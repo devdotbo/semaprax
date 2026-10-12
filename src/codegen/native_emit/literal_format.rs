@@ -198,21 +198,29 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         if self.output_profile == super::NativeOutputProfile::CheckedAllocation {
             // The worker has settled its committed inputs and all partial
             // outputs before selecting either canonical non-result exit.
-            let physical = self.checked_allocation_failure_jump(&expression.id,
-                crate::cleanup_plan::AllocationOperation::LiteralFormat)?;
+            let physical = self.checked_allocation_failure_jump(
+                &expression.id,
+                crate::cleanup_plan::AllocationOperation::LiteralFormat,
+            )?;
             let semantic = self.operation_failure_jump()?;
             self.line("if (spx_checked_native_physical_v1(spx_ctx, spx_status)) {");
             self.indent += 1;
-            for line in physical.lines() { self.line(line); }
+            for line in physical.lines() {
+                self.line(line);
+            }
             self.indent -= 1;
             self.line("} else {");
             self.indent += 1;
-            for line in semantic.lines() { self.line(line); }
+            for line in semantic.lines() {
+                self.line(line);
+            }
             self.indent -= 1;
             self.line("}");
         } else {
             let jump = self.operation_failure_jump()?;
-            for line in jump.lines() { self.line(line); }
+            for line in jump.lines() {
+                self.line(line);
+            }
         }
         self.line(&format!("{done}:;"));
         if is_direct_plan_owned(self.program, &ResolvedType::String) {

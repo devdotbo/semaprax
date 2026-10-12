@@ -11,10 +11,16 @@ fn resolve(source: &str) -> ResolvedProgram {
 }
 fn clear(program: &mut ResolvedProgram) {
     for function in &mut program.functions {
-        drop(std::mem::replace(&mut function.loan_plan, LoanPlan::unresolved()));
+        drop(std::mem::replace(
+            &mut function.loan_plan,
+            LoanPlan::unresolved(),
+        ));
     }
     for instance in &mut program.function_instances {
-        drop(std::mem::replace(&mut instance.function.loan_plan, LoanPlan::unresolved()));
+        drop(std::mem::replace(
+            &mut instance.function.loan_plan,
+            LoanPlan::unresolved(),
+        ));
     }
 }
 fn fixture(group: Group, count: usize) -> ResolvedProgram {
@@ -60,7 +66,9 @@ pub(super) fn wide_original_fixture() -> ResolvedProgram {
     // Preserve the original first body and loan semantics. Only the outer
     // authored directory grows; the shared small fixture remains unchanged.
     for index in 4..33 {
-        source.push_str(&format!("@id(\"wide{index}\") fn wide{index}()->i64 {{0}}\n"));
+        source.push_str(&format!(
+            "@id(\"wide{index}\") fn wide{index}()->i64 {{0}}\n"
+        ));
     }
     let program = resolve(&source);
     assert_eq!(program.functions.len(), 33);
@@ -82,30 +90,45 @@ fn paid_vec_attach(program: &mut ResolvedProgram) -> Result<(), Diagnostic> {
         }
         Ok(())
     })();
-    if owner.first().is_some() { return Err(owner.diagnostic()); }
+    if owner.first().is_some() {
+        return Err(owner.diagnostic());
+    }
     result
 }
 fn first_plan(program: &ResolvedProgram, group: Group, owner: &CfgReservation) -> LoanPlan {
-    match crate::loan_plan::build_plan_with_reservation(program, group.function(program, 0), owner) {
+    match crate::loan_plan::build_plan_with_reservation(program, group.function(program, 0), owner)
+    {
         Ok(plan) => plan,
         Err(_) => panic!("first ordinary member must plan"),
     }
 }
 fn removed_directory_bytes(program: &ResolvedProgram) -> usize {
-    [Group::Authored, Group::Instances].into_iter()
+    [Group::Authored, Group::Instances]
+        .into_iter()
         .map(|group| group.len(program))
         .filter(|&count| count <= staging::INLINE_PLANS)
-        .map(|count| count * std::mem::size_of::<LoanPlan>()).sum()
+        .map(|count| count * std::mem::size_of::<LoanPlan>())
+        .sum()
 }
-fn observed(program: &ResolvedProgram, old: bool, limit: usize) -> (ResolvedProgram, bool, usize, Metrics) {
+fn observed(
+    program: &ResolvedProgram,
+    old: bool,
+    limit: usize,
+) -> (ResolvedProgram, bool, usize, Metrics) {
     let mut program = program.clone();
-    let ((result, metrics), overflow, used) = with_limit_usage(limit, || measure(|| {
-        let result = if old { paid_vec_attach(&mut program) } else { attach(&mut program) };
-        // The full result is checked separately; all new nested backing and
-        // both directories, including the refusal diagnostic, reach Drop here.
-        clear(&mut program);
-        result
-    }));
+    let ((result, metrics), overflow, used) = with_limit_usage(limit, || {
+        measure(|| {
+            let result = if old {
+                paid_vec_attach(&mut program)
+            } else {
+                attach(&mut program)
+            };
+            // The full result is checked separately; all new nested backing and
+            // both directories, including the refusal diagnostic, reach Drop here.
+            clear(&mut program);
+            result
+        })
+    });
     result.unwrap();
     (program, overflow, used, metrics)
 }
@@ -120,14 +143,18 @@ fn inline_staging_matches_paid_vec_full_plans_at_both_group_boundaries() {
         for count in [0, 1, 31, 32, 33] {
             let original = fixture(group, count);
             let mut expected = original.clone();
-            let (result, overflow, _) = with_limit_usage(usize::MAX, || paid_vec_attach(&mut expected));
+            let (result, overflow, _) =
+                with_limit_usage(usize::MAX, || paid_vec_attach(&mut expected));
             result.unwrap();
             assert!(!overflow);
             let mut actual = original;
             let (result, overflow, _) = with_limit_usage(usize::MAX, || attach(&mut actual));
             result.unwrap();
             assert!(!overflow);
-            assert_eq!(actual, expected, "full authored and instantiated plans at count {count}");
+            assert_eq!(
+                actual, expected,
+                "full authored and instantiated plans at count {count}"
+            );
         }
     }
 }
@@ -145,9 +172,11 @@ fn inline_staging_removes_exact_outer_directory_bytes_through_all_drop() {
             assert_eq!(old_used - new_used, removed);
             assert_eq!(old.allocated - new.allocated, removed);
             assert_eq!(old.freed - new.freed, removed);
-            let removed_requests = [Group::Authored, Group::Instances].into_iter()
+            let removed_requests = [Group::Authored, Group::Instances]
+                .into_iter()
                 .map(|group| group.len(&original))
-                .filter(|&count| count > 0 && count <= staging::INLINE_PLANS).count();
+                .filter(|&count| count > 0 && count <= staging::INLINE_PLANS)
+                .count();
             assert_eq!(old.allocations - new.allocations, removed_requests);
             assert_eq!(old.reallocations, new.reallocations);
             assert!(new.allocated <= new_used);
@@ -170,23 +199,38 @@ fn wide_first_array_one_short_is_sticky_and_never_publishes_group() {
             drop(plan);
         });
         assert!(!overflow);
-        let ((error, metrics), overflow, used, _) = with_limit_usage_refusal(boundary - 1, || measure(|| {
-            let owner = CfgReservation::acquire().unwrap();
-            let mut plans = Staging::new();
-            assert_eq!(collect_paid(&program, group, &owner, &mut plans).unwrap_err().code, "SPX-H006");
-            let first = owner.first().expect("array reservation selected a refusal");
-            let remaining = crate::bounded_output::active_remaining();
-            assert_eq!(collect_paid(&program, group, &owner, &mut plans).unwrap_err().code, "SPX-H006");
-            assert_eq!(owner.first(), Some(first));
-            assert_eq!(remaining, crate::bounded_output::active_remaining());
-            assert!(plans.empty_unallocated());
-            drop(plans);
-            let error = owner.diagnostic();
-            assert_eq!(error.message, "canonical loan CFG storage reservation refused");
-            let code = error.code;
-            drop(error);
-            code
-        }));
+        let ((error, metrics), overflow, used, _) = with_limit_usage_refusal(boundary - 1, || {
+            measure(|| {
+                let owner = CfgReservation::acquire().unwrap();
+                let mut plans = Staging::new();
+                assert_eq!(
+                    collect_paid(&program, group, &owner, &mut plans)
+                        .unwrap_err()
+                        .code,
+                    "SPX-H006"
+                );
+                let first = owner.first().expect("array reservation selected a refusal");
+                let remaining = crate::bounded_output::active_remaining();
+                assert_eq!(
+                    collect_paid(&program, group, &owner, &mut plans)
+                        .unwrap_err()
+                        .code,
+                    "SPX-H006"
+                );
+                assert_eq!(owner.first(), Some(first));
+                assert_eq!(remaining, crate::bounded_output::active_remaining());
+                assert!(plans.empty_unallocated());
+                drop(plans);
+                let error = owner.diagnostic();
+                assert_eq!(
+                    error.message,
+                    "canonical loan CFG storage reservation refused"
+                );
+                let code = error.code;
+                drop(error);
+                code
+            })
+        });
         assert_eq!(error, "SPX-H006");
         assert!(overflow);
         assert_eq!(used, boundary - 33 * std::mem::size_of::<LoanPlan>());
@@ -209,18 +253,23 @@ fn wide_first_array_one_short_is_sticky_and_never_publishes_group() {
         if matches!(group, Group::Instances) {
             expected.functions = prefix.functions.clone();
         }
-        let (((), metrics), overflow, used) = with_limit_usage(full_boundary - 1, || measure(|| {
-            let error = attach(&mut program).unwrap_err();
-            assert_eq!(error.code, "SPX-H006");
-            assert_eq!(error.message, "canonical loan CFG storage reservation refused");
-            drop(error);
-            assert_eq!(program, expected);
-            let remaining = crate::bounded_output::active_remaining();
-            drop(attach(&mut program).unwrap_err());
-            assert_eq!(remaining, crate::bounded_output::active_remaining());
-            assert_eq!(program, expected);
-            clear(&mut program);
-        }));
+        let (((), metrics), overflow, used) = with_limit_usage(full_boundary - 1, || {
+            measure(|| {
+                let error = attach(&mut program).unwrap_err();
+                assert_eq!(error.code, "SPX-H006");
+                assert_eq!(
+                    error.message,
+                    "canonical loan CFG storage reservation refused"
+                );
+                drop(error);
+                assert_eq!(program, expected);
+                let remaining = crate::bounded_output::active_remaining();
+                drop(attach(&mut program).unwrap_err());
+                assert_eq!(remaining, crate::bounded_output::active_remaining());
+                assert_eq!(program, expected);
+                clear(&mut program);
+            })
+        });
         assert!(overflow);
         assert_eq!(used, full_boundary - 33 * std::mem::size_of::<LoanPlan>());
         balanced(metrics);

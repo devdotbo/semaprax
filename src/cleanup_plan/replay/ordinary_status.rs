@@ -18,7 +18,9 @@ struct BorrowedStatus<'a> {
     producer: BorrowedProducer<'a>,
 }
 enum BorrowedProducer<'a> {
-    CheckedAllocation { operation: super::super::AllocationOperation },
+    CheckedAllocation {
+        operation: super::super::AllocationOperation,
+    },
     PropagatedCall {
         callee: &'a str,
     },
@@ -50,12 +52,21 @@ impl<'a> Comparison<'a> {
                 && actual.id.lane == expected.id.lane
                 && match (&actual.producer, expected.producer) {
                     (
-                        StatusProducer::CheckedAllocation { operation, normalized_cases },
-                        BorrowedProducer::CheckedAllocation { operation: expected },
-                    ) => *operation == expected && *normalized_cases == [
-                        super::super::AllocationCase::PayloadRefused,
-                        super::super::AllocationCase::SizeOverflow,
-                    ],
+                        StatusProducer::CheckedAllocation {
+                            operation,
+                            normalized_cases,
+                        },
+                        BorrowedProducer::CheckedAllocation {
+                            operation: expected,
+                        },
+                    ) => {
+                        *operation == expected
+                            && *normalized_cases
+                                == [
+                                    super::super::AllocationCase::PayloadRefused,
+                                    super::super::AllocationCase::SizeOverflow,
+                                ]
+                    }
                     (
                         StatusProducer::PropagatedCall { callee },
                         BorrowedProducer::PropagatedCall { callee: expected },
@@ -113,13 +124,24 @@ pub(super) fn validate(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
-    validate_rows(program, function, &function.cleanup_plan.status_sources, None)
+    validate_rows(
+        program,
+        function,
+        &function.cleanup_plan.status_sources,
+        None,
+    )
 }
 
 /// Independent status discovery only. Passing this receiver does not validate
 /// allocation failure cleanup, skeleton paths or an allocator/lease receiver.
 /// The current-function token comes only from full original-source preparation.
-#[cfg_attr(not(test), allow(dead_code, reason = "private checked allocation skeleton and engine receivers are not activated"))]
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "private checked allocation skeleton and engine receivers are not activated"
+    )
+)]
 pub(in crate::cleanup_plan) fn validate_allocation_projection(
     current: super::super::checked_allocation::Function<'_>,
     plan: &CleanupPlan,
@@ -128,10 +150,18 @@ pub(in crate::cleanup_plan) fn validate_allocation_projection(
     if !current.held_by(current.program(), function)
         || plan.schema != super::super::CLEANUP_PLAN_SCHEMA_V20
     {
-        return Err(replay_error(function, "allocation status projection changed its current subject or schema"));
+        return Err(replay_error(
+            function,
+            "allocation status projection changed its current subject or schema",
+        ));
     }
     let selection = allocation::Selection::new(function)?;
-    validate_rows(current.program(), function, &plan.status_sources, Some(&selection))
+    validate_rows(
+        current.program(),
+        function,
+        &plan.status_sources,
+        Some(&selection),
+    )
 }
 
 fn validate_rows(
@@ -447,9 +477,14 @@ fn push_allocation(
     selection: Option<&allocation::Selection>,
     expression: &ResolvedExpr,
 ) {
-    let Some(operation) = selection.and_then(|selection| selection.operation(expression)) else { return; };
+    let Some(operation) = selection.and_then(|selection| selection.operation(expression)) else {
+        return;
+    };
     statuses.push(BorrowedStatus {
-        id: BorrowedId { expression: &expression.id, lane: StatusLane::AllocationFailure },
+        id: BorrowedId {
+            expression: &expression.id,
+            lane: StatusLane::AllocationFailure,
+        },
         producer: BorrowedProducer::CheckedAllocation { operation },
     });
 }

@@ -23,8 +23,8 @@ use crate::diagnostic::Diagnostic;
 use std::collections::{BTreeMap, BTreeSet};
 
 mod carriers;
-mod lexical_cleanup;
 mod checked_allocation;
+mod lexical_cleanup;
 
 pub(crate) const MAX_BYTES: usize = 128 * 1024 * 1024;
 pub(crate) const MAX_ALLOCATION: usize = 128 * 1024 * 1024;

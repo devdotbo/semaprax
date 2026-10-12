@@ -9,8 +9,13 @@ const SOURCE: &str = r#"module checked.native;
 #[test]
 fn exact_source_native_receiver_uses_checked_helpers_and_closed_default_routes() {
     let source = crate::parse(SOURCE, "checked-native.spx").unwrap();
-    let owner = crate::cleanup_plan::checked_allocation::prepare(&source,
-        &DeclarationId::new("checked.native.main")).unwrap().receive().unwrap();
+    let owner = crate::cleanup_plan::checked_allocation::prepare(
+        &source,
+        &DeclarationId::new("checked.native.main"),
+    )
+    .unwrap()
+    .receive()
+    .unwrap();
     let projection = Projection::receive(&owner).unwrap();
     let first = projection.emit().unwrap();
     assert_eq!(first, projection.emit().unwrap());
@@ -20,10 +25,20 @@ fn exact_source_native_receiver_uses_checked_helpers_and_closed_default_routes()
     assert!(first.contains("spx_checked_native_concat_v1(spx_ctx,"));
     assert!(first.contains("checked concat commit epochs"));
     assert!(!first.contains("int main(void)"));
-    assert!(super::super::emit_hir_c_with_labels(owner.program(), &HashMap::new(),
-        NativeOutputProfile::Legacy, None).is_err());
-    assert!(super::super::emit_hir_c_with_labels(owner.program(), &HashMap::new(),
-        NativeOutputProfile::CheckedAllocation, None).is_err());
+    assert!(super::super::emit_hir_c_with_labels(
+        owner.program(),
+        &HashMap::new(),
+        NativeOutputProfile::Legacy,
+        None
+    )
+    .is_err());
+    assert!(super::super::emit_hir_c_with_labels(
+        owner.program(),
+        &HashMap::new(),
+        NativeOutputProfile::CheckedAllocation,
+        None
+    )
+    .is_err());
 }
 
 #[test]
@@ -85,29 +100,51 @@ fn generated_native_format_null_sweep_settles_all_committed_fields_and_prefixes(
 #[test]
 fn escaped_native_string_result_retains_provider_and_rejects_stale_borrow_drop() {
     for (source, allocations, expected, contract_failure) in [
-        (r#"module checked.native;
+        (
+            r#"module checked.native;
 @id("checked.native.publish") fn publish() -> string { string_concat("a", "β") }
 @id("checked.native.main") fn main() -> i64 { 0 }
-"#, 3usize, "aβ", 0u32),
-        (r#"module checked.native;
+"#,
+            3usize,
+            "aβ",
+            0u32,
+        ),
+        (
+            r#"module checked.native;
 @id("checked.native.publish") fn publish() -> string { "" }
 @id("checked.native.main") fn main() -> i64 { 0 }
-"#, 1usize, "", 0u32),
-        (r#"module checked.native;
+"#,
+            1usize,
+            "",
+            0u32,
+        ),
+        (
+            r#"module checked.native;
 @id("checked.native.publish") fn publish() -> string requires false { string_concat("a", "β") }
 @id("checked.native.main") fn main() -> i64 { 0 }
-"#, 0usize, "", 1u32),
-        (r#"module checked.native;
+"#,
+            0usize,
+            "",
+            1u32,
+        ),
+        (
+            r#"module checked.native;
 @id("checked.native.publish") fn publish() -> string ensures false { string_concat("a", "β") }
 @id("checked.native.main") fn main() -> i64 { 0 }
-"#, 3usize, "", 2u32),
+"#,
+            3usize,
+            "",
+            2u32,
+        ),
     ] {
         let source = crate::parse(source, "checked-native-escaped.spx").unwrap();
         // The old scalar factory remains closed for an owning result.
         let entry = DeclarationId::new("checked.native.publish");
         assert!(crate::cleanup_plan::checked_allocation::prepare(&source, &entry).is_err());
         let owner = crate::cleanup_plan::checked_allocation::prepare_string_result(&source, &entry)
-            .unwrap().receive().unwrap();
+            .unwrap()
+            .receive()
+            .unwrap();
         let emitted = Projection::receive(&owner).unwrap().emit().unwrap();
         assert!(!emitted.contains("spx_checked_allocation_invoke_v1("));
         assert!(emitted.contains("spx_checked_string_result_invoke_v1("));
@@ -118,37 +155,75 @@ fn escaped_native_string_result_retains_provider_and_rejects_stale_borrow_drop()
 
 fn run_native(source: &str, allocations: usize, result: i64, semantic_failure: bool) {
     let source = crate::parse(source, "checked-native.spx").unwrap();
-    let owner = crate::cleanup_plan::checked_allocation::prepare(&source,
-        &DeclarationId::new("checked.native.main")).unwrap().receive().unwrap();
+    let owner = crate::cleanup_plan::checked_allocation::prepare(
+        &source,
+        &DeclarationId::new("checked.native.main"),
+    )
+    .unwrap()
+    .receive()
+    .unwrap();
     // The unchanged default owning read at main's tail clones text. This
     // request is distinct from the callee/conversion result construction.
-    let main = owner.program().functions.iter().find(|function|
-        function.id.as_str() == "checked.native.main").unwrap();
-    assert_eq!(main.cleanup_plan.status_sources.iter().filter(|source| matches!(
-        &source.producer,
-        crate::cleanup_plan::StatusProducer::CheckedAllocation {
-            operation: crate::cleanup_plan::AllocationOperation::StringClone, ..
-        }
-    )).count(), 1);
+    let main = owner
+        .program()
+        .functions
+        .iter()
+        .find(|function| function.id.as_str() == "checked.native.main")
+        .unwrap();
+    assert_eq!(
+        main.cleanup_plan
+            .status_sources
+            .iter()
+            .filter(|source| matches!(
+                &source.producer,
+                crate::cleanup_plan::StatusProducer::CheckedAllocation {
+                    operation: crate::cleanup_plan::AllocationOperation::StringClone,
+                    ..
+                }
+            ))
+            .count(),
+        1
+    );
     let emitted = Projection::receive(&owner).unwrap().emit().unwrap();
     let probe = format!("#define CHECKED_EXPECT_ALLOCATIONS {allocations}u\n#define CHECKED_EXPECT_RESULT INT64_C({result})\n#define CHECKED_EXPECT_SEMANTIC {}\n{}", usize::from(semantic_failure), include_str!("probe.c"));
     run_generated(&emitted, &probe);
 }
 fn run_generated(emitted: &str, probe: &str) {
-    let root = std::env::temp_dir().join(format!("checked-native-allocation-{}-{}",
-        std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    let root = std::env::temp_dir().join(format!(
+        "checked-native-allocation-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
     std::fs::create_dir(&root).unwrap();
     let input = root.join("probe.c");
     std::fs::write(&input, format!("{emitted}\n{probe}")).unwrap();
     let compiler = std::env::var_os("CLANG").unwrap_or_else(|| "clang".into());
     for optimization in ["-O0", "-O2"] {
-        let binary = root.join(format!("probe{optimization}{}", std::env::consts::EXE_SUFFIX));
+        let binary = root.join(format!(
+            "probe{optimization}{}",
+            std::env::consts::EXE_SUFFIX
+        ));
         let compiled = std::process::Command::new(&compiler)
             .args(["-std=c11", optimization, "-Wall", "-Wextra", "-Werror"])
-            .arg(&input).arg("-o").arg(&binary).output().unwrap();
-        assert!(compiled.status.success(), "{}", String::from_utf8_lossy(&compiled.stderr));
+            .arg(&input)
+            .arg("-o")
+            .arg(&binary)
+            .output()
+            .unwrap();
+        assert!(
+            compiled.status.success(),
+            "{}",
+            String::from_utf8_lossy(&compiled.stderr)
+        );
         let ran = std::process::Command::new(&binary).output().unwrap();
-        assert!(ran.status.success(), "{}", String::from_utf8_lossy(&ran.stderr));
+        assert!(
+            ran.status.success(),
+            "{}",
+            String::from_utf8_lossy(&ran.stderr)
+        );
         assert_eq!(ran.stdout, b"checked-native-allocation: ok\n");
         assert!(ran.stderr.is_empty());
     }

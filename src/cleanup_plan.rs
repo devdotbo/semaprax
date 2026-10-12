@@ -605,7 +605,8 @@ impl CleanupPlan {
                         normalized_cases.capacity() * std::mem::size_of::<StatusCase>(),
                     )?;
                 }
-                StatusProducer::ContractFalse { .. } | StatusProducer::CheckedAllocation { .. } => {}
+                StatusProducer::ContractFalse { .. } | StatusProducer::CheckedAllocation { .. } => {
+                }
             }
         }
         for block in &self.blocks {

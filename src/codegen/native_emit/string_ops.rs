@@ -93,93 +93,93 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.temporary(&op.return_type())?
         };
         if !self.emit_checked_string_operation(op, &arguments, &temporary, expression)? {
-        match op {
-            crate::string_ops::StringOp::Take => {
-                let input = &arguments[0].code;
-                self.line(&format!("{temporary} = {input};"));
+            match op {
+                crate::string_ops::StringOp::Take => {
+                    let input = &arguments[0].code;
+                    self.line(&format!("{temporary} = {input};"));
+                }
+                crate::string_ops::StringOp::Len => {
+                    let input = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_len({input});"));
+                }
+                crate::string_ops::StringOp::IsEmpty => {
+                    let input = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_is_empty({input});"));
+                }
+                crate::string_ops::StringOp::Concat => {
+                    let left = &arguments[0].code;
+                    let right = &arguments[1].code;
+                    self.line(&format!(
+                        "{temporary} = spx_string_concat({left}, {right});"
+                    ));
+                    self.string_drop(left);
+                    self.string_drop(right);
+                }
+                crate::string_ops::StringOp::StartsWith => {
+                    let value = &arguments[0].code;
+                    let prefix = &arguments[1].code;
+                    self.line(&format!(
+                        "{temporary} = spx_string_starts_with({value}, {prefix});"
+                    ));
+                }
+                crate::string_ops::StringOp::Contains => {
+                    let value = &arguments[0].code;
+                    let needle = &arguments[1].code;
+                    self.line(&format!(
+                        "{temporary} = spx_string_contains({value}, {needle});"
+                    ));
+                }
+                crate::string_ops::StringOp::LenChars => {
+                    let input = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_len_chars({input});"));
+                }
+                crate::string_ops::StringOp::FromChar => {
+                    let scalar = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_from_char({scalar});"));
+                }
+                crate::string_ops::StringOp::FromI64 => {
+                    let value = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_from_i64({value});"));
+                }
+                crate::string_ops::StringOp::FromUsize => {
+                    let value = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_from_usize({value});"));
+                }
+                crate::string_ops::StringOp::Slice
+                | crate::string_ops::StringOp::Find
+                | crate::string_ops::StringOp::ToI64
+                | crate::string_ops::StringOp::Trim
+                | crate::string_ops::StringOp::ByteAt
+                | crate::string_ops::StringOp::FileReadText => {
+                    self.emit_text_toolkit_op(op, &arguments, &temporary)?;
+                }
+                crate::string_ops::StringOp::Compare
+                | crate::string_ops::StringOp::MapNew
+                | crate::string_ops::StringOp::MapAdd
+                | crate::string_ops::StringOp::MapSet
+                | crate::string_ops::StringOp::MapGetOr
+                | crate::string_ops::StringOp::MapHas
+                | crate::string_ops::StringOp::MapLen
+                | crate::string_ops::StringOp::MapKeyAt
+                | crate::string_ops::StringOp::MapValueAt
+                | crate::string_ops::StringOp::MapRemove => {
+                    self.emit_collection_op(op, &arguments, &temporary, expression)?;
+                }
+                crate::string_ops::StringOp::FromStr
+                | crate::string_ops::StringOp::FromUtf8
+                | crate::string_ops::StringOp::F64FromI64
+                | crate::string_ops::StringOp::I64FromF64
+                | crate::string_ops::StringOp::UsizeFromI64
+                | crate::string_ops::StringOp::I64FromU8
+                | crate::string_ops::StringOp::I64FromI32
+                | crate::string_ops::StringOp::UsizeFromU8
+                | crate::string_ops::StringOp::U8FromI64
+                | crate::string_ops::StringOp::CharFromU8
+                | crate::string_ops::StringOp::CharFromI64
+                | crate::string_ops::StringOp::I64FromUsize => {
+                    self.emit_conversion_op(op, &arguments[0].code, &temporary)?;
+                }
             }
-            crate::string_ops::StringOp::Len => {
-                let input = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_len({input});"));
-            }
-            crate::string_ops::StringOp::IsEmpty => {
-                let input = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_is_empty({input});"));
-            }
-            crate::string_ops::StringOp::Concat => {
-                let left = &arguments[0].code;
-                let right = &arguments[1].code;
-                self.line(&format!(
-                    "{temporary} = spx_string_concat({left}, {right});"
-                ));
-                self.string_drop(left);
-                self.string_drop(right);
-            }
-            crate::string_ops::StringOp::StartsWith => {
-                let value = &arguments[0].code;
-                let prefix = &arguments[1].code;
-                self.line(&format!(
-                    "{temporary} = spx_string_starts_with({value}, {prefix});"
-                ));
-            }
-            crate::string_ops::StringOp::Contains => {
-                let value = &arguments[0].code;
-                let needle = &arguments[1].code;
-                self.line(&format!(
-                    "{temporary} = spx_string_contains({value}, {needle});"
-                ));
-            }
-            crate::string_ops::StringOp::LenChars => {
-                let input = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_len_chars({input});"));
-            }
-            crate::string_ops::StringOp::FromChar => {
-                let scalar = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_from_char({scalar});"));
-            }
-            crate::string_ops::StringOp::FromI64 => {
-                let value = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_from_i64({value});"));
-            }
-            crate::string_ops::StringOp::FromUsize => {
-                let value = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_from_usize({value});"));
-            }
-            crate::string_ops::StringOp::Slice
-            | crate::string_ops::StringOp::Find
-            | crate::string_ops::StringOp::ToI64
-            | crate::string_ops::StringOp::Trim
-            | crate::string_ops::StringOp::ByteAt
-            | crate::string_ops::StringOp::FileReadText => {
-                self.emit_text_toolkit_op(op, &arguments, &temporary)?;
-            }
-            crate::string_ops::StringOp::Compare
-            | crate::string_ops::StringOp::MapNew
-            | crate::string_ops::StringOp::MapAdd
-            | crate::string_ops::StringOp::MapSet
-            | crate::string_ops::StringOp::MapGetOr
-            | crate::string_ops::StringOp::MapHas
-            | crate::string_ops::StringOp::MapLen
-            | crate::string_ops::StringOp::MapKeyAt
-            | crate::string_ops::StringOp::MapValueAt
-            | crate::string_ops::StringOp::MapRemove => {
-                self.emit_collection_op(op, &arguments, &temporary, expression)?;
-            }
-            crate::string_ops::StringOp::FromStr
-            | crate::string_ops::StringOp::FromUtf8
-            | crate::string_ops::StringOp::F64FromI64
-            | crate::string_ops::StringOp::I64FromF64
-            | crate::string_ops::StringOp::UsizeFromI64
-            | crate::string_ops::StringOp::I64FromU8
-            | crate::string_ops::StringOp::I64FromI32
-            | crate::string_ops::StringOp::UsizeFromU8
-            | crate::string_ops::StringOp::U8FromI64
-            | crate::string_ops::StringOp::CharFromU8
-            | crate::string_ops::StringOp::CharFromI64
-            | crate::string_ops::StringOp::I64FromUsize => {
-                self.emit_conversion_op(op, &arguments[0].code, &temporary)?;
-            }
-        }
         }
         let code = if is_direct_plan_owned(self.program, &op.return_type()) {
             self.apply_owned_plan_at_value(

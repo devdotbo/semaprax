@@ -42,7 +42,10 @@ pub(in crate::hir) fn attach(program: &mut ResolvedProgram) -> Result<(), Diagno
         for (function, plan) in program.functions.iter_mut().zip(plans) {
             function.loan_plan = plan;
         }
-        let plans = staged!(HirInstanceLoanPlans, collect(program, Group::Instances, None))?;
+        let plans = staged!(
+            HirInstanceLoanPlans,
+            collect(program, Group::Instances, None)
+        )?;
         for (instance, plan) in program.function_instances.iter_mut().zip(plans) {
             instance.function.loan_plan = plan;
         }
@@ -53,9 +56,15 @@ pub(in crate::hir) fn attach(program: &mut ResolvedProgram) -> Result<(), Diagno
     // directories. Nested plan backing still uses the exact caller ledger.
     let mut plans = Staging::new();
     let result = (|| {
-        staged!(HirLoanPlans, collect_paid(program, Group::Authored, &owner, &mut plans))?;
+        staged!(
+            HirLoanPlans,
+            collect_paid(program, Group::Authored, &owner, &mut plans)
+        )?;
         plans.publish(program, Group::Authored);
-        staged!(HirInstanceLoanPlans, collect_paid(program, Group::Instances, &owner, &mut plans))?;
+        staged!(
+            HirInstanceLoanPlans,
+            collect_paid(program, Group::Instances, &owner, &mut plans)
+        )?;
         plans.publish(program, Group::Instances);
         Ok(())
     })();
@@ -74,7 +83,9 @@ fn collect_paid(
     owner.reserve(0).map_err(|_| refused())?;
     for index in 0..group.len(program) {
         let plan = match crate::loan_plan::build_plan_with_reservation(
-            program, group.function(program, index), owner,
+            program,
+            group.function(program, index),
+            owner,
         ) {
             Ok(plan) => plan,
             Err(crate::loan_plan::FundedError::Physical(reason)) => {

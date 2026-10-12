@@ -3,8 +3,11 @@ use super::*;
 use crate::string_ops::StringOp;
 impl<O: COutput> CEmitter<'_, O> {
     pub(in crate::codegen::native_emit) fn checked_string_constructor(
-        &mut self, site: &ExpressionId, operation: AllocationOperation,
-        call: &str, semantic_failure: bool,
+        &mut self,
+        site: &ExpressionId,
+        operation: AllocationOperation,
+        call: &str,
+        semantic_failure: bool,
     ) -> Result<(), Diagnostic> {
         let physical = self.checked_allocation_failure_jump(site, operation)?;
         self.line(&format!("spx_status = {call};"));
@@ -14,40 +17,66 @@ impl<O: COutput> CEmitter<'_, O> {
             let semantic = self.failure_jump_at(site, StatusLane::OperationFailure)?;
             self.line("if (spx_checked_native_physical_v1(spx_ctx, spx_status)) {");
             self.indent += 1;
-            for line in physical.lines() { self.line(line); }
+            for line in physical.lines() {
+                self.line(line);
+            }
             self.indent -= 1;
             self.line("} else {");
             self.indent += 1;
-            for line in semantic.lines() { self.line(line); }
+            for line in semantic.lines() {
+                self.line(line);
+            }
             self.indent -= 1;
             self.line("}");
         } else {
             self.line("if (!spx_checked_native_physical_v1(spx_ctx, spx_status)) spx_runtime_invariant_failure(\"total String constructor selected a semantic status\");");
-            for line in physical.lines() { self.line(line); }
+            for line in physical.lines() {
+                self.line(line);
+            }
         }
         self.indent -= 1;
         self.line("}");
         Ok(())
     }
     pub(in crate::codegen::native_emit) fn checked_allocation_failure_jump(
-        &self, site: &ExpressionId, operation: AllocationOperation,
+        &self,
+        site: &ExpressionId,
+        operation: AllocationOperation,
     ) -> Result<String, Diagnostic> {
-        let rows = self.function.cleanup_plan.status_sources.iter().filter(|source|
-            source.id.expression == *site && source.id.lane == StatusLane::AllocationFailure);
+        let rows = self
+            .function
+            .cleanup_plan
+            .status_sources
+            .iter()
+            .filter(|source| {
+                source.id.expression == *site && source.id.lane == StatusLane::AllocationFailure
+            });
         let mut rows = rows;
-        let row = rows.next().ok_or_else(|| backend_error("checked native String has no physical source"))?;
-        if rows.next().is_some() || !matches!(&row.producer,
+        let row = rows
+            .next()
+            .ok_or_else(|| backend_error("checked native String has no physical source"))?;
+        if rows.next().is_some()
+            || !matches!(&row.producer,
             StatusProducer::CheckedAllocation { operation: actual, normalized_cases }
             if *actual == operation && *normalized_cases == [crate::cleanup_plan::AllocationCase::PayloadRefused,
-                crate::cleanup_plan::AllocationCase::SizeOverflow]) {
-            return Err(backend_error("checked native String source differs from its constructor"));
+                crate::cleanup_plan::AllocationCase::SizeOverflow])
+        {
+            return Err(backend_error(
+                "checked native String source differs from its constructor",
+            ));
         }
         self.failure_jump_at(site, StatusLane::AllocationFailure)
     }
     pub(in crate::codegen::native_emit) fn emit_checked_string_operation(
-        &mut self, op: StringOp, arguments: &[CValue], out: &str, site: &ExpressionId,
+        &mut self,
+        op: StringOp,
+        arguments: &[CValue],
+        out: &str,
+        site: &ExpressionId,
     ) -> Result<bool, Diagnostic> {
-        if self.output_profile != NativeOutputProfile::CheckedAllocation { return Ok(false); }
+        if self.output_profile != NativeOutputProfile::CheckedAllocation {
+            return Ok(false);
+        }
         use AllocationOperation as A;
         let arg = |index: usize| arguments[index].code.as_str();
         let adapter = "spx_checked_native_adapter_v1(spx_ctx)";

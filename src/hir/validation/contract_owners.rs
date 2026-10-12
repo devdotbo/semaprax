@@ -48,8 +48,10 @@ impl super::HirValidator<'_> {
         outer: &BTreeMap<ValueId, ValidationBinding>,
         phase: &str,
     ) -> Result<(), crate::diagnostic::Diagnostic> {
-        if contracts.is_empty() {return Ok(());}
-        let baseline=super::scope_checkpoint::Scope::fresh_baseline(outer)?;
+        if contracts.is_empty() {
+            return Ok(());
+        }
+        let baseline = super::scope_checkpoint::Scope::fresh_baseline(outer)?;
         for (index, contract) in contracts.iter().enumerate() {
             let mut scope = baseline.clone();
             self.validate_expr_iterative_effects(

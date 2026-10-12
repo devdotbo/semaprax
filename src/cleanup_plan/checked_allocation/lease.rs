@@ -62,13 +62,18 @@ pub(crate) fn capture<'v, 'source>(
     let program = validated.program();
     let mut used = [false; 6];
     for function in program.functions.iter().chain(
-        program.function_instances.iter().map(|instance| &instance.function),
+        program
+            .function_instances
+            .iter()
+            .map(|instance| &instance.function),
     ) {
         for flag in &function.cleanup.flags {
-            let family = release(flag.lifecycle.as_str()).ok_or_else(|| lease_error(&format!(
-                "function `{}` lifecycle `{}` is not an allocator-owned release",
-                function.id, flag.lifecycle,
-            )))?;
+            let family = release(flag.lifecycle.as_str()).ok_or_else(|| {
+                lease_error(&format!(
+                    "function `{}` lifecycle `{}` is not an allocator-owned release",
+                    function.id, flag.lifecycle,
+                ))
+            })?;
             used[family as usize] = true;
         }
     }
@@ -76,11 +81,15 @@ pub(crate) fn capture<'v, 'source>(
 }
 
 impl<'v, 'source> Lease<'v, 'source> {
-    pub(crate) fn validated(&self) -> &'v Validated<'source> { self.validated }
+    pub(crate) fn validated(&self) -> &'v Validated<'source> {
+        self.validated
+    }
 
     /// Release families an engine must route through this one allocator pair.
     pub(crate) fn releases(&self) -> impl Iterator<Item = Release> + '_ {
-        RELEASES.into_iter().filter(move |family| self.used[*family as usize])
+        RELEASES
+            .into_iter()
+            .filter(move |family| self.used[*family as usize])
     }
 
     /// Every engine refuses until its receiver independently routes checked
@@ -95,5 +104,8 @@ impl<'v, 'source> Lease<'v, 'source> {
 }
 
 fn lease_error(message: &str) -> Refusal {
-    Refusal::Lease(Diagnostic::io("SPX-B104", format!("checked allocation lease: {message}")))
+    Refusal::Lease(Diagnostic::io(
+        "SPX-B104",
+        format!("checked allocation lease: {message}"),
+    ))
 }

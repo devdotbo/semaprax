@@ -6,7 +6,10 @@
 //! builder and from status discovery. Passing it lends no executor, allocator
 //! or release lease; it only prevents a fatal allocation path from remaining
 //! inside a checked closure.
-#![cfg_attr(not(test), allow(dead_code, reason = "checked allocation projection is not activated"))]
+#![cfg_attr(
+    not(test),
+    allow(dead_code, reason = "checked allocation projection is not activated")
+)]
 use super::*;
 use ordinary_status::allocation::Selection;
 
@@ -14,10 +17,15 @@ use ordinary_status::allocation::Selection;
 /// monomorphic functions and generic instances, in declaration order.
 pub(in crate::cleanup_plan) fn validate(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     for function in program.functions.iter().chain(
-        program.function_instances.iter().map(|instance| &instance.function),
+        program
+            .function_instances
+            .iter()
+            .map(|instance| &instance.function),
     ) {
         let selection = Selection::new(function)?;
-        for root in function.requires.iter()
+        for root in function
+            .requires
+            .iter()
             .chain(std::iter::once(&function.body))
             .chain(function.ensures.iter())
         {
@@ -44,7 +52,10 @@ fn walk(
         }
         if let Some(child) = replay_expression_child(expression, next) {
             if len + 2 > stack.len() {
-                return Err(replay_error(function, "checked allocation coverage depth exceeds 512"));
+                return Err(replay_error(
+                    function,
+                    "checked allocation coverage depth exceeds 512",
+                ));
             }
             stack[len] = Some((expression, next + 1));
             stack[len + 1] = Some((child, 0));
@@ -55,10 +66,13 @@ fn walk(
 }
 
 fn refuse(function: &ResolvedFunction, expression: &ResolvedExpr, site: &str) -> Diagnostic {
-    replay_error(function, format!(
-        "checked allocation projection has no failure inventory for {site} at `{}`",
-        expression.id,
-    ))
+    replay_error(
+        function,
+        format!(
+            "checked allocation projection has no failure inventory for {site} at `{}`",
+            expression.id,
+        ),
+    )
 }
 
 fn owned_drop(
@@ -183,48 +197,99 @@ fn call(
             return match operation {
                 S::FileReadText => Err(refuse(function, expression, "a file text result")),
                 // Catalogued by the selection above.
-                S::Concat | S::FromChar | S::FromI64 | S::FromUsize | S::Slice | S::Trim
-                | S::MapNew | S::MapAdd | S::MapSet | S::MapKeyAt | S::FromStr | S::FromUtf8 => {
-                    Err(refuse(function, expression, "an uncatalogued String operation shape"))
-                }
-                S::Take | S::Len | S::IsEmpty | S::StartsWith | S::Contains | S::LenChars
-                | S::Find | S::ToI64 | S::ByteAt | S::Compare | S::MapGetOr | S::MapHas
-                | S::MapLen | S::MapValueAt | S::MapRemove | S::F64FromI64 | S::I64FromF64
-                | S::UsizeFromI64 | S::I64FromUsize | S::I64FromU8 | S::I64FromI32
-                | S::UsizeFromU8 | S::U8FromI64 | S::CharFromU8 | S::CharFromI64 => Ok(()),
+                S::Concat
+                | S::FromChar
+                | S::FromI64
+                | S::FromUsize
+                | S::Slice
+                | S::Trim
+                | S::MapNew
+                | S::MapAdd
+                | S::MapSet
+                | S::MapKeyAt
+                | S::FromStr
+                | S::FromUtf8 => Err(refuse(
+                    function,
+                    expression,
+                    "an uncatalogued String operation shape",
+                )),
+                S::Take
+                | S::Len
+                | S::IsEmpty
+                | S::StartsWith
+                | S::Contains
+                | S::LenChars
+                | S::Find
+                | S::ToI64
+                | S::ByteAt
+                | S::Compare
+                | S::MapGetOr
+                | S::MapHas
+                | S::MapLen
+                | S::MapValueAt
+                | S::MapRemove
+                | S::F64FromI64
+                | S::I64FromF64
+                | S::UsizeFromI64
+                | S::I64FromUsize
+                | S::I64FromU8
+                | S::I64FromI32
+                | S::UsizeFromU8
+                | S::U8FromI64
+                | S::CharFromU8
+                | S::CharFromI64 => Ok(()),
             };
         }
         if let Some(operation) = crate::byte_ops::by_id(callee.as_str()) {
             use crate::byte_ops::ByteOp as B;
             return match operation {
                 B::Partition => Err(refuse(function, expression, "a byte partition carrier")),
-                B::Copy | B::Zeroed | B::ZeroedBounded => {
-                    Err(refuse(function, expression, "an uncatalogued byte operation shape"))
-                }
-                B::Len | B::Get | B::Range | B::BytesAsSlice | B::ArrayAsSlice | B::StrAsBytes
-                | B::StringAsStr | B::Set | B::Set5 | B::Set1Or5 | B::Set1Or6Or48 => Ok(()),
+                B::Copy | B::Zeroed | B::ZeroedBounded => Err(refuse(
+                    function,
+                    expression,
+                    "an uncatalogued byte operation shape",
+                )),
+                B::Len
+                | B::Get
+                | B::Range
+                | B::BytesAsSlice
+                | B::ArrayAsSlice
+                | B::StrAsBytes
+                | B::StringAsStr
+                | B::Set
+                | B::Set5
+                | B::Set1Or5
+                | B::Set1Or6Or48 => Ok(()),
             };
         }
         if let Some(operation) = crate::vec_ops::by_id(callee.as_str()) {
             use crate::vec_ops::VecOp as V;
             return match operation {
-                V::Sort | V::SortOwned | V::SortBy | V::UniqueBy => {
-                    Err(refuse(function, expression, "Vec sort or selection scratch"))
-                }
-                V::WithCapacity | V::ReserveExact | V::ReserveOwned | V::CloneAt => {
-                    Err(refuse(function, expression, "an uncatalogued Vec operation shape"))
-                }
+                V::Sort | V::SortOwned | V::SortBy | V::UniqueBy => Err(refuse(
+                    function,
+                    expression,
+                    "Vec sort or selection scratch",
+                )),
+                V::WithCapacity | V::ReserveExact | V::ReserveOwned | V::CloneAt => Err(refuse(
+                    function,
+                    expression,
+                    "an uncatalogued Vec operation shape",
+                )),
                 V::Get => reads("an owned Vec element read"),
-                V::Push | V::Len | V::Capacity | V::Set | V::Clear | V::Replace | V::StrAt => Ok(()),
+                V::Push | V::Len | V::Capacity | V::Set | V::Clear | V::Replace | V::StrAt => {
+                    Ok(())
+                }
             };
         }
         if let Some(operation) = crate::map_ops::by_id(callee.as_str()) {
             use crate::map_ops::MapOp as M;
             let key_clone = || -> Result<(), Diagnostic> {
                 match type_arguments.first() {
-                    Some(ResolvedType::String) => {
-                        Err(refuse(function, expression, "an uncatalogued String key shape"))
-                    }
+                    Some(ResolvedType::String) => Err(refuse(
+                        function,
+                        expression,
+                        "an uncatalogued String key shape",
+                    )),
                     Some(key) if type_needs_drop(program, function, key)? => {
                         Err(refuse(function, expression, "a non-String owned key clone"))
                     }
@@ -232,9 +297,11 @@ fn call(
                 }
             };
             return match operation {
-                M::New | M::SetNew => {
-                    Err(refuse(function, expression, "an uncatalogued collection backing shape"))
-                }
+                M::New | M::SetNew => Err(refuse(
+                    function,
+                    expression,
+                    "an uncatalogued collection backing shape",
+                )),
                 M::Add | M::Set | M::SetInsert => key_clone(),
                 M::KeyAt | M::SetKeyAt => reads("an owned collection key clone"),
                 M::GetOr | M::ValueAt => reads("an owned collection value clone"),
@@ -244,7 +311,11 @@ fn call(
         if let Some(operation) = crate::box_ops::by_id(callee.as_str()) {
             use crate::box_ops::BoxOp as X;
             return match operation {
-                X::New => Err(refuse(function, expression, "an uncatalogued Box backing shape")),
+                X::New => Err(refuse(
+                    function,
+                    expression,
+                    "an uncatalogued Box backing shape",
+                )),
                 X::Get | X::IntoInner => Ok(()),
             };
         }

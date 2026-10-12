@@ -1156,8 +1156,9 @@ impl<'a> Executor<'a> {
             .map(|candidate| candidate.producer.clone())
             .ok_or_else(|| invariant(format!("unknown failure source `{}`", source.expression)))?;
         let status = match producer {
-            StatusProducer::CheckedAllocation { normalized_cases, .. } =>
-                checked_allocation::failure_status(self, &source, normalized_cases)?,
+            StatusProducer::CheckedAllocation {
+                normalized_cases, ..
+            } => checked_allocation::failure_status(self, &source, normalized_cases)?,
             StatusProducer::ContractFalse { phase, .. } => NormalizedStatus::contract(phase),
             StatusProducer::CheckedArithmetic {
                 normalized_cases, ..
@@ -1757,8 +1758,8 @@ fn invariant(detail: impl Into<String>) -> CleanupExecutionError {
     CleanupExecutionError::HarnessInvariant(detail.into())
 }
 
-mod propagated_status;
 pub(in crate::cleanup_plan) mod checked_allocation;
+mod propagated_status;
 use propagated_status::validate_propagated_status;
 
 #[cfg(test)]

@@ -389,11 +389,24 @@ fn validate_expression_hostile(
         &recursive_scope,
         path,
     );
-    let owned=owned_validator.validate_expr_iterative_owned_oracle(
-        &execution,expression,&mut owned_scope,path,true,Some(&allowed_effects));
-    HirValidator::assert_validation_oracle(&iterative,&owned,&validator,&owned_validator,
-        &scope,&owned_scope,path);
-    HirValidator::assert_scope_auxiliary_oracle(&validator,&owned_validator);
+    let owned = owned_validator.validate_expr_iterative_owned_oracle(
+        &execution,
+        expression,
+        &mut owned_scope,
+        path,
+        true,
+        Some(&allowed_effects),
+    );
+    HirValidator::assert_validation_oracle(
+        &iterative,
+        &owned,
+        &validator,
+        &owned_validator,
+        &scope,
+        &owned_scope,
+        path,
+    );
+    HirValidator::assert_scope_auxiliary_oracle(&validator, &owned_validator);
     let diagnostic = iterative.unwrap_err();
     assert_eq!(diagnostic.code, "SPX-H006", "{function_id}");
     function
@@ -575,24 +588,42 @@ fn validator_oracle_handles_an_exact_depth_512_late_error_with_a_nonempty_scope(
         .unwrap();
 }
 
-
 #[test]
 fn checkpoint_validator_preserves_full_saved_iterative_success_corpus() {
-    let program=program();
+    let program = program();
     for function in &program.functions {
-        let execution=FunctionExecutionId::Monomorphic(function.id.clone());
-        let mut scope=validation_scope(function);
-        let mut old_scope=scope.clone();
-        let mut validator=HirValidator::new(&program).unwrap();
-        let mut old_validator=validator.clone();
-        let effects=function.effects.iter().cloned().collect();
-        let old=old_validator.validate_expr_iterative_owned_oracle(&execution,&function.body,
-            &mut old_scope,"body",true,Some(&effects));
-        let current=validator.validate_expr_iterative(&execution,&function.body,
-            &mut scope,"body",true,Some(&effects));
-        HirValidator::assert_validation_oracle(&current,&old,&validator,&old_validator,
-            &scope,&old_scope,function.id.as_str());
-        HirValidator::assert_scope_auxiliary_oracle(&validator,&old_validator);
+        let execution = FunctionExecutionId::Monomorphic(function.id.clone());
+        let mut scope = validation_scope(function);
+        let mut old_scope = scope.clone();
+        let mut validator = HirValidator::new(&program).unwrap();
+        let mut old_validator = validator.clone();
+        let effects = function.effects.iter().cloned().collect();
+        let old = old_validator.validate_expr_iterative_owned_oracle(
+            &execution,
+            &function.body,
+            &mut old_scope,
+            "body",
+            true,
+            Some(&effects),
+        );
+        let current = validator.validate_expr_iterative(
+            &execution,
+            &function.body,
+            &mut scope,
+            "body",
+            true,
+            Some(&effects),
+        );
+        HirValidator::assert_validation_oracle(
+            &current,
+            &old,
+            &validator,
+            &old_validator,
+            &scope,
+            &old_scope,
+            function.id.as_str(),
+        );
+        HirValidator::assert_scope_auxiliary_oracle(&validator, &old_validator);
         current.unwrap();
     }
 }

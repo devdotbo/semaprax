@@ -1,7 +1,9 @@
 //! Append-only v20 data carriers. Decoding is never allocation authority.
 use super::{codec_enum, Codec, Decoder, Encoder, Result};
-use crate::cleanup_plan::{AllocationCase, AllocationOperation, CleanupPlan, StatusLane,
-    StatusProducer, CLEANUP_PLAN_SCHEMA_V20};
+use crate::cleanup_plan::{
+    AllocationCase, AllocationOperation, CleanupPlan, StatusLane, StatusProducer,
+    CLEANUP_PLAN_SCHEMA_V20,
+};
 
 codec_enum!(AllocationCase { 0 => PayloadRefused, 1 => SizeOverflow });
 codec_enum!(AllocationOperation {
@@ -17,11 +19,17 @@ impl Codec for [AllocationCase; 2] {
         if *self != [AllocationCase::PayloadRefused, AllocationCase::SizeOverflow] {
             return Err(super::grammar("allocation normalized cases differ from v1"));
         }
-        out.nested(|out| { self[0].encode(out)?; self[1].encode(out) })
+        out.nested(|out| {
+            self[0].encode(out)?;
+            self[1].encode(out)
+        })
     }
     fn decode(input: &mut Decoder<'_>) -> Result<Self> {
         input.nested(|input| {
-            let cases = [AllocationCase::decode(input)?, AllocationCase::decode(input)?];
+            let cases = [
+                AllocationCase::decode(input)?,
+                AllocationCase::decode(input)?,
+            ];
             if cases != [AllocationCase::PayloadRefused, AllocationCase::SizeOverflow] {
                 return Err(super::grammar("allocation normalized cases differ from v1"));
             }
@@ -35,12 +43,20 @@ impl Codec for [AllocationCase; 2] {
 pub(super) fn validate(plan: &CleanupPlan) -> Result<()> {
     for source in &plan.status_sources {
         match (&source.id.lane, &source.producer) {
-            (StatusLane::AllocationFailure, StatusProducer::CheckedAllocation { normalized_cases, .. })
-                if plan.schema == CLEANUP_PLAN_SCHEMA_V20
-                    && *normalized_cases == [AllocationCase::PayloadRefused, AllocationCase::SizeOverflow] => {},
-            (StatusLane::AllocationFailure, _) | (_, StatusProducer::CheckedAllocation { .. }) =>
-                return Err(super::grammar("allocation source requires its exact v20 provenance")),
-            _ => {},
+            (
+                StatusLane::AllocationFailure,
+                StatusProducer::CheckedAllocation {
+                    normalized_cases, ..
+                },
+            ) if plan.schema == CLEANUP_PLAN_SCHEMA_V20
+                && *normalized_cases
+                    == [AllocationCase::PayloadRefused, AllocationCase::SizeOverflow] => {}
+            (StatusLane::AllocationFailure, _) | (_, StatusProducer::CheckedAllocation { .. }) => {
+                return Err(super::grammar(
+                    "allocation source requires its exact v20 provenance",
+                ))
+            }
+            _ => {}
         }
     }
     Ok(())

@@ -391,7 +391,11 @@ fn emit_select_failure_trace(
             ))
         }
         StatusLane::OperationFailure => "SPX_TRACE_STATUS_OPERATION_FAILURE",
-        StatusLane::AllocationFailure => return Err(cleanup_error("allocation failure requires the checked allocation trace receiver")),
+        StatusLane::AllocationFailure => {
+            return Err(cleanup_error(
+                "allocation failure requires the checked allocation trace receiver",
+            ))
+        }
         StatusLane::ContractFalse => "SPX_TRACE_STATUS_CONTRACT_FALSE",
     };
     writeln!(
@@ -430,7 +434,11 @@ fn emit_status_source_check(
     producer: &StatusProducer,
 ) -> Result<(), Diagnostic> {
     let producer_check = match producer {
-        StatusProducer::CheckedAllocation { .. } => return Err(cleanup_error("allocation provenance requires the checked allocation trace receiver")),
+        StatusProducer::CheckedAllocation { .. } => {
+            return Err(cleanup_error(
+                "allocation provenance requires the checked allocation trace receiver",
+            ))
+        }
         StatusProducer::ContractFalse { phase, .. } => {
             let code = match phase {
                 ContractPhase::Requires => "SPX_STATUS_CONTRACT_REQUIRES_FALSE",

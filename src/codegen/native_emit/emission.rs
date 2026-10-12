@@ -86,8 +86,13 @@ pub(super) fn emit_checked_allocation_source(
     projection: &checked_allocation::Projection<'_, '_>,
 ) -> Result<String, Diagnostic> {
     emit_hir_c_with_receiving(
-        projection.owner().program(), &HashMap::new(),
-        NativeOutputProfile::CheckedAllocation, None, None, None, None,
+        projection.owner().program(),
+        &HashMap::new(),
+        NativeOutputProfile::CheckedAllocation,
+        None,
+        None,
+        None,
+        None,
         Some(projection),
     )
 }
@@ -106,10 +111,14 @@ fn emit_hir_c_with_receiving(
     allocation: Option<&checked_allocation::Projection<'_, '_>>,
 ) -> Result<String, Diagnostic> {
     if let Some(projection) = allocation {
-        if partition.is_some() || selected.is_some()
+        if partition.is_some()
+            || selected.is_some()
             || output_profile != NativeOutputProfile::CheckedAllocation
-            || !std::ptr::eq(program, projection.owner().program()) {
-            return Err(backend_error("checked allocation native subject is not current"));
+            || !std::ptr::eq(program, projection.owner().program())
+        {
+            return Err(backend_error(
+                "checked allocation native subject is not current",
+            ));
         }
         projection.revalidate()?;
     } else if let Some(projection) = partition {
@@ -122,7 +131,10 @@ fn emit_hir_c_with_receiving(
         }
         projection.owner().revalidate_compiler()?;
     } else {
-        if matches!(output_profile, NativeOutputProfile::SelectedPartition | NativeOutputProfile::CheckedAllocation) {
+        if matches!(
+            output_profile,
+            NativeOutputProfile::SelectedPartition | NativeOutputProfile::CheckedAllocation
+        ) {
             return Err(backend_error(
                 "native emission requires its exact sealed source projection",
             ));

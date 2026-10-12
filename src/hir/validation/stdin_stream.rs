@@ -170,10 +170,7 @@ pub(super) fn reject_sealed_escape(program: &ResolvedProgram) -> Result<(), Diag
     Ok(())
 }
 
-pub(super) fn reopen_reader(
-    scope: &mut dyn ScopeWrite,
-    owner: &ValueId,
-) -> Result<(), Diagnostic> {
+pub(super) fn reopen_reader(scope: &mut dyn ScopeWrite, owner: &ValueId) -> Result<(), Diagnostic> {
     let binding = scope
         .get_mut(owner)?
         .ok_or_else(|| hir_error("streaming renewal owner is absent"))?;

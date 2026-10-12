@@ -42,7 +42,9 @@ fn borrowed_status_comparison_preserves_owned_oracle_and_late_error_priority() {
                     normalized_cases, ..
                 } => normalized_cases.reverse(),
                 StatusProducer::ContractFalse { ordinal, .. } => *ordinal += 1,
-                StatusProducer::CheckedAllocation { .. } => panic!("ordinary source must not select allocation provenance"),
+                StatusProducer::CheckedAllocation { .. } => {
+                    panic!("ordinary source must not select allocation provenance")
+                }
             }
             // A one-case reversal is unchanged; mutate its actual case too.
             if let StatusProducer::CheckedArithmetic {

@@ -5,13 +5,13 @@ mod constructed_variant;
 mod context_closure;
 mod continuation_storage;
 use constructed_variant::materialize_constructed_variant;
+pub(in crate::cleanup_plan) mod allocation_coverage;
+mod allocation_paths;
+mod call_paths;
 mod call_payload;
 mod expression_children;
 mod expression_facts;
 mod flat_records;
-pub(in crate::cleanup_plan) mod allocation_coverage;
-mod allocation_paths;
-mod call_paths;
 use call_paths::finish_call_states;
 mod inventory_coverage;
 pub(in crate::cleanup_plan) mod ordinary_status;
@@ -460,7 +460,12 @@ pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnost
 pub(in crate::cleanup_plan) fn validate_program_context(
     program: &dyn crate::cleanup::ReplayContext,
 ) -> Result<(), Diagnostic> {
-    let full = program.full_program().ok_or_else(|| Diagnostic::io("SPX-H006", "allocation replay requires the held complete program"))?;
+    let full = program.full_program().ok_or_else(|| {
+        Diagnostic::io(
+            "SPX-H006",
+            "allocation replay requires the held complete program",
+        )
+    })?;
     let mut budget = ReplayBudget::new();
     let mut continuations = continuation_storage::Storage::new(full);
     let helpers = ordinary_renewals::index(program, &mut budget)?;
@@ -1745,7 +1750,9 @@ fn validate_required_status_sources(
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
     match allocation_paths::current(program, function) {
-        Some(current) => ordinary_status::validate_allocation_projection(current, &function.cleanup_plan),
+        Some(current) => {
+            ordinary_status::validate_allocation_projection(current, &function.cleanup_plan)
+        }
         None => ordinary_status::validate(program, function),
     }
 }
@@ -2085,9 +2092,17 @@ fn validate_status_sources_core<E: semantic_refusal::Error>(
                     .into());
                 }
             }
-            (StatusLane::AllocationFailure, StatusProducer::CheckedAllocation { normalized_cases, .. })
-                if function.cleanup_plan.schema == super::CLEANUP_PLAN_SCHEMA_V20
-                    && *normalized_cases == [super::AllocationCase::PayloadRefused, super::AllocationCase::SizeOverflow] => {}
+            (
+                StatusLane::AllocationFailure,
+                StatusProducer::CheckedAllocation {
+                    normalized_cases, ..
+                },
+            ) if function.cleanup_plan.schema == super::CLEANUP_PLAN_SCHEMA_V20
+                && *normalized_cases
+                    == [
+                        super::AllocationCase::PayloadRefused,
+                        super::AllocationCase::SizeOverflow,
+                    ] => {}
             (StatusLane::ContractFalse, StatusProducer::ContractFalse { .. }) => {}
             _ => {
                 return Err(replay_error(
@@ -6369,7 +6384,6 @@ fn sequence_call_argument(
     }
     Ok(next)
 }
-
 
 fn split_status_paths(
     paths: Vec<ExprSkeletonPath>,

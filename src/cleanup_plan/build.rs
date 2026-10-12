@@ -332,7 +332,9 @@ fn builder_nested_capacity(builder: &PlanBuilder<'_>) -> usize {
                     normalized_cases, ..
                 } => normalized_cases.capacity() * std::mem::size_of::<StatusCase>(),
                 StatusProducer::PropagatedCall { callee } => callee.as_str().len(),
-                StatusProducer::ContractFalse { .. } | StatusProducer::CheckedAllocation { .. } => 0,
+                StatusProducer::ContractFalse { .. } | StatusProducer::CheckedAllocation { .. } => {
+                    0
+                }
             }
             + status_source_id_owned_capacity(&source.id)
     });

@@ -22,8 +22,12 @@ pub(super) fn source(
         return Ok(None);
     }
     if ordinary_status::allocation::Selection::operation_with(
-        expression, &work.string_owner_moves, &work.string_condition_reads,
-    ).is_none() {
+        expression,
+        &work.string_owner_moves,
+        &work.string_condition_reads,
+    )
+    .is_none()
+    {
         return Ok(None);
     }
     Ok(Some(StatusSourceId {
@@ -43,16 +47,26 @@ pub(super) fn split_call(
 ) -> Result<(), Diagnostic> {
     let mut failure = work.clone_expr_path(path, "allocation failure path")?;
     let failure_source = work.clone_owned(source, "allocation failure source")?;
-    work.push_observation(&mut failure, SkeletonObservation::Status {
-        source: failure_source, success: false,
-    }, "allocation failure observation")?;
+    work.push_observation(
+        &mut failure,
+        SkeletonObservation::Status {
+            source: failure_source,
+            success: false,
+        },
+        "allocation failure observation",
+    )?;
     failure.failed = true;
     failure.owned_source = None;
     work.push_expr_path(results, failure, "allocation failed call path")?;
     let success_source = work.clone_owned(source, "allocation success source")?;
-    work.push_observation(path, SkeletonObservation::Status {
-        source: success_source, success: true,
-    }, "allocation success observation")
+    work.push_observation(
+        path,
+        SkeletonObservation::Status {
+            source: success_source,
+            success: true,
+        },
+        "allocation success observation",
+    )
 }
 
 pub(super) fn string_paths(
@@ -69,9 +83,14 @@ pub(super) fn string_paths(
     let destination = temporary_place(expression, work)?;
     let at = work.clone_owned(&expression.id, "String allocation initialization identity")?;
     let initialized = work.clone_owned(&destination, "String allocation destination")?;
-    work.push_observation(&mut path, SkeletonObservation::Initialize {
-        at, destination: initialized,
-    }, "String allocation initialization")?;
+    work.push_observation(
+        &mut path,
+        SkeletonObservation::Initialize {
+            at,
+            destination: initialized,
+        },
+        "String allocation initialization",
+    )?;
     path.owned_source = Some(destination);
     work.push_expr_path(&mut results, path, "String allocation successful path")?;
     Ok(results)

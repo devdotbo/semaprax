@@ -185,8 +185,7 @@ fn invariant_and_wrapper_invalid_cases_keep_the_entire_old_error_order() {
                 .unwrap();
                 assert_eq!(old, new);
                 assert!(
-                    !old
-                        .iter()
+                    !old.iter()
                         .any(|error| error.code == "SPX-T283" || error.code == "SPX-T286"),
                     "{old:?}"
                 );
@@ -226,11 +225,9 @@ fn complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal() {
                         let layout = registry.get(&programs[0], &authored, &programs)?;
                         let presentation = layout.presentation(&programs[0], &view)?;
                         let resolved = linked(|| {
-                            hir::identity_resolution::resolve_source(
-                                &view,
-                                presentation,
-                                |bytes| reserve_builder_structure(bytes),
-                            )
+                            hir::identity_resolution::resolve_source(&view, presentation, |bytes| {
+                                reserve_builder_structure(bytes)
+                            })
                         })
                         .map_err(|error| match error {
                             hir::identity_resolution::Failure::Source(errors) => errors,
@@ -369,7 +366,11 @@ fn conservative_class_default_census_keeps_real_owned_record_forwarding() {
         .unwrap();
     for function in [forward, provider] {
         let mut tail = &function.body;
-        while let crate::ast::ExprKind::Block { statements, tail: next } = &tail.kind {
+        while let crate::ast::ExprKind::Block {
+            statements,
+            tail: next,
+        } = &tail.kind
+        {
             assert!(statements.is_empty(), "forwarding tail has statements");
             tail = &**next;
         }

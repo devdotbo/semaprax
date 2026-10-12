@@ -71,10 +71,14 @@ pub(super) fn resolve_module<'s>(
                 frontend.and_then(|cache| {
                     synthetic
                         .owned()
-                        .and_then(|input| cache.resolve_functions_paid(path, input, private, &mut owner))
+                        .and_then(|input| {
+                            cache.resolve_functions_paid(path, input, private, &mut owner)
+                        })
                         .or_else(|| {
                             synthetic.borrowed().and_then(|view| {
-                                cache.resolve_borrowed_cold_source_paid(path, view, private, &mut owner)
+                                cache.resolve_borrowed_cold_source_paid(
+                                    path, view, private, &mut owner,
+                                )
                             })
                         })
                 })

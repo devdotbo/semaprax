@@ -261,15 +261,25 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     let (operation, constructor) = if op == crate::byte_ops::ByteOp::Copy {
                         (crate::cleanup_plan::AllocationOperation::BytesCopy, "copy")
                     } else {
-                        (crate::cleanup_plan::AllocationOperation::BytesZeroed, "zeroed")
+                        (
+                            crate::cleanup_plan::AllocationOperation::BytesZeroed,
+                            "zeroed",
+                        )
                     };
-                    self.checked_string_constructor(expression, operation,
-                        &format!("spx_checked_native_bytes_{constructor}_v1(spx_ctx, {}, &{temporary})", arguments[0].code), false)?;
+                    self.checked_string_constructor(
+                        expression,
+                        operation,
+                        &format!(
+                            "spx_checked_native_bytes_{constructor}_v1(spx_ctx, {}, &{temporary})",
+                            arguments[0].code
+                        ),
+                        false,
+                    )?;
                 } else {
-                self.line(&format!(
-                    "{temporary} = {allocator}({context}{});",
-                    arguments[0].code
-                ));
+                    self.line(&format!(
+                        "{temporary} = {allocator}({context}{});",
+                        arguments[0].code
+                    ));
                 }
             }
             crate::byte_ops::ByteOp::Set => {
@@ -454,11 +464,11 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                         crate::cleanup_plan::AllocationOperation::StringLiteral,
                         &format!("spx_checked_string_adapter_from_literal_v1(spx_checked_native_adapter_v1(spx_ctx), \"{}\", UINT64_C({}), &{temporary})", c_string(value), value.len()), false)?;
                 } else {
-                self.line(&format!(
-                    "{temporary} = spx_string_from_literal(\"{}\", UINT64_C({}));",
-                    c_string(value),
-                    value.len()
-                ));
+                    self.line(&format!(
+                        "{temporary} = spx_string_from_literal(\"{}\", UINT64_C({}));",
+                        c_string(value),
+                        value.len()
+                    ));
                 }
                 let value = CValue {
                     code: temporary,
@@ -500,7 +510,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                             crate::cleanup_plan::AllocationOperation::StringClone,
                             &format!("spx_checked_string_adapter_clone_v1(spx_checked_native_adapter_v1(spx_ctx), {}, &{temporary})", value.code), false)?;
                     } else {
-                    self.line(&format!("{temporary} = spx_string_clone({});", value.code));
+                        self.line(&format!("{temporary} = spx_string_clone({});", value.code));
                     }
                     self.apply_owned_plan_at_value(
                         &expr.id,

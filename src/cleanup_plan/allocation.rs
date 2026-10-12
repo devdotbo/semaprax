@@ -11,7 +11,10 @@ pub enum AllocationCase {
 }
 impl AllocationCase {
     pub const fn code(self) -> u32 {
-        match self { Self::PayloadRefused => 1, Self::SizeOverflow => 2 }
+        match self {
+            Self::PayloadRefused => 1,
+            Self::SizeOverflow => 2,
+        }
     }
 }
 

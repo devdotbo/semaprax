@@ -1,6 +1,12 @@
 //! Exact-source native receiving for the joined String allocation closure.
 //! This private receiver never lends its selector to raw HIR or a decoded plan.
-#![cfg_attr(not(test), allow(dead_code, reason = "checked native allocation receiver awaits its public application and SDK joins"))]
+#![cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "checked native allocation receiver awaits its public application and SDK joins"
+    )
+)]
 use super::*;
 use crate::cleanup_plan::checked_allocation::Validated;
 use crate::cleanup_plan::{AllocationOperation, StatusLane, StatusProducer};
@@ -10,50 +16,100 @@ const KERNEL: &str = include_str!("checked_string_allocation/runtime.c");
 const ADAPTER: &str = include_str!("checked_string_allocation/status_adapter.c");
 const RECEIVER: &str = include_str!("checked_allocation/runtime.c");
 
-pub(crate) struct Projection<'owner, 'source> { owner: &'owner Validated<'source> }
+pub(crate) struct Projection<'owner, 'source> {
+    owner: &'owner Validated<'source>,
+}
 impl<'owner, 'source> Projection<'owner, 'source> {
     pub(crate) fn receive(owner: &'owner Validated<'source>) -> Result<Self, Diagnostic> {
         let projection = Self { owner };
         projection.revalidate()?;
         Ok(projection)
     }
-    pub(super) fn owner(&self) -> &'owner Validated<'source> { self.owner }
+    pub(super) fn owner(&self) -> &'owner Validated<'source> {
+        self.owner
+    }
     pub(super) fn revalidate(&self) -> Result<(), Diagnostic> {
         self.owner.replay()?;
         let program = self.owner.program();
         for function in program.functions.iter().chain(
-            program.function_instances.iter().map(|instance| &instance.function),
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
         ) {
-            if !function.effects.is_empty() || !leaf_type(&function.return_type)
-                || function.params.iter().any(|parameter| !leaf_type(&parameter.ty)) {
+            if !function.effects.is_empty()
+                || !leaf_type(&function.return_type)
+                || function
+                    .params
+                    .iter()
+                    .any(|parameter| !leaf_type(&parameter.ty))
+            {
                 return Err(backend_error("checked native allocation receiver requires its closed String/scalar signature"));
             }
             for source in &function.cleanup_plan.status_sources {
-                if let StatusProducer::CheckedAllocation { operation, normalized_cases } = &source.producer {
+                if let StatusProducer::CheckedAllocation {
+                    operation,
+                    normalized_cases,
+                } = &source.producer
+                {
                     use AllocationOperation as A;
                     if source.id.lane != StatusLane::AllocationFailure
-                        || *normalized_cases != [crate::cleanup_plan::AllocationCase::PayloadRefused,
-                            crate::cleanup_plan::AllocationCase::SizeOverflow]
-                        || !matches!(operation, A::StringLiteral | A::StringClone | A::StringConcat
-                            | A::StringFromChar | A::StringFromI64 | A::StringFromUsize
-                            | A::StringFromStr | A::StringFromUtf8 | A::StringSlice | A::StringTrim
-                            | A::BytesCopy | A::BytesZeroed | A::LiteralFormat) {
-                        return Err(backend_error("checked native allocation receiver has an unjoined materialization"));
+                        || *normalized_cases
+                            != [
+                                crate::cleanup_plan::AllocationCase::PayloadRefused,
+                                crate::cleanup_plan::AllocationCase::SizeOverflow,
+                            ]
+                        || !matches!(
+                            operation,
+                            A::StringLiteral
+                                | A::StringClone
+                                | A::StringConcat
+                                | A::StringFromChar
+                                | A::StringFromI64
+                                | A::StringFromUsize
+                                | A::StringFromStr
+                                | A::StringFromUtf8
+                                | A::StringSlice
+                                | A::StringTrim
+                                | A::BytesCopy
+                                | A::BytesZeroed
+                                | A::LiteralFormat
+                        )
+                    {
+                        return Err(backend_error(
+                            "checked native allocation receiver has an unjoined materialization",
+                        ));
                     }
                 }
             }
-            for root in function.requires.iter().chain(std::iter::once(&function.body)).chain(function.ensures.iter()) {
+            for root in function
+                .requires
+                .iter()
+                .chain(std::iter::once(&function.body))
+                .chain(function.ensures.iter())
+            {
                 classify(program, root)?;
                 let mut stack = [const { None }; 514];
                 stack[0] = Some(hir::lexical_exit::ChildCursor::new(root));
                 let mut len = 1usize;
                 while len != 0 {
-                    if let Some(child) = stack[len - 1].as_mut().expect("retained receiver frame").next() {
+                    if let Some(child) = stack[len - 1]
+                        .as_mut()
+                        .expect("retained receiver frame")
+                        .next()
+                    {
                         classify(program, child)?;
-                        if len == stack.len() { return Err(backend_error("checked native allocation receiver depth exceeds 512")); }
+                        if len == stack.len() {
+                            return Err(backend_error(
+                                "checked native allocation receiver depth exceeds 512",
+                            ));
+                        }
                         stack[len] = Some(hir::lexical_exit::ChildCursor::new(child));
                         len += 1;
-                    } else { stack[len - 1] = None; len -= 1; }
+                    } else {
+                        stack[len - 1] = None;
+                        len -= 1;
+                    }
                 }
             }
         }
@@ -63,13 +119,21 @@ impl<'owner, 'source> Projection<'owner, 'source> {
         super::emission::emit_checked_allocation_source(self)
     }
     pub(super) fn emit_entry(
-        &self, output: &mut impl COutput,
+        &self,
+        output: &mut impl COutput,
         functions: &HashMap<FunctionExecutionId, CFunction>,
         resource_abi: &native_resource::NativeResourceAbi,
     ) -> Result<(), Diagnostic> {
         let execution = FunctionExecutionId::Monomorphic(self.owner.entry().clone());
-        let metadata = functions.get(&execution).ok_or_else(|| backend_error("checked native entry is not held"))?;
-        let function = self.owner.program().functions.iter().find(|function| function.id == *self.owner.entry())
+        let metadata = functions
+            .get(&execution)
+            .ok_or_else(|| backend_error("checked native entry is not held"))?;
+        let function = self
+            .owner
+            .program()
+            .functions
+            .iter()
+            .find(|function| function.id == *self.owner.entry())
             .ok_or_else(|| backend_error("checked native entry is not current"))?;
         if function.return_type == ResolvedType::String {
             return escaped::emit_entry(output, &metadata.symbol);
@@ -80,39 +144,113 @@ impl<'owner, 'source> Projection<'owner, 'source> {
     }
 }
 fn leaf_type(ty: &ResolvedType) -> bool {
-    matches!(ty, ResolvedType::Unit | ResolvedType::I64 | ResolvedType::I32 | ResolvedType::U8
-        | ResolvedType::Usize | ResolvedType::Char | ResolvedType::F32 | ResolvedType::F64
-        | ResolvedType::Bool | ResolvedType::String | ResolvedType::Str | ResolvedType::SliceU8 | ResolvedType::Bytes)
+    matches!(
+        ty,
+        ResolvedType::Unit
+            | ResolvedType::I64
+            | ResolvedType::I32
+            | ResolvedType::U8
+            | ResolvedType::Usize
+            | ResolvedType::Char
+            | ResolvedType::F32
+            | ResolvedType::F64
+            | ResolvedType::Bool
+            | ResolvedType::String
+            | ResolvedType::Str
+            | ResolvedType::SliceU8
+            | ResolvedType::Bytes
+    )
 }
 fn classify(program: &ResolvedProgram, expression: &ResolvedExpr) -> Result<(), Diagnostic> {
-    if !leaf_type(&expression.ty) { return Err(backend_error("checked native allocation expression has an unjoined carrier")); }
+    if !leaf_type(&expression.ty) {
+        return Err(backend_error(
+            "checked native allocation expression has an unjoined carrier",
+        ));
+    }
     match &expression.kind {
-        ResolvedExprKind::FunctionReference { .. } | ResolvedExprKind::HostCommandCall(_)
-        | ResolvedExprKind::NativeRustImportCall(_) =>
-            Err(backend_error("checked native allocation expression has an unjoined runtime helper")),
-        ResolvedExprKind::Call { callee, instance, .. } => {
+        ResolvedExprKind::FunctionReference { .. }
+        | ResolvedExprKind::HostCommandCall(_)
+        | ResolvedExprKind::NativeRustImportCall(_) => Err(backend_error(
+            "checked native allocation expression has an unjoined runtime helper",
+        )),
+        ResolvedExprKind::Call {
+            callee, instance, ..
+        } => {
             use crate::string_ops::StringOp as S;
             if let Some(operation) = crate::string_ops::by_id(callee.as_str()) {
-                if instance.is_some() || !matches!(operation, S::Take | S::Len | S::IsEmpty
-                    | S::Concat | S::StartsWith | S::Contains | S::LenChars | S::FromChar
-                    | S::FromI64 | S::FromUsize | S::FromStr | S::FromUtf8 | S::Slice | S::Trim
-                    | S::Find | S::ByteAt | S::Compare | S::F64FromI64 | S::I64FromF64
-                    | S::UsizeFromI64 | S::I64FromU8 | S::I64FromI32 | S::UsizeFromU8
-                    | S::U8FromI64 | S::CharFromU8 | S::CharFromI64 | S::I64FromUsize) {
-                    return Err(backend_error("checked native allocation call has an unjoined intrinsic"));
+                if instance.is_some()
+                    || !matches!(
+                        operation,
+                        S::Take
+                            | S::Len
+                            | S::IsEmpty
+                            | S::Concat
+                            | S::StartsWith
+                            | S::Contains
+                            | S::LenChars
+                            | S::FromChar
+                            | S::FromI64
+                            | S::FromUsize
+                            | S::FromStr
+                            | S::FromUtf8
+                            | S::Slice
+                            | S::Trim
+                            | S::Find
+                            | S::ByteAt
+                            | S::Compare
+                            | S::F64FromI64
+                            | S::I64FromF64
+                            | S::UsizeFromI64
+                            | S::I64FromU8
+                            | S::I64FromI32
+                            | S::UsizeFromU8
+                            | S::U8FromI64
+                            | S::CharFromU8
+                            | S::CharFromI64
+                            | S::I64FromUsize
+                    )
+                {
+                    return Err(backend_error(
+                        "checked native allocation call has an unjoined intrinsic",
+                    ));
                 }
                 Ok(())
             } else if let Some(operation) = crate::byte_ops::by_id(callee.as_str()) {
                 use crate::byte_ops::ByteOp as B;
-                if instance.is_some() || !matches!(operation, B::Len | B::Copy | B::Zeroed
-                    | B::ZeroedBounded | B::Set | B::Set5 | B::Set1Or5 | B::Set1Or6Or48) {
-                    return Err(backend_error("checked native Bytes call has an unjoined intrinsic"));
+                if instance.is_some()
+                    || !matches!(
+                        operation,
+                        B::Len
+                            | B::Copy
+                            | B::Zeroed
+                            | B::ZeroedBounded
+                            | B::Set
+                            | B::Set5
+                            | B::Set1Or5
+                            | B::Set1Or6Or48
+                    )
+                {
+                    return Err(backend_error(
+                        "checked native Bytes call has an unjoined intrinsic",
+                    ));
                 }
                 Ok(())
             } else if match instance {
-                Some(id) => program.function_instances.iter().any(|current| current.id == *id),
-                None => program.functions.iter().any(|current| current.id == *callee),
-            } { Ok(()) } else { Err(backend_error("checked native allocation call lacks a current held callee")) }
+                Some(id) => program
+                    .function_instances
+                    .iter()
+                    .any(|current| current.id == *id),
+                None => program
+                    .functions
+                    .iter()
+                    .any(|current| current.id == *callee),
+            } {
+                Ok(())
+            } else {
+                Err(backend_error(
+                    "checked native allocation call lacks a current held callee",
+                ))
+            }
         }
         _ => Ok(()), // Full HIR and coverage were independently checked first.
     }
@@ -128,9 +266,13 @@ fn join_runtime(mut prelude: String) -> Result<String, Diagnostic> {
     }
     let context = "    uint32_t call_depth;";
     let zero = "context->call_depth == UINT32_C(0);";
-    if prelude.matches(header).count() != 1 || prelude.matches(context).count() != 1
-        || prelude.matches(zero).count() != 1 {
-        return Err(backend_error("checked native runtime layout anchor is not unique"));
+    if prelude.matches(header).count() != 1
+        || prelude.matches(context).count() != 1
+        || prelude.matches(zero).count() != 1
+    {
+        return Err(backend_error(
+            "checked native runtime layout anchor is not unique",
+        ));
     }
     let mut output = prelude.replacen(header,
         "struct spx_string_v10 { void *release_state; void (*release)(void *, void *); uint64_t len; char data[]; };", 1)

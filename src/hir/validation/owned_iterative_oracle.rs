@@ -572,7 +572,18 @@ impl HirValidator<'_> {
                         .map(|id| id.as_str().len())
                         .sum::<usize>(),
             );
-            owned_dispatch_0!(frame, self, function, allow_moves, allowed_effects, program, publication, frames, scopes, Frame);
+            owned_dispatch_0!(
+                frame,
+                self,
+                function,
+                allow_moves,
+                allowed_effects,
+                program,
+                publication,
+                frames,
+                scopes,
+                Frame
+            );
         }
         if scopes.len() != 1 {
             return Err(hir_error("iterative HIR validator lost its scope stack"));

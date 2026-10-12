@@ -1,5 +1,5 @@
 //! Complete relocated validator checkpoint and oracle source audit.
-pub(super) const TEXT: &str=concat!(
+pub(super) const TEXT: &str = concat!(
     include_str!("../../../../../../src/hir/validation/scope_checkpoint.rs"),
     include_str!("../../../../../../src/hir/validation/scope_checkpoint/charge.rs"),
     include_str!("../../../../../../src/hir/validation/scope_checkpoint/tree.rs"),

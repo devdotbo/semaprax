@@ -26,12 +26,21 @@ impl Selection {
     ) -> Option<A> {
         match &expression.kind {
             ResolvedExprKind::String(_) => Some(A::StringLiteral),
-            ResolvedExprKind::Place(_) if expression.ty == ResolvedType::String
-                && expression.ownership == OwnershipMode::Own
-                && !moves.contains(&expression.id)
-                && !reads.contains(&expression.id) => Some(A::StringClone),
+            ResolvedExprKind::Place(_)
+                if expression.ty == ResolvedType::String
+                    && expression.ownership == OwnershipMode::Own
+                    && !moves.contains(&expression.id)
+                    && !reads.contains(&expression.id) =>
+            {
+                Some(A::StringClone)
+            }
             ResolvedExprKind::LiteralFormat { .. } => Some(A::LiteralFormat),
-            ResolvedExprKind::Call { callee, instance: None, type_arguments, .. } => {
+            ResolvedExprKind::Call {
+                callee,
+                instance: None,
+                type_arguments,
+                ..
+            } => {
                 use crate::string_ops::StringOp as S;
                 if let Some(operation) = crate::string_ops::by_id(callee.as_str()) {
                     return match operation {
@@ -69,11 +78,19 @@ impl Selection {
                 if let Some(operation) = crate::map_ops::by_id(callee.as_str()) {
                     return match operation {
                         M::New => Some(A::MapBacking),
-                        M::Add | M::Set if type_arguments.first() == Some(&ResolvedType::String) => Some(A::MapKeyClone),
+                        M::Add | M::Set
+                            if type_arguments.first() == Some(&ResolvedType::String) =>
+                        {
+                            Some(A::MapKeyClone)
+                        }
                         M::KeyAt if expression.ty == ResolvedType::String => Some(A::StringClone),
                         M::SetNew => Some(A::SetBacking),
-                        M::SetInsert if type_arguments.first() == Some(&ResolvedType::String) => Some(A::SetKeyClone),
-                        M::SetKeyAt if expression.ty == ResolvedType::String => Some(A::StringClone),
+                        M::SetInsert if type_arguments.first() == Some(&ResolvedType::String) => {
+                            Some(A::SetKeyClone)
+                        }
+                        M::SetKeyAt if expression.ty == ResolvedType::String => {
+                            Some(A::StringClone)
+                        }
                         _ => None,
                     };
                 }

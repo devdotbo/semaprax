@@ -6,8 +6,8 @@ impl HirValidator<'_> {
         expression: &ResolvedExpr,
         scope: &mut dyn ScopeWrite,
     ) -> Result<(), Diagnostic> {
-        if let Some(scope)=scope.old_mut() {
-            return self.mark_value_sources_moved_owned_reference(expression,scope);
+        if let Some(scope) = scope.old_mut() {
+            return self.mark_value_sources_moved_owned_reference(expression, scope);
         }
         enum Frame<'a> {
             Enter(&'a ResolvedExpr, usize),
@@ -81,7 +81,7 @@ impl HirValidator<'_> {
                             if place.projections.is_empty() {
                                 binding.availability = Availability::Moved;
                             } else {
-                                scope_checkpoint::move_projection(binding,&place.projections)?;
+                                scope_checkpoint::move_projection(binding, &place.projections)?;
                             }
                         }
                     }
@@ -180,7 +180,12 @@ impl HirValidator<'_> {
                 } => {
                     debug_assert_eq!(else_scope + 1, scopes.len());
                     let else_bindings = scopes.pop().expect("active move branch retained");
-                    scope_checkpoint::merge::branches(&mut scopes[parent], &then_bindings, &else_bindings, &ids)?;
+                    scope_checkpoint::merge::branches(
+                        &mut scopes[parent],
+                        &then_bindings,
+                        &else_bindings,
+                        &ids,
+                    )?;
                 }
                 Frame::AfterMatchArm {
                     arms,

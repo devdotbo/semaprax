@@ -5,7 +5,13 @@
 //! Engines still require the independently replayed allocation projection and
 //! their own allocator/lease receiver; no default or public route calls this
 //! factory. In particular, an ordinary PropagatedCall cannot grant an allocator.
-#![cfg_attr(not(test), allow(dead_code, reason = "checked allocation executors await their joined plan and lease gates"))]
+#![cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "checked allocation executors await their joined plan and lease gates"
+    )
+)]
 
 use crate::{ast::Program, diagnostic::Diagnostic, hir};
 use hir::{DeclarationId, FunctionExecutionId, ResolvedFunction, ResolvedProgram};
@@ -46,8 +52,12 @@ pub(crate) struct Function<'hir> {
     function: &'hir ResolvedFunction,
 }
 impl<'hir> Function<'hir> {
-    pub(crate) fn program(self) -> &'hir ResolvedProgram { self.program }
-    pub(crate) fn function(self) -> &'hir ResolvedFunction { self.function }
+    pub(crate) fn program(self) -> &'hir ResolvedProgram {
+        self.program
+    }
+    pub(crate) fn function(self) -> &'hir ResolvedFunction {
+        self.function
+    }
     pub(crate) fn held_by(self, program: &ResolvedProgram, function: &ResolvedFunction) -> bool {
         std::ptr::eq(self.program, program) && std::ptr::eq(self.function, function)
     }
@@ -68,33 +78,55 @@ pub(crate) fn prepare<'source>(
 /// an engine must independently receive the projection and retain its allocator
 /// provider/module before this owning result can leave the invocation.
 pub(crate) fn prepare_string_result<'source>(
-    source: &'source Program, entry: &DeclarationId,
+    source: &'source Program,
+    entry: &DeclarationId,
 ) -> Result<Prepared<'source>, Refusal> {
     prepare_entry(source, entry, true)
 }
 fn prepare_entry<'source>(
-    source: &'source Program, entry: &DeclarationId, string_result: bool,
+    source: &'source Program,
+    entry: &DeclarationId,
+    string_result: bool,
 ) -> Result<Prepared<'source>, Refusal> {
     let program = hir::resolve(source).map_err(Refusal::Source)?;
     // Keep the complete independent check, including attached canonical plans
     // and final loan replay. A successfully resolved body is not a substitute.
     hir::validate(&program).map_err(Refusal::Validation)?;
-    let function = program.functions.iter().find(|function| function.id == *entry)
+    let function = program
+        .functions
+        .iter()
+        .find(|function| function.id == *entry)
         .ok_or_else(|| boundary("entry is not a current monomorphic function"))?;
-    if !function.params.is_empty() || !function.effects.is_empty()
+    if !function.params.is_empty()
+        || !function.effects.is_empty()
         || if string_result {
             function.return_type != hir::ResolvedType::String
                 || function.body.ownership != hir::OwnershipMode::Own
         } else {
-            !matches!(function.return_type, hir::ResolvedType::I64 | hir::ResolvedType::I32
-                | hir::ResolvedType::U8 | hir::ResolvedType::Usize | hir::ResolvedType::Char
-                | hir::ResolvedType::F32 | hir::ResolvedType::F64 | hir::ResolvedType::Bool)
-                || function.body.ownership != hir::OwnershipMode::Value
+            !matches!(
+                function.return_type,
+                hir::ResolvedType::I64
+                    | hir::ResolvedType::I32
+                    | hir::ResolvedType::U8
+                    | hir::ResolvedType::Usize
+                    | hir::ResolvedType::Char
+                    | hir::ResolvedType::F32
+                    | hir::ResolvedType::F64
+                    | hir::ResolvedType::Bool
+            ) || function.body.ownership != hir::OwnershipMode::Value
         }
     {
-        return Err(boundary(if string_result { "entry requires a parameter-free effect-free owned String result" } else { "entry requires a parameter-free effect-free Copy scalar command" }));
+        return Err(boundary(if string_result {
+            "entry requires a parameter-free effect-free owned String result"
+        } else {
+            "entry requires a parameter-free effect-free Copy scalar command"
+        }));
     }
-    Ok(Prepared { source, program, entry: entry.clone() })
+    Ok(Prepared {
+        source,
+        program,
+        entry: entry.clone(),
+    })
 }
 
 impl<'source> Prepared<'source> {
@@ -104,9 +136,15 @@ impl<'source> Prepared<'source> {
         projection::receive(self)
     }
 
-    pub(crate) fn source(&self) -> &'source Program { self.source }
-    pub(crate) fn ordinary_program(&self) -> &ResolvedProgram { &self.program }
-    pub(crate) fn entry(&self) -> &DeclarationId { &self.entry }
+    pub(crate) fn source(&self) -> &'source Program {
+        self.source
+    }
+    pub(crate) fn ordinary_program(&self) -> &ResolvedProgram {
+        &self.program
+    }
+    pub(crate) fn entry(&self) -> &DeclarationId {
+        &self.entry
+    }
 
     /// Current membership is checked on every lending operation. No declaration
     /// name, copied function or attached evidence supplies that membership.
@@ -116,14 +154,28 @@ impl<'source> Prepared<'source> {
         receive: impl FnOnce(Function<'_>) -> R,
     ) -> Result<R, Refusal> {
         let function = match execution {
-            FunctionExecutionId::Monomorphic(id) => self.program.functions.iter()
+            FunctionExecutionId::Monomorphic(id) => self
+                .program
+                .functions
+                .iter()
                 .find(|function| function.id == *id),
-            FunctionExecutionId::Generic(id) => self.program.function_instances.iter()
-                .find(|instance| instance.id == *id).map(|instance| &instance.function),
-        }.ok_or_else(|| boundary("execution is not in the exact current source closure"))?;
-        Ok(receive(Function { program: &self.program, function }))
+            FunctionExecutionId::Generic(id) => self
+                .program
+                .function_instances
+                .iter()
+                .find(|instance| instance.id == *id)
+                .map(|instance| &instance.function),
+        }
+        .ok_or_else(|| boundary("execution is not in the exact current source closure"))?;
+        Ok(receive(Function {
+            program: &self.program,
+            function,
+        }))
     }
 }
 fn boundary(message: &str) -> Refusal {
-    Refusal::Boundary(Diagnostic::io("SPX-B104", format!("checked allocation preparation: {message}")))
+    Refusal::Boundary(Diagnostic::io(
+        "SPX-B104",
+        format!("checked allocation preparation: {message}"),
+    ))
 }

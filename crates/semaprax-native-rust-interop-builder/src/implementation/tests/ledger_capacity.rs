@@ -1,10 +1,8 @@
 //! Builder ledger proofs: cumulative limits, the post-HIR reservation
 //! envelopes, and the named scratch bounds they may not exceed.
-
 use super::*;
-#[path="ledger_capacity/scope_projection.rs"]
+#[path = "ledger_capacity/scope_projection.rs"]
 mod scope_projection;
-
 #[test]
 fn cumulative_builder_limit_is_exact_and_cannot_be_widened() {
     let (program, spec) = fixture();
@@ -33,7 +31,6 @@ fn cumulative_builder_limit_is_exact_and_cannot_be_widened() {
         error[0].message,
         "Native Rust Interop max_builder_bytes exceeds 33554432"
     );
-
     let widened = std::panic::catch_unwind(|| {
         let _ = prepare_native_rust_interop_with_test_limit(
             &program,
@@ -43,7 +40,6 @@ fn cumulative_builder_limit_is_exact_and_cannot_be_widened() {
     });
     assert!(widened.is_err());
 }
-
 #[test]
 fn full_bundle_builder_limit_is_cumulative_exact_and_cannot_be_widened() {
     let (program, spec) = fixture();
@@ -68,7 +64,6 @@ fn full_bundle_builder_limit_is_cumulative_exact_and_cannot_be_widened() {
         std::fs::remove_dir_all(&root).unwrap();
         result.map(|_| ())
     };
-
     let (mut low, mut high) = (0_usize, MAX_BUILDER_BYTES);
     while low < high {
         let middle = low + (high - low) / 2;
@@ -96,7 +91,6 @@ fn full_bundle_builder_limit_is_cumulative_exact_and_cannot_be_widened() {
         "Native Rust Interop max_builder_bytes exceeds 33554432"
     );
     build_probe(minimum).unwrap();
-
     let root = std::fs::canonicalize(std::env::temp_dir())
         .unwrap()
         .join(format!(
@@ -116,12 +110,11 @@ fn full_bundle_builder_limit_is_cumulative_exact_and_cannot_be_widened() {
     std::fs::remove_dir_all(&root).unwrap();
     assert!(widened.is_err());
 }
-
 #[test]
 fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     // The resolver is split across submodules; its layout pins live beside the
     // frame machinery they describe, so bind the root and the resolver files.
-    let hir_resolver = [concat!(
+    let hir_resolver = concat!(
         include_str!("../../../../../src/loop_calls/byte_writer.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/source_index.rs"),
@@ -248,7 +241,9 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             include_str!("../../../../../src/hir/resolve_program/initial_loan_plans/tests.rs"),
             include_str!("../../../../../src/hir/resolve_program/initial_loan_plans/staging.rs"),
-            include_str!("../../../../../src/hir/resolve_program/initial_loan_plans/staging_tests.rs")
+            include_str!(
+                "../../../../../src/hir/resolve_program/initial_loan_plans/staging_tests.rs"
+            )
         ),
         include_str!("../../../../../src/hir/resolve_program/reuse_lowered.rs"),
         include_str!("../../../../../src/hir/resolve_program/reuse_lowered/tests.rs"),
@@ -385,118 +380,129 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/workspace_link/native_owner.rs"),
         include_str!("../../../../../src/hir/workspace_link/native_owner/url_view.rs"),
     );
-    let hir_validator = concat!(
-        include_str!("../../../../../src/hir/function_directory/caller.rs"),
-        include_str!("../../../../../src/hir/canonical_loan_storage.rs"),
-        include_str!("../../../../../src/hir/canonical_loan_storage/deferred.rs"),
-        include_str!("../../../../../src/hir/canonical_loan_storage/deferred/tests.rs"),
-        include_str!("../../../../../src/hir/canonical_loan_storage/deferred/tests/selected.rs"),
-        include_str!("../../../../../src/hir/canonical_loan_storage/caller.rs"),
-        include_str!("../../../../../src/hir/canonical_loan_storage/tests.rs"),
-        include_str!("../../../../../src/hir/canonical_loan_storage/tests/old.rs"),
-        include_str!("../../../../../src/hir.rs"),
-        include_str!("../../../../../src/hir/static_text.rs"),
-        include_str!("../../../../../src/hir/static_text/backing.rs"),
-        include_str!("../../../../../src/hir/static_text/origin.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/bindings.rs"),
-        include_str!("../../../../../src/loop_calls/byte_writer/module_index.rs"),
+    let hir_validator = [
         concat!(
+            include_str!("../../../../../src/hir/function_directory/caller.rs"),
+            include_str!("../../../../../src/hir/canonical_loan_storage.rs"),
+            include_str!("../../../../../src/hir/canonical_loan_storage/deferred.rs"),
+            include_str!("../../../../../src/hir/canonical_loan_storage/deferred/tests.rs"),
+            include_str!(
+                "../../../../../src/hir/canonical_loan_storage/deferred/tests/selected.rs"
+            ),
+            include_str!("../../../../../src/hir/canonical_loan_storage/caller.rs"),
+            include_str!("../../../../../src/hir/canonical_loan_storage/tests.rs"),
+            include_str!("../../../../../src/hir/canonical_loan_storage/tests/old.rs"),
+            include_str!("../../../../../src/hir.rs"),
+            include_str!("../../../../../src/hir/static_text.rs"),
+            include_str!("../../../../../src/hir/static_text/backing.rs"),
+            include_str!("../../../../../src/hir/static_text/origin.rs"),
+            include_str!("../../../../../src/loop_calls/byte_writer.rs"),
+            include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
+            include_str!("../../../../../src/loop_calls/byte_writer/bindings.rs"),
+            include_str!("../../../../../src/loop_calls/byte_writer/module_index.rs"),
             concat!(
                 concat!(
-                    include_str!("../../../../../src/hir/validation.rs"),
-
-                    include_str!("../../../../../src/hir/validation/constructor_seed.rs"),
-                    include_str!("../../../../../src/hir/validation/canonical_loans.rs"),
-                    include_str!("../../../../../src/hir/validation/aggregate_metadata.rs"),
-                    include_str!("../../../../../src/hir/validation/continuation_path.rs"),
-                    include_str!("../../../../../src/hir/validation/continuation_path/tests.rs"),
-                    include_str!("../../../../../src/hir/validation/aggregate_metadata/tests.rs"),
-                    "\n",
                     concat!(
-                        include_str!("../../../../../src/hir/validation/function_lookup.rs"),
+                        include_str!("../../../../../src/hir/validation.rs"),
+                        include_str!("../../../../../src/hir/validation/constructor_seed.rs"),
+                        include_str!("../../../../../src/hir/validation/canonical_loans.rs"),
+                        include_str!("../../../../../src/hir/validation/aggregate_metadata.rs"),
+                        include_str!("../../../../../src/hir/validation/continuation_path.rs"),
                         include_str!(
-                            "../../../../../src/hir/validation/function_lookup/permits.rs"
+                            "../../../../../src/hir/validation/continuation_path/tests.rs"
+                        ),
+                        include_str!(
+                            "../../../../../src/hir/validation/aggregate_metadata/tests.rs"
                         ),
                         "\n",
-                        include_str!("../../../../../src/hir/function_directory.rs")
+                        concat!(
+                            include_str!("../../../../../src/hir/validation/function_lookup.rs"),
+                            include_str!(
+                                "../../../../../src/hir/validation/function_lookup/permits.rs"
+                            ),
+                            "\n",
+                            include_str!("../../../../../src/hir/function_directory.rs")
+                        )
+                    ),
+                    include_str!("../../../../../src/hir/validation/type_requirement.rs"),
+                    concat!(
+                        include_str!("../../../../../src/hir/vec_constructor.rs"),
+                        include_str!("../../../../../src/hir/vec_constructor/capture.rs")
                     )
                 ),
-                include_str!("../../../../../src/hir/validation/type_requirement.rs"),
+                include_str!("../../../../../src/hir/validation/assign_field.rs"),
+                "\n",
+                include_str!("../../../../../src/hir/validation/byte_range.rs"),
+                "\n",
+                include_str!("../../../../../src/hir/validation/byte_traversal.rs"),
+                "\n",
+                include_str!("../../../../../src/hir/validation/record_traversal.rs"),
+                "\n",
+                include_str!("../../../../../src/hir/validation/string_intrinsic.rs"),
+                "\n",
+                include_str!("../../../../../src/string_ops/take.rs"),
+                "\n",
+                include_str!("../../../../../src/hir/validation/upcast.rs"),
+                "\n",
+                include_str!("../../../../../src/hir/validation/vec_field.rs")
+            ),
+            include_str!("../../../../../src/hir/validation/lexical_exit.rs"),
+            include_str!("../../../../../src/hir/validation/fused_selection.rs"),
+            include_str!("../../../../../src/hir/validation/place_resolution.rs"),
+            include_str!("../../../../../src/hir/validation/call_parameters.rs"),
+            include_str!("../../../../../src/hir/validation/nominal_facts.rs"),
+            include_str!("../../../../../src/hir/validation/variant_guard_state.rs"),
+            include_str!("../../../../../src/hir/validation/string_replacement.rs"),
+            include_str!("../../../../../src/hir/validation/borrowed_argument.rs"),
+            include_str!("../../../../../src/hir/validation/borrowed_bytes_call_tests.rs"),
+            concat!(
+                include_str!("../../../../../src/hir/validation/iterator_loops.rs"),
+                "\n",
+                include_str!("../../../../../src/finite_byte_scratch.rs"),
+                "\n",
+                include_str!("../../../../../src/finite_byte_scratch/source.rs"),
+                "\n",
                 concat!(
-                    include_str!("../../../../../src/hir/vec_constructor.rs"),
-                    include_str!("../../../../../src/hir/vec_constructor/capture.rs")
+                    include_str!("../../../../../src/finite_byte_scratch/resolved.rs"),
+                    include_str!("../../../../../src/finite_owned_record_loop.rs"),
+                    include_str!("../../../../../src/finite_owned_record_loop/source.rs"),
+                    concat!(
+                        include_str!("../../../../../src/finite_owned_record_loop/resolved.rs"),
+                        include_str!("../../../../../src/finite_owned_record_loop/tests.rs")
+                    ),
+                    include_str!("../../../../../src/hir/copy_discard.rs")
                 )
             ),
-            include_str!("../../../../../src/hir/validation/assign_field.rs"),
-            "\n",
-            include_str!("../../../../../src/hir/validation/byte_range.rs"),
-            "\n",
-            include_str!("../../../../../src/hir/validation/byte_traversal.rs"),
-            "\n",
-            include_str!("../../../../../src/hir/validation/record_traversal.rs"),
-            "\n",
-            include_str!("../../../../../src/hir/validation/string_intrinsic.rs"),
-            "\n",
-            include_str!("../../../../../src/string_ops/take.rs"),
-            "\n",
-            include_str!("../../../../../src/hir/validation/upcast.rs"),
-            "\n",
-            include_str!("../../../../../src/hir/validation/vec_field.rs")
+            include_str!("../../../../../src/hir/validation/callable_types.rs"),
+            include_str!("../../../../../src/hir/validation/closure.rs"),
+            include_str!("../../../../../src/hir/validation/generic_variant.rs"),
+            include_str!("../../../../../src/hir/validation/box_intrinsic.rs"),
+            include_str!("../../../../../src/hir/validation/stdin_stream.rs"),
+            include_str!("../../../../../src/hir/validation/branch_merge.rs"),
+            include_str!("../../../../../src/hir/validation/vec_intrinsic.rs"),
+            include_str!("../../../../../src/hir/validation/borrowed_str.rs"),
+            include_str!("../../../../../src/hir/validation/generic_template.rs"),
+            include_str!("../../../../../src/hir/validation/host_command.rs"),
+            include_str!("../../../../../src/hir/validation/owned_buffer.rs"),
+            include_str!("../../../../../src/hir/validation/owned_result_try.rs"),
+            include_str!("../../../../../src/hir/validation/owner_renewal.rs"),
+            include_str!("../../../../../src/hir/validation/identity_scratch.rs"),
+            include_str!("../../../../../src/hir/validation/identity_scratch/tests.rs"),
+            include_str!("../../../../../src/hir/validation/type_profiles.rs"),
+            include_str!("../../../../../src/hir/validation/type_profiles/owned_bytes_tests.rs"),
+            include_str!(
+                "../../../../../src/hir/validation/type_profiles/owned_bytes_tests/old.rs"
+            ),
+            include_str!("../../../../../src/hir/validation/unsafe_scan.rs"),
+            include_str!("../../../../../src/hir/validation/generic_record_composition.rs"),
+            include_str!("../../../../../src/hir/validation/native_borrow.rs"),
+            include_str!("../../../../../src/hir/validation/proof_return.rs"),
+            include_str!("../../../../../src/hir/validation/variant_or.rs"),
+            include_str!("../../../../../src/hir/validation/iterative_while_admission_tests.rs"),
         ),
-        include_str!("../../../../../src/hir/validation/lexical_exit.rs"),
-        include_str!("../../../../../src/hir/validation/fused_selection.rs"),
-        include_str!("../../../../../src/hir/validation/place_resolution.rs"),
-        include_str!("../../../../../src/hir/validation/call_parameters.rs"),
-        include_str!("../../../../../src/hir/validation/nominal_facts.rs"),
-        include_str!("../../../../../src/hir/validation/variant_guard_state.rs"),
-        include_str!("../../../../../src/hir/validation/string_replacement.rs"),
-        include_str!("../../../../../src/hir/validation/borrowed_argument.rs"),
-        include_str!("../../../../../src/hir/validation/borrowed_bytes_call_tests.rs"),
-        concat!(
-            include_str!("../../../../../src/hir/validation/iterator_loops.rs"),
-            "\n",
-            include_str!("../../../../../src/finite_byte_scratch.rs"),
-            "\n",
-            include_str!("../../../../../src/finite_byte_scratch/source.rs"),
-            "\n",
-            concat!(
-                include_str!("../../../../../src/finite_byte_scratch/resolved.rs"),
-                include_str!("../../../../../src/finite_owned_record_loop.rs"),
-                include_str!("../../../../../src/finite_owned_record_loop/source.rs"),
-                concat!(
-                    include_str!("../../../../../src/finite_owned_record_loop/resolved.rs"),
-                    include_str!("../../../../../src/finite_owned_record_loop/tests.rs")
-                ),
-                include_str!("../../../../../src/hir/copy_discard.rs")
-            )
-        ),
-        include_str!("../../../../../src/hir/validation/callable_types.rs"),
-        include_str!("../../../../../src/hir/validation/closure.rs"),
-        include_str!("../../../../../src/hir/validation/generic_variant.rs"),
-        include_str!("../../../../../src/hir/validation/box_intrinsic.rs"),
-        include_str!("../../../../../src/hir/validation/stdin_stream.rs"),
-        include_str!("../../../../../src/hir/validation/branch_merge.rs"),
-        include_str!("../../../../../src/hir/validation/vec_intrinsic.rs"),
-        include_str!("../../../../../src/hir/validation/borrowed_str.rs"),
-        include_str!("../../../../../src/hir/validation/generic_template.rs"),
-        include_str!("../../../../../src/hir/validation/host_command.rs"),
-        include_str!("../../../../../src/hir/validation/owned_buffer.rs"),
-        include_str!("../../../../../src/hir/validation/owned_result_try.rs"),
-        include_str!("../../../../../src/hir/validation/owner_renewal.rs"),
-        include_str!("../../../../../src/hir/validation/identity_scratch.rs"),
-        include_str!("../../../../../src/hir/validation/identity_scratch/tests.rs"),
-        include_str!("../../../../../src/hir/validation/type_profiles.rs"),
-        include_str!("../../../../../src/hir/validation/type_profiles/owned_bytes_tests.rs"),
-        include_str!("../../../../../src/hir/validation/type_profiles/owned_bytes_tests/old.rs"),
-        include_str!("../../../../../src/hir/validation/unsafe_scan.rs"),
-        include_str!("../../../../../src/hir/validation/generic_record_composition.rs"),
-        include_str!("../../../../../src/hir/validation/native_borrow.rs"),
-        include_str!("../../../../../src/hir/validation/proof_return.rs"),
-        include_str!("../../../../../src/hir/validation/variant_or.rs"),
-        include_str!("../../../../../src/hir/validation/iterative_while_admission_tests.rs"),
-    ),scope_projection::TEXT].concat();
+        scope_projection::TEXT,
+    ]
+    .concat();
     let verifier = concat!(
         include_str!("../../../../../src/loop_calls/byte_writer.rs"),
         include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
@@ -769,7 +775,6 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         );
     }
 }
-
 #[test]
 fn hir_complete_reservation_is_exact_and_one_less_prevents_resolution() {
     let (program, _) = fixture();
@@ -819,7 +824,6 @@ fn hir_complete_reservation_is_exact_and_one_less_prevents_resolution() {
     HIR_RESOLVE_PASS_COUNT.with(|count| assert_eq!(count.get(), 0));
     HIR_POST_RESOLVE_PHASE_COUNT.with(|counts| assert_eq!(counts.get(), [0; 4]));
     HIR_POST_RESOLVE_CAPACITY_HIGH_WATER.with(|water| assert_eq!(water.get(), [0; 3]));
-
     HIR_RESOLVE_PASS_COUNT.with(|count| count.set(0));
     HIR_POST_RESOLVE_PHASE_COUNT.with(|counts| counts.set([0; 4]));
     HIR_POST_RESOLVE_CAPACITY_HIGH_WATER.with(|water| water.set([0; 3]));
@@ -844,7 +848,6 @@ fn hir_complete_reservation_is_exact_and_one_less_prevents_resolution() {
         assert!(water.get().into_iter().all(|bytes| bytes > 0));
     });
 }
-
 #[test]
 fn post_hir_nontransfer_reservation_precedes_all_fact_and_render_work() {
     let (program, canonical_spec) = fixture();
@@ -864,7 +867,6 @@ fn post_hir_nontransfer_reservation_precedes_all_fact_and_render_work() {
     let complete = capacity.complete().unwrap();
     let transfer = prepared_spec_transfer_capacity(&spec).unwrap();
     let reservation = complete.checked_sub(transfer).unwrap();
-
     POST_HIR_FACTS_ENTRY_COUNT.with(|count| count.set(0));
     POST_HIR_FACTS_CAPACITY_HIGH_WATER.with(|water| water.set(0));
     POST_HIR_FACTS_SCRATCH_HIGH_WATER.with(|water| water.set(0));
@@ -879,7 +881,6 @@ fn post_hir_nontransfer_reservation_precedes_all_fact_and_render_work() {
     assert_eq!(consumed, 0);
     POST_HIR_FACTS_ENTRY_COUNT.with(|count| assert_eq!(count.get(), 0));
     POST_HIR_FACTS_CAPACITY_HIGH_WATER.with(|water| assert_eq!(water.get(), 0));
-
     POST_HIR_FACTS_ENTRY_COUNT.with(|count| count.set(0));
     let (result, overflowed, consumed) =
         crate::bounded_output::with_limit_usage(reservation, || {
@@ -893,7 +894,6 @@ fn post_hir_nontransfer_reservation_precedes_all_fact_and_render_work() {
     assert_eq!(consumed, 0);
     POST_HIR_FACTS_ENTRY_COUNT.with(|count| assert_eq!(count.get(), 1));
 }
-
 #[test]
 fn post_hir_spec_transfer_is_single_charged_across_target_triple_lengths() {
     fn terms(triple: &str) -> [usize; 5] {
@@ -913,7 +913,6 @@ fn post_hir_spec_transfer_is_single_charged_across_target_triple_lengths() {
             },
         )
     }
-
     // [complete formula, moved Spec ownership, net facts reservation,
     //  new persistent facts, total persistent Prepared ownership]
     let apple = terms("aarch64-apple-darwin");
@@ -929,7 +928,6 @@ fn post_hir_spec_transfer_is_single_charged_across_target_triple_lengths() {
     assert_eq!(linux[3], apple[3]);
     assert_eq!(linux[4] - apple[4], 4);
 }
-
 #[test]
 fn windows_target_phase_a_preparation_stays_inside_the_builder_ledger() {
     with_test_target(
@@ -954,7 +952,6 @@ fn windows_target_phase_a_preparation_stays_inside_the_builder_ledger() {
         },
     );
 }
-
 #[test]
 fn post_hir_spec_transfer_capacity_slack_does_not_consume_scratch_authority() {
     let (program, canonical_spec) = fixture();
@@ -963,7 +960,6 @@ fn post_hir_spec_transfer_capacity_slack_does_not_consume_scratch_authority() {
         parse_spec_with_source(&program, canonical_spec.as_bytes(), &canonical_source).unwrap();
     let resolved = hir::resolve(&program).unwrap();
     let (closure, _) = selected_closure(&resolved, &spec.exports).unwrap();
-
     let base = post_hir_facts_capacity(
         canonical_source.len(),
         canonical_spec.len(),
@@ -979,7 +975,6 @@ fn post_hir_spec_transfer_capacity_slack_does_not_consume_scratch_authority() {
     over_capacity_digest.push_str(&digest);
     assert!(over_capacity_digest.capacity() > over_capacity_digest.len());
     spec.source_revision = Some(over_capacity_digest);
-
     let hostile = post_hir_facts_capacity(
         canonical_source.len(),
         canonical_spec.len(),
@@ -1000,7 +995,6 @@ fn post_hir_spec_transfer_capacity_slack_does_not_consume_scratch_authority() {
         base.complete().unwrap() - base_transfer,
     );
 }
-
 #[test]
 fn final_artifact_sinks_reject_one_less_before_output_allocation() {
     let (program, canonical_spec) = fixture();
@@ -1017,7 +1011,6 @@ fn final_artifact_sinks_reject_one_less_before_output_allocation() {
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect::<Vec<_>>();
-
     EXACT_ARTIFACT_OUTPUT_ALLOCATION_COUNT.with(|count| count.set(0));
     let descriptor = render_descriptor_with_limit(
         &spec,
@@ -1069,7 +1062,6 @@ fn final_artifact_sinks_reject_one_less_before_output_allocation() {
         assert_eq!(diagnostic.code, "SPX-B109");
     }
     EXACT_ARTIFACT_OUTPUT_ALLOCATION_COUNT.with(|count| assert_eq!(count.get(), 0));
-
     assert_eq!(
         render_descriptor_with_limit(
             &spec,
