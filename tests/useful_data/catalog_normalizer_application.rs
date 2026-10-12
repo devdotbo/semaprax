@@ -1035,7 +1035,15 @@ fn assert_batch_backend_matrix(root: &Path) {
             host.push_str(
                 &std::fs::read_to_string(
                     Path::new(env!("CARGO_MANIFEST_DIR"))
-                        .join("tests/useful_data/catalog_normalizer_application.mjs"),
+                        .join(if snapshot.test_program().functions.iter().any(|function| {
+                            function.id.as_str() == "std.data.json.dec.fingerprint_match"
+                        }) {
+                            "tests/useful_data/catalog_normalizer_application/decoded_index/host.mjs"
+                        } else {
+                            // The independently frozen pairwise source retains
+                            // its exact original import list and host controls.
+                            "tests/useful_data/catalog_normalizer_application.mjs"
+                        }),
                 )
                 .unwrap(),
             );
