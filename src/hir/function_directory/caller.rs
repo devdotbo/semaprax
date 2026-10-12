@@ -10,18 +10,25 @@ pub(in crate::hir) fn prepare(program: &ResolvedProgram) -> Result<Directory<'_>
     let count = program.functions.len();
     let bytes = count
         .checked_mul(std::mem::size_of::<Entry<'_>>())
-        .ok_or(Refused::Overflow)?;
+        .ok_or_else(|| {
+            crate::bounded_output::refuse_active_required(usize::MAX);
+            Refused::Overflow
+        })?;
     if crate::bounded_output::active_refused()
         || !crate::bounded_output::reserve_active_required(bytes)
     {
         return Err(Refused::Budget);
     }
     let mut entries = Vec::new();
-    entries
-        .try_reserve_exact(count)
-        .map_err(|_| Refused::Capacity)?;
+    if entries.try_reserve_exact(count).is_err() {
+        return Err(capacity_refusal(bytes, 0));
+    }
     if entries.capacity() != count {
-        return Err(Refused::Capacity);
+        let excess = entries
+            .capacity()
+            .saturating_sub(count)
+            .checked_mul(std::mem::size_of::<Entry<'_>>());
+        return Err(capacity_refusal(bytes, excess.unwrap_or(usize::MAX)));
     }
     entries.extend(
         program
@@ -39,4 +46,20 @@ pub(in crate::hir) fn prepare(program: &ResolvedProgram) -> Result<Directory<'_>
             .then(left.ordinal.cmp(&right.ordinal))
     });
     Ok(Directory { program, entries })
+}
+
+// Allocators expose their actual requested capacity only after allocation.
+// Account any excess explicitly, then fail closed even when it fits. An earlier
+// excess reservation refusal retains its own first receipt.
+fn capacity_refusal(requested: usize, excess: usize) -> Refused {
+    if excess != 0 {
+        crate::bounded_output::reserve_active_required(excess);
+    }
+    crate::bounded_output::refuse_active_required(requested);
+    Refused::Capacity
+}
+
+#[cfg(test)]
+pub(in crate::hir) fn exercise_capacity_refusal(requested: usize, excess: usize) -> Refused {
+    capacity_refusal(requested, excess)
 }

@@ -10,6 +10,11 @@ function instances retain their existing separate validation. The caller
 reserves the exact requested entry backing on the existing active builder
 before allocation, with no new ledger, allowance or refund. With no active
 builder, the same private constructor retains the existing unobserved route.
+Allocator failure and capacity mismatch poison the same active owner. Actual
+excess capacity is debited after the allocator reports it, before rejecting the
+mismatch; no later zero-unit or fitting request restores admission. Tests inject
+these refusal continuations after actual directory acquisition, rather than
+claiming the platform allocator was forced to return excess capacity.
 Initial storage refusal is inline. The enclosing builder's first requested-byte
 receipt remains authoritative; the compatibility Diagnostic has SPX-H006 and an
 empty message rather than constructing unfunded text.

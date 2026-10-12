@@ -267,6 +267,15 @@ pub(crate) fn reserve_active_required(length: usize) -> bool {
     admitted
 }
 
+/// Fail a required allocator frontier without manufacturing another allocation
+/// request. Already selected receipts and actual debits remain unchanged.
+pub(crate) fn refuse_active_required(requested: usize) {
+    if let Some(budget) = active() {
+        record_refusal(&budget, requested);
+        budget.overflowed.set(true);
+    }
+}
+
 pub(crate) fn reserve_active_preserving(length: usize, floor: usize) -> bool {
     let budget = active();
     let Some(budget) = budget.as_deref() else {

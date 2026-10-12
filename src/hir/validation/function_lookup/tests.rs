@@ -103,6 +103,10 @@ fn caller_function_directory_has_literal_exact_short_sticky_payment_and_full_dro
                         caller::prepare(&program).err(),
                         Some(caller::Refused::Budget)
                     );
+                    assert_eq!(
+                        caller::exercise_capacity_refusal(bytes * 2, 0),
+                        caller::Refused::Capacity
+                    );
                     assert_eq!(current_metrics(), before);
                 }
             })
@@ -123,6 +127,41 @@ fn caller_function_directory_has_literal_exact_short_sticky_payment_and_full_dro
             assert_eq!(receipt.requested, bytes);
             assert_eq!(receipt.remaining, limit);
         }
+    }
+    // Exercise both allocator-refusal continuations after the same actual
+    // directory frontier has reserved and allocated its backing. No fake
+    // oversized request substitutes for the original capacity receipt.
+    for excess in [
+        0,
+        std::mem::size_of::<usize>() + std::mem::size_of::<&ResolvedFunction>(),
+    ] {
+        let (((), metrics), refused, used, receipt) =
+            with_limit_usage_refusal(bytes + excess, || {
+                measure(|| {
+                    let directory = caller::prepare(&program).unwrap();
+                    assert_eq!(
+                        caller::exercise_capacity_refusal(bytes, excess),
+                        caller::Refused::Capacity
+                    );
+                    let before = current_metrics();
+                    assert_eq!(
+                        caller::prepare(&program).err(),
+                        Some(caller::Refused::Budget)
+                    );
+                    assert!(!crate::bounded_output::reserve_active_required(0));
+                    assert_eq!(current_metrics(), before);
+                    drop(directory);
+                })
+            });
+        assert!(refused);
+        assert!(!metrics.invalid);
+        assert_eq!(metrics.live, 0);
+        assert_eq!(metrics.allocated, metrics.freed);
+        assert_eq!(metrics.allocated, bytes);
+        assert_eq!(used, bytes + excess);
+        let receipt = receipt.unwrap();
+        assert_eq!(receipt.requested, bytes);
+        assert_eq!(receipt.remaining, 0);
     }
     let ((), old_metrics) = measure(|| {
         drop(old::authenticate(&program).unwrap());
