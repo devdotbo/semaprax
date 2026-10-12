@@ -167,3 +167,47 @@ fn borrowed_template_snapshots_remove_real_type_payloads_through_complete_drop()
         assert_eq!(observation.allocated, observation.freed);
     }
 }
+
+#[test]
+fn generic_closure_scopes_keep_duplicate_priority_and_full_owned_oracle_policy() {
+    let ty = ResolvedType::String;
+    let id = ValueId::new("duplicate");
+    for parent in [Values::new(), Values::owned()] {
+        let mut empty = parent.empty_like();
+        assert!(matches!(
+            (&parent, &empty),
+            (Values::Borrowed(_), Values::Borrowed(_)) | (Values::Owned(_), Values::Owned(_))
+        ));
+        assert!(!empty.insert(id.clone(), &ty));
+        assert!(empty.insert(id.clone(), &ty));
+        assert_eq!(empty.get(&id), Some(&ty));
+    }
+    // Same admitted symbolic closure shape as the retained language owner.
+    let ast = crate::parse(
+        r#"module test.generic_template_closure;
+@id("gc.fill") fn fill<T>(values:own Vec<T>,replacement:T)->Vec<T>{
+    let length=vec_len<T>(values);
+    let mut output=vec_with_capacity<T>(length);
+    let mut index=0usize;
+    while index<length {
+        let callback=fn(item:T)->T{replacement};
+        output=vec_push<T>(output,callback(vec_get<T>(values,index)));
+        index=index+1usize;
+        index<length
+    }
+    output
+}
+@id("gc.main") fn main()->i64{0}
+"#,
+        "borrowed-generic-closure.spx",
+    )
+    .unwrap();
+    let program = crate::hir::resolve(&ast).unwrap();
+    crate::hir::validate(&program).unwrap();
+    for template in &program.function_templates {
+        compare(&program, template).unwrap();
+        let mut hostile = template.clone();
+        hostile.body.ty = ResolvedType::String;
+        assert_eq!(compare(&program, &hostile).unwrap_err().code, "SPX-H006");
+    }
+}

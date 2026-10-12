@@ -120,13 +120,13 @@ impl HirValidator<'_> {
 }
 impl HirValidator<'_> {
     #[allow(clippy::too_many_arguments)]
-    pub(super) fn validate_template_lexical_exit(
+    pub(super) fn validate_template_lexical_exit<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        expression: &ResolvedExpr,
-        value: Option<&ResolvedExpr>,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        expression: &'value ResolvedExpr,
+        value: Option<&'value ResolvedExpr>,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         if expression.ty != ResolvedType::Never || expression.ownership != OwnershipMode::Value {

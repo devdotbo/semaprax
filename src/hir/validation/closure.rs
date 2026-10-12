@@ -85,12 +85,12 @@ impl HirValidator<'_> {
 }
 
 impl HirValidator<'_> {
-    pub(super) fn validate_template_closure(
+    pub(super) fn validate_template_closure<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        expression: &ResolvedExpr,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        expression: &'value ResolvedExpr,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         if !super::super::generic_collection::profile(template) {
@@ -116,16 +116,14 @@ impl HirValidator<'_> {
                 &format!("{path}.capture.{index}"),
             )?;
         }
-        let mut body_values = BTreeMap::new();
+        let mut body_values = values.empty_like();
         for binding in captures
             .iter()
             .map(|capture| &capture.binding)
             .chain(parameters.iter())
         {
             if !self.value_ids.insert(binding.id.clone())
-                || body_values
-                    .insert(binding.id.clone(), binding.ty.clone())
-                    .is_some()
+                || body_values.insert(binding.id.clone(), &binding.ty)
             {
                 return Err(hir_error("generic closure bindings collide"));
             }

@@ -13,15 +13,22 @@ impl<'value> Values<'value> {
     pub(in crate::hir::validation) fn new() -> Self {
         Self::Borrowed(BTreeMap::new())
     }
-    pub(in crate::hir::validation) fn insert(&mut self, id: ValueId, ty: &'value ResolvedType) {
+    pub(in crate::hir::validation) fn empty_like(&self) -> Self {
         match self {
-            Self::Borrowed(values) => {
-                values.insert(id, ty);
-            }
+            Self::Borrowed(_) => Self::new(),
             #[cfg(test)]
-            Self::Owned(values) => {
-                values.insert(id, ty.clone());
-            }
+            Self::Owned(_) => Self::owned(),
+        }
+    }
+    pub(in crate::hir::validation) fn insert(
+        &mut self,
+        id: ValueId,
+        ty: &'value ResolvedType,
+    ) -> bool {
+        match self {
+            Self::Borrowed(values) => values.insert(id, ty).is_some(),
+            #[cfg(test)]
+            Self::Owned(values) => values.insert(id, ty.clone()).is_some(),
         }
     }
     pub(in crate::hir::validation) fn get(&self, id: &ValueId) -> Option<&ResolvedType> {
