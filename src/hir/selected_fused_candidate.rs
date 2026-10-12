@@ -106,6 +106,8 @@ impl<'a> Selected<'a> {
 #[derive(Debug)]
 pub(crate) enum SelectedRefusal {
     /// Step 1: no candidate, or a source pass refused.
+    // Kept in the refusal so Debug and callers can inspect the original source reason.
+    #[allow(dead_code)]
     Source(CandidateRefusal),
     /// Step 2: resolution of the original source refused.
     Resolve(Diagnostic),

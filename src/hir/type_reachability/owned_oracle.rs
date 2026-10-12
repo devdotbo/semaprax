@@ -11,6 +11,8 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use super::*;
 
 // Saved original predicates, including their Url branch and first-match order.
+// Preserve the complete saved admission oracle, including unused historical helpers.
+#[allow(dead_code)]
 mod native_owner_old;
 
 pub(crate) fn owned_reachable_types(
