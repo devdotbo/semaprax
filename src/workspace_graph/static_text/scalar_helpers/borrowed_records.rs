@@ -1,11 +1,7 @@
 //! Defining-source helper shape only. Exact source/layout namespace and full
 //! cleanup replay are independently required before the helper is retained.
 use super::*;
-fn equal(
-    a: &str,
-    b: &str,
-    take: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
-) -> Result<bool, Vec<Diagnostic>> {
+fn equal<E>(a: &str, b: &str, take: &mut dyn FnMut(usize) -> Result<(), E>) -> Result<bool, E> {
     take(1)?;
     if a.len() != b.len() {
         return Ok(false);
@@ -18,11 +14,11 @@ fn equal(
     }
     Ok(true)
 }
-fn fields<'a>(
+fn fields<'a, E>(
     records: &'a [hir::ResolvedTypeDeclaration],
     ty: &hir::ResolvedType,
-    take: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
-) -> Result<Option<&'a [hir::ResolvedFieldDeclaration]>, Vec<Diagnostic>> {
+    take: &mut dyn FnMut(usize) -> Result<(), E>,
+) -> Result<Option<&'a [hir::ResolvedFieldDeclaration]>, E> {
     let hir::ResolvedType::Nominal {
         declaration,
         arguments,
@@ -63,11 +59,11 @@ fn fields<'a>(
     }
     Ok(Some(fields))
 }
-pub(super) fn signature(
+pub(super) fn signature<E>(
     function: &ResolvedFunction,
     records: &[hir::ResolvedTypeDeclaration],
-    take: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
-) -> Result<bool, Vec<Diagnostic>> {
+    take: &mut dyn FnMut(usize) -> Result<(), E>,
+) -> Result<bool, E> {
     if !hir::is_scalar_resolved_type(&function.return_type) {
         return Ok(false);
     }
@@ -84,12 +80,12 @@ pub(super) fn signature(
     }
     Ok(true)
 }
-fn root(
+fn root<E>(
     function: &ResolvedFunction,
     expression: &hir::ResolvedExpr,
     records: &[hir::ResolvedTypeDeclaration],
-    take: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
-) -> Result<bool, Vec<Diagnostic>> {
+    take: &mut dyn FnMut(usize) -> Result<(), E>,
+) -> Result<bool, E> {
     let ResolvedExprKind::Place(place) = &expression.kind else {
         return Ok(false);
     };
@@ -136,13 +132,13 @@ fn root(
 // A direct scalar field read lowers to Place(Field), with the scalar type
 // on the expression. Resolve the root's nominal type from the exact current
 // Borrow parameter; the field expression cannot supply that authority.
-fn projected_place(
+fn projected_place<E>(
     function: &ResolvedFunction,
     expression: &hir::ResolvedExpr,
     place: &hir::Place,
     records: &[hir::ResolvedTypeDeclaration],
-    take: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
-) -> Result<bool, Vec<Diagnostic>> {
+    take: &mut dyn FnMut(usize) -> Result<(), E>,
+) -> Result<bool, E> {
     take(1)?;
     let [hir::PlaceProjection::Field(field)] = place.projections.as_slice() else {
         return Ok(false);
@@ -179,12 +175,12 @@ fn projected_place(
     take(1)?;
     Ok(selected.is_some_and(|f| hir::is_scalar_resolved_type(&f.ty) && f.ty == expression.ty))
 }
-pub(super) fn expression(
+pub(super) fn expression<E>(
     function: &ResolvedFunction,
     expression: &hir::ResolvedExpr,
     records: &[hir::ResolvedTypeDeclaration],
-    take: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
-) -> Result<Option<bool>, Vec<Diagnostic>> {
+    take: &mut dyn FnMut(usize) -> Result<(), E>,
+) -> Result<Option<bool>, E> {
     match &expression.kind {
         ResolvedExprKind::Place(place) if !place.projections.is_empty() => Ok(Some(
             projected_place(function, expression, place, records, take)?,

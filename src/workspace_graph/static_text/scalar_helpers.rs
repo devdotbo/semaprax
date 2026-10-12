@@ -8,6 +8,8 @@ use primitive::body_digest;
 mod borrowed_records;
 mod capture_directory;
 #[cfg(test)]
+mod checked_tests;
+#[cfg(test)]
 mod legacy;
 const DEPTH: usize = 514;
 const WORK: usize = 1_048_576;
@@ -69,13 +71,40 @@ pub(in crate::workspace_graph) fn pure_records_metered(
     work: &mut usize,
     charge: &mut dyn FnMut(usize) -> Result<(), Vec<Diagnostic>>,
 ) -> Result<bool, Vec<Diagnostic>> {
-    pure_profile_metered(
+    legacy_refusal(pure_records_checked(function, records, work, charge))
+}
+/// A purity refusal that never allocates on the classifier's own behalf. The
+/// local work limit carries no payload; a callback refusal is returned exactly.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::workspace_graph) enum PurityRefusal<E> {
+    LocalLimit,
+    Charge(E),
+}
+/// The same closed classifier as `pure_records_metered`, with identical
+/// traversal, charges, verdicts and first refusal, but no diagnostic is built.
+pub(in crate::workspace_graph) fn pure_records_checked<E>(
+    function: &ResolvedFunction,
+    records: &[hir::ResolvedTypeDeclaration],
+    work: &mut usize,
+    charge: &mut dyn FnMut(usize) -> Result<(), E>,
+) -> Result<bool, PurityRefusal<E>> {
+    pure_profile_checked(
         function,
         work,
         charge,
         hir::borrowed_scalar::option_u8::selected_profile_ready(),
         records,
     )
+}
+// Legacy Vec contract: the local limit becomes the original SPX-G410 `fail()`
+// and a callback Vec moves out unchanged, so its backing pointer is preserved.
+fn legacy_refusal(
+    result: Result<bool, PurityRefusal<Vec<Diagnostic>>>,
+) -> Result<bool, Vec<Diagnostic>> {
+    result.map_err(|refusal| match refusal {
+        PurityRefusal::LocalLimit => fail(),
+        PurityRefusal::Charge(errors) => errors,
+    })
 }
 fn pure_profile_metered(
     function: &ResolvedFunction,
@@ -84,13 +113,34 @@ fn pure_profile_metered(
     option_shape: bool,
     records: &[hir::ResolvedTypeDeclaration],
 ) -> Result<bool, Vec<Diagnostic>> {
-    let mut take = |units| -> Result<(), Vec<Diagnostic>> {
-        let remaining = work.checked_sub(units).ok_or_else(fail)?;
-        charge(units)?;
+    legacy_refusal(pure_profile_checked(
+        function,
+        work,
+        charge,
+        option_shape,
+        records,
+    ))
+}
+fn pure_profile_checked<E>(
+    function: &ResolvedFunction,
+    work: &mut usize,
+    charge: &mut dyn FnMut(usize) -> Result<(), E>,
+    option_shape: bool,
+    records: &[hir::ResolvedTypeDeclaration],
+) -> Result<bool, PurityRefusal<E>> {
+    let mut take = |units| -> Result<(), PurityRefusal<E>> {
+        let remaining = work.checked_sub(units).ok_or(PurityRefusal::LocalLimit)?;
+        charge(units).map_err(PurityRefusal::Charge)?;
         *work = remaining;
         Ok(())
     };
-    take(function.params.len().checked_add(1).ok_or_else(fail)?)?;
+    take(
+        function
+            .params
+            .len()
+            .checked_add(1)
+            .ok_or(PurityRefusal::LocalLimit)?,
+    )?;
     if !function.effects.is_empty()
         || function.yields.is_some()
         || !(hir::borrowed_scalar::signature(function)
@@ -111,7 +161,7 @@ fn pure_profile_metered(
         let mut depth = 1;
         while depth != 0 {
             take(1)?;
-            let mut cursor = stack[depth - 1].take().ok_or_else(fail)?;
+            let mut cursor = stack[depth - 1].take().ok_or(PurityRefusal::LocalLimit)?;
             let expr = cursor.expression();
             if !cursor.is_started() {
                 if (!option_shape
