@@ -246,6 +246,7 @@ pub(super) fn clone_vec<T: Clone>(
     out.extend(values.iter().cloned());
     Ok(out)
 }
+#[cfg(test)]
 pub(super) fn singleton_set<K: Ord>(
     value: K,
     payer: Option<&CfgReservation>,
@@ -254,6 +255,7 @@ pub(super) fn singleton_set<K: Ord>(
     set_insert(&mut out, value, payer)?;
     Ok(out)
 }
+#[cfg(test)]
 pub(super) fn clone_set<K: Clone + Ord>(
     values: &std::collections::BTreeSet<K>,
     payer: Option<&CfgReservation>,
