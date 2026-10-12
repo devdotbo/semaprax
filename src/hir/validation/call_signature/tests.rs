@@ -169,7 +169,33 @@ fn wide_current_signature_access_removes_literal_owned_payload_and_drops_without
     // Clone requests only: inline descriptors are stack storage; original Program
     // and validator setup, diagnostic reporting and final publication are excluded.
     assert_eq!(declaration.as_str(), "core.vec");
-    let result_payload = std::mem::size_of::<ResolvedType>() + "core.vec".len();
+    // Only the singleton argument Vec is owned clone payload: declaration
+    // identities are static/shared handles, not copied text.
+    let result_payload = std::mem::size_of::<ResolvedType>();
+    let static_id = DeclarationId::compiler(crate::hir::ids::compiler::CompilerDeclaration::Vec);
+    let shared_id = DeclarationId::new("signature.shared.é");
+    let (_, identity_clones) = crate::test_allocation_observer::measure(|| {
+        for _ in 0..64 {
+            let fixed = static_id.clone();
+            let shared = shared_id.clone();
+            assert_eq!(fixed, static_id);
+            assert_eq!(shared, shared_id);
+            assert_eq!(fixed.as_str().as_ptr(), static_id.as_str().as_ptr());
+            assert_eq!(shared.as_str().as_ptr(), shared_id.as_str().as_ptr());
+            drop((fixed, shared));
+        }
+    });
+    assert_eq!(
+        (
+            identity_clones.allocations,
+            identity_clones.reallocations,
+            identity_clones.allocated,
+            identity_clones.freed,
+            identity_clones.live
+        ),
+        (0, 0, 0, 0, 0)
+    );
+    assert!(!identity_clones.invalid);
     let effects_payload = std::mem::size_of::<String>() + "host.math".len();
     let native_payload =
         2 * std::mem::size_of::<ResolvedImportParameter>() + "left".len() + "right".len();

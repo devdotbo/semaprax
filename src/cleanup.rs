@@ -31,7 +31,10 @@ pub(crate) use inventory_builder::{
 mod iterator;
 #[cfg(test)]
 mod owned_capacity;
-pub(crate) use iterator::{primitive_leaf_lifecycle, variant_leaf_lifecycle, variant_record_field};
+pub(crate) use iterator::{
+    primitive_leaf_lifecycle, primitive_leaf_lifecycle_identity, variant_leaf_lifecycle,
+    variant_record_field,
+};
 #[cfg(test)]
 use owned_capacity::resolved_type_owned_capacity;
 pub const ITER_DROP_LIFECYCLE_ID: &str = "core.iter.drop";

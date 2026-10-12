@@ -30,7 +30,7 @@ pub(crate) fn ast_reader() -> Type {
 }
 pub(crate) fn reader() -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: DeclarationId::new(READER_ID),
+        declaration: DeclarationId::compiler(crate::hir::CompilerDeclaration::StdinReader),
         arguments: Vec::new(),
     }
 }

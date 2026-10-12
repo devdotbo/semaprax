@@ -65,10 +65,21 @@ fn ordinary_builder_payment_never_grants_selected_admission_and_covers_index_dro
     assert_eq!(metrics.live, 0);
     // The actual ordinary replay entry keeps its complete authority checks.
     let mut legacy = ReplayBudget::unobserved();
+    // Use the real caller's capped independent skeleton census. Directly
+    // calling the member receiver starts with no authorized skeleton work.
+    let upper =
+        reserve_program_skeleton_work(&program, std::iter::once(function), &mut legacy).unwrap();
+    assert!(upper > 0 && upper <= MAX_REPLAY_WORK_UNITS);
     validate_structure_with_budget(&program, function, &mut legacy, None).unwrap();
     let (checked, refused, _, _) = with_limit_usage_refusal(usize::MAX, || {
         let mut active = ReplayBudget::new();
+        let active_upper =
+            reserve_program_skeleton_work(&program, std::iter::once(function), &mut active)
+                .unwrap();
+        assert_eq!(active_upper, upper);
         let result = validate_structure_with_budget(&program, function, &mut active, None);
+        assert_eq!(active.remaining, legacy.remaining);
+        assert_eq!(active.skeleton_spent, legacy.skeleton_spent);
         assert!(!active.selected() && active.physical.is_none());
         result
     });

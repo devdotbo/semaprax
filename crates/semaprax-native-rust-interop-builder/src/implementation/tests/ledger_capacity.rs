@@ -279,6 +279,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/expr_nodes.rs"),
         concat!(
             include_str!("../../../../../src/hir/ids.rs"),
+            include_str!("../../../../../src/hir/ids/compiler.rs"),
             "\n",
             include_str!("../../../../../src/hir/ids/streamed.rs"),
             "\n",

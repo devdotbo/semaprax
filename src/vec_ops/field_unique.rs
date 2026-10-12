@@ -305,6 +305,31 @@ pub(crate) fn literal_call(name: &str) -> bool {
     name == NAME || name == sort_keys::NAME
 }
 
+/// Test-only coherent descriptor substitution. The scratch-failure status
+/// source binds the full descriptor callee, so a swapped callee is refused
+/// against its stale lowered plan (`SPX-H006` status-source sequence) and is
+/// independently valid HIR only after every derived ownership proof is rebuilt.
+#[cfg(test)]
+pub(crate) fn rederive_substituted(program: &mut crate::hir::ResolvedProgram, function: &str) {
+    let stale = crate::hir::validate(program).unwrap_err();
+    assert_eq!(stale.code, "SPX-H006");
+    assert!(
+        stale.message.contains("non-canonical status-source sequence"),
+        "{stale:?}"
+    );
+    let index = program
+        .functions
+        .iter()
+        .position(|candidate| candidate.id.as_str() == function)
+        .unwrap();
+    program.functions[index].loan_plan =
+        crate::loan_plan::build_plan(&*program, &program.functions[index]).unwrap();
+    program.functions[index].cleanup =
+        crate::cleanup::build_inventory(&*program, &program.functions[index]).unwrap();
+    program.functions[index].cleanup_plan =
+        crate::cleanup_plan::build_plan(&*program, &program.functions[index]).unwrap();
+}
+
 #[cfg(test)]
 mod tests;
 

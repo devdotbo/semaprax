@@ -158,7 +158,7 @@ impl InventoryBuilder<'_> {
         if !needs_drop(ty)? {
             return Ok(FieldLivenessShape::NoDrop);
         }
-        let id = primitive_leaf_lifecycle(ty)
+        let id = crate::cleanup::primitive_leaf_lifecycle_identity(ty)
             .ok_or_else(|| cleanup_error("selected inventory has no primitive lifecycle"))?;
         self.selected_lifecycle_shape(id, storage, projection)
     }
@@ -166,11 +166,14 @@ impl InventoryBuilder<'_> {
         &mut self,
         storage: CleanupStorageId,
     ) -> Result<FieldLivenessShape, Diagnostic> {
-        self.selected_lifecycle_shape(VEC_DROP_LIFECYCLE_ID, storage, None)
+        self.selected_lifecycle_shape(crate::hir::CompilerDeclaration::VecDrop, storage, None)
     }
+    /// The lifecycle is a fixed compiler identity and allocates nothing. Its
+    /// original text term stays reserved on the selected ledger, unchanged, so
+    /// the cap and refusal order are those of the owned-text inventory.
     fn selected_lifecycle_shape(
         &mut self,
-        id: &str,
+        id: crate::hir::CompilerDeclaration,
         storage: CleanupStorageId,
         projection: Option<&DeclarationId>,
     ) -> Result<FieldLivenessShape, Diagnostic> {
@@ -185,9 +188,9 @@ impl InventoryBuilder<'_> {
             .as_ref()
             .expect("selected shape")
             .borrow_mut()
-            .reserve(id.len())
+            .reserve(id.text().len())
             .map_err(|_| cleanup_error("selected inventory lifecycle reservation refused"))?;
-        let lifecycle = DeclarationId::new(id);
+        let lifecycle = DeclarationId::compiler(id);
         let flag_lifecycle = self.clone_owned(&lifecycle)?;
         let mut projections = Vec::new();
         if let Some(projection) = projection {

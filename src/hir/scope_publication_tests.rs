@@ -1,6 +1,8 @@
-//! Unchanged publication storage only; initial and changed snapshots remain owned.
+//! Exact publication storage; initial snapshots and changed bindings remain owned.
 use super::*;
 use crate::test_allocation_observer::{current_metrics, measure, Metrics};
+#[path = "scope_publication_tests/changed.rs"]
+mod changed;
 #[path = "scope_publication_tests/old.rs"]
 mod old;
 
@@ -14,7 +16,7 @@ fn scope(count: usize) -> BTreeMap<ValueId, ValidationBinding> {
                     mutable: false,
                     ty: ResolvedType::Nominal {
                         declaration: DeclarationId::new(format!("publication.record.{index}")),
-                        arguments: Vec::new(),
+                        arguments: vec![ResolvedType::I64],
                     },
                     ownership: OwnershipMode::Own,
                     availability: Availability::Available,
@@ -72,8 +74,9 @@ fn exact_unchanged_publication_avoids_recloning_wide_scopes_and_preserves_every_
         let actual = observed(count, 128, false);
         let legacy = observed(count, 128, true);
         assert_eq!(actual, baseline);
-        // Each old publication clones each literal nominal declaration String.
-        // This independent lower census does not estimate BTree node layouts.
+        // Each old publication clones each nonempty singleton type-argument Vec.
+        // Shared declaration IDs request no backing on clone. This literal
+        // count*128 census does not estimate BTree node layouts.
         assert!(legacy.allocations >= baseline.allocations + count * 128);
         assert!(legacy.allocated > actual.allocated);
     }

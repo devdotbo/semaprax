@@ -1085,7 +1085,8 @@ impl WorkspaceGraphBuild {
             )]);
         }
 
-        let mut available = BTreeMap::<hir::DeclarationId, hir::LinkedScalarFunction>::new();
+        let mut available =
+            BTreeMap::<hir::DeclarationId, (&hir::ResolvedFunction, hir::IdentityOrigin)>::new();
         for module in &self.hir.modules {
             for function in &module.functions {
                 let Some(fact) = self.hir.declarations.get(function.id.as_str()) else {
@@ -1104,13 +1105,7 @@ impl WorkspaceGraphBuild {
                     )]);
                 }
                 if available
-                    .insert(
-                        function.id.clone(),
-                        hir::LinkedScalarFunction {
-                            function: function.clone(),
-                            origin: fact.origin,
-                        },
-                    )
+                    .insert(function.id.clone(), (function, fact.origin))
                     .is_some()
                 {
                     return Err(vec![graph_error(
@@ -1134,7 +1129,7 @@ impl WorkspaceGraphBuild {
             let fact = self
                 .hir
                 .declarations
-                .get(linked.function.id.as_str())
+                .get(linked.0.id.as_str())
                 .expect("available functions have declaration facts");
             if fact.module.as_deref() != Some(root_module)
                 || fact.origin != hir::IdentityOrigin::Explicit
@@ -1145,8 +1140,8 @@ impl WorkspaceGraphBuild {
                 )]);
             }
             if anchor.is_none()
-                && linked.function.params.is_empty()
-                && linked.function.return_type == hir::ResolvedType::I64
+                && linked.0.params.is_empty()
+                && linked.0.return_type == hir::ResolvedType::I64
             {
                 anchor = Some(id.clone());
             }
@@ -1170,7 +1165,7 @@ impl WorkspaceGraphBuild {
             if !retained.insert(function_id) {
                 continue;
             }
-            for callee in resolved_function_callees(&linked.function) {
+            for callee in resolved_function_callees(linked.0) {
                 if available.contains_key(&callee) && !retained.contains(&callee) {
                     pending.insert(callee);
                 }
@@ -1182,8 +1177,8 @@ impl WorkspaceGraphBuild {
                 available
                     .get(&id)
                     .map(|linked| hir::LinkedScalarFunction {
-                        function: linked.function.clone(),
-                        origin: linked.origin,
+                        function: (*linked.0).clone(),
+                        origin: linked.1,
                     })
                     .ok_or_else(|| {
                         vec![graph_error(

@@ -31,6 +31,22 @@ fn sealed_atoms_keep_saved_detailed_text_and_allocate_no_identity_payload() {
             Atom::RepeatedStorage(storage.clone()),
             format!("cleanup storage `{storage:?}` is repeated"),
         ),
+        (
+            Atom::DeadCallFlag(id.clone(), LivenessFlagId(17)),
+            format!("call `{id}` atomically consumes dead argument flag 17"),
+        ),
+        (
+            Atom::RepeatedCallFlag(id.clone(), LivenessFlagId(17)),
+            format!("call `{id}` atomically consumes argument flag 17 twice"),
+        ),
+        (
+            Atom::RepeatedVariantEpoch(id.clone()),
+            format!("call `{id}` atomically consumes a variant epoch twice"),
+        ),
+        (
+            Atom::MismatchedFailure(id.clone()),
+            format!("selected failure `{id}` does not match the pending failing edge"),
+        ),
     ];
     for (atom, text) in cases {
         let (receipt, observed) = measure(|| Receipt {

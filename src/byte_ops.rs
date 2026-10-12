@@ -10,7 +10,9 @@
 //! which the ordinary borrowed reads apply.
 
 use crate::ast::{Expr, ExprKind, Span, Type};
-use crate::hir::{DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId};
+use crate::hir::{
+    CompilerDeclaration, DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId,
+};
 
 pub(crate) const LEN_NAME: &str = "byte_len";
 pub(crate) const GET_NAME: &str = "byte_get";
@@ -225,15 +227,17 @@ impl ByteOp {
             ],
         }
     }
+    /// Pure expected-type query. Its declaration identities are fixed compiler
+    /// identities, so it consults no payer and cannot be refused by one.
     pub(crate) fn return_type(self) -> ResolvedType {
         match self {
             Self::Partition => ResolvedType::Nominal {
-                declaration: DeclarationId::new(crate::prelude::VEC_ID),
+                declaration: DeclarationId::compiler(CompilerDeclaration::Vec),
                 arguments: vec![ResolvedType::Bytes],
             },
             Self::Len => ResolvedType::Usize,
             Self::Get => ResolvedType::Nominal {
-                declaration: DeclarationId::new(crate::prelude::OPTION_ID),
+                declaration: DeclarationId::compiler(CompilerDeclaration::Option),
                 arguments: vec![ResolvedType::U8],
             },
             Self::Range => ResolvedType::SliceU8,

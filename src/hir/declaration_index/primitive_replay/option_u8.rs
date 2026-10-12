@@ -75,33 +75,20 @@ impl DeclarationIndex {
                 }
             }
         }
+        // Every identity below is a fixed compiler identity and owns no bytes.
+        // Work debits and physical reservations keep their original identity
+        // text terms unchanged, so caps and refusal order are those of the
+        // owned-text replay; those terms are conservative, not identity payment.
+        use crate::hir::CompilerDeclaration as Id;
         let specs = [
-            (
-                crate::prelude::OPTION_ID,
-                "Option",
-                DeclarationKind::Variant,
-                None,
-            ),
-            (
-                crate::prelude::OPTION_NONE_ID,
-                "None",
-                DeclarationKind::VariantCase,
-                Some(crate::prelude::OPTION_ID),
-            ),
-            (
-                crate::prelude::OPTION_SOME_ID,
-                "Some",
-                DeclarationKind::VariantCase,
-                Some(crate::prelude::OPTION_ID),
-            ),
-            (
-                crate::prelude::OPTION_SOME_VALUE_ID,
-                "value",
-                DeclarationKind::CaseField,
-                Some(crate::prelude::OPTION_SOME_ID),
-            ),
+            (Id::Option, "Option", DeclarationKind::Variant, None),
+            (Id::OptionNone, "None", DeclarationKind::VariantCase, Some(Id::Option)),
+            (Id::OptionSome, "Some", DeclarationKind::VariantCase, Some(Id::Option)),
+            (Id::OptionSomeValue, "value", DeclarationKind::CaseField, Some(Id::OptionSome)),
         ];
-        for (id, name, kind, owner) in specs {
+        for (identity, name, kind, owner) in specs {
+            let id = identity.text();
+            let owner_text = owner.map(Id::text);
             for key in self.declarations.keys() {
                 debit(
                     key.as_str()
@@ -118,18 +105,18 @@ impl DeclarationIndex {
                 crate::cleanup_plan::replay_btree_node_upper::<DeclarationId, Declaration>()
                     .and_then(|n| n.checked_add(id.len().checked_mul(2)?))
                     .and_then(|n| n.checked_add(name.len()))
-                    .and_then(|n| n.checked_add(owner.map_or(0, str::len)))
+                    .and_then(|n| n.checked_add(owner_text.map_or(0, str::len)))
                     .ok_or_else(fail)?;
             debit(bytes)?;
             physical.reserve(bytes).map_err(|_| fail())?;
             self.declarations.insert(
-                DeclarationId::new(id),
+                DeclarationId::compiler(identity),
                 Declaration {
-                    id: DeclarationId::new(id),
+                    id: DeclarationId::compiler(identity),
                     name: name.into(),
                     kind,
                     identity_origin: IdentityOrigin::CompilerOwned,
-                    owner: owner.map(DeclarationId::new),
+                    owner: owner.map(DeclarationId::compiler),
                 },
             );
         }
@@ -143,7 +130,7 @@ impl DeclarationIndex {
         debit(parameter)?;
         physical.reserve(parameter).map_err(|_| fail())?;
         self.type_parameters.insert(
-            DeclarationId::new(crate::prelude::OPTION_ID),
+            DeclarationId::compiler(Id::Option),
             vec![ResolvedTypeParameterDeclaration {
                 name: "T".into(),
                 index: 0,
@@ -167,25 +154,25 @@ impl DeclarationIndex {
         debit(cases_bytes)?;
         physical.reserve(cases_bytes).map_err(|_| fail())?;
         let field = || ResolvedFieldDeclaration {
-            id: DeclarationId::new(crate::prelude::OPTION_SOME_VALUE_ID),
+            id: DeclarationId::compiler(Id::OptionSomeValue),
             name: "value".into(),
             index: 0,
             ty: ResolvedType::TypeParameter {
-                owner: DeclarationId::new(crate::prelude::OPTION_ID),
+                owner: DeclarationId::compiler(Id::Option),
                 index: 0,
             },
             span: crate::ast::Span::default(),
         };
         let cases = vec![
             ResolvedVariantCaseDeclaration {
-                id: DeclarationId::new(crate::prelude::OPTION_NONE_ID),
+                id: DeclarationId::compiler(Id::OptionNone),
                 name: "None".into(),
                 index: 0,
                 fields: Vec::new(),
                 span: crate::ast::Span::default(),
             },
             ResolvedVariantCaseDeclaration {
-                id: DeclarationId::new(crate::prelude::OPTION_SOME_ID),
+                id: DeclarationId::compiler(Id::OptionSome),
                 name: "Some".into(),
                 index: 1,
                 fields: vec![field()],
@@ -193,22 +180,19 @@ impl DeclarationIndex {
             },
         ];
         self.variant_cases
-            .insert(DeclarationId::new(crate::prelude::OPTION_ID), cases);
-        for (id, some) in [
-            (crate::prelude::OPTION_NONE_ID, false),
-            (crate::prelude::OPTION_SOME_ID, true),
-        ] {
+            .insert(DeclarationId::compiler(Id::Option), cases);
+        for (id, some) in [(Id::OptionNone, false), (Id::OptionSome, true)] {
             let bytes = crate::cleanup_plan::replay_btree_node_upper::<
                 DeclarationId,
                 Vec<ResolvedFieldDeclaration>,
             >()
-            .and_then(|n| n.checked_add(id.len()))
+            .and_then(|n| n.checked_add(id.text().len()))
             .and_then(|n| n.checked_add(if some { field_bytes } else { 0 }))
             .ok_or_else(fail)?;
             debit(bytes)?;
             physical.reserve(bytes).map_err(|_| fail())?;
             self.case_fields.insert(
-                DeclarationId::new(id),
+                DeclarationId::compiler(id),
                 if some { vec![field()] } else { Vec::new() },
             );
         }

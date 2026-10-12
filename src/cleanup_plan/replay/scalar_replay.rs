@@ -25,14 +25,14 @@ pub(super) fn validate_paid(
     validate_core(program, function, budget, expression_facts::paid)
 }
 
-fn validate_core<E: semantic_refusal::Error>(
+fn validate_core<'hir, E: semantic_refusal::Error>(
     program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
+    function: &'hir ResolvedFunction,
     budget: &mut ReplayBudget,
     build_facts: impl FnOnce(
-        &ResolvedFunction,
+        &'hir ResolvedFunction,
         &mut ReplayBudget,
-    ) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, E>,
+    ) -> Result<BTreeMap<ExpressionId, Option<CallFact<'hir>>>, E>,
 ) -> Result<(), E> {
     if !records::signature(program, function, budget)? {
         return Err(replay_error(
@@ -124,7 +124,7 @@ fn validate_core<E: semantic_refusal::Error>(
     )?;
     structural_maps::validate_reference_coverage(function, budget)?;
     structural_control::validate_reachable_acyclic_cfg(function, budget)?;
-    validate_path_states(program, function, &storage, &leaves, budget, None, None)?;
+    validate_path_states::<E>(program, function, &storage, &leaves, budget, None, None)?;
     match factored::compare_with_index(program, function, budget, None)? {
         Some(true) => Ok(()),
         Some(false) => Err(replay_error(

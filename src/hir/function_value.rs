@@ -188,8 +188,9 @@ pub(crate) fn error(message: &str) -> Diagnostic {
 
 pub(crate) mod resolve;
 
-pub(crate) static INVOKE_ID: std::sync::LazyLock<DeclarationId> =
-    std::sync::LazyLock::new(|| DeclarationId::new("core.function.invoke"));
+pub(crate) static INVOKE_ID: std::sync::LazyLock<DeclarationId> = std::sync::LazyLock::new(|| {
+    DeclarationId::compiler(crate::hir::CompilerDeclaration::FunctionInvoke)
+});
 pub(crate) fn invocation_params(
     expression: &ResolvedExpr,
 ) -> Result<Vec<super::ResolvedParam>, Diagnostic> {

@@ -384,11 +384,13 @@ const env = {
     if(tag>=9||index<0n||index>=BigInt(value.values.length))throw Error('invalid Vec get');
     return value.values[Number(index)];
   },
+  // A Copy carrier (tags 1..8) bound by `spx_vec_sort_by_v1` policy 0 keeps
+  // its Copy-only descriptor; its scalar words own nothing to settle.
   spx_vec_drop_v2:handle=>{
     const value=vectorValue(handle);if(!value)throw Error('stale Vec drop');
     if(value.tag===9)for(const word of value.values)drop(word);
     else if(value.shape===undefined&&value.tag===10){for(const row of value.values){drop(row[0]);drop(row[1])}}
-    else if(value.shape!==undefined)for(const row of value.values)dropRow(row,value.shape);
+    else if(value.shape!==undefined&&value.tag>=10)for(const row of value.values)dropRow(row,value.shape);
     releaseVector(handle);
   },
   spx_vec_reserve_exact_v2:(handle,tag,additional)=>{
@@ -409,7 +411,7 @@ const env = {
     const value=vec(handle,tag);
     if(tag===9)for(const word of value.values)drop(word);
     else if(value.shape===undefined&&tag===10){for(const row of value.values){drop(row[0]);drop(row[1])}}
-    else if(value.shape!==undefined)for(const row of value.values)dropRow(row,value.shape);
+    else if(value.shape!==undefined&&tag>=10)for(const row of value.values)dropRow(row,value.shape);
     value.values=[];return move(handle,value);
   },
   spx_vec_sort_v3:(handle,tag)=>{
@@ -862,6 +864,45 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
       throw Error('partial codec allocation failure did not reach its exact owning commit');
     if(refusal==='unique-scratch'&&uniqueScratchBytes!==0)throw Error('refused uniqueness scratch was observed as allocated');
     if(refusal==='unique-scratch'&&uniqueScratchRequests===0)throw Error('uniqueness scratch refusal was not exercised');
+  }
+  if(copyRecordCodec&&requiredImports.some(entry=>entry.name==='spx_vec_unique_by_v1')){
+    // Copy-carrier controls through the same strict legacy scalar boundary:
+    // the descriptor is bound once by sort-by policy 0 and is never rebound,
+    // renewed or repaired by uniqueness.
+    const mark=()=>[copies,drops,nextPayload,nextVec,vectors.size],shape=0x3110n;
+    let rows=env.spx_vec_with_capacity(1,6n);
+    if(!rows||env.spx_vec_sort_by_v1(rows,41n,shape,0n)!==rows)throw Error('Copy descriptor bind');
+    for(const word of [5n,1n,5n,2n])rows=env.spx_vec_push(rows,1,word);
+    const owner=vectorValue(rows),stored=owner.values,before=mark();
+    if(env.spx_vec_unique_by_v1(rows,41n,shape,0n)!==0)throw Error('Copy duplicate was not found');
+    if(env.spx_vec_unique_by_v1(rows,41n,shape,1n)!==1)throw Error('Copy distinct keys were not unique');
+    if(mark().some((item,i)=>item!==before[i])||vectorValue(rows)!==owner||owner.values!==stored
+       ||stored.join()!=='5,1,5,2')
+      throw Error('Copy uniqueness changed rows or authority');
+    for(const [identity,forged,position] of [[42n,shape,0n],[41n,shape^1n,0n],[41n,shape,2n],[41n,shape,-1n]]){
+      let rejected=false;
+      try{env.spx_vec_unique_by_v1(rows,identity,forged,position)}catch(error){rejected=true}
+      if(!rejected)throw Error('forged Copy uniqueness facts were accepted');
+    }
+    const consumed=rows;
+    for(const word of [7n,3n])rows=env.spx_vec_push(rows,1,word);
+    let stale=false;
+    try{env.spx_vec_unique_by_v1(consumed,41n,shape,0n)}catch(error){stale=true}
+    if(!stale)throw Error('stale Copy generation permitted uniqueness');
+    env.spx_vec_drop(rows);
+    let floating=env.spx_vec_with_capacity(1,4n);
+    env.spx_vec_sort_by_v1(floating,43n,0x6110n,0n);
+    for(const word of [1n,0n,2n,0n])floating=env.spx_vec_push(floating,1,word);
+    let floatRefused=false;
+    try{env.spx_vec_unique_by_v1(floating,43n,0x6110n,1n)}catch(error){floatRefused=true}
+    if(!floatRefused)throw Error('floating Copy key entered the v1 uniqueness profile');
+    env.spx_vec_drop(floating);
+    const unbound=env.spx_vec_with_capacity(1,2n);
+    let unboundRefused=false;
+    try{env.spx_vec_unique_by_v1(unbound,41n,shape,0n)}catch(error){unboundRefused=true}
+    if(!unboundRefused||vectorValue(unbound).shape!==undefined)throw Error('Copy uniqueness lazily bound an authority');
+    env.spx_vec_drop(unbound);
+    if(vectors.size||iterators.size||payloads.size||copies!==drops)throw Error('Copy uniqueness controls leaked');
   }
   if(refusal==='unique-controls'){
     // Independent host controls over exact bound facts; every refusal leaves

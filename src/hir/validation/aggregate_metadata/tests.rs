@@ -201,6 +201,25 @@ fn borrowed_aggregate_metadata_removes_actual_owned_acquisition_payload_through_
         panic!("actual Option instance")
     };
     assert_eq!(arguments.as_slice(), &[ResolvedType::I64]);
+    // Independent shape/name census of the three actual source directories.
+    let packet = record_fields(&program, &record).unwrap();
+    assert_eq!(packet.len(), 2);
+    assert_eq!(packet[0].name, "label");
+    assert_eq!(packet[1].name, "n");
+    let choice = variant_cases(&program, &variant).unwrap();
+    assert_eq!(choice.len(), 2);
+    assert_eq!(choice[0].name, "A");
+    assert_eq!(choice[1].name, "B");
+    assert_eq!(choice[0].fields.len(), 1);
+    assert_eq!(choice[0].fields[0].name, "n");
+    assert!(choice[1].fields.is_empty());
+    let option = variant_cases(&program, generic_id).unwrap();
+    assert_eq!(option.len(), 2);
+    let some = option.iter().find(|case| case.name == "Some").unwrap();
+    let none = option.iter().find(|case| case.name == "None").unwrap();
+    assert!(none.fields.is_empty());
+    assert_eq!(some.fields.len(), 1);
+    assert_eq!(some.fields[0].name, "value");
     assert!(
         resolved_field_declaration_owned_capacity(&record_fields(&program, &record).unwrap()[0])
             > 0
@@ -272,15 +291,23 @@ fn borrowed_aggregate_metadata_removes_actual_owned_acquisition_payload_through_
                 drop((record_copy, variant_copy, generic_copy));
             }
         });
-        // Literal Packet/Choice directories, the actual Option argument Vec and
-        // three declaration-ID payloads are removed by borrowed acquisition.
+        // Packet owns two field slots; Choice and Option each own two case
+        // slots and one one-field directory. All eight nonempty names clone.
+        // The actual singleton Option argument Vec is the remaining type term;
+        // declaration-ID clones request no text/backing. This is an independent
+        // literal lower bound, not the observed total or a capacity estimator.
         let literal = count
-            * (2 * std::mem::size_of::<ResolvedFieldDeclaration>()
-                + 2 * std::mem::size_of::<ResolvedVariantCaseDeclaration>()
+            * (4 * std::mem::size_of::<ResolvedFieldDeclaration>()
+                + 4 * std::mem::size_of::<ResolvedVariantCaseDeclaration>()
                 + std::mem::size_of::<ResolvedType>()
-                + "packet".len()
-                + "choice".len()
-                + generic_id.as_str().len());
+                + "label".len()
+                + "n".len()
+                + "A".len()
+                + "B".len()
+                + "n".len()
+                + "Some".len()
+                + "None".len()
+                + "value".len());
         assert!(!owned.invalid);
         assert!(owned.allocations >= 6 * count);
         assert!(owned.allocated >= literal);

@@ -35,16 +35,21 @@ fn descriptor_storage_and_current_identity_bytes_have_literal_exact_short_and_dr
         "declaration:8:app.main:expression:16:body.arg.0.arg.1",
     ];
     // Independent actual inventory: Box descriptor, two child carriers, one
-    // Vec type argument, three Row ID clones, one Vec ID, sentinel and3IDs.
+    // Vec type argument, three Row ID clones, one Vec ID and 3 IDs. The
+    // sentinel is a fixed compiler identity and owns no bytes.
     let storage = Layout::new::<RowLoan>().size()
         + 2 * std::mem::size_of::<ResolvedExpr>()
         + std::mem::size_of::<ResolvedType>()
         + 3 * "app.row".len()
         + "core.vec".len()
-        + UNBOUND_CALLEE.len()
         + identities.iter().map(|id| id.len()).sum::<usize>();
     assert_eq!(required(&execution, &row, path), Some(storage));
+    // The shared type-clone debit still prices the four declaration clones
+    // (it is also the validator's); shared backings make them allocation-free.
+    let shared_clones = 3 * "app.row".len() + "core.vec".len();
     let exact = storage + 3 * ExpressionId::OWNED_ALLOCATION_CARRIER_BYTES;
+    // Independent owned-text oracle for the sentinel's value, built unobserved.
+    let sentinel_oracle = DeclarationId::new(UNBOUND_CALLEE.to_owned());
     let (((), observed), refused, charged, receipt) = with_limit_usage_refusal(exact, || {
         measure(|| {
             let node = materialize(&execution, span, path, &row).unwrap();
@@ -53,6 +58,9 @@ fn descriptor_storage_and_current_identity_bytes_have_literal_exact_short_and_dr
                 panic!("descriptor")
             };
             assert!(!loan.is_bound());
+            assert!(loan.callee.is_compiler_static());
+            assert_eq!(loan.callee.owned_allocation_bytes(), 0);
+            assert_eq!(loan.callee, sentinel_oracle);
             assert_eq!(loan.parameter, row.bound);
             assert_eq!(args.len(), 2);
             assert_eq!(args[0].id.as_str(), identities[1]);
@@ -64,7 +72,7 @@ fn descriptor_storage_and_current_identity_bytes_have_literal_exact_short_and_dr
     assert_eq!(charged, exact);
     assert_eq!(receipt, None);
     assert!(!observed.invalid);
-    assert_eq!(observed.allocated, exact);
+    assert_eq!(observed.allocated, exact - shared_clones);
     assert_eq!(observed.live, 0);
     for limit in [storage - 1, exact - 1] {
         let (((), observed), refused, charged, receipt) = with_limit_usage_refusal(limit, || {

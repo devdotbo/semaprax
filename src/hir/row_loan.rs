@@ -19,7 +19,7 @@ pub const ROW_LOAN_V1: &str = "semaprax.row-loan.v1";
 
 /// Resolution-time placeholder callee. Validation refuses it everywhere, so a
 /// row reaching any position other than a bound ordinary call fails closed.
-const UNBOUND_CALLEE: &str = "core.row_loan.unbound";
+pub(super) const UNBOUND_CALLEE: &str = "core.row_loan.unbound";
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum RowLoanVersion {

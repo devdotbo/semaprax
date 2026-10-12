@@ -1,9 +1,16 @@
 //! Saved add034 expression-fact producer, independent of new policies.
 use super::*;
 mod capacity;
+#[derive(Clone)]
+pub(in crate::cleanup_plan::replay::expression_facts) struct CallFact {
+    pub(in crate::cleanup_plan::replay::expression_facts) callee: DeclarationId,
+    pub(in crate::cleanup_plan::replay::expression_facts) instance: Option<FunctionInstanceId>,
+    pub(in crate::cleanup_plan::replay::expression_facts) arguments: Vec<ExpressionId>,
+    pub(in crate::cleanup_plan::replay::expression_facts) type_arguments: Vec<ResolvedType>,
+}
 type FactFrame<'a> = Option<(expression_children::ReplayChildCursor<'a>, bool)>;
 
-pub(super) fn expression_facts(
+pub(in crate::cleanup_plan::replay::expression_facts) fn expression_facts(
     function: &ResolvedFunction,
 ) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, Diagnostic> {
     let mut facts = BTreeMap::new();
@@ -20,7 +27,7 @@ pub(super) fn expression_facts(
 
 /// The selected entry retains this independently authenticated map across census
 /// and structural replay. The legacy entry keeps its existing allocations.
-pub(super) fn expression_facts_with_reservation(
+pub(in crate::cleanup_plan::replay::expression_facts) fn expression_facts_with_reservation(
     function: &ResolvedFunction,
     reservation: &mut crate::cleanup_plan::replay::physical_storage::PhysicalReservation,
 ) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, Diagnostic> {

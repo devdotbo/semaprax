@@ -15,8 +15,11 @@ fn tiny() -> ResolvedProgram {
     )
     .unwrap()
 }
-fn session<'a>(program: &'a ResolvedProgram, limit: usize) -> Session<'a> {
-    let function = &program.functions[0];
+fn session<'a>(
+    program: &'a dyn ReplayContext,
+    function: &'a ResolvedFunction,
+    limit: usize,
+) -> Session<'a> {
     let acquired = match Acquired::try_acquire(PhysicalReservation::new(limit), FORM) {
         Ok(acquired) => acquired,
         Err(_) => panic!("paid carrier"),
@@ -34,6 +37,11 @@ fn session<'a>(program: &'a ResolvedProgram, limit: usize) -> Session<'a> {
 #[test]
 fn paid_fact_cursor_and_growth_exact_short_keep_first_receipt_and_drop_one_owner() {
     let program = tiny();
+    // Standalone resolution retains unused generic prelude declarations. The
+    // selected primitive receiver lends the actual authored module projection,
+    // exactly as the existing Session owning controls, rather than admitting
+    // the unrelated prelude inventory.
+    let context = primitive_fixture::Context::new(&program);
     let function = &program.functions[0];
     let ResolvedExprKind::Block { statements, tail } = &function.body.kind else {
         panic!("block")
@@ -43,7 +51,7 @@ fn paid_fact_cursor_and_growth_exact_short_keep_first_receipt_and_drop_one_owner
     // Constructor baseline is measured separately, not called an independent
     // formula. Added fact requests are the independent two-node literal census.
     let (_, refused, base) = crate::bounded_output::with_limit_usage(usize::MAX, || {
-        let session = session(&program, usize::MAX);
+        let session = session(&context, &program.functions[0], usize::MAX);
         let base = session.usage().1;
         drop(session);
         base
@@ -73,7 +81,7 @@ fn paid_fact_cursor_and_growth_exact_short_keep_first_receipt_and_drop_one_owner
     ] {
         let (_, overflowed, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
             let (_, observed) = measure(|| {
-                let mut selected = session(&program, limit);
+                let mut selected = session(&context, &program.functions[0], limit);
                 let backing = selected.report.as_ref().unwrap().backing();
                 let text = selected.budget.refusal_text.as_ref().unwrap().as_ptr();
                 let ledger = selected.budget.physical.as_deref().unwrap() as *const _;
@@ -126,6 +134,11 @@ fn paid_fact_cursor_and_growth_exact_short_keep_first_receipt_and_drop_one_owner
 #[test]
 fn paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts() {
     let program = tiny();
+    // Standalone resolution retains unused generic prelude declarations. The
+    // selected primitive receiver lends the actual authored module projection,
+    // exactly as the existing Session owning controls, rather than admitting
+    // the unrelated prelude inventory.
+    let context = primitive_fixture::Context::new(&program);
     let mut duplicate = program.functions[0].clone();
     let root = duplicate.body.id.clone();
     let ResolvedExprKind::Block { tail, .. } = &mut duplicate.body.kind else {
@@ -134,7 +147,7 @@ fn paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts() {
     tail.id = root.clone();
     let (_, overflowed, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
         let (_, observed) = measure(|| {
-            let mut selected = session(&program, usize::MAX);
+            let mut selected = session(&context, &program.functions[0], usize::MAX);
             let original_ledger = selected.budget.physical.as_deref().unwrap() as *const _;
             let original_report = selected.report.as_ref().unwrap().backing();
             // This producer census is not HIR admission. It is reached by both
@@ -165,12 +178,13 @@ fn paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts() {
         assert_eq!(observed.live, 0);
         assert!(!observed.invalid);
         // Actual complete scalar and lexical driver success/work/backing parity.
-        let mut old = session(&program, usize::MAX);
-        let mut paid = session(&program, usize::MAX);
+        let mut old = session(&context, &program.functions[0], usize::MAX);
+        let mut paid = session(&context, &program.functions[0], usize::MAX);
         old.validate_scalar(&program.functions[0]).unwrap();
         paid.validate_scalar_paid(&program.functions[0]).unwrap();
         assert_eq!(old.usage(), paid.usage());
         let lexical = super::program();
+        let lexical_context = primitive_fixture::Context::new(&lexical);
         let function = super::members(&lexical)[0];
         let acquire = || {
             let acquired = Acquired::try_acquire(PhysicalReservation::new(usize::MAX), FORM)
@@ -180,7 +194,7 @@ fn paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts() {
                 .prepare(function)
                 .ok()
                 .unwrap()
-                .into_paid_session(&lexical, function)
+                .into_paid_session(&lexical_context, function)
                 .ok()
                 .unwrap()
         };

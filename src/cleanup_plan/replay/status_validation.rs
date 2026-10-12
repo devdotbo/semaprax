@@ -89,10 +89,10 @@ pub(super) fn validate_core<E: semantic_refusal::Error>(
                         budget,
                     )?
                 } else {
-                    &call.callee == callee
+                    call.callee.as_ref() == callee
                 };
                 #[cfg(not(test))]
-                let agrees = &call.callee == callee;
+                let agrees = call.callee.as_ref() == callee;
                 if !agrees {
                     return Err(replay_error(
                         function,

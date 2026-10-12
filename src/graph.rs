@@ -3894,19 +3894,21 @@ fn render_graph_json(
     concrete_ownership: bool,
 ) -> Result<String, Diagnostic> {
     let mut selected_types = selected_types.clone();
+    // Borrowed-text removals: the set is keyed by identity bytes, so no
+    // temporary lookup identity is constructed.
     if !prelude_binding::uses_vec(program) {
-        selected_types.remove(&DeclarationId::new(crate::prelude::VEC_ID));
+        selected_types.remove(crate::prelude::VEC_ID);
     }
     if !prelude_binding::uses_box(program) {
-        selected_types.remove(&DeclarationId::new(crate::prelude::BOX_ID));
+        selected_types.remove(crate::prelude::BOX_ID);
     }
     if !prelude_binding::uses_iterator(program) {
-        selected_types.remove(&DeclarationId::new(crate::iterator_ops::ITER_ID));
-        selected_types.remove(&DeclarationId::new(crate::iterator_ops::STEP_ID));
+        selected_types.remove(crate::iterator_ops::ITER_ID);
+        selected_types.remove(crate::iterator_ops::STEP_ID);
     }
     if !prelude_binding::uses_list(program) {
-        selected_types.remove(&DeclarationId::new(crate::list_ops::LIST_ID));
-        selected_types.remove(&DeclarationId::new(crate::list_ops::STEP_ID));
+        selected_types.remove(crate::list_ops::LIST_ID);
+        selected_types.remove(crate::list_ops::STEP_ID);
     }
     let mut selected_interfaces = match view {
         GraphView::Module { .. } => program

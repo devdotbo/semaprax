@@ -160,42 +160,14 @@ fn byte_for_matches_manual_loop_and_oracle_on_every_engine() {
         }
     }
 
-    if Command::new("node").arg("--version").output().is_ok() {
-        for (name, program, outcome) in [
-            (
-                "success",
-                &program,
-                format!("if(value!=={expected}n)throw Error('semantic:'+value);"),
-            ),
-            (
-                "failure",
-                &failure,
-                "throw Error('body failure returned:'+value);".to_owned(),
-            ),
-        ] {
-            let web = root.join(format!("web-{name}"));
-            semaprax::wasm::build_web(program, &web).unwrap();
-            std::fs::write(web.join("package.json"), "{\"type\":\"module\"}\n").unwrap();
-            std::fs::write(
-                web.join("probe.mjs"),
-                format!(
-                    "import {{readFile}} from 'node:fs/promises';\nimport {{instantiateBytes}} from './semaprax.js';\nconst bytes=await readFile('./app.wasm');\nfor(let i=0;i<4;i+=1){{const {{instance}}=await instantiateBytes(bytes);let value;try{{value=instance.exports.semaprax_main();}}catch(error){{if('{name}'==='failure')continue;throw error;}}{outcome}}}\nconsole.log('byte-slice-for-ok');\n"
-                ),
-            )
-            .unwrap();
-            let output = Command::new("node")
-                .arg("probe.mjs")
-                .current_dir(&web)
-                .output()
-                .unwrap();
-            assert!(
-                output.status.success(),
-                "{name}: stdout={} stderr={}",
-                String::from_utf8_lossy(&output.stdout),
-                String::from_utf8_lossy(&output.stderr)
-            );
-            assert_eq!(output.stdout, b"byte-slice-for-ok\n");
-        }
+    // The complete fixture selects aggregate byte-data lowering. The legacy
+    // scalar Web package deliberately has no String runtime; retain its refusal
+    // rather than adding an authored aggregate merely to change that selector.
+    let refused = semaprax::wasm::build_web(&program, &root.join("legacy-string")).unwrap_err();
+    assert_eq!(refused.code, "SPX-W116");
+    for (name, program, value) in [("success", &program, expected), ("failure", &failure, 0)] {
+        let module = semaprax::wasm::emit_module(program).unwrap();
+        raw_wasm(&root, name, &module, value);
     }
     let _ = std::fs::remove_dir_all(&root);
 }
@@ -205,17 +177,79 @@ fn byte_for_view_traversal_materializes_no_buffer_on_core_wasm() {
     let program = parse(VIEW_ONLY, Path::new("byte-slice-traversal-view-only.spx")).unwrap();
     let module = semaprax::wasm::emit_module(&program).unwrap();
     assert_eq!(module, semaprax::wasm::emit_module(&program).unwrap());
-    assert!(!module.windows(14).any(|window| window == b"spx_bytes_copy"));
+    // Copy is a mandatory aggregate-byte ABI import, even when unused. Prove
+    // that no current function body calls its actual imported function index.
+    let mut copy = None;
+    let mut imports = Vec::new();
+    for payload in wasmparser::Parser::new(0).parse_all(&module) {
+        if let wasmparser::Payload::ImportSection(section) = payload.unwrap() {
+            for import in section {
+                let import = import.unwrap();
+                assert!(matches!(import.ty, wasmparser::TypeRef::Func(_)));
+                assert_eq!(import.module, "env");
+                if import.name == "spx_bytes_copy" {
+                    assert!(copy.replace(imports.len() as u32).is_none());
+                }
+                imports.push(import.name.to_owned());
+            }
+        }
+    }
+    assert_eq!(
+        imports,
+        [
+            "spx_add",
+            "spx_sub",
+            "spx_mul",
+            "spx_div",
+            "spx_rem",
+            "spx_neg",
+            "spx_contract_fail",
+            "spx_bytes_copy",
+            "spx_bytes_get",
+            "spx_bytes_drop",
+            "spx_bytes_as_slice"
+        ]
+    );
+    let copy = copy.expect("mandatory aggregate byte copy import");
     for payload in wasmparser::Parser::new(0).parse_all(&module) {
         if let wasmparser::Payload::CodeSectionEntry(body) = payload.unwrap() {
             let mut operators = body.get_operators_reader().unwrap();
             while !operators.eof() {
+                let operator = operators.read().unwrap();
+                assert!(
+                    !matches!(operator, wasmparser::Operator::Call { function_index } if function_index == copy)
+                );
                 assert!(!matches!(
-                    operators.read().unwrap(),
+                    operator,
                     wasmparser::Operator::MemoryCopy { .. }
                         | wasmparser::Operator::MemoryGrow { .. }
                 ));
             }
         }
     }
+    let root = std::env::temp_dir().join(format!("semaprax-byte-for-view-{}", std::process::id()));
+    std::fs::create_dir_all(&root).unwrap();
+    raw_wasm(&root, "view", &module, 6);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+fn raw_wasm(root: &Path, name: &str, module: &[u8], expected: i64) {
+    let wasm = root.join(format!("{name}.wasm"));
+    let script = root.join("raw-byte-for.mjs");
+    std::fs::write(&wasm, module).unwrap();
+    std::fs::write(&script, include_str!("byte_slice_for_runtime/host.mjs")).unwrap();
+    let output = Command::new("node")
+        .arg(&script)
+        .arg(&wasm)
+        .arg(name)
+        .arg(expected.to_string())
+        .output()
+        .expect("Node is required for byte traversal evidence");
+    assert!(
+        output.status.success(),
+        "{name}: stdout={} stderr={}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(output.stdout, b"byte-slice-for-ok\n");
 }

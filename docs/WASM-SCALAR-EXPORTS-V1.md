@@ -304,3 +304,14 @@ cross-realm identity, CSP generation, SSR/hydration, UI dialect, provenance,
 signing, or production readiness. The internal-body profile is not an aggregate
 package or public ABI; its admitted cross-package fixture has hosted-green release evidence while
 retaining scalar-only public signatures.
+
+### Authenticated lexical completion expressions
+
+After complete independent HIR validation, the scalar expression admission walk
+accepts Value/Never only for lexical exits and their Block/If completion carriers.
+This is reachability metadata, not a public scalar type. Never remains excluded
+from scalar signatures, binding storage and the ABI; ordinary literals forged to
+Never and ownership-bearing completion remain rejected by full HIR validation.
+The original terminated-guard persisted Project/native/Wasm owner remains the
+runtime acceptance control. The new scalar export completion/forgery body is
+source-authored and unexecuted; it does not broaden aggregate or loan admission.

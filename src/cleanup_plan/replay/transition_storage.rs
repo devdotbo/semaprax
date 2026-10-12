@@ -3,7 +3,7 @@
 use super::*;
 
 #[allow(clippy::too_many_arguments)]
-pub(super) fn execute(
+pub(super) fn execute<E: semantic_refusal::Error>(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     transition: &CleanupTransition,
@@ -12,12 +12,13 @@ pub(super) fn execute(
     leaves: &Leaves,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
     budget: &mut ReplayBudget,
-) -> Result<(), Diagnostic> {
+) -> Result<(), E> {
     if state.published {
         return Err(replay_error(
             function,
             "cleanup transition occurs after result publication",
-        ));
+        )
+        .into());
     }
     if state.selected_failure.is_some()
         && !matches!(transition, CleanupTransition::SelectFailure { .. })
@@ -25,7 +26,8 @@ pub(super) fn execute(
         return Err(replay_error(
             function,
             "ordinary cleanup transition occurs after failure selection",
-        ));
+        )
+        .into());
     }
     if state.pending_failure.is_some()
         && !matches!(transition, CleanupTransition::SelectFailure { .. })
@@ -33,13 +35,15 @@ pub(super) fn execute(
         return Err(replay_error(
             function,
             "operation failure is not selected before another transition",
-        ));
+        )
+        .into());
     }
     if !state.conditional_variants.is_empty() {
         return Err(replay_error(
             function,
             "selected primitive replay has conditional aggregate state",
-        ));
+        )
+        .into());
     }
     match transition {
         CleanupTransition::Initialize { destination, .. } => {
@@ -50,7 +54,8 @@ pub(super) fn execute(
                 return Err(replay_error(
                     function,
                     "initialize transition initializes an empty or live cleanup place",
-                ));
+                )
+                .into());
             }
             budget.reserve_vec(
                 function,
@@ -119,21 +124,15 @@ pub(super) fn execute(
                     budget,
                 )? {
                     if !state.live_order.contains(&flag) {
-                        return Err(replay_error(
+                        return Err(E::structural(
                             function,
-                            format!(
-                                "call `{call}` atomically consumes dead argument flag {}",
-                                flag.0
-                            ),
+                            semantic_refusal::Atom::DeadCallFlag(call.clone(), flag),
                         ));
                     }
                     if consumed.contains(&flag) {
-                        return Err(replay_error(
+                        return Err(E::structural(
                             function,
-                            format!(
-                                "call `{call}` atomically consumes argument flag {} twice",
-                                flag.0
-                            ),
+                            semantic_refusal::Atom::RepeatedCallFlag(call.clone(), flag),
                         ));
                     }
                     budget.reserve_btree_node::<LivenessFlagId, ()>(
@@ -154,15 +153,13 @@ pub(super) fn execute(
                 return Err(replay_error(
                     function,
                     "failure selection is not write-once during path replay",
-                ));
+                )
+                .into());
             }
             if state.pending_failure.as_ref() != Some(source) {
-                return Err(replay_error(
+                return Err(E::structural(
                     function,
-                    format!(
-                        "selected failure `{}` does not match the pending failing edge",
-                        source.expression
-                    ),
+                    semantic_refusal::Atom::MismatchedFailure(source.expression.clone()),
                 ));
             }
             state.pending_failure = None;
@@ -173,13 +170,15 @@ pub(super) fn execute(
                 return Err(replay_error(
                     function,
                     "Copy aggregate result is staged more than once on one path",
-                ));
+                )
+                .into());
             }
             if !state.live_order.is_empty() {
                 return Err(replay_error(
                     function,
                     "Copy aggregate result staging carries resource liveness",
-                ));
+                )
+                .into());
             }
             budget.reserve_clone(function, source, "staged Copy producer")?;
             state.staged_copy_result = Some(source.clone());
@@ -190,7 +189,8 @@ pub(super) fn execute(
             return Err(replay_error(
                 function,
                 "selected primitive replay excludes conditional aggregate transitions",
-            ));
+            )
+            .into());
         }
     }
     Ok(())

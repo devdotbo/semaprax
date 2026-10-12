@@ -3,7 +3,40 @@
 use super::*;
 use crate::cache_codec::{codec_enum, codec_struct, codec_tuple, Codec, Decoder, Encoder};
 
-codec_tuple!(DeclarationId(0));
+// Same wire as the former owned-String tuple: one nested node around text.
+// Every identity is valid, so encoding has no refusal case of its own.
+impl Codec for DeclarationId {
+    fn encode(&self, encoder: &mut Encoder) -> crate::cache_codec::Result<()> {
+        encoder.nested(|encoder| encoder.text(self.as_str()))
+    }
+
+    /// Decodes borrowed wire text straight into the shared backing; no
+    /// temporary `String` is made. The backing is charged to two independent
+    /// ledgers: the decoder's own allocation cap, and the decode caller's
+    /// active output budget, passed explicitly as the construction payer. A
+    /// refusal by either returns an error and constructs nothing.
+    fn decode(decoder: &mut Decoder<'_>) -> crate::cache_codec::Result<Self> {
+        decoder.nested(|decoder| {
+            let text = decoder.text()?;
+            let refused = || {
+                crate::cache_codec::capacity(
+                    "cache codec declaration identity backing allocation was refused",
+                )
+            };
+            let Some(backing) = DeclarationId::shared_backing_bytes(text.len()) else {
+                return Err(refused());
+            };
+            decoder.allocate(backing)?;
+            DeclarationId::paid_borrowed(text, |bytes| {
+                if crate::bounded_output::reserve_active_required(bytes) {
+                    Ok(())
+                } else {
+                    Err(refused())
+                }
+            })
+        })
+    }
+}
 codec_tuple!(FunctionInstanceId(0));
 impl Codec for ValueId {
     fn encode(&self, encoder: &mut Encoder) -> crate::cache_codec::Result<()> {

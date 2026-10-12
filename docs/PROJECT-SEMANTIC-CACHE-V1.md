@@ -273,3 +273,20 @@ six-function counter witness, actual ordinal allocation/Drop scope and unchanged
 all-input owned sidecar oracle with exact/one-short/sticky controls. These are
 source controls pending qualification; they do not establish total diagnostic
 funding or an application fit/performance result.
+
+### Package scalar publication discovery (source-only followup)
+
+`WorkspaceGraphBuild::linked_package_scalar_exports` borrows current retained
+function bodies while building its available-function map. Discovery still checks
+every body against exact declaration path/module/kind facts and refuses duplicates
+before checking exports. Reachability and byte-sorted publication are unchanged.
+Only the reachable functions are cloned at the final owning linker boundary;
+previously discovery also deep-cloned every available function, including unused
+bodies, before cloning the reachable functions a second time.
+
+The two `workspace_graph::tests::package_link_borrowed` owners compare the saved
+owned implementation's complete wire/errors, declaration and duplicate forgeries,
+and actual discovery through owning publication and Drop for 1/8/32 unused bodies.
+The physical observer excludes workspace preparation and does not establish cache
+acquisition funding or application fit. No forecast, cap or persisted wire changes
+follow from this subset. Qualification remains pending.

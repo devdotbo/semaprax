@@ -42,6 +42,55 @@ fn bindings(function: &FunctionExecutionId) -> (ResolvedBinding, ResolvedBinding
     (view, counter, body)
 }
 
+/// The five declaration identities one receiver constructs, in order.
+fn declarations(receiver: &ResolvedExpr) -> [&DeclarationId; 5] {
+    let ResolvedExprKind::Match { scrutinee, arms, .. } = &receiver.kind else {
+        panic!("receiver match")
+    };
+    let ResolvedType::Nominal { declaration, .. } = &scrutinee.ty else {
+        panic!("Option<u8> result type")
+    };
+    let ResolvedExprKind::Call { callee, .. } = &scrutinee.kind else {
+        panic!("byte_get call")
+    };
+    let [ResolvedMatchArm {
+        pattern:
+            ResolvedMatchPattern::Variant {
+                variant,
+                case,
+                fields,
+            },
+        ..
+    }] = arms.as_slice()
+    else {
+        panic!("one Some arm")
+    };
+    [callee, declaration, variant, case, &fields[0].field]
+}
+
+#[test]
+fn receiver_declarations_are_compiler_identities_equal_to_owned_text() {
+    let function = &owners()[0];
+    let (view, counter, _) = bindings(function);
+    let span = Span::default();
+    // Independent owned-text oracle, in receiver order.
+    let oracle = [
+        crate::byte_ops::GET_ID,
+        crate::prelude::OPTION_ID,
+        crate::prelude::OPTION_ID,
+        crate::prelude::OPTION_SOME_ID,
+        crate::prelude::OPTION_SOME_VALUE_ID,
+    ]
+    .map(|text| DeclarationId::new(text.to_owned()));
+    let receiver = super::receiver(function, ITEM_VALUE, &view, &counter, span, span);
+    for (declaration, oracle) in declarations(&receiver).into_iter().zip(&oracle) {
+        assert!(declaration.is_compiler_static());
+        assert_eq!(declaration.owned_allocation_bytes(), 0);
+        assert_eq!(declaration, oracle);
+        assert_eq!(declaration.as_str(), oracle.as_str());
+    }
+}
+
 #[test]
 fn receiver_retains_exactly_its_debited_backing_and_drops_all_of_it() {
     for function in owners() {

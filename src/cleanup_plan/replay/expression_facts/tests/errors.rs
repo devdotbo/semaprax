@@ -1,7 +1,7 @@
 //! Legacy text/order oracle and inline selected fact receipts.
 use super::*;
 use crate::cleanup_plan::replay::expression_facts::errors as policies;
-mod old;
+pub(in crate::cleanup_plan::replay::expression_facts) mod old;
 
 #[test]
 fn typed_fact_policy_matches_saved_legacy_text_order_and_full_facts() {
@@ -15,7 +15,7 @@ fn typed_fact_policy_matches_saved_legacy_text_order_and_full_facts() {
         let current =
             expression_facts_with_reservation(original, &mut PhysicalReservation::new(usize::MAX))
                 .unwrap();
-        same(&old, &current);
+        same_owned(&old, &current);
     }
     for name in [
         "fact.read",
@@ -112,4 +112,26 @@ fn typed_fact_policy_matches_saved_legacy_text_order_and_full_facts() {
     assert_eq!(receipt.source, deep.body.id);
     assert!(receipt.expression.is_none());
     assert!(!receipt.physical());
+}
+
+pub(in crate::cleanup_plan::replay::expression_facts) fn same_owned(
+    old: &BTreeMap<ExpressionId, Option<old::CallFact>>,
+    current: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
+) {
+    assert_eq!(old.len(), current.len());
+    for (key, old) in old {
+        match (old, current.get(key).expect("same complete identity set")) {
+            (None, None) => {}
+            (Some(old), Some(current)) => {
+                assert_eq!(&old.callee, current.callee.as_ref());
+                assert_eq!(old.instance.as_ref(), current.instance);
+                assert!(old.arguments.iter().eq(current.arguments.iter()));
+                assert_eq!(
+                    old.type_arguments.as_slice(),
+                    current.type_arguments.as_slice()
+                );
+            }
+            _ => panic!("saved call fact kind differs"),
+        }
+    }
 }

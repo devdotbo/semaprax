@@ -204,12 +204,23 @@ fn endpoint_origin_payload_is_moved_once_and_late_refusals_keep_saved_priority()
     // validation, exactly as the saved independent constructor did.
     let mut plan = crate::loan_plan::build_plan(&program, function).unwrap();
     plan.loans[0].start.phase = LoanPointPhase::After;
+    assert!(plan.loans.iter().all(|loan| loan.id != LoanId(255)));
     let endpoint = plan
         .endpoints
         .iter_mut()
-        .find(|endpoint| !endpoint.live_before.is_empty())
+        .find(|endpoint| match endpoint.point.phase {
+            LoanPointPhase::Before => !endpoint.live_before.is_empty(),
+            LoanPointPhase::After => !endpoint.live_after.is_empty(),
+        })
         .unwrap();
-    endpoint.live_before = vec![LoanId(255)].into_boxed_slice();
+    // Mutate the endpoint's active phase, rather than an inactive Before
+    // inventory on an After endpoint. The malformed start remains present;
+    // the authenticated unknown endpoint must keep its original priority.
+    let active = match endpoint.point.phase {
+        LoanPointPhase::Before => &mut endpoint.live_before,
+        LoanPointPhase::After => &mut endpoint.live_after,
+    };
+    *active = vec![LoanId(255)].into_boxed_slice();
     let mut empty = Inventory {
         ids: BTreeMap::new(),
         liveness: BTreeMap::new(),

@@ -170,15 +170,39 @@ fn subtree_resolution_and_independent_replay_use_exact_sticky_builder_budget_thr
         crate::bounded_output::with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, run);
     wide.unwrap();
     assert!(!exhausted && required > 0);
+    // Fixed Copy instrumentation records the existing whole observation; it
+    // excludes no stage and grants no allocation credit or semantic authority.
+    let mut stages = [crate::test_allocation_observer::Metrics::default(); 5];
+    let mut debits = [0usize; 5];
     let ((exact, observed), exhausted, spent) =
         crate::bounded_output::with_limit_usage(required, || {
-            crate::test_allocation_observer::measure(run)
+            crate::test_allocation_observer::measure(|| {
+                let mut snapshot = |index| {
+                    stages[index] = crate::test_allocation_observer::current_metrics();
+                    debits[index] = crate::bounded_output::active_limit().unwrap()
+                        - crate::bounded_output::active_remaining().unwrap();
+                };
+                snapshot(0);
+                let program = hir::resolve(&ast)?;
+                snapshot(1);
+                hir::validate(&program).map_err(|d| vec![d])?;
+                snapshot(2);
+                validate_structure(&program, function(&program, "envelope.consume"))
+                    .map_err(|d| vec![d])?;
+                snapshot(3);
+                drop(program);
+                snapshot(4);
+                Ok::<(), Vec<crate::diagnostic::Diagnostic>>(())
+            })
         });
     exact.unwrap();
     assert!(!exhausted);
     assert_eq!(spent, required);
     assert!(!observed.invalid && observed.live == 0);
-    assert!(observed.allocated <= required && observed.highwater <= required);
+    assert!(
+        observed.allocated <= required && observed.highwater <= required,
+        "whole observation {observed:?}, required {required}, stages initial/resolve/HIR/replay/Drop {stages:?}, cumulative debits {debits:?}"
+    );
     // Required is the measured implementation debit, not an analytical total.
     // The separate prefix/shape owner above supplies independent literal facts.
     let ((first, retry), exhausted, _) =

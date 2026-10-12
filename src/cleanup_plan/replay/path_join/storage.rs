@@ -1,17 +1,12 @@
 //! Precharge actual owned clone carriers. Shared identity Arcs allocate nothing
-//! when cloned; string-backed declaration identities and owned containers do.
+//! when cloned; projection/type/case containers retain their actual backing.
 use super::*;
 use std::mem::size_of;
 fn array<T>(count: usize) -> Option<usize> {
     count.checked_mul(size_of::<T>())
 }
 fn place(place: &CleanupPlace) -> Option<usize> {
-    place
-        .projections
-        .iter()
-        .try_fold(array::<DeclarationId>(place.projections.len())?, |n, id| {
-            n.checked_add(id.as_str().len())
-        })
+    array::<DeclarationId>(place.projections.len())
 }
 fn ty(ty: &ResolvedType) -> Option<usize> {
     let mut stack = [None; crate::cache_codec::MAX_DEPTH + 1];
@@ -28,14 +23,8 @@ fn ty(ty: &ResolvedType) -> Option<usize> {
                     array::<ResolvedType>(parameters.len())?
                         .checked_add(size_of::<ResolvedType>())?
                 }
-                ResolvedType::Nominal {
-                    declaration,
-                    arguments,
-                } => declaration
-                    .as_str()
-                    .len()
-                    .checked_add(array::<ResolvedType>(arguments.len())?)?,
-                ResolvedType::TypeParameter { owner, .. } => owner.as_str().len(),
+                ResolvedType::Nominal { arguments, .. } => array::<ResolvedType>(arguments.len())?,
+                ResolvedType::TypeParameter { .. } => 0,
                 ResolvedType::Never
                 | ResolvedType::Unit
                 | ResolvedType::I64
@@ -85,32 +74,13 @@ fn staged(source: &StagedCopyResultSource) -> Option<usize> {
         StagedCopyResultSource::TryResidual {
             source_instance,
             target_instance,
-            result,
-            ok_case,
-            ok_field,
-            err_case,
-            err_field,
             ..
-        } => [result, ok_case, ok_field, err_case, err_field]
-            .into_iter()
-            .try_fold(
-                ty(source_instance)?.checked_add(ty(target_instance)?)?,
-                |n, id| n.checked_add(id.as_str().len()),
-            ),
-        StagedCopyResultSource::TryOptionNone {
+        }
+        | StagedCopyResultSource::TryOptionNone {
             source_instance,
             target_instance,
-            option,
-            some_case,
-            some_field,
-            none_case,
             ..
-        } => [option, some_case, some_field, none_case]
-            .into_iter()
-            .try_fold(
-                ty(source_instance)?.checked_add(ty(target_instance)?)?,
-                |n, id| n.checked_add(id.as_str().len()),
-            ),
+        } => ty(source_instance)?.checked_add(ty(target_instance)?),
     }
 }
 fn returned(source: &ReturnedSource) -> Option<usize> {
@@ -121,15 +91,10 @@ fn returned(source: &ReturnedSource) -> Option<usize> {
 }
 fn variant(value: &ReplayConditionalVariant) -> Option<usize> {
     value.cases.iter().try_fold(
-        place(&value.root)?
-            .checked_add(value.variant.as_str().len())?
-            .checked_add(array::<(DeclarationId, Vec<LivenessFlagId>)>(
-                value.cases.len(),
-            )?)?,
-        |n, (id, flags)| {
-            n.checked_add(id.as_str().len())?
-                .checked_add(array::<LivenessFlagId>(flags.len())?)
-        },
+        place(&value.root)?.checked_add(array::<(DeclarationId, Vec<LivenessFlagId>)>(
+            value.cases.len(),
+        )?)?,
+        |n, (_, flags)| n.checked_add(array::<LivenessFlagId>(flags.len())?),
     )
 }
 fn state_bytes(state: &PathState) -> Option<usize> {
@@ -277,7 +242,7 @@ pub(in crate::cleanup_plan::replay) fn insert_map<K: Ord, V>(
 pub(super) fn reserve_variant_identity(
     function: &ResolvedFunction,
     root: &CleanupPlace,
-    id: &DeclarationId,
+    _id: &DeclarationId,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     if !budget.pays_allocations() {
@@ -285,9 +250,7 @@ pub(super) fn reserve_variant_identity(
     }
     budget.reserve_bytes(
         function,
-        place(root)
-            .and_then(|n| n.checked_add(id.as_str().len()))
-            .unwrap_or(usize::MAX),
+        place(root).unwrap_or(usize::MAX),
         "joined variant identity",
     )
 }
@@ -390,6 +353,40 @@ mod tests {
                 .and_then(|n| n.checked_add(root))
                 .and_then(|n| n.checked_add(payload))
         );
+    }
+    #[test]
+    fn conditional_clone_literal_backing_keeps_projection_cases_and_flags() {
+        let shared = DeclarationId::new("variant:é\0.long.shared");
+        let value = ReplayConditionalVariant {
+            root: CleanupPlace {
+                storage: StorageId::ProvisionalResult,
+                projections: vec![shared.clone(), shared.clone()],
+            },
+            variant: shared.clone(),
+            cases: vec![
+                (shared.clone(), vec![LivenessFlagId(1)]),
+                (
+                    DeclarationId::compiler(crate::hir::CompilerDeclaration::Vec),
+                    vec![LivenessFlagId(2), LivenessFlagId(3)],
+                ),
+            ],
+        };
+        let expected = 2 * size_of::<DeclarationId>()
+            + 2 * size_of::<(DeclarationId, Vec<LivenessFlagId>)>()
+            + 3 * size_of::<LivenessFlagId>();
+        let former_string_payload = 4 * shared.as_str().len() + "core.vec".len();
+        assert!(former_string_payload > 0);
+        assert_eq!(variant(&value), Some(expected));
+        let (_, observed) = crate::test_allocation_observer::measure(|| {
+            let copy = value.clone();
+            assert_eq!(copy, value);
+            drop(copy);
+        });
+        assert!(!observed.invalid);
+        assert_eq!(observed.allocations, 4);
+        assert_eq!(observed.allocated, expected);
+        assert_eq!(observed.freed, expected);
+        assert_eq!(observed.live, 0);
     }
     #[test]
     fn exact_clone_charge_and_one_short_refusal_precede_clone_and_remain_sticky() {

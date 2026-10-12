@@ -461,7 +461,7 @@ pub(crate) fn ast_vec(element: Type) -> Type {
 }
 pub(crate) fn resolved_vec(element: ResolvedType) -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: DeclarationId::new(crate::prelude::VEC_ID),
+        declaration: DeclarationId::compiler(crate::hir::CompilerDeclaration::Vec),
         arguments: vec![element],
     }
 }

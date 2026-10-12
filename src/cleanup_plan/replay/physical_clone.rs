@@ -9,7 +9,7 @@ pub(crate) trait ClonePayload {
 }
 impl ClonePayload for DeclarationId {
     fn clone_payload_bytes(&self) -> Option<usize> {
-        Some(self.as_str().len())
+        Some(0)
     }
 }
 impl ClonePayload for FunctionInstanceId {
@@ -96,14 +96,10 @@ impl ClonePayload for ResolvedType {
             let (ty, next) = frames[len - 1]?;
             if next == 0 {
                 let own = match ty {
-                    Self::TypeParameter { owner, .. } => owner.as_str().len(),
-                    Self::Nominal {
-                        declaration,
-                        arguments,
-                    } => declaration
-                        .as_str()
-                        .len()
-                        .checked_add(arguments.len().checked_mul(size_of::<Self>())?)?,
+                    Self::TypeParameter { .. } => 0,
+                    Self::Nominal { arguments, .. } => {
+                        arguments.len().checked_mul(size_of::<Self>())?
+                    }
                     Self::Function { parameters, .. } => parameters
                         .len()
                         .checked_mul(size_of::<Self>())?
@@ -246,3 +242,6 @@ impl IntoReplay<std::rc::Rc<SkeletonObservation>> for SkeletonObservation {
 pub(super) fn conversion_bytes<T, V: IntoReplay<T>>(_: &V) -> usize {
     V::conversion_bytes()
 }
+
+#[cfg(test)]
+mod tests;

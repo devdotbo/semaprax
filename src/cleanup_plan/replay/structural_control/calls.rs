@@ -169,7 +169,7 @@ fn needs_drop(
 fn signature<'a>(
     program: &'a dyn ReplayContext,
     function: &ResolvedFunction,
-    fact: &CallFact,
+    fact: &CallFact<'_>,
     expression: &'a ResolvedExpr,
     budget: &mut ReplayBudget,
 ) -> Result<Signature<'a>, Diagnostic> {
@@ -240,7 +240,7 @@ pub(super) fn validate<'a>(
     program: &dyn ReplayContext,
     function: &'a ResolvedFunction,
     call: &ExpressionId,
-    fact: &CallFact,
+    fact: &CallFact<'_>,
     arguments: &[CallArgumentTransfer],
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
@@ -312,7 +312,7 @@ pub(super) fn validate<'a>(
     } else {
         callee == fact.callee.as_str()
             && type_arguments == fact.type_arguments.as_slice()
-            && instance == fact.instance.as_ref()
+            && instance == fact.instance
             && args.len() == fact.arguments.len()
             && args
                 .iter()
@@ -322,7 +322,7 @@ pub(super) fn validate<'a>(
     #[cfg(not(test))]
     let agrees = callee == fact.callee.as_str()
         && type_arguments == fact.type_arguments.as_slice()
-        && instance == fact.instance.as_ref()
+        && instance == fact.instance
         && args.len() == fact.arguments.len()
         && args
             .iter()

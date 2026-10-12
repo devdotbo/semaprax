@@ -2184,3 +2184,6 @@ fn total() -> i64 {
         .validate_entire_project_workspace("app.main", "test.main", P::UsefulDataV1, &[], false)
         .unwrap();
 }
+
+#[path = "tests/package_link_borrowed.rs"]
+mod package_link_borrowed;

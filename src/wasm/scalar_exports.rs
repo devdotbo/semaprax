@@ -474,6 +474,13 @@ fn validate_expression_profile(
     while let Some(expression) = pending.pop() {
         if expression.ownership != OwnershipMode::Value
             || (!internal_scalar_type(&expression.ty, integer_profile)
+                // prepare() has independently validated the full HIR first.
+                // Completion is expression-only: never a scalar ABI/storage type.
+                && !(expression.ty == ResolvedType::Never
+                    && matches!(expression.kind,
+                        ResolvedExprKind::LexicalExit { .. }
+                        | ResolvedExprKind::Block { .. }
+                        | ResolvedExprKind::If { .. }))
                 && !hir::function_value::is_signature(&expression.ty)
                 && !expression.ty.is_mut_function())
         {
@@ -867,3 +874,7 @@ fn evaluate() -> i64 {
             .contains("does not admit authored resource, record, or variant"));
     }
 }
+
+#[cfg(test)]
+#[path = "scalar_exports/completion_tests.rs"]
+mod completion_tests;
