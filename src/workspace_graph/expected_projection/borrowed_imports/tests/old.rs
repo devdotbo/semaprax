@@ -1,5 +1,8 @@
 //! Saved complete owned projection producer, before imported borrowing.
-use super::*;
+use super::{active_builder_limit, graph_error, limit_error, reserve_builder_structure,
+    AuthoredDeclaration, BTreeMap, Diagnostic, Program, ModuleUseKind, TypeDeclaration,
+    Expr, ExprKind, Function, Type, private_layout, import_stub, type_rewrite,
+    default_expr, budgeted_format};
 use crate::ast::Span;
 
 pub(super) fn construct(

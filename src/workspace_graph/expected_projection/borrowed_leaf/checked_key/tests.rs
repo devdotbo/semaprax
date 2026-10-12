@@ -1,4 +1,6 @@
-use super::*;
+use super::{append_copies, materialize, reserve_builder_structure};
+use super::super::{construct, private_layout, synthetic_program_with_registry, Input, Span};
+use crate::hir;
 use crate::ast::program_source::ProgramSource;
 use crate::test_allocation_observer::measure;
 use crate::workspace_graph::index_authored;

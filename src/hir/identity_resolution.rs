@@ -83,7 +83,7 @@ pub(crate) fn resolve_source<'p, E>(
 }
 
 /// Paid sibling of `resolve_source`: full verification and its explicit
-/// invariant refusal precede any identity request.
+/// invariant inventory/desugaring preserve ordinary identity request order.
 pub(crate) fn resolve_source_checked<'p, E>(
     program: &'p dyn ProgramSource,
     previous_program: Option<&Program>,
@@ -101,31 +101,30 @@ pub(crate) fn resolve_source_checked<'p, E>(
     {
         return Err(Failure::Source(diagnostics));
     }
-    if program
-        .types()
-        .iter()
-        .any(|declaration| !declaration.invariants().is_empty())
-    {
-        return Err(Failure::Source(vec![Diagnostic::io(
-            "SPX-H006",
-            "borrowed projection requires owned invariant desugaring",
-        )]));
-    }
-    let reuse = previous_program
-        .zip(previous_resolved)
-        .zip(previous_costs)
+    let reuse = previous_program.zip(previous_resolved).zip(previous_costs)
         .filter(|((previous, _), _)| function_reuse_environment_is_exact(program, previous))
-        .map(|((program, resolved), costs)| FunctionReuse {
-            program,
-            resolved,
-            costs,
-        });
+        .map(|((program, resolved), costs)| FunctionReuse { program, resolved, costs });
+    let clause_program = record_invariants::source::clause_program(program);
+    let inventory: &dyn ProgramSource = clause_program.as_ref().map_or(program, |owned| owned);
+    let resolved = source_pass(inventory, if clause_program.is_some() { None } else { reuse }, &mut reserve)?;
+    let Some(desugared) = record_invariants::source::desugar(program, &resolved.0) else {
+        return Ok(resolved);
+    };
+    pass(&desugared, None, &mut reserve)
+
+}
+
+fn source_pass<E>(
+    program: &dyn ProgramSource,
+    reuse: Option<FunctionReuse<'_>>,
+    reserve: &mut impl FnMut(usize) -> Result<(), E>,
+) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
     // SourceIndex precedes the DeclarationIndex, as in the legacy route.
     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
     let declarations = DeclarationIndex::from_verified_with_identity_reservation(
         program,
         crate::prelude::declarations_for_program(program),
-        &mut reserve,
+        reserve,
     )?;
     (Resolver {
         program,

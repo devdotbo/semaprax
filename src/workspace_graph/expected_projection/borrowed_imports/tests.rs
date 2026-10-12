@@ -1,4 +1,10 @@
-use super::*;
+use super::{construct, eligible, reserve_builder_structure, LayoutRegistry};
+use super::super::{private_layout, type_rewrite, import_stub, default_expr, budgeted_format,
+    active_builder_limit, graph_error, limit_error, AuthoredDeclaration};
+use crate::ast::{Expr, ExprKind, Function, ModuleUse, ModuleUseKind, Program, Type, TypeDeclaration};
+use crate::diagnostic::Diagnostic;
+use crate::hir;
+use std::collections::BTreeMap;
 use crate::ast::program_source::ProgramSource;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::measure;
@@ -62,8 +68,8 @@ fn imports_aliases_private_layouts_defaults_and_cache_publication_keep_full_old_
     parity(&SCALAR_CALLER.replace(" @id(\"app.main\") fn main()->i64 {increment(41)}", ""), SCALAR_PROVIDER);
     parity(CALLER, PROVIDER);
     parity(&CALLER.replacen("module function_layout.app;", "module function_layout.app; use type @id(\"report\") from function_layout.provider as ImportedReport;", 1), PROVIDER);
-    // Actual authored generic main/instance bodies are borrowed; only imported
-    // generic prototypes retain their owning fallback.
+    // Actual authored generic main/instance bodies are borrowed; imported
+    // generic prototypes also use their exact ordinary classifier.
     parity(&SCALAR_CALLER.replace("@id(\"app.main\")", "@id(\"identity\") fn identity<T>(value:T)->T {value} @id(\"app.main\")").replace("increment(41)", "identity<i64>(increment(41))"), SCALAR_PROVIDER);
 }
 #[test]
@@ -133,7 +139,7 @@ fn complete_active_payer_resolution_and_drop_keep_exact_short_and_sticky_refusal
     }
 }
 #[test]
-fn real_overlay_drop_requests_no_new_backing_and_owning_fallback_remains_explicit() {
+fn plain_overlay_drop_requests_no_new_backing_and_full_route_keeps_old_verdicts() {
     let programs = sources(CALLER, PROVIDER);
     let authored = index_authored(&programs).unwrap();
     let registry = LayoutRegistry::new(&programs, &authored);
@@ -142,19 +148,19 @@ fn real_overlay_drop_requests_no_new_backing_and_owning_fallback_remains_explici
     assert!(!dropped.invalid && dropped.allocations == 0 && dropped.reallocations == 0);
     let generic = sources(SCALAR_CALLER, "module imported.provider; @id(\"helper\") fn helper<T>(value:T)->T {value}");
     let map = index_authored(&generic).unwrap();
-    assert!(!eligible(&generic[0], &map, &generic));
+    assert!(eligible(&generic[0], &map, &generic));
     let registry = LayoutRegistry::new(&generic, &map);
     let before = old::construct(&generic[0], &map, &generic, Some(&registry));
     let after = super::super::borrowed_leaf::Input::construct(&generic[0], &map, &generic, &registry, true)
-        .and_then(|input| { assert!(input.owned().is_some()); input.into_owned() });
+        .and_then(|input| { assert!(input.owned().is_none()); input.into_checked_key() });
     assert_eq!(before, after);
     let invariant = sources(SCALAR_CALLER, "module imported.provider; @id(\"row\") record Row { @id(\"row.x\") x:i64, } requires x>=0 @id(\"helper\") fn helper(value:i64)->i64 {value}");
     let map = index_authored(&invariant).unwrap();
-    assert!(!eligible(&invariant[0], &map, &invariant));
+    assert!(eligible(&invariant[0], &map, &invariant));
     let registry = LayoutRegistry::new(&invariant, &map);
     let before = old::construct(&invariant[0], &map, &invariant, Some(&registry));
     let after = super::super::borrowed_leaf::Input::construct(&invariant[0], &map, &invariant, &registry, true)
-        .and_then(|input| { assert!(input.owned().is_some()); input.into_owned() });
+        .and_then(|input| { assert!(input.owned().is_none()); input.into_checked_key() });
     assert_eq!(before, after);
 }
 #[test]
@@ -251,3 +257,6 @@ fn literal_imported_directory_replacements_and_authored_payloads_are_removed() {
         else { assert!(!success && refused && receipt.is_some()); }
     }
 }
+
+#[path = "tests/full.rs"]
+mod full;

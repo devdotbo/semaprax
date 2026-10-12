@@ -1,5 +1,6 @@
 //! Exact-source borrowed input for the generated scalar-main leaf route.
-//! Imported/private layouts and invariant desugaring retain the owned route.
+//! Imported/private layouts use their exact overlay producer; invariant
+//! transformation acquires writable AST only at its ordinary HIR boundary.
 use super::{
     active_builder_limit, checked_usage, graph_error, limit_error, private_layout,
     reserve_builder_structure, synthetic_main_runtime_cost, synthetic_program_with_registry,
@@ -16,10 +17,6 @@ use std::collections::BTreeMap;
 
 pub(in crate::workspace_graph) fn eligible(program: &Program) -> bool {
     program.module_uses.is_empty()
-        && program
-            .types
-            .iter()
-            .all(|declaration| declaration.invariants().is_empty())
 }
 
 pub(in crate::workspace_graph) fn construct(

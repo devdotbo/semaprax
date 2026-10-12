@@ -1,29 +1,24 @@
-//! Exact-source imported overlays. Invariant/class and retained-body transforms
-//! keep the complete owning producer; these views confer no import authority.
-use super::*;
-use crate::ast::program_source::SyntheticProgramView;
+//! Exact-source imported overlays, including ordinary classified retained
+//! wrappers and invariant/class roots. Views confer no import authority.
+use super::{
+    active_builder_limit, ast_function_cost, ast_function_signature_cost, ast_type_declaration_cost,
+    budgeted_format, default_expr, graph_error, import_stub, limit_error,
+    reserve_builder_structure, type_rewrite, AuthoredDeclaration, StructuralCost,
+    LayoutRegistry,
+};
+use crate::ast::{Expr, ExprKind, Function, ModuleUseKind, Program, Type, TypeDeclaration, TypeDeclarationKind};
+use crate::diagnostic::Diagnostic;
+use std::collections::BTreeMap;
+use crate::ast::program_source::{SyntheticProgramView, generated_roots::GeneratedRoots};
 
 pub(in crate::workspace_graph) fn eligible(
     program: &Program,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
-    programs: &[Program],
+    _programs: &[Program],
 ) -> bool {
-    let closed = |declaration: &TypeDeclaration| {
-        declaration.invariants().is_empty()
-            && !matches!(declaration.kind, TypeDeclarationKind::Class { .. })
-    };
-    if program.module_uses.is_empty() || !program.types.iter().all(closed) {
-        return false;
-    }
-    // This is fallback selection only. Avoid allocating wrapper classifiers
-    // merely to decide whether borrowing is possible. All body-retaining
-    // compiler wrappers have type parameters and retain their old receiver.
-    program.module_uses.iter().all(|import| {
-        let Some(target) = authored.get(import.persistent_id.as_str()) else { return false; };
-        target.function.is_none_or(|function| function.type_parameters.is_empty())
-            && programs.iter().filter(|provider| provider.module == target.module)
-                .all(|provider| provider.types.iter().all(closed))
-    })
+    !program.module_uses.is_empty()
+        && program.module_uses.iter().all(|import| authored.contains_key(import.persistent_id.as_str()))
+
 }
 fn refusal() -> Vec<Diagnostic> {
     vec![limit_error("builder_bytes", active_builder_limit())]
@@ -46,6 +41,64 @@ fn pay_signature(function: &Function) -> Result<(), Vec<Diagnostic>> {
     reserve_builder_structure(cost.total)
 }
 
+// A geometric Vec worklist's cumulative requests are below four times its
+// element census; its initial nonbyte capacity is four. Raw inline AST cost
+// counts every node/header without a clone discount. Charge the full fourfold
+// census before cloning each recursive root, plus each worklist's minimum once.
+fn pay_teardown(cost: &StructuralCost) -> Result<(), Vec<Diagnostic>> {
+    reserve_builder_structure(cost.total.checked_mul(4).ok_or_else(refusal)?)
+}
+fn iterative(program: &Program, authored: &BTreeMap<&str, AuthoredDeclaration<'_>>) -> bool {
+    program.module_uses.iter().any(|import| {
+        let target = &authored[import.persistent_id.as_str()];
+        target.function.is_some_and(|function| !function.type_parameters.is_empty())
+            || target.ty.is_some_and(|ty| !ty.invariants().is_empty() || matches!(ty.kind, TypeDeclarationKind::Class { .. }))
+    })
+}
+fn pay_teardown_minimum() -> Result<(), Vec<Diagnostic>> {
+    let bytes = [std::mem::size_of::<Function>(), std::mem::size_of::<Expr>(),
+        std::mem::size_of::<Type>(), std::mem::size_of::<crate::ast::MatchPattern>(),
+        std::mem::size_of::<crate::ast::RecordMatchPatternField>()]
+        .into_iter().try_fold(0usize, |sum, size| sum.checked_add(size)).ok_or_else(refusal)?;
+    reserve_builder_structure(bytes.checked_mul(4).ok_or_else(refusal)?)
+}
+
+// Defaults can expand a shared record type repeatedly. Count that expanded
+// expression tree through borrowed declarations, rather than charging only the
+// unique type directory. This is storage payment, not default admission; the
+// original constructor still chooses forwarding, classifiers and first errors.
+fn pay_default_teardown(ty: &Type, declarations: &[(&str, &TypeDeclaration)]) -> Result<(), Vec<Diagnostic>> {
+    fn census(ty: &Type, declarations: &[(&str, &TypeDeclaration)]) -> Result<usize, Vec<Diagnostic>> {
+        let mut bytes = std::mem::size_of::<Expr>();
+        if let Type::Named { name, arguments } = ty {
+            if arguments.is_empty() {
+                if let Ok(index) = declarations.binary_search_by_key(&name.as_str(), |(name, _)| *name) {
+                    let fields: &[crate::ast::FieldDeclaration] = match &declarations[index].1.kind {
+                        TypeDeclarationKind::Record { fields } | TypeDeclarationKind::Class { fields, .. } => fields,
+                        TypeDeclarationKind::Variant { cases } => cases.first().map_or(&[], |case| &case.fields),
+                        TypeDeclarationKind::Resource { .. } => &[],
+                    };
+                    for field in fields {
+                        bytes = bytes.checked_add(census(&field.ty, declarations)?).ok_or_else(refusal)?;
+                    }
+                }
+            } else {
+                // Accepted compiler collection defaults have a root call,
+                // one scalar size operand and copied type arguments. Generic
+                // authored defaults still receive their old closed refusal.
+                bytes = bytes.checked_add(std::mem::size_of::<Expr>()).ok_or_else(refusal)?;
+                let mut cost = StructuralCost::raw_ast(true);
+                super::declaration_cost::ast_type_cost(ty, &mut cost)?;
+                bytes = bytes.checked_add(cost.total).ok_or_else(refusal)?;
+            }
+        } else if *ty == Type::Bytes || *ty == Type::StringMap {
+            bytes = bytes.checked_add(std::mem::size_of::<Expr>()).ok_or_else(refusal)?;
+        }
+        Ok(bytes)
+    }
+    reserve_builder_structure(census(ty, declarations)?.checked_mul(4).ok_or_else(refusal)?)
+}
+
 pub(in crate::workspace_graph) fn construct<'a>(
     program: &'a Program,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
@@ -59,31 +112,48 @@ pub(in crate::workspace_graph) fn construct<'a>(
     let layout = registry.get(program, authored, programs)?;
     let explicit = program.module_uses.iter().filter(|import| import.kind == ModuleUseKind::Type).count();
     let type_count = explicit.checked_add(layout.entries.len()).ok_or_else(refusal)?;
-    let mut types = directory::<TypeDeclaration>(type_count)?;
+    let recursive = iterative(program, authored);
+    if recursive { pay_teardown_minimum()?; }
+    let mut roots = if recursive {
+        GeneratedRoots::iterative(directory::<TypeDeclaration>(type_count)?, Vec::new())
+    } else {
+        GeneratedRoots::plain(directory::<TypeDeclaration>(type_count)?, Vec::new())
+    };
+    let types = &mut roots.types;
     for import in program.module_uses.iter().filter(|import| import.kind == ModuleUseKind::Type) {
         let target = &authored[import.persistent_id.as_str()];
         let declaration = target.ty.expect("validated type target");
         pay_type(declaration)?;
-        let mut copy = declaration.clone();
+        if recursive {
+            let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+            ast_type_declaration_cost(declaration, &mut cost)?;
+            pay_teardown(&cost)?;
+        }
+        types.push(declaration.clone());
+        let copy = types.last_mut().expect("inserted type");
         copy.name = crate::bounded_output::budgeted_clone(&import.alias);
         super::super::generic_type_import::rewrite_declaration_with_layout(
-            &mut copy, target.module, program, programs, Some(&layout),
+            copy, target.module, program, programs, Some(&layout),
         )?;
-        types.push(copy);
     }
     // Preserve the independent closure's exact order after explicit aliases.
     for entry in &layout.entries {
         pay_type(entry.declaration)?;
-        let mut copy = entry.declaration.clone();
+        if recursive {
+            let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+            ast_type_declaration_cost(entry.declaration, &mut cost)?;
+            pay_teardown(&cost)?;
+        }
+        types.push(entry.declaration.clone());
+        let copy = types.last_mut().expect("inserted private type");
         copy.name = crate::bounded_output::budgeted_clone(&entry.alias);
         super::super::generic_type_import::rewrite_declaration_with_layout(
-            &mut copy, entry.module, program, programs, Some(&layout),
+            copy, entry.module, program, programs, Some(&layout),
         )?;
-        types.push(copy);
     }
     let all_count = program.types.len().checked_add(types.len()).ok_or_else(refusal)?;
     let mut type_index = directory::<(&str, &TypeDeclaration)>(all_count)?;
-    type_index.extend(program.types.iter().chain(&types).map(|declaration| (declaration.name.as_str(), declaration)));
+    type_index.extend(program.types.iter().chain(types.iter()).map(|declaration| (declaration.name.as_str(), declaration)));
     type_index.sort_unstable_by(|a, b| a.0.cmp(b.0));
     if type_index.windows(2).any(|items| items[0].0 == items[1].0) {
         return Err(vec![graph_error("SPX-G173", "synthetic workspace type-name index is not unique")]);
@@ -91,23 +161,42 @@ pub(in crate::workspace_graph) fn construct<'a>(
     let needs_main = !program.functions.iter().any(|function| function.name == "main")
         && !program.module_uses.iter().any(|import| import.kind == ModuleUseKind::Function && import.alias == "main");
     let imports = program.module_uses.iter().filter(|import| import.kind == ModuleUseKind::Function).count();
-    let mut functions = directory::<Function>(imports.checked_add(usize::from(needs_main)).ok_or_else(refusal)?)?;
+    roots.functions = directory::<Function>(imports.checked_add(usize::from(needs_main)).ok_or_else(refusal)?)?;
+    let functions = &mut roots.functions;
     let mut byte_proofs = import_stub::ByteHelperProofs::new(authored, programs);
     for import in program.module_uses.iter().filter(|import| import.kind == ModuleUseKind::Function) {
         let target = &authored[import.persistent_id.as_str()];
         let original = target.function.expect("validated function target");
-        pay_signature(original)?;
-        let mut function = import_stub::signature(original);
+        let retain_body = programs.iter().find(|provider| provider.module == target.module)
+            .is_some_and(|provider| crate::vec_ops::source_wrapper(provider, original).is_some()
+                || crate::box_ops::source_wrapper(provider, original).is_some());
+        if retain_body {
+            let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+            ast_function_cost(original, &mut cost)?;
+            reserve_builder_structure(cost.total)?;
+            pay_teardown(&cost)?;
+        } else {
+            pay_signature(original)?;
+            if recursive {
+                let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+                ast_function_signature_cost(original, &mut cost)?;
+                pay_teardown(&cost)?;
+            }
+        }
+        let mut function = if retain_body { original.clone() } else { import_stub::signature(original) };
         function.name = crate::bounded_output::budgeted_clone(&import.alias);
+        functions.push(function);
+        if retain_body { continue; }
+        let function = functions.last_mut().expect("inserted signature");
         for param in &mut function.params {
             type_rewrite::rewrite_with_layout(&mut param.ty, target.module, program, programs, Some(&layout))?;
         }
         type_rewrite::rewrite_with_layout(&mut function.return_type, target.module, program, programs, Some(&layout))?;
-        function.body = default_expr(&function, &type_index,
+        if recursive { pay_default_teardown(&function.return_type, &type_index)?; }
+        function.body = default_expr(function, &type_index,
             super::super::owned_function_import::admitted_with_layout(program, target, authored, programs, &layout),
             import_stub::byte_helper_authorized(original, target.module, &mut byte_proofs)?,
         )?;
-        functions.push(function);
     }
     // Same old rule also recognizes an imported alias named main.
     if needs_main && !functions.iter().any(|function| function.name == "main") {
@@ -123,7 +212,7 @@ pub(in crate::workspace_graph) fn construct<'a>(
         });
     }
     drop(type_index);
-    SyntheticProgramView::with_imports(program, types, functions).ok_or_else(refusal)
+    SyntheticProgramView::with_generated_owner(program, roots).ok_or_else(refusal)
 }
 
 #[cfg(test)]

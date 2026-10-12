@@ -584,7 +584,7 @@ pub(crate) fn resolve_with_function_reuse<'p>(
 }
 
 /// Full ordinary verification of the private borrowed presentation. Recursive
-/// record-invariant desugaring remains on the paid owned input route.
+/// record-invariant desugaring owns its AST only at the transformation boundary.
 /// Explicit legacy compatibility; the paid sibling is
 /// `identity_resolution::resolve_source`.
 #[cfg_attr(
@@ -605,16 +605,16 @@ pub(crate) fn resolve_source<'p>(
     {
         return Err(diagnostics);
     }
-    if program
-        .types()
-        .iter()
-        .any(|declaration| !declaration.invariants().is_empty())
-    {
-        return Err(vec![Diagnostic::io(
-            "SPX-H006",
-            "borrowed projection requires owned invariant desugaring",
-        )]);
-    }
+    let clause_program = record_invariants::source::clause_program(program);
+    let inventory: &dyn ProgramSource = clause_program.as_ref().map_or(program, |owned| owned);
+    let resolved = resolve_source_pass(inventory)?;
+    let Some(desugared) = record_invariants::source::desugar(program, &resolved.0) else {
+        return Ok(resolved);
+    };
+    resolve_source_pass(&desugared)
+}
+
+fn resolve_source_pass(program: &dyn ProgramSource) -> Result<(ResolvedProgram, FunctionResolutionWork), Vec<Diagnostic>> {
     (Resolver {
         program,
         byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(program),

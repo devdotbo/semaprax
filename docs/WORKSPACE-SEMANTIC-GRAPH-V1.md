@@ -313,34 +313,38 @@ modules by descending full-minus-retained HIR overhead, with a path tie-break;
 the forecast and resolver use the same order. Completed outputs are restored
 to canonical path order before validation and publication.
 
-Uncached modules with no module uses and no record invariants now lend their
-exact authored declaration collections to a sealed compiler-only
-`ProgramSource`. The synthetic presentation owns only an optional scalar `main`;
-its leaf body and empty recursive collections make teardown allocation-free.
-A concrete presentation identity distinguishes different overlays of the same
-source. Full source verification, prelude selection, declaration indexing,
-byte-helper checks and HIR resolution still run over that presentation.
-Imported presentations now also borrow authored declaration slices when the
-relevant type layouts are invariant/class-free and imported prototypes are
-nongeneric. The producer owns only explicit aliases, independently derived
-private layout copies, rewritten signatures/checking defaults, and a missing
-scalar main. Exact generated type/function directories and the complete borrowed
-type-name index are prepaid before allocation; cloned signature/type backing
-and existing default/rewrite work remain paid. Private-layout presentation and
-all ordinary import/ownership/byte-helper classifiers remain independent checks.
-No authored body is cloned just to make the input view. A cold owning cache key
-still clones its authored declarations at publication and moves generated
-overlays into their ordinary order; this is not a shared authored AST cache.
+Exact authored declaration collections now lend a sealed compiler-only
+`ProgramSource`; local presentations own only an optional scalar `main`.
+A concrete presentation identity distinguishes overlays of the same source.
+Imported presentations borrow the authored slices and own explicit aliases,
+independently derived private layouts, rewritten signatures/checking defaults,
+and a missing scalar main. Ordinary Vec/Box wrapper classifiers retain the same
+complete imported body, including generic materialization. Class methods keep
+the same exact copied imported declaration. Every ordinary import, ownership,
+byte-helper, source, prelude and declaration-index check still runs.
 
-Invariant/class transforms and generic body-retaining compiler wrappers keep
-the original owning receiver. The owning oracle remains complete, including
-those fallback decisions. Authored pointers/order, copied alias/default bytes,
-canonical/graph/HIR diagnostics, actual directory replacement layouts,
-constructor/resolver/cache-publication lifetime and allocation-free overlay Drop
-have source-authored owners in `borrowed_imports::tests`. Existing HIR/cleanup and
-retained-output forecasts and application limits remain unchanged. The imported
-receiver has not yet been executed or qualified; no complete OPT776, application
-fit, peak-memory or performance claim follows from these source definitions.
+Generated directories and the complete borrowed type-name index are paid before
+allocation. Recursive generated roots retain the existing iterative `Program`
+teardown owner on success, construction errors and refusal. Before roots are
+copied, the producer pays each teardown worklist's minimum backing and a
+fourfold undiscounted inline AST census, covering cumulative geometric worklist
+requests; this is real new teardown allowance, with no cap increase or forecast
+refund. Plain scalar/default overlays keep their allocation-free teardown.
+Cache publication pays both combined directories while recursive roots remain
+under their owner, then clones authored declarations and moves generated roots
+into canonical order. It does not create a shared authored AST cache.
+
+Record invariants run ordinary source verification first, then the same clause
+inventory and desugaring passes. Writable AST is copied at those genuine
+transformation boundaries; lookup no longer needs an owning synthesis copy.
+The original owning transformation functions and full synthetic producer remain
+independent saved oracles. Authored pointers, alias/default bytes, complete
+canonical/graph/HIR diagnostics, real directory replacement layouts, and
+constructor/resolver/cache-publication/Drop lifetimes have source-authored
+owners, including generic wrappers, class methods and invariant negatives.
+These owners are unexecuted at authoring time. No full #776 release qualification,
+application-fit, reduced HIR forecast, or performance result is claimed here.
+All original application inputs, fuel, caps and profile admission remain fixed.
 
 Within one resolved-core validation attempt, private type authority retains one
 borrowed owner bound to the exact immutable Program slice and authored map.

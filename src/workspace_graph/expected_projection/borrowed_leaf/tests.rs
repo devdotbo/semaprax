@@ -193,7 +193,9 @@ fn borrowed_leaf_full_pipeline_keeps_owned_fallback_and_original_diagnostics() {
     assert!(allocation.highwater <= used);
     // Cache construction retains the independent ordinary owned key.
     let cached = Input::construct(&programs[0], &authored, &programs, &registry, false).unwrap();
-    assert!(cached.owned().is_some());
+    assert!(cached.owned().is_none());
+    let cached_key = cached.into_checked_key().unwrap();
+    assert_eq!(cached_key, synthetic_program_with_registry(&programs[0], &authored, &programs, Some(&registry)).unwrap());
     let delta = super::input_carrier_delta().unwrap();
     // The enum may reuse a niche in Program; zero extra inline bytes is valid.
     assert!(std::mem::size_of::<Input<'_>>() >= std::mem::size_of::<crate::ast::Program>());

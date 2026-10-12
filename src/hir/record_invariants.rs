@@ -543,3 +543,6 @@ fn check_function(
         ExprKind::Var("value".to_owned()),
     )
 }
+
+#[path = "record_invariants/source.rs"]
+pub(super) mod source;

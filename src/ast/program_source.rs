@@ -184,29 +184,26 @@ impl ProgramSource for Program {
     }
 }
 
+#[path = "program_source/generated_roots.rs"]
+pub(crate) mod generated_roots;
+use generated_roots::GeneratedRoots;
+
 /// A producer-paid generated overlay after the exact authored slices.
 /// Authored bodies and declaration backing are never cloned to lend this input.
 pub(crate) struct SyntheticProgramView<'a> {
     authored: &'a Program,
-    generated_types: Vec<TypeDeclaration>,
-    generated_functions: Vec<Function>,
+    generated: GeneratedRoots,
     identity: OverlayIdentity,
 }
 impl<'a> SyntheticProgramView<'a> {
-    pub(crate) fn into_overlay_parts(self) -> (&'a Program, Vec<TypeDeclaration>, Vec<Function>) {
-        (self.authored, self.generated_types, self.generated_functions)
+    pub(crate) fn into_overlay_owner(self) -> (&'a Program, GeneratedRoots) {
+        (self.authored, self.generated)
     }
-    /// Generated declarations carry no verdict. The private producer applies
-    /// ordinary import/layout classifiers; every frontend pass still runs.
-    pub(crate) fn with_imports(
-        authored: &'a Program,
-        generated_types: Vec<TypeDeclaration>,
-        generated_functions: Vec<Function>,
-    ) -> Option<Self> {
-        authored.types.len().checked_add(generated_types.len())?;
-        authored.functions.len().checked_add(generated_functions.len())?;
-        Some(Self { authored, generated_types, generated_functions,
-            identity: OverlayIdentity { _nonzero_size: 0 } })
+
+    pub(crate) fn with_generated_owner(authored: &'a Program, generated: GeneratedRoots) -> Option<Self> {
+        authored.types.len().checked_add(generated.types.len())?;
+        authored.functions.len().checked_add(generated.functions.len())?;
+        Some(Self { authored, generated, identity: OverlayIdentity { _nonzero_size: 0 } })
     }
 
     pub(crate) fn new(authored: &'a Program, generated_functions: Vec<Function>) -> Option<Self> {
@@ -232,8 +229,7 @@ impl<'a> SyntheticProgramView<'a> {
             .checked_add(generated_functions.len())?;
         Some(Self {
             authored,
-            generated_types: Vec::new(),
-            generated_functions,
+            generated: GeneratedRoots::plain(Vec::new(), generated_functions),
             identity: OverlayIdentity { _nonzero_size: 0 },
         })
     }
@@ -257,7 +253,7 @@ impl ProgramSource for SyntheticProgramView<'_> {
         &self.authored.permits
     }
     fn types(&self) -> DeclSlices<'_, TypeDeclaration> {
-        DeclSlices::append(&self.authored.types, &self.generated_types)
+        DeclSlices::append(&self.authored.types, &self.generated.types)
             .expect("constructor checked declaration count")
     }
     fn interfaces(&self) -> &[InterfaceDeclaration] {
@@ -276,7 +272,7 @@ impl ProgramSource for SyntheticProgramView<'_> {
         &self.authored.agents
     }
     fn functions(&self) -> DeclSlices<'_, Function> {
-        DeclSlices::append(&self.authored.functions, &self.generated_functions)
+        DeclSlices::append(&self.authored.functions, &self.generated.functions)
             .expect("constructor checked declaration count")
     }
 }
