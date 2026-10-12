@@ -58,7 +58,9 @@ impl Evaluator<'_> {
                 }))
             }
             ResolvedExprKind::String(value) => {
-                if self.checked_allocation.is_some() { return Ok(Value::CheckedString(self.checked_utf8(&[value])?)); }
+                if self.checked_allocation.is_some() {
+                    return Ok(Value::CheckedString(self.checked_utf8(&[value])?));
+                }
                 Ok(Value::String(self.materialize_utf8_copy(value)?))
             }
             ResolvedExprKind::Place(place) => {

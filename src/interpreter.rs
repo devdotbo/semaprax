@@ -3479,7 +3479,10 @@ impl<'a> FunctionLookup<'a> {
     fn get(&self, id: &str) -> Option<&'a ResolvedFunction> {
         match self {
             Self::Borrowed(functions) => functions.get(id).copied(),
-            Self::Checked(program) => program.functions.iter().find(|function| function.id.as_str() == id),
+            Self::Checked(program) => program
+                .functions
+                .iter()
+                .find(|function| function.id.as_str() == id),
             Self::Prepared {
                 functions,
                 function_instances,
@@ -4071,10 +4074,18 @@ fn combine(op: BinaryOp, lhs: Value, rhs: Value) -> Option<Result<Value, Normali
         (Value::CheckedString(a), Value::CheckedString(b)) => match op {
             BinaryOp::Eq => Some(Ok(Value::Bool(a.as_str() == b.as_str()))),
             BinaryOp::Ne => Some(Ok(Value::Bool(a.as_str() != b.as_str()))),
-            BinaryOp::Lt => Some(Ok(Value::Bool(a.as_str().as_bytes() < b.as_str().as_bytes()))),
-            BinaryOp::Le => Some(Ok(Value::Bool(a.as_str().as_bytes() <= b.as_str().as_bytes()))),
-            BinaryOp::Gt => Some(Ok(Value::Bool(a.as_str().as_bytes() > b.as_str().as_bytes()))),
-            BinaryOp::Ge => Some(Ok(Value::Bool(a.as_str().as_bytes() >= b.as_str().as_bytes()))),
+            BinaryOp::Lt => Some(Ok(Value::Bool(
+                a.as_str().as_bytes() < b.as_str().as_bytes(),
+            ))),
+            BinaryOp::Le => Some(Ok(Value::Bool(
+                a.as_str().as_bytes() <= b.as_str().as_bytes(),
+            ))),
+            BinaryOp::Gt => Some(Ok(Value::Bool(
+                a.as_str().as_bytes() > b.as_str().as_bytes(),
+            ))),
+            BinaryOp::Ge => Some(Ok(Value::Bool(
+                a.as_str().as_bytes() >= b.as_str().as_bytes(),
+            ))),
             _ => None,
         },
         (Value::String(a), Value::String(b)) => match op {

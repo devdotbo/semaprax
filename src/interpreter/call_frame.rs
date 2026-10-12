@@ -9,8 +9,15 @@ impl Evaluator<'_> {
         depth: usize,
     ) -> Result<Value, Flow> {
         if let Some(receiving) = &self.checked_allocation {
-            if !receiving.program.functions.iter().any(|current| std::ptr::eq(current, function)) {
-                return Err(Flow::Guard("checked UTF8 frame is not in its exact source owner"));
+            if !receiving
+                .program
+                .functions
+                .iter()
+                .any(|current| std::ptr::eq(current, function))
+            {
+                return Err(Flow::Guard(
+                    "checked UTF8 frame is not in its exact source owner",
+                ));
             }
         }
         // Stage semantic work v1: one unit per admitted source frame.
@@ -70,9 +77,14 @@ impl Evaluator<'_> {
             let result_value = if let Value::CheckedString(text) = &value {
                 // A provisional contract root is a borrowed alias of the same
                 // result epoch, never an unpriced second String materialization.
-                Value::CheckedString(self.checked_allocation.as_ref()
-                    .ok_or(Flow::Guard("checked contract result has no source invocation"))?
-                    .contract_result(function, text)?)
+                Value::CheckedString(
+                    self.checked_allocation
+                        .as_ref()
+                        .ok_or(Flow::Guard(
+                            "checked contract result has no source invocation",
+                        ))?
+                        .contract_result(function, text)?,
+                )
             } else if retained_result {
                 std::mem::replace(&mut value, Value::Moved)
             } else {

@@ -3,7 +3,10 @@
 //! payload/control boundary, not a claim that System Arc allocation is nullable.
 use super::*;
 use std::collections::VecDeque;
-use std::sync::{Mutex, atomic::{AtomicUsize, Ordering}};
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Mutex,
+};
 const SOURCE: &str = r#"module checked.native;
 @id("checked.native.text") fn text() -> string { string_concat("a", "β") }
 @id("checked.native.main") fn main() -> i64 {
@@ -20,16 +23,29 @@ struct Inventory {
 impl Inventory {
     fn acquire(parts: &[&str], refuse_at: usize) -> Arc<Self> {
         Arc::new(Self {
-            available: Mutex::new(parts.iter().map(|text| Arc::from(text.as_bytes())).collect()),
-            requests: AtomicUsize::new(0), refuse_at,
+            available: Mutex::new(
+                parts
+                    .iter()
+                    .map(|text| Arc::from(text.as_bytes()))
+                    .collect(),
+            ),
+            requests: AtomicUsize::new(0),
+            refuse_at,
         })
     }
 }
 impl Utf8Provider for Inventory {
     fn allocate(&self, pieces: &[&str]) -> Result<Arc<[u8]>, AllocationCase> {
         let ordinal = self.requests.fetch_add(1, Ordering::SeqCst);
-        if ordinal == self.refuse_at { return Err(AllocationCase::PayloadRefused); }
-        let bytes = self.available.lock().unwrap().pop_front().expect("independent inventory census");
+        if ordinal == self.refuse_at {
+            return Err(AllocationCase::PayloadRefused);
+        }
+        let bytes = self
+            .available
+            .lock()
+            .unwrap()
+            .pop_front()
+            .expect("independent inventory census");
         let mut offset = 0;
         for piece in pieces {
             assert_eq!(&bytes[offset..offset + piece.len()], piece.as_bytes());
@@ -39,13 +55,22 @@ impl Utf8Provider for Inventory {
         Ok(bytes)
     }
 }
-fn received<'a>(source: &'a crate::ast::Program, string_result: bool)
-    -> crate::cleanup_plan::checked_allocation::Validated<'a> {
-    let entry = DeclarationId::new(if string_result { "checked.native.publish" } else { "checked.native.main" });
+fn received<'a>(
+    source: &'a crate::ast::Program,
+    string_result: bool,
+) -> crate::cleanup_plan::checked_allocation::Validated<'a> {
+    let entry = DeclarationId::new(if string_result {
+        "checked.native.publish"
+    } else {
+        "checked.native.main"
+    });
     if string_result {
         crate::cleanup_plan::checked_allocation::prepare_string_result(source, &entry).unwrap()
-    } else { crate::cleanup_plan::checked_allocation::prepare(source, &entry).unwrap() }
-        .receive().unwrap()
+    } else {
+        crate::cleanup_plan::checked_allocation::prepare(source, &entry).unwrap()
+    }
+    .receive()
+    .unwrap()
 }
 #[test]
 fn actual_interpreter_provider_refusal_sweep_preserves_default_clone_and_whole_drop() {
@@ -54,22 +79,37 @@ fn actual_interpreter_provider_refusal_sweep_preserves_default_clone_and_whole_d
     let projection = Projection::receive(&owner).unwrap();
     // Saved ordinary execution independently uses System String and the same
     // full source/entry. No checked payload carrier is installed in that route.
-    let ordinary = super::super::evaluate_resolved_zero_arg_i64(owner.program(), "checked.native.main", 1000).unwrap();
-    assert!(matches!(ordinary.outcome, ResolvedEvaluationOutcome::ReturnedI64(3)));
+    let ordinary =
+        super::super::evaluate_resolved_zero_arg_i64(owner.program(), "checked.native.main", 1000)
+            .unwrap();
+    assert!(matches!(
+        ordinary.outcome,
+        ResolvedEvaluationOutcome::ReturnedI64(3)
+    ));
     for refused in 0..=4 {
         for _ in 0..3 {
             let ((), observed) = crate::test_allocation_observer::measure(|| {
                 // Two literals, concat, then the ORIGINAL owning Place clone.
                 let provider = Inventory::acquire(&["a", "β", "aβ", "aβ"], refused);
                 let outcome = projection.run(provider.clone(), 1000);
-                if refused == 4 { assert!(matches!(outcome, Ok(Value::Int(3)))); }
-                else {
-                    let Err(Flow::Failure(status)) = &outcome else { panic!("physical refusal was hidden"); };
-                    assert_eq!(status.domain_id(), crate::cleanup_plan::ALLOCATION_DOMAIN_V1);
+                if refused == 4 {
+                    assert!(matches!(outcome, Ok(Value::Int(3))));
+                } else {
+                    let Err(Flow::Failure(status)) = &outcome else {
+                        panic!("physical refusal was hidden");
+                    };
+                    assert_eq!(
+                        status.domain_id(),
+                        crate::cleanup_plan::ALLOCATION_DOMAIN_V1
+                    );
                     assert_eq!(status.code(), 1);
                 }
-                assert_eq!(provider.requests.load(Ordering::SeqCst), if refused == 4 { 4 } else { refused + 1 });
-                drop(outcome); drop(provider);
+                assert_eq!(
+                    provider.requests.load(Ordering::SeqCst),
+                    if refused == 4 { 4 } else { refused + 1 }
+                );
+                drop(outcome);
+                drop(provider);
             });
             assert!(!observed.invalid);
             assert_eq!(observed.live, 0);
@@ -80,11 +120,31 @@ fn actual_interpreter_provider_refusal_sweep_preserves_default_clone_and_whole_d
 #[test]
 fn escaped_interpreter_utf8_retains_actual_provider_and_pre_post_failure_settles() {
     for (body, pieces, expected, failure) in [
-        ("{ string_concat(\"a\", \"β\") }", &["a", "β", "aβ"][..], "aβ", false),
+        (
+            "{ string_concat(\"a\", \"β\") }",
+            &["a", "β", "aβ"][..],
+            "aβ",
+            false,
+        ),
         ("{ \"\" }", &[""][..], "", false),
-        ("requires false { string_concat(\"a\", \"β\") }", &[][..], "", true),
-        ("ensures false { string_concat(\"a\", \"β\") }", &["a", "β", "aβ"][..], "", true),
-        ("ensures string_len(result) == 3 { string_concat(\"a\", \"β\") }", &["a", "β", "aβ", "aβ"][..], "aβ", false),
+        (
+            "requires false { string_concat(\"a\", \"β\") }",
+            &[][..],
+            "",
+            true,
+        ),
+        (
+            "ensures false { string_concat(\"a\", \"β\") }",
+            &["a", "β", "aβ"][..],
+            "",
+            true,
+        ),
+        (
+            "ensures string_len(result) == 3 { string_concat(\"a\", \"β\") }",
+            &["a", "β", "aβ", "aβ"][..],
+            "aβ",
+            false,
+        ),
     ] {
         let text = format!("module checked.native; @id(\"checked.native.publish\") fn publish() -> string {body} @id(\"checked.native.main\") fn main() -> i64 {{ 0 }}");
         let source = crate::parse(&text, "checked-interpreter-result.spx").unwrap();
@@ -96,9 +156,13 @@ fn escaped_interpreter_utf8_retains_actual_provider_and_pre_post_failure_settles
             let outcome = projection.run(provider.clone(), 1000);
             assert_eq!(provider.requests.load(Ordering::SeqCst), pieces.len());
             drop(provider);
-            if failure { assert!(matches!(outcome, Err(Flow::Failure(_)))); drop(outcome); }
-            else {
-                let Ok(Value::CheckedString(value)) = outcome else { panic!("result was not its physical owner"); };
+            if failure {
+                assert!(matches!(outcome, Err(Flow::Failure(_))));
+                drop(outcome);
+            } else {
+                let Ok(Value::CheckedString(value)) = outcome else {
+                    panic!("result was not its physical owner");
+                };
                 assert_eq!(value.as_str(), expected);
                 let view = value.borrow();
                 drop(value);
@@ -124,26 +188,51 @@ fn provider_receiving_rejects_shared_wrong_size_and_wrong_bytes_and_keeps_first_
         let before = crate::test_allocation_observer::current_metrics().allocated;
         let first = invocation.materialize(&["a"]);
         assert!(matches!(&first, Err(Flow::Failure(status)) if status.code() == 1));
-        assert!(matches!(invocation.materialize(&["β"]), Err(Flow::Guard(_))));
+        assert!(matches!(
+            invocation.materialize(&["β"]),
+            Err(Flow::Guard(_))
+        ));
         assert_eq!(invocation.physical, Some(AllocationCase::PayloadRefused));
         assert_eq!(provider.requests.load(Ordering::SeqCst), 1);
-        assert_eq!(crate::test_allocation_observer::current_metrics().allocated, before);
-        drop(first); drop(invocation); drop(provider);
+        assert_eq!(
+            crate::test_allocation_observer::current_metrics().allocated,
+            before
+        );
+        drop(first);
+        drop(invocation);
+        drop(provider);
     });
-    assert!(!observed.invalid); assert_eq!(observed.live, 0);
+    assert!(!observed.invalid);
+    assert_eq!(observed.live, 0);
     assert_eq!(observed.allocated, observed.freed);
-    #[derive(Debug)] struct Bad { backing: Arc<[u8]>, shared: bool }
+    #[derive(Debug)]
+    struct Bad {
+        backing: Arc<[u8]>,
+        shared: bool,
+    }
     impl Utf8Provider for Bad {
         fn allocate(&self, _: &[&str]) -> Result<Arc<[u8]>, AllocationCase> {
-            if self.shared { Ok(self.backing.clone()) }
-            else { Ok(Arc::from(self.backing.as_ref())) }
+            if self.shared {
+                Ok(self.backing.clone())
+            } else {
+                Ok(Arc::from(self.backing.as_ref()))
+            }
         }
     }
     // Hostile providers are deliberately outside the prefunded protocol; the
     // receiver must reject them before exposing an owner, even when UTF8 valid.
     for (bytes, shared) in [(&b"a"[..], true), (&b""[..], false), (&b"b"[..], false)] {
-        let mut invocation = Invocation::new(owner.program(), Arc::new(Bad { backing: Arc::from(bytes), shared }));
-        assert!(matches!(invocation.materialize(&["a"]), Err(Flow::Guard(_))));
+        let mut invocation = Invocation::new(
+            owner.program(),
+            Arc::new(Bad {
+                backing: Arc::from(bytes),
+                shared,
+            }),
+        );
+        assert!(matches!(
+            invocation.materialize(&["a"]),
+            Err(Flow::Guard(_))
+        ));
     }
 }
 
@@ -155,19 +244,32 @@ fn checked_interpreter_fuel_and_late_argument_failure_preserve_original_order_an
     let mut exhausted = false;
     let mut completed = false;
     for fuel in 0..64 {
-        let old = super::super::evaluate_resolved_zero_arg_i64(owner.program(), "checked.native.main", fuel).unwrap();
+        let old = super::super::evaluate_resolved_zero_arg_i64(
+            owner.program(),
+            "checked.native.main",
+            fuel,
+        )
+        .unwrap();
         let ((), observed) = crate::test_allocation_observer::measure(|| {
             let provider = Inventory::acquire(&["a", "β", "aβ", "aβ"], usize::MAX);
             let outcome = projection.run(provider.clone(), fuel);
             match old.outcome {
-                ResolvedEvaluationOutcome::ReturnedI64(3) => { completed = true; assert!(matches!(outcome, Ok(Value::Int(3)))); }
-                ResolvedEvaluationOutcome::FuelExhausted => { exhausted = true; assert!(matches!(outcome, Err(Flow::Exhausted))); }
+                ResolvedEvaluationOutcome::ReturnedI64(3) => {
+                    completed = true;
+                    assert!(matches!(outcome, Ok(Value::Int(3))));
+                }
+                ResolvedEvaluationOutcome::FuelExhausted => {
+                    exhausted = true;
+                    assert!(matches!(outcome, Err(Flow::Exhausted)));
+                }
                 _ => panic!("saved ordinary fuel oracle did not follow its original contract"),
             }
             assert!(provider.requests.load(Ordering::SeqCst) <= 4);
-            drop(outcome); drop(provider);
+            drop(outcome);
+            drop(provider);
         });
-        assert!(!observed.invalid); assert_eq!(observed.live, 0);
+        assert!(!observed.invalid);
+        assert_eq!(observed.live, 0);
         assert_eq!(observed.allocated, observed.freed);
     }
     assert!(exhausted && completed);
@@ -182,20 +284,34 @@ fn checked_interpreter_fuel_and_late_argument_failure_preserve_original_order_an
     let source = crate::parse(LATE, "checked-interpreter-late.spx").unwrap();
     let owner = received(&source, false);
     let projection = Projection::receive(&owner).unwrap();
-    let old = super::super::evaluate_resolved_zero_arg_i64(owner.program(), "checked.native.main", 1000).unwrap();
-    let ResolvedEvaluationOutcome::LanguageFailure(expected) = old.outcome else { panic!("saved late failure refused differently"); };
+    let old =
+        super::super::evaluate_resolved_zero_arg_i64(owner.program(), "checked.native.main", 1000)
+            .unwrap();
+    let ResolvedEvaluationOutcome::LanguageFailure(expected) = old.outcome else {
+        panic!("saved late failure refused differently");
+    };
     for refusal in [0, usize::MAX] {
         let ((), observed) = crate::test_allocation_observer::measure(|| {
             let provider = Inventory::acquire(&["a"], refusal);
             let outcome = projection.run(provider.clone(), 1000);
-            let Err(Flow::Failure(status)) = &outcome else { panic!("late failure did not select a language status"); };
-            if refusal == 0 { assert_eq!(status.domain_id(), crate::cleanup_plan::ALLOCATION_DOMAIN_V1); }
-            else { assert_eq!(status, &expected); }
+            let Err(Flow::Failure(status)) = &outcome else {
+                panic!("late failure did not select a language status");
+            };
+            if refusal == 0 {
+                assert_eq!(
+                    status.domain_id(),
+                    crate::cleanup_plan::ALLOCATION_DOMAIN_V1
+                );
+            } else {
+                assert_eq!(status, &expected);
+            }
             // The outer callee and its owning-read clone never execute.
             assert_eq!(provider.requests.load(Ordering::SeqCst), 1);
-            drop(outcome); drop(provider);
+            drop(outcome);
+            drop(provider);
         });
-        assert!(!observed.invalid); assert_eq!(observed.live, 0);
+        assert!(!observed.invalid);
+        assert_eq!(observed.live, 0);
         assert_eq!(observed.allocated, observed.freed);
     }
 }
@@ -208,15 +324,26 @@ fn checked_contract_result_alias_requires_current_function_provider_and_protecte
 "#;
     let source = crate::parse(CONTRACT, "checked-interpreter-contract.spx").unwrap();
     let owner = received(&source, true);
-    let function = owner.program().functions.iter().find(|f| f.id.as_str() == "checked.native.publish").unwrap();
+    let function = owner
+        .program()
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "checked.native.publish")
+        .unwrap();
     let foreign_function = function.clone();
     let provider = Inventory::acquire(&["a"], usize::MAX);
     let mut invocation = Invocation::new(owner.program(), provider);
     let value = invocation.materialize(&["a"]).unwrap();
-    assert!(matches!(invocation.contract_result(&foreign_function, &value), Err(Flow::Guard(_))));
+    assert!(matches!(
+        invocation.contract_result(&foreign_function, &value),
+        Err(Flow::Guard(_))
+    ));
     let foreign_provider = Inventory::acquire(&["a"], usize::MAX);
     let foreign_invocation = Invocation::new(owner.program(), foreign_provider);
-    assert!(matches!(foreign_invocation.contract_result(function, &value), Err(Flow::Guard(_))));
+    assert!(matches!(
+        foreign_invocation.contract_result(function, &value),
+        Err(Flow::Guard(_))
+    ));
     let alias = invocation.contract_result(function, &value).unwrap();
     assert_eq!(alias.as_str(), "a");
     assert!(Arc::ptr_eq(&alias.backing.bytes, &value.backing.bytes));
@@ -224,6 +351,11 @@ fn checked_contract_result_alias_requires_current_function_provider_and_protecte
     // checked factory must not substitute an alias to admit that source.
     let hostile = CONTRACT.replace("string_len(result)", "string_len(string_take(result))");
     let hostile = crate::parse(&hostile, "checked-interpreter-contract-hostile.spx").unwrap();
-    assert!(crate::cleanup_plan::checked_allocation::prepare_string_result(&hostile,
-        &DeclarationId::new("checked.native.publish")).is_err());
+    assert!(
+        crate::cleanup_plan::checked_allocation::prepare_string_result(
+            &hostile,
+            &DeclarationId::new("checked.native.publish")
+        )
+        .is_err()
+    );
 }

@@ -24,9 +24,15 @@ pub(super) fn read(
     if let Value::CheckedString(text) = value {
         let backing = Utf8Backing::Checked(text.borrow());
         return Ok(if bytes {
-            Value::BorrowedSlice(BorrowedSliceValue::from_view(place.root.clone().into(), backing))
+            Value::BorrowedSlice(BorrowedSliceValue::from_view(
+                place.root.clone().into(),
+                backing,
+            ))
         } else {
-            Value::BorrowedStr(BorrowedStrValue { invocation_root: place.root.clone().into(), bytes: backing })
+            Value::BorrowedStr(BorrowedStrValue {
+                invocation_root: place.root.clone().into(),
+                bytes: backing,
+            })
         });
     }
     let Value::String(text) = value else {

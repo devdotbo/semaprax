@@ -30,7 +30,9 @@ impl Evaluator<'_> {
             Value::Map(value) => Value::Map(Arc::clone(value)),
             Value::Collection(value) => Value::Collection(Arc::clone(value)),
             Value::String(value) => Value::String(self.materialize_utf8_copy(value)?),
-            Value::CheckedString(value) => Value::CheckedString(self.checked_utf8(&[value.as_str()])?),
+            Value::CheckedString(value) => {
+                Value::CheckedString(self.checked_utf8(&[value.as_str()])?)
+            }
             Value::BorrowedStr(value) => Value::BorrowedStr(value.clone()),
             Value::BorrowedSlice(value) => Value::BorrowedSlice(value.clone()),
             Value::OptionU8(value) => Value::OptionU8(*value),

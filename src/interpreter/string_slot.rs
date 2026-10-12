@@ -136,8 +136,10 @@ impl Evaluator<'_> {
             .slot_function
             .ok_or(Flow::Guard("String-slot frame has no execution identity"))?;
         let function = match &self.admitted {
-            FunctionLookup::Checked(program) => program.functions.iter().find(|function|
-                *function as *const ResolvedFunction as usize == address),
+            FunctionLookup::Checked(program) => program
+                .functions
+                .iter()
+                .find(|function| *function as *const ResolvedFunction as usize == address),
             FunctionLookup::Borrowed(functions) => functions
                 .values()
                 .copied()
