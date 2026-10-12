@@ -23,15 +23,53 @@ fn warm_copy_discard_cache_preserves_current_provider_and_lexical_wire() {
     let fixture = Fixture::new();
     let ast = semaprax::parse(APP, "app.spx").unwrap();
     fixture.write("src/app.spx", &semaprax::format::canonical(&ast));
+    // The owned private helper remains unavailable under ScalarV1.
+    let scalar_manifest = fixture.manifest();
+    let scalar_refusal = errors(
+        ProjectFrontendCache::new_with_semantic_cache().build(&scalar_manifest, &fixture.sources()),
+    );
+    assert!(
+        scalar_refusal.iter().any(|error| error.code == "SPX-G174"),
+        "{scalar_refusal:?}"
+    );
+    // UsefulDataV2 admits ordinary private entry helpers, with no public exports.
+    std::fs::write(
+        fixture.0.join("semaprax.toml"),
+        r#"schema = "semaprax.project.v16"
+name = "calculator"
+version = "0.1.0"
+profile = "useful-data.v2"
+entry = "calculator.app"
+sources = ["src/app.spx", "src/core.spx", "src/spare.spx", "src/tests.spx"]
+web_exports = []
+tests = ["calculator.tests"]
+"#,
+    )
+    .unwrap();
     let manifest = fixture.manifest();
     let mut cache = ProjectFrontendCache::new_with_semantic_cache();
     let cold = cache.build(&manifest, &fixture.sources()).unwrap();
     work(&cold, 4, 0);
     same(cold.revision(), fixture.cold().unwrap());
-    assert!(cold
-        .revision()
-        .semantic_graph()
-        .contains("\"kind\":\"copy_discard\""));
+    let entry = cold.revision().entry_program();
+    let main = entry
+        .functions
+        .iter()
+        .find(|function| function.id.as_str() == "calculator.app.main")
+        .unwrap();
+    let semaprax::hir::ResolvedExprKind::Block { statements, .. } = &main.body.kind else {
+        panic!("entry block")
+    };
+    let semaprax::hir::ResolvedStatement::LexicalWhile { body, .. } = &statements[1] else {
+        panic!("finite lexical loop")
+    };
+    let semaprax::hir::ResolvedExprKind::Block { statements, .. } = &body.kind else {
+        panic!("loop block")
+    };
+    assert!(
+        matches!(&statements[1], semaprax::hir::ResolvedStatement::CopyDiscard { value, .. }
+        if matches!(&value.kind, semaprax::hir::ResolvedExprKind::Match { .. }))
+    );
     assert!(cold
         .revision()
         .sources()
