@@ -108,3 +108,6 @@ impl<'value> Values<'value> {
 }
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod checkpoint_tests;

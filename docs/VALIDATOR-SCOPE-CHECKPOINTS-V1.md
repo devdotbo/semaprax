@@ -24,8 +24,8 @@ The live invocation pays literal initial and local checkpoint control storage.
 Every newly allocated AVL node pays its Rc reference-count header, actual node
 layout and literal initializer stack before allocation. Shared paths construct
 new path nodes transactionally; balancing moves their fresh unique path nodes
-and existing sibling handles without another allocation. a refusal retains the original
-complete root. A search path can mutate only when each node has exactly one
+and existing sibling handles without another allocation. A refusal retains the
+original complete root. A search path can mutate only when each node has exactly one
 strong reference and no weak references. It prepays and allocates a missing leaf
 before changing any node; insertion and rotations then move unique path nodes
 and existing subtree handles without allocating or making a fallible payment.
@@ -52,3 +52,13 @@ observed separately against the prior borrowed directory; no gain is presumed.
 Full application qualification and scoped Clippy remain mandatory in the
 consolidated batch. Any remaining funding gap must be reported; private source
 controls do not complete OPT795 or establish agent token savings.
+
+Nine source-authored owners in
+`hir::validation::generic_template::values::checkpoint_tests` cover the full
+ordered policies/rotations/replacements, independent borrowed snapshot requests,
+insertion and fork receiving lifetimes, exact/short/sticky Drop, unique/shared
+failed publication, sibling domains/unwind, full retained symbolic applications
+and contracts, nested depth/late errors, and zero-allocation replacement after
+sticky refusal. Their module and both production storage children are joined
+into all existing validator text audits. No tests, Clippy or application owners
+have been executed for this source batch.

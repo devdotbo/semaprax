@@ -31,6 +31,9 @@ macro_rules! generic_values_source_inventory {
             include_str!("../../../../../../src/hir/validation/generic_template/values/charge.rs"),
             include_str!("../../../../../../src/hir/validation/generic_template/values/tree.rs"),
             include_str!("../../../../../../src/hir/validation/generic_template/values/tests.rs"),
+            include_str!(
+                "../../../../../../src/hir/validation/generic_template/values/checkpoint_tests.rs"
+            ),
         )
     };
 }
