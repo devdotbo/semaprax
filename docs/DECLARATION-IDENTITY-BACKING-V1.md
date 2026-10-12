@@ -45,3 +45,16 @@ retry, last-owner Drop, decoder-local/owning cap separation, exhausted-budget pu
 queries and graph key lookup. Their allocation scopes are narrow identity scopes,
 not whole resolver/replay/graph funding evidence. Literal constructor source controls
 cover only named migrated domains. No full OPT785 completion or fit claim follows.
+
+Clone-only replay precharges price no DeclarationId text backing: both valid
+static and shared variants retain their existing storage. Type-argument and
+function-parameter Vecs, boxed result types, projection/case/flag directories,
+renewal carriers and String-backed FunctionInstanceId clones remain charged.
+The path-state clone census retains its original depth/work bounds. Zero-byte
+clone requests still consult the same payer and cannot reopen a refused ledger.
+Mixed retained-owner capacity, fresh construction, decode, source forecasts and
+literal compiler/runtime ceilings are unchanged. Narrow authored observers cover
+static/shared clone requests, nested type and conditional-state clone backing,
+and real selected setup through exact/one-short refusal, zero retry and Drop.
+These source controls await execution; they establish no application fit or
+whole-validator/engine funding claim.
