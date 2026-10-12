@@ -181,9 +181,9 @@ impl Evaluator<'_> {
             return Err(Flow::Guard("forged explicit Vec sort descriptor"));
         }
         if op == crate::vec_ops::VecOp::UniqueBy
-            && (!crate::vec_ops::field_unique::arguments(args, &element)
-                || crate::vec_ops::field_unique::replay(declarations, &element, identity)
-                    .is_none())
+            && (crate::vec_ops::field_unique::inspect(expression).is_none()
+                || !crate::vec_ops::field_unique::arguments(args, &element)
+                || crate::vec_ops::field_unique::replay(declarations, &element, identity).is_none())
         {
             return Err(Flow::Guard("forged borrowed field uniqueness descriptor"));
         }

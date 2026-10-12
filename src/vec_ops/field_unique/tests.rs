@@ -65,7 +65,10 @@ fn literal_descriptor_canonical_graph_cache_replay_and_selective_prelude() {
     }
     // Programs without the operation keep their exact older selection.
     let legacy = crate::check(
-        &SOURCE.replace("vec_unique_by<Row>(rows,\"id\")", "vec_len<Row>(rows)==0usize"),
+        &SOURCE.replace(
+            "vec_unique_by<Row>(rows,\"id\")",
+            "vec_len<Row>(rows)==0usize",
+        ),
         "old.spx",
     )
     .unwrap();
@@ -99,9 +102,14 @@ fn independent_source_and_resolved_derivations_agree_and_close_the_key_profile()
         );
     }
     // Floating and Bytes keys stay outside v1; selectors are one identifier.
-    for field in ["score", "blob", "missing", "", "id:asc", "rank,id", "1id", "i d"] {
+    for field in [
+        "score", "blob", "missing", "", "id:asc", "rank,id", "1id", "i d",
+    ] {
         assert!(source(row, field).is_none(), "{field}");
-        assert!(resolve(&program.declarations, &element, field).is_none(), "{field}");
+        assert!(
+            resolve(&program.declarations, &element, field).is_none(),
+            "{field}"
+        );
     }
     assert!(!literal(&"a".repeat(MAX_FIELD_BYTES + 1)));
     // A reused sort selector never authorizes the distinct uniqueness opcode.
@@ -130,20 +138,23 @@ fn dynamic_missing_foreign_float_bytes_generic_temporary_and_moved_roots_refuse(
             "vec_unique_by<Row>(rows,\"id\")",
             "vec_unique_by<Row>(vec_with_capacity<Row>(0usize),\"id\")",
         ),
-        ("vec_unique_by<Row>(rows,\"id\")", "vec_unique_by<Row>(rows)"),
+        (
+            "vec_unique_by<Row>(rows,\"id\")",
+            "vec_unique_by<Row>(rows)",
+        ),
         (
             "vec_unique_by<Row>(rows,\"id\")",
             "vec_unique_by<Row>(rows,\"id\",\"rank\")",
         ),
-        ("vec_unique_by<Row>(rows,\"id\")", "vec_unique_by<i64>(rows,\"id\")"),
+        (
+            "vec_unique_by<Row>(rows,\"id\")",
+            "vec_unique_by<i64>(rows,\"id\")",
+        ),
         (
             "let unique=vec_unique_by<Row>(rows,\"id\");",
             "let moved=rows; let unique=vec_unique_by<Row>(rows,\"id\");",
         ),
-        (
-            "@id(\"unique.row.rank\") rank:i64,",
-            "rank:i64,",
-        ),
+        ("@id(\"unique.row.rank\") rank:i64,", "rank:i64,"),
     ] {
         let source = SOURCE.replace(from, to);
         assert_ne!(source, SOURCE, "{to}");
@@ -216,11 +227,13 @@ fn stale_foreign_layout_float_root_result_and_cached_descriptors_refuse() {
     };
     *callee = DeclarationId::new(other);
     crate::hir::validate(&substituted).unwrap();
-    for mutate in [0, 2, 3] {
+    for mutate in [0, 1, 2, 3, 4] {
         let mut bad = original.clone();
         let expression = call(&mut bad, "unique.main");
         match mutate {
             0 => expression.ty = ResolvedType::I64,
+            1 => expression.ownership = OwnershipMode::Own,
+            4 => expression.ownership = OwnershipMode::Borrow,
             2 => {
                 let crate::hir::ResolvedExprKind::Call { type_arguments, .. } =
                     &mut expression.kind
@@ -238,6 +251,9 @@ fn stale_foreign_layout_float_root_result_and_cached_descriptors_refuse() {
             }
         }
         assert!(crate::hir::validate(&bad).is_err(), "{mutate}");
+        assert!(inspect(call(&mut bad, "unique.main")).is_none(), "{mutate}");
+        assert!(crate::codegen::emit_hir_c(&bad).is_err(), "{mutate}");
+        assert!(crate::wasm::emit_resolved_module(&bad).is_err(), "{mutate}");
     }
 }
 
