@@ -4884,7 +4884,7 @@ impl<'a> HirValidator<'a> {
                         let facts = self
                             .program
                             .declarations
-                            .type_facts(&scrutinee.ty)
+                            .type_flags(&scrutinee.ty)
                             .ok_or_else(|| hir_error("record match has no exact type facts"))?;
                         match mode {
                             ResolvedMatchMode::Value
@@ -5010,7 +5010,7 @@ impl<'a> HirValidator<'a> {
                         let facts = self
                             .program
                             .declarations
-                            .type_facts(&scrutinee.ty)
+                            .type_flags(&scrutinee.ty)
                             .ok_or_else(|| hir_error("variant match has no exact type facts"))?;
                         match mode {
                             ResolvedMatchMode::Value
@@ -5229,7 +5229,7 @@ impl<'a> HirValidator<'a> {
                                     let facts = self
                                         .program
                                         .declarations
-                                        .type_facts(&binding_ty)
+                                        .type_flags(&binding_ty)
                                         .ok_or_else(|| {
                                         hir_error("variant binding has no exact type facts")
                                     })?;
@@ -5766,7 +5766,7 @@ impl<'a> HirValidator<'a> {
             if scope.values().any(|binding| {
                 self.program
                     .declarations
-                    .type_facts(&binding.ty)
+                    .type_flags(&binding.ty)
                     .is_some_and(|facts| facts.contains_resource)
             }) {
                 return Err(hir_error(
@@ -5860,7 +5860,7 @@ impl<'a> HirValidator<'a> {
                     && self
                         .program
                         .declarations
-                        .type_facts(&binding.ty)
+                        .type_flags(&binding.ty)
                         .is_some_and(|facts| facts.needs_drop)
             }) {
                 return Err(hir_error(

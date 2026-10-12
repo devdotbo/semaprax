@@ -20,7 +20,8 @@ impl From<&TypeFacts> for TypeFlags {
 }
 impl DeclarationIndex {
     /// Preserve current-index cache precedence, including hostile cached facts.
-    /// Dynamic identities retain the complete old receiver and its refusals.
+    /// Dynamic identities retain the old key traversal and miss computation.
+    /// A cache hit borrows the facts instead of cloning their layout payload.
     pub(crate) fn type_flags(&self, ty: &ResolvedType) -> Option<TypeFlags> {
         let key = match ty {
             ResolvedType::Never => "never:lexical-exit:v1",
@@ -42,7 +43,14 @@ impl DeclarationIndex {
             ResolvedType::OnceFunctionI64 => "fn-once:bytes+i64:i64:v2",
             ResolvedType::OnceFunctionI64Pair => "fn-once:bytes+i64+i64:i64:v3",
             ResolvedType::MutFunctionI64 => "fn-mut:i64+i64:i64:v1",
-            _ => return self.type_facts(ty).as_ref().map(TypeFlags::from),
+            _ => {
+                let key = ty.identity_key();
+                return self
+                    .type_facts_by_id
+                    .get(&key)
+                    .map(TypeFlags::from)
+                    .or_else(|| self.recompute_type_facts(ty).as_ref().map(TypeFlags::from));
+            }
         };
         if let Some(facts) = self.type_facts_by_id.get(key) {
             return Some(TypeFlags::from(facts));

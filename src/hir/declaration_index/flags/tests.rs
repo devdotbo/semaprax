@@ -188,3 +188,56 @@ fn dynamic_flags_keep_owned_layout_unknown_generic_and_malformed_fallback_verdic
         "queries publish no new memo or layout facts"
     );
 }
+
+#[test]
+fn dynamic_cached_flags_remove_only_retained_layout_clones_through_drop() {
+    // Current cached facts are intentionally independent of language constants:
+    // the full owned API remains the oracle even for hostile layout/flag facts.
+    let mut index = DeclarationIndex::default();
+    let ty = ResolvedType::Nominal {
+        declaration: DeclarationId::new("current.row"),
+        arguments: vec![ResolvedType::I64],
+    };
+    let key = ty.identity_key();
+    const LAYOUT: &str = "retained-layout-payload";
+    const QUERIES: usize = 32;
+    index.type_facts_by_id.insert(
+        key,
+        TypeFacts {
+            copy: true,
+            contains_resource: true,
+            sized: false,
+            needs_drop: true,
+            layout_key: LAYOUT.to_owned(),
+        },
+    );
+    let expected = Some(TypeFlags {
+        copy: true,
+        contains_resource: true,
+        sized: false,
+        needs_drop: true,
+    });
+    let (_, owned) = crate::test_allocation_observer::measure(|| {
+        for _ in 0..QUERIES {
+            let facts = std::hint::black_box(index.type_facts(&ty));
+            assert_eq!(facts.as_ref().map(TypeFlags::from), expected);
+            drop(facts);
+        }
+    });
+    let (_, borrowed) = crate::test_allocation_observer::measure(|| {
+        for _ in 0..QUERIES {
+            assert_eq!(index.type_flags(&ty), expected);
+        }
+    });
+    // Both paths still allocate identical dynamic key traversal scratch. Only
+    // the owned oracle clones this literal retained String once per query.
+    assert!(!owned.invalid && !borrowed.invalid);
+    assert_eq!(owned.live, 0);
+    assert_eq!(borrowed.live, 0);
+    assert_eq!(owned.allocated, owned.freed);
+    assert_eq!(borrowed.allocated, borrowed.freed);
+    assert_eq!(owned.allocations, borrowed.allocations + QUERIES);
+    assert_eq!(owned.allocated, borrowed.allocated + QUERIES * 23);
+    assert_eq!(LAYOUT.len(), 23);
+    assert_eq!(index.type_flags(&ty), old(&index, &ty));
+}

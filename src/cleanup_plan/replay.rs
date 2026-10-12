@@ -5239,7 +5239,7 @@ fn authenticated_try_stage_source(
         ));
     }
     for ty in [&operand.ty, residual_type] {
-        let facts = program.declarations().type_facts(ty).ok_or_else(|| {
+        let facts = program.declarations().type_flags(ty).ok_or_else(|| {
             replay_error(function, "postfix `?` Result instance has no type facts")
         })?;
         let valid = if exact_owned {
@@ -5335,7 +5335,7 @@ fn authenticated_try_option_stage_source(
         ));
     }
     for ty in [&operand.ty, residual_type] {
-        let facts = program.declarations().type_facts(ty).ok_or_else(|| {
+        let facts = program.declarations().type_flags(ty).ok_or_else(|| {
             replay_error(function, "Option postfix `?` instance has no type facts")
         })?;
         if !facts.copy || !facts.sized || facts.contains_resource || facts.needs_drop {
