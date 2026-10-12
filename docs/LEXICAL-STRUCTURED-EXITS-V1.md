@@ -516,3 +516,23 @@ without a defining-source sidecar nor a completed #745 qualification claim.
 The selective direct expression-statement CopyDiscard extension is owned by
 [Finite owned-record discard loops v1](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md).
 It does not relax named Let initializers or StatementIf guard completion.
+
+### Ordinary paid conditional-finalizer validation
+
+Allocation payment and primitive selected admission are independent. Ordinary
+replay under the active builder keeps the exact variant storage, nominal type,
+case path, lifecycle and unique-leaf checks of the original finalizer validator.
+Its guard set requests backing from the same payer before growth. The selected
+primitive route continues to refuse conditional ownership.
+
+Execution-boundary validation authenticates all referenced regions before
+comparing finalizers in canonical runtime order. Ordinary live and conditional
+contours are compared as borrowed iterators, without temporary vectors or
+cloned variant guards. This does not reorder, repair or omit any finalizer.
+
+The `ordinary_paid_conditional_finalizers_keep_legacy_authority_and_selected_refusal`
+owner compares actual resolved Option/string finalizer facts against the original
+validator, including malformed case/type/storage/lifecycle and duplicate guards,
+selected refusal, exact/one-short backing, and successful allocation through
+Drop. These controls are authored; qualification and the unchanged complete
+ShiftSim acceptance remain pending. No application or agent-cost gain is claimed.

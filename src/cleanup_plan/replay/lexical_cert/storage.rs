@@ -224,11 +224,36 @@ pub(in crate::cleanup_plan::replay) fn finalizer_actions(
                 "finalizer lifecycle or guard is invalid or repeated",
             ));
         }
-        if action.active_case.is_some() {
-            return Err(replay_error(
-                function,
-                "selected lexical boundary conditional ownership is outside the primitive profile",
-            ));
+        if let Some(condition) = &action.active_case {
+            // Paying ordinary backing does not select the primitive profile.
+            // Keep the original variant/path authentication without a cloned
+            // leaf vector; insert_set above funds the only growing scratch.
+            if budget.selected() {
+                return Err(replay_error(
+                    function,
+                    "selected lexical boundary conditional ownership is outside the primitive profile",
+                ));
+            }
+            if condition.storage != action.source.storage
+                || action.source.projections.first() != Some(&condition.case)
+                || function
+                    .cleanup_plan
+                    .slots
+                    .iter()
+                    .find(|slot| slot.storage == condition.storage)
+                    .is_none_or(|slot| {
+                        !matches!(
+                            &slot.ty,
+                            ResolvedType::Nominal { declaration, .. }
+                                if declaration == &condition.variant
+                        )
+                    })
+            {
+                return Err(replay_error(
+                    function,
+                    "conditional finalizer does not bind its exact variant case path",
+                ));
+            }
         }
     }
     Ok(())
@@ -328,3 +353,6 @@ mod tests {
             .contains("cycle"));
     }
 }
+
+#[cfg(test)]
+mod ordinary_finalizers;

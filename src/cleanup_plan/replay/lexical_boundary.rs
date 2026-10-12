@@ -248,45 +248,30 @@ pub(super) fn check(
         }
         return Ok(());
     }
-    let expected = state.live_order.iter().rev().copied().collect::<Vec<_>>();
-    let mut expected_conditional = Vec::new();
+    // Authenticate all region references before comparing either contour,
+    // preserving the ordinary route's first-error order. Compare borrowed
+    // case facts instead of allocating four vectors and cloning each guard.
     for variant in state.conditional_variants.iter().rev() {
         let _ = storage_regions
             .get(&variant.root.storage)
             .ok_or_else(|| replay_error(function, "execution boundary variant has no region"))?;
-        for (case, flags) in variant.cases.iter().rev() {
-            for flag in flags.iter().rev() {
-                expected_conditional.push((
-                    *flag,
-                    crate::cleanup_plan::VariantCaseGuard {
-                        storage: variant.root.storage.clone(),
-                        variant: variant.variant.clone(),
-                        case: case.clone(),
-                    },
-                ));
-            }
-        }
     }
-    let actual = item
-        .finalize_in_order
-        .iter()
-        .filter_map(|action| {
-            state
-                .live_order
-                .contains(&action.guard_flag)
-                .then_some(action.guard_flag)
+    let expected = state.live_order.iter().rev().copied();
+    let expected_conditional = state.conditional_variants.iter().rev().flat_map(|variant| {
+        variant.cases.iter().rev().flat_map(move |(case, flags)| {
+            flags.iter().rev().map(move |flag| {
+                (*flag, &variant.root.storage, &variant.variant, case)
+            })
         })
-        .collect::<Vec<_>>();
-    let actual_conditional = item
-        .finalize_in_order
-        .iter()
-        .filter_map(|action| {
-            action
-                .active_case
-                .as_ref()
-                .map(|condition| (action.guard_flag, condition.clone()))
+    });
+    let actual = item.finalize_in_order.iter().filter_map(|action| {
+        state.live_order.contains(&action.guard_flag).then_some(action.guard_flag)
+    });
+    let actual_conditional = item.finalize_in_order.iter().filter_map(|action| {
+        action.active_case.as_ref().map(|condition| {
+            (action.guard_flag, &condition.storage, &condition.variant, &condition.case)
         })
-        .collect::<Vec<_>>();
+    });
     // Every action must finalize a live leaf of this exact state: a stale
     // finalizer for a dead flag would double-release at a guard failure.
     let actions = item
@@ -294,7 +279,9 @@ pub(super) fn check(
         .iter()
         .filter(|action| action.active_case.is_none())
         .count();
-    if actual != expected || actual_conditional != expected_conditional || actions != expected.len()
+    if actual.ne(expected)
+        || actual_conditional.ne(expected_conditional)
+        || actions != state.live_order.len()
     {
         return Err(replay_error(
             function,
