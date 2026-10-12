@@ -265,8 +265,10 @@ fn failed_unique_and_shared_publication_retains_full_prior_map_at_each_paid_node
             if let Some(held) = held {
                 assert_eq!(held.ordered_entries(), before);
             }
+            let remaining = crate::bounded_output::active_remaining().unwrap();
             drop(result);
-            accepted
+            assert_eq!(crate::bounded_output::active_remaining(), Some(remaining));
+            (accepted, remaining)
         })
     };
     // Semantic projection allocations here are outside the storage lifetime
@@ -285,13 +287,25 @@ fn failed_unique_and_shared_publication_retains_full_prior_map_at_each_paid_node
             });
         let () = setup_result;
         assert!(!setup_refused);
-        let (ok, refused, total, _) = observe(shared, usize::MAX);
+        let ((ok, remaining), refused, total, _) = observe(shared, usize::MAX);
+        assert_eq!(total, usize::MAX - remaining);
         assert!(ok && !refused && total > setup);
+        let mut paid_intermediate = false;
         for limit in setup..total {
-            let (ok, refused, _, receipt) = observe(shared, limit);
+            let ((ok, remaining), refused, used, receipt) = observe(shared, limit);
             assert!(!ok && refused && receipt.is_some());
+            assert_eq!(used, limit - remaining);
+            assert!(used >= setup && used <= limit);
+            paid_intermediate |= used > setup;
         }
-        let (ok, refused, actual, _) = observe(shared, total);
+        if shared {
+            assert!(
+                paid_intermediate,
+                "a refused parent retains its paid child debit"
+            );
+        }
+        let ((ok, remaining), refused, actual, _) = observe(shared, total);
+        assert_eq!(actual, total - remaining);
         assert!(ok && !refused && actual == total);
     }
 }
