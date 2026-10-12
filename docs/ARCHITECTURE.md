@@ -146,6 +146,22 @@ Unwind controls own, catch and drop their actual message payload inside the
 observation, without invoking the test harness panic hook. These source-only
 corrections assert no measured funding closure or application recovery.
 
+`hir/closure/paid.rs` and `paid/copy.rs` own the private validation product's
+canonical identity/result backing and literal parameter/body constructors.
+`hir/validation/closure.rs` routes all four direct identity insertion sites
+through the existing constructor payer, retaining capture and merge diagnostic
+priority. The copied root is a direct `ResolvedExpr`; child boxes retain their
+actual constructors. Shared declaration/value/expression identities clone without
+new backing. Complete shape validation and the three ordinary canonical plan
+builders retain their order and work, and remain residual funding domains.
+Recursive scalar and fixed affine/mutable/borrowed admission defines the copied
+variant/statement inventory; a complete legacy fallback preserves future profile
+behavior while explicitly remaining unpaid. Metadata types beyond the existing
+bounded replay clone census likewise retain a complete unpaid clone rather than
+introducing a shape refusal. The original public product and full
+saved receiver/corpus stay independent; source-only controls make no allocation
+or application recovery claim.
+
 `hir/validation/scope_checkpoint.rs` owns private persistent ordered ownership
 scopes. `hir/validation/function_scope.rs` seeds parameter bindings directly
 into that paid scope, validates the body through the existing checkpoint-target

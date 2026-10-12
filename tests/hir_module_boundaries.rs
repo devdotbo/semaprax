@@ -144,6 +144,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/vec_loop_renewal/tests.rs"),
         include_str!("../src/hir/validation/callable_types.rs"),
         include_str!("../src/hir/validation/closure.rs"),
+        include_str!("../src/hir/validation/closure/old.rs"),
+        include_str!("../src/hir/validation/closure/tests.rs"),
         include_str!("../src/hir/generic_result.rs"),
         include_str!("../src/hir/generic_mapping.rs"),
         include_str!("../src/hir/validation/box_intrinsic.rs"),

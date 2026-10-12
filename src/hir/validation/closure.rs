@@ -27,11 +27,12 @@ impl HirValidator<'_> {
             let ResolvedExprKind::Place(place) = &capture.value.kind else {
                 unreachable!()
             };
+            let expected = path_label::Label::child(path, ".capture.{}", [index, 0])?;
             if !capture
                 .value
                 .id
-                .matches(function, &format!("{path}.capture.{index}"))
-                || !self.expression_ids.insert(capture.value.id.clone())
+                .matches_display(function, expected.len(), expected)
+                || !identity_insert::expression(&mut self.expression_ids, &capture.value.id)?
             {
                 return Err(hir_error(
                     "closure capture expression identity is not canonical",
@@ -55,7 +56,7 @@ impl HirValidator<'_> {
                 self.mark_value_sources_moved(&capture.value, scope)?;
             }
         }
-        let body = super::super::closure::closure_function(self.program, expression)?;
+        let body = super::super::closure::paid::function(self.program, expression)?;
         let execution = FunctionExecutionId::Monomorphic(body.id.clone());
         let mut checked = if let Some(storage) = self.canonical_loans.shared() {
             let seed = constructor_seed::ConstructorSeed::authenticate(
@@ -67,18 +68,21 @@ impl HirValidator<'_> {
             HirValidator::with_directory(self.program, self.functions.directory())?
         };
         checked.validate_function(&body, &execution)?;
-        if checked
-            .expression_ids
-            .iter()
-            .any(|id| !self.expression_ids.insert(id.clone()))
-            || checked
-                .value_ids
-                .iter()
-                .any(|id| !self.value_ids.insert(id.clone()))
-        {
-            return Err(hir_error(
-                "closure body identities collide with the enclosing program",
-            ));
+        // Preserve expression-before-value merge order and each full prefix
+        // on duplicate/refusal; each actual new node has its own constructor payer.
+        for id in &checked.expression_ids {
+            if !identity_insert::expression(&mut self.expression_ids, id)? {
+                return Err(hir_error(
+                    "closure body identities collide with the enclosing program",
+                ));
+            }
+        }
+        for id in &checked.value_ids {
+            if !identity_insert::value(&mut self.value_ids, id)? {
+                return Err(hir_error(
+                    "closure body identities collide with the enclosing program",
+                ));
+            }
         }
         self.finish_expr(expression, &expression.ty, ownership)
     }
@@ -108,12 +112,13 @@ impl HirValidator<'_> {
             unreachable!()
         };
         for (index, capture) in captures.iter().enumerate() {
+            let capture_path = super::super::closure::paid::capture_path(path, index)?;
             self.validate_template_expr(
                 template,
                 execution,
                 &capture.value,
                 values,
-                &format!("{path}.capture.{index}"),
+                &capture_path,
             )?;
         }
         let mut body_values = values.empty_like()?;
@@ -122,14 +127,15 @@ impl HirValidator<'_> {
             .map(|capture| &capture.binding)
             .chain(parameters.iter())
         {
-            if !self.value_ids.insert(binding.id.clone())
+            if !identity_insert::value(&mut self.value_ids, &binding.id)?
                 || body_values.insert(binding.id.clone(), &binding.ty)?
             {
                 return Err(hir_error("generic closure bindings collide"));
             }
         }
-        let body_execution =
-            FunctionExecutionId::Monomorphic(super::super::closure::closure_id(&expression.id));
+        let body_execution = FunctionExecutionId::Monomorphic(
+            super::super::closure::paid::identity(&expression.id)?,
+        );
         self.validate_template_expr(template, &body_execution, body, &mut body_values, "body")?;
         self.finish_expr(expression, &expression.ty, OwnershipMode::Value)
     }
@@ -160,3 +166,9 @@ impl HirValidator<'_> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[rustfmt::skip]
+mod old;
+#[cfg(test)]
+mod tests;

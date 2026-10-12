@@ -1,5 +1,14 @@
 # Changelog
 
+- Author constructor-local HIR closure funding for capture and nested-body identity
+  insertions, canonical identity/result backing, parameter names/types, and the
+  recursively admitted body payload. Construct the body root directly, retaining
+  the complete original public product and receiver as independent references.
+  Preserve shape checks and canonical plan work/order; those constructors and a
+  complete legacy fallback remain explicit unpaid residuals. Add full-state,
+  diagnostic, exact/short/sticky, actual payload Drop and unwind controls.
+  Source-only; no measured allocation improvement or application-fit claim.
+
 - Author persistent HIR contract baselines that inspect every current freshness
   flag, share unchanged roots and bindings, and pay complete true-flag payloads
   plus changed node constructors before returning a staged root. Retain the full

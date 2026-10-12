@@ -143,3 +143,5 @@ pub(super) use materialize::materialize;
 pub(crate) mod borrowed;
 pub(crate) mod mutable;
 pub(crate) mod once;
+
+pub(super) mod paid;
