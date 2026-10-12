@@ -196,7 +196,7 @@ fn deferred_frontier_whole_validation_allocation_debit_and_drop_are_observed() {
     ) -> (crate::test_allocation_observer::Metrics, usize) {
         let (((), metrics), refused, debit) =
             crate::bounded_output::with_limit_usage(usize::MAX, || {
-                crate::test_allocation_observer::measure(|| {
+                crate::test_allocation_observer::measure_with_capacity(131_072, || {
                     let result = if indexed { new(program) } else { old(program) };
                     result.unwrap();
                 })
