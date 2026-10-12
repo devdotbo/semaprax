@@ -1,8 +1,10 @@
-//! Unchanged publication storage only; initial and changed snapshots remain owned.
+//! Exact publication storage; initial snapshots and changed bindings remain owned.
 use super::*;
 use crate::test_allocation_observer::{current_metrics, measure, Metrics};
 #[path = "scope_publication_tests/old.rs"]
 mod old;
+#[path = "scope_publication_tests/changed.rs"]
+mod changed;
 
 fn scope(count: usize) -> BTreeMap<ValueId, ValidationBinding> {
     (0..count)

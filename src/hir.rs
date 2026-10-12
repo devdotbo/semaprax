@@ -496,7 +496,16 @@ impl ValidationScopePublication<'_> {
         // types. Equal snapshots already have precisely the required early
         // error publication; avoid reallocating an unchanged whole map.
         if self.enabled && self.published != *scope {
-            self.published.clone_from(scope);
+            self.published.retain(|key, _| scope.contains_key(key));
+            for (key, binding) in scope {
+                if let Some(published) = self.published.get_mut(key) {
+                    if published != binding {
+                        published.clone_from(binding);
+                    }
+                } else {
+                    self.published.insert(key.clone(), binding.clone());
+                }
+            }
         }
     }
 }

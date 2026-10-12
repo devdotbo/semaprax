@@ -1,7 +1,9 @@
 # Unchanged HIR scope publication v1
 
 Qualification pending. The private iterative validator still owns its initial
-publication snapshot and clones changed snapshots exactly as before. It skips
+publication snapshot. On a changed snapshot it removes absent keys, updates
+only bindings whose complete equality differs, and clones new keys and values.
+Existing equal binding payloads retain their backing. It skips
 `clone_from` only when complete ordered map equality proves the existing
 snapshot already equals the supplied scope. `ValidationBinding` equality covers
 contract-local/mutable flags, exact resolved type, ownership, availability,
@@ -13,7 +15,7 @@ The full comparison visits current bindings and their nested equality payloads;
 this is not a constant-time lookup or a claimed work/timing improvement. The
 reduction is repeated allocation of unchanged owned snapshots. It creates no
 new physical payer, authority, forecast discount or quota change. Initial
-snapshot, changed publication, isolated branch scopes and their physical funding
+snapshot, changed binding clones, isolated branch scopes and their physical funding
 remain outside this optimization.
 
 The new lib owner is
@@ -33,3 +35,18 @@ Removing the initial snapshot needs a separate scope mutation/undo contract.
 Raw mutable map helpers currently take scopes and can fail after partial moves;
 an untracked scope handle alone would expose uncommitted state on late error.
 That larger journal is unimplemented here.
+
+The changed-binding tranche adds
+`hir::scope_publication_tests::changed::changed_publication_retains_full_state_without_recloning_unchanged_payloads_through_drop`
+and
+`hir::scope_publication_tests::changed::changed_publication_preserves_unchanged_backing_and_exact_delete_reinsert_disabled_drop`.
+They retain the saved complete-map clone oracle and observe construction, initial
+snapshot, 128 changes to one binding, final publication and all Drop for 1/64
+bindings. Nested type arguments, move/partial paths and loans remain present.
+Map deletion/reinsertion and disabled publication retain exact state. Existing
+late-error owners above remain required. No execution is claimed here.
+
+Synchronization performs ordered-map lookups and full binding comparisons;
+this is an allocation optimization, not a claimed constant-time update or
+linear-work improvement. No snapshot boundary, selected payer, default cap,
+HIR wire format or publication authority changes.
