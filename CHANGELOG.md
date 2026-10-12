@@ -1,5 +1,7 @@
 # Changelog
 
+- Resolve body-dependent byte-helper callers afresh under function reuse, using the exact shared source proof signature frontier and complete nested call traversal. Current transitive proofs, diagnostics, proof failure and reservations remain; ordinary scalar generic callers still reuse. Author full fresh/error, prior Agent authority, metadata drift and actual allocation/Drop with exact funding controls. Source-only; execution pending.
+
 - Harden complete function reuse signatures with exact yields/follows clause equality and full fresh/nonreuse AST-mutation verdict controls. Make owned-text substitution identity leaves exhaustive so future type variants require review; saved old traversal remains unchanged. Source-only and unqualified.
 
 - Author exact generic-environment selective reuse of unchanged monomorphic function HIR. Complete ordered generic signatures and an exact-current source capability replace the blanket generic exclusion; current templates and the full derived instance closure are still rebuilt independently, with previous generic payloads excluded. Full fresh-owned, stale binding, body/closure/argument drift and actual paid allocation/Drop controls are authored; the genuine Vec/Box reuse assertion remains. Source-only and unqualified, with no generic-instance caching or efficiency claim.

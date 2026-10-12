@@ -151,15 +151,19 @@ impl<'a> SourceIndex<'a> {
             proofs: RefCell::new(SourceProofs::default()),
         }
     }
-    pub(crate) fn target(&self, function: &Function) -> bool {
-        if function.return_type != Type::Bytes
-            || function
+    /// Signature frontier before target() can inspect transitive source bodies
+    /// or allocate proof state. Reuse callers share this exact prerequisite.
+    pub(crate) fn may_require_body_proof(function: &Function) -> bool {
+        function.return_type == Type::Bytes
+            && function
                 .params
                 .iter()
                 .filter(|p| p.mode == ParamMode::Own && p.ty == Type::Bytes)
                 .count()
-                != 1
-        {
+                == 1
+    }
+    pub(crate) fn target(&self, function: &Function) -> bool {
+        if !Self::may_require_body_proof(function) {
             return false;
         }
         let Some(function) = self

@@ -813,6 +813,31 @@ fn function_signature_is_exact(
         && current.span == previous.span
 }
 
+/// Source byte-helper admission reads current transitive bodies and keeps a
+/// phase-owned proof memo/failure. Those call-bearing functions resolve afresh;
+/// cloning their HIR would skip the source diagnostics and proof side effects.
+/// Ordinary signature-bound calls, including generic calls, remain reusable.
+fn function_requires_current_byte_helper_resolution(
+    source: &dyn ProgramSource,
+    function: &ResolvedFunction,
+) -> bool {
+    let mut requires = false;
+    for expression in function
+        .requires
+        .iter()
+        .chain(std::iter::once(&function.body))
+        .chain(&function.ensures)
+    {
+        inspection::visit_resolved_calls(expression, &mut |callee, _, _| {
+            requires |= source.functions().iter().any(|target| {
+                target.stable_id == callee.as_str()
+                    && crate::loop_calls::byte_writer::SourceIndex::may_require_body_proof(target)
+            });
+        });
+    }
+    requires
+}
+
 #[cfg(test)]
 mod function_reuse_environment_tests {
     use super::*;
@@ -1025,6 +1050,201 @@ mod generic_environment_reuse_tests {
                 // Complete programs on success, or all diagnostics in exact
                 // order including spans/messages on refusal, stay identical.
                 assert_eq!(run(true), run(false));
+            }
+        }
+    }
+    fn full_verdict(
+        current: &Program,
+        previous: Option<(&Program, &ResolvedProgram, &BTreeMap<String, usize>)>,
+    ) -> Result<(ResolvedProgram, usize), Vec<Diagnostic>> {
+        let (result, refused, _) = crate::bounded_output::with_limit_usage(LIMIT, || {
+            resolve_with_function_reuse(
+                current,
+                previous.map(|p| p.0),
+                previous.map(|p| p.1),
+                previous.map(|p| p.2),
+                None,
+            )
+        });
+        assert!(!refused);
+        result.map(|(program, work)| (program, work.reused()))
+    }
+    #[test]
+    fn current_byte_helper_body_proofs_keep_full_fresh_verdict_and_scalar_generic_reuse() {
+        const BYTES: &str = include_str!("../tests/owned_data/byte_helper_renewal.spx");
+        let source = format!("{BYTES}\n@id(\"reuse.scalar\") fn scalar<T>(value:T)->T {{value}}\n@id(\"reuse.extra\") fn extra()->i64 {{scalar<i64>(7)}}\n");
+        let previous = parse(&source);
+        let (old, work) = fresh(&previous);
+        let costs = work.costs();
+        for id in ["helper.relay", "app.main"] {
+            let function = old.functions.iter().find(|f| f.id.as_str() == id).unwrap();
+            assert!(function_requires_current_byte_helper_resolution(
+                &previous, function
+            ));
+        }
+        let scalar = old
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "reuse.extra")
+            .unwrap();
+        assert!(!function_requires_current_byte_helper_resolution(
+            &previous, scalar
+        ));
+        assert!(costs["reuse.extra"] > 0);
+        let original = "next=bytes_set(next,index,value);";
+        let cycle = "next=leaf(next,index,value);";
+        let cycle = format!("{cycle}{}", " ".repeat(original.len() - cycle.len()));
+        let mut allocating = previous.clone();
+        let donor = parse(
+            "module donor; @id(\"donor.main\") fn main()->i64 {let ignored=bytes_zeroed(1usize);0}",
+        );
+        let crate::ast::ExprKind::Block {
+            statements: donor, ..
+        } = &donor.functions[0].body.kind
+        else {
+            panic!("donor block")
+        };
+        let crate::ast::ExprKind::Block { statements, .. } = &mut allocating.functions[0].body.kind
+        else {
+            panic!("helper block")
+        };
+        statements.insert(0, donor[0].clone());
+        // Keep exact declaration spans/signatures while changing a source-valid
+        // callee body into an allocating profile. Its unchanged loop callers
+        // must reproduce the ordinary source refusal, before HIR replay.
+        assert!(function_reuse_environment_is_exact(&allocating, &previous));
+        assert_eq!(
+            allocating.functions[1], previous.functions[1],
+            "wrapper caller is unchanged"
+        );
+        let (_, refused, _) = crate::bounded_output::with_limit_usage(LIMIT, || {
+            let index = crate::loop_calls::byte_writer::SourceIndex::new(&allocating);
+            assert!(!index.target(&allocating.functions[1]));
+            assert!(
+                index.failure().is_none(),
+                "body profile refusal is not resource refusal"
+            );
+        });
+        assert!(!refused);
+        let invalid_oracle = full_verdict(&allocating, None);
+        assert_eq!(invalid_oracle.as_ref().unwrap_err()[0].code, "SPX-T252");
+        assert!(invalid_oracle.as_ref().unwrap_err()[0]
+            .message
+            .contains("call `leaf` is not admitted in loop bodies"));
+        assert_eq!(
+            full_verdict(&allocating, Some((&previous, &old, &costs)))
+                .as_ref()
+                .map(|p| &p.0),
+            invalid_oracle.as_ref().map(|p| &p.0),
+        );
+        let variants = [
+            (source.clone(), true),
+            (
+                source.replace("bytes_set(next,index,value)", "bytes_set(next,index,33u8 )"),
+                true,
+            ),
+            (source.replace("at=at+1usize", "at=at+2usize"), true),
+            (source.replace(original, &cycle), false),
+        ];
+        for (variant, (source, admitted)) in variants.into_iter().enumerate() {
+            let current = parse(&source);
+            assert!(function_reuse_environment_is_exact(&current, &previous));
+            let oracle = full_verdict(&current, None);
+            let actual = full_verdict(&current, Some((&previous, &old, &costs)));
+            assert_eq!(actual.as_ref().map(|p| &p.0), oracle.as_ref().map(|p| &p.0));
+            assert_eq!(actual.is_ok(), admitted);
+            if let Ok((_, reused)) = actual {
+                assert!(
+                    reused > 0,
+                    "ordinary generic scalar helper remains genuinely reusable"
+                );
+                if variant == 1 {
+                    // Leaf changed, relay/main require current proofs, and the
+                    // generic declaration resolves fresh. Only extra can clone.
+                    assert_eq!(
+                        reused, 1,
+                        "the unchanged generic call-bearing extra was reused"
+                    );
+                }
+            }
+        }
+        let ((result, observed), refused, required) =
+            crate::bounded_output::with_limit_usage(LIMIT, || {
+                crate::test_allocation_observer::measure(|| {
+                    let actual = resolve_with_function_reuse(
+                        &previous,
+                        Some(&previous),
+                        Some(&old),
+                        Some(&costs),
+                        None,
+                    )?;
+                    assert_eq!(actual.0, old);
+                    assert!(actual.1.reused() > 0);
+                    drop(actual);
+                    Ok::<_, Vec<Diagnostic>>(())
+                })
+            });
+        result.unwrap();
+        assert!(!refused && !observed.invalid);
+        assert!(observed.allocated > 0);
+        assert_eq!(observed.live, 0);
+        assert_eq!(observed.allocated, observed.freed);
+        assert!(required > 0);
+        let (exact, refused, used) = crate::bounded_output::with_limit_usage(required, || {
+            resolve_with_function_reuse(&previous, Some(&previous), Some(&old), Some(&costs), None)
+        });
+        assert!(!refused);
+        assert_eq!(used, required);
+        assert_eq!(exact.unwrap().0, old);
+        let (short, refused, _) = crate::bounded_output::with_limit_usage(required - 1, || {
+            resolve_with_function_reuse(&previous, Some(&previous), Some(&old), Some(&costs), None)
+        });
+        assert!(refused);
+        assert!(short.is_err());
+    }
+    #[test]
+    fn current_agent_metadata_replays_with_no_previous_agent_authority() {
+        let source = format!("{}\n@id(\"reuse.scalar\") fn scalar<T>(value:T)->T {{value}}\n@id(\"reuse.extra\") fn extra()->i64 {{scalar<i64>(7)}}\n", crate::parser::agent_embedded_tests::source());
+        let previous = parse(&source);
+        let (old, work) = fresh(&previous);
+        let costs = work.costs();
+        let mut stale = old.clone();
+        stale.agents[0].name = "stale".into();
+        stale.agents[0].runtime_v1_json = "stale authority".into();
+        stale.agents[0].operations.clear();
+        let mut renamed = previous.clone();
+        renamed.agents[0].name = "CurrentAgent".into();
+        let mut invalid_origin = previous.clone();
+        invalid_origin.agents[0].operations[0].embedded_function_index = Some(usize::MAX);
+        let mut invalid_target = previous.clone();
+        invalid_target.agents[0].operations[0].stable_id = "missing.operation".into();
+        let mut invalid_kind = previous.clone();
+        invalid_kind.agents[0].operations[0].kind = crate::ast::AgentOperationKind::Model;
+        let mut invalid_wait = previous.clone();
+        invalid_wait.agents[0].model_wait = Some(Box::new(crate::ast::AgentModelWaitBinding {
+            helper_id: "op.initialize".into(),
+            span: previous.agents[0].span,
+        }));
+        for (current, admitted) in [
+            (&renamed, true),
+            (&invalid_origin, false),
+            (&invalid_target, false),
+            (&invalid_kind, false),
+            (&invalid_wait, false),
+        ] {
+            assert!(function_reuse_environment_is_exact(current, &previous));
+            let oracle = full_verdict(current, None);
+            let actual = full_verdict(current, Some((&previous, &stale, &costs)));
+            assert_eq!(actual.as_ref().map(|p| &p.0), oracle.as_ref().map(|p| &p.0));
+            assert_eq!(actual.is_ok(), admitted);
+            if let Ok((resolved, reused)) = actual {
+                assert!(reused > 0);
+                assert_eq!(resolved.agents[0].name, "CurrentAgent");
+                assert_eq!(
+                    resolved.agents[0].runtime_v1_json,
+                    current.agents[0].runtime_v1_json
+                );
+                assert!(!resolved.agents[0].operations.is_empty());
             }
         }
     }

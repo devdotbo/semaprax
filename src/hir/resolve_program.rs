@@ -608,7 +608,12 @@ impl Resolver<'_> {
                 .find(|previous| previous.id.as_str() == function.stable_id);
             let cost = reuse.costs.get(&function.stable_id).copied();
             if let (Some(previous), Some(resolved), Some(cost)) = (previous, resolved, cost) {
-                if previous == function {
+                if previous == function
+                    && !super::function_requires_current_byte_helper_resolution(
+                        self.program,
+                        resolved,
+                    )
+                {
                     if !crate::bounded_output::reserve_active(cost) {
                         return Err(self.error(
                             "SPX-H006",

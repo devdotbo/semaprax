@@ -340,3 +340,27 @@ These controls await coordinated execution. This source-only change makes no
 cached generic-instance reuse, fit, runtime efficiency or agent-token claim;
 current instance construction, cleanup/loan replay, builder limits and ordinary
 unauthenticated wrapper refusals remain required.
+
+### Current byte-helper and Agent side effects in function reuse
+
+A resolved caller with any call to a possible source byte-helper target resolves
+fresh. The shared `SourceIndex::may_require_body_proof` signature prerequisite
+is exactly the one used before source body proofs: a Bytes result and exactly
+one own Bytes parameter. The existing complete borrowed call visitor checks
+requires, body and ensures, including control flow and nested children. This
+retains current transitive nonallocation proofs, source diagnostic selection,
+phase-owned proof memo/failure and builder reservations. A transitive changed
+helper cannot hide: the direct caller crosses this prerequisite and runs the
+current full source proof. A scalar wrapper's own internal proof-dependent
+calls likewise force its fresh resolution; callers whose admission depends only
+on its unchanged scalar signature remain reusable. This restriction is local to
+body-dependent byte-helper callers, and leaves genuine scalar generic reuse.
+
+The ordinary source verifier still runs before the current reuse capability;
+Agent execution metadata and resolved declarations are rebuilt unconditionally.
+New generic-environment controls compare whole ordinary/nonreuse programs or
+complete ordered errors for valid and invalid byte-helper body drift and direct
+Agent origin/target/kind/model-wait metadata drift. Corrupted prior Agent payloads
+provide no current authority. Actual paid allocation/Drop and exact/one-short
+byte-caller controls are authored. Original generic and Vec/Box owners remain;
+all these additions await coordinated execution and make no efficiency claim.
