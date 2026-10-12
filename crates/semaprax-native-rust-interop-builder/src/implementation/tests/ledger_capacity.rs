@@ -329,6 +329,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/loan_plan/paid_children.rs"),
         include_str!("../../../../../src/loan_plan/paid_patterns.rs"),
         include_str!("../../../../../src/loan_plan/paid_plan.rs"),
+        include_str!("../../../../../src/loan_plan/paid_predicates.rs"),
         include_str!("../../../../../src/loan_plan/paid_materialize.rs"),
         include_str!("../../../../../src/loan_plan/traversal/paid.rs"),
         include_str!("../../../../../src/bounded_output/cfg_reservation.rs"),

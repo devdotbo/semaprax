@@ -18,6 +18,49 @@ fn funded_flat_receiver_keeps_complete_saved_plan_and_current_member_boundary() 
     };
     assert_eq!(actual, old);
     assert!(!actual.loans.is_empty());
+    // String-slot discovery must preserve the independent allocating predicate
+    // while avoiding its temporary Vec<String> type constructor.
+    let slot_ast = crate::check(r#"module slots;
+@id("slots.inspect") fn inspect(values:own Vec<string>)->i64 {
+ let text=vec_str_at(values,0usize);
+ str_len_bytes(text)
+}
+@id("slots.main") fn main()->i64 {0}
+"#, "slots.spx").unwrap();
+    let slot_program = crate::hir::resolve(&slot_ast).unwrap();
+    let slot_function = slot_program.functions.iter().find(|f| f.id.as_str() == "slots.inspect").unwrap();
+    let ResolvedExprKind::Block { statements, .. } = &slot_function.body.kind else { panic!("slot body"); };
+    let ResolvedStatement::Let { value, .. } = &statements[0] else { panic!("slot declaration"); };
+    let expected = crate::vec_ops::string_slot::place(value).unwrap();
+    let ((), observed) = measure(|| {
+        for _ in 0..32 {
+            assert!(std::ptr::eq(paid_predicates::string_slot(value).unwrap(), expected));
+        }
+    });
+    assert_eq!(observed.allocations, 0);
+    assert_eq!(observed.reallocations, 0);
+    assert_eq!(observed.live, 0);
+    assert!(!observed.invalid);
+    let (_, old_queries) = measure(|| {
+        for _ in 0..32 { assert!(crate::vec_ops::string_slot::place(value).is_some()); }
+    });
+    assert_eq!(old_queries.allocations, 32);
+    assert_eq!(old_queries.allocated, 32 * std::mem::size_of::<ResolvedType>());
+    assert_eq!(old_queries.freed, old_queries.allocated);
+    assert_eq!(old_queries.live, 0);
+    for attack in 0..4 {
+        let mut forged = value.clone();
+        let ResolvedExprKind::Call { args, instance, type_arguments, .. } = &mut forged.kind else { panic!("slot call"); };
+        match attack {
+            0 => args[0].ownership = OwnershipMode::Value,
+            1 => args[1].ty = ResolvedType::I64,
+            2 => type_arguments.clear(),
+            3 => *instance = Some(crate::hir::FunctionInstanceId::derive(&DeclarationId::new("foreign.instance"), &[])),
+            _ => unreachable!(),
+        }
+        assert!(crate::vec_ops::string_slot::place(&forged).is_none());
+        assert!(paid_predicates::string_slot(&forged).is_none());
+    }
     let foreign = function.clone();
     let (result, refused, _) = with_limit_usage(usize::MAX, || {
         let owner = CfgReservation::acquire().unwrap();

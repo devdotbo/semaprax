@@ -157,7 +157,7 @@ pub(super) fn expression_place(
     let mut current = expression;
     loop {
         match &current.kind {
-            K::Call { .. } => return crate::vec_ops::string_slot::place(current)
+            K::Call { .. } => return super::paid_predicates::string_slot(current)
                 .map(|place| clone_place(place, payer)).transpose(),
             K::Place(place) | K::BorrowPlace { place, .. } =>
                 return clone_place(place, payer).map(Some),

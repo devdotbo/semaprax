@@ -50,7 +50,7 @@ pub(super) fn build(
         }
         let view = match &expression.kind {
             ResolvedExprKind::Call { .. } => {
-                crate::vec_ops::string_slot::place(expression).map(|place| storage::clone_place(place, payer)).transpose()?
+                paid_predicates::string_slot(expression).map(|place| storage::clone_place(place, payer)).transpose()?
             }
             ResolvedExprKind::BorrowPlace { place, .. } => Some(storage::clone_place(place, payer)?),
             ResolvedExprKind::VecFieldRead { args, .. }

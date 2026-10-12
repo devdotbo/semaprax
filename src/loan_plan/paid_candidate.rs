@@ -74,7 +74,7 @@ pub(super) fn inspect(
         }
         let view = match &expression.kind {
             ResolvedExprKind::Call { .. } => {
-                crate::vec_ops::string_slot::place(expression).map(|place| storage::clone_place(place, Some(payer))).transpose()?
+                paid_predicates::string_slot(expression).map(|place| storage::clone_place(place, Some(payer))).transpose()?
             }
             ResolvedExprKind::BorrowPlace { place, .. } => Some(storage::clone_place(place, Some(payer))?),
             ResolvedExprKind::VecFieldRead { args, .. }

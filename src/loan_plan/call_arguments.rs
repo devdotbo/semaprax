@@ -83,7 +83,7 @@ pub(super) fn borrowed_call_arguments_paid<'a>(
         ResolvedExprKind::Call { callee, instance, args, .. } => {
             let target = program.resolve_call_target(callee, instance.as_ref());
             for (index, argument) in args.iter().enumerate() {
-                if (crate::vec_ops::string_slot::inspect(expression).is_some() && index == 0)
+                if (super::paid_predicates::string_slot(expression).is_some() && index == 0)
                     || crate::vec_ops::field_unique::borrowed_source(expression, index)
                     || record_vec_borrow::argument(program, expression, index, argument)
                     || target.map_or_else(
