@@ -756,11 +756,13 @@ fn byte_capacity_expression_in(
                         } else if callee.as_str() == crate::byte_ops::COPY_ID {
                             Some(CapacityFlow::BytesCopy {
                                 site: expression.id.as_str().to_owned(),
-                                conservative_payload_bytes: function.and_then(|function| {
-                                    args.first().and_then(|argument| {
-                                        static_array_slice_length(program, function, argument)
+                                conservative_payload_bytes: function
+                                    .and_then(|function| {
+                                        args.first().and_then(|argument| {
+                                            static_array_slice_length(program, function, argument)
+                                        })
                                     })
-                                }).unwrap_or(crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES),
+                                    .unwrap_or(crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES),
                             })
                         } else if callee.as_str() == crate::byte_ops::ZEROED_BOUNDED_ID {
                             let conservative_payload_bytes = args

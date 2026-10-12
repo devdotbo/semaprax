@@ -254,6 +254,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/record_invariants/source.rs"),
         concat!(
             include_str!("../../../../../src/hir/byte_capacity.rs"),
+            include_str!("../../../../../src/hir/byte_capacity/static_extent.rs"),
+            include_str!("../../../../../src/hir/byte_capacity/static_extent_tests.rs"),
             "\n",
             include_str!("../../../../../src/hir/byte_capacity/fused_selection.rs"),
             "\n",
