@@ -579,8 +579,9 @@ pub(crate) fn resolve_with_function_reuse<'p>(
         .zip(previous_resolved)
         .zip(previous_costs)
         .filter(|((previous, _), _)| function_reuse_environment_is_exact(program, previous))
-        .map(|((program, resolved), costs)| FunctionReuse {
-            program,
+        .map(|((previous, resolved), costs)| FunctionReuse {
+            current: program,
+            program: previous,
             resolved,
             costs,
         });
@@ -753,6 +754,8 @@ fn hir_error(message: impl Into<String>) -> Diagnostic {
 }
 
 struct FunctionReuse<'a> {
+    // The environment proof belongs to this exact current source receiver.
+    current: &'a dyn ProgramSource,
     program: &'a Program,
     resolved: &'a ResolvedProgram,
     costs: &'a BTreeMap<String, usize>,
@@ -771,6 +774,10 @@ struct Resolver<'a> {
 }
 
 fn function_reuse_environment_is_exact(current: &dyn ProgramSource, previous: &Program) -> bool {
+    // Generic declarations participate in the same complete ordered signature
+    // proof, including scoped type parameters, contracts and source spans.
+    // Only monomorphic HIR is cloned. Current templates and the entire instance
+    // closure are rebuilt below from this exact source, never from reuse.resolved.
     current.path() == previous.path
         && current.module() == previous.module
         && current.module_uses() == previous.module_uses
@@ -780,10 +787,6 @@ fn function_reuse_environment_is_exact(current: &dyn ProgramSource, previous: &P
         && current.protocols() == previous.protocols
         && current.implementations() == previous.implementations
         && current.functions().len() == previous.functions.len()
-        && current
-            .functions()
-            .iter()
-            .all(|function| function.type_parameters.is_empty())
         && current
             .functions()
             .iter()
@@ -831,6 +834,233 @@ mod function_reuse_environment_tests {
 
         let contract = program("input + 2", "input >= 1");
         assert!(!function_reuse_environment_is_exact(&contract, &before));
+    }
+}
+
+#[cfg(test)]
+mod generic_environment_reuse_tests {
+    use super::*;
+    const LIMIT: usize = 67_108_864;
+    const SOURCE: &str = r#"module reuse.generic;
+@id("reuse.first") fn first<T>(one:T,two:T)->T {one}
+@id("reuse.other") fn other<T>(one:T,two:T)->T {two}
+@id("reuse.relay") fn relay<T>(one:T,two:T)->T {first<T>(one,two)}
+@id("reuse.helper") fn helper()->i64 {relay<i64>(3,4)}
+@id("reuse.main") fn main()->i64 {if relay<i64>(3i64,4i64)==3i64 {helper()+1} else {0}}
+"#;
+    fn parse(source: &str) -> Program {
+        crate::parse(source, "generic-reuse.spx").unwrap()
+    }
+    // Full ordinary current source resolution is the independent nonreuse oracle.
+    fn fresh(program: &Program) -> (ResolvedProgram, FunctionResolutionWork) {
+        let (result, refused, _) = crate::bounded_output::with_limit_usage(LIMIT, || {
+            resolve_with_function_reuse(program, None, None, None, None)
+        });
+        assert!(!refused);
+        result.unwrap()
+    }
+    fn reuse(
+        current: &Program,
+        previous: &Program,
+        old: &ResolvedProgram,
+        costs: &BTreeMap<String, usize>,
+    ) -> (ResolvedProgram, FunctionResolutionWork) {
+        let (result, refused, _) = crate::bounded_output::with_limit_usage(LIMIT, || {
+            resolve_with_function_reuse(current, Some(previous), Some(old), Some(costs), None)
+        });
+        assert!(!refused);
+        result.unwrap()
+    }
+    fn parity(
+        current: &Program,
+        previous: &Program,
+        old: &ResolvedProgram,
+        costs: &BTreeMap<String, usize>,
+    ) -> ResolvedProgram {
+        let oracle = fresh(current);
+        let actual = reuse(current, previous, old, costs);
+        assert_eq!(actual.0, oracle.0);
+        assert_eq!(actual.1.static_text(), oracle.1.static_text());
+        assert!(actual.1.reused() > 0);
+        assert!(!actual.0.function_instances.is_empty());
+        // Complete Eq above includes ordered current template/instance bodies,
+        // identities, substitutions and every rebuilt cleanup/loan attachment.
+        actual.0
+    }
+    #[test]
+    fn generic_environment_reuses_call_bearing_helpers_and_rebuilds_current_closure() {
+        let previous = parse(SOURCE);
+        let (old, work) = fresh(&previous);
+        let costs = work.costs();
+        for source in [
+            SOURCE.replace("helper()+1", "helper()+2"),
+            SOURCE.replace("->T {one}", "->T {two}"),
+            SOURCE.replace("{first<T>(one,two)}", "{other<T>(one,two)}"),
+            SOURCE.replace("relay<i64>(3i64,4i64)==3i64", "relay<bool>(true,false)    "),
+        ] {
+            let current = parse(&source);
+            assert!(function_reuse_environment_is_exact(&current, &previous));
+            parity(&current, &previous, &old, &costs);
+        }
+        // Deliberately corrupt every previous generic payload. None is a reuse
+        // source: only complete previous monomorphic functions can be cloned.
+        let mut stale = old.clone();
+        stale.function_templates.reverse();
+        stale.function_templates[0].body.ty = ResolvedType::String;
+        stale.function_instances.reverse();
+        stale.function_instances[0].type_arguments = vec![ResolvedType::String];
+        stale.function_instances[0].function.body.ty = ResolvedType::Bytes;
+        let current = parse(&SOURCE.replace("helper()+1", "helper()+2"));
+        parity(&current, &previous, &stale, &costs);
+        stale.function_instances.clear();
+        stale.function_templates.clear();
+        parity(&current, &previous, &stale, &costs);
+    }
+    #[test]
+    fn generic_environment_drift_disables_reuse_and_detached_capability_is_not_current() {
+        let previous = parse(SOURCE);
+        let (old, work) = fresh(&previous);
+        let costs = work.costs();
+        let mut reordered = previous.clone();
+        reordered.functions.swap(0, 1);
+        let mut removed = previous.clone();
+        removed.functions.remove(1);
+        let mut added = previous.clone();
+        let extra = parse("module reuse.generic; @id(\"reuse.extra\") fn extra()->i64 {0}");
+        added.functions.push(extra.functions[0].clone());
+        let mut parameter = previous.clone();
+        parameter.functions[0].type_parameters[0].name = "U".into();
+        for current in [&reordered, &removed, &added, &parameter] {
+            assert!(!function_reuse_environment_is_exact(current, &previous));
+        }
+        for current in [&reordered, &removed, &added] {
+            let oracle = fresh(current);
+            let actual = reuse(current, &previous, &old, &costs);
+            assert_eq!(actual.0, oracle.0);
+            assert_eq!(actual.1.reused(), 0);
+        }
+        let detached = previous.clone();
+        let oracle = fresh(&detached);
+        let (actual, refused, _) = crate::bounded_output::with_limit_usage(LIMIT, || {
+            resolve_verified(
+                &detached,
+                Some(FunctionReuse {
+                    current: &previous,
+                    program: &previous,
+                    resolved: &old,
+                    costs: &costs,
+                }),
+            )
+        });
+        assert!(!refused);
+        let actual = actual.unwrap();
+        assert_eq!(actual.0, oracle.0);
+        assert_eq!(actual.1.reused(), 0);
+    }
+    fn helper_call(body: &mut ResolvedExpr) -> &mut ResolvedExpr {
+        if matches!(&body.kind, ResolvedExprKind::Block { .. }) {
+            let ResolvedExprKind::Block { tail, .. } = &mut body.kind else {
+                unreachable!()
+            };
+            helper_call(tail)
+        } else {
+            body
+        }
+    }
+    #[test]
+    fn stale_reused_generic_call_identity_and_arguments_fail_current_binding() {
+        let previous = parse(SOURCE);
+        let (old, work) = fresh(&previous);
+        let costs = work.costs();
+        let current = parse(&SOURCE.replace("helper()+1", "helper()+2"));
+        for attack in 0..3 {
+            let mut stale = old.clone();
+            let helper = stale
+                .functions
+                .iter_mut()
+                .find(|f| f.id.as_str() == "reuse.helper")
+                .unwrap();
+            let ResolvedExprKind::Call {
+                callee,
+                instance,
+                type_arguments,
+                ..
+            } = &mut helper_call(&mut helper.body).kind
+            else {
+                panic!("call-bearing helper")
+            };
+            match attack {
+                0 => *instance = Some(FunctionInstanceId::derive(callee, &[ResolvedType::Bool])),
+                1 => type_arguments[0] = ResolvedType::Bool,
+                _ => {
+                    *callee = DeclarationId::new("reuse.missing");
+                    *instance = Some(FunctionInstanceId::derive(callee, type_arguments));
+                }
+            }
+            let (result, refused, _) = crate::bounded_output::with_limit_usage(LIMIT, || {
+                resolve_with_function_reuse(
+                    &current,
+                    Some(&previous),
+                    Some(&stale),
+                    Some(&costs),
+                    None,
+                )
+            });
+            assert!(!refused);
+            let errors = result.err().expect("stale generic binding rejects");
+            assert_eq!(errors[0].code, "SPX-H006");
+            assert_eq!(
+                errors[0].message,
+                if attack == 2 {
+                    "generic function call has no resolved template"
+                } else {
+                    "generic function call has an inconsistent instance identity"
+                }
+            );
+        }
+    }
+    #[test]
+    fn generic_reuse_paid_clone_and_current_instances_settle_and_keep_exact_limit() {
+        let previous = parse(SOURCE);
+        let (old, work) = fresh(&previous);
+        let costs = work.costs();
+        assert!(costs["reuse.helper"] > 0);
+        let current = parse(&SOURCE.replace("helper()+1", "helper()+2"));
+        let oracle = fresh(&current);
+        let ((result, observed), refused, required) =
+            crate::bounded_output::with_limit_usage(LIMIT, || {
+                crate::test_allocation_observer::measure(|| {
+                    let actual = resolve_with_function_reuse(
+                        &current,
+                        Some(&previous),
+                        Some(&old),
+                        Some(&costs),
+                        None,
+                    )?;
+                    assert_eq!(actual.0, oracle.0);
+                    assert!(actual.1.reused() > 0);
+                    drop(actual);
+                    Ok::<_, Vec<Diagnostic>>(())
+                })
+            });
+        result.unwrap();
+        assert!(!refused);
+        assert!(required > 0);
+        assert!(!observed.invalid);
+        assert!(observed.allocated > 0);
+        assert_eq!(observed.live, 0);
+        assert_eq!(observed.allocated, observed.freed);
+        let (exact, refused, used) = crate::bounded_output::with_limit_usage(required, || {
+            resolve_with_function_reuse(&current, Some(&previous), Some(&old), Some(&costs), None)
+        });
+        assert!(!refused);
+        assert_eq!(used, required);
+        assert_eq!(exact.unwrap().0, oracle.0);
+        let (short, refused, _) = crate::bounded_output::with_limit_usage(required - 1, || {
+            resolve_with_function_reuse(&current, Some(&previous), Some(&old), Some(&costs), None)
+        });
+        assert!(refused);
+        assert!(short.is_err());
     }
 }
 

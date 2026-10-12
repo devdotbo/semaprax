@@ -72,7 +72,14 @@ Function reuse is limited to top-level monomorphic free functions. Module path,
 module identity, imports, permits, types, interfaces, protocols,
 implementations, function order, every signature field, contracts and spans
 must be exact. The selected function's complete AST must also be equal. Generic
-top-level functions disable the lane; class methods resolve afresh. Any
+top-level declarations participate in that complete ordered signature proof,
+including exact scoped type parameters; class methods resolve afresh. The reuse
+capability is bound to the exact current source receiver. Only monomorphic
+function HIR is cloned: generic templates always resolve from current source,
+and calls in both reused and fresh functions bind their derived instance IDs
+and ordered type arguments to those current templates. The complete transitive
+instance closure is freshly materialized in the original structural order;
+previous template and instance payloads confer no authority. Any
 environment, contract, signature or span drift conservatively resolves all
 functions in that module. Persistent snapshots do not restore invocation-local
 function work costs, so the first changed-module build after restoration also
@@ -312,3 +319,22 @@ it does not establish whole Project funding or application fit.
 The current v10 compatibility adds CopyDiscard codec tag 5; its exact no-result
 semantics and source revalidation are owned by
 [Finite owned-record discard loops v1](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md).
+
+### Exact generic environment selective reuse: source-only followup
+
+The blanket generic-environment exclusion is removed from the private
+function-granular guard. All original source/provider authentication,
+non-body environment and complete ordered signature equality remain required.
+The unchanged full ordinary nonreuse resolver remains the independent oracle.
+`hir::generic_environment_reuse_tests` authors call-bearing helper reuse,
+current generic template body and nested callee closure drift, type-argument
+drift, stale previous template/instance payload exclusion, malformed reused call
+identities/arguments, detached-current capability rejection, complete current
+HIR equality, and actual allocation/Drop plus exact/one-short reservations.
+The existing canonical Vec/Box selected-import receiver retains its genuine
+`reused > 0` assertion and full fresh-owned comparison without modification.
+
+These controls await coordinated execution. This source-only change makes no
+cached generic-instance reuse, fit, runtime efficiency or agent-token claim;
+current instance construction, cleanup/loan replay, builder limits and ordinary
+unauthenticated wrapper refusals remain required.

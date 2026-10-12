@@ -66,8 +66,9 @@ pub(crate) fn resolve_checked<'p, E>(
         .zip(previous_resolved)
         .zip(previous_costs)
         .filter(|((previous, _), _)| function_reuse_environment_is_exact(program, previous))
-        .map(|((program, resolved), costs)| FunctionReuse {
-            program,
+        .map(|((previous, resolved), costs)| FunctionReuse {
+            current: program,
+            program: previous,
             resolved,
             costs,
         });
@@ -105,8 +106,9 @@ pub(crate) fn resolve_source_checked<'p, E>(
         .zip(previous_resolved)
         .zip(previous_costs)
         .filter(|((previous, _), _)| function_reuse_environment_is_exact(program, previous))
-        .map(|((program, resolved), costs)| FunctionReuse {
-            program,
+        .map(|((previous, resolved), costs)| FunctionReuse {
+            current: program,
+            program: previous,
             resolved,
             costs,
         });

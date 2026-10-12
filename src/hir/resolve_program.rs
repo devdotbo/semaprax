@@ -454,6 +454,10 @@ impl Resolver<'_> {
         if let Some(error) = self.byte_helpers.failure() {
             return Err(error);
         }
+        // The exact signature environment permits monomorphic body reuse in
+        // generic modules, but grants no previous template/instance authority.
+        // Every template is resolved from the current source before calls in
+        // either fresh or reused functions seed the current reachable closure.
         let function_templates = self
             .program
             .functions()
@@ -587,7 +591,11 @@ impl Resolver<'_> {
         &self,
         function: &crate::ast::Function,
     ) -> Result<(ResolvedFunction, usize, bool), Diagnostic> {
-        if let Some(reuse) = &self.reuse {
+        if let Some(reuse) = self.reuse.as_ref().filter(|reuse| {
+            // Compare data addresses: trait vtables can be duplicated between
+            // codegen units. Equal-text detached source is not this capability.
+            std::ptr::addr_eq(reuse.current, self.program)
+        }) {
             let previous = reuse
                 .program
                 .functions
@@ -846,6 +854,11 @@ impl Resolver<'_> {
             }
         }
 
+        // This is the current generic-call binding frontier for reused bodies
+        // too: derive the full template/argument identity, select only a fresh
+        // current template, materialize it, then discover its nested calls.
+        // Final HIR validation independently reconstructs this exact sequence,
+        // substitutions and bodies before cleanup/loan authority is published.
         let mut seen = BTreeSet::new();
         let mut instances = Vec::new();
         while let Some((template_id, type_arguments, id)) = calls.pop_front() {
