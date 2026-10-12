@@ -154,9 +154,8 @@ fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
     }
     // Initial identity refusal keeps the exact budget error and moves no HIR.
     let word = std::mem::size_of::<usize>();
-    let report = std::mem::size_of::<IdentityReservation>()
-        + std::mem::size_of::<Diagnostic>()
-        + 48;
+    let report =
+        std::mem::size_of::<IdentityReservation>() + std::mem::size_of::<Diagnostic>() + 48;
     let (refused, failed, _, receipt) = with_limit_usage_refusal(report, || {
         let mut owner = IdentityReservation::acquire().unwrap();
         pass.resolve_functions_paid(&program.path, &program, None, &mut owner)
@@ -167,11 +166,14 @@ fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
     assert!(failed);
     assert!(matches!(
         refused,
-        paid_resolution::SelectiveFailure::Resolve(crate::hir::identity_resolution::Failure::Identity(
-            Refused::Budget(_)
-        ))
+        paid_resolution::SelectiveFailure::Resolve(
+            crate::hir::identity_resolution::Failure::Identity(Refused::Budget(_))
+        )
     ));
-    assert_eq!(receipt.unwrap().requested, (2 * word + 11).div_ceil(word) * word);
+    assert_eq!(
+        receipt.unwrap().requested,
+        (2 * word + 11).div_ceil(word) * word
+    );
     // Checked body reuse and the first-checked-only borrowed gate are unchanged.
     let _owner = pass.resolved_module(
         &program.path,

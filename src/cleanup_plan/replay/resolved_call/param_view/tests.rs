@@ -1,7 +1,7 @@
 //! Exact projection, complete replay and physical lifetime receivers.
 use super::*;
-use crate::cleanup_plan::replay::*;
 use crate::bounded_output::with_limit_usage_refusal;
+use crate::cleanup_plan::replay::*;
 use crate::test_allocation_observer::measure;
 mod old_frame;
 
@@ -9,7 +9,10 @@ fn program(source: &str) -> ResolvedProgram {
     crate::hir::resolve(&crate::parse(source, "param-view.spx").unwrap()).unwrap()
 }
 fn arity_program(arity: usize) -> ResolvedProgram {
-    let signature = (0..arity).map(|i| format!("p{i}:i64")).collect::<Vec<_>>().join(",");
+    let signature = (0..arity)
+        .map(|i| format!("p{i}:i64"))
+        .collect::<Vec<_>>()
+        .join(",");
     program(&format!("module param.view; @id(\"target\") fn target({signature})->i64 {{0}} @id(\"main\") fn main()->i64 {{0}}"))
 }
 fn assert_projection(old: &[ResolvedParam], view: &Params<'_>) {
@@ -27,25 +30,40 @@ fn authored_arity_zero_one_two_seventeen_borrows_actual_params_without_any_reque
         let target = &program.functions[0];
         let main = &program.functions[1];
         let old = resolved_call_params(&program, main, &main.body, &target.id, None, &[]).unwrap();
-        assert_eq!(old, target.params, "complete old IDs/names/spans/types/ownership projection");
-        let view = resolved_call_param_view(&program, main, &main.body, &target.id, None, &[]).unwrap();
+        assert_eq!(
+            old, target.params,
+            "complete old IDs/names/spans/types/ownership projection"
+        );
+        let view =
+            resolved_call_param_view(&program, main, &main.body, &target.id, None, &[]).unwrap();
         assert_projection(&old, &view);
-        let Params::Borrowed(actual) = &view else { panic!("authored params must be borrowed") };
+        let Params::Borrowed(actual) = &view else {
+            panic!("authored params must be borrowed")
+        };
         assert_eq!(actual.as_ptr(), target.params.as_ptr());
         for (index, parameter) in view.iter().enumerate() {
             assert!(std::ptr::eq(parameter.ty, &target.params[index].ty));
         }
         drop(view);
-        let (_, before) = measure(|| drop(resolved_call_params(&program, main, &main.body, &target.id, None, &[]).unwrap()));
+        let (_, before) = measure(|| {
+            drop(resolved_call_params(&program, main, &main.body, &target.id, None, &[]).unwrap())
+        });
         let (_, after) = measure(|| {
-            let view = resolved_call_param_view(&program, main, &main.body, &target.id, None, &[]).unwrap();
-            let Params::Borrowed(actual) = &view else { panic!("borrowed receiver") };
+            let view = resolved_call_param_view(&program, main, &main.body, &target.id, None, &[])
+                .unwrap();
+            let Params::Borrowed(actual) = &view else {
+                panic!("borrowed receiver")
+            };
             assert_eq!(actual.as_ptr(), target.params.as_ptr());
             drop(view);
         });
-        let removed = arity * std::mem::size_of::<ResolvedParam>() + target.params.iter().map(|p| p.name.len()).sum::<usize>();
+        let removed = arity * std::mem::size_of::<ResolvedParam>()
+            + target.params.iter().map(|p| p.name.len()).sum::<usize>();
         assert_eq!(before.allocated, after.allocated + removed);
-        assert_eq!(before.allocations, after.allocations + if arity == 0 { 0 } else { arity + 1 });
+        assert_eq!(
+            before.allocations,
+            after.allocations + if arity == 0 { 0 } else { arity + 1 }
+        );
         for observed in [before, after] {
             assert!(!observed.invalid && observed.live == 0);
             assert_eq!(observed.allocated, observed.freed);
@@ -56,20 +74,73 @@ fn authored_arity_zero_one_two_seventeen_borrows_actual_params_without_any_reque
 #[test]
 fn generic_instances_borrow_exact_target_and_hostile_instance_errors_match_legacy() {
     let program = program("module param.generic; @id(\"keep\") fn keep<T>(value:T)->T {value} @id(\"main\") fn main()->i64 {keep<i64>(7)}");
-    let main = program.functions.iter().find(|f| f.id.as_str() == "main").unwrap();
+    let main = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "main")
+        .unwrap();
     let call = replay_expression_child(&main.body, 0).unwrap_or(&main.body);
-    let call = if matches!(call.kind, ResolvedExprKind::Call { .. }) { call } else { &main.body };
-    let ResolvedExprKind::Call { callee, instance, type_arguments, .. } = &call.kind else { panic!("generic call fixture") };
-    let target = crate::cleanup::ReplayContext::resolve_call_target(&program, callee, instance.as_ref()).unwrap();
-    let old = resolved_call_params(&program, main, call, callee, instance.as_ref(), type_arguments).unwrap();
+    let call = if matches!(call.kind, ResolvedExprKind::Call { .. }) {
+        call
+    } else {
+        &main.body
+    };
+    let ResolvedExprKind::Call {
+        callee,
+        instance,
+        type_arguments,
+        ..
+    } = &call.kind
+    else {
+        panic!("generic call fixture")
+    };
+    let target =
+        crate::cleanup::ReplayContext::resolve_call_target(&program, callee, instance.as_ref())
+            .unwrap();
+    let old = resolved_call_params(
+        &program,
+        main,
+        call,
+        callee,
+        instance.as_ref(),
+        type_arguments,
+    )
+    .unwrap();
     assert_eq!(old, target.params);
-    let view = resolved_call_param_view(&program, main, call, callee, instance.as_ref(), type_arguments).unwrap();
+    let view = resolved_call_param_view(
+        &program,
+        main,
+        call,
+        callee,
+        instance.as_ref(),
+        type_arguments,
+    )
+    .unwrap();
     assert_projection(&old, &view);
-    let Params::Borrowed(actual) = view else { panic!("instance params must be borrowed") };
+    let Params::Borrowed(actual) = view else {
+        panic!("instance params must be borrowed")
+    };
     assert_eq!(actual.as_ptr(), target.params.as_ptr());
     let wrong = DeclarationId::new("unknown.target");
-    let before = resolved_call_params(&program, main, call, &wrong, instance.as_ref(), type_arguments).unwrap_err();
-    let after = resolved_call_param_view(&program, main, call, &wrong, instance.as_ref(), type_arguments).err().unwrap();
+    let before = resolved_call_params(
+        &program,
+        main,
+        call,
+        &wrong,
+        instance.as_ref(),
+        type_arguments,
+    )
+    .unwrap_err();
+    let after = resolved_call_param_view(
+        &program,
+        main,
+        call,
+        &wrong,
+        instance.as_ref(),
+        type_arguments,
+    )
+    .err()
+    .unwrap();
     assert_eq!(before, after);
 }
 
@@ -80,12 +151,36 @@ fn every_closed_intrinsic_keeps_legacy_projection_and_ignored_type_argument_orde
     let mut views = Vec::new();
     views.extend(crate::byte_ops::ByteOp::ALL.into_iter().map(Params::Byte));
     use crate::string_ops::StringOp;
-    views.extend(StringOp::ALL.into_iter().chain(StringOp::TEXT_TOOLKIT).chain(StringOp::COLLECTIONS).chain(StringOp::CONVERSIONS).chain([
-        StringOp::Take, StringOp::FromUtf8, StringOp::I64FromU8, StringOp::I64FromI32,
-        StringOp::UsizeFromU8, StringOp::U8FromI64, StringOp::CharFromU8, StringOp::CharFromI64,
-    ]).map(Params::String));
+    views.extend(
+        StringOp::ALL
+            .into_iter()
+            .chain(StringOp::TEXT_TOOLKIT)
+            .chain(StringOp::COLLECTIONS)
+            .chain(StringOp::CONVERSIONS)
+            .chain([
+                StringOp::Take,
+                StringOp::FromUtf8,
+                StringOp::I64FromU8,
+                StringOp::I64FromI32,
+                StringOp::UsizeFromU8,
+                StringOp::U8FromI64,
+                StringOp::CharFromU8,
+                StringOp::CharFromI64,
+            ])
+            .map(Params::String),
+    );
     use crate::str_ops::StrOp;
-    views.extend([StrOp::LenBytes, StrOp::IsEmpty, StrOp::StartsWith, StrOp::Contains, StrOp::ByteAt].into_iter().map(Params::Str));
+    views.extend(
+        [
+            StrOp::LenBytes,
+            StrOp::IsEmpty,
+            StrOp::StartsWith,
+            StrOp::Contains,
+            StrOp::ByteAt,
+        ]
+        .into_iter()
+        .map(Params::Str),
+    );
     for view in views {
         let (id, names) = match &view {
             Params::Byte(op) => (op.id(), op.param_names()),
@@ -94,16 +189,23 @@ fn every_closed_intrinsic_keeps_legacy_projection_and_ignored_type_argument_orde
             _ => unreachable!(),
         };
         let callee = DeclarationId::new(id);
-        let old = resolved_call_params(&program, function, &function.body, &callee, None, &[]).unwrap();
+        let old =
+            resolved_call_params(&program, function, &function.body, &callee, None, &[]).unwrap();
         assert_projection(&old, &view);
         for (index, parameter) in old.iter().enumerate() {
             assert_eq!(parameter.name, names[index]);
-            assert_eq!(parameter.id, crate::hir::ValueId::intrinsic_parameter(id, index));
+            assert_eq!(
+                parameter.id,
+                crate::hir::ValueId::intrinsic_parameter(id, index)
+            );
             assert_eq!(parameter.span, crate::ast::Span::default());
         }
         for args in [&[][..], &[ResolvedType::I64][..]] {
-            let old = resolved_call_params(&program, function, &function.body, &callee, None, args).unwrap();
-            let view = resolved_call_param_view(&program, function, &function.body, &callee, None, args).unwrap();
+            let old = resolved_call_params(&program, function, &function.body, &callee, None, args)
+                .unwrap();
+            let view =
+                resolved_call_param_view(&program, function, &function.body, &callee, None, args)
+                    .unwrap();
             assert_projection(&old, &view);
         }
     }
@@ -115,19 +217,42 @@ fn excluded_collection_closure_native_and_dedicated_provider_errors_remain_owned
     let function = &program.functions[0];
     let native = DeclarationId::new("host.combine");
     let old = resolved_call_params(&program, function, &function.body, &native, None, &[]).unwrap();
-    let view = resolved_call_param_view(&program, function, &function.body, &native, None, &[]).unwrap();
+    let view =
+        resolved_call_param_view(&program, function, &function.body, &native, None, &[]).unwrap();
     assert_projection(&old, &view);
-    let Params::Owned(actual) = view else { panic!("native provider remains owned") };
+    let Params::Owned(actual) = view else {
+        panic!("native provider remains owned")
+    };
     assert_eq!(old, actual);
     for (callee, arguments) in [
         (DeclarationId::new(crate::vec_field::ID), vec![]),
         (DeclarationId::new(crate::literal_format::ID), vec![]),
-        (DeclarationId::new(crate::hir::closure::once::INVOKE_ID), vec![ResolvedType::I64]),
-        ((*crate::hir::function_value::INVOKE_ID).clone(), vec![ResolvedType::I64]),
+        (
+            DeclarationId::new(crate::hir::closure::once::INVOKE_ID),
+            vec![ResolvedType::I64],
+        ),
+        (
+            (*crate::hir::function_value::INVOKE_ID).clone(),
+            vec![ResolvedType::I64],
+        ),
         (DeclarationId::new(crate::vec_ops::VecOp::Len.id()), vec![]),
     ] {
-        let old = resolved_call_params(&program, function, &function.body, &callee, None, &arguments);
-        let new = resolved_call_param_view(&program, function, &function.body, &callee, None, &arguments);
+        let old = resolved_call_params(
+            &program,
+            function,
+            &function.body,
+            &callee,
+            None,
+            &arguments,
+        );
+        let new = resolved_call_param_view(
+            &program,
+            function,
+            &function.body,
+            &callee,
+            None,
+            &arguments,
+        );
         match (old, new) {
             (Err(old), Err(new)) => assert_eq!(old, new),
             (Ok(old), Ok(Params::Owned(new))) => assert_eq!(old, new),
@@ -141,12 +266,20 @@ fn paths(program: &ResolvedProgram, owned: bool) -> Vec<Vec<ExprSkeletonPath>> {
     let operation = || {
         let mut budget = ReplayBudget::unobserved();
         reserve_program_skeleton_work(program, program.functions.iter(), &mut budget).unwrap();
-        program.functions.iter().map(|function| {
-            let mut work = SkeletonWork::new(program, function, &mut budget);
-            expression_skeleton(program, function, &function.body, &mut work).unwrap()
-        }).collect()
+        program
+            .functions
+            .iter()
+            .map(|function| {
+                let mut work = SkeletonWork::new(program, function, &mut budget);
+                expression_skeleton(program, function, &function.body, &mut work).unwrap()
+            })
+            .collect()
     };
-    if owned { with_owned_oracle(operation) } else { operation() }
+    if owned {
+        with_owned_oracle(operation)
+    } else {
+        operation()
+    }
 }
 #[test]
 fn full_old_constructor_replay_and_atomic_commit_order_are_identical() {
@@ -159,17 +292,34 @@ fn full_old_constructor_replay_and_atomic_commit_order_are_identical() {
         for (old, new) in old.iter().zip(new) {
             assert_eq!(old.observations, new.observations);
             assert_eq!(old.owned_source, new.owned_source);
-            assert_eq!((old.failed, old.residual, &old.continuation), (new.failed, new.residual, &new.continuation));
+            assert_eq!(
+                (old.failed, old.residual, &old.continuation),
+                (new.failed, new.residual, &new.continuation)
+            );
         }
     }
     with_owned_oracle(|| validate_program(&program)).unwrap();
     validate_program(&program).unwrap();
     let mut corrupt = program.clone();
-    let main = corrupt.functions.iter_mut().find(|f| f.id.as_str() == "main").unwrap();
-    let commit = main.cleanup_plan.blocks.iter_mut().flat_map(|b| &mut b.transitions).find_map(|t| match t {
-        crate::cleanup_plan::CleanupTransition::CallCommit { arguments, .. } if arguments.len() == 2 => Some(arguments),
-        _ => None,
-    }).unwrap();
+    let main = corrupt
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "main")
+        .unwrap();
+    let commit = main
+        .cleanup_plan
+        .blocks
+        .iter_mut()
+        .flat_map(|b| &mut b.transitions)
+        .find_map(|t| match t {
+            crate::cleanup_plan::CleanupTransition::CallCommit { arguments, .. }
+                if arguments.len() == 2 =>
+            {
+                Some(arguments)
+            }
+            _ => None,
+        })
+        .unwrap();
     commit.swap(0, 1);
     let old = with_owned_oracle(|| validate_program(&corrupt));
     let new = validate_program(&corrupt);
@@ -178,40 +328,67 @@ fn full_old_constructor_replay_and_atomic_commit_order_are_identical() {
 }
 fn intrinsic_bytes(id: &str, names: &[&str]) -> usize {
     let align = std::mem::align_of::<usize>();
-    names.len() * std::mem::size_of::<ResolvedParam>() + names.iter().enumerate().map(|(index, name)| {
-        let len = id.len() + 7 + index.to_string().len();
-        let arc = (len + 2 * std::mem::size_of::<usize>() + align - 1) / align * align;
-        name.len() + len + arc
-    }).sum::<usize>()
+    names.len() * std::mem::size_of::<ResolvedParam>()
+        + names
+            .iter()
+            .enumerate()
+            .map(|(index, name)| {
+                let len = id.len() + 7 + index.to_string().len();
+                let arc = (len + 2 * std::mem::size_of::<usize>() + align - 1) / align * align;
+                name.len() + len + arc
+            })
+            .sum::<usize>()
 }
 #[test]
 fn whole_ordinary_receiver_literal_removed_requests_and_no_frame_growth_exact_short() {
     let program = program("module param.storage; @id(\"main\") fn main()->i64 {string_len(string_concat(\"a\",\"b\"))}");
     let function = &program.functions[0];
-    assert_eq!(old_frame::bytes(), std::mem::size_of::<continuation_storage::Frame<'_>>(), "the complete old max variant must bound the new carrier too");
+    assert_eq!(
+        old_frame::bytes(),
+        std::mem::size_of::<continuation_storage::Frame<'_>>(),
+        "the complete old max variant must bound the new carrier too"
+    );
     let observe = |owned, limit| {
-        let operation = || with_limit_usage_refusal(limit, || measure(|| {
-            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-            let mut work = SkeletonWork::new(&program, function, &mut budget);
-            let result = expression_skeleton(&program, function, &function.body, &mut work);
-            let accepted = result.is_ok();
-            if !accepted { drop(work.budget.reserve_bytes(function, 0, "sticky parameter view").unwrap_err()); }
-            drop(result);
-            drop(work);
-            drop(budget);
-            accepted
-        }));
-        if owned { with_owned_oracle(operation) } else { operation() }
+        let operation = || {
+            with_limit_usage_refusal(limit, || {
+                measure(|| {
+                    let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                    let mut work = SkeletonWork::new(&program, function, &mut budget);
+                    let result = expression_skeleton(&program, function, &function.body, &mut work);
+                    let accepted = result.is_ok();
+                    if !accepted {
+                        drop(
+                            work.budget
+                                .reserve_bytes(function, 0, "sticky parameter view")
+                                .unwrap_err(),
+                        );
+                    }
+                    drop(result);
+                    drop(work);
+                    drop(budget);
+                    accepted
+                })
+            })
+        };
+        if owned {
+            with_owned_oracle(operation)
+        } else {
+            operation()
+        }
     };
     let ((old_ok, old), old_refused, old_charge, _) = observe(true, usize::MAX);
     let ((new_ok, new), new_refused, charge, _) = observe(false, usize::MAX);
     assert!(old_ok && new_ok && !old_refused && !new_refused);
     use crate::string_ops::StringOp;
-    let removed = intrinsic_bytes(StringOp::Len.id(), StringOp::Len.param_names()) + intrinsic_bytes(StringOp::Concat.id(), StringOp::Concat.param_names());
+    let removed = intrinsic_bytes(StringOp::Len.id(), StringOp::Len.param_names())
+        + intrinsic_bytes(StringOp::Concat.id(), StringOp::Concat.param_names());
     assert_eq!(old.allocated, new.allocated + removed);
     assert_eq!(old.allocations, new.allocations + 11);
     assert_eq!(old_charge, charge + removed);
-    for metrics in [old, new] { assert!(!metrics.invalid && metrics.live == 0); assert_eq!(metrics.allocated, metrics.freed); }
+    for metrics in [old, new] {
+        assert!(!metrics.invalid && metrics.live == 0);
+        assert_eq!(metrics.allocated, metrics.freed);
+    }
     let ((ok, exact), refused, actual, _) = observe(false, charge);
     assert!(ok && !refused && actual == charge && !exact.invalid && exact.live == 0);
     let ((ok, short), refused, _, receipt) = observe(false, charge - 1);
@@ -220,32 +397,47 @@ fn whole_ordinary_receiver_literal_removed_requests_and_no_frame_growth_exact_sh
 
 #[test]
 fn whole_authored_receiver_arity_seventeen_removes_only_owned_parameter_payload() {
-    let signature = (0..17).map(|i| format!("p{i}:i64")).collect::<Vec<_>>().join(",");
+    let signature = (0..17)
+        .map(|i| format!("p{i}:i64"))
+        .collect::<Vec<_>>()
+        .join(",");
     let args = (0..17).map(|i| i.to_string()).collect::<Vec<_>>().join(",");
     let program = program(&format!("module param.wide; @id(\"target\") fn target({signature})->i64 {{0}} @id(\"main\") fn main()->i64 {{target({args})}}"));
     let target = &program.functions[0];
     let function = &program.functions[1];
     let observe = |owned, limit| {
-        let operation = || with_limit_usage_refusal(limit, || measure(|| {
-            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-            let mut work = SkeletonWork::new(&program, function, &mut budget);
-            let result = expression_skeleton(&program, function, &function.body, &mut work);
-            let accepted = result.is_ok();
-            drop(result);
-            drop(work);
-            drop(budget);
-            accepted
-        }));
-        if owned { with_owned_oracle(operation) } else { operation() }
+        let operation = || {
+            with_limit_usage_refusal(limit, || {
+                measure(|| {
+                    let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                    let mut work = SkeletonWork::new(&program, function, &mut budget);
+                    let result = expression_skeleton(&program, function, &function.body, &mut work);
+                    let accepted = result.is_ok();
+                    drop(result);
+                    drop(work);
+                    drop(budget);
+                    accepted
+                })
+            })
+        };
+        if owned {
+            with_owned_oracle(operation)
+        } else {
+            operation()
+        }
     };
     let ((old_ok, old), old_refused, old_charge, _) = observe(true, usize::MAX);
     let ((new_ok, new), refused, charge, _) = observe(false, usize::MAX);
-    let removed = 17 * std::mem::size_of::<ResolvedParam>() + target.params.iter().map(|p| p.name.len()).sum::<usize>();
+    let removed = 17 * std::mem::size_of::<ResolvedParam>()
+        + target.params.iter().map(|p| p.name.len()).sum::<usize>();
     assert!(old_ok && new_ok && !old_refused && !refused);
     assert_eq!(old.allocated, new.allocated + removed);
     assert_eq!(old.allocations, new.allocations + 18);
     assert_eq!(old_charge, charge + removed);
-    for observed in [old, new] { assert!(!observed.invalid && observed.live == 0); assert_eq!(observed.allocated, observed.freed); }
+    for observed in [old, new] {
+        assert!(!observed.invalid && observed.live == 0);
+        assert_eq!(observed.allocated, observed.freed);
+    }
     let ((ok, exact), refused, actual, _) = observe(false, charge);
     assert!(ok && !refused && actual == charge && !exact.invalid && exact.live == 0);
     let ((ok, short), refused, _, receipt) = observe(false, charge - 1);
@@ -255,7 +447,11 @@ fn whole_authored_receiver_arity_seventeen_removes_only_owned_parameter_payload(
 #[test]
 fn saved_constructor_work_refusals_and_hostile_argument_arity_type_are_equal() {
     let program = program(REPLAY);
-    let function = program.functions.iter().find(|f| f.id.as_str() == "main").unwrap();
+    let function = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "main")
+        .unwrap();
     for units in [0, 1, 3, 8, 17, 31, 63, 127, MAX_REPLAY_WORK_UNITS] {
         let execute = || {
             let mut budget = ReplayBudget::with_skeleton_limit(units);
@@ -269,7 +465,9 @@ fn saved_constructor_work_refusals_and_hostile_argument_arity_type_are_equal() {
         match (old, new) {
             (Ok(old), Ok(new)) => {
                 assert_eq!(old.len(), new.len());
-                for (a, b) in old.iter().zip(&new) { assert_eq!(a.observations, b.observations); }
+                for (a, b) in old.iter().zip(&new) {
+                    assert_eq!(a.observations, b.observations);
+                }
             }
             (Err(old), Err(new)) => assert_eq!(old, new),
             _ => panic!("parameter views changed the first work refusal"),
@@ -277,7 +475,11 @@ fn saved_constructor_work_refusals_and_hostile_argument_arity_type_are_equal() {
     }
     for wrong_type in [false, true] {
         let mut corrupt = program.clone();
-        let main = corrupt.functions.iter_mut().find(|f| f.id.as_str() == "main").unwrap();
+        let main = corrupt
+            .functions
+            .iter_mut()
+            .find(|f| f.id.as_str() == "main")
+            .unwrap();
         fn call(expression: &mut crate::hir::ResolvedExpr) -> &mut Vec<crate::hir::ResolvedExpr> {
             match &mut expression.kind {
                 ResolvedExprKind::Block { tail, .. } => call(tail),
@@ -286,7 +488,11 @@ fn saved_constructor_work_refusals_and_hostile_argument_arity_type_are_equal() {
             }
         }
         let args = call(&mut main.body);
-        if wrong_type { args[0].ty = ResolvedType::I64; } else { args.pop(); }
+        if wrong_type {
+            args[0].ty = ResolvedType::I64;
+        } else {
+            args.pop();
+        }
         let old = with_owned_oracle(|| validate_program(&corrupt));
         let new = validate_program(&corrupt);
         assert!(old.is_err());
@@ -300,30 +506,59 @@ fn ordinary_vec_fallback_keeps_original_owned_provider_and_payment_with_old_sele
     let function = &program.functions[0];
     // This is an actual ordinary Vec expression, outside selected admission.
     let callee = DeclarationId::new(crate::vec_ops::VecOp::Len.id());
-    let old = resolved_call_params(&program, function, &function.body, &callee, None, &[ResolvedType::I64]).unwrap();
-    let view = resolved_call_param_view(&program, function, &function.body, &callee, None, &[ResolvedType::I64]).unwrap();
-    let Params::Owned(current) = view else { panic!("Vec remains on its owned fallback") };
+    let old = resolved_call_params(
+        &program,
+        function,
+        &function.body,
+        &callee,
+        None,
+        &[ResolvedType::I64],
+    )
+    .unwrap();
+    let view = resolved_call_param_view(
+        &program,
+        function,
+        &function.body,
+        &callee,
+        None,
+        &[ResolvedType::I64],
+    )
+    .unwrap();
+    let Params::Owned(current) = view else {
+        panic!("Vec remains on its owned fallback")
+    };
     assert_eq!(old, current);
     let observe = |owned| {
-        let operation = || with_limit_usage_refusal(usize::MAX, || measure(|| {
-            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-            let mut work = SkeletonWork::new(&program, function, &mut budget);
-            assert!(!work.budget.selected());
-            let result = expression_skeleton(&program, function, &function.body, &mut work);
-            let result = result.unwrap();
-            let spent = work.budget.skeleton_spent;
-            drop(result);
-            drop(work);
-            drop(budget);
-            spent
-        }));
-        if owned { with_owned_oracle(operation) } else { operation() }
+        let operation = || {
+            with_limit_usage_refusal(usize::MAX, || {
+                measure(|| {
+                    let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                    let mut work = SkeletonWork::new(&program, function, &mut budget);
+                    assert!(!work.budget.selected());
+                    let result = expression_skeleton(&program, function, &function.body, &mut work);
+                    let result = result.unwrap();
+                    let spent = work.budget.skeleton_spent;
+                    drop(result);
+                    drop(work);
+                    drop(budget);
+                    spent
+                })
+            })
+        };
+        if owned {
+            with_owned_oracle(operation)
+        } else {
+            operation()
+        }
     };
     let ((old_spent, old), old_refused, old_charge, _) = observe(true);
     let ((current_spent, current), current_refused, current_charge, _) = observe(false);
     assert!(!old_refused && !current_refused);
     assert_eq!(old_spent, current_spent);
-    assert_eq!(old_charge, current_charge, "original ordinary Vec reservations stay unchanged");
+    assert_eq!(
+        old_charge, current_charge,
+        "original ordinary Vec reservations stay unchanged"
+    );
     assert_eq!(old.allocated, current.allocated);
     assert_eq!(old.allocations, current.allocations);
     for observed in [old, current] {
@@ -337,7 +572,10 @@ fn ordinary_vec_fallback_keeps_original_owned_provider_and_payment_with_old_sele
         for (old, current) in old.iter().zip(current) {
             assert_eq!(old.observations, current.observations);
             assert_eq!(old.owned_source, current.owned_source);
-            assert_eq!((old.failed, old.residual, &old.continuation), (current.failed, current.residual, &current.continuation));
+            assert_eq!(
+                (old.failed, old.residual, &old.continuation),
+                (current.failed, current.residual, &current.continuation)
+            );
         }
     }
     with_owned_oracle(|| validate_program(&program)).unwrap();

@@ -74,15 +74,22 @@ pub(super) fn resolve(
     // including its directory/header terms, without a second array debit.
     let mut projections = Vec::new();
     if let Some(payer) = work.allocation {
-        let requested = count.checked_mul(size_of::<PlaceProjection>())
-            .ok_or_else(|| { payer.arithmetic(); super::storage::marker() })?;
+        let requested = count
+            .checked_mul(size_of::<PlaceProjection>())
+            .ok_or_else(|| {
+                payer.arithmetic();
+                super::storage::marker()
+            })?;
         if projections.try_reserve_exact(count).is_err() {
             payer.allocation(requested);
             return Err(super::storage::marker());
         }
         if projections.capacity() != count {
-            let excess = projections.capacity().saturating_sub(count)
-                .checked_mul(size_of::<PlaceProjection>()).unwrap_or(usize::MAX);
+            let excess = projections
+                .capacity()
+                .saturating_sub(count)
+                .checked_mul(size_of::<PlaceProjection>())
+                .unwrap_or(usize::MAX);
             let _ = payer.capacity(requested, excess);
             return Err(super::storage::marker());
         }

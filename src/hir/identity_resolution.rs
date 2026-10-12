@@ -127,7 +127,11 @@ fn resolve_verified_paid<E>(
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
     let clause_program = record_invariants::clause_program(program);
     let inventory_program = clause_program.as_ref().unwrap_or(program);
-    let reuse = if clause_program.is_some() { None } else { reuse };
+    let reuse = if clause_program.is_some() {
+        None
+    } else {
+        reuse
+    };
     let resolved = pass(inventory_program, reuse, reserve)?;
     let Some(desugared) = record_invariants::desugar(program, &resolved.0) else {
         return Ok(resolved);

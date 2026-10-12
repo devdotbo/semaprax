@@ -14,8 +14,7 @@ fn report_bytes() -> usize {
 #[test]
 fn owned_and_borrowed_inputs_match_the_legacy_oracle_and_pay_one_report_each() {
     let program = crate::check(SOURCE, "identity-workspace.spx").unwrap();
-    let oracle =
-        crate::hir::resolve_with_function_reuse(&program, None, None, None, None).unwrap();
+    let oracle = crate::hir::resolve_with_function_reuse(&program, None, None, None, None).unwrap();
     let owned = Input::Owned(program.clone());
     let borrowed = Input::Borrowed(SyntheticProgramView::new(&program, Vec::new()).unwrap());
     let ((first, second), failed, used) = with_limit_usage(1 << 20, || {
@@ -40,7 +39,11 @@ fn zero_and_one_short_setup_is_inline_copy_with_no_allocation_and_sticky_budget(
     let owned = Input::Owned(program.clone());
     for limit in [0, report_bytes() - 1] {
         let ((failure, observed), failed, used) = with_limit_usage(limit, || {
-            measure(|| resolve_module(None, &program.path, &owned, None).err().unwrap())
+            measure(|| {
+                resolve_module(None, &program.path, &owned, None)
+                    .err()
+                    .unwrap()
+            })
         });
         assert!(matches!(failure, ModuleFailure::Setup(Refused::Budget(_))));
         assert!(failed);
@@ -69,9 +72,7 @@ fn assert_refusal(
     remaining: usize,
 ) {
     // Warm process-static ordinary tables outside the observation.
-    with_limit_usage(1 << 20, || {
-        resolve_module(None, path, input, None).unwrap()
-    });
+    with_limit_usage(1 << 20, || resolve_module(None, path, input, None).unwrap());
     let before = super::acquisitions();
     let (((), observed), failed, used, receipt) = with_limit_usage_refusal(limit, || {
         measure(|| {
@@ -101,7 +102,10 @@ fn assert_refusal(
             let ModuleFailure::Setup(Refused::Budget(retried)) = retry else {
                 panic!("sticky retry acquired another report")
             };
-            assert_eq!((retried.requested, retried.remaining), (requested, remaining));
+            assert_eq!(
+                (retried.requested, retried.remaining),
+                (requested, remaining)
+            );
             let after = current_metrics();
             assert_eq!(after.allocations, live.allocations);
             assert_eq!(after.live, live.live);

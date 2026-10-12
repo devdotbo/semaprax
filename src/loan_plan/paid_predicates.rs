@@ -1,32 +1,53 @@
 //! Borrowed predicates for actual caller-paid planner discovery.
 //! The legacy allocation-bearing predicates remain independent oracles.
 use super::*;
-use crate::hir::{DeclarationId, DeclarationIndex};
 use crate::bounded_output::cfg_reservation::CfgReservation;
+use crate::hir::{DeclarationId, DeclarationIndex};
 
 pub(super) fn string_slot(expression: &ResolvedExpr) -> Option<&Place> {
-    let ResolvedExprKind::Call { callee, type_arguments, instance: None, args } = &expression.kind else { return None; };
+    let ResolvedExprKind::Call {
+        callee,
+        type_arguments,
+        instance: None,
+        args,
+    } = &expression.kind
+    else {
+        return None;
+    };
     let bytes = match callee.as_str() {
         crate::vec_ops::string_slot::ID => false,
         crate::vec_ops::string_slot::BYTES_ID => true,
         _ => return None,
     };
-    let [source, index] = args.as_slice() else { return None; };
+    let [source, index] = args.as_slice() else {
+        return None;
+    };
     if type_arguments.as_slice() != [ResolvedType::String]
         || !crate::vec_ops::resolved_vec_matches(&source.ty, &ResolvedType::String)
         || !matches!(source.ownership, OwnershipMode::Own | OwnershipMode::Borrow)
-        || index.ty != ResolvedType::Usize || index.ownership != OwnershipMode::Value
+        || index.ty != ResolvedType::Usize
+        || index.ownership != OwnershipMode::Value
         || expression.ownership != OwnershipMode::Borrow
-        || expression.ty != if bytes { ResolvedType::SliceU8 } else { ResolvedType::Str }
-    { return None; }
+        || expression.ty
+            != if bytes {
+                ResolvedType::SliceU8
+            } else {
+                ResolvedType::Str
+            }
+    {
+        return None;
+    }
     match &source.kind {
         ResolvedExprKind::Place(place) if place.projections.is_empty() => Some(place),
         _ => None,
     }
 }
 
-
-fn admitted(root: &ResolvedType, index: &DeclarationIndex, payer: &CfgReservation) -> Result<bool, Diagnostic> {
+fn admitted(
+    root: &ResolvedType,
+    index: &DeclarationIndex,
+    payer: &CfgReservation,
+) -> Result<bool, Diagnostic> {
     if !matches!(root, ResolvedType::Nominal { declaration, arguments }
         if arguments.is_empty() && index.declaration(declaration).is_some_and(|d| d.kind == crate::hir::DeclarationKind::Record))
     {
@@ -95,7 +116,11 @@ fn admitted(root: &ResolvedType, index: &DeclarationIndex, payer: &CfgReservatio
                 }
                 storage::push(&mut pending, Frame::Leave(declaration), Some(payer))?;
                 for field in declared.iter().rev() {
-                    storage::push(&mut pending, Frame::Enter(&field.ty, depth + 1), Some(payer))?;
+                    storage::push(
+                        &mut pending,
+                        Frame::Enter(&field.ty, depth + 1),
+                        Some(payer),
+                    )?;
                 }
             }
             Frame::Leave(declaration) => {
@@ -111,31 +136,84 @@ fn admitted(root: &ResolvedType, index: &DeclarationIndex, payer: &CfgReservatio
 }
 
 pub(super) fn borrowed_vec_argument(
-    program: &dyn crate::cleanup::ReplayContext, call: &ResolvedExpr,
-    position: usize, argument: &ResolvedExpr, payer: &CfgReservation,
+    program: &dyn crate::cleanup::ReplayContext,
+    call: &ResolvedExpr,
+    position: usize,
+    argument: &ResolvedExpr,
+    payer: &CfgReservation,
 ) -> Result<bool, Diagnostic> {
-    let ResolvedExprKind::Call { callee, type_arguments, instance: None, .. } = &call.kind else { return Ok(false); };
-    let (Some(op), [element]) = (crate::vec_ops::by_id(callee.as_str()), type_arguments.as_slice()) else { return Ok(false); };
+    let ResolvedExprKind::Call {
+        callee,
+        type_arguments,
+        instance: None,
+        ..
+    } = &call.kind
+    else {
+        return Ok(false);
+    };
+    let (Some(op), [element]) = (
+        crate::vec_ops::by_id(callee.as_str()),
+        type_arguments.as_slice(),
+    ) else {
+        return Ok(false);
+    };
     if op.param_ownership_for(position, element) != OwnershipMode::Borrow
         || !crate::hir::owned_collection_record::vector(program.declarations(), &argument.ty)
-    { return Ok(false); }
-    let ResolvedExprKind::Place(place) = &argument.kind else { return Ok(false); };
-    let Some(PlaceProjection::Field(first)) = place.projections.first() else { return Ok(false); };
+    {
+        return Ok(false);
+    }
+    let ResolvedExprKind::Place(place) = &argument.kind else {
+        return Ok(false);
+    };
+    let Some(PlaceProjection::Field(first)) = place.projections.first() else {
+        return Ok(false);
+    };
     let index = program.declarations();
-    let Some(root) = index.declaration(first).and_then(|field| field.owner.as_ref()) else { return Ok(false); };
-    let mut ty = ResolvedType::Nominal { declaration: root.clone(), arguments: Vec::new() };
-    if !admitted(&ty, index, payer)? { return Ok(false); }
+    let Some(root) = index
+        .declaration(first)
+        .and_then(|field| field.owner.as_ref())
+    else {
+        return Ok(false);
+    };
+    let mut ty = ResolvedType::Nominal {
+        declaration: root.clone(),
+        arguments: Vec::new(),
+    };
+    if !admitted(&ty, index, payer)? {
+        return Ok(false);
+    }
     for projection in &place.projections {
-        let PlaceProjection::Field(id) = projection else { return Ok(false); };
-        let ResolvedType::Nominal { declaration, arguments } = &ty else { return Ok(false); };
-        let Some(field) = index.record_fields(declaration).and_then(|fields| fields.iter().find(|f| f.id == *id)) else { return Ok(false); };
-        let Some(next) = super::paid_substitute::substitute(&field.ty, declaration, arguments, payer)? else { return Ok(false); };
+        let PlaceProjection::Field(id) = projection else {
+            return Ok(false);
+        };
+        let ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } = &ty
+        else {
+            return Ok(false);
+        };
+        let Some(field) = index
+            .record_fields(declaration)
+            .and_then(|fields| fields.iter().find(|f| f.id == *id))
+        else {
+            return Ok(false);
+        };
+        let Some(next) =
+            super::paid_substitute::substitute(&field.ty, declaration, arguments, payer)?
+        else {
+            return Ok(false);
+        };
         ty = next;
     }
     Ok(ty == argument.ty)
 }
 
-fn invariant(index: &DeclarationIndex, declaration: &DeclarationId, payer: &CfgReservation) -> Result<bool, Diagnostic> {
+fn invariant(
+    index: &DeclarationIndex,
+    declaration: &DeclarationId,
+    payer: &CfgReservation,
+) -> Result<bool, Diagnostic> {
     let Some(length) = declaration.as_str().len().checked_add("#invariant".len()) else {
         payer.arithmetic();
         return Err(storage::marker());

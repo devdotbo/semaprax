@@ -131,10 +131,10 @@ pub(super) fn program_uses_owned_leaf(program: &crate::hir::ResolvedProgram) -> 
                                                 crate::vec_ops::VecOp::SortBy
                                                     | crate::vec_ops::VecOp::UniqueBy
                                             ) && crate::hir::owned_leaf_collection::layout(
-                                                    &program.declarations,
-                                                    element,
-                                                )
-                                                .is_some());
+                                                &program.declarations,
+                                                element,
+                                            )
+                                            .is_some());
                                     }
                                 }
                             },

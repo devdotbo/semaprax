@@ -21,7 +21,6 @@
 //! the selected replay protocol, so this route is not end-to-end funded.
 use super::*;
 mod received;
-pub(super) use received::Received;
 use crate::cleanup::ReplayContext;
 use crate::cleanup_plan::{
     SelectedReplayPreparation, SelectedReplayRefusal, SelectedReplayRefused as Refused,
@@ -32,6 +31,7 @@ use crate::hir::{
     ResolvedTypeDeclaration,
 };
 use crate::workspace_graph::static_text::scalar_lexical::{self as capture, census};
+pub(super) use received::Received;
 
 /// Held replay directory: the exact live module's own borrowed (possibly
 /// sparse) members plus one declaration index rebuilt on the same preparation.
@@ -168,7 +168,11 @@ fn authenticate<'a>(
         // ledger after the fact (never claimed prepaid). A refused debit is
         // the sticky first refusal; otherwise the mismatch poisons the owner.
         if let Some(excess) = lexical.capacity().checked_sub(count) {
-            preparation.try_reserve_array::<bool>(anchor, excess, "scalar lexical member census")?;
+            preparation.try_reserve_array::<bool>(
+                anchor,
+                excess,
+                "scalar lexical member census",
+            )?;
         }
         preparation.fail();
         return Err(Refused::MISMATCH);

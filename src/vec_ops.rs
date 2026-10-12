@@ -7,12 +7,12 @@ use crate::hir::{
     ValueId,
 };
 
+mod by_id_metered;
 pub(crate) mod field_unique;
 mod sort;
 pub(crate) mod sort_keys;
 pub(crate) mod string_slot;
 mod wrappers;
-mod by_id_metered;
 pub(crate) use by_id_metered::by_id_with_work;
 pub(crate) use sort::{program_uses_sort, resolved_program_uses_sort};
 pub(crate) use wrappers::*;

@@ -3783,9 +3783,12 @@ fn expression_skeleton_run<'hir>(
                                     callee,
                                     None,
                                     type_arguments,
-                                )?.into()
+                                )?
+                                .into()
                             } else if let Some(op) = string_intrinsic {
-                                if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
+                                if work.budget.selected()
+                                    || !resolved_call::ordinary_borrows_enabled()
+                                {
                                     typed_storage::static_params(
                                         op.id(),
                                         op.param_types(),
@@ -3795,11 +3798,17 @@ fn expression_skeleton_run<'hir>(
                                     )
                                     .map(resolved_call::Params::Owned)?
                                 } else {
-                                    work.budget.reserve_bytes(function, 0, "intrinsic parameter slots")?;
+                                    work.budget.reserve_bytes(
+                                        function,
+                                        0,
+                                        "intrinsic parameter slots",
+                                    )?;
                                     resolved_call::Params::String(op)
                                 }
                             } else if let Some(op) = str_intrinsic {
-                                if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
+                                if work.budget.selected()
+                                    || !resolved_call::ordinary_borrows_enabled()
+                                {
                                     typed_storage::static_params(
                                         op.id(),
                                         op.param_types(),
@@ -3815,11 +3824,17 @@ fn expression_skeleton_run<'hir>(
                                     )
                                     .map(resolved_call::Params::Owned)?
                                 } else {
-                                    work.budget.reserve_bytes(function, 0, "intrinsic parameter slots")?;
+                                    work.budget.reserve_bytes(
+                                        function,
+                                        0,
+                                        "intrinsic parameter slots",
+                                    )?;
                                     resolved_call::Params::Str(op)
                                 }
                             } else if let Some(op) = byte_intrinsic {
-                                if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
+                                if work.budget.selected()
+                                    || !resolved_call::ordinary_borrows_enabled()
+                                {
                                     typed_storage::static_params(
                                         op.id(),
                                         op.param_types(),
@@ -3829,7 +3844,11 @@ fn expression_skeleton_run<'hir>(
                                     )
                                     .map(resolved_call::Params::Owned)?
                                 } else {
-                                    work.budget.reserve_bytes(function, 0, "intrinsic parameter slots")?;
+                                    work.budget.reserve_bytes(
+                                        function,
+                                        0,
+                                        "intrinsic parameter slots",
+                                    )?;
                                     resolved_call::Params::Byte(op)
                                 }
                             } else if let Some(op) = host_io_intrinsic {
@@ -3848,7 +3867,8 @@ fn expression_skeleton_run<'hir>(
                                     callee,
                                     None,
                                     type_arguments,
-                                )?.into()
+                                )?
+                                .into()
                             } else if let Some(op) = vec_intrinsic {
                                 if work.budget.selected() {
                                     typed_storage::vector_params(program, expression, work)?.into()
@@ -3863,7 +3883,8 @@ fn expression_skeleton_run<'hir>(
                                         program.declarations(),
                                         op,
                                         element,
-                                    ).into()
+                                    )
+                                    .into()
                                 }
                             } else if let Some(op) = box_intrinsic {
                                 typed_storage::unsupported_provider(work)?;
@@ -3883,10 +3904,17 @@ fn expression_skeleton_run<'hir>(
                                             format!("unknown skeleton callee `{callee}`"),
                                         )
                                     })?;
-                                if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
-                                    work.clone_payload(&target.params, "callee parameter clone")?.into()
+                                if work.budget.selected()
+                                    || !resolved_call::ordinary_borrows_enabled()
+                                {
+                                    work.clone_payload(&target.params, "callee parameter clone")?
+                                        .into()
                                 } else {
-                                    work.budget.reserve_bytes(function, 0, "callee parameter clone")?;
+                                    work.budget.reserve_bytes(
+                                        function,
+                                        0,
+                                        "callee parameter clone",
+                                    )?;
                                     resolved_call::Params::Borrowed(&target.params)
                                 }
                             }
@@ -4319,7 +4347,8 @@ fn expression_skeleton_run<'hir>(
                     replay_error(function, "byte range skeleton arity is inconsistent")
                 })?;
                 let op = crate::byte_ops::ByteOp::Range;
-                let params = if work.budget.selected() || !resolved_call::ordinary_borrows_enabled() {
+                let params = if work.budget.selected() || !resolved_call::ordinary_borrows_enabled()
+                {
                     typed_storage::static_params(
                         op.id(),
                         op.param_types(),
@@ -4329,7 +4358,8 @@ fn expression_skeleton_run<'hir>(
                     )
                     .map(resolved_call::Params::Owned)?
                 } else {
-                    work.budget.reserve_bytes(function, 0, "intrinsic parameter slots")?;
+                    work.budget
+                        .reserve_bytes(function, 0, "intrinsic parameter slots")?;
                     resolved_call::Params::Byte(op)
                 };
                 let parameter = params.get(index).ok_or_else(|| {

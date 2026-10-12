@@ -121,10 +121,14 @@ pub(super) fn inventory_aliases_paid(
                 || !program.interfaces.iter().flat_map(|interface| &interface.imports).any(|import|
                     matches!(&import.result.kind, crate::hir::ResolvedImportResultKind::BorrowedStr { resource } if resource == declaration)) { continue; }
             let mut place = storage::clone_place(&origin, payer)?;
-            storage::push(&mut place.projections, PlaceProjection::VariantField {
-                case: case.clone(),
-                field: field.field.clone(),
-            }, payer)?;
+            storage::push(
+                &mut place.projections,
+                PlaceProjection::VariantField {
+                    case: case.clone(),
+                    field: field.field.clone(),
+                },
+                payer,
+            )?;
             storage::map_insert(aliases, field.binding.id.clone(), place, payer)?;
         }
     }
@@ -138,8 +142,12 @@ pub(super) fn match_parents_paid(
 ) -> Result<BTreeMap<ValueId, LoanId>, Diagnostic> {
     let mut sites = BTreeMap::new();
     for (index, draft) in drafts.iter().enumerate() {
-        storage::map_insert(&mut sites, (draft.site.clone(), draft.cause.clone()),
-            LoanId(index as u16), payer)?;
+        storage::map_insert(
+            &mut sites,
+            (draft.site.clone(), draft.cause.clone()),
+            LoanId(index as u16),
+            payer,
+        )?;
     }
     let mut parents = BTreeMap::new();
     for expression in expressions {

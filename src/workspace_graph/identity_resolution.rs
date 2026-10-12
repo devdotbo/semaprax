@@ -14,7 +14,12 @@ use crate::project::incremental::FrontendPass;
 use std::collections::BTreeMap;
 
 /// Resolved HIR, per-function costs, reused function count, static-text flag.
-pub(super) type Parts = (crate::hir::ResolvedProgram, BTreeMap<String, usize>, usize, bool);
+pub(super) type Parts = (
+    crate::hir::ResolvedProgram,
+    BTreeMap<String, usize>,
+    usize,
+    bool,
+);
 
 #[derive(Debug)]
 pub(super) enum ModuleFailure {

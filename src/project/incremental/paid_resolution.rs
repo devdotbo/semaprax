@@ -14,7 +14,10 @@ pub(crate) enum SelectiveFailure {
 }
 
 fn module(
-    (resolved, work): (crate::hir::ResolvedProgram, crate::hir::FunctionResolutionWork),
+    (resolved, work): (
+        crate::hir::ResolvedProgram,
+        crate::hir::FunctionResolutionWork,
+    ),
 ) -> SelectiveResolvedModule {
     SelectiveResolvedModule {
         reused_functions: work.reused(),

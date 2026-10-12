@@ -44,7 +44,10 @@ fn bindings(function: &FunctionExecutionId) -> (ResolvedBinding, ResolvedBinding
 
 /// The five declaration identities one receiver constructs, in order.
 fn declarations(receiver: &ResolvedExpr) -> [&DeclarationId; 5] {
-    let ResolvedExprKind::Match { scrutinee, arms, .. } = &receiver.kind else {
+    let ResolvedExprKind::Match {
+        scrutinee, arms, ..
+    } = &receiver.kind
+    else {
         panic!("receiver match")
     };
     let ResolvedType::Nominal { declaration, .. } = &scrutinee.ty else {

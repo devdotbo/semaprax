@@ -12,7 +12,12 @@ pub(super) fn build(
     let mut bound = BTreeMap::<ExpressionId, ValueId>::new();
     let mut ownership = BTreeMap::new();
     for parameter in &function.params {
-        storage::map_insert(&mut ownership, parameter.id.clone(), parameter.ownership, payer)?;
+        storage::map_insert(
+            &mut ownership,
+            parameter.id.clone(),
+            parameter.ownership,
+            payer,
+        )?;
     }
     for expression in &cfg.expressions {
         charge(work)?;
@@ -27,11 +32,21 @@ pub(super) fn build(
         {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, value, .. } = statement {
-                    storage::map_insert(&mut ownership, binding.id.clone(), binding.ownership, payer)?;
+                    storage::map_insert(
+                        &mut ownership,
+                        binding.id.clone(),
+                        binding.ownership,
+                        payer,
+                    )?;
                     if matches!(binding.ty, ResolvedType::SliceU8 | ResolvedType::Str) {
                         if let Some(place) = storage::expression_place(value, payer)? {
                             storage::map_insert(&mut aliases, binding.id.clone(), place, payer)?;
-                            storage::map_insert(&mut bound, value.id.clone(), binding.id.clone(), payer)?;
+                            storage::map_insert(
+                                &mut bound,
+                                value.id.clone(),
+                                binding.id.clone(),
+                                payer,
+                            )?;
                         }
                     }
                 }
@@ -49,17 +64,22 @@ pub(super) fn build(
             storage::push(&mut drafts, draft, payer)?;
         }
         let view = match &expression.kind {
-            ResolvedExprKind::Call { .. } => {
-                paid_predicates::string_slot(expression).map(|place| storage::clone_place(place, payer)).transpose()?
+            ResolvedExprKind::Call { .. } => paid_predicates::string_slot(expression)
+                .map(|place| storage::clone_place(place, payer))
+                .transpose()?,
+            ResolvedExprKind::BorrowPlace { place, .. } => {
+                Some(storage::clone_place(place, payer)?)
             }
-            ResolvedExprKind::BorrowPlace { place, .. } => Some(storage::clone_place(place, payer)?),
             ResolvedExprKind::VecFieldRead { args, .. }
                 if matches!(
                     expression.ty,
                     crate::hir::ResolvedType::Str | crate::hir::ResolvedType::SliceU8
                 ) =>
             {
-                args.first().map(|source| storage::expression_place(source, payer)).transpose()?.flatten()
+                args.first()
+                    .map(|source| storage::expression_place(source, payer))
+                    .transpose()?
+                    .flatten()
             }
             ResolvedExprKind::ByteRange { source, .. } => storage::expression_place(source, payer)?,
             ResolvedExprKind::NativeRustImportCall(call)
@@ -68,7 +88,11 @@ pub(super) fn build(
                     crate::hir::ResolvedImportResultKind::BorrowedStr { .. }
                 ) =>
             {
-                call.args.first().map(|source| storage::expression_place(source, payer)).transpose()?.flatten()
+                call.args
+                    .first()
+                    .map(|source| storage::expression_place(source, payer))
+                    .transpose()?
+                    .flatten()
             }
             ResolvedExprKind::Place(place) if bound.contains_key(&expression.id) => {
                 Some(storage::clone_place(place, payer)?)
@@ -76,41 +100,54 @@ pub(super) fn build(
             _ => None,
         };
         if let Some(place) = view {
-            storage::push(&mut drafts, CfgDraft {
-                site: expression.id.clone(),
-                origin: resolve_origin(&aliases, storage::clone_place(&place, payer)?, work)?,
-                origin_span: expression.span,
-                parent_root: aliases
-                    .contains_key(&place.root)
-                    .then(|| place.root.clone()),
-                binding: bound.get(&expression.id).cloned(),
-                start: cfg.node(expression, LoanPointPhase::Before)?,
-                seeds: BTreeSet::new(),
-                cause: if expression.ty == ResolvedType::Str {
-                    LoanCause::StrView
-                } else {
-                    LoanCause::SliceView
+            storage::push(
+                &mut drafts,
+                CfgDraft {
+                    site: expression.id.clone(),
+                    origin: resolve_origin(&aliases, storage::clone_place(&place, payer)?, work)?,
+                    origin_span: expression.span,
+                    parent_root: aliases
+                        .contains_key(&place.root)
+                        .then(|| place.root.clone()),
+                    binding: bound.get(&expression.id).cloned(),
+                    start: cfg.node(expression, LoanPointPhase::Before)?,
+                    seeds: BTreeSet::new(),
+                    cause: if expression.ty == ResolvedType::Str {
+                        LoanCause::StrView
+                    } else {
+                        LoanCause::SliceView
+                    },
                 },
-            }, payer)?;
+                payer,
+            )?;
         }
-        for (index, argument) in call_arguments::borrowed_call_arguments_paid(program, expression, payer)? {
+        for (index, argument) in
+            call_arguments::borrowed_call_arguments_paid(program, expression, payer)?
+        {
             let place = storage::expression_place(argument, payer)?
                 .ok_or_else(|| error("borrowed call lacks an exact place origin"))?;
-            storage::push(&mut drafts, CfgDraft {
-                site: expression.id.clone(),
-                origin: resolve_origin(&aliases, storage::clone_place(&place, payer)?, work)?,
-                origin_span: argument.span,
-                parent_root: aliases
-                    .contains_key(&place.root)
-                    .then(|| place.root.clone()),
-                binding: None,
-                start: cfg.node(expression, LoanPointPhase::Before)?,
-                seeds: storage::singleton_set(cfg.node(expression, LoanPointPhase::After)?, payer)?,
-                cause: LoanCause::BorrowedCall {
-                    argument: u16::try_from(index)
-                        .map_err(|_| error("borrowed argument index overflows"))?,
+            storage::push(
+                &mut drafts,
+                CfgDraft {
+                    site: expression.id.clone(),
+                    origin: resolve_origin(&aliases, storage::clone_place(&place, payer)?, work)?,
+                    origin_span: argument.span,
+                    parent_root: aliases
+                        .contains_key(&place.root)
+                        .then(|| place.root.clone()),
+                    binding: None,
+                    start: cfg.node(expression, LoanPointPhase::Before)?,
+                    seeds: storage::singleton_set(
+                        cfg.node(expression, LoanPointPhase::After)?,
+                        payer,
+                    )?,
+                    cause: LoanCause::BorrowedCall {
+                        argument: u16::try_from(index)
+                            .map_err(|_| error("borrowed argument index overflows"))?,
+                    },
                 },
-            }, payer)?;
+                payer,
+            )?;
         }
         if let ResolvedExprKind::Match {
             mode: crate::hir::ResolvedMatchMode::Borrow,
@@ -123,21 +160,28 @@ pub(super) fn build(
             let origin = resolve_origin(&aliases, storage::clone_place(&place, payer)?, work)?;
             for (index, arm) in arms.iter().enumerate() {
                 let entry = arm.guard.as_deref().unwrap_or(&arm.value);
-                storage::push(&mut drafts, CfgDraft {
-                    site: expression.id.clone(),
-                    origin: storage::clone_place(&origin, payer)?,
-                    origin_span: scrutinee.span,
-                    parent_root: aliases
-                        .contains_key(&place.root)
-                        .then(|| place.root.clone()),
-                    binding: None,
-                    start: cfg.node(entry, LoanPointPhase::Before)?,
-                    seeds: storage::singleton_set(cfg.node(&arm.value, LoanPointPhase::After)?, payer)?,
-                    cause: LoanCause::MatchBorrow {
-                        arm: u16::try_from(index)
-                            .map_err(|_| error("match arm index overflows"))?,
+                storage::push(
+                    &mut drafts,
+                    CfgDraft {
+                        site: expression.id.clone(),
+                        origin: storage::clone_place(&origin, payer)?,
+                        origin_span: scrutinee.span,
+                        parent_root: aliases
+                            .contains_key(&place.root)
+                            .then(|| place.root.clone()),
+                        binding: None,
+                        start: cfg.node(entry, LoanPointPhase::Before)?,
+                        seeds: storage::singleton_set(
+                            cfg.node(&arm.value, LoanPointPhase::After)?,
+                            payer,
+                        )?,
+                        cause: LoanCause::MatchBorrow {
+                            arm: u16::try_from(index)
+                                .map_err(|_| error("match arm index overflows"))?,
+                        },
                     },
-                }, payer)?;
+                    payer,
+                )?;
             }
         }
     }
@@ -170,7 +214,12 @@ pub(super) fn build(
     let mut binding_loans = BTreeMap::new();
     for (index, draft) in drafts.iter().enumerate() {
         if let Some(binding) = &draft.binding {
-            storage::map_insert(&mut binding_loans, binding.clone(), LoanId(index as u16), payer)?;
+            storage::map_insert(
+                &mut binding_loans,
+                binding.clone(),
+                LoanId(index as u16),
+                payer,
+            )?;
         }
     }
     for expression in &cfg.expressions {
@@ -178,8 +227,11 @@ pub(super) fn build(
             continue;
         };
         if let Some(id) = binding_loans.get(&place.root) {
-            storage::set_insert(&mut drafts[id.0 as usize].seeds,
-                cfg.node(expression, LoanPointPhase::After)?, payer)?;
+            storage::set_insert(
+                &mut drafts[id.0 as usize].seeds,
+                cfg.node(expression, LoanPointPhase::After)?,
+                payer,
+            )?;
         }
     }
     let match_parents = native_view::match_parents_paid(&cfg.expressions, &drafts, payer)?;
@@ -190,7 +242,9 @@ pub(super) fn build(
                 Some(parent) => Some(parent),
                 None => resolve_parent_paid(&aliases, &match_parents, root.clone(), payer)?,
             }
-        } else { None };
+        } else {
+            None
+        };
         parents.push(parent);
     }
     #[cfg(not(test))]
@@ -203,8 +257,14 @@ pub(super) fn build(
     };
     let mut live = storage::vector(drafts.len(), payer)?;
     for (index, draft) in drafts.iter().enumerate() {
-        live.push(work::live_nodes(&cfg, LoanId(index as u16), draft.start,
-            &draft.seeds, &reachable, work)?);
+        live.push(work::live_nodes(
+            &cfg,
+            LoanId(index as u16),
+            draft.start,
+            &draft.seeds,
+            &reachable,
+            work,
+        )?);
     }
     for _ in 0..=drafts.len() {
         let mut changed = false;
@@ -215,7 +275,9 @@ pub(super) fn build(
             let parent = parent.0 as usize;
             let before = live[parent].len();
             let mut seeds = storage::clone_set(&drafts[parent].seeds, payer)?;
-            for node in &live[child] { storage::set_insert(&mut seeds, *node, payer)?; }
+            for node in &live[child] {
+                storage::set_insert(&mut seeds, *node, payer)?;
+            }
             live[parent] = work::live_nodes(
                 &cfg,
                 LoanId(parent as u16),
@@ -246,7 +308,11 @@ pub(super) fn build(
             .chain(function.ensures.iter())
         {
             charge(work)?;
-            storage::set_insert(&mut terminal_roots, cfg.node(root, LoanPointPhase::After)?, payer)?;
+            storage::set_insert(
+                &mut terminal_roots,
+                cfg.node(root, LoanPointPhase::After)?,
+                payer,
+            )?;
         }
         for nodes in &mut live {
             for (index, point) in cfg.points.iter().enumerate() {
@@ -272,7 +338,14 @@ pub(super) fn build(
         // Recompute edge proof only for a previously rejected terminal shape.
         (edge_live, termination_edges) = work::edge_liveness(&cfg, &live, work)?;
     }
-    paid_materialize::materialize(cfg, drafts, parents, edge_live, termination_edges, payer.expect("private funded entry"))
+    paid_materialize::materialize(
+        cfg,
+        drafts,
+        parents,
+        edge_live,
+        termination_edges,
+        payer.expect("private funded entry"),
+    )
 }
 
 fn reject_cfg_overlaps_paid(
@@ -286,7 +359,9 @@ fn reject_cfg_overlaps_paid(
     let payer = work.allocation;
     let mut nonconsuming = BTreeSet::new();
     for expression in &cfg.expressions {
-        for (_, argument) in call_arguments::borrowed_call_arguments_paid(program, expression, payer)? {
+        for (_, argument) in
+            call_arguments::borrowed_call_arguments_paid(program, expression, payer)?
+        {
             storage::set_insert(&mut nonconsuming, argument.id.clone(), payer)?;
         }
         match &expression.kind {
@@ -331,7 +406,11 @@ fn reject_cfg_overlaps_paid(
                 {
                     let mut projections = Vec::new();
                     if let Some(field) = field {
-                        storage::push(&mut projections, PlaceProjection::Field(field.clone()), payer)?;
+                        storage::push(
+                            &mut projections,
+                            PlaceProjection::Field(field.clone()),
+                            payer,
+                        )?;
                     }
                     let place = resolve_origin(
                         aliases,
@@ -356,14 +435,19 @@ fn reject_cfg_overlaps_paid(
 }
 
 fn resolve_parent_paid(
-    aliases: &BTreeMap<ValueId, Place>, bindings: &BTreeMap<ValueId, LoanId>,
+    aliases: &BTreeMap<ValueId, Place>,
+    bindings: &BTreeMap<ValueId, LoanId>,
     mut root: ValueId,
     payer: Option<&crate::bounded_output::cfg_reservation::CfgReservation>,
 ) -> Result<Option<LoanId>, Diagnostic> {
     let mut seen = BTreeSet::new();
     while storage::set_insert(&mut seen, root.clone(), payer)? {
-        if let Some(id) = bindings.get(&root) { return Ok(Some(*id)); }
-        let Some(alias) = aliases.get(&root) else { return Ok(None); };
+        if let Some(id) = bindings.get(&root) {
+            return Ok(Some(*id));
+        }
+        let Some(alias) = aliases.get(&root) else {
+            return Ok(None);
+        };
         root = alias.root.clone();
     }
     Ok(None)

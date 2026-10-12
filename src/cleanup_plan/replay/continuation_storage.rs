@@ -19,10 +19,16 @@ pub(super) enum Lease {
 }
 impl<'hir> Storage<'hir> {
     pub(super) fn new(program: &'hir ResolvedProgram) -> Self {
-        Self { program, frames: Some(Vec::new()), nested: None }
+        Self {
+            program,
+            frames: Some(Vec::new()),
+            nested: None,
+        }
     }
     pub(super) fn matches(&self, program: &dyn crate::cleanup::ReplayContext) -> bool {
-        program.full_program().is_some_and(|current| std::ptr::eq(current, self.program))
+        program
+            .full_program()
+            .is_some_and(|current| std::ptr::eq(current, self.program))
     }
     pub(super) fn acquire(
         &mut self,
@@ -44,15 +50,24 @@ impl<'hir> Storage<'hir> {
         }
         if self.nested.is_none() {
             budget.reserve_array::<Nested<'hir>>(function, 1, "nested continuation carrier")?;
-            self.nested = Some(Box::new(Nested { depth: 0, slots: Vec::new() }));
+            self.nested = Some(Box::new(Nested {
+                depth: 0,
+                slots: Vec::new(),
+            }));
         }
         let nested = self.nested.as_mut().unwrap();
         let depth = nested.depth;
-        let next = depth.checked_add(1).ok_or_else(|| replay_error(function, "nested continuation depth overflowed"))?;
+        let next = depth
+            .checked_add(1)
+            .ok_or_else(|| replay_error(function, "nested continuation depth overflowed"))?;
         if depth == nested.slots.len() {
             // Replacement is allocated while the old directory remains live.
             // Pay its complete layout, not merely its capacity delta.
-            budget.reserve_array::<Option<Vec<Frame<'hir>>>>(function, next, "nested continuation directory")?;
+            budget.reserve_array::<Option<Vec<Frame<'hir>>>>(
+                function,
+                next,
+                "nested continuation directory",
+            )?;
             let mut replacement = Vec::with_capacity(next);
             replacement.append(&mut nested.slots);
             replacement.push(None);
@@ -79,7 +94,7 @@ impl<'hir> Storage<'hir> {
                 nested.depth = depth;
                 nested.slots[depth] = Some(frames);
             }
-            Lease::Local => {},
+            Lease::Local => {}
         }
     }
 }
@@ -105,12 +120,16 @@ fn record_nested_entry(depth: usize, pointer: usize) {
     });
 }
 #[cfg(test)]
-fn legacy_nested() -> bool { LEGACY_NESTED.with(std::cell::Cell::get) }
+fn legacy_nested() -> bool {
+    LEGACY_NESTED.with(std::cell::Cell::get)
+}
 #[cfg(test)]
 fn with_legacy_nested<T>(run: impl FnOnce() -> T) -> T {
     struct Restore(bool);
     impl Drop for Restore {
-        fn drop(&mut self) { LEGACY_NESTED.with(|mode| mode.set(self.0)); }
+        fn drop(&mut self) {
+            LEGACY_NESTED.with(|mode| mode.set(self.0));
+        }
     }
     let _restore = Restore(LEGACY_NESTED.with(|mode| mode.replace(true)));
     run()

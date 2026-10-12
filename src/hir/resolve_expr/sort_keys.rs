@@ -47,7 +47,11 @@ impl Resolver<'_> {
             if name == crate::vec_ops::field_unique::NAME);
         let fail = || {
             if unique {
-                self.error("SPX-H006", crate::vec_ops::field_unique::SHAPE, expression.span)
+                self.error(
+                    "SPX-H006",
+                    crate::vec_ops::field_unique::SHAPE,
+                    expression.span,
+                )
             } else {
                 self.error("SPX-H006","vec_sort_by requires a monomorphic explicit record and one finite literal key list",expression.span)
             }
@@ -92,9 +96,8 @@ impl Resolver<'_> {
         } else {
             crate::vec_ops::VecOp::SortBy
         };
-        let mut expression = super::super::resolve_vec_call::finish(
-            self, function, path, span, op, element, args,
-        )?;
+        let mut expression =
+            super::super::resolve_vec_call::finish(self, function, path, span, op, element, args)?;
         let ResolvedExprKind::Call { callee: target, .. } = &mut expression.kind else {
             unreachable!("vector call")
         };

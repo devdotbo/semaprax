@@ -341,8 +341,12 @@ fn descending_external_publications_keep_order_balance_and_saved_lookup() {
         let actual = context
             .resolve_call_target(&id, None)
             .map(|f| f as *const ResolvedFunction);
-        let reference =
-            oracle::linear(crate::hir::items::ItemSource::view(&module.functions), &helpers, name).map(|f| f as *const ResolvedFunction);
+        let reference = oracle::linear(
+            crate::hir::items::ItemSource::view(&module.functions),
+            &helpers,
+            name,
+        )
+        .map(|f| f as *const ResolvedFunction);
         let entry = saved_context
             .resolve_call_target(&id, None)
             .map(|f| f as *const ResolvedFunction);

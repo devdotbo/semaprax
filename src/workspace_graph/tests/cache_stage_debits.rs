@@ -5,11 +5,11 @@ mod old_profiles;
 #[path = "../../../tests/fixtures/checked_cache_profiles.rs"]
 mod profiles;
 use crate::bounded_output::stage_debits::{take_completed, Trace};
-use crate::workspace_graph::identity_resolution;
 use crate::project::{
     with_authenticated_project, ProjectFrontendCache, ProjectFrontendSource, ProjectManifest,
     ProjectRevision, ProjectSemanticImage,
 };
+use crate::workspace_graph::identity_resolution;
 use std::path::PathBuf;
 use std::sync::{
     atomic::{AtomicU64, Ordering},

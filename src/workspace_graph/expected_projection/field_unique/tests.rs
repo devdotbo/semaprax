@@ -87,7 +87,7 @@ fn imported_nominal_authority_reconstructs_same_descriptor_and_rejects_prefix_im
         &authored,
     )
     .unwrap_err();
-    assert!(errors
-        .iter()
-        .any(|d| d.message.contains("field uniqueness descriptors cannot be imported")));
+    assert!(errors.iter().any(|d| d
+        .message
+        .contains("field uniqueness descriptors cannot be imported")));
 }

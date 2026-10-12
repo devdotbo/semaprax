@@ -159,11 +159,16 @@ fn finite_record_named_slice_copy_preserves_live_exits_on_every_engine() {
     semaprax::graph::verify_json(&ast, &graph).unwrap();
     let wire: serde_json::Value = serde_json::from_str(&graph).unwrap();
     let main = wire["portable_indexed_byte_data"]["capacity_summaries"]
-        .as_array().unwrap().iter().find(|summary| summary["function"] == "app.main").unwrap();
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|summary| summary["function"] == "app.main")
+        .unwrap();
     assert_eq!(main["bytes_copy_sites"], 6);
     assert_eq!(main["owned_byte_payload_bytes"], 12);
     for _ in 0..3 {
-        let execution = interpreter::interpret(&path, "app.main", &[], &InterpreterOptions::default()).unwrap();
+        let execution =
+            interpreter::interpret(&path, "app.main", &[], &InterpreterOptions::default()).unwrap();
         assert!(execution.returned, "{}", execution.envelope);
         interpreter::verify_envelope(&execution.envelope).unwrap();
         let envelope: serde_json::Value = serde_json::from_str(&execution.envelope).unwrap();

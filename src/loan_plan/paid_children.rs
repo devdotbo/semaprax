@@ -10,9 +10,11 @@ pub(super) fn push_children<'a>(
         ResolvedExprKind::LexicalExit { value, .. } => {
             storage::extend(pending, value.as_deref(), payer)?;
         }
-        ResolvedExprKind::Closure { captures, .. } => {
-            storage::extend(pending, captures.iter().rev().map(|capture| &capture.value), payer)?
-        }
+        ResolvedExprKind::Closure { captures, .. } => storage::extend(
+            pending,
+            captures.iter().rev().map(|capture| &capture.value),
+            payer,
+        )?,
         ResolvedExprKind::FunctionReference { .. } => {}
         ResolvedExprKind::Invoke { callable, args } => {
             storage::extend(pending, args.iter().rev(), payer)?;
@@ -34,9 +36,15 @@ pub(super) fn push_children<'a>(
         ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::LiteralFormat { args, .. }
         | ResolvedExprKind::VecFieldRead { args, .. }
-        | ResolvedExprKind::RowLoan { args, .. } => storage::extend(pending, args.iter().rev(), payer)?,
-        ResolvedExprKind::NativeRustImportCall(call) => storage::extend(pending, call.args.iter().rev(), payer)?,
-        ResolvedExprKind::HostCommandCall(call) => storage::extend(pending, call.args.iter().rev(), payer)?,
+        | ResolvedExprKind::RowLoan { args, .. } => {
+            storage::extend(pending, args.iter().rev(), payer)?
+        }
+        ResolvedExprKind::NativeRustImportCall(call) => {
+            storage::extend(pending, call.args.iter().rev(), payer)?
+        }
+        ResolvedExprKind::HostCommandCall(call) => {
+            storage::extend(pending, call.args.iter().rev(), payer)?
+        }
         ResolvedExprKind::ByteRange {
             source, start, end, ..
         } => {
@@ -65,7 +73,11 @@ pub(super) fn push_children<'a>(
         }
         ResolvedExprKind::ConstructRecord { fields, .. }
         | ResolvedExprKind::ConstructVariant { fields, .. } => {
-            storage::extend(pending, fields.iter().rev().map(|field| &field.value), payer)?;
+            storage::extend(
+                pending,
+                fields.iter().rev().map(|field| &field.value),
+                payer,
+            )?;
         }
         ResolvedExprKind::Match {
             scrutinee, arms, ..
@@ -79,7 +91,11 @@ pub(super) fn push_children<'a>(
             storage::push(pending, scrutinee, payer)?;
         }
         ResolvedExprKind::UpdateRecord { base, fields, .. } => {
-            storage::extend(pending, fields.iter().rev().map(|field| &field.value), payer)?;
+            storage::extend(
+                pending,
+                fields.iter().rev().map(|field| &field.value),
+                payer,
+            )?;
             storage::push(pending, base, payer)?;
         }
         ResolvedExprKind::Int(_)

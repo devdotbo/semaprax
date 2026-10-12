@@ -7,8 +7,15 @@ pub(super) fn inspect(
     payer: &crate::bounded_output::cfg_reservation::CfgReservation,
 ) -> Result<bool, Diagnostic> {
     let mut roots = Vec::new();
-    storage::extend(&mut roots, function.requires.iter().chain(std::iter::once(&function.body))
-        .chain(function.ensures.iter()), Some(payer))?;
+    storage::extend(
+        &mut roots,
+        function
+            .requires
+            .iter()
+            .chain(std::iter::once(&function.body))
+            .chain(function.ensures.iter()),
+        Some(payer),
+    )?;
     let mut expressions = Vec::new();
     let mut pending = Vec::new();
     storage::extend(&mut pending, roots.iter().rev().copied(), Some(payer))?;
@@ -21,7 +28,12 @@ pub(super) fn inspect(
     let mut bound = BTreeMap::<ExpressionId, ValueId>::new();
     let mut ownership = BTreeMap::new();
     for parameter in &function.params {
-        storage::map_insert(&mut ownership, parameter.id.clone(), parameter.ownership, Some(payer))?;
+        storage::map_insert(
+            &mut ownership,
+            parameter.id.clone(),
+            parameter.ownership,
+            Some(payer),
+        )?;
     }
     for expression in &expressions {
         native_view::inventory_aliases_paid(program, expression, &mut aliases, Some(payer))?;
@@ -35,11 +47,26 @@ pub(super) fn inspect(
         {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, value, .. } = statement {
-                    storage::map_insert(&mut ownership, binding.id.clone(), binding.ownership, Some(payer))?;
+                    storage::map_insert(
+                        &mut ownership,
+                        binding.id.clone(),
+                        binding.ownership,
+                        Some(payer),
+                    )?;
                     if matches!(binding.ty, ResolvedType::SliceU8 | ResolvedType::Str) {
                         if let Some(place) = storage::expression_place(value, Some(payer))? {
-                            storage::map_insert(&mut aliases, binding.id.clone(), place, Some(payer))?;
-                            storage::map_insert(&mut bound, value.id.clone(), binding.id.clone(), Some(payer))?;
+                            storage::map_insert(
+                                &mut aliases,
+                                binding.id.clone(),
+                                place,
+                                Some(payer),
+                            )?;
+                            storage::map_insert(
+                                &mut bound,
+                                value.id.clone(),
+                                binding.id.clone(),
+                                Some(payer),
+                            )?;
                         }
                     }
                 }
@@ -73,26 +100,37 @@ pub(super) fn inspect(
             }
         }
         let view = match &expression.kind {
-            ResolvedExprKind::Call { .. } => {
-                paid_predicates::string_slot(expression).map(|place| storage::clone_place(place, Some(payer))).transpose()?
+            ResolvedExprKind::Call { .. } => paid_predicates::string_slot(expression)
+                .map(|place| storage::clone_place(place, Some(payer)))
+                .transpose()?,
+            ResolvedExprKind::BorrowPlace { place, .. } => {
+                Some(storage::clone_place(place, Some(payer))?)
             }
-            ResolvedExprKind::BorrowPlace { place, .. } => Some(storage::clone_place(place, Some(payer))?),
             ResolvedExprKind::VecFieldRead { args, .. }
                 if matches!(
                     expression.ty,
                     crate::hir::ResolvedType::Str | crate::hir::ResolvedType::SliceU8
                 ) =>
             {
-                args.first().map(|source| storage::expression_place(source, Some(payer))).transpose()?.flatten()
+                args.first()
+                    .map(|source| storage::expression_place(source, Some(payer)))
+                    .transpose()?
+                    .flatten()
             }
-            ResolvedExprKind::ByteRange { source, .. } => storage::expression_place(source, Some(payer))?,
+            ResolvedExprKind::ByteRange { source, .. } => {
+                storage::expression_place(source, Some(payer))?
+            }
             ResolvedExprKind::NativeRustImportCall(call)
                 if matches!(
                     call.result,
                     crate::hir::ResolvedImportResultKind::BorrowedStr { .. }
                 ) =>
             {
-                call.args.first().map(|source| storage::expression_place(source, Some(payer))).transpose()?.flatten()
+                call.args
+                    .first()
+                    .map(|source| storage::expression_place(source, Some(payer)))
+                    .transpose()?
+                    .flatten()
             }
             ResolvedExprKind::Place(place) if bound.contains_key(&expression.id) => {
                 Some(storage::clone_place(place, Some(payer))?)
@@ -111,7 +149,9 @@ pub(super) fn inspect(
                 return Ok(true);
             }
         }
-        for (_, argument) in call_arguments::borrowed_call_arguments_paid(program, expression, Some(payer))? {
+        for (_, argument) in
+            call_arguments::borrowed_call_arguments_paid(program, expression, Some(payer))?
+        {
             if let Some(place) = storage::expression_place(argument, Some(payer))? {
                 if ultimate_root_is_own(
                     &place.root,

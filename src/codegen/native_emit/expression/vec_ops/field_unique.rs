@@ -19,7 +19,11 @@ impl<O: COutput> CEmitter<'_, O> {
         let ResolvedExprKind::Place(place) = &call.source.kind else {
             unreachable!()
         };
-        self.require_type(&expression.ty, &ResolvedType::Bool, "field uniqueness result")?;
+        self.require_type(
+            &expression.ty,
+            &ResolvedType::Bool,
+            "field uniqueness result",
+        )?;
         // Borrow the named owner directly; generic owning lowering would stage
         // a transfer that this read-only operation must never perform.
         let owner = self.emit_place(place)?;
@@ -60,12 +64,10 @@ impl<O: COutput> CEmitter<'_, O> {
         } else {
             let layout = crate::codegen::native_vec::owned_leaf::layout(self.program, call.element)
                 .ok_or_else(|| backend_error("field uniqueness has no native row descriptor"))?;
-            let expected = crate::hir::owned_leaf_collection::layout(
-                &self.program.declarations,
-                call.element,
-            )
-            .and_then(|layout| layout.fields)
-            .map_or(0, <[_]>::len);
+            let expected =
+                crate::hir::owned_leaf_collection::layout(&self.program.declarations, call.element)
+                    .and_then(|layout| layout.fields)
+                    .map_or(0, <[_]>::len);
             if layout.kinds.len() != expected || position >= layout.kinds.len() {
                 return Err(backend_error(
                     "field uniqueness declaration order disagrees with native layout",

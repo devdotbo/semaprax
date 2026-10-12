@@ -120,7 +120,13 @@ fn interpret(root: &std::path::Path, source: &str) {
     }
 }
 
-fn host(root: &std::path::Path, ast: &semaprax::ast::Program, status: &str, value: &str, mode: &str) {
+fn host(
+    root: &std::path::Path,
+    ast: &semaprax::ast::Program,
+    status: &str,
+    value: &str,
+    mode: &str,
+) {
     let bytes = wasm::emit_module(ast).expect("Core Wasm emission");
     wasmparser::Validator::new()
         .validate_all(&bytes)
@@ -134,7 +140,10 @@ fn host(root: &std::path::Path, ast: &semaprax::ast::Program, status: &str, valu
         }
     }
     assert_eq!(
-        names.iter().filter(|n| *n == "spx_vec_unique_by_v1").count(),
+        names
+            .iter()
+            .filter(|n| *n == "spx_vec_unique_by_v1")
+            .count(),
         1
     );
     let module = root.join(format!("app-{mode}.wasm"));

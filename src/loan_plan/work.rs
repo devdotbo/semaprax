@@ -40,7 +40,8 @@ impl PointQueue {
     fn new(points: usize, work: &WorkCounter<'_>) -> Result<Self, Diagnostic> {
         Ok(Self {
             next: super::storage::filled(points, Self::NONE, work.allocation)?.into_boxed_slice(),
-            previous: super::storage::filled(points, Self::NONE, work.allocation)?.into_boxed_slice(),
+            previous: super::storage::filled(points, Self::NONE, work.allocation)?
+                .into_boxed_slice(),
             queued: super::storage::filled(points, false, work.allocation)?.into_boxed_slice(),
             head: Self::NONE,
         })
@@ -88,7 +89,9 @@ impl Reachability {
         work: &mut WorkCounter,
     ) -> Result<Self, Diagnostic> {
         let words = starts.len().div_ceil(u64::BITS as usize);
-        let mut by_point = super::storage::filled(words * cfg.points.len(), 0_u64, work.allocation)?.into_boxed_slice();
+        let mut by_point =
+            super::storage::filled(words * cfg.points.len(), 0_u64, work.allocation)?
+                .into_boxed_slice();
         let mut pending = PointQueue::new(cfg.points.len(), work)?;
         // Charge actual row initialization, seeding, dequeues and edge-word
         // merges. No hypothetical separate traversal per loan is charged.
@@ -168,10 +171,17 @@ pub(super) fn live_nodes(
     super::storage::push(&mut pending, start, work.allocation)?;
     while let Some(node) = pending.pop() {
         charge(work)?;
-        if !reachable.contains(loan, node) || !super::storage::set_insert(&mut live, node, work.allocation)? || node == start {
+        if !reachable.contains(loan, node)
+            || !super::storage::set_insert(&mut live, node, work.allocation)?
+            || node == start
+        {
             continue;
         }
-        super::storage::extend(&mut pending, cfg.predecessors(node as usize).iter().rev().copied(), work.allocation)?;
+        super::storage::extend(
+            &mut pending,
+            cfg.predecessors(node as usize).iter().rev().copied(),
+            work.allocation,
+        )?;
     }
     Ok(live)
 }
@@ -181,8 +191,10 @@ pub(super) fn edge_liveness(
     live: &[BTreeSet<u16>],
     work: &mut WorkCounter,
 ) -> Result<EdgeLiveness, Diagnostic> {
-    let mut edge_live = super::storage::filled(cfg.edges.len(), Vec::<LoanId>::new(), work.allocation)?;
-    let mut termination_edges = super::storage::filled(live.len(), Vec::<u16>::new(), work.allocation)?;
+    let mut edge_live =
+        super::storage::filled(cfg.edges.len(), Vec::<LoanId>::new(), work.allocation)?;
+    let mut termination_edges =
+        super::storage::filled(live.len(), Vec::<u16>::new(), work.allocation)?;
     for (loan_index, nodes) in live.iter().enumerate() {
         let id = LoanId(loan_index as u16);
         for from in nodes {
@@ -192,7 +204,11 @@ pub(super) fn edge_liveness(
                 if nodes.contains(&to) {
                     super::storage::push(&mut edge_live[edge_index as usize], id, work.allocation)?;
                 } else {
-                    super::storage::push(&mut termination_edges[loan_index], edge_index, work.allocation)?;
+                    super::storage::push(
+                        &mut termination_edges[loan_index],
+                        edge_index,
+                        work.allocation,
+                    )?;
                 }
             }
         }

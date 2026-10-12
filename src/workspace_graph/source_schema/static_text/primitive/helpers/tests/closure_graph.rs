@@ -404,7 +404,12 @@ fn shared_current_ids_resolve_to_the_saved_first_match_and_refuse_discovery() {
     ] {
         assert_eq!(
             directory.resolve(id).map(|f| f as *const ResolvedFunction),
-            oracle::linear(crate::hir::items::ItemSource::view(&module.functions), &[], id).map(|f| f as *const ResolvedFunction),
+            oracle::linear(
+                crate::hir::items::ItemSource::view(&module.functions),
+                &[],
+                id
+            )
+            .map(|f| f as *const ResolvedFunction),
             "{id}"
         );
     }

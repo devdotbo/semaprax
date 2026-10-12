@@ -70,7 +70,12 @@ pub(super) fn first_loan_overflow() -> (ResolvedProgram, usize, ResolvedFunction
     let ast = crate::parse(&text, Path::new("loan-plan-overflow.spx")).unwrap();
     assert!(crate::verify::verify(&ast).is_empty());
     let errors = crate::hir::resolve(&ast).unwrap_err();
-    assert!(errors.iter().any(|error| error.message.contains("function exceeds 256 shared loans")), "{errors:?}");
+    assert!(
+        errors
+            .iter()
+            .any(|error| error.message.contains("function exceeds 256 shared loans")),
+        "{errors:?}"
+    );
 
     let (program, index) = fixture_with_uses(WORK_ROOT_LOANS, true);
     let mut function = program.functions[index].clone();

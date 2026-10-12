@@ -311,7 +311,10 @@ fn literal_array_bindings_reuse_exact_slots_while_nonliteral_copy_boundaries_rem
     std::fs::write(&path, &source).unwrap();
     let program = parse(&source, &path).unwrap();
     let errors = hir::resolve(&program).expect_err("array assignment must stay unadmitted");
-    assert!(errors.iter().any(|error| error.code == "SPX-U105"), "{errors:?}");
+    assert!(
+        errors.iter().any(|error| error.code == "SPX-U105"),
+        "{errors:?}"
+    );
     // Repeated calls reinitialize the same function-frame slots. Keep array
     // mutation and loop-local literals as explicit negative controls.
     for old in [false, true] {

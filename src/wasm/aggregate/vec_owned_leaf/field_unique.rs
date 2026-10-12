@@ -34,7 +34,10 @@ impl Emitter<'_> {
             write_i64(self.output, constant);
         }
         self.output.push(0x10);
-        write_u32(self.output, super::sort_keys::import_index(self.program) + 1);
+        write_u32(
+            self.output,
+            super::sort_keys::import_index(self.program) + 1,
+        );
         self.output.push(0x22); // local.tee result
         write_u32(self.output, local);
         self.output.extend([0x41, SCRATCH_REFUSED, 0x46]);

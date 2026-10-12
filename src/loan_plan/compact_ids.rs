@@ -28,7 +28,9 @@ pub(super) fn from_vec_paid(
 ) -> Result<Box<[LoanId]>, Diagnostic> {
     payer.reserve(0).map_err(|_| super::storage::marker())?;
     if !ids.is_empty() && ids.capacity() != ids.len() {
-        payer.array::<LoanId>(ids.len()).map_err(|_| super::storage::marker())?;
+        payer
+            .array::<LoanId>(ids.len())
+            .map_err(|_| super::storage::marker())?;
     }
     Ok(ids.into_boxed_slice())
 }

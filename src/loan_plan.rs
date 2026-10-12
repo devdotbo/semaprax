@@ -47,6 +47,7 @@ mod children_tests;
 mod compact_ids;
 use call_arguments::borrowed_call_arguments;
 use children::evaluation_children;
+mod funded_flat;
 mod guidance;
 #[cfg(test)]
 mod legacy_adjacency;
@@ -54,23 +55,22 @@ mod lexical_exit;
 mod native_view;
 mod origin;
 pub(crate) mod owned_capacity;
+mod paid_candidate;
+mod paid_cfg;
+mod paid_children;
+mod paid_materialize;
+mod paid_patterns;
+mod paid_plan;
+mod paid_predicates;
+mod paid_substitute;
 mod provisional_result;
 mod record_vec_borrow;
 #[cfg(test)]
 mod saved_planner;
 #[cfg(test)]
 mod shared_identity_tests;
-pub(crate) mod traversal;
 mod storage;
-mod funded_flat;
-mod paid_candidate;
-mod paid_children;
-mod paid_patterns;
-mod paid_cfg;
-mod paid_materialize;
-mod paid_predicates;
-mod paid_substitute;
-mod paid_plan;
+pub(crate) mod traversal;
 #[cfg(test)]
 mod whole_oracle_tests;
 mod work;
@@ -1011,7 +1011,8 @@ fn build_cfg<'a>(
     if edges.len() > MAX_LOAN_EDGES_V1 {
         return Err(error("function exceeds 4,096 loan CFG edges"));
     }
-    let adjacency = adjacency::Adjacency::build_with_storage(points.len(), &edges, work.allocation)?;
+    let adjacency =
+        adjacency::Adjacency::build_with_storage(points.len(), &edges, work.allocation)?;
     Ok(Cfg {
         points,
         nodes,

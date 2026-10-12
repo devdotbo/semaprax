@@ -33,7 +33,10 @@ fn source(count: usize, identifiers: &str, expected: bool) -> String {
             "shiftsim.schedule.unique_patient_ids",
             "shiftsim.clone_sort.unique_patient_ids",
         )
-        .replace("fn unique_patient_ids(", "fn clone_sort_unique_patient_ids(");
+        .replace(
+            "fn unique_patient_ids(",
+            "fn clone_sort_unique_patient_ids(",
+        );
     let old = ORIGINAL
         .replace(
             "shiftsim.schedule.unique_patient_ids",

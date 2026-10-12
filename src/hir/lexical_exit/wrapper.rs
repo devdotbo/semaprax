@@ -37,7 +37,10 @@ pub(crate) fn source_for_wrapper<'a>(
 pub(crate) fn source_for_wrapper_with<'a>(
     program: &dyn crate::cleanup::ReplayContext,
     region: &'a ResolvedExpr,
-    inspect: &mut dyn FnMut(&dyn crate::cleanup::ReplayContext, &ResolvedExpr) -> Result<bool, Diagnostic>,
+    inspect: &mut dyn FnMut(
+        &dyn crate::cleanup::ReplayContext,
+        &ResolvedExpr,
+    ) -> Result<bool, Diagnostic>,
 ) -> Result<Option<SourceForWrapper<'a>>, Diagnostic> {
     let ResolvedExprKind::Block { statements, tail } = &region.kind else {
         return Ok(None);
@@ -191,7 +194,9 @@ pub(crate) fn source_for_wrapper_with<'a>(
             else {
                 return Err(fail());
             };
-            if type_arguments.as_slice() != std::slice::from_ref(element) || args.first() != Some(source) {
+            if type_arguments.as_slice() != std::slice::from_ref(element)
+                || args.first() != Some(source)
+            {
                 // Identity differs at each source site: compare exact place/type/mode, not expression ID.
                 let Some(owner) = args.first() else {
                     return Err(fail());

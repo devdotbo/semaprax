@@ -201,9 +201,7 @@ fn statement(statement: &S, in_body: bool, flags: &mut Flags) -> bool {
             binding,
             field: None,
             ..
-        } => {
-            binding.ownership == OwnershipMode::Value && hir::is_scalar_resolved_type(&binding.ty)
-        }
+        } => binding.ownership == OwnershipMode::Value && hir::is_scalar_resolved_type(&binding.ty),
         S::While { .. }
         | S::LexicalWhile {
             latch: hir::lexical_exit::LoopLatchKind::Condition,

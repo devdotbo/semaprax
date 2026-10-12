@@ -51,7 +51,8 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
                             || !place_is(index, row_index)
                             || crate::hir::vec_field::field(program.declarations(), element, field)
                                 .and_then(|selected| selected.result_type(*bytes))
-                                 .as_ref() != Some(&expression.ty)
+                                .as_ref()
+                                != Some(&expression.ty)
                         {
                             return Err(fail());
                         }
@@ -124,7 +125,9 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
             }
             _ => {}
         }
-        for (_, argument) in call_arguments::borrowed_call_arguments_paid(program, expression, work.allocation)? {
+        for (_, argument) in
+            call_arguments::borrowed_call_arguments_paid(program, expression, work.allocation)?
+        {
             if matches!(&argument.kind, ResolvedExprKind::Place(place) if place == owner) {
                 storage::set_insert(&mut allowed, argument.id.clone(), work.allocation)?;
             }
@@ -159,7 +162,10 @@ pub(super) fn draft(
         parent_root: None,
         binding: None,
         start: cfg.node(proof.region, LoanPointPhase::Before)?,
-        seeds: storage::singleton_set(cfg.node(proof.region, LoanPointPhase::After)?, work.allocation)?,
+        seeds: storage::singleton_set(
+            cfg.node(proof.region, LoanPointPhase::After)?,
+            work.allocation,
+        )?,
         cause: LoanCause::TraversalFreeze,
     }))
 }
@@ -186,7 +192,10 @@ pub(super) fn draft_bytes(
         parent_root: None,
         binding: None,
         start: cfg.node(expression, LoanPointPhase::Before)?,
-        seeds: storage::singleton_set(cfg.node(expression, LoanPointPhase::After)?, work.allocation)?,
+        seeds: storage::singleton_set(
+            cfg.node(expression, LoanPointPhase::After)?,
+            work.allocation,
+        )?,
         cause: LoanCause::TraversalFreeze,
     }))
 }

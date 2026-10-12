@@ -333,29 +333,36 @@ fn actual_canonical_caller_funds_rebuild_append_and_drop_on_one_invocation() {
     // Source checking, ModuleIndex/constructor authentication, and the fixed
     // existing Budget context are outside this planner+append observation.
     // No claim about the later full validator allocations is made here.
-    let run = |limit| crate::bounded_output::with_limit_usage_refusal(limit, || measure(|| {
-        match caller::prepare(&seed) {
-            Ok(storage) => {
-                same(&storage, &expected);
-                assert!(storage.is_current(&program));
-                drop(storage);
-                true
-            }
-            Err(report) => {
-                assert_eq!(report.code, "SPX-H006");
-                assert_eq!(report.message, "canonical loan CFG storage reservation refused");
-                drop(report);
-                // The same invocation cannot acquire a fresh report/allowance
-                // after failure. This inline setup refusal allocates no text.
-                let retry = caller::prepare(&seed).err().unwrap();
-                assert_eq!(retry.code, "SPX-H006");
-                assert!(retry.message.is_empty());
-                drop(retry);
-                assert!(!crate::bounded_output::reserve_active_required(0));
-                false
-            }
-        }
-    }));
+    let run = |limit| {
+        crate::bounded_output::with_limit_usage_refusal(limit, || {
+            measure(|| {
+                match caller::prepare(&seed) {
+                    Ok(storage) => {
+                        same(&storage, &expected);
+                        assert!(storage.is_current(&program));
+                        drop(storage);
+                        true
+                    }
+                    Err(report) => {
+                        assert_eq!(report.code, "SPX-H006");
+                        assert_eq!(
+                            report.message,
+                            "canonical loan CFG storage reservation refused"
+                        );
+                        drop(report);
+                        // The same invocation cannot acquire a fresh report/allowance
+                        // after failure. This inline setup refusal allocates no text.
+                        let retry = caller::prepare(&seed).err().unwrap();
+                        assert_eq!(retry.code, "SPX-H006");
+                        assert!(retry.message.is_empty());
+                        drop(retry);
+                        assert!(!crate::bounded_output::reserve_active_required(0));
+                        false
+                    }
+                }
+            })
+        })
+    };
     let ((success, observed), refused, exact, first) = run(usize::MAX);
     assert!(success);
     assert!(!refused);

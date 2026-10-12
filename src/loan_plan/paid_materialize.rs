@@ -18,8 +18,11 @@ pub(super) fn materialize(
             return Err(error("loan has no bounded CFG termination edge"));
         }
         let mut ends = storage::vector(end_edges.len(), Some(payer))?;
-        ends.extend(end_edges.iter().map(|edge|
-            cfg.points[cfg.edges[*edge as usize].1 as usize].clone()));
+        ends.extend(
+            end_edges
+                .iter()
+                .map(|edge| cfg.points[cfg.edges[*edge as usize].1 as usize].clone()),
+        );
         ends.dedup();
         loans.push(Loan {
             id: LoanId(index as u16),
@@ -35,7 +38,11 @@ pub(super) fn materialize(
     let mut starts = storage::filled(cfg.points.len(), Vec::<LoanId>::new(), Some(payer))?;
     let mut kills = storage::filled(cfg.points.len(), Vec::<LoanId>::new(), Some(payer))?;
     for loan in &loans {
-        storage::push(&mut starts[*cfg.nodes.get(&loan.start).expect("start point retained") as usize], loan.id, Some(payer))?;
+        storage::push(
+            &mut starts[*cfg.nodes.get(&loan.start).expect("start point retained") as usize],
+            loan.id,
+            Some(payer),
+        )?;
         for edge in &loan.end_edges {
             let to = cfg.edges[*edge as usize].1;
             storage::push(&mut kills[to as usize], loan.id, Some(payer))?;
@@ -49,20 +56,30 @@ pub(super) fn materialize(
             .iter()
             .filter_map(|from| cfg.edges.binary_search(&(*from, node as u16)).ok())
         {
-            for id in &edge_live[edge] { storage::set_insert(&mut live_before, *id, Some(payer))?; }
+            for id in &edge_live[edge] {
+                storage::set_insert(&mut live_before, *id, Some(payer))?;
+            }
         }
         let mut live_after = BTreeSet::new();
         for edge in cfg
             .successors(node)
             .filter_map(|to| cfg.edges.binary_search(&(node as u16, to)).ok())
         {
-            for id in &edge_live[edge] { storage::set_insert(&mut live_after, *id, Some(payer))?; }
+            for id in &edge_live[edge] {
+                storage::set_insert(&mut live_after, *id, Some(payer))?;
+            }
         }
         endpoints.push(LoanEndpoint {
             point: point.clone(),
             live_before: compact_ids::from_vec_paid(set_vector(live_before, payer)?, payer)?,
-            starts: compact_ids::from_vec_paid(storage::clone_vec(&starts[node], Some(payer))?, payer)?,
-            kills: compact_ids::from_vec_paid(storage::clone_vec(&kills[node], Some(payer))?, payer)?,
+            starts: compact_ids::from_vec_paid(
+                storage::clone_vec(&starts[node], Some(payer))?,
+                payer,
+            )?,
+            kills: compact_ids::from_vec_paid(
+                storage::clone_vec(&kills[node], Some(payer))?,
+                payer,
+            )?,
             live_after: compact_ids::from_vec_paid(set_vector(live_after, payer)?, payer)?,
         });
     }
@@ -97,7 +114,8 @@ pub(super) fn materialize(
 }
 
 fn set_vector(
-    values: BTreeSet<LoanId>, payer: &crate::bounded_output::cfg_reservation::CfgReservation,
+    values: BTreeSet<LoanId>,
+    payer: &crate::bounded_output::cfg_reservation::CfgReservation,
 ) -> Result<Vec<LoanId>, Diagnostic> {
     let mut out = storage::vector(values.len(), Some(payer))?;
     out.extend(values);

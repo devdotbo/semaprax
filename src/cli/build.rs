@@ -6,7 +6,7 @@ use same_file::Handle;
 use semaprax::diagnostic::Diagnostic;
 
 use super::project::{
-    DEFAULT_MANIFEST, is_project_manifest, normalize_project_path, resolve_positional,
+    is_project_manifest, normalize_project_path, resolve_positional, DEFAULT_MANIFEST,
 };
 
 pub(crate) struct BuildOptions {

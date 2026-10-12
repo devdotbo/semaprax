@@ -47,12 +47,12 @@ pub(super) mod private_layout;
 pub(in crate::workspace_graph) use held_projection::{
     synthetic_builder_bytes_scoped_with_retention_with_registry, synthetic_program_with_registry,
 };
+#[path = "expected_projection/field_unique.rs"]
+mod field_unique;
 #[path = "expected_projection/record_traversal.rs"]
 mod record_traversal;
 #[path = "expected_projection/retention.rs"]
 mod retention;
-#[path = "expected_projection/field_unique.rs"]
-mod field_unique;
 #[path = "expected_projection/sort_keys.rs"]
 mod sort_keys;
 #[path = "expected_projection/statement_segment.rs"]

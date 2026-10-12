@@ -2,10 +2,10 @@
 //! sizing authority. Active callers fund planner scratch and append through one
 //! captured owner; upstream preflight and legacy semantic diagnostic text remain open.
 use super::*;
+use crate::bounded_output::cfg_reservation::CfgReservation;
 use crate::hir::validation::{constructor_seed::ConstructorSeed, HirValidator};
 use crate::hir::{function_directory::Directory, hir_error};
 use crate::loan_plan::LoanPlan;
-use crate::bounded_output::cfg_reservation::CfgReservation;
 
 #[derive(Clone, Copy)]
 enum Payer<'payer> {
@@ -25,7 +25,9 @@ impl Payer<'_> {
         if let Self::Captured(owner) = self {
             return owner.reserve(bytes).map_err(|_| refused());
         }
-        if matches!(self, Self::ActiveBuilder) && !crate::bounded_output::reserve_active_required(bytes) {
+        if matches!(self, Self::ActiveBuilder)
+            && !crate::bounded_output::reserve_active_required(bytes)
+        {
             return Err(refused());
         }
         Ok(())
@@ -135,7 +137,9 @@ fn prepare_with_comparison<'a>(
     } else {
         None
     };
-    let payer = captured.as_ref().map_or_else(Payer::current, Payer::Captured);
+    let payer = captured
+        .as_ref()
+        .map_or_else(Payer::current, Payer::Captured);
     let result = (|| {
         payer.reserve(0)?;
         let mut deferred = Deferred::new(program);
@@ -145,13 +149,19 @@ fn prepare_with_comparison<'a>(
             liveness: Vec::new(),
             origins: Vec::new(),
         };
-        for function in program.functions.iter().chain(program.function_instances.iter().map(|i| &i.function)) {
+        for function in program
+            .functions
+            .iter()
+            .chain(program.function_instances.iter().map(|i| &i.function))
+        {
             let plan = match captured.as_ref() {
-                Some(owner) => match crate::loan_plan::build_plan_with_reservation(program, function, owner) {
-                    Ok(plan) => plan,
-                    Err(crate::loan_plan::FundedError::Physical(_)) => return Err(refused()),
-                    Err(crate::loan_plan::FundedError::Semantic(error)) => return Err(error),
-                },
+                Some(owner) => {
+                    match crate::loan_plan::build_plan_with_reservation(program, function, owner) {
+                        Ok(plan) => plan,
+                        Err(crate::loan_plan::FundedError::Physical(_)) => return Err(refused()),
+                        Err(crate::loan_plan::FundedError::Semantic(error)) => return Err(error),
+                    }
+                }
                 None => crate::loan_plan::build_plan(program, function)?,
             };
             // Compare the COMPLETE plan before append consumes it. An
@@ -164,7 +174,9 @@ fn prepare_with_comparison<'a>(
     // Only this exact affine owner can mark physical failure. Never infer
     // payment from H006 text, and never reserve/render after semantic error.
     if let Some(owner) = captured {
-        if owner.first().is_some() { return Err(owner.diagnostic()); }
+        if owner.first().is_some() {
+            return Err(owner.diagnostic());
+        }
     }
     result
 }

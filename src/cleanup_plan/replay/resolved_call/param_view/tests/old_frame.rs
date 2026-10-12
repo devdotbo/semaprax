@@ -1,7 +1,7 @@
 //! Complete saved pre-view frame layout; no estimated variant layout.
 #![allow(dead_code)]
-use crate::cleanup_plan::replay::*;
 use crate::cleanup_plan::replay::continuation_storage::OwnedStep;
+use crate::cleanup_plan::replay::*;
 enum SavedFrame<'a> {
     Eval(&'a ResolvedExpr),
     FinishCopyRegion {
@@ -177,4 +177,6 @@ enum SavedFrame<'a> {
     },
 }
 
-pub(super) fn bytes() -> usize { std::mem::size_of::<SavedFrame<'_>>() }
+pub(super) fn bytes() -> usize {
+    std::mem::size_of::<SavedFrame<'_>>()
+}

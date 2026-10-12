@@ -73,9 +73,8 @@ fn cfg_owner_nested_and_escaped_zero_requests_cannot_change_first_receipt() {
     let request = size_of::<CfgReservation>() + MESSAGE.len();
     let (owner, refused, used) = with_limit_usage(request + 1, || {
         let owner = CfgReservation::acquire().unwrap();
-        let (reason, inner_refused, inner_used) = with_limit_usage(0, || {
-            owner.reserve(0).unwrap_err()
-        });
+        let (reason, inner_refused, inner_used) =
+            with_limit_usage(0, || owner.reserve(0).unwrap_err());
         assert_eq!(reason, Refused::Detached);
         assert!(!inner_refused);
         assert_eq!(inner_used, 0);

@@ -82,9 +82,24 @@ impl DeclarationIndex {
         use crate::hir::CompilerDeclaration as Id;
         let specs = [
             (Id::Option, "Option", DeclarationKind::Variant, None),
-            (Id::OptionNone, "None", DeclarationKind::VariantCase, Some(Id::Option)),
-            (Id::OptionSome, "Some", DeclarationKind::VariantCase, Some(Id::Option)),
-            (Id::OptionSomeValue, "value", DeclarationKind::CaseField, Some(Id::OptionSome)),
+            (
+                Id::OptionNone,
+                "None",
+                DeclarationKind::VariantCase,
+                Some(Id::Option),
+            ),
+            (
+                Id::OptionSome,
+                "Some",
+                DeclarationKind::VariantCase,
+                Some(Id::Option),
+            ),
+            (
+                Id::OptionSomeValue,
+                "value",
+                DeclarationKind::CaseField,
+                Some(Id::OptionSome),
+            ),
         ];
         for (identity, name, kind, owner) in specs {
             let id = identity.text();

@@ -28,7 +28,12 @@ pub(super) fn inventory(
     match pattern {
         ResolvedMatchPattern::Variant { fields, .. } => {
             for field in fields {
-                storage::map_insert(ownership, field.binding.id.clone(), field.binding.ownership, payer)?;
+                storage::map_insert(
+                    ownership,
+                    field.binding.id.clone(),
+                    field.binding.ownership,
+                    payer,
+                )?;
             }
         }
         ResolvedMatchPattern::Record { fields, .. } => {

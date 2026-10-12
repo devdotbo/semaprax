@@ -669,7 +669,9 @@ impl Emitter<'_> {
                 return Err(error("owned-leaf Vec old operation is not admitted"));
             }
             VecOp::UniqueBy => {
-                return Err(error("field uniqueness requires its exact borrowed receiver"));
+                return Err(error(
+                    "field uniqueness requires its exact borrowed receiver",
+                ));
             }
         }
         Ok(result)

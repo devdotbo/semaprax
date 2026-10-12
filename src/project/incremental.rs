@@ -40,8 +40,8 @@ pub(crate) mod checked_hir;
 /// Read-only replay measuring `FrontendPass::lookup`'s `Program::clone` cost
 /// (SPX-AI-031/#130, SPX-AI-032/#131). See that module's doc comment.
 mod clone_cost_report;
-mod source_handoff;
 pub(crate) mod paid_resolution;
+mod source_handoff;
 use checked_hir::{CheckedModuleLease, ResolvedModuleInput};
 
 pub const PROJECT_FRONTEND_CACHE_SCHEMA: &str = "semaprax.project-frontend-cache-work.v1";

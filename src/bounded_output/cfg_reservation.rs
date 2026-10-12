@@ -26,10 +26,12 @@ pub(crate) struct CfgReservation {
 impl CfgReservation {
     pub(crate) fn acquire() -> Result<Self, Refused> {
         let budget = active().ok_or(Refused::NoOwner)?;
-        let bytes = size_of::<Self>().checked_add(MESSAGE.len()).ok_or_else(|| {
-            poison(&budget, usize::MAX);
-            Refused::Arithmetic
-        })?;
+        let bytes = size_of::<Self>()
+            .checked_add(MESSAGE.len())
+            .ok_or_else(|| {
+                poison(&budget, usize::MAX);
+                Refused::Arithmetic
+            })?;
         required(&budget, bytes)?;
         let mut text = String::new();
         if text.try_reserve_exact(MESSAGE.len()).is_err() {
@@ -41,7 +43,11 @@ impl CfgReservation {
             poison(&budget, 0);
             return Err(Refused::Capacity);
         }
-        Ok(Self { budget, text, first: Cell::new(None) })
+        Ok(Self {
+            budget,
+            text,
+            first: Cell::new(None),
+        })
     }
 
     pub(crate) fn reserve(&self, bytes: usize) -> Result<(), Refused> {
@@ -49,7 +55,9 @@ impl CfgReservation {
         if !active().is_some_and(|current| Rc::ptr_eq(&current, &self.budget)) {
             return self.fail(Refused::Detached, bytes);
         }
-        if let Some(first) = self.first.get() { return Err(first); }
+        if let Some(first) = self.first.get() {
+            return Err(first);
+        }
         required(&self.budget, bytes).map_err(|reason| {
             self.first.set(Some(reason));
             reason
@@ -77,7 +85,9 @@ impl CfgReservation {
         self.fail(Refused::Arithmetic, usize::MAX).unwrap_err()
     }
 
-    pub(crate) fn first(&self) -> Option<Refused> { self.first.get() }
+    pub(crate) fn first(&self) -> Option<Refused> {
+        self.first.get()
+    }
 
     fn fail(&self, reason: Refused, requested: usize) -> Result<(), Refused> {
         let first = self.first.get().unwrap_or(reason);
@@ -94,7 +104,9 @@ impl CfgReservation {
     }
 
     #[cfg(test)]
-    pub(crate) fn text_pointer(&self) -> *const u8 { self.text.as_ptr() }
+    pub(crate) fn text_pointer(&self) -> *const u8 {
+        self.text.as_ptr()
+    }
 }
 
 fn poison(budget: &Budget, requested: usize) {
@@ -102,9 +114,16 @@ fn poison(budget: &Budget, requested: usize) {
     budget.overflowed.set(true);
 }
 fn required(budget: &Budget, bytes: usize) -> Result<(), Refused> {
-    if reserve(Some(budget), bytes) { return Ok(()); }
+    if reserve(Some(budget), bytes) {
+        return Ok(());
+    }
     poison(budget, bytes);
-    Err(Refused::Budget(budget.first_refusal.get().expect("required refusal recorded")))
+    Err(Refused::Budget(
+        budget
+            .first_refusal
+            .get()
+            .expect("required refusal recorded"),
+    ))
 }
 
 #[cfg(test)]

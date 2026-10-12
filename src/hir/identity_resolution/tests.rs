@@ -239,7 +239,9 @@ fn paid_borrowed_source_keeps_verifier_and_invariant_refusals_before_identity() 
     assert_eq!(paid, legacy);
     let mut malformed = program.clone();
     malformed.functions[0].stable_id.clear();
-    let legacy = super::super::resolve_source(&malformed, None).err().unwrap();
+    let legacy = super::super::resolve_source(&malformed, None)
+        .err()
+        .unwrap();
     let Failure::Source(paid) = resolve_source(&malformed, None, |_| -> Result<(), Stop> {
         panic!("identity request after verifier refusal")
     })
@@ -257,8 +259,7 @@ fn paid_siblings_keep_unicode_empty_nul_and_duplicate_identity_outcomes() {
     for text in ["\u{e9}\u{2713}.main", "", "nul\0id", duplicate.as_str()] {
         let mut changed = base.clone();
         changed.functions[1].stable_id = text.to_owned();
-        let legacy =
-            super::super::resolve_with_function_reuse(&changed, None, None, None, None);
+        let legacy = super::super::resolve_with_function_reuse(&changed, None, None, None, None);
         let paid = resolve_checked(&changed, None, None, None, None, |_| Ok::<_, Stop>(()));
         match (legacy, paid) {
             (Ok(old), Ok(new)) => assert_eq!(old.0, new.0),

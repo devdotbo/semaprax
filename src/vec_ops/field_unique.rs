@@ -314,7 +314,9 @@ pub(crate) fn rederive_substituted(program: &mut crate::hir::ResolvedProgram, fu
     let stale = crate::hir::validate(program).unwrap_err();
     assert_eq!(stale.code, "SPX-H006");
     assert!(
-        stale.message.contains("non-canonical status-source sequence"),
+        stale
+            .message
+            .contains("non-canonical status-source sequence"),
         "{stale:?}"
     );
     let index = program

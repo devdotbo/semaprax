@@ -93,7 +93,10 @@ pub(crate) fn validate_function_with(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     owner: &FunctionExecutionId,
-    inspect: &mut dyn FnMut(&dyn crate::cleanup::ReplayContext, &ResolvedExpr) -> Result<bool, Diagnostic>,
+    inspect: &mut dyn FnMut(
+        &dyn crate::cleanup::ReplayContext,
+        &ResolvedExpr,
+    ) -> Result<bool, Diagnostic>,
 ) -> Result<(), Diagnostic> {
     validate_owner(function, owner)?;
     if storage_has_bottom(&function.return_type, 0)
@@ -104,7 +107,9 @@ pub(crate) fn validate_function_with(
         ));
     }
     for contract in function.requires.iter().chain(&function.ensures) {
-        walk(program, function, owner, contract, false, None, None, 0, inspect)?;
+        walk(
+            program, function, owner, contract, false, None, None, 0, inspect,
+        )?;
     }
     walk(
         program,
@@ -127,7 +132,10 @@ fn walk<'a>(
     nearest: Option<&'a ExpressionId>,
     allowed: Option<&'a ResolvedExpr>,
     depth: usize,
-    inspect: &mut dyn FnMut(&dyn crate::cleanup::ReplayContext, &ResolvedExpr) -> Result<bool, Diagnostic>,
+    inspect: &mut dyn FnMut(
+        &dyn crate::cleanup::ReplayContext,
+        &ResolvedExpr,
+    ) -> Result<bool, Diagnostic>,
 ) -> Result<(), Diagnostic> {
     if depth > crate::cache_codec::MAX_DEPTH {
         return Err(error("lexical contour exceeds admitted HIR depth"));
@@ -466,7 +474,17 @@ fn walk<'a>(
                     inspect,
                 )?;
             }
-            walk(program, function, owner, body, false, None, None, depth + 1, inspect)?;
+            walk(
+                program,
+                function,
+                owner,
+                body,
+                false,
+                None,
+                None,
+                depth + 1,
+                inspect,
+            )?;
         }
         _ => {
             let mut index = 0;

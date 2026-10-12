@@ -1,6 +1,6 @@
 use super::*;
-use crate::hir::DeclarationId;
 use crate::bounded_output::{with_limit_usage, with_limit_usage_refusal};
+use crate::hir::DeclarationId;
 use crate::test_allocation_observer::measure;
 
 #[test]
@@ -21,21 +21,36 @@ fn funded_flat_receiver_keeps_complete_saved_plan_and_current_member_boundary() 
     assert!(!actual.loans.is_empty());
     // String-slot discovery must preserve the independent allocating predicate
     // while avoiding its temporary Vec<String> type constructor.
-    let slot_ast = crate::check(r#"module slots;
+    let slot_ast = crate::check(
+        r#"module slots;
 @id("slots.inspect") fn inspect(values:own Vec<string>)->i64 {
  let text=vec_str_at(values,0usize);
  str_len_bytes(text)
 }
 @id("slots.main") fn main()->i64 {0}
-"#, "slots.spx").unwrap();
+"#,
+        "slots.spx",
+    )
+    .unwrap();
     let slot_program = crate::hir::resolve(&slot_ast).unwrap();
-    let slot_function = slot_program.functions.iter().find(|f| f.id.as_str() == "slots.inspect").unwrap();
-    let ResolvedExprKind::Block { statements, .. } = &slot_function.body.kind else { panic!("slot body"); };
-    let ResolvedStatement::Let { value, .. } = &statements[0] else { panic!("slot declaration"); };
+    let slot_function = slot_program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "slots.inspect")
+        .unwrap();
+    let ResolvedExprKind::Block { statements, .. } = &slot_function.body.kind else {
+        panic!("slot body");
+    };
+    let ResolvedStatement::Let { value, .. } = &statements[0] else {
+        panic!("slot declaration");
+    };
     let expected = crate::vec_ops::string_slot::place(value).unwrap();
     let ((), observed) = measure(|| {
         for _ in 0..32 {
-            assert!(std::ptr::eq(paid_predicates::string_slot(value).unwrap(), expected));
+            assert!(std::ptr::eq(
+                paid_predicates::string_slot(value).unwrap(),
+                expected
+            ));
         }
     });
     assert_eq!(observed.allocations, 0);
@@ -43,20 +58,38 @@ fn funded_flat_receiver_keeps_complete_saved_plan_and_current_member_boundary() 
     assert_eq!(observed.live, 0);
     assert!(!observed.invalid);
     let (_, old_queries) = measure(|| {
-        for _ in 0..32 { assert!(crate::vec_ops::string_slot::place(value).is_some()); }
+        for _ in 0..32 {
+            assert!(crate::vec_ops::string_slot::place(value).is_some());
+        }
     });
     assert_eq!(old_queries.allocations, 32);
-    assert_eq!(old_queries.allocated, 32 * std::mem::size_of::<ResolvedType>());
+    assert_eq!(
+        old_queries.allocated,
+        32 * std::mem::size_of::<ResolvedType>()
+    );
     assert_eq!(old_queries.freed, old_queries.allocated);
     assert_eq!(old_queries.live, 0);
     for attack in 0..4 {
         let mut forged = value.clone();
-        let ResolvedExprKind::Call { args, instance, type_arguments, .. } = &mut forged.kind else { panic!("slot call"); };
+        let ResolvedExprKind::Call {
+            args,
+            instance,
+            type_arguments,
+            ..
+        } = &mut forged.kind
+        else {
+            panic!("slot call");
+        };
         match attack {
             0 => args[0].ownership = OwnershipMode::Value,
             1 => args[1].ty = ResolvedType::I64,
             2 => type_arguments.clear(),
-            3 => *instance = Some(crate::hir::FunctionInstanceId::derive(&DeclarationId::new("foreign.instance"), &[])),
+            3 => {
+                *instance = Some(crate::hir::FunctionInstanceId::derive(
+                    &DeclarationId::new("foreign.instance"),
+                    &[],
+                ))
+            }
             _ => unreachable!(),
         }
         assert!(crate::vec_ops::string_slot::place(&forged).is_none());
@@ -69,8 +102,10 @@ fn funded_flat_receiver_keeps_complete_saved_plan_and_current_member_boundary() 
     });
     assert!(!refused);
     match result {
-        Err(PlannerError::Semantic(error)) =>
-            assert_eq!(error.message, "funded loan planner requires the exact current function"),
+        Err(PlannerError::Semantic(error)) => assert_eq!(
+            error.message,
+            "funded loan planner requires the exact current function"
+        ),
         _ => panic!("foreign member was not rejected before planner storage"),
     }
 }
@@ -115,39 +150,52 @@ fn actual_flat_adjacency_and_fixed_queue_arrays_have_exact_short_drop_payment() 
     let legacy = work::Reachability::build(&cfg, starts.into_iter(), &mut legacy_work).unwrap();
     // Exact actual allocations: two offsets, one predecessor entry array,
     // one mask word per point, two u16 links and one membership byte.
-    let arrays = 2 * (cfg.points.len() + 1) * 2 + cfg.edges.len() * 2
-        + cfg.points.len() * (8 + 2 + 2 + 1);
+    let arrays =
+        2 * (cfg.points.len() + 1) * 2 + cfg.edges.len() * 2 + cfg.points.len() * (8 + 2 + 2 + 1);
     let setup = std::mem::size_of::<CfgReservation>() + 46;
-    let run = |limit| with_limit_usage_refusal(limit, || measure(|| {
-        let owner = CfgReservation::acquire().unwrap();
-        let result = (|| {
-            let adjacency = adjacency::Adjacency::build_with_storage(
-                cfg.points.len(), &cfg.edges, Some(&owner))?;
-            let mut counted = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
-            counted.allocation = Some(&owner);
-            let reachable = work::Reachability::build(&cfg, starts.into_iter(), &mut counted)?;
-            assert_eq!(counted.used, legacy_work.used);
-            for loan in 0..3 {
-                for node in 0..cfg.points.len() {
-                    assert_eq!(reachable.contains(LoanId(loan), node as u16),
-                        legacy.contains(LoanId(loan), node as u16));
+    let run = |limit| {
+        with_limit_usage_refusal(limit, || {
+            measure(|| {
+                let owner = CfgReservation::acquire().unwrap();
+                let result = (|| {
+                    let adjacency = adjacency::Adjacency::build_with_storage(
+                        cfg.points.len(),
+                        &cfg.edges,
+                        Some(&owner),
+                    )?;
+                    let mut counted = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
+                    counted.allocation = Some(&owner);
+                    let reachable =
+                        work::Reachability::build(&cfg, starts.into_iter(), &mut counted)?;
+                    assert_eq!(counted.used, legacy_work.used);
+                    for loan in 0..3 {
+                        for node in 0..cfg.points.len() {
+                            assert_eq!(
+                                reachable.contains(LoanId(loan), node as u16),
+                                legacy.contains(LoanId(loan), node as u16)
+                            );
+                        }
+                    }
+                    drop(reachable);
+                    drop(adjacency);
+                    Ok::<_, Diagnostic>(())
+                })();
+                match classify(result, &owner) {
+                    Ok(()) => {
+                        drop(owner);
+                        true
+                    }
+                    Err(PlannerError::Physical(reason)) => {
+                        assert_eq!(owner.reserve(0), Err(reason));
+                        assert_eq!(owner.reserve(1), Err(reason));
+                        drop(owner.diagnostic());
+                        false
+                    }
+                    Err(PlannerError::Semantic(_)) => panic!("unexpected semantic failure"),
                 }
-            }
-            drop(reachable);
-            drop(adjacency);
-            Ok::<_, Diagnostic>(())
-        })();
-        match classify(result, &owner) {
-            Ok(()) => { drop(owner); true }
-            Err(PlannerError::Physical(reason)) => {
-                assert_eq!(owner.reserve(0), Err(reason));
-                assert_eq!(owner.reserve(1), Err(reason));
-                drop(owner.diagnostic());
-                false
-            }
-            Err(PlannerError::Semantic(_)) => panic!("unexpected semantic failure"),
-        }
-    }));
+            })
+        })
+    };
     let ((success, observed), refused, used, first) = run(setup + arrays);
     assert!(success);
     assert!(!refused);
@@ -172,7 +220,8 @@ fn actual_flat_adjacency_and_fixed_queue_arrays_have_exact_short_drop_payment() 
 #[test]
 fn complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop() {
     const PROJECTED: &str = include_str!("../../../tests/fixtures/nested-collection-records.spx");
-    const STRINGS: &str = include_str!("../../../tests/fixtures/nested-collection-string-record.spx");
+    const STRINGS: &str =
+        include_str!("../../../tests/fixtures/nested-collection-string-record.spx");
     const LEXICAL: &str = r#"module app.paid_lexical;
 @id("row") record Row { @id("row.left") left:i64, @id("row.right") right:i64, }
 @id("app.main") fn main()->i64 {
@@ -193,22 +242,36 @@ fn complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop() {
     ] {
         let ast = crate::check(source, "paid-planner.spx").unwrap();
         let program = crate::hir::resolve(&ast).unwrap();
-        let function = program.functions.iter().find(|f| f.id.as_str() == name).unwrap();
-        assert_eq!(crate::hir::lexical_exit::requires(function).unwrap(), lexical);
+        let function = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == name)
+            .unwrap();
+        assert_eq!(
+            crate::hir::lexical_exit::requires(function).unwrap(),
+            lexical
+        );
         if lexical {
             // Lower only the receiver's test work counter, not production
             // limits. Both routes execute the real BorrowRecord preflight.
             let legacy_owner = crate::hir::lexical_exit::owner(&program, function).unwrap();
             let mut old_work = WorkCounter::new(0);
             let old_error = crate::hir::lexical_exit::validate_function_with(
-                &program, function, &legacy_owner, &mut |program, region| {
+                &program,
+                function,
+                &legacy_owner,
+                &mut |program, region| {
                     traversal::inspect_counted(program, region, &mut old_work)
                         .map(|proof| proof.is_some())
                 },
-            ).unwrap_err();
+            )
+            .unwrap_err();
             assert_eq!(old_work.used, 1);
             assert_eq!(old_error.code, "SPX-H006");
-            assert_eq!(old_error.message, "loan analysis exceeds 1,000,000 checked work");
+            assert_eq!(
+                old_error.message,
+                "loan analysis exceeds 1,000,000 checked work"
+            );
             assert_eq!(old_error.span, None);
             assert_eq!(old_error.help, None);
             let ((), refused, _) = with_limit_usage(usize::MAX, || {
@@ -229,31 +292,40 @@ fn complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop() {
         }
         let old = saved_planner::build_plan(&program, function).unwrap();
         assert!(!old.loans.is_empty());
-        if !lexical { assert!(old.loans.iter().any(|loan| !loan.origin.projections.is_empty())); }
-        let run = |limit| with_limit_usage_refusal(limit, || {
-            // Only the already established Budget/Rc context is excluded.
-            measure(|| {
-                let owner = CfgReservation::acquire().unwrap();
-                match build(&program, function, &owner) {
-                    Ok(plan) => {
-                        assert_eq!(plan, old);
-                        drop(plan);
-                        drop(owner);
-                        true
+        if !lexical {
+            assert!(old
+                .loans
+                .iter()
+                .any(|loan| !loan.origin.projections.is_empty()));
+        }
+        let run = |limit| {
+            with_limit_usage_refusal(limit, || {
+                // Only the already established Budget/Rc context is excluded.
+                measure(|| {
+                    let owner = CfgReservation::acquire().unwrap();
+                    match build(&program, function, &owner) {
+                        Ok(plan) => {
+                            assert_eq!(plan, old);
+                            drop(plan);
+                            drop(owner);
+                            true
+                        }
+                        Err(PlannerError::Physical(reason)) => {
+                            assert_eq!(owner.reserve(0), Err(reason));
+                            assert_eq!(owner.reserve(1), Err(reason));
+                            let pointer = owner.text_pointer();
+                            let report = owner.diagnostic();
+                            assert_eq!(report.message.as_ptr(), pointer);
+                            drop(report);
+                            false
+                        }
+                        Err(PlannerError::Semantic(_)) => {
+                            panic!("checked positive planner selected semantic failure")
+                        }
                     }
-                    Err(PlannerError::Physical(reason)) => {
-                        assert_eq!(owner.reserve(0), Err(reason));
-                        assert_eq!(owner.reserve(1), Err(reason));
-                        let pointer = owner.text_pointer();
-                        let report = owner.diagnostic();
-                        assert_eq!(report.message.as_ptr(), pointer);
-                        drop(report);
-                        false
-                    }
-                    Err(PlannerError::Semantic(_)) => panic!("checked positive planner selected semantic failure"),
-                }
+                })
             })
-        });
+        };
         let ((success, observed), refused, exact, first) = run(usize::MAX);
         assert!(success);
         assert!(!refused);
