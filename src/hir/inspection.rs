@@ -7,13 +7,27 @@ pub(super) fn validate_with_static_text(
     program: &ResolvedProgram,
     fused: Option<super::selected_fused_candidate::Selected<'_>>,
 ) -> Result<bool, Diagnostic> {
-    let selected =
-        super::validation::owner_renewal::validate_selected_with_static_text(program, fused)?;
+    let directory = super::function_directory::caller::prepare(program)
+        .map_err(|_| Diagnostic::io("SPX-H006", String::new()))?;
+    let selected = super::validation::owner_renewal::validate_with_directory(
+        program,
+        fused,
+        Some(&directory),
+    )?;
     super::function_value::validate_program(program)?;
     validate_attached_identity_references(program)?;
     crate::cleanup::validate_program(program)?;
     crate::cleanup_plan::validate_program(program)?;
     Ok(selected)
+}
+
+/// The same independent core verdict, with caller-owned function storage.
+/// Other validator scratch/semantic diagnostics remain separate open payers.
+pub(crate) fn validate_core_with_storage(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    let directory = super::function_directory::caller::prepare(program)
+        .map_err(|_| Diagnostic::io("SPX-H006", String::new()))?;
+    super::validation::owner_renewal::validate_with_directory(program, None, Some(&directory))
+        .map(|_| ())
 }
 
 pub(super) fn validate_nul_free_identities(program: &ResolvedProgram) -> Result<(), Diagnostic> {

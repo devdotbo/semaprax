@@ -5,6 +5,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             concat!(
                 include_str!("../src/hir/validation.rs"),
                 include_str!("../src/hir/inspection/calls.rs"),
+                include_str!("../src/hir/validation/function_lookup.rs"),
+                include_str!("../src/hir/function_directory.rs"),
                 include_str!("../src/hir/validation/type_requirement.rs"),
                 include_str!("../src/hir/validation/canonical_loans.rs"),
                 include_str!("../src/hir/validation/canonical_loans/tests.rs"),
@@ -169,7 +171,9 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
 
     let root = include_str!("../src/hir.rs");
     assert!(root.contains("mod validation;"));
-    assert!(root.contains("pub(crate) use validation::validate_core;"));
+    assert!(
+        root.contains("pub(crate) use inspection::validate_core_with_storage as validate_core;")
+    );
 
     let format_macro = root.find("macro_rules! format {").unwrap();
     let validation_module = root.find("mod validation;").unwrap();

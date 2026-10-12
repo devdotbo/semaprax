@@ -57,7 +57,7 @@ impl HirValidator<'_> {
         }
         let body = super::super::closure::closure_function(self.program, expression)?;
         let execution = FunctionExecutionId::Monomorphic(body.id.clone());
-        let mut checked = HirValidator::new(self.program)?;
+        let mut checked = HirValidator::with_directory(self.program, self.functions.directory())?;
         checked.validate_function(&body, &execution)?;
         if checked
             .expression_ids

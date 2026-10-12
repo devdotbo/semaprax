@@ -108,6 +108,7 @@ pub use lexical_exit::{
     ControlTarget, FlowCompletion, LexicalExitKind, LoopLatchKind, SourceForKind,
 };
 pub(crate) mod byte_partition;
+mod function_directory;
 pub mod function_value;
 mod ids;
 mod inspection;
@@ -268,6 +269,7 @@ use inspection::{
 };
 pub(crate) use inspection::{visit_resolved_calls, visit_workspace_call_sites};
 
+pub(crate) use inspection::validate_core_with_storage as validate_core;
 #[cfg(test)]
 pub(crate) use type_reachability::owned_oracle::owned_reachable_types as owned_reachable_types_oracle;
 pub(crate) use type_reachability::{
@@ -276,7 +278,6 @@ pub(crate) use type_reachability::{
     BorrowedTypeInventory,
 };
 pub(crate) use validation::resolved_type_contains_owned_bytes;
-pub(crate) use validation::validate_core;
 #[cfg(test)]
 use validation::HirValidator;
 pub(crate) use workspace_link::{

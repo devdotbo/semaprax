@@ -2,6 +2,7 @@
 //!
 //! Validates HIR meaning; source resolution remains in
 //! the parent module.
+mod function_lookup;
 mod type_requirement;
 use super::workspace_link::native_owner::admitted_ri06_regex_result as regex_result;
 use super::*;
@@ -39,6 +40,7 @@ mod vec_field;
 mod vec_intrinsic;
 use borrowed_argument::{hir_diagnostic_at_span, hir_error_at_span};
 use call_parameters::CallParameters;
+#[cfg(test)]
 pub(crate) use owner_renewal::validate_core;
 pub(crate) use type_profiles::resolved_type_contains_owned_bytes;
 use type_profiles::{
@@ -55,7 +57,7 @@ pub(super) struct HirValidator<'a> {
     byte_traversal_observer: Option<&'a std::cell::Cell<bool>>,
     byte_helpers: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     nominal_facts: nominal_facts::Lookup<'a>,
-    functions: BTreeMap<DeclarationId, &'a ResolvedFunction>,
+    functions: function_lookup::Lookup<'a>,
     expression_ids: BTreeSet<ExpressionId>,
     value_ids: BTreeSet<ValueId>,
     byte_slice_aliases: BTreeMap<ValueId, Place>,
@@ -88,7 +90,14 @@ impl<'a> HirValidator<'a> {
             .get(&(expression.clone(), cause.clone()))
             .copied())
     }
+    #[cfg(test)]
     pub(super) fn new(program: &'a ResolvedProgram) -> Result<Self, Diagnostic> {
+        Self::with_directory(program, None)
+    }
+    pub(super) fn with_directory(
+        program: &'a ResolvedProgram,
+        directory: Option<&'a super::function_directory::Directory<'a>>,
+    ) -> Result<Self, Diagnostic> {
         validate_nul_free_identities(program)?;
         stdin_stream::reject_sealed_escape(program)?;
         string_intrinsic::reject_reserved_identities(program)?;
@@ -105,40 +114,7 @@ impl<'a> HirValidator<'a> {
                 )));
             }
         }
-        let mut functions = BTreeMap::new();
-        for function in &program.functions {
-            if crate::host_io_ops::by_id(function.id.as_str()).is_some()
-                || crate::command_io_ops::by_id(function.id.as_str()).is_some()
-            {
-                return Err(hir_error(format!(
-                    "resolved function `{}` aliases a compiler-owned host I/O operation",
-                    function.id
-                )));
-            }
-            if functions.insert(function.id.clone(), function).is_some() {
-                return Err(hir_error(format!(
-                    "duplicate resolved function identity `{}`",
-                    function.id
-                )));
-            }
-            match program.declarations.declaration(&function.id) {
-                Some(declaration)
-                    if declaration.kind == DeclarationKind::Function
-                        && declaration.name == function.name => {}
-                Some(_) => {
-                    return Err(hir_error(format!(
-                        "resolved function `{}` disagrees with its declaration index entry",
-                        function.id
-                    )));
-                }
-                None => {
-                    return Err(hir_error(format!(
-                        "resolved function `{}` is absent from the declaration index",
-                        function.id
-                    )));
-                }
-            }
-        }
+        let functions = function_lookup::authenticate(program, directory)?;
         for template in &program.function_templates {
             if crate::host_io_ops::by_id(template.id.as_str()).is_some()
                 || crate::command_io_ops::by_id(template.id.as_str()).is_some()

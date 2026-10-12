@@ -46,24 +46,35 @@ impl<'a> HirValidator<'a> {
 /// Validate resolved meaning without consulting attached cleanup metadata.
 /// Independent cleanup-plan replayers use this boundary to avoid circularly
 /// trusting the canonical cleanup-plan builder as their oracle.
+#[cfg(test)]
 pub(crate) fn validate_core(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     validate_with_static_text(program).map(|_| ())
 }
 
+#[cfg(test)]
 pub(crate) fn validate_with_static_text(program: &ResolvedProgram) -> Result<bool, Diagnostic> {
     validate_selected_with_static_text(program, None)
 }
 
 /// The same validator, with an explicit joined selection only on the private
 /// selected factory path.
+#[cfg(test)]
 pub(crate) fn validate_selected_with_static_text(
     program: &ResolvedProgram,
     fused: Option<crate::hir::selected_fused_candidate::Selected<'_>>,
 ) -> Result<bool, Diagnostic> {
+    validate_with_directory(program, fused, None)
+}
+
+pub(in crate::hir) fn validate_with_directory<'a>(
+    program: &'a ResolvedProgram,
+    fused: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
+    directory: Option<&'a crate::hir::function_directory::Directory<'a>>,
+) -> Result<bool, Diagnostic> {
     let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
     let row_loans = std::cell::Cell::new(false);
     let byte_traversals = std::cell::Cell::new(false);
-    let selected = HirValidator::new(program)?
+    let selected = HirValidator::with_directory(program, directory)?
         .with_row_loan_observer(&row_loans)
         .with_byte_traversal_observer(&byte_traversals)
         .with_helpers(&helpers)
