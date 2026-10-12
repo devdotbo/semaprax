@@ -277,7 +277,10 @@ fn copy_record_integer_char_and_bool_keys_use_exact_values() {
     let root = root();
     interpret(&root, &source);
     native(&root, &ast, false, &[4 * 3; 4]);
-    host(&root, &ast, "0", "42", "none");
+    // Copy rows cross the exact legacy scalar Vec boundary; the strict codec
+    // mode supplies it, refuses any owned-leaf import, proves the capacity
+    // import is required and adds Copy-carrier uniqueness refusal controls.
+    host(&root, &ast, "0", "42", "copy-record-codec");
     std::fs::remove_dir_all(root).unwrap();
 }
 

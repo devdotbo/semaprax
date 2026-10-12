@@ -226,7 +226,12 @@ fn stale_foreign_layout_float_root_result_and_cached_descriptors_refuse() {
         panic!()
     };
     *callee = DeclarationId::new(other);
+    rederive_substituted(&mut substituted, "unique.main");
     crate::hir::validate(&substituted).unwrap();
+    let wire = crate::cache_codec::encode(&substituted).unwrap();
+    let restored: crate::hir::ResolvedProgram = crate::cache_codec::decode(&wire).unwrap();
+    crate::hir::validate(&restored).unwrap();
+    assert_ne!(wire, crate::cache_codec::encode(&original).unwrap());
     for mutate in [0, 1, 2, 3, 4] {
         let mut bad = original.clone();
         let expression = call(&mut bad, "unique.main");

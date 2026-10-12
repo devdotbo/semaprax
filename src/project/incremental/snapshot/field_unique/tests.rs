@@ -40,6 +40,7 @@ fn same_typed_field_substitution_cannot_acquire_source_or_cache_authority() {
     *callee = DeclarationId::new(right);
     // Both fields have the same declared type and legal live root. HIR alone
     // authenticates either descriptor; source replay must select the authored one.
+    crate::vec_ops::field_unique::rederive_substituted(&mut retained, "reader");
     hir::validate(&retained).unwrap();
     let wire = crate::cache_codec::encode(&retained).unwrap();
     let restored = crate::cache_codec::decode(&wire).unwrap();

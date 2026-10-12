@@ -52,6 +52,7 @@ fn independent_source_projection_binds_the_literal_field_at_exact_call_identity(
     };
     *callee = hir::DeclarationId::new(rank);
     // Independently valid HIR for a different field, but not this source.
+    crate::vec_ops::field_unique::rederive_substituted(&mut resolved, "rows.main");
     hir::validate(&resolved).unwrap();
     assert!(verify(&ast, &resolved, &BTreeMap::new()).is_err());
 }
