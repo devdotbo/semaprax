@@ -240,9 +240,10 @@ impl<'a> HirValidator<'a> {
             let argument = u16::try_from(parameter_index).map_err(|_| {
                 hir_error_at_span(call.span, "borrowed Bytes argument index overflows")
             })?;
-            if !self
-                .canonical_loan_ids
-                .contains_key(&(call.id.clone(), LoanCause::BorrowedCall { argument }))
+            if self
+                .canonical_loans
+                .id(&(call.id.clone(), LoanCause::BorrowedCall { argument }))
+                .is_none()
             {
                 return Err(hir_error_at_span(
                     call.span,

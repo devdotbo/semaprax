@@ -86,3 +86,40 @@ impl Inventory {
 
 #[cfg(test)]
 mod tests;
+
+// The ordinary compatibility constructor retains the saved owned directories.
+// Production caller storage lends only immutable exact-subject lookup metadata.
+#[derive(Clone)]
+// The compatibility branch preserves its existing inline owned inventory;
+// boxing it would add an unpriced allocation to old constructors.
+#[allow(clippy::large_enum_variant)]
+pub(super) enum Lookup<'a> {
+    Legacy(Inventory),
+    Borrowed(&'a super::super::canonical_loan_storage::Storage<'a>),
+}
+impl<'a> Lookup<'a> {
+    pub(super) fn id(&self, key: &(ExpressionId, LoanCause)) -> Option<&LoanId> {
+        match self {
+            Self::Legacy(i) => i.ids.get(key),
+            Self::Borrowed(i) => i.id(key),
+        }
+    }
+    pub(super) fn live(&self, key: &(ExpressionId, LoanPointPhase, LoanId)) -> Option<&usize> {
+        match self {
+            Self::Legacy(i) => i.liveness.get(key),
+            Self::Borrowed(i) => i.live(key),
+        }
+    }
+    pub(super) fn origin(&self, index: usize) -> Option<&Place> {
+        match self {
+            Self::Legacy(i) => i.origins.get(index),
+            Self::Borrowed(i) => i.origin(index),
+        }
+    }
+    pub(super) fn shared(&self) -> Option<&'a super::super::canonical_loan_storage::Storage<'a>> {
+        match self {
+            Self::Legacy(_) => None,
+            Self::Borrowed(i) => Some(*i),
+        }
+    }
+}

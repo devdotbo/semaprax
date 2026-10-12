@@ -327,6 +327,10 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     );
     let hir_validator = concat!(
         include_str!("../../../../../src/hir/function_directory/caller.rs"),
+        include_str!("../../../../../src/hir/canonical_loan_storage.rs"),
+        include_str!("../../../../../src/hir/canonical_loan_storage/caller.rs"),
+        include_str!("../../../../../src/hir/canonical_loan_storage/tests.rs"),
+        include_str!("../../../../../src/hir/canonical_loan_storage/tests/old.rs"),
         include_str!("../../../../../src/hir.rs"),
         include_str!("../../../../../src/hir/static_text.rs"),
         include_str!("../../../../../src/hir/static_text/backing.rs"),
@@ -339,6 +343,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             concat!(
                 concat!(
                     include_str!("../../../../../src/hir/validation.rs"),
+                    include_str!("../../../../../src/hir/validation/constructor_seed.rs"),
+                    include_str!("../../../../../src/hir/validation/canonical_loans.rs"),
                     include_str!("../../../../../src/hir/validation/aggregate_metadata.rs"),
                     include_str!("../../../../../src/hir/validation/continuation_path.rs"),
                     include_str!("../../../../../src/hir/validation/continuation_path/tests.rs"),

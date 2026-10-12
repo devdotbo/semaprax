@@ -156,11 +156,11 @@ impl HirValidator<'_> {
         phase: LoanPointPhase,
     ) -> Result<bool, Diagnostic> {
         for loan in &binding.active_loans {
-            if let Some(ordinal) =
-                self.canonical_loan_liveness
-                    .get(&(expression.clone(), phase, *loan))
+            if let Some(ordinal) = self
+                .canonical_loans
+                .live(&(expression.clone(), phase, *loan))
             {
-                let origin = self.canonical_loan_origins.get(*ordinal).ok_or_else(|| {
+                let origin = self.canonical_loans.origin(*ordinal).ok_or_else(|| {
                     hir_error("canonical shared-loan origin directory is incomplete")
                 })?;
                 if origin.root != requested.root {

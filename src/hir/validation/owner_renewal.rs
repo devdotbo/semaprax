@@ -66,18 +66,29 @@ pub(crate) fn validate_selected_with_static_text(
     validate_with_directory(program, fused, None)
 }
 
+#[cfg(test)]
 pub(in crate::hir) fn validate_with_directory<'a>(
     program: &'a ResolvedProgram,
     fused: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
     directory: Option<&'a crate::hir::function_directory::Directory<'a>>,
 ) -> Result<bool, Diagnostic> {
     let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
+    let validator = HirValidator::with_directory(program, directory)?;
+    validate_prepared(program, fused, &helpers, validator)
+}
+
+pub(in crate::hir) fn validate_prepared<'a>(
+    program: &'a ResolvedProgram,
+    fused: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
+    helpers: &'a crate::loop_calls::byte_writer::ModuleIndex<'a>,
+    validator: HirValidator<'a>,
+) -> Result<bool, Diagnostic> {
     let row_loans = std::cell::Cell::new(false);
     let byte_traversals = std::cell::Cell::new(false);
-    let selected = HirValidator::with_directory(program, directory)?
+    let selected = validator
         .with_row_loan_observer(&row_loans)
         .with_byte_traversal_observer(&byte_traversals)
-        .with_helpers(&helpers)
+        .with_helpers(helpers)
         .with_selected(fused)
         .validate()?;
     // This observation belongs only to this successful complete primary walk;

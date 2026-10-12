@@ -21,6 +21,7 @@ mod call_signature;
 mod callable_types;
 mod canonical_loans;
 mod closure;
+pub(in crate::hir) mod constructor_seed;
 mod contract_owners;
 mod effect_keys;
 mod generic_record_composition;
@@ -75,9 +76,7 @@ pub(super) struct HirValidator<'a> {
     borrowed_str_aliases: BTreeMap<ValueId, Place>,
     proof_generic_calls: bool,
     proof_return: Option<(FunctionInstanceId, ResolvedType)>,
-    canonical_loan_ids: BTreeMap<(ExpressionId, LoanCause), LoanId>,
-    canonical_loan_liveness: BTreeMap<(ExpressionId, LoanPointPhase, LoanId), usize>,
-    canonical_loan_origins: Vec<Place>,
+    canonical_loans: canonical_loans::Lookup<'a>,
     /// Joined `FusedConstructionV1` selection; `None` on every ordinary path.
     selected: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
 }
@@ -90,8 +89,8 @@ impl<'a> HirValidator<'a> {
     ) -> Result<Option<LoanId>, Diagnostic> {
         let _ = execution;
         Ok(self
-            .canonical_loan_ids
-            .get(&(expression.clone(), cause.clone()))
+            .canonical_loans
+            .id(&(expression.clone(), cause.clone()))
             .copied())
     }
     #[cfg(test)]
@@ -102,42 +101,33 @@ impl<'a> HirValidator<'a> {
         program: &'a ResolvedProgram,
         directory: Option<&'a super::function_directory::Directory<'a>>,
     ) -> Result<Self, Diagnostic> {
-        validate_nul_free_identities(program)?;
-        stdin_stream::reject_sealed_escape(program)?;
-        string_intrinsic::reject_reserved_identities(program)?;
-        box_intrinsic::reject_reserved_identities(program)?;
-        super::closure::once::reject_reserved_identities(program)?;
-        generic_template::validate_call_graph(program)?;
-        for declaration in program.declarations.declarations() {
-            if crate::host_io_ops::by_id(declaration.id.as_str()).is_some()
-                || crate::command_io_ops::by_id(declaration.id.as_str()).is_some()
-            {
-                return Err(hir_error(format!(
-                    "resolved {:?} declaration `{}` aliases a compiler-owned host I/O operation",
-                    declaration.kind, declaration.id
-                )));
-            }
-        }
-        let functions = function_lookup::authenticate(program, directory)?;
-        for template in &program.function_templates {
-            if crate::host_io_ops::by_id(template.id.as_str()).is_some()
-                || crate::command_io_ops::by_id(template.id.as_str()).is_some()
-            {
-                return Err(hir_error(format!(
-                    "resolved function template `{}` aliases a compiler-owned host I/O operation",
-                    template.id
-                )));
-            }
-        }
+        let seed = constructor_seed::ConstructorSeed::authenticate(program, directory)?;
         let canonical_loans = canonical_loans::Inventory::rebuild(program)?;
+        Self::from_constructor(seed, canonical_loans::Lookup::Legacy(canonical_loans))
+    }
+    pub(in crate::hir) fn with_storage(
+        seed: constructor_seed::ConstructorSeed<'a>,
+        storage: &'a super::canonical_loan_storage::Storage<'a>,
+    ) -> Result<Self, Diagnostic> {
+        if !storage.is_current(seed.program) {
+            return Err(hir_error(
+                "canonical shared-loan storage does not belong to the current program",
+            ));
+        }
+        Self::from_constructor(seed, canonical_loans::Lookup::Borrowed(storage))
+    }
+    fn from_constructor(
+        seed: constructor_seed::ConstructorSeed<'a>,
+        canonical_loans: canonical_loans::Lookup<'a>,
+    ) -> Result<Self, Diagnostic> {
         Ok(Self {
-            program,
+            program: seed.program,
             static_text: std::cell::Cell::new((false, 0)),
             row_loan_observer: None,
             byte_traversal_observer: None,
             byte_helpers: None,
             nominal_facts: nominal_facts::Lookup::default(),
-            functions,
+            functions: seed.functions,
             expression_ids: BTreeSet::new(),
             value_ids: BTreeSet::new(),
             byte_slice_aliases: BTreeMap::new(),
@@ -145,9 +135,7 @@ impl<'a> HirValidator<'a> {
             borrowed_str_aliases: BTreeMap::new(),
             proof_generic_calls: false,
             proof_return: None,
-            canonical_loan_ids: canonical_loans.ids,
-            canonical_loan_liveness: canonical_loans.liveness,
-            canonical_loan_origins: canonical_loans.origins,
+            canonical_loans,
             selected: None,
         })
     }

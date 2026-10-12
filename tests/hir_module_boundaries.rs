@@ -14,6 +14,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 include_str!("../src/hir/function_directory.rs"),
                 include_str!("../src/hir/validation/type_requirement.rs"),
                 include_str!("../src/hir/validation/canonical_loans.rs"),
+                include_str!("../src/hir/validation/constructor_seed.rs"),
+                include_str!("../src/hir/canonical_loan_storage.rs"),
                 include_str!("../src/hir/validation/canonical_loans/tests.rs"),
                 concat!(
                     include_str!("../src/hir/vec_constructor.rs"),

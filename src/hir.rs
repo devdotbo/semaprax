@@ -108,6 +108,7 @@ pub use lexical_exit::{
     ControlTarget, FlowCompletion, LexicalExitKind, LoopLatchKind, SourceForKind,
 };
 pub(crate) mod byte_partition;
+mod canonical_loan_storage;
 mod function_directory;
 pub mod function_value;
 mod ids;
@@ -340,8 +341,8 @@ pub use expr_nodes::{
     ResolvedMatchArm, ResolvedMatchPattern, ResolvedMatchPatternField,
     ResolvedRecordMatchFieldPattern, ResolvedRecordMatchPatternField, ResolvedStatement,
 };
-pub use ids::{DeclarationId, ExpressionId, FunctionExecutionId, FunctionInstanceId, ValueId};
 pub(crate) use ids::CompilerDeclaration;
+pub use ids::{DeclarationId, ExpressionId, FunctionExecutionId, FunctionInstanceId, ValueId};
 pub(crate) mod row_loan;
 pub(crate) use monomorphize::substitute_type;
 use monomorphize::{

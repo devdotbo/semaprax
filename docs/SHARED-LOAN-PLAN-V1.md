@@ -275,3 +275,33 @@ This storage optimization does not reduce a forecast, change a limit, or give
 pure validation a physical account. Complete caller prepayment for validator
 storage remains a separate owning contract; the relative allocation control is
 not a whole-validator funding or application-fit receipt.
+
+### Caller-funded canonical lookup directories
+
+The ordinary inspection caller constructs its function/permit directory, then
+helper ModuleIndex, then runs the original ordered constructor preflight. A
+private seed binds the exact immutable program and authenticated lookup before
+any independently rebuilt plan is admitted to canonical lookup storage. The
+caller prepays actual Vec probe/global backing with the active builder account;
+an absent account is explicitly the legacy unobserved policy. Spare-capacity
+and zero requests do not clear an active sticky refusal. Full replacement
+capacities, including overlap with old backing, are charged before growth;
+allocator excess is charged after observation and fails closed.
+
+Private sorted indexes carry source ordinals solely to preserve the original
+endpoint/loan error encounter order. Local duplicate LoanIds retain last-wins
+lookup; unknown endpoints precede duplicate liveness, endpoints precede start
+checks, and each complete current plan is processed before rebuilding the next.
+Canonical vectors are never sorted or repaired. Origins move once in original
+loan order. Closure validation reruns constructor preflight, borrows only this
+exact-program inventory, and keeps fresh scopes/identity sets. Equal cloned or
+reordered programs cannot receive the inventory. Ordinary compatibility
+constructors retain the original owned indexes for independent oracle controls.
+
+This prices only the explicit lookup/probe vectors. Independent loan-plan
+builder scratch, semantic diagnostics, other validator storage and temporary
+closure function construction remain open payers. The terminal independent
+`loan_plan::validate_program` is unchanged. No forecast discount, quota change,
+whole-validator funding, application fit or runtime advantage follows from this
+source tranche. Storage observers exclude input plans and fixed ledger setup
+explicitly; complete compiler/application inequalities remain unchanged.
