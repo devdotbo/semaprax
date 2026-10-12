@@ -5,6 +5,7 @@
 mod function_lookup;
 mod function_scope;
 mod identity_scratch;
+mod identity_insert;
 #[cfg(test)]
 mod owned_iterative_oracle;
 mod scope_checkpoint;
@@ -1290,7 +1291,7 @@ impl<'a> HirValidator<'a> {
     ) -> Result<(), Diagnostic> {
         let (_allow_record_reconstruction, allow_aggregate_root) = aggregate_context;
         if !expression.id.matches(execution, path)
-            || !self.expression_ids.insert(expression.id.clone())
+            || !identity_insert::expression(&mut self.expression_ids, &expression.id)?
             || !generic_template::expression_ownership_is_valid(self.program, template, expression)
         {
             return Err(hir_error(format!(
@@ -2268,7 +2269,7 @@ impl<'a> HirValidator<'a> {
                             expression.id
                         )));
                     }
-                    if !self.expression_ids.insert(expression.id.clone()) {
+                    if !identity_insert::expression(&mut self.expression_ids, &expression.id)? {
                         return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "duplicate resolved expression identity `{}`",
                             expression.id
@@ -8200,7 +8201,7 @@ impl<'a> HirValidator<'a> {
 
     fn insert_value(&mut self, id: &ValueId) -> Result<(), Diagnostic> {
         reject_nul_identity("resolved value", id.as_str())?;
-        if self.value_ids.insert(id.clone()) {
+        if identity_insert::value(&mut self.value_ids, id)? {
             Ok(())
         } else {
             Err(hir_error(format!(

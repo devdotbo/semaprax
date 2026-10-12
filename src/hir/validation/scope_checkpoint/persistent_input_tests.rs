@@ -87,9 +87,22 @@ fn checkpoint_target_guard_keeps_full_published_state_on_unwind_without_map_mate
                     suppressed.get_mut(&id).unwrap().unwrap().mutable = false;
                     publication.enabled = false;
                     publication.publish(&suppressed).unwrap();
-                    panic!("injected with persistent publication and children live");
+                    // Real owned payload is caught and dropped below. Avoid the harness
+                    // panic hook's captured output, which survives this observation.
+                    std::panic::resume_unwind(Box::new(String::from(
+                        "injected with persistent publication and children live",
+                    )));
                 }));
                 assert!(caught.is_err());
+                assert_eq!(
+                    caught
+                        .as_ref()
+                        .err()
+                        .unwrap()
+                        .downcast_ref::<String>()
+                        .map(String::as_str),
+                    Some("injected with persistent publication and children live"),
+                );
                 drop(caught);
                 let id = outer.keys().next().unwrap();
                 let mut expected = before.get(id).unwrap().clone();

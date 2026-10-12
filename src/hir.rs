@@ -933,12 +933,33 @@ mod generic_environment_reuse_tests {
             SOURCE.replace("helper()+1", "helper()+2"),
             SOURCE.replace("->T {one}", "->T {two}"),
             SOURCE.replace("{first<T>(one,two)}", "{other<T>(one,two)}"),
-            SOURCE.replace("relay<i64>(3,4)==3", "relay<bool>(true,false)    "),
         ] {
             let current = parse(&source);
             assert!(function_reuse_environment_is_exact(&current, &previous));
             parity(&current, &previous, &old, &costs);
         }
+        // Keep the original longer boolean replacement as an explicit drift
+        // case: function_signature_is_exact includes the complete function span.
+        let drifted = parse(&SOURCE.replace("relay<i64>(3,4)==3", "relay<bool>(true,false)    "));
+        assert!(!function_reuse_environment_is_exact(&drifted, &previous));
+        let expected = fresh(&drifted);
+        let actual = reuse(&drifted, &previous, &old, &costs);
+        assert_eq!(actual.0, expected.0);
+        assert_eq!(actual.1.static_text(), expected.1.static_text());
+        assert_eq!(actual.1.reused(), 0);
+        assert!(!actual.0.function_instances.is_empty());
+
+        // A separately resolved padded prior source gives the admitted boolean
+        // call the exact original body width, preserving all declaration spans.
+        let original_call = "relay<i64>(3,4)==3";
+        let boolean_call = "relay<bool>(true,false)";
+        let padding = " ".repeat(boolean_call.len() - original_call.len());
+        let padded = parse(&SOURCE.replace(original_call, &format!("{original_call}{padding}")));
+        let (padded_old, padded_work) = fresh(&padded);
+        let changed = parse(&SOURCE.replace(original_call, boolean_call));
+        assert!(function_reuse_environment_is_exact(&changed, &padded));
+        parity(&changed, &padded, &padded_old, &padded_work.costs());
+
         // Deliberately corrupt every previous generic payload. None is a reuse
         // source: only complete previous monomorphic functions can be cloned.
         let mut stale = old.clone();

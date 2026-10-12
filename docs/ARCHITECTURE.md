@@ -136,6 +136,16 @@ Sticky removal moves existing nodes without allocation or refund. Missing nodes 
 ordered extraction allocate no additional nodes. The public BTree planner and
 complete saved planner retain their independent storage policies.
 
+`hir/validation/identity_insert.rs` owns conservative B-tree node payment at
+ordinary/generic expression headers and the shared value insertion helper.
+Shared identity clones request no payload backing; duplicate detection retains its original
+priority without constructing a node. This acquisition is separate from actual
+allocator-request observations. Whole function-chain controls retain their full
+allocation/debit inequality, exact/short sticky refusals and complete Drop.
+Unwind controls own, catch and drop their actual message payload inside the
+observation, without invoking the test harness panic hook. These source-only
+corrections assert no measured funding closure or application recovery.
+
 `hir/validation/scope_checkpoint.rs` owns private persistent ordered ownership
 scopes. `hir/validation/function_scope.rs` seeds parameter bindings directly
 into that paid scope, validates the body through the existing checkpoint-target

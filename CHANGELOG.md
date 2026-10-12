@@ -23,6 +23,13 @@
   classifier fact-cache misses and synthetic parameter backing remain unpaid
   residuals, and qualification and whole-replay funding remain open.
 
+- Author constructor-local HIR identity B-tree payment and focused owner
+  corrections: retain the complete allocation/debit bound, catch and drop real
+  owned unwind payloads without harness hook capture, compare rich hostile
+  contract diagnostics with the complete old oracle before an admitted transfer
+  case, and preserve both span-drift rejection and equal-width generic reuse.
+  Full fixtures, saved pass bodies and 64 MiB budgets remain; execution pending.
+
 - Author transactional paid HIR scope insertion: stage a shared suffix with exact
   owning node carrier/initializer payments, then commit the unique prefix without
   fallible work or allocation. Preserve the complete coarse receiving policy and

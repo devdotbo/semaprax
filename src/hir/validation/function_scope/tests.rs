@@ -154,7 +154,11 @@ fn production_chain_observes_actual_backing_debits_complete_drop_and_exact_short
             assert_eq!(actual.live, 0);
             assert_eq!(old.live, 0);
             assert!(actual.allocated > 0 && paid > 0);
-            assert!(actual.allocated <= paid && actual.highwater <= paid);
+            assert!(
+                actual.allocated <= paid && actual.highwater <= paid,
+                "function {}: actual {actual:?}, paid {paid}",
+                function.id
+            );
             let (exact, refused, exact_paid, exact_receipt) =
                 lifetime(&program, function, paid, false);
             assert!(!refused && !exact_receipt && !exact.invalid);
@@ -181,9 +185,22 @@ fn production_chain_validator_drop_is_complete_on_postvalidation_unwind() {
                     validator.validate_function(function, &execution).unwrap();
                     // Ownership of the validator enters the unwinding closure.
                     let _validator = validator;
-                    panic!("injected after complete production function chain");
+                    // Own the real message payload inside the observation. resume_unwind
+                    // skips the harness panic hook, whose output capture outlives it.
+                    std::panic::resume_unwind(Box::new(String::from(
+                        "injected after complete production function chain",
+                    )));
                 }));
                 assert!(caught.is_err());
+                assert_eq!(
+                    caught
+                        .as_ref()
+                        .err()
+                        .unwrap()
+                        .downcast_ref::<String>()
+                        .map(String::as_str),
+                    Some("injected after complete production function chain"),
+                );
                 drop(caught);
             })
         });
@@ -202,83 +219,104 @@ fn persistent_requires_and_ensures_keep_hostile_flags_and_full_outer_metadata_is
         .unwrap();
     for ensures in [false, true] {
         for hostile in [false, true] {
-            let mut function = original.clone();
-            let execution = FunctionExecutionId::Monomorphic(function.id.clone());
-            let mut outer = BTreeMap::new();
-            for (id, ty, ownership) in function
-                .params
-                .iter()
-                .map(|p| (&p.id, &p.ty, p.ownership))
-                .chain(std::iter::once((
-                    &function.result_id,
-                    &function.return_type,
-                    OwnershipMode::Own,
-                )))
-            {
-                let path = vec![PlaceProjection::Field(DeclarationId::new("scope.field")); 3];
-                outer.insert(
-                    id.clone(),
-                    ValidationBinding {
-                        contract_local: true,
-                        mutable: true,
-                        ty: ty.clone(),
-                        ownership,
-                        availability: Availability::Available,
-                        active_loans: BTreeSet::from([LoanId(17)]),
-                        moved_places: BTreeMap::from([(path.clone(), Availability::MaybeMoved)]),
-                        definitely_partial: BTreeSet::from([path]),
-                    },
+            for admitted in [false, true] {
+                let mut function = original.clone();
+                let execution = FunctionExecutionId::Monomorphic(function.id.clone());
+                let mut outer = BTreeMap::new();
+                for (id, ty, ownership) in function
+                    .params
+                    .iter()
+                    .map(|p| (&p.id, &p.ty, p.ownership))
+                    .chain(std::iter::once((
+                        &function.result_id,
+                        &function.return_type,
+                        OwnershipMode::Own,
+                    )))
+                {
+                    let path = vec![PlaceProjection::Field(DeclarationId::new("scope.field")); 3];
+                    outer.insert(
+                        id.clone(),
+                        ValidationBinding {
+                            contract_local: true,
+                            mutable: true,
+                            ty: ty.clone(),
+                            ownership,
+                            availability: Availability::Available,
+                            active_loans: BTreeSet::from([LoanId(17)]),
+                            moved_places: BTreeMap::from([(
+                                path.clone(),
+                                Availability::MaybeMoved,
+                            )]),
+                            definitely_partial: BTreeSet::from([path]),
+                        },
+                    );
+                }
+                // Retain the original rich fixture verbatim as the first case.
+                // Its partial metadata selects a read diagnostic before transfer.
+                // The second case admits the read and isolates ownership transfer.
+                if admitted {
+                    for binding in outer.values_mut() {
+                        binding.active_loans.clear();
+                        binding.moved_places.clear();
+                        binding.definitely_partial.clear();
+                    }
+                }
+                let before = outer.clone();
+                if hostile {
+                    let root = if ensures {
+                        function.result_id.clone()
+                    } else {
+                        function.params[0].id.clone()
+                    };
+                    let clause = if ensures {
+                        &mut function.ensures[0]
+                    } else {
+                        &mut function.requires[0]
+                    };
+                    let ResolvedExprKind::Block { statements, .. } = &mut clause.kind else {
+                        panic!("contract block")
+                    };
+                    let ResolvedStatement::Let { value, .. } = &mut statements[0] else {
+                        panic!("local")
+                    };
+                    value.kind = ResolvedExprKind::Place(Place {
+                        root,
+                        projections: Vec::new(),
+                    });
+                }
+                let clauses = if ensures {
+                    &function.ensures
+                } else {
+                    &function.requires
+                };
+                let phase = if ensures { "ensures" } else { "requires" };
+                let mut current = HirValidator::new(&program).unwrap();
+                let mut old = current.clone();
+                scope_checkpoint::Scope::prepare(outer.len()).unwrap();
+                let persistent = scope_checkpoint::Scope::from_prepaid(outer.clone());
+                let expected =
+                    old.validate_contracts_owned_reference(&execution, clauses, &outer, phase);
+                let actual =
+                    current.validate_contracts_persistent(&execution, clauses, &persistent, phase);
+                HirValidator::assert_validation_oracle(
+                    &actual, &expected, &current, &old, &outer, &before, phase,
                 );
-            }
-            let before = outer.clone();
-            if hostile {
-                let root = if ensures {
-                    function.result_id.clone()
-                } else {
-                    function.params[0].id.clone()
-                };
-                let clause = if ensures {
-                    &mut function.ensures[0]
-                } else {
-                    &mut function.requires[0]
-                };
-                let ResolvedExprKind::Block { statements, .. } = &mut clause.kind else {
-                    panic!("contract block")
-                };
-                let ResolvedStatement::Let { value, .. } = &mut statements[0] else {
-                    panic!("local")
-                };
-                value.kind = ResolvedExprKind::Place(Place {
-                    root,
-                    projections: Vec::new(),
-                });
-            }
-            let clauses = if ensures {
-                &function.ensures
-            } else {
-                &function.requires
-            };
-            let phase = if ensures { "ensures" } else { "requires" };
-            let mut current = HirValidator::new(&program).unwrap();
-            let mut old = current.clone();
-            scope_checkpoint::Scope::prepare(outer.len()).unwrap();
-            let persistent = scope_checkpoint::Scope::from_prepaid(outer.clone());
-            let expected =
-                old.validate_contracts_owned_reference(&execution, clauses, &outer, phase);
-            let actual =
-                current.validate_contracts_persistent(&execution, clauses, &persistent, phase);
-            HirValidator::assert_validation_oracle(
-                &actual, &expected, &current, &old, &outer, &before, phase,
-            );
-            HirValidator::assert_scope_auxiliary_oracle(&current, &old);
-            assert!(persistent.iter().eq(before.iter()));
-            assert!(persistent.values().all(|value| value.contract_local));
-            assert_eq!(actual.is_err(), hostile);
-            if hostile {
-                assert!(actual
-                    .unwrap_err()
-                    .message
-                    .contains("contract cannot transfer ownership into a local binding"));
+                HirValidator::assert_scope_auxiliary_oracle(&current, &old);
+                assert!(persistent.iter().eq(before.iter()));
+                assert!(persistent.values().all(|value| value.contract_local));
+                assert_eq!(
+                    actual.as_ref().err().map(Diagnostic::json),
+                    expected.as_ref().err().map(Diagnostic::json)
+                );
+                assert_eq!(actual.is_err(), hostile);
+                if hostile && admitted {
+                    assert!(
+                        actual
+                            .unwrap_err()
+                            .message
+                            .contains("contract cannot transfer ownership into a local binding")
+                    );
+                }
             }
         }
     }
