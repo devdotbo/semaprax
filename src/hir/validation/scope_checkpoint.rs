@@ -5,6 +5,7 @@ use std::rc::Rc;
 pub(super) mod charge;
 #[cfg(test)]
 mod coarse;
+mod fresh;
 mod marks;
 pub(super) mod merge;
 pub(super) mod paths;
@@ -19,11 +20,15 @@ pub(super) struct Scope {
     root: Option<Rc<tree::Node>>,
 }
 impl Scope {
+    #[cfg(test)]
     pub(super) fn fresh_baseline(values: &dyn ScopeRead) -> Result<Self, Diagnostic> {
         charge::fresh_baseline(values)?;
         Ok(Self {
             root: tree::build_fresh(&mut values.iter(), values.len()),
         })
+    }
+    pub(super) fn fresh_baseline_persistent(values: &Scope) -> Result<Self, Diagnostic> {
+        fresh::baseline(values)
     }
     pub(super) fn prepare(count: usize) -> Result<(), Diagnostic> {
         charge::initial(count)
@@ -260,3 +265,7 @@ mod persistent_input_tests;
 #[cfg(test)]
 #[path = "scope_checkpoint/transaction_tests.rs"]
 mod transaction_tests;
+
+#[cfg(test)]
+#[path = "scope_checkpoint/fresh/tests.rs"]
+mod fresh_tests;

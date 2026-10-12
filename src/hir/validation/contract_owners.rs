@@ -58,8 +58,33 @@ impl super::HirValidator<'_> {
         outer: &super::scope_checkpoint::Scope,
         phase: &str,
     ) -> Result<(), crate::diagnostic::Diagnostic> {
-        self.validate_contracts_baseline(execution, contracts, outer, phase)
+        if contracts.is_empty() {
+            return Ok(());
+        }
+        let baseline = super::scope_checkpoint::Scope::fresh_baseline_persistent(outer)?;
+        for (index, contract) in contracts.iter().enumerate() {
+            let mut scope = baseline.clone();
+            self.validate_expr_iterative_effects(
+                execution,
+                contract,
+                &mut scope,
+                super::path_label::Label::child(phase, ".{}", [index, 0])?,
+                false,
+                None,
+            )?;
+            self.require_type(
+                &contract.ty,
+                &ResolvedType::Bool,
+                if phase == "requires" {
+                    "precondition"
+                } else {
+                    "postcondition"
+                },
+            )?;
+        }
+        Ok(())
     }
+    #[cfg(test)]
     fn validate_contracts_baseline(
         &mut self,
         execution: &super::FunctionExecutionId,

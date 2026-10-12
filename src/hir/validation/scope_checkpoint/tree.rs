@@ -171,6 +171,7 @@ pub(super) fn value<'a>(
     None
 }
 
+#[cfg(test)]
 pub(super) fn build_fresh<'a>(
     values: &mut impl Iterator<Item = (&'a ValueId, &'a ValidationBinding)>,
     count: usize,

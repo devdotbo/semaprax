@@ -9,6 +9,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 include_str!("../src/hir/validation/function_scope/tests.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/charge.rs"),
+                include_str!("../src/hir/validation/scope_checkpoint/fresh.rs"),
+                include_str!("../src/hir/validation/scope_checkpoint/fresh/tests.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/tree.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/transaction.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/coarse.rs"),

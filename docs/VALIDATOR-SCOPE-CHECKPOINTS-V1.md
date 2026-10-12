@@ -77,10 +77,10 @@ obligations. No current execution or OPT781/OPT795 closure is claimed.
 ## Persistent function receiving scope
 
 The private function driver seeds a paid persistent scope directly, validates
-requires clauses from a full freshness-reset copy, runs its body through the
+requires clauses from an independently reset baseline, runs its body through the
 existing iterative checkpoint publication guard, inserts the complete result
 binding, and validates ensures clauses from their own full baseline. Every
-baseline copies all mutable/type/ownership/availability/loan/move/partial fields
+baseline retains all mutable/type/ownership/availability/loan/move/partial fields
 and changes only `contract_local=false`. Each clause owns a root checkpoint;
 its mutations and local publication never update the function input or siblings.
 Parameter and result insertion backing and full type clone payloads are paid
@@ -114,6 +114,24 @@ allowance. Weak rebuilding may make additional requests. These are authored
 expectations pending execution, not allocation reductions or application-fit
 evidence. Baseline, edit and publication charges are unchanged.
 
+`scope_checkpoint/fresh.rs` owns persistent contract baseline construction.
+It visits every current binding flag and both child subtrees on each invocation;
+no assumed clear flags or cached membership authorize sharing. Clear bindings
+and complete unchanged subtrees share their existing Rc handles. A true flag
+receives one complete payload clone after its binding carrier and payload payment;
+changed ancestors pay their own node carrier and literal initializer before each
+Rc constructor. The source is never mutated, and only a completely staged root
+is returned. Even an empty or entirely clear baseline checks sticky refusal with
+a zero-byte reservation. Each contract clause then owns its independent checkpoint.
+The complete generic full-copy baseline, its original tree builder and owning
+controls remain test-only independent receivers with unchanged bodies. New owners
+compare every rich field for clear/true/mixed flags and shared roots, every paid
+byte refusal and exact admission, later flag mutation, clause isolation, complete
+Drop and unwind. Panic infrastructure remains outside the separate allocator
+payment owner. The original full function-chain and application controls remain
+selected. Constructor removal and sharing are source behavior awaiting execution;
+no observed allocation, work, application-fit or token gain is claimed.
+
 The full prior map function is saved in `function_scope/old.rs`, retaining its
 entire preflight, parameter order, body, result and contract order. Only the
 entry name, owner-path qualification after relocation, and calls to complete
@@ -134,7 +152,7 @@ contract and checkpoint controls remain selected, as do whole-subtree and origin
 application owners at the unchanged 64 MiB allowance. This source-only batch
 runs no compiler, tests, Clippy or application gates. Consolidated qualification
 remains required; no allocation reduction, application fit or OPT795 closure is
-claimed before execution. Full baseline payload copying remains a separate cost.
+claimed before execution. True-flag baseline payload copying remains a separate cost.
 
 The unchanged generic nested-block depth cases `[1,17,64]` and complete current,
 borrowed-map and owned-map walkers now run in a joined 16 MiB oracle test thread,

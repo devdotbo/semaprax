@@ -1,5 +1,12 @@
 # Changelog
 
+- Author persistent HIR contract baselines that inspect every current freshness
+  flag, share unchanged roots and bindings, and pay complete true-flag payloads
+  plus changed node constructors before returning a staged root. Retain the full
+  original copy receiver and complete function/control corpora, with new rich
+  sharing, every-byte refusal, clause isolation, Drop and unwind owners.
+  Source-only; executable allocation/work/application-fit evidence remains open.
+
 - Author transactional paid HIR scope insertion: stage a shared suffix with exact
   owning node carrier/initializer payments, then commit the unique prefix without
   fallible work or allocation. Preserve the complete coarse receiving policy and
