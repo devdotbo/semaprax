@@ -6,7 +6,7 @@ use crate::test_allocation_observer::measure;
 fn complete_primary_walk_without_row_loans_adds_no_replay_storage_or_reservation() {
     let source = crate::check(
         r#"module app.scalar;
-@id("app.helper") fn helper(value:i64)->i64 requires value>=0; ensures result>=0; {value+1}
+@id("app.helper") fn helper(value:i64)->i64 requires value>=0 ensures result>=0 {value+1}
 @id("app.main") fn main()->i64 {if false {helper(2)} else {helper(3)}}
 "#,
         "row-loan-absence.spx",

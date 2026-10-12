@@ -9,10 +9,13 @@ const expectedValue = BigInt(process.argv[4]);
 const refusal = process.argv[5] || '';
 // Dedicated private scalar String/Bytes witness, not a public Web adapter.
 const scalarView = refusal === 'scalar-view';
+const contractView = refusal === 'contract-view';
 const copyRecordCodec = refusal === 'copy-record-codec';
-const expectedDomain = scalarView ? process.argv[6] : null;
+const expectedDomain = (scalarView || contractView) ? process.argv[6] : null;
 if (scalarView && !['ok', 'semaprax.convert.v1'].includes(expectedDomain))
   throw Error('scalar-view requires an exact admitted normalized status domain');
+if (contractView && expectedDomain !== 'semaprax.contract.v1')
+  throw Error('contract-view requires the exact contract status domain');
 // OPT #746: `shared-owner` and `shared-owner-lease` route every payload read,
 // allocation and drop through the private shared-owner host's hooks
 // (src/wasm/shared_owner/host.mjs, staged beside this file) and take its
@@ -746,9 +749,9 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
     let selected=0,returned;
     try{returned=instance.exports.semaprax_main()}
     catch(error){if(!error.message.startsWith('status:'))throw error;selected=Number(error.message.slice(7))}
-    if(scalarView){
-      const domain=selected===0?'ok':selected===21||selected===22?'semaprax.convert.v1':null;
-      const code=selected===21||selected===22?selected-20:selected;
+    if(scalarView || contractView){
+      const domain=selected===0?'ok':selected===21||selected===22?'semaprax.convert.v1':selected===9||selected===10?'semaprax.contract.v1':null;
+      const code=selected===21||selected===22?selected-20:selected===9||selected===10?selected-8:selected;
       if(domain!==expectedDomain||code!==expectedStatus)
         throw Error(`normalized status ${domain}|${code}, expected ${expectedDomain}|${expectedStatus}`);
       if(selected&&returned!==undefined)throw Error('failed scalar view published a result');

@@ -121,18 +121,44 @@ fn row_loan_binds_its_exact_call_slot_parameter_and_call_long_vec_loan() {
         .unwrap();
     // Call-only: live from before argument evaluation, expired right after the
     // call returns, so before the loop latch, continue, break or return.
-    assert!(main.loan_plan.loans.iter().any(|item| item.site == call_id
-        && item.origin.root == owner
-        && item.origin.projections.is_empty()
-        && item.cause == crate::loan_plan::LoanCause::BorrowedCall { argument: 0 }
-        && item.start.expression == call_id
-        && item.start.phase == crate::loan_plan::LoanPointPhase::Before
-        && !item.ends.is_empty()
-        && item
+    let plan = &main.loan_plan;
+    let call_loan = plan
+        .loans
+        .iter()
+        .find(|item| {
+            item.site == call_id
+                && item.origin.root == owner
+                && item.origin.projections.is_empty()
+                && item.cause == crate::loan_plan::LoanCause::BorrowedCall { argument: 0 }
+        })
+        .expect("exact whole-Vec call loan");
+    assert_eq!(call_loan.start.expression, call_id);
+    assert_eq!(
+        call_loan.start.phase,
+        crate::loan_plan::LoanPointPhase::Before
+    );
+    let after = plan
+        .endpoints
+        .iter()
+        .position(|endpoint| {
+            endpoint.point.expression == call_id
+                && endpoint.point.phase == crate::loan_plan::LoanPointPhase::After
+        })
+        .expect("current call After endpoint");
+    assert!(plan.endpoints[after].live_before.contains(&call_loan.id));
+    assert!(!plan.endpoints[after].live_after.contains(&call_loan.id));
+    // `ends` contains destination points, not the last live point. Every
+    // termination must leave this exact Call.After; no latch can extend it.
+    assert!(!call_loan.end_edges.is_empty());
+    for edge in &call_loan.end_edges {
+        let edge = &plan.edges[usize::from(*edge)];
+        assert_eq!(usize::from(edge.from), after);
+        assert!(!edge.live.contains(&call_loan.id));
+        assert!(call_loan
             .ends
-            .iter()
-            .all(|end| end.expression == call_id
-                && end.phase == crate::loan_plan::LoanPointPhase::After)));
+            .contains(&plan.endpoints[usize::from(edge.to)].point));
+    }
+    assert_eq!(call_loan.ends.len(), call_loan.end_edges.len());
     assert!(main
         .loan_plan
         .loans

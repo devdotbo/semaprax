@@ -35,6 +35,10 @@ const DECLARATION: &str = r#"module app.leaf;
 "#;
 
 fn run_wasm(body: &str, status: u32, value: i64, refusal: &str) {
+    run_wasm_status(body, status, value, refusal, None);
+}
+
+fn run_wasm_status(body: &str, status: u32, value: i64, refusal: &str, domain: Option<&str>) {
     let source = format!("{DECLARATION}{body}");
     let program = semaprax::check(&source, "owned-leaf-vec-wasm.spx")
         .expect("source and HIR must admit the owned-leaf profile");
@@ -46,12 +50,17 @@ fn run_wasm(body: &str, status: u32, value: i64, refusal: &str) {
         SEQUENCE.fetch_add(1, Ordering::Relaxed),
     ));
     std::fs::write(&path, bytes).unwrap();
-    let output = Command::new("node")
+    let mut command = Command::new("node");
+    command
         .arg(HOST)
         .arg(&path)
         .arg(status.to_string())
         .arg(value.to_string())
-        .arg(refusal)
+        .arg(refusal);
+    if let Some(domain) = domain {
+        command.arg(domain);
+    }
+    let output = command
         .output()
         .expect("Node must execute the private host");
     std::fs::remove_file(path).unwrap();

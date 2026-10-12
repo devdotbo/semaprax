@@ -106,25 +106,56 @@ fn row_loan_contract_failure_is_canonical_and_settles_the_frozen_owner() {
     );
     assert_ne!(failing, ROW_LOAN);
     let source = format!("{DECLARATION}{failing}");
-    let path = std::env::temp_dir().join(format!(
-        "record-row-loan-failure-{}-{}.spx",
-        std::process::id(),
-        SEQUENCE.fetch_add(1, Ordering::Relaxed)
-    ));
-    std::fs::write(&path, &source).unwrap();
-    let result =
-        semaprax::interpreter::interpret(&path, "app.main", &[], &Default::default()).unwrap();
-    std::fs::remove_file(path).unwrap();
-    assert!(
-        result.envelope.contains("semaprax.contract.v1"),
-        "{}",
-        result.envelope
-    );
+    let interpret_failure = |source: &str| {
+        let path = std::env::temp_dir().join(format!(
+            "record-row-loan-failure-{}-{}.spx",
+            std::process::id(),
+            SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::write(&path, source).unwrap();
+        for _ in 0..3 {
+            let result =
+                semaprax::interpreter::interpret(&path, "app.main", &[], &Default::default())
+                    .unwrap();
+            semaprax::interpreter::verify_envelope(&result.envelope).unwrap();
+            let envelope: serde_json::Value = serde_json::from_str(&result.envelope).unwrap();
+            let outcome = &envelope["payload"]["outcome"];
+            assert!(!result.returned);
+            assert_eq!(outcome["status"]["domain_id"], "semaprax.contract.v1");
+            assert_eq!(outcome["status"]["code"], 1);
+            assert!(outcome.get("value").is_none());
+        }
+        std::fs::remove_file(path).unwrap();
+    };
+    interpret_failure(&source);
     // requires-false is semaprax.contract.v1 code 1. Native selects exactly that
     // status after the lent reads began, publishes no result, allocates nothing
     // and settles the frozen owner on every reentry; the Wasm host proves the same.
     super::super::scoped_vec_field_native::run_status(&source, 1, "semaprax.contract.v1", 0);
-    run_wasm(&failing, 1, 0, "none");
+    super::run_wasm_status(
+        &failing,
+        1,
+        0,
+        "contract-view",
+        Some("semaprax.contract.v1"),
+    );
+    // An ordinary scalar callee uses the same checked contract and transports
+    // its selected status identically; lending must not change normalization.
+    let scalar = failing
+        .replace(
+            "fn strict(row:borrow Row)->i64\n requires row.priority>100\n{ row.priority }",
+            "fn strict(value:i64)->i64\n requires value>100\n{ value }",
+        )
+        .replace("strict(row)", "strict(row.priority)");
+    assert_ne!(scalar, failing);
+    interpret_failure(&format!("{DECLARATION}{scalar}"));
+    super::super::scoped_vec_field_native::run_status(
+        &format!("{DECLARATION}{scalar}"),
+        1,
+        "semaprax.contract.v1",
+        0,
+    );
+    super::run_wasm_status(&scalar, 1, 0, "contract-view", Some("semaprax.contract.v1"));
 }
 
 #[test]
