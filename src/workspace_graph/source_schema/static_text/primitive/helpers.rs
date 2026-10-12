@@ -9,6 +9,8 @@ type Frame<'a> = Option<(hir::lexical_exit::ChildCursor<'a>, bool)>;
 const DEPTH: usize = 514;
 mod graph;
 pub(super) mod local;
+#[cfg(test)]
+mod purity_tests;
 mod types;
 struct Member<'a> {
     module: &'a WorkspaceResolvedModule,
@@ -356,25 +358,16 @@ fn authenticate_target<'a>(
         "imported scalar helper profile cursor",
     )?;
     let mut work = 1_048_576;
-    // The shared purity classifier keeps its owned-Vec contract. Our debit
-    // refuses with an empty, unallocated Vec and keeps the Copy reason here;
-    // the classifier's own structural refusals still build their legacy Vec
-    // internally (a documented remaining gap), dropped before the transfer.
-    let mut debit_refusal = None;
-    let pure =
-        scalar_helpers::pure_records_metered(function, &module.types, &mut work, &mut |units| {
-            charge(resources, anchor, units).map_err(|refused| {
-                debit_refusal = Some(refused);
-                Vec::new()
-            })
-        });
-    match pure {
+    // The classifier and debit both propagate inline refusals. Legacy callers
+    // retain their owned-Vec wrapper; this paid route never constructs it.
+    match scalar_helpers::pure_records_checked(function, &module.types, &mut work, &mut |units| {
+        charge(resources, anchor, units)
+    }) {
         Ok(true) => {}
-        Ok(false) => return Err(Refused::MISMATCH),
-        Err(errors) => {
-            drop(errors);
-            return Err(debit_refusal.unwrap_or(Refused::MISMATCH));
+        Ok(false) | Err(scalar_helpers::PurityRefusal::LocalLimit) => {
+            return Err(Refused::MISMATCH)
         }
+        Err(scalar_helpers::PurityRefusal::Charge(refused)) => return Err(refused),
     }
     // The complete pure walk above independently excludes owned roots and
     // lexical exits. Such a provider has exactly the ordinary empty V1 loan

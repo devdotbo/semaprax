@@ -202,14 +202,15 @@ qualified contract:
   No public type changes in this batch. A v0.10 typed outward refusal would be
   a separate, specified API change.
 
+The qualified imported-helper caller uses `pure_records_checked`: its local
+limit is an inline Copy refusal and its charge error moves out unchanged. The
+legacy purity wrappers retain their original owned-Vec contract for other
+callers. The actual paid acquisition-to-purity-refusal-to-report-to-Drop owner
+covers the carrier and ledger together; this removes the classifier's own
+refusal allocation, without claiming whole-engine funding.
+
 Remaining concrete gaps inside the route (not claimed as funded):
 
-- The shared scalar purity classifier
-  (`static_text::scalar_helpers::pure_records_metered`, with
-  `hir::borrowed_scalar` and `borrowed_records`) keeps its owned-Vec
-  contract. The route's debit refuses with an empty, unallocated Vec and keeps
-  its Copy reason. The classifier's own structural refusals still allocate
-  their legacy `fail()` Vec, which the route drops before the transfer.
 - Replay engine refusals inside the Session that are not budget refusals
   (`replay_error` in `require_entry`, `selected_callees`, `selected_context`
   and lexical/scalar replay) still allocate their own formatted Diagnostic.
