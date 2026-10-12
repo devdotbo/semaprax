@@ -66,7 +66,7 @@ fn deferred_complete_plans_preserve_saved_full_validator_forgery_and_error_prior
             3 => {
                 plan.loans[0].site = crate::hir::ExpressionId::from_owned("forged.site".to_owned())
             }
-            4 => plan.loans[0].origin.root = crate::hir::ValueId::new("forged.root"),
+            4 => plan.loans[0].origin.root = crate::hir::ValueId::new("forged.root".to_owned()),
             5 => plan.loans[0].parent = Some(crate::loan_plan::LoanId(255)),
             6 => plan.loans[0].start.phase = crate::loan_plan::LoanPointPhase::After,
             7 => plan.loans[0].ends.clear(),

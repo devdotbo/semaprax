@@ -9,7 +9,7 @@ const SOURCE: &str = r#"module take.owner;
 
 #[test]
 fn exact_named_transfer_has_one_commit_no_clone_or_failure_and_keeps_default_reads() {
-    assert!(!crate::string_ops::ALL.contains(&crate::string_ops::StringOp::Take));
+    assert!(!crate::string_ops::StringOp::ALL.contains(&crate::string_ops::StringOp::Take));
     assert!(crate::string_ops::StringOp::Take.is_wasm_refused());
     let ast = crate::check(SOURCE, "string-take.spx").unwrap();
     let canonical = crate::format::canonical(&ast);

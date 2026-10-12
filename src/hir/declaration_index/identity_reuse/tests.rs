@@ -73,7 +73,10 @@ fn inserted_identity_reuse_preserves_full_index_inheritance_and_current_text_gua
         changed.types[1].stable_id = text.to_owned();
         compare(&changed);
         // The reuse helper grants no verifier authority to the changed AST.
-        assert_eq!(crate::verify(&changed), crate::verify(&changed.clone()));
+        assert_eq!(
+            crate::verify::verify(&changed),
+            crate::verify::verify(&changed.clone())
+        );
     }
     for source in [
         SOURCE.replace("@id(\"child.read\")", "@id(\"base.read\")"),
