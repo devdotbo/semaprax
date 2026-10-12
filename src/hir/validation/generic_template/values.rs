@@ -1,7 +1,6 @@
 //! Paid persistent symbolic binding environment. Types borrow only the exact
 //! current immutable template; checkpoints grant no validation authority.
 use super::*;
-#[cfg(test)]
 use std::borrow::Cow;
 mod charge;
 mod tree;
