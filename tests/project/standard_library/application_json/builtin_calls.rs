@@ -157,9 +157,9 @@ pub(super) fn operation_counts(program: &ResolvedProgram, wanted: &str) -> (usiz
                     }
                     pending.extend(args);
                 }
-                E::LiteralFormat { args, .. } | E::VecFieldRead { args, .. } => {
-                    pending.extend(args)
-                }
+                E::LiteralFormat { args, .. }
+                | E::VecFieldRead { args, .. }
+                | E::RowLoan { args, .. } => pending.extend(args),
                 E::Unary { value, .. } => pending.push(value),
                 E::Binary { left, right, .. } => pending.extend([left.as_ref(), right.as_ref()]),
                 E::If {

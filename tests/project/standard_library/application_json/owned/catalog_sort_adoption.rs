@@ -147,7 +147,8 @@ fn push_children<'a>(
         }
         semaprax::hir::ResolvedExprKind::Call { args, .. }
         | semaprax::hir::ResolvedExprKind::LiteralFormat { args, .. }
-        | semaprax::hir::ResolvedExprKind::VecFieldRead { args, .. } => {
+        | semaprax::hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | semaprax::hir::ResolvedExprKind::RowLoan { args, .. } => {
             pending.extend(args.iter().rev())
         }
         semaprax::hir::ResolvedExprKind::NativeRustImportCall(call) => {

@@ -148,7 +148,8 @@ fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
             .collect(),
         hir::ResolvedExprKind::Call { args, .. }
         | hir::ResolvedExprKind::LiteralFormat { args, .. }
-        | hir::ResolvedExprKind::VecFieldRead { args, .. } => args.iter().collect(),
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args.iter().collect(),
         hir::ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().collect(),
         hir::ResolvedExprKind::HostCommandCall(call) => call.args.iter().collect(),
         hir::ResolvedExprKind::Unary { value, .. }
@@ -512,7 +513,8 @@ fn replace_f64_in_expression(expression: &mut hir::ResolvedExpr, bits: u64) -> b
         }
         hir::ResolvedExprKind::Call { args, .. }
         | hir::ResolvedExprKind::LiteralFormat { args, .. }
-        | hir::ResolvedExprKind::VecFieldRead { args, .. } => args
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args
             .iter_mut()
             .any(|argument| replace_f64_in_expression(argument, bits)),
         hir::ResolvedExprKind::ConstructRecord { fields, .. }
@@ -578,7 +580,8 @@ fn replace_f32_in_expression(expression: &mut hir::ResolvedExpr, bits: u32) -> b
         }
         hir::ResolvedExprKind::Call { args, .. }
         | hir::ResolvedExprKind::LiteralFormat { args, .. }
-        | hir::ResolvedExprKind::VecFieldRead { args, .. } => args
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args
             .iter_mut()
             .any(|argument| replace_f32_in_expression(argument, bits)),
         hir::ResolvedExprKind::ConstructRecord { fields, .. }

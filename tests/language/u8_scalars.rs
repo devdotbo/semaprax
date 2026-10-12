@@ -167,7 +167,8 @@ fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
             .collect(),
         hir::ResolvedExprKind::Call { args, .. }
         | hir::ResolvedExprKind::LiteralFormat { args, .. }
-        | hir::ResolvedExprKind::VecFieldRead { args, .. } => args.iter().collect(),
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args.iter().collect(),
         hir::ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().collect(),
         hir::ResolvedExprKind::HostCommandCall(call) => call.args.iter().collect(),
         hir::ResolvedExprKind::Unary { value, .. }
