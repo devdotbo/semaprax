@@ -184,7 +184,9 @@ pub(crate) fn current_metrics() -> Metrics {
         metrics
     })
 }
-pub(crate) fn measure<T>(operation: impl FnOnce() -> T) -> (T, Metrics) {
+// Keep instrumentation outside the per-operation generic body. These helpers
+// allocate nothing and retain the same observation and unwind boundaries.
+fn begin_observation() -> Guard {
     assert!(!active(), "allocation observation cannot nest");
     STATE.with(|state| {
         let mut state = state.borrow_mut();
@@ -193,16 +195,23 @@ pub(crate) fn measure<T>(operation: impl FnOnce() -> T) -> (T, Metrics) {
     });
     INVALID.with(|invalid| invalid.set(false));
     ACTIVE.with(|active| active.set(true));
-    let guard = Guard;
-    let result = operation();
+    Guard
+}
+fn finish_observation(guard: Guard) -> Metrics {
     drop(guard);
-    let metrics = STATE.with(|state| {
+    STATE.with(|state| {
         let mut metrics = state.borrow().metrics;
         metrics.invalid = INVALID.with(Cell::get);
         metrics
-    });
+    })
+}
+pub(crate) fn measure<T>(operation: impl FnOnce() -> T) -> (T, Metrics) {
+    let guard = begin_observation();
+    let result = operation();
+    let metrics = finish_observation(guard);
     (result, metrics)
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,6 +234,43 @@ mod tests {
         assert_eq!(metrics.freed, 53);
         assert_eq!(metrics.highwater, 53);
         assert_eq!(metrics.live, 0);
+    }
+    #[test]
+    fn observation_boundaries_preserve_local_result_and_unwind_drop_timing() {
+        struct Witness<'a>(&'a Cell<Option<bool>>);
+        impl Drop for Witness<'_> {
+            fn drop(&mut self) {
+                self.0.set(Some(active()));
+            }
+        }
+        let local = Cell::new(None);
+        let returned = Cell::new(None);
+        let (result, _) = measure(|| {
+            let _local = Witness(&local);
+            Witness(&returned)
+        });
+        assert_eq!(local.get(), Some(true));
+        assert_eq!(returned.get(), None);
+        assert!(!active());
+        drop(result);
+        assert_eq!(returned.get(), Some(false));
+
+        let unwound = Cell::new(None);
+        let failure = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            measure(|| {
+                let _local = Witness(&unwound);
+                panic!("observe unwind boundary");
+            });
+        }));
+        assert!(failure.is_err());
+        assert_eq!(unwound.get(), Some(true));
+        assert!(!active());
+        let (value, _) = measure(|| {
+            assert!(active());
+            7
+        });
+        assert_eq!(value, 7);
+        assert!(!active());
     }
     #[test]
     fn registry_overflow_is_invalid_evidence_instead_of_a_partial_success_count() {

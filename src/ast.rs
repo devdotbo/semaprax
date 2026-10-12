@@ -1241,13 +1241,15 @@ impl Expr {
     /// on legacy source. This is not type, ownership or exit-target authority.
     pub(crate) fn contains_lexical_exit(&self) -> bool {
         let mut found = false;
-        self.visit_call_nodes(|expression| {
+        self.visit_call_nodes(&mut |expression| {
             found |= matches!(expression.kind, ExprKind::LexicalExit { .. });
         });
         found
     }
 
-    fn visit_call_nodes(&self, mut visit: impl FnMut(&Expr)) {
+    // Keep the full traversal shared across caller closure types. The callback
+    // is borrowed only during this walk and never stored or allocated.
+    fn visit_call_nodes(&self, visit: &mut dyn FnMut(&Expr)) {
         const FIXED_DEPTH: usize = 513;
         let mut stack = [None; FIXED_DEPTH];
         stack[0] = Some((self, 0usize));
@@ -1361,7 +1363,7 @@ impl Expr {
     }
 
     pub fn visit_calls(&self, visit: &mut impl FnMut(&str, Span)) {
-        self.visit_call_nodes(|expression| {
+        self.visit_call_nodes(&mut |expression| {
             if let ExprKind::Call { name, .. } = &expression.kind {
                 visit(name, expression.span);
             }
@@ -1369,7 +1371,7 @@ impl Expr {
     }
 
     pub fn visit_call_instances(&self, visit: &mut impl FnMut(&str, &[Type], Span)) {
-        self.visit_call_nodes(|expression| {
+        self.visit_call_nodes(&mut |expression| {
             if let ExprKind::Call {
                 name,
                 type_arguments,
@@ -1388,7 +1390,7 @@ impl Expr {
     /// maintains rather than a second hand-written `ExprKind` match that
     /// could silently drift from it.
     pub(crate) fn visit_all_nodes(&self, visit: &mut impl FnMut(&Expr)) {
-        self.visit_call_nodes(|expression| visit(expression));
+        self.visit_call_nodes(&mut |expression| visit(expression));
     }
 }
 
