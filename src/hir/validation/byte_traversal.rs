@@ -347,6 +347,7 @@ pub(in crate::hir) fn validate_function(
     declarations: &DeclarationIndex,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
+    let mut unauthorized = false;
     for root in function
         .ensures
         .iter()
@@ -368,12 +369,17 @@ pub(in crate::hir) fn validate_function(
             if receiver_shape(expression).is_some()
                 && !authorized.is_some_and(|receiver| std::ptr::eq(receiver, expression))
             {
-                return Err(fail(
-                    "borrowed byte receiver is outside an authenticated Slice<u8> traversal",
-                ));
+                unauthorized = true;
             }
             Ok(authorized)
         })?;
+    }
+    // Region/provenance errors retain their original precedence over the
+    // final whole-function detached-receiver census refusal.
+    if unauthorized {
+        return Err(fail(
+            "borrowed byte receiver is outside an authenticated Slice<u8> traversal",
+        ));
     }
     Ok(())
 }
