@@ -101,13 +101,25 @@ fn borrowed_identity_scratch_preserves_saved_text_order_and_removes_owning_key_s
     assert_eq!(size_of::<DeclarationId>(), 3 * size_of::<usize>());
     assert_eq!(size_of::<&DeclarationId>(), size_of::<usize>());
     // Literal logical key census is distinct from private BTree node backing.
-    assert_eq!(actual.0.len(), 64);
+    // The current resolver appends the two exact compiler Vec/Box types.
+    // They contribute key carriers even though their identity text is static.
+    let mut authored = (0..64).map(|n| format!("token.{n}")).collect::<Vec<_>>();
+    authored.extend([
+        crate::prelude::VEC_ID.to_owned(),
+        crate::prelude::BOX_ID.to_owned(),
+    ]);
+    authored.sort();
+    assert_eq!(
+        actual.0.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
+        authored.iter().map(String::as_str).collect::<Vec<_>>()
+    );
+    assert_eq!(actual.0.len(), 64 + 2);
     assert_eq!(actual.1.len(), 1);
     assert_eq!(actual.2.len(), 64);
-    let keys = 64 + 1 + 64 + 64;
+    let keys = (64 + 2) + 1 + 64 + 64;
     assert_eq!(
         keys * (size_of::<DeclarationId>() - size_of::<&DeclarationId>()),
-        386 * size_of::<usize>()
+        390 * size_of::<usize>()
     );
     drop((actual, expected));
     let (_, owned_metrics) = measure(|| drop(old(&program)));

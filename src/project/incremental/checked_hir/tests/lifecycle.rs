@@ -172,7 +172,19 @@ fn actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop
     let actual = cache.build(&manifest, &changed).err().unwrap();
     let expected = ordinary.build(&manifest, &changed).err().unwrap();
     assert_eq!(actual, expected);
-    assert!(actual.iter().any(|error| error.code == "SPX-T208"));
+    // Integer operands are checked in the changed i32 parameter context;
+    // the helper now returns i32 before any imported-call mismatch is reached.
+    let provider = changed
+        .iter()
+        .find(|source| source.path() == "src/core.spx")
+        .unwrap();
+    let independent = crate::check(provider.source(), "src/core.spx").unwrap_err();
+    let result_mismatch = |error: &crate::diagnostic::Diagnostic| {
+        error.code == "SPX-T103"
+            && error.message == "function `helper` returns i32, but its signature declares i64"
+    };
+    assert!(independent.iter().any(result_mismatch), "{independent:?}");
+    assert!(actual.iter().any(result_mismatch), "{actual:?}");
     assert_eq!(
         before,
         cache.checked["src/core.spx"].resolved.functions.as_ptr()

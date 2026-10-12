@@ -216,12 +216,28 @@ tests = ["test.subtree_tests"]
     );
     let tests = "module test.subtree_tests; @id(\"tests.main\") fn main()->i64 {0}";
     let inputs = |text: &str| {
-        vec![
-            semaprax::project::ProjectFrontendSource::new("app.spx", text).unwrap(),
-            semaprax::project::ProjectFrontendSource::new("tests.spx", tests).unwrap(),
-        ]
+        [("app.spx", text), ("tests.spx", tests)]
+            .into_iter()
+            .map(|(path, raw)| {
+                let parsed = semaprax::parse(raw, path).unwrap();
+                let canonical = semaprax::format::canonical(&parsed);
+                assert_eq!(
+                    semaprax::format::canonical(&semaprax::parse(&canonical, path).unwrap()),
+                    canonical
+                );
+                semaprax::project::ProjectFrontendSource::new(path, &canonical).unwrap()
+            })
+            .collect::<Vec<_>>()
     };
     let mut cache = semaprax::project::ProjectFrontendCache::new_with_semantic_cache();
+    // The raw fixture remains a negative for the ordinary source protocol.
+    let raw = vec![
+        semaprax::project::ProjectFrontendSource::new("app.spx", &source).unwrap(),
+        semaprax::project::ProjectFrontendSource::new("tests.spx", tests).unwrap(),
+    ];
+    let errors = cache.build(&manifest, &raw).err().unwrap();
+    assert!(errors.iter().any(|error| error.code == "SPX-G170"
+        && error.message == "workspace semantic source `app.spx` is not canonical"));
     let cold = cache.build(&manifest, &inputs(&source)).unwrap();
     let cold_graph = cold.revision().semantic_graph().to_owned();
     let warm = cache.build(&manifest, &inputs(&source)).unwrap();
@@ -233,6 +249,7 @@ tests = ["test.subtree_tests"]
     let current = cache.build(&manifest, &inputs(&drift)).unwrap();
     assert_ne!(current.revision().semantic_graph(), cold_graph);
     let malformed = drift.replace("report,valid", "report:_,valid");
+    assert_ne!(malformed, drift);
     assert!(cache.build(&manifest, &inputs(&malformed)).is_err());
     let restored = cache.build(&manifest, &inputs(&source)).unwrap();
     assert_eq!(restored.revision().semantic_graph(), cold_graph);
