@@ -89,7 +89,7 @@ pub(in crate::hir) fn receiver_shape(expression: &ResolvedExpr) -> Option<Receiv
         && expression.ownership == OwnershipMode::Value
         && callee.as_str() == crate::byte_ops::GET_ID
         && type_arguments.is_empty()
-        && scrutinee.ty == crate::byte_ops::ByteOp::Get.return_type()
+        && scrutinee.ty.is_compiler_byte_option()
         && scrutinee.ownership == OwnershipMode::Value
         && view.ty == ResolvedType::SliceU8
         && bare_place(view).is_some()
