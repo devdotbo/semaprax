@@ -89,7 +89,28 @@ fn checked_cold_source_preserves_limits_costs_current_key_and_body_reuse_fallbac
     assert!(!refused);
     assert_eq!(borrowed.resolved, reused.resolved);
     assert_eq!(borrowed.reused_functions, reused.reused_functions);
-    assert_eq!(borrowed.function_costs, reused.function_costs);
+    // `function_costs` measure the active ledger around each resolved body, so
+    // the paid borrowed route is compared with the legacy route under its own
+    // separate, equivalent active ledger (the unpaid run above has none).
+    let (legacy_active, legacy_refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+        pass.resolve_functions(&program.path, &changed, None)
+            .unwrap()
+            .unwrap()
+    });
+    assert!(!legacy_refused);
+    assert_eq!(legacy_active.resolved, reused.resolved);
+    assert_eq!(legacy_active.reused_functions, reused.reused_functions);
+    assert_eq!(borrowed.function_costs, legacy_active.function_costs);
+    // The edited body paid real work; the reused unchanged body keeps its
+    // stored cost.
+    assert_eq!(borrowed.function_costs["helper"], 0);
+    assert!(borrowed.function_costs["main"] > 0);
+    // No-active compatibility: the same inventory with zero measured cost.
+    assert_eq!(
+        reused.function_costs.keys().collect::<Vec<_>>(),
+        borrowed.function_costs.keys().collect::<Vec<_>>()
+    );
+    assert!(reused.function_costs.values().all(|cost| *cost == 0));
     crate::hir::validate(&borrowed.resolved).unwrap();
     // Both receivers refuse count before duplicate IDs/source semantics.
     let mut excessive = program.clone();
@@ -148,24 +169,46 @@ fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
         .resolve_functions(&program.path, &program, None)
         .unwrap()
         .unwrap();
-    // One owner serves one module route; both cold inputs are exercised.
-    let ((owned, borrowed), failed, used) = with_limit_usage(1 << 20, || {
-        let mut owner = IdentityReservation::acquire().unwrap();
-        let owned = pass
-            .resolve_functions_paid(&program.path, &program, None, &mut owner)
-            .unwrap()
-            .unwrap();
-        let borrowed = pass
-            .resolve_borrowed_cold_source_paid(&program.path, &view, None, &mut owner)
-            .unwrap()
-            .unwrap();
-        (owned, borrowed)
-    });
+    // Each full resolution is one module route: it acquires its own owner on
+    // its own equivalent real workspace builder ledger. Sharing one arbitrary
+    // 1 MiB ledger across both exhausted the independent-replay cursor.
+    let (owned, failed, owned_used) =
+        with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+            let mut owner = IdentityReservation::acquire().unwrap();
+            pass.resolve_functions_paid(&program.path, &program, None, &mut owner)
+                .unwrap()
+                .unwrap()
+        });
     assert!(!failed);
-    assert!(used > 0);
+    assert!(owned_used > 0);
+    let (borrowed, failed, borrowed_used) =
+        with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+            let mut owner = IdentityReservation::acquire().unwrap();
+            pass.resolve_borrowed_cold_source_paid(&program.path, &view, None, &mut owner)
+                .unwrap()
+                .unwrap()
+        });
+    assert!(!failed);
+    assert!(borrowed_used > 0);
+    // Paid costs are measured on an active ledger, so the legacy route is
+    // compared under its own equivalent active ledger. The no-active run keeps
+    // its zero-cost compatibility inventory, which is not normalized.
+    let (old_active, old_failed, _) =
+        with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+            pass.resolve_functions(&program.path, &program, None)
+                .unwrap()
+                .unwrap()
+        });
+    assert!(!old_failed);
+    assert_eq!(old_active.resolved, old.resolved);
+    assert_eq!(
+        old.function_costs.keys().collect::<Vec<_>>(),
+        old_active.function_costs.keys().collect::<Vec<_>>()
+    );
+    assert!(old.function_costs.values().all(|cost| *cost == 0));
     for new in [&owned, &borrowed] {
         assert_eq!(new.resolved, old.resolved);
-        assert_eq!(new.function_costs, old.function_costs);
+        assert_eq!(new.function_costs, old_active.function_costs);
         assert_eq!(
             (new.reused_functions, new.static_text),
             (old.reused_functions, old.static_text)
@@ -194,6 +237,7 @@ fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
         (2 * word + 11).div_ceil(word) * word
     );
     // Checked body reuse and the first-checked-only borrowed gate are unchanged.
+    let saved_helper_cost = owned.function_costs["helper"];
     let _owner = pass.resolved_module(
         &program.path,
         program.clone(),
@@ -224,7 +268,23 @@ fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
     assert_eq!(paid.reused_functions, 1);
     assert_eq!(paid.reused_functions, legacy.reused_functions);
     assert_eq!(paid.resolved, legacy.resolved);
-    assert_eq!(paid.function_costs, legacy.function_costs);
+    // Same separate, equivalent 1 MiB active ledger for the legacy route; the
+    // no-active `legacy` run above keeps its zero-cost compatibility inventory.
+    let (legacy_active, legacy_failed, _) = with_limit_usage(1 << 20, || {
+        pass.resolve_functions(&program.path, &changed, None)
+            .unwrap()
+            .unwrap()
+    });
+    assert!(!legacy_failed);
+    assert_eq!(legacy_active.resolved, legacy.resolved);
+    assert_eq!(legacy_active.reused_functions, legacy.reused_functions);
+    assert_eq!(paid.function_costs, legacy_active.function_costs);
+    assert_eq!(
+        legacy.function_costs.keys().collect::<Vec<_>>(),
+        legacy_active.function_costs.keys().collect::<Vec<_>>()
+    );
+    assert_eq!(legacy.function_costs["main"], 0);
+    assert_eq!(legacy.function_costs["helper"], saved_helper_cost);
 }
 
 #[test]

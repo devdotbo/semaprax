@@ -291,66 +291,126 @@ fn complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop() {
             assert!(!refused);
         }
         let old = saved_planner::build_plan(&program, function).unwrap();
-        assert!(!old.loans.is_empty());
-        if !lexical {
-            assert!(old
-                .loans
-                .iter()
-                .any(|loan| !loan.origin.projections.is_empty()));
+        if lexical {
+            // The lexical fixture owns its `rows` root: real loans exist.
+            assert!(!old.loans.is_empty());
+        } else {
+            // The whole-projection fixtures inspect through `borrow Report`,
+            // which has no own root: the saved planner invents no loans and
+            // the funded planner must agree (checked by `assert_paid_owner_through_drop`).
+            assert!(old.loans.is_empty());
         }
-        let run = |limit| {
-            with_limit_usage_refusal(limit, || {
-                // Only the already established Budget/Rc context is excluded.
-                measure(|| {
-                    let owner = CfgReservation::acquire().unwrap();
-                    match build(&program, function, &owner) {
-                        Ok(plan) => {
-                            assert_eq!(plan, old);
-                            drop(plan);
-                            drop(owner);
-                            true
-                        }
-                        Err(PlannerError::Physical(reason)) => {
-                            assert_eq!(owner.reserve(0), Err(reason));
-                            assert_eq!(owner.reserve(1), Err(reason));
-                            let pointer = owner.text_pointer();
-                            let report = owner.diagnostic();
-                            assert_eq!(report.message.as_ptr(), pointer);
-                            drop(report);
-                            false
-                        }
-                        Err(PlannerError::Semantic(_)) => {
-                            panic!("checked positive planner selected semantic failure")
-                        }
-                    }
-                })
-            })
-        };
-        let ((success, observed), refused, exact, first) = run(usize::MAX);
-        assert!(success);
-        assert!(!refused);
-        assert_eq!(first, None);
-        assert!(observed.allocations > 8);
-        assert!(observed.allocated <= exact);
-        assert_eq!(observed.freed, observed.allocated);
-        assert_eq!(observed.live, 0);
-        assert!(!observed.invalid);
-        let ((success, repeated), refused, used, first) = run(exact);
-        assert!(success);
-        assert!(!refused);
-        assert_eq!(used, exact);
-        assert_eq!(first, None);
-        assert_eq!(repeated.allocated, observed.allocated);
-        assert_eq!(repeated.allocations, observed.allocations);
-        assert_eq!(repeated.freed, repeated.allocated);
-        assert_eq!(repeated.live, 0);
-        assert!(!repeated.invalid);
-        let ((success, short), refused, _, first) = run(exact - 1);
-        assert!(!success);
-        assert!(refused);
-        assert!(first.is_some());
-        assert_eq!(short.freed, short.allocated);
-        assert_eq!(short.live, 0);
-        assert!(!short.invalid);
+        assert_paid_owner_through_drop(&program, function, &old);
     }
+}
+
+#[test]
+fn owning_root_projected_vec_and_string_loans_use_one_paid_owner_through_drop() {
+    const PROJECTED: &str = include_str!("../../../tests/fixtures/nested-collection-records.spx");
+    const STRINGS: &str =
+        include_str!("../../../tests/fixtures/nested-collection-string-record.spx");
+    // `app.main` owns `report`; borrowing its `items` field is a projected
+    // Vec/string loan on a real own root.
+    for (source, anchor, probe) in [
+        (
+            PROJECTED,
+            "let first=inspect(report);",
+            "let count=vec_len<Row>(report.items);let first=inspect(report);",
+        ),
+        (
+            STRINGS,
+            "let count=inspect(report);",
+            "let probe=vec_len<string>(report.items);let count=inspect(report);",
+        ),
+    ] {
+        assert_eq!(source.matches(anchor).count(), 1);
+        let ast = crate::check(&source.replace(anchor, probe), "paid-planner.spx").unwrap();
+        let program = crate::hir::resolve(&ast).unwrap();
+        let inspect = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "collection.inspect")
+            .unwrap();
+        // The original borrow parameter still has no own root and no loans.
+        assert!(saved_planner::build_plan(&program, inspect)
+            .unwrap()
+            .loans
+            .is_empty());
+        let function = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "app.main")
+            .unwrap();
+        assert!(!crate::hir::lexical_exit::requires(function).unwrap());
+        let old = saved_planner::build_plan(&program, function).unwrap();
+        assert!(!old.loans.is_empty());
+        assert!(old
+            .loans
+            .iter()
+            .any(|loan| !loan.origin.projections.is_empty()));
+        assert_paid_owner_through_drop(&program, function, &old);
+    }
+}
+
+/// Full-plan equality and exact/short payment, refusal and Drop checks for one
+/// function, shared by every fixture above.
+fn assert_paid_owner_through_drop(
+    program: &crate::hir::ResolvedProgram,
+    function: &crate::hir::ResolvedFunction,
+    old: &LoanPlan,
+) {
+    let run = |limit| {
+        with_limit_usage_refusal(limit, || {
+            // Only the already established Budget/Rc context is excluded.
+            measure(|| {
+                let owner = CfgReservation::acquire().unwrap();
+                match build(program, function, &owner) {
+                    Ok(plan) => {
+                        assert_eq!(&plan, old);
+                        drop(plan);
+                        drop(owner);
+                        true
+                    }
+                    Err(PlannerError::Physical(reason)) => {
+                        assert_eq!(owner.reserve(0), Err(reason));
+                        assert_eq!(owner.reserve(1), Err(reason));
+                        let pointer = owner.text_pointer();
+                        let report = owner.diagnostic();
+                        assert_eq!(report.message.as_ptr(), pointer);
+                        drop(report);
+                        false
+                    }
+                    Err(PlannerError::Semantic(_)) => {
+                        panic!("checked positive planner selected semantic failure")
+                    }
+                }
+            })
+        })
+    };
+    let ((success, observed), refused, exact, first) = run(usize::MAX);
+    assert!(success);
+    assert!(!refused);
+    assert_eq!(first, None);
+    assert!(observed.allocations > 8);
+    assert!(observed.allocated <= exact);
+    assert_eq!(observed.freed, observed.allocated);
+    assert_eq!(observed.live, 0);
+    assert!(!observed.invalid);
+    let ((success, repeated), refused, used, first) = run(exact);
+    assert!(success);
+    assert!(!refused);
+    assert_eq!(used, exact);
+    assert_eq!(first, None);
+    assert_eq!(repeated.allocated, observed.allocated);
+    assert_eq!(repeated.allocations, observed.allocations);
+    assert_eq!(repeated.freed, repeated.allocated);
+    assert_eq!(repeated.live, 0);
+    assert!(!repeated.invalid);
+    let ((success, short), refused, _, first) = run(exact - 1);
+    assert!(!success);
+    assert!(refused);
+    assert!(first.is_some());
+    assert_eq!(short.freed, short.allocated);
+    assert_eq!(short.live, 0);
+    assert!(!short.invalid);
 }
