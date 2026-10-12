@@ -126,7 +126,10 @@ fn collect<'a>(
                         pending.push((condition, false));
                     }
                     ResolvedStatement::Let { value, .. }
-                    | ResolvedStatement::Assign { value, .. } => pending.push((value, in_loop)),
+                    | ResolvedStatement::Assign { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. } => {
+                        pending.push((value, in_loop))
+                    }
                     _ => {}
                 }
             }

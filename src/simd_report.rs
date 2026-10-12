@@ -782,7 +782,8 @@ impl Walker<'_> {
                 self.scan.assignment_count += 1;
                 self.push_ineligible(value, REASON_MUTATION_TARGET);
             }
-            ResolvedStatement::Unsafe { body, .. } => {
+            ResolvedStatement::CopyDiscard { value: body, .. }
+            | ResolvedStatement::Unsafe { body, .. } => {
                 self.scan_expr(body);
             }
             ResolvedStatement::While {

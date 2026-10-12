@@ -231,3 +231,7 @@ element, `Bytes` or `str` source without an explicit view, computed source,
 mutation during traversal, nested traversal, generic-instance traversal,
 native-Rust interop builder route, public ABI, or performance claim. Its actual
 gain is to be measured live later.
+
+Checked-HIR cache compatibility is now v10 after the selective CopyDiscard
+statement extension; the byte traversal wire and Graph v83 semantics above are
+unchanged. See [finite owned-record discard loops](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md).

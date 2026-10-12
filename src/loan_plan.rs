@@ -999,7 +999,9 @@ fn build_cfg<'a>(
 
 fn statement_entry(statement: &ResolvedStatement) -> &ResolvedExpr {
     match statement {
-        ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => value,
+        ResolvedStatement::Let { value, .. }
+        | ResolvedStatement::Assign { value, .. }
+        | ResolvedStatement::CopyDiscard { value, .. } => value,
         ResolvedStatement::Unsafe { body, .. } => body,
         ResolvedStatement::While { condition, .. }
         | ResolvedStatement::LexicalWhile { condition, .. } => condition,
@@ -1008,7 +1010,9 @@ fn statement_entry(statement: &ResolvedStatement) -> &ResolvedExpr {
 
 fn statement_exit(statement: &ResolvedStatement) -> &ResolvedExpr {
     match statement {
-        ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => value,
+        ResolvedStatement::Let { value, .. }
+        | ResolvedStatement::Assign { value, .. }
+        | ResolvedStatement::CopyDiscard { value, .. } => value,
         ResolvedStatement::Unsafe { body, .. } => body,
         ResolvedStatement::While { body, .. } | ResolvedStatement::LexicalWhile { body, .. } => {
             body
@@ -1297,7 +1301,10 @@ pub fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
 // The original owned diagnostic policy is shared with the invocation-local
 // deferred comparison. This renderer grants no proof or validation authority.
 pub(crate) fn forged_evidence(function: &ResolvedFunction) -> Diagnostic {
-    error(format!("function `{}` has forged shared-loan evidence", function.id))
+    error(format!(
+        "function `{}` has forged shared-loan evidence",
+        function.id
+    ))
 }
 
 fn resolve_parent(

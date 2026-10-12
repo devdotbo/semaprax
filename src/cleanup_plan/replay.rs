@@ -4,9 +4,9 @@ mod constructed_variant;
 #[cfg(test)]
 mod context_closure;
 use constructed_variant::materialize_constructed_variant;
+mod call_payload;
 mod expression_children;
 mod expression_facts;
-mod call_payload;
 mod flat_records;
 mod inventory_coverage;
 mod ordinary_status;
@@ -4452,7 +4452,7 @@ fn expression_skeleton(
                 let suffixes = produced.take().expect("binding path retained");
                 let mut paths = sequence_skeleton_paths(paths, &suffixes, work)?;
                 match &statements[index] {
-                    ResolvedStatement::Unsafe { .. } => {
+                    ResolvedStatement::CopyDiscard { .. } | ResolvedStatement::Unsafe { .. } => {
                         // Unsafe boundaries bind and own nothing here: their ordinary block body was evaluated as this statement's value expression.
                         if let Some(settled) = advance_block_value(
                             function,

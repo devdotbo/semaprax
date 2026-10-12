@@ -243,9 +243,8 @@ pub(super) fn schema_receiving_paid<'a>(
     }
     let static_schema = static_text::schema(module, facts)?;
     if let (None, Some(sources)) = (static_schema, sources) {
-        if let Some(received) =
-            scalar_lexical::receive_paid(module, modules, facts, sources, form)
-                .map_err(ViewRefusal::Replay)?
+        if let Some(received) = scalar_lexical::receive_paid(module, modules, facts, sources, form)
+            .map_err(ViewRefusal::Replay)?
         {
             // The receipt names this exact module; any other module is an
             // impossible caller error kept at the unfunded legacy literal.
@@ -389,6 +388,14 @@ fn select<'a>(
                 return Err(vec![graph_error("SPX-G410", message)]);
             }
         }
+    }
+    if module
+        .functions
+        .iter()
+        .chain(module.function_instances.iter().map(|i| &i.function))
+        .any(crate::hir::copy_discard_function_uses)
+    {
+        return Ok("semaprax.graph.v84");
     }
     // Byte traversal is the outer v83 layer, preserving row-loan v82 facts.
     if module

@@ -1590,6 +1590,12 @@ impl<'a> PlanBuilder<'a> {
                 continue;
             }
             let (binding, value) = match statement {
+                ResolvedStatement::CopyDiscard { value, .. } => {
+                    let evaluated = self.lower_expr(value, current, current_state, root)?;
+                    current = evaluated.block;
+                    current_state = evaluated.state;
+                    continue;
+                }
                 ResolvedStatement::Let { binding, value, .. }
                 | ResolvedStatement::Assign { binding, value, .. } => (binding, value),
                 // Unsafe boundaries bind nothing: their ordinary block body
@@ -4991,6 +4997,13 @@ impl<'a> PlanBuilder<'a> {
                 continue;
             }
             let (binding, value) = match statement {
+                ResolvedStatement::CopyDiscard { value, .. } => {
+                    let evaluated =
+                        self.lower_expr_recursive_reference(value, current, current_state, region)?;
+                    current = evaluated.block;
+                    current_state = evaluated.state;
+                    continue;
+                }
                 ResolvedStatement::LexicalWhile { .. } => {
                     return Err(plan_error(
                         "legacy recursive cleanup reference does not admit lexical loops",

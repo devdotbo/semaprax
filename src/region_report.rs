@@ -544,7 +544,8 @@ fn collect_expr(
                         collect_expr(value, span.end, resolved, facts);
                         facts.uses.push((binding.id.as_str().to_owned(), span.end));
                     }
-                    ResolvedStatement::Unsafe { body, span, .. } => {
+                    ResolvedStatement::CopyDiscard { value: body, span }
+                    | ResolvedStatement::Unsafe { body, span, .. } => {
                         collect_expr(body, span.end, resolved, facts);
                     }
                     ResolvedStatement::While {

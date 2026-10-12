@@ -149,6 +149,20 @@ impl Resolver<'_> {
         expression: &Expr,
         execution: Option<&FunctionExecutionId>,
     ) -> Result<(), Diagnostic> {
+        if execution
+            .and_then(FunctionExecutionId::monomorphic_declaration)
+            .and_then(|owner| {
+                self.program
+                    .functions()
+                    .iter()
+                    .find(|f| f.stable_id == owner.as_str())
+            })
+            .is_some_and(|function| {
+                crate::finite_owned_record_loop::source(function, expression).is_some()
+            })
+        {
+            return Ok(());
+        }
         let generic = execution
             .and_then(FunctionExecutionId::monomorphic_declaration)
             .and_then(|owner| {

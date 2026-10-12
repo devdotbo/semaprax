@@ -114,7 +114,7 @@ fn work_split(
     assert_eq!(report["schema"], "semaprax.project-semantic-cache-work.v1");
     assert_eq!(
         report["compiler"]["compatibility"],
-        "semaprax.project-checked-module-hir.v9"
+        "semaprax.project-checked-module-hir.v10"
     );
     assert_eq!(report["work"]["modules_parsed"], ast_parsed);
     assert_eq!(report["work"]["canonicalizer_calls"], ast_parsed);
@@ -576,3 +576,6 @@ mod byte_traversal;
 
 #[path = "semantic_cache/string_transfer.rs"]
 mod string_transfer;
+
+#[path = "semantic_cache/copy_discard.rs"]
+mod copy_discard;

@@ -35,6 +35,27 @@ fn check_function(
     {
         return;
     }
+    if !crate::ast::expression_statement::projection_roots(
+        function
+            .requires
+            .iter()
+            .chain(std::iter::once(&function.body))
+            .chain(&function.ensures),
+        function
+            .params
+            .iter()
+            .map(|p| p.name.as_str())
+            .chain(function.type_parameters.iter().map(|p| p.name.as_str())),
+        crate::bounded_output::reserve_active_required,
+    ) {
+        diagnostics.push(error(
+            program,
+            "SPX-T315",
+            "expression-statement projection is not hygienic",
+            function.span,
+        ));
+        return;
+    }
     for contract in function.requires.iter().chain(&function.ensures) {
         walk(program, contract, false, 0, 0, diagnostics);
     }
@@ -142,8 +163,20 @@ fn walk(
                             diagnostics,
                         )
                     }
-                    Statement::Let { value, .. } => {
-                        walk(program, value, false, loops, depth + 1, diagnostics)
+                    statement @ Statement::Let { value, .. } => {
+                        let discard = crate::ast::expression_statement::value(statement)
+                            .is_some_and(|value| {
+                                matches!(value.kind, ExprKind::Match { .. })
+                                    && value.contains_lexical_exit()
+                            });
+                        walk(
+                            program,
+                            value,
+                            statement_route && discard,
+                            loops,
+                            depth + 1,
+                            diagnostics,
+                        )
                     }
                     Statement::Assign { value, .. } => {
                         walk(program, value, false, loops, depth + 1, diagnostics)

@@ -33,7 +33,10 @@ pub(crate) fn function_has_record_renewal_outside_loop(
                         }
                         pending.push((value, in_loop));
                     }
-                    ResolvedStatement::Assign { value, .. } => pending.push((value, in_loop)),
+                    ResolvedStatement::Assign { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. } => {
+                        pending.push((value, in_loop))
+                    }
                     ResolvedStatement::Unsafe { body, .. } => pending.push((body, in_loop)),
                     ResolvedStatement::While {
                         condition, body, ..

@@ -96,7 +96,10 @@ pub(super) fn oracle_match(
             )
             && matches!(&scrutinee.kind, ExprKind::Var(name)
                 if is_owned_iterator_item(name, &value.ty));
-        if LOOP_DEPTH.with(std::cell::Cell::get) != 0 && !exact_owned_record_item {
+        if LOOP_DEPTH.with(std::cell::Cell::get) != 0
+            && !exact_owned_record_item
+            && !crate::finite_owned_record_loop::source_permits(current, expr)
+        {
             reject_loop_match_scrutinee(program, types, scrutinee, value, diagnostics);
         }
     }

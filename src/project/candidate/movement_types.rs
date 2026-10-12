@@ -860,9 +860,10 @@ impl<'a> Node<'a> {
                         .get(index)
                         .copied()
                 }
-                S::Unsafe { .. } | S::While { .. } | S::LexicalWhile { .. } => {
-                    s.child(index).map(Self::Expression)
-                }
+                S::CopyDiscard { .. }
+                | S::Unsafe { .. }
+                | S::While { .. }
+                | S::LexicalWhile { .. } => s.child(index).map(Self::Expression),
             },
             Self::Arm(a) => match index {
                 0 => Some(Self::Pattern(&a.pattern)),

@@ -214,6 +214,10 @@ pub(super) fn render_expr(
                         output.push_str(&render_child(walker, value, 0));
                         output.push_str("; ");
                     }
+                    ResolvedStatement::CopyDiscard { value, .. } => {
+                        output.push_str(&render_child(walker, value, 0));
+                        output.push_str("; ");
+                    }
                     ResolvedStatement::Unsafe { body, .. } => {
                         output.push_str("unsafe ");
                         output.push_str(&render_child(walker, body, 0));

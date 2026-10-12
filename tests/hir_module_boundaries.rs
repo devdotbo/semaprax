@@ -90,7 +90,16 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             "\n",
             include_str!("../src/finite_byte_scratch/source.rs"),
             "\n",
-            include_str!("../src/finite_byte_scratch/resolved.rs")
+            concat!(
+                include_str!("../src/finite_byte_scratch/resolved.rs"),
+                include_str!("../src/finite_owned_record_loop.rs"),
+                include_str!("../src/finite_owned_record_loop/source.rs"),
+                concat!(
+                    include_str!("../src/finite_owned_record_loop/resolved.rs"),
+                    include_str!("../src/finite_owned_record_loop/tests.rs")
+                ),
+                include_str!("../src/hir/copy_discard.rs")
+            )
         ),
         include_str!("../src/hir/validation/string_replacement.rs"),
         include_str!("../src/hir/iterator_loop.rs"),

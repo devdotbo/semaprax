@@ -1,5 +1,7 @@
 # Changelog
 
+- Author a selective explicit CopyDiscard statement and the finite owned-record loop profile for OPT779. Source and HIR independently retain the no-result boundary and exact counter shape; canonical cleanup, all three engines, Graph v84 and checked-HIR cache v10 are joined. The original lifetime fixture and allocation limits remain unchanged. Source-only controls and qualification are pending.
+
 - Author named-only explicit `string_take` ownership forwarding (OPT790), preserving default clones, full source/HIR and independent canonical cleanup checks, and frozen public profiles. Initial native/interpreter/private Wasm and hostile gates are authored; qualification and complete acceptance remain pending.
 
 - Reduce discarded HIR classification and identity-audit scratch (#789): nested owned-byte admission counts leaves without building unused field paths or formatted cycle keys, flat admission avoids a discarded result vector, and exact nominal/type-parameter identity leaves retain their NUL checks without a heap worklist. Saved classifiers, exact original bounds and diagnostic priority, and complete query Drop observations remain owning controls. Fixed test-only core debit traces additionally locate checked-cold/ordinary cache report differences without changing Budget layout, graph fields or caps. Source-reviewed; grouped execution remains required, with no whole-validator funding or application-efficiency claim.

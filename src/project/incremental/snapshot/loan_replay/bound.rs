@@ -345,7 +345,8 @@ fn walk(
                             add(&mut inventory.projection_text, field.as_str().len())?;
                         }
                     }
-                    crate::hir::ResolvedStatement::Unsafe { .. }
+                    crate::hir::ResolvedStatement::CopyDiscard { .. }
+                    | crate::hir::ResolvedStatement::Unsafe { .. }
                     | crate::hir::ResolvedStatement::While { .. }
                     | crate::hir::ResolvedStatement::LexicalWhile { .. } => {}
                 }

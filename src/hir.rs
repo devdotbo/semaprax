@@ -94,7 +94,12 @@ pub use static_text::StaticUtf8;
 #[cfg(test)]
 mod capacity_probe;
 pub mod closure;
+mod copy_discard;
+pub(crate) use copy_discard::source as copy_discard_source;
 mod expr_nodes;
+pub(crate) use copy_discard::{
+    function_uses as copy_discard_function_uses, program_uses as copy_discard_program_uses,
+};
 #[cfg_attr(
     not(test),
     allow(

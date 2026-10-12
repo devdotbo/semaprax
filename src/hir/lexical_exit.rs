@@ -134,9 +134,9 @@ pub(crate) fn returns_only(expr: &super::ResolvedExpr) -> bool {
                             NORMAL
                                 | (visit(body, Some(&condition.id), depth + 1) & (RETURN | ESCAPE))
                         }),
-                        S::Let { value, .. } | S::Assign { value, .. } => {
-                            visit(value, local_loop, depth + 1)
-                        }
+                        S::Let { value, .. }
+                        | S::Assign { value, .. }
+                        | S::CopyDiscard { value, .. } => visit(value, local_loop, depth + 1),
                         S::Unsafe { body, .. } => visit(body, local_loop, depth + 1),
                     });
                 }

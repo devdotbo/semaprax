@@ -1100,6 +1100,11 @@ fn collect_operation_expr_occurrences(
                             | hir::ResolvedStatement::LexicalWhile { .. }
                     )
                 );
+                let same_kind = same_kind
+                    || matches!(
+                        resolved_statement,
+                        hir::ResolvedStatement::CopyDiscard { .. }
+                    ) && crate::hir::copy_discard_source(statement);
                 if !same_kind || statement.child_count() != resolved_statement.child_count() {
                     return Err(operation_sidecar_disagreement());
                 }

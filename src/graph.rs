@@ -70,12 +70,13 @@ mod facts_object;
 mod string_slots;
 mod vec_constructor;
 use facts_object::facts_object;
+mod copy_discard;
 mod finite_byte_scratch;
 pub(crate) mod row_loan;
 mod static_text;
 mod view_render;
-use byte_traversal::graph_json;
-pub(crate) use byte_traversal::{graph_schema, legacy_graph_schema};
+use copy_discard::graph_json;
+pub(crate) use copy_discard::{graph_schema, legacy_graph_schema};
 use view_render::view_json;
 #[path = "graph/native_import.rs"]
 mod native_import;

@@ -302,6 +302,19 @@ fn walk<'a>(
                             )?;
                         }
                     }
+                    ResolvedStatement::CopyDiscard { value, .. } => {
+                        super::super::copy_discard::require(value)?;
+                        walk(
+                            program,
+                            function,
+                            owner,
+                            value,
+                            route,
+                            nearest,
+                            allowed,
+                            depth + 1,
+                        )?;
+                    }
                     ResolvedStatement::Assign { value, .. } => walk(
                         program,
                         function,

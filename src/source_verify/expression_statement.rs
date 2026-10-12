@@ -20,7 +20,12 @@ pub(super) fn check(
     if crate::ast::expression_statement::value(statement).is_none()
         || actual.mode != ParamMode::Value
         || actual.native_unit
-        || !is_scalar_source_type(&actual.ty)
+        || !(is_scalar_source_type(&actual.ty)
+            || (actual.ty == crate::ast::Type::Never
+                && crate::ast::expression_statement::value(statement).is_some_and(|value| {
+                    matches!(value.kind, crate::ast::ExprKind::Match { .. })
+                        && crate::ast::has_no_normal_completion(value)
+                })))
     {
         Some(error(program, "SPX-T315", "discarded expression statement requires a Copy scalar result", *span)
             .with_help("bind the result explicitly; only i64, i32, u8, usize, char, f32, f64 and bool may be discarded"))

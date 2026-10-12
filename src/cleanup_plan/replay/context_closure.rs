@@ -160,6 +160,9 @@ impl<'a, 'b> Walk<'a, 'b> {
             K::Block { statements, .. } => {
                 self.debit(statements.len())?;
                 for s in statements {
+                    if matches!(s, crate::hir::ResolvedStatement::CopyDiscard { .. }) {
+                        return Err(self.error());
+                    }
                     self.ty(&s.binding().ty)?;
                 }
                 Ok(None)

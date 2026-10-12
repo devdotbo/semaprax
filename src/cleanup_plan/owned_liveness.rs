@@ -248,7 +248,9 @@ fn find_in_block(
     };
     for statement in statements {
         match statement {
-            ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => {
+            ResolvedStatement::Let { value, .. }
+            | ResolvedStatement::Assign { value, .. }
+            | ResolvedStatement::CopyDiscard { value, .. } => {
                 if find_in_value(value, site, executed)? {
                     return Ok(true);
                 }
@@ -815,7 +817,8 @@ fn scalar_branch_join(flag: bool) -> i64 {
                         }
                         let nested = match statement {
                             ResolvedStatement::Let { value, .. }
-                            | ResolvedStatement::Assign { value, .. } => Some(value),
+                            | ResolvedStatement::Assign { value, .. }
+                            | ResolvedStatement::CopyDiscard { value, .. } => Some(value),
                             ResolvedStatement::While { body, .. }
                             | ResolvedStatement::LexicalWhile { body, .. }
                             | ResolvedStatement::Unsafe { body, .. } => Some(body.as_ref()),

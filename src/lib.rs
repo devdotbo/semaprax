@@ -139,6 +139,7 @@ pub mod environment_snapshot;
 pub mod execution_revision;
 pub(crate) mod filesystem_ops;
 mod finite_byte_scratch;
+mod finite_owned_record_loop;
 mod finite_row_construction;
 pub mod format;
 pub mod freestanding_object;

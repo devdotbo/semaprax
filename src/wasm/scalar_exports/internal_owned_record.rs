@@ -262,7 +262,8 @@ pub(super) fn validate_expression(
                             value,
                             ..
                         } if super::scalar_type(&binding.ty).is_some() => pending.push(value),
-                        ResolvedStatement::Assign { .. }
+                        ResolvedStatement::CopyDiscard { .. }
+                        | ResolvedStatement::Assign { .. }
                         | ResolvedStatement::Unsafe { .. }
                         | ResolvedStatement::While { .. }
                         | ResolvedStatement::LexicalWhile { .. } => {

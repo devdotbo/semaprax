@@ -535,7 +535,9 @@ fn locate_direct_yields(function: &ResolvedFunction) -> Result<Vec<YieldSite<'_>
             }
             ResolvedStatement::Let { value, .. } => (value, ResumableStatementKind::Let),
             ResolvedStatement::Assign { value, .. } => (value, ResumableStatementKind::Assign),
-            ResolvedStatement::Unsafe { .. } | ResolvedStatement::While { .. } => continue,
+            ResolvedStatement::CopyDiscard { .. }
+            | ResolvedStatement::Unsafe { .. }
+            | ResolvedStatement::While { .. } => continue,
         };
         if let ResolvedExprKind::Yield { request } = &value.kind {
             let index = u32::try_from(index)
@@ -735,6 +737,12 @@ fn relocate_expression(
                             &block_values,
                         )?;
                     }
+                    ResolvedStatement::CopyDiscard { value, .. } => relocate_expression(
+                        value,
+                        execution,
+                        &format!("{statement_path}.value"),
+                        &block_values,
+                    )?,
                     ResolvedStatement::Unsafe { body, .. } => relocate_expression(
                         body,
                         execution,

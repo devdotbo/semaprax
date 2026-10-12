@@ -4690,9 +4690,10 @@ impl<'a> CheckedValueNode<'a> {
                         .get(index)
                         .copied()
                 }
-                S::Unsafe { .. } | S::While { .. } | S::LexicalWhile { .. } => {
-                    statement.child(index).map(Self::Expression)
-                }
+                S::CopyDiscard { .. }
+                | S::Unsafe { .. }
+                | S::While { .. }
+                | S::LexicalWhile { .. } => statement.child(index).map(Self::Expression),
             },
             Self::Arm(arm) => match index {
                 0 => Some(Self::Pattern(&arm.pattern)),

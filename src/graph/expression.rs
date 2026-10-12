@@ -369,6 +369,10 @@ fn statement_json(
     statement: &ResolvedStatement,
 ) -> Result<String, Diagnostic> {
     match statement {
+        ResolvedStatement::CopyDiscard { value, .. } => Ok(format!(
+            "{{\"kind\":\"copy_discard\",\"value\":{}}}",
+            expr_json(program, value)?
+        )),
         ResolvedStatement::Let {
             binding,
             mutable,

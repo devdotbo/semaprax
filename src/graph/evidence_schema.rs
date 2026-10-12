@@ -35,6 +35,7 @@ pub(crate) fn reject_while_loop_evidence_schema(schema: &str) -> Result<(), Diag
             | "semaprax.graph.v81"
             | "semaprax.graph.v82"
             | "semaprax.graph.v83"
+            | "semaprax.graph.v84"
             | "semaprax.graph.v77"
     ) {
         return Err(Diagnostic::io(

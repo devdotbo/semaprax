@@ -158,7 +158,8 @@ fn scan<'a>(
             for statement in statements {
                 let completes = match statement {
                     ResolvedStatement::Let { value, .. }
-                    | ResolvedStatement::Assign { value, .. } => {
+                    | ResolvedStatement::Assign { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. } => {
                         scan(function, value, facts, depth + 1, budget)?
                     }
                     ResolvedStatement::Unsafe { body, .. } => {

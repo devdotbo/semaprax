@@ -17,8 +17,9 @@ an ordinary binding: repeated `let _` retains `SPX-T209`.
 `LetSyntax::ExpressionStatement` appends AST cache tag 3; existing tags retain
 exact bytes. The marker grants no HIR, cleanup, loan, capability, lexical-exit
 or graph authority. Both source verifiers independently check its shape,
-actual scalar type and Value mode. HIR resolves the ordinary let and all
-backends execute its ordinary left-to-right operand, staged calls and cleanup.
+actual scalar type and Value mode. Nonlexical statements retain the ordinary
+let; the selective lexical extension below uses an explicit no-result HIR
+statement. Backends retain ordinary left-to-right operands, staged calls and cleanup.
 Lazy boolean operands stay lazy. No owning-result discard is introduced.
 The semantic lowering equals the explicit fresh-let form, while the graph
 revision remains bound to each distinct canonical source spelling. Cross-source
@@ -32,16 +33,15 @@ readers, duplicates, mutability or annotations preserve the full let spelling.
 Name scratch is reserved before growth; global-budget refusal remains sticky.
 The hidden structural AST helper is presentation support, never typed authority.
 
-A generic discarded initializer cannot contain a lexical exit (`SPX-T312`).
-The existing separately authenticated StatementIf marker keeps its statement
-exit privilege. A bare valued `if` whose parsed tree contains an exit, followed
-directly by `;` and another block item, is therefore not an expression
-statement: the parser mints that existing StatementIf marker for it, exactly as
-for the unterminated spelling. Every other `expr;`, including a postfix or
-operator continuation of such an `if` and one followed by an item that could
-continue it (`-x;`, `(x);`), keeps this generic marker and its `SPX-T312`. See [lexical exits](LEXICAL-STRUCTURED-EXITS-V1.md),
-[statement if](STATEMENT-IF-CANONICAL-V1.md), and
-[language ergonomics](LANGUAGE-ERGONOMICS-V1.md).
+A direct authenticated Match expression statement may contain a checked
+lexical exit through its statement contour. This selectively lowers to
+CopyDiscard, independently checked for Value Copy scalar or Never completion.
+It does not create a binding or owning-result storage. Generic Block statements, calls, operators,
+constructor fields and named Let initializers retain their value-evaluation
+boundaries and SPX-T312. StatementIf retains its existing separate scalar-zero
+guard completion privilege. See
+[finite owned-record discard loops](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md) for
+the restricted allocating while profile and graph/cache versions.
 
 Owning gates: `language::statement_if::scalar_expression::` (seven authored
 bodies), the existing statement-if/foreign-syntax controls, and AST carrier

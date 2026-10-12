@@ -58,6 +58,12 @@ pub(super) fn json(expression: &ResolvedExpr) -> Result<String, Diagnostic> {
                         quote_json(audit),
                         agent_contract_expr_json(body)?
                     ),
+                    ResolvedStatement::CopyDiscard { .. } => {
+                        return Err(Diagnostic::io(
+                            "SPX-H006",
+                            "lexical discard is not a contract expression",
+                        ));
+                    }
                     ResolvedStatement::LexicalWhile { .. } => {
                         return Err(Diagnostic::io(
                             "SPX-H006",

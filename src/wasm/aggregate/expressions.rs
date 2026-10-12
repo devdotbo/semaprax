@@ -422,8 +422,9 @@ pub(super) fn block_direct_anchors(
                 anchors.insert(storage);
             }
         }
-        if let ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } =
-            statement
+        if let ResolvedStatement::Let { value, .. }
+        | ResolvedStatement::Assign { value, .. }
+        | ResolvedStatement::CopyDiscard { value, .. } = statement
         {
             let storage = StorageId::Temporary(value.id.clone());
             if slots.contains_key(&storage) {
@@ -458,9 +459,9 @@ pub(super) fn block_scope_anchors(
             }
         }
         match statement {
-            ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => {
-                pending.push(value)
-            }
+            ResolvedStatement::Let { value, .. }
+            | ResolvedStatement::Assign { value, .. }
+            | ResolvedStatement::CopyDiscard { value, .. } => pending.push(value),
             ResolvedStatement::Unsafe { body, .. } => pending.push(body),
             ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => {}
         }

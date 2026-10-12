@@ -1469,6 +1469,11 @@ impl<'a> HirValidator<'a> {
                             self.insert_value(&binding.id)?;
                             block_values.insert(binding.id.clone(), binding.ty.clone());
                         }
+                        ResolvedStatement::CopyDiscard { .. } => {
+                            return Err(hir_error(
+                                "generic templates do not admit lexical discard statements",
+                            ));
+                        }
                         ResolvedStatement::Assign { .. } => self.validate_template_mutation(
                             template,
                             execution,
@@ -4130,6 +4135,25 @@ impl<'a> HirValidator<'a> {
                                     path: format!("{path}.s{index}.value"),
                                 });
                             }
+                            ResolvedStatement::CopyDiscard { value, .. } => {
+                                frames.push(Frame::BlockAfterUnsafe {
+                                    expression,
+                                    statements,
+                                    tail,
+                                    index,
+                                    outer,
+                                    outer_ids,
+                                    path,
+                                });
+                                let enabled = publication.enabled;
+                                publication.enabled = false;
+                                frames.push(Frame::RestorePublication(enabled));
+                                frames.push(Frame::Enter {
+                                    expression: value,
+                                    scope,
+                                    path: format!("{path}.s{index}.value"),
+                                });
+                            }
                             ResolvedStatement::Assign { binding, value, .. } => {
                                 if crate::byte_ops::is_same_owner_set_hir(value, &binding.id) {
                                     self.buffer_reopen_sites.insert(value.id.clone());
@@ -4238,15 +4262,20 @@ impl<'a> HirValidator<'a> {
                     // The body block validated like any nested block; its
                     // merged scope continues into the enclosing block.
                     let scope = scopes.pop().expect("unsafe body scope retained");
-                    let ResolvedStatement::Unsafe { body, .. } = &statements[index] else {
-                        unreachable!("unsafe frame resumes at an unsafe statement")
-                    };
-                    if body.ownership != OwnershipMode::Value
-                        || !crate::hir::is_scalar_resolved_type(&body.ty)
-                    {
-                        return Err(hir_error(
-                            "unsafe boundary bodies must produce a scalar Copy value",
-                        ));
+                    match &statements[index] {
+                        ResolvedStatement::CopyDiscard { value, .. } => {
+                            super::copy_discard::require(value)?
+                        }
+                        ResolvedStatement::Unsafe { body, .. } => {
+                            if body.ownership != OwnershipMode::Value
+                                || !crate::hir::is_scalar_resolved_type(&body.ty)
+                            {
+                                return Err(hir_error(
+                                    "unsafe boundary bodies must produce a scalar Copy value",
+                                ));
+                            }
+                        }
+                        _ => unreachable!("no-binding statement continuation"),
                     }
                     frames.push(Frame::BlockNext {
                         expression,
@@ -7023,6 +7052,17 @@ impl<'a> HirValidator<'a> {
                                     binding.id
                                 )));
                             }
+                        }
+                        ResolvedStatement::CopyDiscard { value, .. } => {
+                            self.validate_expr_recursive_reference(
+                                function,
+                                value,
+                                &mut block_scope,
+                                &format!("{path}.s{index}.value"),
+                                allow_moves,
+                                allowed_effects,
+                            )?;
+                            super::copy_discard::require(value)?;
                         }
                         ResolvedStatement::Unsafe { body, .. } => {
                             if !allow_moves {

@@ -798,6 +798,20 @@ pub(super) fn emit_with_control(
         ResolvedExprKind::Block { statements, tail } => {
             for statement in statements {
                 match statement {
+                    ResolvedStatement::CopyDiscard { value, .. } => {
+                        emit_with_control(
+                            output,
+                            value,
+                            value_indexes,
+                            function_indexes,
+                            layout,
+                            result,
+                            control,
+                        )?;
+                        if value.ty != ResolvedType::Never {
+                            output.push(0x1a);
+                        }
+                    }
                     ResolvedStatement::Let { binding, value, .. } => {
                         emit_with_control(
                             output,

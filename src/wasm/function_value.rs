@@ -97,7 +97,8 @@ pub(super) fn collect_locals(
                     // An assignment target reuses its `let` local and an
                     // unsafe boundary adds none; only their values contribute
                     // to the local walk.
-                    ResolvedStatement::Assign { value, .. } => {
+                    ResolvedStatement::Assign { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. } => {
                         collect_locals(value, parameter_count, layout)?;
                     }
                     ResolvedStatement::Unsafe { body, .. } => {

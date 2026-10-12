@@ -177,3 +177,7 @@ exact literal path-set/manifest/`ACTIVE` replay test pins workspace revision
 `sha256:88181393a052db1605145236cd3fd2e7f3f24256ce0c90d7968d939fc6a4c4ef`.
 The implemented release regression corpus is HOSTED GREEN. The full
 workspace/product objective remains separately gated.
+
+Graph v84 adds the explicit lexical CopyDiscard statement described in
+[Finite owned-record discard loops v1](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md).
+No-feature graph selection remains unchanged.

@@ -942,7 +942,8 @@ fn byte_capacity_expression_in(
                                         true,
                                     ));
                                 }
-                                ResolvedStatement::Assign { value, .. } => {
+                                ResolvedStatement::Assign { value, .. }
+                                | ResolvedStatement::CopyDiscard { value, .. } => {
                                     frames.push(Frame::Visit(value, true));
                                 }
                                 ResolvedStatement::Unsafe { body, .. } => {
@@ -960,6 +961,11 @@ fn byte_capacity_expression_in(
                                     .map(|proof| proof.iterations)
                                     .or_else(|| {
                                         crate::finite_row_construction::resolved(
+                                            program, condition, body,
+                                        )
+                                    })
+                                    .or_else(|| {
+                                        crate::finite_owned_record_loop::resolved(
                                             program, condition, body,
                                         )
                                     });

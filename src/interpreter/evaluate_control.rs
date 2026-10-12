@@ -284,6 +284,12 @@ impl Evaluator<'_> {
                                 }
                             }
                         }
+                        ResolvedStatement::CopyDiscard { value, .. } => {
+                            if let Err(flow) = self.evaluate(value, environment, depth) {
+                                interrupted = Some(flow);
+                                break 'statements;
+                            }
+                        }
                         ResolvedStatement::Assign {
                             binding,
                             field,

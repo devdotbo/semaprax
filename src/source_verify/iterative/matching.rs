@@ -37,7 +37,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 )
                 && matches!(&scrutinee.kind, ExprKind::Var(name)
                     if self.owned_iterator_items.last().is_some_and(|item| item == name));
-            if self.loop_depth != 0 && !exact_owned_record_item {
+            if self.loop_depth != 0
+                && !exact_owned_record_item
+                && !crate::finite_owned_record_loop::source_permits(self.current, expression)
+            {
                 reject_loop_match_scrutinee(
                     self.program,
                     self.types,

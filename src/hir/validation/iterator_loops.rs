@@ -723,6 +723,11 @@ impl HirValidator<'_> {
             // Every node still passes ordinary type/ownership/loan/cleanup validation.
             return Ok(());
         }
+        if crate::finite_owned_record_loop::resolved(self.program, condition, body).is_some() {
+            // Capacity-only shape fact. Ordinary type, ownership, loan and cleanup
+            // checks still visit every node and every lexical exit.
+            return Ok(());
+        }
         if let Some(protocol) = crate::hir::iterator_loop::recognize(condition, body) {
             if !crate::iterator_ops::step_shape(&self.program.declarations, &protocol.step.ty) {
                 return Err(hir_error("iterator loop has unauthenticated Step metadata"));

@@ -1,5 +1,6 @@
 //! Read-only, targeted diagnostic repair discovery and instantiation.
 mod call_closure;
+mod discard_boundary;
 mod scoped_vec_field;
 use crate::ast::{Expr, ExprKind, ParamMode, Program, Type};
 use crate::diagnostic::{quote_json, Diagnostic};
@@ -9,6 +10,7 @@ use crate::hir::{
 };
 use crate::{format, graph, parse, patch};
 use call_closure::{call_graph, has_call_cycle};
+use discard_boundary::rebase_mismatch;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -1113,6 +1115,10 @@ impl StructuralRebase<'_> {
                             self.compare_expr(left_value, right_value)?;
                         }
                         (
+                            ResolvedStatement::CopyDiscard { value: left, .. },
+                            ResolvedStatement::CopyDiscard { value: right, .. },
+                        ) => self.compare_expr(left, right)?,
+                        (
                             ResolvedStatement::Unsafe {
                                 audit: left_audit,
                                 body: left_body,
@@ -1211,12 +1217,6 @@ fn identity_string_field(field: Option<&str>) -> bool {
                 | "projections"
         )
     )
-}
-
-fn rebase_mismatch() -> Vec<Diagnostic> {
-    vec![repair_delta_error(
-        "candidate HIR exceeds the selected function identity rebase",
-    )]
 }
 
 fn render_report(

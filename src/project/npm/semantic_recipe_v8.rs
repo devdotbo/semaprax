@@ -823,7 +823,7 @@ fn render_block(
                     rendered.push_str(&format!("{target} = {value}; "));
                 }
             }
-            ResolvedStatement::Unsafe { .. } => {
+            ResolvedStatement::CopyDiscard { .. } | ResolvedStatement::Unsafe { .. } => {
                 return Err(package_error(
                     "owned-data semantic recipe unsafe boundary is unsupported",
                 ));

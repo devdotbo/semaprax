@@ -221,7 +221,10 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/yield_aggregate.rs"),
         include_str!("../../../../../src/hir/resolve_expr_frame.rs"),
         concat!(
-            include_str!("../../../../../src/hir/resolve_expr_reference.rs"),
+            concat!(
+                include_str!("../../../../../src/hir/resolve_expr_reference.rs"),
+                include_str!("../../../../../src/hir/resolve_expr_reference/block.rs")
+            ),
             include_str!("../../../../../src/hir/resolve_expr_reference/control.rs"),
             "\n",
             include_str!("../../../../../src/hir/resolve_expr_reference/literal_format.rs"),
@@ -266,7 +269,16 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             include_str!("../../../../../src/finite_byte_scratch/source.rs"),
             "\n",
-            include_str!("../../../../../src/finite_byte_scratch/resolved.rs")
+            concat!(
+                include_str!("../../../../../src/finite_byte_scratch/resolved.rs"),
+                include_str!("../../../../../src/finite_owned_record_loop.rs"),
+                include_str!("../../../../../src/finite_owned_record_loop/source.rs"),
+                concat!(
+                    include_str!("../../../../../src/finite_owned_record_loop/resolved.rs"),
+                    include_str!("../../../../../src/finite_owned_record_loop/tests.rs")
+                ),
+                include_str!("../../../../../src/hir/copy_discard.rs")
+            )
         ),
         concat!(
             include_str!("../../../../../src/hir/byte_slice_provenance.rs"),
@@ -416,7 +428,16 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             include_str!("../../../../../src/finite_byte_scratch/source.rs"),
             "\n",
-            include_str!("../../../../../src/finite_byte_scratch/resolved.rs")
+            concat!(
+                include_str!("../../../../../src/finite_byte_scratch/resolved.rs"),
+                include_str!("../../../../../src/finite_owned_record_loop.rs"),
+                include_str!("../../../../../src/finite_owned_record_loop/source.rs"),
+                concat!(
+                    include_str!("../../../../../src/finite_owned_record_loop/resolved.rs"),
+                    include_str!("../../../../../src/finite_owned_record_loop/tests.rs")
+                ),
+                include_str!("../../../../../src/hir/copy_discard.rs")
+            )
         ),
         include_str!("../../../../../src/hir/validation/callable_types.rs"),
         include_str!("../../../../../src/hir/validation/closure.rs"),
@@ -468,7 +489,16 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
                 "\n",
                 include_str!("../../../../../src/finite_byte_scratch/source.rs"),
                 "\n",
-                include_str!("../../../../../src/finite_byte_scratch/resolved.rs")
+                concat!(
+                    include_str!("../../../../../src/finite_byte_scratch/resolved.rs"),
+                    include_str!("../../../../../src/finite_owned_record_loop.rs"),
+                    include_str!("../../../../../src/finite_owned_record_loop/source.rs"),
+                    concat!(
+                        include_str!("../../../../../src/finite_owned_record_loop/resolved.rs"),
+                        include_str!("../../../../../src/finite_owned_record_loop/tests.rs")
+                    ),
+                    include_str!("../../../../../src/hir/copy_discard.rs")
+                )
             ),
             "\n",
             include_str!("../../../../../src/source_verify/capacity/command_io.rs"),
@@ -560,7 +590,16 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
                 "\n",
                 include_str!("../../../../../src/finite_byte_scratch/source.rs"),
                 "\n",
-                include_str!("../../../../../src/finite_byte_scratch/resolved.rs")
+                concat!(
+                    include_str!("../../../../../src/finite_byte_scratch/resolved.rs"),
+                    include_str!("../../../../../src/finite_owned_record_loop.rs"),
+                    include_str!("../../../../../src/finite_owned_record_loop/source.rs"),
+                    concat!(
+                        include_str!("../../../../../src/finite_owned_record_loop/resolved.rs"),
+                        include_str!("../../../../../src/finite_owned_record_loop/tests.rs")
+                    ),
+                    include_str!("../../../../../src/hir/copy_discard.rs")
+                )
             ),
             "\n",
             include_str!("../../../../../src/source_verify/loans.rs"),

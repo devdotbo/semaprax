@@ -308,3 +308,7 @@ boundary; it does not establish a shared AST cache owner. Cached forecasts and
 cold-equivalent accounting remain conservative and unchanged. The narrow
 allocation witness measures only removed sidecar clone payloads through Drop;
 it does not establish whole Project funding or application fit.
+
+The current v10 compatibility adds CopyDiscard codec tag 5; its exact no-result
+semantics and source revalidation are owned by
+[Finite owned-record discard loops v1](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md).

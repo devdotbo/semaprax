@@ -816,7 +816,8 @@ fn visit_hir<'a>(
                         visit_hir(value, phase, &local, depth + 1, facts, scope_count)?;
                         insert_binding(&mut local, binding, *mutable);
                     }
-                    ResolvedStatement::Assign { value, .. } => {
+                    ResolvedStatement::Assign { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. } => {
                         visit_hir(value, phase, &local, depth + 1, facts, scope_count)?
                     }
                     ResolvedStatement::Unsafe { body, .. } => {

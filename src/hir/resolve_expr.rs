@@ -1534,6 +1534,23 @@ impl Resolver<'_> {
                         unreachable!("let frame resumes at a let statement")
                     };
                     let statement = Seg::Statement.at(index);
+                    if super::copy_discard::source(&statements[index]) {
+                        super::copy_discard::require(&value)?;
+                        resolved.push(ResolvedStatement::CopyDiscard {
+                            value,
+                            span: *statement_span,
+                        });
+                        frames.push(Frame::BlockNext {
+                            span,
+                            path,
+                            statements,
+                            tail,
+                            index: index + 1,
+                            scope,
+                            resolved,
+                        });
+                        continue;
+                    }
                     if let Some(declared_ast) = declared {
                         let declared_ty = self.resolve_binding_annotation(
                             function,

@@ -83,6 +83,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
     /// fail-closed outside the admitted per-iteration lifetime profile.
     /// Computed String conditions have a separate per-iteration cleanup region.
     pub(super) fn reject_while_disallowed(&mut self, expression: &'p Expr) -> Result<(), ()> {
+        if crate::finite_owned_record_loop::source(self.current, expression).is_some() {
+            return Ok(());
+        }
         self.reject_iterator_body(expression, None)
     }
     pub(super) fn reject_iterator_body(

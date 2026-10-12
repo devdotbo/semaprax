@@ -323,7 +323,8 @@ fn normalize_statement_spans(statement: &mut ResolvedStatement) {
             *span = Span::default();
             normalize_expression_spans(value);
         }
-        ResolvedStatement::Unsafe { body, span, .. } => {
+        ResolvedStatement::CopyDiscard { value: body, span }
+        | ResolvedStatement::Unsafe { body, span, .. } => {
             *span = Span::default();
             normalize_expression_spans(body);
         }

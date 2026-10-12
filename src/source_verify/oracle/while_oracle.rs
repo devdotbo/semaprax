@@ -39,7 +39,9 @@ pub(super) fn check_while_statement(
         ));
     }
     let _ = reject_while_disallowed_oracle(program, condition, functions, types, diagnostics);
-    let _ = reject_while_disallowed_oracle(program, body, functions, types, diagnostics);
+    if crate::finite_owned_record_loop::source(current, body).is_none() {
+        let _ = reject_while_disallowed_oracle(program, body, functions, types, diagnostics);
+    }
     let baseline = variables.clone();
     let condition_value = super::matching::in_loop(|| {
         check_expr(

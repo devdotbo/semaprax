@@ -653,7 +653,7 @@ fn render_recipe_expr(
     values: &mut std::collections::BTreeMap<String, String>,
     local_index: &mut usize,
 ) -> Result<String, Diagnostic> {
-    use crate::hir::{ResolvedExprKind, ResolvedMatchPattern, ResolvedStatement};
+    use crate::hir::{ResolvedExprKind, ResolvedMatchPattern, ResolvedStatement as S};
 
     match &expression.kind {
         ResolvedExprKind::Int(value) => Ok(value.to_string()),
@@ -812,12 +812,12 @@ fn render_recipe_expr(
             let mut rendered = String::from("{ ");
             for statement in statements {
                 match statement {
-                    ResolvedStatement::LexicalWhile { .. } => {
+                    S::CopyDiscard { .. } | S::LexicalWhile { .. } => {
                         return Err(package_error(
                             "lexical control is outside the npm semantic recipe profile",
                         ))
                     }
-                    ResolvedStatement::Let {
+                    S::Let {
                         binding,
                         mutable,
                         value,
@@ -832,7 +832,7 @@ fn render_recipe_expr(
                             if *mutable { "mut " } else { "" }
                         ));
                     }
-                    ResolvedStatement::Assign {
+                    S::Assign {
                         binding,
                         field: None,
                         value,
@@ -844,13 +844,13 @@ fn render_recipe_expr(
                         })?;
                         rendered.push_str(&format!("{name} = {value}; "));
                     }
-                    ResolvedStatement::Unsafe { body, .. } => {
+                    S::Unsafe { body, .. } => {
                         let body = render_recipe_expr(body, functions, values, local_index)?;
                         rendered.push_str(&format!(
                             "@audit(\"canonical npm semantic replay\") unsafe {body}; "
                         ));
                     }
-                    ResolvedStatement::While {
+                    S::While {
                         condition, body, ..
                     } => {
                         let condition =
@@ -858,7 +858,7 @@ fn render_recipe_expr(
                         let body = render_recipe_expr(body, functions, values, local_index)?;
                         rendered.push_str(&format!("while {condition} {body} "));
                     }
-                    ResolvedStatement::Assign { field: Some(_), .. } => {
+                    S::Assign { field: Some(_), .. } => {
                         return Err(package_error(
                             "npm semantic recipe statement is unsupported",
                         ))

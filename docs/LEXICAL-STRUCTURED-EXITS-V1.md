@@ -512,3 +512,7 @@ Renewal and byte-helper reconstruction debit the same invocation work balance.
 The authored independent ordinary-plan, malformed-fact and exact/one-short
 controls are unexecuted. These receiving facts grant neither imported layouts
 without a defining-source sidecar nor a completed #745 qualification claim.
+
+The selective direct expression-statement CopyDiscard extension is owned by
+[Finite owned-record discard loops v1](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md).
+It does not relax named Let initializers or StatementIf guard completion.
