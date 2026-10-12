@@ -1,5 +1,12 @@
 # Changelog
 
+- Author transactional paid HIR scope insertion: stage a shared suffix with exact
+  owning node carrier/initializer payments, then commit the unique prefix without
+  fallible work or allocation. Preserve the complete coarse receiving policy and
+  all original corpora; add full-field rotation, replacement, snapshot, weak,
+  every-paid-boundary and Drop comparisons. Source-only; physical request counts
+  may remain the same, and consolidated qualification/application fit remain open.
+
 - Author direct paid persistent HIR function scopes across parameters, requires,
   body, result and ensures through a sealed owner of the mutable scope borrow.
   Preserve complete saved map function/expression/

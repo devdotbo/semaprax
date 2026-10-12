@@ -59,6 +59,11 @@ pub(super) fn binding(value: &ValidationBinding) -> Option<usize> {
     }
     bytes.checked_add(tree::<LoanId, ()>(value.active_loans.len())?)
 }
+// This is the owning Node's carrier and its literal initializer, not a
+// borrowed generic-directory stand-in or a height-based allocation allowance.
+pub(super) fn new_node() -> Result<(), Diagnostic> {
+    reserve(carrier::<tree::Node>().checked_add(std::mem::size_of::<tree::Node>()))
+}
 pub(super) fn publication_slots(count: usize) -> Result<(), Diagnostic> {
     reserve(tree::<ValueId, ValidationBinding>(count))
 }

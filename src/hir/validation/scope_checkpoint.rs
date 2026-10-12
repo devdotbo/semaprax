@@ -3,10 +3,13 @@
 use super::*;
 use std::rc::Rc;
 pub(super) mod charge;
+#[cfg(test)]
+mod coarse;
 mod marks;
 pub(super) mod merge;
 pub(super) mod paths;
 mod storage;
+mod transaction;
 mod tree;
 pub(super) use storage::Storage;
 mod views;
@@ -49,46 +52,32 @@ impl Scope {
         let Some(value) = tree::value(source.root.as_deref(), key) else {
             return Ok(());
         };
-        let nodes = usize::from(tree::height(&self.root))
-            .checked_mul(3)
-            .and_then(|n| n.checked_add(8));
-        charge::reserve(nodes.and_then(|n| n.checked_mul(charge::carrier::<tree::Node>())))?;
-        self.root = Some(tree::insert(self.root.take(), key.clone(), value.clone()));
-        Ok(())
+        transaction::insert_current(&mut self.root, key.clone(), value.clone())
     }
     pub(super) fn insert(
         &mut self,
         key: ValueId,
         value: ValidationBinding,
     ) -> Result<(), Diagnostic> {
-        self.prepare_insert()?.insert(key, value);
-        Ok(())
+        self.prepare_insert()?.insert(key, value)
     }
     pub(super) fn prepare_insert(&mut self) -> Result<PreparedInsert<'_>, Diagnostic> {
-        // One new binding carrier plus the complete path and double rotation
-        // headroom; all prior versions remain live and receive no refund.
-        let nodes = usize::from(tree::height(&self.root))
-            .checked_mul(3)
-            .and_then(|n| n.checked_add(8));
-        charge::reserve(
-            nodes
-                .and_then(|n| n.checked_mul(charge::carrier::<tree::Node>()))
-                .and_then(|n| n.checked_add(charge::carrier::<ValidationBinding>())),
-        )?;
+        charge::reserve(Some(charge::carrier::<ValidationBinding>()))?;
         Ok(PreparedInsert { scope: self })
     }
 }
-// Only Scope can construct this paid owner. Its exclusive borrow pins the
-// receiving root between payment and the one consuming insertion. Dropping
-// the owner (including after payload-payment refusal) leaves the root intact.
+// The carrier is paid before the caller clones owned type/payload data. This
+// exclusive borrow survives every fallible path constructor until one commit.
 pub(super) struct PreparedInsert<'a> {
     scope: &'a mut Scope,
 }
 impl PreparedInsert<'_> {
-    pub(super) fn insert(self, key: ValueId, value: ValidationBinding) {
-        self.scope.root = Some(tree::insert(self.scope.root.take(), key, Rc::new(value)));
+    pub(super) fn insert(self, key: ValueId, value: ValidationBinding) -> Result<(), Diagnostic> {
+        charge::reserve(Some(0))?;
+        transaction::insert_current(&mut self.scope.root, key, Rc::new(value))
     }
 }
+
 impl PartialEq for Scope {
     fn eq(&self, other: &Self) -> bool {
         match (&self.root, &other.root) {
@@ -267,3 +256,7 @@ mod refusal_tests;
 #[cfg(test)]
 #[path = "scope_checkpoint/persistent_input_tests.rs"]
 mod persistent_input_tests;
+
+#[cfg(test)]
+#[path = "scope_checkpoint/transaction_tests.rs"]
+mod transaction_tests;

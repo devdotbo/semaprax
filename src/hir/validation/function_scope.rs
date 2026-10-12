@@ -175,7 +175,7 @@ impl HirValidator<'_> {
                     moved_places: BTreeMap::new(),
                     definitely_partial: BTreeSet::new(),
                 },
-            );
+            )?;
         }
         reject_nul_identity("resolved value", function.result_id.as_str())?;
         if !function.result_id.matches_result(execution) {
@@ -232,7 +232,7 @@ impl HirValidator<'_> {
                 moved_places: BTreeMap::new(),
                 definitely_partial: BTreeSet::new(),
             },
-        );
+        )?;
         self.validate_contracts_persistent(
             execution,
             &function.ensures,

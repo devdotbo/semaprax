@@ -88,8 +88,31 @@ before those payloads are cloned. A sealed paid insertion owner holds the exclus
 scope borrow until its one consuming insertion. Dropping it after clone-payment
 refusal leaves the prior root unchanged; there is no unfunded insertion entry. The body preserves Publication destruction
 order and RestorePublication frames. The map adapter and its materialization
-charges remain; no map is created on the persistent function route. The ordinary
-`3 * height + 8` insertion prepayment remains conservative and unchanged.
+charges remain; no map is created on the persistent function route.
+
+`scope_checkpoint/transaction.rs` stages the first shared (or weakly held) suffix
+without changing the receiving root. A scalar depth records the preceding unique
+prefix; no heap path directory is constructed. Each new node pays its own Rc
+carrier plus the exact owning Node literal initializer before construction. Owned
+insertion pays the binding carrier before the caller clones its already charged
+payload; binding-copy insertion shares the existing Rc and ValueId Arc handles.
+The sealed exclusive scope borrow holds through staging. Every payment and
+allocation completes before the first prefix mutation. Publication and rotations
+then use only unique Rc access and moves, with no fallible work or allocation.
+Failed staging drops all incoming/staged ownership and preserves the complete
+prior root and held snapshots. A zero-byte check retains sticky refusal even for
+an allocation-free replacement. Weakly held paths rebuild conservatively.
+
+The complete prior `3 * height + 8` receiving policy and original tree insertion
+are retained as independent test controls in `scope_checkpoint/coarse.rs` and
+`tree.rs`. Full rich-field owners cover all four rotation shapes under unique,
+shared-root and mixed-path ownership, replacement, weak references, every paid
+byte boundary and complete Drop. They compare actual receiving requests with the
+coarse control: these strong-reference cases are expected to allocate the same
+physical backing, while literal constructor payments remove the conservative
+allowance. Weak rebuilding may make additional requests. These are authored
+expectations pending execution, not allocation reductions or application-fit
+evidence. Baseline, edit and publication charges are unchanged.
 
 The full prior map function is saved in `function_scope/old.rs`, retaining its
 entire preflight, parameter order, body, result and contract order. Only the

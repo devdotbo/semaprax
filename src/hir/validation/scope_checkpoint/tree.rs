@@ -20,6 +20,7 @@ fn update(node: &mut Node) {
     node.height = 1 + height(&node.left).max(height(&node.right));
     node.count = 1 + count(&node.left) + count(&node.right);
 }
+#[cfg(test)]
 fn rotate_left(mut root: Rc<Node>) -> Rc<Node> {
     let mut next = Rc::make_mut(&mut root)
         .right
@@ -31,6 +32,7 @@ fn rotate_left(mut root: Rc<Node>) -> Rc<Node> {
     update(Rc::make_mut(&mut next));
     next
 }
+#[cfg(test)]
 fn rotate_right(mut root: Rc<Node>) -> Rc<Node> {
     let mut next = Rc::make_mut(&mut root).left.take().expect("AVL left child");
     Rc::make_mut(&mut root).left = Rc::make_mut(&mut next).right.take();
@@ -39,6 +41,7 @@ fn rotate_right(mut root: Rc<Node>) -> Rc<Node> {
     update(Rc::make_mut(&mut next));
     next
 }
+#[cfg(test)]
 fn balance(mut root: Rc<Node>) -> Rc<Node> {
     update(Rc::make_mut(&mut root));
     let delta = i16::from(height(&root.left)) - i16::from(height(&root.right));
@@ -60,6 +63,7 @@ fn balance(mut root: Rc<Node>) -> Rc<Node> {
         root
     }
 }
+#[cfg(test)]
 pub(super) fn insert(
     root: Option<Rc<Node>>,
     key: ValueId,
