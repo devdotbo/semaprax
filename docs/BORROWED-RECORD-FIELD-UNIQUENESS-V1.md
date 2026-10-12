@@ -110,12 +110,17 @@ Vecs with fewer than two rows allocate nothing.
   is present. The strict test host's typed-array scratch is fixture memory, not
   paid native backing.
 
-Compiler descriptor construction and validation are charged to the active
-bounded-output budget before their buffers exist (`reserve_active_required`),
-and workspace declaration cost prebounds the transient replay text exactly as
-explicit sort keys do. Runtime scratch has no compiler payer: native scratch is
-an exact allocator request with no context ledger, and the interpreter has no
-general heap ledger. This is a disclosed limit, not an allowance.
+The identity writer reserves its output buffer on the active bounded-output
+budget before allocation, and the ascending selector uses the budgeted formatter.
+Workspace declaration cost retains the conservative explicit-sort transient
+prebound. These local reservations do not establish complete descriptor replay
+payment: decode copies element/layout/field text, and decimal parsing in the
+shared reader allocates before the identity writer's reservation. Prelude
+source-use discovery also retains an allocated result vector. Exact coverage
+of those allocations remains an accounting qualification obligation. Runtime
+scratch has no compiler payer: native scratch is an exact allocator request
+with no context ledger, and the interpreter has no general heap ledger. These
+are disclosed limits, not allowances.
 
 ## Prelude, graph and cache
 
