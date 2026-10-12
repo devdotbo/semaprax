@@ -491,7 +491,10 @@ struct ValidationScopePublication<'a> {
 
 impl ValidationScopePublication<'_> {
     fn publish(&mut self, scope: &BTreeMap<ValueId, ValidationBinding>) {
-        if self.enabled {
+        // Full equality includes nested move/partial/loan state and exact
+        // types. Equal snapshots already have precisely the required early
+        // error publication; avoid reallocating an unchanged whole map.
+        if self.enabled && self.published != *scope {
             self.published.clone_from(scope);
         }
     }
@@ -778,6 +781,10 @@ mod function_reuse_environment_tests {
 #[cfg(test)]
 #[path = "hir/iterative_validator_tests.rs"]
 mod iterative_validator_tests;
+
+#[cfg(test)]
+#[path = "hir/scope_publication_tests.rs"]
+mod scope_publication_tests;
 
 #[cfg(test)]
 #[path = "hir/record_tests.rs"]
