@@ -581,3 +581,235 @@ fn ordinary_vec_fallback_keeps_original_owned_provider_and_payment_with_old_sele
     with_owned_oracle(|| validate_program(&program)).unwrap();
     validate_program(&program).unwrap();
 }
+
+fn ordinal_transfers(
+    params: &[ResolvedParam],
+    ordinals: &[u32],
+) -> Vec<crate::cleanup_plan::CallArgumentTransfer> {
+    ordinals
+        .iter()
+        .map(
+            |&parameter_index| crate::cleanup_plan::CallArgumentTransfer {
+                parameter_index,
+                source: CleanupPlace {
+                    storage: StorageId::Binding(params[0].id.clone()),
+                    projections: Vec::new(),
+                },
+            },
+        )
+        .collect()
+}
+#[test]
+fn borrowed_commit_ordinals_preserve_full_classifier_priority_and_hostile_order() {
+    let mut program = arity_program(17);
+    for (index, parameter) in program.functions[0].params.iter_mut().enumerate() {
+        parameter.ownership = if index % 2 == 0 {
+            OwnershipMode::Own
+        } else {
+            OwnershipMode::Value
+        };
+        parameter.ty = ResolvedType::String;
+    }
+    let target = &program.functions[0];
+    let function = &program.functions[1];
+    let params = Params::Borrowed(&target.params);
+    let canonical = (0..17).step_by(2).collect::<Vec<u32>>();
+    let mut reordered = canonical.clone();
+    reordered.swap(0, 1);
+    let mut duplicated = canonical.clone();
+    duplicated[1] = duplicated[0];
+    let mut extra = canonical.clone();
+    extra.push(u32::MAX);
+    for ordinals in [
+        canonical.clone(),
+        vec![],
+        vec![u32::MAX],
+        canonical[1..].to_vec(),
+        reordered,
+        duplicated,
+        extra,
+    ] {
+        let arguments = ordinal_transfers(&target.params, &ordinals);
+        for fail_at in [None, Some(1), Some(8)] {
+            let compare = |saved| {
+                let mut visits = 0;
+                let classifier = |_: &ResolvedType| {
+                    let ordinal = visits;
+                    visits += 1;
+                    if Some(ordinal) == fail_at {
+                        Err(replay_error(function, "later droppable type failure"))
+                    } else {
+                        Ok(true)
+                    }
+                };
+                let result = if saved {
+                    saved_owned_parameter_indices_match(&params, &arguments, function, classifier)
+                } else {
+                    owned_parameter_indices_match(&params, &arguments, function, classifier)
+                };
+                (result, visits)
+            };
+            let old = compare(true);
+            let current = compare(false);
+            assert_eq!(old, current);
+            assert_eq!(current.1, fail_at.map_or(9, |ordinal| ordinal + 1));
+            if fail_at.is_some() {
+                assert!(current.0.is_err());
+            } else {
+                assert_eq!(current.0.unwrap(), ordinals == canonical);
+            }
+        }
+    }
+}
+#[test]
+fn early_commit_ordinal_mismatch_keeps_later_current_type_diagnostic() {
+    let mut program = arity_program(2);
+    for parameter in &mut program.functions[0].params {
+        parameter.ownership = OwnershipMode::Own;
+        parameter.ty = ResolvedType::String;
+    }
+    program.functions[0].params[1].ty = ResolvedType::Nominal {
+        declaration: DeclarationId::new("missing.current.cleanup.type"),
+        arguments: Vec::new(),
+    };
+    let target = &program.functions[0];
+    let function = &program.functions[1];
+    let params = Params::Borrowed(&target.params);
+    for ordinals in [vec![], vec![u32::MAX], vec![1, 0], vec![0, 0]] {
+        let arguments = ordinal_transfers(&target.params, &ordinals);
+        let old = saved_owned_parameter_indices_match(&params, &arguments, function, |ty| {
+            type_needs_drop(&program, function, ty)
+        });
+        let current = owned_parameter_indices_match(&params, &arguments, function, |ty| {
+            type_needs_drop(&program, function, ty)
+        });
+        assert!(old.is_err());
+        assert_eq!(old, current);
+    }
+}
+
+#[test]
+fn borrowed_commit_ordinals_remove_two_literal_scratch_requests_through_drop() {
+    let mut program = arity_program(2);
+    for parameter in &mut program.functions[0].params {
+        parameter.ownership = OwnershipMode::Own;
+        parameter.ty = ResolvedType::String;
+    }
+    let target = &program.functions[0];
+    let function = &program.functions[1];
+    let params = Params::Borrowed(&target.params);
+    let arguments = ordinal_transfers(&target.params, &[0, 1]);
+    let observe = |saved| {
+        with_limit_usage_refusal(0, || {
+            measure(|| {
+                let result = if saved {
+                    saved_owned_parameter_indices_match(&params, &arguments, function, |ty| {
+                        type_needs_drop(&program, function, ty)
+                    })
+                } else {
+                    owned_parameter_indices_match(&params, &arguments, function, |ty| {
+                        type_needs_drop(&program, function, ty)
+                    })
+                };
+                result.unwrap()
+            })
+        })
+    };
+    let ((old_ok, old), old_refused, old_charge, _) = observe(true);
+    let ((current_ok, current), refused, charge, _) = observe(false);
+    assert!(old_ok && current_ok && !old_refused && !refused);
+    // Original push-grown u32 Vec minimum capacity 4, and exact collected
+    // actual ordinal Vec capacity 2. Neither scratch vector ever had a payer.
+    assert_eq!(
+        old.allocated,
+        current.allocated + (4 + 2) * std::mem::size_of::<u32>()
+    );
+    assert_eq!(old.allocations, current.allocations + 2);
+    assert_eq!((old_charge, charge), (0, 0));
+    for observed in [old, current] {
+        assert!(!observed.invalid && observed.live == 0);
+        assert_eq!(observed.allocated, observed.freed);
+    }
+}
+#[test]
+fn whole_commit_receiver_preserves_ordinary_verdicts_debit_and_exact_short() {
+    let program = program(REPLAY);
+    assert_eq!(
+        with_saved_commit_indices(|| validate_program(&program)),
+        validate_program(&program)
+    );
+    for ordinals in [
+        vec![],
+        vec![0],
+        vec![1, 0],
+        vec![0, 0],
+        vec![0, 1, u32::MAX],
+        vec![u32::MAX, 1],
+    ] {
+        let mut forged = program.clone();
+        let main = forged
+            .functions
+            .iter_mut()
+            .find(|function| function.id.as_str() == "main")
+            .unwrap();
+        let arguments = main
+            .cleanup_plan
+            .blocks
+            .iter_mut()
+            .flat_map(|block| &mut block.transitions)
+            .find_map(|transition| match transition {
+                crate::cleanup_plan::CleanupTransition::CallCommit { arguments, .. }
+                    if arguments.len() == 2 =>
+                {
+                    Some(arguments)
+                }
+                _ => None,
+            })
+            .unwrap();
+        let first = arguments[0].clone();
+        *arguments = ordinals
+            .iter()
+            .map(|&parameter_index| {
+                let mut argument = first.clone();
+                argument.parameter_index = parameter_index;
+                argument
+            })
+            .collect();
+        let old = with_saved_commit_indices(|| validate_program(&forged));
+        let current = validate_program(&forged);
+        assert!(old.is_err());
+        assert_eq!(old, current);
+    }
+    let observe = |saved, limit| {
+        let operation = || {
+            with_limit_usage_refusal(limit, || {
+                measure(|| {
+                    let result = validate_program(&program);
+                    let accepted = result.is_ok();
+                    drop(result);
+                    accepted
+                })
+            })
+        };
+        if saved {
+            with_saved_commit_indices(operation)
+        } else {
+            operation()
+        }
+    };
+    let ((old_ok, old), old_refused, old_charge, _) = observe(true, usize::MAX);
+    let ((current_ok, current), refused, charge, _) = observe(false, usize::MAX);
+    assert!(old_ok && current_ok && !old_refused && !refused && charge > 0);
+    assert_eq!(old_charge, charge, "scratch removal changes no paid debit");
+    assert!(old.allocated > current.allocated && old.allocations > current.allocations);
+    for observed in [old, current] {
+        assert!(!observed.invalid && observed.live == 0);
+        assert_eq!(observed.allocated, observed.freed);
+    }
+    for saved in [true, false] {
+        let ((ok, exact), refused, actual, _) = observe(saved, charge);
+        assert!(ok && !refused && actual == charge && !exact.invalid && exact.live == 0);
+        let ((ok, short), refused, _, receipt) = observe(saved, charge - 1);
+        assert!(!ok && refused && receipt.is_some() && !short.invalid && short.live == 0);
+    }
+}

@@ -3,7 +3,10 @@
 use std::collections::BTreeSet;
 
 mod param_view;
-pub(super) use param_view::{ordinary_borrows_enabled, resolved_call_param_view, Param, Params};
+pub(super) use param_view::{
+    ordinary_borrows_enabled, owned_parameter_indices_match, resolved_call_param_view, Param,
+    Params,
+};
 
 use crate::cleanup_plan::{CleanupPlace, StorageId};
 use crate::diagnostic::Diagnostic;

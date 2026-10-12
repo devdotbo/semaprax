@@ -61,3 +61,23 @@ and complete ordinary plus factored cleanup and hostile commit replay. Original
 parameter-view, merge/union equations and application corpora are retained.
 This source followup awaits consolidated qualification and establishes no
 application fit, runtime efficiency or live-agent token ratio.
+
+
+## Borrowed call-commit ordinal receiver
+
+Call-commit validation now compares held transfer ordinals directly with the
+borrowed signature projection. It still classifies every owned parameter in
+signature order, retaining any mismatch until the full fallible classification
+pass completes. A later type diagnostic therefore still precedes ordinal
+disagreement. Parameter providers, arity checks and subsequent storage/strict
+order validation retain their previous admission and error order.
+
+The complete old expected/actual vector receiver remains an independent
+cfg(test) oracle. New controls under `resolved_call::param_view::tests` retain
+missing, duplicate, reordered and maximal actual ordinals, early mismatch with
+later current type failure, whole ordinary verdict/diagnostic equality, actual
+allocation and Drop, and the existing cumulative exact/one-short boundary.
+The two removed ordinal vectors were uncharged scratch allocations: physical
+requests fall while paid debit stays exactly unchanged. No reservation is
+invented or refunded, and no unsupported parameter provider becomes borrowed.
+This followup is source-only and awaits consolidated qualification.

@@ -2434,23 +2434,12 @@ fn validate_blocks_and_edges(
                             "call commit callee signature has inconsistent arity",
                         ));
                     }
-                    let mut expected_parameters = Vec::new();
-                    for (index, parameter) in params.iter().enumerate() {
-                        if parameter.ownership == OwnershipMode::Own
-                            && type_needs_drop(program, function, parameter.ty)?
-                        {
-                            expected_parameters.push(
-                                u32::try_from(index).map_err(|_| {
-                                    replay_error(function, "too many call parameters")
-                                })?,
-                            );
-                        }
-                    }
-                    let actual_parameters = arguments
-                        .iter()
-                        .map(|argument| argument.parameter_index)
-                        .collect::<Vec<_>>();
-                    if actual_parameters != expected_parameters {
+                    if !resolved_call::owned_parameter_indices_match(
+                        &params,
+                        arguments,
+                        function,
+                        |ty| type_needs_drop(program, function, ty),
+                    )? {
                         return Err(replay_error(
                             function,
                             "call commit does not contain every and only owned droppable parameter",

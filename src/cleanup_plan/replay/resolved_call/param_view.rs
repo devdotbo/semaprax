@@ -70,6 +70,71 @@ impl Params<'_> {
     }
 }
 
+/// Compare only replay ordinals, without materializing either ordinal vector.
+/// A mismatch is retained until every parameter has completed the old fallible
+/// classification pass: a later type error still precedes ordinal disagreement.
+pub(in crate::cleanup_plan::replay) fn owned_parameter_indices_match(
+    params: &Params<'_>,
+    arguments: &[crate::cleanup_plan::CallArgumentTransfer],
+    function: &ResolvedFunction,
+    mut needs_drop: impl FnMut(&ResolvedType) -> Result<bool, Diagnostic>,
+) -> Result<bool, Diagnostic> {
+    #[cfg(test)]
+    if SAVED_COMMIT_INDICES.with(std::cell::Cell::get) || !ordinary_borrows_enabled() {
+        return saved_owned_parameter_indices_match(params, arguments, function, needs_drop);
+    }
+    let mut actual = arguments.iter();
+    let mut equal = true;
+    for (index, parameter) in params.iter().enumerate() {
+        if parameter.ownership == OwnershipMode::Own && needs_drop(parameter.ty)? {
+            let expected = u32::try_from(index)
+                .map_err(|_| replay_error(function, "too many call parameters"))?;
+            // Do not short circuit iteration or classification after mismatch.
+            equal &= actual.next().map(|argument| argument.parameter_index) == Some(expected);
+        }
+    }
+    Ok(equal && actual.next().is_none())
+}
+
+/// Complete original receiver, including both independent owned vectors.
+#[cfg(test)]
+fn saved_owned_parameter_indices_match(
+    params: &Params<'_>,
+    arguments: &[crate::cleanup_plan::CallArgumentTransfer],
+    function: &ResolvedFunction,
+    mut needs_drop: impl FnMut(&ResolvedType) -> Result<bool, Diagnostic>,
+) -> Result<bool, Diagnostic> {
+    let mut expected_parameters = Vec::new();
+    for (index, parameter) in params.iter().enumerate() {
+        if parameter.ownership == OwnershipMode::Own && needs_drop(parameter.ty)? {
+            expected_parameters.push(
+                u32::try_from(index)
+                    .map_err(|_| replay_error(function, "too many call parameters"))?,
+            );
+        }
+    }
+    let actual_parameters = arguments
+        .iter()
+        .map(|argument| argument.parameter_index)
+        .collect::<Vec<_>>();
+    Ok(actual_parameters == expected_parameters)
+}
+#[cfg(test)]
+thread_local! {
+    static SAVED_COMMIT_INDICES: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+#[cfg(test)]
+fn with_saved_commit_indices<T>(operation: impl FnOnce() -> T) -> T {
+    struct Reset(bool);
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            SAVED_COMMIT_INDICES.with(|cell| cell.set(self.0));
+        }
+    }
+    let _reset = Reset(SAVED_COMMIT_INDICES.with(|cell| cell.replace(true)));
+    operation()
+}
+
 #[cfg(test)]
 thread_local! {
     static OWNED_ORACLE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
