@@ -91,7 +91,7 @@ fn exact_t312(source: &str) -> Vec<(String, String)> {
         .unwrap_err()
         .into_iter()
         .filter(|d| d.code == "SPX-T312")
-        .map(|d| (d.message, format!("{:?}", d.span)))
+        .map(|d| (d.message.into_owned(), format!("{:?}", d.span)))
         .collect()
 }
 

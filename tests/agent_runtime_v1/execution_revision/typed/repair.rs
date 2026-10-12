@@ -384,7 +384,7 @@ fn offline_repair_keeps_candidate_diagnostics_private_and_feeds_checked_correcti
                 },
             )
             .is_err());
-        assert!(!String::from_utf8_lossy(&requests.borrow()[1]).contains(&withheld_message));
+        assert!(!String::from_utf8_lossy(&requests.borrow()[1]).contains(withheld_message.as_ref()));
         assert!(store
             .documents
             .iter()

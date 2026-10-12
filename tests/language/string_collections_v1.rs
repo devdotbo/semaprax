@@ -440,7 +440,7 @@ fn first_code(prefix: &str, body: &str) -> (String, String) {
     let first = found
         .first()
         .unwrap_or_else(|| panic!("no diagnostic for {body}"));
-    (first.code.to_owned(), first.message.clone())
+    (first.code.to_owned(), first.message.clone().into_owned())
 }
 
 #[test]
