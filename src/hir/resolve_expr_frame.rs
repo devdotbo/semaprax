@@ -456,21 +456,12 @@ pub(super) fn frame_owned_capacity(
     frame: &Frame<'_>,
     seen_scopes: &mut std::collections::HashSet<*const BTreeMap<String, Binding>>,
 ) -> usize {
-    if let Frame::ForOwn(frame) = frame {
-        return super::resolve_for_own::capacity(frame, seen_scopes);
-    }
-    // Path fields are inline `PathId` coordinates. Their arena backing is
-    // shared by every frame and counted once by `resolve_expr::capacity`.
-    // Continuations share immutable binding maps through `Rc`. Count
-    // the owned map allocation once, not once per retaining frame.
-    let mut unique_scope_capacity = |scope: &Rc<BTreeMap<String, Binding>>| {
-        if seen_scopes.insert(Rc::as_ptr(scope)) {
-            resolver_scope_owned_capacity(scope)
-        } else {
-            0
-        }
-    };
-    let scope = match frame {
+    frame_owned_capacity_with(frame, &mut |pointer| seen_scopes.insert(pointer))
+}
+
+#[cfg(test)]
+fn frame_scope<'a>(frame: &'a Frame<'_>) -> Option<&'a Rc<BTreeMap<String, Binding>>> {
+    match frame {
         Frame::Enter { bindings, .. }
         | Frame::ChildNext { bindings, .. }
         | Frame::LiteralFormatArgNext { bindings, .. }
@@ -490,16 +481,53 @@ pub(super) fn frame_owned_capacity(
         | Frame::ScalarMatchAfterArm { bindings, .. }
         | Frame::AfterUpdateBase { bindings, .. }
         | Frame::UpdateNext { bindings, .. }
-        | Frame::UpdateAfterField { bindings, .. } => unique_scope_capacity(bindings),
+        | Frame::UpdateAfterField { bindings, .. } => Some(bindings),
         Frame::BlockNext { scope, .. }
         | Frame::BlockAfterLet { scope, .. }
         | Frame::BlockAfterAssign { scope, .. }
         | Frame::BlockAfterUnsafe { scope, .. }
         | Frame::BlockWhileCondition { scope, .. }
-        | Frame::BlockWhileBody { scope, .. } => unique_scope_capacity(scope),
-        Frame::BlockForBody { scope, .. } => unique_scope_capacity(scope),
-        _ => 0,
-    };
+        | Frame::BlockWhileBody { scope, .. } => Some(scope),
+        Frame::BlockForBody { scope, .. } => Some(scope),
+        Frame::ForOwn(frame) => Some(&frame.scope),
+        _ => None,
+    }
+}
+
+/// Borrow every retained scope, including boxed upcast resumes, in the same
+/// order as the owned-capacity receiver. No pointer is retained or dereferenced.
+#[cfg(test)]
+pub(super) fn visit_frame_scopes(
+    mut frame: &Frame<'_>,
+    mut visit: impl FnMut(*const BTreeMap<String, Binding>),
+) {
+    loop {
+        if let Some(scope) = frame_scope(frame) {
+            visit(Rc::as_ptr(scope));
+        }
+        match frame {
+            Frame::StartUpcast { resume, .. } => frame = resume,
+            _ => break,
+        }
+    }
+}
+
+#[cfg(test)]
+pub(super) fn frame_owned_capacity_with(
+    frame: &Frame<'_>,
+    first_scope: &mut dyn FnMut(*const BTreeMap<String, Binding>) -> bool,
+) -> usize {
+    if let Frame::ForOwn(frame) = frame {
+        return super::resolve_for_own::capacity(frame, first_scope);
+    }
+    // Path coordinates are inline; their backing is counted once by the probe.
+    let scope = frame_scope(frame).map_or(0, |scope| {
+        if first_scope(Rc::as_ptr(scope)) {
+            resolver_scope_owned_capacity(scope)
+        } else {
+            0
+        }
+    });
     let retained = match frame {
         Frame::FinishVecConstructor { element, .. } => resolved_type_owned_capacity(element),
         Frame::EnterLoop(target) | Frame::FinishLexicalExit { target, .. } => {
@@ -655,11 +683,14 @@ pub(super) fn frame_owned_capacity(
     // An interrupted continuation boxed beneath an upcast is retained too.
     let resumed = match frame {
         Frame::StartUpcast { resume, .. } => std::mem::size_of::<Frame<'_>>()
-            .saturating_add(frame_owned_capacity(resume, seen_scopes)),
+            .saturating_add(frame_owned_capacity_with(resume, first_scope)),
         _ => 0,
     };
     scope.saturating_add(retained).saturating_add(resumed)
 }
+
+#[cfg(test)]
+pub(super) mod capacity_old;
 
 #[cfg(test)]
 mod literal_format_capacity_tests {

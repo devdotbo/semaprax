@@ -207,6 +207,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/resolve_stdin_stream.rs"),
         include_str!("../../../../../src/hir/workspace_link/stdin_stream.rs"),
         include_str!("../../../../../src/hir/resolve_expr/capacity.rs"),
+        include_str!("../../../../../src/hir/resolve_expr/capacity/tests.rs"),
+        include_str!("../../../../../src/hir/resolve_expr_frame/capacity_old.rs"),
         include_str!("../../../../../src/hir/resolve_box_call.rs"),
         include_str!("../../../../../src/hir/resolve_box_call/map.rs"),
         include_str!("../../../../../src/hir/resolve_box_call/iterator.rs"),
@@ -1180,7 +1182,6 @@ fn post_hir_named_phase_envelopes_cover_representative_and_depth_512_c() {
                 parse_spec_with_source(&program, canonical_spec.as_bytes(), &canonical_source)
                     .unwrap();
             let representative = measure(&program, &spec);
-
             let mut deep = program;
             let function = deep
                 .functions
@@ -1214,7 +1215,6 @@ fn post_hir_named_phase_envelopes_cover_representative_and_depth_512_c() {
                 capabilities: vec!["host.math".to_owned()],
             };
             let deep = measure(&deep, &deep_spec);
-
             assert_eq!(
                 [representative, deep],
                 [

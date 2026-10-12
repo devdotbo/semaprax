@@ -461,7 +461,7 @@ pub(super) fn resolve_reference(
 #[cfg(test)]
 pub(super) fn capacity(
     frame: &ForOwnFrame<'_>,
-    seen: &mut std::collections::HashSet<*const BTreeMap<String, Binding>>,
+    first_scope: &mut dyn FnMut(*const BTreeMap<String, Binding>) -> bool,
 ) -> usize {
     use super::capacity_probe::*;
     std::mem::size_of::<ForOwnFrame<'_>>()
@@ -475,7 +475,7 @@ pub(super) fn capacity(
             .source
             .as_ref()
             .map_or(0, resolved_expr_owned_capacity)
-        + if seen.insert(Rc::as_ptr(&frame.scope)) {
+        + if first_scope(Rc::as_ptr(&frame.scope)) {
             resolver_scope_owned_capacity(&frame.scope)
         } else {
             0

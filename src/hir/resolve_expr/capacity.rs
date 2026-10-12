@@ -1,6 +1,6 @@
 use super::{Frame, ResolvedExpr};
 use crate::hir::capacity_probe::{note_iterative_phase_capacity, resolved_expr_owned_capacity};
-use crate::hir::resolve_expr_frame::frame_owned_capacity;
+use crate::hir::resolve_expr_frame::{frame_owned_capacity_with, visit_frame_scopes};
 
 pub(super) fn note(
     frames: &Vec<Frame<'_>>,
@@ -9,11 +9,7 @@ pub(super) fn note(
     loops: &[Option<crate::hir::ControlTarget>],
     paths: &super::path_arena::PathArena<'_>,
 ) {
-    let mut seen_scopes = std::collections::HashSet::new();
-    let frame_owned = frames.iter().fold(0_usize, |total, candidate| {
-        total.saturating_add(frame_owned_capacity(candidate, &mut seen_scopes))
-    });
-    let current_owned = frame_owned_capacity(frame, &mut seen_scopes);
+    let owned = owned_frames(frames, frame);
     note_iterative_phase_capacity(
         0,
         frames.capacity() * std::mem::size_of::<Frame<'_>>()
@@ -22,8 +18,7 @@ pub(super) fn note(
                 .iter()
                 .map(resolved_expr_owned_capacity)
                 .sum::<usize>()
-            + frame_owned
-            + current_owned
+            + owned
             + paths.owned_capacity()
             + std::mem::size_of_val(loops)
             + loops
@@ -33,3 +28,33 @@ pub(super) fn note(
                 .sum::<usize>(),
     );
 }
+
+// A capacity observation is harness metadata, not resolver allocation. Scan
+// the actual borrowed frame prefix instead of allocating a HashSet per event.
+// This trades test-only pointer comparisons for zero measurement scratch;
+// production frames/work and the complete payload census remain unchanged.
+fn owned_frames(frames: &[Frame<'_>], current: &Frame<'_>) -> usize {
+    frames.iter().chain(std::iter::once(current)).enumerate().fold(
+        0usize,
+        |total, (index, frame)| {
+            let mut ordinal = 0usize;
+            let owned = frame_owned_capacity_with(frame, &mut |pointer| {
+                let mut seen = false;
+                for previous in &frames[..index.min(frames.len())] {
+                    visit_frame_scopes(previous, |prior| seen |= prior == pointer);
+                }
+                let mut position = 0usize;
+                visit_frame_scopes(frame, |prior| {
+                    seen |= position < ordinal && prior == pointer;
+                    position += 1;
+                });
+                ordinal += 1;
+                !seen
+            });
+            total.saturating_add(owned)
+        },
+    )
+}
+
+#[cfg(test)]
+mod tests;
