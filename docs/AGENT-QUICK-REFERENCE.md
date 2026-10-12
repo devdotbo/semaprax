@@ -103,6 +103,9 @@ fn main() -> i64
   statements are admitted; owning, aggregate and borrowed discards
   (`SPX-T315`), tuples and public unit/bottom values remain closed. See
   `help language author:lexical-exits`.
+  A direct `match ...;` statement may carry a checked lexical exit when its
+  normal result is Copy scalar. Binding that match with `let` still crosses a
+  value boundary and refuses. This source extension is pending qualification.
 - Source blocks, delimiters, unary chains, and expression trees may nest at
   most 128 levels; `SPX-P207` asks you to extract a named helper.
 - Canonical layout puts the function body's `{` on its own line and each
@@ -342,6 +345,15 @@ fn main() -> i64
   named unprojected owner with no live descendant loan. Complete hidden children
   still count toward limits; `match borrow` keeps recursive patterns.
   See [owned subtree patterns](NESTED-OWNED-RECORD-DESTRUCTURING-V2.md).
+- Finite record loops (source implementation; qualification pending): an
+  effect-free, parameter-free i64 function may use `let mut i = 0;` immediately
+  before `while i < N`, with literal `N` in 1–32. Each body constructs one fresh
+  immutable monomorphic record, then discards one owning record match and ends
+  in `0`. Its single guard-free arm first increments that exact counter by one;
+  branch tails may continue, break, return or complete normally. Extra arm
+  statements, counter shadowing and nested loops refuse. Actual allocations
+  still obey the existing 32-event/2 MiB limits. See
+  [the exact admitted shape](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md).
 - Copy-record Vec admits identified flat records with 1–8 Copy fields. Project
   v30 adds `Vec<string>` and flat records with up to two direct owned
   String/Bytes fields. User records need `@id`; ask
