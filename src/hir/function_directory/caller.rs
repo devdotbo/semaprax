@@ -14,8 +14,22 @@ pub(in crate::hir) fn prepare(program: &ResolvedProgram) -> Result<Directory<'_>
             crate::bounded_output::refuse_active_required(usize::MAX);
             Refused::Overflow
         })?;
+    let permit_bytes = program
+        .permits
+        .len()
+        .checked_mul(std::mem::size_of::<&str>())
+        .and_then(|permit_bytes| {
+            bytes
+                .checked_add(permit_bytes)
+                .map(|total| (permit_bytes, total))
+        })
+        .ok_or_else(|| {
+            crate::bounded_output::refuse_active_required(usize::MAX);
+            Refused::Overflow
+        })?;
+    let (permit_bytes, total_bytes) = permit_bytes;
     if crate::bounded_output::active_refused()
-        || !crate::bounded_output::reserve_active_required(bytes)
+        || !crate::bounded_output::reserve_active_required(total_bytes)
     {
         return Err(Refused::Budget);
     }
@@ -45,7 +59,27 @@ pub(in crate::hir) fn prepare(program: &ResolvedProgram) -> Result<Directory<'_>
             .cmp(&right.function.id)
             .then(left.ordinal.cmp(&right.ordinal))
     });
-    Ok(Directory { program, entries })
+    let mut permits = Vec::new();
+    if permits.try_reserve_exact(program.permits.len()).is_err() {
+        return Err(capacity_refusal(permit_bytes, 0));
+    }
+    if permits.capacity() != program.permits.len() {
+        let excess = permits
+            .capacity()
+            .saturating_sub(program.permits.len())
+            .checked_mul(std::mem::size_of::<&str>())
+            .unwrap_or(usize::MAX);
+        return Err(capacity_refusal(permit_bytes, excess));
+    }
+    permits.extend(program.permits.iter().map(String::as_str));
+    permits.sort_unstable();
+    // Duplicates deliberately remain: membership matches the old set, while
+    // independent declaration/source validation retains duplicate authority.
+    Ok(Directory {
+        program,
+        entries,
+        permits,
+    })
 }
 
 // Allocators expose their actual requested capacity only after allocation.

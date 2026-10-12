@@ -6,6 +6,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 include_str!("../src/hir/validation.rs"),
                 include_str!("../src/hir/inspection/calls.rs"),
                 include_str!("../src/hir/validation/function_lookup.rs"),
+                include_str!("../src/hir/validation/function_lookup/permits.rs"),
                 include_str!("../src/hir/function_directory.rs"),
                 include_str!("../src/hir/validation/type_requirement.rs"),
                 include_str!("../src/hir/validation/canonical_loans.rs"),

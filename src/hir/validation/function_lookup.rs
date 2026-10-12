@@ -1,6 +1,8 @@
 //! Lookup data grants no declaration/body verdict; the old constructor checks remain.
 use super::*;
 use crate::hir::function_directory::Directory;
+mod permits;
+pub(super) use permits::Permits;
 
 #[derive(Clone)]
 pub(super) enum Lookup<'a> {
@@ -11,6 +13,14 @@ pub(super) enum Lookup<'a> {
     },
 }
 impl<'a> Lookup<'a> {
+    pub(super) fn permits(&self, program: &'a ResolvedProgram) -> Permits<'a> {
+        match self {
+            Self::Borrowed { directory, .. } => Permits::Borrowed((*directory).permits()),
+            Self::Legacy(_) => {
+                Permits::Legacy(program.permits.iter().map(String::as_str).collect())
+            }
+        }
+    }
     pub(super) fn directory(&self) -> Option<&'a Directory<'a>> {
         match self {
             Self::Legacy(_) => None,

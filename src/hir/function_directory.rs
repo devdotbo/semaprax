@@ -8,6 +8,7 @@ pub(super) struct Entry<'a> {
 pub(super) struct Directory<'a> {
     program: &'a ResolvedProgram,
     entries: Vec<Entry<'a>>,
+    permits: Vec<&'a str>,
 }
 impl<'a> Directory<'a> {
     pub(super) fn is_current(&self, program: &ResolvedProgram) -> bool {
@@ -16,6 +17,9 @@ impl<'a> Directory<'a> {
     #[cfg(test)]
     pub(super) fn entries(&self) -> &[Entry<'a>] {
         &self.entries
+    }
+    pub(super) fn permits(&self) -> &[&'a str] {
+        &self.permits
     }
     pub(super) fn member_is(&self, ordinal: usize, function: &ResolvedFunction) -> bool {
         self.program

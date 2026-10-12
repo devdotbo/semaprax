@@ -6,7 +6,13 @@ backend authority. Qualification is pending.
 The complete HIR inspection caller and independent cleanup execution caller
 prepare one directory borrowing the exact current `ResolvedProgram`. Its owned
 Vec contains one original ordinal and function reference per ordinary function;
-function instances retain their existing separate validation. The caller
+function instances retain their existing separate validation. The same held
+caller now also retains a sorted Vec of borrowed module-permit strings, charged
+once as permit_count * sizeof(&str) before construction. Duplicate permit values
+are retained in this directory; membership alone matches the old set and never
+replaces independent source/declaration checks. Closure validators reuse the
+same permit metadata but still perform current function effect/body checks.
+ The caller
 reserves the exact requested entry backing on the existing active builder
 before allocation, with no new ledger, allowance or refund. With no active
 builder, the same private constructor retains the existing unobserved route.

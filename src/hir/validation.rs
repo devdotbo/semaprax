@@ -1618,12 +1618,7 @@ impl<'a> HirValidator<'a> {
                 function.id
             )));
         }
-        let permits = self
-            .program
-            .permits
-            .iter()
-            .map(String::as_str)
-            .collect::<BTreeSet<_>>();
+        let permits = self.functions.permits(self.program);
         for effect in &function.effects {
             if !permits.contains(effect.as_str()) {
                 return Err(hir_error(format!(
