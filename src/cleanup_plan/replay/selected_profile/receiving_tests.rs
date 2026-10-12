@@ -487,8 +487,8 @@ fn string_append_reserved_refusal_and_retry_allocate_only_the_prepaid_diagnostic
 fn named_string_transfer_retained_replay_matches_ordinary_exact_and_short() {
     const SOURCE: &str = r#"module receiving;
 @id("app.probe") fn probe()->i64 {
- let mut at=0;while at<2 {at=at+1;let text="é";let moved=string_take(text);
- if at==1 {continue;} else {0} return string_len(moved);0} 0
+ let key=str"x";let mut at=0;while at<2 {at=at+1;let text="é";let moved=string_take(text);
+ if at==1 {continue;} else {0} return string_len(moved)+str_len_bytes(key);0} 0
 }
 @id("app.main") fn main()->i64 {probe()}
 "#;
