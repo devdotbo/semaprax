@@ -212,7 +212,9 @@ pub(crate) fn permits(function: &Function, expression: &Expr) -> bool {
         let S::While { body, .. } = statement else {
             return false;
         };
-        inspect(function, body).is_some_and(|proof| contains(proof.body, expression, 0))
+        inspect(function, body).is_some_and(|proof| {
+            proof.iterations > 0 && proof.iterations <= LIMIT && contains(proof.body, expression, 0)
+        })
     })
 }
 fn contains(root: &Expr, needle: &Expr, depth: usize) -> bool {
