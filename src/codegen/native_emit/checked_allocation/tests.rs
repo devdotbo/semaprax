@@ -82,6 +82,32 @@ fn generated_native_format_null_sweep_settles_all_committed_fields_and_prefixes(
     run_native(EMPTY, 4, 0, false);
 }
 
+#[test]
+fn escaped_native_string_result_retains_provider_and_rejects_stale_borrow_drop() {
+    for (source, allocations, expected) in [
+        (r#"module checked.native;
+@id("checked.native.publish") fn publish() -> string { string_concat("a", "β") }
+@id("checked.native.main") fn main() -> i64 { 0 }
+"#, 3usize, "aβ"),
+        (r#"module checked.native;
+@id("checked.native.publish") fn publish() -> string { "" }
+@id("checked.native.main") fn main() -> i64 { 0 }
+"#, 1usize, ""),
+    ] {
+        let source = crate::parse(source, "checked-native-escaped.spx").unwrap();
+        // The old scalar factory remains closed for an owning result.
+        let entry = DeclarationId::new("checked.native.publish");
+        assert!(crate::cleanup_plan::checked_allocation::prepare(&source, &entry).is_err());
+        let owner = crate::cleanup_plan::checked_allocation::prepare_string_result(&source, &entry)
+            .unwrap().receive().unwrap();
+        let emitted = Projection::receive(&owner).unwrap().emit().unwrap();
+        assert!(!emitted.contains("spx_checked_allocation_invoke_v1("));
+        assert!(emitted.contains("spx_checked_string_result_invoke_v1("));
+        let probe = format!("#define ESCAPED_REQUESTS {allocations}u\n#define ESCAPED_TEXT \"{}\"\n#define ESCAPED_LENGTH {}u\n{}", c_string(expected), expected.len(), include_str!("escaped_probe.c"));
+        run_generated(&emitted, &probe);
+    }
+}
+
 fn run_native(source: &str, allocations: usize, result: i64, semantic_failure: bool) {
     let source = crate::parse(source, "checked-native.spx").unwrap();
     let owner = crate::cleanup_plan::checked_allocation::prepare(&source,
@@ -97,11 +123,15 @@ fn run_native(source: &str, allocations: usize, result: i64, semantic_failure: b
         }
     )).count(), 1);
     let emitted = Projection::receive(&owner).unwrap().emit().unwrap();
+    let probe = format!("#define CHECKED_EXPECT_ALLOCATIONS {allocations}u\n#define CHECKED_EXPECT_RESULT INT64_C({result})\n#define CHECKED_EXPECT_SEMANTIC {}\n{}", usize::from(semantic_failure), include_str!("probe.c"));
+    run_generated(&emitted, &probe);
+}
+fn run_generated(emitted: &str, probe: &str) {
     let root = std::env::temp_dir().join(format!("checked-native-allocation-{}-{}",
         std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
     std::fs::create_dir(&root).unwrap();
     let input = root.join("probe.c");
-    std::fs::write(&input, format!("{emitted}\n#define CHECKED_EXPECT_ALLOCATIONS {allocations}u\n#define CHECKED_EXPECT_RESULT INT64_C({result})\n#define CHECKED_EXPECT_SEMANTIC {}\n{}", usize::from(semantic_failure), include_str!("probe.c"))).unwrap();
+    std::fs::write(&input, format!("{emitted}\n{probe}")).unwrap();
     let compiler = std::env::var_os("CLANG").unwrap_or_else(|| "clang".into());
     for optimization in ["-O0", "-O2"] {
         let binary = root.join(format!("probe{optimization}{}", std::env::consts::EXE_SUFFIX));

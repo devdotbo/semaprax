@@ -400,3 +400,20 @@ copy/join/conversion returns the selected allocation status. The worker settles
 committed fields and partial accumulators before taking the independently replayed
 allocation failure edge. The added empty/two-String-field NULL sweep is source-only
 and has not been executed. Collection and escaped SDK receivers remain pending.
+
+A separate private `prepare_string_result` boundary fully resolves and validates
+the original source, then receives all projected attachments before native
+emission. Its generated result lease acquires an explicit host retain that pins
+the allocator provider and this exact module; it binds the initialized context
+and its generation/nonce. Result publication uses the ordinary postcondition and
+non-result cleanup boundary. Handles and scoped borrows authenticate the exact
+lease, generation and epoch. Failed invocation leaves the output handle unchanged;
+close refuses a live result, drop refuses a live borrow, and stale/double drop or
+reuse refuses. Released String headers use their captured release pair.
+
+The new O0/O2 source owner sweeps every real literal/concat request for empty and
+nonempty results through retained-provider close, including foreign lease copies,
+context drift and stale borrow/drop controls. It is authored but unexecuted. This
+is a private generated native receiver, not a published public application/SDK
+profile; dynamic module-loader integration and the interpreter/Core-Wasm and
+collection receiver gates remain open. No all-engine completion is claimed.

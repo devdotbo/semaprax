@@ -61,6 +61,20 @@ pub(crate) fn prepare<'source>(
     source: &'source Program,
     entry: &DeclarationId,
 ) -> Result<Prepared<'source>, Refusal> {
+    prepare_entry(source, entry, false)
+}
+
+/// A separate source-checked result boundary. It grants no escaped lifetime:
+/// an engine must independently receive the projection and retain its allocator
+/// provider/module before this owning result can leave the invocation.
+pub(crate) fn prepare_string_result<'source>(
+    source: &'source Program, entry: &DeclarationId,
+) -> Result<Prepared<'source>, Refusal> {
+    prepare_entry(source, entry, true)
+}
+fn prepare_entry<'source>(
+    source: &'source Program, entry: &DeclarationId, string_result: bool,
+) -> Result<Prepared<'source>, Refusal> {
     let program = hir::resolve(source).map_err(Refusal::Source)?;
     // Keep the complete independent check, including attached canonical plans
     // and final loan replay. A successfully resolved body is not a substitute.
@@ -68,12 +82,17 @@ pub(crate) fn prepare<'source>(
     let function = program.functions.iter().find(|function| function.id == *entry)
         .ok_or_else(|| boundary("entry is not a current monomorphic function"))?;
     if !function.params.is_empty() || !function.effects.is_empty()
-        || !matches!(function.return_type, hir::ResolvedType::I64 | hir::ResolvedType::I32
-            | hir::ResolvedType::U8 | hir::ResolvedType::Usize | hir::ResolvedType::Char
-            | hir::ResolvedType::F32 | hir::ResolvedType::F64 | hir::ResolvedType::Bool)
-        || function.body.ownership != hir::OwnershipMode::Value
+        || if string_result {
+            function.return_type != hir::ResolvedType::String
+                || function.body.ownership != hir::OwnershipMode::Own
+        } else {
+            !matches!(function.return_type, hir::ResolvedType::I64 | hir::ResolvedType::I32
+                | hir::ResolvedType::U8 | hir::ResolvedType::Usize | hir::ResolvedType::Char
+                | hir::ResolvedType::F32 | hir::ResolvedType::F64 | hir::ResolvedType::Bool)
+                || function.body.ownership != hir::OwnershipMode::Value
+        }
     {
-        return Err(boundary("entry requires a parameter-free effect-free Copy scalar command"));
+        return Err(boundary(if string_result { "entry requires a parameter-free effect-free owned String result" } else { "entry requires a parameter-free effect-free Copy scalar command" }));
     }
     Ok(Prepared { source, program, entry: entry.clone() })
 }

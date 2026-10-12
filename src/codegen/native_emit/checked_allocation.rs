@@ -5,6 +5,7 @@ use super::*;
 use crate::cleanup_plan::checked_allocation::Validated;
 use crate::cleanup_plan::{AllocationOperation, StatusLane, StatusProducer};
 mod constructors;
+mod escaped;
 const KERNEL: &str = include_str!("checked_string_allocation/runtime.c");
 const ADAPTER: &str = include_str!("checked_string_allocation/status_adapter.c");
 const RECEIVER: &str = include_str!("checked_allocation/runtime.c");
@@ -70,6 +71,9 @@ impl<'owner, 'source> Projection<'owner, 'source> {
         let metadata = functions.get(&execution).ok_or_else(|| backend_error("checked native entry is not held"))?;
         let function = self.owner.program().functions.iter().find(|function| function.id == *self.owner.entry())
             .ok_or_else(|| backend_error("checked native entry is not current"))?;
+        if function.return_type == ResolvedType::String {
+            return escaped::emit_entry(output, &metadata.symbol);
+        }
         let result = c_value_type(self.owner.program(), resource_abi, &function.return_type)?;
         write!(output, "\nstatic __attribute__((unused)) spx_status_token spx_checked_allocation_invoke_v1(struct spx_context *ctx, void *allocator_state, void *(*allocate)(void *, size_t), void (*release)(void *, void *), {result} *out) {{\n    struct spx_checked_string_adapter_v1 adapter = {{0}};\n    if (ctx == NULL || out == NULL || ctx->checked_allocation != NULL || ctx->status_arena.length != UINT32_C(0) || !spx_checked_string_adapter_init_v1(&adapter, ctx, allocator_state, allocate, release)) spx_runtime_invariant_failure(\"checked allocation invocation binding\");\n    ctx->checked_allocation = &adapter;\n    spx_status_token selected = {}(ctx, out);\n    ctx->checked_allocation = NULL;\n    return selected;\n}}\n", metadata.symbol).expect("String output");
         Ok(())
