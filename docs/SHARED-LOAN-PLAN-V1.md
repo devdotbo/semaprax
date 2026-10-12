@@ -347,3 +347,25 @@ allocation. Roots, directories, queue/liveness and diagnostics still require the
 explicit caller-payer work in OPT-792. Original whole-subtree allocation/debit
 bounds and application corpora remain intact. No public schema, cap, physical
 attribution, application-fit or agent-token claim follows from these sources.
+
+
+### Ordinary factored memo construction ordering
+
+Ordinary factored replay assigns private DAG construction ordinals in one
+`SkeletonWork` invocation. Memo ordering uses ordinal and continuation, while
+every hit and replacement checks the exact retained `Rc` pointer. An ordinal is
+storage metadata, not a source/session certificate or selected-helper lease.
+Detached nodes without an ordinal refuse. Same-content nodes remain distinct.
+
+The ordinary union, sequence, concatenation and prepend constructors reserve
+actual `Rc` node and nested vector backing on the existing replay payer before
+allocation. Their legacy destructor remains unchanged. The memo reserves its
+actual enlarged pointer/end value carrier. Existing work events remain; each
+new ordinary construction ordinal and exact memo pointer check adds one unit.
+This does not claim unchanged low-budget thresholds, a forecast reduction or
+whole replay funding. Owned legacy diagnostic rendering remains its existing
+boundary. `Observations::Ord` still compares prefix pointers; the factored
+receiver does not use the enumerating path sort, whose flat prefixes are absent.
+The complete selected owner preserves exact old/current/removed allocation
+and byte equations in both measurement orders; narrow memo controls also use
+real opposite Rc address ranks with the saved pointer-key result oracle.

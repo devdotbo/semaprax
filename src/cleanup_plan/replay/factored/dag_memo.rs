@@ -5,10 +5,10 @@ use super::*;
 #[cfg(test)]
 pub(super) mod ordinal;
 #[cfg(not(test))]
-pub(super) type Memo = BTreeMap<(usize, usize), usize>;
+pub(super) type Memo = BTreeMap<(usize, usize), (usize, usize)>;
 #[cfg(test)]
 pub(super) enum Memo {
-    Ordinary(BTreeMap<(usize, usize), usize>),
+    Ordinary(BTreeMap<(usize, usize), (usize, usize)>),
     Borrowed(ordinal::Ordinals),
 }
 pub(super) fn new(
@@ -40,14 +40,12 @@ pub(super) fn test_borrowed() -> Memo {
 pub(super) struct Key {
     pointer: usize,
     continuation: usize,
-    #[cfg(test)]
     ordinal: Option<usize>,
 }
 pub(super) fn key(dag: &Rc<ObservationDag>, continuation: usize) -> Key {
     Key {
         pointer: Rc::as_ptr(dag) as usize,
         continuation,
-        #[cfg(test)]
         ordinal: dag.ordinal,
     }
 }
@@ -68,7 +66,7 @@ pub(super) fn get(
     #[cfg(test)]
     {
         match memo {
-            Memo::Ordinary(memo) => Ok(memo.get(&(key.pointer, key.continuation)).copied()),
+            Memo::Ordinary(memo) => ordinary_get(function, memo, key, budget),
             Memo::Borrowed(memo) => {
                 let ordinal = key.ordinal.ok_or_else(|| {
                     replay_error(
@@ -94,8 +92,7 @@ pub(super) fn get(
     }
     #[cfg(not(test))]
     {
-        let _ = (function, budget);
-        Ok(memo.get(&(key.pointer, key.continuation)).copied())
+        ordinary_get(function, memo, key, budget)
     }
 }
 pub(super) fn insert(
@@ -130,13 +127,44 @@ pub(super) fn insert(
     };
     #[cfg(not(test))]
     let ordinary = memo;
-    let key = (key.pointer, key.continuation);
-    if !ordinary.contains_key(&key) {
-        budget
-            .reserve_btree_node::<(usize, usize), usize>(function, "factored DAG identity memo")?;
+    let ordinal = key.ordinal.ok_or_else(|| {
+        replay_error(function, "ordinary DAG memo has no construction ordinal")
+    })?;
+    let numeric = (ordinal, key.continuation);
+    budget.charge(function, 1, "ordinary DAG memo exact insertion pointer")?;
+    if let Some((pointer, _)) = ordinary.get(&numeric) {
+        if *pointer != key.pointer {
+            return Err(replay_error(function, "ordinary DAG memo construction identity collides"));
+        }
+    } else {
+        budget.reserve_btree_node::<(usize, usize), (usize, usize)>(
+            function, "factored DAG identity memo",
+        )?;
     }
     #[cfg(test)]
-    instrumentation::memo(key, ordinary);
-    ordinary.insert(key, end);
+    instrumentation::memo(numeric, ordinary);
+    ordinary.insert(numeric, (key.pointer, end));
     Ok(())
 }
+
+fn ordinary_get(
+    function: &ResolvedFunction,
+    memo: &BTreeMap<(usize, usize), (usize, usize)>,
+    key: &Key,
+    budget: &mut ReplayBudget,
+) -> Result<Option<usize>, Diagnostic> {
+    let ordinal = key.ordinal.ok_or_else(|| {
+        replay_error(function, "ordinary DAG memo has no construction ordinal")
+    })?;
+    let Some((pointer, end)) = memo.get(&(ordinal, key.continuation)) else {
+        return Ok(None);
+    };
+    budget.charge(function, 1, "ordinary DAG memo exact current pointer")?;
+    if *pointer != key.pointer {
+        return Err(replay_error(function, "ordinary DAG memo construction identity collides"));
+    }
+    Ok(Some(*end))
+}
+
+#[cfg(test)]
+mod tests;

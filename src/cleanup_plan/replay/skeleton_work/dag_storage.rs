@@ -13,7 +13,6 @@ pub(super) struct DestructionScratch {
     registered_edges: usize,
     // One checked construction sequence belongs to this shared frontier.
     // Children must share it; a detached/other-session memo hit still checks Rc.
-    #[cfg(test)]
     next_ordinal: usize,
 }
 
@@ -36,12 +35,7 @@ impl SkeletonWork<'_, '_> {
         // Cover construction/registration and the later destruction traversal.
         self.charge(units, "factored observation DAG node and release")?;
         if !self.budget.selected() {
-            self.budget.reserve_bytes(
-                self.function,
-                physical_clone::rc_backing_bytes::<ObservationDag>(),
-                "ordinary observation DAG node",
-            )?;
-            return Ok(Rc::new(ObservationDag::legacy(kind)));
+            return self.ordinary_dag(kind);
         }
         if self.dag_scratch.is_none() {
             self.budget.reserve_bytes(
@@ -52,7 +46,6 @@ impl SkeletonWork<'_, '_> {
             self.dag_scratch = Some(Rc::new(RefCell::new(DestructionScratch {
                 pending: Vec::new(),
                 registered_edges: 0,
-                #[cfg(test)]
                 next_ordinal: 0,
             })));
         }
@@ -99,7 +92,6 @@ impl SkeletonWork<'_, '_> {
             physical_clone::rc_backing_bytes::<ObservationDag>(),
             "factored observation DAG header",
         )?;
-        #[cfg(test)]
         let ordinal = {
             self.charge(1, "factored DAG construction ordinal")?;
             let mut held = scratch.borrow_mut();
@@ -113,7 +105,6 @@ impl SkeletonWork<'_, '_> {
             ordinal
         };
         Ok(Rc::new(ObservationDag {
-            #[cfg(test)]
             ordinal: Some(ordinal),
             kind,
             scratch: Some(scratch),

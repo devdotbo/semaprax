@@ -2,9 +2,11 @@
 //!
 //! Path observations are shared behind `Rc`, so sequencing a prefix with each
 //! suffix copies pointers rather than deep-copying every identity and place.
-//! Every charge and materialization count is unchanged.
+//! Existing work events remain; ordinary construction ordinals and exact memo
+//! pointer checks add explicit work, and new ordinary DAG storage is prepaid.
 use super::*;
 mod dag_storage;
+mod ordinary_dag;
 
 pub(super) struct SkeletonWork<'a, 'b> {
     pub(super) continuations: Option<&'b mut continuation_storage::Storage<'a>>,
@@ -13,6 +15,7 @@ pub(super) struct SkeletonWork<'a, 'b> {
     pub(super) renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings<'a>,
     pub(super) active_copy_region: Option<ExpressionId>,
     dag_scratch: Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
+    next_ordinary_dag: usize,
     held_renewals: Option<&'a crate::cleanup_plan::renewal_profile::RenewalBindings<'a>>,
     ordinary_index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     ordinary_program: Option<&'a dyn crate::cleanup::ReplayContext>,
@@ -44,6 +47,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             continuations: None,
             active_copy_region: None,
             dag_scratch: None,
+            next_ordinary_dag: 0,
             held_renewals: None,
             ordinary_index: index,
             ordinary_program: Some(program),
@@ -90,6 +94,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings::empty(),
             active_copy_region: None,
             dag_scratch: None,
+            next_ordinary_dag: 0,
             held_renewals: Some(held_renewals),
             ordinary_index: None,
             ordinary_program: None,
@@ -248,8 +253,12 @@ impl SkeletonWork<'_, '_> {
                 phase,
             )?;
         }
-        target.extend(observations);
-        Ok(())
+        if self.budget.selected() {
+            target.extend(observations);
+            Ok(())
+        } else {
+            self.ordinary_extend(target, observations)
+        }
     }
 
     pub(super) fn push_observation(
@@ -295,8 +304,12 @@ impl SkeletonWork<'_, '_> {
         }
         self.budget
             .reserve_vec(self.function, &mut observations.items, 1, phase)?;
-        observations.insert_front(observation.into());
-        Ok(())
+        if observations.prefix.is_some() {
+            self.ordinary_prepend(observations, observation.into())
+        } else {
+            observations.insert_front(observation.into());
+            Ok(())
+        }
     }
 }
 
@@ -329,7 +342,6 @@ pub(super) struct Observations {
 /// A set of observation sequences. `Seq` is `prefix` then `items`; `Cat`
 /// concatenates its parts in order; `Alt` is the union of its members.
 pub(super) struct ObservationDag {
-    #[cfg(test)]
     pub(super) ordinal: Option<usize>,
     pub(super) kind: ObservationDagKind,
     scratch: Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
@@ -372,7 +384,6 @@ impl Drop for ObservationDag {
 impl ObservationDag {
     pub(super) fn legacy(kind: ObservationDagKind) -> Self {
         Self {
-            #[cfg(test)]
             ordinal: None,
             kind,
             scratch: None,
@@ -455,6 +466,7 @@ impl Observations {
         )))
     }
 
+    #[cfg(test)]
     fn union(members: Vec<Observations>) -> Self {
         let members = members
             .iter()
@@ -628,7 +640,7 @@ impl SkeletonWork<'_, '_> {
                 path.observations = if self.budget.selected() {
                     self.union_observations(members)?
                 } else {
-                    Observations::union(members)
+                    self.ordinary_union(members)?
                 };
             }
             result.push(path);
@@ -740,7 +752,7 @@ impl SkeletonWork<'_, '_> {
                 path.observations = if self.budget.selected() {
                     self.union_observations(members)?
                 } else {
-                    Observations::union(members)
+                    self.ordinary_union(members)?
                 };
             }
             result.push((path, commits));

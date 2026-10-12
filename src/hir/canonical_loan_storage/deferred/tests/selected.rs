@@ -67,6 +67,12 @@ fn genuine_selected_4096_join_preserves_saved_final_boundary_plan_and_error_prio
                 current.reallocations + removed.reallocations
             );
             assert_eq!(saved.allocated, current.allocated + removed.allocated);
+            assert_eq!(saved_second.allocations, current_first.allocations + removed_second.allocations);
+            assert_eq!(saved_second.reallocations, current_first.reallocations + removed_second.reallocations);
+            assert_eq!(saved_second.allocated, current_first.allocated + removed_second.allocated);
+            assert_eq!(saved, saved_second);
+            assert_eq!(current, current_first);
+            assert_eq!(removed, removed_second);
             for observed in [saved, current, removed, current_first, saved_second, removed_second] {
                 assert!(!observed.invalid);
                 assert_eq!(observed.live, 0);

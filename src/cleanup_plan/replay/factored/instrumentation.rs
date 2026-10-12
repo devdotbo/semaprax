@@ -74,7 +74,7 @@ pub(super) fn visit(dag: &ObservationDag, hit: bool) {
         }] += 1;
     });
 }
-pub(super) fn memo(key: (usize, usize), memo: &BTreeMap<(usize, usize), usize>) {
+pub(super) fn memo(key: (usize, usize), memo: &BTreeMap<(usize, usize), (usize, usize)>) {
     update(|stats| {
         if !memo.contains_key(&key) {
             stats.pairs += 1;
