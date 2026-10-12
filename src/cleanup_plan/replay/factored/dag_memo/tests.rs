@@ -74,24 +74,24 @@ fn one_function_work_dominates_helper_arguments_guards_and_both_contract_phases(
     let source = crate::check(r#"module memo.helpers;
 @id("accepts") fn accepts(value:i64)->bool {value>=0}
 @id("first") fn first(value:i64)->i64
-    requires accepts(value);
-    ensures accepts(result);
+    requires accepts(value)
+    ensures accepts(result)
 {
     let a=if value==0 {1}else{2};
     let b=if value==1 {3}else{4};
     a+b
 }
 @id("second") fn second(value:i64)->i64
-    requires accepts(value);
-    ensures accepts(result);
+    requires accepts(value)
+    ensures accepts(result)
 {
     let a=if first(value)>0 {5}else{6};
     let b=if accepts(value) {7}else{8};
     a+b
 }
 @id("main") fn main()->i64
-    requires accepts(0);
-    ensures accepts(result);
+    requires accepts(0)
+    ensures accepts(result)
 {
     let a=if first(0)>0 {1}else{2};
     let b=if second(a)>0 {3}else{4};
