@@ -105,8 +105,7 @@ fn funded_current_storage_matches_saved_complete_inventory_and_rejects_transplan
         .collect::<Vec<_>>();
     captures.sort_unstable();
     assert_eq!(captures, [0, 1]);
-    let closure_directory =
-        crate::hir::function_closure_directory::caller::prepare(&closures).unwrap();
+    let closure_directory = crate::hir::function_directory::caller::prepare(&closures).unwrap();
     let closure_seed = ConstructorSeed::authenticate(&closures, Some(&closure_directory)).unwrap();
     let closure_storage = caller::prepare(&closure_seed).unwrap();
     same(
@@ -114,8 +113,7 @@ fn funded_current_storage_matches_saved_complete_inventory_and_rejects_transplan
         &old::Inventory::rebuild(&closures).unwrap(),
     );
     let current = caller::validate(&closures, None, Some(&closure_directory));
-    let legacy =
-        owner_renewal::validate_with_closure_directory(&closures, None, Some(&closure_directory));
+    let legacy = owner_renewal::validate_with_directory(&closures, None, Some(&closure_directory));
     assert_eq!(current, legacy);
     current.unwrap();
     legacy.unwrap();
