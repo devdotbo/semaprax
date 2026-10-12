@@ -191,7 +191,7 @@ pub(crate) fn resolved_type_contains_owned_bytes(
     program: &ResolvedProgram,
     ty: &ResolvedType,
 ) -> bool {
-    let mut pending = vec![ty.clone()];
+    let mut pending = vec![ty];
     let mut visited = BTreeSet::new();
     while let Some(ty) = pending.pop() {
         match ty {
@@ -206,26 +206,26 @@ pub(crate) fn resolved_type_contains_owned_bytes(
                 arguments,
             } => {
                 pending.extend(arguments);
-                if !visited.insert(declaration.clone()) {
+                if !visited.insert(declaration) {
                     continue;
                 }
                 let Some(item) = program
                     .types
                     .iter()
-                    .find(|candidate| candidate.id == declaration)
+                    .find(|candidate| candidate.id == *declaration)
                 else {
                     continue;
                 };
                 match &item.kind {
                     ResolvedTypeDeclarationKind::Record { fields }
                     | ResolvedTypeDeclarationKind::Class { fields, .. } => {
-                        pending.extend(fields.iter().map(|field| field.ty.clone()));
+                        pending.extend(fields.iter().map(|field| &field.ty));
                     }
                     ResolvedTypeDeclarationKind::Variant { cases } => pending.extend(
                         cases
                             .iter()
                             .flat_map(|case| &case.fields)
-                            .map(|field| field.ty.clone()),
+                            .map(|field| &field.ty),
                     ),
                     ResolvedTypeDeclarationKind::Resource { .. } => {}
                 }
@@ -326,3 +326,6 @@ pub(super) fn requires_record_pattern(program: &ResolvedProgram, ty: &ResolvedTy
         && matches!(ty, ResolvedType::Nominal { declaration, .. }
             if program.declarations.declaration(declaration).is_some_and(|item| item.kind == DeclarationKind::Record))
 }
+
+#[cfg(test)]
+mod owned_bytes_tests;

@@ -150,6 +150,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         ),
         include_str!("../src/hir/validation/proof_return.rs"),
         include_str!("../src/hir/validation/type_profiles.rs"),
+        include_str!("../src/hir/validation/type_profiles/owned_bytes_tests.rs"),
+        include_str!("../src/hir/validation/type_profiles/owned_bytes_tests/old.rs"),
         include_str!("../src/hir/validation/unsafe_scan.rs"),
         include_str!("../src/hir/validation/vec_intrinsic.rs"),
         include_str!("../src/hir/validation/native_borrow.rs"),
