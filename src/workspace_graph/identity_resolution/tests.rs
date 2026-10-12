@@ -3,6 +3,7 @@ use crate::ast::program_source::SyntheticProgramView;
 use crate::bounded_output::{with_limit_usage, with_limit_usage_refusal};
 use crate::test_allocation_observer::{current_metrics, measure};
 use std::mem::size_of;
+mod legacy_receiver;
 
 const SOURCE: &str = "module identity.workspace; @id(\"helper\") fn helper(value:i64)->i64 {value+1} @id(\"main\") fn main()->i64 {helper(1)}";
 
@@ -53,10 +54,14 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     let program = crate::check(SOURCE, "identity-workspace.spx").unwrap();
     let input = Input::Owned(program.clone());
     let borrowed = Input::Borrowed(SyntheticProgramView::new(&program, Vec::new()).unwrap());
-    let oracle = crate::hir::resolve_with_function_reuse(&program, None, None, None, None).unwrap();
-    let expected_reused = oracle.1.reused();
-    let expected_static = oracle.1.static_text();
-    let expected_costs = oracle.1.costs();
+    let (oracle, legacy_refused, _) =
+        with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+            legacy_receiver::resolve_module(None, &program.path, &input, None).unwrap()
+        });
+    assert!(!legacy_refused);
+    let expected_reused = oracle.2;
+    let expected_static = oracle.3;
+    let expected_costs = &oracle.1;
     with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
         resolve_module(None, &program.path, &input, None).unwrap()
     });
@@ -69,7 +74,7 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
                 match &result {
                     Ok(parts) => {
                         assert_eq!(parts.0, oracle.0);
-                        assert_eq!(parts.1, expected_costs);
+                        assert_eq!(&parts.1, expected_costs);
                         assert_eq!(parts.2, expected_reused);
                         assert_eq!(parts.3, expected_static);
                         assert!(!crate::bounded_output::active_refused());
@@ -116,10 +121,14 @@ fn complete_owned_and_borrowed_actual_payment_exact_short_and_sticky_receivers()
     let program = crate::check(SOURCE, "identity-workspace.spx").unwrap();
     let owned = Input::Owned(program.clone());
     let borrowed = Input::Borrowed(SyntheticProgramView::new(&program, Vec::new()).unwrap());
-    let oracle = crate::hir::resolve_with_function_reuse(&program, None, None, None, None).unwrap();
-    let expected_reused = oracle.1.reused();
-    let expected_static = oracle.1.static_text();
-    let expected_costs = oracle.1.costs();
+    let (oracle, legacy_refused, _) =
+        with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+            legacy_receiver::resolve_module(None, &program.path, &owned, None).unwrap()
+        });
+    assert!(!legacy_refused);
+    let expected_reused = oracle.2;
+    let expected_static = oracle.3;
+    let expected_costs = &oracle.1;
     with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
         resolve_module(None, &program.path, &owned, None).unwrap()
     });
@@ -149,7 +158,7 @@ fn complete_owned_and_borrowed_actual_payment_exact_short_and_sticky_receivers()
                     } else {
                         let parts = result.as_ref().unwrap();
                         assert_eq!(parts.0, oracle.0);
-                        assert_eq!(parts.1, expected_costs);
+                        assert_eq!(&parts.1, expected_costs);
                         assert_eq!(parts.2, expected_reused);
                         assert_eq!(parts.3, expected_static);
                         assert!(!crate::bounded_output::active_refused());
@@ -540,3 +549,30 @@ fn actual_selective_import_receiver_matches_fresh_owned_for_vec_and_box() {
 
 #[path = "tests/refusal_reference.rs"]
 mod refusal_reference;
+
+#[test]
+fn direct_paid_inner_receivers_preserve_complete_independent_legacy_function_work() {
+    let program = crate::check(SOURCE, "identity-workspace.spx").unwrap();
+    let owned = Input::Owned(program.clone());
+    let borrowed = Input::Borrowed(SyntheticProgramView::new(&program, Vec::new()).unwrap());
+    let oracle = crate::hir::resolve_with_function_reuse(&program, None, None, None, None).unwrap();
+    let expected_reused = oracle.1.reused();
+    let expected_static = oracle.1.static_text();
+    let expected_costs = oracle.1.costs();
+    for input in [&owned, &borrowed] {
+        let (actual, failed, _) =
+            with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+                let mut owner = IdentityReservation::acquire().unwrap();
+                crate::vec_ops::with_authenticated_linked_source(|| {
+                    crate::box_ops::with_authenticated_linked_source(|| {
+                        input.resolve_paid(None, &mut owner).unwrap()
+                    })
+                })
+            });
+        assert!(!failed);
+        assert_eq!(actual.0, oracle.0);
+        assert_eq!(actual.1.reused(), expected_reused);
+        assert_eq!(actual.1.static_text(), expected_static);
+        assert_eq!(actual.1.costs(), expected_costs);
+    }
+}
