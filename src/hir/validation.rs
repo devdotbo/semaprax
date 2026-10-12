@@ -1277,12 +1277,12 @@ impl<'a> HirValidator<'a> {
         self.finish_static_pool()
     }
 
-    fn validate_template_expr_with_context(
+    fn validate_template_expr_with_context<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        expression: &ResolvedExpr,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        expression: &'value ResolvedExpr,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
         aggregate_context: (bool, bool),
     ) -> Result<(), Diagnostic> {
@@ -1341,7 +1341,7 @@ impl<'a> HirValidator<'a> {
                 self.finish_static_text(expression, value)?
             }
             ResolvedExprKind::Place(place) => {
-                if generic_template::projected_place_type(self.program, place, values)?
+                if *generic_template::projected_place_type(self.program, place, values)?
                     != expression.ty
                 {
                     return Err(hir_error(
@@ -1472,7 +1472,7 @@ impl<'a> HirValidator<'a> {
                                 self.validate_function_template_type(template, &binding.ty)?;
                             }
                             self.insert_value(&binding.id)?;
-                            block_values.insert(binding.id.clone(), binding.ty.clone());
+                            block_values.insert(binding.id.clone(), &binding.ty);
                         }
                         ResolvedStatement::CopyDiscard { .. } => {
                             return Err(hir_error(

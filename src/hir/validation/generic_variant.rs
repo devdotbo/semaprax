@@ -1,12 +1,12 @@
 //! Exact case/field/binding validation for authored generic variant templates.
 use super::*;
 impl HirValidator<'_> {
-    pub(super) fn validate_template_authored_variant(
+    pub(super) fn validate_template_authored_variant<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        expression: &ResolvedExpr,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        expression: &'value ResolvedExpr,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         if !super::super::generic_variant::profile(self.program, template) {
@@ -186,7 +186,7 @@ impl HirValidator<'_> {
                             ));
                         }
                         self.insert_value(&field.binding.id)?;
-                        arm_values.insert(field.binding.id.clone(), ty);
+                        arm_values.insert(field.binding.id.clone(), &field.binding.ty);
                     }
                     if arm.value.ty != expression.ty
                         || arm.value.ownership != expression.ownership

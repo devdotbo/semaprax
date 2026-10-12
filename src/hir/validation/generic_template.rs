@@ -1,17 +1,26 @@
 //! Validation-only rules for bounded generic templates.
 
 use super::*;
+pub(super) mod values;
 
 impl HirValidator<'_> {
-    pub(super) fn validate_template_expressions(
+    pub(super) fn validate_template_expressions<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
     ) -> Result<(), Diagnostic> {
-        let mut values = BTreeMap::new();
+        self.validate_template_expressions_with_values(template, execution, values::Values::new())
+    }
+
+    fn validate_template_expressions_with_values<'value>(
+        &mut self,
+        template: &'value ResolvedFunctionTemplate,
+        execution: &FunctionExecutionId,
+        mut values: values::Values<'value>,
+    ) -> Result<(), Diagnostic> {
         for parameter in &template.params {
             self.insert_value(&parameter.id)?;
-            values.insert(parameter.id.clone(), parameter.ty.clone());
+            values.insert(parameter.id.clone(), &parameter.ty);
         }
         for (index, expression) in template.requires.iter().enumerate() {
             let mut contract_values = values.clone();
@@ -32,7 +41,7 @@ impl HirValidator<'_> {
             (false, true),
         )?;
         self.insert_value(&template.result_id)?;
-        values.insert(template.result_id.clone(), template.return_type.clone());
+        values.insert(template.result_id.clone(), &template.return_type);
         for (index, expression) in template.ensures.iter().enumerate() {
             let mut contract_values = values.clone();
             self.validate_template_expr(
@@ -289,14 +298,13 @@ impl HirValidator<'_> {
     }
 }
 
-pub(super) fn projected_place_type(
+pub(super) fn projected_place_type<'scope>(
     program: &ResolvedProgram,
     place: &Place,
-    values: &BTreeMap<ValueId, ResolvedType>,
-) -> Result<ResolvedType, Diagnostic> {
+    values: &'scope values::Values<'_>,
+) -> Result<std::borrow::Cow<'scope, ResolvedType>, Diagnostic> {
     let mut ty = values
-        .get(&place.root)
-        .cloned()
+        .root(&place.root)
         .ok_or_else(|| hir_error("generic template place root is out of scope"))?;
     for projection in &place.projections {
         let PlaceProjection::Field(field) = projection else {
@@ -307,7 +315,7 @@ pub(super) fn projected_place_type(
         let ResolvedType::Nominal {
             declaration,
             arguments,
-        } = &ty
+        } = ty.as_ref()
         else {
             return Err(hir_error("generic template projects a non-record place"));
         };
@@ -317,7 +325,7 @@ pub(super) fn projected_place_type(
             .and_then(|fields| fields.iter().find(|candidate| candidate.id == *field))
             .map(|candidate| &candidate.ty)
             .ok_or_else(|| hir_error("generic template projects an unknown record field"))?;
-        ty = substitute_type(field_ty, declaration, arguments)?;
+        ty = std::borrow::Cow::Owned(substitute_type(field_ty, declaration, arguments)?);
     }
     Ok(ty)
 }
@@ -327,9 +335,9 @@ pub(super) fn validate_template_place(
     _template: &ResolvedFunctionTemplate,
     expression: &ResolvedExpr,
     place: &Place,
-    values: &BTreeMap<ValueId, ResolvedType>,
+    values: &values::Values<'_>,
 ) -> Result<(), Diagnostic> {
-    if projected_place_type(program, place, values)? != expression.ty {
+    if *projected_place_type(program, place, values)? != expression.ty {
         return Err(hir_error("generic projected place type differs"));
     }
     Ok(())
@@ -671,12 +679,12 @@ pub(super) fn substitutions(
 }
 
 impl HirValidator<'_> {
-    pub(super) fn validate_template_result_expression(
+    pub(super) fn validate_template_result_expression<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        expression: &ResolvedExpr,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        expression: &'value ResolvedExpr,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         if !super::super::generic_result::profile(template) || !path.starts_with("body") {
@@ -768,12 +776,12 @@ impl HirValidator<'_> {
         generic_template::validate_type(self.program, template, ty)
     }
 
-    pub(super) fn validate_template_expr(
+    pub(super) fn validate_template_expr<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        expression: &ResolvedExpr,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        expression: &'value ResolvedExpr,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         self.validate_template_expr_with_context(
@@ -788,12 +796,12 @@ impl HirValidator<'_> {
 }
 
 impl HirValidator<'_> {
-    pub(super) fn validate_template_callable(
+    pub(super) fn validate_template_callable<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        expression: &ResolvedExpr,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        expression: &'value ResolvedExpr,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         if !super::super::generic_collection::profile(template) {
@@ -858,12 +866,12 @@ impl HirValidator<'_> {
 }
 
 impl HirValidator<'_> {
-    pub(super) fn validate_template_mutation(
+    pub(super) fn validate_template_mutation<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        statement: &ResolvedStatement,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        statement: &'value ResolvedStatement,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         if !super::super::generic_collection::profile(template) {

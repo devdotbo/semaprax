@@ -483,7 +483,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/hir/validation/branch_merge.rs"),
             include_str!("../../../../../src/hir/validation/vec_intrinsic.rs"),
             include_str!("../../../../../src/hir/validation/borrowed_str.rs"),
-            include_str!("../../../../../src/hir/validation/generic_template.rs"),
+            concat!(include_str!("../../../../../src/hir/validation/generic_template.rs"), include_str!("../../../../../src/hir/validation/generic_template/values.rs"), include_str!("../../../../../src/hir/validation/generic_template/values/tests.rs")),
             include_str!("../../../../../src/hir/validation/host_command.rs"),
             include_str!("../../../../../src/hir/validation/owned_buffer.rs"),
             include_str!("../../../../../src/hir/validation/owned_result_try.rs"),

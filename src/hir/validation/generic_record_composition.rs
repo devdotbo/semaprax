@@ -27,12 +27,12 @@ fn fields(
 }
 
 impl HirValidator<'_> {
-    pub(super) fn validate_composed_template_record(
+    pub(super) fn validate_composed_template_record<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        expression: &ResolvedExpr,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        expression: &'value ResolvedExpr,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         match &expression.kind {
@@ -180,16 +180,16 @@ impl HirValidator<'_> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn validate_composed_record_pattern(
+    fn validate_composed_record_pattern<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
         expected: &ResolvedType,
         record: &DeclarationId,
         instance: &ResolvedType,
-        pattern: &[ResolvedRecordMatchPatternField],
+        pattern: &'value [ResolvedRecordMatchPatternField],
         mode: ResolvedMatchMode,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         if expected != instance
@@ -231,7 +231,7 @@ impl HirValidator<'_> {
                         ));
                     }
                     self.insert_value(&binding.id)?;
-                    values.insert(binding.id.clone(), ty);
+                    values.insert(binding.id.clone(), &binding.ty);
                 }
                 ResolvedRecordMatchFieldPattern::Wildcard => {}
                 ResolvedRecordMatchFieldPattern::Record {
