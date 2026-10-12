@@ -17,11 +17,11 @@ use crate::hir::{
 
 use super::*;
 
-fn fixture(loan_count: usize) -> (ResolvedProgram, usize) {
+pub(super) fn fixture(loan_count: usize) -> (ResolvedProgram, usize) {
     fixture_with_uses(loan_count, false)
 }
 
-fn fixture_with_uses(loan_count: usize, retain_last_uses: bool) -> (ResolvedProgram, usize) {
+pub(super) fn fixture_with_uses(loan_count: usize, retain_last_uses: bool) -> (ResolvedProgram, usize) {
     let mut source = String::from(
         "module test.loan_plan_boundaries;\n\
          @id(\"loan.boundary\")\n\
@@ -72,7 +72,7 @@ fn padding_statement(
     }
 }
 
-fn add_live_padding(
+pub(super) fn add_live_padding(
     function: &mut ResolvedFunction,
     loan_count: usize,
     prefix: &str,
@@ -170,7 +170,7 @@ fn three_arm_match_root(function: &ResolvedFunction, path: &str) -> ResolvedExpr
     }
 }
 
-fn add_padding(
+pub(super) fn add_padding(
     function: &mut ResolvedFunction,
     prefix: &str,
     leaves: usize,
@@ -191,7 +191,7 @@ fn add_padding(
     }
 }
 
-fn cfg_counts(function: &ResolvedFunction) -> (usize, usize) {
+pub(super) fn cfg_counts(function: &ResolvedFunction) -> (usize, usize) {
     let mut work = WorkCounter::new(usize::MAX);
     let cfg = build_cfg(function, &mut work).expect("boundary fixture CFG builds");
     (cfg.points.len(), cfg.edges.len())
@@ -210,11 +210,14 @@ fn install_plan(
 }
 
 fn uncached_live_nodes(cfg: &Cfg<'_>, start: u16, seeds: &BTreeSet<u16>) -> BTreeSet<u16> {
+    // The saved nested tables, rebuilt from the sorted edges, keep this
+    // reference independent of the flat adjacency under test.
+    let legacy = legacy_adjacency::LegacyAdjacency::from_edges(cfg.points.len(), &cfg.edges);
     let mut reachable = BTreeSet::new();
     let mut pending = vec![start];
     while let Some(node) = pending.pop() {
         if reachable.insert(node) {
-            pending.extend(cfg.successors[node as usize].iter().rev().copied());
+            pending.extend(legacy.successors[node as usize].iter().rev().copied());
         }
     }
     let mut live = BTreeSet::new();
@@ -228,7 +231,7 @@ fn uncached_live_nodes(cfg: &Cfg<'_>, start: u16, seeds: &BTreeSet<u16>) -> BTre
         if !reachable.contains(&node) || !live.insert(node) || node == start {
             continue;
         }
-        pending.extend(cfg.predecessors[node as usize].iter().rev().copied());
+        pending.extend(legacy.predecessors[node as usize].iter().rev().copied());
     }
     live
 }
@@ -319,18 +322,10 @@ fn batched_forward_work_is_shared_and_cycles_preserve_start_barriers() {
     let mut cfg = build_cfg(function, &mut WorkCounter::new(usize::MAX)).unwrap();
     // A linear analysis-only CFG with 256 distinct starts exposes the shape
     // that an eight-start memo cannot share. This does not alter admission.
-    for node in 0..cfg.points.len() {
-        cfg.successors[node] = if node + 1 < cfg.points.len() {
-            vec![(node + 1) as u16]
-        } else {
-            vec![]
-        };
-        cfg.predecessors[node] = if node > 0 {
-            vec![(node - 1) as u16]
-        } else {
-            vec![]
-        };
-    }
+    cfg.edges = (0..cfg.points.len() - 1)
+        .map(|node| (node as u16, (node + 1) as u16))
+        .collect();
+    cfg.adjacency = adjacency::Adjacency::build(cfg.points.len(), &cfg.edges).unwrap();
     let end = (cfg.points.len() - 1) as u16;
     let starts = (0..MAX_LOANS_PER_FUNCTION_V1 as u16).collect::<Vec<_>>();
     let mut batch_work = WorkCounter::new(usize::MAX);
@@ -355,8 +350,9 @@ fn batched_forward_work_is_shared_and_cycles_preserve_start_barriers() {
     );
     // A back edge challenges convergence. Reverse liveness must still stop at
     // each loan's own start even though all starts can now reach every point.
-    cfg.successors[end as usize].push(0);
-    cfg.predecessors[0].push(end);
+    // `end` is the largest source, so the back edge sorts last.
+    cfg.edges.push((end, 0));
+    cfg.adjacency = adjacency::Adjacency::build(cfg.points.len(), &cfg.edges).unwrap();
     let reachable =
         work::Reachability::build(&cfg, starts.iter().copied(), &mut batch_work).unwrap();
     for loan in [0, 63, 64, 127, 128, 255] {
@@ -472,12 +468,15 @@ fn exact_4096_cfg_edges_rebuild_and_edge_4097_fails_before_point_capacity() {
     assert_eq!(error.message, "function exceeds 4,096 loan CFG edges");
 }
 
-#[test]
-fn exact_million_work_build_replays_and_the_first_extra_unit_is_fail_closed() {
-    // Each byte_len last use is itself a synchronous borrowed-call loan. Pair
-    // 128 own-root views with their 128 real last-use calls to exercise the
-    // exact 256-loan boundary without exceeding it before work measurement.
-    const WORK_ROOT_LOANS: usize = MAX_LOANS_PER_FUNCTION_V1 / 2;
+// Each byte_len last use is itself a synchronous borrowed-call loan. Pair
+// 128 own-root views with their 128 real last-use calls to exercise the
+// exact 256-loan boundary without exceeding it before work measurement.
+pub(super) const WORK_ROOT_LOANS: usize = MAX_LOANS_PER_FUNCTION_V1 / 2;
+
+/// The checked-work boundary source: the program, the boundary function's
+/// index, and the padded function that consumes exactly 1,000,000 work units.
+/// Shared by the whole-planner oracle so both read one measured fixture.
+pub(super) fn exact_million_work_boundary() -> (ResolvedProgram, usize, ResolvedFunction) {
     let (program, index) = fixture_with_uses(WORK_ROOT_LOANS, true);
     let base = program.functions[index].clone();
     let (base_result, base_work) = build_cfg_plan_with_work_limit(&program, &base, usize::MAX);
@@ -564,7 +563,12 @@ fn exact_million_work_build_replays_and_the_first_extra_unit_is_fail_closed() {
         matches,
     );
     add_padding(&mut exact, "work.tuning.boundary", tuning_leaves, 0, 0);
+    (program, index, exact)
+}
 
+#[test]
+fn exact_million_work_build_replays_and_the_first_extra_unit_is_fail_closed() {
+    let (program, index, mut exact) = exact_million_work_boundary();
     let (plan, used) = build_cfg_plan_with_work_limit(&program, &exact, MAX_LOAN_PLAN_WORK_V1);
     let plan = plan.expect("exactly 1,000,000 work units are admitted");
     assert_eq!(used, MAX_LOAN_PLAN_WORK_V1);
@@ -598,4 +602,211 @@ fn exact_million_work_build_replays_and_the_first_extra_unit_is_fail_closed() {
         .help
         .unwrap()
         .contains(&format!("function @id({:?})", exact.id.as_str())));
+}
+
+fn oracle_functions() -> Vec<ResolvedFunction> {
+    let (program, index) = fixture_with_uses(3, true);
+    let base = program.functions[index].clone();
+    let mut padded = base.clone();
+    add_live_padding(&mut padded, 3, "oracle.live", 2, 2, 2);
+    add_padding(&mut padded, "oracle.disconnected", 1, 1, 1);
+    let mut functions = vec![base, padded];
+    let source = include_str!("../../tests/language/while_loops/record_borrow_renewal.spx");
+    let ast = crate::check(source, Path::new("oracle-renewal.spx")).unwrap();
+    let renewal = crate::hir::resolve(&ast).unwrap();
+    functions.extend(renewal.functions.iter().cloned());
+    functions
+}
+
+fn forged_cfg(points: usize, edges: Vec<(u16, u16)>) -> Cfg<'static> {
+    let adjacency = adjacency::Adjacency::build(points, &edges).unwrap();
+    Cfg {
+        points: Vec::new(),
+        nodes: BTreeMap::new(),
+        expressions: Vec::new(),
+        edges,
+        adjacency,
+    }
+}
+
+fn assert_adjacency_matches_original(cfg: &Cfg<'_>, points: usize) {
+    let legacy = legacy_adjacency::LegacyAdjacency::from_edges(points, &cfg.edges);
+    for node in 0..points {
+        assert_eq!(cfg.successors(node).collect::<Vec<_>>(), legacy.successors[node]);
+        assert_eq!(
+            cfg.successors(node).rev().collect::<Vec<_>>(),
+            legacy.successors[node]
+                .iter()
+                .rev()
+                .copied()
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            cfg.successor_edges(node).collect::<Vec<_>>(),
+            legacy.successor_edges[node]
+        );
+        assert_eq!(cfg.predecessors(node), legacy.predecessors[node].as_slice());
+    }
+}
+
+#[test]
+fn flat_adjacency_and_borrowed_children_match_the_saved_original_at_every_point() {
+    let mut checked = 0;
+    for function in oracle_functions() {
+        // Every oracle source is real checked or padded HIR and is an intended
+        // positive: a CFG refusal must fail the test, not skip the function.
+        let cfg = build_cfg(&function, &mut WorkCounter::new(usize::MAX)).unwrap();
+        assert_adjacency_matches_original(&cfg, cfg.points.len());
+        for expression in &cfg.expressions {
+            let borrowed = children::evaluation_children(expression).collect::<Vec<_>>();
+            let original = legacy_adjacency::evaluation_children(expression);
+            assert_eq!(borrowed.len(), original.len());
+            assert!(borrowed
+                .iter()
+                .zip(&original)
+                .all(|(left, right)| std::ptr::eq(*left, *right)));
+        }
+        checked += 1;
+    }
+    assert!(checked >= 3, "oracle must cover real and padded CFGs");
+}
+
+#[test]
+fn flat_adjacency_preserves_order_and_multiplicity_on_forged_edge_lists() {
+    let mut state = 0x2545_f491_u32;
+    let mut next = move |bound: usize| {
+        state ^= state << 13;
+        state ^= state >> 17;
+        state ^= state << 5;
+        state as usize % bound
+    };
+    for points in [1_usize, 2, 3, 8, 65] {
+        for density in [0_usize, 1, 4, 40, 200] {
+            // Duplicates and self-loops are retained: the oracle pushes one
+            // entry per edge, so the flat tables must do the same.
+            let mut edges = (0..density)
+                .map(|_| (next(points) as u16, next(points) as u16))
+                .collect::<Vec<_>>();
+            edges.sort();
+            let cfg = forged_cfg(points, edges);
+            assert_adjacency_matches_original(&cfg, points);
+        }
+    }
+    let hub = 64_u16;
+    let mut edges = (1..=hub).map(|node| (0, node)).collect::<Vec<_>>();
+    edges.extend((0..hub).map(|node| (node, hub)));
+    edges.sort();
+    assert_adjacency_matches_original(&forged_cfg(65, edges), 65);
+    assert_adjacency_matches_original(&forged_cfg(65, Vec::new()), 65);
+}
+
+#[test]
+fn flat_adjacency_refuses_an_edge_count_beyond_its_offsets_with_the_edge_cap_diagnostic() {
+    let cfg = forged_cfg(1, vec![(0, 0); u16::MAX as usize]);
+    assert_eq!(cfg.successor_edges(0), 0..u16::MAX);
+    assert_eq!(cfg.predecessors(0).len(), u16::MAX as usize);
+    let error = adjacency::Adjacency::build(1, &vec![(0, 0); u16::MAX as usize + 1])
+        .err()
+        .unwrap();
+    assert_eq!(error.code, "SPX-H006");
+    assert_eq!(error.message, "function exceeds 4,096 loan CFG edges");
+}
+
+type OraclePipeline = (Result<(Vec<BTreeSet<u16>>, work::EdgeLiveness), String>, usize);
+
+fn flat_pipeline(
+    cfg: &Cfg<'_>,
+    starts: &[u16],
+    seeds: &BTreeSet<u16>,
+    limit: usize,
+) -> OraclePipeline {
+    let mut work = WorkCounter::new(limit);
+    let result = (|| -> Result<_, Diagnostic> {
+        let reachable = work::Reachability::build(cfg, starts.iter().copied(), &mut work)?;
+        let mut live = Vec::new();
+        for (loan, start) in starts.iter().copied().enumerate() {
+            let id = LoanId(loan as u16);
+            live.push(work::live_nodes(cfg, id, start, seeds, &reachable, &mut work)?);
+        }
+        let edges = work::edge_liveness(cfg, &live, &mut work)?;
+        Ok((live, edges))
+    })()
+    .map_err(|error: Diagnostic| format!("{}:{}", error.code, error.message));
+    (result, work.used)
+}
+
+fn legacy_pipeline(
+    cfg: &Cfg<'_>,
+    starts: &[u16],
+    seeds: &BTreeSet<u16>,
+    limit: usize,
+) -> OraclePipeline {
+    let legacy = legacy_adjacency::LegacyAdjacency::from_edges(cfg.points.len(), &cfg.edges);
+    let mut work = WorkCounter::new(limit);
+    let result = (|| -> Result<_, Diagnostic> {
+        let reachable =
+            legacy_adjacency::reachability(&legacy, cfg.points.len(), starts, &mut work)?;
+        let mut live = Vec::new();
+        for (loan, start) in starts.iter().copied().enumerate() {
+            live.push(legacy_adjacency::live_nodes(
+                &legacy, &reachable, loan, start, seeds, &mut work,
+            )?);
+        }
+        let edges = legacy_adjacency::edge_liveness(&legacy, &cfg.edges, &live, &mut work)?;
+        Ok((live, edges))
+    })()
+    .map_err(|error: Diagnostic| format!("{}:{}", error.code, error.message));
+    (result, work.used)
+}
+
+#[test]
+fn flat_traversal_results_work_and_first_work_error_match_the_saved_original() {
+    let mut checked = 0;
+    for function in oracle_functions() {
+        let cfg = build_cfg(&function, &mut WorkCounter::new(usize::MAX)).unwrap();
+        let points = cfg.points.len();
+        let starts = (0..points)
+            .step_by(3)
+            .take(130)
+            .map(|point| point as u16)
+            .collect::<Vec<_>>();
+        let seeds = BTreeSet::from([(points - 1) as u16, (points / 2) as u16]);
+        let (flat, total) = flat_pipeline(&cfg, &starts, &seeds, usize::MAX);
+        let (original, original_total) = legacy_pipeline(&cfg, &starts, &seeds, usize::MAX);
+        assert_eq!(flat.as_ref().unwrap(), original.as_ref().unwrap());
+        assert_eq!(total, original_total);
+        // Exact limit succeeds; one short, and a mid-run limit, fail at the
+        // same charged unit with the same diagnostic in both pipelines.
+        for limit in [total, total - 1, total / 2, 0] {
+            assert_eq!(
+                flat_pipeline(&cfg, &starts, &seeds, limit),
+                legacy_pipeline(&cfg, &starts, &seeds, limit),
+                "limit {limit}"
+            );
+        }
+        let reachable = work::Reachability::build(
+            &cfg,
+            starts.iter().copied(),
+            &mut WorkCounter::new(usize::MAX),
+        )
+        .unwrap();
+        let legacy = legacy_adjacency::LegacyAdjacency::from_edges(points, &cfg.edges);
+        let original = legacy_adjacency::reachability(
+            &legacy,
+            points,
+            &starts,
+            &mut WorkCounter::new(usize::MAX),
+        )
+        .unwrap();
+        for loan in 0..starts.len() {
+            for node in 0..points {
+                assert_eq!(
+                    reachable.contains(LoanId(loan as u16), node as u16),
+                    original.contains(loan, node)
+                );
+            }
+        }
+        checked += 1;
+    }
+    assert!(checked >= 3, "oracle must cover real and padded CFGs");
 }

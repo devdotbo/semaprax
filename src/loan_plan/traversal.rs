@@ -34,7 +34,7 @@ pub(crate) fn inspect<'a>(
     )
 }
 
-fn inspect_counted<'a>(
+pub(super) fn inspect_counted<'a>(
     program: &dyn crate::cleanup::ReplayContext,
     region: &'a ResolvedExpr,
     work: &mut WorkCounter,

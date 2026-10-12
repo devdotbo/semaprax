@@ -27,12 +27,19 @@ pub enum LoanPointPhase {
     After,
 }
 
+mod adjacency;
 #[cfg(test)]
 mod boundary_tests;
 mod call_arguments;
+mod children;
+#[cfg(test)]
+mod children_tests;
 mod compact_ids;
 use call_arguments::borrowed_call_arguments;
+use children::evaluation_children;
 mod guidance;
+#[cfg(test)]
+mod legacy_adjacency;
 mod lexical_exit;
 mod native_view;
 mod origin;
@@ -40,9 +47,13 @@ pub(crate) mod owned_capacity;
 mod provisional_result;
 mod record_vec_borrow;
 #[cfg(test)]
+mod saved_planner;
+#[cfg(test)]
 mod shared_identity_tests;
 pub(crate) mod traversal;
 mod work;
+#[cfg(test)]
+mod whole_oracle_tests;
 
 pub(crate) use work::{REACHABILITY_BYTES_PER_EXPRESSION, REACHABILITY_FIXED_BYTES};
 
@@ -176,9 +187,7 @@ struct Cfg<'a> {
     nodes: BTreeMap<LoanProgramPoint, u16>,
     expressions: Vec<&'a ResolvedExpr>,
     edges: Vec<(u16, u16)>,
-    successors: Vec<Vec<u16>>,
-    successor_edges: Vec<Vec<u16>>,
-    predecessors: Vec<Vec<u16>>,
+    adjacency: adjacency::Adjacency,
 }
 
 fn has_own_root_candidate(
@@ -679,7 +688,7 @@ fn build_cfg_plan_counted(
             for (index, point) in cfg.points.iter().enumerate() {
                 charge(work)?;
                 if point.phase == LoanPointPhase::After
-                    && cfg.successors[index].is_empty()
+                    && cfg.successor_edges(index).is_empty()
                     && terminal_roots.contains(&(index as u16))
                 {
                     nodes.remove(&(index as u16));
@@ -955,19 +964,18 @@ fn build_cfg<'a>(
                 edge_set.insert((operand_after, root_after(expression)?));
             }
             _ => {
-                let children = evaluation_children(expression);
-                if let Some(first) = children.first() {
+                let mut children = evaluation_children(expression);
+                if let Some(first) = children.next() {
                     edge_set.insert((before, node(first, LoanPointPhase::Before)?));
-                    for pair in children.windows(2) {
+                    let mut last = first;
+                    for next in children {
                         edge_set.insert((
-                            node(pair[0], LoanPointPhase::After)?,
-                            node(pair[1], LoanPointPhase::Before)?,
+                            node(last, LoanPointPhase::After)?,
+                            node(next, LoanPointPhase::Before)?,
                         ));
+                        last = next;
                     }
-                    edge_set.insert((
-                        node(children.last().expect("nonempty"), LoanPointPhase::After)?,
-                        after,
-                    ));
+                    edge_set.insert((node(last, LoanPointPhase::After)?, after));
                 } else {
                     edge_set.insert((before, after));
                 }
@@ -978,22 +986,13 @@ fn build_cfg<'a>(
     if edges.len() > MAX_LOAN_EDGES_V1 {
         return Err(error("function exceeds 4,096 loan CFG edges"));
     }
-    let mut successors = vec![Vec::new(); points.len()];
-    let mut successor_edges = vec![Vec::new(); points.len()];
-    let mut predecessors = vec![Vec::new(); points.len()];
-    for (edge, (from, to)) in edges.iter().enumerate() {
-        successors[*from as usize].push(*to);
-        successor_edges[*from as usize].push(edge as u16);
-        predecessors[*to as usize].push(*from);
-    }
+    let adjacency = adjacency::Adjacency::build(points.len(), &edges)?;
     Ok(Cfg {
         points,
         nodes,
         expressions,
         edges,
-        successors,
-        successor_edges,
-        predecessors,
+        adjacency,
     })
 }
 
@@ -1017,60 +1016,6 @@ fn statement_exit(statement: &ResolvedStatement) -> &ResolvedExpr {
         ResolvedStatement::While { body, .. } | ResolvedStatement::LexicalWhile { body, .. } => {
             body
         }
-    }
-}
-
-fn evaluation_children(expression: &ResolvedExpr) -> Vec<&ResolvedExpr> {
-    match &expression.kind {
-        ResolvedExprKind::LexicalExit { value, .. } => value.as_deref().into_iter().collect(),
-        ResolvedExprKind::Closure { captures, .. } => {
-            captures.iter().map(|capture| &capture.value).collect()
-        }
-        ResolvedExprKind::FunctionReference { .. } => Vec::new(),
-        ResolvedExprKind::Invoke { callable, args } => std::iter::once(callable.as_ref())
-            .chain(args.iter())
-            .collect(),
-        ResolvedExprKind::Call { args, .. }
-        | ResolvedExprKind::LiteralFormat { args, .. }
-        | ResolvedExprKind::VecFieldRead { args, .. }
-        | ResolvedExprKind::RowLoan { args, .. } => args.iter().collect(),
-        ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().collect(),
-        ResolvedExprKind::HostCommandCall(call) => call.args.iter().collect(),
-        ResolvedExprKind::ByteRange {
-            source, start, end, ..
-        } => vec![source, start, end],
-        ResolvedExprKind::Unary { value, .. }
-        | ResolvedExprKind::Try { operand: value, .. }
-        | ResolvedExprKind::TryOption { operand: value, .. }
-        | ResolvedExprKind::Project { base: value, .. }
-        | ResolvedExprKind::Upcast { source: value }
-        | ResolvedExprKind::Yield { request: value } => vec![value],
-        ResolvedExprKind::Binary { left, right, .. } => vec![left, right],
-        ResolvedExprKind::ConstructRecord { fields, .. }
-        | ResolvedExprKind::ConstructVariant { fields, .. } => {
-            fields.iter().map(|field| &field.value).collect()
-        }
-        ResolvedExprKind::UpdateRecord { base, fields, .. } => std::iter::once(base.as_ref())
-            .chain(fields.iter().map(|field| &field.value))
-            .collect(),
-        ResolvedExprKind::Block { .. }
-        | ResolvedExprKind::VecConstructor { .. }
-        | ResolvedExprKind::If { .. }
-        | ResolvedExprKind::Match { .. }
-        | ResolvedExprKind::Int(_)
-        | ResolvedExprKind::Int32(_)
-        | ResolvedExprKind::Char(_)
-        | ResolvedExprKind::Uint8(_)
-        | ResolvedExprKind::Usize(_)
-        | ResolvedExprKind::ArrayU8(_)
-        | ResolvedExprKind::RepeatArrayU8 { .. }
-        | ResolvedExprKind::Float32(_)
-        | ResolvedExprKind::Float64(_)
-        | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
-        | ResolvedExprKind::BorrowedUtf8Literal(_)
-        | ResolvedExprKind::Place(_)
-        | ResolvedExprKind::BorrowPlace { .. } => Vec::new(),
     }
 }
 
@@ -1233,16 +1178,17 @@ fn materialize_cfg_plan(
     let mut endpoints = Vec::with_capacity(cfg.points.len());
     for (node, point) in cfg.points.iter().enumerate() {
         let mut live_before = BTreeSet::new();
-        for edge in cfg.predecessors[node]
+        for edge in cfg
+            .predecessors(node)
             .iter()
             .filter_map(|from| cfg.edges.binary_search(&(*from, node as u16)).ok())
         {
             live_before.extend(edge_live[edge].iter().copied());
         }
         let mut live_after = BTreeSet::new();
-        for edge in cfg.successors[node]
-            .iter()
-            .filter_map(|to| cfg.edges.binary_search(&(node as u16, *to)).ok())
+        for edge in cfg
+            .successors(node)
+            .filter_map(|to| cfg.edges.binary_search(&(node as u16, to)).ok())
         {
             live_after.extend(edge_live[edge].iter().copied());
         }

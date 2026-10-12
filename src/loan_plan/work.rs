@@ -102,18 +102,18 @@ impl Reachability {
         }
         while let Some(from) = pending.pop() {
             charge(work)?;
-            for to in cfg.successors[from as usize].iter().rev() {
+            for to in cfg.successors(from as usize).rev() {
                 let mut changed = false;
                 for word in 0..words {
                     charge(work)?;
-                    let before = by_point[*to as usize * words + word];
+                    let before = by_point[to as usize * words + word];
                     let after = before | by_point[from as usize * words + word];
-                    by_point[*to as usize * words + word] = after;
+                    by_point[to as usize * words + word] = after;
                     changed |= before != after;
                 }
                 if changed {
                     charge(work)?;
-                    pending.push(*to);
+                    pending.push(to);
                 }
             }
         }
@@ -136,14 +136,14 @@ impl Reachability {
                 if !reached[node as usize] {
                     reached[node as usize] = true;
                     by_point[node as usize * words + loan / 64] |= 1u64 << (loan % 64);
-                    pending.extend(cfg.successors[node as usize].iter().rev().copied());
+                    pending.extend(cfg.successors(node as usize).rev());
                 }
             }
         }
         Ok(Self { by_point, words })
     }
 
-    fn contains(&self, loan: LoanId, node: u16) -> bool {
+    pub(super) fn contains(&self, loan: LoanId, node: u16) -> bool {
         let loan = loan.0 as usize;
         self.by_point[node as usize * self.words + loan / 64] & (1u64 << (loan % 64)) != 0
     }
@@ -171,7 +171,7 @@ pub(super) fn live_nodes(
         if !reachable.contains(loan, node) || !live.insert(node) || node == start {
             continue;
         }
-        pending.extend(cfg.predecessors[node as usize].iter().rev().copied());
+        pending.extend(cfg.predecessors(node as usize).iter().rev().copied());
     }
     Ok(live)
 }
@@ -186,13 +186,13 @@ pub(super) fn edge_liveness(
     for (loan_index, nodes) in live.iter().enumerate() {
         let id = LoanId(loan_index as u16);
         for from in nodes {
-            for edge_index in &cfg.successor_edges[*from as usize] {
+            for edge_index in cfg.successor_edges(*from as usize) {
                 charge(work)?;
-                let (_, to) = cfg.edges[*edge_index as usize];
+                let (_, to) = cfg.edges[edge_index as usize];
                 if nodes.contains(&to) {
-                    edge_live[*edge_index as usize].push(id);
+                    edge_live[edge_index as usize].push(id);
                 } else {
-                    termination_edges[loan_index].push(*edge_index);
+                    termination_edges[loan_index].push(edge_index);
                 }
             }
         }
