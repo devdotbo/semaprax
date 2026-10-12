@@ -9,6 +9,7 @@ use crate::ast::program_source::SyntheticProgramView;
 use crate::ast::Span;
 use crate::ast::{Expr, ExprKind, Function, Program, Type, TypeDeclaration};
 use crate::bounded_output::budgeted_format;
+use crate::bounded_output::identity_reservation::{IdentityReservation, Refused};
 use crate::diagnostic::Diagnostic;
 use crate::hir;
 use std::collections::BTreeMap;
@@ -185,15 +186,30 @@ impl<'a> Input<'a> {
             )]),
         }
     }
-    pub(in crate::workspace_graph) fn resolve<'s>(
+    /// Fresh resolution of the actual Owned/Borrowed case with the caller's
+    /// already acquired identity owner; no Program is materialized.
+    pub(in crate::workspace_graph) fn resolve_paid<'s>(
         &'s self,
         private: Option<crate::source_verify::private_names::PrivateNames<'s>>,
-    ) -> Result<(hir::ResolvedProgram, hir::FunctionResolutionWork), Vec<Diagnostic>> {
+        owner: &mut IdentityReservation,
+    ) -> Result<
+        (hir::ResolvedProgram, hir::FunctionResolutionWork),
+        hir::identity_resolution::Failure<Refused>,
+    > {
         match self {
-            Self::Owned(program) => {
-                hir::resolve_with_function_reuse(program, None, None, None, private)
+            Self::Owned(program) => hir::identity_resolution::resolve_checked(
+                program,
+                None,
+                None,
+                None,
+                private,
+                |bytes| owner.reserve(bytes),
+            ),
+            Self::Borrowed(program) => {
+                hir::identity_resolution::resolve_source(program, private, |bytes| {
+                    owner.reserve(bytes)
+                })
             }
-            Self::Borrowed(program) => hir::resolve_source(program, private),
         }
     }
 }

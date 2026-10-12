@@ -41,6 +41,7 @@ pub(crate) mod checked_hir;
 /// (SPX-AI-031/#130, SPX-AI-032/#131). See that module's doc comment.
 mod clone_cost_report;
 mod source_handoff;
+pub(crate) mod paid_resolution;
 use checked_hir::{CheckedModuleLease, ResolvedModuleInput};
 
 pub const PROJECT_FRONTEND_CACHE_SCHEMA: &str = "semaprax.project-frontend-cache-work.v1";
@@ -503,6 +504,13 @@ impl FrontendPass {
         self.semantic && !self.checked.contains_key(path)
     }
 
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "legacy unpaid selective route; workspace uses the explicit-owner sibling"
+        )
+    )]
     pub(crate) fn resolve_borrowed_cold_source<'p>(
         &self,
         path: &str,
@@ -530,6 +538,13 @@ impl FrontendPass {
         )
     }
 
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "legacy unpaid selective route; workspace uses the explicit-owner sibling"
+        )
+    )]
     pub(crate) fn resolve_functions<'p>(
         &self,
         path: &str,

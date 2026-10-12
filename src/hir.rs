@@ -545,6 +545,16 @@ pub fn resolve(program: &Program) -> Result<ResolvedProgram, Vec<Diagnostic>> {
 /// The resolver still rebuilds and validates the complete `ResolvedProgram`.
 /// `private` only changes how source diagnostics name `program`'s private
 /// layout copies.
+///
+/// Explicit legacy compatibility: ordinary workspace resolution uses the
+/// identity-paid `identity_resolution::resolve_checked` sibling instead.
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "legacy unpaid route retained as the saved oracle for the paid sibling"
+    )
+)]
 pub(crate) fn resolve_with_function_reuse<'p>(
     program: &'p Program,
     previous_program: Option<&Program>,
@@ -575,6 +585,15 @@ pub(crate) fn resolve_with_function_reuse<'p>(
 
 /// Full ordinary verification of the private borrowed presentation. Recursive
 /// record-invariant desugaring remains on the paid owned input route.
+/// Explicit legacy compatibility; the paid sibling is
+/// `identity_resolution::resolve_source`.
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "legacy unpaid route retained as the saved oracle for the paid sibling"
+    )
+)]
 pub(crate) fn resolve_source<'p>(
     program: &'p dyn ProgramSource,
     private: Option<source_verify::private_names::PrivateNames<'p>>,

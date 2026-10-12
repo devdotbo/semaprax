@@ -20,6 +20,7 @@ mod expected_projection;
 #[cfg(test)]
 pub(crate) mod forecast_observation;
 mod generic_type_import;
+mod identity_resolution;
 mod operation_sidecar;
 mod owned_function_import;
 use callee_inventory::resolved_function_callees;
@@ -4434,34 +4435,17 @@ fn build_resolved_core(
                 .map(|layout| layout.presentation(program, synthetic.source()))
                 .transpose()?
                 .flatten();
-            let selective = staged!(
-                SelectiveResolution,
-                frontend.as_deref().and_then(|cache| {
-                    synthetic
-                        .owned()
-                        .and_then(|input| cache.resolve_functions(&program.path, input, private))
-                        .or_else(|| {
-                            synthetic.borrowed().and_then(|view| {
-                                cache.resolve_borrowed_cold_source(&program.path, view, private)
-                            })
-                        })
-                })
-            );
+            // Typed receiver: one identity report is acquired on this same
+            // resolved-core ledger before either route, and Setup stays Copy
+            // until this legacy outer adapter.
             let (resolved, function_costs, reused_functions, static_text) =
-                crate::vec_ops::with_authenticated_linked_source(|| {
-                    crate::box_ops::with_authenticated_linked_source(|| {
-                        if let Some(selective) = selective {
-                            selective.map(|resolved| resolved.into_parts())
-                        } else {
-                            staged!(FreshResolution, {
-                                synthetic.resolve(private).map(|(resolved, work)| {
-                                    let selected = work.static_text();
-                                    (resolved, BTreeMap::new(), 0, selected)
-                                })
-                            })
-                        }
-                    })
-                })?;
+                identity_resolution::resolve_module(
+                    frontend.as_deref(),
+                    &program.path,
+                    &synthetic,
+                    private,
+                )
+                .map_err(identity_resolution::ModuleFailure::into_legacy)?;
             drop(held);
             let resolver_bytes = before.saturating_sub(
                 crate::bounded_output::active_remaining()

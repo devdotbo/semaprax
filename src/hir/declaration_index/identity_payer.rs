@@ -124,7 +124,7 @@ impl DeclarationIndex {
                 index.insert_owned_declaration(
                     index.inserted_identity(&declaration.stable_id),
                     "drop".to_owned(),
-                    identity(&lifecycle_id).map_err(IdentityIndexError::Identity)?,
+                    identity(lifecycle_id).map_err(IdentityIndexError::Identity)?,
                     DeclarationKind::ResourceDrop,
                     IdentityOrigin::Explicit,
                 );

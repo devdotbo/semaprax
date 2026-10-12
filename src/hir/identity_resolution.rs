@@ -40,17 +40,104 @@ pub(crate) fn resolve<E>(
     {
         return Err(Failure::Source(diagnostics));
     }
+    resolve_verified_paid(program, None, &mut reserve)
+}
+
+/// Paid sibling of `resolve_with_function_reuse`: identical environment
+/// equality and reuse selection, identical verification-before-index order.
+pub(crate) fn resolve_checked<'p, E>(
+    program: &'p Program,
+    previous_program: Option<&Program>,
+    previous_resolved: Option<&ResolvedProgram>,
+    previous_costs: Option<&BTreeMap<String, usize>>,
+    private: Option<source_verify::private_names::PrivateNames<'p>>,
+    mut reserve: impl FnMut(usize) -> Result<(), E>,
+) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _workflow_span = crate::workflow_profile::span(crate::workflow_profile::Stage::Resolve);
+    let diagnostics = source_verify::verify_presenting(program, private);
+    if diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.severity.is_error())
+    {
+        return Err(Failure::Source(diagnostics));
+    }
+    let reuse = previous_program
+        .zip(previous_resolved)
+        .zip(previous_costs)
+        .filter(|((previous, _), _)| function_reuse_environment_is_exact(program, previous))
+        .map(|((program, resolved), costs)| FunctionReuse {
+            program,
+            resolved,
+            costs,
+        });
+    resolve_verified_paid(program, reuse, &mut reserve)
+}
+
+/// Paid sibling of `resolve_source`: full verification and its explicit
+/// invariant refusal precede any identity request.
+pub(crate) fn resolve_source<'p, E>(
+    program: &'p dyn ProgramSource,
+    private: Option<source_verify::private_names::PrivateNames<'p>>,
+    mut reserve: impl FnMut(usize) -> Result<(), E>,
+) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
+    let diagnostics = source_verify::verify_presenting(program, private);
+    if diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.severity.is_error())
+    {
+        return Err(Failure::Source(diagnostics));
+    }
+    if program
+        .types()
+        .iter()
+        .any(|declaration| !declaration.invariants().is_empty())
+    {
+        return Err(Failure::Source(vec![Diagnostic::io(
+            "SPX-H006",
+            "borrowed projection requires owned invariant desugaring",
+        )]));
+    }
+    // SourceIndex precedes the DeclarationIndex, as in the legacy route.
+    let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
+    let declarations = DeclarationIndex::from_verified_with_identity_reservation(
+        program,
+        crate::prelude::declarations_for_program(program),
+        &mut reserve,
+    )?;
+    (Resolver {
+        program,
+        byte_helpers,
+        declarations,
+        reuse: None,
+        function_work: FunctionResolutionWork::default(),
+        fused_producer: None,
+        partition_profile: false,
+    })
+    .resolve()
+    .map_err(Failure::Semantic)
+}
+
+/// Both invariant passes share one callback. The inventory pass suppresses
+/// reuse exactly when a clause program exists; the desugared pass never reuses.
+fn resolve_verified_paid<E>(
+    program: &Program,
+    reuse: Option<FunctionReuse<'_>>,
+    reserve: &mut impl FnMut(usize) -> Result<(), E>,
+) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
     let clause_program = record_invariants::clause_program(program);
     let inventory_program = clause_program.as_ref().unwrap_or(program);
-    let resolved = pass(inventory_program, &mut reserve)?;
+    let reuse = if clause_program.is_some() { None } else { reuse };
+    let resolved = pass(inventory_program, reuse, reserve)?;
     let Some(desugared) = record_invariants::desugar(program, &resolved.0) else {
         return Ok(resolved);
     };
-    pass(&desugared, &mut reserve)
+    pass(&desugared, None, reserve)
 }
 
 fn pass<E>(
     program: &Program,
+    reuse: Option<FunctionReuse<'_>>,
     reserve: &mut impl FnMut(usize) -> Result<(), E>,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
     // Preserve the old Resolver field-evaluation order before index creation.
@@ -64,7 +151,7 @@ fn pass<E>(
         program,
         byte_helpers,
         declarations,
-        reuse: None,
+        reuse,
         function_work: FunctionResolutionWork::default(),
         fused_producer: None,
         partition_profile: false,

@@ -5,6 +5,7 @@ mod old_profiles;
 #[path = "../../../tests/fixtures/checked_cache_profiles.rs"]
 mod profiles;
 use crate::bounded_output::stage_debits::{take_completed, Trace};
+use crate::workspace_graph::identity_resolution;
 use crate::project::{
     with_authenticated_project, ProjectFrontendCache, ProjectFrontendSource, ProjectManifest,
     ProjectRevision, ProjectSemanticImage,
@@ -130,8 +131,13 @@ fn reproduce(bytes: bool) {
     let manifest = fixture.manifest();
     let mut cache = ProjectFrontendCache::new_with_semantic_cache();
     take_completed();
+    let acquired_before = identity_resolution::acquisitions();
     let checked = cache.build(&manifest, &fixture.sources(&manifest)).unwrap();
     let checked_trace = trace();
+    // Every cold module acquired its fixed identity report in the recorded
+    // resolver interval (retries may acquire again, never fewer).
+    let acquired_cold = identity_resolution::acquisitions();
+    assert!(acquired_cold - acquired_before >= 3);
     let report: serde_json::Value = serde_json::from_str(checked.to_json()).unwrap();
     assert_eq!(report["work"]["modules_resolved"], 3);
     assert_eq!(report["work"]["checked_HIR_reused"], 0);
@@ -142,8 +148,12 @@ fn reproduce(bytes: bool) {
     .unwrap();
     let ordinary_trace = trace();
     take_completed();
+    let acquired_ordinary = identity_resolution::acquisitions();
     let warm = cache.build(&manifest, &fixture.sources(&manifest)).unwrap();
     let warm_trace = trace();
+    // Exact hits validate and charge only the stored residual: no new
+    // identity report is acquired and no index is rebuilt.
+    assert_eq!(identity_resolution::acquisitions(), acquired_ordinary);
     let report: serde_json::Value = serde_json::from_str(warm.to_json()).unwrap();
     assert_eq!(report["work"]["modules_resolved"], 0);
     assert_eq!(report["work"]["checked_HIR_reused"], 3);

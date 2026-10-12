@@ -118,6 +118,95 @@ fn checked_cold_source_preserves_limits_costs_current_key_and_body_reuse_fallbac
 }
 
 #[test]
+fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
+    use crate::bounded_output::identity_reservation::{IdentityReservation, Refused};
+    use crate::bounded_output::{with_limit_usage, with_limit_usage_refusal};
+    let source = "module cold; @id(\"helper\") fn helper(value:i64)->i64 {value+1} @id(\"main\") fn main()->i64 {helper(1)}";
+    let program = crate::check(source, "cold.spx").unwrap();
+    let mut pass = pass(source, &program);
+    let view = SyntheticProgramView::new(&program, Vec::new()).unwrap();
+    let old = pass
+        .resolve_functions(&program.path, &program, None)
+        .unwrap()
+        .unwrap();
+    // One owner serves one module route; both cold inputs are exercised.
+    let ((owned, borrowed), failed, used) = with_limit_usage(1 << 20, || {
+        let mut owner = IdentityReservation::acquire().unwrap();
+        let owned = pass
+            .resolve_functions_paid(&program.path, &program, None, &mut owner)
+            .unwrap()
+            .unwrap();
+        let borrowed = pass
+            .resolve_borrowed_cold_source_paid(&program.path, &view, None, &mut owner)
+            .unwrap()
+            .unwrap();
+        (owned, borrowed)
+    });
+    assert!(!failed);
+    assert!(used > 0);
+    for new in [&owned, &borrowed] {
+        assert_eq!(new.resolved, old.resolved);
+        assert_eq!(new.function_costs, old.function_costs);
+        assert_eq!(
+            (new.reused_functions, new.static_text),
+            (old.reused_functions, old.static_text)
+        );
+    }
+    // Initial identity refusal keeps the exact budget error and moves no HIR.
+    let word = std::mem::size_of::<usize>();
+    let report = std::mem::size_of::<IdentityReservation>()
+        + std::mem::size_of::<Diagnostic>()
+        + 48;
+    let (refused, failed, _, receipt) = with_limit_usage_refusal(report, || {
+        let mut owner = IdentityReservation::acquire().unwrap();
+        pass.resolve_functions_paid(&program.path, &program, None, &mut owner)
+            .unwrap()
+            .err()
+            .unwrap()
+    });
+    assert!(failed);
+    assert!(matches!(
+        refused,
+        paid_resolution::SelectiveFailure::Resolve(crate::hir::identity_resolution::Failure::Identity(
+            Refused::Budget(_)
+        ))
+    ));
+    assert_eq!(receipt.unwrap().requested, (2 * word + 11).div_ceil(word) * word);
+    // Checked body reuse and the first-checked-only borrowed gate are unchanged.
+    let _owner = pass.resolved_module(
+        &program.path,
+        program.clone(),
+        owned.resolved,
+        0,
+        0,
+        owned.function_costs,
+        owned.reused_functions,
+    );
+    pass.checked = std::mem::take(&mut pass.next_checked);
+    let changed = crate::check(&source.replace("helper(1)", "helper(2)"), "cold.spx").unwrap();
+    let legacy = pass
+        .resolve_functions(&program.path, &changed, None)
+        .unwrap()
+        .unwrap();
+    let (paid, failed, _) = with_limit_usage(1 << 20, || {
+        let mut owner = IdentityReservation::acquire().unwrap();
+        let paid = pass
+            .resolve_functions_paid(&program.path, &changed, None, &mut owner)
+            .unwrap()
+            .unwrap();
+        assert!(pass
+            .resolve_borrowed_cold_source_paid(&program.path, &view, None, &mut owner)
+            .is_none());
+        paid
+    });
+    assert!(!failed);
+    assert_eq!(paid.reused_functions, 1);
+    assert_eq!(paid.reused_functions, legacy.reused_functions);
+    assert_eq!(paid.resolved, legacy.resolved);
+    assert_eq!(paid.function_costs, legacy.function_costs);
+}
+
+#[test]
 fn borrowed_checked_cold_preserves_complete_project_graph_image_warm_and_body_edit() {
     let manifest = ProjectManifest::parse(
         r#"schema = "semaprax.project.v1"

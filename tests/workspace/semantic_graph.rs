@@ -349,6 +349,8 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         concat!(
             concat!(
                 include_str!("../../src/workspace_graph.rs"),
+                include_str!("../../src/workspace_graph/identity_resolution.rs"),
+                include_str!("../../src/workspace_graph/identity_resolution/tests.rs"),
                 include_str!("../../src/workspace_graph/paid_view.rs"),
                 include_str!("../../src/workspace_graph/forecast_observation.rs"),
                 include_str!("../../src/workspace_graph/import_validation.rs"),

@@ -112,6 +112,163 @@ fn both_invariant_passes_keep_exact_identity_refusal_and_partial_index_drop() {
     assert_eq!(current, old);
 }
 
+const PLAIN: &str = r#"module identity.plain;
+@id("plain.type") record Pair {
+    @id("plain.a") a:i64,
+    @id("plain.b") b:i64,
+}
+@id("plain.helper") fn helper(value:i64)->i64 { value + 1 }
+@id("plain.main") fn main()->i64 {
+    let pair = Pair { a:1, b:2 };
+    helper(pair.b)
+}
+"#;
+
+#[test]
+fn paid_checked_and_borrowed_siblings_match_legacy_requests_and_body_reuse() {
+    let program = crate::check(PLAIN, "identity-plain.spx").unwrap();
+    let (resolved, work) =
+        super::super::resolve_with_function_reuse(&program, None, None, None, None).unwrap();
+    let mut checked_requests = Vec::new();
+    let checked = resolve_checked(&program, None, None, None, None, |bytes| {
+        checked_requests.push(bytes);
+        Ok::<_, Stop>(())
+    })
+    .unwrap();
+    let mut borrowed_requests = Vec::new();
+    let borrowed = resolve_source(&program, None, |bytes| {
+        borrowed_requests.push(bytes);
+        Ok::<_, Stop>(())
+    })
+    .unwrap();
+    assert!(!checked_requests.is_empty());
+    assert_eq!(checked_requests, borrowed_requests);
+    assert_eq!(checked.0, resolved);
+    assert_eq!(borrowed.0, resolved);
+    assert_eq!(
+        super::super::resolve_source(&program, None).unwrap().0,
+        resolved
+    );
+    assert_eq!(
+        (checked.1.reused(), checked.1.static_text()),
+        (work.reused(), work.static_text())
+    );
+    // A prior exact checked module reuses function bodies; the index is still
+    // built and paid in the same SourceIndex-then-DeclarationIndex order.
+    let costs = work.costs();
+    let legacy = super::super::resolve_with_function_reuse(
+        &program,
+        Some(&program),
+        Some(&resolved),
+        Some(&costs),
+        None,
+    )
+    .unwrap();
+    let mut reuse_requests = Vec::new();
+    let paid = resolve_checked(
+        &program,
+        Some(&program),
+        Some(&resolved),
+        Some(&costs),
+        None,
+        |bytes| {
+            reuse_requests.push(bytes);
+            Ok::<_, Stop>(())
+        },
+    )
+    .unwrap();
+    assert_eq!(reuse_requests, checked_requests);
+    assert_eq!(paid.0, legacy.0);
+    assert_eq!(paid.1.reused(), legacy.1.reused());
+    assert!(paid.1.reused() > 0);
+}
+
+#[test]
+fn paid_siblings_refuse_initial_middle_and_final_identity_with_the_exact_caller_error() {
+    let program = crate::check(PLAIN, "identity-plain.spx").unwrap();
+    let mut count = 0;
+    resolve_checked(&program, None, None, None, None, |_| {
+        count += 1;
+        Ok::<_, Stop>(())
+    })
+    .unwrap();
+    assert!(count > 2);
+    for stop in [0, count / 2, count - 1] {
+        for borrowed in [false, true] {
+            let mut seen = 0;
+            let mut reserve = |_bytes: usize| {
+                let at = seen;
+                seen += 1;
+                if at == stop {
+                    Err(Stop(at))
+                } else {
+                    Ok(())
+                }
+            };
+            let (error, observed) = measure(|| {
+                if borrowed {
+                    resolve_source(&program, None, &mut reserve).err().unwrap()
+                } else {
+                    resolve_checked(&program, None, None, None, None, &mut reserve)
+                        .err()
+                        .unwrap()
+                }
+            });
+            assert!(matches!(error, Failure::Identity(Stop(at)) if at == stop));
+            assert_eq!(seen, stop + 1);
+            assert_eq!(observed.live, 0);
+            assert_eq!(observed.allocated, observed.freed);
+            assert!(!observed.invalid);
+        }
+    }
+}
+
+#[test]
+fn paid_borrowed_source_keeps_verifier_and_invariant_refusals_before_identity() {
+    let program = crate::check(SOURCE, "identity-paid.spx").unwrap();
+    // Record invariants stay on the owned route; no identity is requested.
+    let legacy = super::super::resolve_source(&program, None).err().unwrap();
+    let paid = resolve_source(&program, None, |_| -> Result<(), Stop> {
+        panic!("identity request before borrowed invariant refusal")
+    })
+    .err()
+    .unwrap();
+    let Failure::Source(paid) = paid else {
+        panic!("invariant refusal remapped")
+    };
+    assert_eq!(paid, legacy);
+    let mut malformed = program.clone();
+    malformed.functions[0].stable_id.clear();
+    let legacy = super::super::resolve_source(&malformed, None).err().unwrap();
+    let Failure::Source(paid) = resolve_source(&malformed, None, |_| -> Result<(), Stop> {
+        panic!("identity request after verifier refusal")
+    })
+    .err()
+    .unwrap() else {
+        panic!("verifier refusal remapped")
+    };
+    assert_eq!(paid, legacy);
+}
+
+#[test]
+fn paid_siblings_keep_unicode_empty_nul_and_duplicate_identity_outcomes() {
+    let base = crate::check(PLAIN, "identity-plain.spx").unwrap();
+    let duplicate = base.functions[0].stable_id.clone();
+    for text in ["\u{e9}\u{2713}.main", "", "nul\0id", duplicate.as_str()] {
+        let mut changed = base.clone();
+        changed.functions[1].stable_id = text.to_owned();
+        let legacy =
+            super::super::resolve_with_function_reuse(&changed, None, None, None, None);
+        let paid = resolve_checked(&changed, None, None, None, None, |_| Ok::<_, Stop>(()));
+        match (legacy, paid) {
+            (Ok(old), Ok(new)) => assert_eq!(old.0, new.0),
+            (Err(old), Err(Failure::Source(new))) => assert_eq!(old, new),
+            (Err(old), Err(Failure::Semantic(new))) => assert_eq!(old, vec![new]),
+            _ => panic!("paid sibling changed the outcome for {text:?}"),
+        }
+    }
+}
+
 #[test]
 fn actual_identity_caller_setup_refuses_without_diagnostic_or_report_allocation() {
     let program = crate::check(SOURCE, "identity-paid.spx").unwrap();

@@ -104,3 +104,23 @@ one-short setup. They do not assert payment for source verification, index
 maps/names/type payloads, invariant cloning, resolver scratch, legacy semantic
 errors or the complete public diagnostic pipeline. Public activation and those
 remaining funding obligations stay open.
+
+### Ordinary workspace module resolution (initial index identities only)
+
+The actual non-hit module resolution in `workspace_graph` now acquires one
+`IdentityReservation` on the resolved-core ledger before either the selective
+or fresh route and forwards that owner through `resolve_checked` (owned input,
+function reuse) or `resolve_source` (borrowed input), including both invariant
+passes. Cache hits charge the stored full resolver residual without acquiring
+another owner or building an index. Setup refusal stays Copy through the
+`workspace_graph::identity_resolution` receiver and is adapted to the legacy
+`Vec<Diagnostic>` layer only outside it; that outer graph/report layer remains
+unqualified. Public `hir::resolve`/`analyze` stay explicit unpaid legacy.
+
+Only the initial `DeclarationIndex` identities are paid. Still unpaid: the
+fresh `DeclarationId::new` reconstructions in `Resolver::resolve` (entrypoint,
+type, lifecycle, class method, interface, import, generic, function-template
+and generic-owner identities), genuinely new agent/generated identities, other
+initial-index callers (selected fused candidate, byte partition, compiler
+prelude link), source/semantic diagnostics and operation constructors. No
+whole-resolver funding claim is made.
