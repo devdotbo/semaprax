@@ -275,13 +275,25 @@ fn complete_active_payer_resolution_and_drop_keep_exact_short_and_sticky_refusal
         };
         for retain in [false, true] {
             let (((), actual), refused, required, _) = observe(usize::MAX, retain);
-            assert!(!refused && !actual.invalid && actual.live == 0);
+            assert!(
+                !refused && !actual.invalid && actual.live == 0,
+                "full imported receiver: {actual:?}; first invalid reason: {:?}",
+                crate::test_allocation_observer::invalid_reason()
+            );
             assert_eq!(actual.allocated, actual.freed);
             assert!(actual.allocated <= required && actual.highwater <= required);
             let (((), exact), refused, paid, _) = observe(required, retain);
-            assert!(!refused && !exact.invalid && exact.live == 0 && paid == required);
+            assert!(
+                !refused && !exact.invalid && exact.live == 0 && paid == required,
+                "exact imported receiver: {exact:?}; first invalid reason: {:?}",
+                crate::test_allocation_observer::invalid_reason()
+            );
             let (((), short), refused, _, receipt) = observe(required - 1, retain);
-            assert!(refused && receipt.is_some() && !short.invalid && short.live == 0);
+            assert!(
+                refused && receipt.is_some() && !short.invalid && short.live == 0,
+                "short imported receiver: {short:?}; first invalid reason: {:?}",
+                crate::test_allocation_observer::invalid_reason()
+            );
         }
     }
 }
