@@ -21,6 +21,10 @@ fn reserve(bytes: Option<usize>) -> Result<(), Diagnostic> {
         ))
     }
 }
+// Allocation-free unique replacements must still honor a selected refusal.
+pub(super) fn active() -> Result<(), Diagnostic> {
+    reserve(Some(0))
+}
 pub(super) fn control() -> Result<(), Diagnostic> {
     reserve(Some(std::mem::size_of::<Values<'_>>()))
 }

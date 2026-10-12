@@ -46,6 +46,7 @@ impl<'value> Values<'value> {
     ) -> Result<bool, Diagnostic> {
         match self {
             Self::Borrowed(root) => {
+                charge::active()?;
                 let replaced = tree::get(root.as_deref(), &id).is_some();
                 // Never take the published root before all changed-path and
                 // rotation allocations succeed. Failure leaves it complete.

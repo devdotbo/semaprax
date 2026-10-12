@@ -28,6 +28,8 @@ complete root. A search path can mutate only when each node has exactly one
 strong reference and no weak references. It prepays and allocates a missing leaf
 before changing any node; insertion and rotations then move unique path nodes
 and existing subtree handles without allocating or making a fallible payment.
+Allocation-free replacements check sticky active refusal with a zero-byte
+reservation before mutation; this adds no debit or allowance.
 Published/shared nodes never mutate. Equal-key replacement retains the original
 key identity. Drop releases carriers without refunding cumulative admission;
 there is no separate quota, reset, forecast discount or allocation normalization.
