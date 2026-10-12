@@ -324,6 +324,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/declaration_index/projection.rs"),
         include_str!("../../../../../src/hir/type_reachability/nested_generic_function.rs"),
         include_str!("../../../../../src/hir/workspace_link/compiler_prelude.rs"),
+        include_str!("../../../../../src/hir/workspace_link/compiler_prelude/identity_constants/tests.rs"),
+        include_str!("../../../../../src/hir/workspace_link/compiler_prelude/identity_constants/old.rs"),
         include_str!("../../../../../src/hir/workspace_link/profile_diagnostics.rs"),
         include_str!("../../../../../src/hir/workspace_link/native_owner.rs"),
         include_str!("../../../../../src/hir/workspace_link/native_owner/url_view.rs"),

@@ -196,7 +196,7 @@ pub(super) fn compiler_prelude_declarations_for_vec(
 ) -> Result<DeclarationIndex, Diagnostic> {
     let mut declarations = DeclarationIndex::from_verified(&workspace_linker_prelude_program())?;
     if include_vec {
-        let id = DeclarationId::new(crate::prelude::VEC_ID);
+        let id = DeclarationId::compiler(CompilerDeclaration::Vec);
         declarations.insert_top_level(
             "Vec".to_owned(),
             id.clone(),
@@ -223,7 +223,7 @@ pub(super) fn compiler_prelude_declarations_for(
     // The Box-bearing v4 prelude is additive over the Vec-bearing predecessor.
     let mut declarations = compiler_prelude_declarations_for_vec(include_vec || include_box)?;
     if include_box {
-        let id = DeclarationId::new(crate::prelude::BOX_ID);
+        let id = DeclarationId::compiler(CompilerDeclaration::Box);
         declarations.insert_top_level(
             "Box".to_owned(),
             id.clone(),
@@ -422,3 +422,7 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "compiler_prelude/identity_constants/tests.rs"]
+mod identity_constant_tests;
