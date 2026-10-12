@@ -11,14 +11,14 @@ use crate::workspace_graph::index_authored;
 const VEC_PROVIDER: &str = include_str!("../../../../../std/collections/src/collections.spx");
 const BOX_PROVIDER: &str = include_str!("../../../../../std/mem/src/mem.spx");
 const VEC_CALLER: &str = r#"module overlay.vec;
-use function @id("std.collections.vec.with-capacity") from std.collections as allocate;
-use function @id("std.collections.vec.push") from std.collections as append;
-use function @id("std.collections.vec.get") from std.collections as read;
-@id("overlay.vec.main") fn main()->i64 { let values=allocate<i64>(2usize); let values=append<i64>(values,42); read<i64>(values,0usize) }"#;
+use function @id("std.collections.vec.with-capacity") from std.collections as vec_with_capacity;
+use function @id("std.collections.vec.push") from std.collections as vec_push;
+use function @id("std.collections.vec.get") from std.collections as vec_get;
+@id("overlay.vec.main") fn main()->i64 { let values=vec_with_capacity<i64>(2usize); let appended=vec_push<i64>(values,42); vec_get<i64>(appended,0usize) }"#;
 const BOX_CALLER: &str = r#"module overlay.box;
-use function @id("std.mem.box.new") from std.mem as allocate;
-use function @id("std.mem.box.into-inner") from std.mem as consume;
-@id("overlay.box.main") fn main()->i64 { consume<i64>(allocate<i64>(42)) }"#;
+use function @id("std.mem.box.new") from std.mem as box_new;
+use function @id("std.mem.box.into-inner") from std.mem as box_into_inner;
+@id("overlay.box.main") fn main()->i64 { box_into_inner<i64>(box_new<i64>(42)) }"#;
 // Class methods are not module functions; each record/class-only provider also
 // declares one inert function so it parses (SPX-P101). Type imports never
 // project a provider function, and the original declarations stay verbatim.
@@ -124,13 +124,16 @@ fn retained_vec_box_class_and_invariant_sources_match_full_owning_projection() {
 fn invariant_and_wrapper_invalid_cases_keep_the_entire_old_error_order() {
     let cases = [
         (
-            VEC_CALLER.replace("allocate<i64>(2usize)", "allocate<string>(2usize)"),
+            VEC_CALLER.replace(
+                "vec_with_capacity<i64>(2usize)",
+                "vec_with_capacity<string>(2usize)",
+            ),
             VEC_PROVIDER.to_owned(),
         ),
         (
             BOX_CALLER.replace(
-                "consume<i64>(allocate<i64>(42))",
-                "consume<i64>(allocate<i64>(true))",
+                "box_into_inner<i64>(box_new<i64>(42))",
+                "box_into_inner<i64>(box_new<i64>(true))",
             ),
             BOX_PROVIDER.to_owned(),
         ),
@@ -311,14 +314,14 @@ fn literal_box_wrapper_overlay_removes_real_caller_copy_and_function_growth() {
         + 2 * std::mem::size_of::<crate::ast::Type>()
         + "overlay.box.main".len()
         + "main".len()
-        + "consume".len()
-        + "allocate".len();
+        + "box_into_inner".len()
+        + "box_new".len();
     let sidecars = 2 * std::mem::size_of::<crate::ast::ModuleUse>()
         + "std.mem.box.new".len()
         + "std.mem.box.into-inner".len()
         + 2 * "std.mem".len()
-        + "allocate".len()
-        + "consume".len()
+        + "box_new".len()
+        + "box_into_inner".len()
         + "caller.spx".len()
         + "overlay.box".len();
     // Both iterative receivers obtain Expr capacity4. The new receiver has
@@ -353,35 +356,81 @@ fn conservative_class_default_census_keeps_real_owned_record_forwarding() {
         .iter()
         .find(|function| function.name == "forward")
         .unwrap();
-    // A class import enables iterative ownership. The census deliberately
-    // overbounds the record default tree; the unchanged actual provider proof
-    // still forwards exactly one existing owner through a Var expression.
-    // Canonical source `{ value }` is a statement-free Block whose tail is
-    // that Var; only such a Block is peeled, and the Var must still name the
-    // function's single owning parameter.
+    // Retain the complete original Report<String, Vec<Row>> control. Its
+    // provider forwards, but the ordinary import classifier intentionally
+    // constructs a checked default for this shape; only its narrower
+    // Bytes/usize renewal record grants an owner-forwarding prototype.
+    let expected = old::construct(&programs[0], &authored, &programs, Some(&registry)).unwrap();
+    let expected_forward = expected
+        .functions
+        .iter()
+        .find(|f| f.name == "forward")
+        .unwrap();
+    assert_eq!(forward.body, expected_forward.body);
+    assert!(matches!(
+        forward.body.kind,
+        crate::ast::ExprKind::ConstructRecord { .. }
+    ));
     let provider = programs[1]
         .functions
         .iter()
         .find(|function| function.name == "forward")
         .unwrap();
-    for function in [forward, provider] {
-        let mut tail = &function.body;
-        while let crate::ast::ExprKind::Block {
-            statements,
-            tail: next,
-        } = &tail.kind
-        {
-            assert!(statements.is_empty(), "forwarding tail has statements");
-            tail = &**next;
-        }
-        let [owner] = function.params.as_slice() else {
-            panic!("forward has exactly one owning parameter")
-        };
-        assert_eq!(owner.mode, crate::ast::ParamMode::Own);
-        assert!(
-            matches!(&tail.kind, crate::ast::ExprKind::Var(name) if *name == owner.name),
-            "{:?}",
-            tail.kind
-        );
+    assert_forward_owner(provider);
+
+    let renewal_provider = r#"module renewal.provider;
+@id("renewal.packet") record Packet {
+ @id("renewal.packet.bytes") bytes:Bytes,
+ @id("renewal.packet.len") len:usize,
+}
+@id("renewal.unused") class Unused {@id("renewal.unused.x") x:i64,}
+@id("renewal.forward") fn forward(value:own Packet)->Packet {value}
+"#;
+    let renewal_caller = r#"module renewal.app;
+use type @id("renewal.packet") from renewal.provider as Packet;
+use type @id("renewal.unused") from renewal.provider as Unused;
+use function @id("renewal.forward") from renewal.provider as forward;
+@id("renewal.main") fn main()->i64 {
+ let packet=Packet{bytes:bytes_zeroed(0usize),len:0usize};
+ let renewed=forward(packet);
+ i64_from_usize(renewed.len)
+}
+"#;
+    parity(renewal_caller, renewal_provider);
+    let renewal = sources(renewal_caller, renewal_provider);
+    let authored = index_authored(&renewal).unwrap();
+    let registry = LayoutRegistry::new(&renewal, &authored);
+    let view = construct(&renewal[0], &authored, &renewal, &registry).unwrap();
+    let mut forwarded = 0;
+    for function in view
+        .functions()
+        .iter()
+        .chain(renewal[1].functions.iter())
+        .filter(|f| f.name == "forward")
+    {
+        assert_forward_owner(function);
+        forwarded += 1;
     }
+    assert_eq!(forwarded, 2, "both current prototype and original provider");
+}
+
+fn assert_forward_owner(function: &crate::ast::Function) {
+    let mut tail = &function.body;
+    while let crate::ast::ExprKind::Block {
+        statements,
+        tail: next,
+    } = &tail.kind
+    {
+        assert!(statements.is_empty(), "forwarding tail has statements");
+        tail = &**next;
+    }
+    let [owner] = function.params.as_slice() else {
+        panic!("forward has exactly one owning parameter")
+    };
+    assert_eq!(owner.mode, crate::ast::ParamMode::Own);
+    assert!(
+        matches!(&tail.kind, crate::ast::ExprKind::Var(name) if *name == owner.name),
+        "{:?}",
+        tail.kind
+    );
 }

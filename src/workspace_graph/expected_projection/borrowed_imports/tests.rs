@@ -138,13 +138,26 @@ fn imports_aliases_private_layouts_defaults_and_cache_publication_keep_full_old_
         let caller = format!("module imported.app; use function @id(\"helper\") from imported.provider as helper; @id(\"app.main\") fn main()->i64 {{helper({args})}}");
         parity(&caller, &provider);
     }
-    // A parsed module declares at least one function (SPX-P101). One inert
-    // non-main authored function keeps both callers valid; the imported alias
-    // `main` and the generated synthetic main remain the observed subjects.
-    parity(
+    // A parsed module declares at least one function (SPX-P101). Keep the
+    // inert authored declaration in the reserved-main hostile input and the
+    // separate admitted caller that exercises generated synthetic main.
+    // Retain the original imported-main input as an explicit hostile alias:
+    // ordinary import validation reserves main before projection construction.
+    let alias_main = sources(
         "module imported.app; use function @id(\"helper\") from imported.provider as main; @id(\"app.inert\") fn inert()->i64 {0}",
         "module imported.provider; @id(\"helper\") fn helper()->i64 {42}",
     );
+    let authored = index_authored(&alias_main).unwrap();
+    let modules = index_modules(&alias_main).unwrap();
+    let registry = LayoutRegistry::new(&alias_main, &authored);
+    let errors = import_validation::validate_uses_with_registry(
+        &alias_main,
+        &modules,
+        &authored,
+        Some(&registry),
+    )
+    .unwrap_err();
+    assert_eq!(errors[0].code, "SPX-G172");
     parity(
         &SCALAR_CALLER.replace(
             " @id(\"app.main\") fn main()->i64 {increment(41)}",
