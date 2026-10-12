@@ -27,7 +27,7 @@ fn refused() -> Diagnostic {
     Diagnostic::io("SPX-H006", String::new())
 }
 
-pub(super) fn attach(program: &mut ResolvedProgram) -> Result<(), Diagnostic> {
+pub(in crate::hir) fn attach(program: &mut ResolvedProgram) -> Result<(), Diagnostic> {
     // One exact ledger/report spans both groups. Acquisition grants no quota.
     let captured = if crate::bounded_output::active_remaining().is_some() {
         Some(CfgReservation::acquire().map_err(|_| refused())?)

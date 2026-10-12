@@ -1,5 +1,7 @@
 # Changelog
 
+- Reuse exact initial loan-plan funding in linked workspace metadata, borrow complete authored/instance HIR for provenance, and avoid declaration-index Drop scratch for leaf roots. Preserve full derivation, diagnostic order, canonical replay and iterative nested disposal; independent old-path allocation and hostile controls await current-source execution.
+
 - Fund initial authored and concrete-instance loan-plan construction through one captured existing CFG owner (OPT792). Preserve the original group publication/error order, full independent later rebuild, exact limits and original whole-pipeline observers. Add complete legacy attachment and actual planner backing through Drop controls; current-source execution remains pending.
 
 - Author a selective explicit CopyDiscard statement and the finite owned-record loop profile for OPT779. Source and HIR independently retain the no-result boundary and exact counter shape; canonical cleanup, all three engines, Graph v84 and checked-HIR cache v10 are joined. The original lifetime fixture and allocation limits remain unchanged. Source-only controls and qualification are pending.

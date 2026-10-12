@@ -1140,7 +1140,13 @@ pub fn dispose_declaration_index_for_private_contract(
 impl Drop for DeclarationIndex {
     fn drop(&mut self) {
         let mut pending = Vec::new();
-        self.drain_recursive_types_for_private_contract(|ty| pending.push(ty));
+        // Leaf fields have no recursive payload to queue. Move only nominal
+        // children into the iterative fallback, preserving bounded stack use.
+        self.drain_recursive_types_for_private_contract(|ty| {
+            if let ResolvedType::Nominal { arguments, .. } = ty {
+                pending.extend(arguments);
+            }
+        });
         while let Some(ty) = pending.pop() {
             if let ResolvedType::Nominal { arguments, .. } = ty {
                 pending.extend(arguments);
@@ -1148,3 +1154,6 @@ impl Drop for DeclarationIndex {
         }
     }
 }
+
+#[cfg(test)]
+mod leaf_drop_tests;

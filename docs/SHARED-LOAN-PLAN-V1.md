@@ -446,3 +446,13 @@ planner-through-Drop and exact/short/sticky controls await execution. This
 extends initial planner funding only: original whole resolve→validation→replay
 and resolved-HIR Drop observers remain unchanged, and no complete pipeline
 funding or application fit is established by this source change.
+
+Linked-workspace cleanup metadata rebuilds now reuse that same exact-current-member
+initial attachment boundary. Their original inventory construction, canonical
+cleanup attachment and final independent HIR validation remain unchanged. The
+linked provenance scan borrows complete authored functions followed by instances,
+with the same derivation and first-error order; no backing debit is discounted.
+Declaration-index Drop skips queuing scalar roots and empty nominal argument lists
+and retains its iterative nested-type disposer. Independent original cloned-input
+and queue-through-Drop controls are authored; their current-head execution remains
+pending. These changes do not establish whole-pipeline funding.

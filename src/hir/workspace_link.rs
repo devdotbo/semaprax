@@ -268,20 +268,15 @@ fn link_scalar_workspace_impl(
     compiler_types.extend(types);
     types = compiler_types;
     let has_generic_instances = !function_instances.is_empty();
-    if has_generic_instances {
-        let mut cleanup_functions = functions.clone();
-        cleanup_functions.extend(
-            function_instances
+    // The original scan is authored functions followed by concrete instances.
+    // Borrow those exact bodies instead of cloning full HIR and attachments.
+    declarations.byte_slice_roots =
+        super::byte_slice_provenance::derive_byte_slice_provenance_from(
+            &mut functions
                 .iter()
-                .map(|instance| instance.function.clone()),
-        );
-        declarations.byte_slice_roots =
-            derive_byte_slice_provenance(&cleanup_functions, &declarations)?;
-    } else {
-        // Scalar signatures may contain checked native returned views and byte
-        // inspections. Rebuild their facts from the exact retained bodies too.
-        declarations.byte_slice_roots = derive_byte_slice_provenance(&functions, &declarations)?;
-    }
+                .chain(function_instances.iter().map(|instance| &instance.function)),
+            &declarations,
+        )?;
     let mut linked = ResolvedProgram {
         module,
         permits: import_effects.into_iter().collect(),
@@ -1053,26 +1048,7 @@ fn link_error(message: impl Into<String>) -> Diagnostic {
 }
 
 fn rebuild_cleanup_metadata(program: &mut ResolvedProgram) -> Result<(), Diagnostic> {
-    let loan_plans = program
-        .functions
-        .iter()
-        .map(|function| crate::loan_plan::build_plan(program, function))
-        .collect::<Result<Vec<_>, _>>()?;
-    for (function, loan_plan) in program.functions.iter_mut().zip(loan_plans) {
-        function.loan_plan = loan_plan;
-    }
-    let instance_loan_plans = program
-        .function_instances
-        .iter()
-        .map(|instance| crate::loan_plan::build_plan(program, &instance.function))
-        .collect::<Result<Vec<_>, _>>()?;
-    for (instance, loan_plan) in program
-        .function_instances
-        .iter_mut()
-        .zip(instance_loan_plans)
-    {
-        instance.function.loan_plan = loan_plan;
-    }
+    super::resolve_program::initial_loan_plans::attach(program)?;
     let inventories = program
         .functions
         .iter()

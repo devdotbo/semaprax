@@ -294,6 +294,15 @@ pub(super) fn derive_byte_slice_provenance(
     functions: &[ResolvedFunction],
     declarations: &DeclarationIndex,
 ) -> Result<BTreeMap<ValueId, ByteSliceProvenance>, Diagnostic> {
+    derive_byte_slice_provenance_from(&mut functions.iter(), declarations)
+}
+
+// Share the complete derivation across borrowed ordered sequences. The iterator
+// lends original bodies; it creates no owning function or attachment projection.
+pub(super) fn derive_byte_slice_provenance_from<'a>(
+    functions: &mut dyn Iterator<Item = &'a ResolvedFunction>,
+    declarations: &DeclarationIndex,
+) -> Result<BTreeMap<ValueId, ByteSliceProvenance>, Diagnostic> {
     let mut facts = BTreeMap::new();
     let mut root_types = BTreeMap::<ValueId, ResolvedType>::new();
     let command_argument_root =
@@ -752,3 +761,6 @@ pub(super) fn derive_byte_slice_provenance(
         }
     }
 }
+
+#[cfg(test)]
+mod borrowed_sequence_tests;

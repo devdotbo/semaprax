@@ -5,13 +5,6 @@ use super::{active_builder_limit, limit_error, reserve_builder_structure};
 use crate::ast::program_source::SyntheticProgramView;
 use crate::ast::Program;
 use crate::diagnostic::Diagnostic;
-// The sibling test module reaches these parent carriers through this module.
-#[cfg(test)]
-use super::{construct, private_layout, synthetic_program_with_registry, Input};
-#[cfg(test)]
-use crate::ast::Span;
-#[cfg(test)]
-use crate::hir;
 
 pub(super) fn materialize(view: SyntheticProgramView<'_>) -> Result<Program, Vec<Diagnostic>> {
     reserve_builder_structure(0)?;

@@ -111,7 +111,12 @@ Each group installs only after its complete collection succeeds, with authored
 attachment preceding instance planning. The later canonical caller still
 rebuilds and compares every full plan independently; initial attachments grant
 no admission or sizing authority. Unobserved construction keeps the legacy
-planner. `loan_plan/funded_flat.rs` owns the exact-current-member paid planner,
+planner. Linked-workspace metadata rebuilding uses the same current-member
+attachment boundary. Linked byte-slice provenance borrows authored functions then
+instances through the unchanged full derivation instead of cloning their HIR.
+Declaration-index disposal sends only nominal children to its existing iterative
+frontier, so scalar leaves and empty nominal arguments need no queue.
+`loan_plan/funded_flat.rs` owns the exact-current-member paid planner,
 while `bounded_output/cfg_reservation.rs` owns its affine ledger and prepaid
 physical-refusal carrier.
 

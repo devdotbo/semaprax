@@ -294,7 +294,9 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             include_str!("../../../../../src/hir/byte_slice_provenance/inline_range.rs"),
             "\n",
-            include_str!("../../../../../src/hir/byte_slice_provenance/vec_field.rs")
+            include_str!("../../../../../src/hir/byte_slice_provenance/vec_field.rs"),
+            "\n",
+            include_str!("../../../../../src/hir/byte_slice_provenance/borrowed_sequence_tests.rs")
         ),
         include_str!("../../../../../src/hir/capacity_probe.rs"),
         include_str!("../../../../../src/hir/expr_nodes.rs"),
@@ -325,7 +327,11 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/hir/workspace_link/stream_record.rs")
         ),
         include_str!("../../../../../src/hir/cache_codec.rs"),
-        include_str!("../../../../../src/hir/declaration_index.rs"),
+        concat!(
+            include_str!("../../../../../src/hir/declaration_index.rs"),
+            "\n",
+            include_str!("../../../../../src/hir/declaration_index/leaf_drop_tests.rs")
+        ),
         include_str!("../../../../../src/hir/declaration_index/source.rs"),
         include_str!("../../../../../src/hir/declaration_index/identity_payer.rs"),
         include_str!("../../../../../src/hir/identity_resolution.rs"),

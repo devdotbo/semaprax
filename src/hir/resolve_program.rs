@@ -1403,5 +1403,5 @@ fn resolve_agent_declaration(
 #[cfg(test)]
 mod tests;
 
-mod initial_loan_plans;
+pub(super) mod initial_loan_plans;
 mod reuse_lowered;

@@ -27,10 +27,10 @@ fn fixture() -> ResolvedProgram {
         .iter()
         .any(|f| !f.loan_plan.loans.is_empty()));
     for function in &mut program.functions {
-        function.loan_plan = LoanPlan::empty_v1();
+        function.loan_plan = LoanPlan::unresolved();
     }
     for instance in &mut program.function_instances {
-        instance.function.loan_plan = LoanPlan::empty_v1();
+        instance.function.loan_plan = LoanPlan::unresolved();
     }
     program
 }
@@ -104,13 +104,13 @@ fn observed(limit: usize) -> (bool, bool, usize, crate::test_allocation_observer
             for function in &mut program.functions {
                 drop(std::mem::replace(
                     &mut function.loan_plan,
-                    LoanPlan::empty_v1(),
+                    LoanPlan::unresolved(),
                 ));
             }
             for instance in &mut program.function_instances {
                 drop(std::mem::replace(
                     &mut instance.function.loan_plan,
-                    LoanPlan::empty_v1(),
+                    LoanPlan::unresolved(),
                 ));
             }
             success
