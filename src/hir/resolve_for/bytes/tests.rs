@@ -87,7 +87,7 @@ fn receiver_retains_exactly_its_debited_backing_and_drops_all_of_it() {
 #[test]
 fn byte_lowering_is_exact_one_short_sticky_and_refuses_before_construction() {
     for function in owners() {
-        let (view, _, body) = bindings(&function);
+        let (view, counter, body) = bindings(&function);
         let span = Span::default();
         let lower = || {
             super::lower(
@@ -105,12 +105,44 @@ fn byte_lowering_is_exact_one_short_sticky_and_refuses_before_construction() {
         let (admitted, overflowed, used) = with_limit_usage(1 << 20, lower);
         assert!(admitted.is_some());
         assert!(!overflowed);
-        // The up-front debit plus one shared carrier per constructed identity.
+        // Observe the complete NEW receiver constructor through Drop. The
+        // shared sixteen-node For profile has its separate AST prebound; this
+        // observation does not mislabel that existing payer as receiver debit.
         assert!(used > backing);
-        assert_eq!(
-            (used - backing) % ExpressionId::SHARED_ALLOCATION_CARRIER_BYTES,
-            0
+        let (((), allocations), overflowed, measured_used) = with_limit_usage(1 << 20, || {
+            assert!(crate::bounded_output::reserve_active_required(backing));
+            measure(|| {
+                drop(super::receiver(
+                    &function, ITEM_VALUE, &view, &counter, span, span,
+                ))
+            })
+        });
+        let mut expected = backing + 5 * ExpressionId::SHARED_ALLOCATION_CARRIER_BYTES;
+        for suffix in ["", SCRUTINEE, VIEW_ARGUMENT, INDEX_ARGUMENT, ARM_VALUE] {
+            expected += crate::hir::ids::streamed::scoped_len(
+                &function,
+                "expression",
+                ITEM_VALUE.len() + suffix.len(),
+            )
+            .unwrap();
+        }
+        expected += crate::hir::ids::streamed::scoped_len(
+            &function,
+            "value:local",
+            ITEM_VALUE.len() + PAYLOAD_BINDING.len(),
+        )
+        .unwrap();
+        assert!(!overflowed);
+        assert_eq!(measured_used, expected);
+        assert!(!allocations.invalid);
+        assert!(
+            allocations.allocated <= expected,
+            "actual cumulative receiver requests {} exceed debit {}",
+            allocations.allocated,
+            expected
         );
+        assert_eq!(allocations.live, 0);
+        assert_eq!(allocations.allocated, allocations.freed);
 
         let (exact, overflowed, exact_used) = with_limit_usage(used, lower);
         assert!(exact.is_some());

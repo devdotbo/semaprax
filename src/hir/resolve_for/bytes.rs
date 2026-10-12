@@ -135,18 +135,23 @@ fn receiver(
     item_span: Span,
     span: Span,
 ) -> ResolvedExpr {
-    let id = ExpressionId::new(function, path);
-    let scrutinee_id = ExpressionId::new(function, &format!("{path}{SCRUTINEE}"));
-    let view = place(function, &format!("{path}{VIEW_ARGUMENT}"), view, span);
-    let index = place(function, &format!("{path}{INDEX_ARGUMENT}"), counter, span);
+    let id = receiver_id(function, path, "");
+    let scrutinee_id = receiver_id(function, path, SCRUTINEE);
+    let view = receiver_place(function, path, VIEW_ARGUMENT, view, span);
+    let index = receiver_place(function, path, INDEX_ARGUMENT, counter, span);
     let payload = ResolvedBinding {
-        id: ValueId::local(function, &format!("{path}{PAYLOAD_BINDING}")),
+        id: ValueId::new(receiver_text(
+            function,
+            "value:local",
+            path,
+            PAYLOAD_BINDING,
+        )),
         name: PAYLOAD.to_owned(),
         ownership: OwnershipMode::Value,
         ty: ResolvedType::U8,
         span: item_span,
     };
-    let value = place(function, &format!("{path}{ARM_VALUE}"), &payload, span);
+    let value = receiver_place(function, path, ARM_VALUE, &payload, span);
     let read = ResolvedExpr {
         id: scrutinee_id,
         ty: crate::byte_ops::ByteOp::Get.return_type(),
@@ -180,6 +185,43 @@ fn receiver(
                 span,
             }],
         },
+        span,
+    }
+}
+
+// Stream the exact old scoped identity without formatting a temporary path
+// (or a generic execution key). emit prepays the complete requested text;
+// receiver_backing separately covers retained payload/containers/declarations.
+fn receiver_text(function: &FunctionExecutionId, kind: &str, path: &str, suffix: &str) -> String {
+    let length = path
+        .len()
+        .checked_add(suffix.len())
+        .expect("preflight receiver path");
+    crate::hir::ids::streamed::emit(function, kind, length, |bytes| {
+        bytes[..path.len()].copy_from_slice(path.as_bytes());
+        bytes[path.len()..].copy_from_slice(suffix.as_bytes());
+    })
+}
+
+fn receiver_id(function: &FunctionExecutionId, path: &str, suffix: &str) -> ExpressionId {
+    ExpressionId::from_owned(receiver_text(function, "expression", path, suffix))
+}
+
+fn receiver_place(
+    function: &FunctionExecutionId,
+    path: &str,
+    suffix: &str,
+    binding: &ResolvedBinding,
+    span: Span,
+) -> ResolvedExpr {
+    ResolvedExpr {
+        id: receiver_id(function, path, suffix),
+        ty: binding.ty.clone(),
+        ownership: binding.ownership,
+        kind: ResolvedExprKind::Place(Place {
+            root: binding.id.clone(),
+            projections: Vec::new(),
+        }),
         span,
     }
 }

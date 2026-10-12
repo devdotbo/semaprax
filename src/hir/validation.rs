@@ -51,6 +51,7 @@ pub(super) struct HirValidator<'a> {
     program: &'a ResolvedProgram,
     static_text: std::cell::Cell<(bool, usize)>,
     row_loan_observer: Option<&'a std::cell::Cell<bool>>,
+    byte_traversal_observer: Option<&'a std::cell::Cell<bool>>,
     byte_helpers: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     nominal_facts: nominal_facts::Lookup<'a>,
     functions: BTreeMap<DeclarationId, &'a ResolvedFunction>,
@@ -200,6 +201,7 @@ impl<'a> HirValidator<'a> {
             program,
             static_text: std::cell::Cell::new((false, 0)),
             row_loan_observer: None,
+            byte_traversal_observer: None,
             byte_helpers: None,
             nominal_facts: nominal_facts::Lookup::default(),
             functions,
@@ -1666,7 +1668,6 @@ impl<'a> HirValidator<'a> {
         execution: &FunctionExecutionId,
     ) -> Result<(), Diagnostic> {
         super::lexical_exit::validate_function(self.program, function, execution)?;
-        byte_traversal::validate_function(&self.program.declarations, function)?;
         super::declared_collection::validate_function(&self.program.declarations, function)?;
         crate::hir::iterator_loop::validate_function(function)?;
         owner_renewal::validate_function(self.program, self.byte_helpers, function)?;
@@ -5455,7 +5456,7 @@ impl<'a> HirValidator<'a> {
                     if index == arms.len() {
                         if !wildcard_seen
                             && covered.len() != cases.len()
-                            && !byte_traversal::partial_receiver(expression)
+                            && !self.observed_partial_byte_receiver(expression)
                         {
                             return Err(hir_error("resolved match is not exhaustive"));
                         }
@@ -8096,7 +8097,7 @@ impl<'a> HirValidator<'a> {
                 }
                 if !wildcard_seen
                     && covered.len() != cases.len()
-                    && !byte_traversal::partial_receiver(expression)
+                    && !self.observed_partial_byte_receiver(expression)
                 {
                     return Err(hir_error("resolved match is not exhaustive"));
                 }

@@ -62,8 +62,10 @@ pub(crate) fn validate_selected_with_static_text(
 ) -> Result<bool, Diagnostic> {
     let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
     let row_loans = std::cell::Cell::new(false);
+    let byte_traversals = std::cell::Cell::new(false);
     let selected = HirValidator::new(program)?
         .with_row_loan_observer(&row_loans)
+        .with_byte_traversal_observer(&byte_traversals)
         .with_helpers(&helpers)
         .with_selected(fused)
         .validate()?;
@@ -71,6 +73,16 @@ pub(crate) fn validate_selected_with_static_text(
     // no attached marker or persisted hint can suppress independent replay.
     if row_loans.get() {
         crate::hir::row_loan::validate_program(program)?;
+    }
+    if byte_traversals.get() {
+        for function in program.functions.iter().chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        ) {
+            byte_traversal::validate_function(&program.declarations, function)?;
+        }
     }
     Ok(selected)
 }

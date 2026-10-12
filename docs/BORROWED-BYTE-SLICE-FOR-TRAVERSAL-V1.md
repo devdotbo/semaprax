@@ -197,8 +197,8 @@ They cover:
   deviation from the receiver shape.
 - Hostile latch, step, seed, advance, index, default-`None`,
   detached-receiver, and counter-rewind HIR.
-- Cold and warm cache round-trips with latch drift, the tag-`4` refusal and
-  the v8 literal.
+- AST/HIR codec transport round-trips with latch drift, the tag-`4` refusal and
+  the v9 literal.
 - Graph v83 selection, forged-schema refusal, and an unchanged Vec-traversal
   graph.
 - The receiver's exact debited backing, its complete Drop, an exact limit, a
@@ -210,9 +210,9 @@ They cover:
 
 The native-Rust interop builder's own pre-resolve reservation
 (`FOR_GENERATED_EXPRESSION_COUNT`, sixteen at the Vec suffix) does not cover a
-byte receiver. A byte traversal routed through that builder is therefore
-refused by its exact ledger rather than admitted. That route is not yet
-supported.
+byte receiver. That reservation alone does not establish deterministic rejection or
+acceptance: live lowering also debits receiver storage. That route is not yet
+supported or qualified.
 
 ## Nonclaims
 

@@ -292,8 +292,7 @@ fn frozen_body(
     payload: &ResolvedBinding,
     frozen: &[&ValueId],
 ) -> Result<(), Diagnostic> {
-    let mut pending = vec![body];
-    while let Some(expression) = pending.pop() {
+    walk(body, |expression, authorized| {
         if matches!(&expression.kind, ResolvedExprKind::Place(place) | ResolvedExprKind::BorrowPlace { place, .. } if place.root == payload.id)
         {
             return Err(fail("borrowed byte receiver payload escapes its receiver"));
@@ -330,8 +329,8 @@ fn frozen_body(
                 }
             }
         }
-        crate::hir::push_resolved_expression_children_in_authored_order(expression, &mut pending);
-    }
+        Ok(authorized)
+    })?;
     Ok(())
 }
 
@@ -348,40 +347,33 @@ pub(in crate::hir) fn validate_function(
     declarations: &DeclarationIndex,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
-    let mut pending = function
-        .requires
+    for root in function
+        .ensures
         .iter()
+        .rev()
         .chain(std::iter::once(&function.body))
-        .chain(&function.ensures)
-        .collect::<Vec<_>>();
-    let mut authorized = BTreeSet::<*const ResolvedExpr>::new();
-    let mut receivers = Vec::<*const ResolvedExpr>::new();
-    while let Some(expression) = pending.pop() {
-        if let Some(region) = region(expression)? {
-            let view = bare_place(region.view)
-                .ok_or_else(|| fail("borrowed byte traversal view is not a bare place"))?;
-            let provenance = declarations
-                .byte_slice_provenance(&view.root)
-                .ok_or_else(|| {
-                    fail("borrowed byte traversal view lacks authenticated byte-slice provenance")
-                })?;
-            if provenance.root != view.root {
-                frozen_body(region.authored_body, region.payload, &[&provenance.root])?;
-            }
-            authorized.insert(region.receiver);
-        }
-        if receiver_shape(expression).is_some() {
-            receivers.push(expression);
-        }
-        crate::hir::push_resolved_expression_children_in_authored_order(expression, &mut pending);
-    }
-    if receivers
-        .iter()
-        .any(|receiver| !authorized.contains(receiver))
+        .chain(function.requires.iter().rev())
     {
-        return Err(fail(
-            "borrowed byte receiver is outside an authenticated Slice<u8> traversal",
-        ));
+        walk(root, |expression, mut authorized| {
+            if let Some(region) = region(expression)? {
+                let view = bare_place(region.view)
+                    .ok_or_else(|| fail("borrowed byte traversal view is not a bare place"))?;
+                let provenance = declarations.byte_slice_provenance(&view.root)
+                    .ok_or_else(|| fail("borrowed byte traversal view lacks authenticated byte-slice provenance"))?;
+                if provenance.root != view.root {
+                    frozen_body(region.authored_body, region.payload, &[&provenance.root])?;
+                }
+                authorized = Some(region.receiver);
+            }
+            if receiver_shape(expression).is_some()
+                && !authorized.is_some_and(|receiver| std::ptr::eq(receiver, expression))
+            {
+                return Err(fail(
+                    "borrowed byte receiver is outside an authenticated Slice<u8> traversal",
+                ));
+            }
+            Ok(authorized)
+        })?;
     }
     Ok(())
 }
@@ -415,13 +407,98 @@ pub(crate) fn program_uses(program: &ResolvedProgram) -> bool {
 #[cfg(test)]
 mod tests;
 
-fn roots_use<'a>(roots: impl Iterator<Item = &'a ResolvedExpr>) -> bool {
-    let mut pending = roots.collect::<Vec<_>>();
-    while let Some(expression) = pending.pop() {
-        if receiver_shape(expression).is_some() {
+// Like the saved Vec frontier, closures expose their evaluated captures only;
+// their separately checked bodies cannot borrow authorization from the caller.
+#[derive(Clone, Copy)]
+struct Frame<'a> {
+    children: crate::hir::lexical_exit::ChildCursor<'a>,
+    authorized: Option<&'a ResolvedExpr>,
+    capture: usize,
+    entered: bool,
+}
+
+fn walk<'a>(
+    root: &'a ResolvedExpr,
+    mut visit: impl FnMut(
+        &'a ResolvedExpr,
+        Option<&'a ResolvedExpr>,
+    ) -> Result<Option<&'a ResolvedExpr>, Diagnostic>,
+) -> Result<(), Diagnostic> {
+    // Same fixed depth as the shared lexical cursor. This is stack storage,
+    // not a heap allocation or permission to obtain physical authority.
+    let mut frames = [None; crate::cache_codec::MAX_DEPTH + 1];
+    let frame = |expression, authorized| Frame {
+        children: crate::hir::lexical_exit::ChildCursor::new(expression),
+        authorized,
+        capture: 0,
+        entered: false,
+    };
+    frames[0] = Some(frame(root, None));
+    let mut len = 1;
+    while len != 0 {
+        let current = frames[len - 1]
+            .as_mut()
+            .expect("occupied byte traversal frame");
+        let expression = current.children.expression();
+        if !current.entered {
+            current.authorized = visit(expression, current.authorized)?;
+            current.entered = true;
+        }
+        let next = if let ResolvedExprKind::Closure { captures, .. } = &expression.kind {
+            let next = captures.get(current.capture).map(|capture| &capture.value);
+            current.capture += usize::from(next.is_some());
+            next
+        } else {
+            current.children.next()
+        };
+        let authorized = current.authorized;
+        if let Some(next) = next {
+            if len == frames.len() {
+                return Err(fail(
+                    "borrowed byte traversal scan exceeds admitted expression depth",
+                ));
+            }
+            frames[len] = Some(frame(next, authorized));
+            len += 1;
+        } else {
+            len -= 1;
+            frames[len] = None;
+        }
+    }
+    Ok(())
+}
+
+fn roots_use<'a>(roots: impl DoubleEndedIterator<Item = &'a ResolvedExpr>) -> bool {
+    for root in roots.rev() {
+        let mut found = false;
+        if walk(root, |expression, authorized| {
+            found |= receiver_shape(expression).is_some();
+            Ok(authorized)
+        })
+        .is_err()
+            || found
+        {
             return true;
         }
-        crate::hir::push_resolved_expression_children_in_authored_order(expression, &mut pending);
     }
     false
+}
+
+impl<'a> HirValidator<'a> {
+    pub(super) fn with_byte_traversal_observer(
+        mut self,
+        observer: &'a std::cell::Cell<bool>,
+    ) -> Self {
+        self.byte_traversal_observer = Some(observer);
+        self
+    }
+    pub(super) fn observed_partial_byte_receiver(&self, expression: &ResolvedExpr) -> bool {
+        let partial = partial_receiver(expression);
+        if partial {
+            if let Some(observer) = self.byte_traversal_observer {
+                observer.set(true);
+            }
+        }
+        partial
+    }
 }

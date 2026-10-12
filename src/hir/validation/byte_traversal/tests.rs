@@ -312,3 +312,40 @@ fn only_the_fully_authenticated_receiver_shape_is_partial() {
         assert!(crate::hir::validate(&forged).is_err(), "{case}");
     }
 }
+
+#[test]
+fn complete_receiver_census_region_and_discovery_have_no_heap_scratch() {
+    let program = resolved();
+    // The compiler and its ordinary validation storage are prepared outside
+    // this observation. These are the complete NEW independent proof phases,
+    // including provenance-root freezing and schema discovery, through return.
+    let (((), observed), refused, used) = crate::bounded_output::with_limit_usage(0, || {
+        crate::test_allocation_observer::measure(|| {
+            for function in &program.functions {
+                validate_function(&program.declarations, function).unwrap();
+            }
+            assert!(program_uses(&program));
+        })
+    });
+    assert!(!refused);
+    assert_eq!(used, 0);
+    assert!(!observed.invalid);
+    assert_eq!(observed.allocations, 0);
+    assert_eq!(observed.allocated, 0);
+    assert_eq!(observed.live, 0);
+    assert_eq!(observed.freed, 0);
+
+    let ast = crate::parse(
+        "module app.plain; @id(\"app.plain.main\") fn main() -> i64 { 0 }",
+        std::path::Path::new("plain.spx"),
+    )
+    .unwrap();
+    let plain = crate::hir::resolve(&ast).unwrap();
+    let ((), absent) = crate::test_allocation_observer::measure(|| {
+        validate_function(&plain.declarations, &plain.functions[0]).unwrap();
+        assert!(!program_uses(&plain));
+    });
+    assert!(!absent.invalid);
+    assert_eq!(absent.allocations, 0);
+    assert_eq!(absent.live, 0);
+}
