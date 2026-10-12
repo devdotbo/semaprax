@@ -4314,3 +4314,11 @@ the existing ordered union. It does not retain a cloned call staging vector or
 create a separate effect-set result for each call. Compiler forecasts and caller
 prepayment remain conservative; this storage change supplies no validation or
 execution authority and makes no application-fit claim.
+
+Ordinary HIR call frames lend immutable current callee result/effect metadata,
+and native Rust argument frames lend the exact import parameter slice. The
+private `hir/validation/call_signature.rs` result view retains owned intrinsic
+and generic-proof types. Frame payload observations count only owned variants;
+retained declarations remain owned and charged by their existing caller. The
+saved recursive validator and diagnostics are unchanged, as are the conservative
+compiler forecast, inline frame-size assertion, and pure-validator boundary.

@@ -15,6 +15,7 @@ mod branch_merge;
 mod byte_range;
 pub(in crate::hir) mod byte_traversal;
 mod call_parameters;
+mod call_signature;
 mod callable_types;
 mod canonical_loans;
 mod closure;
@@ -2267,7 +2268,7 @@ impl<'a> HirValidator<'a> {
                 expression: &'e ResolvedExpr,
                 args: &'e [ResolvedExpr],
                 params: CallParameters<'e>,
-                return_type: ResolvedType,
+                return_type: call_signature::ResultType<'e>,
                 return_ownership: OwnershipMode,
                 index: usize,
                 scope: BTreeMap<ValueId, ValidationBinding>,
@@ -2277,7 +2278,7 @@ impl<'a> HirValidator<'a> {
                 expression: &'e ResolvedExpr,
                 args: &'e [ResolvedExpr],
                 params: CallParameters<'e>,
-                return_type: ResolvedType,
+                return_type: call_signature::ResultType<'e>,
                 return_ownership: OwnershipMode,
                 index: usize,
                 path: String,
@@ -2285,7 +2286,7 @@ impl<'a> HirValidator<'a> {
             NativeNext {
                 expression: &'e ResolvedExpr,
                 args: &'e [ResolvedExpr],
-                params: Vec<ResolvedImportParameter>,
+                params: &'e [ResolvedImportParameter],
                 result: ResolvedType,
                 index: usize,
                 scope: BTreeMap<ValueId, ValidationBinding>,
@@ -2294,7 +2295,7 @@ impl<'a> HirValidator<'a> {
             NativeAfterArg {
                 expression: &'e ResolvedExpr,
                 args: &'e [ResolvedExpr],
-                params: Vec<ResolvedImportParameter>,
+                params: &'e [ResolvedImportParameter],
                 result: ResolvedType,
                 index: usize,
                 path: String,
@@ -2585,40 +2586,20 @@ impl<'a> HirValidator<'a> {
                     ..
                 } => {
                     params.owned_capacity()
-                        + resolved_type_owned_capacity(return_type)
+                        + call_signature::owned_capacity(return_type)
                         + scope(value)
                 }
                 Frame::CallAfterArg {
                     params,
                     return_type,
                     ..
-                } => params.owned_capacity() + resolved_type_owned_capacity(return_type),
+                } => params.owned_capacity() + call_signature::owned_capacity(return_type),
                 Frame::NativeNext {
-                    params,
                     result,
                     scope: value,
                     ..
-                } => {
-                    params.capacity() * std::mem::size_of::<ResolvedImportParameter>()
-                        + params
-                            .iter()
-                            .map(|param| {
-                                param.name.capacity() + resolved_type_owned_capacity(&param.ty)
-                            })
-                            .sum::<usize>()
-                        + resolved_type_owned_capacity(result)
-                        + scope(value)
-                }
-                Frame::NativeAfterArg { params, result, .. } => {
-                    params.capacity() * std::mem::size_of::<ResolvedImportParameter>()
-                        + params
-                            .iter()
-                            .map(|param| {
-                                param.name.capacity() + resolved_type_owned_capacity(&param.ty)
-                            })
-                            .sum::<usize>()
-                        + resolved_type_owned_capacity(result)
-                }
+                } => resolved_type_owned_capacity(result) + scope(value),
+                Frame::NativeAfterArg { result, .. } => resolved_type_owned_capacity(result),
                 Frame::BlockNext {
                     scope: value,
                     outer,
@@ -3185,7 +3166,7 @@ impl<'a> HirValidator<'a> {
                             let (params, return_type) = if let Some(signature) =
                                 self.intrinsic_signature(callee, type_arguments, instance, args)?
                             {
-                                signature
+                                (signature.0, call_signature::ResultType::Owned(signature.1))
                             } else if let Some(op) = crate::string_ops::by_id(callee.as_str()) {
                                 // Compiler-owned string operations carry
                                 // their reserved identity instead of an
@@ -3206,7 +3187,10 @@ impl<'a> HirValidator<'a> {
                                     )));
                                 }
                                 intrinsic_parameters = Some(CallParameters::String(op));
-                                (Vec::new(), op.return_type())
+                                (
+                                    Vec::new(),
+                                    call_signature::ResultType::Owned(op.return_type()),
+                                )
                             } else if let Some(op) = crate::str_ops::by_id(callee.as_str()) {
                                 if instance.is_some() || !type_arguments.is_empty() {
                                     return Err(hir_error(
@@ -3222,7 +3206,10 @@ impl<'a> HirValidator<'a> {
                                     )));
                                 }
                                 intrinsic_parameters = Some(CallParameters::Str(op));
-                                (Vec::new(), op.return_type())
+                                (
+                                    Vec::new(),
+                                    call_signature::ResultType::Owned(op.return_type()),
+                                )
                             } else if let Some(op) = crate::byte_ops::by_id(callee.as_str()) {
                                 if instance.is_some() || !type_arguments.is_empty() {
                                     return Err(hir_error(
@@ -3243,7 +3230,10 @@ impl<'a> HirValidator<'a> {
                                     self.buffer_reopen_sites.contains(&expression.id),
                                 )?;
                                 intrinsic_parameters = Some(CallParameters::Byte(op));
-                                (Vec::new(), op.return_type())
+                                (
+                                    Vec::new(),
+                                    call_signature::ResultType::Owned(op.return_type()),
+                                )
                             } else if let Some(op) = crate::host_io_ops::by_id(callee.as_str()) {
                                 if instance.is_some() || !type_arguments.is_empty() {
                                     return Err(hir_error(
@@ -3272,7 +3262,10 @@ impl<'a> HirValidator<'a> {
                                     }
                                     _ => {}
                                 }
-                                (crate::host_io_ops::resolved_params(op), op.return_type())
+                                (
+                                    crate::host_io_ops::resolved_params(op),
+                                    call_signature::ResultType::Owned(op.return_type()),
+                                )
                             } else {
                                 let (params, return_type, target_effects) = if let Some(target) =
                                     retained_program.resolve_call_target(callee, instance.as_ref())
@@ -3280,16 +3273,22 @@ impl<'a> HirValidator<'a> {
                                     borrowed_parameters = Some(target.params.as_slice());
                                     (
                                         Vec::new(),
-                                        target.return_type.clone(),
-                                        target.effects.clone(),
+                                        call_signature::ResultType::Borrowed(&target.return_type),
+                                        std::borrow::Cow::Borrowed(target.effects.as_slice()),
                                     )
                                 } else if self.proof_generic_calls {
-                                    generic_template::proof_signature(
-                                        self.program,
-                                        callee,
-                                        instance.as_ref(),
-                                        type_arguments,
-                                    )?
+                                    let (params, result, effects) =
+                                        generic_template::proof_signature(
+                                            self.program,
+                                            callee,
+                                            instance.as_ref(),
+                                            type_arguments,
+                                        )?;
+                                    (
+                                        params,
+                                        call_signature::ResultType::Owned(result),
+                                        std::borrow::Cow::Owned(effects),
+                                    )
                                 } else {
                                     return Err(hir_error(format!(
                                         "resolved callee `{callee}` is not indexed"
@@ -3306,7 +3305,7 @@ impl<'a> HirValidator<'a> {
                                 }
                                 match allowed_effects {
                                     Some(allowed) => {
-                                        for effect in &target_effects {
+                                        for effect in target_effects.iter() {
                                             if !allowed.contains(effect) {
                                                 return Err(hir_error(format!(
                                                     "call to `{callee}` requires undeclared effect `{effect}`"
@@ -3356,7 +3355,7 @@ impl<'a> HirValidator<'a> {
                                 expression,
                                 args,
                                 params: CallParameters::VecField(args),
-                                return_type,
+                                return_type: call_signature::ResultType::Owned(return_type),
                                 return_ownership,
                                 index: 0,
                                 scope,
@@ -3370,7 +3369,9 @@ impl<'a> HirValidator<'a> {
                                 expression,
                                 args,
                                 params: CallParameters::LiteralFormat(args),
-                                return_type: ResolvedType::String,
+                                return_type: call_signature::ResultType::Owned(
+                                    ResolvedType::String,
+                                ),
                                 return_ownership: OwnershipMode::Own,
                                 index: 0,
                                 scope,
@@ -3392,7 +3393,9 @@ impl<'a> HirValidator<'a> {
                                 params: CallParameters::Owned(
                                     crate::command_io_ops::resolved_params(call.operation),
                                 ),
-                                return_type: crate::command_io_ops::return_type(call.operation),
+                                return_type: call_signature::ResultType::Owned(
+                                    crate::command_io_ops::return_type(call.operation),
+                                ),
                                 return_ownership: crate::command_io_ops::result_ownership(
                                     call.operation,
                                 ),
@@ -3407,8 +3410,8 @@ impl<'a> HirValidator<'a> {
                                     "native Rust import call has a non-canonical expression identity",
                                 ));
                             }
-                            let import = self
-                                .program
+                            let retained_program = self.program;
+                            let import = retained_program
                                 .interfaces
                                 .iter()
                                 .flat_map(|interface| &interface.imports)
@@ -3445,7 +3448,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::NativeNext {
                                 expression,
                                 args: &call.args,
-                                params: import.parameters.clone(),
+                                params: import.parameters.as_slice(),
                                 result,
                                 index: 0,
                                 scope,
