@@ -615,7 +615,7 @@ struct PlanBuilder<'a> {
     function: &'a ResolvedFunction,
     allocation: Option<super::checked_allocation::Function<'a>>,
     byte_helpers: helper_index::HelperSites<'a>,
-    ordinary_index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+    ordinary_index: Option<helper_index::ordinary_view::OrdinaryView<'a>>,
     slots: Vec<CleanupSlot>,
     storage_to_slot: BTreeMap<StorageId, CleanupSlotId>,
     inventory_storage: BTreeMap<InventoryStorageId, StorageId>,

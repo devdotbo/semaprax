@@ -9,6 +9,7 @@ mod bindings;
 pub(crate) use bindings::HelperBindings;
 mod module_index;
 mod resolved;
+pub(crate) mod validation_frontier;
 pub(crate) use module_index::ModuleIndex;
 mod source;
 mod source_index;

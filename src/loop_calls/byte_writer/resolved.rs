@@ -1,5 +1,6 @@
 use super::*;
 mod selected;
+pub(super) mod validation;
 #[cfg(test)]
 pub(crate) use selected::checked_absent_with_work_reservation;
 pub(crate) use selected::checked_bindings_with_reservation_and_work;

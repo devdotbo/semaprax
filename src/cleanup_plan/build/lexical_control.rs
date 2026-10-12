@@ -3,6 +3,7 @@ use super::*;
 use crate::hir::FunctionExecutionId;
 #[cfg(test)]
 pub(super) mod capacity;
+pub(in crate::cleanup_plan::build) mod validation;
 #[cfg(test)]
 pub(super) use capacity::exit_capacity;
 

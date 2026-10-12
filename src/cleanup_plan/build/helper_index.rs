@@ -3,10 +3,18 @@
 use super::*;
 use crate::hir::ResolvedBinding;
 use crate::loop_calls::byte_writer::{HelperBindings, ModuleIndex};
+pub(super) mod ordinary_view;
+use ordinary_view::OrdinaryView;
+pub(in crate::cleanup_plan) mod validation;
 
 #[derive(Clone)]
 pub(super) enum HelperSites<'a> {
     Owned(HelperBindings<'a>),
+    Validation {
+        sites: &'a HelperBindings<'a>,
+        #[cfg(test)]
+        current: &'a dyn crate::loop_calls::byte_writer::validation_frontier::Ordinary<'a>,
+    },
     Indexed {
         sites: &'a HelperBindings<'a>,
         #[cfg(test)]
@@ -17,13 +25,13 @@ impl<'a> HelperSites<'a> {
     fn is_empty(&self) -> bool {
         match self {
             Self::Owned(sites) => sites.is_empty(),
-            Self::Indexed { sites, .. } => sites.is_empty(),
+            Self::Indexed { sites, .. } | Self::Validation { sites, .. } => sites.is_empty(),
         }
     }
     fn get(&self, at: &ExpressionId) -> Option<&'a ResolvedBinding> {
         match self {
             Self::Owned(sites) => sites.get(at),
-            Self::Indexed { sites, .. } => sites.get(at),
+            Self::Indexed { sites, .. } | Self::Validation { sites, .. } => sites.get(at),
         }
     }
     #[cfg(test)]
@@ -31,6 +39,7 @@ impl<'a> HelperSites<'a> {
         match self {
             Self::Owned(sites) => sites.owned_capacity_bytes(),
             Self::Indexed { index, .. } => index.owned_capacity_bytes(),
+            Self::Validation { current, .. } => current.owned_capacity_bytes(),
         }
     }
 }
@@ -65,8 +74,13 @@ impl<'a> PlanBuilder<'a> {
                 ))
             }
         };
-        let mut builder = Self::with_helper_sites(program, function, sites, Some(index))?;
-        builder.ordinary_index = Some(index);
+        let mut builder = Self::with_helper_sites(
+            program,
+            function,
+            sites,
+            Some(OrdinaryView::Construction(index)),
+        )?;
+        builder.ordinary_index = Some(OrdinaryView::Construction(index));
         index.ordinary_complete()?;
         Ok(builder)
     }
@@ -77,7 +91,7 @@ impl<'a> PlanBuilder<'a> {
         // profile priority, never from attached cleanup transitions.
         if let Some(index) = self.ordinary_index {
             return index
-                .ordinary_at(self.program, self.function, at)
+                .at(self.program, self.function, at)
                 .map(|(binding, _)| binding);
         }
         self.byte_helpers
@@ -91,7 +105,7 @@ impl<'a> PlanBuilder<'a> {
         program: &'a ResolvedProgram,
         function: &'a ResolvedFunction,
         byte_helpers: helper_index::HelperSites<'a>,
-        ordinary: Option<&'a ModuleIndex<'a>>,
+        ordinary: Option<OrdinaryView<'a>>,
     ) -> Result<Self, Diagnostic> {
         let has_byte_helpers = !byte_helpers.is_empty();
         let mut storage_to_slot = BTreeMap::new();
@@ -202,7 +216,7 @@ impl<'a> PlanBuilder<'a> {
             } else if ordinary.map_or_else(
                 || crate::byte_ops::requires_same_owner_set(function),
                 |index| {
-                    index.ordinary_has(
+                    index.has(
                         program,
                         function,
                         crate::cleanup_plan::renewal_profile::ordinary::Family::ByteSet,
@@ -213,7 +227,7 @@ impl<'a> PlanBuilder<'a> {
             } else if ordinary.map_or_else(
                 || crate::string_ops::replacement::requires(function),
                 |index| {
-                    index.ordinary_has(
+                    index.has(
                         program,
                         function,
                         crate::cleanup_plan::renewal_profile::ordinary::Family::String,
@@ -224,7 +238,7 @@ impl<'a> PlanBuilder<'a> {
             } else if ordinary.map_or_else(
                 || crate::hir::vec_loop_renewal::requires_in(program, function),
                 |index| {
-                    index.ordinary_has(
+                    index.has(
                         program,
                         function,
                         crate::cleanup_plan::renewal_profile::ordinary::Family::Vec,
@@ -247,7 +261,7 @@ impl<'a> PlanBuilder<'a> {
                         )
                 },
                 |index| {
-                    index.ordinary_has(
+                    index.has(
                         program,
                         function,
                         crate::cleanup_plan::renewal_profile::ordinary::Family::Iterator,

@@ -998,6 +998,13 @@ replay. `cleanup_plan/build/helper_index.rs` owns immutable module construction
 helper-site authority and reserved all-function plan staging. Construction drops
 its borrowed index before attaching plans; validation and replay independently
 reconstruct current HIR authority.
+`loop_calls/byte_writer/validation_frontier.rs` owns the separate ordered
+cleanup-validation demand phase. Sealed current-member receivers lend stable
+lazy helper/family cells to `cleanup_plan/build/helper_index/validation.rs`;
+future bodies remain unforced until earlier canonical comparisons pass. The
+complete original validator remains under `cleanup_plan/validate/owned.rs` for
+tests. Validation drops its proof/storage owner before independent final replay.
+
 
 Current graph versions select the minimum schema needed by the admitted
 feature, from legacy scalar/Result meaning through Option, aggregates,

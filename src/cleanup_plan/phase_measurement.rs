@@ -47,6 +47,7 @@ fn verify_pair(program: &crate::hir::ResolvedProgram) {
         constructed_bytes(&helper_index::build_program_plans(program).unwrap()),
         expected
     );
+    validate::owned::validate_program_unindexed_reference(program).unwrap();
     validate_program(program).unwrap();
 }
 #[test]
@@ -110,7 +111,7 @@ fn generated_codec_construction_and_replay_measurement() {
         emit(serde_json::json!({"record":"context","schema":"semaprax.opt738.phase-measurement.v1","generated_source_sha256":sha(generated.as_bytes()),"app_source_sha256":sha(app.as_bytes()),"functions":program.functions.len(),"instances":program.function_instances.len(),"helper_functions":helper_functions,"reservation_limit":RESERVATION_LIMIT,"warmup":warmup,"samples":samples}));
         let expected = plans(program);
         for iteration in 0..warmup+samples {
-            for phase in ["construction", "replay"] {
+            for phase in ["construction", "replay", "validation"] {
                 for indexed in if iteration % 2 == 0 {[false,true]} else {[true,false]} {
                     let start = Instant::now();
                     if phase == "construction" {
@@ -119,6 +120,13 @@ fn generated_codec_construction_and_replay_measurement() {
                         assert!(!overflowed);let output=output.unwrap();
                         // Serialization and assertions are outside the measured interval.
                         assert_eq!(constructed_bytes(&output),expected);
+                        emit(serde_json::json!({"record":"sample","phase":phase,"indexed":indexed,"iteration":iteration,"warmup":iteration<warmup,"elapsed_ns":elapsed_ns,"reservation_ledger_bytes":reserved,"replay_work_units":null,"status":"success"}));
+                    } else if phase == "validation" {
+                        let (output, overflowed, reserved) = crate::bounded_output::with_limit_usage(RESERVATION_LIMIT, || {
+                            if indexed {validate_program(program)} else {validate::owned::validate_program_unindexed_reference(program)}
+                        });
+                        let elapsed_ns=start.elapsed().as_nanos();
+                        assert!(!overflowed);output.unwrap();
                         emit(serde_json::json!({"record":"sample","phase":phase,"indexed":indexed,"iteration":iteration,"warmup":iteration<warmup,"elapsed_ns":elapsed_ns,"reservation_ledger_bytes":reserved,"replay_work_units":null,"status":"success"}));
                     } else {
                         let (output, overflowed, reserved) = crate::bounded_output::with_limit_usage(RESERVATION_LIMIT, || replay::phase_measurement::replay(program,indexed));

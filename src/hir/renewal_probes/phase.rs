@@ -61,6 +61,21 @@ impl<'a> Probes<'a> {
         })
     }
 }
+#[cfg(test)]
+impl Probes<'_> {
+    pub(crate) fn backing_bytes(&self) -> usize {
+        self.declarations.capacity()
+            * std::mem::size_of::<(&DeclarationId, &crate::hir::Declaration)>()
+            + self.parameters.capacity()
+                * std::mem::size_of::<(
+                    &DeclarationId,
+                    &Vec<crate::hir::ResolvedTypeParameterDeclaration>,
+                )>()
+            + self.fields.capacity()
+                * std::mem::size_of::<(&DeclarationId, &Vec<crate::hir::ResolvedFieldDeclaration>)>(
+                )
+    }
+}
 impl Index for Probes<'_> {
     fn declaration(
         &self,

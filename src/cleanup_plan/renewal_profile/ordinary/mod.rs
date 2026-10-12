@@ -7,6 +7,7 @@ mod iterator_shape;
 mod leaf;
 mod scratch;
 pub(crate) mod sort;
+mod validation;
 mod vector;
 use crate::hir::{ExpressionId, ResolvedBinding, ResolvedFunction, ResolvedProgram};
 pub(crate) use scratch::{Admission, Refusal, Scratch};
@@ -43,8 +44,9 @@ pub(crate) struct Directory<'a> {
     function: &'a ResolvedFunction,
     entries: Vec<Entry<'a>>,
 }
-/// Only this iterator can construct a current-member token. It carries exact
-/// borrowed pointers, not source or cleanup-plan authority.
+/// Only registered iterator/ordinal projections construct this token with exact
+/// borrowed pointers, never source or cleanup-plan authority.
+#[derive(Clone, Copy)]
 pub(crate) struct CurrentMember<'a> {
     program: &'a ResolvedProgram,
     function: &'a ResolvedFunction,
@@ -57,6 +59,19 @@ pub(crate) fn current_members(
         .iter()
         .chain(program.function_instances.iter().map(|i| &i.function))
         .map(move |function| CurrentMember { program, function })
+}
+pub(crate) fn current_member_at(
+    program: &ResolvedProgram,
+    ordinal: usize,
+) -> Option<CurrentMember<'_>> {
+    let function = program.functions.get(ordinal).or_else(|| {
+        let instance = ordinal.checked_sub(program.functions.len())?;
+        program
+            .function_instances
+            .get(instance)
+            .map(|i| &i.function)
+    })?;
+    Some(CurrentMember { program, function })
 }
 impl<'a> CurrentMember<'a> {
     pub(crate) fn function(&self) -> &'a ResolvedFunction {
