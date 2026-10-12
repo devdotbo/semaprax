@@ -1,6 +1,7 @@
 //! Independent replay directory queries spend the existing ReplayBudget.
 use super::*;
 use crate::cleanup_plan::renewal_profile::ordinary::{Directory, Family};
+use crate::hir::ResolvedBinding;
 pub(super) fn lookup<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
@@ -103,4 +104,41 @@ pub(super) fn whole(
         })?;
     budget.charge(function, units, "ordinary renewal destination comparison")?;
     Ok(value == &binding.id && place.projections.is_empty())
+}
+
+/// The actual full-program replay owns its directory independently and debits
+/// the same remaining replay ledger before each discovery activity.
+pub(super) fn index<'a>(
+    program: &'a ResolvedProgram,
+    budget: &mut ReplayBudget,
+) -> Result<crate::loop_calls::byte_writer::ModuleIndex<'a>, Diagnostic> {
+    let first = program
+        .functions
+        .iter()
+        .chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        )
+        .next();
+    let Some(first) = first else {
+        return crate::loop_calls::byte_writer::ModuleIndex::new(program);
+    };
+    let mut refusal = None;
+    let result = crate::loop_calls::byte_writer::ModuleIndex::new_with_ordinary_work(
+        program,
+        None,
+        &mut |units| match budget.charge(first, units, "ordinary renewal directory construction") {
+            Ok(()) => true,
+            Err(error) => {
+                refusal = Some(error);
+                false
+            }
+        },
+    );
+    match result {
+        Ok(index) => Ok(index),
+        Err(error) => Err(refusal.unwrap_or(error)),
+    }
 }

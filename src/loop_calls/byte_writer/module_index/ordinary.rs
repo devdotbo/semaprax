@@ -4,6 +4,7 @@ use super::*;
 use crate::cleanup_plan::renewal_profile::ordinary::{
     Admission, Directory, Family, Refusal, Scratch,
 };
+use crate::hir::ExpressionId;
 impl<'a> ModuleIndex<'a> {
     pub(crate) fn new(program: &'a ResolvedProgram) -> Result<Self, Diagnostic> {
         let mut index = Self::new_helpers(program)?;

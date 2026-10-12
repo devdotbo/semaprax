@@ -124,6 +124,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/loop_calls/byte_writer/module_index/ordinary/numeric.rs"),
             include_str!("../src/hir/renewal_probes.rs"),
             include_str!("../src/hir/renewal_probes/phase.rs"),
+            include_str!("../src/cleanup_plan/replay/ordinary_renewals.rs"),
             include_str!("../src/cleanup_plan/renewal_profile/ordinary/compare.rs"),
             include_str!("../src/cleanup_plan/renewal_profile/ordinary/consuming.rs"),
             include_str!("../src/cleanup_plan/renewal_profile/ordinary/debug_contains.rs"),

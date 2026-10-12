@@ -75,6 +75,7 @@ pub(super) fn validate_with_index(
             &storage,
             &leaves,
             helpers,
+            budget,
         )?;
         (storage, leaves)
     };

@@ -463,7 +463,7 @@ fn validate_structure(
 
 pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     let mut budget = ReplayBudget::new();
-    let helpers = phase_measurement::ordinary_index(program, &mut budget)?;
+    let helpers = ordinary_renewals::index(program, &mut budget)?;
     reserve_program_skeleton_work(
         program,
         program.functions().iter().chain(
@@ -578,6 +578,7 @@ fn validate_structure_with_budget(
         &storage,
         &leaves,
         helpers,
+        budget,
     )?;
     validate_exits(program, function, &storage, &leaves, &BTreeSet::new())?;
     validate_reference_coverage(function)?;
@@ -2525,6 +2526,7 @@ fn validate_blocks_and_edges(
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let statuses = plan
@@ -2567,7 +2569,7 @@ fn validate_blocks_and_edges(
                     validate_place(function, destination, storage, leaves)?;
                 }
                 CleanupTransition::ReserveRenewal { at, binding } => {
-                    renewal::validate_binding(program, function, at, binding, helpers)?;
+                    renewal::validate_binding(program, function, at, binding, helpers, budget)?;
                     require_expression(function, expressions, at)?;
                     validate_place(function, binding, storage, leaves)?;
                 }
@@ -2576,7 +2578,7 @@ fn validate_blocks_and_edges(
                     source,
                     destination,
                 } => {
-                    renewal::validate_binding(program, function, at, destination, helpers)?;
+                    renewal::validate_binding(program, function, at, destination, helpers, budget)?;
                     require_expression(function, expressions, at)?;
                     validate_place(function, source, storage, leaves)?;
                     validate_place(function, destination, storage, leaves)?;

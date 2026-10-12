@@ -1,8 +1,7 @@
 //! Paid borrowed emissions for the unchanged String/byte-set family predicates.
 use super::{Admission, Directory, Entry, Family, Refusal, Scratch};
 use crate::hir::{
-    ResolvedBinding, ResolvedExpr, ResolvedExprKind as K, ResolvedFunction, ResolvedStatement as S,
-    ValueId,
+    ResolvedExpr, ResolvedExprKind as K, ResolvedFunction, ResolvedStatement as S, ValueId,
 };
 use std::cmp::Ordering;
 

@@ -24,7 +24,7 @@ mod owner_admission;
 // keeps its existing SPX-T303/T305/T306 refusal.
 mod owned_liveness;
 mod renewal_history;
-mod renewal_profile;
+pub(crate) mod renewal_profile;
 pub(crate) use renewal_profile::RenewalBindings as ReplayRenewalBindings;
 mod replay;
 mod row_loan;
