@@ -184,22 +184,34 @@ impl ProgramSource for Program {
     }
 }
 
-/// The producer prepays the generated scalar main before lending this input.
-/// Authored bodies and declaration backing are never cloned. Recursive
-/// generated overlays remain on the paid owned route in this tranche.
+/// A producer-paid generated overlay after the exact authored slices.
+/// Authored bodies and declaration backing are never cloned to lend this input.
 pub(crate) struct SyntheticProgramView<'a> {
     authored: &'a Program,
+    generated_types: Vec<TypeDeclaration>,
     generated_functions: Vec<Function>,
     identity: OverlayIdentity,
 }
 impl<'a> SyntheticProgramView<'a> {
-    pub(crate) fn into_parts(self) -> (&'a Program, Vec<Function>) {
-        (self.authored, self.generated_functions)
+    pub(crate) fn into_overlay_parts(self) -> (&'a Program, Vec<TypeDeclaration>, Vec<Function>) {
+        (self.authored, self.generated_types, self.generated_functions)
+    }
+    /// Generated declarations carry no verdict. The private producer applies
+    /// ordinary import/layout classifiers; every frontend pass still runs.
+    pub(crate) fn with_imports(
+        authored: &'a Program,
+        generated_types: Vec<TypeDeclaration>,
+        generated_functions: Vec<Function>,
+    ) -> Option<Self> {
+        authored.types.len().checked_add(generated_types.len())?;
+        authored.functions.len().checked_add(generated_functions.len())?;
+        Some(Self { authored, generated_types, generated_functions,
+            identity: OverlayIdentity { _nonzero_size: 0 } })
     }
 
     pub(crate) fn new(authored: &'a Program, generated_functions: Vec<Function>) -> Option<Self> {
-        // This first route owns only leaf main bodies. All recursive generated
-        // overlays remain on the explicitly paid owned projection path.
+        // Keep the leaf-main constructor closed. Imported prototypes use the
+        // separately classified and paid imported-overlay producer.
         if generated_functions.iter().any(|function| {
             function.name != "main"
                 || !function.params.is_empty()
@@ -220,6 +232,7 @@ impl<'a> SyntheticProgramView<'a> {
             .checked_add(generated_functions.len())?;
         Some(Self {
             authored,
+            generated_types: Vec::new(),
             generated_functions,
             identity: OverlayIdentity { _nonzero_size: 0 },
         })
@@ -244,7 +257,8 @@ impl ProgramSource for SyntheticProgramView<'_> {
         &self.authored.permits
     }
     fn types(&self) -> DeclSlices<'_, TypeDeclaration> {
-        DeclSlices::one(&self.authored.types)
+        DeclSlices::append(&self.authored.types, &self.generated_types)
+            .expect("constructor checked declaration count")
     }
     fn interfaces(&self) -> &[InterfaceDeclaration] {
         &self.authored.interfaces

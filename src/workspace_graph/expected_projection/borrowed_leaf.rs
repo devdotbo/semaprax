@@ -143,6 +143,9 @@ impl<'a> Input<'a> {
     ) -> Result<Self, Vec<Diagnostic>> {
         if eligible(program) {
             construct(program).map(Self::Borrowed)
+        } else if super::borrowed_imports::eligible(program, authored, programs) {
+            super::borrowed_imports::construct(program, authored, programs, registry)
+                .map(Self::Borrowed)
         } else {
             synthetic_program_with_registry(program, authored, programs, Some(registry))
                 .map(Self::Owned)

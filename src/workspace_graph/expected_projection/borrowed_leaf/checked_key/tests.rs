@@ -95,3 +95,41 @@ fn checked_key_omits_only_discarded_sidecar_clone_payloads_and_preserves_sticky_
     assert_eq!(charged, 0);
     assert!(first.is_some());
 }
+
+
+#[test]
+fn imported_cache_directory_is_paid_while_generated_backing_is_live() {
+    let authored = [11u64, 12];
+    let bytes = 19 * std::mem::size_of::<u64>();
+    for limit in [bytes, bytes - 1] {
+        // Generated backing belongs to the already-paid overlay. Observe only
+        // its real replacement; successful receiving Drop also frees it.
+        let generated = vec![13u64; 17];
+        let ((success, observed), refused, charged, first) =
+            crate::bounded_output::with_limit_usage_refusal(limit, || measure(|| {
+                let result = append_copies(&authored, generated);
+                let success = result.is_ok();
+                if let Ok(values) = &result {
+                    assert_eq!(&values[..2], &authored);
+                    assert_eq!(&values[2..], &[13u64; 17]);
+                } else {
+                    assert!(reserve_builder_structure(0).is_err());
+                }
+                drop(result);
+                success
+            }));
+        // The allocation observer records frees only for its own allocations;
+        // generated backing was acquired outside this receiver's observation.
+        assert!(!observed.invalid && observed.live == 0);
+        assert_eq!(observed.allocated, observed.freed);
+        if limit == bytes {
+            assert!(success && !refused && charged == bytes);
+            assert_eq!(observed.allocations, 1);
+            assert_eq!(observed.reallocations, 0);
+            assert_eq!(observed.allocated, bytes);
+            assert_eq!(observed.highwater, bytes);
+        } else {
+            assert!(!success && refused && first.is_some());
+        }
+    }
+}

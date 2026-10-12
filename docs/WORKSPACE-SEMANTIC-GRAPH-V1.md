@@ -320,13 +320,27 @@ its leaf body and empty recursive collections make teardown allocation-free.
 A concrete presentation identity distinguishes different overlays of the same
 source. Full source verification, prelude selection, declaration indexing,
 byte-helper checks and HIR resolution still run over that presentation.
-Imports and invariant desugaring retain the paid owned projection; frontend
-cache keys also retain the original owned path. Only the reservation for the
-absent synthetic AST copy is reduced on the actual uncached borrowed route.
-HIR expansion, cleanup and retained-output forecasts are unchanged. This is a
-partial OPT776 boundary: generated imported overlays and their teardown remain
-owned, and original application fit and actual allocation gates are unqualified
-until the owning checks run.
+Imported presentations now also borrow authored declaration slices when the
+relevant type layouts are invariant/class-free and imported prototypes are
+nongeneric. The producer owns only explicit aliases, independently derived
+private layout copies, rewritten signatures/checking defaults, and a missing
+scalar main. Exact generated type/function directories and the complete borrowed
+type-name index are prepaid before allocation; cloned signature/type backing
+and existing default/rewrite work remain paid. Private-layout presentation and
+all ordinary import/ownership/byte-helper classifiers remain independent checks.
+No authored body is cloned just to make the input view. A cold owning cache key
+still clones its authored declarations at publication and moves generated
+overlays into their ordinary order; this is not a shared authored AST cache.
+
+Invariant/class transforms and generic body-retaining compiler wrappers keep
+the original owning receiver. The owning oracle remains complete, including
+those fallback decisions. Authored pointers/order, copied alias/default bytes,
+canonical/graph/HIR diagnostics, actual directory replacement layouts,
+constructor/resolver/cache-publication lifetime and allocation-free overlay Drop
+have source-authored owners in `borrowed_imports::tests`. Existing HIR/cleanup and
+retained-output forecasts and application limits remain unchanged. The imported
+receiver has not yet been executed or qualified; no complete OPT776, application
+fit, peak-memory or performance claim follows from these source definitions.
 
 Within one resolved-core validation attempt, private type authority retains one
 borrowed owner bound to the exact immutable Program slice and authored map.
