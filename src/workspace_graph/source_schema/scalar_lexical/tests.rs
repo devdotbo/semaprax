@@ -5,16 +5,15 @@
 //! oracle. Every hostile case first requires the same unmodified admission.
 //! These definitions are authored; executable qualification is pending.
 use super::*;
-use crate::cleanup_plan::{
-    ReplayPhysicalRefusal, SelectedReplayCause, SelectedReplayUnpaidReason,
-};
+use crate::cleanup_plan::{ReplayPhysicalRefusal, SelectedReplayCause, SelectedReplayUnpaidReason};
 use crate::interpreter::ResolvedEvaluationOutcome;
 use crate::test_allocation_observer::{current_metrics, measure, Metrics};
 use crate::workspace_graph::source_schema::REPORT;
 
 const PATH: &str = "src/app.spx";
 const TESTS_PATH: &str = "src/tests.spx";
-const TESTS: &str = "module calculator.tests;\n@id(\"calculator.tests.main\") fn main() -> i64 { 0 }\n";
+const TESTS: &str =
+    "module calculator.tests;\n@id(\"calculator.tests.main\") fn main() -> i64 { 0 }\n";
 /// The original OPT766 body, verbatim from the persisted CLI owner.
 const BODY: &str = "let mut i=0; let mut total=0; while i<3 { i=i+1; if i==2 {continue;} else {0}; total=total+i; 0 } total";
 
@@ -51,8 +50,16 @@ fn build(app: &str) -> (WorkspaceGraphBuild, Vec<WorkspaceSource>) {
 fn module<'a>(build: &'a WorkspaceGraphBuild, path: &str) -> &'a WorkspaceResolvedModule {
     build.hir.modules.iter().find(|m| m.path == path).unwrap()
 }
-fn module_mut<'a>(build: &'a mut WorkspaceGraphBuild, path: &str) -> &'a mut WorkspaceResolvedModule {
-    build.hir.modules.iter_mut().find(|m| m.path == path).unwrap()
+fn module_mut<'a>(
+    build: &'a mut WorkspaceGraphBuild,
+    path: &str,
+) -> &'a mut WorkspaceResolvedModule {
+    build
+        .hir
+        .modules
+        .iter_mut()
+        .find(|m| m.path == path)
+        .unwrap()
 }
 fn main_mut(build: &mut WorkspaceGraphBuild) -> &mut ResolvedFunction {
     module_mut(build, PATH)
@@ -83,8 +90,14 @@ fn received(
     sources: &dyn ReceivingSources,
 ) -> Result<Option<&'static str>, SelectedReplayRefusal> {
     let held = module(build, path);
-    receive_paid(held, &build.hir.modules, &build.hir.declarations, sources, REPORT)
-        .map(|receipt| receipt.map(|receipt| receipt.select(held).expect("own module")))
+    receive_paid(
+        held,
+        &build.hir.modules,
+        &build.hir.declarations,
+        sources,
+        REPORT,
+    )
+    .map(|receipt| receipt.map(|receipt| receipt.select(held).expect("own module")))
 }
 fn refused(build: &WorkspaceGraphBuild, sources: &dyn ReceivingSources) -> SelectedReplayRefusal {
     match received(build, PATH, sources) {
@@ -122,7 +135,10 @@ fn original_terminated_guard_is_received_from_current_source_with_full_program_p
     let text = canonical(&source(BODY));
     let (build, sources) = build(&text);
     let app = module(&build, PATH);
-    assert!(app.scalar_lexical.is_some(), "lexical scalar owner captured");
+    assert!(
+        app.scalar_lexical.is_some(),
+        "lexical scalar owner captured"
+    );
     assert!(
         module(&build, TESTS_PATH).scalar_lexical.is_none(),
         "an exit-free module keeps its existing route"
@@ -137,7 +153,10 @@ fn original_terminated_guard_is_received_from_current_source_with_full_program_p
     )
     .unwrap_err();
     assert_eq!(frozen.code, "SPX-G410");
-    assert_eq!(build.source_graph_schemas().unwrap_err()[0].code, "SPX-G410");
+    assert_eq!(
+        build.source_graph_schemas().unwrap_err()[0].code,
+        "SPX-G410"
+    );
     let (direct, schema) = oracle(&text);
     let tests_schema = crate::graph::graph_schema(
         &hir::resolve(&crate::check(TESTS, TESTS_PATH).unwrap()).unwrap(),
@@ -146,14 +165,25 @@ fn original_terminated_guard_is_received_from_current_source_with_full_program_p
     let schemas = build.source_graph_schemas_receiving(&sources).unwrap();
     assert_eq!(schemas[PATH], schema, "original full-program Graph family");
     assert_eq!(schemas[TESTS_PATH], tests_schema);
-    assert_eq!(received(&build, PATH, &sources).unwrap(), Some(schema));
+    assert_eq!(
+        received(&build, PATH, &sources).unwrap_or_else(|_| panic!("paid source receipt required")),
+        Some(schema)
+    );
     // Retained HIR and canonical plans equal the independent program's.
     for retained in &app.functions {
-        let control = direct.functions.iter().find(|f| f.id == retained.id).unwrap();
+        let control = direct
+            .functions
+            .iter()
+            .find(|f| f.id == retained.id)
+            .unwrap();
         assert_eq!(retained.params, control.params, "{}", retained.id);
         assert_eq!(retained.return_type, control.return_type, "{}", retained.id);
         assert_eq!(retained.body, control.body, "{}", retained.id);
-        assert_eq!(retained.cleanup_plan, control.cleanup_plan, "{}", retained.id);
+        assert_eq!(
+            retained.cleanup_plan, control.cleanup_plan,
+            "{}",
+            retained.id
+        );
     }
     let linked = build
         .linked_owned_data_api_program_with_roots("calculator.app", &[])
@@ -168,7 +198,10 @@ fn original_terminated_guard_is_received_from_current_source_with_full_program_p
 fn canonical_semicolon_control_is_the_same_generation_and_body_drift_is_a_new_receipt() {
     let text = canonical(&source(BODY));
     let control = canonical(&source(&BODY.replace("else {0};", "else {0}")));
-    assert_eq!(control, text, "optional guard terminator canonicalizes away");
+    assert_eq!(
+        control, text,
+        "optional guard terminator canonicalizes away"
+    );
     let drift = canonical(&source(&BODY.replace("total+i", "total+i+1")));
     for (text, expected) in [(&text, 4), (&drift, 6)] {
         let (build, sources) = build(text);
@@ -181,14 +214,23 @@ fn canonical_semicolon_control_is_the_same_generation_and_body_drift_is_a_new_re
             .linked_owned_data_api_program_with_roots("calculator.app", &[])
             .unwrap();
         assert_eq!(evaluate(&linked), evaluate(&direct));
-        assert_eq!(evaluate(&linked), ResolvedEvaluationOutcome::ReturnedI64(expected));
+        assert_eq!(
+            evaluate(&linked),
+            ResolvedEvaluationOutcome::ReturnedI64(expected)
+        );
     }
     // A former generation's source cannot authorize the drifted build, and
     // the drifted source cannot authorize the former build.
     let (original, original_sources) = build(&text);
     let (drifted, drifted_sources) = build(&drift);
-    assert_mismatch(&refused(&original, &drifted_sources), "old build, new source");
-    assert_mismatch(&refused(&drifted, &original_sources), "new build, old source");
+    assert_mismatch(
+        &refused(&original, &drifted_sources),
+        "old build, new source",
+    );
+    assert_mismatch(
+        &refused(&drifted, &original_sources),
+        "new build, old source",
+    );
 }
 
 #[test]
@@ -230,7 +272,12 @@ fn current_source_namespace_member_and_layout_attacks_refuse_with_one_paid_repor
     let drift = canonical(&source(&BODY.replace("total+i", "total+i+1")));
     for attack in 0..10 {
         let (mut build, mut sources) = build(&text);
-        assert!(received(&build, PATH, &sources).unwrap().is_some(), "{attack}");
+        assert!(
+            received(&build, PATH, &sources)
+                .unwrap_or_else(|_| panic!("paid source receipt required"))
+                .is_some(),
+            "{attack}"
+        );
         let at = sources.iter().position(|s| s.path == PATH).unwrap();
         match attack {
             // Authentic HIR paired with another generation's source bytes.
@@ -283,7 +330,10 @@ fn current_source_namespace_member_and_layout_attacks_refuse_with_one_paid_repor
             Ok(schema) => panic!("attack {attack} selected {schema:?}"),
         };
         assert_mismatch(&refusal, &format!("attack {attack}"));
-        assert!(refusal.receipt().is_none(), "attack {attack}: no Session receipt");
+        assert!(
+            refusal.receipt().is_none(),
+            "attack {attack}: no Session receipt"
+        );
         assert_public(&build.source_graph_schemas_receiving(&sources).unwrap_err());
     }
 }
@@ -295,7 +345,9 @@ fn reordered_missing_transplanted_detached_and_inserted_inventories_refuse() {
     let other = canonical(&with_spare(&BODY.replace("total+i", "total+i+1"), spare));
     for attack in 0..5 {
         let (mut build, sources) = build(&text);
-        assert!(received(&build, PATH, &sources).unwrap().is_some());
+        assert!(received(&build, PATH, &sources)
+            .unwrap_or_else(|_| panic!("paid source receipt required"))
+            .is_some());
         match attack {
             0 => module_mut(&mut build, PATH)
                 .scalar_lexical
@@ -357,7 +409,9 @@ fn certificate_and_plan_mutations_refuse_without_repair() {
     let text = canonical(&source(BODY));
     for attack in 0..3 {
         let (mut build, sources) = build(&text);
-        assert!(received(&build, PATH, &sources).unwrap().is_some());
+        assert!(received(&build, PATH, &sources)
+            .unwrap_or_else(|_| panic!("paid source receipt required"))
+            .is_some());
         let function = main_mut(&mut build);
         let site = function.body.id.clone();
         let control = function.cleanup_plan.lexical_control.as_mut().unwrap();
@@ -397,7 +451,8 @@ fn certificate_and_plan_mutations_refuse_without_repair() {
 
 #[test]
 fn closed_family_exclusions_keep_their_existing_route() {
-    const PROVIDER: &str = "module calculator.lib;\n@id(\"calculator.lib.one\") fn one()->i64 { 1 }\n";
+    const PROVIDER: &str =
+        "module calculator.lib;\n@id(\"calculator.lib.one\") fn one()->i64 { 1 }\n";
     let probe = "@id(\"calculator.app.probe\") fn probe(x:i64)->i64 { x }";
     let cases: [(String, &[(&str, &str)]); 6] = [
         // An ordinary Call in a dead branch.
@@ -447,7 +502,10 @@ fn closed_family_exclusions_keep_their_existing_route() {
         // dead-branch Call, String, record and Vec controls must build.
         let built = try_build_with(&canonical(text), extra);
         let Ok((build, sources)) = built else {
-            assert!(index >= 4, "case {index} must be an admitted ordinary module");
+            assert!(
+                index >= 4,
+                "case {index} must be an admitted ordinary module"
+            );
             continue;
         };
         assert!(
@@ -471,10 +529,20 @@ fn receipt_selects_only_its_own_module_without_post_release_work() {
     let (build, sources) = build(&canonical(&source(BODY)));
     let held = module(&build, PATH);
     for own in [true, false] {
-        let receipt = receive_paid(held, &build.hir.modules, &build.hir.declarations, &sources, REPORT)
-            .unwrap()
-            .expect("captured owner");
-        let target = if own { held } else { module(&build, TESTS_PATH) };
+        let receipt = receive_paid(
+            held,
+            &build.hir.modules,
+            &build.hir.declarations,
+            &sources,
+            REPORT,
+        )
+        .unwrap_or_else(|_| panic!("paid source receipt required"))
+        .expect("captured owner");
+        let target = if own {
+            held
+        } else {
+            module(&build, TESTS_PATH)
+        };
         let (selected, metrics) = measure(|| receipt.select(target));
         assert_eq!(selected.is_some(), own);
         assert!(!metrics.invalid);
@@ -563,14 +631,18 @@ fn capture_selection_is_metered_and_unaffected_modules_keep_exact_builder_usage(
     let sources = sources_with(&text, &[]);
     let start = crate::cache_codec::MAX_NODES;
     let mut left = start;
-    assert!(capture::capture_metered(&program, &resolved, &authored, &sources, &mut left)
-        .unwrap()
-        .is_some());
+    assert!(
+        capture::capture_metered(&program, &resolved, &authored, &sources, &mut left)
+            .unwrap()
+            .is_some()
+    );
     let spent = start - left;
     let mut exact = spent;
-    assert!(capture::capture_metered(&program, &resolved, &authored, &sources, &mut exact)
-        .unwrap()
-        .is_some());
+    assert!(
+        capture::capture_metered(&program, &resolved, &authored, &sources, &mut exact)
+            .unwrap()
+            .is_some()
+    );
     assert_eq!(exact, 0, "capture work is exactly the successful debit sum");
     // One short fails the final member digest debit: not captured, no error.
     let mut short = spent - 1;
@@ -593,7 +665,13 @@ fn capture_selection_is_metered_and_unaffected_modules_keep_exact_builder_usage(
     let mut work = start;
     let (answer, overflowed, used) =
         crate::bounded_output::with_limit_usage(MAX_CHANGE_BUILDER_BYTES, || {
-            capture::capture_metered(&tests, &tests_resolved, &tests_authored, &sources, &mut work)
+            capture::capture_metered(
+                &tests,
+                &tests_resolved,
+                &tests_authored,
+                &sources,
+                &mut work,
+            )
         });
     assert!(matches!(answer, Ok(None)) && !overflowed);
     assert_eq!(used, census::cursor_bytes());
@@ -622,14 +700,20 @@ fn capture_capacity_excess_is_debited_after_the_fact_and_stays_refused() {
     assert_eq!(first.unwrap().requested, 2 * member);
     // A short allocation has no excess to debit and still poisons.
     let ((code, restored), overflowed, used, first) = excess(MAX_CHANGE_BUILDER_BYTES, 2);
-    assert_eq!((code, restored, overflowed, used), ("SPX-G171", false, true, 0));
+    assert_eq!(
+        (code, restored, overflowed, used),
+        ("SPX-G171", false, true, 0)
+    );
     assert_eq!(first.unwrap().requested, usize::MAX);
 }
 
 #[test]
 fn source_less_change_view_keeps_the_original_refusal() {
     let (build, _) = build(&canonical(&source(BODY)));
-    assert_eq!(build.into_change_view().unwrap_err()[0].code, "SPX-G410");
+    match build.into_change_view() {
+        Err(errors) => assert_eq!(errors[0].code, "SPX-G410"),
+        Ok(_) => panic!("source-less change view must refuse"),
+    }
 }
 
 /// One observation for reception and the whole lifetime of what it returns.
@@ -642,12 +726,13 @@ fn receive_observed<F: Copy>(
     limit: usize,
     inspect: impl FnOnce(Result<Option<&'static str>, SelectedReplayRefusal>, Metrics) -> F,
 ) -> (F, Metrics, bool, usize) {
-    let ((facts, metrics), overflowed, used) = crate::bounded_output::with_limit_usage(limit, || {
-        measure(|| {
-            let answer = received(build, PATH, sources);
-            inspect(answer, current_metrics())
-        })
-    });
+    let ((facts, metrics), overflowed, used) =
+        crate::bounded_output::with_limit_usage(limit, || {
+            measure(|| {
+                let answer = received(build, PATH, sources);
+                inspect(answer, current_metrics())
+            })
+        });
     (facts, metrics, overflowed, used)
 }
 
@@ -662,20 +747,32 @@ fn zero_and_report_one_short_return_the_unpaid_ledger_without_allocating() {
                     panic!("a one-short enclosing budget cannot fund the report carrier")
                 };
                 assert!(!returned.invalid);
-                assert_eq!((returned.allocations, returned.allocated, returned.live), (0, 0, 0));
+                assert_eq!(
+                    (returned.allocations, returned.allocated, returned.live),
+                    (0, 0, 0)
+                );
                 assert!(!refusal.is_paid());
-                assert_eq!(first_receipt(&mut refusal), ReplayPhysicalRefusal::EnclosingBudget);
+                assert_eq!(
+                    first_receipt(&mut refusal),
+                    ReplayPhysicalRefusal::EnclosingBudget
+                );
                 // The typed boundary consumes the refusal and its ledger here.
                 let unpaid = refusal.into_published().expect_err("unpaid carrier");
                 assert_eq!(current_metrics().allocations, returned.allocations);
-                assert!(matches!(unpaid.reason(), SelectedReplayUnpaidReason::Carrier(_)));
+                assert!(matches!(
+                    unpaid.reason(),
+                    SelectedReplayUnpaidReason::Carrier(_)
+                ));
                 // Only the named unfunded boundary allocates the same literal.
                 let literal = unpaid.into_unfunded();
                 assert_public(&literal);
                 drop(literal);
             });
         assert!(!metrics.invalid);
-        assert_eq!(metrics.live, 0, "ledger and unfunded literal dropped in scope");
+        assert_eq!(
+            metrics.live, 0,
+            "ledger and unfunded literal dropped in scope"
+        );
         assert!(overflowed);
         assert_eq!(used, charged);
     }
@@ -686,15 +783,16 @@ fn exact_success_one_short_refusal_and_drop_share_one_observed_owner() {
     let (build, sources) = build(&canonical(&source(BODY)));
     // Exact report payment: paid setup refusal on the original carrier.
     let paid = REPORT.paid_bytes();
-    let (cause, metrics, overflowed, used) = receive_observed(&build, &sources, paid, |answer, _| {
-        let Err(refusal) = answer else {
-            panic!("an exact report payment leaves no preparation backing")
-        };
-        assert!(refusal.is_paid());
-        let cause = refusal.refused().map(|r| r.cause());
-        drop(refusal);
-        cause
-    });
+    let (cause, metrics, overflowed, used) =
+        receive_observed(&build, &sources, paid, |answer, _| {
+            let Err(refusal) = answer else {
+                panic!("an exact report payment leaves no preparation backing")
+            };
+            assert!(refusal.is_paid());
+            let cause = refusal.refused().map(|r| r.cause());
+            drop(refusal);
+            cause
+        });
     assert!(overflowed && used == paid);
     assert_eq!(cause, Some(SelectedReplayCause::Setup));
     assert!(!metrics.invalid);
@@ -708,7 +806,10 @@ fn exact_success_one_short_refusal_and_drop_share_one_observed_owner() {
     assert!(selected && !overflowed);
     assert!(!metrics.invalid);
     assert_eq!(metrics.live, 0, "every owner and the receipt dropped");
-    assert!(metrics.allocated <= used, "every allocation was charged first");
+    assert!(
+        metrics.allocated <= used,
+        "every allocation was charged first"
+    );
     // One byte short of the successful route refuses with the prepaid receipt;
     // the report, receipt and ledger are inspected and dropped in scope.
     let (cause, metrics, overflowed, _) =
@@ -728,9 +829,15 @@ fn exact_success_one_short_refusal_and_drop_share_one_observed_owner() {
         });
     assert!(overflowed);
     assert!(
-        matches!(cause, SelectedReplayCause::Budget | SelectedReplayCause::Session),
+        matches!(
+            cause,
+            SelectedReplayCause::Budget | SelectedReplayCause::Session
+        ),
         "{cause:?}"
     );
     assert!(!metrics.invalid);
-    assert_eq!(metrics.live, 0, "the paid refusal and its ledger dropped in scope");
+    assert_eq!(
+        metrics.live, 0,
+        "the paid refusal and its ledger dropped in scope"
+    );
 }
