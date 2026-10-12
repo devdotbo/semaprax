@@ -973,6 +973,18 @@ remaining executable/application acceptance gates distinct.
 `src/verify.rs`, `src/source_verify.rs`, and `src/hir.rs` own checked meaning.
 The `src/hir/` modules own validation, inspection indexes, declaration lookup,
 and bounded Project linking.
+Source declaration verification lends its exact immutable `TypeTable` to generic
+profile and cycle checks rather than rebuilding its directories. Requires clauses
+borrow the original parameter state before the body; `require_bool` retains its
+independent full clause copy and freshness reset. `source_verify/type_table.rs`
+keeps the existing namespace HashMap, prelude precedence and class inheritance
+storage; declared record/class fields use reverse borrowed lookup to preserve
+the former secondary HashMap's last duplicate winner. Complete former program,
+function and table-construction/lookup receivers live in `declaration/old.rs`,
+`declaration/functions/old.rs` and `type_table/old.rs`. Constructor owners retain
+the full original source corpus and public/private ordered diagnostic JSON.
+Source-only; no observed allocation, ledger, application-fit or work gain is
+claimed before consolidated execution.
 
 HIR carries resolved identities and typed operations. A backend or report may
 apply a stricter admission profile, but it may not reinterpret unresolved AST

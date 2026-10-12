@@ -9,7 +9,7 @@ use self::declarations::{
     check_record_layouts, check_resource_lifecycles,
 };
 use self::functions::{
-    check_function_bodies, check_function_declarations, check_generic_function_cycles,
+    check_function_bodies, check_function_declarations, check_generic_function_cycles_with_types,
 };
 use self::identity::{check_interface_identities, check_type_identities};
 use super::capacity::{source_capacity_functions, verify_selected_capacity};
@@ -169,7 +169,7 @@ fn verify_profile<'p>(
     let mut checked_layouts = HashSet::new();
     check_record_layouts(program, &types, &mut checked_layouts, &mut diagnostics);
 
-    check_function_declarations(program, &mut functions, &mut ids, &mut diagnostics);
+    check_function_declarations(program, &types, &mut functions, &mut ids, &mut diagnostics);
     diagnostics.extend(crate::session_protocol::source::check(program));
     diagnostics.extend(crate::session_protocol::typestate::check(program));
 
@@ -205,7 +205,13 @@ fn verify_profile<'p>(
         .filter(|function| !function.type_parameters.is_empty())
         .map(|function| function.name.as_str())
         .collect::<HashSet<_>>();
-    check_generic_function_cycles(program, &call_graph, &generic_functions, &mut diagnostics);
+    check_generic_function_cycles_with_types(
+        program,
+        &call_graph,
+        &generic_functions,
+        &types,
+        &mut diagnostics,
+    );
 
     super::lexical_exit::validate(program, &mut diagnostics);
     check_function_bodies(
@@ -292,3 +298,7 @@ fn verify_profile<'p>(
     }
     diagnostics
 }
+
+#[cfg(test)]
+#[rustfmt::skip]
+pub(super) mod old;

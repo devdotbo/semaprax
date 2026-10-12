@@ -26,6 +26,7 @@ use crate::source_verify::type_table::TypeTable;
 use std::collections::{BTreeSet, HashMap, HashSet};
 pub(super) fn check_function_declarations<'p>(
     program: &'p dyn ProgramSource,
+    types: &TypeTable<'p>,
     functions: &mut HashMap<&'p str, &'p Function>,
     ids: &mut HashSet<&'p str>,
     diagnostics: &mut Vec<Diagnostic>,
@@ -328,19 +329,13 @@ pub(super) fn check_function_declarations<'p>(
                     function.span,
                 ));
             }
-            let variant = crate::source_verify::declared_type::generic_variant::profile(
-                function,
-                &TypeTable::new(program),
-            );
+            let variant =
+                crate::source_verify::declared_type::generic_variant::profile(function, types);
             let owned_result = generic_result::profile(function);
             let collection =
                 crate::source_verify::declared_type::generic_collection::profile(function);
             for param in &function.params {
-                let owned_record = generic_function_owned_record_slot(
-                    function,
-                    &param.ty,
-                    &TypeTable::new(program),
-                );
+                let owned_record = generic_function_owned_record_slot(function, &param.ty, types);
                 if !((param.mode == ParamMode::Value
                     && (generic_function_signature_slot(&param.ty, &parameter_names)
                         || (collection
@@ -353,9 +348,7 @@ pub(super) fn check_function_declarations<'p>(
                         && (owned_record
                             || (variant
                                 && crate::source_verify::declared_type::generic_variant::slot(
-                                    function,
-                                    &param.ty,
-                                    &TypeTable::new(program),
+                                    function, &param.ty, types,
                                 ))
                             || (collection
                                 && crate::source_verify::declared_type::generic_collection::slot(
@@ -378,11 +371,7 @@ pub(super) fn check_function_declarations<'p>(
                 && !variant
                 && !collection
                 && !generic_function_signature_slot(&function.return_type, &parameter_names)
-                && !generic_function_owned_record_slot(
-                    function,
-                    &function.return_type,
-                    &TypeTable::new(program),
-                )
+                && !generic_function_owned_record_slot(function, &function.return_type, types)
             {
                 diagnostics.push(error(
                     program,
@@ -394,13 +383,9 @@ pub(super) fn check_function_declarations<'p>(
                     function.span,
                 ));
             }
-            if generic_function_contains_nested_owned_record_slot(
-                function,
-                &TypeTable::new(program),
-            ) && !generic_function_has_owned_record_composition(
-                function,
-                &TypeTable::new(program),
-            ) {
+            if generic_function_contains_nested_owned_record_slot(function, types)
+                && !generic_function_has_owned_record_composition(function, types)
+            {
                 diagnostics.push(error(
                     program,
                     "SPX-T224",
@@ -416,7 +401,6 @@ pub(super) fn check_function_declarations<'p>(
             {
                 diagnostics.push(diagnostic);
             }
-            let types = TypeTable::new(program);
             let invalid_contract = function
                 .requires
                 .iter()
@@ -424,13 +408,13 @@ pub(super) fn check_function_declarations<'p>(
                 .any(|expression| !generic_function_expression_is_direct_scalar(expression));
             let invalid_body = !crate::source_verify::declared_type::generic_variant::body(
                 function,
-                &types,
+                types,
                 &function.body,
             ) && !generic_result::body(function, &function.body)
                 && !generic_function_expression_is_direct_scalar(&function.body)
                 && !generic_function_expression_is_owned_record_composition(
                     function,
-                    &types,
+                    types,
                     &function.body,
                 );
             let invalid_body = invalid_body && !(crate::source_verify::generic_collection_profile(function)
@@ -449,10 +433,11 @@ pub(super) fn check_function_declarations<'p>(
         }
     }
 }
-pub(super) fn check_generic_function_cycles<'p>(
+pub(super) fn check_generic_function_cycles_with_types<'p>(
     program: &'p dyn ProgramSource,
     call_graph: &HashMap<String, Vec<String>>,
     generic_functions: &HashSet<&'p str>,
+    types: &TypeTable<'p>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
     let functions = program
@@ -460,7 +445,6 @@ pub(super) fn check_generic_function_cycles<'p>(
         .iter()
         .map(|function| (function.name.as_str(), function))
         .collect::<HashMap<_, _>>();
-    let types = TypeTable::new(program);
     for function in program
         .functions()
         .iter()
@@ -483,7 +467,7 @@ pub(super) fn check_generic_function_cycles<'p>(
                 expression,
                 &mut bindings,
                 &functions,
-                &types,
+                types,
                 diagnostics,
                 0,
             );
@@ -1160,7 +1144,6 @@ pub(super) fn check_function_bodies<'p>(
                 }
             }
 
-            let entry_variables = variables.clone();
             for contract in &function.requires {
                 contract.visit_calls(&mut |callee, span| {
                     if crate::host_io_ops::by_name(callee).is_some() {
@@ -1184,7 +1167,7 @@ pub(super) fn check_function_bodies<'p>(
                     program,
                     function,
                     contract,
-                    &entry_variables,
+                    &variables,
                     functions,
                     types,
                     None,
@@ -1397,3 +1380,23 @@ pub(super) fn check_function_bodies<'p>(
 
 #[cfg(test)]
 mod generic_inference_tests;
+
+#[cfg(test)]
+#[rustfmt::skip]
+pub(super) mod old;
+
+#[cfg(test)]
+pub(super) fn check_generic_function_cycles<'p>(
+    program: &'p dyn ProgramSource,
+    call_graph: &HashMap<String, Vec<String>>,
+    generic_functions: &HashSet<&'p str>,
+    diagnostics: &mut Vec<Diagnostic>,
+) {
+    check_generic_function_cycles_with_types(
+        program,
+        call_graph,
+        generic_functions,
+        &TypeTable::new(program),
+        diagnostics,
+    );
+}

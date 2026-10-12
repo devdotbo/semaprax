@@ -299,3 +299,6 @@ pub(crate) use declaration::fusion::{
 };
 
 pub(crate) use declaration::fusion::inventory as construction_fusion_candidate;
+
+#[cfg(test)]
+mod constructor_tests;

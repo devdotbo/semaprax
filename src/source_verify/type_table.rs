@@ -62,7 +62,8 @@ pub(super) fn effective_record_fields<'t>(
 pub(super) struct TypeTable<'a> {
     pub(super) declarations: HashMap<&'a str, &'a TypeDeclaration>,
     native_owned_containers: [bool; 3],
-    declared_fields: HashMap<&'a str, HashMap<&'a str, &'a FieldDeclaration>>,
+    #[cfg(test)]
+    declared_fields: Option<HashMap<&'a str, HashMap<&'a str, &'a FieldDeclaration>>>,
     /// Class Inheritance v1: declared parent name per extending class.
     pub(super) class_parents: HashMap<&'a str, &'a str>,
     /// Class Inheritance v1: the effective declared-field list of every
@@ -90,20 +91,6 @@ impl<'a> TypeTable<'a> {
             .map(|declaration| (declaration.name.as_str(), declaration))
             .collect();
         let mut merged_class_fields = HashMap::new();
-        let mut declared_fields = HashMap::new();
-        for (name, declaration) in &declarations {
-            if let TypeDeclarationKind::Record { fields }
-            | TypeDeclarationKind::Class { fields, .. } = &declaration.kind
-            {
-                declared_fields.insert(
-                    *name,
-                    fields
-                        .iter()
-                        .map(|field| (field.name.as_str(), field))
-                        .collect(),
-                );
-            }
-        }
         for (name, declaration) in &declarations {
             if !matches!(declaration.kind, TypeDeclarationKind::Class { .. }) {
                 continue;
@@ -164,7 +151,8 @@ impl<'a> TypeTable<'a> {
             ]
             .map(|kind| crate::ast::ImportResult::container_enabled(program, &kind.value_type())),
             declarations,
-            declared_fields,
+            #[cfg(test)]
+            declared_fields: None,
             merged_class_fields,
             class_parents,
             private: None,
@@ -192,10 +180,20 @@ impl<'a> TypeTable<'a> {
         type_name: &str,
         field_name: &str,
     ) -> Option<&'a FieldDeclaration> {
-        self.declared_fields
-            .get(type_name)
-            .and_then(|fields| fields.get(field_name))
-            .copied()
+        #[cfg(test)]
+        if self.declared_fields.is_some() {
+            return self.declared_field_owned_reference(type_name, field_name);
+        }
+        let fields = match &self.declaration(type_name)?.kind {
+            TypeDeclarationKind::Record { fields } | TypeDeclarationKind::Class { fields, .. } => {
+                fields
+            }
+            TypeDeclarationKind::Resource { .. } | TypeDeclarationKind::Variant { .. } => {
+                return None
+            }
+        };
+        // HashMap collect selected the LAST authored field on hostile duplicates.
+        fields.iter().rev().find(|field| field.name == field_name)
     }
 
     pub(super) fn record_field_type(
@@ -1152,3 +1150,6 @@ pub(super) fn owned_byte_prelude_instance_is_admitted(name: &str, arguments: &[T
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod old;

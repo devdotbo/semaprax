@@ -7,6 +7,14 @@
   sharing, every-byte refusal, clause isolation, Drop and unwind owners.
   Source-only; executable allocation/work/application-fit evidence remains open.
 
+- Author source-verifier constructor removal: lend the existing immutable type
+  table across generic passes, borrow requires entry state, and scan declared
+  fields in reverse to preserve last duplicate winners without secondary indexes.
+  Keep namespace/inheritance storage and cycle function-map construction; retain
+  complete old program/function/table receivers, the full original source corpus,
+  public/private diagnostic JSON and allocation/Drop owners. Source-only; observed
+  allocation, ledger and application-fit evidence remains pending.
+
 - Author transactional paid HIR scope insertion: stage a shared suffix with exact
   owning node carrier/initializer payments, then commit the unique prefix without
   fallible work or allocation. Preserve the complete coarse receiving policy and
