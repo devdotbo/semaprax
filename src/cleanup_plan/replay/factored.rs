@@ -109,7 +109,12 @@ pub(super) fn validate_with_index_storage<'hir>(
 ) -> Result<bool, Diagnostic> {
     let cfg_paths = branch_sensitive_cfg_bounds(function)?.terminal_paths;
     let semantic_paths = hir_terminal_path_bound(function)?;
-    if !selected_paid(function, cfg_paths, semantic_paths, &mut ReplayBudget::new())? {
+    if !selected_paid(
+        function,
+        cfg_paths,
+        semantic_paths,
+        &mut ReplayBudget::new(),
+    )? {
         #[cfg(test)]
         cross_check(program, function);
         return Ok(false);

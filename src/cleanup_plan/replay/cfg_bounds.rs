@@ -9,46 +9,86 @@ pub(in crate::cleanup_plan::replay) enum Targets<'a> {
     Terminal,
 }
 impl Targets<'_> {
-    pub(in crate::cleanup_plan::replay) fn len(self) -> usize { match self { Self::Edges(edges) => edges.len(), Self::One(_) => 1, Self::Terminal => 0 } }
-    pub(in crate::cleanup_plan::replay) fn get(self, function: &ResolvedFunction, index: usize) -> Result<usize, Diagnostic> {
+    pub(in crate::cleanup_plan::replay) fn len(self) -> usize {
         match self {
-            Self::Edges(edges) => function.cleanup_plan.edges.get(edges[index].0 as usize)
-                .map(|edge| edge.to.0 as usize).ok_or_else(|| invalid(function)),
+            Self::Edges(edges) => edges.len(),
+            Self::One(_) => 1,
+            Self::Terminal => 0,
+        }
+    }
+    pub(in crate::cleanup_plan::replay) fn get(
+        self,
+        function: &ResolvedFunction,
+        index: usize,
+    ) -> Result<usize, Diagnostic> {
+        match self {
+            Self::Edges(edges) => function
+                .cleanup_plan
+                .edges
+                .get(edges[index].0 as usize)
+                .map(|edge| edge.to.0 as usize)
+                .ok_or_else(|| invalid(function)),
             Self::One(block) => Ok(block.0 as usize),
             Self::Terminal => unreachable!("terminal has no successors"),
         }
     }
 }
 fn invalid(function: &ResolvedFunction) -> Diagnostic {
-    replay_error(function, "cleanup replay preflight references an unknown id")
+    replay_error(
+        function,
+        "cleanup replay preflight references an unknown id",
+    )
 }
-pub(in crate::cleanup_plan::replay) fn targets(function: &ResolvedFunction, index: usize) -> Result<Targets<'_>, Diagnostic> {
+pub(in crate::cleanup_plan::replay) fn targets(
+    function: &ResolvedFunction,
+    index: usize,
+) -> Result<Targets<'_>, Diagnostic> {
     let plan = &function.cleanup_plan;
     match &plan.blocks[index].terminator {
         CleanupTerminator::Goto(edge) => Ok(Targets::Edges(std::slice::from_ref(edge))),
         CleanupTerminator::Branch(edges) => Ok(Targets::Edges(edges)),
-        CleanupTerminator::Exit(exit) => match &plan.exits.get(exit.0 as usize).ok_or_else(|| invalid(function))?.continuation {
-            ExitContinuation::Continue(edge) | ExitContinuation::LoopBreak { edge, .. }
-            | ExitContinuation::FunctionReturn { edge, .. } => Ok(Targets::Edges(std::slice::from_ref(edge))),
-            ExitContinuation::LoopLatch { .. } => Ok(lexical_cert::latch_resume(plan, *exit)
-                .map_or(Targets::Terminal, Targets::One)),
-            ExitContinuation::CommitResult { .. } | ExitContinuation::ReturnUnit
+        CleanupTerminator::Exit(exit) => match &plan
+            .exits
+            .get(exit.0 as usize)
+            .ok_or_else(|| invalid(function))?
+            .continuation
+        {
+            ExitContinuation::Continue(edge)
+            | ExitContinuation::LoopBreak { edge, .. }
+            | ExitContinuation::FunctionReturn { edge, .. } => {
+                Ok(Targets::Edges(std::slice::from_ref(edge)))
+            }
+            ExitContinuation::LoopLatch { .. } => {
+                Ok(lexical_cert::latch_resume(plan, *exit).map_or(Targets::Terminal, Targets::One))
+            }
+            ExitContinuation::CommitResult { .. }
+            | ExitContinuation::ReturnUnit
             | ExitContinuation::ReturnFailure { .. } => Ok(Targets::Terminal),
         },
     }
 }
 
-pub(super) fn bounds(function: &ResolvedFunction, budget: &mut ReplayBudget) -> Result<CfgReplayBounds, Diagnostic> {
+pub(super) fn bounds(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<CfgReplayBounds, Diagnostic> {
     let plan = &function.cleanup_plan;
-    let entry = plan.blocks.get(plan.entry.0 as usize).map(|_| plan.entry.0 as usize)
+    let entry = plan
+        .blocks
+        .get(plan.entry.0 as usize)
+        .map(|_| plan.entry.0 as usize)
         .ok_or_else(|| invalid(function))?;
     // Preserve old per-block lookup-before-range order: an unknown edge later
     // in one branch precedes an earlier edge's out-of-range destination.
     for index in 0..plan.blocks.len() {
         let successors = targets(function, index)?;
-        for ordinal in 0..successors.len() { successors.get(function, ordinal)?; }
         for ordinal in 0..successors.len() {
-            if successors.get(function, ordinal)? >= plan.blocks.len() { return Err(invalid(function)); }
+            successors.get(function, ordinal)?;
+        }
+        for ordinal in 0..successors.len() {
+            if successors.get(function, ordinal)? >= plan.blocks.len() {
+                return Err(invalid(function));
+            }
         }
     }
     budget.reserve_array::<bool>(function, plan.blocks.len(), "CFG preflight reachable")?;
@@ -56,13 +96,22 @@ pub(super) fn bounds(function: &ResolvedFunction, budget: &mut ReplayBudget) -> 
     budget.reserve_array::<usize>(function, 1, "CFG preflight discovery entry")?;
     let mut discover = vec![entry];
     while let Some(index) = discover.pop() {
-        if std::mem::replace(&mut reachable[index], true) { continue; }
+        if std::mem::replace(&mut reachable[index], true) {
+            continue;
+        }
         let successors = targets(function, index)?;
-        budget.reserve_vec(function, &mut discover, successors.len(), "CFG preflight discovery successors")?;
+        budget.reserve_vec(
+            function,
+            &mut discover,
+            successors.len(),
+            "CFG preflight discovery successors",
+        )?;
         // Preserve the original exact-size Vec::extend constructor when no
         // payer is attached; individual pushes would change its growth layout.
         discover.extend((0..successors.len()).map(|ordinal| {
-            successors.get(function, ordinal).expect("immutable prevalidated CFG target")
+            successors
+                .get(function, ordinal)
+                .expect("immutable prevalidated CFG target")
         }));
     }
     budget.reserve_array::<usize>(function, plan.blocks.len(), "CFG preflight indegree")?;
@@ -91,11 +140,18 @@ pub(super) fn bounds(function: &ResolvedFunction, budget: &mut ReplayBudget) -> 
         let paths = incoming[index];
         let block = &plan.blocks[index];
         let local = block.transitions.len().saturating_add(1);
-        total = total.saturating_add(local.saturating_mul(paths)).min(ceiling);
-        skeleton_work = skeleton_work.saturating_add(
-            skeleton_bound::plan_skeleton_block_weight(plan, block).saturating_mul(paths)).min(ceiling);
+        total = total
+            .saturating_add(local.saturating_mul(paths))
+            .min(ceiling);
+        skeleton_work = skeleton_work
+            .saturating_add(
+                skeleton_bound::plan_skeleton_block_weight(plan, block).saturating_mul(paths),
+            )
+            .min(ceiling);
         let successors = targets(function, index)?;
-        if matches!(successors, Targets::Terminal) { terminal_paths = terminal_paths.saturating_add(paths); }
+        if matches!(successors, Targets::Terminal) {
+            terminal_paths = terminal_paths.saturating_add(paths);
+        }
         for ordinal in 0..successors.len() {
             let successor = successors.get(function, ordinal)?;
             incoming[successor] = incoming[successor].saturating_add(paths).min(ceiling);
@@ -105,14 +161,22 @@ pub(super) fn bounds(function: &ResolvedFunction, budget: &mut ReplayBudget) -> 
                 pending.push_back(successor);
             }
         }
-        if total >= ceiling { return Ok(CfgReplayBounds {
-            terminal_paths: MAX_REPLAY_PATHS.saturating_add(1), work: ceiling, skeleton_work: ceiling,
-        }); }
+        if total >= ceiling {
+            return Ok(CfgReplayBounds {
+                terminal_paths: MAX_REPLAY_PATHS.saturating_add(1),
+                work: ceiling,
+                skeleton_work: ceiling,
+            });
+        }
     }
     if visited != reachable.iter().filter(|reachable| **reachable).count() {
         return Err(replay_error(function, "cleanup CFG contains a cycle"));
     }
-    Ok(CfgReplayBounds { terminal_paths, work: total, skeleton_work })
+    Ok(CfgReplayBounds {
+        terminal_paths,
+        work: total,
+        skeleton_work,
+    })
 }
 
 /// Preserve local payer provenance until the legacy semantic-only fallback is

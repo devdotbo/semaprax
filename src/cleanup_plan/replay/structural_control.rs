@@ -12,8 +12,8 @@ mod cfg;
 pub(super) use blocks::validate_blocks_and_edges;
 mod entry;
 mod exits;
-pub(super) use cfg::validate_reachable_acyclic_cfg;
 pub(super) use cfg::validate_ordinary as validate_ordinary_cfg;
+pub(super) use cfg::validate_reachable_acyclic_cfg;
 pub(super) use entry::validate_entry;
 pub(super) use exits::validate_exits;
 
