@@ -11,6 +11,9 @@ use std::sync::{
     Arc,
 };
 
+#[path = "../fixtures/checked_cache_profiles.rs"]
+mod checked_cache_profiles;
+
 static SERIAL: AtomicU64 = AtomicU64::new(0);
 const PATHS: [&str; 4] = [
     "src/app.spx",
@@ -464,25 +467,9 @@ fn row_loan_fixture() -> Fixture {
     ] {
         std::fs::copy(sample.join(path), fixture.0.join(path)).unwrap();
     }
-    let frame = fixture.read("src/frame.spx")
-        + r#"
-@id("loan.row") record LoanRow { @id("loan.row.n") n: i64, @id("loan.row.text") text: string, }
-@id("loan.weight") fn loan_weight(row: borrow LoanRow) -> i64 { row.n + 1 }
-"#;
-    fixture.write("src/frame.spx", &frame);
-    let tests = fixture.read("src/tests.spx")
-        .replace("module frame_payload.tests;", "module frame_payload.tests;\nuse type @id(\"loan.row\") from frame_payload.frame as LoanRow;\nuse function @id(\"loan.weight\") from frame_payload.frame as loan_weight;")
-        .replace("if valid_ok && mismatch_ok", "if valid_ok && mismatch_ok && loan_scan() == 12")
-        + r#"
-@id("loan.scan") fn loan_scan() -> i64 {
-    let first = vec_push<LoanRow>(vec_with_capacity<LoanRow>(2usize), LoanRow { n: 3, text: "a" });
-    let rows = vec_push<LoanRow>(first, LoanRow { n: 7, text: "b" });
-    let mut total = 0;
-    for borrow row in rows { total = total + loan_weight(row); 0 }
-    total
-}
-"#;
-    fixture.write("src/tests.spx", &tests);
+    for (path, source) in checked_cache_profiles::sources(false) {
+        fixture.write(path, &source);
+    }
     fixture
 }
 

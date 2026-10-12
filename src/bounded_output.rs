@@ -1,3 +1,5 @@
+#[cfg(test)]
+pub(crate) mod stage_debits;
 use std::cell::{Cell, RefCell};
 use std::fmt::{self, Write as _};
 use std::ops::Deref;
@@ -138,6 +140,8 @@ pub(crate) fn with_limit_usage_refusal<T>(
                     // report the refusal.
                     let remaining = parent.remaining.get();
                     parent.remaining.set(remaining.saturating_sub(consumed));
+                    #[cfg(test)]
+                    stage_debits::debit(&parent, remaining.min(consumed));
                     parent.overflowed.set(true);
                 }
             }
@@ -245,6 +249,8 @@ fn reserve(budget: Option<&Budget>, length: usize) -> bool {
         return false;
     }
     budget.remaining.set(remaining - length);
+    #[cfg(test)]
+    stage_debits::debit(budget, length);
     true
 }
 

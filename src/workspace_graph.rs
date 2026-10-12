@@ -4106,6 +4106,9 @@ fn build_owned_inner(
             .transpose()?;
         let (core, overflowed, consumed, refusal) =
             crate::bounded_output::with_limit_usage_refusal(active_builder_limit(), || {
+                #[cfg(test)]
+                let _trace = crate::bounded_output::stage_debits::start(
+                    resolve_builder_bytes, layouts.receipt(), fallback_mode);
                 reserve_builder_structure(layouts.receipt())?;
                 staged!(CorePrebound, charge_builder_prebound(resolve_builder_bytes))?;
                 staged!(

@@ -1,3 +1,5 @@
+#[path = "tests/cache_stage_debits.rs"]
+mod cache_stage_debits;
 use super::*;
 #[path = "tests/builder_limits.rs"]
 mod builder_limits;

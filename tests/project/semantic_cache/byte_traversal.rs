@@ -4,27 +4,9 @@ use super::*;
 fn byte_fixture() -> Fixture {
     // Retain the row-loan provider/consumer so v83 must compose with v82 facts.
     let fixture = row_loan_fixture();
-    let frame = fixture.read("src/frame.spx")
-        + r#"
-@id("bytes.count") fn byte_count(input: borrow Slice<u8>) -> i64 {
-    let view = input;
-    let mut total = 0;
-    for byte in view { total = total + 1; 0 }
-    total
-}
-"#;
-    fixture.write("src/frame.spx", &frame);
-    let tests = fixture.read("src/tests.spx")
-        .replace("module frame_payload.tests;", "module frame_payload.tests;\nuse function @id(\"bytes.count\") from frame_payload.frame as byte_count;")
-        .replace("loan_scan() == 12", "loan_scan() == 12 && bytes_probe() == 4")
-        + r#"
-@id("bytes.probe") fn bytes_probe() -> i64 {
-    let owned = bytes_zeroed(4usize);
-    let view = bytes_as_slice(owned);
-    byte_count(view)
-}
-"#;
-    fixture.write("src/tests.spx", &tests);
+    for (path, source) in checked_cache_profiles::sources(true) {
+        fixture.write(path, &source);
+    }
     fixture
 }
 
