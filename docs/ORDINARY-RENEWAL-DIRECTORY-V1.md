@@ -40,8 +40,8 @@ application admission, performance, or completion of OPT783.
 
 Cleanup validation owns a fresh validation-only frontier for the exact borrowed
 program. It rebuilds and compares each authored member, then each concrete
-instance, in the original order. Stable linked cells are paid only after the current member
-passes the original selective lexical probes; future members have no cells or
+instance, in the original order. One inline current-member cell is funded only after the current member
+passes the original selective lexical probes; future members have no facts or
 backing requests. Only the sealed exact current member can supply a builder receiver;
 copied programs, copied functions and advanced cursors fail closed.
 
@@ -73,8 +73,15 @@ its existing construction/replay comparisons and adds the paired full validator.
 These source-authored controls await executable qualification.
 
 
-Current-member selection uses direct authored/instance ordinal lookup. Stable
-cell lookup still walks the prior linked members, so this metadata lookup is
-quadratic across a large member inventory. The 128/512 plain-member whole-phase
+After the owned expected plan is compared and dropped, consuming Current::finish
+marks a private pending ordinal. Mutable Frontier::advance requires every
+current/builder borrow to end, consumes that pending ordinal and drops the
+member cell's helper/family backing. Equal HIR pointers from another phase,
+uncompleted admission, stale ordinals and repeated advances cannot release it.
+No replayable receipt or unsafe self-reference cache exists. Census/proof
+storage, positive proof memo, declaration probes, work observations and physical
+debits stay phase-owned; dropping current facts never refunds admission.
+
+Current-member selection uses direct authored/instance ordinal lookup. Current-cell lookup is also constant-time and retains no prior member facts. The 128/512 plain-member whole-phase
 observer records that overhead without assuming a gain; repeated helper and
 dense String controls separately require actual allocation/debit savings.

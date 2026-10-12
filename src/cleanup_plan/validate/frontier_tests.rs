@@ -59,7 +59,7 @@ fn deferred_frontier_preserves_full_ordinary_lexical_generic_and_helper_plans() 
         old(&program).unwrap();
         new(&program).unwrap();
         parity(&program);
-        let frontier = Frontier::new(&program);
+        let mut frontier = Frontier::new(&program);
         for function in program
             .functions
             .iter()
@@ -74,7 +74,8 @@ fn deferred_frontier_preserves_full_ordinary_lexical_generic_and_helper_plans() 
                 crate::cache_codec::encode(&rebuilt).unwrap(),
                 crate::cache_codec::encode(&function.cleanup_plan).unwrap()
             );
-            frontier.advance(&current).unwrap();
+            current.finish().unwrap();
+            frontier.advance().unwrap();
         }
     }
 }
@@ -198,7 +199,7 @@ fn deferred_frontier_whole_validation_allocation_debit_and_drop_are_observed() {
 fn deferred_frontier_rejects_foreign_program_and_copied_function_at_builder_receiver() {
     let program = program(HELPERS);
     let copied = program.clone();
-    let frontier = Frontier::new(&program);
+    let mut frontier = Frontier::new(&program);
     let current = frontier.current().unwrap();
     assert!(
         crate::cleanup_plan::build::helper_index::validation::reject_foreign(
@@ -218,9 +219,18 @@ fn deferred_frontier_rejects_foreign_program_and_copied_function_at_builder_rece
     );
     crate::cleanup_plan::build::helper_index::validation::build_current(&program, &current)
         .unwrap();
-    frontier.advance(&current).unwrap();
+    current.finish().unwrap();
+    frontier.advance().unwrap();
     assert!(
-        crate::cleanup_plan::build::helper_index::validation::build_current(&program, &current)
+        frontier.advance().is_err(),
+        "a consumed ordinal cannot advance again"
+    );
+    // Rust prevents retaining the old Current across mutable advancement.
+    // Exercise the builder's runtime refusal with the original stale ordinal.
+    let next = frontier.current().unwrap();
+    let stale = next.with_ordinal_for_test(0);
+    assert!(
+        crate::cleanup_plan::build::helper_index::validation::build_current(&program, &stale)
             .is_err()
     );
 }
@@ -296,7 +306,7 @@ fn deferred_frontier_large_plain_member_overhead_and_complete_drop_are_observed(
             assert_eq!(measured.allocated, measured.freed);
             assert_eq!(attached(&program), before);
             // No expected gain is imposed on the no-helper control. This owns
-            // literal row/query overhead and the remaining linked-head walk.
+            // literal current-row/query overhead through complete phase Drop.
             println!("validation-frontier members={count} indexed={indexed} elapsed_ns={} debit={debit} allocations={measured:?}", elapsed.as_nanos());
         }
     }

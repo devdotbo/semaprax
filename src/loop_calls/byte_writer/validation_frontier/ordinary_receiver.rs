@@ -2,7 +2,7 @@
 use super::*;
 impl<'f, 'p> Current<'f, 'p> {
     fn directory(&self, family: Family) -> Result<&Directory<'p>, ordinary::Refusal> {
-        if self.ordinal != self.frontier.next.get() {
+        if !self.valid() {
             return Err(ordinary::Refusal::Subject);
         }
         if self.frontier.failed.get() {
@@ -65,7 +65,7 @@ impl<'a, 'f: 'a, 'p: 'a> Ordinary<'a> for Current<'f, 'p> {
     fn matches(&self, program: &ResolvedProgram, function: &ResolvedFunction) -> bool {
         std::ptr::eq(self.frontier.program, program)
             && std::ptr::eq(self.function(), function)
-            && self.ordinal == self.frontier.next.get()
+            && self.valid()
     }
     fn has(&self, family: Family) -> bool {
         let directory = match self.directory(family) {
@@ -111,7 +111,7 @@ impl<'a, 'f: 'a, 'p: 'a> Ordinary<'a> for Current<'f, 'p> {
         None
     }
     fn complete(&self) -> Result<(), Diagnostic> {
-        if self.frontier.failed.get() {
+        if !self.valid() || self.frontier.failed.get() {
             Err(error())
         } else {
             Ok(())

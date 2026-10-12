@@ -8,13 +8,14 @@ use super::{CleanupPlan, CleanupSlot};
 #[cfg(test)]
 pub(in crate::cleanup_plan) mod owned;
 pub(crate) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
-    let frontier = crate::loop_calls::byte_writer::validation_frontier::Frontier::new(program);
+    let mut frontier = crate::loop_calls::byte_writer::validation_frontier::Frontier::new(program);
     for function in &program.functions {
         let current = frontier.current()?;
         let expected = super::build::helper_index::validation::build_current(program, &current)?;
         validate_canonical_plan(&function.id, &function.cleanup_plan, &expected)?;
         drop(expected);
-        frontier.advance(&current)?;
+        current.finish()?;
+        frontier.advance()?;
     }
     for instance in &program.function_instances {
         let current = frontier.current()?;
@@ -25,7 +26,8 @@ pub(crate) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnost
             &expected,
         )?;
         drop(expected);
-        frontier.advance(&current)?;
+        current.finish()?;
+        frontier.advance()?;
     }
     drop(frontier);
     // Complete fresh independent replay never borrows frontier proofs.

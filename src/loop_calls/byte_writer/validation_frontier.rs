@@ -15,7 +15,6 @@ struct Row<'p> {
     member: ordinary::CurrentMember<'p>,
     helpers: OnceCell<HelperBindings<'p>>,
     families: [OnceCell<Directory<'p>>; 4],
-    next: OnceCell<Box<[Row<'p>]>>,
 }
 struct ProofState<'p> {
     census: Vec<resolved::CensusCursor<'p>>,
@@ -25,7 +24,8 @@ struct ProofState<'p> {
 }
 pub(crate) struct Frontier<'p> {
     program: &'p ResolvedProgram,
-    head: OnceCell<Box<[Row<'p>]>>,
+    row: OnceCell<Row<'p>>,
+    ready: Cell<Option<usize>>,
     funded: Cell<bool>,
     next: Cell<usize>,
     possible: bool,
@@ -60,7 +60,8 @@ impl<'p> Frontier<'p> {
     pub(crate) fn new(program: &'p ResolvedProgram) -> Self {
         Self {
             program,
-            head: OnceCell::new(),
+            row: OnceCell::new(),
+            ready: Cell::new(None),
             funded: Cell::new(false),
             next: Cell::new(0),
             possible: resolved::potential(program),
@@ -93,6 +94,9 @@ impl<'p> Frontier<'p> {
         }
     }
     pub(crate) fn current(&self) -> Result<Current<'_, 'p>, Diagnostic> {
+        if self.ready.get().is_some() {
+            return Err(error());
+        }
         let ordinal = self.next.get();
         let member = ordinary::current_member_at(self.program, ordinal).ok_or_else(error)?;
         let function = member.function();
@@ -109,7 +113,7 @@ impl<'p> Frontier<'p> {
             None
         };
         // No phase backing is forced before the old selective lexical probes.
-        let row = self.row(ordinal, member)?;
+        let row = self.row(member)?;
         Ok(Current {
             frontier: self,
             ordinal,
@@ -117,13 +121,19 @@ impl<'p> Frontier<'p> {
             owner,
         })
     }
-    pub(crate) fn advance(&self, current: &Current<'_, 'p>) -> Result<(), Diagnostic> {
-        if !std::ptr::eq(self, current.frontier) || self.next.get() != current.ordinal {
+    pub(crate) fn advance(&mut self) -> Result<(), Diagnostic> {
+        // A consumed exact Current marks this ordinal. Rust requires every
+        // builder/current borrow to end before this mutable receiver can run.
+        if self.ready.get() != Some(self.next.get()) {
             return Err(error());
         }
-        current.complete()?;
-        self.next
-            .set(self.next.get().checked_add(1).ok_or_else(error)?);
+        let next = self.next.get().checked_add(1).ok_or_else(error)?;
+        let row = self.row.take().ok_or_else(error)?;
+        self.next.set(next);
+        self.ready.set(None);
+        // Release only member facts. Physical debits and phase proof state
+        // remain cumulative; no reservation or work allowance is refunded.
+        drop(row);
         Ok(())
     }
     fn helpers<'f>(&'f self, row: &'f Row<'p>) -> Result<&'f HelperBindings<'p>, Diagnostic> {
@@ -197,40 +207,30 @@ impl<'p> Frontier<'p> {
         }
         row.helpers.get().ok_or_else(error)
     }
-    fn row(
-        &self,
-        ordinal: usize,
-        member: ordinary::CurrentMember<'p>,
-    ) -> Result<&Row<'p>, Diagnostic> {
+    fn row(&self, member: ordinary::CurrentMember<'p>) -> Result<&Row<'p>, Diagnostic> {
         if !self.funded.get() {
+            // Self includes the one inline row. No phase or row backing is
+            // funded before the original selective lexical-owner probes.
             if !crate::bounded_output::reserve_active_required(std::mem::size_of::<Self>()) {
                 return Err(error());
             }
             self.funded.set(true);
         }
-        let mut cell = &self.head;
-        for _ in 0..ordinal {
-            cell = &cell
-                .get()
-                .and_then(|rows| rows.first())
-                .ok_or_else(error)?
-                .next;
-        }
-        if cell.get().is_none() {
-            // Stable one-row backing; no future member receives an allocation.
-            let mut rows = reserve(1)?;
+        if self.row.get().is_none() {
+            // This is the literal current initializer stack, not a future-row
+            // forecast or heap request. Row storage itself is inline in Self.
             if !crate::bounded_output::reserve_active_required(std::mem::size_of::<Row<'p>>()) {
                 return Err(error());
             }
-            rows.push(Row {
-                member,
-                helpers: OnceCell::new(),
-                families: std::array::from_fn(|_| OnceCell::new()),
-                next: OnceCell::new(),
-            });
-            cell.set(rows.into_boxed_slice()).map_err(|_| error())?;
+            self.row
+                .set(Row {
+                    member,
+                    helpers: OnceCell::new(),
+                    families: std::array::from_fn(|_| OnceCell::new()),
+                })
+                .map_err(|_| error())?;
         }
-        let row = cell.get().and_then(|rows| rows.first()).ok_or_else(error)?;
+        let row = self.row.get().ok_or_else(error)?;
         if !std::ptr::eq(row.member.function(), member.function()) {
             return Err(error());
         }
@@ -246,37 +246,48 @@ impl<'p> Frontier<'p> {
             + state.census.capacity() * std::mem::size_of::<resolved::CensusCursor<'p>>()
             + state.proof.capacity() * std::mem::size_of::<resolved::ProofCursor<'p>>()
             + state.positives.capacity() * std::mem::size_of::<&ResolvedFunction>();
-        let mut cell = &self.head;
-        while let Some(rows) = cell.get() {
-            let row = &rows[0];
-            total += rows.len() * std::mem::size_of::<Row<'p>>()
-                + row
-                    .helpers
-                    .get()
-                    .map_or(0, HelperBindings::owned_capacity_bytes)
+        if let Some(row) = self.row.get() {
+            total += row
+                .helpers
+                .get()
+                .map_or(0, HelperBindings::owned_capacity_bytes)
                 + row
                     .families
                     .iter()
                     .filter_map(OnceCell::get)
                     .map(Directory::backing_bytes)
                     .sum::<usize>();
-            cell = &row.next;
         }
         total
     }
 }
-impl Drop for Frontier<'_> {
-    fn drop(&mut self) {
-        // Arbitrarily many registered members do not create recursive Drop.
-        let mut rows = self.head.take();
-        while let Some(mut current) = rows {
-            rows = current[0].next.take();
-            drop(current);
+impl<'f, 'p> Current<'f, 'p> {
+    fn valid(&self) -> bool {
+        self.ordinal == self.frontier.next.get()
+            && self.frontier.ready.get().is_none()
+            && self
+                .frontier
+                .row
+                .get()
+                .is_some_and(|row| std::ptr::eq(row, self.row))
+    }
+    /// Consumes this capability; mutable advance cannot run while any other
+    /// Current or builder still borrows the phase. No replayable receipt leaks.
+    pub(crate) fn finish(self) -> Result<(), Diagnostic> {
+        self.complete()?;
+        self.frontier.ready.set(Some(self.ordinal));
+        Ok(())
+    }
+    // Adversarial test tokens cannot be minted by a production caller.
+    #[cfg(test)]
+    pub(crate) fn with_ordinal_for_test(&self, ordinal: usize) -> Current<'_, 'p> {
+        Current {
+            frontier: self.frontier,
+            row: self.row,
+            ordinal,
+            owner: None,
         }
     }
-}
-
-impl<'f, 'p> Current<'f, 'p> {
     pub(crate) fn function(&self) -> &'p ResolvedFunction {
         self.row.member.function()
     }
@@ -284,7 +295,7 @@ impl<'f, 'p> Current<'f, 'p> {
         self.owner.as_ref()
     }
     pub(crate) fn sites(&self) -> Result<&HelperBindings<'p>, Diagnostic> {
-        if self.ordinal != self.frontier.next.get() {
+        if !self.valid() {
             return Err(error());
         }
         self.frontier.helpers(self.row)
