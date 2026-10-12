@@ -83,6 +83,8 @@ mod match_mode_graph_v21;
 mod match_modes_syntax;
 #[path = "language/native_if_string_temporaries.rs"]
 mod native_if_string_temporaries;
+#[path = "language/one_mistake_one_diagnostic.rs"]
+mod one_mistake_one_diagnostic;
 #[path = "language/option_try_semantics.rs"]
 mod option_try_semantics;
 #[path = "language/owned_bounded_box_v1.rs"]

@@ -574,6 +574,25 @@ fn rust_and_python_habits_in_bodies_name_the_admitted_form() {
 }
 
 #[test]
+fn string_arithmetic_reports_only_the_operator() {
+    // The arithmetic result has no type, so the return and equality checks
+    // that follow must not report a made-up i64 against the declared string.
+    let cases = [
+        "module habit.v;\n@id(\"habit.join\")\nfn join(a: string, b: string) -> string\n{\n    a + b\n}\n@id(\"app.main\")\nfn main() -> i64\n{\n    0\n}\n",
+        "module habit.v;\n@id(\"app.main\")\nfn main() -> i64\n{\n    if \"a\" + \"b\" == \"ab\" { 7 } else { 8 }\n}\n",
+    ];
+    for source in cases {
+        let found = diagnostics(source);
+        let codes = found
+            .iter()
+            .map(|diagnostic| diagnostic.code)
+            .collect::<Vec<_>>();
+        assert_eq!(codes, ["SPX-T250"], "{source}: {found:?}");
+        assert!(help(&found[0]).contains("string_concat(a, b)"));
+    }
+}
+
+#[test]
 fn nested_views_and_missing_effects_name_the_complete_fix() {
     let invalid_temporary = diagnostics(
         "module habit.view;\n@id(\"view.make\")\nfn make() -> string { \"hi\" }\n@id(\"app.main\")\nfn main() -> i64\n{\n    let b = str_as_bytes(string_as_str(make()));\n    0\n}\n",
