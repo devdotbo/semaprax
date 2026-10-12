@@ -15,7 +15,6 @@ use semaprax::workspace_graph::{
 };
 use semaprax::{format, parse, workspace};
 use sha2::{Digest, Sha256};
-
 static SERIAL: AtomicU64 = AtomicU64::new(0);
 
 struct ManagedFixture {
@@ -352,6 +351,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!("../../src/workspace_graph/identity_resolution.rs"),
                 include_str!("../../src/workspace_graph/identity_resolution/tests.rs"),
                 include_str!("../../src/workspace_graph/identity_resolution/tests/refusal_reference.rs"),
+                include_str!("../../src/workspace_graph/identity_resolution/tests/legacy_receiver.rs"),
                 include_str!("../../src/workspace_graph/paid_view.rs"),
                 include_str!("../../src/workspace_report.rs"),
                 include_str!("../../src/workspace_report/tests.rs"),

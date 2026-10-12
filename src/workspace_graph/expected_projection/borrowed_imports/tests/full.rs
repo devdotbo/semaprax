@@ -11,11 +11,21 @@ use crate::workspace_graph::index_authored;
 const VEC_PROVIDER: &str = include_str!("../../../../../std/collections/src/collections.spx");
 const BOX_PROVIDER: &str = include_str!("../../../../../std/mem/src/mem.spx");
 const VEC_CALLER: &str = r#"module overlay.vec;
+use function @id("std.collections.vec.with-capacity") from std.collections as with_capacity;
+use function @id("std.collections.vec.push") from std.collections as push;
+use function @id("std.collections.vec.get") from std.collections as get;
+@id("overlay.vec.main") fn main()->i64 { let values=with_capacity<i64>(2usize); let appended=push<i64>(values,42); get<i64>(appended,0usize) }"#;
+const BOX_CALLER: &str = r#"module overlay.box;
+use function @id("std.mem.box.new") from std.mem as new;
+use function @id("std.mem.box.into-inner") from std.mem as into_inner;
+@id("overlay.box.main") fn main()->i64 { into_inner<i64>(new<i64>(42)) }"#;
+// Complete prior aliases remain independent authenticated refusal corpora.
+const VEC_ALIASED_CALLER: &str = r#"module overlay.vec;
 use function @id("std.collections.vec.with-capacity") from std.collections as new_vec;
 use function @id("std.collections.vec.push") from std.collections as append_vec;
 use function @id("std.collections.vec.get") from std.collections as read_vec;
 @id("overlay.vec.main") fn main()->i64 { let values=new_vec<i64>(2usize); let appended=append_vec<i64>(values,42); read_vec<i64>(appended,0usize) }"#;
-const BOX_CALLER: &str = r#"module overlay.box;
+const BOX_ALIASED_CALLER: &str = r#"module overlay.box;
 use function @id("std.mem.box.new") from std.mem as new_box;
 use function @id("std.mem.box.into-inner") from std.mem as take_box;
 @id("overlay.box.main") fn main()->i64 { take_box<i64>(new_box<i64>(42)) }"#;
@@ -124,13 +134,16 @@ fn retained_vec_box_class_and_invariant_sources_match_full_owning_projection() {
 fn invariant_and_wrapper_invalid_cases_keep_the_entire_old_error_order() {
     let cases = [
         (
-            VEC_CALLER.replace("new_vec<i64>(2usize)", "new_vec<string>(2usize)"),
+            VEC_CALLER.replace(
+                "with_capacity<i64>(2usize)",
+                "with_capacity<string>(2usize)",
+            ),
             VEC_PROVIDER.to_owned(),
         ),
         (
             BOX_CALLER.replace(
-                "take_box<i64>(new_box<i64>(42))",
-                "take_box<i64>(new_box<i64>(true))",
+                "into_inner<i64>(new<i64>(42))",
+                "into_inner<i64>(new<i64>(true))",
             ),
             BOX_PROVIDER.to_owned(),
         ),
@@ -246,8 +259,14 @@ fn complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal() {
                         }
                         Ok::<(), Vec<Diagnostic>>(())
                     })();
-                    if result.is_err() {
+                    if crate::bounded_output::active_refused() {
+                        assert!(result.is_err());
                         assert!(reserve_builder_structure(0).is_err());
+                    } else {
+                        assert!(
+                            result.is_ok(),
+                            "authenticated canonical receiver: {result:?}"
+                        );
                     }
                     drop(result);
                     drop(registry);
@@ -434,3 +453,69 @@ fn assert_forward_owner(function: &crate::ast::Function) {
 
 #[path = "full/receiving.rs"]
 mod receiving;
+
+// Aliasing a retained reserved wrapper is a source error even under the linked
+// guard. Semantic refusal must not be mistaken for sticky physical refusal.
+#[test]
+fn complete_arbitrary_aliases_keep_original_source_refusal_without_payer_refusal() {
+    for (caller, provider, code) in [
+        (VEC_ALIASED_CALLER, VEC_PROVIDER, "SPX-T283"),
+        (BOX_ALIASED_CALLER, BOX_PROVIDER, "SPX-T286"),
+    ] {
+        let programs = sources(caller, provider);
+        let authored = index_authored(&programs).unwrap();
+        let ((), refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+            let registry = LayoutRegistry::new(&programs, &authored);
+            let owned =
+                old::construct(&programs[0], &authored, &programs, Some(&registry)).unwrap();
+            let costs = super::super::super::synthetic_builder_bytes_scoped_with_registry(
+                &programs[0],
+                &authored,
+                &programs,
+                None,
+                4,
+                true,
+                Some(&registry),
+            )
+            .unwrap();
+            reserve_builder_structure(costs.raw_clone_and_hir).unwrap();
+            let view = construct(&programs[0], &authored, &programs, &registry).unwrap();
+            let receiving = super::super::super::construct_receiving(
+                &programs[0],
+                &authored,
+                &programs,
+                &registry,
+            )
+            .unwrap();
+            let layout = registry.get(&programs[0], &authored, &programs).unwrap();
+            let before = linked(|| {
+                hir::resolve_with_function_reuse(
+                    &owned,
+                    None,
+                    None,
+                    None,
+                    layout.presentation(&programs[0], &owned).unwrap(),
+                )
+            })
+            .err()
+            .unwrap();
+            for current in [&view, &receiving] {
+                let after = linked(|| {
+                    hir::resolve_source(
+                        current,
+                        layout.presentation(&programs[0], current).unwrap(),
+                    )
+                })
+                .err()
+                .unwrap();
+                assert_eq!(before, after);
+                assert!(after.iter().any(|error| error.code == code), "{after:?}");
+                assert!(!crate::bounded_output::active_refused());
+                assert!(reserve_builder_structure(0).is_ok());
+                drop(after);
+            }
+            drop((before, receiving, view, owned, registry));
+        });
+        assert!(!refused);
+    }
+}
