@@ -13,6 +13,26 @@ impl DeclarationIndex {
             .clone()
     }
 
+    /// The resolver's own pass index was built from the same `ProgramSource`
+    /// and inserted every top-level type, interface, import, resource
+    /// lifecycle, function, and class method before `Resolver::resolve`
+    /// begins. Lookup is exact-text and borrowed; it shares the existing
+    /// carrier and validates nothing (kind, owner, and profile checks stay at
+    /// their callers). There is no legacy-construction fallback: every actual
+    /// caller passes text read from that same source, and a detached index is
+    /// outside this accessor's premise.
+    pub(in crate::hir) fn held_identity(&self, text: &str) -> DeclarationId {
+        #[cfg(test)]
+        if let Some(saved) = identity_reuse_tests::resolver_held::saved_identity(text) {
+            return saved;
+        }
+        self.declarations
+            .get(text)
+            .expect("resolver subject held by its own declaration index")
+            .id
+            .clone()
+    }
+
     pub(in crate::hir) fn recompute_type_facts(&self, ty: &ResolvedType) -> Option<TypeFacts> {
         self.compute_type_facts(ty, &mut BTreeSet::new(), &mut BTreeMap::new())
     }

@@ -113,7 +113,7 @@ impl Resolver<'_> {
             self.resolve_function_type(function, &function.return_type, function.span)?;
         if super::generic_result::slot(
             &result_type,
-            &DeclarationId::new(function.stable_id.clone()),
+            &self.declarations.held_identity(&function.stable_id),
             function.type_parameters.len(),
         ) {
             return Ok(super::generic_result::arguments(&result_type, arguments));
@@ -123,7 +123,7 @@ impl Resolver<'_> {
         }) {
             return Ok(false);
         }
-        let owner = DeclarationId::new(function.stable_id.clone());
+        let owner = self.declarations.held_identity(&function.stable_id);
         let return_type =
             self.resolve_function_type(function, &function.return_type, function.span)?;
         let owned_return = super::type_reachability::is_nested_owned_byte_record_template(
@@ -199,7 +199,7 @@ impl Resolver<'_> {
             .functions()
             .iter()
             .find(|function| function.name == "main")
-            .map(|function| DeclarationId::new(function.stable_id.clone()))
+            .map(|function| self.declarations.held_identity(&function.stable_id))
             .ok_or_else(|| {
                 self.error(
                     "SPX-H005",
@@ -212,7 +212,7 @@ impl Resolver<'_> {
             .iter()
             .chain(crate::prelude::declarations_for_program(self.program))
             .map(|declaration| {
-                let id = DeclarationId::new(declaration.stable_id.clone());
+                let id = self.declarations.held_identity(&declaration.stable_id);
                 let kind = match &declaration.kind {
                     TypeDeclarationKind::Resource { lifecycles } => {
                         let lifecycle = lifecycles.first().ok_or_else(|| {
@@ -222,8 +222,8 @@ impl Resolver<'_> {
                                 declaration.span,
                             )
                         })?;
-                        let lifecycle_id = DeclarationId::new(
-                            lifecycle.stable_id.clone().ok_or_else(|| {
+                        let lifecycle_id = self.declarations.held_identity(
+                            lifecycle.stable_id.as_deref().ok_or_else(|| {
                                 self.error(
                                     "SPX-H006",
                                     format!("resource `{id}` lifecycle has no identity"),
@@ -288,7 +288,7 @@ impl Resolver<'_> {
                             .to_vec();
                         let methods = methods
                             .iter()
-                            .map(|method| DeclarationId::new(method.stable_id.clone()))
+                            .map(|method| self.declarations.held_identity(&method.stable_id))
                             .collect();
                         ResolvedTypeDeclarationKind::Class { fields, methods }
                     }
@@ -331,7 +331,7 @@ impl Resolver<'_> {
             .interfaces()
             .iter()
             .map(|interface| {
-                let interface_id = DeclarationId::new(interface.stable_id.clone());
+                let interface_id = self.declarations.held_identity(&interface.stable_id);
                 let imports = interface
                     .imports
                     .iter()
@@ -368,7 +368,7 @@ impl Resolver<'_> {
                             },
                         };
                         Ok(ResolvedImport {
-                            id: DeclarationId::new(import.stable_id.clone()),
+                            id: self.declarations.held_identity(&import.stable_id),
                             name: import.name.clone(),
                             interface: interface_id.clone(),
                             import_key: import.stable_id.clone(),
@@ -657,7 +657,7 @@ impl Resolver<'_> {
                 continue;
             }
             let ty = ResolvedType::Nominal {
-                declaration: DeclarationId::new(declaration.stable_id.clone()),
+                declaration: self.declarations.held_identity(&declaration.stable_id),
                 arguments: Vec::new(),
             };
             if self.declarations.type_facts(&ty).is_none() {
@@ -678,7 +678,7 @@ impl Resolver<'_> {
         &self,
         function: &crate::ast::Function,
     ) -> Result<ResolvedFunction, Diagnostic> {
-        let template_id = DeclarationId::new(function.stable_id.clone());
+        let template_id = self.declarations.held_identity(&function.stable_id);
         let function_scope = FunctionExecutionId::Monomorphic(template_id.clone());
         self.resolve_function_in_scope(function, &function_scope, template_id)
     }
@@ -689,7 +689,7 @@ impl Resolver<'_> {
     ) -> Result<ResolvedFunctionTemplate, Diagnostic> {
         let transparent_vec_wrapper = crate::vec_ops::source_wrapper(self.program, function);
         let transparent_box_wrapper = crate::box_ops::source_wrapper(self.program, function);
-        let function_id = DeclarationId::new(function.stable_id.clone());
+        let function_id = self.declarations.held_identity(&function.stable_id);
         let function_scope = FunctionExecutionId::Monomorphic(function_id.clone());
         let type_parameters = function
             .type_parameters
@@ -1240,7 +1240,7 @@ impl Resolver<'_> {
                 .position(|parameter| parameter.name == *name)
             {
                 return Ok(ResolvedType::TypeParameter {
-                    owner: DeclarationId::new(function.stable_id.clone()),
+                    owner: self.declarations.held_identity(&function.stable_id),
                     index: u32::try_from(index).map_err(|_| {
                         self.error(
                             "SPX-H006",
@@ -1267,7 +1267,7 @@ impl Resolver<'_> {
             declaration: declaration.clone(),
             arguments: resolved.clone(),
         };
-        let owner = DeclarationId::new(function.stable_id.clone());
+        let owner = self.declarations.held_identity(&function.stable_id);
         let transparent_vec = crate::vec_ops::source_wrapper(self.program, function).is_some()
             && declaration.as_str() == crate::prelude::VEC_ID
             && matches!(resolved.as_slice(),

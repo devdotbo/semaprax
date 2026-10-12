@@ -130,3 +130,5 @@ fn inserted_identity_reuse_removes_literal_reconstruction_payloads_through_index
 
 #[path = "paid.rs"]
 mod paid;
+#[path = "resolver_held.rs"]
+pub(super) mod resolver_held;
