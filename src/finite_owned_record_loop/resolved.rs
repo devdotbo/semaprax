@@ -31,11 +31,7 @@ fn tail(e: &E, counter: &crate::hir::ResolvedBinding, depth: usize) -> bool {
     }
     match &e.kind {
         K::Closure { .. } | K::Yield { .. } | K::VecConstructor { .. } => return false,
-        K::Block { statements, .. } => {
-            if !statements.is_empty() {
-                return false;
-            }
-        }
+        K::Block { statements, .. } if !statements.is_empty() => return false,
         K::Match { arms, .. } => {
             if arms.iter().any(|a| {
                 a.guard.is_some()
@@ -58,8 +54,7 @@ fn tail(e: &E, counter: &crate::hir::ResolvedBinding, depth: usize) -> bool {
         }
         _ => {}
     }
-    let mut cursor = crate::hir::lexical_exit::ChildCursor::new(e);
-    while let Some(child) = cursor.next() {
+    for child in crate::hir::lexical_exit::ChildCursor::new(e) {
         if !tail(child, counter, depth + 1) {
             return false;
         }

@@ -200,7 +200,7 @@ fn subtree_transfer_refuses_hidden_owner_borrow_use_after_move_and_live_descenda
 
 #[test]
 fn subtree_cache_cold_warm_and_current_source_drift_replay_exact_graph_facts() {
-    let manifest = semaprax::project::ProjectManifest::parse(
+    let scalar_manifest = semaprax::project::ProjectManifest::parse(
         r#"schema = "semaprax.project.v1"
 name = "subtree"
 entry = "test.subtree"
@@ -243,7 +243,7 @@ tests = ["test.subtree_tests"]
         )
         .unwrap(),
     ];
-    let errors = cache.build(&manifest, &raw).err().unwrap();
+    let errors = cache.build(&scalar_manifest, &raw).err().unwrap();
     assert!(errors.iter().any(|error| error.code == "SPX-G170"
         && error.message == "workspace semantic source `app.spx` is not canonical"));
     // Preserve the original public-profile refusal independently; canonical
@@ -262,10 +262,24 @@ tests = ["test.subtree_tests"]
             .unwrap()
     })
     .collect::<Vec<_>>();
-    let errors = cache.build(&manifest, &public_inputs).err().unwrap();
+    let errors = cache.build(&scalar_manifest, &public_inputs).err().unwrap();
     assert!(errors.iter().any(|error| error.code == "SPX-G174"
         && error.message
             == "project function `score` has a signature outside the selected profile"));
+    // The entire test source retains its owned helpers under the existing
+    // private UsefulDataV2 route; ScalarV1 above still refuses those boundaries.
+    let manifest = semaprax::project::ProjectManifest::parse(
+        r#"schema = "semaprax.project.v16"
+name = "subtree"
+version = "0.1.0"
+profile = "useful-data.v2"
+entry = "test.subtree"
+sources = ["app.spx", "tests.spx"]
+web_exports = ["public.probe"]
+tests = ["test.subtree_tests"]
+"#,
+    )
+    .unwrap();
     let cold = cache.build(&manifest, &inputs(&source)).unwrap();
     let cold_graph = cold.revision().semantic_graph().to_owned();
     let warm = cache.build(&manifest, &inputs(&source)).unwrap();

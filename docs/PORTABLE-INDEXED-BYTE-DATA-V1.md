@@ -225,8 +225,14 @@ described above. Its per-function and per-root summaries are target-neutral
 compiler facts and Graph v17 serializes them.
 
 The executable closure containing `bytes_copy` must be acyclic. An
-allocation-producing operation is forbidden in a `while` body or condition,
-and direct or mutual recursion reaching one is rejected before emission. The
+allocation-producing operation is forbidden in an ordinary `while` body or
+condition, and direct or mutual recursion reaching one is rejected before emission.
+The later [Finite owned-record discard loops v1](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md)
+profile admits only its independently reconstructed exact finite body, multiplying
+that body's complete demand by the proved literal bound under these unchanged
+site and payload limits. It does not widen the general indexed-byte loop profile;
+allocating conditions, unproved loops and recursive allocation closures remain
+refused. The
 compiler computes the conservative maximum across branches and the sum across
 calls; it does not trust a backend counter. This ensures the semantic bound
 cannot be exhausted dynamically by a loop and avoids inventing a recoverable

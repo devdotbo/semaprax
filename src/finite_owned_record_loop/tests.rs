@@ -239,3 +239,74 @@ fn forged_discard_ownership_counter_and_status_lose_independent_hir_validation()
         );
     }
 }
+
+#[test]
+fn finite_record_source_and_hir_fold_complete_body_events_at_the_unchanged_cap() {
+    let two_sites = SOURCE
+        .replace("record Outer {@id(\"outer.report\") report:Report,}", "record Outer {@id(\"outer.report\") report:Report,@id(\"outer.extra\") extra:Bytes,}")
+        .replace("Outer{report:Report{bytes:bytes_zeroed(3usize)}}", "Outer{report:Report{bytes:bytes_zeroed(3usize)},extra:bytes_zeroed(1usize)}")
+        .replace("Outer{report}=>", "Outer{report,extra:_}=>");
+    for count in [1, 8, 16] {
+        let text = two_sites.replace("count<3", &format!("count<{count}"));
+        let ast = crate::parse(&text, "finite-record-cap.spx").unwrap();
+        let main = ast.functions.iter().find(|f| f.stable_id == "app.main").unwrap();
+        let crate::ast::ExprKind::Block { statements, .. } = &main.body.kind else { panic!("source root") };
+        let crate::ast::Statement::While { body, .. } = &statements[1] else { panic!("source loop") };
+        assert_eq!(source(main, body).unwrap().iterations, count);
+        let program = checked(&text);
+        let (condition, body) = pair(&program);
+        assert_eq!(resolved(&program, condition, body), Some(count));
+        let capacity = crate::hir::analyze_byte_data_capacity(&program).unwrap();
+        let main = capacity.function("app.main").unwrap();
+        assert_eq!(main.bytes_copy_sites, count * 2);
+        assert_eq!(main.owned_byte_payload_bytes, u64::from(count) * 4);
+    }
+    // A proved trip count alone cannot admit 34 producer executions.
+    let excess = two_sites.replace("count<3", "count<17");
+    assert!(crate::check(&excess, "finite-record-excess.spx").unwrap_err().iter().any(|d| d.code == "SPX-T267"));
+}
+
+#[test]
+fn exact_finite_named_slice_copy_counts_actual_extent_and_keeps_unproved_copy_refusal() {
+    let text = SOURCE
+        .replace(" let mut count=0;", " let input=[1u8,0u8,255u8];let view=array_as_slice(input);let mut count=0;")
+        .replace("bytes_zeroed(3usize)", "bytes_copy(view)");
+    let ast = crate::parse(&text, "finite-named-copy.spx").unwrap();
+    let main = ast.functions.iter().find(|f| f.stable_id == "app.main").unwrap();
+    let crate::ast::ExprKind::Block { statements, .. } = &main.body.kind else { panic!("source root") };
+    let body = statements.iter().find_map(|s| match s {
+        crate::ast::Statement::While { body, .. } => Some(body),
+        _ => None,
+    }).unwrap();
+    assert_eq!(source(main, body).unwrap().iterations, 3);
+    assert!(source(main, &body.as_ref().clone()).is_none());
+    let program = checked(&text);
+    let main = program.functions.iter().find(|f| f.id.as_str() == "app.main").unwrap();
+    let K::Block { statements, .. } = &main.body.kind else { panic!("main") };
+    let (condition, body) = statements.iter().find_map(|s| match s {
+        S::LexicalWhile { condition, body, .. } => Some((condition, body)),
+        _ => None,
+    }).unwrap();
+    assert_eq!(resolved(&program, condition, body), Some(3));
+    let capacity = crate::hir::analyze_byte_data_capacity(&program).unwrap();
+    let main = capacity.function("app.main").unwrap();
+    assert_eq!((main.bytes_copy_sites, main.owned_byte_payload_bytes), (3, 9));
+    for changed in [text.replace("count<3", "count<33"), text.replace("count=count+1", "count=count+2")] {
+        assert!(crate::check(&changed, "unproved-copy-loop.spx").unwrap_err().iter().any(|d| d.code == "SPX-T267"));
+    }
+    let plain = "module app;@id(\"app.main\") fn main()->i64 {let input=[1u8];let view=array_as_slice(input);let mut count=0;while count<3 {let copy=bytes_copy(view);count=count+1;0}count}";
+    assert!(crate::check(plain, "ordinary-copy-loop.spx").unwrap_err().iter().any(|d| d.code == "SPX-T267"));
+}
+
+#[test]
+fn finite_record_payload_exact_and_one_iteration_over_keep_the_original_limit() {
+    let exact = SOURCE.replace("count<3", "count<16").replace("bytes_zeroed(3usize)", "bytes_zeroed(131072usize)");
+    let program = checked(&exact);
+    let (condition, body) = pair(&program);
+    assert_eq!(resolved(&program, condition, body), Some(16));
+    let capacity = crate::hir::analyze_byte_data_capacity(&program).unwrap();
+    let main = capacity.function("app.main").unwrap();
+    assert_eq!((main.bytes_copy_sites, main.owned_byte_payload_bytes), (16, 2097152));
+    let excess = exact.replace("count<16", "count<17");
+    assert!(crate::check(&excess, "finite-record-payload-excess.spx").unwrap_err().iter().any(|d| d.code == "SPX-T267"));
+}

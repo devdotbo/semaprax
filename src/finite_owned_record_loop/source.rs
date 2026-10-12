@@ -33,11 +33,7 @@ fn tail(e: &Expr, counter: &str, depth: usize) -> bool {
         | K::VecConstructor { .. }
         | K::MethodCall { .. }
         | K::SuperMethod { .. } => return false,
-        K::Block { statements, .. } => {
-            if !statements.is_empty() {
-                return false;
-            }
-        }
+        K::Block { statements, .. } if !statements.is_empty() => return false,
         K::Match { arms, .. } => {
             if arms.iter().any(|a| {
                 a.guard.is_some()

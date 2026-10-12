@@ -23,6 +23,16 @@ still refuse. Induction is not ownership permission: independent type,
 availability, loan, canonical cleanup and backend checks remain mandatory.
 Every iteration-local descendant must settle before a latch, exit or failure.
 
+Source capacity selects this flow only for the actual pointer-held While body;
+it does not identify candidates by equal text or replace the ordinary ForBorrow
+or ForOwn route. HIR capacity independently selects it from the actual condition,
+body, bindings and declaration identities. Both folds retain complete callee and
+producer demand and checked multiplication. The legacy `SPX-T267` message names
+`bytes_copy` for all owned-byte producers, including `bytes_zeroed`: recognition
+must apply to the proved flow rather than exempting a builtin name. A literal
+counter condition has no allocating child. An allocating condition, excess total
+events/payload, unknown extent or recursive producer remains refused.
+
 ## Explicit no-result statement
 
 An authenticated parser Match expression-statement marker containing a lexical exit
@@ -55,3 +65,25 @@ The original owned-subtree Break/Continue three-backend fixture is retained.
 Owning controls independently derive exact source/HIR sites, capacity and wire,
 reject detached sites and malformed ownership/counters/statuses, and preserve
 ordinary named-initializer refusal. Authored controls are not passing receipts.
+
+## Source repair regression owners
+
+The source and HIR profile controls in `finite_owned_record_loop::tests::`
+retain the complete original 1/8/32 record bodies and hostile ownership,
+counter, lexical status and detached-node corpus. Added complete-body controls
+count two independent producers per iteration at 1/8/16, refuse 17 iterations
+under the unchanged 32-event bound, independently exercise exact 2 MiB payload
+and one-iteration-over refusal, and count a real named-slice `bytes_copy`
+with embedded NUL and 255-byte content. The ordinary/unproved copy-loop
+`SPX-T267` controls remain separate.
+
+`owned_data::nested_collection_record::subtree::lifetime::finite_record_named_slice_copy_preserves_live_exits_on_every_engine`
+authors the corresponding interpreter, native O0/O2 and strict Core-Wasm
+repeated-lifetime receiver, in addition to the original zeroed-buffer
+Break/Continue corpus. These authored controls await the consolidated run;
+source edits are not executable or hosted evidence.
+
+The subtree cache owner retains its ScalarV1 `SPX-G174` refusal and uses the
+existing Project v16 `useful-data.v2` private-entry/test role for both complete
+canonical sources. It does not alter scalar public exports or remove private
+owned helpers to make cache admission succeed.

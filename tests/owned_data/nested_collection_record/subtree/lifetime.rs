@@ -130,3 +130,46 @@ static __attribute__((unused)) void *subtree_memmove(void *to,const void *from,s
         }
     }
 }
+
+#[test]
+fn finite_record_named_slice_copy_preserves_live_exits_on_every_engine() {
+    let text = format!(
+        r#"{PREFIX}
+@id("app.main") fn main()->i64 {{
+ let input=[0u8;3];let view=array_as_slice(input);let mut count=0;
+ while count<3 {{
+  let outer=Outer{{valid:true,report:Report{{bytes:bytes_copy(view),text:"four",words:vec_with_capacity<string>(0usize),metrics:Metrics{{total:35}}}},sibling:Sibling{{bytes:bytes_zeroed(1usize),tag:9}}}};
+  match own outer {{Outer{{sibling:Sibling{{bytes:unused,tag:_}},report,valid:_}}=>{{
+   count=count+1;
+   if count==1 {{continue;}}else{{if count==2 {{break;}}else{{score(report)}}}}
+  }},}};
+  0
+ }}
+ if count==2 {{42}}else{{0}}
+}}
+"#
+    );
+    let root = directory("subtree-finite-named-copy");
+    let path = root.join("app.spx");
+    std::fs::write(&path, &text).unwrap();
+    let ast = semaprax::check(&text, &path).unwrap();
+    let hir = semaprax::hir::resolve(&ast).unwrap();
+    semaprax::hir::validate(&hir).unwrap();
+    let graph = semaprax::graph::to_json(&ast).unwrap();
+    semaprax::graph::verify_json(&ast, &graph).unwrap();
+    let wire: serde_json::Value = serde_json::from_str(&graph).unwrap();
+    let main = wire["portable_indexed_byte_data"]["capacity_summaries"]
+        .as_array().unwrap().iter().find(|summary| summary["function"] == "app.main").unwrap();
+    assert_eq!(main["bytes_copy_sites"], 6);
+    assert_eq!(main["owned_byte_payload_bytes"], 12);
+    for _ in 0..3 {
+        let execution = interpreter::interpret(&path, "app.main", &[], &InterpreterOptions::default()).unwrap();
+        assert!(execution.returned, "{}", execution.envelope);
+        interpreter::verify_envelope(&execution.envelope).unwrap();
+        let envelope: serde_json::Value = serde_json::from_str(&execution.envelope).unwrap();
+        assert_eq!(envelope["payload"]["outcome"]["value"], "42");
+    }
+    super::super::super::owned_collection_outcome::run_native(&ast, &root);
+    super::super::super::owned_collection_outcome::run_strict_wasm(&ast, &root);
+    std::fs::remove_dir_all(root).unwrap();
+}

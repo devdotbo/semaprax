@@ -1425,6 +1425,14 @@ fn source_capacity_expr(
                                 })
                             } else {
                                 crate::source_verify::finite_row_loop(context.program, body)
+                                    .or_else(|| {
+                                        matches!(statement, Statement::While { .. })
+                                            .then(|| context.ordinary.values().find_map(|function| {
+                                                crate::finite_owned_record_loop::source(function, body)
+                                                    .map(|proof| proof.iterations)
+                                            }))
+                                            .flatten()
+                                    })
                             };
                             frames.push(if fused_selection::selected_loop(context, statement) {
                                 Frame::FusedConstruction
