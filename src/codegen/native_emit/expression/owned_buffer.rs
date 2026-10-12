@@ -21,10 +21,16 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         let (allocator, context) = self
             .output_profile
             .byte_allocator(crate::byte_ops::ByteOp::Zeroed);
+        if self.output_profile == super::super::NativeOutputProfile::CheckedAllocation {
+            let site = self.active_expression.clone().ok_or_else(|| backend_error("checked bounded Bytes lacks its exact source"))?;
+            self.checked_string_constructor(&site, crate::cleanup_plan::AllocationOperation::BytesZeroed,
+                &format!("spx_checked_native_bytes_zeroed_v1(spx_ctx, {}, &{temporary})", arguments[0].code), false)?;
+        } else {
         self.line(&format!(
             "{temporary} = {allocator}({context}{});",
             arguments[0].code
         ));
+        }
         Ok(())
     }
 

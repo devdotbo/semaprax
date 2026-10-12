@@ -18,7 +18,7 @@ static void checked_release(void *state, void *pointer) {
     free(pointer);
 }
 int main(void) {
-    for (size_t refused = 0; refused <= 3; ++refused) {
+    for (size_t refused = 0; refused <= CHECKED_EXPECT_ALLOCATIONS; ++refused) {
         for (size_t repetition = 0; repetition < 3; ++repetition) {
             struct checked_probe probe = { .refuse = refused };
             struct spx_context context = {0};
@@ -27,12 +27,15 @@ int main(void) {
             int64_t out = INT64_C(919);
             spx_status_token selected = spx_checked_allocation_invoke_v1(&context, &probe, checked_allocate, checked_release, &out);
             if (context.checked_allocation != NULL || probe.live != 0) return 2;
-            if (refused == 0) {
-                if (selected != SPX_STATUS_SUCCESS || out != INT64_C(3) || probe.ordinal != 3 || probe.releases != 3) return 3;
+            if (refused == 0 && !CHECKED_EXPECT_SEMANTIC) {
+                if (selected != SPX_STATUS_SUCCESS || out != CHECKED_EXPECT_RESULT || probe.ordinal != CHECKED_EXPECT_ALLOCATIONS || probe.releases != CHECKED_EXPECT_ALLOCATIONS) return 3;
             } else {
-                if (selected == SPX_STATUS_SUCCESS || out != INT64_C(919) || probe.ordinal != refused || probe.releases != refused - 1) return 4;
+                size_t attempts = refused == 0 ? CHECKED_EXPECT_ALLOCATIONS : refused;
+                size_t releases = refused == 0 ? attempts : attempts - 1;
+                if (selected == SPX_STATUS_SUCCESS || out != INT64_C(919) || probe.ordinal != attempts || probe.releases != releases) return 4;
                 const struct spx_status_entry *entry = &entries[selected - 1];
-                if (strcmp(entry->status.domain_id, "semaprax.allocation.v1") != 0 || entry->status.code != UINT32_C(1)) return 5;
+                const char *domain = refused == 0 ? "semaprax.convert.v1" : "semaprax.allocation.v1";
+                if (strcmp(entry->status.domain_id, domain) != 0 || entry->status.code != UINT32_C(1)) return 5;
             }
         }
     }

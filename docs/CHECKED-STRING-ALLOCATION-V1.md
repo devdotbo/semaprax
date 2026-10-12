@@ -380,8 +380,16 @@ publication. Every String header retains its release callback and state.
 
 This receiver is executable source, with a generated helper-closure NULL sweep
 at O0/O2 authored but not executed. It is still a private scalar-output boundary:
-Bytes/Vec/Map/Box/literal-format materializations, interpreter and Core-Wasm
+Vec/Map/Box/literal-format materializations, interpreter and Core-Wasm
 receivers, and escaped SDK outputs require their actual runtime joins. Neither
 this receiver nor the earlier family inventory establishes those joins. Arrays
 (including empty arrays) and function-value signature metadata now fail coverage
 rather than borrowing a native inline/nonallocating classification.
+
+The same native receiving closure now joins Bytes copy and zeroed payloads.
+Nonempty Bytes retain a header release pair; empty Bytes retain their established
+null/zero carrier without a request. Bounded allocation runs the original
+semantic bound check before the physical request. Authored generated-source
+controls sweep both Bytes and String requests, preserve invalid UTF-8 priority,
+and exercise empty owner initialization/settlement. These controls are pending
+execution. This is not an escaped-result SDK join or an all-engine claim.

@@ -28,15 +28,60 @@ fn exact_source_native_receiver_uses_checked_helpers_and_closed_default_routes()
 
 #[test]
 fn generated_native_null_sweep_settles_committed_inputs_and_reenters_at_o0_o2() {
-    let source = crate::parse(SOURCE, "checked-native.spx").unwrap();
+    run_native(SOURCE, 4, 3, false);
+}
+
+#[test]
+fn generated_native_string_bytes_refusals_keep_empty_owners_and_utf8_precedence() {
+    const BYTES: &str = r#"module checked.native;
+@id("checked.native.main") fn main() -> i64 {
+    let raw = bytes_zeroed(2usize);
+    let view = bytes_as_slice(raw);
+    let text = string_from_utf8(view);
+    string_len(text)
+}
+"#;
+    const EMPTY: &str = r#"module checked.native;
+@id("checked.native.main") fn main() -> i64 {
+    let raw = bytes_zeroed(0usize);
+    let view = bytes_as_slice(raw);
+    let text = string_from_utf8(view);
+    string_len(text)
+}
+"#;
+    const INVALID: &str = r#"module checked.native;
+@id("checked.native.main") fn main() -> i64 {
+    let raw = bytes_set(bytes_zeroed(1usize), 0usize, 255u8);
+    let view = bytes_as_slice(raw);
+    let text = string_from_utf8(view);
+    string_len(text)
+}
+"#;
+    run_native(BYTES, 3, 2, false);
+    run_native(EMPTY, 2, 0, false);
+    run_native(INVALID, 1, 0, true);
+}
+
+fn run_native(source: &str, allocations: usize, result: i64, semantic_failure: bool) {
+    let source = crate::parse(source, "checked-native.spx").unwrap();
     let owner = crate::cleanup_plan::checked_allocation::prepare(&source,
         &DeclarationId::new("checked.native.main")).unwrap().receive().unwrap();
+    // The unchanged default owning read at main's tail clones text. This
+    // request is distinct from the callee/conversion result construction.
+    let main = owner.program().functions.iter().find(|function|
+        function.id.as_str() == "checked.native.main").unwrap();
+    assert_eq!(main.cleanup_plan.status_sources.iter().filter(|source| matches!(
+        &source.producer,
+        crate::cleanup_plan::StatusProducer::CheckedAllocation {
+            operation: crate::cleanup_plan::AllocationOperation::StringClone, ..
+        }
+    )).count(), 1);
     let emitted = Projection::receive(&owner).unwrap().emit().unwrap();
     let root = std::env::temp_dir().join(format!("checked-native-allocation-{}-{}",
         std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
     std::fs::create_dir(&root).unwrap();
     let input = root.join("probe.c");
-    std::fs::write(&input, format!("{emitted}\n{}", include_str!("probe.c"))).unwrap();
+    std::fs::write(&input, format!("{emitted}\n#define CHECKED_EXPECT_ALLOCATIONS {allocations}u\n#define CHECKED_EXPECT_RESULT INT64_C({result})\n#define CHECKED_EXPECT_SEMANTIC {}\n{}", usize::from(semantic_failure), include_str!("probe.c"))).unwrap();
     let compiler = std::env::var_os("CLANG").unwrap_or_else(|| "clang".into());
     for optimization in ["-O0", "-O2"] {
         let binary = root.join(format!("probe{optimization}{}", std::env::consts::EXE_SUFFIX));

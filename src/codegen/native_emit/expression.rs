@@ -257,10 +257,20 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             }
             crate::byte_ops::ByteOp::Copy | crate::byte_ops::ByteOp::Zeroed => {
                 let (allocator, context) = self.output_profile.byte_allocator(op);
+                if self.output_profile == NativeOutputProfile::CheckedAllocation {
+                    let (operation, constructor) = if op == crate::byte_ops::ByteOp::Copy {
+                        (crate::cleanup_plan::AllocationOperation::BytesCopy, "copy")
+                    } else {
+                        (crate::cleanup_plan::AllocationOperation::BytesZeroed, "zeroed")
+                    };
+                    self.checked_string_constructor(expression, operation,
+                        &format!("spx_checked_native_bytes_{constructor}_v1(spx_ctx, {}, &{temporary})", arguments[0].code), false)?;
+                } else {
                 self.line(&format!(
                     "{temporary} = {allocator}({context}{});",
                     arguments[0].code
                 ));
+                }
             }
             crate::byte_ops::ByteOp::Set => {
                 self.emit_owned_buffer_set(expression, &arguments, &temporary)?;

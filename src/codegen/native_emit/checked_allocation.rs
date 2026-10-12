@@ -35,7 +35,8 @@ impl<'owner, 'source> Projection<'owner, 'source> {
                             crate::cleanup_plan::AllocationCase::SizeOverflow]
                         || !matches!(operation, A::StringLiteral | A::StringClone | A::StringConcat
                             | A::StringFromChar | A::StringFromI64 | A::StringFromUsize
-                            | A::StringFromStr | A::StringFromUtf8 | A::StringSlice | A::StringTrim) {
+                            | A::StringFromStr | A::StringFromUtf8 | A::StringSlice | A::StringTrim
+                            | A::BytesCopy | A::BytesZeroed) {
                         return Err(backend_error("checked native allocation receiver has an unjoined materialization"));
                     }
                 }
@@ -77,7 +78,7 @@ impl<'owner, 'source> Projection<'owner, 'source> {
 fn leaf_type(ty: &ResolvedType) -> bool {
     matches!(ty, ResolvedType::Unit | ResolvedType::I64 | ResolvedType::I32 | ResolvedType::U8
         | ResolvedType::Usize | ResolvedType::Char | ResolvedType::F32 | ResolvedType::F64
-        | ResolvedType::Bool | ResolvedType::String | ResolvedType::Str | ResolvedType::SliceU8)
+        | ResolvedType::Bool | ResolvedType::String | ResolvedType::Str | ResolvedType::SliceU8 | ResolvedType::Bytes)
 }
 fn classify(program: &ResolvedProgram, expression: &ResolvedExpr) -> Result<(), Diagnostic> {
     if !leaf_type(&expression.ty) { return Err(backend_error("checked native allocation expression has an unjoined carrier")); }
@@ -97,6 +98,13 @@ fn classify(program: &ResolvedProgram, expression: &ResolvedExpr) -> Result<(), 
                     return Err(backend_error("checked native allocation call has an unjoined intrinsic"));
                 }
                 Ok(())
+            } else if let Some(operation) = crate::byte_ops::by_id(callee.as_str()) {
+                use crate::byte_ops::ByteOp as B;
+                if instance.is_some() || !matches!(operation, B::Len | B::Copy | B::Zeroed
+                    | B::ZeroedBounded | B::Set | B::Set5 | B::Set1Or5 | B::Set1Or6Or48) {
+                    return Err(backend_error("checked native Bytes call has an unjoined intrinsic"));
+                }
+                Ok(())
             } else if match instance {
                 Some(id) => program.function_instances.iter().any(|current| current.id == *id),
                 None => program.functions.iter().any(|current| current.id == *callee),
@@ -106,8 +114,14 @@ fn classify(program: &ResolvedProgram, expression: &ResolvedExpr) -> Result<(), 
     }
 }
 
-fn join_runtime(prelude: String) -> Result<String, Diagnostic> {
+fn join_runtime(mut prelude: String) -> Result<String, Diagnostic> {
     let header = "struct spx_string_v10 { uint64_t len; char data[]; };";
+    // A Bytes-only closure still uses the same allocation status adapter.
+    // No ordinary String prelude exists in that case; supply only its unused
+    // concrete carrier/read helpers, never a legacy allocator implementation.
+    if prelude.matches(header).count() == 0 {
+        prelude.push_str("\n#include <stddef.h>\nstruct spx_string_v10 { uint64_t len; char data[]; };\nstatic __attribute__((unused)) struct spx_string_v10 *spx_string_header_v10(const char *value) { return (struct spx_string_v10 *)((uint8_t *)value - offsetof(struct spx_string_v10, data)); }\nstatic __attribute__((unused)) uint64_t spx_string_length_v10(const char *value) { return spx_string_header_v10(value)->len; }\n");
+    }
     let context = "    uint32_t call_depth;";
     let zero = "context->call_depth == UINT32_C(0);";
     if prelude.matches(header).count() != 1 || prelude.matches(context).count() != 1
@@ -131,6 +145,9 @@ fn join_runtime(prelude: String) -> Result<String, Diagnostic> {
     output.push_str(&kernel);
     output.push_str(ADAPTER);
     output.push_str(RECEIVER);
+    if output.contains("} spx_bytes_v1;") {
+        output.push_str(include_str!("checked_allocation/bytes.c"));
+    }
     Ok(output)
 }
 #[cfg(test)]
