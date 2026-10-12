@@ -210,13 +210,14 @@ tests = ["test.subtree_tests"]
 "#,
     )
     .unwrap();
-    let source = format!(
-        "{}\n@id(\"public.probe\") fn probe()->i64 {{0}}",
-        source(SUBTREE, true)
+    // The whole original subtree program belongs to the private test route.
+    // Its owned Report helper cannot be exposed as a scalar public signature.
+    let source = source(SUBTREE, true).replacen(
+        "module test.subtree;", "module test.subtree_tests;", 1,
     );
-    let tests = "module test.subtree_tests; @id(\"tests.main\") fn main()->i64 {0}";
+    let app = "module test.subtree; @id(\"public.probe\") fn probe()->i64 {0} @id(\"public.main\") fn main()->i64 {0}";
     let inputs = |text: &str| {
-        [("app.spx", text), ("tests.spx", tests)]
+        [("app.spx", app), ("tests.spx", text)]
             .into_iter()
             .map(|(path, raw)| {
                 let parsed = semaprax::parse(raw, path).unwrap();
@@ -230,14 +231,29 @@ tests = ["test.subtree_tests"]
             .collect::<Vec<_>>()
     };
     let mut cache = semaprax::project::ProjectFrontendCache::new_with_semantic_cache();
+    let outside = format!(
+        "{}\n@id(\"public.probe\") fn probe()->i64 {{0}}", self::source(SUBTREE, true)
+    );
     // The raw fixture remains a negative for the ordinary source protocol.
     let raw = vec![
-        semaprax::project::ProjectFrontendSource::new("app.spx", &source).unwrap(),
-        semaprax::project::ProjectFrontendSource::new("tests.spx", tests).unwrap(),
+        semaprax::project::ProjectFrontendSource::new("app.spx", &outside).unwrap(),
+        semaprax::project::ProjectFrontendSource::new("tests.spx", "module test.subtree_tests; @id(\"tests.main\") fn main()->i64 {0}").unwrap(),
     ];
     let errors = cache.build(&manifest, &raw).err().unwrap();
     assert!(errors.iter().any(|error| error.code == "SPX-G170"
         && error.message == "workspace semantic source `app.spx` is not canonical"));
+    // Preserve the original public-profile refusal independently; canonical
+    // formatting must not grant its owned record helper public admission.
+    let public_inputs = [
+        ("app.spx", outside.as_str()),
+        ("tests.spx", "module test.subtree_tests; @id(\"tests.main\") fn main()->i64 {0}"),
+    ].into_iter().map(|(path, raw)| {
+        let parsed = semaprax::parse(raw, path).unwrap();
+        semaprax::project::ProjectFrontendSource::new(path, &semaprax::format::canonical(&parsed)).unwrap()
+    }).collect::<Vec<_>>();
+    let errors = cache.build(&manifest, &public_inputs).err().unwrap();
+    assert!(errors.iter().any(|error| error.code == "SPX-G174"
+        && error.message == "project function `score` has a signature outside the selected profile"));
     let cold = cache.build(&manifest, &inputs(&source)).unwrap();
     let cold_graph = cold.revision().semantic_graph().to_owned();
     let warm = cache.build(&manifest, &inputs(&source)).unwrap();

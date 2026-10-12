@@ -101,12 +101,12 @@ fn borrowed_identity_scratch_preserves_saved_text_order_and_removes_owning_key_s
     assert_eq!(size_of::<DeclarationId>(), 3 * size_of::<usize>());
     assert_eq!(size_of::<&DeclarationId>(), size_of::<usize>());
     // Literal logical key census is distinct from private BTree node backing.
-    // The current resolver appends the two exact compiler Vec/Box types.
+    // The current resolver appends the two exact compiler Option/Result types.
     // They contribute key carriers even though their identity text is static.
     let mut authored = (0..64).map(|n| format!("token.{n}")).collect::<Vec<_>>();
     authored.extend([
-        crate::prelude::VEC_ID.to_owned(),
-        crate::prelude::BOX_ID.to_owned(),
+        crate::prelude::OPTION_ID.to_owned(),
+        crate::prelude::RESULT_ID.to_owned(),
     ]);
     authored.sort();
     assert_eq!(

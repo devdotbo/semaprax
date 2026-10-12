@@ -173,7 +173,8 @@ fn actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop
     let expected = ordinary.build(&manifest, &changed).err().unwrap();
     assert_eq!(actual, expected);
     // Integer operands are checked in the changed i32 parameter context;
-    // the helper now returns i32 before any imported-call mismatch is reached.
+    // the standalone helper returns i32. The complete workspace checks its
+    // source-ordered app callers first, so their i64 arguments win there.
     let provider = changed
         .iter()
         .find(|source| source.path() == "src/core.spx")
@@ -184,7 +185,12 @@ fn actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop
             && error.message == "function `helper` returns i32, but its signature declares i64"
     };
     assert!(independent.iter().any(result_mismatch), "{independent:?}");
-    assert!(actual.iter().any(result_mismatch), "{actual:?}");
+    assert_eq!(actual.len(), 2, "{actual:?}");
+    for error in &actual {
+        assert_eq!(error.code, "SPX-T205");
+        assert_eq!(error.message, "argument `value` to `helper` expects i32, received i64");
+        assert_eq!(error.path.as_deref(), Some("src/app.spx"));
+    }
     assert_eq!(
         before,
         cache.checked["src/core.spx"].resolved.functions.as_ptr()
