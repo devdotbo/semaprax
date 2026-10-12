@@ -10,7 +10,15 @@ fn fixture(unused: usize) -> WorkspaceGraphBuild {
             "@id(\"pkg.unused.{n}\") fn unused_{n}(n:i64)->i64 {{let a=n+1;let b=a+2;b+3}}\n"
         ));
     }
-    build_owned(vec![canonical_source("package/link.spx", &text)]).unwrap()
+    // Keep the owning route inside its unchanged 2..32-source contract.
+    build_owned(vec![
+        canonical_source("package/link.spx", &text),
+        canonical_source(
+            "package/support.spx",
+            "module package.support; @id(\"pkg.support\") fn main()->i64 {0}",
+        ),
+    ])
+    .unwrap()
 }
 fn compare(workspace: &WorkspaceGraphBuild, roots: &[String]) {
     let expected = old::link(workspace, "package.link", roots);
@@ -59,13 +67,19 @@ fn borrowed_package_discovery_preserves_owned_wire_all_guards_and_first_error_or
                     .origin = hir::IdentityOrigin::Automatic;
             }
             3 => {
-                let duplicate = workspace.hir.modules[0]
+                let module = workspace
+                    .hir
+                    .modules
+                    .iter_mut()
+                    .find(|module| module.module == "package.link")
+                    .unwrap();
+                let duplicate = module
                     .functions
                     .iter()
                     .find(|f| f.id.as_str() == "pkg.main")
                     .unwrap()
                     .clone();
-                workspace.hir.modules[0].functions.push(duplicate);
+                module.functions.push(duplicate);
             }
             _ => {
                 workspace

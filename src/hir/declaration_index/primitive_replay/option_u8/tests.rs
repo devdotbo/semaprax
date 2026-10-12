@@ -111,19 +111,53 @@ fn option_u8_replay_builds_only_compiler_identities_within_its_reservation_throu
         OPTION_ID,
     );
     drop(index);
-    // The identical replay against the actual allocator, through Drop: it
-    // requests no more than its reservation and Drop requests nothing.
+    // Saved DeclarationIndex Drop drains exactly two field types here: the
+    // Some field in variant_cases and its separate case_fields inventory.
+    // Its Vec frontier is real temporary storage, not an identity clone.
+    // Observe that independent two-element frontier through Drop rather than
+    // assuming a private Vec minimum capacity or hiding its allocation.
+    let ((), drop_frontier) = crate::test_allocation_observer::measure(|| {
+        let mut pending = Vec::new();
+        for _ in 0..2 {
+            pending.push(ResolvedType::TypeParameter {
+                owner: DeclarationId::compiler(crate::hir::CompilerDeclaration::Option),
+                index: 0,
+            });
+        }
+        while let Some(ty) = pending.pop() {
+            assert!(matches!(ty, ResolvedType::TypeParameter { .. }));
+        }
+        drop(pending);
+    });
+    assert!(!drop_frontier.invalid);
+    assert_eq!(drop_frontier.allocations, 1);
+    assert_eq!(drop_frontier.reallocations, 0);
+    assert_eq!(drop_frontier.live, 0);
+    assert_eq!(drop_frontier.allocated, drop_frontier.freed);
+    // The identical replay against the actual allocator, including the real
+    // disposer frontier and every final release, stays within its reservation.
     let ((), observed) = crate::test_allocation_observer::measure(|| {
         let (result, index) = run(&DeclarationIndex::default(), 1 << 20, 1 << 20);
         assert_eq!(result.unwrap().1, charged);
         let retained = crate::test_allocation_observer::current_metrics();
         drop(index);
         let settled = crate::test_allocation_observer::current_metrics();
-        assert_eq!(settled.allocations, retained.allocations);
+        assert_eq!(
+            settled.allocations,
+            retained.allocations + drop_frontier.allocations
+        );
+        assert_eq!(
+            settled.allocated,
+            retained.allocated + drop_frontier.allocated
+        );
         assert_eq!(settled.live, 0);
     });
     assert!(!observed.invalid);
-    assert!(observed.allocated <= charged, "{} > {charged}", observed.allocated);
+    assert!(
+        observed.allocated <= charged,
+        "{} > {charged}",
+        observed.allocated
+    );
     assert_eq!(observed.live, 0);
 }
 #[test]
