@@ -46,6 +46,19 @@ pub(super) fn nested_cleanup_graph_schema<'a>(
     }
     reject_nested_native_flags(has_nested_cleanup, has_native_import)?;
 
+    // Graph v84 composes this independently checked current finite-discard
+    // profile. A parts-only view or equal-content foreign function cannot
+    // activate it; frozen nested schemas retain their original loan guard.
+    if let Some(program) = program {
+        let current = functions.iter().all(|function| {
+            program.functions.iter().chain(program.function_instances.iter().map(|i| &i.function))
+                .any(|held| std::ptr::eq(held, *function))
+        });
+        if current && super::copy_discard::authenticate_finite_composition(program)? {
+            return Ok(Some("semaprax.graph.v84"));
+        }
+    }
+
     let has_attached_loans = functions
         .iter()
         .any(|function| !function.loan_plan.loans.is_empty());

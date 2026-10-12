@@ -180,6 +180,17 @@ requires exact agreement. It rejects, at minimum:
 The plan is descriptive proof data. Neither a serialized plan nor its digest
 authorizes source changes, execution, memory access, or publication.
 
+## Graph v84 finite record composition
+
+The finite owned-record discard profile independently authenticates its actual
+current HIR sites before composing flat local byte loans with nested storage in
+Graph v84. Complete loan-plan validation, HIR and capacity authentication, and
+canonical cleanup rebuild/replay remain required. This separate frontier does
+not widen the frozen nested graph profiles, native-import flag admission, or
+parts-only projections. Other CopyDiscard programs retain their existing inner
+profile restrictions. The owning finite record specification records authored
+regression controls and their pending executable qualification.
+
 ## Graph v23/v24/v32/v33 and compatibility
 
 A program carrying a nonempty authenticated unprojected Shared Loan Plan v1

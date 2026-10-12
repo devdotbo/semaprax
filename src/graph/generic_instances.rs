@@ -86,6 +86,21 @@ pub(super) fn legacy_graph_json(
     selected_types: &BTreeSet<DeclarationId>,
     view: &GraphView<'_>,
 ) -> Result<String, Diagnostic> {
+    if hir::copy_discard_program_uses(program) {
+        return Err(Diagnostic::io("SPX-G410", "lexical Copy discard requires Graph v84"));
+    }
+    ordinary_inner_graph_json(program, source_revision, selected_functions, selected_types, view)
+}
+
+// The ordinary layered renderer retains its exact previous checks and bytes;
+// its current v84 selector is not a frozen projection's selection authority.
+fn ordinary_inner_graph_json(
+    program: &ResolvedProgram,
+    source_revision: &str,
+    selected_functions: &BTreeSet<DeclarationId>,
+    selected_types: &BTreeSet<DeclarationId>,
+    view: &GraphView<'_>,
+) -> Result<String, Diagnostic> {
     if super::filesystem::requires(program)
         || super::environment::requires(program)
         || super::process::requires(program)
@@ -155,7 +170,7 @@ pub(super) fn pre_filesystem_graph_json(
                 false,
             );
         }
-        return legacy_graph_json(
+        return ordinary_inner_graph_json(
             program,
             source_revision,
             selected_functions,

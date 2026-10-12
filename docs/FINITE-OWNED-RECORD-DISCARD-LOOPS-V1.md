@@ -61,6 +61,23 @@ Expression paths remain .sN.value. Programs without this statement retain their
 previous graph versions, including row-loan v82 and borrowed byte traversal
 v83. Frozen evidence profiles refuse this newer feature.
 
+For nested storage with flat local byte loans, v84 has a separate current finite
+record composition frontier. Every CopyDiscard must occur within an actual
+pointer-held finite-record body independently recognized from current HIR.
+Selection follows the existing nested cleanup and native-import flag gates,
+then complete HIR, loan, byte capacity and canonical cleanup rebuild/replay.
+A statement tag, retained hint, detached function or parts-only view cannot
+activate this frontier. Frozen nested schemas retain their projected-loan
+restrictions. Other admitted CopyDiscard shapes continue through their existing
+checked inner graph profile and the v84 statement layer. Canonical rendering
+preserves the existing prefix contract and ordered loan/cleanup carriers.
+
+`graph::copy_discard::tests::` authors complete source/HIR 1/8/32 controls,
+canonical and cache replay, native-flag and forged loan/cleanup/counter refusals,
+frozen/detached controls, and the existing nonfinite nested projected-loan
+route. These source controls await consolidated executable qualification.
+
+
 The original owned-subtree Break/Continue three-backend fixture is retained.
 Owning controls independently derive exact source/HIR sites, capacity and wire,
 reject detached sites and malformed ownership/counters/statuses, and preserve
