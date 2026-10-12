@@ -183,7 +183,7 @@ fn byte_for_view_traversal_materializes_no_buffer_on_core_wasm() {
     let mut imports = Vec::new();
     for payload in wasmparser::Parser::new(0).parse_all(&module) {
         if let wasmparser::Payload::ImportSection(section) = payload.unwrap() {
-            for import in section {
+            for import in section.into_imports() {
                 let import = import.unwrap();
                 assert!(matches!(import.ty, wasmparser::TypeRef::Func(_)));
                 assert_eq!(import.module, "env");
