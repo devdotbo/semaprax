@@ -67,3 +67,8 @@ checks preserve their owned values. Source classification checks authored
 clauses; independent HIR classification checks the reserved synthesized
 `<record-id>#invariant` declaration. This avoids silently executing an
 unenforced invariant when the new layout is selected.
+
+The additive [Owned String Transfer v1](OWNED-STRING-TRANSFER-V1.md) defines
+explicit named-owner `string_take` separately. Its source implementation and
+owning gates await qualification; it preserves this document's default clone
+behavior and does not imply general projected moves or public ABI promotion.

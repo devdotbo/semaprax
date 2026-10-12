@@ -76,6 +76,26 @@ impl Evaluator<'_> {
         depth: usize,
     ) -> Result<Value, Flow> {
         self.charge()?;
+        if op == crate::string_ops::StringOp::Take {
+            let [argument] = args else {
+                return Err(Flow::Guard("String transfer arity changed"));
+            };
+            if argument.ty != ResolvedType::String || argument.ownership != hir::OwnershipMode::Own
+            {
+                return Err(Flow::Guard("String transfer ownership changed"));
+            }
+            let ResolvedExprKind::Place(place) = &argument.kind else {
+                return Err(Flow::Guard("String transfer requires a named owner"));
+            };
+            if !place.projections.is_empty() {
+                return Err(Flow::Guard("String transfer requires a whole owner"));
+            }
+            self.begin_expression(argument, depth)?;
+            return match take_owned_place(environment, place) {
+                Some(value @ Value::String(_)) => Ok(value),
+                _ => Err(Flow::Guard("String transfer owner is unavailable")),
+            };
+        }
         if matches!(
             op,
             crate::string_ops::StringOp::Len

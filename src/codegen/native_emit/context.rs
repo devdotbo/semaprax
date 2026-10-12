@@ -12,8 +12,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         bytes_plan: Option<&'a native_bytes::NativeBytesPlan>,
         borrowed_aggregate_bytes: HashMap<(ValueId, Vec<DeclarationId>), String>,
         track_strings: bool,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, Diagnostic> {
+        Ok(Self {
             output,
             program: emission.program,
             resource_abi: emission.resource_abi,
@@ -38,11 +38,11 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             semantic_metered: false,
             owned_strings: track_strings.then(owned_strings::OwnedStrings::default),
             try_target_enabled: false,
-            string_owner_moves: crate::literal_format::moving_string_operands(function),
+            string_owner_moves: crate::literal_format::checked_moving_string_operands(function)?,
             string_condition_reads: crate::string_ops::conditions::function_reads(function),
             next_local: 0,
             indent: 1,
-        }
+        })
     }
 }
 

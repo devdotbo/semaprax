@@ -81,6 +81,7 @@
 //! `semaprax.convert.v1` status: code 1 for out of range, code 2 for NaN.
 
 pub(crate) mod conditions;
+pub(crate) mod take;
 
 #[cfg(test)]
 mod bulk_utf8_tests;
@@ -92,6 +93,7 @@ use crate::hir::{OwnershipMode, ResolvedParam, ResolvedType, ValueId};
 
 pub(crate) const LEN_NAME: &str = "string_len";
 pub(crate) const CONCAT_NAME: &str = "string_concat";
+pub(crate) const TAKE_NAME: &str = "string_take";
 pub(crate) const IS_EMPTY_NAME: &str = "string_is_empty";
 pub(crate) const STARTS_WITH_NAME: &str = "string_starts_with";
 pub(crate) const CONTAINS_NAME: &str = "string_contains";
@@ -213,6 +215,8 @@ pub(crate) const MAX_FILE_TEXT_BYTES: u64 = 65_536;
 /// One admitted string operation intrinsic.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum StringOp {
+    /// Explicit identity transfer of one named whole String owner.
+    Take,
     /// Borrowed byte-length read.
     Len,
     /// Consuming concatenation of two owned strings.
@@ -290,6 +294,15 @@ pub(crate) enum StringOp {
 }
 
 impl StringOp {
+    /// Preserve the closed compiler identity for the transfer intrinsic.
+    pub(crate) fn resolved_id(self) -> crate::hir::DeclarationId {
+        if self == Self::Take {
+            crate::hir::DeclarationId::compiler(crate::hir::CompilerDeclaration::StringTake)
+        } else {
+            crate::hir::DeclarationId::new(self.id())
+        }
+    }
+
     /// The first three waves. Frozen Project candidate schemas enumerate
     /// exactly these operations, so Text Toolkit v1 is listed separately.
     pub(crate) const ALL: [Self; 9] = [
@@ -341,6 +354,7 @@ impl StringOp {
     pub(crate) fn name(self) -> &'static str {
         match self {
             StringOp::Len => LEN_NAME,
+            StringOp::Take => TAKE_NAME,
             StringOp::Concat => CONCAT_NAME,
             StringOp::IsEmpty => IS_EMPTY_NAME,
             StringOp::StartsWith => STARTS_WITH_NAME,
@@ -383,6 +397,7 @@ impl StringOp {
     pub(crate) fn id(self) -> &'static str {
         match self {
             StringOp::Len => LEN_ID,
+            StringOp::Take => take::ID,
             StringOp::Concat => CONCAT_ID,
             StringOp::IsEmpty => IS_EMPTY_ID,
             StringOp::StartsWith => STARTS_WITH_ID,
@@ -433,6 +448,7 @@ impl StringOp {
             StringOp::Len | StringOp::IsEmpty | StringOp::LenChars => &["s"],
             StringOp::FromChar => &["c"],
             StringOp::FromI64 | StringOp::FromUsize => &["value"],
+            StringOp::Take => &["value"],
             StringOp::Concat => &["a", "b"],
             StringOp::StartsWith => &["s", "prefix"],
             StringOp::Contains => &["s", "needle"],
@@ -468,7 +484,9 @@ impl StringOp {
     /// `string` operands except the copied-scalar constructors.
     pub(crate) fn param_types(self) -> &'static [ResolvedType] {
         match self {
-            StringOp::Len | StringOp::IsEmpty | StringOp::LenChars => &[ResolvedType::String],
+            StringOp::Take | StringOp::Len | StringOp::IsEmpty | StringOp::LenChars => {
+                &[ResolvedType::String]
+            }
             StringOp::FromChar => &[ResolvedType::Char],
             StringOp::FromI64 => &[ResolvedType::I64],
             StringOp::FromUsize => &[ResolvedType::Usize],
@@ -512,9 +530,9 @@ impl StringOp {
         }
     }
 
-    /// Whether every non-scalar operand is consumed (only `string_concat`).
+    /// Whether every non-scalar operand is consumed (concat and explicit take).
     pub(crate) fn consumes_arguments(self) -> bool {
-        matches!(self, StringOp::Concat)
+        matches!(self, StringOp::Concat | StringOp::Take)
     }
 
     /// The ownership mode of one parameter. `string_concat` consumes both
@@ -593,7 +611,8 @@ impl StringOp {
     /// Operations no Core Wasm lane lowers: Text Toolkit v1, String
     /// Collections v1, and Conversions v1.
     pub(crate) fn is_wasm_refused(self) -> bool {
-        self.is_text_toolkit()
+        self == Self::Take
+            || self.is_text_toolkit()
             || self.is_collection()
             || (self.is_conversion() && !self.is_integer_conversion())
     }
@@ -648,7 +667,8 @@ impl StringOp {
             StringOp::MapLen => ResolvedType::Usize,
             StringOp::MapHas => ResolvedType::Bool,
             StringOp::MapKeyAt => ResolvedType::String,
-            StringOp::Concat
+            StringOp::Take
+            | StringOp::Concat
             | StringOp::FromChar
             | StringOp::FromI64
             | StringOp::FromUsize
@@ -686,7 +706,8 @@ impl StringOp {
             StringOp::MapLen => Type::Usize,
             StringOp::MapHas => Type::Bool,
             StringOp::MapKeyAt => Type::String,
-            StringOp::Concat
+            StringOp::Take
+            | StringOp::Concat
             | StringOp::FromChar
             | StringOp::FromI64
             | StringOp::FromUsize
@@ -729,6 +750,7 @@ pub(crate) fn is_to_i64_call_hir(scrutinee: &crate::hir::ResolvedExpr) -> bool {
 /// Resolve a source-level call name to its intrinsic operation.
 pub(crate) fn by_name(name: &str) -> Option<StringOp> {
     match name {
+        TAKE_NAME => Some(StringOp::Take),
         LEN_NAME => Some(StringOp::Len),
         CONCAT_NAME => Some(StringOp::Concat),
         IS_EMPTY_NAME => Some(StringOp::IsEmpty),
@@ -773,6 +795,7 @@ pub(crate) fn by_name(name: &str) -> Option<StringOp> {
 /// Resolve a resolved-callee identity to its intrinsic operation.
 pub(crate) fn by_id(id: &str) -> Option<StringOp> {
     match id {
+        take::ID => Some(StringOp::Take),
         LEN_ID => Some(StringOp::Len),
         CONCAT_ID => Some(StringOp::Concat),
         IS_EMPTY_ID => Some(StringOp::IsEmpty),

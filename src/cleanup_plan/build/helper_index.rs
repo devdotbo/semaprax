@@ -159,7 +159,7 @@ impl<'a> PlanBuilder<'a> {
         let entry = BlockId(0);
         let mut builder = Self {
             string_appends: crate::stdin_stream_ops::owner_reopens(function),
-            string_owner_moves: crate::literal_format::moving_string_operands(function),
+            string_owner_moves: crate::literal_format::checked_moving_string_operands(function)?,
             string_condition_reads: crate::string_ops::conditions::function_reads(function),
             program,
             function,

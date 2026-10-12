@@ -37,5 +37,16 @@ fn reject_function(id: &DeclarationId, name: &str) -> Result<(), Diagnostic> {
     Ok(())
 }
 
+pub(super) fn take_shape(expression: &ResolvedExpr, allow_moves: bool) -> Result<(), Diagnostic> {
+    if matches!(&expression.kind, ResolvedExprKind::Call { callee, .. } if callee.as_str() == crate::string_ops::take::ID)
+        && (!allow_moves || crate::string_ops::take::operand(expression).is_none())
+    {
+        return Err(hir_error(
+            "string_take requires an available named owned String outside contracts",
+        ));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests;

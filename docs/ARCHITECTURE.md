@@ -116,6 +116,11 @@ operation table and format synthetic parameter identities only for diagnostics;
 other signatures retain their owned metadata and full frame capacity census.
 The test-only recursive validator retains the allocating signature reference.
 
+`string_ops/take.rs` owns the exact named-String transfer shape. Source and
+independent HIR admission retain availability/loan authority; cleanup producer
+and replay derive operand moves separately. Engines forward the same canonical
+argument/result carrier, with no new runtime identity or public ABI.
+
 `literal_format.rs` owns the closed decoded-template scanner and reserved
 operation identity. Source verification and HIR validation independently
 admit its dedicated `ResolvedExprKind::LiteralFormat`; the cleanup planner

@@ -381,6 +381,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             "\n",
             include_str!("../../../../../src/hir/validation/string_intrinsic.rs"),
             "\n",
+            include_str!("../../../../../src/string_ops/take.rs"),
+            "\n",
             include_str!("../../../../../src/hir/validation/upcast.rs"),
             "\n",
             include_str!("../../../../../src/hir/validation/vec_field.rs")

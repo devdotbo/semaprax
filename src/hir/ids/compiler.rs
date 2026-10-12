@@ -38,6 +38,7 @@ pub(crate) enum CompilerDeclaration {
     OnceMixedDrop,
     OncePairDrop,
     BytesDrop,
+    StringTake,
     StringDrop,
     StringMapDrop,
     CollectionDrop,
@@ -50,6 +51,7 @@ impl CompilerDeclaration {
     pub(crate) const fn text(self) -> &'static str {
         use crate::hir::closure::once;
         match self {
+            Self::StringTake => crate::string_ops::take::ID,
             Self::Vec => crate::prelude::VEC_ID,
             Self::Box => crate::prelude::BOX_ID,
             Self::Option => crate::prelude::OPTION_ID,

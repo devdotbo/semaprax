@@ -111,6 +111,7 @@ pub(super) fn expression_is_infallible_compiler_operation(
         crate::hir::ResolvedExprKind::Call { callee, instance: None, .. }
             if crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
                 || is_total_str_len_bytes(callee)
+                    || crate::string_ops::take::operand(expression).is_some()
                 || crate::host_io_ops::by_id(callee.as_str()).is_some()
                 || is_infallible_vec_operation(crate::vec_ops::by_id(callee.as_str()))
                 || is_infallible_box_operation(callee)

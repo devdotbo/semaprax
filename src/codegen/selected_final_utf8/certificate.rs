@@ -139,7 +139,8 @@ pub(super) fn derive(
                     callee, instance, ..
                 } if instance.is_none()
                     && (producer_inventory.functions.contains(callee)
-                        || crate::string_ops::by_id(callee.as_str()).is_some()
+                        || crate::string_ops::by_id(callee.as_str())
+                            .is_some_and(|op| op != crate::string_ops::StringOp::Take)
                         || crate::byte_ops::by_id(callee.as_str()).is_some()
                         || crate::vec_ops::by_id(callee.as_str()).is_some()) =>
                 {
@@ -267,6 +268,11 @@ pub(super) fn derive(
                             return Ok(());
                         }
                         if let Some(op) = crate::string_ops::by_id(callee.as_str()) {
+                            if op == crate::string_ops::StringOp::Take {
+                                return Err(error(
+                                    "explicit String transfer is outside the selected closure",
+                                ));
+                            }
                             if op == crate::string_ops::StringOp::FromUtf8 {
                                 let K::Call { args, .. } = &expr.kind else {
                                     unreachable!("matched call")

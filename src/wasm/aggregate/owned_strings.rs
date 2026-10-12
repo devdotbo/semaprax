@@ -59,7 +59,13 @@ impl super::Emitter<'_> {
     /// the binding's carrier into the call instead of cloning it. Direct owned
     /// String Places in LiteralFormat have the same transfer behavior, exactly
     /// as independently derived by CleanupPlan construction and replay.
-    pub(super) fn moves_string_owner(&self, expression: &crate::hir::ResolvedExpr) -> bool {
-        crate::literal_format::moving_string_operands(self.function).contains(&expression.id)
+    pub(super) fn moves_string_owner(
+        &self,
+        expression: &crate::hir::ResolvedExpr,
+    ) -> Result<bool, crate::diagnostic::Diagnostic> {
+        Ok(
+            crate::literal_format::checked_moving_string_operands(self.function)?
+                .contains(&expression.id),
+        )
     }
 }

@@ -34,6 +34,16 @@ pub(super) fn check_call(
         };
         signature
     } else if let Some(op) = crate::string_ops::by_name(name) {
+        if op == crate::string_ops::StringOp::Take
+            && !crate::string_ops::take::source_operand(args, allow_moves)
+        {
+            diagnostics.push(error(
+                program,
+                "SPX-O105",
+                "string_take requires an available named owned String outside contracts",
+                expression.span,
+            ));
+        }
         (crate::string_ops::ast_params(op), op.ast_return_type())
     } else {
         let op = crate::str_ops::by_name(name)?;

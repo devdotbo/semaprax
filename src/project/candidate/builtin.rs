@@ -40,9 +40,11 @@ impl BuiltinOp {
 }
 
 pub(in crate::project::candidate) fn by_id(target: &str) -> Option<BuiltinOp> {
-    byte_ops::by_id(target)
-        .map(BuiltinOp::Byte)
-        .or_else(|| string_ops::by_id(target).map(BuiltinOp::String))
+    byte_ops::by_id(target).map(BuiltinOp::Byte).or_else(|| {
+        string_ops::by_id(target)
+            .filter(|op| *op != StringOp::Take)
+            .map(BuiltinOp::String)
+    })
 }
 
 /// Check the edited, disposable ASTs too: an intention can introduce an ID
@@ -270,6 +272,8 @@ mod tests {
 
     #[test]
     fn string_descriptors_preserve_exact_owner_signatures_and_byte_family_shape() {
+        assert_eq!(by_id(crate::string_ops::take::ID), None);
+        assert!(!StringOp::ALL.contains(&StringOp::Take));
         for op in StringOp::ALL {
             let selected = BuiltinOp::String(op);
             assert_eq!(by_id(op.id()), Some(selected));

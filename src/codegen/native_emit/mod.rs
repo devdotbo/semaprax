@@ -1711,7 +1711,7 @@ fn emit_function(
         bytes_plan.as_ref(),
         borrowed_aggregate_bytes,
         track_strings,
-    );
+    )?;
     if emitter.owned_strings.is_some() {
         for (index, param) in function.params.iter().enumerate() {
             if matches!(param.ty, ResolvedType::String) {

@@ -3084,11 +3084,7 @@ impl<'a> HirValidator<'a> {
                             {
                                 (signature.0, call_signature::ResultType::Owned(signature.1))
                             } else if let Some(op) = crate::string_ops::by_id(callee.as_str()) {
-                                // Compiler-owned string operations carry
-                                // their reserved identity instead of an
-                                // authored declaration; their synthetic
-                                // parameters keep the ordinary argument
-                                // ownership and transfer machinery.
+                                string_intrinsic::take_shape(expression, allow_moves)?;
                                 if instance.is_some() || !type_arguments.is_empty() {
                                     return Err(hir_error(
                                         "string operation call must be monomorphic",
@@ -6441,8 +6437,7 @@ impl<'a> HirValidator<'a> {
                 {
                     (params, return_type, Vec::new())
                 } else if let Some(op) = string_intrinsic {
-                    // String operations carry their reserved identity instead
-                    // of an authored declaration.
+                    string_intrinsic::take_shape(expression, allow_moves)?;
                     if args.len() != op.arity() {
                         return Err(hir_error(format!(
                             "string operation `{}` expects {} arguments but received {}",

@@ -10,9 +10,10 @@ pub(crate) const MAX_TEMPLATE_BYTES: usize = 65_536;
 pub(crate) const MAX_FIELDS: usize = 32;
 
 pub(crate) fn operation_id() -> &'static crate::hir::DeclarationId {
-    static IDENTITY: std::sync::LazyLock<crate::hir::DeclarationId> = std::sync::LazyLock::new(|| {
-        crate::hir::DeclarationId::compiler(crate::hir::CompilerDeclaration::LiteralFormat)
-    });
+    static IDENTITY: std::sync::LazyLock<crate::hir::DeclarationId> =
+        std::sync::LazyLock::new(|| {
+            crate::hir::DeclarationId::compiler(crate::hir::CompilerDeclaration::LiteralFormat)
+        });
     &IDENTITY
 }
 
@@ -135,12 +136,40 @@ pub(crate) fn expression_uses(expression: &crate::hir::ResolvedExpr) -> bool {
 /// Ordinary concat renewals and direct formatter-owned Place operands move
 /// their authenticated source generation. This is derived from typed HIR, not
 /// from attached cleanup flags or a callee name on an ordinary Call node.
+#[cfg(test)]
 pub(crate) fn moving_string_operands(
     function: &crate::hir::ResolvedFunction,
 ) -> std::collections::BTreeSet<crate::hir::ExpressionId> {
+    checked_moving_string_operands(function).expect("unlimited test inventory")
+}
+
+/// New transfer entries reserve their maximum tree-node backing on the held
+/// compiler ledger before insertion. The legacy concat/format census remains
+/// unchanged; this does not claim funding for its existing traversal scratch.
+pub(crate) fn checked_moving_string_operands(
+    function: &crate::hir::ResolvedFunction,
+) -> Result<std::collections::BTreeSet<crate::hir::ExpressionId>, crate::diagnostic::Diagnostic> {
     use crate::hir::{OwnershipMode, ResolvedExprKind, ResolvedType};
     let mut operands = crate::string_ops::same_owner_concat_operands(function);
+    let mut refused = false;
     crate::hir::function_value::walk(function, |expression| {
+        if refused {
+            return;
+        }
+        if let Some(argument) = crate::string_ops::take::operand(expression) {
+            if !operands.contains(&argument.id) {
+                let bytes =
+                    crate::cleanup_plan::compiler_btree_node_upper::<crate::hir::ExpressionId, ()>(
+                    );
+                if bytes.is_none_or(|bytes| !crate::bounded_output::reserve_active_required(bytes))
+                {
+                    crate::bounded_output::refuse_active_required(usize::MAX);
+                    refused = true;
+                    return;
+                }
+                operands.insert(argument.id.clone());
+            }
+        }
         if let ResolvedExprKind::LiteralFormat { args, .. } = &expression.kind {
             operands.extend(
                 args.iter()
@@ -153,7 +182,13 @@ pub(crate) fn moving_string_operands(
             );
         }
     });
-    operands
+    if refused {
+        // The active ledger owns the first capacity receipt. Do not allocate
+        // another message while propagating its selected refusal.
+        Err(crate::diagnostic::Diagnostic::io("SPX-H006", String::new()))
+    } else {
+        Ok(operands)
+    }
 }
 
 pub(crate) fn accepts_ast_type(ty: &crate::ast::Type) -> bool {

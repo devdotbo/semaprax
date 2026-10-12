@@ -257,6 +257,14 @@ pub(super) fn validate(
                         type_arguments,
                         ..
                     } => {
+                        if crate::string_ops::by_id(callee.as_str())
+                            == Some(crate::string_ops::StringOp::Take)
+                        {
+                            return Err(replay_error(
+                                function,
+                                "selected lexical replay does not admit explicit String transfer",
+                            ));
+                        }
                         if collections::call(program, function, expression, budget)? {
                             frames[depth - 1] = Some((cursor, true));
                             continue;

@@ -209,3 +209,6 @@ mod wasm_map_collections_v2;
 
 #[path = "language/lexical_structured_exits.rs"]
 mod lexical_structured_exits;
+
+#[path = "language/owned_string_transfer.rs"]
+mod owned_string_transfer;

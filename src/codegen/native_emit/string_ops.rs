@@ -93,6 +93,10 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.temporary(&op.return_type())?
         };
         match op {
+            crate::string_ops::StringOp::Take => {
+                let input = &arguments[0].code;
+                self.line(&format!("{temporary} = {input};"));
+            }
             crate::string_ops::StringOp::Len => {
                 let input = &arguments[0].code;
                 self.line(&format!("{temporary} = spx_string_len({input});"));

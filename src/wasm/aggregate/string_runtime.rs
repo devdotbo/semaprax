@@ -333,7 +333,7 @@ impl Emitter<'_> {
         if conversions::admitted(operation) {
             return self.emit_scalar_conversion(expr, operation, args);
         }
-        if operation.is_wasm_refused() && operation != StringOp::Compare {
+        if operation.is_wasm_refused() && !matches!(operation, StringOp::Compare | StringOp::Take) {
             return Err(crate::string_ops::text_toolkit_wasm_refusal(operation));
         }
         if args.len() != operation.arity() {
@@ -379,6 +379,9 @@ impl Emitter<'_> {
             // Aggregate String carriers use the existing Bytes runtime's
             // pointer-high/byte-length-low representation. These borrowed
             // operations therefore require no second owner runtime.
+            StringOp::Take => {
+                self.get_scalar(&values[0]);
+            }
             StringOp::I64FromU8 => {
                 self.get_scalar(&values[0]);
                 self.output.push(0xad); // i64.extend_i32_u
@@ -435,6 +438,12 @@ impl Emitter<'_> {
         }
         self.output.push(0x21);
         write_u32(self.output, destination);
+        if operation == StringOp::Take {
+            let Value::Scalar { local, .. } = &values[0] else {
+                return Err(error("String transfer carrier is not scalar"));
+            };
+            owned_strings::emit_clear(self.output, *local);
+        }
         if operation == StringOp::Concat {
             for value in &values {
                 self.drop_internal_string(value)?;

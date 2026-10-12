@@ -526,6 +526,7 @@ impl Emitter<'_> {
             }
         }
         if operation.is_wasm_refused()
+            && operation != StringOp::Take
             && !(operation == StringOp::Compare
                 && self
                     .function_indexes
@@ -579,6 +580,19 @@ impl Emitter<'_> {
         let destination = self.plan.expr_scalar(expr)?;
         if expr.ty == ResolvedType::String {
             owned_strings::emit_empty_guard(self.output, destination);
+        }
+        if operation == StringOp::Take {
+            self.get_scalar(&values[0]);
+            self.output.push(0x21);
+            write_u32(self.output, destination);
+            let Value::Scalar { local, .. } = &values[0] else {
+                return Err(error("String transfer carrier is not scalar"));
+            };
+            owned_strings::emit_clear(self.output, *local);
+            return Ok(Value::Scalar {
+                local: destination,
+                ty: expr.ty.clone(),
+            });
         }
         for value in &values {
             self.get_scalar(value);

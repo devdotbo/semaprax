@@ -271,7 +271,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         )
                         .is_none()
                     {
-                        self.diagnostics.push(error(self.program,"SPX-T319",crate::vec_ops::field_unique::SHAPE,expression.span));
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T319",
+                            crate::vec_ops::field_unique::SHAPE,
+                            expression.span,
+                        ));
                         self.values.push(None);
                         return Ok(());
                     }
@@ -487,6 +492,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     // synthetic signature; consuming arguments use the
                     // established `own` transfer mode and borrowed
                     // arguments never mark their sources moved.
+                    if op == crate::string_ops::StringOp::Take
+                        && !crate::string_ops::take::source_operand(args, self.allow_moves)
+                    {
+                        self.diagnostics.push(error(self.program, "SPX-O105",
+                            "string_take requires an available named owned String outside contracts", expression.span));
+                    }
                     let params = crate::string_ops::ast_params(op);
                     if !type_arguments.is_empty() {
                         self.diagnostics.push(error(

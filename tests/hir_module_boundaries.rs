@@ -35,7 +35,9 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             "\n",
             include_str!("../src/hir/validation/record_traversal.rs"),
             "\n",
-            include_str!("../src/hir/validation/string_intrinsic.rs")
+            include_str!("../src/hir/validation/string_intrinsic.rs"),
+            "\n",
+            include_str!("../src/string_ops/take.rs")
         ),
         include_str!("../src/hir/validation/vec_field.rs"),
         concat!(

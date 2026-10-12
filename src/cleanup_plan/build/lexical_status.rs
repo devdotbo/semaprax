@@ -96,6 +96,7 @@ fn expression<'a>(
             let id = callee.as_str();
             if instance.is_none()
                 && (super::super::deferred_commit::is_total_str_len_bytes(callee)
+                    || crate::string_ops::take::operand(value).is_some()
                     || crate::byte_ops::by_id(id).is_some_and(|op| !op.is_fallible())
                     || crate::host_io_ops::by_id(id).is_some()
                     || id == crate::stdin_stream_ops::EOF_ID

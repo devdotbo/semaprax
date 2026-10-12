@@ -26,6 +26,7 @@ impl PlanBuilder<'_> {
         }
         if super::super::deferred_commit::is_total_byte_operation(callee)
             || super::super::deferred_commit::is_total_str_len_bytes(callee)
+            || crate::string_ops::take::operand(expression).is_some()
             || crate::host_io_ops::by_id(callee.as_str()).is_some()
             || super::super::deferred_commit::is_infallible_vec_operation(vec_op)
             || super::super::deferred_commit::is_infallible_box_operation(callee)

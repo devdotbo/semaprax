@@ -29,15 +29,15 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         function: &'a ResolvedFunction,
         budget: &'b mut ReplayBudget,
     ) -> Self {
-        Self::with_index(program, function, budget, None)
+        Self::with_index(program, function, budget, None).expect("unlimited test inventory")
     }
     pub(super) fn with_index(
         program: &'a dyn crate::cleanup::ReplayContext,
         function: &'a ResolvedFunction,
         budget: &'b mut ReplayBudget,
         index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, Diagnostic> {
+        Ok(Self {
             function,
             budget,
             active_copy_region: None,
@@ -50,14 +50,14 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             } else {
                 crate::cleanup_plan::renewal_profile::bindings_with_index(program, function, None)
             },
-            string_owner_moves: crate::literal_format::moving_string_operands(function),
+            string_owner_moves: crate::literal_format::checked_moving_string_operands(function)?,
             string_condition_reads: crate::string_ops::conditions::function_reads(function),
             owner: if super::lexical_cert::requires_lexical(function) {
                 crate::hir::lexical_exit::owner(program, function).ok()
             } else {
                 None
             },
-        }
+        })
     }
 
     pub(super) fn checked_with_index(
@@ -67,7 +67,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         index: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     ) -> Result<Self, Diagnostic> {
         if !budget.selected() {
-            return Ok(Self::with_index(program, function, budget, index));
+            return Self::with_index(program, function, budget, index);
         }
         selected_profile::validate(program, function, budget)?;
         let owner = selected_owner::owner(program, function, budget)?;

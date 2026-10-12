@@ -329,7 +329,7 @@ impl Resolver<'_> {
                         ty,
                         ownership,
                         kind: ResolvedExprKind::Call {
-                            callee: DeclarationId::new(op.id()),
+                            callee: op.resolved_id(),
                             type_arguments: Vec::new(),
                             instance: None,
                             args,
