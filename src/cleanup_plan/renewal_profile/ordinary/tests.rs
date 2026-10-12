@@ -281,7 +281,7 @@ fn paid_whole_family_collectors_match_saved_per_query_oracle_and_current_subject
 @id("main") fn main()->i64 {
  let values=vec_push<i64>(vec_with_capacity<i64>(1usize),1);
  let mut target=vec_with_capacity<i64>(1usize);
- for own item in values {if item==1 {target=vec_push<i64>(target,item);0}else{0};0}
+ for own item in vec_into_iter<i64>(values) {if item==1 {target=vec_push<i64>(target,item);0}else{0};0}
  0
 }"#,
         r#"module directory_string;
@@ -293,7 +293,7 @@ fn paid_whole_family_collectors_match_saved_per_query_oracle_and_current_subject
 @id("main") fn main()->i64 {
  let rows=vec_push<Row>(vec_with_capacity<Row>(1usize),Row{a:bytes_zeroed(1usize),n:1,b:bytes_zeroed(1usize)});
  let mut target=vec_with_capacity<Row>(1usize);
- for own row in rows {target=vec_push<Row>(target,row);0} 0 }
+ for own row in vec_into_iter<Row>(rows) {target=vec_push<Row>(target,row);0} 0 }
 "#,
         include_str!("../../../../tests/owned_data/byte_helper_renewal.spx"),
     ];

@@ -61,22 +61,22 @@ impl Write for Search<'_, '_> {
             if self.found {
                 continue;
             }
-            while self.matched != 0 {
+            // Each candidate byte comparison is charged and executed once.
+            // A matching fallback candidate advances immediately rather than
+            // testing the same bytes again after the fallback loop.
+            loop {
                 if let Err(error) = self.admission.units(1) {
                     self.refusal = Some(error);
                     return Err(fmt::Error);
                 }
                 if self.needle[self.matched] == byte {
+                    self.matched += 1;
+                    break;
+                }
+                if self.matched == 0 {
                     break;
                 }
                 self.matched = self.prefix[self.matched - 1];
-            }
-            if let Err(error) = self.admission.units(1) {
-                self.refusal = Some(error);
-                return Err(fmt::Error);
-            }
-            if self.needle[self.matched] == byte {
-                self.matched += 1;
             }
             self.found = self.matched == self.needle.len();
         }

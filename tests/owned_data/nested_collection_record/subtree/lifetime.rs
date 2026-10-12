@@ -13,6 +13,7 @@ fn live_subtree_break_and_continue_settle_on_every_engine() {
    count=count+1;
    if count==1 {{continue;}}else{{if count==2 {{break;}}else{{score(report)}}}}
   }},}};
+  0
  }}
  if count==2 {{42}}else{{0}}
 }}
