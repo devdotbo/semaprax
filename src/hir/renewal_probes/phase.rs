@@ -87,3 +87,12 @@ impl Index for Probes<'_> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+pub(crate) fn current_map_counts(index: &DeclarationIndex) -> [usize; 3] {
+    [
+        index.declarations.len(),
+        index.type_parameters.len(),
+        index.record_fields.len(),
+    ]
+}

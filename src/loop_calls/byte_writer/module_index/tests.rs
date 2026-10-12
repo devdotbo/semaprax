@@ -83,11 +83,62 @@ fn module_index_exact_reservation_and_one_short_fail_before_publication() {
 fn irrelevant_modules_have_no_new_backing_and_allocating_legacy_helpers_keep_old_profiles() {
     let plain = program("module index.plain; @id(\"main\") fn main()->i64 {0}");
     let (index, overflowed, used) =
-        crate::bounded_output::with_limit_usage(0, || ModuleIndex::new(&plain));
+        crate::bounded_output::with_limit_usage(0, || ModuleIndex::new_helpers(&plain));
     let index = index.unwrap();
     assert!(!overflowed);
     assert_eq!(used, 0);
     assert_eq!(index.owned_capacity_bytes(), 0);
+    let mut expected = std::mem::size_of::<ModuleIndex<'_>>() + 30 * std::mem::size_of::<usize>();
+    let mut payload = 7 * std::mem::size_of::<usize>();
+    for count in crate::hir::renewal_probes::phase::current_map_counts(&plain.declarations) {
+        expected += 3 * std::mem::size_of::<usize>();
+        let mut capacity = 1;
+        while count != 0 {
+            let bytes = capacity * 2 * std::mem::size_of::<usize>();
+            payload += bytes;
+            expected += bytes + 3 * std::mem::size_of::<usize>();
+            if capacity >= count {
+                break;
+            }
+            capacity *= 2;
+        }
+    }
+    let ((ordinary, observed), overflowed, required) =
+        crate::bounded_output::with_limit_usage(usize::MAX, || {
+            crate::test_allocation_observer::measure(|| {
+                let index = ModuleIndex::new(&plain)?;
+                let capacity = index.owned_capacity_bytes();
+                drop(index);
+                Ok::<_, Diagnostic>(capacity)
+            })
+        });
+    assert_eq!(ordinary.unwrap(), 7 * std::mem::size_of::<usize>());
+    assert!(!observed.invalid);
+    assert_eq!(observed.allocated, payload);
+    assert_eq!(observed.live, 0);
+    assert_eq!(required, expected);
+    let ordinary = ModuleIndex::new(&plain).unwrap();
+    assert!(!overflowed);
+    assert_eq!(
+        ordinary.owned_capacity_bytes(),
+        7 * std::mem::size_of::<usize>()
+    );
+    assert!(ordinary.sites.is_empty());
+    assert!(ordinary.expressions.is_empty());
+    assert!(ordinary.targets.is_empty());
+    let (exact, overflowed, used) =
+        crate::bounded_output::with_limit_usage(required, || ModuleIndex::new(&plain));
+    assert!(exact.is_ok());
+    assert!(!overflowed);
+    assert_eq!(used, required);
+    let (short, overflowed, _) =
+        crate::bounded_output::with_limit_usage(required - 1, || ModuleIndex::new(&plain));
+    assert!(short.is_err());
+    assert!(overflowed);
+    let (zero, overflowed, _) =
+        crate::bounded_output::with_limit_usage(0, || ModuleIndex::new(&plain));
+    assert!(zero.is_err());
+    assert!(overflowed);
     let legacy = program(
         r#"module index.legacy;
 @id("old") fn old(input:own Bytes)->Bytes { let length=byte_len(bytes_as_slice(input)); bytes_zeroed(1usize) }

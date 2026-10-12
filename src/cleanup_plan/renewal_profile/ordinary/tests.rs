@@ -264,6 +264,7 @@ fn borrowed_directory_preserves_family_bits_priority_opposing_keys_and_literal_b
 
 #[test]
 fn paid_whole_family_collectors_match_saved_per_query_oracle_and_current_subject() {
+    hostile_collector_order_and_closure_universe();
     let sources = [
         r#"module directory_vec;
 @id("row") record Row { @id("row.s") text:string, @id("row.n") n:i64, }
@@ -338,4 +339,97 @@ fn paid_whole_family_collectors_match_saved_per_query_oracle_and_current_subject
             assert!(admission.reserve(0).is_err());
         }
     }
+}
+
+// Malformed HIR here is classifier input, never a source admission claim.
+fn hostile_collector_order_and_closure_universe() {
+    use crate::hir::{ResolvedExprKind as K, ResolvedStatement as S};
+    let source=crate::check(r#"module hostile_directory;
+@id("main") fn main()->i64 {let mut left=bytes_zeroed(1usize);let mut right=bytes_zeroed(1usize);let mut i=0;
+ while i<1 {if true {left=bytes_set(left,0usize,1u8);0}else{0};if true {right=bytes_set(right,0usize,2u8);0}else{0};i=i+1;0} 0}
+"#,"hostile-directory.spx").unwrap();
+    let mut program = crate::hir::resolve(&source).unwrap();
+    let function = &mut program.functions[0];
+    let K::Block { statements, .. } = &mut function.body.kind else {
+        panic!("block")
+    };
+    let S::While { body, .. } = &mut statements[3] else {
+        panic!("while");
+    };
+    let K::Block { statements, .. } = &mut body.kind else {
+        panic!("loop block")
+    };
+    fn assignment(statement: &mut S) -> &mut crate::hir::ResolvedExpr {
+        let S::Let {
+            value: expression, ..
+        } = statement
+        else {
+            panic!("if statement")
+        };
+        let K::If { then_branch, .. } = &mut expression.kind else {
+            panic!("if")
+        };
+        let K::Block { statements, .. } = &mut then_branch.kind else {
+            panic!("then block")
+        };
+        let S::Assign { value, .. } = &mut statements[0] else {
+            panic!("assignment")
+        };
+        value
+    }
+    let duplicate = assignment(&mut statements[0]).id.clone();
+    assignment(&mut statements[1]).id = duplicate.clone();
+    let function = &program.functions[0];
+    let expected = crate::byte_ops::same_owner_set_bindings(function);
+    assert_eq!(expected.len(), 1);
+    let mut work = |_| true;
+    let mut backing = |_| true;
+    let mut admission = Admission::new(&mut work, &mut backing);
+    let directory = Directory::build(&program, function, &mut admission, |entries, admission| {
+        leaf::collect(function, Family::ByteSet, entries, admission)
+    })
+    .unwrap();
+    let found = directory
+        .receive(&program, function, &duplicate, &mut admission)
+        .unwrap()
+        .unwrap()
+        .0;
+    assert!(std::ptr::eq(found, expected[&duplicate]));
+
+    let source=crate::check(r#"module closure_directory; @id("main") fn main()->i64 {let mut values=vec_with_capacity<i64>(1usize);let mut i=0;while i<1 {values=vec_push<i64>(values,i);i=i+1;0}0}"#,"closure-directory.spx").unwrap();
+    let mut program = crate::hir::resolve(&source).unwrap();
+    let original = program.functions[0].body.clone();
+    let K::Block { statements, .. } = &mut program.functions[0].body.kind else {
+        panic!("block")
+    };
+    let S::Let { mutable, .. } = &mut statements[0] else {
+        panic!("let")
+    };
+    *mutable = false;
+    let mut closure = original.clone();
+    closure.kind = K::Closure {
+        parameters: Vec::new(),
+        captures: Vec::new(),
+        body: Box::new(original),
+    };
+    let mut closure_statement = statements[0].clone();
+    let S::Let { value, mutable, .. } = &mut closure_statement else {
+        panic!("let")
+    };
+    *value = closure;
+    *mutable = false;
+    statements.push(closure_statement);
+    let function = &program.functions[0];
+    assert!(crate::hir::vec_loop_renewal::bindings_in(&program, function).is_empty());
+    let mut work = |_| true;
+    let mut backing = |_| true;
+    let mut admission = Admission::new(&mut work, &mut backing);
+    let directory = Directory::build(&program, function, &mut admission, |entries, admission| {
+        vector::collect(&program, function, entries, admission)
+    })
+    .unwrap();
+    assert!(
+        directory.entries.is_empty(),
+        "closure body cannot confer outer mutable declaration"
+    );
 }

@@ -136,7 +136,7 @@ fn irrelevant_and_allocating_legacy_helpers_keep_old_schemas_and_canonical_order
         "module old;@id(\"old\") fn old(input:own Bytes)->Bytes{let size=byte_len(bytes_as_slice(input));bytes_zeroed(1usize)} @id(\"main\") fn main()->i64{let mut output=bytes_zeroed(1usize);let next=old(output);i64_from_usize(byte_len(bytes_as_slice(next)))}"] {
         let program=program(source);
         let index=ModuleIndex::new(&program).unwrap();
-        if source.starts_with("module plain") {assert_eq!(index.owned_capacity_bytes(),0);}
+        if source.starts_with("module plain") {assert!(index.is_empty());assert_eq!(index.owned_capacity_bytes(),7*std::mem::size_of::<usize>());}
         let plans=build_program_plans(&program).unwrap();
         for (function,plan) in program.functions.iter().zip(&plans) {
             assert_ne!(plan.schema,super::super::super::CLEANUP_PLAN_SCHEMA_V19);

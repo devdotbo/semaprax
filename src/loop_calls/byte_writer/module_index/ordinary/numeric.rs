@@ -4,9 +4,9 @@ fn reserve<T>(count: usize, admission: &mut Admission<'_>) -> Result<Vec<T>, Ref
     let bytes = admission.arithmetic(count.checked_mul(std::mem::size_of::<T>()))?;
     admission.reserve(bytes)?;
     let mut values = Vec::new();
-    values
-        .try_reserve_exact(count)
-        .map_err(|_| Refusal::Allocation)?;
+    if values.try_reserve_exact(count).is_err() {
+        return admission.refuse(Refusal::Allocation);
+    }
     if values.capacity() != count {
         if values.capacity() > count {
             let delta = admission
