@@ -171,7 +171,7 @@ fn borrowed_template_snapshots_remove_real_type_payloads_through_complete_drop()
 #[test]
 fn generic_closure_scopes_keep_duplicate_priority_and_full_owned_oracle_policy() {
     let ty = ResolvedType::String;
-    let id = ValueId::new("duplicate");
+    let id = ValueId::new("duplicate".to_owned());
     for parent in [Values::new(), Values::owned()] {
         let mut empty = parent.empty_like();
         assert!(matches!(
