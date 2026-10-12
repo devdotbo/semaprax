@@ -34,6 +34,39 @@ fn old_expression<'hir>(
     let mut frames = Vec::with_capacity(516);
     expression_skeleton_run(program, function, expression, work, &mut frames)
 }
+// Saved small DAG expansion: sequence order and duplicate alternatives are
+// semantic content, not Rc-address equality or Debug output.
+fn observation_sequences(observations: &Observations) -> Vec<Vec<std::rc::Rc<SkeletonObservation>>> {
+    fn expand(dag: &skeleton_work::ObservationDag) -> Vec<Vec<std::rc::Rc<SkeletonObservation>>> {
+        match &dag.kind {
+            skeleton_work::ObservationDagKind::Seq(prefix, items) => {
+                let mut paths = prefix.as_ref().map_or_else(|| vec![vec![]], |prefix| expand(prefix));
+                for path in &mut paths { path.extend_from_slice(items); }
+                paths
+            }
+            skeleton_work::ObservationDagKind::Alt(parts) =>
+                parts.iter().flat_map(|part| expand(part)).collect(),
+            skeleton_work::ObservationDagKind::Cat(parts) => {
+                let mut paths = vec![vec![]];
+                for part in parts {
+                    let suffixes = expand(part);
+                    paths = paths.into_iter().flat_map(|prefix| {
+                        suffixes.iter().map(move |suffix| {
+                            let mut path = prefix.clone();
+                            path.extend_from_slice(suffix);
+                            path
+                        })
+                    }).collect();
+                }
+                paths
+            }
+        }
+    }
+    let (prefix, items) = observations.parts();
+    let mut paths = prefix.map_or_else(|| vec![vec![]], |prefix| expand(prefix));
+    for path in &mut paths { path.extend_from_slice(items); }
+    paths
+}
 #[test]
 fn same_program_roots_and_guard_reentry_keep_old_paths_work_and_first_errors() {
     let program = program();
@@ -52,7 +85,7 @@ fn same_program_roots_and_guard_reentry_keep_old_paths_work_and_first_errors() {
             let after = expression_skeleton(&program, function, expression, &mut current).unwrap();
             assert_eq!(before.len(), after.len());
             for (old, new) in before.iter().zip(&after) {
-                assert_eq!(old.observations, new.observations);
+                assert_eq!(observation_sequences(&old.observations), observation_sequences(&new.observations));
                 assert_eq!(old.owned_source, new.owned_source);
                 assert_eq!((old.failed, old.residual, &old.continuation),
                     (new.failed, new.residual, &new.continuation));
