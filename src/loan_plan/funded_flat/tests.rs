@@ -195,6 +195,38 @@ fn complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop() {
         let program = crate::hir::resolve(&ast).unwrap();
         let function = program.functions.iter().find(|f| f.id.as_str() == name).unwrap();
         assert_eq!(crate::hir::lexical_exit::requires(function).unwrap(), lexical);
+        if lexical {
+            // Lower only the receiver's test work counter, not production
+            // limits. Both routes execute the real BorrowRecord preflight.
+            let legacy_owner = crate::hir::lexical_exit::owner(&program, function).unwrap();
+            let mut old_work = WorkCounter::new(0);
+            let old_error = crate::hir::lexical_exit::validate_function_with(
+                &program, function, &legacy_owner, &mut |program, region| {
+                    traversal::inspect_counted(program, region, &mut old_work)
+                        .map(|proof| proof.is_some())
+                },
+            ).unwrap_err();
+            assert_eq!(old_work.used, 1);
+            assert_eq!(old_error.code, "SPX-H006");
+            assert_eq!(old_error.message, "loan analysis exceeds 1,000,000 checked work");
+            assert_eq!(old_error.span, None);
+            assert_eq!(old_error.help, None);
+            let ((), refused, _) = with_limit_usage(usize::MAX, || {
+                let payer = CfgReservation::acquire().unwrap();
+                let mut new_work = WorkCounter::new(0);
+                new_work.allocation = Some(&payer);
+                match lexical_preflight(&program, function, &payer, &mut |program, region| {
+                    traversal::paid::inspect_counted(program, region, &mut new_work)
+                        .map(|proof| proof.is_some())
+                }) {
+                    Err(PlannerError::Semantic(actual)) => assert_eq!(actual, old_error),
+                    _ => panic!("lexical work refusal changed its semantic boundary"),
+                }
+                assert_eq!(new_work.used, 1);
+                assert_eq!(payer.first(), None);
+            });
+            assert!(!refused);
+        }
         let old = saved_planner::build_plan(&program, function).unwrap();
         assert!(!old.loans.is_empty());
         if !lexical { assert!(old.loans.iter().any(|loan| !loan.origin.projections.is_empty())); }

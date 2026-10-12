@@ -1,7 +1,7 @@
 //! Exact traversal freeze receiver with caller-paid scratch/draft storage.
 use super::*;
 
-pub(super) fn inspect_counted<'a>(
+pub(in crate::loan_plan) fn inspect_counted<'a>(
     program: &dyn crate::cleanup::ReplayContext,
     region: &'a ResolvedExpr,
     work: &mut WorkCounter,
@@ -191,7 +191,7 @@ pub(super) fn draft_bytes(
     }))
 }
 
-pub(super) fn inspect<'a>(
+pub(in crate::loan_plan) fn inspect<'a>(
     program: &dyn crate::cleanup::ReplayContext,
     expression: &'a ResolvedExpr,
     payer: &crate::bounded_output::cfg_reservation::CfgReservation,

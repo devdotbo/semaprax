@@ -16,17 +16,12 @@ pub(super) fn build(
     {
         return Err(PlannerError::Semantic(error("funded loan planner requires the exact current function")));
     }
+    // Lexical preflight precedes the legacy guidance boundary. Its semantic
+    // refusal must retain its original span/path/help, even for a work limit.
+    let lexical = lexical_preflight(program, function, payer, &mut |program, region| {
+        traversal::paid::inspect(program, region, payer).map(|proof| proof.is_some())
+    })?;
     let result = (|| {
-        payer.reserve(0).map_err(|_| storage::marker())?;
-        let lexical = crate::hir::lexical_exit::requires(function)?;
-        if lexical {
-            let owner = crate::hir::lexical_exit::owner_with(program, function, &mut |bytes| {
-                payer.reserve(bytes).map_err(|_| storage::marker())
-            })?;
-            crate::hir::lexical_exit::validate_function_with(program, function, &owner, &mut |program, region| {
-                traversal::paid::inspect(program, region, payer).map(|proof| proof.is_some())
-            })?;
-        }
         if paid_candidate::inspect(program, function, payer)? {
             let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
             work.allocation = Some(payer);
@@ -44,6 +39,26 @@ pub(super) fn build(
             Err(PlannerError::Semantic(guidance::work_limit(error, function))),
         result => result,
     }
+}
+
+fn lexical_preflight(
+    program: &ResolvedProgram,
+    function: &ResolvedFunction,
+    payer: &CfgReservation,
+    inspect: &mut dyn FnMut(&dyn crate::cleanup::ReplayContext, &ResolvedExpr)
+        -> Result<bool, Diagnostic>,
+) -> Result<bool, PlannerError> {
+    classify((|| {
+        payer.reserve(0).map_err(|_| storage::marker())?;
+        let lexical = crate::hir::lexical_exit::requires(function)?;
+        if lexical {
+            let owner = crate::hir::lexical_exit::owner_with(program, function, &mut |bytes| {
+                payer.reserve(bytes).map_err(|_| storage::marker())
+            })?;
+            crate::hir::lexical_exit::validate_function_with(program, function, &owner, inspect)?;
+        }
+        Ok(lexical)
+    })(), payer)
 }
 
 #[cfg(test)]
