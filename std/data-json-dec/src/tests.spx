@@ -214,13 +214,17 @@ fn raw_fingerprint_equivalence() -> bool
 {
     let mut value = 0usize;
     let mut equal = true;
+    // Allocate outside the bounded loop. Only the payload byte changes; the
+    // exact closed/unclosed lengths and quote positions remain fixed.
+    let mut closed_buffer = bytes_set(bytes_set(bytes_zeroed(3usize), 0usize, 34u8), 2usize, 34u8);
+    let mut unclosed_buffer = bytes_set(bytes_zeroed(2usize), 0usize, 34u8);
     while value < 256usize {
-        let raw = [34u8, u8_from_usize(value), 34u8];
-        let view = array_as_slice(raw);
+        closed_buffer = bytes_set(closed_buffer, 1usize, u8_from_usize(value));
+        let view = bytes_as_slice(closed_buffer);
         let expected = if value >= 32usize && value != 34usize && value != 92usize { 65536usize + value } else { 0usize };
         equal = equal && decoded_fingerprint(view, 0usize, 1usize) == expected && frozen_fingerprint(view, 0usize, 1usize) == expected;
-        let unclosed = [34u8, u8_from_usize(value)];
-        let unclosed_view = array_as_slice(unclosed);
+        unclosed_buffer = bytes_set(unclosed_buffer, 1usize, u8_from_usize(value));
+        let unclosed_view = bytes_as_slice(unclosed_buffer);
         equal = equal && decoded_fingerprint(unclosed_view, 0usize, 1usize) == 0usize && frozen_fingerprint(unclosed_view, 0usize, 1usize) == 0usize;
         value = value + 1usize;
         0
