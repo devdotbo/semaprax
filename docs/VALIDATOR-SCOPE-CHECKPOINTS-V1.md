@@ -23,7 +23,8 @@ Contracts share a root but do not publish local bindings to sibling clauses.
 The live invocation pays literal initial and local checkpoint control storage.
 Every newly allocated AVL node pays its Rc reference-count header, actual node
 layout and literal initializer stack before allocation. Shared paths construct
-new nodes and rotation nodes transactionally; a refusal retains the original
+new path nodes transactionally; balancing moves their fresh unique path nodes
+and existing sibling handles without another allocation. a refusal retains the original
 complete root. A search path can mutate only when each node has exactly one
 strong reference and no weak references. It prepays and allocates a missing leaf
 before changing any node; insertion and rotations then move unique path nodes

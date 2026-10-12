@@ -1,4 +1,4 @@
-//! Immutable ordered AVL directory. Every constructed changed-path/rotation
+//! Immutable ordered AVL directory. Every constructed changed-path
 //! node is independently paid; only a fully successful root is published.
 use super::*;
 use std::rc::Rc;
@@ -29,51 +29,6 @@ fn node<'value>(
         height,
     }))
 }
-fn rotate_left<'value>(root: Rc<Node<'value>>) -> Result<Rc<Node<'value>>, Diagnostic> {
-    let next = root.right.as_ref().expect("AVL right child");
-    let left = node(
-        root.key.clone(),
-        root.ty,
-        root.left.clone(),
-        next.left.clone(),
-    )?;
-    node(next.key.clone(), next.ty, Some(left), next.right.clone())
-}
-fn rotate_right<'value>(root: Rc<Node<'value>>) -> Result<Rc<Node<'value>>, Diagnostic> {
-    let next = root.left.as_ref().expect("AVL left child");
-    let right = node(
-        root.key.clone(),
-        root.ty,
-        next.right.clone(),
-        root.right.clone(),
-    )?;
-    node(next.key.clone(), next.ty, next.left.clone(), Some(right))
-}
-fn balance<'value>(root: Rc<Node<'value>>) -> Result<Rc<Node<'value>>, Diagnostic> {
-    let left = height(&root.left);
-    let right = height(&root.right);
-    if left > right + 1 {
-        let child = root.left.as_ref().expect("AVL left imbalance");
-        let root = if height(&child.left) < height(&child.right) {
-            let left = rotate_left(child.clone())?;
-            node(root.key.clone(), root.ty, Some(left), root.right.clone())?
-        } else {
-            root
-        };
-        rotate_right(root)
-    } else if right > left + 1 {
-        let child = root.right.as_ref().expect("AVL right imbalance");
-        let root = if height(&child.right) < height(&child.left) {
-            let right = rotate_right(child.clone())?;
-            node(root.key.clone(), root.ty, root.left.clone(), Some(right))?
-        } else {
-            root
-        };
-        rotate_left(root)
-    } else {
-        Ok(root)
-    }
-}
 pub(super) fn insert<'value>(
     root: &Root<'value>,
     key: ValueId,
@@ -96,7 +51,10 @@ pub(super) fn insert<'value>(
             node(root.key.clone(), ty, root.left.clone(), root.right.clone())?
         }
     };
-    balance(next)
+    // Each rebuilt path node is fresh and unique. Only a height-changing
+    // insertion can rotate; its heavy child/pivot belongs to that fresh path.
+    // Existing sibling subtrees only move as handles and never mutate.
+    Ok(unique_balance(next))
 }
 pub(super) fn get<'value>(
     mut root: Option<&Node<'value>>,
