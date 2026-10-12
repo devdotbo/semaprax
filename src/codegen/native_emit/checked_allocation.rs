@@ -265,7 +265,9 @@ pub(super) fn join_runtime(mut prelude: String) -> Result<String, Diagnostic> {
         prelude.push_str("\n#include <stddef.h>\nstruct spx_string_v10 { uint64_t len; char data[]; };\nstatic __attribute__((unused)) struct spx_string_v10 *spx_string_header_v10(const char *value) { return (struct spx_string_v10 *)((uint8_t *)value - offsetof(struct spx_string_v10, data)); }\nstatic __attribute__((unused)) uint64_t spx_string_length_v10(const char *value) { return spx_string_header_v10(value)->len; }\n");
     }
     let context = "    uint32_t call_depth;";
-    let zero = "context->call_depth == UINT32_C(0);";
+    // Match the canonical-zero clause before its existing borrowed/collection
+    // conjunctions, preserving every original authority zero check.
+    let zero = "        context->call_depth == UINT32_C(0)";
     if prelude.matches(header).count() != 1
         || prelude.matches(context).count() != 1
         || prelude.matches(zero).count() != 1
@@ -277,7 +279,7 @@ pub(super) fn join_runtime(mut prelude: String) -> Result<String, Diagnostic> {
     let mut output = prelude.replacen(header,
         "struct spx_string_v10 { void *release_state; void (*release)(void *, void *); uint64_t len; char data[]; };", 1)
         .replacen(context, "    uint32_t call_depth;\n    struct spx_checked_string_adapter_v1 *checked_allocation;", 1)
-        .replacen(zero, "context->call_depth == UINT32_C(0) && context->checked_allocation == NULL;", 1);
+        .replacen(zero, "        context->call_depth == UINT32_C(0) && context->checked_allocation == NULL", 1);
     // Reuse the independently checked borrowed constructor algorithms with the
     // SAME concrete carrier used by all ordinary read helpers in this unit.
     let kernel = KERNEL.replace("struct spx_checked_string_header_v1 { uint64_t length; char data[]; };", "")

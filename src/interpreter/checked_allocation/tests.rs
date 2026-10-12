@@ -72,6 +72,38 @@ fn received<'a>(
     .receive()
     .unwrap()
 }
+// The legacy public scanner intentionally excludes String-returning helpers.
+// This saved ordinary engine receives the same independently replayed full HIR,
+// without installing a checked provider. Its original System String operations,
+// default owning clones, fuel, contracts and unwind remain the oracle.
+fn ordinary(
+    owner: &crate::cleanup_plan::checked_allocation::Validated<'_>,
+    fuel: usize,
+) -> Result<Value, Flow> {
+    owner.replay().unwrap();
+    let program = owner.program();
+    let entry = program
+        .functions
+        .iter()
+        .find(|f| f.id == *owner.entry())
+        .unwrap();
+    let functions = program
+        .functions
+        .iter()
+        .map(|f| (f.id.as_str(), f))
+        .collect();
+    let mut evaluator = Evaluator::new_prepared(
+        FunctionLookup::Borrowed(&functions),
+        BTreeMap::new(),
+        &program.declarations,
+        fuel,
+        0,
+        PreparedCancellation::Never,
+    );
+    assert!(evaluator.checked_allocation.is_none());
+    evaluator.call_frame(entry, Vec::new(), 0)
+}
+
 #[test]
 fn actual_interpreter_provider_refusal_sweep_preserves_default_clone_and_whole_drop() {
     let source = crate::parse(SOURCE, "checked-interpreter.spx").unwrap();
@@ -79,13 +111,11 @@ fn actual_interpreter_provider_refusal_sweep_preserves_default_clone_and_whole_d
     let projection = Projection::receive(&owner).unwrap();
     // Saved ordinary execution independently uses System String and the same
     // full source/entry. No checked payload carrier is installed in that route.
-    let ordinary =
+    let legacy =
         super::super::evaluate_resolved_zero_arg_i64(owner.program(), "checked.native.main", 1000)
-            .unwrap();
-    assert!(matches!(
-        ordinary.outcome,
-        ResolvedEvaluationOutcome::ReturnedI64(3)
-    ));
+            .unwrap_err();
+    assert!(legacy[0].message.contains("unsupported_callee"));
+    assert!(matches!(ordinary(&owner, 1000), Ok(Value::Int(3))));
     for refused in 0..=4 {
         for _ in 0..3 {
             let ((), observed) = crate::test_allocation_observer::measure(|| {
@@ -243,22 +273,21 @@ fn checked_interpreter_fuel_and_late_argument_failure_preserve_original_order_an
     let projection = Projection::receive(&owner).unwrap();
     let mut exhausted = false;
     let mut completed = false;
+    let public_zero =
+        super::super::evaluate_resolved_zero_arg_i64(owner.program(), "checked.native.main", 0)
+            .unwrap_err();
+    assert_eq!(public_zero[0].code, "SPX-F101");
     for fuel in 0..64 {
-        let old = super::super::evaluate_resolved_zero_arg_i64(
-            owner.program(),
-            "checked.native.main",
-            fuel,
-        )
-        .unwrap();
+        let old = ordinary(&owner, fuel);
         let ((), observed) = crate::test_allocation_observer::measure(|| {
             let provider = Inventory::acquire(&["a", "β", "aβ", "aβ"], usize::MAX);
             let outcome = projection.run(provider.clone(), fuel);
-            match old.outcome {
-                ResolvedEvaluationOutcome::ReturnedI64(3) => {
+            match old {
+                Ok(Value::Int(3)) => {
                     completed = true;
                     assert!(matches!(outcome, Ok(Value::Int(3))));
                 }
-                ResolvedEvaluationOutcome::FuelExhausted => {
+                Err(Flow::Exhausted) => {
                     exhausted = true;
                     assert!(matches!(outcome, Err(Flow::Exhausted)));
                 }
@@ -284,10 +313,8 @@ fn checked_interpreter_fuel_and_late_argument_failure_preserve_original_order_an
     let source = crate::parse(LATE, "checked-interpreter-late.spx").unwrap();
     let owner = received(&source, false);
     let projection = Projection::receive(&owner).unwrap();
-    let old =
-        super::super::evaluate_resolved_zero_arg_i64(owner.program(), "checked.native.main", 1000)
-            .unwrap();
-    let ResolvedEvaluationOutcome::LanguageFailure(expected) = old.outcome else {
+    let old = ordinary(&owner, 1000);
+    let Err(Flow::Failure(expected)) = old else {
         panic!("saved late failure refused differently");
     };
     for refusal in [0, usize::MAX] {

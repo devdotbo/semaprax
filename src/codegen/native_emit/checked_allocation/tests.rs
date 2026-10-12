@@ -229,3 +229,25 @@ fn run_generated(emitted: &str, probe: &str) {
     }
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn checked_runtime_zero_anchor_preserves_existing_authority_conjunctions_and_refuses_drift() {
+    for suffix in [
+        ";",
+        " &&\n        context->borrowed_str_depth == UINT32_C(0);",
+        " &&\n        context->vec_next_generation == UINT64_C(0);",
+    ] {
+        let prelude = format!("struct spx_string_v10 {{ uint64_t len; char data[]; }};\nstruct spx_context {{\n    uint32_t call_depth;\n}};\nstatic bool zero(const struct spx_context *context) {{ return\n        context->call_depth == UINT32_C(0){suffix}\n}}\n");
+        let joined = super::join_runtime(prelude.clone()).unwrap();
+        assert!(joined.contains(&format!("        context->call_depth == UINT32_C(0) && context->checked_allocation == NULL{suffix}")));
+        for drift in [
+            prelude.replace(
+                "        context->call_depth",
+                "        context->different_depth",
+            ),
+            format!("{prelude}\n        context->call_depth == UINT32_C(0);\n"),
+        ] {
+            assert_eq!(super::join_runtime(drift).unwrap_err().code, "SPX-B103");
+        }
+    }
+}

@@ -444,3 +444,8 @@ constructors, LiteralFormat, Bytes/collections, lexical control, Core-Wasm and
 public escaped SDK joins. Ordinary System String execution and frozen public
 profiles remain unchanged. No completion-matrix support or whole-engine funding
 claim follows from these source controls.
+
+The private native receiver inserts its allocator-zero requirement into the
+unique canonical-zero call-depth clause while retaining all existing borrowed
+String and collection authority conjunctions. Missing or duplicate anchors
+refuse generation; no original authority check is replaced.
