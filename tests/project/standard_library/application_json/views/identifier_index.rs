@@ -179,8 +179,7 @@ fn generated_identifier_buckets_preserve_max_shape_collisions_and_failure_order(
     let omitted = admitted.replacen(span_import, "", 1);
     std::fs::write(root.join("src/app.spx"), canonical(&omitted)).unwrap();
     let refused = project::with_authenticated_project(&root.join("semaprax.toml"), |_| Ok(()))
-        .err()
-        .expect("omitted element import must retain the private profile refusal");
+        .expect_err("omitted element import must retain the private profile refusal");
     assert!(
         refused
             .iter()
