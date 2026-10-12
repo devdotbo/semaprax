@@ -34,7 +34,12 @@ pub(in crate::cleanup_plan) fn execute_for_conformance(
             "checked allocation oracle received an ordinary plan",
         ));
     }
-    validate_public_result_type(program, function)?;
+    // The authenticated nonescaping private scalar boundary already admits
+    // usize; the existing trace/result replay has its exact Usize carrier.
+    // Keep the older public oracle result whitelist unchanged.
+    if function.return_type != ResolvedType::Usize {
+        validate_public_result_type(program, function)?;
+    }
     Executor::new(program, function, scenario)?.run()
 }
 
