@@ -773,7 +773,7 @@ impl DeclarationIndex {
         program: &dyn ProgramSource,
         prelude: &[crate::ast::TypeDeclaration],
     ) -> Result<Self, Diagnostic> {
-        Self::from_verified_with_identity_payer(program, prelude, |text| {
+        Self::from_verified_with_identity_payer(program, prelude, &mut |text| {
             Ok::<_, std::convert::Infallible>(DeclarationId::new(text))
         })
         .map_err(|error| match error {

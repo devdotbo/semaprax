@@ -31,15 +31,18 @@ impl DeclarationIndex {
         prelude: &[crate::ast::TypeDeclaration],
         mut reserve: impl FnMut(usize) -> Result<(), E>,
     ) -> Result<Self, IdentityIndexError<E>> {
-        Self::from_verified_with_identity_payer(program, prelude, |text| {
+        Self::from_verified_with_identity_payer(program, prelude, &mut |text| {
             DeclarationId::paid_borrowed(text, &mut reserve)
         })
     }
 
+    // Borrow the callback on the stack so this complete constructor specializes
+    // by its refusal carrier, rather than every caller closure type. No callback
+    // escapes and reservation order and owned identity construction stay exact.
     pub(super) fn from_verified_with_identity_payer<E>(
         program: &dyn ProgramSource,
         prelude: &[crate::ast::TypeDeclaration],
-        mut identity: impl FnMut(&str) -> Result<DeclarationId, E>,
+        identity: &mut dyn FnMut(&str) -> Result<DeclarationId, E>,
     ) -> Result<Self, IdentityIndexError<E>> {
         let mut index = Self::default();
         for declaration in program.types().iter().chain(prelude) {
