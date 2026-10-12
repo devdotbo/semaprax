@@ -713,6 +713,14 @@ fn a_narrow_integer_generic_argument_names_the_i64_round_trip() {
         help(&option).contains("`usize_from_i64(value)`"),
         "{option}"
     );
+    assert!(
+        help(&option).contains("at most 9223372036854775807 (i64::MAX)"),
+        "{option}"
+    );
+    assert!(
+        help(&option).contains("otherwise the conversion fails"),
+        "{option}"
+    );
 
     let record = only(
         "module habit.p;\n@id(\"habit.pair\")\nrecord Pair<T> {\n    @id(\"habit.pair.left\")\n    left: T,\n}\n@id(\"habit.f\")\nfn f(a: Pair<u8>) -> i64\n{\n    0\n}\n@id(\"app.main\")\nfn main() -> i64\n{\n    0\n}\n",
@@ -720,6 +728,10 @@ fn a_narrow_integer_generic_argument_names_the_i64_round_trip() {
     );
     assert!(help(&record).contains("`i64_from_u8(value)`"), "{record}");
     assert!(help(&record).contains("`u8_from_i64(value)`"), "{record}");
+    assert!(
+        !help(&record).contains("otherwise the conversion fails"),
+        "{record}"
+    );
 
     // The form the hint names verifies, and no hint is invented for an
     // argument without that round trip.

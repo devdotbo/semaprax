@@ -516,8 +516,13 @@ pub(super) fn generic_scalar_argument_help(name: &str, arguments: &[Type]) -> Op
         Type::U8 => Some(("u8", "i64_from_u8", "u8_from_i64")),
         _ => None,
     })?;
+    let range = if scalar == "usize" {
+        "; this round trip requires a value at most 9223372036854775807 (i64::MAX), otherwise the conversion fails"
+    } else {
+        ""
+    };
     Some(format!(
-        "carry the `{scalar}` as `i64`: instantiate `{name}` with `i64`, store `{widen}(value)`, and read it back with `{narrow}(value)`"
+        "carry the `{scalar}` as `i64`: instantiate `{name}` with `i64`, store `{widen}(value)`, and read it back with `{narrow}(value)`{range}"
     ))
 }
 

@@ -332,6 +332,9 @@ fn main() -> i64
 - Construct a generic variant as `Option<i64>::Some { value: v }`; match it
   as `Option::Some { value: v } => …`. `Some(v)` is invalid. Generic calls
   spell type arguments, as in `identity<i64>(4)`.
+- If a Copy generic rejects `usize` or `u8` (`SPX-T223`), carry the value
+  as `i64` and use the named integer conversions. `usize` must be at most
+  9223372036854775807 (`i64::MAX`) to round-trip; larger values fail conversion.
 - `record … with { field: value }` is immutable update. Record construction
   must name every field (`SPX-T213`).
 - Monomorphic acyclic records may own String/Bytes, Copy scalars and nested
