@@ -49,7 +49,7 @@ fn radix(entries: &mut [(usize, usize)], admission: &mut Admission<'_>) -> Resul
     let mut offsets = [0usize; 256];
     let mut scratch = reserve(entries.len(), admission)?;
     admission.units(entries.len())?;
-    scratch.extend_from_slice(&entries);
+    scratch.extend_from_slice(entries);
     for byte in 0..std::mem::size_of::<usize>() {
         admission.units(256)?;
         offsets.fill(0);

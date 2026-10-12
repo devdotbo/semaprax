@@ -54,6 +54,9 @@ impl<'a> ModuleIndex<'a> {
         demanded: Option<&ResolvedFunction>,
         work: &mut dyn FnMut(usize) -> bool,
     ) -> Result<Vec<Directory<'a>>, Diagnostic> {
+        // Declare the borrowed inventory before Admission so its backing
+        // remains alive until after the last borrowing receiver is dropped.
+        #[allow(clippy::needless_late_init)]
         let probes;
         let mut reserve = crate::bounded_output::reserve_active_required;
         let mut admission = Admission::new(work, &mut reserve);

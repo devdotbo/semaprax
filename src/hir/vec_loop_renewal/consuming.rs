@@ -18,8 +18,10 @@ pub(crate) struct Site<'a> {
 type Frames<'a> =
     [Option<crate::hir::lexical_exit::ChildCursor<'a>>; crate::cache_codec::MAX_DEPTH + 1];
 fn frames<'a>() -> Option<Frames<'a>> {
-    crate::bounded_output::reserve_active_required(std::mem::size_of::<Frames<'_>>())
-        .then(|| [None; crate::cache_codec::MAX_DEPTH + 1])
+    if !crate::bounded_output::reserve_active_required(std::mem::size_of::<Frames<'_>>()) {
+        return None;
+    }
+    Some([None; crate::cache_codec::MAX_DEPTH + 1])
 }
 /// Depth-first authored-order traversal with no heap frontier or ID clones.
 /// Overflow refuses this additive profile, without changing legacy collectors.
