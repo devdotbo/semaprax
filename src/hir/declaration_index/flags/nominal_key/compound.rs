@@ -57,7 +57,7 @@ fn literal(ty: &ResolvedType) -> Option<&'static [u8]> {
 fn prefix_length(ty: &ResolvedType) -> Option<usize> {
     if let Some(bytes) = literal(ty) { return Some(bytes.len()); }
     match ty {
-        ResolvedType::ArrayU8(length) => 9usize.checked_add(digits(*length)),
+        ResolvedType::ArrayU8(length) => 9usize.checked_add(digits(usize::try_from(*length).ok()?)),
         ResolvedType::TypeParameter { owner, index } => 12usize
             .checked_add(digits(owner.as_str().len()))?.checked_add(owner.as_str().len())?
             .checked_add(digits(*index as usize)),
@@ -161,7 +161,7 @@ fn prefix<'a>(ty: &'a ResolvedType, stage: u8) -> Option<Segment<'a>> {
     }
     Some(match (ty, stage) {
         (ResolvedType::ArrayU8(_), 0) => Segment::Text(b"array:u8:".iter()),
-        (ResolvedType::ArrayU8(length), 1) => Segment::decimal(*length),
+        (ResolvedType::ArrayU8(length), 1) => Segment::decimal(usize::try_from(*length).ok()?),
         (ResolvedType::TypeParameter { .. }, 0) => Segment::Text(b"parameter:".iter()),
         (ResolvedType::TypeParameter { owner, .. }, 1) => Segment::decimal(owner.as_str().len()),
         (ResolvedType::TypeParameter { .. }, 2 | 4) => Segment::Text(b":".iter()),
