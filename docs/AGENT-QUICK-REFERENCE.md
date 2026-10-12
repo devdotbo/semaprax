@@ -1031,6 +1031,17 @@ and consuming traversal remain outside this `for` form. Statement-tail
 [lexical profile](LEXICAL-STRUCTURED-EXITS-V1.md); `continue` advances once.
 See [Owned Bounded Vec For Traversal v1](OWNED-BOUNDED-VEC-FOR-TRAVERSAL-V1.md).
 
+`for byte in view { body }` visits an immutable named `Slice<u8>` in
+ascending order, with a fresh immutable `u8` item. Name a view from
+`str_as_bytes(text)`, `bytes_as_slice(buffer)`, `array_as_slice(array)`, or
+`byte_range(view, start, end)` first. The compiler keeps the length snapshot,
+checked byte read and loop counter; no buffer copy is needed. The underlying
+owner stays frozen for the whole traversal, including through subrange aliases.
+`continue` advances once; `break` and `return` leave without advancing.
+Computed or mutable iterable views, item mutation/shadowing and nested traversals
+remain refused. Executable qualification is pending; see
+[Borrowed Byte Slice For Traversal v1](BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V1.md).
+
 `for borrow row at index in rows { body }` adds a scoped field-only row view
 for an immutable named vector of an admitted Copy record or flat owned-leaf
 record. Omit `at index` when no index is needed. Scalars copy; `row.text` and
