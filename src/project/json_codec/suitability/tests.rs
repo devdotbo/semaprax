@@ -1,5 +1,16 @@
-use super::saved_page::page;
 use super::*;
+// Existing boundary owners continue to exercise the production pager. The
+// saved eager implementation is used only as an independent oracle below.
+fn page(
+    envelope: Value,
+    rows: &[Value],
+    offset: usize,
+    maximum: usize,
+) -> Result<String, Vec<Diagnostic>> {
+    paging::page(envelope, rows.len(), offset, maximum, |index| {
+        rows[index].clone()
+    })
+}
 fn revision(field: &str) -> ProjectRevision {
     revision_with_padding(field, None)
 }
@@ -197,7 +208,7 @@ fn compact_inventory_paging_matches_saved_eager_bytes_and_renders_only_page_rows
     // input inventory. This proves a local allocation reduction, not the
     // fragment generators' or complete Project's memory requirements.
     let (_, eager) = crate::test_allocation_observer::measure(|| {
-        drop(page(envelope.clone(), &rows, 0, 16384).unwrap());
+        drop(saved_page::page(envelope.clone(), &rows, 0, 16384).unwrap());
     });
     let (_, compact) = crate::test_allocation_observer::measure(|| {
         drop(
@@ -220,7 +231,7 @@ fn compact_inventory_paging_matches_saved_eager_bytes_and_renders_only_page_rows
                 rendered.push(index);
                 rows[index].clone()
             });
-            let expected = page(envelope.clone(), &rows, offset, maximum);
+            let expected = saved_page::page(envelope.clone(), &rows, offset, maximum);
             match (actual, expected) {
                 (Ok(actual), Ok(expected)) => {
                     assert_eq!(actual, expected);
@@ -285,7 +296,8 @@ fn compact_profile_facts_preserve_all_twelve_saved_predicates_imports_and_refusa
                 assert_eq!(rows.len(), 12);
                 for offset in 0..12 {
                     let envelope = json!({"profiles":[],"offset":offset,"coverage":"continued","next_offset":Value::Null});
-                    let expected = page(envelope.clone(), &rows, offset, 16384).unwrap();
+                    let expected =
+                        saved_page::page(envelope.clone(), &rows, offset, 16384).unwrap();
                     assert_eq!(
                         paging::page(envelope, rows.len(), offset, expected.len(), |index| rows
                             [index]
