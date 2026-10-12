@@ -74,12 +74,20 @@ fn compound_key_exact_node_byte_and_work_boundaries_keep_owned_fallback() {
     let simple = nominal("row", vec![ResolvedType::I64]);
     const KEY: &str = "nominal:3:row:1:3:i64";
     assert_eq!(simple.identity_key(), KEY);
-    // Independent census: root enter, child enter+finish, root finish, one
-    // encoded-child length visit. All five visits are required before lookup.
-    assert!(Plan::with_limits(&simple, 2, KEY.len(), 5).is_some());
-    assert!(Plan::with_limits(&simple, 1, KEY.len(), 5).is_none());
-    assert!(Plan::with_limits(&simple, 2, KEY.len() - 1, 5).is_none());
-    assert!(Plan::with_limits(&simple, 2, KEY.len(), 4).is_none());
+    // Independent census: root dispatch constructs the child in the same
+    // visit, child finishes, root finishes, then its child length is folded.
+    // These are four visits; constructing a child is not a separate dispatch.
+    assert!(Plan::with_limits(&simple, 2, KEY.len(), 4).is_some());
+    assert!(Plan::with_limits(&simple, 1, KEY.len(), 4).is_none());
+    assert!(Plan::with_limits(&simple, 2, KEY.len() - 1, 4).is_none());
+    assert!(Plan::with_limits(&simple, 2, KEY.len(), 3).is_none());
+    let function = ResolvedType::Function {
+        parameters: vec![ResolvedType::I64, ResolvedType::ArrayU8(10)],
+        result: Box::new(ResolvedType::Bool),
+    };
+    const FUNCTION_KEY: &str = "function:v1:2:3:i6411:array:u8:104:bool";
+    assert_eq!(function.identity_key(), FUNCTION_KEY);
+    assert_eq!(Plan::new(&function).unwrap().bytes().collect::<Vec<_>>(), FUNCTION_KEY.as_bytes());
     let wide = nominal("w", vec![ResolvedType::I64; NODES]);
     assert!(Plan::new(&wide).is_none());
     let huge = nominal(&"x".repeat(MAX_BYTES), vec![ResolvedType::I64]);
