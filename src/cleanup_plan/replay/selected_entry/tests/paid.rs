@@ -373,7 +373,8 @@ fn paid_report_remap_publishes_only_its_prepaid_form() {
     assert_eq!(first_receipt(&mut refusal), PhysicalRefusal::LocalLimit);
     let (published, allocations) = measure(|| refusal.into_report(FORM));
     assert_eq!(allocations.allocations, 0, "paid form moves out unchanged");
-    assert_eq!(published.unwrap().as_ptr(), backing.0);
+    let published = published.unwrap();
+    assert_eq!(published.as_ptr(), backing.0);
     let acquired = acquired(1 << 20);
     let (mismatched, allocations) = measure(|| acquired.refuse_unprepared().into_report(other));
     assert_eq!(
