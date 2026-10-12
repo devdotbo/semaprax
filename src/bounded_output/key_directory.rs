@@ -1,8 +1,9 @@
 //! Actual affine receiving backing; no detachable pointer/capacity ticket.
 //! Only this owner can mutate its Vec, and it never lends &mut Vec or a seal.
-use super::*;
+use super::{active, record_refusal, reserve, Budget};
 use std::mem::size_of;
 use std::ops::Deref;
+use std::rc::Rc;
 
 pub(crate) struct KeyDirectory<'a, T> {
     budget: Rc<Budget>,

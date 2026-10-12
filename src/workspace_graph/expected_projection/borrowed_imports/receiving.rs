@@ -1,6 +1,15 @@
 //! Complete original import walk with real receiving directory ownership.
 //! Ordinary and warm views retain additional spare storage, deliberately.
-use super::*;
+use super::{
+    ast_function_cost, ast_function_signature_cost, ast_type_declaration_cost, budgeted_format,
+    default_expr, directory, eligible, graph_error, import_stub, iterative, pay_default_teardown,
+    pay_signature, pay_teardown, pay_teardown_minimum, pay_type, refusal,
+    reserve_builder_structure, type_rewrite, AuthoredDeclaration, LayoutRegistry, StructuralCost,
+};
+use crate::ast::program_source::SyntheticProgramView;
+use crate::ast::{Expr, ExprKind, Function, ModuleUseKind, Program, Type, TypeDeclaration};
+use crate::diagnostic::Diagnostic;
+use std::collections::BTreeMap;
 
 pub(in crate::workspace_graph) fn construct_receiving<'a>(
     program: &'a Program,

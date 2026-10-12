@@ -1,7 +1,16 @@
 //! Actual full constructor/receiving/Drop; old standalone receiver is retained.
-use super::*;
+use super::{
+    construct, linked, old, reserve_builder_structure, sources, LayoutRegistry, BOX_CALLER,
+    BOX_PROVIDER, CLASS_CALLER, CLASS_PROVIDER, INVARIANT_CALLER, INVARIANT_PROVIDER, VEC_CALLER,
+    VEC_PROVIDER,
+};
+use crate::bounded_output::with_limit_usage_refusal;
+use crate::diagnostic::Diagnostic;
+use crate::hir;
+use crate::test_allocation_observer::measure;
 use crate::workspace_graph::expected_projection::borrowed_imports::construct_receiving;
 use crate::workspace_graph::expected_projection::borrowed_leaf::Input;
+use crate::workspace_graph::index_authored;
 
 #[test]
 fn full_receiving_overlay_moves_exact_paid_directories_and_preserves_original_order() {

@@ -1,5 +1,10 @@
-use super::*;
+use super::KeyDirectory;
+use crate::bounded_output::{
+    active_remaining, reserve_active_required, with_limit, with_limit_usage,
+    with_limit_usage_refusal,
+};
 use crate::test_allocation_observer::measure;
+use std::mem::size_of;
 
 #[test]
 fn real_directory_zero_exact_short_and_sticky_owners_settle_through_drop() {

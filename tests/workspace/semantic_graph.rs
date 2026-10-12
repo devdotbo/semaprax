@@ -628,7 +628,6 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     let projection = format!(
         "{projection_private_layout}\n{projection_type_rewrite}\n{projection_import_stub}\n{projection_uncached_peak}\n{projection_root}\n{projection_local_identity}\n{projection_call_identity}\n{projection_call_sites}\n{projection_cost}\n{projection_declaration_cost}\n{projection_identity_slots}\n{projection_statement_segment}\n{projection_defaults}"
     );
-
     assert!(root.contains("mod expected_projection;"));
     assert!(!projection.contains("use super::*;"));
     assert!(projection_root.contains("pub(super) use uncached_peak::{\n    initial_core_prebound, next_retention_prebound_with_uncached_peak,\n    uncached_output_peak_prebound,\n};"));
@@ -668,6 +667,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         // old::construct is a cfg(test) oracle shared only by its test siblings.
         // Keep both in the full union and reject any other added helper.
         "pub(super) fn materialize(view: SyntheticProgramView<'_>) -> Result<Program, Vec<Diagnostic>> {",
+        "pub(super) fn materialize_receiving(",
         "pub(super) fn construct(",
         "pub(super) fn collect_edges(",
         "pub(super) fn verify(",
