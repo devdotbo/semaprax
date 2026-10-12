@@ -50,7 +50,9 @@ fn shared_permits_match_all_function_old_effect_diagnostics_duplicates_and_curre
         let expected = crate::hir::validation::owner_renewal::validate_core(&current);
         let actual = crate::hir::validate_core(&current);
         assert_eq!(actual, expected);
-        if mutation == 2 {
+        if mutation < 2 {
+            actual.unwrap();
+        } else if mutation == 2 {
             let error = actual.unwrap_err();
             assert!(error.message.contains("missing.z"));
             assert!(!error.message.contains("missing.a"));
