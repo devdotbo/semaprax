@@ -135,6 +135,25 @@ fn whole_subtree_and_recursive_control_settle_empty_and_full_vec_on_three_backen
 #[test]
 fn subtree_transfer_refuses_hidden_owner_borrow_use_after_move_and_live_descendant() {
     let valid = source(SUBTREE, true);
+    // Existing rooted String views admit this complete nested collection root.
+    // Its positive last-use control independently authenticates the same path
+    // before the exact root move; the live case below keeps that view in use.
+    let released = valid.replace("let answer=match own value",
+        "let view=str_as_bytes(string_as_str(value.report.text));let view_size=byte_len(view);let answer=match own value");
+    assert_ne!(released, valid);
+    let released = semaprax::check(&released, "subtree-released-view.spx").unwrap();
+    let resolved = semaprax::hir::resolve(&released).unwrap();
+    semaprax::hir::validate(&resolved).unwrap();
+    let forward = resolved
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "forward")
+        .unwrap();
+    assert!(forward.loan_plan.loans.iter().any(|loan| {
+        matches!(loan.origin.projections.as_slice(),
+            [semaprax::hir::PlaceProjection::Field(report), semaprax::hir::PlaceProjection::Field(text)]
+            if report.as_str() == "outer.report" && text.as_str() == "report.text")
+    }), "actual current projected descendant loan");
     for (label, from, to, code) in [
         ("wildcard", "report,valid", "report:_,valid", "SPX-O117"),
         (
@@ -149,17 +168,25 @@ fn subtree_transfer_refuses_hidden_owner_borrow_use_after_move_and_live_descenda
             "score(report)+score(report)",
             "SPX-O101",
         ),
+        // The old Bytes-only nested record profile does not admit this
+        // String/Vec-bearing root. Keep that exact operand as a closed case.
+        (
+            "unsupported-bytes-view",
+            "let answer=match own value",
+            "let view=bytes_as_slice(value.report.bytes);let answer=match own value",
+            "SPX-T266",
+        ),
         (
             "live",
             "let answer=match own value",
-            "let view=bytes_as_slice(value.report.bytes);let answer=match own value",
+            "let view=str_as_bytes(string_as_str(value.report.text));let answer=match own value",
             "SPX-T265",
         ),
     ] {
         let changed = valid.replace(from, to);
         assert_ne!(changed, valid);
         // Use after the match keeps the descendant loan live at the root move.
-        let changed = if label == "live" {
+        let changed = if label == "live" || label == "unsupported-bytes-view" {
             changed.replace(" answer\n}", " answer+i64_from_usize(byte_len(view))\n}")
         } else {
             changed
