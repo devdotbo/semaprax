@@ -88,8 +88,7 @@ pub(super) fn resolve(
             let excess = projections
                 .capacity()
                 .saturating_sub(count)
-                .checked_mul(size_of::<PlaceProjection>())
-                .unwrap_or(usize::MAX);
+                .saturating_mul(size_of::<PlaceProjection>());
             let _ = payer.capacity(requested, excess);
             return Err(super::storage::marker());
         }

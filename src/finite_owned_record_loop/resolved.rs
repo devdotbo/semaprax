@@ -32,7 +32,7 @@ fn tail(e: &E, counter: &crate::hir::ResolvedBinding, depth: usize) -> bool {
     match &e.kind {
         K::Closure { .. } | K::Yield { .. } | K::VecConstructor { .. } => return false,
         K::Block { statements, .. } if !statements.is_empty() => return false,
-        K::Match { arms, .. } => {
+        K::Match { arms, .. }
             if arms.iter().any(|a| {
                 a.guard.is_some()
                     || match &a.pattern {
@@ -48,9 +48,9 @@ fn tail(e: &E, counter: &crate::hir::ResolvedBinding, depth: usize) -> bool {
                         ResolvedMatchPattern::Or(_) => true,
                         _ => false,
                     }
-            }) {
-                return false;
-            }
+            }) =>
+        {
+            return false;
         }
         _ => {}
     }
@@ -214,7 +214,12 @@ pub(crate) fn inspect(program: &ResolvedProgram, condition: &E, body: &E) -> Opt
     else {
         return None;
     };
-    if binding != counter
+    // The assignment target carries its own use-site span, so whole-binding
+    // equality can never hold; compare the identity facts the let established.
+    if binding.id != counter.id
+        || binding.name != counter.name
+        || binding.ty != counter.ty
+        || binding.ownership != counter.ownership
         || !place(left, &counter.id)
         || !int(right, 1)
         || step.ty != T::I64

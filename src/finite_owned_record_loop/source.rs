@@ -34,7 +34,7 @@ fn tail(e: &Expr, counter: &str, depth: usize) -> bool {
         | K::MethodCall { .. }
         | K::SuperMethod { .. } => return false,
         K::Block { statements, .. } if !statements.is_empty() => return false,
-        K::Match { arms, .. } => {
+        K::Match { arms, .. }
             if arms.iter().any(|a| {
                 a.guard.is_some()
                     || match &a.pattern {
@@ -48,9 +48,9 @@ fn tail(e: &Expr, counter: &str, depth: usize) -> bool {
                         MatchPattern::Or { .. } => true,
                         _ => false,
                     }
-            }) {
-                return false;
-            }
+            }) =>
+        {
+            return false;
         }
         _ => {}
     }

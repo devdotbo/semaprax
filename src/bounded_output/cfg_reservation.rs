@@ -58,9 +58,8 @@ impl CfgReservation {
         if let Some(first) = self.first.get() {
             return Err(first);
         }
-        required(&self.budget, bytes).map_err(|reason| {
+        required(&self.budget, bytes).inspect_err(|&reason| {
             self.first.set(Some(reason));
-            reason
         })
     }
 

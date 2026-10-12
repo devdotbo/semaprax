@@ -27,8 +27,7 @@ pub(super) fn vector<T>(
         let excess = values
             .capacity()
             .saturating_sub(capacity)
-            .checked_mul(std::mem::size_of::<T>())
-            .unwrap_or(usize::MAX);
+            .saturating_mul(std::mem::size_of::<T>());
         let _ = payer.capacity(requested, excess);
         return Err(marker());
     }
@@ -92,8 +91,7 @@ pub(super) fn push<T>(
             let excess = values
                 .capacity()
                 .saturating_sub(target)
-                .checked_mul(std::mem::size_of::<T>())
-                .unwrap_or(usize::MAX);
+                .saturating_mul(std::mem::size_of::<T>());
             let _ = payer.capacity(requested, excess);
             return Err(marker());
         }

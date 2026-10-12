@@ -251,7 +251,7 @@ fn finite_record_source_and_hir_fold_complete_body_events_at_the_unchanged_cap()
             "Outer{report:Report{bytes:bytes_zeroed(3usize)}}",
             "Outer{report:Report{bytes:bytes_zeroed(3usize)},extra:bytes_zeroed(1usize)}",
         )
-        .replace("Outer{report}=>", "Outer{report,extra:_}=>");
+        .replace("Outer{report}=>", "Outer{report,extra}=>");
     for count in [1, 8, 16] {
         let text = two_sites.replace("count<3", &format!("count<{count}"));
         let ast = crate::parse(&text, "finite-record-cap.spx").unwrap();

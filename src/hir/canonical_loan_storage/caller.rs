@@ -158,7 +158,11 @@ fn prepare_with_comparison<'a>(
                 Some(owner) => {
                     match crate::loan_plan::build_plan_with_reservation(program, function, owner) {
                         Ok(plan) => plan,
-                        Err(crate::loan_plan::FundedError::Physical(_)) => return Err(refused()),
+                        Err(crate::loan_plan::FundedError::Physical(reason)) => {
+                            // The tag is copied from this exact owner's first failure.
+                            debug_assert_eq!(owner.first(), Some(reason));
+                            return Err(refused());
+                        }
                         Err(crate::loan_plan::FundedError::Semantic(error)) => return Err(error),
                     }
                 }

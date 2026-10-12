@@ -5,7 +5,7 @@ use crate::test_allocation_observer::measure;
 fn rebuilding_clone_omits_only_obsolete_attachments_and_settles_removed_payload() {
     let ast = crate::check(
         r#"module reuse;
-@id("read") fn read(value:own Bytes)->i64 {byte_len(value)}
+@id("read") fn read(value:string)->i64 {i64_from_usize(byte_len(str_as_bytes(string_as_str(value))))}
 @id("main") fn main()->i64 {0}
 "#,
         "reuse.spx",

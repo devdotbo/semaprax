@@ -1,7 +1,17 @@
 //! Genuine owning cache publication boundary for the exact cold source view.
 //! Cached full-clone forecasts remain unchanged. Retained authored declarations
 //! are still copied once here; this does not claim a shared AST cache owner.
-use super::*;
+use super::reserve_builder_structure;
+use crate::ast::program_source::SyntheticProgramView;
+use crate::ast::Program;
+use crate::diagnostic::Diagnostic;
+// The sibling test module reaches these parent carriers through this module.
+#[cfg(test)]
+use super::{construct, private_layout, synthetic_program_with_registry, Input};
+#[cfg(test)]
+use crate::ast::Span;
+#[cfg(test)]
+use crate::hir;
 
 pub(super) fn materialize(view: SyntheticProgramView<'_>) -> Result<Program, Vec<Diagnostic>> {
     reserve_builder_structure(0)?;

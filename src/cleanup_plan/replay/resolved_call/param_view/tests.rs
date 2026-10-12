@@ -261,7 +261,7 @@ fn excluded_collection_closure_native_and_dedicated_provider_errors_remain_owned
     }
 }
 
-const REPLAY: &str = "module param.replay; @id(\"consume\") fn consume(a:own string,b:own string)->i64 {string_len(a)+string_len(b)} @id(\"main\") fn main()->i64 {consume(string_concat(\"a\",\"b\"),string_concat(\"c\",\"d\"))}";
+const REPLAY: &str = "module param.replay; @id(\"consume\") fn consume(a:string,b:string)->i64 {string_len(a)+string_len(b)} @id(\"main\") fn main()->i64 {consume(string_concat(\"a\",\"b\"),string_concat(\"c\",\"d\"))}";
 fn paths(program: &ResolvedProgram, owned: bool) -> Vec<Vec<ExprSkeletonPath>> {
     let operation = || {
         let mut budget = ReplayBudget::unobserved();
