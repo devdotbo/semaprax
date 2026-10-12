@@ -175,7 +175,7 @@ fn late_publication(input: BTreeMap<ValueId,ValidationBinding>,
 }
 
 #[test]
-fn real_late_error_moves_the_last_published_full_binding_on_unwind() {
+fn real_late_error_moves_the_last_published_full_binding_on_early_return() {
     let input=rich(17);let mut expected=input.clone();
     expected.values_mut().next().unwrap().availability=Availability::Moved;
     let mut target=BTreeMap::new();
@@ -272,4 +272,48 @@ fn contract_baseline_copies_all_fields_once_and_pays_real_backing_through_drop()
     }));
     assert!(refused && !short.invalid);assert_eq!(short.live,0);assert!(receipt.is_some());
     assert_eq!(input,rich(17));
+}
+
+
+#[test]
+fn panic_unwind_restores_the_same_full_publication_as_the_original_owning_guard() {
+    use std::panic::{catch_unwind,AssertUnwindSafe};
+    for enabled in [false,true] {
+        let input=rich(17);
+        let mut expected=input.clone();
+        if enabled {expected.values_mut().next().unwrap().availability=Availability::Moved;}
+        let mut old_target=BTreeMap::new();
+        let old_result=catch_unwind(AssertUnwindSafe(|| {
+            let mut publication=super::super::super::ValidationScopePublication {
+                target:&mut old_target,published:input.clone(),enabled,
+            };
+            let mut current=input.clone();
+            let id=current.keys().next().unwrap().clone();
+            current.get_mut(&id).unwrap().availability=Availability::Moved;
+            publication.publish(&current);
+            let mut failed_child=current.clone();
+            failed_child.get_mut(&id).unwrap().availability=Availability::MaybeMoved;
+            panic!("late isolated child panic");
+        }));
+        assert!(old_result.is_err());drop(old_result);
+        let mut new_target=BTreeMap::new();
+        Scope::prepare(input.len()).unwrap();
+        let new_result=catch_unwind(AssertUnwindSafe(|| {
+            let mut publication=Publication::new(&mut new_target,Scope::from_prepaid(input));
+            publication.enabled=enabled;
+            // Every sibling handle is declared after the publication guard,
+            // so panic unwinding releases it before moving the paid payload.
+            let mut current=publication.published.clone();
+            let id=current.keys().next().unwrap().clone();
+            current.get_mut(&id).unwrap().unwrap().availability=Availability::Moved;
+            publication.publish(&current).unwrap();
+            let mut failed_child=current.clone();
+            failed_child.get_mut(&id).unwrap().unwrap().availability=Availability::MaybeMoved;
+            panic!("late isolated child panic");
+        }));
+        assert!(new_result.is_err());drop(new_result);
+        assert_eq!(old_target,expected);assert_eq!(new_target,old_target);
+        // Panic infrastructure is outside this storage/payment oracle; this
+        // control owns full publication and child destruction on unwinding.
+    }
 }
