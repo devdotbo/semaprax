@@ -45,6 +45,17 @@ semantic-workspace-init requires exactly <root> <path-set.json>
 Domain failures exit 1 through the common diagnostic renderer and write no
 stdout.
 
+## Additive typed source-only preflight
+
+The source-authored `semantic_workspace::reporting::preflight` accepts a
+canonical path set and `Vec<SemanticWorkspaceSource>` without filesystem access.
+It returns opaque checked facts or the affine `WorkspaceReportFailure` defined
+in [Workspace report owner v1](WORKSPACE-REPORT-OWNER-V1.md). Both selected-replay
+receiving passes preserve their original same-invocation owner on refusal.
+Ordinary directory/source/output reports remain explicitly allocating legacy
+boundaries. This does not change the initializer, lock, CLI, generation schema
+or ACTIVE publication protocol; executable qualification is pending.
+
 ## Canonical control documents
 
 Every document in this section is compact UTF-8 JSON with exactly one terminal

@@ -54,10 +54,22 @@ pub(crate) fn initialize_from_preflight_with_hook(
     workspace::initialize_semantic_with_hook(root, path_set_path, hook)
 }
 
-pub(crate) struct SemanticWorkspaceSource {
+/// Caller-owned source bytes for source-only semantic preflight.
+/// Construction grants no filesystem or publication authority.
+pub struct SemanticWorkspaceSource {
     pub(crate) path: String,
     pub(crate) source: String,
 }
+
+impl SemanticWorkspaceSource {
+    /// Move already-owned path and source storage into the source receiver.
+    pub fn new(path: String, source: String) -> Self {
+        Self { path, source }
+    }
+}
+
+/// Typed source-only replay with an affine report failure carrier.
+pub mod reporting;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct SemanticWorkspaceFileFact {

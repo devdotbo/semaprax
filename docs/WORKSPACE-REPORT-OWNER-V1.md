@@ -1,0 +1,84 @@
+# Workspace report owner v1
+
+Status: source-authored additive Rust facade API; executable qualification pending.
+This is a bounded OPT781 tranche, not completion of report or application funding.
+
+## Same-invocation ownership
+
+`workspace_report::WorkspaceReportFailure` is sealed and non-Clone. Selected
+replay still acquires its original caller-owned report before preparation on
+that invocation's original physical ledger: one actual Diagnostic slot and the
+exact fixed form's owned text. This API adds no allowance, factory budget,
+allocation, Box, reset or refund. It moves the complete original refusal owner,
+including initial setup failure or failed Preparation, first receipt and ledger.
+An unacquired report stays inline through propagation and Drop.
+
+`reported()` borrows existing backing. `has_paid_report()` certifies only the
+original selected carrier for its exact form. `into_paid_report()` moves that
+Vec/String, preserving pointer and capacity; it otherwise returns the same
+affine failure without releasing the retained owner. An ordinary existing Vec
+moves unchanged but does not become certified paid storage. Mismatched forms
+cannot relabel an existing paid report. No public operation exposes mutable HIR,
+ledger access, a replay index or authority to restore a failed invocation.
+
+Display streams the existing diagnostics or exact fixed refusal form to a
+caller-owned formatter. It allocates no intermediate message/report. Output
+backing is the renderer's obligation; calling Display does not fund output.
+`into_legacy_unfunded()` explicitly materializes the old outward report when
+necessary. There is no allocating Deref or implicit typed-failure-to-Vec/String
+conversion. The legacy Vec APIs and all their original bodies/owners remain.
+
+## Actual typed source receiver
+
+`SemanticWorkspaceSource::new(String, String)` moves caller-owned input storage.
+`semantic_workspace::reporting::preflight` authenticates the complete canonical
+path set and owned sources, then returns an opaque `CheckedPreflight`. Its
+`manifest()` and `workspace_revision()` borrow checked stored bytes; `replay()`
+independently rechecks every held source, schema, revision, digest and manifest.
+Both full schema-receiving passes propagate the affine selected-replay failure.
+The original complete Vec preflight and independent replay remain an oracle.
+Canonical ordering, all original source/storage limits and diagnostic priority
+are unchanged. This source-only API grants no filesystem, lock, transaction,
+staging, evidence, managed generation or ACTIVE authority. The initializer,
+CLI and filesystem change/operation routes keep their original behavior.
+
+## Explicit residual frontiers
+
+Ordinary grammar, source resolution, fingerprints, directory backing, dynamic
+limit/help reports and output still use the existing allocating legacy boundary.
+In particular `source_schema::all` first charges its original directory before
+replay. Its failure preserves the exact dynamic maximum and full TLS module,
+pending/resolving/retained attribution; no max-only substitute or post-refusal
+clone claims funding. Migrating that seam needs a separately acquired attribution
+owner that preserves nested/repeated invocation behavior.
+
+The actual filesystem change, structural-change and operation view wrappers
+still call `into_report(form)` and explicitly materialize `SelectedReplayUnpaid`.
+They can release the failed owner at that legacy edge. The next concrete caller
+migration is the change/structural `into_change_view_reporting` and operations
+`into_operation_view_reporting` error return, followed through its authority-held
+preparer to the public typed outcome without moving replay after staging. The
+full original lock, evidence replay, source binding and ACTIVE order must remain.
+This additive preflight does not satisfy that remaining OPT781 acceptance.
+
+## Source-authored owners
+
+All previous paid carrier, Preparation/Session, workspace preflight and filesystem
+oracles remain complete. New library selectors:
+
+- `workspace_report::tests::initial_zero_exact_short_sticky_typed_transfer_display_and_drop_allocate_nothing`
+- `workspace_report::tests::exact_paid_setup_refusal_transfers_original_slot_text_and_ledger_through_drop`
+- `workspace_report::tests::constructor_receipt_and_same_ledger_survive_typed_owner_and_no_paid_form_remap`
+- `workspace_report::tests::explicit_legacy_materialization_preserves_full_owned_report_and_original_pass_through`
+- `workspace_report::tests::actual_schema_receiving_caller_keeps_zero_short_exact_paid_owner_until_final_drop`
+- `workspace_report::tests::actual_source_drift_keeps_full_prior_literal_and_whole_receiving_debit_drop`
+- `workspace_report::tests::prepaid_first_budget_receipt_moves_with_affine_typed_owner_without_reformatting`
+- `semantic_workspace::reporting::tests::complete_original_schema_corpus_matches_legacy_manifest_revision_and_independent_replay`
+- `semantic_workspace::reporting::tests::full_path_frontier_and_late_source_errors_keep_original_diagnostics_and_order`
+- `semantic_workspace::reporting::tests::typed_independent_replay_retains_manifest_source_revision_and_digest_priority`
+
+The controls observe actual construction, receiving, streaming and final Drop;
+zero, exact and one-short acquisition; original report pointer/capacity and
+sticky first ledger refusal; full old literal, schema corpus and hostile error
+parity. They are authored only. No compile, runtime, efficiency, end-to-end
+funding or issue-closure result is claimed.

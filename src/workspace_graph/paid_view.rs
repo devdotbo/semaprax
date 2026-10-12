@@ -26,6 +26,18 @@ impl From<Vec<Diagnostic>> for ViewRefusal {
     }
 }
 impl ViewRefusal {
+    /// Affine outward transfer. Initial setup keeps its ledger; no literal is
+    /// materialized here and no implicit Vec conversion exists for the result.
+    pub(crate) fn into_typed(self) -> crate::workspace_report::WorkspaceReportFailure {
+        match self {
+            Self::Legacy(diagnostics) => {
+                crate::workspace_report::WorkspaceReportFailure::existing(diagnostics)
+            }
+            Self::Replay(refusal) => {
+                crate::workspace_report::WorkspaceReportFailure::selected(refusal, None)
+            }
+        }
+    }
     /// Pass-through form. A paid replay carrier and an existing legacy Vec
     /// move out unchanged; an unpaid replay refusal stays typed.
     pub(crate) fn into_published(self) -> Result<Vec<Diagnostic>, SelectedReplayUnpaid> {
@@ -77,6 +89,14 @@ impl ReceivingSources for Vec<WorkspaceSource> {
 }
 
 impl WorkspaceGraphBuild {
+    pub(crate) fn source_graph_schemas_receiving_typed(
+        &self,
+        sources: &dyn ReceivingSources,
+    ) -> Result<BTreeMap<String, &'static str>, crate::workspace_report::WorkspaceReportFailure>
+    {
+        self.source_graph_schemas_receiving_paid(source_schema::REPORT, Some(sources))
+            .map_err(ViewRefusal::into_typed)
+    }
     /// Change view for a caller that publishes one fixed `form` on refusal.
     /// The unpaid case is the explicit, allocating legacy edge.
     pub(crate) fn into_change_view_reporting(

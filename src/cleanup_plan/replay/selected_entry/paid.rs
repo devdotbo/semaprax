@@ -23,11 +23,9 @@ impl ReportForm {
     pub(crate) const fn new(code: &'static str, message: &'static str) -> Self {
         Self { code, message }
     }
-    #[cfg(test)]
     pub(crate) fn code(self) -> &'static str {
         self.code
     }
-    #[cfg(test)]
     pub(crate) fn message(self) -> &'static str {
         self.message
     }
@@ -561,6 +559,31 @@ impl Session<'_> {
 }
 
 impl PaidRefusal {
+    /// Borrowing this descriptor grants neither report backing nor ledger access.
+    pub(crate) fn form(&self) -> ReportForm {
+        match &self.0 {
+            Refusal::Paid { form, .. } | Refusal::Unpaid { form, .. } => *form,
+        }
+    }
+    pub(crate) fn published_for(&self, expected: ReportForm) -> Option<&[Diagnostic]> {
+        match &self.0 {
+            Refusal::Paid { report, form, .. } if *form == expected => Some(report),
+            _ => None,
+        }
+    }
+    /// Unlike the Copy legacy boundary, refusal retains the entire exact owner.
+    pub(crate) fn into_report_retaining(
+        self,
+        expected: ReportForm,
+    ) -> Result<Vec<Diagnostic>, Self> {
+        if self.published_for(expected).is_none() {
+            return Err(self);
+        }
+        let Refusal::Paid { report, .. } = self.0 else {
+            unreachable!()
+        };
+        Ok(report)
+    }
     #[cfg(test)]
     pub(crate) fn is_paid(&self) -> bool {
         matches!(self.0, Refusal::Paid { .. })

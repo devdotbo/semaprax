@@ -50,3 +50,14 @@ full JSON/Display/Debug parity for all location shapes. Generic and scope
 refusal modules cover arithmetic, exact, one-short and sticky full receiving
 lifetimes; the iterator frontier owner covers its actual entries through Drop.
 No execution or whole-application funding advantage is claimed for this tranche.
+
+## Additive affine source-preflight failures
+
+The source-authored public `WorkspaceReportFailure` and
+`semantic_workspace::reporting` API are additive to facade major 3 and specified
+by [Workspace report owner v1](WORKSPACE-REPORT-OWNER-V1.md). They preserve an
+initial refusal or existing paid selected-replay owner without implicitly
+materializing a Vec. Existing outcome types, Vec APIs, negotiated version,
+wire schemas and encoded bytes remain unchanged. Source preflight has no
+filesystem or publication authority; remaining filesystem/directory/output
+funding is explicit and qualification is pending.

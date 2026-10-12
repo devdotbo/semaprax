@@ -513,6 +513,7 @@ pub mod typed_workflow;
 pub mod workflow_profile;
 pub mod workspace_analysis;
 pub mod workspace_graph;
+pub mod workspace_report;
 
 use std::path::Path;
 

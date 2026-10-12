@@ -425,3 +425,14 @@ joins before claiming complete final-validation allocation coverage. Existing
 whole-lifecycle owners retain their inequalities and detect the remaining gaps.
 No application fit, runtime result, cap increase or ordinary V6 admission is
 claimed.
+
+## Retaining typed outward owner (source-only followup)
+
+[Workspace report owner v1](WORKSPACE-REPORT-OWNER-V1.md) adds an affine outward
+receiver preserving the exact initial failure or failed Preparation and first
+receipt through the typed source-preflight caller. Existing paid carrier
+acquisition and physical equations are unchanged. Exact paid publication moves
+the original slot/text; initial or mismatched paid publication returns the same
+owner. All original legacy publication and Preparation/Session tests remain.
+The filesystem view wrappers and full dynamic directory/TLS-help frontier are
+explicit legacy residuals, so this followup does not complete OPT781.
