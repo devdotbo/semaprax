@@ -53,12 +53,15 @@ Initial owning selectors (all unexecuted):
 - lib `string_ops::take::tests::added_transfer_inventory_pays_its_node_exact_short_sticky_and_drop`
 - language `owned_string_transfer::explicit_transfer_preserves_native_carriers_clone_baseline_and_failure_settlement`
 - language `owned_string_transfer::explicit_transfer_interpreter_and_private_wasm_reentry_keep_selected_status`
+- language `owned_string_transfer::named_destructured_string_leaf_keeps_clone_reference_and_all_engine_settlement`
 
 The native allocation observer covers literal construction through settlement
 for three repeated empty/nonempty calls and an unchanged clone reference,
 counting realloc requests too. These source assertions are not measured gains
-or all-backend no-copy evidence. Further acceptance remains: recursive-leaf
-and mixed record/aggregate Wasm controls, first/late operand fuel refusal,
+or all-backend no-copy evidence. The additional flat record owner compares
+named destructured transfer with an unchanged owning-read reference on native,
+interpreter and aggregate Wasm; only its native observer counts allocations. Further acceptance remains: recursive-leaf
+and mixed String/Bytes record controls, first/late operand fuel refusal,
 complete loan/status/transfer forgeries, complete compiler metadata funding beyond the new node
 exact/one-short/sticky/Drop control, current Project cache cold/warm/provider drift and the
 full original OPT779 forwarding populations. No Catalog rewrite, forecast

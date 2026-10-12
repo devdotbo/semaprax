@@ -136,3 +136,93 @@ for(let i=0;i<3;i++){
     );
     fixture.cleanup();
 }
+
+const RECORD_SOURCE: &str = r#"module transfer.record;
+@id("task") record Task {@id("task.title") title:string,@id("task.label") label:string,@id("task.points") points:i64,}
+@id("extract") fn extract(item:own Task)->string {
+ match own item {Task {title:text,label:tag,points:points}=>string_take(text),}
+}
+@id("old") fn old(item:own Task)->string {
+ match own item {Task {title:text,label:tag,points:points}=>text,}
+}
+@id("record.take") fn transferred()->i64 {string_len(extract(Task {title:"é\u{0}",label:"x",points:7}))}
+@id("record.old") fn cloned()->i64 {string_len(old(Task {title:"é\u{0}",label:"x",points:7}))}
+@id("main") fn main()->i64 {transferred()+cloned()}
+"#;
+
+#[test]
+fn named_destructured_string_leaf_keeps_clone_reference_and_all_engine_settlement() {
+    let ast = semaprax::check(RECORD_SOURCE, "string-transfer-record.spx").unwrap();
+    let canonical = semaprax::format::canonical(&ast);
+    let reparsed = semaprax::check(&canonical, "string-transfer-record.spx").unwrap();
+    assert_eq!(canonical, semaprax::format::canonical(&reparsed));
+    let graph = semaprax::graph::to_json(&ast).unwrap();
+    semaprax::graph::verify_json(&ast, &graph).unwrap();
+    let program = hir::resolve(&ast).unwrap();
+    hir::validate(&program).unwrap();
+    let generated = codegen::emit_c(&ast).unwrap();
+    let tracked = generated.replace("realloc(", "transfer_realloc(");
+    let mut probe = format!("{}\n{}\nstatic unsigned transfer_realloc_requests;\nstatic __attribute__((unused)) void *transfer_realloc(void *p,size_t n){{++transfer_realloc_requests;return realloc(p,n);}}\n{tracked}\n#undef malloc\n#undef free\nint main(void){{struct spx_status_entry entries[32];struct spx_context context={{0}};REQUIRE(spx_context_init(&context,19,entries,32,NULL,NULL,NULL));\n",
+        include_str!("../support/native_fixture_stdio.c"), include_str!("../native_owned_utf8_settlement_v1/allocations.c"));
+    // Two original literal owners. The saved owning-read reference adds exactly
+    // one physical title clone; take forwards that same leaf without replacing it.
+    for (id, allocations) in [("record.take", 2), ("record.old", 3)] {
+        probe.push_str(&format!("for(unsigned i=0;i<3;++i){{size_t before=fixture_allocations;unsigned requests=transfer_realloc_requests;int64_t result=INT64_MIN;REQUIRE({}(&context,&result)==0);REQUIRE(result==3);REQUIRE(fixture_allocations-before=={allocations});REQUIRE(transfer_realloc_requests==requests);REQUIRE(fixture_live==0&&fixture_allocations==fixture_frees);}}\n", symbol(id)));
+    }
+    probe.push_str("return 0;}\n");
+    let mut fixture = Fixture::new(&canonical);
+    for level in ["-O0", "-O2"] {
+        assert_eq!(fixture.native(&probe, level), "");
+    }
+    for _ in 0..3 {
+        for id in ["record.take", "record.old"] {
+            let report = interpreter::internal_strings::interpret(
+                &fixture.source,
+                id,
+                &[],
+                &InterpreterOptions::default(),
+            )
+            .unwrap();
+            assert!(report.returned);
+            let envelope: serde_json::Value = serde_json::from_str(&report.envelope).unwrap();
+            assert_eq!(envelope["payload"]["outcome"]["value"], "3");
+            interpreter::internal_strings::verify_envelope_against_source(
+                &report.envelope,
+                &fixture.source,
+            )
+            .unwrap();
+        }
+    }
+    let web = fixture.root.join("web");
+    wasm::build_web(&ast, &web).unwrap();
+    std::fs::write(web.join("probe.mjs"), r#"import {readFile} from 'node:fs/promises';
+import {instantiateBytes} from './semaprax.js';
+const {instance}=await instantiateBytes(await readFile('./app.wasm'),{maxOwnedByteEntries:16});
+for(let i=0;i<3;i++) if(instance.exports.semaprax_main()!==6n) throw Error('named String leaf transfer or clone settlement changed');
+"#).unwrap();
+    let output = Command::new("node")
+        .current_dir(&web)
+        .arg(web.join("probe.mjs"))
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(output.stdout.is_empty());
+    let names = [
+        "app.wasm",
+        "semaprax.js",
+        "index.html",
+        "package.json",
+        "semaprax.manifest.json",
+        "probe.mjs",
+    ];
+    assert_eq!(std::fs::read_dir(&web).unwrap().count(), names.len());
+    for name in names {
+        std::fs::remove_file(web.join(name)).unwrap();
+    }
+    std::fs::remove_dir(web).unwrap();
+    fixture.cleanup();
+}
