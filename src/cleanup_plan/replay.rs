@@ -1139,10 +1139,11 @@ fn skeleton_work_upper(
         )?,
     )?;
 
-    let cfg = match branch_sensitive_cfg_bounds(function) {
-        Ok(cfg) if cfg.terminal_paths <= MAX_REPLAY_PATHS => cfg,
-        Err(error) if crate::bounded_output::active_refused() => return Err(error),
-        Ok(_) | Err(_) => return Ok(0),
+    let mut cfg_budget = ReplayBudget::new();
+    let result = cfg_bounds::bounds(function, &mut cfg_budget);
+    let cfg = match cfg_bounds::enumerating_result(result, &cfg_budget)? {
+        Some(cfg) => cfg,
+        None => return Ok(0),
     };
     let plan_expansion = cfg.skeleton_work;
     let plan_terminals = checked_skeleton_mul(function, cfg.terminal_paths.max(1), 4)?;

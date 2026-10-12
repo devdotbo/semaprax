@@ -115,6 +115,19 @@ pub(super) fn bounds(function: &ResolvedFunction, budget: &mut ReplayBudget) -> 
     Ok(CfgReplayBounds { terminal_paths, work: total, skeleton_work })
 }
 
+/// Preserve local payer provenance until the legacy semantic-only fallback is
+/// selected. A carrier/capacity refusal need not poison the enclosing ledger.
+pub(super) fn enumerating_result(
+    result: Result<CfgReplayBounds, Diagnostic>,
+    budget: &ReplayBudget,
+) -> Result<Option<CfgReplayBounds>, Diagnostic> {
+    match result {
+        Ok(cfg) if cfg.terminal_paths <= MAX_REPLAY_PATHS => Ok(Some(cfg)),
+        Err(error) if budget.refusal_spent || crate::bounded_output::active_refused() => Err(error),
+        Ok(_) | Err(_) => Ok(None),
+    }
+}
+
 #[cfg(test)]
 #[path = "cfg_bounds/tests.rs"]
 mod tests;

@@ -250,3 +250,25 @@ fn skeleton_preflight_does_not_reclassify_funding_refusal_as_zero_allowance() {
     });
     assert!(result.is_err() && refused);
 }
+
+#[test]
+fn local_capacity_refusal_keeps_exact_diagnostic_without_global_poisoning() {
+    let program=program();
+    let function=program.functions().iter().find(|f|f.id.as_str()=="probe").unwrap();
+    assert!(!crate::bounded_output::active_refused());
+    let mut budget=ReplayBudget::new();
+    // Exercise the actual ordinary payer overflow boundary without an enclosing
+    // quota failure or attempting an enormous physical allocation.
+    budget.payer=AllocationPayer::ActiveBuilder;
+    let mut values=Vec::<u64>::new();
+    let error=budget.reserve_vec(function,&mut values,usize::MAX,"injected local capacity").unwrap_err();
+    assert!(budget.refusal_spent);
+    assert!(!crate::bounded_output::active_refused());
+    let expected=(error.code,error.message.clone());
+    let result=enumerating_result(Err(error),&budget).unwrap_err();
+    assert_eq!((result.code,result.message),expected);
+    assert!(values.is_empty() && values.capacity()==0);
+    // A genuine semantic failure retains the full old zero-allowance fallback.
+    let semantic=replay_error(function,"cleanup CFG contains a cycle");
+    assert!(enumerating_result(Err(semantic),&ReplayBudget::new()).unwrap().is_none());
+}
