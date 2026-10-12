@@ -599,9 +599,8 @@ fn plan_function(
                 }
             }
             StatusProducer::CheckedAllocation { .. }
-            | StatusProducer::CheckedArithmetic { .. } | StatusProducer::PropagatedCall { .. } => {
-                return Err(unsupported())
-            }
+            | StatusProducer::CheckedArithmetic { .. }
+            | StatusProducer::PropagatedCall { .. } => return Err(unsupported()),
         }
     }
 

@@ -4,10 +4,10 @@ use super::{
     variant_declaration_id, CBinding, CEmitter, COutput, CValue,
 };
 use crate::aggregate_layout::AggregateLayout;
-use crate::codegen::NativeOutputProfile;
 use crate::ast::{BinaryOp, UnaryOp};
 use crate::bounded_output::BudgetedJoin as _;
 use crate::codegen::native_bytes::NativeBytesProducer as _;
+use crate::codegen::NativeOutputProfile;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
     self, DeclarationId, ExpressionId, FunctionExecutionId, PlaceProjection, ResolvedExpr,

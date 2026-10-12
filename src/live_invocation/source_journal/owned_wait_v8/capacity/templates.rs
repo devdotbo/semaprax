@@ -138,7 +138,9 @@ fn largest_terminal(context: &FoldContextV8) -> Result<Value, SourceJournalError
         for source in &f.cleanup_plan.status_sources {
             use crate::cleanup_plan::StatusProducer;
             let statuses = match &source.producer {
-            StatusProducer::CheckedAllocation { .. } => return Err(SourceJournalError::Binding),
+                StatusProducer::CheckedAllocation { .. } => {
+                    return Err(SourceJournalError::Binding)
+                }
                 StatusProducer::ContractFalse { phase, .. } => {
                     vec![crate::conformance::NormalizedStatus::contract(*phase)]
                 }
