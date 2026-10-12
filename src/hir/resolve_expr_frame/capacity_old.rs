@@ -216,8 +216,15 @@ fn for_own_capacity(
 ) -> usize {
     std::mem::size_of::<crate::hir::resolve_for_own::ForOwnFrame<'_>>()
         + frame.resolved.capacity() * std::mem::size_of::<ResolvedStatement>()
-        + frame.resolved.iter().map(resolved_statement_owned_capacity).sum::<usize>()
-        + frame.source.as_ref().map_or(0, resolved_expr_owned_capacity)
+        + frame
+            .resolved
+            .iter()
+            .map(resolved_statement_owned_capacity)
+            .sum::<usize>()
+        + frame
+            .source
+            .as_ref()
+            .map_or(0, resolved_expr_owned_capacity)
         + if seen.insert(Rc::as_ptr(&frame.scope)) {
             resolver_scope_owned_capacity(&frame.scope)
         } else {

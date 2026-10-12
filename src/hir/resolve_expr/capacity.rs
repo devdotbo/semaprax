@@ -34,9 +34,11 @@ pub(super) fn note(
 // This trades test-only pointer comparisons for zero measurement scratch;
 // production frames/work and the complete payload census remain unchanged.
 fn owned_frames(frames: &[Frame<'_>], current: &Frame<'_>) -> usize {
-    frames.iter().chain(std::iter::once(current)).enumerate().fold(
-        0usize,
-        |total, (index, frame)| {
+    frames
+        .iter()
+        .chain(std::iter::once(current))
+        .enumerate()
+        .fold(0usize, |total, (index, frame)| {
             let mut ordinal = 0usize;
             let owned = frame_owned_capacity_with(frame, &mut |pointer| {
                 let mut seen = false;
@@ -52,8 +54,7 @@ fn owned_frames(frames: &[Frame<'_>], current: &Frame<'_>) -> usize {
                 !seen
             });
             total.saturating_add(owned)
-        },
-    )
+        })
 }
 
 #[cfg(test)]
