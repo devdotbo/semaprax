@@ -96,7 +96,7 @@ fn same(
     assert_eq!(left.to_json(), right.to_json());
 }
 // Success also needs its actual ledger receipts: the published graph takes
-// max(canonical forecast, actual core consumption), so graph equality alone
+// max(canonical source bytes, actual core consumption), so graph equality alone
 // can conceal different successful stage debits. Render only after all three
 // builds, outside their watched ledgers and any allocation observation.
 fn print_receipt(bytes: bool, route: &str, trace: Trace) {
