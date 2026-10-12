@@ -143,9 +143,9 @@ fn borrowed_template_snapshots_remove_real_type_payloads_through_complete_drop()
     assert_eq!(inner.len(), 2);
     let (_, old) = measure(|| {
         let mut values = Values::owned();
-        values.insert(parameter.id.clone(), &parameter.ty);
+        values.insert(parameter.id.clone(), &parameter.ty).unwrap();
         for _ in 0..64 {
-            let snapshot = values.clone();
+            let snapshot = values.checkpoint().unwrap();
             assert_eq!(snapshot.get(&parameter.id), Some(&parameter.ty));
             assert_eq!(
                 snapshot.root(&parameter.id).unwrap().as_ref(),
@@ -156,10 +156,10 @@ fn borrowed_template_snapshots_remove_real_type_payloads_through_complete_drop()
         drop(values);
     });
     let (_, new) = measure(|| {
-        let mut values = Values::new();
-        values.insert(parameter.id.clone(), &parameter.ty);
+        let mut values = Values::new().unwrap();
+        values.insert(parameter.id.clone(), &parameter.ty).unwrap();
         for _ in 0..64 {
-            let snapshot = values.clone();
+            let snapshot = values.checkpoint().unwrap();
             let ty = snapshot.get(&parameter.id).unwrap();
             assert!(std::ptr::eq(ty, &parameter.ty));
             assert!(matches!(
@@ -187,14 +187,14 @@ fn borrowed_template_snapshots_remove_real_type_payloads_through_complete_drop()
 fn generic_closure_scopes_keep_duplicate_priority_and_full_owned_oracle_policy() {
     let ty = ResolvedType::String;
     let id = ValueId::new("duplicate".to_owned());
-    for parent in [Values::new(), Values::owned()] {
-        let mut empty = parent.empty_like();
+    for parent in [Values::new().unwrap(), Values::owned()] {
+        let mut empty = parent.empty_like().unwrap();
         assert!(matches!(
             (&parent, &empty),
             (Values::Borrowed(_), Values::Borrowed(_)) | (Values::Owned(_), Values::Owned(_))
         ));
-        assert!(!empty.insert(id.clone(), &ty));
-        assert!(empty.insert(id.clone(), &ty));
+        assert!(!empty.insert(id.clone(), &ty).unwrap());
+        assert!(empty.insert(id.clone(), &ty).unwrap());
         assert_eq!(empty.get(&id), Some(&ty));
     }
     // Same admitted symbolic closure shape as the retained language owner.

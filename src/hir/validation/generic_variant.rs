@@ -154,7 +154,7 @@ impl HirValidator<'_> {
                     if declared.len() != fields.len() {
                         return Err(hir_error("authored match field inventory is incomplete"));
                     }
-                    let mut arm_values = values.clone();
+                    let mut arm_values = values.checkpoint()?;
                     let mut seen = BTreeSet::new();
                     for (field_index, field) in fields.iter().enumerate() {
                         let expected = declared
@@ -186,7 +186,7 @@ impl HirValidator<'_> {
                             ));
                         }
                         self.insert_value(&field.binding.id)?;
-                        arm_values.insert(field.binding.id.clone(), &field.binding.ty);
+                        arm_values.insert(field.binding.id.clone(), &field.binding.ty)?;
                     }
                     if arm.value.ty != expression.ty
                         || arm.value.ownership != expression.ownership

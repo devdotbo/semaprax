@@ -1446,7 +1446,7 @@ impl<'a> HirValidator<'a> {
                 statements, tail, ..
             } => {
                 super::vec_constructor::authenticate(expression)?;
-                let mut block_values = values.clone();
+                let mut block_values = values.checkpoint()?;
                 for (index, statement) in statements.iter().enumerate() {
                     let statement_path = format!("{path}.s{index}");
                     match statement {
@@ -1473,7 +1473,7 @@ impl<'a> HirValidator<'a> {
                                 self.validate_function_template_type(template, &binding.ty)?;
                             }
                             self.insert_value(&binding.id)?;
-                            block_values.insert(binding.id.clone(), &binding.ty);
+                            block_values.insert(binding.id.clone(), &binding.ty)?;
                         }
                         ResolvedStatement::CopyDiscard { .. } => {
                             return Err(hir_error(
@@ -1525,21 +1525,21 @@ impl<'a> HirValidator<'a> {
                     template,
                     execution,
                     condition,
-                    &mut values.clone(),
+                    &mut values.checkpoint()?,
                     &format!("{path}.condition"),
                 )?;
                 self.validate_template_expr(
                     template,
                     execution,
                     then_branch,
-                    &mut values.clone(),
+                    &mut values.checkpoint()?,
                     &format!("{path}.then"),
                 )?;
                 self.validate_template_expr(
                     template,
                     execution,
                     else_branch,
-                    &mut values.clone(),
+                    &mut values.checkpoint()?,
                     &format!("{path}.else"),
                 )?;
             }

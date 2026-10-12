@@ -140,6 +140,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/borrowed_str.rs"),
         include_str!("../src/hir/validation/generic_template.rs"),
         include_str!("../src/hir/validation/generic_template/values.rs"),
+        include_str!("../src/hir/validation/generic_template/values/charge.rs"),
+        include_str!("../src/hir/validation/generic_template/values/tree.rs"),
         include_str!("../src/hir/validation/generic_template/values/tests.rs"),
         include_str!("../src/hir/validation/generic_variant.rs"),
         include_str!("../src/hir/validation/generic_record_composition.rs"),

@@ -9,7 +9,7 @@ impl HirValidator<'_> {
         template: &ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
     ) -> Result<(), Diagnostic> {
-        self.validate_template_expressions_with_values(template, execution, values::Values::new())
+        self.validate_template_expressions_with_values(template, execution, values::Values::new()?)
     }
 
     fn validate_template_expressions_with_values<'value>(
@@ -20,10 +20,10 @@ impl HirValidator<'_> {
     ) -> Result<(), Diagnostic> {
         for parameter in &template.params {
             self.insert_value(&parameter.id)?;
-            values.insert(parameter.id.clone(), &parameter.ty);
+            values.insert(parameter.id.clone(), &parameter.ty)?;
         }
         for (index, expression) in template.requires.iter().enumerate() {
-            let mut contract_values = values.clone();
+            let mut contract_values = values.checkpoint()?;
             self.validate_template_expr(
                 template,
                 execution,
@@ -41,9 +41,9 @@ impl HirValidator<'_> {
             (false, true),
         )?;
         self.insert_value(&template.result_id)?;
-        values.insert(template.result_id.clone(), &template.return_type);
+        values.insert(template.result_id.clone(), &template.return_type)?;
         for (index, expression) in template.ensures.iter().enumerate() {
-            let mut contract_values = values.clone();
+            let mut contract_values = values.checkpoint()?;
             self.validate_template_expr(
                 template,
                 execution,
@@ -924,14 +924,14 @@ impl HirValidator<'_> {
                     template,
                     execution,
                     condition,
-                    &mut values.clone(),
+                    &mut values.checkpoint()?,
                     &format!("{path}.condition"),
                 )?;
                 self.validate_template_expr(
                     template,
                     execution,
                     body,
-                    &mut values.clone(),
+                    &mut values.checkpoint()?,
                     &format!("{path}.body"),
                 )
             }

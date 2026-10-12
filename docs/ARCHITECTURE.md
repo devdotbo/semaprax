@@ -134,6 +134,14 @@ clauses; each clause retains an independent mutation and publication domain.
 `hir/validation/record_pattern.rs` retains complete record-pattern admission
 against the same ordered read/write interface. Neither owner accepts attached
 proof authority or changes the validation traversal or admitted language profile.
+`hir/validation/generic_template/values.rs` owns the separately paid persistent
+ordered symbolic directory: keys retain existing identity handles and types
+borrow the exact immutable current HIR. Wholly unique insertion paths prepay
+the leaf before mutation; shared paths publish only a complete paid replacement.
+Contract, block, branch, match, loop and closure environments preserve their old
+isolation boundaries. Complete old borrowed-map and owned-map test receivers
+remain independent. [Validator Scope Checkpoints v1](VALIDATOR-SCOPE-CHECKPOINTS-V1.md)
+owns private storage/payment invariants and remaining qualification obligations.
 
 `hir/validation/byte_range.rs` re-derives named-slice and exact inline
 owned-Bytes range origins from live scope. Source loan origin bookkeeping

@@ -22,3 +22,15 @@ macro_rules! byte_writer_source_inventory {
         )
     };
 }
+
+// Full generic directory implementation and unchanged original test owner.
+macro_rules! generic_values_source_inventory {
+    () => {
+        concat!(
+            include_str!("../../../../../../src/hir/validation/generic_template/values.rs"),
+            include_str!("../../../../../../src/hir/validation/generic_template/values/charge.rs"),
+            include_str!("../../../../../../src/hir/validation/generic_template/values/tree.rs"),
+            include_str!("../../../../../../src/hir/validation/generic_template/values/tests.rs"),
+        )
+    };
+}

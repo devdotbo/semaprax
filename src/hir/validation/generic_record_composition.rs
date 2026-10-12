@@ -149,7 +149,7 @@ impl HirValidator<'_> {
                     else {
                         return Err(hir_error("generic record match has a non-record pattern"));
                     };
-                    let mut arm_values = values.clone();
+                    let mut arm_values = values.checkpoint()?;
                     self.validate_composed_record_pattern(
                         template,
                         execution,
@@ -231,7 +231,7 @@ impl HirValidator<'_> {
                         ));
                     }
                     self.insert_value(&binding.id)?;
-                    values.insert(binding.id.clone(), &binding.ty);
+                    values.insert(binding.id.clone(), &binding.ty)?;
                 }
                 ResolvedRecordMatchFieldPattern::Wildcard => {}
                 ResolvedRecordMatchFieldPattern::Record {

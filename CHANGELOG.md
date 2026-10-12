@@ -1,5 +1,7 @@
 # Changelog
 
+- Author paid persistent ordered generic-template environments, sharing immutable current-HIR types and untouched checkpoint roots. Unique insertion paths prepay their leaf before mutation; shared path/rotation nodes publish only after complete payment and construction. Retain complete original borrowed-map and owned-map receiver policies and exact caller frontiers. Source-only OPT795 followup; allocation/debit tradeoffs, full application funding and executable qualification remain unassessed.
+
 - Compare replay call-commit ordinals through borrowed signature/transfer receivers, removing two discarded scratch vectors while retaining the complete fallible classification pass and diagnostic priority. Preserve the full vector oracle and author hostile ordinal, later-type-error, actual allocation/Drop and unchanged-debit exact/one-short controls. All parameter fallbacks remain; source-only, consolidated qualification pending.
 
 - Consume newly owned replay observation prefixes when freezing a local extension, removing only the second head-tail clone buffer and its reservation. Preserve borrowed suffix copies, original moved-storage funding, work/node/ordinal/destruction order and complete saved extension oracles. Author full result/error and actual allocation/debit/Drop plus exact/one-short controls; original parameter, union/merge and application controls remain. Source-only; consolidated qualification pending.

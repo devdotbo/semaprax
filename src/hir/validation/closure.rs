@@ -116,14 +116,14 @@ impl HirValidator<'_> {
                 &format!("{path}.capture.{index}"),
             )?;
         }
-        let mut body_values = values.empty_like();
+        let mut body_values = values.empty_like()?;
         for binding in captures
             .iter()
             .map(|capture| &capture.binding)
             .chain(parameters.iter())
         {
             if !self.value_ids.insert(binding.id.clone())
-                || body_values.insert(binding.id.clone(), &binding.ty)
+                || body_values.insert(binding.id.clone(), &binding.ty)?
             {
                 return Err(hir_error("generic closure bindings collide"));
             }
