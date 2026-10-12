@@ -100,3 +100,8 @@ UTF-8/empty/colon/NUL/suffix/long-identity neighbors, literal zero query heap
 allocation, and complete index Drop controls. The full owned probe remains the
 independent oracle; no map scan, directory, cap or admission bound is introduced.
 This followup also awaits coordinated execution.
+
+The borrowed field-substitution identity shortcut names every current leaf
+`ResolvedType` variant explicitly. New variants must be reviewed by the compiler
+exhaustiveness check; nominal arguments, function types and type parameters
+retain the original fallible substitution route and saved owned oracle.

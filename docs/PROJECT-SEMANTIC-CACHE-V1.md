@@ -324,7 +324,9 @@ semantics and source revalidation are owned by
 
 The blanket generic-environment exclusion is removed from the private
 function-granular guard. All original source/provider authentication,
-non-body environment and complete ordered signature equality remain required.
+non-body environment and complete ordered signature equality remain required,
+including every yields/follows clause field and span. Hostile direct-AST clause
+mutations retain full fresh/nonreuse program or ordered diagnostic parity.
 The unchanged full ordinary nonreuse resolver remains the independent oracle.
 `hir::generic_environment_reuse_tests` authors call-bearing helper reuse,
 current generic template body and nested callee closure drift, type-argument

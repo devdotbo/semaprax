@@ -1,5 +1,7 @@
 # Changelog
 
+- Harden complete function reuse signatures with exact yields/follows clause equality and full fresh/nonreuse AST-mutation verdict controls. Make owned-text substitution identity leaves exhaustive so future type variants require review; saved old traversal remains unchanged. Source-only and unqualified.
+
 - Author exact generic-environment selective reuse of unchanged monomorphic function HIR. Complete ordered generic signatures and an exact-current source capability replace the blanket generic exclusion; current templates and the full derived instance closure are still rebuilt independently, with previous generic payloads excluded. Full fresh-owned, stale binding, body/closure/argument drift and actual paid allocation/Drop controls are authored; the genuine Vec/Box reuse assertion remains. Source-only and unqualified, with no generic-instance caching or efficiency claim.
 
 - Author exact borrowed reserved-record-invariant lookup in the existing declaration map, preserving arbitrary stored declaration presence and complete UTF-8 byte order. Retain the owned suffix-key oracle and author hostile identities, literal zero-query-allocation and complete Drop controls. Source-only followup; executable qualification remains pending.

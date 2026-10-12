@@ -132,7 +132,26 @@ pub(crate) fn contains_string(root: &ResolvedType, declarations: &DeclarationInd
                     let identity = match &field.ty {
                         ResolvedType::Nominal { arguments, .. } => arguments.is_empty(),
                         ResolvedType::Function { .. } | ResolvedType::TypeParameter { .. } => false,
-                        _ => true,
+                        ResolvedType::Never
+                        | ResolvedType::OnceFunction
+                        | ResolvedType::OnceFunctionI64
+                        | ResolvedType::OnceFunctionI64Pair
+                        | ResolvedType::MutFunctionI64
+                        | ResolvedType::Unit
+                        | ResolvedType::I64
+                        | ResolvedType::I32
+                        | ResolvedType::Char
+                        | ResolvedType::U8
+                        | ResolvedType::Usize
+                        | ResolvedType::ArrayU8(_)
+                        | ResolvedType::F32
+                        | ResolvedType::F64
+                        | ResolvedType::Bool
+                        | ResolvedType::String
+                        | ResolvedType::Bytes
+                        | ResolvedType::Str
+                        | ResolvedType::SliceU8
+                        | ResolvedType::StringMap => true,
                     };
                     if identity {
                         pending.push(Cow::Borrowed(&field.ty));

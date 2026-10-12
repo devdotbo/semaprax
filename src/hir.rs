@@ -806,6 +806,8 @@ fn function_signature_is_exact(
         && current.params == previous.params
         && current.return_type == previous.return_type
         && current.effects == previous.effects
+        && current.yields == previous.yields
+        && current.follows == previous.follows
         && current.requires == previous.requires
         && current.ensures == previous.ensures
         && current.span == previous.span
@@ -956,6 +958,75 @@ mod generic_environment_reuse_tests {
         let actual = actual.unwrap();
         assert_eq!(actual.0, oracle.0);
         assert_eq!(actual.1.reused(), 0);
+    }
+    #[test]
+    fn yields_and_follows_signature_drift_matches_full_nonreuse_verdict() {
+        let previous = parse(SOURCE);
+        let (old, work) = fresh(&previous);
+        let costs = work.costs();
+        let mut clauses = previous.clone();
+        let span = clauses.functions[0].span;
+        clauses.functions[0].yields = Some(crate::ast::YieldsClause {
+            request_type: crate::ast::Type::I64,
+            response_type: crate::ast::Type::Bool,
+            span,
+        });
+        clauses.functions[0].follows = Some(Box::new(crate::ast::SessionProtocolFollowsClause {
+            protocol_id: "reuse.missing.protocol".into(),
+            protocol_id_span: span,
+            span,
+        }));
+        // Direct AST mutations also exercise hostile clauses without relying
+        // on the source parser admitting an invalid generic/effect profile.
+        let mut variants = vec![clauses.clone()];
+        for attack in 0..6 {
+            let mut changed = clauses.clone();
+            let function = &mut changed.functions[0];
+            match attack {
+                0 => function.yields.as_mut().unwrap().request_type = crate::ast::Type::Bool,
+                1 => function.yields.as_mut().unwrap().response_type = crate::ast::Type::I64,
+                2 => function.yields.as_mut().unwrap().span = function.name_span,
+                3 => function.follows.as_mut().unwrap().protocol_id = "reuse.other.protocol".into(),
+                4 => function.follows.as_mut().unwrap().protocol_id_span = function.name_span,
+                _ => function.follows.as_mut().unwrap().span = function.name_span,
+            }
+            assert!(!function_signature_is_exact(
+                &changed.functions[0],
+                &clauses.functions[0]
+            ));
+            assert!(!function_reuse_environment_is_exact(&changed, &clauses));
+            variants.push(changed);
+        }
+        for current in &variants {
+            let mut pairs = vec![(current, &previous), (&previous, current)];
+            if current != &clauses {
+                pairs.push((current, &clauses));
+                pairs.push((&clauses, current));
+            }
+            for (current, prior) in pairs {
+                assert!(!function_reuse_environment_is_exact(current, prior));
+                let run = |reuse: bool| {
+                    let (result, refused, _) =
+                        crate::bounded_output::with_limit_usage(LIMIT, || {
+                            resolve_with_function_reuse(
+                                current,
+                                reuse.then_some(prior),
+                                reuse.then_some(&old),
+                                reuse.then_some(&costs),
+                                None,
+                            )
+                        });
+                    assert!(!refused);
+                    result.map(|(resolved, work)| {
+                        assert_eq!(work.reused(), 0);
+                        resolved
+                    })
+                };
+                // Complete programs on success, or all diagnostics in exact
+                // order including spans/messages on refusal, stay identical.
+                assert_eq!(run(true), run(false));
+            }
+        }
     }
     fn helper_call(body: &mut ResolvedExpr) -> &mut ResolvedExpr {
         if matches!(&body.kind, ResolvedExprKind::Block { .. }) {
