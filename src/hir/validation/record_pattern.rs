@@ -10,7 +10,7 @@ impl HirValidator<'_> {
         instance: &ResolvedType,
         fields: &[ResolvedRecordMatchPatternField],
         scope: &mut dyn ScopeWrite,
-        path: &str,
+        path: impl std::fmt::Display,
         mode: ResolvedMatchMode,
     ) -> Result<(), Diagnostic> {
         let expected_root = expected;
@@ -44,7 +44,7 @@ impl HirValidator<'_> {
             record,
             instance,
             fields,
-            path: path.to_owned(),
+            path: path.to_string(),
             mode,
         }];
         while let Some(frame) = frames.pop() {

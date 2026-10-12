@@ -20,6 +20,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 include_str!("../src/hir/validation/owned_iterative_oracle/dispatch_3.rs"),
                 include_str!("../src/hir/validation/aggregate_metadata.rs"),
                 include_str!("../src/hir/validation/continuation_path.rs"),
+                include_str!("../src/hir/validation/path_label.rs"),
+                include_str!("../src/hir/validation/path_label/tests.rs"),
                 include_str!("../src/hir/validation/continuation_path/tests.rs"),
                 include_str!("../src/hir/validation/aggregate_metadata/tests.rs"),
                 include_str!("../src/hir/inspection/calls.rs"),

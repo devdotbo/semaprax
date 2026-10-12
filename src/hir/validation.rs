@@ -14,6 +14,7 @@ use super::*;
 mod aggregate_metadata;
 mod assign_field;
 mod continuation_path;
+mod path_label;
 use crate::loan_plan::{LoanCause, LoanId, LoanPointPhase};
 mod borrowed_argument;
 mod borrowed_str;
@@ -1838,7 +1839,7 @@ impl<'a> HirValidator<'a> {
             function,
             expression,
             scope,
-            path,
+            path.into(),
             allow_moves,
             allowed_effects,
         )
@@ -1893,7 +1894,7 @@ impl<'a> HirValidator<'a> {
         function: &FunctionExecutionId,
         expression: &ResolvedExpr,
         scope: &mut dyn ScopeWrite,
-        path: &str,
+        path: path_label::Label<'_>,
         allow_moves: bool,
         allowed_effects: Option<effect_keys::Allowed<'_>>,
     ) -> Result<(), Diagnostic> {
@@ -1918,7 +1919,7 @@ impl<'a> HirValidator<'a> {
             Enter {
                 expression: &'e ResolvedExpr,
                 scope: scope_checkpoint::Scope,
-                path: String,
+                path: path_label::Label<'e>,
             },
             Unary {
                 expression: &'e ResolvedExpr,
@@ -1993,7 +1994,7 @@ impl<'a> HirValidator<'a> {
                 return_ownership: OwnershipMode,
                 index: usize,
                 scope: scope_checkpoint::Scope,
-                path: std::borrow::Cow<'e, str>,
+                path: &'e str,
             },
             CallAfterArg {
                 expression: &'e ResolvedExpr,
@@ -2002,7 +2003,7 @@ impl<'a> HirValidator<'a> {
                 return_type: call_signature::ResultType<'e>,
                 return_ownership: OwnershipMode,
                 index: usize,
-                path: std::borrow::Cow<'e, str>,
+                path: &'e str,
             },
             NativeNext {
                 expression: &'e ResolvedExpr,
@@ -2239,19 +2240,7 @@ impl<'a> HirValidator<'a> {
         fn frame_owned_capacity(frame: &Frame<'_>) -> usize {
             let ids = |values: &scope_checkpoint::IdSnapshot| values.retained_capacity();
             let scope = |scope: &scope_checkpoint::Scope| scope.retained_capacity();
-            let path = match frame {
-                Frame::Enter { path, .. } => path.capacity(),
-                Frame::CallNext {
-                    path: std::borrow::Cow::Owned(path),
-                    ..
-                }
-                | Frame::CallAfterArg {
-                    path: std::borrow::Cow::Owned(path),
-                    ..
-                } => path.capacity(),
-                _ => 0,
-            };
-            let retained = match frame {
+            match frame {
                 Frame::InvokeNext { scope: value, .. } | Frame::Enter { scope: value, .. } => {
                     scope(value)
                 }
@@ -2390,8 +2379,7 @@ impl<'a> HirValidator<'a> {
                             .map_or(0, |(ty, _)| resolved_type_owned_capacity(ty))
                 }
                 _ => 0,
-            };
-            path.saturating_add(retained)
+            }
         }
         let mut publication = scope_checkpoint::Publication::take(scope)?;
         let initial_scope = publication.published.clone();
@@ -2399,7 +2387,7 @@ impl<'a> HirValidator<'a> {
         frames.push(Frame::Enter {
             expression,
             scope: initial_scope,
-            path: scope_checkpoint::paths::owned(path)?,
+            path,
         })?;
         let mut scopes = scope_checkpoint::Storage::new();
         while let Some(frame) = frames.pop() {
@@ -2461,12 +2449,9 @@ impl<'a> HirValidator<'a> {
                     };
                     if let Some(child) = child {
                         let child_path = if index == 0 {
-                            scope_checkpoint::paths::format(format_args!("{path}.callable"))?
+                            path_label::Label::child(path, ".callable", [0, 0])?
                         } else {
-                            scope_checkpoint::paths::format(format_args!(
-                                "{path}.arg.{}",
-                                index - 1
-                            ))?
+                            path_label::Label::child(path, ".arg.{}", [index - 1, 0])?
                         };
                         frames.push(Frame::InvokeAfter {
                             expression,
@@ -2503,7 +2488,7 @@ impl<'a> HirValidator<'a> {
                     path,
                 } => {
                     reject_nul_identity("resolved expression", expression.id.as_str())?;
-                    if !expression.id.matches(function, &path) {
+                    if !expression.id.matches_display(function, path.len(), path) {
                         return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "expression `{}` has a non-canonical identity",
                             expression.id
@@ -2518,7 +2503,6 @@ impl<'a> HirValidator<'a> {
                     self.validate_type(&expression.ty)?;
                     let expected_path = path;
                     let path = continuation_path::after_header(expression, expected_path.len());
-                    drop(expected_path);
                     match &expression.kind {
                         ResolvedExprKind::LexicalExit { value, .. } => {
                             if let Some(operand) = value {
@@ -2529,9 +2513,7 @@ impl<'a> HirValidator<'a> {
                                 frames.push(Frame::Enter {
                                     expression: operand,
                                     scope,
-                                    path: scope_checkpoint::paths::format(format_args!(
-                                        "{path}.value"
-                                    ))?,
+                                    path: path_label::Label::child(path, ".value", [0, 0])?,
                                 })?;
                             } else {
                                 self.finish_expr(
@@ -2634,9 +2616,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::Enter {
                                 expression: source,
                                 scope,
-                                path: scope_checkpoint::paths::format(format_args!(
-                                    "{path}.arg.0"
-                                ))?,
+                                path: path_label::Label::child(path, ".arg.0", [0, 0])?,
                             })?;
                         }
                         ResolvedExprKind::ArrayU8(values) => {
@@ -2767,9 +2747,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::Enter {
                                 expression: value,
                                 scope,
-                                path: scope_checkpoint::paths::format(format_args!(
-                                    "{path}.value"
-                                ))?,
+                                path: path_label::Label::child(path, ".value", [0, 0])?,
                             })?;
                         }
                         ResolvedExprKind::Call {
@@ -2995,12 +2973,12 @@ impl<'a> HirValidator<'a> {
                                 return_ownership,
                                 index: 0,
                                 scope,
-                                path: path.into(),
+                                path,
                             })?;
                         }
                         ResolvedExprKind::VecFieldRead { args, .. }
                         | ResolvedExprKind::RowLoan { args, .. } => {
-                            let (return_type, return_ownership, bytes) =
+                            let (return_type, return_ownership, _bytes) =
                                 self.validate_scoped_vec_node(function, expression, &scope)?;
                             frames.push(Frame::CallNext {
                                 expression,
@@ -3010,13 +2988,7 @@ impl<'a> HirValidator<'a> {
                                 return_ownership,
                                 index: 0,
                                 scope,
-                                path: if bytes {
-                                    std::borrow::Cow::Owned(scope_checkpoint::paths::format(
-                                        format_args!("{path}.arg.0"),
-                                    )?)
-                                } else {
-                                    std::borrow::Cow::Borrowed(path)
-                                },
+                                path,
                             })?;
                         }
                         ResolvedExprKind::LiteralFormat { template, args } => {
@@ -3032,7 +3004,7 @@ impl<'a> HirValidator<'a> {
                                 return_ownership: OwnershipMode::Own,
                                 index: 0,
                                 scope,
-                                path: path.into(),
+                                path,
                             })?;
                         }
                         ResolvedExprKind::HostCommandCall(call) => {
@@ -3058,7 +3030,7 @@ impl<'a> HirValidator<'a> {
                                 ),
                                 index: 0,
                                 scope,
-                                path: path.into(),
+                                path,
                             })?;
                         }
                         ResolvedExprKind::NativeRustImportCall(call) => {
@@ -3122,7 +3094,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::Enter {
                                 expression: left,
                                 scope,
-                                path: scope_checkpoint::paths::format(format_args!("{path}.left"))?,
+                                path: path_label::Label::child(path, ".left", [0, 0])?,
                             })?;
                         }
                         ResolvedExprKind::If {
@@ -3139,9 +3111,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::Enter {
                                 expression: condition,
                                 scope,
-                                path: scope_checkpoint::paths::format(format_args!(
-                                    "{path}.condition"
-                                ))?,
+                                path: path_label::Label::child(path, ".condition", [0, 0])?,
                             })?;
                         }
                         ResolvedExprKind::Block { statements, tail }
@@ -3308,7 +3278,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::Enter {
                                 expression: base,
                                 scope,
-                                path: scope_checkpoint::paths::format(format_args!("{path}.base"))?,
+                                path: path_label::Label::child(path, ".base", [0, 0])?,
                             })?;
                         }
                         ResolvedExprKind::Match {
@@ -3322,9 +3292,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::Enter {
                                 expression: scrutinee,
                                 scope,
-                                path: scope_checkpoint::paths::format(format_args!(
-                                    "{path}.scrutinee"
-                                ))?,
+                                path: path_label::Label::child(path, ".scrutinee", [0, 0])?,
                             })?;
                         }
                         ResolvedExprKind::Project { base, field } => {
@@ -3337,7 +3305,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::Enter {
                                 expression: base,
                                 scope,
-                                path: scope_checkpoint::paths::format(format_args!("{path}.base"))?,
+                                path: path_label::Label::child(path, ".base", [0, 0])?,
                             })?;
                         }
                         // Class Inheritance v1: independently re-derive the
@@ -3348,9 +3316,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::Enter {
                                 expression: source,
                                 scope,
-                                path: scope_checkpoint::paths::format(format_args!(
-                                    "{path}.source"
-                                ))?,
+                                path: path_label::Label::child(path, ".source", [0, 0])?,
                             })?;
                         }
                         // Resumable Effects v1 (issue #204): the request
@@ -3363,9 +3329,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::Enter {
                                 expression: request,
                                 scope,
-                                path: scope_checkpoint::paths::format(format_args!(
-                                    "{path}.request"
-                                ))?,
+                                path: path_label::Label::child(path, ".request", [0, 0])?,
                             })?;
                         }
                         ResolvedExprKind::Try { operand, .. } => {
@@ -3377,9 +3341,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::Enter {
                                 expression: operand,
                                 scope,
-                                path: scope_checkpoint::paths::format(format_args!(
-                                    "{path}.operand"
-                                ))?,
+                                path: path_label::Label::child(path, ".operand", [0, 0])?,
                             })?;
                         }
                         ResolvedExprKind::TryOption { operand, .. } => {
@@ -3391,9 +3353,7 @@ impl<'a> HirValidator<'a> {
                             frames.push(Frame::Enter {
                                 expression: operand,
                                 scope,
-                                path: scope_checkpoint::paths::format(format_args!(
-                                    "{path}.operand"
-                                ))?,
+                                path: path_label::Label::child(path, ".operand", [0, 0])?,
                             })?;
                         }
                     }
@@ -3439,7 +3399,7 @@ impl<'a> HirValidator<'a> {
                     frames.push(Frame::Enter {
                         expression: start,
                         scope,
-                        path: scope_checkpoint::paths::format(format_args!("{path}.arg.1"))?,
+                        path: path_label::Label::child(path, ".arg.1", [0, 0])?,
                     })?;
                 }
                 Frame::ByteRangeAfterStart {
@@ -3452,7 +3412,7 @@ impl<'a> HirValidator<'a> {
                     frames.push(Frame::Enter {
                         expression: end,
                         scope,
-                        path: scope_checkpoint::paths::format(format_args!("{path}.arg.2"))?,
+                        path: path_label::Label::child(path, ".arg.2", [0, 0])?,
                     })?;
                 }
                 Frame::ByteRangeAfterEnd { expression } => {
@@ -3496,16 +3456,12 @@ impl<'a> HirValidator<'a> {
                             return_type,
                             return_ownership,
                             index,
-                            path: path.clone(),
+                            path,
                         })?;
                         frames.push(Frame::Enter {
                             expression: &args[index],
                             scope,
-                            path: crate::vec_ops::string_slot::argument_path(
-                                expression,
-                                path.as_ref(),
-                                index,
-                            ),
+                            path: path_label::Label::argument(expression, path, index)?,
                         })?;
                     }
                 }
@@ -3592,9 +3548,11 @@ impl<'a> HirValidator<'a> {
                         frames.push(Frame::Enter {
                             expression: &args[index],
                             scope,
-                            path: scope_checkpoint::paths::format(format_args!(
-                                "{path}.native-rust-arg.{index}"
-                            ))?,
+                            path: path_label::Label::child(
+                                path,
+                                ".native-rust-arg.{}",
+                                [index, 0],
+                            )?,
                         })?;
                     }
                 }
@@ -3669,7 +3627,7 @@ impl<'a> HirValidator<'a> {
                     frames.push(Frame::Enter {
                         expression: right,
                         scope: left_scope,
-                        path: scope_checkpoint::paths::format(format_args!("{path}.right"))?,
+                        path: path_label::Label::child(path, ".right", [0, 0])?,
                     })?;
                 }
                 Frame::BinaryRight {
@@ -3797,7 +3755,7 @@ impl<'a> HirValidator<'a> {
                     frames.push(Frame::Enter {
                         expression: then_branch,
                         scope: outer,
-                        path: scope_checkpoint::paths::format(format_args!("{path}.then"))?,
+                        path: path_label::Label::child(path, ".then", [0, 0])?,
                     })?;
                 }
                 Frame::IfThen {
@@ -3820,7 +3778,7 @@ impl<'a> HirValidator<'a> {
                     frames.push(Frame::Enter {
                         expression: else_branch,
                         scope: outer,
-                        path: scope_checkpoint::paths::format(format_args!("{path}.else"))?,
+                        path: path_label::Label::child(path, ".else", [0, 0])?,
                     })?;
                 }
                 Frame::IfElse {
@@ -3872,7 +3830,7 @@ impl<'a> HirValidator<'a> {
                         frames.push(Frame::Enter {
                             expression: tail,
                             scope,
-                            path: scope_checkpoint::paths::format(format_args!("{path}.tail"))?,
+                            path: path_label::Label::child(path, ".tail", [0, 0])?,
                         })?;
                     } else {
                         match &statements[index] {
@@ -3892,9 +3850,7 @@ impl<'a> HirValidator<'a> {
                                 frames.push(Frame::Enter {
                                     expression: value,
                                     scope,
-                                    path: scope_checkpoint::paths::format(format_args!(
-                                        "{path}.s{index}.value"
-                                    ))?,
+                                    path: path_label::Label::child(path, ".s{}.value", [index, 0])?,
                                 })?;
                             }
                             ResolvedStatement::CopyDiscard { value, .. } => {
@@ -3913,9 +3869,7 @@ impl<'a> HirValidator<'a> {
                                 frames.push(Frame::Enter {
                                     expression: value,
                                     scope,
-                                    path: scope_checkpoint::paths::format(format_args!(
-                                        "{path}.s{index}.value"
-                                    ))?,
+                                    path: path_label::Label::child(path, ".s{}.value", [index, 0])?,
                                 })?;
                             }
                             ResolvedStatement::Assign { binding, value, .. } => {
@@ -3947,9 +3901,7 @@ impl<'a> HirValidator<'a> {
                                 frames.push(Frame::Enter {
                                     expression: value,
                                     scope,
-                                    path: scope_checkpoint::paths::format(format_args!(
-                                        "{path}.s{index}.value"
-                                    ))?,
+                                    path: path_label::Label::child(path, ".s{}.value", [index, 0])?,
                                 })?;
                             }
                             ResolvedStatement::Unsafe { body, .. } => {
@@ -3976,9 +3928,7 @@ impl<'a> HirValidator<'a> {
                                 frames.push(Frame::Enter {
                                     expression: body,
                                     scope,
-                                    path: scope_checkpoint::paths::format(format_args!(
-                                        "{path}.s{index}.body"
-                                    ))?,
+                                    path: path_label::Label::child(path, ".s{}.body", [index, 0])?,
                                 })?;
                             }
                             ResolvedStatement::While {
@@ -4012,9 +3962,11 @@ impl<'a> HirValidator<'a> {
                                 frames.push(Frame::Enter {
                                     expression: condition,
                                     scope,
-                                    path: scope_checkpoint::paths::format(format_args!(
-                                        "{path}.s{index}.condition"
-                                    ))?,
+                                    path: path_label::Label::child(
+                                        path,
+                                        ".s{}.condition",
+                                        [index, 0],
+                                    )?,
                                 })?;
                             }
                         }
@@ -4100,9 +4052,7 @@ impl<'a> HirValidator<'a> {
                     frames.push(Frame::Enter {
                         expression: body,
                         scope,
-                        path: scope_checkpoint::paths::format(format_args!(
-                            "{path}.s{index}.body"
-                        ))?,
+                        path: path_label::Label::child(path, ".s{}.body", [index, 0])?,
                     })?;
                 }
                 Frame::BlockAfterWhileBody {
@@ -4152,9 +4102,12 @@ impl<'a> HirValidator<'a> {
                     else {
                         unreachable!("let frame resumes at a let statement")
                     };
-                    let statement_path =
-                        scope_checkpoint::paths::format(format_args!("{path}.s{index}"))?;
-                    if !binding.id.matches_local(function, &statement_path) {
+                    let statement_path = path_label::Label::child(path, ".s{}", [index, 0])?;
+                    if !binding.id.matches_local_display(
+                        function,
+                        statement_path.len(),
+                        statement_path,
+                    ) {
                         return Err(scope_checkpoint::paths::diagnostic(format_args!(
                             "local `{}` has a non-canonical identity",
                             binding.id
@@ -4470,9 +4423,7 @@ impl<'a> HirValidator<'a> {
                         frames.push(Frame::Enter {
                             expression: &initializer.value,
                             scope,
-                            path: scope_checkpoint::paths::format(format_args!(
-                                "{path}.field.{index}.value"
-                            ))?,
+                            path: path_label::Label::child(path, ".field.{}.value", [index, 0])?,
                         })?;
                     }
                 }
@@ -4574,9 +4525,7 @@ impl<'a> HirValidator<'a> {
                         frames.push(Frame::Enter {
                             expression: &initializer.value,
                             scope,
-                            path: scope_checkpoint::paths::format(format_args!(
-                                "{path}.field.{index}.value"
-                            ))?,
+                            path: path_label::Label::child(path, ".field.{}.value", [index, 0])?,
                         })?;
                     }
                 }
@@ -4764,9 +4713,7 @@ impl<'a> HirValidator<'a> {
                         frames.push(Frame::Enter {
                             expression: &initializer.value,
                             scope,
-                            path: scope_checkpoint::paths::format(format_args!(
-                                "{path}.field.{index}.value"
-                            ))?,
+                            path: path_label::Label::child(path, ".field.{}.value", [index, 0])?,
                         })?;
                     }
                 }
@@ -4962,9 +4909,7 @@ impl<'a> HirValidator<'a> {
                                     instance,
                                     fields,
                                     &mut arm_scope,
-                                    &scope_checkpoint::paths::format(format_args!(
-                                        "{path}.arm.0.record"
-                                    ))?,
+                                    path_label::Label::child(path, ".arm.0.record", [0, 0])?,
                                     *mode,
                                 )
                                 .map_err(|diagnostic| {
@@ -4997,9 +4942,7 @@ impl<'a> HirValidator<'a> {
                         frames.push(Frame::Enter {
                             expression: &arm.value,
                             scope: arm_scope,
-                            path: scope_checkpoint::paths::format(format_args!(
-                                "{path}.arm.0.value"
-                            ))?,
+                            path: path_label::Label::child(path, ".arm.0.value", [0, 0])?,
                         })?;
                     } else {
                         if kind != Some(DeclarationKind::Variant) {
@@ -5245,11 +5188,13 @@ impl<'a> HirValidator<'a> {
                                         ));
                                     };
                                     if !seen.insert(field.field.clone())
-                                        || !field.binding.id.matches_local(
+                                        || !field.binding.id.matches_local_label(
                                             function,
-                                            &scope_checkpoint::paths::format(format_args!(
-                                                "{path}.arm.{index}.binding.{field_index}"
-                                            ))?,
+                                            path_label::Label::child(
+                                                path,
+                                                ".arm.{}.binding.{}",
+                                                [index, field_index],
+                                            )?,
                                         )
                                         || field.binding.ty != binding_ty
                                         || field.binding.ownership != binding_ownership
@@ -5328,9 +5273,7 @@ impl<'a> HirValidator<'a> {
                                 function,
                                 guard,
                                 &mut arm_scope,
-                                &scope_checkpoint::paths::format(format_args!(
-                                    "{path}.arm.{index}.guard"
-                                ))?,
+                                path_label::Label::child(path, ".arm.{}.guard", [index, 0])?,
                                 allow_moves,
                                 allowed_effects,
                             )?;
@@ -5360,9 +5303,7 @@ impl<'a> HirValidator<'a> {
                         frames.push(Frame::Enter {
                             expression: &arm.value,
                             scope: arm_scope,
-                            path: scope_checkpoint::paths::format(format_args!(
-                                "{path}.arm.{index}.value"
-                            ))?,
+                            path: path_label::Label::child(path, ".arm.{}.value", [index, 0])?,
                         })?;
                     }
                 }
@@ -5497,11 +5438,9 @@ impl<'a> HirValidator<'a> {
                     match &arm.pattern {
                         ResolvedMatchPattern::Wildcard => {}
                         ResolvedMatchPattern::Binding(binding) => {
-                            if !binding.id.matches_local(
+                            if !binding.id.matches_local_label(
                                 function,
-                                &scope_checkpoint::paths::format(format_args!(
-                                    "{path}.arm.{index}.binding"
-                                ))?,
+                                path_label::Label::child(path, ".arm.{}.binding", [index, 0])?,
                             ) || binding.ty != scrutinee.ty
                                 || binding.ownership != OwnershipMode::Value
                             {
@@ -5578,9 +5517,7 @@ impl<'a> HirValidator<'a> {
                         frames.push(Frame::Enter {
                             expression: guard.as_ref(),
                             scope: arm_scope,
-                            path: scope_checkpoint::paths::format(format_args!(
-                                "{path}.arm.{index}.guard"
-                            ))?,
+                            path: path_label::Label::child(path, ".arm.{}.guard", [index, 0])?,
                         })?;
                     } else {
                         frames.push(Frame::ScalarMatchAfterArm {
@@ -5599,9 +5536,7 @@ impl<'a> HirValidator<'a> {
                         frames.push(Frame::Enter {
                             expression: &arm.value,
                             scope: arm_scope,
-                            path: scope_checkpoint::paths::format(format_args!(
-                                "{path}.arm.{index}.value"
-                            ))?,
+                            path: path_label::Label::child(path, ".arm.{}.value", [index, 0])?,
                         })?;
                     }
                 }
@@ -5642,9 +5577,7 @@ impl<'a> HirValidator<'a> {
                     frames.push(Frame::Enter {
                         expression: &arm.value,
                         scope: scope_after_guard,
-                        path: scope_checkpoint::paths::format(format_args!(
-                            "{path}.arm.{index}.value"
-                        ))?,
+                        path: path_label::Label::child(path, ".arm.{}.value", [index, 0])?,
                     })?;
                 }
                 Frame::ScalarMatchAfterArm {

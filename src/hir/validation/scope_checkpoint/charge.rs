@@ -15,7 +15,7 @@ struct Carrier<T> {
 pub(super) fn carrier<T>() -> usize {
     Layout::new::<Carrier<T>>().size()
 }
-pub(super) fn failure(requested: usize, message: &'static str) -> Diagnostic {
+pub(in crate::hir::validation) fn failure(requested: usize, message: &'static str) -> Diagnostic {
     crate::bounded_output::refuse_active_required(requested);
     hir_error(message)
 }

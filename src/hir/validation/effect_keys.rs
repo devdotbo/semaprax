@@ -33,7 +33,7 @@ impl HirValidator<'_> {
             function,
             expression,
             scope,
-            path,
+            path.into(),
             allow_moves,
             allowed_effects.map(Allowed::Owned),
         )

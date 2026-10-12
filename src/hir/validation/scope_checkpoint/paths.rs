@@ -23,6 +23,7 @@ pub(in crate::hir::validation) fn format(arguments: Arguments<'_>) -> Result<Str
         .expect("exact internal continuation label");
     Ok(result)
 }
+#[cfg(test)]
 pub(in crate::hir::validation) fn owned(value: &str) -> Result<String, Diagnostic> {
     format(format_args!("{value}"))
 }

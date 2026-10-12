@@ -360,6 +360,15 @@ impl ValueId {
         self.matches_scoped(function, "value:local", path.len(), path)
     }
 
+    pub(super) fn matches_local_display(
+        &self,
+        function: &FunctionExecutionId,
+        path_length: usize,
+        path: impl fmt::Display,
+    ) -> bool {
+        self.matches_scoped(function, "value:local", path_length, path)
+    }
+
     pub(super) fn matches_result(&self, function: &FunctionExecutionId) -> bool {
         self.matches_scoped(function, "value:result", 0, "")
     }
@@ -448,6 +457,15 @@ impl ExpressionId {
 
     pub(super) fn matches(&self, function: &FunctionExecutionId, path: &str) -> bool {
         matches_scoped_identity(self.as_str(), function, "expression", path.len(), path)
+    }
+
+    pub(super) fn matches_display(
+        &self,
+        function: &FunctionExecutionId,
+        path_length: usize,
+        path: impl fmt::Display,
+    ) -> bool {
+        matches_scoped_identity(self.as_str(), function, "expression", path_length, path)
     }
 
     pub fn as_str(&self) -> &str {

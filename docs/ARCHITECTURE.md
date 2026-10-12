@@ -4385,3 +4385,13 @@ ordered set. The private `validation/effect_keys.rs` adapter preserves exact
 membership and diagnostics while the saved recursive oracle retains owned keys.
 Set nodes still allocate; this change removes key text clones only and does not
 change caller payment, forecasts, or the pure-validator authority boundary.
+
+The private `hir/validation/path_label.rs` owns streamed expected child labels:
+authenticated parent text, a static suffix and at most two decimal indices. Enter
+frames and local binding probes compare exact bytes and checked lengths without
+owned path buffers; call continuations borrow their authenticated parent. Full
+header validation still precedes borrowing from the current expression identity.
+Record-pattern nested traversal retains its owned receiver storage. Saved full
+owned iterative/recursive oracles and the exact frame-size assertion remain;
+source-authored controls are pending execution as recorded in
+[Borrowed continuation paths](HIR-BORROWED-CONTINUATION-PATH-V1.md).

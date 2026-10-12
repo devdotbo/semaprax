@@ -58,7 +58,7 @@ fn compare_expression(
         &execution,
         expression,
         &mut scope,
-        "body",
+        "body".into(),
         true,
         Some(Allowed::Borrowed(&borrowed)),
     );

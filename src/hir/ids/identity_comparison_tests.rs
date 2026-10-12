@@ -50,6 +50,13 @@ fn retained_identity_checks_need_no_temporary_string_budget() {
         let mut corrupt_fingerprint = local.clone();
         corrupt_fingerprint.1 ^= 1;
         assert!(!corrupt_fingerprint.matches_local(&owner, path));
+        assert!(!corrupt_fingerprint.matches_local_display(
+            &owner,
+            path.len(),
+            format_args!("{path}")
+        ));
+        assert!(local.matches_local_display(&owner, path.len(), format_args!("{path}")));
+        assert!(!local.matches_local_display(&owner, path.len() + 1, format_args!("{path}")));
         for index in [0, 9, 10, 99, 100, usize::MAX] {
             let parameter = ValueId::parameter(&owner, index);
             let (matched, overflowed, used) = crate::bounded_output::with_limit_usage(0, || {

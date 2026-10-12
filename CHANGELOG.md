@@ -907,6 +907,11 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Source-only HIR expected child labels now borrow authenticated parent text and
+  stream static suffixes/indices into exact identity comparison. Saved full
+  owned iterative and recursive oracles, frame bounds and forecasts remain;
+  new byte/debit/allocation/hostile parity controls are authored but unexecuted.
+
 - Compare complete canonical loan plans during their existing independent build,
   retaining an exact-program deferred mismatch for the original final validation
   boundary. Public standalone validation and diagnostic priority remain intact;

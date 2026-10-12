@@ -58,7 +58,7 @@ impl super::HirValidator<'_> {
                 execution,
                 contract,
                 &mut scope,
-                &super::scope_checkpoint::paths::format(format_args!("{phase}.{index}"))?,
+                super::path_label::Label::child(phase, ".{}", [index, 0])?,
                 false,
                 None,
             )?;
