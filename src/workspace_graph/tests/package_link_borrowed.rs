@@ -106,16 +106,16 @@ fn borrowed_package_discovery_removes_actual_unselected_hir_clones_through_publi
             assert_eq!(published.functions.len(), 2);
             drop(published);
         });
-        assert_eq!(old.allocated_bytes, old.freed_bytes);
-        assert_eq!(borrowed.allocated_bytes, borrowed.freed_bytes);
-        assert_eq!(old.live_bytes, 0);
-        assert_eq!(borrowed.live_bytes, 0);
+        assert_eq!(old.allocated, old.freed);
+        assert_eq!(borrowed.allocated, borrowed.freed);
+        assert_eq!(old.live, 0);
+        assert_eq!(borrowed.live, 0);
         // Independently unavoidable old body header backing for each unused
         // function's authored Block: two statements plus one boxed tail.
         let minimum = count
             * (2 * std::mem::size_of::<hir::ResolvedStatement>()
                 + std::mem::size_of::<hir::ResolvedExpr>());
-        assert!(old.allocated_bytes - borrowed.allocated_bytes >= minimum);
+        assert!(old.allocated - borrowed.allocated >= minimum);
         assert!(old.allocations > borrowed.allocations);
     }
 }

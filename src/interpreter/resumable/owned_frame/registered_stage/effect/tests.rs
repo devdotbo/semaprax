@@ -246,7 +246,7 @@ fn owned_frame_v8_effect_matching_acks_release_seal_then_mint_unique_outcome_and
             panic!()
         };
         let metadata = b.lifecycle().owned_wait_outcome_v8();
-        let Value::Bytes(bytes) = &outcome.fields[&metadata.bytes_field] else {
+        let Value::Bytes(bytes) = &outcome.fields[metadata.bytes_field] else {
             panic!()
         };
         assert_eq!(bytes.bytes.as_ref(), RESULT);
@@ -785,7 +785,7 @@ fn with_staged_reduce_fixture(
             panic!()
         };
         let Value::Bytes(bytes) =
-            &outcome.fields[&b.lifecycle().owned_wait_outcome_v8().bytes_field]
+            &outcome.fields[b.lifecycle().owned_wait_outcome_v8().bytes_field]
         else {
             panic!()
         };

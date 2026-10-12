@@ -272,7 +272,7 @@ impl ExecutedOwnedAgentTurnV2<'_> {
             panic!("nominal Outcome");
         };
         let metadata = self.binding.lifecycle().owned_wait_outcome_v8();
-        let Value::Bytes(bytes) = &outcome.fields[&metadata.bytes_field] else {
+        let Value::Bytes(bytes) = &outcome.fields[metadata.bytes_field] else {
             panic!("actual owned payload");
         };
         std::sync::Arc::downgrade(bytes.bytes.ordinary())

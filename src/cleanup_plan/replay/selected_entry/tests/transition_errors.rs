@@ -207,8 +207,8 @@ fn held_paid_transition_mismatch_keeps_source_operands_first_report_and_drop_wit
             assert!(refused.structural_receipt().is_some());
             drop(refused.into_report(FORM).ok().unwrap());
         });
-        assert_eq!(observed.allocated_bytes, observed.freed_bytes);
-        assert_eq!(observed.live_bytes, 0);
+        assert_eq!(observed.allocated, observed.freed);
+        assert_eq!(observed.live, 0);
     });
     assert!(!overflowed);
 }

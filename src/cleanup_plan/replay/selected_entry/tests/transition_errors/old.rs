@@ -1,5 +1,6 @@
 //! Independent saved transition error oracle; never runtime authority.
 use super::*;
+use crate::cleanup_plan::replay::transition_storage::transfer;
 pub(super) fn ordinary(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,

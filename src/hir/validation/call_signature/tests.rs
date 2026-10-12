@@ -172,7 +172,7 @@ fn wide_current_signature_access_removes_literal_owned_payload_and_drops_without
     // Only the singleton argument Vec is owned clone payload: declaration
     // identities are static/shared handles, not copied text.
     let result_payload = std::mem::size_of::<ResolvedType>();
-    let static_id = DeclarationId::compiler(crate::hir::ids::compiler::CompilerDeclaration::Vec);
+    let static_id = DeclarationId::compiler(crate::hir::ids::CompilerDeclaration::Vec);
     let shared_id = DeclarationId::new("signature.shared.é");
     let (_, identity_clones) = crate::test_allocation_observer::measure(|| {
         for _ in 0..64 {
