@@ -72,3 +72,23 @@ The additive [Owned String Transfer v1](OWNED-STRING-TRANSFER-V1.md) defines
 explicit named-owner `string_take` separately. Its source implementation and
 owning gates await qualification; it preserves this document's default clone
 behavior and does not imply general projected moves or public ABI promotion.
+
+The source-only type-admission allocation tranche keeps scalar and zero-argument
+nominal entry/finish frames inline, evaluates generic classifiers only for
+nonempty argument lists, and uses cache-first flag queries for presence and
+ownership checks. Arbitrary cached facts retain precedence over recomputation.
+The independent text classifier borrows exact monomorphic fields and tracks
+structural types on its active path instead of formatted cycle keys.
+String discovery borrows identity substitutions and moves each fallible compound
+substitution into its visited set without a second type clone. Foreign or
+missing type parameters retain the original substitution refusal.
+
+Complete pre-change eager/type-facts and owned-text walks remain test-only
+oracles in their owning source files. `type_admission_tests` and
+`owned_text_record::tests` author verdict parity, arbitrary-cache precedence,
+foreign/missing parameters, invariant and cycle refusals, repeated siblings,
+exact 64/65-depth, 256/257-leaf and 4096/4097-field boundaries, plus literal
+allocation and complete Drop controls. Existing hostile HIR and backend gates
+remain required. These controls have not been executed for this tranche;
+allocation reductions are source hypotheses until the coordinated verification
+round. The reserved invariant declaration probe retains its existing key path.
