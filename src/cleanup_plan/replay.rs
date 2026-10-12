@@ -6,6 +6,7 @@ mod context_closure;
 use constructed_variant::materialize_constructed_variant;
 mod expression_children;
 mod expression_facts;
+mod call_payload;
 mod flat_records;
 mod inventory_coverage;
 mod ordinary_status;
@@ -319,11 +320,11 @@ struct Leaf {
 }
 
 #[derive(Clone)]
-struct CallFact {
-    callee: DeclarationId,
-    instance: Option<FunctionInstanceId>,
-    arguments: Vec<ExpressionId>,
-    type_arguments: Vec<ResolvedType>,
+struct CallFact<'hir> {
+    callee: std::borrow::Cow<'hir, DeclarationId>,
+    instance: Option<&'hir FunctionInstanceId>,
+    arguments: call_payload::Arguments<'hir>,
+    type_arguments: call_payload::Types<'hir>,
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -2105,14 +2106,14 @@ fn collect_shape(
 
 fn validate_status_sources(
     function: &ResolvedFunction,
-    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+    expressions: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
 ) -> Result<(), Diagnostic> {
     validate_status_sources_core::<Diagnostic>(function, expressions)
 }
 
 fn validate_status_sources_core<E: semantic_refusal::Error>(
     function: &ResolvedFunction,
-    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+    expressions: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
 ) -> Result<(), E> {
     let mut ids = BTreeSet::new();
     for source in &function.cleanup_plan.status_sources {
@@ -2140,7 +2141,7 @@ fn validate_status_sources_core<E: semantic_refusal::Error>(
                     )
                     .into());
                 };
-                if &call.callee != callee {
+                if call.callee.as_ref() != callee {
                     return Err(replay_error(
                         function,
                         "propagated-call status source names the wrong callee",
@@ -2273,7 +2274,7 @@ fn validate_entry(
 fn validate_blocks_and_edges(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
-    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+    expressions: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
@@ -2479,8 +2480,8 @@ fn validate_blocks_and_edges(
                             replay_error(function, "call commit expression is absent")
                         })?,
                         &fact.callee,
-                        fact.instance.as_ref(),
-                        &fact.type_arguments,
+                        fact.instance,
+                        fact.type_arguments.as_slice(),
                     )
                     .map_err(|_| {
                         replay_error(
@@ -7507,7 +7508,7 @@ fn block_successors(function: &ResolvedFunction, block: BlockId) -> Vec<BlockId>
 fn validate_edge_condition(
     function: &ResolvedFunction,
     condition: &EdgeCondition,
-    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+    expressions: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
     statuses: &BTreeSet<StatusSourceId>,
 ) -> Result<(), Diagnostic> {
     match condition {
@@ -7620,7 +7621,7 @@ fn validate_place(
 
 fn require_expression(
     function: &ResolvedFunction,
-    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+    expressions: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
     expression: &ExpressionId,
 ) -> Result<(), Diagnostic> {
     if expressions.contains_key(expression) {

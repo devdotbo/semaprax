@@ -33,15 +33,15 @@ pub(super) fn validate_paid(
     validate_core(program, function, budget, None, expression_facts::paid)
 }
 
-fn validate_core<E: semantic_refusal::Error>(
+fn validate_core<'hir, E: semantic_refusal::Error>(
     program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
+    function: &'hir ResolvedFunction,
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
     build_facts: impl FnOnce(
-        &ResolvedFunction,
+        &'hir ResolvedFunction,
         &mut ReplayBudget,
-    ) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, E>,
+    ) -> Result<BTreeMap<ExpressionId, Option<CallFact<'hir>>>, E>,
 ) -> Result<(), E> {
     let plan = &function.cleanup_plan;
     selected_profile::validate(program, function, budget)?;

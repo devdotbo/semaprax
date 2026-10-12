@@ -41,7 +41,7 @@ fn ordinary_fact_oracle_and_two_receivers_share_exact_work_and_backing_through_d
     let absent = [empty, ExpressionId::from_owned("hostile.nearby".into())];
     fn run(
         function: &ResolvedFunction,
-        expected: &BTreeMap<ExpressionId, Option<CallFact>>,
+        expected: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
         absent: &[ExpressionId; 2],
         work: usize,
         bytes: usize,

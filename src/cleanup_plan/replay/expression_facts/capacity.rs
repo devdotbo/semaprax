@@ -152,13 +152,14 @@ impl<'a, 'p> FactCapacity<'a, 'p> {
             physical: false,
         })?;
         self.reserve(
-            btree_node_upper::<ExpressionId, Option<CallFact>>().ok_or_else(|| Failure {
+            btree_node_upper::<ExpressionId, Option<CallFact<'_>>>().ok_or_else(|| Failure {
                 detail: "expression-fact tree layout overflow",
                 physical: false,
             })?,
         )?;
         // ExpressionId clones retain existing Arc backing; only the new map and
-        // argument slots allocate. Declaration/instance strings and types clone.
+        // argument slots historically allocated. Keep their clone reservations
+        // conservatively while payloads now borrow the current HIR.
         if let Some((callee, args)) = crate::hir::closure::once::call(expression) {
             self.reserve(callee.as_str().len())?;
             return self.array::<ExpressionId>(args.len());

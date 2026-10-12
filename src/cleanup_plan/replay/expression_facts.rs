@@ -10,12 +10,12 @@ pub(super) use borrowed::BorrowedFacts;
 /// Selected receivers retain the legacy tree or consume an independently built
 /// metered borrowed table. Ordinary tree lookup keeps its original behavior.
 pub(super) enum Entries<'a> {
-    Tree(std::collections::btree_map::Iter<'a, ExpressionId, Option<CallFact>>),
+    Tree(std::collections::btree_map::Iter<'a, ExpressionId, Option<CallFact<'a>>>),
     #[cfg(test)]
-    Borrowed(std::slice::Iter<'a, (ExpressionId, Option<CallFact>)>),
+    Borrowed(std::slice::Iter<'a, (ExpressionId, Option<CallFact<'a>>)>),
 }
 impl<'a> Iterator for Entries<'a> {
-    type Item = (&'a ExpressionId, &'a Option<CallFact>);
+    type Item = (&'a ExpressionId, &'a Option<CallFact<'a>>);
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             Self::Tree(entries) => entries.next(),
@@ -35,7 +35,7 @@ pub(super) trait Lookup {
         function: &ResolvedFunction,
         key: &ExpressionId,
         budget: &mut ReplayBudget,
-    ) -> Result<Option<&'a Option<CallFact>>, Diagnostic>;
+    ) -> Result<Option<&'a Option<CallFact<'a>>>, Diagnostic>;
     fn require(
         &self,
         function: &ResolvedFunction,
@@ -52,7 +52,7 @@ pub(super) trait Lookup {
         }
     }
 }
-impl Lookup for BTreeMap<ExpressionId, Option<CallFact>> {
+impl<'hir> Lookup for BTreeMap<ExpressionId, Option<CallFact<'hir>>> {
     fn entries(&self) -> Entries<'_> {
         Entries::Tree(self.iter())
     }
@@ -61,16 +61,16 @@ impl Lookup for BTreeMap<ExpressionId, Option<CallFact>> {
         _: &ResolvedFunction,
         key: &ExpressionId,
         _: &mut ReplayBudget,
-    ) -> Result<Option<&'a Option<CallFact>>, Diagnostic> {
+    ) -> Result<Option<&'a Option<CallFact<'a>>>, Diagnostic> {
         Ok(self.get(key))
     }
 }
 
 type FactFrame<'a> = Option<(expression_children::ReplayChildCursor<'a>, bool)>;
 
-pub(super) fn expression_facts(
-    function: &ResolvedFunction,
-) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, Diagnostic> {
+pub(super) fn expression_facts<'hir>(
+    function: &'hir ResolvedFunction,
+) -> Result<BTreeMap<ExpressionId, Option<CallFact<'hir>>>, Diagnostic> {
     let mut facts = BTreeMap::new();
     for expression in function
         .requires
@@ -84,24 +84,24 @@ pub(super) fn expression_facts(
 }
 
 /// The selected entry retains this independently authenticated map across census
-/// and structural replay. The legacy entry keeps its existing allocations.
-pub(super) fn expression_facts_with_reservation(
-    function: &ResolvedFunction,
+/// and structural replay. All entries borrow payloads; the existing clone reservations remain conservative.
+pub(super) fn expression_facts_with_reservation<'hir>(
+    function: &'hir ResolvedFunction,
     reservation: &mut super::physical_storage::PhysicalReservation,
-) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, Diagnostic> {
+) -> Result<BTreeMap<ExpressionId, Option<CallFact<'hir>>>, Diagnostic> {
     with_policy::<errors::Legacy>(function, reservation)
 }
 
-fn with_policy<P: errors::Policy>(
-    function: &ResolvedFunction,
+fn with_policy<'hir, P: errors::Policy>(
+    function: &'hir ResolvedFunction,
     reservation: &mut super::physical_storage::PhysicalReservation,
-) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, P::Error> {
+) -> Result<BTreeMap<ExpressionId, Option<CallFact<'hir>>>, P::Error> {
     with_capacity::<P>(function, capacity::Payer::Selected(reservation))
 }
-fn with_capacity<P: errors::Policy>(
-    function: &ResolvedFunction,
+fn with_capacity<'hir, P: errors::Policy>(
+    function: &'hir ResolvedFunction,
     payer: capacity::Payer<'_>,
-) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, P::Error> {
+) -> Result<BTreeMap<ExpressionId, Option<CallFact<'hir>>>, P::Error> {
     let mut capacity = capacity::FactCapacity::with_payer(function, payer)
         .map_err(|failure| P::capacity(function, failure))?;
     let mut facts = BTreeMap::new();
@@ -118,10 +118,10 @@ fn with_capacity<P: errors::Policy>(
 
 /// Ordinary callers retain the complete legacy verdict and error text. Only
 /// acquisition refusal consumes the actual builder's already-paid diagnostic.
-pub(super) fn with_budget(
-    function: &ResolvedFunction,
+pub(super) fn with_budget<'hir>(
+    function: &'hir ResolvedFunction,
     budget: &mut ReplayBudget,
-) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, Diagnostic> {
+) -> Result<BTreeMap<ExpressionId, Option<CallFact<'hir>>>, Diagnostic> {
     if budget.payer == AllocationPayer::ActiveBuilder {
         budget.prepare_builder(function)?;
         let result = with_capacity::<errors::Selected>(function, capacity::Payer::ActiveBuilder);
@@ -146,10 +146,10 @@ pub(super) fn with_budget(
 
 /// Only this shared producer's errors are inline. Other replay children keep
 /// their owned Diagnostic contract until their independent migration.
-pub(super) fn paid(
-    function: &ResolvedFunction,
+pub(super) fn paid<'hir>(
+    function: &'hir ResolvedFunction,
     budget: &mut ReplayBudget,
-) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, errors::EngineError> {
+) -> Result<BTreeMap<ExpressionId, Option<CallFact<'hir>>>, errors::EngineError> {
     let result = match budget.physical.as_deref_mut() {
         Some(physical) => with_policy::<errors::Selected>(function, physical),
         None => expression_facts(function).map_err(errors::EngineError::Owned),
@@ -171,7 +171,7 @@ pub(super) fn paid(
 fn collect_expression_facts<'a, P: errors::Policy>(
     function: &'a ResolvedFunction,
     expression: &'a ResolvedExpr,
-    facts: &mut BTreeMap<ExpressionId, Option<CallFact>>,
+    facts: &mut BTreeMap<ExpressionId, Option<CallFact<'a>>>,
     mut capacity: Option<&mut capacity::FactCapacity<'a, '_>>,
 ) -> Result<(), P::Error> {
     // One borrowed continuation per ancestor keeps the original pre-order walk
@@ -201,29 +201,29 @@ fn collect_expression_facts<'a, P: errors::Policy>(
                         (callee, args)
                     };
                     Some(CallFact {
-                        callee: callee.clone(),
+                        callee: std::borrow::Cow::Borrowed(callee),
                         instance: None,
-                        arguments: args.iter().map(|a| a.id.clone()).collect(),
-                        type_arguments: vec![],
+                        arguments: call_payload::Arguments::Slice(args),
+                        type_arguments: call_payload::Types::Slice(&[]),
                     })
                 }
                 ResolvedExprKind::Invoke { callable, args } => Some(CallFact {
-                    callee: crate::hir::function_value::INVOKE_ID.clone(),
+                    callee: std::borrow::Cow::Borrowed(&crate::hir::function_value::INVOKE_ID),
                     instance: None,
-                    arguments: args.iter().map(|a| a.id.clone()).collect(),
-                    type_arguments: vec![callable.ty.clone()],
+                    arguments: call_payload::Arguments::Slice(args),
+                    type_arguments: call_payload::Types::One(&callable.ty),
                 }),
                 ResolvedExprKind::VecFieldRead { args, .. } => Some(CallFact {
-                    callee: crate::vec_field::operation_id().clone(),
+                    callee: std::borrow::Cow::Borrowed(crate::vec_field::operation_id()),
                     instance: None,
-                    arguments: args.iter().map(|argument| argument.id.clone()).collect(),
-                    type_arguments: Vec::new(),
+                    arguments: call_payload::Arguments::Slice(args),
+                    type_arguments: call_payload::Types::Slice(&[]),
                 }),
                 ResolvedExprKind::LiteralFormat { args, .. } => Some(CallFact {
-                    callee: crate::literal_format::operation_id().clone(),
+                    callee: std::borrow::Cow::Borrowed(crate::literal_format::operation_id()),
                     instance: None,
-                    arguments: args.iter().map(|argument| argument.id.clone()).collect(),
-                    type_arguments: Vec::new(),
+                    arguments: call_payload::Arguments::Slice(args),
+                    type_arguments: call_payload::Types::Slice(&[]),
                 }),
                 ResolvedExprKind::Call {
                     callee,
@@ -231,36 +231,28 @@ fn collect_expression_facts<'a, P: errors::Policy>(
                     args,
                     type_arguments,
                 } => Some(CallFact {
-                    callee: callee.clone(),
-                    instance: instance.clone(),
-                    arguments: args.iter().map(|argument| argument.id.clone()).collect(),
-                    type_arguments: type_arguments.clone(),
+                    callee: std::borrow::Cow::Borrowed(callee),
+                    instance: instance.as_ref(),
+                    arguments: call_payload::Arguments::Slice(args),
+                    type_arguments: call_payload::Types::Slice(type_arguments),
                 }),
                 ResolvedExprKind::NativeRustImportCall(call)
                     if crate::cleanup_plan::native_rust::owns(current) =>
                 {
                     Some(CallFact {
-                        callee: call.import.clone(),
+                        callee: std::borrow::Cow::Borrowed(&call.import),
                         instance: None,
-                        arguments: call
-                            .args
-                            .iter()
-                            .map(|argument| argument.id.clone())
-                            .collect(),
-                        type_arguments: Vec::new(),
+                        arguments: call_payload::Arguments::Slice(&call.args),
+                        type_arguments: call_payload::Types::Slice(&[]),
                     })
                 }
                 ResolvedExprKind::HostCommandCall(call) => Some(CallFact {
-                    callee: DeclarationId::compiler(crate::hir::CompilerDeclaration::Command(
-                        call.operation,
+                    callee: std::borrow::Cow::Owned(DeclarationId::compiler(
+                        crate::hir::CompilerDeclaration::Command(call.operation),
                     )),
                     instance: None,
-                    arguments: call
-                        .args
-                        .iter()
-                        .map(|argument| argument.id.clone())
-                        .collect(),
-                    type_arguments: Vec::new(),
+                    arguments: call_payload::Arguments::Slice(&call.args),
+                    type_arguments: call_payload::Types::Slice(&[]),
                 }),
                 ResolvedExprKind::ByteRange {
                     operation,
@@ -268,13 +260,10 @@ fn collect_expression_facts<'a, P: errors::Policy>(
                     start,
                     end,
                 } => Some(CallFact {
-                    callee: operation.clone(),
+                    callee: std::borrow::Cow::Borrowed(operation),
                     instance: None,
-                    arguments: [source.as_ref(), start.as_ref(), end.as_ref()]
-                        .into_iter()
-                        .map(|argument| argument.id.clone())
-                        .collect(),
-                    type_arguments: Vec::new(),
+                    arguments: call_payload::Arguments::Range([source, start, end]),
+                    type_arguments: call_payload::Types::Slice(&[]),
                 }),
                 _ => None,
             };
@@ -304,6 +293,7 @@ fn collect_expression_facts<'a, P: errors::Policy>(
 mod tests {
     use super::*;
     mod errors;
+    mod payloads;
     use crate::cleanup_plan::replay::physical_storage::PhysicalReservation;
 
     fn program() -> ResolvedProgram {
@@ -323,8 +313,8 @@ mod tests {
         crate::hir::resolve(&source).unwrap()
     }
     fn same(
-        left: &BTreeMap<ExpressionId, Option<CallFact>>,
-        right: &BTreeMap<ExpressionId, Option<CallFact>>,
+        left: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
+        right: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
     ) {
         assert_eq!(left.len(), right.len());
         for (key, left) in left {
@@ -383,7 +373,9 @@ mod tests {
             .iter()
             .find(|f| f.id.as_str() == "fact.read")
             .unwrap();
-        let measured = |function: &ResolvedFunction| {
+        fn measured(
+            function: &ResolvedFunction,
+        ) -> (BTreeMap<ExpressionId, Option<CallFact<'_>>>, bool, usize) {
             crate::bounded_output::with_limit_usage(usize::MAX, || {
                 expression_facts_with_reservation(
                     function,
@@ -391,7 +383,7 @@ mod tests {
                 )
                 .unwrap()
             })
-        };
+        }
         let (_, refused, before) = measured(original);
         assert!(!refused);
         let mut function = original.clone();
@@ -420,11 +412,32 @@ mod tests {
         );
         same(&expression_facts(&function).unwrap(), &selected);
         let fact = selected.get(&tail_id).unwrap().as_ref().unwrap();
-        assert_eq!(fact.type_arguments.capacity(), 1);
+        let ResolvedExprKind::Block { tail, .. } = &function.body.kind else {
+            panic!("block")
+        };
+        let ResolvedExprKind::Call { type_arguments, .. } = &tail.kind else {
+            panic!("call")
+        };
+        assert!(std::ptr::eq(
+            fact.type_arguments.as_slice(),
+            type_arguments.as_slice()
+        ));
+        assert_eq!(type_arguments.capacity(), 64);
+        let old = errors::old::expression_facts(&function).unwrap();
+        let old = old.get(&tail_id).unwrap().as_ref().unwrap();
+        assert_eq!(old.type_arguments.capacity(), 1);
+        let ResolvedType::Nominal {
+            arguments: old_arguments,
+            ..
+        } = &old.type_arguments[0]
+        else {
+            panic!("nominal")
+        };
+        assert_eq!(old_arguments.capacity(), 1);
         let ResolvedType::Nominal { arguments, .. } = &fact.type_arguments[0] else {
             panic!("nominal fixture")
         };
-        assert_eq!(arguments.capacity(), 1);
+        assert_eq!(arguments.capacity(), 31);
     }
 
     #[test]

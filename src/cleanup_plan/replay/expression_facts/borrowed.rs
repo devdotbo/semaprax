@@ -3,8 +3,8 @@
 use super::*;
 use std::cmp::Ordering;
 
-pub(in crate::cleanup_plan::replay) struct BorrowedFacts {
-    entries: Vec<(ExpressionId, Option<CallFact>)>,
+pub(in crate::cleanup_plan::replay) struct BorrowedFacts<'hir> {
+    entries: Vec<(ExpressionId, Option<CallFact<'hir>>)>,
 }
 fn compare(
     function: &ResolvedFunction,
@@ -23,7 +23,7 @@ fn compare(
     budget.charge(function, 1, "borrowed fact actual key length")?;
     Ok(a.as_str().len().cmp(&b.as_str().len()))
 }
-impl BorrowedFacts {
+impl<'hir> BorrowedFacts<'hir> {
     fn position(
         &self,
         function: &ResolvedFunction,
@@ -44,7 +44,7 @@ impl BorrowedFacts {
         Ok(Err(low))
     }
     pub(in crate::cleanup_plan::replay) fn build(
-        function: &ResolvedFunction,
+        function: &'hir ResolvedFunction,
         budget: &mut ReplayBudget,
     ) -> Result<Self, Diagnostic> {
         budget.reserve_array::<Self>(function, 1, "borrowed fact table header")?;
@@ -104,20 +104,19 @@ impl BorrowedFacts {
                                 args.len(),
                                 "borrowed fact argument slots",
                             )?;
-                            let mut arguments = Vec::with_capacity(args.len());
-                            for argument in args {
+
+                            for _argument in args {
                                 budget.charge(
                                     function,
                                     1,
                                     "borrowed fact actual argument identity clone",
                                 )?;
-                                arguments.push(argument.id.clone());
                             }
                             Some(CallFact {
-                                callee: callee.clone(),
+                                callee: std::borrow::Cow::Borrowed(callee),
                                 instance: None,
-                                arguments,
-                                type_arguments: Vec::new(),
+                                arguments: call_payload::Arguments::Slice(args),
+                                type_arguments: call_payload::Types::Slice(&[]),
                             })
                         }
                         ResolvedExprKind::Invoke { .. }
@@ -171,7 +170,7 @@ impl BorrowedFacts {
         Ok(table)
     }
 }
-impl Lookup for BorrowedFacts {
+impl<'hir> Lookup for BorrowedFacts<'hir> {
     fn is_metered(&self) -> bool {
         true
     }
@@ -183,7 +182,7 @@ impl Lookup for BorrowedFacts {
         function: &ResolvedFunction,
         key: &ExpressionId,
         budget: &mut ReplayBudget,
-    ) -> Result<Option<&'a Option<CallFact>>, Diagnostic> {
+    ) -> Result<Option<&'a Option<CallFact<'a>>>, Diagnostic> {
         Ok(match self.position(function, key, budget)? {
             Ok(position) => Some(&self.entries[position].1),
             Err(_) => None,
