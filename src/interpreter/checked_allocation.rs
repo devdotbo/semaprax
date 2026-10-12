@@ -58,6 +58,8 @@ pub(super) struct Invocation<'hir> {
     physical: Option<AllocationCase>,
     // Acquired before first physical request; refusal moves its owned receipt.
     reports: [Option<NormalizedStatus>; 2],
+    text_reports: [Option<NormalizedStatus>; 2],
+    semantic: Option<u32>,
 }
 impl<'hir> Invocation<'hir> {
     fn new(program: &'hir hir::ResolvedProgram, provider: Arc<dyn Utf8Provider>) -> Self {
@@ -74,11 +76,28 @@ impl<'hir> Invocation<'hir> {
                 .expect("closed allocation status table"),
             )
         });
+        let text_reports = [
+            crate::string_ops::TEXT_OUT_OF_RANGE_CODE,
+            crate::string_ops::TEXT_NOT_CHAR_BOUNDARY_CODE,
+        ]
+        .map(|code| {
+            Some(
+                NormalizedStatus::try_new(
+                    crate::string_ops::TEXT_STATUS_DOMAIN,
+                    code,
+                    StatusClass::Adapter,
+                    Retryability::Known(false),
+                )
+                .expect("closed text status table"),
+            )
+        });
         Self {
             program,
             provider,
             physical: None,
             reports,
+            text_reports,
+            semantic: None,
         }
     }
     pub(in crate::interpreter) fn contract_result(
@@ -108,7 +127,7 @@ impl<'hir> Invocation<'hir> {
         })
     }
     fn materialize(&mut self, pieces: &[&str]) -> Result<OwnedUtf8, Flow> {
-        if self.physical.is_some() {
+        if self.physical.is_some() || self.semantic.is_some() {
             return Err(Flow::Guard("checked allocation invocation already refused"));
         }
         let length = pieces
@@ -141,6 +160,17 @@ impl<'hir> Invocation<'hir> {
                 provider: Arc::clone(&self.provider),
             },
         })
+    }
+    fn text_failure(&mut self, code: u32) -> Flow {
+        if self.physical.is_some() || self.semantic.is_some() {
+            return Flow::Guard("checked allocation invocation already refused");
+        }
+        self.semantic = Some(code);
+        Flow::Failure(
+            self.text_reports[code as usize - 1]
+                .take()
+                .expect("closed text receipt acquired before execution"),
+        )
     }
     fn refuse(&mut self, reason: AllocationCase) -> Flow {
         self.physical = Some(reason);
@@ -262,6 +292,12 @@ fn inspect(program: &hir::ResolvedProgram, expression: &ResolvedExpr) -> Result<
                                 | S::StartsWith
                                 | S::Contains
                                 | S::FromStr
+                                | S::FromChar
+                                | S::FromI64
+                                | S::FromUsize
+                                | S::Slice
+                                | S::Trim
+                                | S::LenChars
                         )
                     ) || program
                         .functions

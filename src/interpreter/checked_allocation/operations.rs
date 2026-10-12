@@ -66,12 +66,12 @@ impl Evaluator<'_> {
             }
             return scalar(operation, texts[0], texts[1]);
         }
-        if arguments.len() > 2 || arguments.len() != operation.arity() {
+        if arguments.len() > 3 || arguments.len() != operation.arity() {
             return Err(Flow::Guard("checked String operation arity"));
         }
         // No owning argument Vec is constructed on this joined operation path.
         // Every prefix remains owned until all arguments have executed LTR.
-        let mut values = [None, None];
+        let mut values = [None, None, None];
         for (index, argument) in arguments.iter().enumerate() {
             values[index] = Some(self.evaluate(argument, environment, depth)?);
         }
@@ -97,6 +97,66 @@ impl Evaluator<'_> {
                     .and_then(borrowed_text)
                     .ok_or(Flow::Guard("checked borrowed UTF8 operand"))?;
                 self.checked_utf8(&[value]).map(Value::CheckedString)
+            }
+            S::FromChar => {
+                let Some(Value::Char(number)) = values[0].as_ref() else {
+                    return Err(Flow::Guard("checked character operand"));
+                };
+                let character = char::from_u32(*number)
+                    .ok_or(Flow::Guard("checked character is not a scalar"))?;
+                let mut bytes = [0; 4];
+                self.checked_utf8(&[character.encode_utf8(&mut bytes)])
+                    .map(Value::CheckedString)
+            }
+            S::FromI64 | S::FromUsize => {
+                let (magnitude, negative) = match (operation, values[0].as_ref()) {
+                    (S::FromI64, Some(Value::Int(number))) => (number.unsigned_abs(), *number < 0),
+                    (S::FromUsize, Some(Value::Usize(number))) => (*number as u64, false),
+                    _ => return Err(Flow::Guard("checked decimal operand")),
+                };
+                let mut bytes = [0; 20];
+                let decimal = decimal(&mut bytes, magnitude, negative);
+                self.checked_utf8(&[decimal]).map(Value::CheckedString)
+            }
+            S::Slice | S::Trim => {
+                let value = values[0]
+                    .as_ref()
+                    .and_then(text)
+                    .ok_or(Flow::Guard("checked text owner"))?;
+                let range = if operation == S::Trim {
+                    crate::string_ops::trim_range(value.as_bytes())
+                } else {
+                    let (Some(Value::Int(start)), Some(Value::Int(end))) =
+                        (values[1].as_ref(), values[2].as_ref())
+                    else {
+                        return Err(Flow::Guard("checked slice offsets"));
+                    };
+                    if *start < 0 || *start > *end || *end > value.len() as i64 {
+                        return Err(self
+                            .checked_allocation
+                            .as_mut()
+                            .unwrap()
+                            .text_failure(crate::string_ops::TEXT_OUT_OF_RANGE_CODE));
+                    }
+                    let range = *start as usize..*end as usize;
+                    if !value.is_char_boundary(range.start) || !value.is_char_boundary(range.end) {
+                        return Err(self
+                            .checked_allocation
+                            .as_mut()
+                            .unwrap()
+                            .text_failure(crate::string_ops::TEXT_NOT_CHAR_BOUNDARY_CODE));
+                    }
+                    range
+                };
+                self.checked_utf8(&[&value[range]])
+                    .map(Value::CheckedString)
+            }
+            S::LenChars => {
+                let value = values[0]
+                    .as_ref()
+                    .and_then(text)
+                    .ok_or(Flow::Guard("checked text owner"))?;
+                Ok(Value::Int(value.chars().count() as i64))
             }
             S::Len | S::IsEmpty | S::StartsWith | S::Contains => scalar(
                 operation,
@@ -134,4 +194,23 @@ fn scalar(
         )),
         _ => Err(Flow::Guard("checked String scalar operation is not joined")),
     }
+}
+
+// Exactly 20 bytes cover i64::MIN including its sign and u64::MAX. No
+// intermediate System String exists before the physical provider is called.
+fn decimal(bytes: &mut [u8; 20], mut magnitude: u64, negative: bool) -> &str {
+    let mut begin = bytes.len();
+    loop {
+        begin -= 1;
+        bytes[begin] = b'0' + (magnitude % 10) as u8;
+        magnitude /= 10;
+        if magnitude == 0 {
+            break;
+        }
+    }
+    if negative {
+        begin -= 1;
+        bytes[begin] = b'-';
+    }
+    std::str::from_utf8(&bytes[begin..]).expect("closed decimal digits")
 }

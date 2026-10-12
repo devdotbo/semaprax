@@ -422,7 +422,8 @@ collection receiver gates remain open. No all-engine completion is claimed.
 
 The original-source validated allocation projection now has a private interpreter
 receiver for String literals, ordinary owning reads, concat, explicit take,
-borrowed Str conversion and scalar String inspection. The existing evaluator
+borrowed Str conversion, character/decimal constructors, UTF8-boundary slice,
+ASCII trim and scalar String inspection. The existing evaluator
 still supplies fuel, call/contract ordering and failure unwinding. A distinct
 owned UTF8 carrier retains the exact supplied physical provider and its module
 through payload and borrowed-view Drop; it never reconstructs System String
@@ -439,8 +440,7 @@ is moved on refusal, avoiding allocation to report that physical failure. A
 refused invocation never issues another provider request.
 
 This is unexecuted private payload integration. Evaluator frame/index/report
-metadata remains an explicit funding dependency, as do the other String
-constructors, LiteralFormat, Bytes/collections, lexical control, Core-Wasm and
+metadata remains an explicit funding dependency, as do LiteralFormat, Bytes/collections, lexical control, Core-Wasm and
 public escaped SDK joins. Ordinary System String execution and frozen public
 profiles remain unchanged. No completion-matrix support or whole-engine funding
 claim follows from these source controls.

@@ -386,3 +386,116 @@ fn checked_contract_result_alias_requires_current_function_provider_and_protecte
         .is_err()
     );
 }
+
+#[test]
+fn checked_scalar_text_constructors_use_actual_provider_without_decimal_string_temporaries() {
+    for (expression, expected, pieces) in [
+        (
+            "string_from_i64(-9223372036854775808)",
+            "-9223372036854775808",
+            &["-9223372036854775808"][..],
+        ),
+        ("string_from_i64(0)", "0", &["0"][..]),
+        (
+            "string_from_usize(18446744073709551615usize)",
+            "18446744073709551615",
+            &["18446744073709551615"][..],
+        ),
+        ("string_from_char('β')", "β", &["β"][..]),
+        ("string_trim(\"  β\t\")", "β", &["  β\t", "β"][..]),
+        ("string_slice(\"aβz\", 1, 3)", "β", &["aβz", "β"][..]),
+    ] {
+        let text = format!("module checked.native; @id(\"checked.native.publish\") fn publish()->string {{ {expression} }} @id(\"checked.native.main\") fn main()->i64 {{0}}");
+        let source = crate::parse(&text, "checked-interpreter-constructor.spx").unwrap();
+        let owner = received(&source, true);
+        let projection = Projection::receive(&owner).unwrap();
+        let functions: BTreeMap<_, _> = owner
+            .program()
+            .functions
+            .iter()
+            .map(|f| (f.id.as_str(), f))
+            .collect();
+        let entry = functions["checked.native.publish"];
+        let mut old = Evaluator::new_prepared(
+            FunctionLookup::Borrowed(&functions),
+            BTreeMap::new(),
+            &owner.program().declarations,
+            1000,
+            0,
+            PreparedCancellation::Never,
+        );
+        let Ok(Value::String(reference)) = old.call_frame(entry, Vec::new(), 0) else {
+            panic!("original constructor refused");
+        };
+        assert_eq!(reference, expected);
+        for refused in 0..=pieces.len() {
+            let ((), observed) = crate::test_allocation_observer::measure(|| {
+                let provider = Inventory::acquire(pieces, refused);
+                let outcome = projection.run(provider.clone(), 1000);
+                if refused == pieces.len() {
+                    let Ok(Value::CheckedString(value)) = &outcome else {
+                        panic!("constructor did not publish checked owner");
+                    };
+                    assert_eq!(value.as_str(), expected);
+                } else {
+                    assert!(
+                        matches!(&outcome, Err(Flow::Failure(status)) if status.domain_id() == crate::cleanup_plan::ALLOCATION_DOMAIN_V1)
+                    );
+                }
+                assert_eq!(
+                    provider.requests.load(Ordering::SeqCst),
+                    if refused == pieces.len() {
+                        pieces.len()
+                    } else {
+                        refused + 1
+                    }
+                );
+                drop(outcome);
+                drop(provider);
+            });
+            assert!(!observed.invalid);
+            assert_eq!(observed.live, 0);
+            assert_eq!(observed.allocated, observed.freed);
+        }
+    }
+}
+#[test]
+fn checked_slice_semantic_refusal_precedes_fresh_payload_and_matches_original_full_status() {
+    for (offsets, code) in [("-1, 2", 1), ("1, 2", 2)] {
+        let text = format!("module checked.native; @id(\"checked.native.publish\") fn publish()->string {{ string_slice(\"β\", {offsets}) }} @id(\"checked.native.main\") fn main()->i64 {{0}}");
+        let source = crate::parse(&text, "checked-interpreter-slice.spx").unwrap();
+        let owner = received(&source, true);
+        let projection = Projection::receive(&owner).unwrap();
+        let functions: BTreeMap<_, _> = owner
+            .program()
+            .functions
+            .iter()
+            .map(|f| (f.id.as_str(), f))
+            .collect();
+        let mut old = Evaluator::new_prepared(
+            FunctionLookup::Borrowed(&functions),
+            BTreeMap::new(),
+            &owner.program().declarations,
+            1000,
+            0,
+            PreparedCancellation::Never,
+        );
+        let Err(Flow::Failure(expected)) =
+            old.call_frame(functions["checked.native.publish"], Vec::new(), 0)
+        else {
+            panic!("original text failure did not select status");
+        };
+        assert_eq!(expected.code(), code);
+        let ((), observed) = crate::test_allocation_observer::measure(|| {
+            let provider = Inventory::acquire(&["β"], usize::MAX);
+            let outcome = projection.run(provider.clone(), 1000);
+            assert!(matches!(&outcome, Err(Flow::Failure(status)) if status == &expected));
+            assert_eq!(provider.requests.load(Ordering::SeqCst), 1);
+            drop(outcome);
+            drop(provider);
+        });
+        assert!(!observed.invalid);
+        assert_eq!(observed.live, 0);
+        assert_eq!(observed.allocated, observed.freed);
+    }
+}
