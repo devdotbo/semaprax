@@ -103,6 +103,14 @@ independent match coverage and actual repeated receiver acquisition/Drop.
 Its refusal_dependency child adds full old/current expected-type controls,
 actual ownership/place/loan state equality, fixed-result reset, identity/re-entry,
 native-unit, contract, projection and success canonical/graph boundaries.
+Its fixture_controls child retains each original fixture string that failed at
+runtime (missing final arm comma, local named `result`, non-`i64` or
+parameterized `main`, explicit `own string`, missing Boolean catch-all, missing return semicolon) as an executed
+negative control with complete hand-authored six-field invariant diagnostics
+(`SPX-P106`, `SPX-T104`, `SPX-O002`, `SPX-S109`, `SPX-T201`, `SPX-T257`) beside a corrected
+admitted counterpart (trailing comma, `outcome`, helper plus valid `main`,
+`owner: string`, Boolean catch-all and integer `match`, terminated return). Authored only; not executed.
+
 The original `iterative_verifier_tests` corpus remains unchanged.
 
 Required next-batch selectors: `--lib source_verify::recovery_tests`,

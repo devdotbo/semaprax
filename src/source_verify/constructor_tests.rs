@@ -372,6 +372,9 @@ fn complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps() 
         include_str!("recovery_legacy/records.rs"),
         include_str!("recovery_legacy/match_arms.rs"),
         include_str!("recovery_tests/refusal_dependency.rs"),
+        include_str!("recovery_tests.rs"),
+        include_str!("recovery_tests/boundaries.rs"),
+        include_str!("recovery_tests/fixture_controls.rs"),
         include_str!("recovery_tests/intentional_wrong_field.rs"),
         include_str!("../prelude.rs"),
         include_str!("declaration.rs"),
@@ -393,6 +396,9 @@ fn complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps() 
         include_str!("declaration/old.rs"),
         include_str!("type_table/old.rs"),
         include_str!("constructor_tests/corpus.rs"),
+        include_str!("recovery_tests/fixture_controls.rs"),
+        include_str!("recovery_tests/refusal_dependency.rs"),
+        include_str!("recovery_tests/boundaries.rs"),
     ] {
         assert!(part.lines().count() <= 1500);
     }

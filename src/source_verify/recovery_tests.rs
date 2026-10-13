@@ -6,6 +6,8 @@ use super::recovery::Recovery;
 use super::type_table::TypeTable;
 #[path = "recovery_tests/boundaries.rs"]
 mod boundaries;
+#[path = "recovery_tests/fixture_controls.rs"]
+mod fixture_controls;
 #[path = "recovery_tests/intentional_wrong_field.rs"]
 pub(super) mod intentional_wrong_field;
 #[path = "recovery_tests/proposal_corpus.rs"]
@@ -177,7 +179,7 @@ fn existing_bindings_function_values_moves_and_match_coverage_keep_complete_old_
         "let bad = missing; let bad = 1; bad",
         "let ignored = { let bad = missing; 0 }; let bad = 1; bad",
         "if true { let local = missing; 0 } else { local }",
-        "match 1 { 0 => missing, n => n }",
+        "match 1 { 0 => missing, n => n, }",
     ] {
         let source = source(body);
         let old = receive(&source, true);
@@ -263,7 +265,16 @@ fn directory_and_full_receivers_observe_real_acquisition_and_receiving_drop() {
     assert!(!storage.invalid);
     assert!(storage.allocated > 0);
     assert_eq!(storage.live, 0);
-    assert_eq!(storage.allocated, storage.freed);
+    assert_eq!(
+        storage.allocated, storage.freed,
+        "directory storage allocated/freed mismatch: {storage:?}"
+    );
+    // `prelude::declarations()` is a process-lived OnceLock that the first
+    // receiver would otherwise initialize inside the measured scope, leaving its
+    // owner live after Drop. Hold exactly that immutable table before measuring;
+    // the verifier, type table and receivers are never warmed.
+    let held = crate::prelude::declarations();
+    let identity = (held.as_ptr(), held.len());
     for body in [
         "let bad = missing; let alias = bad; alias + bad",
         "let bad = missing; let callback = fn() -> i64 { bad }; 0",
@@ -273,9 +284,21 @@ fn directory_and_full_receivers_observe_real_acquisition_and_receiving_drop() {
             let (_, receiver) = measure(|| {
                 drop(receive(&source, old));
             });
-            assert!(!receiver.invalid, "old={old}: {receiver:?}");
-            assert_eq!(receiver.live, 0, "old={old}: {receiver:?}");
-            assert_eq!(receiver.allocated, receiver.freed);
+            assert!(
+                !receiver.invalid,
+                "old={old}: invalid observation with prelude held: {receiver:?}"
+            );
+            assert_eq!(
+                receiver.live, 0,
+                "old={old}: live bytes after receiving Drop with prelude held: {receiver:?}"
+            );
+            assert_eq!(
+                receiver.allocated, receiver.freed,
+                "old={old}: allocated/freed mismatch with prelude held: {receiver:?}"
+            );
+            let after = crate::prelude::declarations();
+            assert_eq!(identity, (after.as_ptr(), after.len()), "old={old}");
+            assert!(std::ptr::eq(held, after), "old={old}");
         }
     }
 }

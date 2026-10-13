@@ -5,7 +5,7 @@ use crate::ast::{ParamMode, Type};
 use crate::diagnostic::Diagnostic;
 use std::path::Path;
 
-const CALLS: &str = r#"
+pub(super) const CALLS: &str = r#"
 @id("bool.id") fn bool_id(value: bool) -> bool { value }
 @id("bool.consume") fn f_bool(value: bool) -> i64 { 0 }
 @id("string.consume") fn f_string(value: string) -> i64 { 0 }
@@ -58,7 +58,7 @@ fn annotation_view_excuses_only_its_expected_type_and_fixed_call_results_reset_i
             &["SPX-T232", "SPX-T205"][..],
         ),
         (
-            "let bad: bool = 1; let result = bool_id(bad); let independent = f_string(result); 0",
+            "let bad: bool = 1; let outcome = bool_id(bad); let independent = f_string(outcome); 0",
             &["SPX-T232", "SPX-T205", "SPX-T205"][..],
             &["SPX-T232", "SPX-T205"][..],
         ),
@@ -86,30 +86,30 @@ fn annotation_view_excuses_only_its_expected_type_and_fixed_call_results_reset_i
 fn owned_and_borrowed_annotation_views_keep_complete_original_ownership_errors() {
     selected(
         &format!(
-            "module test.owned_view; {CALLS} @id(\"app.main\") fn main(owner: own string) -> i64 {{ let alias: Bytes = owner; let consumed = consume_bytes(alias); let independent = string_len(owner); 0 }}"
+            "module test.owned_view; {CALLS} @id(\"app.probe\") fn probe(owner: string) -> i64 {{ let alias: Bytes = owner; let consumed = consume_bytes(alias); let independent = string_len(owner); 0 }} @id(\"app.main\") fn main() -> i64 {{ 0 }}"
         ),
         &["SPX-T232", "SPX-T205", "SPX-O101"],
         &["SPX-T232", "SPX-O101"],
     );
     selected(
         &format!(
-            "module test.borrowed_view; {CALLS} @id(\"app.main\") fn main(held: borrow Bytes) -> i64 {{ let alias: string = held; let consumed = f_string(alias); 0 }}"
+            "module test.borrowed_view; {CALLS} @id(\"app.probe\") fn probe(held: borrow Bytes) -> i64 {{ let alias: string = held; let consumed = f_string(alias); 0 }} @id(\"app.main\") fn main() -> i64 {{ 0 }}"
         ),
         &["SPX-T232", "SPX-T205", "SPX-O102"],
         &["SPX-T232", "SPX-O102"],
     );
     selected(
-        "module test.borrowed_return; @id(\"app.main\") fn main(held: borrow Bytes) -> Bytes { let alias: string = held; alias }",
+        "module test.borrowed_return; @id(\"app.probe\") fn probe(held: borrow Bytes) -> Bytes { let alias: string = held; alias } @id(\"app.main\") fn main() -> i64 { 0 }",
         &["SPX-T232", "SPX-O104"],
         &["SPX-T232", "SPX-O104"],
     );
     selected(
-        "module test.lexical_borrowed_return; @id(\"app.main\") fn main(held: borrow Bytes) -> string { let alias: string = held; return alias }",
+        "module test.lexical_borrowed_return; @id(\"app.probe\") fn probe(held: borrow Bytes) -> string { let alias: string = held; return alias; } @id(\"app.main\") fn main() -> i64 { 0 }",
         &["SPX-T232", "SPX-T103", "SPX-O104"],
-        &["SPX-T232", "SPX-O104"],
+        &["SPX-T232"],
     );
     let loan = format!(
-        "module test.loan_view; {CALLS} @id(\"app.main\") fn main(owner: own Bytes) -> i64 {{ let view: bool = bytes_as_slice(owner); let consumed = consume_bytes(owner); let still_live = byte_len(view); 0 }}"
+        "module test.loan_view; {CALLS} @id(\"app.probe\") fn probe(owner: own Bytes) -> i64 {{ let view: bool = bytes_as_slice(owner); let consumed = consume_bytes(owner); let still_live = byte_len(view); 0 }} @id(\"app.main\") fn main() -> i64 {{ 0 }}"
     );
     let old = full(&loan, true);
     let current = full(&loan, false);
@@ -177,12 +177,12 @@ fn unary_while_and_direct_return_obligations_use_only_the_refused_annotation() {
         &["SPX-T232"],
     );
     selected(
-        "module test.return_view; @id(\"app.main\") fn main() -> bool { let bad: bool = 1; bad }",
+        "module test.return_view; @id(\"app.probe\") fn probe() -> bool { let bad: bool = 1; bad } @id(\"app.main\") fn main() -> i64 { 0 }",
         &["SPX-T232", "SPX-T103"],
         &["SPX-T232"],
     );
     selected(
-        "module test.independent_return; @id(\"app.main\") fn main() -> string { let bad: bool = 1; bad }",
+        "module test.independent_return; @id(\"app.probe\") fn probe() -> string { let bad: bool = 1; bad } @id(\"app.main\") fn main() -> i64 { 0 }",
         &["SPX-T232", "SPX-T103", "SPX-O104"],
         &["SPX-T232", "SPX-T103"],
     );
@@ -230,7 +230,7 @@ fn match_guards_retain_independent_coverage_and_ownership_mode_obligations() {
         r#"@id("choice") variant Choice { @id("choice.one") One, @id("choice.two") Two, }"#;
     let complete = |initializer: &str, arms: &str| {
         format!(
-            "module test.guard_view; {VARIANT} @id(\"app.main\") fn main(selected: Choice) -> i64 {{ let bad: bool = {initializer}; match selected {{ {arms} }} }}"
+            "module test.guard_view; {VARIANT} @id(\"app.probe\") fn probe(selected: Choice) -> i64 {{ let bad: bool = {initializer}; match selected {{ {arms} }} }} @id(\"app.main\") fn main() -> i64 {{ 0 }}"
         )
     };
     selected(
@@ -278,7 +278,7 @@ fn accepted_annotations_keep_full_original_receiver_canonical_and_graph_results(
         "let text: string = \"x\"; let size = string_len(text); size",
         "let mut flag: bool = false; while flag { flag = false; 0 } 0",
         "let callback = fn(value: i64) -> i64 { let alias: i64 = value; alias }; 0",
-        "match true { true => 1, false => 0, }",
+        "match 1 { 0 => 1, n => n, }",
     ] {
         let source = module(body);
         assert!(full(&source, true).is_empty(), "old acceptance: {source}");
@@ -548,7 +548,7 @@ fn contract_expected_type_view_preserves_independent_result_and_transfer_obligat
         &["SPX-T232", "SPX-C101"],
     );
     let borrowed = format!(
-        "module test.contract_borrow; {CALLS} @id(\"app.main\") fn main(held: borrow Bytes) -> i64 requires {{ let alias: string = held; let used = f_string(alias); true }} {{ 0 }}"
+        "module test.contract_borrow; {CALLS} @id(\"app.probe\") fn probe(held: borrow Bytes) -> i64 requires {{ let alias: string = held; let used = f_string(alias); true }} {{ 0 }} @id(\"app.main\") fn main() -> i64 {{ 0 }}"
     );
     selected(
         &borrowed,

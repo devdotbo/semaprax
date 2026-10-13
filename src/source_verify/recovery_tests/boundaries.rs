@@ -48,7 +48,10 @@ fn owned_and_borrowed_annotation_mismatches_preserve_real_transfer_verdicts() {
         assert!(codes(&old).contains(&"SPX-T232"));
         for diagnostic in &old {
             if diagnostic.code.starts_with("SPX-O") {
-                assert!(current.contains(diagnostic), "lost ownership boundary: {source}: {diagnostic:?}");
+                assert!(
+                    current.contains(diagnostic),
+                    "lost ownership boundary: {source}: {diagnostic:?}"
+                );
             }
         }
         if source.contains("owned_annotation") || source.contains("borrowed_annotation") {
@@ -72,8 +75,12 @@ fn valid_binding_and_sibling_scope_are_not_replaced_by_annotation_recovery() {
         let old = full(&source, true);
         let current = full(&source, false);
         assert_eq!(current.first(), old.first());
-        if body.contains("fn(bad:") { assert_eq!(current, old); }
-        for diagnostic in &current { assert!(old.contains(diagnostic)); }
+        if body.contains("fn(bad:") {
+            assert_eq!(current, old);
+        }
+        for diagnostic in &current {
+            assert!(old.contains(diagnostic));
+        }
     }
 }
 
@@ -160,7 +167,7 @@ fn accepted_source_roundtrip_graph_revision_and_original_receiver_stay_equal() {
         "let value = 1; if true { value + 1 } else { value }",
         "let callback = fn(n: i64) -> i64 { n + 1 }; callback(2)",
         "let mut n = 0; while n < 2 { n = n + 1; 0 } n",
-        "match 1 { 0 => 0, n => n }",
+        "match 1 { 0 => 0, n => n, }",
     ] {
         let source = source(body);
         assert_eq!(full(&source, false), full(&source, true));

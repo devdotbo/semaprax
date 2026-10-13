@@ -60,6 +60,38 @@ The prelude vector initializer is factored into a private owning factory used
 by the `OnceLock`, and a test-only copy of the original initializer body is the
 reference it must match.
 
+## Fixture controls
+
+Nine recovery selectors failed at runtime: eight contain invalid source fixtures,
+and one observes a process-lived prelude owner inside an invocation Drop scope.
+Production recovery is unchanged.
+
+- Missing final arm commas: the original bodies stay literal in
+  `recovery_tests/fixture_controls.rs` and are asserted as parser `SPX-P106`
+  refusals with all six fields, the site derived from the literal's closing brace.
+  Corrected trailing-comma bodies keep full receiver, declaration-pass,
+  canonical and graph parity.
+- Local `result`: the original keeps full old and current sequences including
+  `SPX-S109` and `SPX-T201`. The `outcome` counterpart keeps the fixed-result
+  reset with its own full sequences.
+- Non-`i64` or parameterized `main`: originals keep exact `SPX-T104` (and
+  `SPX-O002` for `own string`) objects with spans from the parsed declaration or
+  literal site. Counterparts use a named `probe` helper, a valid `main`, and
+  `owner: string`. Existing direct-body receivers and `state` checks are unchanged.
+- Boolean `match`: the original missing catch-all retains the complete authored
+  `SPX-T257` object and exact old/current equality under Refutable Match v1.
+  Admitted Boolean and integer counterparts retain canonical and graph parity.
+- Direct return: the original missing-semicolon source retains its complete
+  authored `SPX-P106` object under Acyclic Guard Returns v1. The admitted helper
+  preserves full old type/ownership symptoms and the exact current refusal view
+  without fabricating ownership for a mismatched actual carrier.
+- Allocation: measured controls hold only the immutable prelude table and
+  measure the full invocation through Drop, asserting alloc == freed, live 0,
+  not invalid, and a stable held pointer and length. Failure messages print the
+  metrics. No attribution claim is made.
+
+All of this is authored only; no Cargo, build or test command was run.
+
 ## Pending selectors
 
 - `--lib source_verify::iterative_verifier_tests`
