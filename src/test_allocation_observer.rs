@@ -277,6 +277,25 @@ pub(crate) fn current_metrics() -> Metrics {
         metrics
     })
 }
+/// Attribute currently live observed layouts to an explicit owner graph.
+/// The predicate must borrow existing data only: callbacks run while the
+/// observation registry is borrowed. No metric, slot, or debit is rewritten.
+pub(crate) fn live_bytes_matching(mut owns: impl FnMut(usize) -> bool) -> usize {
+    assert!(active(), "live ownership requires an active observation");
+    STATE.with(|state| {
+        let state = state.borrow();
+        let slots = state
+            .extended
+            .as_ref()
+            .map_or(&state.slots[..], |registry| &registry.slots[..]);
+        slots
+            .iter()
+            .filter(|slot| slot.pointer != 0 && owns(slot.pointer))
+            .try_fold(0usize, |sum, slot| sum.checked_add(slot.bytes))
+            .expect("live ownership layout sum overflowed")
+    })
+}
+
 // Keep instrumentation outside the per-operation generic body. These helpers
 // allocate nothing and retain the same observation and unwind boundaries.
 fn begin_observation() -> Guard {
@@ -529,4 +548,20 @@ mod tests {
             assert_eq!(registry.slots.as_ptr(), backing);
         }
     }
+}
+
+#[test]
+fn live_pointer_owner_receipt_preserves_full_metrics_and_drop() {
+    let (_, metrics) = measure(|| {
+        let owner = vec![0u8; 32];
+        let pointer = owner.as_ptr() as usize;
+        let before = current_metrics();
+        assert_eq!(live_bytes_matching(|candidate| candidate == pointer), 32);
+        assert_eq!(live_bytes_matching(|_| false), 0);
+        assert_eq!(before, current_metrics());
+        drop(owner);
+        assert_eq!(live_bytes_matching(|candidate| candidate == pointer), 0);
+    });
+    assert!(!metrics.invalid && metrics.live == 0);
+    assert_eq!(metrics.allocated, metrics.freed);
 }
