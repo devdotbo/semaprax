@@ -160,10 +160,11 @@ fn early_profile_constructors_are_actually_paid_before_construction() {
         .declarations
         .declarations
         .insert(DeclarationId::new("owned.box#invariant"), declaration);
-    assert!(
-        funded_early::invariant_present(&forged.declarations, &DeclarationId::new("owned.box"))
-            .unwrap()
-    );
+    assert!(funded_early::invariant_present(
+        &forged.declarations,
+        &DeclarationId::new("owned.box")
+    )
+    .unwrap());
 }
 #[test]
 fn funded_lifecycle_collector_matches_original_cycles_errors_and_pays_nodes() {
@@ -229,10 +230,13 @@ fn imported_lifecycle_effect_payloads_are_funded_deduplicated_and_drop_complete(
         .iter_mut()
         .find(|item| item.id == token_id)
         .unwrap();
-    let ResolvedTypeDeclarationKind::Resource { drop } = &mut resource.kind else {
+    let ResolvedTypeDeclarationKind::Resource {
+        drop: resource_drop,
+    } = &mut resource.kind
+    else {
         panic!("resource fixture")
     };
-    drop.kind = ResolvedResourceDropKind::Imported {
+    resource_drop.kind = ResolvedResourceDropKind::Imported {
         import: import_id,
         import_key: "unchanged collector ignores import-key metadata".to_owned(),
     };

@@ -291,21 +291,21 @@ fn detached_traversal_rows_keep_complete_binding_metadata_and_actual_drop() {
     use crate::hir::resolve_for::record::Row;
     let execution = FunctionExecutionId::Monomorphic(DeclarationId::new("row.owner"));
     let source = ResolvedBinding {
-        id: ValueId::new("row.source"),
+        id: ValueId::new("row.source".to_owned()),
         name: "rows".into(),
         ty: crate::vec_ops::resolved_vec(ResolvedType::I64),
         ownership: OwnershipMode::Borrow,
         span: crate::ast::Span::default(),
     };
     let index = ResolvedBinding {
-        id: ValueId::new("row.index"),
+        id: ValueId::new("row.index".to_owned()),
         name: "at".into(),
         ty: ResolvedType::Usize,
         ownership: OwnershipMode::Value,
         span: crate::ast::Span::default(),
     };
     let region = ExpressionId::new(&execution, "body.s0.loop");
-    let bound = ValueId::new("row.bound");
+    let bound = ValueId::new("row.bound".to_owned());
     let input = BTreeMap::from([(
         "row".into(),
         Binding {

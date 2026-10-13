@@ -17,8 +17,8 @@ struct Outcome<'r, O> {
 macro_rules! run {
     ($visit:expr, $root:expr, $work:expr, $backing:expr) => {{
         let root: &E = $root;
-        let work = Cell::new($work);
-        let backing = Cell::new($backing);
+        let work: Cell<usize> = Cell::new($work);
+        let backing: Cell<usize> = Cell::new($backing);
         let failed = Cell::new(false);
         let mut charge = |units: usize| match work.get().checked_sub(units) {
             Some(left) if !failed.get() => {

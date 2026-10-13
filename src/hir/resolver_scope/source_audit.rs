@@ -1,7 +1,10 @@
 //! Complete joined frozen carrier/helper and unchanged service source audit.
 use sha2::{Digest, Sha256};
 fn digest(text: &str) -> String {
-    format!("{:x}", Sha256::digest(text.as_bytes()))
+    format!(
+        "{:x}",
+        crate::digest_hex::LowerHex(Sha256::digest(text.as_bytes()))
+    )
 }
 #[test]
 fn complete_frozen_receiver_and_shared_boundaries_match_static_body_provenance() {
