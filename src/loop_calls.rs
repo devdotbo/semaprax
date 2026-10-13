@@ -17,8 +17,10 @@ use crate::ast::{ParamMode, Type, TypeDeclarationKind};
 use crate::hir::{OwnershipMode, ResolvedType};
 use crate::source_verify::is_scalar_source_type;
 
-/// One source parameter a loop-body call admits: a Copy scalar or flat Copy variant, a borrowed
-/// byte slice, named `str`, or exact Copy-scalar Vec, or an owned `string` the call consumes.
+/// Loop-body parameters include Copy scalars, flat Copy variants and the flat Copy
+/// records of `docs/COPY-RECORD-COLLECTIONS-V1.md`, alongside the admitted borrowed
+/// views, collection carriers and consumed owners below. Each additive profile
+/// keeps its own authenticated shape and ownership boundary.
 pub(crate) fn ast_param_admitted(program: &dyn ProgramSource, mode: ParamMode, ty: &Type) -> bool {
     match mode {
         ParamMode::Value => {
@@ -69,7 +71,9 @@ pub(crate) fn effects_admitted(effects: &[String]) -> bool {
     })
 }
 
-/// One source result a loop-body call admits: a Copy scalar, flat Copy variant or new `string`.
+/// Loop-body results include Copy scalars, flat Copy variants, flat Copy records
+/// (`docs/COPY-RECORD-COLLECTIONS-V1.md`), new `string` values and the independently
+/// authenticated owned-leaf/collection profiles below.
 pub(crate) fn ast_result_admitted(program: &dyn ProgramSource, ty: &Type) -> bool {
     is_scalar_source_type(ty)
         || *ty == Type::String

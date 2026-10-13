@@ -454,6 +454,10 @@ fn shapes_outside_owned_string_loops_v2_stay_refused() {
         found[0].message,
         "ownership of `text` changes inside a while loop, which is not yet admitted"
     );
+}
+
+#[test]
+fn flat_copy_record_loop_call_arguments_verify_cleanly() {
     // A flat Copy record is an admitted by-value loop-call argument
     // (`loop_calls::ast_param_admitted`), so this call verifies cleanly.
     let found = diagnostics(&format!(

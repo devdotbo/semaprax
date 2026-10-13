@@ -221,22 +221,22 @@ fn main() -> i64
   own final expression.
 - A `while` condition must be `bool` and is checked before every iteration.
   Its body still needs a final expression, but that value is discarded; the
-  condition controls repetition. While bodies admit
-  Copy-scalar operations, user calls with declared read-only input effects
-  taking Copy scalars or flat Copy variants, borrowed byte slices, named `str`
-  views, exact compiler-owned `borrow Vec<T>` for Copy-scalar `T`, or consumed
-  strings and returning a scalar, flat Copy variant or string, matches over Copy
-  scalars or variants with only Copy scalar payloads,
-  and string literals and `string_*` calls (each iteration releases its own
-  strings). Match arms may yield strings or flat Copy variants. Concrete variants with only Copy
-  scalar payloads may be constructed there, including direct match scrutinees;
-  record/non-Copy variant construction, other aggregate-returning calls, and
-  surrounding ownership changes are `SPX-T252`. Conditions settle temporary
-  Strings before each Boolean decision ([condition lifetime](STRING-CONDITION-LIFETIMES-V1.md)). Copy variant guards admit ordinary checked bool calls/blocks and
-  case/wildcard/or patterns, require exhaustive unguarded fallback, and cannot
-  consume an outer owner ([guard profile](GENERAL-LOOP-MATCH-V1.md)).
-  Use canonical `vec_*<T>` operations inside loops; imported generic aliases
-  remain generic calls and are refused with `SPX-T252`.
+  condition controls repetition. While bodies admit Copy-scalar operations,
+  string literals and `string_*` calls. User calls declare read-only input
+  effects, take Copy scalars or flat Copy variants, borrowed byte slices, named `str`, exact compiler-owned
+  `borrow Vec<T>` for Copy-scalar `T`, or consumed strings, and return scalars,
+  flat Copy variants or strings. Each iteration releases its strings. Matches over
+  Copy scalars or variants with only Copy scalar payloads may yield strings or
+  flat Copy variants. Construct Copy-scalar variants directly, including match
+  scrutinees. [Copy record collections](COPY-RECORD-COLLECTIONS-V1.md)
+  add checked flat Copy record construction, projection and private by-value
+  helpers. Other aggregates need admission; moving an outer owner
+  remains `SPX-T252`. Conditions settle temporary
+  Strings before selection ([condition lifetime](STRING-CONDITION-LIFETIMES-V1.md)).
+  Copy variant guards admit checked bool calls/blocks and case/wildcard/or
+  patterns, require exhaustive unguarded fallback, and cannot consume an outer
+  owner ([guard profile](GENERAL-LOOP-MATCH-V1.md)). Use canonical `vec_*<T>`
+  operations inside loops; imported generic aliases retain `SPX-T252`.
 - Bindings are immutable unless `let mut`. Assignment is a statement:
   `x = x + 1;` or `point.x = 5;`. Parameters are immutable. A `let mut`
   string can be replaced by a same-typed RHS; the completed RHS becomes its
