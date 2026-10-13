@@ -1,7 +1,7 @@
 //! Complete ordinary receiving dispatch; old tree branches remain compiled independently.
 use super::*;
 
-pub(super) fn validate_status_sources(
+pub(in crate::cleanup_plan::replay) fn validate_status_sources(
     function: &ResolvedFunction,
     facts: &Facts<'_>,
     budget: &mut ReplayBudget,
@@ -12,7 +12,7 @@ pub(super) fn validate_status_sources(
     validate_status_sources_core::<Diagnostic>(function, facts, budget)
 }
 
-pub(super) fn validate_status_sources_core<E: semantic_refusal::Error>(
+pub(in crate::cleanup_plan::replay) fn validate_status_sources_core<E: semantic_refusal::Error>(
     function: &ResolvedFunction,
     facts: &Facts<'_>,
     budget: &mut ReplayBudget,
@@ -79,11 +79,11 @@ pub(super) fn validate_status_sources_core<E: semantic_refusal::Error>(
                 StatusProducer::CheckedAllocation {
                     normalized_cases, ..
                 },
-            ) if function.cleanup_plan.schema == super::CLEANUP_PLAN_SCHEMA_V20
+            ) if function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20
                 && *normalized_cases
                     == [
-                        super::AllocationCase::PayloadRefused,
-                        super::AllocationCase::SizeOverflow,
+                        crate::cleanup_plan::AllocationCase::PayloadRefused,
+                        crate::cleanup_plan::AllocationCase::SizeOverflow,
                     ] => {}
             (StatusLane::ContractFalse, StatusProducer::ContractFalse { .. }) => {}
             _ => {
@@ -98,7 +98,7 @@ pub(super) fn validate_status_sources_core<E: semantic_refusal::Error>(
     Ok(())
 }
 
-pub(super) fn validate_blocks_and_edges(
+pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     facts: &Facts<'_>,
@@ -437,9 +437,9 @@ pub(super) fn validate_blocks_and_edges(
                             | CLEANUP_PLAN_SCHEMA_V13
                             | CLEANUP_PLAN_SCHEMA_V15
                             | CLEANUP_PLAN_SCHEMA_V16
-                            | super::CLEANUP_PLAN_SCHEMA_V17
-                            | super::CLEANUP_PLAN_SCHEMA_V18
-                            | super::CLEANUP_PLAN_SCHEMA_V19
+                            | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17
+                            | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+                            | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
                             | CLEANUP_PLAN_SCHEMA_V14
                     ) && matches!(
                         plan.edges[edge.0 as usize].condition,

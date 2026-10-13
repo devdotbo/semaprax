@@ -1,6 +1,6 @@
 use super::*;
 
-fn collect_arena_facts<'a, P: errors::Policy>(
+pub(super) fn collect_arena_facts<'a, P: errors::Policy>(
     function: &'a ResolvedFunction,
     expression: &'a ResolvedExpr,
     facts: &mut Arena<'a>,
