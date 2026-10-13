@@ -2,7 +2,7 @@
 use std::fmt::Write as _;
 
 const MAX_BYTES: usize = 2_048;
-const ROUTES: &str = "Authoring routes (complete):\n  author:vec-constructor typed Vec source; ordinary per-item commits\n  author:lexical-exits statement-tail break/continue/return\n  author:stdin-json v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data v30 private owned-leaf collections\n  author:collection-records v31 nested records containing Vec\n  author:nested-outcomes v32 typed nested success/error carriers\n  author:file-text native UTF-8 file command\n  author:selected-file native file; :selected-file-resource for v34\n  author:source-web single-source web build\n  author:literal-format literal String rendering\n  author:string-take named String owner transfer\n  author:static-utf8              borrowed UTF-8\n  author:string-from-utf8         strict bytes-to-String\n  author:copy-record-vec flat Copy-record vectors\n  author:record-sort-keys explicit stable field sort policies\n  author:unique-by field duplicate check\n  author:record-field-views borrowed record and Vec field reads\n  author:record-traversal scoped borrowed rows and optional indices\n  author:byte-traversal named immutable byte-slice traversal\n  author:json-codec checked source JSON codec derivation\n  author:json-identifier-views one identifier as a token view\n  author:json-request-views bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response nested collection encoder\n  author:json-nested-request finite nested request decoder\n  author:json-stream-nested-request finite nested stdin decoder\n  author:json-nested-response finite nested borrowed encoder\n  author:json-request-response typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
+const ROUTES: &str = "Authoring routes (complete):\n  author:vec-constructor typed Vec source; ordinary per-item commits\n  author:lexical-exits statement-tail break/continue/return\n  author:stdin-json v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data v30 private owned-leaf collections\n  author:collection-records v31 nested records containing Vec\n  author:nested-outcomes v32 typed nested success/error carriers\n  author:file-text native UTF-8 file command\n  author:selected-file native file\n  author:selected-file-resource v34\n  author:source-web single-source web build\n  author:literal-format literal String rendering\n  author:string-take named String owner transfer\n  author:static-utf8              borrowed UTF-8\n  author:string-from-utf8         strict bytes-to-String\n  author:copy-record-vec flat Copy-record vectors\n  author:record-sort-keys explicit stable field sort policies\n  author:unique-by field duplicate check\n  author:record-field-views borrowed record and Vec field reads\n  author:record-traversal scoped borrowed rows and optional indices\n  author:byte-traversal named immutable byte-slice traversal\n  author:json-codec checked source JSON codec derivation\n  author:json-identifier-views one identifier as a token view\n  author:json-request-views bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response nested collection encoder\n  author:json-nested-request finite nested request decoder\n  author:json-stream-nested-request finite nested stdin decoder\n  author:json-nested-response finite nested borrowed encoder\n  author:json-request-response typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
 
 #[cfg(test)]
 pub(super) fn assert_guide_contract() {
@@ -696,6 +696,7 @@ mod tests {
 
     #[test]
     fn routes_and_search_are_bounded_exact_and_have_complete_continuations() {
+        let inventory = lookup("author:routes").unwrap();
         for route in [
             "author:routes",
             "author:vec-constructor",
@@ -735,6 +736,12 @@ mod tests {
             let output = lookup(route).unwrap();
             assert!(output.len() <= MAX_BYTES);
             assert_eq!(output, lookup(route).unwrap());
+            if route != "author:routes" {
+                assert!(
+                    inventory.split_whitespace().any(|word| word == route),
+                    "complete authoring inventory omits exact selector {route}"
+                );
+            }
         }
         for bad in [
             "author:unknown",

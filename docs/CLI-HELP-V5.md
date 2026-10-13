@@ -39,6 +39,8 @@ executable qualification is pending. Existing command and help bounds remain.
 ## Bounded application discovery
 
 `help language author:routes` lists the complete application-route inventory.
+Every admitted route appears as its full exact selector, including
+`author:selected-file-resource`; descriptions never abbreviate selectors.
 Exact `author:stdin-json`, `author:file-text`, and `author:source-web` selectors
 give the admitted profile/target, build and test commands, required capabilities,
 starter, limitations, and exact selectors for checked library prerequisites.
