@@ -333,8 +333,29 @@ fn generic_callable_and_unknown_types_stay_uncached_and_exact() {
 }
 
 #[test]
-fn actual_validator_clone_and_nested_constructor_share_exact_index_memo() {
+fn uppercase_string_source_keeps_complete_original_unknown_type_diagnostic() {
+    // Retain the complete formerly failing source as an explicit negative.
     let source = crate::parse("module text.validator; @id(\"text.row\") record Row { @id(\"text.row.field\") field: String, } @id(\"text.main\") fn main() -> i64 { 0 }", std::path::Path::new("text-validator.spx")).unwrap();
+    let diagnostics = crate::hir::resolve(&source).unwrap_err();
+    let expected = Diagnostic::error(
+        "SPX-T001",
+        "unknown type `String`; declare it with `resource String;`",
+        crate::ast::Span {
+            start: 74,
+            end: 88,
+            line: 1,
+            column: 75,
+        },
+    )
+    .at_path("text-validator.spx")
+    .with_help("owned text is `string`; a borrowed view is `borrow str` in a parameter position");
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].json(), expected.json());
+}
+
+#[test]
+fn actual_validator_clone_and_nested_constructor_share_exact_index_memo() {
+    let source = crate::parse("module text.validator; @id(\"text.row\") record Row { @id(\"text.row.field\") field: string, } @id(\"text.main\") fn main() -> i64 { 0 }", std::path::Path::new("text-validator.spx")).unwrap();
     let program = crate::hir::resolve(&source).unwrap();
     let other = program.clone();
     let validator = HirValidator::new(&program).unwrap();
@@ -344,6 +365,8 @@ fn actual_validator_clone_and_nested_constructor_share_exact_index_memo() {
         &clone.executable_profiles.state
     ));
     clone.executable_profiles.validate_use(&root()).unwrap();
+    assert!(oracle::contains_string(&root(), &program.declarations));
+    assert_eq!(clone.executable_profiles.state.borrow().entries.len(), 1);
     let nested =
         HirValidator::with_profiles(&program, None, None, validator.executable_profiles.clone())
             .unwrap();
@@ -351,6 +374,8 @@ fn actual_validator_clone_and_nested_constructor_share_exact_index_memo() {
         &validator.executable_profiles.state,
         &nested.executable_profiles.state
     ));
+    nested.executable_profiles.validate_use(&root()).unwrap();
+    assert_eq!(nested.executable_profiles.state.borrow().entries.len(), 1);
     assert!(
         HirValidator::with_profiles(&other, None, None, validator.executable_profiles.clone())
             .is_err()
