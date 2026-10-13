@@ -1,5 +1,6 @@
 //! Flags-only ownership observations paid by the same active HIR invocation.
 use super::*;
+use crate::cleanup_plan::replay::physical_clone::ClonePayload;
 use std::mem::size_of;
 
 pub(super) struct Payer;
