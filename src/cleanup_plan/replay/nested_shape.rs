@@ -422,6 +422,29 @@ pub(super) fn type_needs_drop(
     function: &ResolvedFunction,
     ty: &ResolvedType,
 ) -> Result<bool, Diagnostic> {
+    #[cfg(test)]
+    match allocation::authority(program, function) {
+        Ok(Some(lease)) => {
+            if program.selected_flat_records() {
+                lease.fail_physical("selected inventory is outside the ordinary oracle receiver");
+                return Err(Diagnostic::io_static(
+                    "SPX-H006",
+                    "ordinary oracle receiver refused selected inventory admission",
+                ));
+            }
+            // A new helper budget owns no allowance: every byte is debited from
+            // the same cumulative account, with the existing Ordinary ceilings.
+            let mut budget = ReplayBudget::with_skeleton_limit_oracle(MAX_REPLAY_WORK_UNITS, lease);
+            return super::paid_type_facts::needs_drop(program, function, ty, &mut budget);
+        }
+        Ok(None) => {}
+        Err(_) => {
+            return Err(Diagnostic::io_static(
+                "SPX-H006",
+                "oracle invocation authority refused a type probe",
+            ))
+        }
+    }
     if program.selected_flat_records() {
         return crate::cleanup::selected_inventory_needs_drop_in(program, ty);
     }

@@ -10,9 +10,11 @@ mod invocation;
 #[cfg(test)]
 mod tests;
 
-pub(in crate::cleanup_plan::replay) use diagnostic::{replay_error_funded, ReplayFailure};
+pub(in crate::cleanup_plan::replay) use diagnostic::{
+    raw_error_funded, replay_error_funded, ReplayFailure,
+};
 pub(in crate::cleanup_plan::replay) use invocation::{
-    authority, authority_for_function, enter, opt_in, opted, Invocation, InvocationRefusal, OptIn,
+    authority, authority_for_function, enter, opt_in, opted, InvocationRefusal,
 };
 
 /// Observable account state. Reported next to, never merged into, production

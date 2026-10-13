@@ -763,3 +763,42 @@ fn finite_account_work_refusal_census_carrier_is_observed_through_drop() {
     assert_eq!((first.requested, first.remaining, first.ordinal), (1, 0, 1));
     assert!(receipt.first_refusal.is_none());
 }
+
+#[test]
+fn account_type_probe_fast_receivers_match_original_without_production_ledger_touch() {
+    let program = program();
+    let function = &program.functions[0];
+    let types = [
+        crate::hir::ResolvedType::Never,
+        crate::hir::ResolvedType::I64,
+        crate::hir::ResolvedType::Bytes,
+        crate::hir::ResolvedType::String,
+    ];
+    let original: Vec<_> = types
+        .iter()
+        .map(|ty| crate::cleanup::type_needs_resource_cleanup(&program, ty).unwrap())
+        .collect();
+    let scope = OracleScope::open(0).unwrap();
+    let lease = scope.lease();
+    let (((), metrics), refused, active) = crate::bounded_output::with_limit_usage(0, || {
+        crate::test_allocation_observer::measure(|| {
+            let invocation = super::enter(&program, function, lease).unwrap();
+            for (ty, original) in types.iter().zip(&original) {
+                let received = crate::cleanup_plan::replay::nested_shape::type_needs_drop(
+                    &program, function, ty,
+                )
+                .unwrap();
+                assert_eq!(received, *original);
+            }
+            assert_eq!(invocation.exit(), Ok(()));
+        })
+    });
+    assert!(!refused);
+    assert_eq!(active, 0);
+    assert!(!metrics.invalid);
+    assert_eq!(metrics.allocated, 0);
+    assert_eq!(metrics.live, 0);
+    assert_eq!(scope.receipt().charged, 0);
+    assert!(scope.receipt().first_refusal.is_none());
+    assert!(scope.receipt().physical_failure.is_none());
+}

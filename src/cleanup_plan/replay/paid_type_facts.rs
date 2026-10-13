@@ -11,6 +11,18 @@ struct Payer<'a> {
 }
 impl Payer<'_> {
     fn current(&mut self) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if let Some(lease) = self.budget.oracle_lease() {
+            if matches!(allocation::authority_for_function(self.function), Ok(Some(held)) if held == lease)
+            {
+                return Ok(());
+            }
+            lease.fail_physical("classifier account payer differs from its live invocation");
+            return Err(Diagnostic::io_static(
+                "SPX-H006",
+                "oracle invocation authority refused a classifier payer",
+            ));
+        }
         if self.ledger.current() {
             return Ok(());
         }
@@ -102,6 +114,10 @@ impl TypeFactsPayer for Payer<'_> {
         Ok(Box::new(ty))
     }
     fn construction_refusal(&mut self, message: &'static str) -> Diagnostic {
+        #[cfg(test)]
+        if let Some(lease) = self.budget.oracle_lease() {
+            lease.fail_physical(message);
+        }
         self.budget.budget_refusal(self.function, message, "")
     }
 }
@@ -114,6 +130,13 @@ pub(super) fn flags(
 ) -> Result<Option<crate::hir::TypeFlags>, Diagnostic> {
     #[cfg(test)]
     if SAVED.with(std::cell::Cell::get) {
+        if let Some(lease) = budget.oracle_lease() {
+            lease.fail_physical("independent saved classifier is not an account-funded receiver");
+            return Err(Diagnostic::io_static(
+                "SPX-H006",
+                "saved classifier receiver has no oracle-account payer",
+            ));
+        }
         return Ok(index.type_flags(ty));
     }
     index.type_flags_paid(
@@ -135,6 +158,13 @@ pub(super) fn needs_drop(
 ) -> Result<bool, Diagnostic> {
     #[cfg(test)]
     if SAVED.with(std::cell::Cell::get) {
+        if let Some(lease) = budget.oracle_lease() {
+            lease.fail_physical("independent saved classifier is not an account-funded receiver");
+            return Err(Diagnostic::io_static(
+                "SPX-H006",
+                "saved classifier receiver has no oracle-account payer",
+            ));
+        }
         return crate::cleanup::type_needs_resource_cleanup(program, ty)
             .map_err(|message| replay_error(function, message));
     }
@@ -168,3 +198,76 @@ fn with_saved_classifier<T>(run: impl FnOnce() -> T) -> T {
 mod tests;
 #[cfg(test)]
 mod zero_tests;
+
+#[cfg(test)]
+mod oracle_payer_tests {
+    use super::*;
+    use crate::cleanup_plan::replay::allocation::{enter, OracleRefusal, OracleScope};
+
+    fn program() -> crate::hir::ResolvedProgram {
+        crate::hir::resolve(
+            &crate::check(
+                r#"module classifier.oracle; @id("main") fn main()->i64 {7}"#,
+                "classifier-oracle.spx",
+            )
+            .unwrap(),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn explicit_classifier_payer_requires_live_subject_and_keeps_first_physical_failure() {
+        let program = program();
+        let function = &program.functions[0];
+        let scope = OracleScope::open(1 << 20).unwrap();
+        let lease = scope.lease();
+        let invocation = enter(&program, function, lease).unwrap();
+        let mut budget = ReplayBudget::with_skeleton_limit_oracle(MAX_REPLAY_WORK_UNITS, lease);
+        let mut payer = Payer {
+            function,
+            budget: &mut budget,
+            ledger: ClassifierLedger::capture(),
+        };
+        assert_eq!(payer.bytes(0), Ok(()));
+        let _ = payer.construction_refusal("first classifier physical failure");
+        let _ = payer.construction_refusal("second classifier physical failure");
+        assert_eq!(
+            scope.receipt().physical_failure,
+            Some("first classifier physical failure")
+        );
+        assert_eq!(lease.charge(0), Err(OracleRefusal::Sticky));
+        assert_eq!(invocation.exit(), Ok(()));
+        drop(scope);
+        let scope = OracleScope::open(1 << 20).unwrap();
+        let mut budget =
+            ReplayBudget::with_skeleton_limit_oracle(MAX_REPLAY_WORK_UNITS, scope.lease());
+        let mut payer = Payer {
+            function,
+            budget: &mut budget,
+            ledger: ClassifierLedger::capture(),
+        };
+        assert!(
+            payer.bytes(0).is_err(),
+            "an account without its live invocation is refused"
+        );
+        assert!(scope.receipt().physical_failure.is_some());
+        assert_eq!(scope.receipt().charged, 0);
+    }
+
+    #[test]
+    fn complete_saved_receiver_cannot_be_misrepresented_as_account_funded() {
+        let program = program();
+        let function = &program.functions[0];
+        let scope = OracleScope::open(1 << 20).unwrap();
+        let lease = scope.lease();
+        let invocation = enter(&program, function, lease).unwrap();
+        let mut budget = ReplayBudget::with_skeleton_limit_oracle(MAX_REPLAY_WORK_UNITS, lease);
+        let result = with_saved_classifier(|| {
+            needs_drop(&program, function, &ResolvedType::I64, &mut budget)
+        });
+        assert!(result.is_err());
+        assert!(scope.receipt().physical_failure.is_some());
+        assert_eq!(scope.receipt().charged, 0);
+        assert_eq!(invocation.exit(), Ok(()));
+    }
+}

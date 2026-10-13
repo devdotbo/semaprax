@@ -404,7 +404,9 @@ pub(crate) fn checked_bindings<'a>(
     })
 }
 const CENSUS_DEPTH: usize = 514;
+#[cfg(test)]
 const CENSUS_CODE: &str = "SPX-H006";
+#[cfg(test)]
 const CENSUS_MESSAGE: &str = "byte helper renewal census exceeds admitted scratch, work or depth";
 pub(super) fn census_error() -> crate::diagnostic::Diagnostic {
     crate::diagnostic::Diagnostic::io(

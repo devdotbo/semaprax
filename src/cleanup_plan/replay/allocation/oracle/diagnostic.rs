@@ -92,3 +92,33 @@ pub(in crate::cleanup_plan::replay) fn replay_error_funded(
     }
     Ok(Diagnostic::io("SPX-H006", text))
 }
+
+/// Raw H006 receiver: unlike replay_error_funded this preserves the upstream
+/// constructor's unprefixed text. The complete backing is paid before allocation.
+pub(in crate::cleanup_plan::replay) fn raw_error_funded(
+    lease: OracleLease,
+    message: fmt::Arguments<'_>,
+) -> Result<Diagnostic, ReplayFailure> {
+    let mut count = Count(0);
+    if write!(count, "{message}").is_err() {
+        return Err(physical(lease, "raw diagnostic length overflowed"));
+    }
+    lease.charge(count.0).map_err(ReplayFailure::Account)?;
+    let mut text = String::new();
+    if text.try_reserve_exact(count.0).is_err() {
+        return Err(physical(lease, "raw diagnostic allocation failed"));
+    }
+    if text.capacity() != count.0 {
+        return Err(physical(
+            lease,
+            "raw diagnostic capacity differs from its reservation",
+        ));
+    }
+    if write!(text, "{message}").is_err() || text.len() != count.0 {
+        return Err(physical(
+            lease,
+            "raw diagnostic text differs from its counted bytes",
+        ));
+    }
+    Ok(Diagnostic::io("SPX-H006", text))
+}
