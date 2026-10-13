@@ -11,7 +11,7 @@
     "src/cleanup_plan/replay/expression_facts/tests/payloads.rs": "d1226902c11a4cdbc6dbe42ee17229033174dcc2123c3add52e0aa83b5de61bf",
     "src/cleanup_plan/replay/lexical_replay.rs": "20e1f53661791728da24801f90ff31228173d5f5d4125a8dac541dc2e8c80981",
     "src/cleanup_plan/replay/scalar_replay.rs": "71c43c4c023be68c6673d348909b56a4362dbedafe5f8457b5c7808b94647873",
-    "src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs": "346c92cb9dd2df570f5de652d808eb7203c08aa6c92cf862eb40518c64ca56ae",
+    "src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs": "1436760b3ed5d4a3b1612092f7d36df62dd6f3e9285af26fa03ab3e56f692228",
     "src/cleanup_plan/replay/structural_control/blocks.rs": "04b3b312866bde5572832a8a753cd963edcef45ec6f7dbcc5c2023bbba40928e",
     "tests/hir_module_boundaries.rs": "3d61444004861945d001d84e5431f6e4168e2fc6197b36e6329d230a4288fa5a",
     "docs/evidence/expression-fact-arena/original_capacity.txt": "f95245c44f2ec9ba13d288f58ceac361a3b3784d752fab16d4595de1b9b347ba",

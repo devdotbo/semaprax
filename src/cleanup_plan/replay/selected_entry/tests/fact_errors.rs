@@ -207,4 +207,5 @@ fn paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts() {
     assert!(!overflowed);
 }
 
+#[path = "fact_errors/arena.rs"]
 mod arena;
