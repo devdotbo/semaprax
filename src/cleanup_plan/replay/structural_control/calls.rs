@@ -230,7 +230,7 @@ fn signature<'a>(
         .ok_or_else(|| {
             replay_error(
                 function,
-                format!("call commit has unknown callee `{}`", fact.callee),
+                format_args!("call commit has unknown callee `{}`", fact.callee),
             )
         })?;
     if !target.effects.is_empty() || target.yields.is_some() {

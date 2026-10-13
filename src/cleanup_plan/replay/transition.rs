@@ -518,7 +518,7 @@ pub(super) fn append_dead_flags(
     {
         return Err(replay_error(
             function,
-            format!("{operation} initializes an empty or live cleanup place"),
+            format_args!("{operation} initializes an empty or live cleanup place"),
         ));
     }
     state.live_order.extend(flags);
@@ -645,7 +645,7 @@ pub(super) fn replay_exit(
     if actual != expected {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "exit {} does not finalize its live region leaves in reverse initialization order",
                 exit.id.0
             ),
@@ -914,7 +914,7 @@ pub(super) fn require_normal_flow_state(
     } else {
         Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "block {} continues ordinary control flow with failure or publication state",
                 block.0
             ),

@@ -18,7 +18,7 @@ impl Policy for Legacy {
     fn duplicate(function: &ResolvedFunction, expression: &ExpressionId) -> Diagnostic {
         replay_error(
             function,
-            format!("HIR expression identity `{expression}` is repeated"),
+            format_args!("HIR expression identity `{expression}` is repeated"),
         )
     }
 }
@@ -57,7 +57,7 @@ impl FactReceipt {
         if let Some(expression) = self.expression {
             replay_error(
                 function,
-                format!("HIR expression identity `{expression}` is repeated"),
+                format_args!("HIR expression identity `{expression}` is repeated"),
             )
         } else {
             replay_error(function, self.detail)

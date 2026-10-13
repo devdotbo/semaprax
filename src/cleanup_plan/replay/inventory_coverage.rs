@@ -63,7 +63,9 @@ pub(super) fn validate_inventory_coverage(
         {
             return Err(replay_error(
                 function,
-                format!("cleanup plan base slot {index} disagrees with the independent inventory"),
+                format_args!(
+                    "cleanup plan base slot {index} disagrees with the independent inventory"
+                ),
             ));
         }
     }
@@ -147,7 +149,7 @@ pub(super) fn validate_inventory_coverage(
         {
             return Err(replay_error(
                 function,
-                format!("supplemental call-argument slot {offset} disagrees with typed HIR"),
+                format_args!("supplemental call-argument slot {offset} disagrees with typed HIR"),
             ));
         }
     }

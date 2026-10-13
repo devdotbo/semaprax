@@ -131,7 +131,7 @@ pub(super) fn path_budget_errors(
     if cfg_paths > MAX_REPLAY_PATHS {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup replay found {} terminal control-flow paths, exceeding the {} path \
                  budget: path count multiplies combinatorially (2^N) when N branch outcomes are \
                  combined independently within one function, not additively with branch count, \
@@ -146,7 +146,7 @@ pub(super) fn path_budget_errors(
     if semantic_paths > MAX_REPLAY_PATHS {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup replay found {semantic_paths} semantic terminal paths, exceeding the \
                  {MAX_REPLAY_PATHS} path budget: path count multiplies combinatorially (2^N) \
                  when N branch outcomes are combined independently within one function, not \

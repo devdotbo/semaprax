@@ -104,6 +104,7 @@ pub(crate) fn checked_bindings_with_reservation_and_work<'a>(
         |bytes, storage| storage.0.reserve(bytes).is_ok(),
         |units, storage| (storage.1)(units),
         |_| {},
+        census_error,
     )
 }
 /// Guarded receiving proof for a complete nonowning helper profile. The
@@ -158,6 +159,7 @@ pub(crate) fn checked_absent_with_work_reservation<'a>(
         |bytes, physical| physical.reserve(bytes).is_ok(),
         |units, _| debit(units),
         |_| {},
+        census_error,
     )
 }
 

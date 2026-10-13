@@ -68,7 +68,7 @@ fn walk(
 fn refuse(function: &ResolvedFunction, expression: &ResolvedExpr, site: &str) -> Diagnostic {
     replay_error(
         function,
-        format!(
+        format_args!(
             "checked allocation projection has no failure inventory for {site} at `{}`",
             expression.id,
         ),

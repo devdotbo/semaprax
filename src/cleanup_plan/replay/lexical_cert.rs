@@ -157,7 +157,7 @@ pub(super) fn owned_continue_leaves(
             .get(region.0 as usize)
             .is_some_and(|region| region.slots.contains(&storage))
     });
-    let fail = |message: &str| replay_error(function, message.to_owned());
+    let fail = |message: &str| replay_error(function, message);
     let (index, arm) = owners
         .next()
         .map(|(index, region)| (index, *region))
@@ -182,7 +182,7 @@ pub(super) fn authenticate(
     budget: &mut ReplayBudget,
 ) -> Result<LexicalAuth, Diagnostic> {
     let plan = &function.cleanup_plan;
-    let fail = |message: &str| replay_error(function, message.to_owned());
+    let fail = |message: &str| replay_error(function, message);
     let control = plan
         .lexical_control
         .as_deref()
@@ -830,7 +830,7 @@ fn validate_normal_ends(
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
-    let fail = |message: &str| replay_error(function, message.to_owned());
+    let fail = |message: &str| replay_error(function, message);
     let mut lexical_edges = BTreeSet::new();
     for exit in &plan.exits {
         let edge = match &exit.continuation {

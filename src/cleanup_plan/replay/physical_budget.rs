@@ -288,7 +288,7 @@ impl ReplayBudget {
         {
             // Detached test ledgers retain their previous unadmitted route;
             // only from_reservation establishes a prepaid selected budget.
-            return replay_error(function, format!("{reason}{phase}"));
+            return replay_error(function, format_args!("{reason}{phase}"));
         }
         self.refusal_spent = true;
         self.remaining = 0;

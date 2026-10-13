@@ -182,7 +182,10 @@ pub(super) fn derive(
                     .iter()
                     .find(|item| item.id == *declaration)
                     .ok_or_else(|| {
-                        replay_error(function, format!("unknown cleanup type `{declaration}`"))
+                        replay_error(
+                            function,
+                            format_args!("unknown cleanup type `{declaration}`"),
+                        )
                     })?;
                 match &item.kind {
                     ResolvedTypeDeclarationKind::Resource { drop } => {
@@ -222,7 +225,7 @@ pub(super) fn derive(
                         {
                             return Err(replay_error(
                                 function,
-                                format!(
+                                format_args!(
                                     "cleanup shape exceeds the {} record-depth limit",
                                     crate::cleanup::MAX_CLEANUP_SHAPE_DEPTH
                                 ),

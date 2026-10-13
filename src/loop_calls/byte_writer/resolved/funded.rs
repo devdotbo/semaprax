@@ -34,17 +34,25 @@ impl<E> Funding<'_, '_, E> {
         }
     }
 
-    /// Report work units; the seam then fails with its own census diagnostic,
-    /// which `verdict` discards in favour of the recorded refusal.
+    /// Report work units; the seam then fails with an allocation-free census
+    /// carrier, which `refusal` discards in favour of the recorded refusal.
     fn units(&mut self, units: usize) -> Result<(), crate::diagnostic::Diagnostic> {
         match (self.work)(units) {
             Ok(()) => Ok(()),
             Err(error) => {
                 self.refused.get_or_insert(error);
-                Err(census_error())
+                Err(census_static())
             }
         }
     }
+}
+
+/// Inline control carrier with the six fields of the owning `census_error`.
+/// Every funded diagnostic is discarded by `refusal`, so nothing owned is ever
+/// built on this route and no unpaid backing exists; the ordinary and selected
+/// routes keep the original owning constructor.
+fn census_static() -> crate::diagnostic::Diagnostic {
+    crate::diagnostic::Diagnostic::io_static(CENSUS_CODE, CENSUS_MESSAGE)
 }
 
 pub(crate) fn checked_bindings_funded<'a, E>(
@@ -112,7 +120,7 @@ pub(crate) fn checked_bindings_funded_with_work<'a, E>(
             }
             if proof.is_none() {
                 if !funding.pay(std::mem::size_of::<Option<ProofCursor<'_>>>()) {
-                    return Err(census_error());
+                    return Err(census_static());
                 }
                 proof = Some(ProofCursor {
                     frames: [None; DEPTH],
@@ -134,7 +142,7 @@ pub(crate) fn checked_bindings_funded_with_work<'a, E>(
                     .functions()
                     .len()
                     .saturating_add(program.function_instances().len()),
-                proof.as_mut().ok_or_else(census_error)?,
+                proof.as_mut().ok_or_else(census_static)?,
                 &mut |units| funding.units(units),
             )?;
             Ok(assignment_with_target(
@@ -144,6 +152,7 @@ pub(crate) fn checked_bindings_funded_with_work<'a, E>(
         |bytes, funding| funding.pay(bytes),
         |units, funding| funding.units(units),
         |funding| funding.physical = true,
+        census_static,
     );
     match outcome {
         Ok(found) => Ok(found),
@@ -303,6 +312,54 @@ mod tests {
             proofs_seen += usize::from(total > 0);
         }
         assert!(proofs_seen > 0);
+    }
+
+    #[test]
+    fn static_census_carrier_has_the_six_original_fields_and_stays_borrowed() {
+        let owning = census_error();
+        let carrier = census_static();
+        assert_eq!(carrier, owning);
+        assert_eq!(carrier.code, owning.code);
+        assert_eq!(carrier.severity, owning.severity);
+        assert_eq!(carrier.message, owning.message);
+        assert_eq!(carrier.path, owning.path);
+        assert_eq!(carrier.span, owning.span);
+        assert_eq!(carrier.help, owning.help);
+        assert!(matches!(carrier.message, std::borrow::Cow::Borrowed(_)));
+        assert!(matches!(owning.message, std::borrow::Cow::Owned(_)));
+    }
+
+    #[test]
+    fn work_refusal_first_wins_over_the_census_verdict_it_triggers() {
+        let checked = crate::check(SOURCE, "funded-census-order.spx").unwrap();
+        let program = crate::hir::resolve(&checked).unwrap();
+        let main = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "app.main")
+            .unwrap();
+        // First unit refused: the helper walk stops there and reports that
+        // refusal, not the carrier the seam returned to unwind.
+        let mut payer = funded::payer::Payer::unlimited();
+        let mut calls = 0usize;
+        let refused =
+            checked_bindings_funded_with_work(&program, main, &mut |b| payer.pay(b), &mut |_| {
+                calls += 1;
+                Err(calls)
+            });
+        assert!(matches!(refused, Err(FundedError::Refused(1))));
+        assert_eq!(calls, 1, "the seam stops at the first refused unit");
+        // A payer refusal at every ordinal is returned unchanged and ahead of
+        // any census classification, including ordinals past the proof cursor.
+        let mut counting = funded::payer::Payer::unlimited();
+        checked_bindings_funded(&program, main, &mut |b| counting.pay(b)).unwrap();
+        for ordinal in 0..counting.calls {
+            let mut scripted = funded::payer::Payer::refusing_at(ordinal);
+            assert!(matches!(
+                checked_bindings_funded(&program, main, &mut |b| scripted.pay(b)),
+                Err(FundedError::Refused(funded::payer::PayerRefusal::Ordinal(at))) if at == ordinal
+            ));
+        }
     }
 
     #[test]

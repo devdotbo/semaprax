@@ -106,6 +106,94 @@ mod tests {
         assert_eq!(held.exit(), Ok(()));
     }
 
+    /// Complete ordinary receiver (`replay_error_old` over an owned `format!`)
+    /// against the funded receiver for one message: all six fields, exact
+    /// account, one byte short, sticky retry and the zero-byte account. Only the
+    /// diagnostic receiver is claimed; this says nothing about the whole pair.
+    macro_rules! assert_complete_diagnostic_controls {
+        ($function:expr, $($message:tt)+) => {{
+            use super::super::allocation::{replay_error_funded, ReplayFailure};
+            let function = $function;
+            let old = super::super::replay_error_old(function, format!($($message)+));
+            let bytes = old.message.len();
+            let scope = OracleScope::open(bytes).unwrap();
+            let ((), observed) = crate::test_allocation_observer::measure(|| {
+                let funded = replay_error_funded(scope.lease(), function, format_args!($($message)+))
+                    .unwrap();
+                assert_eq!(funded, old);
+                drop(funded);
+            });
+            assert!(!observed.invalid);
+            assert_eq!(observed.live, 0, "complete diagnostic dropped inside observation");
+            assert!(observed.allocated <= scope.receipt().charged);
+            assert_eq!(scope.receipt().charged, bytes);
+            drop(scope);
+            let scope = OracleScope::open(bytes).unwrap();
+            let funded = replay_error_funded(scope.lease(), function, format_args!($($message)+))
+                .unwrap();
+            assert_eq!(funded.code, old.code);
+            assert_eq!(funded.severity, old.severity);
+            assert_eq!(funded.message, old.message);
+            assert_eq!(funded.path, old.path);
+            assert_eq!(funded.span, old.span);
+            assert_eq!(funded.help, old.help);
+            assert_eq!(funded, old);
+            assert_eq!(scope.receipt().charged, bytes);
+            assert!(scope.receipt().physical_failure.is_none());
+            assert!(matches!(
+                replay_error_funded(scope.lease(), function, format_args!("x")),
+                Err(ReplayFailure::Account(OracleRefusal::Exhausted { .. }))
+            ));
+            assert!(matches!(
+                replay_error_funded(scope.lease(), function, format_args!("x")),
+                Err(ReplayFailure::Account(OracleRefusal::Sticky))
+            ));
+            drop(scope);
+            let short = OracleScope::open(bytes - 1).unwrap();
+            assert!(matches!(
+                replay_error_funded(short.lease(), function, format_args!($($message)+)),
+                Err(ReplayFailure::Account(OracleRefusal::Exhausted { .. }))
+            ));
+            assert_eq!(short.receipt().charged, 0);
+            drop(short);
+            let zero = OracleScope::open(0).unwrap();
+            assert!(matches!(
+                replay_error_funded(zero.lease(), function, format_args!($($message)+)),
+                Err(ReplayFailure::Account(_))
+            ));
+            assert_eq!(zero.receipt().charged, 0);
+        }};
+    }
+
+    #[test]
+    fn dynamic_and_static_replay_messages_match_the_complete_ordinary_diagnostic() {
+        let program = program();
+        let function = &program.functions[0];
+        let id = &function.body.id;
+        let index = 7usize;
+        let storage = crate::cleanup_plan::StorageId::Temporary(id.clone());
+        assert_complete_diagnostic_controls!(function, "status source for `{id}` is repeated");
+        assert_complete_diagnostic_controls!(
+            function,
+            "cleanup slot at index {index} has non-contiguous identity or index"
+        );
+        assert_complete_diagnostic_controls!(
+            function,
+            "call `{id}` atomically consumes dead argument flag {}",
+            index
+        );
+        assert_complete_diagnostic_controls!(function, "cleanup storage `{storage:?}` is repeated");
+        assert_complete_diagnostic_controls!(
+            function,
+            "cleanup join at block {} has incompatible control states",
+            index
+        );
+        assert_complete_diagnostic_controls!(
+            function,
+            "resource cleanup slot has generic arguments"
+        );
+    }
+
     #[test]
     fn replay_diagnostic_matches_the_original_bytes_and_is_paid_before_construction() {
         let program = program();

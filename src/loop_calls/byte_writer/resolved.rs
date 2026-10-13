@@ -404,6 +404,8 @@ pub(crate) fn checked_bindings<'a>(
     })
 }
 const CENSUS_DEPTH: usize = 514;
+const CENSUS_CODE: &str = "SPX-H006";
+const CENSUS_MESSAGE: &str = "byte helper renewal census exceeds admitted scratch, work or depth";
 pub(super) fn census_error() -> crate::diagnostic::Diagnostic {
     crate::diagnostic::Diagnostic::io(
         "SPX-H006",
@@ -449,6 +451,7 @@ pub(super) fn checked_bindings_with<'a>(
         |bytes, _| crate::bounded_output::reserve_active_required(bytes),
         |_, _| Ok(()),
         |_| {},
+        census_error,
     )
 }
 fn checked_bindings_with_storage<'a, S>(
@@ -465,8 +468,11 @@ fn checked_bindings_with_storage<'a, S>(
     // Told, with no effect on the verdict, that the entry vector itself could
     // not be laid out or allocated; work and depth verdicts never call it.
     mut physical: impl FnMut(&mut S),
+    // The seam's own refusal constructor. Ordinary and selected routes pass the
+    // original owning `census_error`; a funded route that discards the seam's
+    // diagnostic passes an allocation-free carrier so no unpaid backing is built.
+    error: fn() -> crate::diagnostic::Diagnostic,
 ) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
-    let error = census_error;
     let mut found = HelperBindings::default();
     let frames = &mut cursor.frames;
     frames[0] = (&function.body, 0, 0);

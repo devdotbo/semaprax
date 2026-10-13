@@ -47,7 +47,7 @@ pub(super) trait Lookup {
         } else {
             Err(replay_error(
                 function,
-                format!("cleanup plan references unknown expression `{key}`"),
+                format_args!("cleanup plan references unknown expression `{key}`"),
             ))
         }
     }

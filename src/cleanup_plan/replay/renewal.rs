@@ -273,7 +273,7 @@ pub(super) fn validate_join_compatibility<'a>(
     }) {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup join at block {} has incompatible control states",
                 block.0
             ),
@@ -358,7 +358,7 @@ pub(super) fn validate_join_compatibility<'a>(
     if visited != flags.len() {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup join at block {} has conflicting initialization histories",
                 block.0
             ),

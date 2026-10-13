@@ -714,3 +714,52 @@ fn oracle_payer_with_expired_lease_refuses_without_production_fallback() {
     assert!(result.is_err());
     assert_eq!(charged, 0);
 }
+
+#[test]
+fn finite_account_work_refusal_census_carrier_is_observed_through_drop() {
+    let checked = crate::check(
+        include_str!("../../../../../tests/owned_data/byte_helper_renewal.spx"),
+        "oracle-census-refusal.spx",
+    )
+    .unwrap();
+    let program = crate::hir::resolve(&checked).unwrap();
+    let main = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "app.main")
+        .unwrap();
+    // Own the independent finite account before the production ledger starts.
+    let scope = OracleScope::open_with_work(1 << 20, 0).unwrap();
+    let lease = scope.lease();
+    let (((), metrics), refused, active) = crate::bounded_output::with_limit_usage(0, || {
+        crate::test_allocation_observer::measure(|| {
+            let result = crate::loop_calls::byte_writer::checked_bindings_funded_with_work(
+                &program,
+                main,
+                &mut |bytes| lease.charge(bytes),
+                &mut |units| lease.charge_work(units),
+            );
+            assert!(matches!(
+                result,
+                Err(FundedError::Refused(OracleRefusal::Exhausted {
+                    requested: 1
+                }))
+            ));
+            drop(result);
+            assert_eq!(lease.charge(0), Err(OracleRefusal::Sticky));
+        })
+    });
+    assert!(!refused);
+    assert_eq!(active, 0);
+    assert!(!metrics.invalid);
+    assert_eq!(metrics.live, 0);
+    assert_eq!(
+        metrics.allocated, 0,
+        "refusal constructs only the inline carrier"
+    );
+    let receipt = scope.finish();
+    assert!(receipt.charged > 0 && receipt.charged <= receipt.allowance);
+    let first = receipt.first_work_refusal.unwrap();
+    assert_eq!((first.requested, first.remaining, first.ordinal), (1, 0, 1));
+    assert!(receipt.first_refusal.is_none());
+}

@@ -448,7 +448,7 @@ fn require_status_received(
         }
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup plan references unknown status source `{}`",
                 source.expression
             ),

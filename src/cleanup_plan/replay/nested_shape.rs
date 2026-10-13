@@ -185,7 +185,10 @@ fn derive(
                     .iter()
                     .find(|item| item.id == *declaration)
                     .ok_or_else(|| {
-                        replay_error(function, format!("unknown cleanup type `{declaration}`"))
+                        replay_error(
+                            function,
+                            format_args!("unknown cleanup type `{declaration}`"),
+                        )
                     })?;
                 match &item.kind {
                     ResolvedTypeDeclarationKind::Resource { drop } => {
@@ -219,7 +222,7 @@ fn derive(
                         {
                             return Err(replay_error(
                                 function,
-                                format!(
+                                format_args!(
                                     "cleanup shape exceeds the {} record-depth limit",
                                     crate::cleanup::MAX_CLEANUP_SHAPE_DEPTH
                                 ),
@@ -382,7 +385,7 @@ fn charge_leaf(function: &ResolvedFunction, budget: &mut Budget) -> Result<(), D
     {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup shape exceeds the {} owned-leaf limit",
                 crate::cleanup::MAX_CLEANUP_OWNED_LEAVES
             ),
@@ -405,7 +408,7 @@ fn charge_fields(
     {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup shape exceeds the {} visited-field limit",
                 crate::cleanup::MAX_CLEANUP_VISITED_FIELDS
             ),

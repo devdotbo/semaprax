@@ -73,7 +73,10 @@ impl<'hir> BorrowedFacts<'hir> {
                         Ok(_) => {
                             return Err(replay_error(
                                 function,
-                                format!("HIR expression identity `{}` is repeated", expression.id),
+                                format_args!(
+                                    "HIR expression identity `{}` is repeated",
+                                    expression.id
+                                ),
                             ))
                         }
                     };

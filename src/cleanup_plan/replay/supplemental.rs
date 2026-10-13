@@ -37,7 +37,7 @@ pub(super) fn collect_supplemental_slots(
                     if params.len() != args.len() {
                         return Err(replay_error(
                             function,
-                            format!("cleanup call `{}` has inconsistent arity", expression.id),
+                            format_args!("cleanup call `{}` has inconsistent arity", expression.id),
                         ));
                     }
                     if let Some(argument) = args.get(next) {

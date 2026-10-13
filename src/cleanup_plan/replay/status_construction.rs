@@ -221,7 +221,7 @@ fn collect_expression_statuses(
                     {
                         return Err(replay_error(
                             function,
-                            format!("status source call has unknown callee `{callee}`"),
+                            format_args!("status source call has unknown callee `{callee}`"),
                         ));
                     }
                 }

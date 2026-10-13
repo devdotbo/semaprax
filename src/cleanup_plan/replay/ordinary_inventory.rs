@@ -54,7 +54,7 @@ pub(super) fn validate_inventory_coverage(
         if inventory_slot.shape != independently_derived {
             return Err(replay_error(
                 function,
-                format!(
+                format_args!(
                     "cleanup inventory base slot {index} disagrees with independently derived typed HIR"
                 ),
             ));
@@ -67,7 +67,9 @@ pub(super) fn validate_inventory_coverage(
         {
             return Err(replay_error(
                 function,
-                format!("cleanup plan base slot {index} disagrees with the independent inventory"),
+                format_args!(
+                    "cleanup plan base slot {index} disagrees with the independent inventory"
+                ),
             ));
         }
     }
@@ -226,7 +228,7 @@ pub(super) fn validate_inventory_coverage(
     if let Some(offset) = first_mismatch {
         return Err(replay_error(
             function,
-            format!("supplemental call-argument slot {offset} disagrees with typed HIR"),
+            format_args!("supplemental call-argument slot {offset} disagrees with typed HIR"),
         ));
     }
 

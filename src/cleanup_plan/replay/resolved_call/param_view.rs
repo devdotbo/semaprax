@@ -257,7 +257,7 @@ pub(in crate::cleanup_plan::replay) fn resolved_call_param_view<'a>(
         .ok_or_else(|| {
             replay_error(
                 function,
-                format!("cleanup call has unknown callee `{callee}`"),
+                format_args!("cleanup call has unknown callee `{callee}`"),
             )
         })?;
     Ok(Params::Borrowed(&target.params))

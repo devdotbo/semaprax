@@ -1,5 +1,6 @@
 //! Sealed semantic error data. These atoms grant no replay/lookup authority.
-//! Only the explicitly unfunded legacy adapter formats detailed H006 text.
+//! Detailed H006 text uses the diagnostic bridge; ordinary formatting retains
+//! the legacy receiver and test-only invocation authority selects funded text.
 use super::*;
 #[derive(Debug)]
 pub(super) enum Atom {
@@ -26,31 +27,49 @@ pub(crate) struct Receipt {
 }
 impl Receipt {
     pub(super) fn legacy(self, function: &ResolvedFunction) -> Diagnostic {
-        let message = match self.atom {
-            Atom::RepeatedStatus(id) => format!("status source for `{id}` is repeated"),
-            Atom::UnknownStatus(id) => {
-                format!("status source references unknown expression `{id}`")
-            }
-            Atom::NoncontiguousSlot(index) => {
-                format!("cleanup slot at index {index} has non-contiguous identity or index")
-            }
-            Atom::DeadCallFlag(call, flag) => format!(
-                "call `{call}` atomically consumes dead argument flag {}",
-                flag.0
+        // Branch-local calls: no `fmt::Arguments` escapes its own statement.
+        match self.atom {
+            Atom::RepeatedStatus(id) => replay_error(
+                function,
+                format_args!("status source for `{id}` is repeated"),
             ),
-            Atom::RepeatedCallFlag(call, flag) => format!(
-                "call `{call}` atomically consumes argument flag {} twice",
-                flag.0
+            Atom::UnknownStatus(id) => replay_error(
+                function,
+                format_args!("status source references unknown expression `{id}`"),
             ),
-            Atom::RepeatedVariantEpoch(call) => {
-                format!("call `{call}` atomically consumes a variant epoch twice")
-            }
-            Atom::MismatchedFailure(expression) => {
-                format!("selected failure `{expression}` does not match the pending failing edge")
-            }
-            Atom::RepeatedStorage(storage) => format!("cleanup storage `{storage:?}` is repeated"),
-        };
-        replay_error(function, message)
+            Atom::NoncontiguousSlot(index) => replay_error(
+                function,
+                format_args!("cleanup slot at index {index} has non-contiguous identity or index"),
+            ),
+            Atom::DeadCallFlag(call, flag) => replay_error(
+                function,
+                format_args!(
+                    "call `{call}` atomically consumes dead argument flag {}",
+                    flag.0
+                ),
+            ),
+            Atom::RepeatedCallFlag(call, flag) => replay_error(
+                function,
+                format_args!(
+                    "call `{call}` atomically consumes argument flag {} twice",
+                    flag.0
+                ),
+            ),
+            Atom::RepeatedVariantEpoch(call) => replay_error(
+                function,
+                format_args!("call `{call}` atomically consumes a variant epoch twice"),
+            ),
+            Atom::MismatchedFailure(expression) => replay_error(
+                function,
+                format_args!(
+                    "selected failure `{expression}` does not match the pending failing edge"
+                ),
+            ),
+            Atom::RepeatedStorage(storage) => replay_error(
+                function,
+                format_args!("cleanup storage `{storage:?}` is repeated"),
+            ),
+        }
     }
     #[cfg(test)]
     pub(super) fn source(&self) -> &ExpressionId {

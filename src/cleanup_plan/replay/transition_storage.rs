@@ -461,7 +461,7 @@ pub(super) fn exit(
     if expected.ne(actual) {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "exit {} does not finalize its live region leaves in reverse initialization order",
                 exit.id.0
             ),

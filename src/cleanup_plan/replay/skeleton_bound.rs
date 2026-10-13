@@ -88,7 +88,7 @@ fn untouched_update_field_work_upper(
         .ok_or_else(|| {
             replay_error(
                 function,
-                format!("record update has unknown record `{record}`"),
+                format_args!("record update has unknown record `{record}`"),
             )
         })?;
     let arguments = record_destructure::update::concrete_arguments(function, expression, record)?;

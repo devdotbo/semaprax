@@ -463,7 +463,7 @@ pub(super) fn resolved_call_params(
         .ok_or_else(|| {
             replay_error(
                 function,
-                format!("cleanup call has unknown callee `{callee}`"),
+                format_args!("cleanup call has unknown callee `{callee}`"),
             )
         })?;
     Ok(target.params.clone())

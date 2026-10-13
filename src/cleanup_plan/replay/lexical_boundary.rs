@@ -28,7 +28,7 @@ pub(super) fn authenticate(
     budget: &mut ReplayBudget,
 ) -> Result<BTreeMap<BlockId, BoundaryAuth>, Diagnostic> {
     let plan = &function.cleanup_plan;
-    let fail = |message: &str| replay_error(function, message.to_owned());
+    let fail = |message: &str| replay_error(function, message);
     let control = plan
         .lexical_control
         .as_deref()
