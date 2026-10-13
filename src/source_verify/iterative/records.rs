@@ -5,13 +5,13 @@ use crate::ast::{
     Expr, FieldDeclaration, ParamMode, Type, TypeDeclaration, VariantCaseDeclaration,
 };
 use crate::diagnostic::Diagnostic;
+use crate::source_verify::IterativeVerifier;
 use crate::source_verify::binding::CheckedValue;
 use crate::source_verify::diagnostics::{error, reject_native_unit_value};
 use crate::source_verify::loans::mark_value_sources_moved;
 use crate::source_verify::place::source_place;
 use crate::source_verify::scope::VerifierFrame;
-use crate::source_verify::type_table::{effective_record_fields, TypeTable};
-use crate::source_verify::IterativeVerifier;
+use crate::source_verify::type_table::{TypeTable, effective_record_fields};
 use std::collections::HashSet;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
@@ -113,7 +113,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     TypeTable::substitute_variant_type(declaration, type_arguments, &declared.ty)
                 })
                 .unwrap_or_else(|| declared.ty.clone());
-            if actual.ty != expected {
+            if actual.ty != expected && !self.recovery.explains(&field.value, &expected) {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T215",
@@ -270,7 +270,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             let expected =
                 TypeTable::substitute_variant_type(declaration, type_arguments, &declared.ty)
                     .unwrap_or_else(|| declared.ty.clone());
-            if actual.ty != expected {
+            if actual.ty != expected && !self.recovery.explains(&field.value, &expected) {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T215",
@@ -516,7 +516,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 .types
                 .record_field_type(&base_type, declared)
                 .unwrap_or_else(|| declared.ty.clone());
-            if actual.ty != expected {
+            if actual.ty != expected && !self.recovery.explains(&field.value, &expected) {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T215",

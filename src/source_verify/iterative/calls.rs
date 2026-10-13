@@ -3,6 +3,7 @@
 
 use crate::ast::{Expr, Function, ImportResult, ParamMode, Type};
 use crate::diagnostic::Diagnostic;
+use crate::source_verify::IterativeVerifier;
 use crate::source_verify::arguments::{
     check_argument_ownership, release_borrowed_bytes_call_loans,
 };
@@ -14,7 +15,6 @@ use crate::source_verify::loans::mark_value_sources_moved;
 use crate::source_verify::private_names::type_name;
 use crate::source_verify::scope::{VerifierCallTarget, VerifierFrame, VerifierFunctionSignature};
 use crate::source_verify::type_table::{effective_record_fields, resolve_class_method};
-use crate::source_verify::IterativeVerifier;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     #[allow(clippy::too_many_arguments)]
@@ -37,6 +37,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         reject_native_unit_value(self.program, argument, actual, self.diagnostics);
                         if !actual.native_unit
                             && !crate::literal_format::accepts_ast_type(&actual.ty)
+                            && !self.recovery.explains_acceptance(
+                                argument,
+                                crate::literal_format::accepts_ast_type,
+                            )
                         {
                             self.diagnostics.push(error(self.program, "SPX-T205", format!("string_format value {} must be i64, u8, usize, bool, or own string", index - 1), argument.span));
                         }
@@ -109,10 +113,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     if let Some(actual) = &actual {
                         reject_native_unit_value(self.program, argument, actual, self.diagnostics);
                     }
-                    if let Some(actual) = actual
-                        .as_ref()
-                        .filter(|actual| !actual.native_unit && actual.ty != param.ty)
-                    {
+                    if let Some(actual) = actual.as_ref().filter(|actual| {
+                        !actual.native_unit
+                            && actual.ty != param.ty
+                            && !self.recovery.explains(argument, &param.ty)
+                    }) {
                         self.diagnostics.push(hints::with_optional_help(
                             error(
                                 self.program,
@@ -153,7 +158,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             VerifierCallTarget::Byte(op) => {
                 if let Some(actual) = &actual {
                     reject_native_unit_value(self.program, argument, actual, self.diagnostics);
-                    if !actual.native_unit && !op.accepts_ast(index, &actual.ty) {
+                    if !actual.native_unit
+                        && !op.accepts_ast(index, &actual.ty)
+                        && !self.recovery.explains_acceptance(argument, |declared| {
+                            op.accepts_ast(index, declared)
+                        })
+                    {
                         self.diagnostics.push(hints::with_optional_help(
                             error(
                                 self.program,
@@ -171,7 +181,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             VerifierCallTarget::HostIo(op) => {
                 if let Some(actual) = &actual {
                     reject_native_unit_value(self.program, argument, actual, self.diagnostics);
-                    if !actual.native_unit && !op.accepts_ast(index, &actual.ty) {
+                    if !actual.native_unit
+                        && !op.accepts_ast(index, &actual.ty)
+                        && !self.recovery.explains_acceptance(argument, |declared| {
+                            op.accepts_ast(index, declared)
+                        })
+                    {
                         self.diagnostics.push(hints::with_optional_help(
                             error(
                                 self.program,
@@ -209,6 +224,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     reject_native_unit_value(self.program, argument, actual, self.diagnostics);
                     if !actual.native_unit
                         && !crate::command_io_ops::accepts_ast(*op, index, &actual.ty)
+                        && !self.recovery.explains_acceptance(argument, |declared| {
+                            crate::command_io_ops::accepts_ast(*op, index, declared)
+                        })
                     {
                         self.diagnostics.push(error(
                             self.program,
@@ -461,10 +479,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             if let Some(actual) = &actual {
                 reject_native_unit_value(self.program, argument, actual, self.diagnostics);
             }
-            if actual
-                .as_ref()
-                .is_some_and(|actual| !actual.native_unit && actual.ty != param.ty)
-            {
+            if actual.as_ref().is_some_and(|actual| {
+                !actual.native_unit
+                    && actual.ty != param.ty
+                    && !self.recovery.explains(argument, &param.ty)
+            }) {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T205",

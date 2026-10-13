@@ -26,6 +26,11 @@ outranks a real checked binding or valid function value. A successful binding
 clears its same-scope missing marker. Closure scopes have no recovery parent;
 capture admission and independent closure errors remain intact.
 
+Annotation expression facts use exact borrowed AST identity, never a source
+span as identity. The invocation-local pointer keys are not dereferenced,
+serialized or iterated to choose diagnostics. Re-entry clears an old fact.
+Only annotation-refused reads acquire expression entries; transparent block
+lookup follows the evaluated tail chain, not statements or sibling bodies.
 There is no authored-function traversal on a dependent read. Lookup visits only
 the active directory ancestry. Ordinary successful scope forks acquire no
 directory. Signature recovery rechecks each affected parameter once per invocation after an
@@ -41,12 +46,18 @@ spans and duplicate parameter names cannot substitute another binding/type.
   repeated `SPX-T202`. Other names retain their independent errors.
 - `SPX-O104` is judged only when the real body type matched the declared result,
   or native-unit refusal still requires the original checks.
-- A known annotation mismatch may neutralize later inference only for a real
-  cleanup-inert by-value non-native-unit binding. The actual binding type and
-  mode remain unchanged. Owned and borrowed values retain all original call
-  transfers, loan checks and diagnostics. Broader annotation recovery remains
-  open until refusal dependency is separate from ownership metadata; returning
-  `None` where ownership consumes it would hide real errors.
+- An annotation mismatch carries a separate borrowed expected-type refusal
+  view. Reads retain the full actual type, mode and native-unit flag, including
+  real owned and borrowed values. Calls, fields, conditions, guards, contracts
+  and direct returns may omit a type symptom only when that view explains the
+  specific expected type or the owning operation's admitted type predicate.
+  Ownership transfers, availability, places, loan activation/release and native
+  capability errors still consume the actual metadata. An unrelated expected
+  type retains its error. Fixed declared call/constructor results and successful
+  explicit annotations provide a fresh type obligation. Direct aliases and
+  transparent block tails retain the original annotation view. Projections and
+  joins requiring richer refusal derivation remain at their original physical
+  type checks; no nominal field or branch result is invented.
 - Unknown parameter types neutralize inference only for cleanup-inert declared
   carriers whose existing `SPX-T001` exactly identifies that parameter. Existing
   but inadmissible types and ownership-mode errors retain original behavior.
@@ -89,6 +100,9 @@ lists, separately stated current lists, first diagnostic equality and complete
 original diagnostic subsequence preservation. Its boundary child covers
 scope/closure/function precedence, owned and borrowed annotation controls,
 independent match coverage and actual repeated receiver acquisition/Drop.
+Its refusal_dependency child adds full old/current expected-type controls,
+actual ownership/place/loan state equality, fixed-result reset, identity/re-entry,
+native-unit, contract, projection and success canonical/graph boundaries.
 The original `iterative_verifier_tests` corpus remains unchanged.
 
 Required next-batch selectors: `--lib source_verify::recovery_tests`,
@@ -103,3 +117,6 @@ No Cargo, build, test or full-profile gate was executed during this implementati
 batch, at the user's explicit instruction. These are authored controls, not
 passing or current-head execution evidence. No hosted, measured token/cost/turn,
 public-support or production-support claim is made.
+
+Annotation refusal views are limited to immutable bindings. Mutable assignment
+flow keeps its full original diagnostics until a dependency join model exists.

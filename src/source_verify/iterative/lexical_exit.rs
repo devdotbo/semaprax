@@ -11,7 +11,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
     ) -> Result<(), Diagnostic> {
         let value = self.values.pop().unwrap_or(None);
         if let Some(value) = value {
-            if value.native_unit || value.ty != self.current.return_type {
+            if value.native_unit
+                || (value.ty != self.current.return_type
+                    && !self.recovery.explains(operand, &self.current.return_type))
+            {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T103",

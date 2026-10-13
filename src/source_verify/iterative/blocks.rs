@@ -3,13 +3,13 @@
 
 use crate::ast::{Expr, ParamMode, Span, Statement, Type};
 use crate::diagnostic::Diagnostic;
+use crate::source_verify::IterativeVerifier;
 use crate::source_verify::binding::{Availability, Binding};
 use crate::source_verify::diagnostics::{error, is_scalar_source_type, reject_native_unit_value};
 use crate::source_verify::loans::{
     activate_local_loan, has_active_overlapping_loan, local_borrow_origin,
     mark_value_sources_moved, merge_moved, release_dead_local_loans,
 };
-use crate::source_verify::IterativeVerifier;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
@@ -105,6 +105,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     // whose prefix consumes the value cleanly; the
                     // binding carries the declared type.
                     let mut annotation_refused = false;
+                    let mut annotation_origin = None;
                     let mut binding_ty = actual.ty.clone();
                     let mut binding_mode = actual.mode;
                     if let Some(declared_ty) = declared {
@@ -173,7 +174,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                     )
                                 })
                                 .flatten();
-                            self.diagnostics.push(crate::source_verify::hints::with_optional_help(
+                            if !self.recovery.explains(value, declared_ty) {
+                                if annotation_refused {
+                                    annotation_origin = Some(self.diagnostics.len());
+                                }
+                                self.diagnostics.push(crate::source_verify::hints::with_optional_help(
                                 error(
                                     self.program,
                                     diagnostic,
@@ -197,6 +202,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                 ),
                                 help,
                             ));
+                            }
                         }
                     }
                     let contract_local = !self.allow_moves
@@ -257,19 +263,27 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             borrow_origin,
                         },
                     );
-                    // None must never erase call-boundary ownership/loan
-                    // checks for a real owner or a borrowed value.
-                    if annotation_refused
-                        && !self.types.needs_drop(&actual.ty)
-                        && actual.mode == ParamMode::Value
-                        && !actual.native_unit
-                    {
-                        self.recovery.refused_annotation(
-                            block_scope,
-                            name,
-                            recovery_checkpoint,
-                            self.diagnostics,
-                        );
+                    // The refusal view is independent of the actual type,
+                    // mode, place state, move effects and activated loan above.
+                    // A successful explicit annotation provides a fresh type
+                    // obligation; an unannotated alias retains the old view.
+                    if !actual.native_unit && !*mutable {
+                        match (declared, annotation_origin) {
+                            (Some(declared), Some(origin)) => self.recovery.refused_annotation(
+                                block_scope,
+                                name,
+                                declared,
+                                origin,
+                            ),
+                            (None, _) => self.recovery.inherit_binding(block_scope, name, value),
+                            (Some(declared), None)
+                                if annotation_refused
+                                    && self.recovery.explains(value, declared) =>
+                            {
+                                self.recovery.inherit_binding(block_scope, name, value);
+                            }
+                            _ => {}
+                        }
                     }
                 } else {
                     self.recovery.refused_let(
@@ -606,7 +620,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         if let Some(value) = condition_value {
             if value.native_unit {
                 reject_native_unit_value(self.program, condition, &value, self.diagnostics);
-            } else if value.ty != Type::Bool {
+            } else if value.ty != Type::Bool && !self.recovery.explains(condition, &Type::Bool) {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T251",

@@ -1,0 +1,322 @@
+{
+  "affected_and_exception_rows": [
+    {
+      "cap": 2367,
+      "lines": 2367,
+      "path": "crates/semaprax-native-host/src/callable_wire_v3.rs"
+    },
+    {
+      "cap": 1691,
+      "lines": 1691,
+      "path": "crates/semaprax-native-host/src/descriptor_v3.rs"
+    },
+    {
+      "cap": 1809,
+      "lines": 1743,
+      "path": "crates/semaprax-native-host/src/lib.rs"
+    },
+    {
+      "cap": 1633,
+      "lines": 1633,
+      "path": "crates/semaprax-native-loader/src/settlement.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 1495,
+      "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity.rs"
+    },
+    {
+      "cap": 1549,
+      "lines": 1547,
+      "path": "src/agent_lifecycle/authorization/target_protocol.rs"
+    },
+    {
+      "cap": 1853,
+      "lines": 1806,
+      "path": "src/agent_lifecycle/iterative/effects.rs"
+    },
+    {
+      "cap": 1741,
+      "lines": 1671,
+      "path": "src/agent_runtime/tests.rs"
+    },
+    {
+      "cap": 6818,
+      "lines": 6768,
+      "path": "src/cleanup_plan/build.rs"
+    },
+    {
+      "cap": 1770,
+      "lines": 1770,
+      "path": "src/cleanup_plan/execute.rs"
+    },
+    {
+      "cap": 7993,
+      "lines": 7169,
+      "path": "src/cleanup_plan/replay.rs"
+    },
+    {
+      "cap": 1835,
+      "lines": 1832,
+      "path": "src/cleanup_plan/replay_tests.rs"
+    },
+    {
+      "cap": 1678,
+      "lines": 1678,
+      "path": "src/codegen/native_callable_provider_v3.rs"
+    },
+    {
+      "cap": 2697,
+      "lines": 2396,
+      "path": "src/codegen/native_emit/expression.rs"
+    },
+    {
+      "cap": 2466,
+      "lines": 2285,
+      "path": "src/codegen/native_emit/mod.rs"
+    },
+    {
+      "cap": 1914,
+      "lines": 1914,
+      "path": "src/economic_agent/tests.rs"
+    },
+    {
+      "cap": 5611,
+      "lines": 5563,
+      "path": "src/graph.rs"
+    },
+    {
+      "cap": 3145,
+      "lines": 3089,
+      "path": "src/hir/resolve_expr.rs"
+    },
+    {
+      "cap": 1860,
+      "lines": 1687,
+      "path": "src/hir/resolve_expr_reference.rs"
+    },
+    {
+      "cap": 8812,
+      "lines": 8236,
+      "path": "src/hir/validation.rs"
+    },
+    {
+      "cap": 6807,
+      "lines": 5699,
+      "path": "src/interpreter.rs"
+    },
+    {
+      "cap": 1667,
+      "lines": 1667,
+      "path": "src/native_settlement/tests.rs"
+    },
+    {
+      "cap": 2055,
+      "lines": 2055,
+      "path": "src/native_settlement.rs"
+    },
+    {
+      "cap": 1519,
+      "lines": 1519,
+      "path": "src/outbound_host_adapter/mod.rs"
+    },
+    {
+      "cap": 1870,
+      "lines": 1781,
+      "path": "src/parser.rs"
+    },
+    {
+      "cap": 3064,
+      "lines": 3064,
+      "path": "src/patch.rs"
+    },
+    {
+      "cap": 1914,
+      "lines": 1914,
+      "path": "src/patch_evidence.rs"
+    },
+    {
+      "cap": 1519,
+      "lines": 1519,
+      "path": "src/project/npm.rs"
+    },
+    {
+      "cap": 1549,
+      "lines": 1547,
+      "path": "src/properties.rs"
+    },
+    {
+      "cap": 2299,
+      "lines": 2299,
+      "path": "src/semantic_workspace_change/tests.rs"
+    },
+    {
+      "cap": 3043,
+      "lines": 3023,
+      "path": "src/semantic_workspace_change.rs"
+    },
+    {
+      "cap": 2729,
+      "lines": 2729,
+      "path": "src/semantic_workspace_operations/tests.rs"
+    },
+    {
+      "cap": 2601,
+      "lines": 2584,
+      "path": "src/semantic_workspace_operations.rs"
+    },
+    {
+      "cap": 2837,
+      "lines": 2837,
+      "path": "src/semantic_workspace_structural_change/artifact.rs"
+    },
+    {
+      "cap": 2677,
+      "lines": 2659,
+      "path": "src/semantic_workspace_structural_change/tests.rs"
+    },
+    {
+      "cap": 1571,
+      "lines": 1570,
+      "path": "src/semantic_workspace_structural_change.rs"
+    },
+    {
+      "cap": 1536,
+      "lines": 1536,
+      "path": "src/simd_report.rs"
+    },
+    {
+      "cap": 1672,
+      "lines": 1599,
+      "path": "src/source_verify/capacity.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 577,
+      "path": "src/source_verify/closure.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 303,
+      "path": "src/source_verify/constructor_tests.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 1410,
+      "path": "src/source_verify/declaration/functions.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 360,
+      "path": "src/source_verify/diagnostics.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 1155,
+      "path": "src/source_verify/iterative/blocks.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 741,
+      "path": "src/source_verify/iterative/calls.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 1469,
+      "path": "src/source_verify/iterative/enter.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 55,
+      "path": "src/source_verify/iterative/lexical_exit.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 706,
+      "path": "src/source_verify/iterative/match_arms.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 600,
+      "path": "src/source_verify/iterative/operators.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 577,
+      "path": "src/source_verify/iterative/records.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 395,
+      "path": "src/source_verify/iterative.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 294,
+      "path": "src/source_verify/recovery.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 558,
+      "path": "src/source_verify/recovery_tests/refusal_dependency.rs"
+    },
+    {
+      "cap": 1500,
+      "lines": 279,
+      "path": "src/source_verify/recovery_tests.rs"
+    },
+    {
+      "cap": 8698,
+      "lines": 8679,
+      "path": "src/wasm/aggregate.rs"
+    },
+    {
+      "cap": 4770,
+      "lines": 3771,
+      "path": "src/wasm.rs"
+    },
+    {
+      "cap": 5923,
+      "lines": 5871,
+      "path": "src/workspace.rs"
+    },
+    {
+      "cap": 4196,
+      "lines": 4196,
+      "path": "src/workspace_analysis.rs"
+    },
+    {
+      "cap": 1929,
+      "lines": 1649,
+      "path": "src/workspace_graph/expected_projection.rs"
+    },
+    {
+      "cap": 1917,
+      "lines": 1913,
+      "path": "src/workspace_graph/operation_sidecar.rs"
+    },
+    {
+      "cap": 2320,
+      "lines": 2191,
+      "path": "src/workspace_graph/tests.rs"
+    },
+    {
+      "cap": 6018,
+      "lines": 5934,
+      "path": "src/workspace_graph.rs"
+    },
+    {
+      "cap": 1575,
+      "lines": 1575,
+      "path": "src/workspace_patch_evidence.rs"
+    },
+    {
+      "cap": 1533,
+      "lines": 1533,
+      "path": "tests/interpreter_v1.rs"
+    }
+  ],
+  "qualification": "Static line census only; no tests executed. Existing caps unchanged.",
+  "rust_files": 5636,
+  "violations": []
+}

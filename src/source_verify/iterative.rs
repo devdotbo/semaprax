@@ -4,12 +4,12 @@
 //! frame layout. The frame loop lives in [`run`] and the `while` admission
 //! rules in [`while_rules`].
 
+use super::IterativeVerifier;
 use super::binding::{Binding, CheckedValue};
 use super::diagnostics::{error, source_identifier};
 use super::hints;
 use super::scope::VerifierFrame;
 use super::type_table::TypeTable;
-use super::IterativeVerifier;
 use crate::ast::program_source::ProgramSource;
 use crate::ast::{Expr, Function, Statement, Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
@@ -312,6 +312,39 @@ pub(super) fn check_expr_with_helpers<'a, 'p>(
     helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,
     fused_producer: Option<&'p Expr>,
 ) -> Option<CheckedValue> {
+    check_expr_with_helpers_view(
+        program,
+        current,
+        expr,
+        variables,
+        functions,
+        types,
+        result_type,
+        allow_moves,
+        diagnostics,
+        helpers,
+        fused_producer,
+    )
+    .0
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn check_expr_with_helpers_view<'a, 'p>(
+    program: &'p dyn ProgramSource,
+    current: &'p Function,
+    expr: &'p Expr,
+    variables: &mut HashMap<String, Binding>,
+    functions: &'p HashMap<&'p str, &'p Function>,
+    types: &'p TypeTable<'p>,
+    result_type: Option<&'p Type>,
+    allow_moves: bool,
+    diagnostics: &'a mut Vec<Diagnostic>,
+    helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,
+    fused_producer: Option<&'p Expr>,
+) -> (
+    Option<CheckedValue>,
+    Option<super::recovery::RefusalView<'p>>,
+) {
     let initial = std::mem::take(variables);
     let mut verifier = IterativeVerifier::new(
         program,
@@ -326,6 +359,7 @@ pub(super) fn check_expr_with_helpers<'a, 'p>(
     verifier.byte_helpers = helpers;
     verifier.fused_producer = fused_producer;
     let result = verifier.run(expr);
+    let refusal = verifier.recovery.view(expr);
     *variables = verifier
         .scopes
         .first_mut()
@@ -333,10 +367,10 @@ pub(super) fn check_expr_with_helpers<'a, 'p>(
         .unwrap_or_default();
     drop(verifier);
     match result {
-        Ok(value) => value,
+        Ok(value) => (value, refusal),
         Err(diagnostic) => {
             diagnostics.push(diagnostic.at_path(program.path()));
-            None
+            (None, None)
         }
     }
 }

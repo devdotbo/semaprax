@@ -3,6 +3,7 @@
 
 use crate::ast::{BinaryOp, Expr, ExprKind, Type, UnaryOp};
 use crate::diagnostic::Diagnostic;
+use crate::source_verify::IterativeVerifier;
 use crate::source_verify::binding::{Availability, Binding, CheckedValue};
 use crate::source_verify::diagnostics::{
     error, reject_aggregate_equality, reject_native_unit_value,
@@ -12,7 +13,6 @@ use crate::source_verify::loans::join_conditional;
 use crate::source_verify::place::{join_definitely_partial, join_moved_places};
 use crate::source_verify::private_names::type_name;
 use crate::source_verify::scope::{VerifierFrame, VerifierScope};
-use crate::source_verify::IterativeVerifier;
 use std::collections::HashMap;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
@@ -40,7 +40,16 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             (UnaryOp::Not, _) => Type::Bool,
         };
         let mismatched = !actual.native_unit && actual.ty != expected;
-        if mismatched {
+        if mismatched
+            && !self
+                .recovery
+                .explains_acceptance(operand, |declared| match op {
+                    UnaryOp::Neg => {
+                        matches!(declared, Type::I64 | Type::I32 | Type::F32 | Type::F64)
+                    }
+                    UnaryOp::Not => *declared == Type::Bool,
+                })
+        {
             self.diagnostics.push(error(
                 self.program,
                 "SPX-T206",
@@ -216,15 +225,37 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             )
             && string_operands
         {
-            self.diagnostics.push(
-                error(
-                    self.program,
-                    "SPX-T250",
-                    format!("operator `{}` does not support string operands", op.text()),
-                    expression.span,
-                )
-                .with_help(crate::source_verify::hints::STRING_OPERATOR_HELP),
-            );
+            let independent_string = |operand: &Expr, value: &Option<CheckedValue>| {
+                value.as_ref().is_some_and(|value| value.ty == Type::String)
+                    && !self
+                        .recovery
+                        .explains_acceptance(operand, |declared| match op {
+                            BinaryOp::And | BinaryOp::Or => *declared == Type::Bool,
+                            BinaryOp::Rem => {
+                                matches!(declared, Type::I64 | Type::I32 | Type::U8 | Type::Usize)
+                            }
+                            _ => matches!(
+                                declared,
+                                Type::I64
+                                    | Type::I32
+                                    | Type::F32
+                                    | Type::F64
+                                    | Type::U8
+                                    | Type::Usize
+                            ),
+                        })
+            };
+            if independent_string(left, &left_value) || independent_string(right, &right_value) {
+                self.diagnostics.push(
+                    error(
+                        self.program,
+                        "SPX-T250",
+                        format!("operator `{}` does not support string operands", op.text()),
+                        expression.span,
+                    )
+                    .with_help(crate::source_verify::hints::STRING_OPERATOR_HELP),
+                );
+            }
             if matches!(
                 op,
                 BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem
@@ -263,6 +294,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     && right_value.is_some()
                     && left_value.as_ref().map(|value| &value.ty)
                         != right_value.as_ref().map(|value| &value.ty)
+                    && !right_value
+                        .as_ref()
+                        .is_some_and(|value| self.recovery.explains(left, &value.ty))
+                    && !left_value
+                        .as_ref()
+                        .is_some_and(|value| self.recovery.explains(right, &value.ty))
                 {
                     self.diagnostics.push(hints::with_optional_help(
                         error(
@@ -289,12 +326,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     op,
                     BinaryOp::Lt | BinaryOp::Le | BinaryOp::Gt | BinaryOp::Ge
                 ))
-            && (left_value
-                .as_ref()
-                .is_some_and(|value| value.ty != expected)
-                || right_value
-                    .as_ref()
-                    .is_some_and(|value| value.ty != expected))
+            && (left_value.as_ref().is_some_and(|value| {
+                value.ty != expected && !self.recovery.explains(left, &expected)
+            }) || right_value.as_ref().is_some_and(|value| {
+                value.ty != expected && !self.recovery.explains(right, &expected)
+            }))
         {
             self.diagnostics.push(hints::with_optional_help(
                 error(
@@ -325,7 +361,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         if let Some(value) = condition_value {
             if value.native_unit {
                 reject_native_unit_value(self.program, condition, &value, self.diagnostics);
-            } else if value.ty != Type::Bool {
+            } else if value.ty != Type::Bool && !self.recovery.explains(condition, &Type::Bool) {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T210",

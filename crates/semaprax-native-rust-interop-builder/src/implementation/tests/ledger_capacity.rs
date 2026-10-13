@@ -516,6 +516,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/source_verify/recovery_legacy/operators.rs"),
             include_str!("../../../../../src/source_verify/recovery_legacy/records.rs"),
             include_str!("../../../../../src/source_verify/recovery_legacy/match_arms.rs"),
+            include_str!("../../../../../src/source_verify/recovery_tests/refusal_dependency.rs"),
             include_str!("../../../../../src/source_verify/declaration/functions/old.rs"),
             include_str!("../../../../../src/source_verify/contract_owners.rs"),
             "\n",

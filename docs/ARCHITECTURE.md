@@ -4577,10 +4577,22 @@ authored names are keyed by actual lexical scope ordinals and published only
 after initializer completion. Existing checked binding/ownership checks and
 valid function values retain precedence; detached closure scopes and per-arm
 pattern markers preserve independent errors and exhaustiveness. Known annotation
-neutralization is restricted to cleanup-inert real values because existing call
-ownership consumes checked metadata. Complete independent receiving bodies live
+refusals carry a separate expected-type view while all actual checked values
+remain available to call ownership and loan checks. Complete independent receiving bodies live
 in the test-only `recovery_legacy` tree; source-text audits join every child.
 The ordinary directory has no replay-constructor payer and retains unpaid
 storage; no verifier bound or phase allowance is changed.
 [Scoped diagnostic recovery v1](SCOPED-DIAGNOSTIC-RECOVERY-V1.md) owns the exact
 source-authored boundary and pending qualification.
+
+Annotation recovery keeps `CheckedValue` and `Binding` as the real checked
+carriers. A separate invocation-local borrowed refusal view explains selected
+expected-type failures; it never becomes an inferred binding type, ownership
+mode, place or loan. Annotation facts use exact borrowed AST identity and clear
+on re-entry; lookup through blocks follows only the evaluated tail. Fixed call
+and constructor results reset the view. Ownership and native capability checks
+remain independent. The exact verifier frame layouts and source bounds are
+unchanged; the extra directory nodes remain unpaid ordinary storage.
+
+Annotation refusal views are limited to immutable bindings. Mutable assignment
+flow keeps its full original diagnostics until a dependency join model exists.

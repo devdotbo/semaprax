@@ -1,9 +1,9 @@
 //! Closed scalar snapshot capture analysis shared with HIR source lowering.
+use super::IterativeVerifier;
 use super::binding::{Availability, Binding, CheckedValue};
 use super::declared_type::{function_value_scalar_type, function_value_signature};
 use super::diagnostics::{error, source_identifier};
 use super::scope::{VerifierFrame, VerifierScope};
-use super::IterativeVerifier;
 use crate::ast::program_source::ProgramSource;
 use crate::ast::{ClosureParam, Expr, ExprKind, ParamMode, Statement, Type};
 use crate::diagnostic::Diagnostic;
@@ -299,6 +299,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         let ExprKind::Closure {
             params,
             return_type,
+            body,
             ..
         } = &expression.kind
         else {
@@ -314,12 +315,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 result: Box::new(return_type.clone()),
             })));
         } else {
-            self.diagnostics.push(error(
-                self.program,
-                "SPX-T288",
-                "closure result does not match its scalar signature",
-                expression.span,
-            ));
+            if !value.as_ref().is_some_and(|value| {
+                !value.native_unit
+                    && value.mode == ParamMode::Value
+                    && self.recovery.explains(body, return_type)
+            }) {
+                self.diagnostics.push(error(
+                    self.program,
+                    "SPX-T288",
+                    "closure result does not match its scalar signature",
+                    expression.span,
+                ));
+            }
             self.values.push(None);
         }
         Ok(())
@@ -530,7 +537,7 @@ pub(super) fn validate_generic_syntax(
                         "SPX-T288",
                         "generic closure bodies require ordinary scalar expressions and calls",
                         expression.span,
-                    ))
+                    ));
                 }
             }
         }

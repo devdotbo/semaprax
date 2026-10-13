@@ -8,6 +8,8 @@ use super::type_table::TypeTable;
 mod boundaries;
 #[path = "recovery_tests/proposal_corpus.rs"]
 mod proposal_corpus;
+#[path = "recovery_tests/refusal_dependency.rs"]
+mod refusal_dependency;
 use crate::ast::{ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
 use crate::test_allocation_observer::measure;

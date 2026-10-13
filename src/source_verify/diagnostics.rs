@@ -2,7 +2,7 @@
 //! predicates that decide whether an identifier or scalar type is admitted.
 
 use super::binding::{Availability, Binding, CheckedValue};
-use super::iterative::check_expr_iterative;
+use super::iterative::check_expr_with_helpers_view;
 use super::type_table::TypeTable;
 use crate::ast::program_source::ProgramSource;
 use crate::ast::{Expr, ExprKind, Function, ParamMode, Span, Type};
@@ -223,7 +223,7 @@ pub(super) fn require_bool(
             );
         }
     }
-    if let Some(value) = check_expr_iterative(
+    let (contract_value, refusal_view) = check_expr_with_helpers_view(
         program,
         function,
         contract,
@@ -233,10 +233,15 @@ pub(super) fn require_bool(
         result_type,
         false,
         diagnostics,
-    ) {
+        None,
+        None,
+    );
+    if let Some(value) = contract_value {
         if value.native_unit {
             reject_native_unit_value(program, contract, &value, diagnostics);
-        } else if value.ty != Type::Bool {
+        } else if value.ty != Type::Bool
+            && !refusal_view.is_some_and(|view| view.declared == &Type::Bool)
+        {
             diagnostics.push(error(
                 program,
                 "SPX-C101",

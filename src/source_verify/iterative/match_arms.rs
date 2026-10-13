@@ -3,6 +3,7 @@
 
 use crate::ast::{MatchMode, MatchPattern, ParamMode, Type};
 use crate::diagnostic::Diagnostic;
+use crate::source_verify::IterativeVerifier;
 use crate::source_verify::binding::{Availability, Binding};
 use crate::source_verify::declared_type::generic_function_has_owned_record_composition;
 use crate::source_verify::diagnostics::{
@@ -16,9 +17,8 @@ use crate::source_verify::scope::{
 };
 use crate::source_verify::type_table::TypeTable;
 use crate::source_verify::variant_or::{
-    check_variant_or_pattern, VariantOrContext, AGGREGATE_REFUTABLE_HELP,
+    AGGREGATE_REFUTABLE_HELP, VariantOrContext, check_variant_or_pattern,
 };
-use crate::source_verify::IterativeVerifier;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
@@ -185,7 +185,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     let diagnostic = error(
                         self.program,
                         "SPX-M103",
-                        format!("pattern `{type_name}::{case_name}` is incompatible with the match scrutinee"),
+                        format!(
+                            "pattern `{type_name}::{case_name}` is incompatible with the match scrutinee"
+                        ),
                         *span,
                     );
                     self.diagnostics.push(
@@ -375,7 +377,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         if state.guard_pending {
             let guard_value = self.values.pop().unwrap_or(None);
             if let Some(value) = guard_value {
-                if value.ty != Type::Bool || value.mode != ParamMode::Value {
+                if (value.ty != Type::Bool
+                    && !self
+                        .recovery
+                        .explains(arm.guard.as_ref().expect("guard retained"), &Type::Bool))
+                    || value.mode != ParamMode::Value
+                {
                     self.diagnostics.push(error(
                         self.program,
                         "SPX-T256",
@@ -610,7 +617,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         let guard_value = self.values.pop().unwrap_or(None);
         let arm = &state.arms[state.index];
         if let Some(value) = &guard_value {
-            if value.ty != Type::Bool || value.mode != ParamMode::Value {
+            if (value.ty != Type::Bool
+                && !arm
+                    .guard
+                    .as_ref()
+                    .is_some_and(|guard| self.recovery.explains(guard, &Type::Bool)))
+                || value.mode != ParamMode::Value
+            {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T256",

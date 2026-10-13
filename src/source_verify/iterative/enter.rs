@@ -3,6 +3,7 @@
 
 use crate::ast::{Expr, ExprKind, ImportResult, ParamMode, Statement, Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
+use crate::source_verify::IterativeVerifier;
 use crate::source_verify::arguments::{
     activate_borrowed_bytes_call_loans, source_byte_view_place_is_admitted,
 };
@@ -20,7 +21,6 @@ use crate::source_verify::scope::{
     VerifierCallTarget, VerifierFrame, VerifierFunctionSignature, VerifierScope,
 };
 use crate::source_verify::type_table::effective_record_fields;
-use crate::source_verify::IterativeVerifier;
 use std::collections::HashSet;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
@@ -34,6 +34,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             return self.recovery_old_frame_enter(expression, scope);
         }
 
+        self.recovery.begin(expression);
         match &expression.kind {
             ExprKind::VecConstructor { .. } => {
                 let hygienic = *self.constructor_hygiene.get_or_insert_with(|| {
@@ -223,8 +224,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     ));
                 }
                 // Preserve every real binding/ownership check above before
-                // neutralizing inference that depends on this declaration.
-                let refused = value.is_some() && self.recovery.reads_known_refused(scope, name);
+                // attaching a separate expected-type refusal view to this read.
+                let refused = value.is_some() && self.recovery.reads_value(scope, name, expression);
                 self.values.push(if refused { None } else { value });
             }
             ExprKind::Unary { op, value } => {

@@ -21,7 +21,7 @@ use crate::source_verify::diagnostics::{
     error, invalid_stable_id, reject_native_unit_value, reject_reserved_host_id, require_bool,
     source_identifier,
 };
-use crate::source_verify::iterative::check_expr_with_helpers;
+use crate::source_verify::iterative::check_expr_with_helpers_view;
 use crate::source_verify::type_table::TypeTable;
 use std::collections::{BTreeSet, HashMap, HashSet};
 pub(super) fn check_function_declarations<'p>(
@@ -1180,7 +1180,7 @@ pub(super) fn check_function_bodies<'p>(
                 );
             }
 
-            if let Some(actual) = check_expr_with_helpers(
+            let (body_value, refusal_view) = check_expr_with_helpers_view(
                 program,
                 function,
                 &function.body,
@@ -1192,7 +1192,8 @@ pub(super) fn check_function_bodies<'p>(
                 diagnostics,
                 Some(&byte_helpers),
                 fused_producer,
-            ) {
+            );
+            if let Some(actual) = body_value {
                 if actual.native_unit {
                     reject_native_unit_value(program, &function.body, &actual, diagnostics);
                 }
@@ -1200,6 +1201,7 @@ pub(super) fn check_function_bodies<'p>(
                     && actual.ty != Type::Never
                     && actual.ty != function.return_type
                     && !return_unknown
+                    && !refusal_view.is_some_and(|view| view.declared == &function.return_type)
                 {
                     diagnostics.push(error(
                         program,

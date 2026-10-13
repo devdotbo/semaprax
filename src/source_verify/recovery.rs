@@ -1,4 +1,4 @@
-//! Lexical recovery for declarations whose initializer produced no checked value.
+//! Lexical missing-declaration recovery and separate annotation refusal views.
 //!
 //! Names borrow immutable authored source. This directory never supplies a type,
 //! binding, capture, ownership state, or backend admission. Ordinary source
@@ -7,13 +7,21 @@
 
 use std::collections::BTreeMap;
 
-use crate::ast::Function;
+use crate::ast::{Expr, ExprKind, Function, Type};
 use crate::diagnostic::Diagnostic;
 
 #[derive(Default)]
 struct Scope<'p> {
     parent: Option<usize>,
-    names: BTreeMap<&'p str, (usize, bool)>,
+    names: BTreeMap<&'p str, (usize, bool, Option<&'p Type>)>,
+}
+
+/// A declaration refusal explains an expected-type failure; it never replaces
+/// the independently checked value or any binding/ownership metadata.
+#[derive(Clone, Copy)]
+pub(super) struct RefusalView<'p> {
+    pub(super) origin: usize,
+    pub(super) declared: &'p Type,
 }
 
 #[derive(Clone, Copy)]
@@ -27,6 +35,10 @@ pub(super) struct Recovery<'p> {
     scopes: Vec<Scope<'p>>,
     last_read: Option<usize>,
     reads: usize,
+    // Opaque borrowed expression identities are invocation-local lookup keys.
+    // They are never dereferenced, iterated to select diagnostics, or emitted.
+    // Only reads of real annotation-refused bindings acquire entries.
+    expressions: BTreeMap<*const Expr, RefusalView<'p>>,
     #[cfg(test)]
     pub(super) visited: usize,
 }
@@ -95,7 +107,7 @@ impl<'p> Recovery<'p> {
                 recovery.ensure(0);
                 recovery.scopes[0]
                     .names
-                    .insert(parameter.name.as_str(), (origin, true));
+                    .insert(parameter.name.as_str(), (origin, true, None));
             }
         }
         recovery
@@ -131,35 +143,95 @@ impl<'p> Recovery<'p> {
     /// Only an absent checked binding/function reaches this lookup. Existing
     /// availability, loan, move, and function-value diagnostics run first.
     pub(super) fn reads_refused(&mut self, scope: usize, name: &str) -> bool {
-        self.read(scope, name, false)
+        self.read(scope, name, false).is_some()
     }
 
+    #[cfg(test)]
     pub(super) fn reads_known_refused(&mut self, scope: usize, name: &str) -> bool {
-        self.read(scope, name, true)
+        self.read(scope, name, true).is_some()
     }
 
-    fn read(&mut self, mut scope: usize, name: &str, known: bool) -> bool {
+    /// Keep the full actual value for annotation refusals. Unknown signature
+    /// types keep their existing narrower inference behavior in this batch.
+    pub(super) fn reads_value(&mut self, scope: usize, name: &str, expression: &Expr) -> bool {
+        match self.read(scope, name, true) {
+            Some((origin, Some(declared))) => {
+                self.expressions.insert(
+                    std::ptr::from_ref(expression),
+                    RefusalView { origin, declared },
+                );
+                false
+            }
+            Some((_, None)) => true,
+            None => false,
+        }
+    }
+
+    pub(super) fn begin(&mut self, expression: &Expr) {
+        self.expressions.remove(&std::ptr::from_ref(expression));
+    }
+
+    /// Blocks return their checked tail. Follow only that transparent chain,
+    /// never statements or sibling arms, and never rescan a whole function.
+    pub(super) fn view(&self, mut expression: &Expr) -> Option<RefusalView<'p>> {
+        loop {
+            if let Some(view) = self.expressions.get(&std::ptr::from_ref(expression)) {
+                return Some(*view);
+            }
+            let ExprKind::Block { tail, .. } = &expression.kind else {
+                return None;
+            };
+            expression = tail;
+        }
+    }
+
+    pub(super) fn explains(&self, expression: &Expr, expected: &Type) -> bool {
+        self.view(expression)
+            .is_some_and(|view| view.declared == expected)
+    }
+
+    pub(super) fn explains_acceptance(
+        &self,
+        expression: &Expr,
+        accepts: impl FnOnce(&Type) -> bool,
+    ) -> bool {
+        self.view(expression)
+            .is_some_and(|view| accepts(view.declared))
+    }
+
+    pub(super) fn inherit_binding(&mut self, scope: usize, name: &'p str, value: &Expr) {
+        if let Some(view) = self.view(value) {
+            self.refused_annotation(scope, name, view.declared, view.origin);
+        }
+    }
+
+    fn read(
+        &mut self,
+        mut scope: usize,
+        name: &str,
+        known: bool,
+    ) -> Option<(usize, Option<&'p Type>)> {
         while let Some(row) = self.scopes.get(scope) {
             #[cfg(test)]
             {
                 self.visited += 1;
             }
-            if let Some(&(origin, declaration_known)) = row.names.get(name) {
+            if let Some(&(origin, declaration_known, declared)) = row.names.get(name) {
                 // A missing declaration never outranks a real function value
                 // or checked binding. Known markers are inference-only.
                 if declaration_known != known {
-                    return false;
+                    return None;
                 }
                 self.last_read = Some(origin);
                 self.reads += 1;
-                return true;
+                return Some((origin, declared));
             }
             let Some(parent) = row.parent else {
                 break;
             };
             scope = parent;
         }
-        false
+        None
     }
 
     pub(super) fn checkpoint(&self, diagnostics: &[Diagnostic]) -> Checkpoint {
@@ -186,10 +258,13 @@ impl<'p> Recovery<'p> {
         &mut self,
         scope: usize,
         name: &'p str,
-        checkpoint: Checkpoint,
-        diagnostics: &[Diagnostic],
+        declared: &'p Type,
+        origin: usize,
     ) {
-        self.publish(scope, name, checkpoint, diagnostics, true);
+        self.ensure(scope);
+        self.scopes[scope]
+            .names
+            .insert(name, (origin, true, Some(declared)));
     }
 
     fn publish(
@@ -213,7 +288,7 @@ impl<'p> Recovery<'p> {
             });
         if let Some(origin) = origin {
             self.ensure(scope);
-            self.scopes[scope].names.insert(name, (origin, known));
+            self.scopes[scope].names.insert(name, (origin, known, None));
         }
     }
 }

@@ -12,6 +12,11 @@
   references; retain independent full old lookups and hostile/real-owner
   allocation-through-Drop controls. Source-only; runtime qualification pending.
 
+- Source-authored annotation recovery retains actual type/ownership/loan metadata
+  and carries a separate expected-type refusal view. Independent expected types,
+  fixed-result checks and ownership boundaries remain selected. Focused
+  qualification is pending; no Cargo or full gate ran in the implementation lane.
+
 - Extend the paid outer droppability source corpus with isolated zero-budget
   helper-allocation controls over real parsed declaration IDs, owned-record and
   owned-leaf Vec signatures, concrete generic records and refused variants.
