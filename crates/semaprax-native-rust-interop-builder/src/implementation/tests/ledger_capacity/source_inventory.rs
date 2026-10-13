@@ -553,7 +553,7 @@ macro_rules! hir_validator_source_inventory {
             include_str!(
                 "../../../../../src/hir/canonical_loan_storage/deferred/tests/selected.rs"
             ),
-            include_str!("../../../../../src/hir/canonical_loan_storage/caller.rs"),
+            concat!(include_str!("../../../../../src/hir/canonical_loan_storage/caller.rs"), include_str!("../../../../../src/hir/canonical_loan_storage/caller_before.rs"), include_str!("../../../../../src/hir/canonical_loan_storage/scratch.rs"), include_str!("../../../../../src/hir/canonical_loan_storage/tests/reuse.rs")),
             include_str!("../../../../../src/hir/canonical_loan_storage/tests.rs"),
             include_str!("../../../../../src/hir/canonical_loan_storage/tests/old.rs"),
             include_str!("../../../../../src/hir.rs"),

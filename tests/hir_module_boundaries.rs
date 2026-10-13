@@ -78,7 +78,12 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 concat!(
                     include_str!("../src/hir/canonical_loan_storage.rs"),
                     "\n",
-                    include_str!("../src/hir/canonical_loan_storage/caller.rs")
+                    concat!(
+                        include_str!("../src/hir/canonical_loan_storage/caller.rs"),
+                        include_str!("../src/hir/canonical_loan_storage/caller_before.rs"),
+                        include_str!("../src/hir/canonical_loan_storage/scratch.rs"),
+                        include_str!("../src/hir/canonical_loan_storage/tests/reuse.rs")
+                    )
                 ),
                 include_str!("../src/hir/canonical_loan_storage/deferred.rs"),
                 include_str!("../src/hir/canonical_loan_storage/deferred/tests.rs"),
