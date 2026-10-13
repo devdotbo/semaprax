@@ -151,8 +151,10 @@ pub(crate) fn checked_bindings_funded_with_work<'a, E>(
         },
         |bytes, funding| funding.pay(bytes),
         |units, funding| funding.units(units),
-        |funding| funding.physical = true,
-        census_static,
+        CensusRefusal {
+            physical: |funding: &mut Funding<'_, '_, E>| funding.physical = true,
+            error: census_static,
+        },
     );
     match outcome {
         Ok(found) => Ok(found),

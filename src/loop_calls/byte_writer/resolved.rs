@@ -452,10 +452,19 @@ pub(super) fn checked_bindings_with<'a>(
         |binding, value, _| admitted(binding, value),
         |bytes, _| crate::bounded_output::reserve_active_required(bytes),
         |_, _| Ok(()),
-        |_| {},
-        census_error,
+        CensusRefusal {
+            physical: |_| {},
+            error: census_error,
+        },
     )
 }
+// Physical failure notification and its diagnostic constructor travel together.
+// Work/depth refusals never call physical; each route retains its original error.
+struct CensusRefusal<S> {
+    physical: fn(&mut S),
+    error: fn() -> crate::diagnostic::Diagnostic,
+}
+
 fn checked_bindings_with_storage<'a, S>(
     function: &'a ResolvedFunction,
     cursor: &mut CensusCursor<'a>,
@@ -467,14 +476,9 @@ fn checked_bindings_with_storage<'a, S>(
     ) -> Result<bool, crate::diagnostic::Diagnostic>,
     mut reserve: impl FnMut(usize, &mut S) -> bool,
     mut debit: impl FnMut(usize, &mut S) -> Result<(), crate::diagnostic::Diagnostic>,
-    // Told, with no effect on the verdict, that the entry vector itself could
-    // not be laid out or allocated; work and depth verdicts never call it.
-    mut physical: impl FnMut(&mut S),
-    // The seam's own refusal constructor. Ordinary and selected routes pass the
-    // original owning `census_error`; a funded route that discards the seam's
-    // diagnostic passes an allocation-free carrier so no unpaid backing is built.
-    error: fn() -> crate::diagnostic::Diagnostic,
+    refusal: CensusRefusal<S>,
 ) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
+    let CensusRefusal { physical, error } = refusal;
     let mut found = HelperBindings::default();
     let frames = &mut cursor.frames;
     frames[0] = (&function.body, 0, 0);
