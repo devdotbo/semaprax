@@ -133,7 +133,7 @@ pub(crate) fn checked_bindings_funded_with_work<'a, E>(
                 |_, ty| {
                     crate::hir::is_scalar_resolved_type(ty)
                         || crate::hir::copy_record_collection::admitted(program.declarations(), ty)
-                        || super::super::resolved_match_scrutinee_admitted(
+                        || crate::loop_calls::resolved_match_scrutinee_admitted(
                             program.declarations(),
                             ty,
                         )
@@ -274,13 +274,15 @@ mod tests {
                 &mut |_| {
                     seen += 1;
                     if seen == at + 1 {
-                        Err(at)
+                        Err(funded::payer::PayerRefusal::Ordinal(at))
                     } else {
                         Ok(())
                     }
                 },
             );
-            assert!(matches!(refused, Err(FundedError::Refused(n)) if n == at));
+            assert!(
+                matches!(refused, Err(FundedError::Refused(funded::payer::PayerRefusal::Ordinal(n))) if n == at)
+            );
             assert_eq!(seen, at + 1);
         }
     }
@@ -345,9 +347,14 @@ mod tests {
         let refused =
             checked_bindings_funded_with_work(&program, main, &mut |b| payer.pay(b), &mut |_| {
                 calls += 1;
-                Err(calls)
+                Err(funded::payer::PayerRefusal::Ordinal(calls))
             });
-        assert!(matches!(refused, Err(FundedError::Refused(1))));
+        assert!(matches!(
+            refused,
+            Err(FundedError::Refused(funded::payer::PayerRefusal::Ordinal(
+                1
+            )))
+        ));
         assert_eq!(calls, 1, "the seam stops at the first refused unit");
         // A payer refusal at every ordinal is returned unchanged and ahead of
         // any census classification, including ordinals past the proof cursor.
