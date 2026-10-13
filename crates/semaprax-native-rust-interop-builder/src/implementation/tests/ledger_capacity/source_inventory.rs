@@ -645,6 +645,11 @@ macro_rules! hir_validator_source_inventory {
             include_str!("../../../../../src/hir/validation/fused_selection.rs"),
             include_str!("../../../../../src/hir/validation/place_resolution.rs"),
             include_str!("../../../../../src/hir/validation/call_parameters.rs"),
+            include_str!("../../../../../src/hir/validation/ownership_flags.rs"),
+            include_str!("../../../../../src/hir/validation/ownership_flags/before.rs"),
+            include_str!("../../../../../src/hir/validation/ownership_flags/tests.rs"),
+            include_str!("../../../../../src/hir/validation/call_parameters/copy_before.rs"),
+            include_str!("../../../../../src/hir/validation/call_parameters/copy_flags_tests.rs"),
             include_str!("../../../../../src/hir/validation/nominal_facts.rs"),
             include_str!("../../../../../src/hir/validation/variant_guard_state.rs"),
             include_str!("../../../../../src/hir/validation/string_replacement.rs"),
@@ -1044,6 +1049,13 @@ macro_rules! lower_source_inventory {
 macro_rules! hir_final_validation_source_inventory {
     () => {
         concat!(
+            include_str!("../../../../../src/hir/validation/call_parameters.rs"),
+            include_str!("../../../../../src/hir/validation/nominal_facts.rs"),
+            include_str!("../../../../../src/hir/validation/ownership_flags.rs"),
+            include_str!("../../../../../src/hir/validation/ownership_flags/before.rs"),
+            include_str!("../../../../../src/hir/validation/ownership_flags/tests.rs"),
+            include_str!("../../../../../src/hir/validation/call_parameters/copy_before.rs"),
+            include_str!("../../../../../src/hir/validation/call_parameters/copy_flags_tests.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving.rs"),
             include_str!(
                 "../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory.rs"

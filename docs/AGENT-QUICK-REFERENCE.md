@@ -39,8 +39,10 @@ The installed compiler prints this page verbatim with
 5. Ask for narrow help: `semaprax help <command>`, `semaprax help language
    topics`, `semaprax help language <topic>`, `semaprax help diagnostic
    <SPX-code>`, or `semaprax help shapes <kind|stable-id|path#stable-id>`.
-   `semaprax help all` and `semaprax help language all` are for broad
-   questions.
+   For libraries, start with `semaprax help library`, then request an exact
+   module, name or stable ID. Search the guide with `semaprax help language
+   find:<word>:0` and request the next page only when needed. Use `help all`,
+   `help language all` or `help library all` for an explicit full export.
 
 The authored source-only `fused-construction-v1` opt-in uses
 `run <file> --profile fused-construction-v1 --managed-bytes N` or
@@ -1439,9 +1441,11 @@ v26/v28 tests need authenticated native roots:
 `semaprax test <project> --target native`.
 [Bounds](PROJECT-NATIVE-TEST-V1.md); [cases](PROJECT-TEST-CASES-V1.md).
 
-`help library`: modules; `help library all`: offline
-[catalog](STANDARD-LIBRARY-CATALOG.md); `help library <module|name|stable-id>`
-is exact, no fuzzy/prefix lookup. Import IDs/dependencies.
+Start with `help library` for the module index, then
+`help library <module|name|stable-id>` for exact lookup (no fuzzy/prefix match).
+Search this guide with `help language find:<word>:0`; request later pages as
+needed. Use `help library all` only for an explicit full offline
+[catalog](STANDARD-LIBRARY-CATALOG.md) export. Import IDs/dependencies.
 Vec: `owned-data-api.v1`, `std.collections = "^0.1.0"`, exact
 std.collections.vec.* IDs, explicit Copy-scalar type args. Mutators transfer/return
 owners; no public/generic ABI.

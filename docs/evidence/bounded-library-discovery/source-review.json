@@ -1,0 +1,30 @@
+{
+  "issue": 823,
+  "qualification": "SOURCE_ONLY_PENDING_OWNING_CHECKS",
+  "discovery_subject": "e045527a611a048515349ab2f970043a5d33b185",
+  "packet_path": "/Volumes/Semaprax/provenance/astra-shiftsim-help-exposure-e045-20261013.json",
+  "packet_sha256": "163def9cbec53cb286ba06325d216d84d38d13d9a2e11f99d071e364de02a4cd",
+  "observed_sem_attempts": 5,
+  "raw_catalog_bytes_each": 252331,
+  "retained_combined_batch_bytes": [
+    40154,
+    40154,
+    40153,
+    40154,
+    40154
+  ],
+  "matched_prompt_bytes_each_arm": 2793,
+  "measurement": "Retained output bytes; not net input tokens, retransmission, cost, or demonstrated improvement",
+  "current_source_sha256": {
+    "docs/AGENT-QUICK-REFERENCE.md": "8c56d7147f4c4ab3c8c641e0563f2a9f43726d50921b00d59a585899a293786f",
+    "src/cli/help.rs": "ed52ecbf7ccc300eb1f9c009a6f9038768a7ea061e8fe07c8d36be5e3ec308d6",
+    "src/cli/help/library.rs": "47304d004d1f3c6e64b6d55c3b48976e291875aead319b3b5a24217b0cd15a35"
+  },
+  "preserved": [
+    "explicit full-catalog API and bytes",
+    "exact selectors",
+    "matched prompts",
+    "acceptance requirements",
+    "TypeScript baseline"
+  ]
+}

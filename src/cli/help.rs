@@ -783,8 +783,8 @@ static GUIDE: &[GuideGroup] = &[
             },
             GuideEntry {
                 id: CommandId::Help,
-                shape: "help library [all|selector]",
-                summary: "Module index, one API, or full catalog",
+                shape: "help library [selector]",
+                summary: "Module index; exact API; all exports catalog",
             },
             GuideEntry {
                 id: CommandId::Help,
@@ -1169,6 +1169,7 @@ mod tests {
             assert!(help.contains("\n  help all "));
             assert!(help.contains("\n  help language "));
             assert!(help.contains("help shapes [selector]"));
+            assert!(help.contains("help library [selector]"));
             assert!(help.contains("Catalog; `kinds` lists exact selectors"));
             assert!(help.contains("semaprax help diagnostic <code>`\n"));
             assert!(help.contains("\n  new "));
