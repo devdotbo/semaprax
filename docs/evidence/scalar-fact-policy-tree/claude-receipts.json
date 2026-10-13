@@ -1,0 +1,75 @@
+{
+  "status": "actual tool-free source consultation and review; no code execution or runtime qualification",
+  "base_commit": "5a81caa784ac8c75b6363c1f1a55496c464e8b2c",
+  "final_review_source_audit_sha256": "2c25fa0556e05531c57d317529415d1fb2629c6c56ffd06f62e2e5ba234ad296",
+  "reviews": [
+    {
+      "role": "design consultation",
+      "actual_session_id": "e01110e6-c915-4f97-8657-eab25b9719f7",
+      "process_receipt": {
+        "exit_code": 0,
+        "wall_seconds": 117.87567595799919,
+        "tools_enabled": false,
+        "code_execution": false,
+        "peak_process_group_rss_bytes": 340738048,
+        "resource_refusal": null
+      },
+      "actual_total_cost_usd": 0.23744750000000003,
+      "packet_path": "/Volumes/Semaprax/lane-prompts/scalar-fact-policy-tree-20261014",
+      "prompt_sha256": "a597ad17d1b9b6f8d0bca95ab50ec656508f0a6b4d6a3516dbf1908875045351",
+      "result_sha256": "c7a7c08e2841ce1fdab4c5be710bcb0798ae9e6ccd826fccf613c9c42f14e30a",
+      "verdict": "See unchanged external actual result; this was an earlier source stage."
+    },
+    {
+      "role": "initial review; fixture defect subsequently repaired",
+      "actual_session_id": "5de9d4a1-b9f4-4d09-945c-6c229bd3aa0c",
+      "process_receipt": {
+        "exit_code": 0,
+        "wall_seconds": 228.48263191700244,
+        "tools_enabled": false,
+        "code_execution": false,
+        "peak_process_group_rss_bytes": 414466048,
+        "resource_refusal": null
+      },
+      "actual_total_cost_usd": 0.49656560000000005,
+      "packet_path": "/Volumes/Semaprax/lane-prompts/scalar-fact-policy-tree-20261014",
+      "prompt_sha256": "95fa928ec5776278d0853605b0fdf84854f4be3ede4cd5d05dcd928d47a70d86",
+      "result_sha256": "7f71c05a935a485641124ee6bed78602e37f1c2af8b67ff6ec1f1b1ff94bbc94",
+      "verdict": "See unchanged external actual result; this was an earlier source stage."
+    },
+    {
+      "role": "corrective review; dependency uncertainty subsequently resolved",
+      "actual_session_id": "7c197b3f-55b4-49cb-9f67-ea208ed3bf4b",
+      "process_receipt": {
+        "exit_code": 0,
+        "wall_seconds": 146.96309245799785,
+        "tools_enabled": false,
+        "code_execution": false,
+        "peak_process_group_rss_bytes": 357695488,
+        "resource_refusal": null
+      },
+      "actual_total_cost_usd": 0.35229560000000004,
+      "packet_path": "/Volumes/Semaprax/lane-prompts/scalar-fact-policy-tree-20261014",
+      "prompt_sha256": "d329e72e79c090d10e24ee9588cd23eb46224a511e0ef0dcadbb68e3f2dfe100",
+      "result_sha256": "5a97ceb2224d4d31413d942e86ef2a4783e092da0557a5ae627d4b5c69d20007",
+      "verdict": "See unchanged external actual result; this was an earlier source stage."
+    },
+    {
+      "role": "final source verification; no blockers",
+      "actual_session_id": "60144317-3675-403f-a700-31ab61594aaf",
+      "process_receipt": {
+        "exit_code": 0,
+        "wall_seconds": 48.86700920899602,
+        "tools_enabled": false,
+        "code_execution": false,
+        "peak_process_group_rss_bytes": 346816512,
+        "resource_refusal": null
+      },
+      "actual_total_cost_usd": 0.1394536,
+      "packet_path": "/Volumes/Semaprax/lane-prompts/scalar-fact-policy-tree-20261014",
+      "prompt_sha256": "225ff9750d0bd21b8a045449bd27a8cdd133294e574f1e64306a5e34b849f129",
+      "result_sha256": "e8c826c1175423178941d012a4d7197279d9f14acdb09d5832899fb3112f80fb",
+      "verdict": "**Status: no blockers in the supplied source. Review is static only, with no execution claims.**\n\n**Resolved**\n- **Lookup import:** `Lookup::entries_paid(&arena, ...)` now uses the trait explicitly, and `Facts` implements `Lookup` (`expression_facts.rs:78-115`). The `Facts::Arena` variant assertion precedes it. The earlier \"unused import\" label was wrong.\n- **Tree vs Arena accounting:** the different-representation assertion (`different |= ...`) is unrelaxed. The existing two `assert_eq!(old.usage(), paid.usage())` assertions are pinned at count 2 in both the original and current test files.\n- **Byte-exact lock:**\n  - The Tree driver and both `records.rs` files are compared to the evidence copies.\n  - `scalar_replay.rs` must equal `original.replacen(old, new, 1)`, and `old` must occur exactly once.\n  - `fact_errors.rs` must equal the original plus the `tree_policy` mod line.\n  - The `cfg(test)` registration of `scalar_replay_tree` is also asserted.\n  - The only behavioral change in the compatibility facade is Legacy to genuine Arena.\n- **First errors through Drop:** every route keeps the owned `Diagnostic` alive across `drop(selected)` and compares it afterward, in both the semantic and nominal tests. `budget_refusal` seals the physical ledger on the refusal path (`physical_budget.rs:287-344`). `finish_paid` success only drops the carrier and moves the held `Box` (`paid.rs:540-560`).\n- **`borrow str` signature:** `borrowed_scalar::parameter` admits `Borrow` with `Str` or `SliceU8`, so the `text` fixture function is covered.\n- **Nominal hostiles:** mutations 0-6 each map to a distinct rejection in `projected_place`:\n  - Foreign field: no declared match.\n  - `Own`: fails the `Value` ownership check.\n  - Foreign root: no root parameter found.\n  - `Bool` type: mismatches the field type.\n  - `Borrow`: fails the `Value` ownership check.\n  - Duplicate projection: fails the single-projection slice pattern.\n  - Mutation 0 is the unmodified positive control.\n- **Metrics and receipts:** `clean()` checks `!invalid`, `live == 0` and `allocated == freed` around every observed block. Receipt equality is asserted after the retry.\n\n**Non-blocking notes**\n- The forged-clone case asserts the membership diagnostic first on all three routes. In the supplied `validate_core`, `records::signature` returns `Ok(false)` for an `Own` nominal parameter, which would yield \"outside Copy scalars\" if reached. The test therefore relies on the guard in `Context::new` / `validate_scalar` running earlier. That code was not in this batch, so I can't confirm the ordering from source. You've stated it holds.\n- `nominal.rs` has long single-line match arms and asserts. That is consistent with rustfmt leaving a closure body untouched when a string literal exceeds the width limit (likely the long `assert!` message). Shortening that message would let rustfmt wrap the closure to match the neighboring files. It has no effect on correctness."
+    }
+  ]
+}

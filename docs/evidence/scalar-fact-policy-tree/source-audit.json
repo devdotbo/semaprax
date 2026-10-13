@@ -1,0 +1,84 @@
+{
+  "base_commit": "5a81caa784ac8c75b6363c1f1a55496c464e8b2c",
+  "status": "source-only; runtime qualification pending",
+  "full_source_inverse_pass": true,
+  "existing_exact_usage_assertions_unchanged": 2,
+  "original_driver_and_child_byte_exact": true,
+  "files": {
+    "docs/evidence/scalar-fact-policy-tree/original-fact-errors.txt": {
+      "sha256": "725fbcf0b55db270de67a019d45f08259cf731721483da5fb598c7ff3d0f25e2",
+      "bytes": 10353,
+      "lines": 223
+    },
+    "docs/evidence/scalar-fact-policy-tree/original-scalar-records.txt": {
+      "sha256": "d0a7ecff13b07ac0c5197fb5d590de2a734c45c4ebd02ab66eb8bcb1479ad09b",
+      "bytes": 7709,
+      "lines": 215
+    },
+    "docs/evidence/scalar-fact-policy-tree/original-scalar-replay.txt": {
+      "sha256": "71c43c4c023be68c6673d348909b56a4362dbedafe5f8457b5c7808b94647873",
+      "bytes": 7832,
+      "lines": 211
+    },
+    "docs/evidence/scalar-fact-policy-tree/original-selected-entry.txt": {
+      "sha256": "4cdca6c749885979766c8f1260c8a8c7163df116f8749f79fba00e436ca5afeb",
+      "bytes": 14186,
+      "lines": 423
+    },
+    "src/cleanup_plan/replay/scalar_replay/records.rs": {
+      "sha256": "d0a7ecff13b07ac0c5197fb5d590de2a734c45c4ebd02ab66eb8bcb1479ad09b",
+      "bytes": 7709,
+      "lines": 215
+    },
+    "src/cleanup_plan/replay/scalar_replay.rs": {
+      "sha256": "48603f16f8fec4d6290a20cdc5729f0e8372c9064ec5d500f002760595056ef6",
+      "bytes": 7988,
+      "lines": 215
+    },
+    "src/cleanup_plan/replay/scalar_replay_tree/records.rs": {
+      "sha256": "d0a7ecff13b07ac0c5197fb5d590de2a734c45c4ebd02ab66eb8bcb1479ad09b",
+      "bytes": 7709,
+      "lines": 215
+    },
+    "src/cleanup_plan/replay/scalar_replay_tree.rs": {
+      "sha256": "71c43c4c023be68c6673d348909b56a4362dbedafe5f8457b5c7808b94647873",
+      "bytes": 7832,
+      "lines": 211
+    },
+    "src/cleanup_plan/replay/selected_entry/tests/fact_errors/tree_policy/nominal.rs": {
+      "sha256": "d188d9acafd56e69427fc001bbecd663cfee0f6735993f76c9a7566a9f252776",
+      "bytes": 4578,
+      "lines": 88
+    },
+    "src/cleanup_plan/replay/selected_entry/tests/fact_errors/tree_policy.rs": {
+      "sha256": "9d4409753465b6f8e07cc4431f43002620b2f2225ab7f6d0aa473052b94d3427",
+      "bytes": 15824,
+      "lines": 392
+    },
+    "src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs": {
+      "sha256": "1fff759bb8c4fbf58e3ab41d81c3033e2464e09a362a7ece926b98784aef75a8",
+      "bytes": 10410,
+      "lines": 226
+    },
+    "src/cleanup_plan/replay/selected_entry.rs": {
+      "sha256": "4cdca6c749885979766c8f1260c8a8c7163df116f8749f79fba00e436ca5afeb",
+      "bytes": 14186,
+      "lines": 423
+    },
+    "src/cleanup_plan/replay.rs": {
+      "sha256": "83b5ae5fec95348757ff3fd5bd586c4c6c624f5abb6aaf6d8be7037c52d65d67",
+      "bytes": 298002,
+      "lines": 7274
+    },
+    "tests/hir_module_boundaries.rs": {
+      "sha256": "cc552067f207272cc50093f618cc510c403e5618499a52064e6550fc364314f5",
+      "bytes": 29459,
+      "lines": 460
+    }
+  },
+  "no_production_core_or_authority_change": true,
+  "actual_member_malformed_driver_control": true,
+  "genuine_source_record_no_borrowed_lease_guard": true,
+  "first_owned_primary_held_across_complete_drop": true,
+  "facade_arena_variant_assertion": true
+}

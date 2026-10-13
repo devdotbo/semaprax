@@ -9,12 +9,16 @@ pub(super) fn validate(
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     validate_core(program, function, budget, |function, budget| {
-        let physical = budget
-            .physical
-            .as_deref_mut()
-            .ok_or_else(|| replay_error(function, "selected scalar helper lacks backing"))?;
-        expression_facts::expression_facts_with_reservation(function, physical)
-            .map(expression_facts::Facts::Tree)
+        // This facade compares error policies on the same genuine Arena route.
+        // The complete independent Tree driver remains compiled for its own
+        // semantic and representation-accounting controls.
+        if budget.physical.is_none() {
+            return Err(replay_error(
+                function,
+                "selected scalar helper lacks backing",
+            ));
+        }
+        expression_facts::with_budget(function, budget)
     })
 }
 

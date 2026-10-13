@@ -20,6 +20,12 @@ mod physical_clone;
 mod physical_storage;
 mod scalar_match;
 mod scalar_replay;
+#[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "complete independently compiled original Tree scalar receiver"
+)]
+mod scalar_replay_tree;
 mod selected_callees;
 mod selected_context;
 mod selected_entry;

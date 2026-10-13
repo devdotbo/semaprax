@@ -338,6 +338,14 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/expression_facts/tests/payloads/arena.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/tests/payloads.rs"),
         include_str!("../src/cleanup_plan/replay/selected_entry/tests/fact_errors/arena.rs"),
+        include_str!("../src/cleanup_plan/replay/scalar_replay.rs"),
+        include_str!("../src/cleanup_plan/replay/scalar_replay/records.rs"),
+        include_str!("../src/cleanup_plan/replay/scalar_replay_tree.rs"),
+        include_str!("../src/cleanup_plan/replay/scalar_replay_tree/records.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_entry/tests/fact_errors/tree_policy.rs"),
+        include_str!(
+            "../src/cleanup_plan/replay/selected_entry/tests/fact_errors/tree_policy/nominal.rs"
+        ),
         include_str!("../src/cleanup_plan/replay/physical_budget.rs"),
         include_str!("../src/cleanup_plan/replay/physical_budget/setup.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts.rs"),
