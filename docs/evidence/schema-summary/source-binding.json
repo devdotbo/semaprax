@@ -43,7 +43,7 @@
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs": "9edcfe04ec45408193fe8d7969b2cd2bf756498df9d5b43e4c2d6fcb569644e2",
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs": "a22ad9d3b05506fcb2c1e4ccbb9a175486305fd792de5bfb4fcab031aa5bdf52",
     "src/cleanup_plan/replay/paid_type_facts/droppability.rs": "50553857f7a33d60b245f66bdc3c380f65b8ba5ae5fa53e776fd2b419da80e76",
-    "tests/hir_module_boundaries.rs": "8b708aa7d186b50156cf668c66c6580612d287aee57425769b1db690c7257bb8",
+    "tests/hir_module_boundaries.rs": "f8bafa1cadc6f5a2522dcc66dcb3870d34ad3cb03b13466883987a3d5ebc17a4",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "e06efbb1ac6deacec6f348313b870454429041f0e31be2cb56a38646fdf92692",
     "src/cleanup_plan/replay/paid_type_facts/inventory_text.rs": "34c5813dc5dff46bd9dd9eee480fea834c2e4d82f8eb22e7a1abfc81288493fa",
     "src/cleanup.rs": "e2a653179270f02ca7d56cfffc11e503043fd00068aac09152a89a493660159f",
@@ -126,5 +126,7 @@
       "resource_refusal": null,
       "verdict": "no concrete compile/semantic blocker in three-file source review; all four visibility/zero-charge/invariant/test-path checks verified against exact source; no execution"
     }
-  }
+  },
+  "integrated_current_root": "767e7f4c7",
+  "integration_note": "Private merge preserves complete f9 originals; only current HIR receiving-union hash changed. No production summary adoption."
 }
