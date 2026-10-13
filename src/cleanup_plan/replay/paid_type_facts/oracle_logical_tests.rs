@@ -29,8 +29,8 @@ fn forwarded_account_keys_preserve_full_old_bytes_and_charge_through_drop() {
         result: Box::new(ResolvedType::ArrayU8(32)),
     };
     let original = ty.identity_key();
-    let run = |allowance| {
-        let scope = OracleScope::open(allowance).unwrap();
+    let run = |allowance, work| {
+        let scope = OracleScope::open_with_work(allowance, work).unwrap();
         let lease = scope.lease();
         let ((same, retry, metrics), refused, used, first) =
             crate::bounded_output::with_limit_usage_refusal(0, || {
@@ -75,17 +75,30 @@ fn forwarded_account_keys_preserve_full_old_bytes_and_charge_through_drop() {
         );
         (same, retry, receipt, metrics.allocated)
     };
-    let (same, retry, baseline, allocated) = run(1 << 20);
+    let (same, retry, baseline, allocated) = run(1 << 20, 1 << 25);
     assert!(same);
     assert_eq!(retry, Ok(()));
     assert!(allocated > 0);
     assert!(baseline.first_refusal.is_none());
-    let (same, retry, exact, _) = run(baseline.charged);
+    let (same, retry, exact, _) = run(baseline.charged, baseline.work);
     assert!(same);
     assert_eq!(retry, Ok(()));
     assert_eq!(exact.charged, baseline.charged);
+    assert!(baseline.work > 0);
+    assert_eq!(exact.work, baseline.work);
+    for work in [baseline.work - 1, 0] {
+        let (same, retry, receipt, _) = run(baseline.charged, work);
+        assert!(
+            !same,
+            "work refusal cannot publish complete semantic key equality"
+        );
+        assert_eq!(retry, Err(OracleRefusal::Sticky));
+        assert!(receipt.first_work_refusal.is_some());
+        assert_eq!(receipt.work_allowance, work);
+        assert!(receipt.work <= work);
+    }
     for allowance in [baseline.charged - 1, 0] {
-        let (same, retry, receipt, _) = run(allowance);
+        let (same, retry, receipt, _) = run(allowance, baseline.work);
         assert!(
             !same,
             "physical refusal cannot publish a partial semantic key"

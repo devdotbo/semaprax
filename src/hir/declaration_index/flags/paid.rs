@@ -21,6 +21,8 @@ impl DeclarationIndex {
         // Authentication/sticky first-refusal still runs even when this query
         // needs no classifier Storage carrier. No allocation or allowance.
         payer.bytes(0)?;
+        #[cfg(test)]
+        payer.oracle_work(0, "classifier fast receiver authority")?;
         if matches!(
             ty,
             ResolvedType::Never

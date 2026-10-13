@@ -13,6 +13,8 @@ fn build<P: Payer>(ty: &ResolvedType, storage: &mut Storage<'_, P>) -> Option<St
     } = ty
     {
         if arguments.is_empty() {
+            #[cfg(test)]
+            storage.oracle_work(1, "cleanup nominal key receive")?;
             return storage.strict_text(format_args!(
                 "nominal:{}:{}:0:",
                 declaration.as_str().len(),
@@ -30,6 +32,8 @@ fn build<P: Payer>(ty: &ResolvedType, storage: &mut Storage<'_, P>) -> Option<St
     storage.push(&mut frames, Frame::Enter(ty))?;
     let mut keys = Vec::<String>::new();
     while let Some(frame) = frames.pop() {
+        #[cfg(test)]
+        storage.oracle_work(1, "cleanup key frame")?;
         match frame {
             Frame::Enter(ty) => match ty {
                 ResolvedType::Function { parameters, result } => {
@@ -143,6 +147,8 @@ fn build<P: Payer>(ty: &ResolvedType, storage: &mut Storage<'_, P>) -> Option<St
                 let mut key = storage.encoded()?;
                 storage.append_strict(&mut key, format_args!("function:v1:{count}:"))?;
                 for child in keys.drain(split..) {
+                    #[cfg(test)]
+                    storage.oracle_work(1, "cleanup key child receive")?;
                     storage.append_raw(&mut key, format_args!("{}:{child}", child.len()))?;
                 }
                 storage.push(&mut keys, key.into_string())?;
@@ -154,6 +160,8 @@ fn build<P: Payer>(ty: &ResolvedType, storage: &mut Storage<'_, P>) -> Option<St
                     .expect("type-key traversal has one result per argument");
                 let mut encoded = storage.encoded()?;
                 for key in keys.drain(split..) {
+                    #[cfg(test)]
+                    storage.oracle_work(1, "cleanup key child receive")?;
                     storage.append(&mut encoded, format_args!("{}:{key}", key.len()))?;
                 }
                 let key = storage.strict_text(format_args!(

@@ -149,3 +149,36 @@ no compilation, tests or runtime measurements were performed in this lane.
 This checkpoint does not close OPT810: full live enum/factored entry and every
 remaining transitive acquisition/error owner still require qualification. No
 cached verdict, alternate context, account exemption or hook activation is added.
+
+## Explicit cumulative work callbacks — source checkpoint
+
+A cfg(test) TypeFactsPayer callback forwards through borrowed payers to the
+matching live OracleAccount. Ordinary payers perform no new ledger access or
+work debit. Classifier/substitution/key/drop receiving frames, declaration and
+variant walks, literal copying and clone preflight now debit that same finite
+account before their work. The clone census retains all 17 complete original
+byte receivers; account twins prepay their corresponding future clone visits,
+owned name bytes, shared identity dispatch and observation tail copying. The
+fixed 514 cursor and original per-receiver ceilings remain unchanged.
+
+Positive fixtures explicitly open the existing 1 MiB byte and 32 Mi work
+allowances upfront. Exact repetitions use the observed cumulative receipt;
+byte/work one-short and zero runs cannot reset or replenish either allowance.
+The original substitution Diagnostic comparison retains every field; forwarded
+zero-work, stale subject and expired lease controls observe receiving Drop and
+retain production ACTIVE and allocation-observer assertions. These controls are
+authored but unrun. Leaf formatting, source joins, diff checking and the size
+census are static checks only; no executable qualification ran in this lane.
+
+Two small tool-free Claude Sonnet 5.5 drafting calls authored the callback seam
+and clone providers. Local review corrected the actual lease API and completed
+continuation/tail work before applying the proposed methods. Successful API
+list costs were $0.0665889 and $0.1293949, not invoice costs; a separate broad
+review timed out without a result or usage receipt, so its cost is unknown.
+
+OPT810 remains open and the live hook remains inactive. Borrowed cache Ord
+comparisons, complete argument-tree equality/cycle searches, general formatter
+counting and transitive admission predicates still lack complete work funding.
+The live panic payload and original owning pair require fresh executable
+qualification after those gaps close. No comparison is skipped or cached; the
+two complete old owning fixtures and original hook source remain unchanged.

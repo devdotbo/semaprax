@@ -48,6 +48,8 @@ pub(in crate::cleanup_plan::replay) fn substitute_type(
     frames.push(Frame::Enter(template));
     let mut resolved = Vec::new();
     while let Some(frame) = frames.pop() {
+        #[cfg(test)]
+        budget.charge_oracle_work(function, 1, "shape substitution frame")?;
         match frame {
             Frame::Enter(template) => match template {
                 ResolvedType::Function { parameters, result } => {
@@ -352,8 +354,8 @@ mod oracle_error_tests {
         let original = hir_error_old(format!(
             "type template for `{owner}` references missing parameter 7"
         ));
-        let run = |allowance| {
-            let scope = OracleScope::open(allowance).unwrap();
+        let run = |allowance, work| {
+            let scope = OracleScope::open_with_work(allowance, work).unwrap();
             let lease = scope.lease();
             let ((same, metrics), refused, active) =
                 crate::bounded_output::with_limit_usage(0, || {
@@ -378,20 +380,29 @@ mod oracle_error_tests {
             assert!(metrics.allocated <= receipt.charged);
             (same, receipt)
         };
-        let (same, baseline) = run(1 << 20);
+        let (same, baseline) = run(1 << 20, 1 << 25);
         assert!(same, "all six unprefixed original diagnostic fields");
         assert!(baseline.charged > original.message.len());
         assert!(baseline.first_refusal.is_none());
-        let (same, exact) = run(baseline.charged);
+        let (same, exact) = run(baseline.charged, baseline.work);
         assert!(same);
         assert_eq!(exact.charged, baseline.charged);
+        assert_eq!(exact.work, baseline.work);
+        assert!(baseline.work > 0);
         for allowance in [baseline.charged - 1, 0] {
-            let (same, receipt) = run(allowance);
+            let (same, receipt) = run(allowance, baseline.work);
             assert!(
                 !same,
                 "physical refusal cannot publish the semantic diagnostic"
             );
             assert!(receipt.first_refusal.is_some());
+        }
+        for work in [baseline.work - 1, 0] {
+            let (same, receipt) = run(baseline.charged, work);
+            assert!(!same, "work refusal cannot publish the semantic diagnostic");
+            assert!(receipt.first_work_refusal.is_some());
+            assert!(receipt.work <= work);
+            assert!(receipt.physical_failure.is_none());
         }
     }
 }

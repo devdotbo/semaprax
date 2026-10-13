@@ -79,6 +79,10 @@ impl ClonePayload for Continuation {
         // All marker identities belong to the already charged observation Rc.
         Some(0)
     }
+    #[cfg(test)]
+    fn clone_payload_bytes_with_work(&self, work: &mut impl FnMut(usize) -> bool) -> Option<usize> {
+        work(2).then_some(0)
+    }
 }
 
 pub(super) enum Marker<'a> {

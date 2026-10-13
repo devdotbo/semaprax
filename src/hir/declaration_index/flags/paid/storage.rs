@@ -24,6 +24,12 @@ pub(crate) trait Payer {
             "explicit classifier sink has no payer",
         ))
     }
+    /// Explicit test-account work only. Ordinary payers retain their receiver;
+    /// this default grants neither a leased account nor a work allowance.
+    #[cfg(test)]
+    fn oracle_work(&mut self, _units: usize, _phase: &'static str) -> Result<(), Diagnostic> {
+        Ok(())
+    }
 }
 
 impl<P: Payer + ?Sized> Payer for &mut P {
@@ -53,6 +59,10 @@ impl<P: Payer + ?Sized> Payer for &mut P {
     #[cfg(test)]
     fn classifier_reserve_sink(&mut self, bytes: usize) -> Result<bool, Diagnostic> {
         (**self).classifier_reserve_sink(bytes)
+    }
+    #[cfg(test)]
+    fn oracle_work(&mut self, units: usize, phase: &'static str) -> Result<(), Diagnostic> {
+        (**self).oracle_work(units, phase)
     }
 }
 
@@ -118,6 +128,16 @@ impl<P: Payer> Storage<P> {
             return None;
         }
         let result = self.payer.node::<K, V>();
+        self.receive(result)
+    }
+    /// The original first Diagnostic is retained; a refused receiver performs
+    /// no later callback work and never substitutes a semantic None for refusal.
+    #[cfg(test)]
+    pub(super) fn oracle_work(&mut self, units: usize, phase: &'static str) -> Option<()> {
+        if self.first.is_some() {
+            return None;
+        }
+        let result = self.payer.oracle_work(units, phase);
         self.receive(result)
     }
     fn growth<T>(&mut self, result: Result<T, GrowthFailure<Diagnostic>>) -> Option<T> {
@@ -228,6 +248,8 @@ impl<P: Payer> Storage<P> {
         Some(output.into_string())
     }
     pub(super) fn literal(&mut self, value: &str) -> Option<String> {
+        #[cfg(test)]
+        self.oracle_work(value.len(), "classifier literal bytes")?;
         if self.first.is_some() {
             return None;
         }

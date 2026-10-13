@@ -25,6 +25,14 @@ impl<P: TypeFactsPayer> Storage<'_, P> {
             }
         }
     }
+    #[cfg(test)]
+    pub(super) fn oracle_work(&mut self, units: usize, phase: &'static str) -> Option<()> {
+        if self.first.is_some() {
+            return None;
+        }
+        let result = self.payer.oracle_work(units, phase);
+        self.receive(result)
+    }
     pub(super) fn bytes(&mut self, bytes: usize) -> Option<()> {
         if self.first.is_some() {
             return None;
@@ -149,6 +157,8 @@ impl<P: TypeFactsPayer> Storage<'_, P> {
         Some(output.into_string())
     }
     pub(super) fn literal(&mut self, value: &str) -> Option<String> {
+        #[cfg(test)]
+        self.oracle_work(value.len(), "cleanup key literal bytes")?;
         self.bytes(value.len())?;
         let mut text = String::new();
         if text.try_reserve_exact(value.len()).is_err() {

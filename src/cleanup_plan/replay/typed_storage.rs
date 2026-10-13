@@ -52,6 +52,18 @@ impl ClonePayload for crate::hir::ResolvedParam {
     fn clone_payload_bytes(&self) -> Option<usize> {
         self.name.len().checked_add(self.ty.clone_payload_bytes()?)
     }
+    #[cfg(test)]
+    fn clone_payload_bytes_with_work(&self, work: &mut impl FnMut(usize) -> bool) -> Option<usize> {
+        if !work(2) {
+            return None;
+        }
+        if !work(self.name.len()) {
+            return None;
+        }
+        self.name
+            .len()
+            .checked_add(self.ty.clone_payload_bytes_with_work(work)?)
+    }
 }
 fn digits(mut index: usize) -> usize {
     let mut count = 1;

@@ -76,6 +76,10 @@ pub(in crate::cleanup_plan::replay::paid_type_facts) fn needs_drop<P: TypeFactsP
     pending.push(Cow::Borrowed(ty));
     let mut visited = BTreeSet::new();
     while let Some(ty) = pending.pop() {
+        #[cfg(test)]
+        payer
+            .oracle_work(1, "cleanup type receive")
+            .map_err(Failure::Physical)?;
         let facts = match first.take() {
             Some(facts) => Some(facts),
             None => program
@@ -153,7 +157,23 @@ pub(in crate::cleanup_plan::replay::paid_type_facts) fn needs_drop<P: TypeFactsP
                 {
                     return Ok(true);
                 }
-                let Some(item) = program.types().iter().find(|item| &item.id == declaration) else {
+                #[cfg(test)]
+                let item = {
+                    let mut found = None;
+                    for item in program.types() {
+                        payer
+                            .oracle_work(1, "cleanup declaration lookup")
+                            .map_err(Failure::Physical)?;
+                        if &item.id == declaration {
+                            found = Some(item);
+                            break;
+                        }
+                    }
+                    found
+                };
+                #[cfg(not(test))]
+                let item = program.types().iter().find(|item| &item.id == declaration);
+                let Some(item) = item else {
                     return Err(Failure::Semantic(
                         super::text::raw(
                             payer,
@@ -170,6 +190,10 @@ pub(in crate::cleanup_plan::replay::paid_type_facts) fn needs_drop<P: TypeFactsP
                             .grow(&mut pending, fields.len())
                             .map_err(Failure::Physical)?;
                         for field in fields.iter().rev() {
+                            #[cfg(test)]
+                            payer
+                                .oracle_work(1, "cleanup declared field receive")
+                                .map_err(Failure::Physical)?;
                             let resolved = program
                                 .declarations()
                                 .substitute_type_paid(
@@ -194,6 +218,22 @@ pub(in crate::cleanup_plan::replay::paid_type_facts) fn needs_drop<P: TypeFactsP
                         }
                     }
                     ResolvedTypeDeclarationKind::Variant { cases } => {
+                        #[cfg(test)]
+                        let fields = {
+                            let mut total = Some(0usize);
+                            for case in cases {
+                                payer
+                                    .oracle_work(1, "cleanup variant count")
+                                    .map_err(Failure::Physical)?;
+                                total =
+                                    total.and_then(|total| total.checked_add(case.fields.len()));
+                                if total.is_none() {
+                                    break;
+                                }
+                            }
+                            total
+                        };
+                        #[cfg(not(test))]
                         let fields = cases
                             .iter()
                             .try_fold(0usize, |total, case| total.checked_add(case.fields.len()));
@@ -210,7 +250,15 @@ pub(in crate::cleanup_plan::replay::paid_type_facts) fn needs_drop<P: TypeFactsP
                             .grow(&mut pending, fields)
                             .map_err(Failure::Physical)?;
                         for case in cases.iter().rev() {
+                            #[cfg(test)]
+                            payer
+                                .oracle_work(1, "cleanup declared field receive")
+                                .map_err(Failure::Physical)?;
                             for field in case.fields.iter().rev() {
+                                #[cfg(test)]
+                                payer
+                                    .oracle_work(1, "cleanup declared field receive")
+                                    .map_err(Failure::Physical)?;
                                 let resolved = program
                                     .declarations()
                                     .substitute_type_paid(

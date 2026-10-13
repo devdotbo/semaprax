@@ -55,6 +55,16 @@ impl TypeFactsPayer for Payer<'_> {
             .reserve_bytes(self.function, bytes, "type-fact classifier logical text")?;
         Ok(true)
     }
+    // Claude-authored account-only override: ordinary paths do no added work,
+    // ledger access or preparation. Zero still checks the exact live authority.
+    #[cfg(test)]
+    fn oracle_work(&mut self, units: usize, phase: &'static str) -> Result<(), Diagnostic> {
+        if self.budget.oracle_lease().is_none() {
+            return Ok(());
+        }
+        self.current()?;
+        self.budget.charge_oracle_work(self.function, units, phase)
+    }
     fn bytes(&mut self, bytes: usize) -> Result<(), Diagnostic> {
         self.current()?;
         self.budget
@@ -76,6 +86,8 @@ impl TypeFactsPayer for Payer<'_> {
     }
     fn clone_type(&mut self, ty: &ResolvedType) -> Result<ResolvedType, Diagnostic> {
         self.current()?;
+        #[cfg(test)]
+        self.oracle_work(1, "classifier clone receive")?;
         let owns_backing = match ty {
             ResolvedType::Nominal { arguments, .. } => !arguments.is_empty(),
             ResolvedType::Function { .. } => true,
@@ -93,7 +105,11 @@ impl TypeFactsPayer for Payer<'_> {
         self.grow(&mut pending, 1)?;
         pending.push((ty, 0usize));
         while let Some((current, child)) = pending.last().copied() {
+            #[cfg(test)]
+            self.oracle_work(1, "classifier clone census frame")?;
             if child == 0 {
+                #[cfg(test)]
+                self.oracle_work(1, "classifier cloned type node")?;
                 let bytes = match current {
                     ResolvedType::Nominal { arguments, .. } => arguments
                         .len()
@@ -295,3 +311,6 @@ mod oracle_payer_tests {
 
 #[cfg(test)]
 mod oracle_logical_tests;
+
+#[cfg(test)]
+mod oracle_work_tests;

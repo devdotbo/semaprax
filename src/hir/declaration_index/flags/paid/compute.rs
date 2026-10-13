@@ -16,6 +16,8 @@ fn children<'a, P: Payer>(
     storage.bytes(std::mem::size_of::<Vec<ResolvedType>>())?;
     let mut children = Vec::new();
     for ty in types {
+        #[cfg(test)]
+        storage.oracle_work(1, "classifier declared field receive")?;
         let child = storage.substitute(ty, owner, arguments)?;
         storage.push(&mut children, child)?;
     }
@@ -57,6 +59,8 @@ impl DeclarationIndex {
         storage.push(&mut frames, Frame::Enter(root))?;
         let mut results = Vec::<TypeFacts>::new();
         while let Some(frame) = frames.pop() {
+            #[cfg(test)]
+            storage.oracle_work(1, "classifier compute frame")?;
             match frame {
                 Frame::Enter(ty) => {
                     let identity = key::identity(&ty, storage)?;
@@ -271,6 +275,8 @@ impl DeclarationIndex {
                             let mut sized = true;
                             let mut needs_drop = false;
                             for (field, facts) in fields.iter().zip(child_facts) {
+                                #[cfg(test)]
+                                storage.oracle_work(1, "classifier declared field receive")?;
                                 copy &= facts.copy;
                                 contains_resource |= facts.contains_resource;
                                 sized &= facts.sized;
@@ -322,6 +328,8 @@ impl DeclarationIndex {
                             let mut sized = true;
                             let mut needs_drop = false;
                             for case in cases {
+                                #[cfg(test)]
+                                storage.oracle_work(1, "classifier declared field receive")?;
                                 storage.append(
                                     &mut encoded,
                                     format_args!(
@@ -332,6 +340,8 @@ impl DeclarationIndex {
                                     ),
                                 )?;
                                 for field in &case.fields {
+                                    #[cfg(test)]
+                                    storage.oracle_work(1, "classifier declared field receive")?;
                                     let facts = facts_iter.next()?;
                                     copy &= facts.copy;
                                     contains_resource |= facts.contains_resource;

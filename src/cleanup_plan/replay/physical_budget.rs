@@ -116,7 +116,16 @@ impl ReplayBudget {
             return Ok(());
         }
         self.prepare_clone_cursor(function)?;
-        let bytes = value.clone_payload_bytes().ok_or_else(|| {
+        #[cfg(test)]
+        let payload = match self.oracle_lease() {
+            Some(lease) => {
+                value.clone_payload_bytes_with_work(&mut |units| lease.charge_work(units).is_ok())
+            }
+            None => value.clone_payload_bytes(),
+        };
+        #[cfg(not(test))]
+        let payload = value.clone_payload_bytes();
+        let bytes = payload.ok_or_else(|| {
             self.budget_refusal(
                 function,
                 "cleanup replay clone payload exceeds the physical bound",

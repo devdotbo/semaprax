@@ -21,6 +21,8 @@ pub(super) fn resolve<P: Payer>(
     storage.push(&mut frames, Frame::Enter(template))?;
     let mut types = Vec::new();
     while let Some(frame) = frames.pop() {
+        #[cfg(test)]
+        storage.oracle_work(1, "classifier substitution frame")?;
         match frame {
             Frame::Enter(ty) => match ty {
                 ResolvedType::TypeParameter {
