@@ -1,5 +1,6 @@
 //! Explicit account storage receiver. The complete ordinary receiver remains
-//! in the parent. Unfunded nominal admission refuses before acquisition.
+//! in the parent. Admission scratch is paid by the same live account; the
+//! storage-only prototype remains an explicit negative control.
 use super::super::{allocation, ReplayBudget, MAX_REPLAY_WORK_UNITS};
 use super::*;
 
@@ -10,6 +11,17 @@ pub(super) fn replay(
     instance: &ResolvedType,
     fields: &[ResolvedRecordMatchPatternField],
     mode: ResolvedMatchMode,
+) -> Option<Result<ExpectedDestructure, Diagnostic>> {
+    replay_with_admission(program, function, record, instance, fields, (mode, true))
+}
+
+fn replay_with_admission(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    record: &DeclarationId,
+    instance: &ResolvedType,
+    fields: &[ResolvedRecordMatchPatternField],
+    mode: (ResolvedMatchMode, bool),
 ) -> Option<Result<ExpectedDestructure, Diagnostic>> {
     let lease = match allocation::authority(program, function) {
         Ok(None) => return None,
@@ -60,9 +72,10 @@ fn replay_paid(
     record: &DeclarationId,
     instance: &ResolvedType,
     fields: &[ResolvedRecordMatchPatternField],
-    mode: ResolvedMatchMode,
+    mode: (ResolvedMatchMode, bool),
     budget: &mut super::super::ReplayBudget,
 ) -> Result<ExpectedDestructure, Diagnostic> {
+    let (mode, fund_admission) = mode;
     let mut queue = VecDeque::new();
     budget.reserve_deque(function, &mut queue, 1, "destructure pending root")?;
     queue.push_back(Pending {
@@ -187,10 +200,11 @@ fn replay_paid(
                             "nested record destructure replay binding is not canonical",
                         ));
                     }
-                    // The nominal whole-subtree predicate has its own owning
-                    // traversal, which is not prepaid by this storage receiver.
-                    // Refuse visibly before calling it; never infer its verdict.
-                    if needs_drop
+                    // The storage-only prototype deliberately lacks admission
+                    // scratch payment. Retain its original fail-closed control
+                    // without calling the ordinary owning traversal.
+                    if !fund_admission
+                        && needs_drop
                         && mode == ResolvedMatchMode::Own
                         && matches!(&ty, ResolvedType::Nominal { .. })
                     {
@@ -208,19 +222,26 @@ fn replay_paid(
                     }
                     let subtree = needs_drop
                         && mode == ResolvedMatchMode::Own
-                        && crate::hir::owned_record_subtree::admitted(
-                            program.declarations(),
-                            instance,
-                            &ty,
-                        );
+                        && if fund_admission {
+                            admission::subtree(
+                                program.declarations(),
+                                instance,
+                                &ty,
+                                function,
+                                budget,
+                            )?
+                        } else {
+                            crate::hir::owned_record_subtree::admitted(
+                                program.declarations(),
+                                instance,
+                                &ty,
+                            )
+                        };
                     nested |= subtree;
                     non_byte_owned_terminal |= needs_drop
                         && !subtree
                         && !matches!(ty, ResolvedType::Bytes | ResolvedType::String)
-                        && !crate::hir::owned_collection_record::vector(
-                            program.declarations(),
-                            &ty,
-                        );
+                        && !admission::vector(program.declarations(), &ty);
                     if needs_drop
                         && mode == ResolvedMatchMode::Own
                         && (bindings.len() >= OWNED_LEAF_LIMIT
@@ -295,3 +316,5 @@ fn replay_paid(
 
 #[cfg(test)]
 mod tests;
+
+mod admission;

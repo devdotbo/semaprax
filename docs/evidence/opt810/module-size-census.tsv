@@ -1,5 +1,5 @@
 # Source-only census; no executable qualification. Base 5ff88aa99040a597f60cf10f66bc50582ccc1e8e
-# path	lines	unchanged_limit
+# path\tlines\tunchanged_limit
 src/bounded_output/classifier_string.rs	218	1500
 src/bounded_output/classifier_string/explicit.rs	150	1500
 src/bounded_output/classifier_string/explicit/tests.rs	134	1500
@@ -35,10 +35,15 @@ src/cleanup_plan/replay/paid_type_facts/droppability.rs	200	1500
 src/cleanup_plan/replay/paid_type_facts/droppability/text.rs	195	1500
 src/cleanup_plan/replay/paid_type_facts/oracle_logical_tests.rs	156	1500
 src/cleanup_plan/replay/path_summary.rs	187	1500
-src/cleanup_plan/replay/physical_budget.rs	328	1500
+src/cleanup_plan/replay/physical_budget.rs	336	1500
 src/cleanup_plan/replay/record_destructure.rs	364	1500
-src/cleanup_plan/replay/record_destructure/funded.rs	297	1500
-src/cleanup_plan/replay/record_destructure/funded/tests.rs	264	1500
+src/cleanup_plan/replay/record_destructure/funded.rs	320	1500
+src/cleanup_plan/replay/record_destructure/funded/admission.rs	80	1500
+src/cleanup_plan/replay/record_destructure/funded/admission/byte.rs	171	1500
+src/cleanup_plan/replay/record_destructure/funded/admission/collection.rs	106	1500
+src/cleanup_plan/replay/record_destructure/funded/admission/tests.rs	141	1500
+src/cleanup_plan/replay/record_destructure/funded/admission/text.rs	107	1500
+src/cleanup_plan/replay/record_destructure/funded/tests.rs	476	1500
 src/cleanup_plan/replay/renewal.rs	875	1500
 src/cleanup_plan/replay/resolved_call.rs	507	1500
 src/cleanup_plan/replay/resolved_call/param_view.rs	267	1500
@@ -82,4 +87,4 @@ src/string_ops/conditions.rs	119	1500
 src/string_ops/conditions/funded.rs	168	1500
 src/string_ops/replacement.rs	68	1500
 src/string_ops/replacement/funded.rs	84	1500
-tests/hir_module_boundaries.rs	339	1500
+tests/hir_module_boundaries.rs	347	1500

@@ -106,3 +106,46 @@ below MAX_REPLAY_PATHS can return ordinary nonselection after a physical error,
 and the selection precheck uses a fresh work budget. Neither behavior was changed
 or asserted to be the cause of the supplied test-only panic. Any production
 refusal fix needs its own original/current protocol controls.
+
+
+## Paid admission checkpoint (source only, after the destructure checkpoint)
+
+The explicit account destructure receiver now routes whole nominal subtree
+admission through paid byte, text and collection predicate twins. The complete
+ordinary predicates remain unchanged and independently supply expected results.
+The previous storage-only prototype remains a named negative control; its live
+account call explicitly selects that prototype, preserving its refusal before
+the original owning predicate. The live factored hook and both original failing
+owner controls remain unchanged and inactive with respect to this pending hook.
+
+Byte admission retains complete Cow declaration/argument carriers until their
+LeaveRecord continuation, full structural equality, original arity/field/depth/
+leaf limits, original traversal order and fallible field substitution. Substitution
+uses the existing account-paid full carrier and original diagnostic route. A
+physical or account refusal propagates as an error rather than a false semantic
+verdict. Text admission borrows field types and active paths; collection admission
+borrows field types and declaration keys, replacing owned invariant text with the
+existing exact heterogeneous lookup (independent owned oracle unchanged).
+Every traversal frame, active path growth, collection tree node, substituted
+carrier and receiving result is reserved before construction from one cumulative
+account. The original vector receiver is retained: its reachable scalar tests,
+copy-record field scans and owned-leaf layouts use borrowed fields or fixed local
+arrays. Runtime vector operation/capacity/clone-flow helpers are not reached.
+
+The account's inline physical-refusal category now receives hard replay-budget
+construction failure only when there is no selected byte/work/authentication
+refusal. The full dynamic reason and all Diagnostic fields still come from the
+unchanged prepaid diagnostic builder. Controls compare the independent complete
+old Diagnostic, observe receiving Drop, and check sticky zero-byte retry. An
+authenticated zero-byte reserve has its own actual observer and zero-charge
+control. Ordinary and SelectedReservation behavior are unchanged by cfg(test).
+
+New controls use the existing 1 MiB byte allowance and explicitly fund one finite
+32 Mi work-unit allowance upfront. Exact retries derive both amounts from the
+observed cumulative receipt; byte/work one-short and zero controls never reset,
+refund or add a tranche. Source joins include every new child and the rolling
+module-size census records every changed Rust owner. These controls are unrun:
+no compilation, tests or runtime measurements were performed in this lane.
+This checkpoint does not close OPT810: full live enum/factored entry and every
+remaining transitive acquisition/error owner still require qualification. No
+cached verdict, alternate context, account exemption or hook activation is added.

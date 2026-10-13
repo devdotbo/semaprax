@@ -255,6 +255,14 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/record_destructure.rs"),
         include_str!("../src/cleanup_plan/replay/record_destructure/funded.rs"),
         include_str!("../src/cleanup_plan/replay/record_destructure/funded/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/record_destructure/funded/admission.rs"),
+        include_str!("../src/cleanup_plan/replay/record_destructure/funded/admission/byte.rs"),
+        include_str!("../src/cleanup_plan/replay/record_destructure/funded/admission/text.rs"),
+        include_str!(
+            "../src/cleanup_plan/replay/record_destructure/funded/admission/collection.rs"
+        ),
+        include_str!("../src/cleanup_plan/replay/record_destructure/funded/admission/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/physical_budget.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts.rs"),
         include_str!("../src/bounded_output/classifier_string/explicit.rs"),
         include_str!("../src/bounded_output/classifier_string/explicit/tests.rs"),

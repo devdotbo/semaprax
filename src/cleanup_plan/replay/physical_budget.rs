@@ -281,6 +281,14 @@ impl ReplayBudget {
         reason: &str,
         phase: &str,
     ) -> Diagnostic {
+        #[cfg(test)]
+        if let Some(lease) = self.oracle_lease().filter(|lease| !lease.refused()) {
+            // The diagnostic keeps its complete dynamic reason. The inline
+            // account stores a static category only when no prior refusal
+            // has selected the failure; byte/work/authentication stay first.
+            lease.fail_physical("oracle replay budget refused physical construction");
+        }
+
         if self.payer == AllocationPayer::LegacyUnobserved
             || (self.payer == AllocationPayer::SelectedReservation
                 && self.refusal_text.is_none()
