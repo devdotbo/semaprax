@@ -27,8 +27,8 @@ owned by the operator, with no concurrent candidate/model writers. Unknown
 bundled resolver/version/registry shapes fail closed; setup never downloads a
 package or copies caches. The selected original manifest and source bytes are
 checked against Git, then retained using `compiler_output_provenance.capture_inputs`.
-Both generator invocations and their byte-exact replays use the unchanged private
-bootstrap. Only after all four succeed are both module replacements and the
+One paired-plan derivation and its complete byte-exact replay use the unchanged private
+bootstrap. Only after both succeed are both module replacements and the
 reviewed `app.command.spx` installed in another private tree.
 
 The helper checks canonical source and the complete installed Project, records
@@ -39,7 +39,7 @@ partial generator artifacts without a completion receipt. These artifacts are
 not successful source installation or acceptance evidence.
 
 `setup-result.json` identifies the last stage and every generator output whose
-same-bootstrap replay completed, even if the second derivation or an installed
+same-bootstrap replay completed, even if the complete replay or an installed
 source check fails. A failed directory is retained evidence: do not copy its
 partial replacements into another candidate or retry with the same output path.
 Correct the reported source/compiler issue and select a new output directory.
@@ -101,3 +101,10 @@ strong TypeScript setup are unaffected.
 
 Owning mocked guard harness: `python3 -m unittest discover -s benchmarks -p
 test_typed_application_setup.py`. No compiler/model execution occurs in its tests.
+
+New installations retain `semaprax.typed-application-setup.v2`, the exact plan,
+complete authored/candidate source inventories and the paired bundle digest.
+The read-only verifier still accepts intact v1 installations with their original
+four individual generator artifacts; the independent individual-generator
+controls remain unchanged. Neither receipt version replaces compiler replay or
+the full application acceptance runner.

@@ -378,5 +378,89 @@ class TypedApplicationSetupTests(unittest.TestCase):
             self.assertEqual(installation.verify(args, api=setup), project)
 
 
+class PairedPlanSetupTests(unittest.TestCase):
+    def test_reviewed_application_policies_match_operator_exact_selectors(self):
+        repo = Path(setup.__file__).resolve().parents[1]
+        for application in setup.EXAMPLES:
+            policy = repo / "examples" / setup.EXAMPLES[application]["directory"] / "codec-plan.json"
+            self.assertEqual(json.loads(policy.read_bytes()), setup.paired.plan(application, setup))
+
+    def fixture(self):
+        temporary = self.enterContext(tempfile.TemporaryDirectory())
+        root = Path(temporary)
+        bootstrap, generated = root / "bootstrap", root / "generated"
+        bootstrap.mkdir(); generated.mkdir()
+        example = Path(setup.__file__).resolve().parents[1] / "examples" / setup.EXAMPLES["catalog"]["directory"]
+        # The retained original manifest is the actual public specimen contract.
+        manifest = (example / "semaprax.toml").read_bytes()
+        (bootstrap / "semaprax.toml").write_bytes(manifest)
+        declared = setup.validate_manifest("catalog", manifest)["modules"]["sources"]
+        rows = []
+        for path in sorted(declared):
+            data = (example / path).read_bytes()
+            target = bootstrap / path; target.parent.mkdir(exist_ok=True); target.write_bytes(data)
+            rows.append({"path": path, "source": data.decode(), "sha256": "sha256:" + setup.sha(data)})
+        candidate = [dict(row) for row in rows]
+        entries = []
+        for policy in sorted(setup.paired.plan("catalog", setup)["entries"], key=lambda row: row["source"]):
+            row = next(row for row in candidate if row["path"] == policy["source"])
+            original = row["sha256"]
+            row["source"] += "\n// mocked complete generated source\n"
+            row["sha256"] = "sha256:" + setup.sha(row["source"].encode())
+            entries.append({"source_path": policy["source"], "record_id": policy["record"],
+                            "profile": policy["profile"], "max_string_bytes": 16,
+                            "max_array_items": None, "authored_sha256": original,
+                            "candidate_sha256": row["sha256"],
+                            "generated_declarations": [policy["record"] + ".generated"]})
+        bundle = {"schema": "semaprax.json-codec-bundle.v1",
+                  "authored_project_revision": "sha256:" + "a" * 64,
+                  "candidate_project_revision": "sha256:" + "b" * 64,
+                  "candidate_workspace_revision": "sha256:" + "c" * 64,
+                  "manifest": manifest.decode(), "authored_sources": rows,
+                  "candidate_sources": candidate, "entries": entries}
+        return bootstrap, generated, bundle
+
+    def test_complete_paired_replay_precedes_every_staged_module_binding(self):
+        bootstrap, generated, bundle = self.fixture()
+        commands, staged = [], []
+        def run(argv, label):
+            commands.append(label)
+            self.assertEqual(staged, [])
+            Path(argv[-1]).write_bytes(json.dumps(bundle).encode())
+        outputs = setup.paired.derive("catalog", Path("compiler"), bootstrap, generated,
+                                      run, lambda: None, setup,
+                                      lambda path, data: staged.append((path, data)))
+        self.assertEqual(commands, ["derive-plan", "replay-plan"])
+        self.assertEqual(dict(staged), outputs)
+        self.assertEqual(len(outputs), 2)
+        self.assertFalse((bootstrap / "candidate").exists())
+
+    def test_partial_or_changed_complete_replay_never_stages_first_module(self):
+        bootstrap, generated, bundle = self.fixture()
+        staged = []
+        def run(argv, label):
+            data = json.dumps(bundle).encode()
+            Path(argv[-1]).write_bytes(data if label == "derive-plan" else data + b" ")
+        with self.assertRaisesRegex(ValueError, "complete paired candidate differs"):
+            setup.paired.derive("catalog", Path("compiler"), bootstrap, generated,
+                                run, lambda: None, setup,
+                                lambda path, data: staged.append((path, data)))
+        self.assertEqual(staged, [])
+
+    def test_complete_inventory_receipt_and_original_bytes_are_checked(self):
+        import copy
+        bootstrap, _, bundle = self.fixture()
+        self.assertEqual(len(setup.paired.validate(json.dumps(bundle).encode(), "catalog", bootstrap, setup)), 2)
+        mutations = [lambda value: value["candidate_sources"].pop(),
+                     lambda value: value["entries"][0].update(max_string_bytes=17),
+                     lambda value: value["authored_sources"][0].update(source="changed original"),
+                     lambda value: value["entries"][0].update(generated_declarations=[])]
+        for mutate in mutations:
+            with self.subTest(mutation=mutate):
+                changed = copy.deepcopy(bundle); mutate(changed)
+                with self.assertRaises(ValueError):
+                    setup.paired.validate(json.dumps(changed).encode(), "catalog", bootstrap, setup)
+
+
 if __name__ == "__main__":
     unittest.main()

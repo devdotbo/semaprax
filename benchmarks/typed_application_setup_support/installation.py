@@ -94,7 +94,7 @@ def verify(args, *, api) -> Path:
     result = json.loads(api.read_regular(root / "setup-result.json", 1024 * 1024))
     done = json.loads(api.read_regular(root / "completion-receipt.json", 1024 * 1024))
     if (not isinstance(result, dict) or not isinstance(done, dict)
-            or result.get("schema") != "semaprax.typed-application-setup.v1"
+            or result.get("schema") not in {"semaprax.typed-application-setup.v1", "semaprax.typed-application-setup.v2"}
             or result.get("status") != "checked_source_runtime_qualification_pending"
             or result.get("application") != args.application or result.get("profile") != api.PROFILE
             or result.get("compiler_source_commit") != source
@@ -137,6 +137,8 @@ def verify(args, *, api) -> Path:
         "benchmarks/typed_application_setup_support/dependencies.py",
         "benchmarks/typed_application_setup_support/installation.py",
         "src/project/standard_dependencies.rs", "std/packages.json"}
+    if result["schema"] == "semaprax.typed-application-setup.v2":
+        required.add("benchmarks/typed_application_setup_support/paired.py")
     if len(directories) != len(packages) or set(directories) != set(registry):
         raise ValueError("package catalog differs from actual bundled registry")
     for name in dependencies:
@@ -167,12 +169,24 @@ def verify(args, *, api) -> Path:
             != [row[0] for row in api.generator_jobs(args.application)]):
         raise ValueError("checked generator output inventory differs")
     generated_by_path = {row["path"]: row for row in generated}
-    for index, (path, *_rest) in enumerate(api.generator_jobs(args.application)):
-        first = api.read_regular(root / "generated" / f"{index}.spx", api.MAX_GENERATED_BYTES)
-        replay = api.read_regular(root / "generated" / f"{index}.replay.spx", api.MAX_GENERATED_BYTES)
-        row = generated_by_path[path]
-        if not first or first != replay or (api.sha(first), len(first)) != (row.get("sha256"), row.get("bytes")):
-            raise ValueError(f"retained generator output differs: {path}")
+    if result["schema"] == "semaprax.typed-application-setup.v2":
+        from . import paired
+        outputs, digest = paired.retained(args.application, root / "generated", root / "authored-inputs/inputs", api)
+        if result.get("paired_bundle_sha256") != digest:
+            raise ValueError("retained complete paired bundle binding differs")
+        if set(outputs) != set(generated_by_path) or len(outputs) != len(generated_by_path):
+            raise ValueError("retained paired output inventory differs")
+        for path, data in outputs.items():
+            row = generated_by_path[path]
+            if (api.sha(data), len(data)) != (row.get("sha256"), row.get("bytes")):
+                raise ValueError(f"retained paired output differs: {path}")
+    else:
+        for index, (path, *_rest) in enumerate(api.generator_jobs(args.application)):
+            first = api.read_regular(root / "generated" / f"{index}.spx", api.MAX_GENERATED_BYTES)
+            replay = api.read_regular(root / "generated" / f"{index}.replay.spx", api.MAX_GENERATED_BYTES)
+            row = generated_by_path[path]
+            if not first or first != replay or (api.sha(first), len(first)) != (row.get("sha256"), row.get("bytes")):
+                raise ValueError(f"retained generator output differs: {path}")
     originals = {row["path"]: row for row in authored}
     for row in installed:
         data = api.read_regular(project / row["path"])

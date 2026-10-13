@@ -45,14 +45,17 @@ Install into a separate copy with a verified compiler. Keep `src/app.spx` as the
 bootstrap until **both** complete-source derivations have been produced:
 
 ```sh
-semaprax json-codec . --source src/request.spx --type catalog.request \
-  --output src/request.generated.spx --profile stream-utf8-owned-request.v1 \
-  --max-string-bytes 16
-semaprax json-codec . --source src/response.spx --type catalog.report \
-  --output src/response.generated.spx --profile bounded-collection-response.v1 \
-  --max-string-bytes 16
-cp src/request.generated.spx src/request.spx
-cp src/response.generated.spx src/response.spx
+semaprax json-codec . --plan codec-plan.json --output candidate.json
+semaprax json-codec . --plan codec-plan.json --output candidate.replay.json
+cmp candidate.json candidate.replay.json
+python3 - <<'PYTHON'
+import json
+from pathlib import Path
+bundle = json.loads(Path("candidate.json").read_text())
+# Review the complete bundle before writing into this separate installation copy.
+for source in bundle["candidate_sources"]:
+    Path(source["path"]).write_text(source["source"])
+PYTHON
 cp src/app.command.spx src/app.spx
 semaprax test .
 semaprax build . --output catalog-native
@@ -61,7 +64,7 @@ semaprax build . --output catalog-native
 
 The shared [typed application setup operator](../../benchmarks/typed_application_setup_support/README.md)
 retains the authored schemas before generation, binds the actual compiler-bundled
-library closure, replays both outputs against the unchanged bootstrap, and returns
+library closure, replays the complete paired bundle against the unchanged bootstrap, and returns
 a regular complete source tree with explicit build/test/run scripts. It does not
 qualify the 23 cases itself or seed paid trial candidates.
 Its read-only `--verify-installation` action rechecks a completed tree against the

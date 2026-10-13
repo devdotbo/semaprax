@@ -1,0 +1,17 @@
+{
+  "schema": "semaprax.json-codec-plan.v1",
+  "entries": [
+    {
+      "source": "src/request.spx",
+      "record": "catalog.request",
+      "profile": "stream-utf8-owned-request.v1",
+      "max_string_bytes": 16
+    },
+    {
+      "source": "src/response.spx",
+      "record": "catalog.report",
+      "profile": "bounded-collection-response.v1",
+      "max_string_bytes": 16
+    }
+  ]
+}

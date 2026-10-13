@@ -1734,3 +1734,10 @@ use separate scalar observations or keep that variant outside the record.
 [renewal]: IO-LINES-V1.md#cursor-transitions
 [vec]: OWNED-BOUNDED-VEC-V1.md
 [loans]: SHARED-LOAN-PLAN-V1.md
+
+The reviewed [Catalog paired plan](../examples/catalog-scoped-record-successor/codec-plan.json)
+selects both request and response modules with their existing bounds. Derive the
+whole bundle twice from the unchanged bootstrap and compare all bytes before
+staging its complete source inventory, as in the
+[installation workflow](../examples/catalog-scoped-record-successor/README.md).
+A bundle is read-only evidence; it does not publish a workspace generation.

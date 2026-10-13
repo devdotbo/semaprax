@@ -68,50 +68,45 @@ fn stage(root: &Path) {
         assert_eq!(canonical(&canonical_source), canonical_source, "{path}");
         std::fs::write(root.join(path), canonical_source).unwrap();
     }
-    // Derive/replay both actual generators from the unchanged bootstrap.
-    // No guessed body, source-origin exemption, or half-installed import is used.
-    let mut candidates = Vec::new();
-    for (path, identity, profile) in [
-        (
-            "src/request.spx",
-            "catalog.request",
-            project::JsonCodecProfile::StreamUtf8OwnedRequest {
+    let entries = [
+        project::JsonCodecPlanEntry {
+            source_path: "src/request.spx".to_owned(),
+            record_id: "catalog.request".to_owned(),
+            profile: project::JsonCodecProfile::StreamUtf8OwnedRequest {
                 max_string_bytes: 16,
             },
-        ),
-        (
-            "src/response.spx",
-            "catalog.report",
-            project::JsonCodecProfile::CollectionResponse {
+        },
+        project::JsonCodecPlanEntry {
+            source_path: "src/response.spx".to_owned(),
+            record_id: "catalog.report".to_owned(),
+            profile: project::JsonCodecProfile::CollectionResponse {
                 max_string_bytes: 16,
             },
-        ),
-    ] {
-        let generated =
-            project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
-                project::derive_json_codec_source_with_profile(
-                    &snapshot.retain_revision(),
-                    path,
-                    identity,
-                    profile,
-                )
-            })
+        },
+    ];
+    let bundle = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        let revision = snapshot.retain_revision();
+        let bundle = project::derive_json_codec_plan(&revision, &entries)?;
+        project::verify_json_codec_plan(&revision, &entries, &bundle)?;
+        assert_eq!(bundle.entries.len(), 2);
+        assert_eq!(
+            bundle.authored_sources.len(),
+            bundle.candidate_sources.len()
+        );
+        Ok(bundle)
+    })
+    .unwrap();
+    for entry in &bundle.entries {
+        let generated = bundle
+            .candidate_sources
+            .iter()
+            .find(|source| source.path == entry.source_path)
             .unwrap();
-        assert_eq!(canonical(&generated), generated);
-        project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
-            project::verify_json_codec_source_with_profile(
-                &snapshot.retain_revision(),
-                path,
-                identity,
-                &generated,
-                profile,
-            )
-        })
-        .unwrap();
-        candidates.push((path, generated));
+        assert_eq!(canonical(&generated.source), generated.source);
     }
-    for (path, generated) in candidates {
-        std::fs::write(root.join(path), generated).unwrap();
+    // Only the complete, independently replayed candidate becomes staged input.
+    for source in &bundle.candidate_sources {
+        std::fs::write(root.join(&source.path), &source.source).unwrap();
     }
     // The original ordinary Input→Decode tail now composes. Preserve its
     // independent projected-owner refusal against the same generated schemas.
@@ -181,6 +176,17 @@ fn typed_catalog_derives_codecs_and_preserves_all_23_functional_cases() {
         .map_err(|error| vec![error])
     })
     .unwrap();
+    let adopted_order = std::fs::read_to_string(root.join("src/order.spx")).unwrap();
+    std::fs::write(root.join("src/order.spx"), include_str!("../../../../../docs/evidence/application-traversal-plan-adoption/order_before_traversal.txt")).unwrap();
+    let indexed_c = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        codegen::emit_hir_c_with_stdin_stream_collection_records(
+            snapshot.public_api_program(),
+            "catalog.command",
+        )
+        .map_err(|error| vec![error])
+    })
+    .unwrap();
+    std::fs::write(root.join("src/order.spx"), adopted_order).unwrap();
     // Differential source retains the original ordinary normalized-input join,
     // while retaining the admitted owned-record command destructuring. The old
     // receive/decide workaround remains independently executed below.
@@ -212,9 +218,10 @@ fn typed_catalog_derives_codecs_and_preserves_all_23_functional_cases() {
         .map_err(|error| vec![error])
     })
     .unwrap();
-    // All three sources execute every frozen raw-byte/all-channel row unchanged.
+    // All four sources execute every frozen raw-byte/all-channel row unchanged.
     for (route, source) in [
         ("slot-views", &c_source),
+        ("original-indexed-validation", &indexed_c),
         ("joined", &joined_c),
         ("tag-wrapper", &wrapper_c),
     ] {

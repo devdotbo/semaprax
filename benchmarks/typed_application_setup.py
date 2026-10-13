@@ -20,7 +20,7 @@ import time
 import tomllib
 
 import compiler_output_provenance as provenance
-from typed_application_setup_support import dependencies
+from typed_application_setup_support import dependencies, paired
 
 MAX_BYTES = 8 * 1024 * 1024
 MAX_GENERATED_BYTES = 2 * 1024 * 1024
@@ -260,7 +260,8 @@ def install(args: argparse.Namespace) -> Path:
     subject()
     for relative in ("benchmarks/typed_application_setup.py", "benchmarks/compiler_output_provenance.py",
                      "benchmarks/typed_application_setup_support/dependencies.py",
-                     "benchmarks/typed_application_setup_support/installation.py"):
+                     "benchmarks/typed_application_setup_support/installation.py",
+                     "benchmarks/typed_application_setup_support/paired.py"):
         committed(relative)
     prefix = "examples/" + EXAMPLES[args.application]["directory"] + "/"
     selected = selected_paths(args.application)
@@ -289,7 +290,7 @@ def install(args: argparse.Namespace) -> Path:
     if output.resolve().is_relative_to(repo.resolve()) or output.exists() or output.is_symlink():
         raise ValueError("output must be a new external operator-owned evidence directory")
     create_new_directory(output)  # Exclusive, no-follow ancestors, no previous evidence overwritten.
-    result = {"schema": "semaprax.typed-application-setup.v1", "status": "failed",
+    result = {"schema": "semaprax.typed-application-setup.v2", "status": "failed",
               "application": args.application, "profile": PROFILE,
               "compiler_source_commit": source, "compiler_binary_sha256": args.compiler_sha256,
               "compiler_build_receipt": build_binding, "runtime_qualification": None,
@@ -361,7 +362,9 @@ def install(args: argparse.Namespace) -> Path:
         def replayed(module, data):
             result["generated_outputs"].append({"path": module, "sha256": sha(data), "bytes": len(data)})
 
-        candidates = derive_pair(args.application, compiler, bootstrap, generated, run, unchanged, replayed)
+        candidates = paired.derive(args.application, compiler, bootstrap, generated, run, unchanged,
+                                   sys.modules[__name__], replayed)
+        result["paired_bundle_sha256"] = sha(read_regular(generated / "candidate.json", paired.BUNDLE_LIMIT))
         unchanged()
         result["stage"] = "install-source"
         complete = output / "installed-project"

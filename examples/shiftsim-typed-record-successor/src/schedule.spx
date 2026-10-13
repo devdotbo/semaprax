@@ -73,6 +73,20 @@ fn waiting_count(states: borrow Vec<PatientState>, count: usize, time: i64) -> i
 @id("shiftsim.schedule.next_patient")
 fn next_patient(states: borrow Vec<PatientState>, count: usize, time: i64) -> usize
 {
+    if count > vec_len<PatientState>(states) { return next_patient_indexed_control(states, count, time); }
+    let mut selected = count;
+    for borrow state at index in states {
+        if index >= count { break; }
+        if !state.assigned && state.arrival <= time { selected = index; break; }
+        0
+    }
+    selected
+}
+
+// Complete indexed receiver retained for exact prefix/overlength controls.
+@id("shiftsim.schedule.next_patient.indexed_control")
+fn next_patient_indexed_control(states: borrow Vec<PatientState>, count: usize, time: i64) -> usize
+{
     let mut index = 0usize;
     while index < count {
         let state = vec_get<PatientState>(states, index);
@@ -85,6 +99,20 @@ fn next_patient(states: borrow Vec<PatientState>, count: usize, time: i64) -> us
 
 @id("shiftsim.schedule.next_server")
 fn next_server(states: borrow Vec<WorkerState>, count: usize, time: i64) -> usize
+{
+    if count > vec_len<WorkerState>(states) { return next_server_indexed_control(states, count, time); }
+    let mut selected = count;
+    for borrow state at index in states {
+        if index >= count { break; }
+        if state.free_at <= time { selected = index; break; }
+        0
+    }
+    selected
+}
+
+// Complete indexed receiver retained for exact prefix/overlength controls.
+@id("shiftsim.schedule.next_server.indexed_control")
+fn next_server_indexed_control(states: borrow Vec<WorkerState>, count: usize, time: i64) -> usize
 {
     let mut index = 0usize;
     while index < count {
@@ -130,6 +158,20 @@ fn advance_arrivals(arrivals: borrow Vec<i64>, count: usize, cursor: usize, time
 
 @id("shiftsim.schedule.next_time_from_arrivals")
 fn next_time_from_arrivals(arrivals: borrow Vec<i64>, arrived: usize, count: usize, workers: borrow Vec<WorkerState>, server_count: usize, time: i64) -> i64
+{
+    if server_count > vec_len<WorkerState>(workers) { return next_time_from_arrivals_indexed_control(arrivals, arrived, count, workers, server_count, time); }
+    let mut next = if arrived < count { vec_get<i64>(arrivals, arrived) } else { 9223372036854775807 };
+    for borrow state at index in workers {
+        if index >= server_count { break; }
+        if state.free_at > time && state.free_at < next { next = state.free_at; }
+        0
+    }
+    next
+}
+
+// Complete indexed receiver retained for exact prefix/overlength controls.
+@id("shiftsim.schedule.next_time_from_arrivals.indexed_control")
+fn next_time_from_arrivals_indexed_control(arrivals: borrow Vec<i64>, arrived: usize, count: usize, workers: borrow Vec<WorkerState>, server_count: usize, time: i64) -> i64
 {
     let mut next = if arrived < count { vec_get<i64>(arrivals, arrived) } else { 9223372036854775807 };
     let mut completion_index = 0usize;

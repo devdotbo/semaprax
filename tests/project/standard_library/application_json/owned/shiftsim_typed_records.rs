@@ -245,6 +245,18 @@ fn typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus() {
     })
     .unwrap();
 
+    // Complete pre-traversal typed source remains an independent full-corpus arm.
+    std::fs::write(root.join("src/schedule.spx"), include_str!("../../../../../docs/evidence/application-traversal-plan-adoption/schedule_before_traversal.txt")).unwrap();
+    let indexed_c = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+        codegen::emit_hir_c_with_stdin_stream_collection_records(
+            snapshot.public_api_program(),
+            "shiftsim.command",
+        )
+        .map_err(|error| vec![error])
+    })
+    .unwrap();
+    std::fs::write(root.join("src/schedule.spx"), SCHEDULE).unwrap();
+
     let corpus: serde_json::Value = serde_json::from_str(CORPUS).unwrap();
     assert_eq!(
         corpus["valid"].as_array().unwrap().len() + corpus["invalid"].as_array().unwrap().len(),
@@ -276,7 +288,7 @@ fn typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus() {
         std::fs::read_to_string(root.join("src/schedule.spx")).unwrap(),
         original
     );
-    for source in [&c_source, &wrapper_c, &original_c] {
+    for source in [&c_source, &indexed_c, &wrapper_c, &original_c] {
         for optimization in ["-O0", "-O2"] {
             let binary = compile_native(source, &root, optimization);
             for case in corpus["valid"].as_array().unwrap() {

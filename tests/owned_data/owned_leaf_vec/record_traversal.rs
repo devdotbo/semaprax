@@ -237,3 +237,23 @@ fn finite_fresh_rows_preserve_first_failure_without_result_or_leaked_owner() {
     run_wasm(&terminal, 15, 0, "codec-push-4");
     run_wasm(&body, 0, 1, "field-bad-word");
 }
+
+#[test]
+fn owned_row_traversal_keeps_previous_indexed_string_view_scoped_to_iteration() {
+    run(
+        r#"@id("app.main") fn main()->i64 {
+ let rows=vec_push<Row>(vec_push<Row>(vec_with_capacity<Row>(2usize),Row{priority:7,title:"a",payload:bytes_zeroed(0usize)}),Row{priority:11,title:"b",payload:bytes_zeroed(0usize)});
+ let mut good=true;
+ for borrow row at index in rows {
+  let current=row.title;
+  if index>0usize { let previous=vec_field<Row>(rows,index-1usize,"title"); let left=str_as_bytes(previous); let right=str_as_bytes(current);
+   let unequal=match byte_get(left,0usize) { Option::Some { value:a } => match byte_get(right,0usize) { Option::Some { value:b } => a!=b && a==97u8 && b==98u8, Option::None {} => false, }, Option::None {} => false, };
+   good=good && unequal && byte_len(left)==1usize && byte_len(right)==1usize; }
+  0
+ }
+ let renewed=vec_sort_owned<Row>(rows);
+ if good && vec_len<Row>(renewed)==2usize {29}else{0}
+}"#,
+        29,
+    );
+}
