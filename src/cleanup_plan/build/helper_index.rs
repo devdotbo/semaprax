@@ -283,6 +283,8 @@ impl<'a> PlanBuilder<'a> {
 pub(crate) fn build_program_plans(
     program: &ResolvedProgram,
 ) -> Result<Vec<CleanupPlan>, Diagnostic> {
+    #[cfg(test)]
+    let _capacity_scope = capacity_observation::Construction::begin();
     if crate::bounded_output::active_refused() {
         return Err(plan_error(
             "cleanup construction budget was already refused",
@@ -292,6 +294,8 @@ pub(crate) fn build_program_plans(
     // replacement is staged. Charge this additional overlap before any new
     // index/staging/builder allocation. Attached metadata grants no authority.
     let attached = attached_capacity::program(program)?;
+    #[cfg(test)]
+    capacity_observation::attached(attached);
     if !crate::bounded_output::reserve_active_required(attached) {
         return Err(plan_error(
             "attached cleanup overlap exceeds admitted scratch",
@@ -321,11 +325,15 @@ pub(crate) fn build_program_plans(
             "cleanup plan staging backing exceeds reserved capacity",
         ));
     }
+    #[cfg(test)]
+    capacity_observation::staged(&plans);
     for function in &program.functions {
         let execution = crate::hir::FunctionExecutionId::Monomorphic(function.id.clone());
         plans.push(lexical_control::build_with_index(
             program, function, &execution, &index,
         )?);
+        #[cfg(test)]
+        capacity_observation::staged(&plans);
     }
     for instance in &program.function_instances {
         let execution = crate::hir::FunctionExecutionId::Generic(instance.id.clone());
@@ -335,30 +343,14 @@ pub(crate) fn build_program_plans(
             &execution,
             &index,
         )?);
+        #[cfg(test)]
+        capacity_observation::staged(&plans);
     }
     // Intrinsic parameter identities use infallible bounded formatting. A
     // refused format returns an empty diagnostic carrier and marks the ledger;
     // it must never turn into successful staged-plan publication.
     if crate::bounded_output::active_refused() {
         return Err(plan_error("cleanup construction exceeded admitted scratch"));
-    }
-    #[cfg(test)]
-    {
-        // A conservative upper bound on the overlap: the largest in-progress
-        // builder (including the held index) plus every staged plan backing.
-        // Count full physical capacities, rather than legacy receipt lengths.
-        let staged = plans
-            .iter()
-            .try_fold(
-                plans.capacity() * std::mem::size_of::<CleanupPlan>(),
-                |bytes, plan| {
-                    bytes.checked_add(
-                        crate::private_capacity_contract::cleanup_plan_owned_capacity(plan)?,
-                    )
-                },
-            )
-            .expect("staged physical capacity census fits usize");
-        note_lower_capacity_high_water(lower_capacity_high_water() + staged + attached);
     }
     Ok(plans)
 }

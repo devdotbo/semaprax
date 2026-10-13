@@ -5,6 +5,14 @@
   and the complete inventory stay available; both old exact CLI owners remain
   unchanged. Focused controller regression is authored; execution is pending.
 
+- Fix cleanup capacity telemetry feeding a previous construction aggregate into
+  the next invocation. Separate standalone/local/persistent component maxima,
+  restore local scopes on refusal, and retain complete staged/attached terms.
+  Count omitted held ordinary directories, conditional flow and string-move
+  ownership. Preserve the full original model/feedback and receiving-Drop
+  controls. Source-only; physical attribution, existing pin regeneration and
+  focused qualification remain pending.
+
 - Record the recovery constructor funding design and source-authored executable
   boundaries for real unpaid acquisition/work, zero/exact-observed/one-short
   limits, sticky refusal and complete receiving Drop. Preserve ordinary

@@ -66,24 +66,11 @@ const UNRESOLVED_EXIT: ExitTargetId = ExitTargetId(u32::MAX);
 const CLEANUP_EVAL_RESULT_SIZE_CEILING: usize = 192;
 
 #[cfg(test)]
-thread_local! {
-    static LOWER_CAPACITY_HIGH_WATER: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-}
-
+mod capacity_observation;
 #[cfg(test)]
-pub(crate) fn reset_lower_capacity_high_water() {
-    LOWER_CAPACITY_HIGH_WATER.with(|water| water.set(0));
-}
-
-#[cfg(test)]
-pub(crate) fn lower_capacity_high_water() -> usize {
-    LOWER_CAPACITY_HIGH_WATER.with(std::cell::Cell::get)
-}
-
-#[cfg(test)]
-fn note_lower_capacity_high_water(bytes: usize) {
-    LOWER_CAPACITY_HIGH_WATER.with(|water| water.set(water.get().max(bytes)));
-}
+use capacity_observation::{
+    lower_capacity_high_water, note_lower_capacity_high_water, reset_lower_capacity_high_water,
+};
 
 #[cfg(test)]
 fn storage_id_owned_capacity(storage: &StorageId) -> usize {
@@ -352,7 +339,7 @@ fn builder_nested_capacity(builder: &PlanBuilder<'_>) -> usize {
         + exit_payload
         + status_payload
         + edge_payload
-        + builder.byte_helpers.owned_capacity_bytes()
+        + capacity_observation::helper_backing(builder)
         + strings::derived_metadata_capacity(builder)
         + flow_state_owned_capacity(&builder.initial_state)
         + builder.pending_try_residuals.capacity() * std::mem::size_of::<PendingTryResidual>()
@@ -427,7 +414,8 @@ fn builder_nested_capacity(builder: &PlanBuilder<'_>) -> usize {
 
 #[cfg(test)]
 fn flow_state_owned_capacity(state: &FlowState) -> usize {
-    state.live_order.capacity() * std::mem::size_of::<LivenessFlagId>()
+    capacity_observation::conditional_backing(state)
+        + state.live_order.capacity() * std::mem::size_of::<LivenessFlagId>()
         + state
             .renewals
             .iter()

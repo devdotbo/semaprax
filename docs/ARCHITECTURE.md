@@ -4641,3 +4641,13 @@ metadata and other resolution storage keep their existing owners. The complete
 frozen receiver remains a compiled independent test control. ARC and scoped-task
 queries reuse held keys, with complete frozen model controls under their owning
 unit harnesses.
+
+Test-only cleanup construction telemetry lives in
+`cleanup_plan/build/capacity_observation`. Standalone builder maxima and the
+persistent construction overlap census are separate; each construction uses
+a fresh local builder maximum and restores its enclosing observation scope
+on success or refusal. The overlap sums local builder, full staged-plan and
+attached-plan terms without feeding an earlier aggregate back into the model.
+The complete original census and feedback expression remain compiled controls.
+This is a component-model upper, not allocator high-water, RSS or budget proof;
+legacy text-length and collection allowances remain explicit audit gaps.

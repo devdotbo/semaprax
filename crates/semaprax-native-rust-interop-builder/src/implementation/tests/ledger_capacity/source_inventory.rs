@@ -914,6 +914,9 @@ macro_rules! lower_source_inventory {
     () => {
         concat!(
             include_str!("../../../../../src/cleanup_plan/build.rs"),
+            include_str!("../../../../../src/cleanup_plan/build/capacity_observation.rs"),
+            include_str!("../../../../../src/cleanup_plan/build/capacity_observation/legacy.rs"),
+            include_str!("../../../../../src/cleanup_plan/build/capacity_observation/tests.rs"),
             include_str!("../../../../../src/cleanup_plan/build/checked_allocation.rs"),
             include_str!("../../../../../src/cleanup_plan/build/phase_measurement.rs"),
             include_str!("../../../../../src/cleanup_plan/build/helper_index.rs"),

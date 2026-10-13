@@ -1,0 +1,105 @@
+{
+  "base": "fe6a7f5f4cda0a9b182109b1b28dd04485e36777",
+  "fixed_defect": "Persistent prior aggregate is never input to the next construction. Invocation-local builder max + full staged-plan backing + full attached backing publishes a persistent max; RAII restores enclosing scope on success/refusal.",
+  "scope": "Test-only instrumentation at actual production construction callers; no reservation, catalog or semantic changes.",
+  "new_owners": [
+    "ordinary_index retained by Owned-empty HelperSites, counted once",
+    "FlowState conditional_variants vector, roots, variant/case IDs, case flag vectors",
+    "string_owner_moves collection allowance and retained ExpressionId allocation extent"
+  ],
+  "physical_model_limits": [
+    "Builder census retains historical as_str().len() identity terms and per-entry tree allowances. Those are not allocator requested Layout observations.",
+    "New owned-allocation terms can count shared alias backing more than once. The overlap is an upper sum of this invocation component census only, not a proved physical allocator upper.",
+    "Unknown refused ExpressionId backing marks the active component observation invalid rather than inventing bytes.",
+    "Refusal captures observed component milestones, not every allocator event. Physical observation remains independent and includes constructor/receiving Drop."
+  ],
+  "historical_attribution": "Repeated calls make feedback reachable; neither the existing one-resolution fixture nor these unrun controls prove repetition caused 441713. Actual5ff [9224,441713] is an owning pin mismatch, not RSS or by itself an allocation regression.",
+  "original_metric": {
+    "compiled_receiver": "src/cleanup_plan/build/capacity_observation/legacy.rs",
+    "preserved": "All original standalone capacity census helper bodies, full original string metadata census, global max and complete staged-overlap feedback aggregation; only test visibility and relocated renewal_history qualifier adapted.",
+    "controls": "Actual builders compare current/legacy omission terms; actual construction calls invoke the old full staged aggregation; repeated old feedback demonstrates accumulation separately.",
+    "full_frozen_sources": [
+      {
+        "path": "src/cleanup_plan/build.rs",
+        "archive": "evidence/cleanup-instrumentation-opt811/src__cleanup_plan__build.rs.txt",
+        "sha256": "544cfe6ef9a410954976d1ed2054d3096036c1839b1fa01d19ac8fe06914929b"
+      },
+      {
+        "path": "src/cleanup_plan/build/helper_index.rs",
+        "archive": "evidence/cleanup-instrumentation-opt811/src__cleanup_plan__build__helper_index.rs.txt",
+        "sha256": "2d77422f52b4bca4e2ee9ab0115c8d0f01da107a887d71a1b7aa10d6073198f3"
+      },
+      {
+        "path": "src/cleanup_plan/build/strings.rs",
+        "archive": "evidence/cleanup-instrumentation-opt811/src__cleanup_plan__build__strings.rs.txt",
+        "sha256": "0a9ca34506277aca5262281b9fab6ce7d4b260190fc4492cb0d8c37e4bda2b08"
+      }
+    ]
+  },
+  "source_joins": {
+    "reader": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "real_consumer": "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions",
+    "children": [
+      "src/cleanup_plan/build/capacity_observation.rs",
+      "src/cleanup_plan/build/capacity_observation/legacy.rs",
+      "src/cleanup_plan/build/capacity_observation/tests.rs"
+    ],
+    "other_cleanup_build_readers": "No other lexical cleanup_plan/build.rs/helper_index.rs/strings.rs readers found under tests/crates.",
+    "standing_budget_changed": false
+  },
+  "module_sizes": [
+    {
+      "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "lines": 997,
+      "limit": 1500
+    },
+    {
+      "path": "src/cleanup_plan/build.rs",
+      "lines": 6755,
+      "limit": 6818
+    },
+    {
+      "path": "src/cleanup_plan/build/helper_index.rs",
+      "lines": 387,
+      "limit": 1500
+    },
+    {
+      "path": "src/cleanup_plan/build/strings.rs",
+      "lines": 368,
+      "limit": 1500
+    },
+    {
+      "path": "src/cleanup_plan/build/capacity_observation.rs",
+      "lines": 157,
+      "limit": 1500
+    },
+    {
+      "path": "src/cleanup_plan/build/capacity_observation/legacy.rs",
+      "lines": 492,
+      "limit": 1500
+    },
+    {
+      "path": "src/cleanup_plan/build/capacity_observation/tests.rs",
+      "lines": 209,
+      "limit": 1500
+    }
+  ],
+  "build_root_before_lines": 6767,
+  "not_run": [
+    "Cargo",
+    "build",
+    "tests",
+    "Clippy",
+    "full gates",
+    "optional Claude review (auto-review rejected external source export)"
+  ],
+  "pins": "No numbers regenerated or thresholds changed; root owning producer must qualify and regenerate actual measured output after integration.",
+  "static_checks": [
+    "leaf rustfmt skip_children=true",
+    "git diff --check",
+    "changed/new Rust module size ceilings",
+    "source inventory child registration"
+  ],
+  "completion_claim": "Instrumentation feedback repair source-authored; OPT811 complete physical ownership/cause attribution and runtime qualification remain open.",
+  "graft_saved_tokens": 110644
+}

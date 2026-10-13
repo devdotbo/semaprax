@@ -310,6 +310,7 @@ pub(super) fn derived_metadata_capacity(builder: &PlanBuilder<'_>) -> usize {
             + super::lexical_control::capacity::lexical_exit_payload_extra(builder)
     });
     lexical
+        + super::capacity_observation::string_owner_moves(builder)
         + builder.string_appends.len()
             * (std::mem::size_of::<(ExpressionId, ExpressionId)>()
                 + std::mem::size_of::<BTreeMap<ExpressionId, ExpressionId>>())
