@@ -304,12 +304,14 @@ fn full_archived_paid_and_inventory_sources_bind_every_current_hook() {
     ];
     for (path, current, archived_sha) in files {
         let entry = &proof["archived_sources"][path];
-        let archive = std::fs::read_to_string(
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("docs/evidence/nested-shape-scratch")
-                .join(entry["archive"].as_str().unwrap()),
-        )
-        .unwrap();
+        let (archive_name, archive) = match path {
+            "src/cleanup_plan/replay/nested_shape/paid.rs" => ("src__cleanup_plan__replay__nested_shape__paid.rs.before.txt", include_str!("../../../../../docs/evidence/nested-shape-scratch/src__cleanup_plan__replay__nested_shape__paid.rs.before.txt")),
+            "src/cleanup_plan/replay/nested_shape.rs" => ("src__cleanup_plan__replay__nested_shape.rs.before.txt", include_str!("../../../../../docs/evidence/nested-shape-scratch/src__cleanup_plan__replay__nested_shape.rs.before.txt")),
+            "src/cleanup_plan/replay/ordinary_inventory.rs" => ("src__cleanup_plan__replay__ordinary_inventory.rs.before.txt", include_str!("../../../../../docs/evidence/nested-shape-scratch/src__cleanup_plan__replay__ordinary_inventory.rs.before.txt")),
+            "src/cleanup_plan/replay/ordinary_inventory/tests.rs" => ("src__cleanup_plan__replay__ordinary_inventory__tests.rs.before.txt", include_str!("../../../../../docs/evidence/nested-shape-scratch/src__cleanup_plan__replay__ordinary_inventory__tests.rs.before.txt")),
+            _ => unreachable!("complete fixed archived-source inventory"),
+        };
+        assert_eq!(entry["archive"].as_str().unwrap(), archive_name);
         assert_eq!(
             format!(
                 "{:x}",

@@ -94,9 +94,24 @@ mod tests {
     fn funded_walk_orders_requires_body_then_ensures() {
         let source =
             "module walk; @id(\"w.main\") fn main(x:i64)->i64 requires x>0 ensures result>0 {x}";
-        let checked = crate::check(source, "funded-walk-contracts.spx").unwrap();
+        let diagnostics = crate::check(source, "funded-walk-contracts.spx").unwrap_err();
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code, "SPX-T104");
+        assert_eq!(
+            diagnostics[0].message,
+            "entry function must be monomorphic with signature `fn main() -> i64`"
+        );
+        let admitted = format!(
+            "{} @id(\"app.main\") fn main()->i64 {{contract_helper(1)}}",
+            source.replace("fn main(x:i64)", "fn contract_helper(x:i64)")
+        );
+        let checked = crate::check(&admitted, "funded-walk-contracts.spx").unwrap();
         let program = crate::hir::resolve(&checked).unwrap();
-        let function = &program.functions[0];
+        let function = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "w.main")
+            .unwrap();
         assert!(!function.requires.is_empty() && !function.ensures.is_empty());
         let old = order(function);
         let mut payer = Payer::unlimited();

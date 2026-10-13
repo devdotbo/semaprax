@@ -650,7 +650,15 @@ fn measured_concat_moving_and_reads_inventories_are_paid_through_drop() {
         &|reserve| crate::literal_format::checked_moving_string_operands_funded(function, reserve),
         &|out| out.iter().eq(moving.iter()),
     );
-    let checked = crate::check(READS, "oracle-measured-reads.spx").unwrap();
+    let diagnostics = crate::check(READS, "oracle-measured-reads.spx").unwrap_err();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code, "SPX-O002");
+    assert_eq!(
+        diagnostics[0].message,
+        "string parameters own their input implicitly; an explicit ownership mode is not admitted"
+    );
+    let admitted = READS.replace("text: own string", "text: string");
+    let checked = crate::check(&admitted, "oracle-measured-reads.spx").unwrap();
     let program = crate::hir::resolve(&checked).unwrap();
     let reads_fn = program
         .functions

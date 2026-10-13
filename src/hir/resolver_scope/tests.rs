@@ -285,7 +285,18 @@ fn complete_frozen_iterative_receiver_keeps_every_diagnostic_field_and_first_err
         "let values=vec_with_capacity<i64>(1usize); for values in values {0} 0",
     ] {
         let source = format!("module borrowed.refusal; @id(\"main\") fn main()->i64 {{{body}}}");
-        receiver(&source, false);
+        if matches!(body, "break; 0" | "continue; 0") {
+            let diagnostic = crate::parse(&source, Path::new("borrowed-root.spx")).unwrap_err();
+            assert_eq!(diagnostic.code, "SPX-P209");
+            assert_eq!(
+                diagnostic.message,
+                "code after an unconditional return is unreachable"
+            );
+            let admitted = source.replace(body, body.strip_suffix(" 0").unwrap());
+            receiver(&admitted, false);
+        } else {
+            receiver(&source, false);
+        }
     }
 }
 

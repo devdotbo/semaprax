@@ -119,8 +119,17 @@ mod tests {
         set.iter().map(|id| id.as_str().to_owned()).collect()
     }
 
+    #[test]
+    fn original_explicit_owned_string_fixture_retains_its_source_refusal() {
+        let diagnostics = crate::check(SOURCE, "funded-conditions.spx").unwrap_err();
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code, "SPX-O002");
+        assert_eq!(diagnostics[0].message, "string parameters own their input implicitly; an explicit ownership mode is not admitted");
+    }
+
     fn program() -> crate::hir::ResolvedProgram {
-        crate::hir::resolve(&crate::check(SOURCE, "funded-conditions.spx").unwrap()).unwrap()
+        let admitted = SOURCE.replace("text: own string", "text: string");
+        crate::hir::resolve(&crate::check(&admitted, "funded-conditions.spx").unwrap()).unwrap()
     }
 
     #[test]

@@ -1638,8 +1638,7 @@ fn collect_leaves_paid(
             &slot.field_liveness_shape,
             &mut leaves,
             &mut places,
-            budget,
-            &mut pending,
+            (budget, &mut pending),
         )?;
     }
     for (expected, flag) in leaves.keys().enumerate() {
@@ -1660,9 +1659,9 @@ fn collect_shape<'shape>(
     shape: &'shape FieldLivenessShape,
     leaves: &mut BTreeMap<LivenessFlagId, Leaf>,
     places: &mut BTreeSet<CleanupPlace>,
-    budget: &mut ReplayBudget,
-    pending: &mut shape_cursor::Pending<'shape>,
+    scratch: (&mut ReplayBudget, &mut shape_cursor::Pending<'shape>),
 ) -> Result<(), Diagnostic> {
+    let (budget, pending) = scratch;
     use shape_cursor::Item;
 
     let initial_projection_depth = projections.len();

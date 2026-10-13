@@ -15,6 +15,7 @@ mod tests {
     fn invocation_authority_is_exact_scoped_and_fails_closed() {
         let program = program();
         let function = &program.functions[0];
+        let other = self::program();
         assert_eq!(
             authority(&program, function),
             Ok(None),
@@ -35,7 +36,17 @@ mod tests {
             authority(&program, &clone),
             Err(InvocationRefusal::StaleSubject)
         );
-        let other = self::program();
+        // Preserve the original attempted foreign construction under authority
+        // as a negative control, without admitting a replacement subject.
+        let checked = crate::check(SOURCE, "oracle-auth.spx").unwrap();
+        let diagnostics = crate::hir::resolve(&checked).unwrap_err();
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code, "SPX-H006");
+        assert_eq!(
+            diagnostics[0].message,
+            "oracle invocation authority refused a type probe"
+        );
+        assert_eq!(authority(&program, function), Ok(Some(lease)));
         assert_eq!(
             authority(&other, &other.functions[0]),
             Err(InvocationRefusal::StaleSubject)

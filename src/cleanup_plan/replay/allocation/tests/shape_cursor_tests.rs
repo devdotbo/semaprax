@@ -207,10 +207,11 @@ fn current_shape_receiver_is_exact_full_original_with_named_cursor_hooks() {
     let mut projected = root[start..end].to_owned();
     for (current, original) in [
         ("    let mut pending = shape_cursor::Pending::new();\n", ""),
-        ("            budget,\n            &mut pending,\n", "            budget,\n"),
+        ("            (budget, &mut pending),\n", "            budget,\n"),
         ("fn collect_shape<'shape>(", "fn collect_shape("),
         ("    shape: &'shape FieldLivenessShape,", "    shape: &FieldLivenessShape,"),
-        ("    pending: &mut shape_cursor::Pending<'shape>,\n", ""),
+        ("    scratch: (&mut ReplayBudget, &mut shape_cursor::Pending<'shape>),\n", "    budget: &mut ReplayBudget,\n"),
+        ("    let (budget, pending) = scratch;\n", ""),
         ("    use shape_cursor::Item;\n\n", "    enum Item<'a> {\n        Shape(&'a FieldLivenessShape),\n        Push(&'a DeclarationId),\n        Pop,\n    }\n\n"),
         ("    pending.reserve(function, budget, 1, \"shape worklist\")?;", "    let mut pending = Vec::new();\n    budget.reserve_vec(function, &mut pending, 1, \"shape worklist\")?;"),
         ("                pending.reserve(\n                    function,\n                    budget,\n                    fields.len().saturating_mul(3),\n                    \"record shape worklist\",\n                )?;\n", "                budget.reserve_vec(\n                    function,\n                    &mut pending,\n                    fields.len().saturating_mul(3),\n                    \"record shape worklist\",\n                )?;\n                pending\n                    .try_reserve(fields.len().saturating_mul(3))\n                    .map_err(|_| {\n                        replay_error(\n                            function,\n                            \"cleanup shape replay capacity exceeds address space\",\n                        )\n                    })?;\n"),
