@@ -1,0 +1,32 @@
+{
+  "schema": "semaprax.source-only-provenance.v1",
+  "issue": "https://github.com/wavect/semaprax/issues/817",
+  "base_head": "47cbc2f7487485dd23ac2ecfcdc1afea2a86f3d3",
+  "status": "static only; original bodies byte-exact and registered; no compiler/runtime qualification",
+  "source_hashes": {
+    "CHANGELOG.md": "5e198069bc8da7dd2cf6549ea690d5db414c641c2c824fa119c29bd3f00227d2",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "d314490a4af1b0709084f2abb6ea10ec8382b4618c1300e912fda7e620657ef3",
+    "docs/ARCHITECTURE.md": "302adf85c13980e3b434bfb820bfb484ac459fd59772a6435de9f7c9b1f902d2",
+    "src/hir.rs": "9c3160576bc61c4cf14df030e409acaeba2451605c0354c991a1be98f7062691",
+    "src/hir/iterator_loop.rs": "3295874fa719aa58acf8f31ee73956aed757ac7ad25fa7fad39f599c830fe9aa",
+    "src/hir/iterator_loop/paid.rs": "6baee339c5d405624fffced4257c9c13ed3933e01a076464c63ea683ca23a48b",
+    "src/hir/iterator_loop/renewal.rs": "8951fdff100645816c03094331768562e847d74bf3b275b321a09a0cea2fa167",
+    "src/hir/iterator_loop/renewal/paid_scan.rs": "fedcf6ff959b52451d5fbcd7eddb8bee8f7c8963c300e97a8c54b8726c45dae1",
+    "src/hir/ordinary_scan.rs": "f17e34eec31173524e333afca35facf4652364965959998bb5bc7db42e485b2b",
+    "src/hir/ordinary_scan/tests.rs": "4096b703146ed09604db95619b64d3570c3add502de829da9363373fbc87ed17",
+    "src/hir/validation.rs": "9e878bead4d3d748764a55e10c51edd93146f1998d5eafd896205b31f1067ad6",
+    "src/hir/validation/function_scope.rs": "fb2c97c98bcc97f1688df822d859d79a322318962faa59dc503e5b71bf2d5d69",
+    "src/hir/validation/owner_renewal.rs": "def13efb28107cbe479b8fdff6ac04346ceaa936040f093a30265ae437bcd0bb",
+    "src/hir/validation/unsafe_scan.rs": "2309786e3789e9a0983d1e846f5c19eb71422bae727b2c73db49c0a814be089d",
+    "src/hir/validation/unsafe_scan/paid.rs": "98019a0d1a3c5cf8c3f1a3901f3c7c4f56948695e49c40d3e7558f2bbb2376e3",
+    "src/hir/validation/unsafe_scan/paid/tests.rs": "d91113e77145ef672b4ef02e47fee6b53e1e455217c62eb76d980ae6bb27654d",
+    "tests/hir_module_boundaries.rs": "3c76f5e0d9924f88915a295da94922968540403f4d5cbd3c1f8fcfda2620266e",
+    "docs/evidence/ordinary-hir-scans/pending-selectors.json": "810df9ee12898aa3dca1ddb2c1cbde7ce68a1af12b437339b4df62f49381a529",
+    "docs/evidence/ordinary-hir-scans/README.md": "efdc3b583cd6bc790276fa986639f27e12a83d02294b85603c15080002af5143",
+    "docs/evidence/ordinary-hir-scans/original-scans.txt": "2025f1da39517120b17790f3f20f17b02b67fd6cda3e21e7fb87af5d3bbd7102"
+  },
+  "original_full_scans_sha256": "2025f1da39517120b17790f3f20f17b02b67fd6cda3e21e7fb87af5d3bbd7102",
+  "new_registered_controls": 10,
+  "existing_receiver_controls": 5,
+  "source_registration_problems": []
+}

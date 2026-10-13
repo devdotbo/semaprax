@@ -1,8 +1,12 @@
 //! Structural authentication of the consuming iterator loop's retained lowering.
 use super::*;
 mod renewal;
+#[cfg(test)]
+pub(crate) use renewal::function_has_record_renewal_outside_loop;
+mod paid;
+pub(crate) use paid::validate_function_paid;
 pub(crate) use renewal::{
-    function_has_record_renewal_outside_loop, function_may_require_record_renewal,
+    function_has_record_renewal_outside_loop_paid, function_may_require_record_renewal,
     function_requires_record_renewal, function_requires_renewal, is_owner_renewal_record,
     is_record_owner_renewal, renewal_binding, renewal_bindings, template_requires_renewal,
 };
@@ -267,6 +271,7 @@ pub(crate) fn function_contains(function: &ResolvedFunction) -> bool {
 }
 
 /// Authenticate the owning seed and mutable slot independently of display names.
+#[cfg(test)]
 pub(crate) fn validate_function(
     function: &ResolvedFunction,
 ) -> Result<(), crate::diagnostic::Diagnostic> {

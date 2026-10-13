@@ -1,5 +1,11 @@
 # Changelog
 
+- Author funded borrowed inline scratch for ordinary HIR iterator, renewal and
+  unsafe preflight scans (#817), retaining full independent original receivers
+  and their distinct child/error order. Spill backing and authorization nodes
+  are prepaid; fixed semantic errors retain identical static diagnostic bytes.
+  Exact physical/refusal/Drop controls are authored, with execution pending.
+
 - Author a paid online expression-fact AVL arena for ordinary cleanup replay and
   selected callers (#813). Retain complete original BTree producers/receivers,
   exact payloads and immediate duplicate order; prepay full overlapping backing

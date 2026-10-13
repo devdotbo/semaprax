@@ -11,8 +11,8 @@ impl HirValidator<'_> {
             &self.program.declarations,
             function,
         )?;
-        crate::hir::iterator_loop::validate_function(function)?;
-        owner_renewal::validate_function(self.program, self.byte_helpers, function)?;
+        crate::hir::iterator_loop::validate_function_paid(function)?;
+        owner_renewal::validate_function_paid(self.program, self.byte_helpers, function)?;
         crate::hir::yield_aggregate::check_bytes_request_site_count(
             &self.program.declarations,
             function,
@@ -38,7 +38,9 @@ impl HirValidator<'_> {
                 )));
             }
         }
-        if contains_unsafe_boundary(&function.body) && !permits.contains("unsafe") {
+        if unsafe_scan::contains_unsafe_boundary_paid(&function.body)?
+            && !permits.contains("unsafe")
+        {
             return Err(hir_error(format!(
                 "function `{}` contains an unsafe boundary but the module does not declare `permit {{ unsafe }}`",
                 function.id

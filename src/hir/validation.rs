@@ -64,6 +64,7 @@ use type_profiles::{
     resolved_type_is_flat_owned_byte_variant, template_contains_nested_owned_record_type,
     template_has_owned_record_slot, template_ownership, validate_nested_update_base_shape,
 };
+#[cfg(test)]
 use unsafe_scan::contains_unsafe_boundary;
 #[derive(Clone)]
 pub(super) struct HirValidator<'a> {

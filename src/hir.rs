@@ -88,6 +88,7 @@ mod agent_nodes;
 mod agent_validation;
 pub(crate) mod borrowed_scalar;
 mod byte_capacity;
+mod ordinary_scan;
 mod byte_slice_provenance;
 pub(crate) mod static_text;
 pub use static_text::StaticUtf8;

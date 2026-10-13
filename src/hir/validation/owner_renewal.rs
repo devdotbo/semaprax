@@ -1,5 +1,6 @@
 use super::*;
 
+#[cfg(test)]
 pub(super) fn validate_function(
     program: &ResolvedProgram,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
@@ -10,6 +11,23 @@ pub(super) fn validate_function(
     }
     if crate::hir::iterator_loop::function_has_record_renewal_outside_loop(program, function) {
         return Err(hir_error(
+            "record owner renewal is admitted only inside a bounded while body",
+        ));
+    }
+    Ok(())
+}
+
+pub(super) fn validate_function_paid(
+    program: &ResolvedProgram,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    function: &ResolvedFunction,
+) -> Result<(), Diagnostic> {
+    if helpers.is_none() {
+        crate::loop_calls::byte_writer::checked_bindings(program, function)?;
+    }
+    if crate::hir::iterator_loop::function_has_record_renewal_outside_loop_paid(program, function)?
+    {
+        return Err(hir_error_static(
             "record owner renewal is admitted only inside a bounded while body",
         ));
     }
@@ -115,4 +133,57 @@ pub(in crate::hir) fn validate_prepared<'a>(
         }
     }
     Ok(selected)
+}
+
+#[cfg(test)]
+mod scan_tests {
+    use super::*;
+    #[test]
+    fn outside_record_renewal_retains_complete_old_diagnostic_without_owned_message_backing() {
+        let source = r#"module scan.record;
+@id("cursor") record Cursor { @id("cursor.bytes") bytes: Bytes, @id("cursor.index") index: usize, }
+@id("advance") fn advance(value: own Cursor)->Cursor { value }
+@id("main") fn main()->i64 {
+ let mut cursor=Cursor{bytes:bytes_zeroed(0usize),index:0usize};
+ while false { cursor=advance(cursor); continue; }
+ 0
+}"#;
+        let ast = crate::check(source, "outside-record-scan.spx").unwrap();
+        let program = crate::hir::resolve(&ast).unwrap();
+        let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(&program).unwrap();
+        let mut function = program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "main")
+            .unwrap()
+            .clone();
+        let ResolvedExprKind::Block { statements, .. } = &mut function.body.kind else {
+            panic!("block");
+        };
+        let (ResolvedStatement::While { body, .. } | ResolvedStatement::LexicalWhile { body, .. }) =
+            &statements[1]
+        else {
+            panic!("while");
+        };
+        let ResolvedExprKind::Block {
+            statements: inner, ..
+        } = &body.kind
+        else {
+            panic!("loop block");
+        };
+        let assignment = inner[0].clone();
+        statements.insert(1, assignment);
+        let expected = validate_function(&program, Some(&helpers), &function).unwrap_err();
+        let ((actual, metrics), refused, paid) = crate::bounded_output::with_limit_usage(0, || {
+            crate::test_allocation_observer::measure(|| {
+                validate_function_paid(&program, Some(&helpers), &function)
+            })
+        });
+        assert_eq!(actual.unwrap_err(), expected);
+        assert!(!refused && !metrics.invalid);
+        assert_eq!(paid, 0);
+        assert_eq!(metrics.allocations, 0);
+        assert_eq!(metrics.live, 0);
+        assert_eq!(metrics.allocated, metrics.freed);
+    }
 }

@@ -1,0 +1,321 @@
+pub(crate) fn validate_function(
+    function: &ResolvedFunction,
+) -> Result<(), crate::diagnostic::Diagnostic> {
+    let mut pending = vec![&function.body];
+    let mut authorized = BTreeSet::new();
+    let mut replacements = Vec::new();
+    while let Some(expression) = pending.pop() {
+        if let ResolvedExprKind::Block { statements, tail } = &expression.kind {
+            for statement in statements {
+                if let ResolvedStatement::Assign { binding, value, .. } = statement {
+                    if crate::iterator_ops::is_step(&binding.ty) {
+                        replacements.push(value.id.clone());
+                    }
+                }
+                if let ResolvedStatement::While {
+                    condition, body, ..
+                }
+                | ResolvedStatement::LexicalWhile {
+                    condition, body, ..
+                } = statement
+                {
+                    if let Some(protocol) = recognize(condition, body) {
+                        let [ResolvedStatement::Let {
+                            binding,
+                            mutable: true,
+                            value: seed,
+                            ..
+                        }, ResolvedStatement::While { .. }
+                        | ResolvedStatement::LexicalWhile { .. }] = statements.as_slice()
+                        else {
+                            return Err(crate::diagnostic::Diagnostic::io(
+                                "SPX-H006",
+                                "iterator loop must retain one mutable initialized Step slot",
+                            ));
+                        };
+                        if binding != protocol.step
+                            || !zero(tail)
+                            || !matches!(&seed.kind, ResolvedExprKind::Call { callee, type_arguments, instance: None, args }
+                                if callee.as_str() == crate::iterator_ops::NEXT_ID
+                                && matches!(args.as_slice(), [source] if source.ownership == OwnershipMode::Own && source.ty == crate::iterator_ops::resolved_iter(type_arguments.first().cloned().unwrap_or(ResolvedType::Unit))))
+                            || seed.ty != binding.ty
+                            || seed.ownership != OwnershipMode::Own
+                        {
+                            return Err(crate::diagnostic::Diagnostic::io(
+                                "SPX-H006",
+                                "iterator loop seed, slot, or wrapper is inconsistent",
+                            ));
+                        }
+                        let ResolvedExprKind::Block { statements, .. } = &body.kind else {
+                            unreachable!()
+                        };
+                        let ResolvedStatement::Assign { value, .. } = &statements[0] else {
+                            unreachable!()
+                        };
+                        authorized.insert(value.id.clone());
+                    }
+                }
+            }
+        }
+        push_resolved_expression_children_in_authored_order(expression, &mut pending);
+    }
+    if replacements.iter().any(|id| !authorized.contains(id)) {
+        return Err(crate::diagnostic::Diagnostic::io(
+            "SPX-H006",
+            "owning Step assignment is outside an authenticated consuming iterator loop",
+        ));
+    }
+    Ok(())
+}
+
+// NEXT COMPLETE RECEIVER
+
+pub(crate) fn function_has_record_renewal_outside_loop(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+) -> bool {
+    let mut pending = vec![(&function.body, false)];
+    while let Some((expression, in_loop)) = pending.pop() {
+        if let ResolvedExprKind::Block { statements, tail } = &expression.kind {
+            pending.push((tail, in_loop));
+            for statement in statements {
+                match statement {
+                    ResolvedStatement::Let { value, .. } => pending.push((value, in_loop)),
+                    ResolvedStatement::Assign {
+                        binding,
+                        field: None,
+                        value,
+                        ..
+                    } => {
+                        if !in_loop && is_record_owner_renewal(program, binding, value) {
+                            return true;
+                        }
+                        pending.push((value, in_loop));
+                    }
+                    ResolvedStatement::Assign { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. } => {
+                        pending.push((value, in_loop))
+                    }
+                    ResolvedStatement::Unsafe { body, .. } => pending.push((body, in_loop)),
+                    ResolvedStatement::While {
+                        condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
+                        condition, body, ..
+                    } => {
+                        pending.push((condition, in_loop));
+                        pending.push((body, true));
+                    }
+                }
+            }
+        } else {
+            let mut children = Vec::new();
+            push_resolved_expression_children_in_authored_order(expression, &mut children);
+            pending.extend(children.into_iter().map(|child| (child, in_loop)));
+        }
+    }
+    false
+}
+
+// NEXT COMPLETE RECEIVER
+
+pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
+    let mut pending = vec![expression];
+    while let Some(expression) = pending.pop() {
+        match &expression.kind {
+            ResolvedExprKind::Closure { captures, .. } => {
+                pending.extend(captures.iter().map(|capture| &capture.value))
+            }
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
+                pending.push(tail);
+                for statement in statements.iter().rev() {
+                    if matches!(statement, ResolvedStatement::Unsafe { .. }) {
+                        return true;
+                    }
+                    for index in (0..statement.child_count()).rev() {
+                        if let Some(child) = statement.child(index) {
+                            pending.push(child);
+                        }
+                    }
+                }
+            }
+            ResolvedExprKind::FunctionReference { .. } => {}
+            ResolvedExprKind::Invoke { callable, args } => {
+                pending.extend(args.iter().rev());
+                pending.push(callable);
+            }
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter().rev()),
+            ResolvedExprKind::NativeRustImportCall(call) => {
+                pending.extend(call.args.iter().rev());
+            }
+            ResolvedExprKind::HostCommandCall(call) => pending.extend(call.args.iter().rev()),
+            ResolvedExprKind::ByteRange {
+                source, start, end, ..
+            } => {
+                pending.push(end);
+                pending.push(start);
+                pending.push(source);
+            }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    pending.push(value);
+                }
+            }
+            ResolvedExprKind::Unary { value, .. }
+            | ResolvedExprKind::Try { operand: value, .. }
+            | ResolvedExprKind::TryOption { operand: value, .. }
+            | ResolvedExprKind::Project { base: value, .. }
+            | ResolvedExprKind::Upcast { source: value }
+            | ResolvedExprKind::Yield { request: value } => pending.push(value),
+            ResolvedExprKind::Binary { left, right, .. } => {
+                pending.push(right);
+                pending.push(left);
+            }
+            ResolvedExprKind::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                pending.push(else_branch);
+                pending.push(then_branch);
+                pending.push(condition);
+            }
+            ResolvedExprKind::ConstructRecord { fields, .. }
+            | ResolvedExprKind::ConstructVariant { fields, .. } => {
+                pending.extend(fields.iter().rev().map(|field| &field.value));
+            }
+            ResolvedExprKind::Match {
+                scrutinee, arms, ..
+            } => {
+                pending.extend(arms.iter().rev().map(|arm| &arm.value));
+                pending.push(scrutinee);
+            }
+            ResolvedExprKind::UpdateRecord { base, fields, .. } => {
+                pending.extend(fields.iter().rev().map(|field| &field.value));
+                pending.push(base);
+            }
+            ResolvedExprKind::Int(_)
+            | ResolvedExprKind::Int32(_)
+            | ResolvedExprKind::Char(_)
+            | ResolvedExprKind::Uint8(_)
+            | ResolvedExprKind::Usize(_)
+            | ResolvedExprKind::ArrayU8(_)
+            | ResolvedExprKind::RepeatArrayU8 { .. }
+            | ResolvedExprKind::Float32(_)
+            | ResolvedExprKind::Float64(_)
+            | ResolvedExprKind::Bool(_)
+            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
+            | ResolvedExprKind::Place(_)
+            | ResolvedExprKind::BorrowPlace { .. } => {}
+        }
+    }
+    false
+}
+
+// NEXT COMPLETE RECEIVER
+
+pub(crate) fn push_resolved_expression_children_in_authored_order<'a>(
+    expression: &'a ResolvedExpr,
+    pending: &mut Vec<&'a ResolvedExpr>,
+) {
+    match &expression.kind {
+        ResolvedExprKind::Closure { captures, .. } => {
+            pending.extend(captures.iter().rev().map(|capture| &capture.value))
+        }
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
+            pending.push(tail);
+            for statement in statements.iter().rev() {
+                for index in (0..statement.child_count()).rev() {
+                    if let Some(child) = statement.child(index) {
+                        pending.push(child);
+                    }
+                }
+            }
+        }
+        ResolvedExprKind::FunctionReference { .. } => {}
+        ResolvedExprKind::Invoke { callable, args } => {
+            pending.extend(args.iter().rev());
+            pending.push(callable);
+        }
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter().rev()),
+        ResolvedExprKind::NativeRustImportCall(call) => pending.extend(call.args.iter().rev()),
+        ResolvedExprKind::HostCommandCall(call) => pending.extend(call.args.iter().rev()),
+        ResolvedExprKind::ByteRange {
+            source, start, end, ..
+        } => {
+            pending.push(end);
+            pending.push(start);
+            pending.push(source);
+        }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                pending.push(value);
+            }
+        }
+        ResolvedExprKind::Unary { value, .. }
+        | ResolvedExprKind::Try { operand: value, .. }
+        | ResolvedExprKind::TryOption { operand: value, .. }
+        | ResolvedExprKind::Project { base: value, .. }
+        | ResolvedExprKind::Upcast { source: value }
+        | ResolvedExprKind::Yield { request: value } => pending.push(value),
+        ResolvedExprKind::Binary { left, right, .. } => {
+            pending.push(right);
+            pending.push(left);
+        }
+        ResolvedExprKind::If {
+            condition,
+            then_branch,
+            else_branch,
+        } => {
+            pending.push(else_branch);
+            pending.push(then_branch);
+            pending.push(condition);
+        }
+        ResolvedExprKind::ConstructRecord { fields, .. }
+        | ResolvedExprKind::ConstructVariant { fields, .. } => {
+            pending.extend(fields.iter().rev().map(|field| &field.value));
+        }
+        ResolvedExprKind::Match {
+            scrutinee, arms, ..
+        } => {
+            for arm in arms.iter().rev() {
+                pending.push(&arm.value);
+                if let Some(guard) = &arm.guard {
+                    pending.push(guard);
+                }
+            }
+            pending.push(scrutinee);
+        }
+        ResolvedExprKind::UpdateRecord { base, fields, .. } => {
+            pending.extend(fields.iter().rev().map(|field| &field.value));
+            pending.push(base);
+        }
+        ResolvedExprKind::Int(_)
+        | ResolvedExprKind::Int32(_)
+        | ResolvedExprKind::Char(_)
+        | ResolvedExprKind::Uint8(_)
+        | ResolvedExprKind::Usize(_)
+        | ResolvedExprKind::ArrayU8(_)
+        | ResolvedExprKind::RepeatArrayU8 { .. }
+        | ResolvedExprKind::Float32(_)
+        | ResolvedExprKind::Float64(_)
+        | ResolvedExprKind::Bool(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
+        | ResolvedExprKind::Place(_)
+        | ResolvedExprKind::BorrowPlace { .. } => {}
+    }
+}

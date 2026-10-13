@@ -1,6 +1,8 @@
 //! Exact same-owner renewal inside authenticated bounded loops.
 use super::*;
 use std::collections::BTreeMap;
+mod paid_scan;
+pub(crate) use paid_scan::function_has_record_renewal_outside_loop_paid;
 
 pub(crate) fn function_requires_renewal(function: &ResolvedFunction) -> bool {
     !bindings(&function.body, None).is_empty()
@@ -11,6 +13,7 @@ pub(crate) fn function_requires_record_renewal(
 ) -> bool {
     !record_bindings(program, &function.body).is_empty()
 }
+#[cfg(test)]
 pub(crate) fn function_has_record_renewal_outside_loop(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,

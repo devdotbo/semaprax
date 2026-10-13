@@ -179,6 +179,14 @@ holds the mutable scope borrow through the one consuming insertion; dropping it
 before insertion preserves the prior root. The complete prior
 map function is retained in `function_scope/old.rs` beside the saved expression
 and contract drivers; all children are joined into the validator source audit.
+`hir/ordinary_scan.rs` owns private inline preflight scratch and paid spill backing.
+`iterator_loop/paid.rs`, `iterator_loop/renewal/paid_scan.rs` and
+`validation/unsafe_scan/paid.rs` retain distinct traversal and error order;
+renewal streams borrowed children without a per-node temporary vector. The
+function scope adopts these variants at the existing preflight positions and
+propagates boolean scan refusals as errors. Full original scan bodies and the
+original renewal owner remain compiled test receivers. Physical qualification
+and application acceptance are pending; no quota or budget cap changes.
 `hir/declared_collection/paid.rs` owns the current function's borrowed collection
 preflight, and its `early.rs` child owns the unchanged early profile traversal.
 Typed pending and ordered-set backing is paid before construction; an existing

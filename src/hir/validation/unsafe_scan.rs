@@ -4,6 +4,7 @@ use super::*;
 
 /// `true` when the resolved expression tree contains an unsafe boundary
 /// statement anywhere inside its blocks, branches, arms, or nested bodies.
+#[cfg(test)]
 pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
     let mut pending = vec![expression];
     while let Some(expression) = pending.pop() {
@@ -103,3 +104,6 @@ pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
     }
     false
 }
+
+mod paid;
+pub(in crate::hir::validation) use paid::contains_unsafe_boundary_paid;
