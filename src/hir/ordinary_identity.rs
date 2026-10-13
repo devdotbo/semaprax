@@ -2,6 +2,7 @@
 //! Only identity backing and its affine refusal report are paid here. Source
 //! verification, index maps/names/types, invariant transforms and semantic
 //! diagnostics retain their existing owners; this is not whole-resolver funding.
+use super::resolve_program::agent_identity::AgentIdentityFailure;
 use super::*;
 use crate::bounded_output::identity_reservation::{IdentityReservation, Refused};
 use declaration_index::identity_payer::IdentityIndexError;
@@ -137,9 +138,17 @@ fn pass<'a>(
         fused_producer: None,
         partition_profile: false,
     }
-    .resolve()
-    .map_err(PassFailure::Semantic)
+    .resolve_with_agent_identities(|text| {
+        DeclarationId::paid_borrowed(text, |bytes| owner.reserve(bytes))
+    })
+    .map_err(|error| match error {
+        AgentIdentityFailure::Semantic(error) => PassFailure::Semantic(error),
+        AgentIdentityFailure::Identity(_) => PassFailure::Identity,
+    })
 }
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod agent_tests;

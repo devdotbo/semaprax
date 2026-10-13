@@ -1,6 +1,7 @@
 //! Explicit identity-only payment through the original two resolution passes.
 //! Source and semantic errors remain owned compatibility diagnostics. This
 //! private route changes neither verifier authority nor selected admission.
+use super::resolve_program::agent_identity::AgentIdentityFailure;
 use super::*;
 use declaration_index::identity_payer::IdentityIndexError;
 
@@ -15,6 +16,14 @@ impl<E> From<IdentityIndexError<E>> for Failure<E> {
         match error {
             IdentityIndexError::Semantic(error) => Self::Semantic(error),
             IdentityIndexError::Identity(error) => Self::Identity(error),
+        }
+    }
+}
+impl<E> From<AgentIdentityFailure<E>> for Failure<E> {
+    fn from(error: AgentIdentityFailure<E>) -> Self {
+        match error {
+            AgentIdentityFailure::Semantic(error) => Self::Semantic(error),
+            AgentIdentityFailure::Identity(error) => Self::Identity(error),
         }
     }
 }
@@ -139,7 +148,7 @@ fn source_pass<E>(
     let declarations = DeclarationIndex::from_verified_with_identity_reservation(
         program,
         crate::prelude::declarations_for_program(program),
-        reserve,
+        &mut *reserve,
     )?;
     (Resolver {
         program,
@@ -150,8 +159,8 @@ fn source_pass<E>(
         fused_producer: None,
         partition_profile: false,
     })
-    .resolve()
-    .map_err(Failure::Semantic)
+    .resolve_with_agent_identities(|text| DeclarationId::paid_borrowed(text, &mut *reserve))
+    .map_err(Failure::from)
 }
 
 /// Both invariant passes share one callback. The inventory pass suppresses
@@ -185,7 +194,7 @@ fn pass<E>(
     let declarations = DeclarationIndex::from_verified_with_identity_reservation(
         program,
         crate::prelude::declarations_for_program(program),
-        reserve,
+        &mut *reserve,
     )?;
     (Resolver {
         program,
@@ -196,8 +205,8 @@ fn pass<E>(
         fused_producer: None,
         partition_profile: false,
     })
-    .resolve()
-    .map_err(Failure::Semantic)
+    .resolve_with_agent_identities(|text| DeclarationId::paid_borrowed(text, &mut *reserve))
+    .map_err(Failure::from)
 }
 
 /// Actual caller acquires the fixed report BEFORE invoking either pass.
@@ -246,3 +255,6 @@ fn resolve_with_report_observation(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod agent_tests;

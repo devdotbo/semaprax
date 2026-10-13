@@ -14,6 +14,7 @@ use crate::cleanup_plan::CleanupPlan;
 use crate::diagnostic::Diagnostic;
 use crate::loan_plan::LoanPlan;
 
+use self::agent_identity::AgentIdentityFailure;
 use super::byte_slice_provenance::derive_byte_slice_provenance;
 use super::hir_error;
 use super::ids::{DeclarationId, FunctionExecutionId, FunctionInstanceId, ValueId};
@@ -191,8 +192,21 @@ impl Resolver<'_> {
     }
 
     pub(super) fn resolve(
-        mut self,
+        self,
     ) -> Result<(ResolvedProgram, super::FunctionResolutionWork), Diagnostic> {
+        match self.resolve_with_agent_identities(|text| {
+            Ok::<_, std::convert::Infallible>(DeclarationId::new(text))
+        }) {
+            Ok(resolved) => Ok(resolved),
+            Err(AgentIdentityFailure::Semantic(error)) => Err(error),
+            Err(AgentIdentityFailure::Identity(never)) => match never {},
+        }
+    }
+
+    pub(super) fn resolve_with_agent_identities<E>(
+        mut self,
+        mut identity: impl FnMut(&str) -> Result<DeclarationId, E>,
+    ) -> Result<(ResolvedProgram, super::FunctionResolutionWork), AgentIdentityFailure<E>> {
         let _lowering_stage = reservation_stage_guard(ReservationStage::HirLowering);
         let entrypoint = self
             .program
@@ -452,7 +466,7 @@ impl Resolver<'_> {
             }
         }
         if let Some(error) = self.byte_helpers.failure() {
-            return Err(error);
+            return Err(error.into());
         }
         // The exact signature environment permits monomorphic body reuse in
         // generic modules, but grants no previous template/instance authority.
@@ -476,8 +490,15 @@ impl Resolver<'_> {
             .program
             .agents()
             .iter()
-            .map(|declaration| resolve_agent_declaration(declaration, self.program.module()))
-            .collect();
+            .map(|declaration| {
+                agent_identity::resolve_agent_declaration_with(
+                    declaration,
+                    self.program.module(),
+                    &mut identity,
+                )
+            })
+            .collect::<Result<Vec<_>, E>>()
+            .map_err(AgentIdentityFailure::Identity)?;
         let byte_slice_roots = derive_byte_slice_provenance(&functions, &self.declarations)?;
         let mut declarations = self.declarations;
         declarations.byte_slice_roots = byte_slice_roots;
@@ -494,7 +515,7 @@ impl Resolver<'_> {
             function_instances,
         };
         if let Some(error) = self.byte_helpers.failure() {
-            return Err(error);
+            return Err(error.into());
         }
         super::selected_fused_candidate::resolution::capacity(
             self.program,
@@ -1342,84 +1363,11 @@ impl Resolver<'_> {
     }
 }
 
-fn resolve_agent_declaration(
-    declaration: &crate::ast::AgentDeclaration,
-    module: &str,
-) -> super::ResolvedAgentDeclaration {
-    super::ResolvedAgentDeclaration {
-        stable_id: DeclarationId::new(declaration.stable_id.clone()),
-        name: declaration.name.clone(),
-        types: declaration
-            .types
-            .iter()
-            .map(|role| super::ResolvedAgentTypeRole {
-                role: match role.role {
-                    crate::ast::AgentTypeRole::Task => super::ResolvedAgentTypeRoleKind::Task,
-                    crate::ast::AgentTypeRole::State => super::ResolvedAgentTypeRoleKind::State,
-                    crate::ast::AgentTypeRole::Observation => {
-                        super::ResolvedAgentTypeRoleKind::Observation
-                    }
-                    crate::ast::AgentTypeRole::Proposal => {
-                        super::ResolvedAgentTypeRoleKind::Proposal
-                    }
-                    crate::ast::AgentTypeRole::Outcome => super::ResolvedAgentTypeRoleKind::Outcome,
-                    crate::ast::AgentTypeRole::Result => super::ResolvedAgentTypeRoleKind::Result,
-                },
-                stable_id: DeclarationId::new(role.stable_id.clone()),
-            })
-            .collect(),
-        operations: declaration
-            .operations
-            .iter()
-            .map(|operation| super::ResolvedAgentOperationRole {
-                role: match operation.role {
-                    crate::ast::AgentOperationRole::Initialize => {
-                        super::ResolvedAgentOperationRoleKind::Initialize
-                    }
-                    crate::ast::AgentOperationRole::Observe => {
-                        super::ResolvedAgentOperationRoleKind::Observe
-                    }
-                    crate::ast::AgentOperationRole::Propose => {
-                        super::ResolvedAgentOperationRoleKind::Propose
-                    }
-                    crate::ast::AgentOperationRole::Authorize => {
-                        super::ResolvedAgentOperationRoleKind::Authorize
-                    }
-                    crate::ast::AgentOperationRole::Execute => {
-                        super::ResolvedAgentOperationRoleKind::Execute
-                    }
-                    crate::ast::AgentOperationRole::Reduce => {
-                        super::ResolvedAgentOperationRoleKind::Reduce
-                    }
-                },
-                kind: match operation.kind {
-                    crate::ast::AgentOperationKind::Deterministic => {
-                        super::ResolvedAgentOperationKind::Deterministic
-                    }
-                    crate::ast::AgentOperationKind::Model => {
-                        super::ResolvedAgentOperationKind::Model
-                    }
-                    crate::ast::AgentOperationKind::Effect => {
-                        super::ResolvedAgentOperationKind::Effect
-                    }
-                },
-                stable_id: DeclarationId::new(operation.stable_id.clone()),
-                embedded: operation.embedded_function_index.is_some(),
-            })
-            .collect(),
-        source_association: None,
-        runtime_v1_json: declaration.runtime_v1_json.clone(),
-        model_wait: declaration.model_wait.as_ref().map(|binding| {
-            Box::new(super::ResolvedAgentModelWaitBinding {
-                helper_id: super::DeclarationId::new(binding.helper_id.clone()),
-            })
-        }),
-    }
-    .bind_source_association(module)
-}
-
 #[cfg(test)]
 mod tests;
 
+pub(in crate::hir) mod agent_identity;
+#[cfg(test)]
+pub(in crate::hir) mod agent_identity_original;
 pub(super) mod initial_loan_plans;
 mod reuse_lowered;

@@ -98,7 +98,7 @@ impl Resolver<'_> {
             ty,
             ownership: OwnershipMode::Value,
             kind: ResolvedExprKind::FunctionReference {
-                target: DeclarationId::new(&target.stable_id),
+                target: self.declarations.held_identity(&target.stable_id),
             },
             span: expr.span,
         }))
@@ -203,7 +203,7 @@ impl Resolver<'_> {
             && !((1..=2).contains(&function.type_parameters.len())
                 && super::super::generic_collection::callback(
                     &ty,
-                    &DeclarationId::new(&function.stable_id),
+                    &self.declarations.held_identity(&function.stable_id),
                     function.type_parameters.len(),
                 ))
         {

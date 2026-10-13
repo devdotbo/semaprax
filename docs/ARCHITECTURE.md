@@ -4619,3 +4619,12 @@ facts. Paid flag Storage initializes in a separate non-inlined miss constructor;
 known leaves and exact cache hits retain the existing payer's sticky zero-byte
 check. Complete original receivers and the fixed builder cap remain. The bounded
 contract and pending qualification are in [HIR final-validation scratch v1](HIR-FINAL-VALIDATION-SCRATCH-V1.md).
+
+Late Agent identity construction lives in `hir/resolve_program/agent_identity`.
+Both the explicit and ordinary analyzed resolver thread their existing identity
+owner through this helper after the original function lowering and metadata
+validation. Its payment authority covers only shared identity backing; Agent
+metadata and other resolution storage keep their existing owners. The complete
+frozen receiver remains a compiled independent test control. ARC and scoped-task
+queries reuse held keys, with complete frozen model controls under their owning
+unit harnesses.

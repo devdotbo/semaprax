@@ -124,7 +124,7 @@ impl Resolver<'_> {
                     || (super::super::function_value::scalar(&captured.ty)
                         || super::super::generic_collection::parameter(
                             &captured.ty,
-                            &DeclarationId::new(source_function.stable_id.clone()),
+                            &self.declarations.held_identity(&source_function.stable_id),
                             source_function.type_parameters.len(),
                         )))
             {

@@ -206,3 +206,25 @@ as an independently callable owned-key oracle, and allocation owners that claim
 old key requests call that saved API explicitly. Scoped test-only old-key policy
 also compares complete ordinary generic/invariant diagnostics and resolved HIR.
 No production policy switch or new public receiver is introduced.
+
+## Late Agent identity producers
+
+`hir/resolve_program/agent_identity` preserves the complete Agent carrier and
+its original agent/type-role/operation/model-wait identity order. The explicit
+resolver and ordinary analyzed resolver pass their existing identity owner
+through this late construction point in both invariant passes. Each borrowed
+source spelling reserves the complete shared backing before acquisition;
+identity refusal remains separate from the unchanged semantic diagnostic.
+The unfunded wrapper still accepts all legacy text. Name, runtime JSON, role
+vectors and source associations keep their original owners; this pays identity
+backing alone. The complete frozen resolver receiver and Agent builder remain
+compiled independent controls, alongside exact/one-short/sticky/Drop controls.
+
+ARC strong-count and scoped task/scope/failure queries borrow exact str keys;
+known cancellation reuses the held scope key after the original authentication,
+completion and unknown-scope checks. Their complete frozen model receivers,
+trace and receiving-Drop controls remain compiled. Function-reference and
+generic callback owner keys reuse the same resolution pass's held function ID.
+Infallible public model constructors and other dynamic producer domains retain
+legacy behavior. These source-authored controls await focused execution; they
+do not close OPT785 or establish whole-pipeline funding or application fit.

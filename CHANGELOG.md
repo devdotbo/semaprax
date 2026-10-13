@@ -7,6 +7,13 @@
   unimplemented: its failure needs a separate result through the source verifier.
   No runtime qualification or admission-budget change is claimed.
 
+- Author caller-paid late Agent identity producers in both resolver passes,
+  preserving the full carrier and separate semantic/refusal channels. Borrow
+  held ARC/scoped lookup keys and same-pass function owner identities. Complete
+  frozen receivers, literal compatibility, exact/short/sticky/Drop controls and
+  receiving source joins remain connected. Source-only; focused qualification
+  and complete dynamic producer migration remain pending.
+
 - Source-authored borrowed-root HIR scopes defer complete binding-map copies until
   actual scope mutation, preserving full map fields, sibling isolation and owned
   publication. The complete frozen nonrecursive receiver and helper/frame bodies

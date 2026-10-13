@@ -1,0 +1,27 @@
+{
+  "execution": "not run; source-only authorization",
+  "base": "5ff88aa99040a597f60cf10f66bc50582ccc1e8e",
+  "core_harness": "semaprax library",
+  "builder_harness": "semaprax-native-rust-interop-builder library",
+  "exact_selectors": [
+    "arc_zones::borrowed_lookup_tests::borrowed_strong_count_observes_no_backing_and_keeps_original_values",
+    "arc_zones::borrowed_lookup_tests::complete_original_arc_model_trace_cycle_selection_and_receiving_drop_match",
+    "hir::identity_resolution::agent_tests::agent_identities_are_the_final_exact_borrowed_requests_and_keep_full_hir",
+    "hir::identity_resolution::agent_tests::every_agent_request_refuses_one_short_with_exact_first_receipt_and_drop",
+    "hir::identity_resolution::agent_tests::exactly_funded_agent_request_succeeds_and_the_next_one_refuses_with_zero_remaining",
+    "hir::identity_resolution::agent_tests::exact_total_ledger_resolves_every_agent_identity",
+    "hir::identity_resolution::agent_tests::both_invariant_passes_pay_late_agent_identities_and_keep_complete_original_hir",
+    "hir::ordinary_identity::agent_tests::analyzed_agent_identities_keep_hir_and_pay_exact_backing_beside_setup",
+    "hir::ordinary_identity::agent_tests::public_analysis_refuses_each_agent_request_one_short_with_paid_report_and_sticky_receipt",
+    "hir::ordinary_identity::agent_tests::strict_constructor_moves_the_prepaid_report_after_a_late_agent_refusal",
+    "hir::resolve_program::agent_identity::tests::callback_receives_borrowed_source_text_in_original_order_and_matches_saved_builder",
+    "hir::resolve_program::agent_identity::tests::arbitrary_nonempty_nul_unicode_and_duplicate_text_matches_saved_builder",
+    "hir::resolve_program::agent_identity::tests::identity_refusal_is_returned_unchanged_and_stops_later_requests",
+    "hir::resolve_program::agent_identity::tests::borrowed_payment_removes_exactly_one_temporary_string_per_identity",
+    "hir::resolve_program::agent_identity::tests::complete_original_missing_entrypoint_diagnostic_precedes_every_agent_request",
+    "scoped_tasks::borrowed_lookup_tests::borrowed_task_scope_and_failure_queries_acquire_no_identity_backing",
+    "scoped_tasks::borrowed_lookup_tests::unknown_cancel_avoids_backing_and_preserves_complete_original_error_order",
+    "scoped_tasks::borrowed_lookup_tests::complete_original_scoped_cancellation_failure_trace_and_receiving_drop_match",
+    "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions"
+  ]
+}

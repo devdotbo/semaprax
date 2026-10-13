@@ -1,0 +1,187 @@
+{
+  "base": "5ff88aa99040a597f60cf10f66bc50582ccc1e8e",
+  "production_scope": [
+    "late Agent identities on existing identity_resolution and ordinary_identity owner in both passes",
+    "ARC/scoped borrowed held-key queries and known cancellation",
+    "same-pass function reference and scoped generic callback owner clones"
+  ],
+  "unchanged": [
+    "public infallible constructors and all static literals",
+    "identity carrier and budget implementation",
+    "ceilings, forecasts and admission",
+    "ordinary unfunded compatibility"
+  ],
+  "whole_pipeline_paid": false,
+  "OPT785_closed": false,
+  "independent_receivers": [
+    {
+      "base_source": "src/arc_zones.rs",
+      "saved_source": "src/arc_zones/borrowed_lookup_tests/old.rs",
+      "baseline_sha256": "87b8dcfe84cae41f1b9318adc82d59990d2d608c23430bbe9ad2d9ee1a5773b1",
+      "saved_sha256": "f4c123797cab177fac858bc136e05438c0fc9bc3f66e0eb3563f953c74ea2a33",
+      "only_adaptation": "original tests module path kept and adjusted to ../tests.rs",
+      "compiled_receiving_module": "src/arc_zones/borrowed_lookup_tests.rs",
+      "complete_original_tests_registration_preserved": true
+    },
+    {
+      "base_source": "src/scoped_tasks.rs",
+      "saved_source": "src/scoped_tasks/borrowed_lookup_tests/old.rs",
+      "baseline_sha256": "9e19864465a17d45b55d4f47f2b9ed5dcb7e31f87c6ebe5147036d7d6d70fda6",
+      "saved_sha256": "69ab4aef917a81d1017eacb6faee6e8c634be9cf44fb33422fed80a24b227bb2",
+      "only_adaptation": "original tests module path kept and adjusted to ../tests.rs",
+      "compiled_receiving_module": "src/scoped_tasks/borrowed_lookup_tests.rs",
+      "complete_original_tests_registration_preserved": true
+    },
+    {
+      "base_span": "src/hir/resolve_program.rs:193-589",
+      "raw_source_sha256": "f5c1c844eb62a989a75453aa7384d92a49c85f598a6d8be529e753f94462f44d",
+      "saved_source": "src/hir/resolve_program/agent_identity_original.rs",
+      "adaptations": [
+        "method/free-function names and test visibility",
+        "crate::hir qualifiers for relocated super references",
+        "leaf rustfmt; original diagnostic literal contents retained"
+      ],
+      "consumer": "src/hir/resolve_program/agent_identity/fixture.rs::original_resolve"
+    },
+    {
+      "base_span": "src/hir/resolve_program.rs:1345-1419",
+      "raw_source_sha256": "ea9977da28d01b4800dd30d3a2331a04a6f733ec02e9fc66f17245b42f24d330",
+      "saved_source": "src/hir/resolve_program/agent_identity_original.rs",
+      "adaptations": [
+        "method/free-function names and test visibility",
+        "crate::hir qualifiers for relocated super references",
+        "leaf rustfmt; original diagnostic literal contents retained"
+      ],
+      "consumer": "src/hir/resolve_program/agent_identity/fixture.rs::original_resolve"
+    },
+    {
+      "base_span": "src/hir.rs:650-686",
+      "raw_source_sha256": "fff2d6d119f721a979a25d14a1bfe1fb13715ee8222075f7aefbf2020ffc74a6",
+      "saved_source": "src/hir/resolve_program/agent_identity_original.rs",
+      "adaptations": [
+        "method/free-function names and test visibility",
+        "crate::hir qualifiers for relocated super references",
+        "leaf rustfmt; original diagnostic literal contents retained"
+      ],
+      "consumer": "src/hir/resolve_program/agent_identity/fixture.rs::original_resolve"
+    }
+  ],
+  "source_joins": {
+    "reader": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "receiving_assertion": "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions",
+    "new_paths": [
+      "src/hir/identity_resolution/agent_tests.rs",
+      "src/hir/ordinary_identity/agent_tests.rs",
+      "src/hir/resolve_program/agent_identity.rs",
+      "src/hir/resolve_program/agent_identity/fixture.rs",
+      "src/hir/resolve_program/agent_identity/tests.rs",
+      "src/hir/resolve_program/agent_identity_original.rs"
+    ],
+    "new_missing_after": 0,
+    "inherited_missing_before_and_after": [
+      "src/hir/validation/owned_iterative_oracle.rs",
+      "src/hir/validation/contract_owners.rs",
+      "src/hir/validation/record_pattern.rs"
+    ],
+    "inherited_fix_already_in_private_commit": "ee1cf82df84433c22028cc723e6b5d712da878b3",
+    "baselines_changed": false,
+    "model_source_readers": "No existing external lexical source reader of arc_zones.rs/scoped_tasks.rs found; complete old models and their old tests are compiled by owning unit modules."
+  },
+  "module_sizes": [
+    {
+      "file": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "lines": 973
+    },
+    {
+      "file": "src/arc_zones.rs",
+      "lines": 1373
+    },
+    {
+      "file": "src/hir/closure/resolve.rs",
+      "lines": 251
+    },
+    {
+      "file": "src/hir/function_value/resolve.rs",
+      "lines": 214
+    },
+    {
+      "file": "src/hir/identity_resolution.rs",
+      "lines": 260
+    },
+    {
+      "file": "src/hir/ordinary_identity.rs",
+      "lines": 154
+    },
+    {
+      "file": "src/hir/resolve_program.rs",
+      "lines": 1373
+    },
+    {
+      "file": "src/scoped_tasks.rs",
+      "lines": 1419
+    },
+    {
+      "file": "src/arc_zones/borrowed_lookup_tests.rs",
+      "lines": 130
+    },
+    {
+      "file": "src/arc_zones/borrowed_lookup_tests/old.rs",
+      "lines": 1370
+    },
+    {
+      "file": "src/hir/identity_resolution/agent_tests.rs",
+      "lines": 155
+    },
+    {
+      "file": "src/hir/ordinary_identity/agent_tests.rs",
+      "lines": 114
+    },
+    {
+      "file": "src/hir/resolve_program/agent_identity.rs",
+      "lines": 110
+    },
+    {
+      "file": "src/hir/resolve_program/agent_identity/fixture.rs",
+      "lines": 296
+    },
+    {
+      "file": "src/hir/resolve_program/agent_identity/tests.rs",
+      "lines": 152
+    },
+    {
+      "file": "src/hir/resolve_program/agent_identity_original.rs",
+      "lines": 519
+    },
+    {
+      "file": "src/scoped_tasks/borrowed_lookup_tests.rs",
+      "lines": 182
+    },
+    {
+      "file": "src/scoped_tasks/borrowed_lookup_tests/old.rs",
+      "lines": 1415
+    }
+  ],
+  "static_checks": [
+    "leaf rustfmt skip_children=true passed",
+    "git diff --check passed",
+    "all changed/new Rust modules <=1500",
+    "full old model source equality after test-path adaptation passed"
+  ],
+  "not_run": [
+    "Cargo",
+    "build",
+    "tests",
+    "Clippy",
+    "full gates",
+    "current-head runtime qualification"
+  ],
+  "review_dispositions": [
+    "fixed missing ARC zone entry/live construct and bounded terminal loop",
+    "fixed six-field refusal comparison against existing prepaid owner output",
+    "confirmed Borrow<str> exact textual equality in ids.rs:189",
+    "confirmed source desugar Option<Program> in record_invariants/source.rs:27",
+    "confirmed dyn ProgramSource reuse at hir.rs:790 and existing production source-paid callers",
+    "model source audit outside HIR lexical reader scope; retained full compiled model controls"
+  ],
+  "approval_review": "Literal test expected Diagnostic proposal rejected as invented; no writes occurred for that proposal. Safer reference report from existing prepaid owner was accepted; no blocked action remains."
+}
