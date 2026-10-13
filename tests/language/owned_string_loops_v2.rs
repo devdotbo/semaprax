@@ -454,16 +454,12 @@ fn shapes_outside_owned_string_loops_v2_stay_refused() {
         found[0].message,
         "ownership of `text` changes inside a while loop, which is not yet admitted"
     );
-    // Record parameters stay outside the loop-call profile.
+    // A flat Copy record is an admitted by-value loop-call argument
+    // (`loop_calls::ast_param_admitted`), so this call verifies cleanly.
     let found = diagnostics(&format!(
         "{HELPERS}@id(\"app.main\")\nfn main() -> i64\n{{\n    let mut i = 0;\n    while i < 2 {{\n        i = i + first(Pair {{ a: 1 }});\n        0\n    }}\n    i\n}}\n"
     ));
-    assert!(
-        found.iter().any(|diagnostic| diagnostic.code == "SPX-T252"
-            && diagnostic.message
-                == "call `first` is not admitted in loop bodies; use scalar/text signatures with read-only input effects. For output, build one string in the loop and write it once afterwards"),
-        "{found:?}"
-    );
+    assert!(found.is_empty(), "{found:?}");
 }
 
 #[test]

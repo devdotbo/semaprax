@@ -107,7 +107,9 @@ fn interpret_main(source: &str, stem: &str) -> serde_json::Value {
 
 /// `semaprax run <file> --native`: stdout and the exit status.
 fn run_native(source: &str, stem: &str) -> Option<(bool, String, String)> {
-    if !command_available("clang") && !command_available("cc") {
+    // `run --native` starts `clang` and nothing else (`SPX-B101`), so a host
+    // with only `cc` has no native route to observe.
+    if !command_available("clang") {
         return None;
     }
     let path = write_source(source, stem);
