@@ -382,6 +382,17 @@ fn aggregate_authentication_to_final_drop_work_and_backing_are_exact_and_one_sho
 }
 #[test]
 fn cycles_and_unsupported_scalar_provider_extensions_remain_closed() {
+    // The ordinary checked constructor is broader than this selected profile.
+    // Receive its actual source schema before testing selected helper refusal.
+    fn build(
+        caller: &str,
+        provider: &str,
+        leaf: &str,
+    ) -> Result<WorkspaceGraphBuild, Vec<Diagnostic>> {
+        let built = self::build(caller, provider, leaf)?;
+        schema(&built)?;
+        Ok(built)
+    }
     for provider in [
         PROVIDER.replace("{leaf_step(n)}", "{step(n)}"),
         PROVIDER.replace(
@@ -396,6 +407,70 @@ fn cycles_and_unsupported_scalar_provider_extensions_remain_closed() {
         assert!(build(CALLER, &provider, LEAF).is_err());
     }
 }
+#[test]
+fn complete_ordinary_provider_sources_remain_checked_while_selected_schema_refuses() {
+    for provider in [
+        PROVIDER.replace("{leaf_step(n)}", "{step(n)}"),
+        PROVIDER.replace(
+            "fn step(n:i64)->i64 {leaf_step(n)}",
+            "fn step(n:i64)->i64 {let label=str\"x\";if str_len_bytes(label)==1usize {n}else{0}}",
+        ),
+        PROVIDER.replace(
+            "fn step(n:i64)->i64 {leaf_step(n)}",
+            "fn step(n:i64)->i64 {let values=vec_with_capacity<i64>(1usize);n}",
+        ),
+    ] {
+        assert_ne!(
+            provider, PROVIDER,
+            "every hostile source mutation must occur"
+        );
+        let ordinary = build(CALLER, &provider, LEAF).unwrap();
+        assert_eq!(ordinary.hir.modules.len(), 3);
+        assert_eq!(caller(&ordinary).functions[0].id.as_str(), "app.main");
+        let errors = schema(&ordinary).unwrap_err();
+        assert!(!errors.is_empty());
+        assert!(errors.iter().any(|error| error.code == "SPX-G410"));
+    }
+    let admitted = build(CALLER, PROVIDER, LEAF).unwrap();
+    assert_eq!(schema(&admitted).unwrap(), "semaprax.graph.v77");
+}
+
+#[test]
+fn selected_refusal_fixture_keeps_complete_original_test_and_ordinary_receiver() {
+    let current = concat!(
+        include_str!("tests.rs"),
+        include_str!("tests/borrowed.rs"),
+        include_str!("tests/closure_graph.rs"),
+        include_str!("tests/closure_graph/entry.rs"),
+        include_str!("tests/closure_graph/oracle.rs"),
+        include_str!("tests/runtime.rs"),
+    );
+    let original = include_str!(
+        "../../../../../../docs/evidence/scalar-provider-selected-refusal/original_test.txt"
+    );
+    let start = current
+        .find("#[test]\nfn cycles_and_unsupported_scalar_provider_extensions_remain_closed()")
+        .unwrap();
+    let tail = &current[start..];
+    let end = tail.find("\n#[test]").unwrap();
+    let complete = &tail[..end];
+    let hook_start = complete
+        .find("    // The ordinary checked constructor")
+        .unwrap();
+    let hook_tail = &complete[hook_start..];
+    let hook_end = hook_start
+        + hook_tail.find("        Ok(built)\n    }\n").unwrap()
+        + "        Ok(built)\n    }\n".len();
+    assert_eq!(
+        format!("{}{}\n", &complete[..hook_start], &complete[hook_end..]),
+        original
+    );
+    let ordinary = include_str!(
+        "../../../../../../docs/evidence/scalar-provider-selected-refusal/ordinary_receiver.txt"
+    );
+    assert!(current.starts_with(ordinary.trim_end_matches('\n')));
+}
+
 #[test]
 fn cloned_function_and_failed_later_provider_cannot_restart_a_lease_or_allowance() {
     let build = build(CALLER, PROVIDER, LEAF).unwrap();

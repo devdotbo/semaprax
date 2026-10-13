@@ -1,0 +1,9 @@
+{
+  "base": "fe4e742a773a7e64bc2e1affccc85a545f39116f",
+  "source_path": "src/workspace_graph/source_schema/static_text/primitive/helpers/tests.rs",
+  "base_full_source_sha256": "1cf9baf48769bbde0ab016a75cc21a7c48c78061b637fee2e257b9b15787f1f0",
+  "complete_original_test_sha256": "3b037b175c6f02a92443ac01638273c4f2e9b2fed06d6812dd4125dd2b1a9c4c",
+  "complete_ordinary_receiver_sha256": "f0d4ac76dd8089f82ab41d5e1627552df3396dd37cf03d098cfebc56ca207458",
+  "production_changed": false,
+  "execution_performed": false
+}
