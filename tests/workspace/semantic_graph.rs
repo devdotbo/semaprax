@@ -543,6 +543,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/old.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full.rs"),
+                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/initialization.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/receiving.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full/receiving.rs"),
                 include_str!("../../src/bounded_output/key_directory.rs"),
