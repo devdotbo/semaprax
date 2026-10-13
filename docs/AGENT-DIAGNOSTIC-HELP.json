@@ -98,6 +98,15 @@
       ]
     },
     {
+      "code": "SPX-M104",
+      "rows": [
+        {
+          "fix": "Fresh unique local; result is reserved; record/variant payloads: field: fresh_alias; keep field names unchanged",
+          "wrote": "invalid/duplicate pattern binding"
+        }
+      ]
+    },
+    {
       "code": "SPX-M105",
       "rows": [
         {
@@ -439,7 +448,7 @@
       "code": "SPX-T269",
       "rows": [
         {
-          "fix": "Writes outside loops; profile caps: stdout+stderr ≤65536 bytes default; v28 appends ≤1 MiB",
+          "fix": "Build bounded output; publish once outside loops/cycles; default stdout+stderr ≤65536 bytes; v28 direct appends ≤1 MiB",
           "wrote": "direct output repeats per path / is loop-reachable"
         }
       ]
