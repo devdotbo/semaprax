@@ -41,10 +41,6 @@ fn prelude_owns(pointer: usize) -> bool {
     let declarations = crate::prelude::declarations();
     declarations.as_ptr() as usize == pointer
         || declarations.iter().any(|declaration| {
-            assert!(
-                declaration.extends.is_none() && declaration.invariants.is_none(),
-                "prelude owner census must include new payloads"
-            );
             string_owns(&declaration.stable_id, pointer)
                 || string_owns(&declaration.name, pointer)
                 || vec_owns(&declaration.type_parameters, pointer)
@@ -63,7 +59,7 @@ fn prelude_owns(pointer: usize) -> bool {
                             })
                     }
                     TypeDeclarationKind::Resource { .. } | TypeDeclarationKind::Class { .. } => {
-                        panic!("prelude owner census must include new declaration kind")
+                        false
                     }
                 }
         })
@@ -97,6 +93,21 @@ pub(super) fn complete_original_receiver_before_measurement(programs: &[Program]
     };
     let ((receipt, attributed), first) = measure(|| {
         run();
+        // Tripwires run before the observer registry is borrowed. The pointer
+        // predicate itself must never allocate, including a panic payload.
+        for declaration in crate::prelude::declarations() {
+            assert!(
+                declaration.extends.is_none() && declaration.invariants.is_none(),
+                "prelude owner census must include new payloads"
+            );
+            assert!(
+                matches!(
+                    declaration.kind,
+                    TypeDeclarationKind::Record { .. } | TypeDeclarationKind::Variant { .. }
+                ),
+                "prelude owner census must include new declaration kind"
+            );
+        }
         (current_metrics().live, live_bytes_matching(prelude_owns))
     });
     assert!(

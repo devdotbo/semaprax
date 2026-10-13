@@ -158,10 +158,11 @@ fn borrowed_owner_name_real_class_generic_variant_and_compiler_owners_keep_full_
         probes(index, owner, name);
         probes(index, owner, "missing");
     }
-    let complete = concat!(include_str!("../owner_name.rs"), include_str!("tests.rs"));
-    assert!(complete.contains("Borrow<dyn OwnerName + 'a>"));
-    assert!(complete.contains("values.get::<dyn OwnerName + '_>"));
+    // Check production text directly: the assertion's own literals must not
+    // satisfy this drift guard. The complete source owner joins both children.
     let production = include_str!("../owner_name.rs");
+    assert!(production.contains("Borrow<dyn OwnerName + 'a>"));
+    assert!(production.contains("values.get::<dyn OwnerName + '_>"));
     for forbidden in [
         ".iter()",
         "unsafe",
