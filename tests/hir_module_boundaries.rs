@@ -221,6 +221,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/cleanup_plan/replay/ordinary_renewals.rs"),
             include_str!("../src/cleanup_plan/renewal_profile/ordinary/compare.rs"),
             include_str!("../src/cleanup_plan/renewal_profile/ordinary/consuming.rs"),
+            include_str!("../src/cleanup_plan/renewal_profile/ordinary/consuming/stack.rs"),
+            include_str!("../src/cleanup_plan/renewal_profile/ordinary/consuming/old.rs"),
             include_str!("../src/cleanup_plan/renewal_profile/ordinary/debug_contains.rs"),
             include_str!("../src/cleanup_plan/renewal_profile/ordinary/iterator.rs"),
             include_str!("../src/cleanup_plan/renewal_profile/ordinary/iterator_shape.rs"),

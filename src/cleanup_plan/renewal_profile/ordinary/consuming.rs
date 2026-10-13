@@ -1,26 +1,27 @@
 //! Exact owned-record consuming additions; no ordinary winner is replaced.
 use super::{compare, iterator_shape, vector, Admission, Directory, Entry, Refusal, Scratch};
 use crate::hir::lexical_exit::ChildCursor;
+#[cfg(test)]
+mod old;
+mod stack;
+#[cfg(test)]
+mod tests;
+use self::stack::Stack;
 use crate::hir::{
     OwnershipMode as M, ResolvedBinding as B, ResolvedExpr as E, ResolvedExprKind as K,
     ResolvedFunction as F, ResolvedProgram as P, ResolvedStatement as S, ResolvedType as T,
 };
-type Frames<'a> = [Option<ChildCursor<'a>>; crate::cache_codec::MAX_DEPTH + 1];
 fn visit<'a>(
     root: &'a E,
     admission: &mut Admission<'_>,
     mut visitor: impl FnMut(&'a E, &mut Admission<'_>) -> Result<(), Refusal>,
 ) -> Result<(), Refusal> {
-    admission.reserve(std::mem::size_of::<Frames<'_>>())?;
-    admission.units(crate::cache_codec::MAX_DEPTH + 1)?;
-    let mut stack: Frames<'a> = [None; crate::cache_codec::MAX_DEPTH + 1];
-    stack[0] = Some(ChildCursor::new(root));
-    let mut len = 1;
-    while len != 0 {
+    // Each visit owns its stack: the visitor re-enters visit via collect/declares.
+    let mut stack = Stack::new(admission)?;
+    stack.push(ChildCursor::new(root), admission)?;
+    while !stack.is_empty() {
         admission.units(1)?;
-        let frame = stack[len - 1]
-            .as_mut()
-            .expect("occupied consuming directory frame");
+        let frame = stack.top();
         let expression = frame.expression();
         if !frame.is_started() {
             visitor(expression, admission)?;
@@ -32,14 +33,9 @@ fn visit<'a>(
             frame.next()
         };
         if let Some(child) = child {
-            if len == stack.len() {
-                return admission.refuse(Refusal::Capacity);
-            }
-            stack[len] = Some(ChildCursor::new(child));
-            len += 1;
+            stack.push(ChildCursor::new(child), admission)?;
         } else {
-            stack[len - 1] = None;
-            len -= 1;
+            stack.pop();
         }
     }
     Ok(())

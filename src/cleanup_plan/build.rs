@@ -1,5 +1,6 @@
 //! Canonical cleanup-plan construction from validated core HIR.
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::ast::{BinaryOp, UnaryOp};
@@ -33,6 +34,9 @@ pub(crate) use owned_frame_finalizers::{
 };
 mod bounded_box;
 mod bounded_vec;
+#[cfg(test)]
+mod call_parameter_tests;
+mod call_parameters;
 #[cfg(test)]
 mod call_reference;
 mod execution_boundary;
@@ -1847,7 +1851,7 @@ impl<'a> PlanBuilder<'a> {
                 expression: &'e ResolvedExpr,
                 callee: &'e DeclarationId,
                 args: &'e [ResolvedExpr],
-                params: Vec<crate::hir::ResolvedParam>,
+                params: call_parameters::CallParams<'e>,
                 index: usize,
                 flow: EvalResult,
                 commits: Vec<CallArgumentTransfer>,
@@ -1856,7 +1860,7 @@ impl<'a> PlanBuilder<'a> {
                 expression: &'e ResolvedExpr,
                 callee: &'e DeclarationId,
                 args: &'e [ResolvedExpr],
-                params: Vec<crate::hir::ResolvedParam>,
+                params: call_parameters::CallParams<'e>,
                 index: usize,
                 commits: Vec<CallArgumentTransfer>,
             },
@@ -2077,11 +2081,7 @@ impl<'a> PlanBuilder<'a> {
                     commits,
                     ..
                 } => {
-                    params.capacity() * std::mem::size_of::<crate::hir::ResolvedParam>()
-                        + params
-                            .iter()
-                            .map(resolved_param_owned_capacity)
-                            .sum::<usize>()
+                    call_parameters::owned_capacity(params)
                         + eval_result_owned_capacity(flow)
                         + commits.capacity() * std::mem::size_of::<CallArgumentTransfer>()
                         + commits
@@ -2092,11 +2092,7 @@ impl<'a> PlanBuilder<'a> {
                 Frame::CallAfterArg {
                     params, commits, ..
                 } => {
-                    params.capacity() * std::mem::size_of::<crate::hir::ResolvedParam>()
-                        + params
-                            .iter()
-                            .map(resolved_param_owned_capacity)
-                            .sum::<usize>()
+                    call_parameters::owned_capacity(params)
                         + commits.capacity() * std::mem::size_of::<CallArgumentTransfer>()
                         + commits
                             .iter()
@@ -2395,7 +2391,10 @@ impl<'a> PlanBuilder<'a> {
                             expression,
                             callee: &call.import,
                             args: &call.args,
-                            params: super::native_rust::params(self.program, &call.import)?,
+                            params: Cow::Owned(super::native_rust::params(
+                                self.program,
+                                &call.import,
+                            )?),
                             index: 0,
                             flow: EvalResult {
                                 block,
@@ -2421,6 +2420,7 @@ impl<'a> PlanBuilder<'a> {
                             == crate::hir::ResolvedHostCommandOperation::StdinStreamNext =>
                     {
                         let (callee, params) = finish_call::stream_next_signature(expression)?;
+                        let params = Cow::Owned(params);
                         frames.push(Frame::CallNext {
                             expression,
                             callee,
@@ -2451,6 +2451,7 @@ impl<'a> PlanBuilder<'a> {
                     ResolvedExprKind::Invoke { .. } | ResolvedExprKind::Closure { .. } => {
                         let (callee, args, params) =
                             crate::hir::function_value::cleanup_call(expression)?;
+                        let params = Cow::Owned(params);
                         frames.push(Frame::CallNext {
                             expression,
                             callee,
@@ -2480,7 +2481,7 @@ impl<'a> PlanBuilder<'a> {
                             expression,
                             callee: crate::vec_field::operation_id(),
                             args,
-                            params: crate::vec_field::resolved_params(args),
+                            params: Cow::Owned(crate::vec_field::resolved_params(args)),
                             index: 0,
                             flow: EvalResult {
                                 block,
@@ -2495,7 +2496,7 @@ impl<'a> PlanBuilder<'a> {
                             expression,
                             callee: crate::literal_format::operation_id(),
                             args,
-                            params: crate::literal_format::resolved_params(args),
+                            params: Cow::Owned(crate::literal_format::resolved_params(args)),
                             index: 0,
                             flow: EvalResult {
                                 block,
@@ -2511,7 +2512,8 @@ impl<'a> PlanBuilder<'a> {
                         args,
                         type_arguments,
                     } => {
-                        let params = if let Some(op) = crate::map_ops::by_id(callee.as_str()) {
+                        let mut authored = None;
+                        let synthetic = if let Some(op) = crate::map_ops::by_id(callee.as_str()) {
                             if instance.is_some() {
                                 return Err(plan_error(
                                     "typed collection intrinsic cannot carry a function instance",
@@ -2619,20 +2621,17 @@ impl<'a> PlanBuilder<'a> {
                                 &expression.id,
                             )?
                         } else {
-                            let target = self
-                                .program
-                                .resolve_call_target(callee, instance.as_ref())
-                                .ok_or_else(|| {
-                                    plan_error(format!("unknown cleanup call target `{callee}`"))
-                                })?;
-                            if target.params.len() != args.len() {
-                                return Err(plan_error(format!(
-                                    "cleanup call `{}` has inconsistent arity",
-                                    expression.id
-                                )));
-                            }
-                            target.params.clone()
+                            authored = Some(call_parameters::authored(
+                                self.program,
+                                callee,
+                                instance.as_ref(),
+                                args.len(),
+                                &expression.id,
+                            )?);
+                            // Authored signatures stay borrowed; this carrier never allocates.
+                            Vec::new()
                         };
+                        let params = authored.unwrap_or_else(|| Cow::Owned(synthetic));
                         frames.push(Frame::CallNext {
                             expression,
                             callee,
