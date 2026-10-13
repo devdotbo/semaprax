@@ -1,0 +1,100 @@
+[
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_scope::phase_tests::scalar_production_stages_isolate_actual_backing_without_replacing_whole_owner",
+    "ignored": false,
+    "source": "src/hir/validation/function_scope/phase_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_scope::phase_tests::complete_whole_chain_allocation_owner_is_retained_byte_exact",
+    "ignored": false,
+    "source": "src/hir/validation/function_scope/phase_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_scope::phase_tests::production_stage_dispatch_preserves_original_with_only_named_permit_and_registration_hooks",
+    "ignored": false,
+    "source": "src/hir/validation/function_scope/phase_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_scope::tests::production_chain_observes_actual_backing_debits_complete_drop_and_exact_short_sticky",
+    "ignored": false,
+    "source": "src/hir/validation/function_scope/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_lookup::permits::source_tests::source_permits_match_complete_old_membership_without_backing_in_both_lookup_modes",
+    "ignored": false,
+    "source": "src/hir/validation/function_lookup/permits/source_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_lookup::permits::source_tests::current_source_permits_preserve_full_saved_function_diagnostics_and_effect_order",
+    "ignored": false,
+    "source": "src/hir/validation/function_lookup/permits/source_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_lookup::permits::source_tests::complete_lookup_and_permit_sources_have_only_named_borrowed_membership_hooks",
+    "ignored": false,
+    "source": "src/hir/validation/function_lookup/permits/source_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_lookup::permits::tests::shared_permits_match_all_function_old_effect_diagnostics_duplicates_and_current_program",
+    "ignored": false,
+    "source": "src/hir/validation/function_lookup/permits/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_lookup::permits::tests::caller_paid_permit_directory_replaces_per_function_nodes_with_exact_short_sticky_and_drop",
+    "ignored": false,
+    "source": "src/hir/validation/function_lookup/permits/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_scope::tests::production_chain_matches_complete_saved_map_function_and_full_iterative_corpus",
+    "ignored": false,
+    "source": "src/hir/validation/function_scope/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_scope::tests::production_chain_preserves_parameter_requires_body_result_and_ensures_first_errors",
+    "ignored": false,
+    "source": "src/hir/validation/function_scope/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_scope::tests::production_chain_validator_drop_is_complete_on_postvalidation_unwind",
+    "ignored": false,
+    "source": "src/hir/validation/function_scope/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_scope::tests::persistent_requires_and_ensures_keep_hostile_flags_and_full_outer_metadata_isolated",
+    "ignored": false,
+    "source": "src/hir/validation/function_scope/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::validation::function_scope::tests::persistent_body_receiver_preserves_complete_saved_iterative_scope_on_every_corpus_function",
+    "ignored": false,
+    "source": "src/hir/validation/function_scope/tests.rs"
+  }
+]

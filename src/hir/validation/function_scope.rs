@@ -29,7 +29,7 @@ impl HirValidator<'_> {
                 function.id
             )));
         }
-        let permits = self.functions.permits(self.program);
+        let permits = self.functions.permits_borrowed(self.program);
         for effect in &function.effects {
             if !permits.contains(effect.as_str()) {
                 return Err(hir_error(format!(
@@ -263,3 +263,6 @@ mod backing_saved;
 
 #[cfg(test)]
 mod lifecycle_receiver_saved;
+
+#[cfg(test)]
+mod phase_tests;

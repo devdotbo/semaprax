@@ -13,6 +13,14 @@ pub(super) enum Lookup<'a> {
     },
 }
 impl<'a> Lookup<'a> {
+    pub(super) fn permits_borrowed(&self, program: &'a ResolvedProgram) -> Permits<'a> {
+        match self {
+            Self::Borrowed { directory, .. } => Permits::Borrowed((*directory).permits()),
+            Self::Legacy(_) => Permits::Source(&program.permits),
+        }
+    }
+    // Complete original BTree receiver for independently compiled saved validators.
+    #[cfg(test)]
     pub(super) fn permits(&self, program: &'a ResolvedProgram) -> Permits<'a> {
         match self {
             Self::Borrowed { directory, .. } => Permits::Borrowed((*directory).permits()),
