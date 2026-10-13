@@ -137,3 +137,17 @@ macro_rules! reachability_leaf_source_inventory {
         )
     };
 }
+
+// Joined source audit inventory for the additive final-validation children.
+macro_rules! hir_final_validation_source_inventory {
+    () => {
+        concat!(
+            include_str!("../../../../../src/hir/nodes/import_result_type.rs"),
+            include_str!("../../../../../src/hir/nodes/import_result_type/tests.rs"),
+            include_str!("../../../../../src/hir/validation/callable_types/inline_frames.rs"),
+            include_str!("../../../../../src/hir/validation/callable_types/inline_frames/tests.rs"),
+            include_str!("../../../../../src/hir/validation/callable_types/original_receiver.rs"),
+            include_str!("ledger_capacity/source_inventory.rs")
+        )
+    };
+}

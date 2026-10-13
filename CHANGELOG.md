@@ -1,5 +1,11 @@
 # Changelog
 
+- Source-authored HIR final-validation scratch batch removes discarded native
+  result trees, small generic frame vectors and nominal key copies, projects
+  Array/scalar callable flag misses, and constructs paid classifier Storage only
+  on actual miss/fallback. Full original receivers and exact sticky budgets stay
+  preserved; combined focused qualification and application fit remain pending.
+
 - Author root-first caller-paid cleanup droppability: classify the borrowed root
   once before outer traversal storage, retaining hostile cache precedence, exact
   semantic errors and complete nominal traversal. Preserve the full prior paid

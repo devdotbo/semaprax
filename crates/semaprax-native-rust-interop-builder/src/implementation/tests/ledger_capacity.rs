@@ -364,6 +364,7 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/vec_loop_renewal/tests.rs"),
         include_str!("../../../../../src/hir/generic_mapping.rs"),
         include_str!("../../../../../src/hir/nodes.rs"),
+        hir_final_validation_source_inventory!(),
         include_str!("../../../../../src/hir/declaration_index/linked_owned_data.rs"),
         include_str!("../../../../../src/hir/declaration_index/owned_builtin.rs"),
         include_str!("../../../../../src/hir/declaration_index/projection.rs"),

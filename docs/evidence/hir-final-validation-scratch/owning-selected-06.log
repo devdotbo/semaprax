@@ -1,0 +1,15 @@
+
+running 1 test
+test catalog_normalizer_application::decoded_index::backends::decoded_index_collision_boundaries_and_failure_order_run_on_native_and_wasm ... 
+thread 'catalog_normalizer_application::decoded_index::backends::decoded_index_collision_boundaries_and_failure_order_run_on_native_and_wasm' (177651) panicked at tests/useful_data/catalog_normalizer_application/decoded_index/backends.rs:117:10:
+called `Result::unwrap()` on an `Err` value: [Diagnostic { code: "SPX-G171", severity: Error, message: "Workspace Semantic Graph `builder_bytes` exceeds 67108864", path: None, span: None, help: Some("live graph construction, not the static admission pre-charge, exceeded the budget: the pre-charge forecast 45345840 bytes for 12 module(s) and fit within 67108864, with `src/app.spx` the largest at 15498748 bytes. Reducing reachable source is the only lever; the forecast itself was not the refusing bound. resolved-core phase first sticky ledger refusal: requested 4520 bytes with 812 remaining and 0 reserved floor. Authenticated internal stage: HIR final validation. These are cumulative reservation bytes, not a retained-memory forecast or process RSS; the exact inner operation is unknown.") }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    catalog_normalizer_application::decoded_index::backends::decoded_index_collision_boundaries_and_failure_order_run_on_native_and_wasm
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 195 filtered out; finished in 1.06s
+

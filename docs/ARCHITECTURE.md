@@ -4596,3 +4596,12 @@ unchanged; the extra directory nodes remain unpaid ordinary storage.
 
 Annotation refusal views are limited to immutable bindings. Mutable assignment
 flow keeps its full original diagnostics until a dependency join model exists.
+
+HIR final-validation comparison/scratch ownership: `hir/nodes/import_result_type.rs`
+borrows exact current native result type identities; `validation/callable_types/inline_frames.rs`
+owns inline frames with unchanged Vec fallback. Nominal fact preparation now
+borrows cache-key bytes; Array/scalar Function flag misses project full original
+facts. Paid flag Storage initializes in a separate non-inlined miss constructor;
+known leaves and exact cache hits retain the existing payer's sticky zero-byte
+check. Complete original receivers and the fixed builder cap remain. The bounded
+contract and pending qualification are in [HIR final-validation scratch v1](HIR-FINAL-VALIDATION-SCRATCH-V1.md).

@@ -265,3 +265,65 @@ fn nominal_facts_private_forecast_covers_prelude_and_metadata_key_coexistence() 
     let upper = crate::private_capacity_contract::nominal_facts_lookup_upper(&source).unwrap();
     assert!(lookup.owned_capacity() + maximum_key <= upper);
 }
+
+#[test]
+fn nominal_directory_borrowed_keys_preserve_complete_original_entries_and_actual_drop() {
+    let program = program();
+    for repeats in [1, 8, 64] {
+        let (_, new) = crate::test_allocation_observer::measure(|| {
+            for _ in 0..repeats {
+                drop(std::hint::black_box(Lookup::prepare(&program).unwrap()));
+            }
+        });
+        let (_, old) = crate::test_allocation_observer::measure(|| {
+            for _ in 0..repeats {
+                drop(std::hint::black_box(
+                    Lookup::prepare_owned_keys(&program).unwrap(),
+                ));
+            }
+        });
+        assert!(!new.invalid && !old.invalid);
+        assert!(new.allocated > 0 && new.allocated < old.allocated);
+        assert_eq!((new.live, old.live), (0, 0));
+        assert_eq!(new.allocated, new.freed);
+        assert_eq!(old.allocated, old.freed);
+    }
+    let current = Lookup::prepare(&program).unwrap().unwrap();
+    let old = Lookup::prepare_owned_keys(&program).unwrap().unwrap();
+    assert_eq!(current.len(), old.len());
+    for (current, old) in current.iter().zip(old.iter()) {
+        assert!(std::ptr::eq(current.0, old.0));
+        assert!(std::ptr::eq(current.1, old.1));
+    }
+    let mut forged = program.clone();
+    forged.declarations.type_facts_by_id.insert(
+        nominal("facts.record", vec![]).identity_key(),
+        forged.declarations.type_facts(&ResolvedType::I64).unwrap(),
+    );
+    let current = Lookup::prepare(&forged).unwrap();
+    let old = Lookup::prepare_owned_keys(&forged).unwrap();
+    assert_eq!(current, old);
+}
+#[test]
+fn nominal_directory_actual_metadata_keeps_exact_short_floor_and_sticky_refusal() {
+    let program = program();
+    let ty = nominal("facts.record", vec![]);
+    let (_, overflow, used) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+        let _ = Lookup::default().get(&program, &ty).unwrap();
+    });
+    assert!(!overflow && used > 0);
+    let (_, overflow) = crate::bounded_output::with_limit(used, || {
+        assert!(Lookup::default().get(&program, &ty).unwrap().is_some());
+    });
+    assert!(!overflow);
+    for (limit, floor) in [(used - 1, 0), (used, 1), (0, 0)] {
+        let (_, overflow) = crate::bounded_output::with_limit(limit, || {
+            assert!(crate::bounded_output::set_active_floor(floor));
+            let lookup = Lookup::default();
+            assert!(lookup.get(&program, &ty).is_err());
+            assert!(lookup.get(&program, &ty).is_err());
+            assert!(!crate::bounded_output::reserve_active_required(0));
+        });
+        assert!(overflow);
+    }
+}

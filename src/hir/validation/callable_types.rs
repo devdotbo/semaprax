@@ -1,5 +1,8 @@
 //! Executable type and declared ownership validation.
 use super::*;
+mod inline_frames;
+#[cfg(test)]
+mod original_receiver;
 
 impl HirValidator<'_> {
     pub(super) fn validate_type(&self, ty: &ResolvedType) -> Result<(), Diagnostic> {
@@ -8,9 +11,9 @@ impl HirValidator<'_> {
             Enter(&'a ResolvedType),
             Finish(&'a ResolvedType),
         }
-        // The first leaf and zero-argument Finish stay inline. Only actual
-        // generic children require a heap worklist.
-        let mut frames = Vec::new();
+        // The first leaf and zero-argument Finish stay inline. Eight generic
+        // continuation frames also stay inline; larger worklists spill to Vec.
+        let mut frames = inline_frames::Stack::<_, 8>::new();
         let mut inline = Some(Frame::Enter(ty));
         while let Some(frame) = inline.take().or_else(|| frames.pop()) {
             match frame {
@@ -116,10 +119,7 @@ impl HirValidator<'_> {
                                     .flat_map(|i| &i.imports)
                                     .any(|i| {
                                         i.native_rust
-                                            && i.result
-                                                .kind
-                                                .value_type(&self.program.declarations)
-                                                .is_ok_and(|actual| &actual == ty)
+                                            && i.result.kind.matches_value_type(&self.program.declarations, ty)
                                     }))
                                 && !crate::hir::workspace_link::native_owner::admitted_ri06_regex_result(self.program, ty)
                                 && !admitted_owned_record

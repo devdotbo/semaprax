@@ -410,6 +410,8 @@ fn complete_classifier_source_join_keeps_the_existing_payer_and_full_receiver_in
         include_str!("droppability/root_tests.rs"),
         include_str!("../../../cleanup.rs"),
         include_str!("../../../hir/declaration_index/flags.rs"),
+        include_str!("../../../hir/nodes/import_result_type.rs"),
+        include_str!("../../../hir/nodes/import_result_type/tests.rs"),
     ];
     for source in complete {
         assert!(!source.is_empty());
@@ -420,4 +422,134 @@ fn complete_classifier_source_join_keeps_the_existing_payer_and_full_receiver_in
     );
     assert!(routes.contains("paid_type_facts::flags("));
     assert!(routes.contains("super::paid_type_facts::needs_drop("));
+}
+
+#[test]
+fn paid_flag_fast_receivers_omit_only_unconstructed_storage_and_keep_actual_payer_sticky() {
+    for program in fixtures() {
+        let function = &program.functions[0];
+        let mut types = vec![
+            ResolvedType::I64,
+            ResolvedType::Bool,
+            ResolvedType::Bytes,
+            ResolvedType::String,
+            ResolvedType::Never,
+        ];
+        types.extend(
+            program
+                .types
+                .iter()
+                .filter(|item| item.type_parameters.is_empty())
+                .map(|item| ResolvedType::Nominal {
+                    declaration: item.id.clone(),
+                    arguments: vec![],
+                }),
+        );
+        for ty in &types {
+            let mut original_budget = ReplayBudget::new();
+            let mut current_budget = ReplayBudget::new();
+            let original = program
+                .declarations
+                .type_flags_paid_original_receiver(ty, payer(function, &mut original_budget));
+            let current = program
+                .declarations
+                .type_flags_paid(ty, payer(function, &mut current_budget));
+            assert_eq!(current, original);
+        }
+        for ty in [ResolvedType::I64, ResolvedType::Bytes] {
+            let (_, overflow, used, _) = with_limit_usage_refusal(usize::MAX, || {
+                let mut budget = ReplayBudget::new();
+                program
+                    .declarations
+                    .type_flags_paid(&ty, payer(function, &mut budget))
+                    .unwrap()
+            });
+            assert!(!overflow);
+            assert_eq!(used, 0);
+            let (_, overflow, original_used, _) = with_limit_usage_refusal(usize::MAX, || {
+                let mut budget = ReplayBudget::new();
+                program
+                    .declarations
+                    .type_flags_paid_original_receiver(&ty, payer(function, &mut budget))
+                    .unwrap()
+            });
+            assert!(!overflow);
+            assert!(original_used > 0);
+            let (_, overflow, _, _) = with_limit_usage_refusal(0, || {
+                assert!(!reserve_active_required(1));
+                let mut budget = ReplayBudget::new();
+                let first = program
+                    .declarations
+                    .type_flags_paid(&ty, payer(function, &mut budget))
+                    .unwrap_err();
+                let retry = program
+                    .declarations
+                    .type_flags_paid(&ty, payer(function, &mut budget))
+                    .unwrap_err();
+                assert_eq!(first, retry);
+                assert!(!reserve_active_required(0));
+            });
+            assert!(overflow);
+            let (_, actual) = measure(|| {
+                for _ in 0..256 {
+                    let mut budget = ReplayBudget::new();
+                    std::hint::black_box(
+                        program
+                            .declarations
+                            .type_flags_paid(&ty, payer(function, &mut budget))
+                            .unwrap(),
+                    );
+                }
+            });
+            assert!(!actual.invalid);
+            assert_eq!(actual.live, 0);
+            assert_eq!(actual.allocated, actual.freed);
+        }
+    }
+}
+
+#[test]
+fn paid_flag_miss_keeps_complete_original_constructor_exact_short_and_drop() {
+    let program = fixtures().into_iter().next().unwrap();
+    let function = &program.functions[0];
+    let ty = ResolvedType::Nominal {
+        declaration: crate::hir::DeclarationId::new("unknown.classifier"),
+        arguments: vec![],
+    };
+    let run = |old: bool| {
+        let mut budget = ReplayBudget::new();
+        if old {
+            program
+                .declarations
+                .type_flags_paid_original_receiver(&ty, payer(function, &mut budget))
+        } else {
+            program
+                .declarations
+                .type_flags_paid(&ty, payer(function, &mut budget))
+        }
+    };
+    let (actual, overflow, used, _) = with_limit_usage_refusal(usize::MAX, || run(false));
+    assert!(!overflow && used > 0);
+    let (original, overflow, original_used, _) = with_limit_usage_refusal(usize::MAX, || run(true));
+    assert!(!overflow);
+    assert_eq!(actual, original);
+    assert_eq!(used, original_used);
+    for limit in [0, used - 1, used] {
+        let (actual, refused, used, receipt) = with_limit_usage_refusal(limit, || run(false));
+        let (old, old_refused, old_used, old_receipt) =
+            with_limit_usage_refusal(limit, || run(true));
+        assert_eq!(actual, old);
+        assert_eq!(
+            (refused, used, receipt),
+            (old_refused, old_used, old_receipt)
+        );
+    }
+    let (_, actual) = measure(|| {
+        for _ in 0..32 {
+            std::hint::black_box(run(false).unwrap());
+        }
+    });
+    assert!(!actual.invalid && actual.allocated > 0);
+    assert_eq!(actual.live, 0);
+    assert_eq!(actual.allocated, actual.freed);
 }

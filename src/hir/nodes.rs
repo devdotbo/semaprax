@@ -3,6 +3,7 @@
 //! Resolved types, type facts, ownership modes, and the declaration
 //! nodes (types, interfaces, imports, functions) the resolver emits.
 
+mod import_result_type;
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
@@ -815,10 +816,7 @@ impl ResolvedImportResultKind {
             Self::OwnedResultStringOptionI64,
         ]
         .iter()
-        .any(|kind| {
-            kind.value_type(declarations)
-                .is_ok_and(|actual| &actual == ty)
-        })
+        .any(|kind| kind.matches_value_type(declarations, ty))
     }
 }
 

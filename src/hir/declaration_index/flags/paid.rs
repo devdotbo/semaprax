@@ -18,6 +18,62 @@ impl DeclarationIndex {
         ty: &ResolvedType,
         mut payer: P,
     ) -> Result<Option<TypeFlags>, Diagnostic> {
+        // Authentication/sticky first-refusal still runs even when this query
+        // needs no classifier Storage carrier. No allocation or allowance.
+        payer.bytes(0)?;
+        if matches!(
+            ty,
+            ResolvedType::Never
+                | ResolvedType::Unit
+                | ResolvedType::I64
+                | ResolvedType::I32
+                | ResolvedType::Char
+                | ResolvedType::U8
+                | ResolvedType::Usize
+                | ResolvedType::F32
+                | ResolvedType::F64
+                | ResolvedType::Bool
+                | ResolvedType::String
+                | ResolvedType::Bytes
+                | ResolvedType::Str
+                | ResolvedType::SliceU8
+                | ResolvedType::StringMap
+                | ResolvedType::OnceFunction
+                | ResolvedType::OnceFunctionI64
+                | ResolvedType::OnceFunctionI64Pair
+                | ResolvedType::MutFunctionI64
+        ) {
+            return Ok(self.type_flags(ty));
+        }
+        if let Some(Some(facts)) = super::cached_facts(self, ty) {
+            return Ok(Some(TypeFlags::from(facts)));
+        }
+        self.type_flags_paid_construct(ty, payer)
+    }
+
+    // Keeping this constructor out of the fast receiving frame ensures its
+    // complete Storage<P> object is initialized only for a real miss/fallback.
+    #[inline(never)]
+    pub(crate) fn type_flags_paid_construct<P: TypeFactsPayer>(
+        &self,
+        ty: &ResolvedType,
+        mut payer: P,
+    ) -> Result<Option<TypeFlags>, Diagnostic> {
+        payer.bytes(size_of::<Storage<P>>())?;
+        let mut storage = Storage { payer, first: None };
+        let result = self.flags_paid(ty, &mut storage);
+        match storage.first {
+            Some(error) => Err(error),
+            None => Ok(result),
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn type_flags_paid_original_receiver<P: TypeFactsPayer>(
+        &self,
+        ty: &ResolvedType,
+        mut payer: P,
+    ) -> Result<Option<TypeFlags>, Diagnostic> {
         payer.bytes(size_of::<Storage<P>>())?;
         let mut storage = Storage { payer, first: None };
         let result = self.flags_paid(ty, &mut storage);

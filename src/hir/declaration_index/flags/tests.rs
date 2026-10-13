@@ -25,7 +25,10 @@ fn leaves() -> Vec<(ResolvedType, bool, bool)> {
     ]
 }
 fn old(index: &DeclarationIndex, ty: &ResolvedType) -> Option<TypeFlags> {
-    index.type_facts_owned_key_oracle(ty).as_ref().map(TypeFlags::from)
+    index
+        .type_facts_owned_key_oracle(ty)
+        .as_ref()
+        .map(TypeFlags::from)
 }
 #[test]
 fn leaf_flags_preserve_literal_facts_and_current_cached_precedence_without_query_allocations() {
@@ -232,7 +235,9 @@ fn dynamic_cached_flags_remove_only_retained_layout_clones_through_drop() {
     // Independent saved key-only construction isolates every original scratch
     // request; the streamed query now removes those AND the owned layout clone.
     let (_, keys) = crate::test_allocation_observer::measure(|| {
-        for _ in 0..QUERIES { drop(std::hint::black_box(ty.identity_key())); }
+        for _ in 0..QUERIES {
+            drop(std::hint::black_box(ty.identity_key()));
+        }
     });
     assert!(!owned.invalid && !borrowed.invalid && !keys.invalid);
     assert_eq!(owned.live, 0);
@@ -241,7 +246,67 @@ fn dynamic_cached_flags_remove_only_retained_layout_clones_through_drop() {
     assert_eq!(keys.allocated, keys.freed);
     assert_eq!(owned.allocations, keys.allocations + QUERIES);
     assert_eq!(owned.allocated, keys.allocated + QUERIES * 23);
-    assert_eq!((borrowed.allocations, borrowed.reallocations, borrowed.allocated, borrowed.freed, borrowed.live), (0, 0, 0, 0, 0));
+    assert_eq!(
+        (
+            borrowed.allocations,
+            borrowed.reallocations,
+            borrowed.allocated,
+            borrowed.freed,
+            borrowed.live
+        ),
+        (0, 0, 0, 0, 0)
+    );
     assert_eq!(LAYOUT.len(), 23);
     assert_eq!(index.type_flags(&ty), old(&index, &ty));
+}
+
+#[test]
+fn uncached_array_and_scalar_callable_flags_preserve_full_carriers_and_hostile_cache_precedence() {
+    let mut index = DeclarationIndex::default();
+    let mut types = vec![ResolvedType::ArrayU8(0), ResolvedType::ArrayU8(u32::MAX)];
+    for count in [0, 1, 8, 9] {
+        types.push(ResolvedType::Function {
+            parameters: vec![ResolvedType::I64; count],
+            result: Box::new(ResolvedType::Bool),
+        });
+    }
+    types.push(ResolvedType::Function {
+        parameters: vec![ResolvedType::Bytes],
+        result: Box::new(ResolvedType::I64),
+    });
+    for ty in &types {
+        assert_eq!(index.type_flags(ty), old(&index, ty));
+    }
+    let (_, new) = crate::test_allocation_observer::measure(|| {
+        for _ in 0..128 {
+            for ty in &types {
+                std::hint::black_box(index.type_flags(ty));
+            }
+        }
+    });
+    assert!(!new.invalid);
+    assert_eq!((new.allocations, new.allocated, new.live), (0, 0, 0));
+    let (_, original) = crate::test_allocation_observer::measure(|| {
+        for _ in 0..128 {
+            for ty in &types {
+                std::hint::black_box(old(&index, ty));
+            }
+        }
+    });
+    assert!(!original.invalid && original.allocated > 0);
+    assert_eq!(original.live, 0);
+    assert_eq!(original.allocated, original.freed);
+    for ty in &types {
+        index.type_facts_by_id.insert(
+            ty.identity_key(),
+            TypeFacts {
+                copy: false,
+                contains_resource: true,
+                sized: false,
+                needs_drop: true,
+                layout_key: "forged:λ".into(),
+            },
+        );
+        assert_eq!(index.type_flags(ty), old(&index, ty));
+    }
 }

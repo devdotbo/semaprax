@@ -22,6 +22,28 @@ impl From<&TypeFacts> for TypeFlags {
     }
 }
 impl DeclarationIndex {
+    pub(crate) fn cached_zero_argument_facts(
+        &self,
+        declaration: &super::DeclarationId,
+    ) -> Option<&TypeFacts> {
+        nominal_key::get(&self.type_facts_by_id, declaration)
+    }
+    fn recompute_flags(&self, ty: &ResolvedType) -> Option<TypeFlags> {
+        if matches!(ty, ResolvedType::ArrayU8(_)) || matches!(ty, ResolvedType::Function { .. }) {
+            if matches!(ty, ResolvedType::Function { .. })
+                && !crate::hir::function_value::is_signature(ty)
+            {
+                return None;
+            }
+            return Some(TypeFlags {
+                copy: true,
+                contains_resource: false,
+                sized: true,
+                needs_drop: false,
+            });
+        }
+        self.recompute_type_facts(ty).as_ref().map(TypeFlags::from)
+    }
     /// Preserve current-index cache precedence, including hostile cached facts.
     /// Dynamic identities retain the old key traversal and miss computation.
     /// A cache hit borrows the facts instead of cloning their layout payload.
@@ -46,22 +68,26 @@ impl DeclarationIndex {
             ResolvedType::OnceFunctionI64 => "fn-once:bytes+i64:i64:v2",
             ResolvedType::OnceFunctionI64Pair => "fn-once:bytes+i64+i64:i64:v3",
             ResolvedType::MutFunctionI64 => "fn-mut:i64+i64:i64:v1",
-            ResolvedType::Nominal { declaration, arguments } if arguments.is_empty() => {
+            ResolvedType::Nominal {
+                declaration,
+                arguments,
+            } if arguments.is_empty() => {
                 return nominal_key::get(&self.type_facts_by_id, declaration)
                     .map(TypeFlags::from)
-                    .or_else(|| self.recompute_type_facts(ty).as_ref().map(TypeFlags::from));
+                    .or_else(|| self.recompute_flags(ty));
             }
             _ => {
                 if let Some(facts) = nominal_key::compound_get(&self.type_facts_by_id, ty) {
-                    return facts.map(TypeFlags::from)
-                        .or_else(|| self.recompute_type_facts(ty).as_ref().map(TypeFlags::from));
+                    return facts
+                        .map(TypeFlags::from)
+                        .or_else(|| self.recompute_flags(ty));
                 }
                 let key = ty.identity_key();
                 return self
                     .type_facts_by_id
                     .get(&key)
                     .map(TypeFlags::from)
-                    .or_else(|| self.recompute_type_facts(ty).as_ref().map(TypeFlags::from));
+                    .or_else(|| self.recompute_flags(ty));
             }
         };
         if let Some(facts) = self.type_facts_by_id.get(key) {
@@ -108,8 +134,10 @@ pub(super) fn cached_facts<'a>(
     ty: &ResolvedType,
 ) -> Option<Option<&'a TypeFacts>> {
     match ty {
-        ResolvedType::Nominal { declaration, arguments } if arguments.is_empty() =>
-            Some(nominal_key::get(&index.type_facts_by_id, declaration)),
+        ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } if arguments.is_empty() => Some(nominal_key::get(&index.type_facts_by_id, declaration)),
         _ => nominal_key::compound_get(&index.type_facts_by_id, ty),
     }
 }
