@@ -208,7 +208,18 @@ mod tests {
     #[test]
     fn default_is_a_complete_module_index_and_all_selects_the_full_catalog() {
         let index = library_help(None).unwrap();
-        assert!(index.starts_with("Standard library modules (52):\n"));
+        let catalog: serde_json::Value = serde_json::from_str(LIBRARY_INDEX).unwrap();
+        let modules = catalog["modules"].as_array().unwrap();
+        assert!(index.starts_with(&format!("Standard library modules ({}):\n", modules.len())));
+        let indexed: Vec<_> = index
+            .lines()
+            .filter_map(|line| line.strip_prefix("  "))
+            .collect();
+        let expected: Vec<_> = modules
+            .iter()
+            .map(|module| module["module"].as_str().unwrap())
+            .collect();
+        assert_eq!(indexed, expected);
         assert!(index.contains("\n  std.int.decimal\n"));
         assert!(index.contains("\n  std.data.json.scan\n"));
         assert!(index.contains("\n  std.pattern\n"));
@@ -221,7 +232,7 @@ mod tests {
                 .lines()
                 .filter(|line| line.starts_with("  std."))
                 .count(),
-            52
+            modules.len()
         );
         assert_eq!(library_help(Some("all")).unwrap(), LIBRARY_CATALOG);
     }

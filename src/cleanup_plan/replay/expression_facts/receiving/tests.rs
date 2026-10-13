@@ -256,10 +256,16 @@ fn full_key_search_insert_relocation_rotation_and_iteration_keep_same_work_payer
     let keys: Vec<_> = (0..97)
         .map(|n| ExpressionId::from_owned(format!("work.full.{}.{n:03}\0", "λ識".repeat(17))))
         .collect();
-    let mut budget = ReplayBudget::unobserved();
-    let initial = budget.remaining;
-    directory_run(function, &keys, &mut budget).unwrap();
-    let required = initial - budget.remaining;
+    // Measure the same paid growth route used below. The unobserved receiver
+    // leaves allocation to Vec's ordinary growth, which can relocate at
+    // different lengths and therefore has a different work debit.
+    let (required, refused, _, _) = with_limit_usage_refusal(usize::MAX, || {
+        let mut budget = ReplayBudget::new();
+        let initial = budget.remaining;
+        directory_run(function, &keys, &mut budget).unwrap();
+        initial - budget.remaining
+    });
+    assert!(!refused);
     assert!(required > keys.len());
     for available in [required, required - 1] {
         let (((), metrics), _, paid, _) = with_limit_usage_refusal(usize::MAX, || {
@@ -271,13 +277,11 @@ fn full_key_search_insert_relocation_rotation_and_iteration_keep_same_work_payer
                     result.as_ref().unwrap();
                     assert_eq!(budget.remaining, 0);
                 } else {
-                    assert!(
-                        result
-                            .as_ref()
-                            .unwrap_err()
-                            .message
-                            .contains("cleanup replay work budget exhausted")
-                    );
+                    assert!(result
+                        .as_ref()
+                        .unwrap_err()
+                        .message
+                        .contains("cleanup replay work budget exhausted"));
                     assert!(budget.refusal_spent);
                     let before = crate::test_allocation_observer::current_metrics();
                     let remaining = budget.remaining;
