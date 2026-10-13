@@ -260,12 +260,22 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
     assert!(rejected_break
         .iter()
         .any(|diagnostic| diagnostic.code == "SPX-P209"));
-    // A guarded break keeps the trailing expression reachable. The loop uses
-    // the checked byte-view alias required by the existing while receiver.
-    let reachable = original.replace(
+    // The local payload alias is checked source, but it adds an unprojected
+    // loan outside the exact nested-projected Graph profile. Retain it in full.
+    let alias_source = original.replace(
         "{return 0;}",
         "{let view=bytes_as_slice(payload); while byte_len(view)>0usize {if byte_len(view)>0usize {break;} 0} 0}",
     );
+    let (_, alias_program) = resolved(&alias_source);
+    assert_eq!(graph_schema(&alias_program).unwrap_err().code, "SPX-G410");
+    // A scalar parameter provides a dynamic, nonfinite loop without creating
+    // another loan. The original inspect function retains its full nested loan.
+    let reachable = original
+        .replace(
+            "fn take(value:own Outer)->i64",
+            "fn take(value:own Outer, count:i64)->i64",
+        )
+        .replace("{return 0;}", "{while count>0 {if count>0 {break;} 0} 0}");
     let (ast, program) = resolved(&reachable);
     assert!(crate::hir::copy_discard_program_uses(&program));
     assert!(!authenticate_finite_composition(&program).unwrap());
