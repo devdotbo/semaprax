@@ -500,7 +500,7 @@ fn expression_identity_and_reentry_cannot_reuse_another_refusal_view() {
     use crate::source_verify::recovery::Recovery;
     let program =
         crate::parse(&source("let bad: bool = 1; bad"), Path::new("identity.spx")).unwrap();
-    let ExprKind::Block { tail, .. } = &program.functions[0].body else {
+    let ExprKind::Block { tail, .. } = &program.functions[0].body.kind else {
         panic!("block");
     };
     let copied = tail.as_ref().clone();
