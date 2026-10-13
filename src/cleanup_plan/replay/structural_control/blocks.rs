@@ -369,7 +369,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
     }
     if plan.lexical_control.is_none() {
         let mut expected_count = 0usize;
-        for (expression, fact) in expressions.entries() {
+        for (expression, fact) in expressions.entries_paid(function, budget)? {
             budget.charge(function, 1, "structural call coverage")?;
             if fact.is_some() {
                 expected_count = expected_count

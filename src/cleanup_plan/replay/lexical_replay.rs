@@ -30,7 +30,13 @@ pub(super) fn validate_paid(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<(), expression_facts::errors::EngineError> {
-    validate_core(program, function, budget, None, expression_facts::paid)
+    validate_core(
+        program,
+        function,
+        budget,
+        None,
+        expression_facts::paid_arena,
+    )
 }
 
 fn validate_core<'hir, E: semantic_refusal::Error>(
@@ -41,7 +47,7 @@ fn validate_core<'hir, E: semantic_refusal::Error>(
     build_facts: impl FnOnce(
         &'hir ResolvedFunction,
         &mut ReplayBudget,
-    ) -> Result<BTreeMap<ExpressionId, Option<CallFact<'hir>>>, E>,
+    ) -> Result<expression_facts::Facts<'hir>, E>,
 ) -> Result<(), E> {
     let plan = &function.cleanup_plan;
     selected_profile::validate(program, function, budget)?;
@@ -90,10 +96,14 @@ fn validate_core<'hir, E: semantic_refusal::Error>(
         validate_required_status_sources(program, function)?;
         let storage = validate_slots_paid_core::<E>(function, budget)?;
         let leaves = collect_leaves_paid(function, budget)?;
-        validate_status_sources_core::<E>(function, &expression_facts)?;
+        expression_facts::receiving::validate_status_sources_core::<E>(
+            function,
+            &expression_facts,
+            budget,
+        )?;
         validate_regions(function, &storage)?;
         validate_entry(function, &storage, &leaves)?;
-        validate_blocks_and_edges(
+        expression_facts::receiving::validate_blocks_and_edges(
             program,
             function,
             &expression_facts,

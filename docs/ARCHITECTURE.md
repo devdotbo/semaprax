@@ -4525,6 +4525,12 @@ for scoped fields and charged by the declaration-index capacity census.
 The cleanup builder and independent replay retain an ordinary zero-owned
 CallCommit followed by the checked Vec/2 operation-failure edge. Extracted
 `cleanup_plan/replay/expression_facts` owns the same operation/child inventory;
+its private paid arena keeps full exact expression keys and call payloads in an
+indexed AVL tree. Online duplicate selection follows the complete preorder
+dispatch. Full replacement backing and caller work are paid before acquisition
+or comparisons; successor indices preserve ordered receiving iteration. The
+complete BTree producer and receiving controls remain independently executable
+for source-bound parity. This carrier change grants no replay admission.
 `hir/validation/upcast` and `hir/resolve_expr/finish` preserve existing class and
 resolver stack checks while keeping module ceilings fixed.
 `workspace_graph/callee_inventory` and the retained validation `scalar_link`

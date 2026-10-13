@@ -14,6 +14,7 @@ pub(super) fn validate(
             .as_deref_mut()
             .ok_or_else(|| replay_error(function, "selected scalar helper lacks backing"))?;
         expression_facts::expression_facts_with_reservation(function, physical)
+            .map(expression_facts::Facts::Tree)
     })
 }
 
@@ -22,7 +23,7 @@ pub(super) fn validate_paid(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<(), expression_facts::errors::EngineError> {
-    validate_core(program, function, budget, expression_facts::paid)
+    validate_core(program, function, budget, expression_facts::paid_arena)
 }
 
 fn validate_core<'hir, E: semantic_refusal::Error>(
@@ -32,7 +33,7 @@ fn validate_core<'hir, E: semantic_refusal::Error>(
     build_facts: impl FnOnce(
         &'hir ResolvedFunction,
         &mut ReplayBudget,
-    ) -> Result<BTreeMap<ExpressionId, Option<CallFact<'hir>>>, E>,
+    ) -> Result<expression_facts::Facts<'hir>, E>,
 ) -> Result<(), E> {
     if !records::signature(program, function, budget)? {
         return Err(replay_error(

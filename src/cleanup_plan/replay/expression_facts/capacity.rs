@@ -225,4 +225,78 @@ impl<'a, 'p> FactCapacity<'a, 'p> {
         }
         Ok(())
     }
+    pub(super) fn arena_expression(&mut self, expression: &'a ResolvedExpr) -> Result<(), Failure> {
+        self.work = self.work.checked_sub(1).ok_or_else(|| Failure {
+            detail: "expression-fact inventory exceeds work limit",
+            physical: false,
+        })?;
+        // ExpressionId clones retain existing Arc backing; only the new map and
+        // argument slots historically allocated. Keep their clone reservations
+        // conservatively while payloads now borrow the current HIR.
+        if let Some((callee, args)) = crate::hir::closure::once::call(expression) {
+            self.reserve(callee.as_str().len())?;
+            return self.array::<ExpressionId>(args.len());
+        }
+        match &expression.kind {
+            ResolvedExprKind::Invoke { callable, args } => {
+                self.reserve("core.function.invoke".len())?;
+                self.array::<ExpressionId>(args.len())?;
+                self.array::<ResolvedType>(1)?;
+                self.types(&callable.ty)?;
+            }
+            ResolvedExprKind::VecFieldRead { args, .. } => {
+                self.reserve(crate::vec_field::ID.len())?;
+                self.array::<ExpressionId>(args.len())?;
+            }
+            ResolvedExprKind::LiteralFormat { args, .. } => {
+                self.reserve(crate::literal_format::ID.len())?;
+                self.array::<ExpressionId>(args.len())?;
+            }
+            ResolvedExprKind::Call {
+                callee,
+                instance,
+                args,
+                type_arguments,
+            } => {
+                self.reserve(callee.as_str().len())?;
+                if let Some(instance) = instance {
+                    self.reserve(instance.as_str().len())?;
+                }
+                self.array::<ExpressionId>(args.len())?;
+                self.array::<ResolvedType>(type_arguments.len())?;
+                for ty in type_arguments {
+                    self.types(ty)?;
+                }
+            }
+            ResolvedExprKind::NativeRustImportCall(call)
+                if crate::cleanup_plan::native_rust::owns(expression) =>
+            {
+                self.reserve(call.import.as_str().len())?;
+                self.array::<ExpressionId>(call.args.len())?;
+            }
+            ResolvedExprKind::HostCommandCall(call) => {
+                // The callee is a fixed compiler identity and allocates nothing;
+                // its original text term stays reserved, conservatively.
+                self.reserve(crate::command_io_ops::id(call.operation).len())?;
+                self.array::<ExpressionId>(call.args.len())?;
+            }
+            ResolvedExprKind::ByteRange { operation, .. } => {
+                self.reserve(operation.as_str().len())?;
+                self.array::<ExpressionId>(3)?;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    pub(super) fn arena_reserve_array<T>(&mut self, count: usize) -> Result<(), Failure> {
+        self.array::<T>(count)
+    }
+    pub(super) fn arena_work(&mut self, units: usize) -> Result<(), Failure> {
+        let remaining = self.work.checked_sub(units).ok_or(Failure {
+            detail: "expression-fact arena work exceeds limit",
+            physical: false,
+        })?;
+        self.work = remaining;
+        Ok(())
+    }
 }

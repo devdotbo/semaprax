@@ -1,9 +1,13 @@
 //! Exact operation and child facts used by independent cleanup replay.
 use super::*;
+mod arena;
 #[cfg(test)]
 mod borrowed;
 mod capacity;
 pub(super) mod errors;
+pub(super) mod receiving;
+#[cfg(test)]
+mod saved;
 #[cfg(test)]
 pub(super) use borrowed::BorrowedFacts;
 
@@ -11,6 +15,7 @@ pub(super) use borrowed::BorrowedFacts;
 /// metered borrowed table. Ordinary tree lookup keeps its original behavior.
 pub(super) enum Entries<'a> {
     Tree(std::collections::btree_map::Iter<'a, ExpressionId, Option<CallFact<'a>>>),
+    Arena(arena::Iter<'a, 'a>),
     #[cfg(test)]
     Borrowed(std::slice::Iter<'a, (ExpressionId, Option<CallFact<'a>>)>),
 }
@@ -19,6 +24,7 @@ impl<'a> Iterator for Entries<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             Self::Tree(entries) => entries.next(),
+            Self::Arena(entries) => entries.next(),
             #[cfg(test)]
             Self::Borrowed(entries) => entries.next().map(|(key, value)| (key, value)),
         }
@@ -30,6 +36,13 @@ pub(super) trait Lookup {
         false
     }
     fn entries(&self) -> Entries<'_>;
+    fn entries_paid(
+        &self,
+        _: &ResolvedFunction,
+        _: &mut ReplayBudget,
+    ) -> Result<Entries<'_>, Diagnostic> {
+        Ok(self.entries())
+    }
     fn fact<'a>(
         &'a self,
         function: &ResolvedFunction,
@@ -63,6 +76,48 @@ impl<'hir> Lookup for BTreeMap<ExpressionId, Option<CallFact<'hir>>> {
         _: &mut ReplayBudget,
     ) -> Result<Option<&'a Option<CallFact<'a>>>, Diagnostic> {
         Ok(self.get(key))
+    }
+}
+
+pub(super) enum Facts<'hir> {
+    Tree(BTreeMap<ExpressionId, Option<CallFact<'hir>>>),
+    Arena(arena::Arena<'hir>),
+}
+impl Facts<'_> {
+    pub(super) fn len(&self) -> usize {
+        match self {
+            Self::Tree(tree) => tree.len(),
+            Self::Arena(arena) => arena.len(),
+        }
+    }
+}
+impl Lookup for Facts<'_> {
+    fn entries(&self) -> Entries<'_> {
+        match self {
+            Self::Tree(tree) => Lookup::entries(tree),
+            Self::Arena(arena) => Lookup::entries(arena),
+        }
+    }
+    fn entries_paid(
+        &self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<Entries<'_>, Diagnostic> {
+        match self {
+            Self::Tree(tree) => tree.entries_paid(function, budget),
+            Self::Arena(arena) => arena.entries_paid(function, budget),
+        }
+    }
+    fn fact<'a>(
+        &'a self,
+        function: &ResolvedFunction,
+        key: &ExpressionId,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<&'a Option<CallFact<'a>>>, Diagnostic> {
+        match self {
+            Self::Tree(tree) => tree.fact(function, key, budget),
+            Self::Arena(arena) => arena.fact(function, key, budget),
+        }
     }
 }
 
@@ -121,7 +176,7 @@ fn with_capacity<'hir, P: errors::Policy>(
 pub(super) fn with_budget<'hir>(
     function: &'hir ResolvedFunction,
     budget: &mut ReplayBudget,
-) -> Result<BTreeMap<ExpressionId, Option<CallFact<'hir>>>, Diagnostic> {
+) -> Result<Facts<'hir>, Diagnostic> {
     let builder_payer = match budget.payer {
         AllocationPayer::ActiveBuilder => Some(capacity::Payer::ActiveBuilder),
         #[cfg(test)]
@@ -130,7 +185,7 @@ pub(super) fn with_budget<'hir>(
     };
     if let Some(builder_payer) = builder_payer {
         budget.prepare_builder(function)?;
-        let result = with_capacity::<errors::Selected>(function, builder_payer);
+        let result = arena::build::<errors::Selected>(function, builder_payer, budget);
         return match result {
             Err(errors::EngineError::Fact(receipt)) if receipt.physical() => {
                 Err(budget.budget_refusal(function, receipt.detail(), ""))
@@ -141,17 +196,60 @@ pub(super) fn with_budget<'hir>(
             Err(errors::EngineError::Failed) => {
                 Err(budget.budget_refusal(function, "expression facts already failed", ""))
             }
-            Ok(facts) => Ok(facts),
+            Ok(facts) => Ok(Facts::Arena(facts)),
         };
     }
-    match budget.physical.as_deref_mut() {
-        Some(physical) => expression_facts_with_reservation(function, physical),
-        None => expression_facts(function),
+    let mut physical = budget.physical.take();
+    let result = match physical.as_deref_mut() {
+        Some(physical) => {
+            arena::build::<errors::Legacy>(function, capacity::Payer::Selected(physical), budget)
+                .map(Facts::Arena)
+        }
+        None => expression_facts(function).map(Facts::Tree),
+    };
+    budget.physical = physical;
+    if budget.refusal_spent {
+        if let Some(physical) = budget.physical.as_deref_mut() {
+            physical.reject();
+        }
     }
+    result
 }
 
 /// Only this shared producer's errors are inline. Other replay children keep
 /// their owned Diagnostic contract until their independent migration.
+pub(super) fn paid_arena<'hir>(
+    function: &'hir ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<Facts<'hir>, errors::EngineError> {
+    let mut physical = budget.physical.take();
+    let result = match physical.as_deref_mut() {
+        Some(physical) => {
+            arena::build::<errors::Selected>(function, capacity::Payer::Selected(physical), budget)
+                .map(Facts::Arena)
+        }
+        None => paid(function, budget).map(Facts::Tree),
+    };
+    budget.physical = physical;
+    if budget.refusal_spent {
+        if let Some(physical) = budget.physical.as_deref_mut() {
+            physical.reject();
+        }
+    }
+    match result {
+        Err(errors::EngineError::Fact(receipt)) if receipt.physical() => {
+            // End the physical sub-borrow before consuming the original
+            // budget's prepaid text. Never format or discard its first receipt.
+            Err(errors::EngineError::Owned(budget.budget_refusal(
+                function,
+                receipt.detail(),
+                "",
+            )))
+        }
+        other => other,
+    }
+}
+
 pub(super) fn paid<'hir>(
     function: &'hir ResolvedFunction,
     budget: &mut ReplayBudget,
@@ -298,6 +396,7 @@ fn collect_expression_facts<'a, P: errors::Policy>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod arena;
     mod errors;
     mod payloads;
     use crate::cleanup_plan::replay::physical_storage::PhysicalReservation;

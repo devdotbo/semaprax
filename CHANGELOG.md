@@ -1,5 +1,12 @@
 # Changelog
 
+- Author a paid online expression-fact AVL arena for ordinary cleanup replay and
+  selected callers (#813). Retain complete original BTree producers/receivers,
+  exact payloads and immediate duplicate order; prepay full overlapping backing
+  and caller work without changing caps. Full semantic/allocation/Drop controls
+  and source joins are authored; focused execution and application gains remain
+  unqualified.
+
 - Restore the original common diagnostic help shortlist by ranking the explicit
   fused-profile F130 advice after ordinary diagnostic advice. Exact profile help
   and the complete inventory stay available; both old exact CLI owners remain

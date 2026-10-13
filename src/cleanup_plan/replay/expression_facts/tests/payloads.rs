@@ -282,3 +282,5 @@ fn current_fact_payloads_survive_complete_replay_and_drop_before_hir_owner() {
     }
     assert_eq!(program, original);
 }
+
+mod arena;

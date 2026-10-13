@@ -1,0 +1,18 @@
+{
+  "schema": "semaprax.pending-owning-selectors.v1",
+  "package": "semaprax",
+  "status": "source-only; not executed",
+  "selectors": [
+    "cleanup_plan::replay::expression_facts::tests::arena::arena_full_tree_receiving_preserves_all_fields_and_first_diagnostic",
+    "cleanup_plan::replay::expression_facts::tests::arena::arena_exact_backing_work_short_sticky_and_receiving_drop_are_independent",
+    "cleanup_plan::replay::expression_facts::tests::arena::arena_duplicate_precedes_later_descendant_and_keeps_complete_diagnostic",
+    "cleanup_plan::replay::expression_facts::tests::arena::arena_rotations_equal_text_keys_and_order_match_full_tree",
+    "cleanup_plan::replay::expression_facts::tests::arena::complete_original_producers_receivers_and_full_arena_dispatch_are_source_locked",
+    "cleanup_plan::replay::expression_facts::tests::arena::arena_actual_builder_and_complete_saved_builder_are_independent_through_drop",
+    "cleanup_plan::replay::expression_facts::tests::payloads::arena::arena_all_operation_kinds_zero_one_seventeen_keep_complete_owned_oracle",
+    "cleanup_plan::replay::selected_entry::tests::fact_errors::arena::paid_arena_actual_session_exact_short_zero_work_and_drop_keep_first_receipt",
+    "cleanup_plan::replay::expression_facts::tests::selected_fact_owner_matches_legacy_exact_and_one_short",
+    "cleanup_plan::replay::selected_entry::tests::fact_errors::paid_fact_cursor_and_growth_exact_short_keep_first_receipt_and_drop_one_owner",
+    "cleanup_plan::replay::allocation::tests::ordinary_builder_payment_never_grants_selected_admission_and_covers_index_drop"
+  ]
+}

@@ -611,10 +611,10 @@ fn validate_structure_with_budget_storage<'hir>(
     validate_required_status_sources(program, function)?;
     let storage = validate_slots_paid(function, budget)?;
     let leaves = collect_leaves_paid(function, budget)?;
-    validate_status_sources(function, &expression_facts)?;
+    expression_facts::receiving::validate_status_sources(function, &expression_facts, budget)?;
     validate_regions(function, &storage)?;
     validate_entry(function, &storage, &leaves)?;
-    validate_blocks_and_edges(
+    expression_facts::receiving::validate_blocks_and_edges(
         program,
         function,
         &expression_facts,

@@ -937,6 +937,22 @@ macro_rules! verifier_source_inventory {
 macro_rules! lower_source_inventory {
     () => {
         concat!(
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/saved.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena/producer.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/borrowed/tests.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/borrowed.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/capacity.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/errors.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/tests/arena.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/tests/errors/old/capacity.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/tests/errors/old.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/tests/errors.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/tests/payloads/arena.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/tests/payloads.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors/arena.rs"),
             include_str!("../../../../../src/cleanup_plan/build.rs"),
             include_str!("../../../../../src/cleanup_plan/build/capacity_observation.rs"),
             include_str!("../../../../../src/cleanup_plan/build/capacity_observation/legacy.rs"),
