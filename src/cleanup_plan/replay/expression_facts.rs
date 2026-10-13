@@ -614,3 +614,6 @@ mod tests {
         assert!(!called, "invalid CFG must refuse before fact construction");
     }
 }
+
+#[cfg(test)]
+mod receiving_before;

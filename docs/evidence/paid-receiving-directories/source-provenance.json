@@ -1,0 +1,137 @@
+{
+  "base": "d58b68ed867c8e5d7bd5736237c383e2fbd58427",
+  "original_sources": {
+    "src/cleanup_plan/replay/expression_facts/receiving.rs": {
+      "archive": "src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt",
+      "sha256": "44b46c6954724d9fb9bc90dfbcb0a77e86bbf55998fdbe1ed3973393bc6744b7"
+    },
+    "src/cleanup_plan/replay/expression_facts.rs": {
+      "archive": "src__cleanup_plan__replay__expression_facts.rs.before.txt",
+      "sha256": "bd26157302dd48bc3df7b8635ac9d277a64978a23e2c438a0865dfdd88ccd2ea"
+    }
+  },
+  "full_current_projection": {
+    "src/cleanup_plan/replay/expression_facts/receiving.rs": [
+      {
+        "name": "receiving.rs: complete directory/hook projection 1",
+        "from": "//! Complete ordinary receiving dispatch; old tree branches remain compiled independently.\nuse super::*;\nmod directory;\nuse directory::Directory;\n\npub(in crate::cleanup_plan::replay) fn validate_status_sources(\n",
+        "to": "//! Complete ordinary receiving dispatch; old tree branches remain compiled independently.\nuse super::*;\n\npub(in crate::cleanup_plan::replay) fn validate_status_sources(\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 2",
+        "from": "    }\n    let expressions: &dyn Lookup = facts;\n    let mut ids = Directory::new(function, budget, \"cleanup status identity directory\")?;\n    for source in &function.cleanup_plan.status_sources {\n        if !ids.insert(function, &source.id, budget)? {\n            return Err(E::structural(\n                function,\n",
+        "to": "    }\n    let expressions: &dyn Lookup = facts;\n    let mut ids = BTreeSet::new();\n    for source in &function.cleanup_plan.status_sources {\n        if !ids.insert(source.id.clone()) {\n            return Err(E::structural(\n                function,\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 3",
+        "from": "                },\n            ) => {\n                let mut cases = Directory::new(\n                    function,\n                    budget,\n                    \"cleanup checked arithmetic case directory\",\n                )?;\n                for case in normalized_cases {\n                    cases.insert(function, *case, budget)?;\n                }\n                if cases.is_empty() || cases.len() != normalized_cases.len() {\n                    return Err(replay_error(\n",
+        "to": "                },\n            ) => {\n                let cases = normalized_cases.iter().copied().collect::<BTreeSet<_>>();\n                if cases.is_empty() || cases.len() != normalized_cases.len() {\n                    return Err(replay_error(\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 4",
+        "from": "    let expressions: &dyn Lookup = facts;\n    let plan = &function.cleanup_plan;\n    let mut statuses = Directory::new(function, budget, \"cleanup status source directory\")?;\n    for source in &plan.status_sources {\n        statuses.insert(function, &source.id, budget)?;\n    }\n    for (index, edge) in plan.edges.iter().enumerate() {\n        if edge.id.0 != u32_index(function, index, \"cleanup edge\")?\n",
+        "to": "    let expressions: &dyn Lookup = facts;\n    let plan = &function.cleanup_plan;\n    let statuses = plan\n        .status_sources\n        .iter()\n        .map(|source| source.id.clone())\n        .collect::<BTreeSet<_>>();\n    for (index, edge) in plan.edges.iter().enumerate() {\n        if edge.id.0 != u32_index(function, index, \"cleanup edge\")?\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 5",
+        "from": "    }\n\n    let mut referenced_edges =\n        Directory::new(function, budget, \"cleanup referenced edge directory\")?;\n    let mut referenced_exits =\n        Directory::new(function, budget, \"cleanup referenced exit directory\")?;\n    let mut committed_calls = Directory::new(function, budget, \"cleanup committed call directory\")?;\n    for (index, block) in plan.blocks.iter().enumerate() {\n        if block.id.0 != u32_index(function, index, \"cleanup block\")?\n",
+        "to": "    }\n\n    let mut referenced_edges = BTreeSet::new();\n    let mut referenced_exits = BTreeSet::new();\n    let mut committed_calls = BTreeSet::new();\n    for (index, block) in plan.blocks.iter().enumerate() {\n        if block.id.0 != u32_index(function, index, \"cleanup block\")?\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 6",
+        "from": "                    let source_flags = validate_place(function, source, storage, leaves)?;\n                    let destination_flags = validate_place(function, destination, storage, leaves)?;\n                    let mut source_directory =\n                        Directory::new(function, budget, \"cleanup transfer source flag directory\")?;\n                    for flag in source_flags {\n                        source_directory.insert(function, flag, budget)?;\n                    }\n                    let mut destination_directory = Directory::new(\n                        function,\n                        budget,\n                        \"cleanup transfer destination flag directory\",\n                    )?;\n                    for flag in destination_flags {\n                        destination_directory.insert(function, flag, budget)?;\n                    }\n                    let source_flags = source_directory;\n                    let destination_flags = destination_directory;\n                    if source_flags.len() != destination_flags.len()\n                        || !source_flags.is_disjoint(&destination_flags, function, budget)?\n                    {\n                        return Err(replay_error(\n",
+        "to": "                    let source_flags = validate_place(function, source, storage, leaves)?;\n                    let destination_flags = validate_place(function, destination, storage, leaves)?;\n                    let source_flags = source_flags.into_iter().collect::<BTreeSet<_>>();\n                    let destination_flags = destination_flags.into_iter().collect::<BTreeSet<_>>();\n                    if source_flags.len() != destination_flags.len()\n                        || !source_flags.is_disjoint(&destination_flags)\n                    {\n                        return Err(replay_error(\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 7",
+        "from": "                    // call legitimately commits once per proof domain; the typed\n                    // skeleton comparison counts those per-domain commits exactly.\n                    if !committed_calls.insert(function, call, budget)?\n                        && plan.lexical_control.is_none()\n                    {\n                        return Err(replay_error(\n                            function,\n",
+        "to": "                    // call legitimately commits once per proof domain; the typed\n                    // skeleton comparison counts those per-domain commits exactly.\n                    if !committed_calls.insert(call.clone()) && plan.lexical_control.is_none() {\n                        return Err(replay_error(\n                            function,\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 8",
+        "from": "                    }\n                    let mut previous = None;\n                    let mut consumed =\n                        Directory::new(function, budget, \"cleanup consumed flag directory\")?;\n                    for argument in arguments {\n                        if previous.is_some_and(|value| value >= argument.parameter_index) {\n",
+        "to": "                    }\n                    let mut previous = None;\n                    let mut consumed = BTreeSet::new();\n                    for argument in arguments {\n                        if previous.is_some_and(|value| value >= argument.parameter_index) {\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 9",
+        "from": "                        }\n                        for flag in validate_place(function, &argument.source, storage, leaves)? {\n                            if !consumed.insert(function, flag, budget)? {\n                                return Err(replay_error(\n                                    function,\n",
+        "to": "                        }\n                        for flag in validate_place(function, &argument.source, storage, leaves)? {\n                            if !consumed.insert(flag) {\n                                return Err(replay_error(\n                                    function,\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 10",
+        "from": "                }\n                CleanupTransition::SelectFailure { source } => {\n                    require_status_paid(function, &statuses, source, budget)?;\n                    if selected.replace(source).is_some() {\n                        return Err(replay_error(\n",
+        "to": "                }\n                CleanupTransition::SelectFailure { source } => {\n                    require_status(function, &statuses, source)?;\n                    if selected.replace(source).is_some() {\n                        return Err(replay_error(\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 11",
+        "from": "        match &block.terminator {\n            CleanupTerminator::Goto(edge) => {\n                validate_owned_edge_paid(function, block.id, *edge, &mut referenced_edges, budget)?;\n                if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always)\n                    && !(matches!(\n",
+        "to": "        match &block.terminator {\n            CleanupTerminator::Goto(edge) => {\n                validate_owned_edge(function, block.id, *edge, &mut referenced_edges)?;\n                if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always)\n                    && !(matches!(\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 12",
+        "from": "                }\n                for edge in edges {\n                    validate_owned_edge_paid(\n                        function,\n                        block.id,\n                        *edge,\n                        &mut referenced_edges,\n                        budget,\n                    )?;\n                }\n                validate_branch_pair(\n",
+        "to": "                }\n                for edge in edges {\n                    validate_owned_edge(function, block.id, *edge, &mut referenced_edges)?;\n                }\n                validate_branch_pair(\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 13",
+        "from": "                    .ok()\n                    .is_none_or(|value| value >= plan.exits.len())\n                    || !referenced_exits.insert(function, *exit, budget)?\n                {\n                    return Err(replay_error(\n",
+        "to": "                    .ok()\n                    .is_none_or(|value| value >= plan.exits.len())\n                    || !referenced_exits.insert(*exit)\n                {\n                    return Err(replay_error(\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 14",
+        "from": "        }\n    }\n    let mut expected_calls = Directory::new(function, budget, \"cleanup expected call directory\")?;\n    for (expression, fact) in expressions.entries_paid(function, budget)? {\n        if fact.is_some() {\n            expected_calls.insert(function, expression, budget)?;\n        }\n    }\n    // Control-flow-dead calls after an abrupt exit are never lowered, so the\n    // lexical profile checks commit coverage in the typed skeleton instead.\n    if plan.lexical_control.is_none()\n        && !committed_calls.same_keys(&expected_calls, function, budget)?\n    {\n        return Err(replay_error(\n            function,\n",
+        "to": "        }\n    }\n    let expected_calls = expressions\n        .entries_paid(function, budget)?\n        .filter_map(|(expression, fact)| fact.as_ref().map(|_| expression.clone()))\n        .collect::<BTreeSet<_>>();\n    // Control-flow-dead calls after an abrupt exit are never lowered, so the\n    // lexical profile checks commit coverage in the typed skeleton instead.\n    if plan.lexical_control.is_none() && committed_calls != expected_calls {\n        return Err(replay_error(\n            function,\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 15",
+        "from": "    condition: &EdgeCondition,\n    expressions: &dyn Lookup,\n    statuses: &Directory<&StatusSourceId>,\n    budget: &mut ReplayBudget,\n) -> Result<(), Diagnostic> {\n",
+        "to": "    condition: &EdgeCondition,\n    expressions: &dyn Lookup,\n    statuses: &BTreeSet<StatusSourceId>,\n    budget: &mut ReplayBudget,\n) -> Result<(), Diagnostic> {\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 16",
+        "from": "        }\n        EdgeCondition::StatusZero(source) | EdgeCondition::StatusNonzero(source) => {\n            require_status_paid(function, statuses, source, budget)\n        }\n    }\n",
+        "to": "        }\n        EdgeCondition::StatusZero(source) | EdgeCondition::StatusNonzero(source) => {\n            require_status(function, statuses, source)\n        }\n    }\n",
+        "count": 1
+      },
+      {
+        "name": "receiving.rs: complete directory/hook projection 17",
+        "from": "    }\n}\n\nfn validate_owned_edge_paid(\n    function: &ResolvedFunction,\n    owner: BlockId,\n    edge: EdgeId,\n    referenced: &mut Directory<EdgeId>,\n    budget: &mut ReplayBudget,\n) -> Result<(), Diagnostic> {\n    let plan = &function.cleanup_plan;\n    let Some(item) = plan.edges.get(edge.0 as usize) else {\n        return Err(replay_error(\n            function,\n            \"cleanup terminator references unknown edge\",\n        ));\n    };\n    if item.id != edge || item.from != owner || !referenced.insert(function, edge, budget)? {\n        return Err(replay_error(\n            function,\n            \"cleanup edge has the wrong owner or is referenced repeatedly\",\n        ));\n    }\n    Ok(())\n}\n\nfn require_status_paid(\n    function: &ResolvedFunction,\n    statuses: &Directory<&StatusSourceId>,\n    source: &StatusSourceId,\n    budget: &mut ReplayBudget,\n) -> Result<(), Diagnostic> {\n    if statuses.contains(function, &source, budget)? {\n        Ok(())\n    } else {\n        Err(replay_error(\n            function,\n            format_args!(\n                \"cleanup plan references unknown status source `{}`\",\n                source.expression\n            ),\n        ))\n    }\n}\n\n#[cfg(test)]\nmod tests;\n",
+        "to": "    }\n}\n",
+        "count": 1
+      }
+    ],
+    "src/cleanup_plan/replay/expression_facts.rs": [
+      {
+        "name": "expression_facts.rs: complete directory/hook projection 1",
+        "from": "    }\n}\n\n#[cfg(test)]\nmod receiving_before;\n",
+        "to": "    }\n}\n",
+        "count": 1
+      }
+    ]
+  },
+  "complete_helpers": {
+    "validate_owned_edge": {
+      "archive": "validate_owned_edge.before.txt",
+      "sha256": "91dfa6bd834f3799e44e3ecaebd0e3de9627888c9ce9d3f93466c8e47171cdc6"
+    },
+    "require_status": {
+      "archive": "require_status.before.txt",
+      "sha256": "aa5f4d7ce07de0d664342ad9eca628848ea5f4fe36e4fb082d594ba9265e7160"
+    }
+  }
+}

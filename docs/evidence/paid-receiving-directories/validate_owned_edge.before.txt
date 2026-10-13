@@ -1,0 +1,21 @@
+fn validate_owned_edge(
+    function: &ResolvedFunction,
+    owner: BlockId,
+    edge: EdgeId,
+    referenced: &mut BTreeSet<EdgeId>,
+) -> Result<(), Diagnostic> {
+    let plan = &function.cleanup_plan;
+    let Some(item) = plan.edges.get(edge.0 as usize) else {
+        return Err(replay_error(
+            function,
+            "cleanup terminator references unknown edge",
+        ));
+    };
+    if item.id != edge || item.from != owner || !referenced.insert(edge) {
+        return Err(replay_error(
+            function,
+            "cleanup edge has the wrong owner or is referenced repeatedly",
+        ));
+    }
+    Ok(())
+}

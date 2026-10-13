@@ -1,5 +1,7 @@
 //! Complete ordinary receiving dispatch; old tree branches remain compiled independently.
 use super::*;
+mod directory;
+use directory::Directory;
 
 pub(in crate::cleanup_plan::replay) fn validate_status_sources(
     function: &ResolvedFunction,
@@ -21,9 +23,9 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_core<E: semantic_
         return super::super::validate_status_sources_core::<E>(function, tree);
     }
     let expressions: &dyn Lookup = facts;
-    let mut ids = BTreeSet::new();
+    let mut ids = Directory::new(function, budget, "cleanup status identity directory")?;
     for source in &function.cleanup_plan.status_sources {
-        if !ids.insert(source.id.clone()) {
+        if !ids.insert(function, &source.id, budget)? {
             return Err(E::structural(
                 function,
                 semantic_refusal::Atom::RepeatedStatus(source.id.expression.clone()),
@@ -65,7 +67,14 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_core<E: semantic_
                     normalized_cases, ..
                 },
             ) => {
-                let cases = normalized_cases.iter().copied().collect::<BTreeSet<_>>();
+                let mut cases = Directory::new(
+                    function,
+                    budget,
+                    "cleanup checked arithmetic case directory",
+                )?;
+                for case in normalized_cases {
+                    cases.insert(function, *case, budget)?;
+                }
                 if cases.is_empty() || cases.len() != normalized_cases.len() {
                     return Err(replay_error(
                         function,
@@ -114,11 +123,10 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
     }
     let expressions: &dyn Lookup = facts;
     let plan = &function.cleanup_plan;
-    let statuses = plan
-        .status_sources
-        .iter()
-        .map(|source| source.id.clone())
-        .collect::<BTreeSet<_>>();
+    let mut statuses = Directory::new(function, budget, "cleanup status source directory")?;
+    for source in &plan.status_sources {
+        statuses.insert(function, &source.id, budget)?;
+    }
     for (index, edge) in plan.edges.iter().enumerate() {
         if edge.id.0 != u32_index(function, index, "cleanup edge")?
             || !block_exists(function, edge.from)
@@ -132,9 +140,11 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
         validate_edge_condition(function, &edge.condition, expressions, &statuses, budget)?;
     }
 
-    let mut referenced_edges = BTreeSet::new();
-    let mut referenced_exits = BTreeSet::new();
-    let mut committed_calls = BTreeSet::new();
+    let mut referenced_edges =
+        Directory::new(function, budget, "cleanup referenced edge directory")?;
+    let mut referenced_exits =
+        Directory::new(function, budget, "cleanup referenced exit directory")?;
+    let mut committed_calls = Directory::new(function, budget, "cleanup committed call directory")?;
     for (index, block) in plan.blocks.iter().enumerate() {
         if block.id.0 != u32_index(function, index, "cleanup block")?
             || usize::try_from(block.region.0)
@@ -176,10 +186,23 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                     require_expression(function, expressions, at, budget)?;
                     let source_flags = validate_place(function, source, storage, leaves)?;
                     let destination_flags = validate_place(function, destination, storage, leaves)?;
-                    let source_flags = source_flags.into_iter().collect::<BTreeSet<_>>();
-                    let destination_flags = destination_flags.into_iter().collect::<BTreeSet<_>>();
+                    let mut source_directory =
+                        Directory::new(function, budget, "cleanup transfer source flag directory")?;
+                    for flag in source_flags {
+                        source_directory.insert(function, flag, budget)?;
+                    }
+                    let mut destination_directory = Directory::new(
+                        function,
+                        budget,
+                        "cleanup transfer destination flag directory",
+                    )?;
+                    for flag in destination_flags {
+                        destination_directory.insert(function, flag, budget)?;
+                    }
+                    let source_flags = source_directory;
+                    let destination_flags = destination_directory;
                     if source_flags.len() != destination_flags.len()
-                        || !source_flags.is_disjoint(&destination_flags)
+                        || !source_flags.is_disjoint(&destination_flags, function, budget)?
                     {
                         return Err(replay_error(
                             function,
@@ -300,7 +323,9 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                     // Lexical return domains duplicate postcondition bodies, so one
                     // call legitimately commits once per proof domain; the typed
                     // skeleton comparison counts those per-domain commits exactly.
-                    if !committed_calls.insert(call.clone()) && plan.lexical_control.is_none() {
+                    if !committed_calls.insert(function, call, budget)?
+                        && plan.lexical_control.is_none()
+                    {
                         return Err(replay_error(
                             function,
                             "call has more than one atomic commit",
@@ -340,7 +365,8 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                         ));
                     }
                     let mut previous = None;
-                    let mut consumed = BTreeSet::new();
+                    let mut consumed =
+                        Directory::new(function, budget, "cleanup consumed flag directory")?;
                     for argument in arguments {
                         if previous.is_some_and(|value| value >= argument.parameter_index) {
                             return Err(replay_error(
@@ -375,7 +401,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                             }
                         }
                         for flag in validate_place(function, &argument.source, storage, leaves)? {
-                            if !consumed.insert(flag) {
+                            if !consumed.insert(function, flag, budget)? {
                                 return Err(replay_error(
                                     function,
                                     "atomic call commit consumes overlapping argument epochs",
@@ -385,7 +411,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                     }
                 }
                 CleanupTransition::SelectFailure { source } => {
-                    require_status(function, &statuses, source)?;
+                    require_status_paid(function, &statuses, source, budget)?;
                     if selected.replace(source).is_some() {
                         return Err(replay_error(
                             function,
@@ -423,7 +449,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
         }
         match &block.terminator {
             CleanupTerminator::Goto(edge) => {
-                validate_owned_edge(function, block.id, *edge, &mut referenced_edges)?;
+                validate_owned_edge_paid(function, block.id, *edge, &mut referenced_edges, budget)?;
                 if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always)
                     && !(matches!(
                         function.cleanup_plan.schema,
@@ -457,7 +483,13 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                     ));
                 }
                 for edge in edges {
-                    validate_owned_edge(function, block.id, *edge, &mut referenced_edges)?;
+                    validate_owned_edge_paid(
+                        function,
+                        block.id,
+                        *edge,
+                        &mut referenced_edges,
+                        budget,
+                    )?;
                 }
                 validate_branch_pair(
                     function,
@@ -469,7 +501,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                 if usize::try_from(exit.0)
                     .ok()
                     .is_none_or(|value| value >= plan.exits.len())
-                    || !referenced_exits.insert(*exit)
+                    || !referenced_exits.insert(function, *exit, budget)?
                 {
                     return Err(replay_error(
                         function,
@@ -485,13 +517,17 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
             }
         }
     }
-    let expected_calls = expressions
-        .entries_paid(function, budget)?
-        .filter_map(|(expression, fact)| fact.as_ref().map(|_| expression.clone()))
-        .collect::<BTreeSet<_>>();
+    let mut expected_calls = Directory::new(function, budget, "cleanup expected call directory")?;
+    for (expression, fact) in expressions.entries_paid(function, budget)? {
+        if fact.is_some() {
+            expected_calls.insert(function, expression, budget)?;
+        }
+    }
     // Control-flow-dead calls after an abrupt exit are never lowered, so the
     // lexical profile checks commit coverage in the typed skeleton instead.
-    if plan.lexical_control.is_none() && committed_calls != expected_calls {
+    if plan.lexical_control.is_none()
+        && !committed_calls.same_keys(&expected_calls, function, budget)?
+    {
         return Err(replay_error(
             function,
             "cleanup plan does not contain exactly one atomic commit for every call",
@@ -504,7 +540,7 @@ fn validate_edge_condition(
     function: &ResolvedFunction,
     condition: &EdgeCondition,
     expressions: &dyn Lookup,
-    statuses: &BTreeSet<StatusSourceId>,
+    statuses: &Directory<&StatusSourceId>,
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     match condition {
@@ -519,7 +555,7 @@ fn validate_edge_condition(
             require_expression(function, expressions, scrutinee, budget)
         }
         EdgeCondition::StatusZero(source) | EdgeCondition::StatusNonzero(source) => {
-            require_status(function, statuses, source)
+            require_status_paid(function, statuses, source, budget)
         }
     }
 }
@@ -539,3 +575,48 @@ fn require_expression(
         ))
     }
 }
+
+fn validate_owned_edge_paid(
+    function: &ResolvedFunction,
+    owner: BlockId,
+    edge: EdgeId,
+    referenced: &mut Directory<EdgeId>,
+    budget: &mut ReplayBudget,
+) -> Result<(), Diagnostic> {
+    let plan = &function.cleanup_plan;
+    let Some(item) = plan.edges.get(edge.0 as usize) else {
+        return Err(replay_error(
+            function,
+            "cleanup terminator references unknown edge",
+        ));
+    };
+    if item.id != edge || item.from != owner || !referenced.insert(function, edge, budget)? {
+        return Err(replay_error(
+            function,
+            "cleanup edge has the wrong owner or is referenced repeatedly",
+        ));
+    }
+    Ok(())
+}
+
+fn require_status_paid(
+    function: &ResolvedFunction,
+    statuses: &Directory<&StatusSourceId>,
+    source: &StatusSourceId,
+    budget: &mut ReplayBudget,
+) -> Result<(), Diagnostic> {
+    if statuses.contains(function, &source, budget)? {
+        Ok(())
+    } else {
+        Err(replay_error(
+            function,
+            format_args!(
+                "cleanup plan references unknown status source `{}`",
+                source.expression
+            ),
+        ))
+    }
+}
+
+#[cfg(test)]
+mod tests;
