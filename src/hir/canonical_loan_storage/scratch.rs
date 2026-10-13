@@ -1,0 +1,9 @@
+//! Actual append probe backing retained with the receiving immutable storage.
+//! Entries are private discovery metadata, never admission or plan authority.
+use super::*;
+#[derive(Default)]
+pub(super) struct Scratch {
+    pub(super) local: Vec<(LoanId, usize)>,
+    pub(super) liveness: Vec<(LiveKey, Option<usize>, usize)>,
+    pub(super) ids: Vec<(IdKey, LoanId, usize)>,
+}

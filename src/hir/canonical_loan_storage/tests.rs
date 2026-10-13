@@ -7,6 +7,9 @@ use crate::hir::{hir_error, HirValidator};
 use crate::loan_plan::{Loan, LoanEndpoint, LoanPlan, LoanProgramPoint};
 use std::collections::BTreeMap;
 mod old;
+mod reuse;
+// The existing literal from_plans controls below retain the complete saved
+// allocation receiver. reuse tests exercise the actual production append path.
 
 pub(super) fn fixture() -> ResolvedProgram {
     let source = crate::check(

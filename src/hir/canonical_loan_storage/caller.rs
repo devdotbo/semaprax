@@ -79,6 +79,27 @@ fn ensure<T>(values: &mut Vec<T>, needed: usize, payer: Payer<'_>) -> Result<(),
     }
     Ok(())
 }
+fn ensure_probe<T>(values: &mut Vec<T>, needed: usize, payer: Payer<'_>) -> Result<(), Diagnostic> {
+    // Even spare-capacity and zero requests preserve the selected first refusal.
+    payer.reserve(0)?;
+    if needed <= values.capacity() {
+        return Ok(());
+    }
+    // Probe entries are drained every append. Exact replacement avoids
+    // doubling beyond the next complete plan while retaining prepaid backing.
+    let capacity = needed;
+    let bytes = backing::<T>(capacity, payer)?;
+    payer.reserve(bytes)?;
+    if values.try_reserve_exact(capacity - values.len()).is_err() {
+        return Err(payer.capacity(bytes, 0));
+    }
+    if values.capacity() != capacity {
+        let excess =
+            backing::<T>(values.capacity().saturating_sub(capacity), payer).unwrap_or(usize::MAX);
+        return Err(payer.capacity(bytes, excess));
+    }
+    Ok(())
+}
 fn count(current: usize, added: usize, payer: Payer<'_>) -> Result<usize, Diagnostic> {
     current
         .checked_add(added)
@@ -162,6 +183,7 @@ fn prepare_with_comparison<'a>(
             ids: Vec::new(),
             liveness: Vec::new(),
             origins: Vec::new(),
+            _scratch: Scratch::default(),
         };
         for function in program
             .functions
@@ -200,9 +222,29 @@ fn prepare_with_comparison<'a>(
 }
 
 fn append(storage: &mut Storage<'_>, plan: LoanPlan, payer: Payer<'_>) -> Result<(), Diagnostic> {
+    payer.reserve(0)?;
+    // Detaching only owned backing lets the original complete receiver read
+    // persistent directories without holding a mutable borrow of their owner.
+    let mut scratch = std::mem::take(&mut storage._scratch);
+    let result = append_reusing(storage, plan, payer, &mut scratch);
+    scratch.local.clear();
+    scratch.liveness.clear();
+    scratch.ids.clear();
+    // Success and refusal retain the same backing through receiving Drop.
+    storage._scratch = scratch;
+    result
+}
+
+fn append_reusing(
+    storage: &mut Storage<'_>,
+    plan: LoanPlan,
+    payer: Payer<'_>,
+    scratch: &mut Scratch,
+) -> Result<(), Diagnostic> {
     let base = storage.origins.len();
-    let mut local = Vec::new();
-    ensure(&mut local, plan.loans.len(), payer)?;
+    scratch.local.clear();
+    let local = &mut scratch.local;
+    ensure_probe(local, plan.loans.len(), payer)?;
     for (offset, loan) in plan.loans.iter().enumerate() {
         local.push((
             loan.id,
@@ -227,8 +269,9 @@ fn append(storage: &mut Storage<'_>, plan: LoanPlan, payer: Payer<'_>) -> Result
         };
         live_count = count(live_count, live.len(), payer)?;
     }
-    let mut live_probe = Vec::new();
-    ensure(&mut live_probe, live_count, payer)?;
+    scratch.liveness.clear();
+    let live_probe = &mut scratch.liveness;
+    ensure_probe(live_probe, live_count, payer)?;
     for endpoint in &plan.endpoints {
         let live = match endpoint.point.phase {
             LoanPointPhase::Before => &endpoint.live_before,
@@ -271,8 +314,9 @@ fn append(storage: &mut Storage<'_>, plan: LoanPlan, payer: Payer<'_>) -> Result
             source += 1;
         }
     }
-    let mut id_probe = Vec::new();
-    ensure(&mut id_probe, plan.loans.len(), payer)?;
+    scratch.ids.clear();
+    let id_probe = &mut scratch.ids;
+    ensure_probe(id_probe, plan.loans.len(), payer)?;
     id_probe.extend(
         plan.loans
             .iter()
@@ -302,10 +346,10 @@ fn append(storage: &mut Storage<'_>, plan: LoanPlan, payer: Payer<'_>) -> Result
     ensure(&mut storage.origins, origin_needed, payer)?;
     storage
         .ids
-        .extend(id_probe.into_iter().map(|(key, id, _)| (key, id)));
+        .extend(id_probe.drain(..).map(|(key, id, _)| (key, id)));
     storage.liveness.extend(
         live_probe
-            .into_iter()
+            .drain(..)
             .map(|(key, ordinal, _)| (key, ordinal.expect("checked every source endpoint"))),
     );
     storage
@@ -321,10 +365,20 @@ pub(super) fn capacity_failure(requested: usize, excess: usize) -> Diagnostic {
     Payer::current().capacity(requested, excess)
 }
 
+// Saved raw receiver preserves the complete original literal paid controls.
+// Production preparation always uses append above, never this compatibility seam.
+#[cfg(test)]
+pub(super) fn from_plans<'a>(
+    program: &'a ResolvedProgram,
+    plans: Vec<LoanPlan>,
+) -> Result<Storage<'a>, Diagnostic> {
+    super::caller_before::from_plans(program, plans)
+}
+
 // Raw plan injection exists only for independent receiver/error-priority tests.
 // Production acquisition requires the unconstructible current ConstructorSeed.
 #[cfg(test)]
-pub(super) fn from_plans<'a>(
+pub(super) fn from_plans_reused<'a>(
     program: &'a ResolvedProgram,
     plans: Vec<LoanPlan>,
 ) -> Result<Storage<'a>, Diagnostic> {
@@ -333,6 +387,7 @@ pub(super) fn from_plans<'a>(
         ids: Vec::new(),
         liveness: Vec::new(),
         origins: Vec::new(),
+        _scratch: Scratch::default(),
     };
     let payer = Payer::current();
     payer.reserve(0)?;
@@ -340,4 +395,12 @@ pub(super) fn from_plans<'a>(
         append(&mut storage, plan, payer)?;
     }
     Ok(storage)
+}
+
+#[cfg(test)]
+pub(super) fn append_for_receiving(
+    storage: &mut Storage<'_>,
+    plan: LoanPlan,
+) -> Result<(), Diagnostic> {
+    append(storage, plan, Payer::current())
 }

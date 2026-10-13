@@ -1,0 +1,50 @@
+{
+  "old_sha256": "47bec8003e7c5e7056edd1a3beeadddc355c9d422fdf184df71d1d3f0b9e7f0b",
+  "hooks": [
+    {
+      "name": "explicit_saved_test_seam_and_current_raw_seam",
+      "current": "// Saved raw receiver preserves the complete original literal paid controls.\n// Production preparation always uses append above, never this compatibility seam.\n#[cfg(test)]\npub(super) fn from_plans<'a>(\n    program: &'a ResolvedProgram,\n    plans: Vec<LoanPlan>,\n) -> Result<Storage<'a>, Diagnostic> {\n    super::caller_before::from_plans(program, plans)\n}\n\n// Raw plan injection exists only for independent receiver/error-priority tests.\n// Production acquisition requires the unconstructible current ConstructorSeed.\n#[cfg(test)]\npub(super) fn from_plans_reused<'a>(\n    program: &'a ResolvedProgram,\n    plans: Vec<LoanPlan>,\n) -> Result<Storage<'a>, Diagnostic> {\n    let mut storage = Storage {\n        program,\n        ids: Vec::new(),\n        liveness: Vec::new(),\n        origins: Vec::new(),\n        _scratch: Scratch::default(),\n    };\n    let payer = Payer::current();\n    payer.reserve(0)?;\n    for plan in plans {\n        append(&mut storage, plan, payer)?;\n    }\n    Ok(storage)\n}\n\n#[cfg(test)]\npub(super) fn append_for_receiving(\n    storage: &mut Storage<'_>,\n    plan: LoanPlan,\n) -> Result<(), Diagnostic> {\n    append(storage, plan, Payer::current())\n}\n",
+      "original": "// Raw plan injection exists only for independent receiver/error-priority tests.\n// Production acquisition requires the unconstructible current ConstructorSeed.\n#[cfg(test)]\npub(super) fn from_plans<'a>(\n    program: &'a ResolvedProgram,\n    plans: Vec<LoanPlan>,\n) -> Result<Storage<'a>, Diagnostic> {\n    let mut storage = Storage {\n        program,\n        ids: Vec::new(),\n        liveness: Vec::new(),\n        origins: Vec::new(),\n    };\n    let payer = Payer::current();\n    payer.reserve(0)?;\n    for plan in plans {\n        append(&mut storage, plan, payer)?;\n    }\n    Ok(storage)\n}\n"
+    },
+    {
+      "name": "empty_retained_scratch_initializer",
+      "current": "            _scratch: Scratch::default(),\n",
+      "original": ""
+    },
+    {
+      "name": "exact_probe_backing_constructor",
+      "current": "fn ensure_probe<T>(values: &mut Vec<T>, needed: usize, payer: Payer<'_>) -> Result<(), Diagnostic> {\n    // Even spare-capacity and zero requests preserve the selected first refusal.\n    payer.reserve(0)?;\n    if needed <= values.capacity() {\n        return Ok(());\n    }\n    // Probe entries are drained every append. Exact replacement avoids\n    // doubling beyond the next complete plan while retaining prepaid backing.\n    let capacity = needed;\n    let bytes = backing::<T>(capacity, payer)?;\n    payer.reserve(bytes)?;\n    if values.try_reserve_exact(capacity - values.len()).is_err() {\n        return Err(payer.capacity(bytes, 0));\n    }\n    if values.capacity() != capacity {\n        let excess =\n            backing::<T>(values.capacity().saturating_sub(capacity), payer).unwrap_or(usize::MAX);\n        return Err(payer.capacity(bytes, excess));\n    }\n    Ok(())\n}\n",
+      "original": ""
+    },
+    {
+      "name": "retained_scratch_dispatch_complete_receiver",
+      "current": "fn append(storage: &mut Storage<'_>, plan: LoanPlan, payer: Payer<'_>) -> Result<(), Diagnostic> {\n    payer.reserve(0)?;\n    // Detaching only owned backing lets the original complete receiver read\n    // persistent directories without holding a mutable borrow of their owner.\n    let mut scratch = std::mem::take(&mut storage._scratch);\n    let result = append_reusing(storage, plan, payer, &mut scratch);\n    scratch.local.clear();\n    scratch.liveness.clear();\n    scratch.ids.clear();\n    // Success and refusal retain the same backing through receiving Drop.\n    storage._scratch = scratch;\n    result\n}\n\nfn append_reusing(\n    storage: &mut Storage<'_>,\n    plan: LoanPlan,\n    payer: Payer<'_>,\n    scratch: &mut Scratch,\n) -> Result<(), Diagnostic> {\n",
+      "original": "fn append(storage: &mut Storage<'_>, plan: LoanPlan, payer: Payer<'_>) -> Result<(), Diagnostic> {\n"
+    },
+    {
+      "name": "local_origin_probe_backing",
+      "current": "    scratch.local.clear();\n    let local = &mut scratch.local;\n    ensure_probe(local, plan.loans.len(), payer)?;",
+      "original": "    let mut local = Vec::new();\n    ensure(&mut local, plan.loans.len(), payer)?;"
+    },
+    {
+      "name": "liveness_probe_backing",
+      "current": "    scratch.liveness.clear();\n    let live_probe = &mut scratch.liveness;\n    ensure_probe(live_probe, live_count, payer)?;",
+      "original": "    let mut live_probe = Vec::new();\n    ensure(&mut live_probe, live_count, payer)?;"
+    },
+    {
+      "name": "identity_probe_backing",
+      "current": "    scratch.ids.clear();\n    let id_probe = &mut scratch.ids;\n    ensure_probe(id_probe, plan.loans.len(), payer)?;",
+      "original": "    let mut id_probe = Vec::new();\n    ensure(&mut id_probe, plan.loans.len(), payer)?;"
+    },
+    {
+      "name": "identity_probe_drain",
+      "current": "id_probe.drain(..).map",
+      "original": "id_probe.into_iter().map"
+    },
+    {
+      "name": "liveness_probe_drain",
+      "current": "live_probe\n            .drain(..)",
+      "original": "live_probe\n            .into_iter()"
+    }
+  ]
+}

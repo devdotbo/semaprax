@@ -2,6 +2,10 @@
 use super::{Diagnostic, ExpressionId, Place, ResolvedProgram};
 use crate::loan_plan::{LoanCause, LoanId, LoanPointPhase};
 pub(super) mod caller;
+#[cfg(test)]
+mod caller_before;
+mod scratch;
+use scratch::Scratch;
 mod deferred;
 pub(in crate::hir) use deferred::Deferred;
 #[cfg(test)]
@@ -15,6 +19,8 @@ pub(super) struct Storage<'a> {
     ids: Vec<(IdKey, LoanId)>,
     liveness: Vec<(LiveKey, usize)>,
     origins: Vec<Place>,
+    // Retain reusable paid append backing with this exact receiving owner.
+    _scratch: Scratch,
 }
 impl Storage<'_> {
     pub(super) fn is_current(&self, program: &ResolvedProgram) -> bool {

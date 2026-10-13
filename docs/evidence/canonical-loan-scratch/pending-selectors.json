@@ -1,0 +1,114 @@
+{
+  "status": "source registration only; executable list/build/test not run",
+  "selectors": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::funded_current_storage_matches_saved_complete_inventory_and_rejects_transplants",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::plan_batch_priority_last_local_id_wins_and_moved_origins_match_saved_receiver",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::actual_storage_payer_literal_capacities_exact_short_and_drop_keep_first_receipt",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::actual_canonical_caller_funds_rebuild_append_and_drop_on_one_invocation",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::reuse::complete_saved_append_and_current_reuse_keep_all_original_attack_priorities_and_origins",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::reuse::literal_reusable_scratch_is_paid_once_and_retained_through_exact_short_receiver_drop",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::reuse::full_saved_and_current_batch_observers_include_all_probe_backing_and_actual_drop",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::reuse::poisoned_receiving_owner_cannot_reuse_paid_spare_capacity_or_replace_first_refusal",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::reuse::complete_old_current_constructor_and_validation_keep_exact_subject_and_full_outcomes",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::reuse::growing_probe_replacements_use_exact_needed_backing_and_clear_all_entries",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::reuse::complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are_bound",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::tests::reuse::full_current_and_complete_saved_prepare_pay_every_actual_acquisition_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "new": true
+    }
+  ],
+  "required_existing_controls": "Retain unchanged canonical_loan_storage/deferred registered controls, full owning overlay receivers, function-scope funding and actual unchanged Catalog/application corpora in root minimum batch. No smaller application gate substituted."
+}

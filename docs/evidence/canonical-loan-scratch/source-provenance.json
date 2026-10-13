@@ -1,0 +1,54 @@
+{
+  "base": "9218e04681586fa41d3f26c3866050e227a0c3cc",
+  "qualification": "source-only",
+  "sources": [
+    {
+      "path": "src/hir/canonical_loan_storage.rs",
+      "sha256": "2e91ae3407014b5df2070aa18d0d770cdc5a6c8949c81a090dc1cc0c2917b929",
+      "lines": 44
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller.rs",
+      "sha256": "3b587ace29cd3942be08931c4d5ac0690f7cbd1f431ed208822904866e940a30",
+      "lines": 392
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller_before.rs",
+      "sha256": "44874e9c35637d2c926287d92385cb85bcd565eb51dae789d2692adf49464b71",
+      "lines": 331
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/scratch.rs",
+      "sha256": "4c7ce462e1f8c38fced82d0f0d9871397792429264a4acc7dbd355b9676ace97",
+      "lines": 9
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/tests.rs",
+      "sha256": "d1a31bd500e69cb4aac4fbd957e7a20ed4a63832f983776d214f370cbb94a9a3",
+      "lines": 405
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "sha256": "d7cb73a837eb24fe83297218f372f5bf8d5fd78b89b7899cc522dbbee9e6b3cb",
+      "lines": 358
+    }
+  ],
+  "old_objects": [
+    {
+      "archive": "docs/evidence/canonical-loan-scratch/caller_before.txt",
+      "git_object": "9218e04681586fa41d3f26c3866050e227a0c3cc:src/hir/canonical_loan_storage/caller.rs",
+      "sha256": "47bec8003e7c5e7056edd1a3beeadddc355c9d422fdf184df71d1d3f0b9e7f0b"
+    },
+    {
+      "archive": "docs/evidence/canonical-loan-scratch/storage_before.txt",
+      "git_object": "9218e04681586fa41d3f26c3866050e227a0c3cc:src/hir/canonical_loan_storage.rs",
+      "sha256": "088a2d91895c12065ada643e98c96f1a1f261aa78923d24b19662cd27795e0bc"
+    },
+    {
+      "archive": "docs/evidence/canonical-loan-scratch/tests_before.txt",
+      "git_object": "9218e04681586fa41d3f26c3866050e227a0c3cc:src/hir/canonical_loan_storage/tests.rs",
+      "sha256": "2db71a1312772f847fe19c934ee47c54a685a6562fd59cb4090f99879a15a8e7"
+    }
+  ],
+  "compiled_old_seams": "Only two empty Scratch initializer field hooks; complete full old caller bodies unchanged. Exact hashed full-current inverse projection includes every current source byte."
+}
