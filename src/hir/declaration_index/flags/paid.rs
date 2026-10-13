@@ -270,3 +270,8 @@ impl DeclarationIndex {
         )
     }
 }
+
+mod inventory_constructor;
+pub(crate) use inventory_constructor::{
+    identity as inventory_identity, substitute as inventory_substitute, InventoryPayer,
+};

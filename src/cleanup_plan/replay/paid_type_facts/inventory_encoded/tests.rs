@@ -209,3 +209,6 @@ fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
         include_str!("../../../../../docs/evidence/schema-summary/classifier_string.rs.before")
     );
 }
+
+#[path = "tests/constructors.rs"]
+mod constructors;

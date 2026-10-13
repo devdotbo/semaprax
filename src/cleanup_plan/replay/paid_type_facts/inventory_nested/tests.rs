@@ -171,6 +171,7 @@ fn held_metadata_root_suffix_zero_one_short_and_sticky_work_keep_original_querie
             index.has_record_invariant(&key),
             index.cached_zero_argument_facts(&key),
             index.type_id(text),
+            index.cached_zero_argument_facts(&key),
         );
         let (work, refused) = crate::bounded_output::with_limit(usize::MAX, || {
             let mut budget = ReplayBudget::new();
@@ -181,7 +182,8 @@ fn held_metadata_root_suffix_zero_one_short_and_sticky_work_keep_original_querie
             let present = metadata::has_invariant(index, &key, &mut payer).unwrap();
             let cached = metadata::cached_identity(index, &full_key, &mut payer).unwrap();
             let named = metadata::named_type(index, text, &mut payer).unwrap();
-            assert_eq!((value, present, cached, named), expected);
+            let borrowed = metadata::cached_zero_argument(index, &key, &mut payer).unwrap();
+            assert_eq!((value, present, cached, named, borrowed), expected);
             before - payer.budget.remaining
         });
         assert!(!refused);
@@ -204,7 +206,17 @@ fn held_metadata_root_suffix_zero_one_short_and_sticky_work_keep_original_querie
                                         metadata::cached_identity(index, &full_key, &mut payer)
                                             .and_then(|cached| {
                                                 metadata::named_type(index, text, &mut payer)
-                                                    .map(|named| (value, present, cached, named))
+                                                    .and_then(|named| {
+                                                        metadata::cached_zero_argument(
+                                                            index, &key, &mut payer,
+                                                        )
+                                                        .map(|borrowed| {
+                                                            (
+                                                                value, present, cached, named,
+                                                                borrowed,
+                                                            )
+                                                        })
+                                                    })
                                             })
                                     },
                                 )
@@ -242,7 +254,9 @@ fn complete_original_nested_and_index_sources_stay_independent_and_byte_exact() 
         include_str!("../../../../../docs/evidence/schema-summary/nested.rs.before")
     );
     assert_eq!(
-        include_str!("../../../../hir/declaration_index.rs").replacen(
+        include_str!("../../../../hir/declaration_index.rs")
+            .replacen("pub(crate) use flags::{inventory_identity, inventory_substitute, InventoryPayer};\n", "", 1)
+            .replacen(
             "mod inventory_lookup;\n",
             "",
             1
@@ -275,4 +289,109 @@ fn full_forged_cycle_missing_arity_and_case_metadata_keep_original_refusal_order
             );
         });
     }
+}
+
+#[test]
+fn full_native_authored_admission_first_lookup_order_and_forged_metadata_keep_paid_drop() {
+    let program = fixture();
+    let function = &program.functions[0];
+    let indexes = std::iter::once(program.declarations.clone())
+        .chain(program.declarations.inventory_nested_forgeries_for_test());
+    for index in indexes {
+        let mut roots = vec![
+            ResolvedType::Bytes,
+            ResolvedType::I64,
+            nominal("n.Outcome", vec![]),
+            nominal("n.Config", vec![]),
+        ];
+        for width in [0, 1, 17] {
+            roots.push(nominal(
+                "n.Outcome",
+                vec![
+                    ResolvedType::Function {
+                        parameters: vec![ResolvedType::Bytes; width],
+                        result: Box::new(ResolvedType::I64),
+                    };
+                    width
+                ],
+            ));
+        }
+        if let Some(id) = index.type_id("Option") {
+            roots.push(ResolvedType::Nominal {
+                declaration: id.clone(),
+                arguments: vec![ResolvedType::String],
+            });
+        }
+        if let Some(id) = index.type_id("Result") {
+            roots.push(ResolvedType::Nominal {
+                declaration: id.clone(),
+                arguments: vec![ResolvedType::String, ResolvedType::I64],
+            });
+            roots.push(ResolvedType::Nominal {
+                declaration: id.clone(),
+                arguments: vec![ResolvedType::Bytes, ResolvedType::Bytes],
+            });
+        }
+        for ty in roots {
+            let expected = index.classifier_admission_for_test(&ty);
+            let query = |payer: &mut Payer<'_>| {
+                let native = metadata::admission::native_owned(&index, &ty, payer)?;
+                metadata::admission::authored_byte_variant(&index, &ty, payer)
+                    .map(|authored| (native, authored))
+            };
+            let (work, refused) = crate::bounded_output::with_limit(usize::MAX, || {
+                let mut budget = ReplayBudget::new();
+                budget
+                    .charge(function, 0, "admission full receiver setup")
+                    .unwrap();
+                let before = budget.remaining;
+                assert_eq!(
+                    query(&mut super::super::tests::payer(function, &mut budget)).unwrap(),
+                    expected
+                );
+                before - budget.remaining
+            });
+            assert!(!refused && work > 0);
+            for limit in [work, work - 1, 0] {
+                let ((failed, observed), _, paid) =
+                    crate::bounded_output::with_limit_usage(usize::MAX, || {
+                        measure(|| {
+                            let mut budget = ReplayBudget::new();
+                            budget
+                                .charge(function, 0, "admission finite receiver setup")
+                                .unwrap();
+                            budget.remaining = limit;
+                            let result =
+                                query(&mut super::super::tests::payer(function, &mut budget));
+                            let failed = result.is_err();
+                            if limit == work {
+                                assert_eq!(result.as_ref().unwrap(), &expected);
+                            } else {
+                                assert!(failed);
+                                let before = crate::test_allocation_observer::current_metrics();
+                                let retry =
+                                    query(&mut super::super::tests::payer(function, &mut budget));
+                                assert!(retry.is_err());
+                                assert_eq!(
+                                    before.allocated,
+                                    crate::test_allocation_observer::current_metrics().allocated
+                                );
+                                drop(retry);
+                            }
+                            drop(result);
+                            drop(budget);
+                            failed
+                        })
+                    });
+                assert_eq!(failed, limit < work);
+                assert!(!observed.invalid && observed.allocated <= paid);
+                assert_eq!(observed.live, 0);
+                assert_eq!(observed.allocated, observed.freed);
+            }
+        }
+    }
+    assert_eq!(
+        include_str!("../../../../hir/declaration_index/flags/paid/admission.rs"),
+        include_str!("../../../../../docs/evidence/schema-summary/flags-paid-admission.rs.before")
+    );
 }

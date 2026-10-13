@@ -3,6 +3,7 @@ use super::{DeclarationIndex, ResolvedType, TypeFacts};
 mod nominal_key;
 mod paid;
 pub(crate) use paid::TypeFactsPayer;
+pub(crate) use paid::{inventory_identity, inventory_substitute, InventoryPayer};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct TypeFlags {

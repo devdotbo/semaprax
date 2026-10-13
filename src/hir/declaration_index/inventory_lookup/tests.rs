@@ -138,3 +138,69 @@ fn full_string_directory_keys_preserve_value_precedence_and_withhold_refused_val
         }
     }
 }
+
+#[test]
+fn complete_zero_argument_nominal_query_keeps_utf8_null_cache_precedence_and_exact_work() {
+    let ids = ["", "row", "prefix:0:", "é\0suffix", "🦀.row"];
+    let mut map = BTreeMap::new();
+    for (i, name) in ids.iter().enumerate() {
+        let id = DeclarationId::new(*name);
+        let key = ResolvedType::Nominal {
+            declaration: id,
+            arguments: Vec::new(),
+        }
+        .identity_key();
+        map.insert(key, i);
+    }
+    for name in ids.into_iter().chain(["missing", "é\0suffix.extra"]) {
+        let id = DeclarationId::new(name);
+        let key = ResolvedType::Nominal {
+            declaration: id.clone(),
+            arguments: Vec::new(),
+        }
+        .identity_key();
+        let expected = map.get(&key);
+        let mut used = 0;
+        let (value, observed) = crate::test_allocation_observer::measure(|| {
+            nominal::get(&map, &id, &mut |units| {
+                used += units;
+                true
+            })
+            .unwrap()
+        });
+        assert_eq!(value, expected);
+        assert!(!observed.invalid && observed.allocated == 0 && observed.live == 0);
+        let mut remaining = used;
+        assert_eq!(
+            nominal::get(&map, &id, &mut |units| {
+                if units > remaining {
+                    return false;
+                }
+                remaining -= units;
+                true
+            })
+            .unwrap(),
+            expected
+        );
+        assert_eq!(remaining, 0);
+        for available in [0, used - 1] {
+            let mut remaining = available;
+            let mut refused = false;
+            let mut after = 0;
+            assert!(nominal::get(&map, &id, &mut |units| {
+                if refused {
+                    after += 1;
+                    return false;
+                }
+                if units > remaining {
+                    refused = true;
+                    return false;
+                }
+                remaining -= units;
+                true
+            })
+            .is_err());
+            assert!(refused && after == 0);
+        }
+    }
+}

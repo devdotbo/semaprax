@@ -31,6 +31,11 @@
     "hir::declaration_index::inventory_lookup::tests::full_string_directory_keys_preserve_value_precedence_and_withhold_refused_values",
     "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::real_encoded_constructor_work_exact_short_zero_and_receiving_drop_keep_all_utf8",
     "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::complete_original_logical_frontier_suppression_strict_and_raw_modes_stay_equal",
-    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::full_classifier_string_original_body_remains_independent_of_work_receiver"
+    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::full_classifier_string_original_body_remains_independent_of_work_receiver",
+    "hir::declaration_index::inventory_lookup::tests::complete_zero_argument_nominal_query_keeps_utf8_null_cache_precedence_and_exact_work",
+    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::constructors::complete_callable_nominal_identity_zero_one_seventeen_arguments_keep_paid_work_and_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::constructors::complete_inline_semantic_substitution_refusal_and_nested_argument_clone_keep_original",
+    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::constructors::complete_prior_key_substitution_and_storage_receivers_remain_independent_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_native_authored_admission_first_lookup_order_and_forged_metadata_keep_paid_drop"
   ]
 }

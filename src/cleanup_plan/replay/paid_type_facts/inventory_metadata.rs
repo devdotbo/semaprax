@@ -151,3 +151,19 @@ pub(super) fn case_fields<'a>(
 ) -> Result<Option<&'a Vec<ResolvedFieldDeclaration>>, Diagnostic> {
     with_work(payer, |work| index.inventory_probes().case_rows(key, work))
 }
+
+// Exactly the zero-argument cache spelling, including full UTF8/embedded null
+// identity bytes. Caller must first match the entire nominal argument slice.
+pub(super) fn cached_zero_argument<'a>(
+    index: &'a DeclarationIndex,
+    declaration: &DeclarationId,
+    payer: &mut Payer<'_>,
+) -> Result<Option<&'a crate::hir::TypeFacts>, Diagnostic> {
+    with_work(payer, |work| {
+        index
+            .inventory_probes()
+            .cached_zero_argument(declaration, work)
+    })
+}
+
+pub(super) mod admission;

@@ -2,6 +2,7 @@
 use super::*;
 
 mod flags;
+pub(crate) use flags::{inventory_identity, inventory_substitute, InventoryPayer};
 pub(crate) use flags::{TypeFactsPayer, TypeFlags};
 pub(super) mod identity_payer;
 mod inventory_lookup;

@@ -331,6 +331,7 @@ mod declaration_index;
 pub(crate) mod identity_resolution;
 mod ordinary_identity;
 pub use declaration_index::{DeclarationIndex, dispose_declaration_index_for_private_contract};
+pub(crate) use declaration_index::{inventory_identity, inventory_substitute, InventoryPayer};
 pub(crate) use declaration_index::{TypeFactsPayer, TypeFlags};
 
 // Resolved data model and shared probes, re-exported so this module and its

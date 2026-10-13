@@ -42,3 +42,13 @@ pub(super) fn raw(
 
 #[cfg(test)]
 mod tests;
+
+impl crate::hir::InventoryPayer for Payer<'_> {
+    fn inventory_work(&mut self, units: usize, phase: &'static str) -> Result<(), Diagnostic> {
+        inventory_text::current(self)?;
+        self.budget.charge(self.function, units, phase)
+    }
+    fn inventory_clone(&mut self, ty: &ResolvedType) -> Result<ResolvedType, Diagnostic> {
+        inventory_clone::clone_type(ty, self)
+    }
+}

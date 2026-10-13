@@ -8,6 +8,10 @@ use std::cmp::Ordering;
 
 trait Key {
     fn parts(&self) -> (&[u8], &[u8]);
+    fn segments(&self) -> [&[u8]; 5] {
+        let (head, tail) = self.parts();
+        [head, tail, &[], &[], &[]]
+    }
     fn metered(&self) -> bool {
         false
     }
@@ -52,10 +56,8 @@ impl Ord for dyn Key + '_ {
         if !work.visit(1) {
             return Ordering::Equal;
         }
-        let (a, a_tail) = self.parts();
-        let (b, b_tail) = other.parts();
-        let mut a = a.iter().chain(a_tail).copied();
-        let mut b = b.iter().chain(b_tail).copied();
+        let mut a = self.segments().into_iter().flatten().copied();
+        let mut b = other.segments().into_iter().flatten().copied();
         loop {
             // Pay before fetching/comparing the next complete UTF-8 byte pair.
             if !work.visit(1) {
@@ -300,3 +302,5 @@ impl DeclarationIndex {
             .collect()
     }
 }
+
+mod nominal;

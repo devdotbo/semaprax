@@ -70,3 +70,33 @@ callbacks are only logical oracles and make no funding claim. This source stage
 was authored by bounded tool-free Claude and reviewed locally; no Rust execution
 has occurred. Complete flags/droppability/shape/collector funding and production
 adoption remain pending, with no gain or application-fit claim.
+
+
+## Mandatory-work key, substitution and complete admission receivers
+
+The additive `InventoryPayer` seam requires production work callbacks and full
+paid argument cloning; it has no default work method. The entire prior flags
+paid root, key, substitution and storage bodies remain independently compiled
+and byte-exact. The HIR change is one explicit private re-export; its complete
+prior body is preserved with an exact whole-source projection. Full original
+paid key/substitution methods are the receiving oracle, not only literal keys.
+
+Zero-argument nominal cache probes stream the complete identity length/text
+spelling with an inline decimal buffer. Decimal construction and each actual
+map comparison/byte pair use the held work callback; a refused provisional
+result is withheld. No owned query key or copied directory is acquired. The
+complete native/authored-byte admission fork retains original name lookup and
+field/parameter/case order, and propagates paid comparison failure as an error.
+Original methods, cache precedence, generic arguments and limits stay intact.
+Five further exact controls are authored, including exact/one-short/zero/sticky
+work and complete receiving Drop; all 34 selectors remain unexecuted.
+
+Claude's distinct seven-file constructor review found no definite blocker.
+Local follow-up verified helper visibility, shared/static DeclarationId cloning,
+alias reexports, full clone/Box prepayment and sticky current authority. The
+literal copy was kept separate from the old account-only cfg(test) work hook.
+The later nominal/admission additions were locally reviewed, not covered by
+that earlier provider payload. No lint suppression or work allowance was added.
+These constructors and predicates remain private staged work: full ordered
+classifier state, shape construction, streaming collector and genuine schema
+production adoption are still required before integration or funding claims.
