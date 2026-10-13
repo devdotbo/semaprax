@@ -4,7 +4,7 @@
   "base_head": "fe4e742a773a7e64bc2e1affccc85a545f39116f",
   "status": "unexecuted; static source comparisons, module registrations, budgets and include resolution only",
   "source_hashes": {
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "73c7aebaa010da3e0a8df5d1edbe21304d875a31ab0d4340dca250d161d39155",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "368f4085a1427526aaf095412b2981dc62e2f4c26d3c9166b6ef5baff2ccddf3",
     "src/cleanup_plan/replay.rs": "58befe1a9da44d20864389c03a42dee8202751132b5f5105f2ac601633af5e7f",
     "src/cleanup_plan/replay/expression_facts.rs": "bd26157302dd48bc3df7b8635ac9d277a64978a23e2c438a0865dfdd88ccd2ea",
     "src/cleanup_plan/replay/expression_facts/capacity.rs": "ee3bbd81a54e829a6859f5636ed272bc8a9f28177f4f8f4cf99b590243c967bd",
@@ -13,7 +13,7 @@
     "src/cleanup_plan/replay/scalar_replay.rs": "71c43c4c023be68c6673d348909b56a4362dbedafe5f8457b5c7808b94647873",
     "src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs": "1436760b3ed5d4a3b1612092f7d36df62dd6f3e9285af26fa03ab3e56f692228",
     "src/cleanup_plan/replay/structural_control/blocks.rs": "04b3b312866bde5572832a8a753cd963edcef45ec6f7dbcc5c2023bbba40928e",
-    "tests/hir_module_boundaries.rs": "1ba54d261a0dd382047d78e17a12a9869e2601b705b89747ad457001961a05f9",
+    "tests/hir_module_boundaries.rs": "cc287d0c2ade2ca8ec763a2b3343ed3d251fb8bb0ecfec4b0793cf956417a762",
     "docs/evidence/expression-fact-arena/original_capacity.txt": "f95245c44f2ec9ba13d288f58ceac361a3b3784d752fab16d4595de1b9b347ba",
     "docs/evidence/expression-fact-arena/original_facts.txt": "ff2ce0e84fe159c585901635fe49d356ac1342ccfeecd0ebe20ffb815d98e398",
     "docs/evidence/expression-fact-arena/original_receivers.txt": "6325749010bdbfec9b7172f1bed9e3aff18b41d2ad5236b099a67a855e0406c6",
