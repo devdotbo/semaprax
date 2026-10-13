@@ -67,7 +67,7 @@ impl<'a> Trace<'a> {
     }
 }
 #[derive(Clone, Copy)]
-pub(super) enum Query {
+pub(crate) enum Query {
     Stdout,
     Stderr,
     AnyOutput,
@@ -325,7 +325,7 @@ fn output(render: impl Fn(&mut dyn Write) -> fmt::Result) -> Option<String> {
     render(&mut text).ok()?;
     (text.len() == size.0).then_some(text)
 }
-pub(super) fn repeated<'a>(
+pub(crate) fn repeated<'a>(
     flow: &'a CapacityFlow,
     function: &'a str,
     inputs: &BTreeMap<&'a str, &'a FunctionCapacityInput>,
@@ -343,7 +343,7 @@ pub(super) fn repeated<'a>(
         write!(out, ". {REPAIR}")
     })
 }
-pub(super) fn loop_output<'a>(
+pub(crate) fn loop_output<'a>(
     flow: &'a CapacityFlow,
     function: &'a str,
     inputs: &BTreeMap<&'a str, &'a FunctionCapacityInput>,
@@ -365,7 +365,7 @@ pub(super) fn loop_output<'a>(
         write!(out, ". {REPAIR}")
     })
 }
-pub(super) fn cycle<'a>(
+pub(crate) fn cycle<'a>(
     functions: &BTreeMap<&'a str, ValidatedFunction<'a>>,
     residual: &BTreeMap<&'a str, usize>,
     start: &'a str,
@@ -410,6 +410,6 @@ pub(super) fn cycle<'a>(
 }
 
 /// Re-cloning the optional owned field cannot create an unpaid failure payload.
-pub(super) fn clone_help(text: &str) -> Option<String> {
+pub(crate) fn clone_help(text: &str) -> Option<String> {
     output(|out| out.write_str(text))
 }

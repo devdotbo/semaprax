@@ -1381,7 +1381,7 @@ mod tests;
 mod fused_tests;
 
 #[cfg(test)]
-mod before;
-#[cfg(test)]
-mod witness_tests;
-mod witnesses;
+#[path = "byte_data_capacity/before.rs"]
+pub(crate) mod before;
+#[path = "byte_data_capacity/witnesses.rs"]
+pub(crate) mod witnesses;

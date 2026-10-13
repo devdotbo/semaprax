@@ -102,7 +102,7 @@
       {
         "old_start": 1317,
         "old_end": 1317,
-        "replacement": "\n#[cfg(test)]\nmod before;\n#[cfg(test)]\nmod witness_tests;\nmod witnesses;\n"
+        "replacement": "\n#[cfg(test)]\n#[path = \"byte_data_capacity/before.rs\"]\npub(crate) mod before;\n#[path = \"byte_data_capacity/witnesses.rs\"]\npub(crate) mod witnesses;\n"
       }
     ]
   },
@@ -188,5 +188,29 @@
     "archive": "src__byte_data_capacity__fused_tests.rs.before.txt",
     "original_sha256": "4cdb8c7e19a6950080695c7707f4c7d7e99d43cf8050422f547a5f0bdf19cf58",
     "patch": []
+  },
+  {
+    "source": "src/lib.rs",
+    "archive": "src__lib.rs.before.txt",
+    "original_sha256": "69b48cf0848f16b0921b5add4fa022d070173bef1ee7452c48ecb03786a0983e",
+    "patch": [
+      {
+        "old_start": 83,
+        "old_end": 83,
+        "replacement": "\n/// Reservation-only bridge for the independently compiled transcript model.\n/// Uses the invocation's existing compiler payer, with no quota or authority\n/// creation. A false return omits optional help; it never replaces a refusal.\n#[doc(hidden)]\npub fn reserve_transcript_witness_preserving(bytes: usize, floor: usize) -> bool {\n    bounded_output::reserve_active_preserving(bytes, floor)\n}\n\n#[cfg(test)]\n#[path = \"byte_data_capacity/witness_tests.rs\"]\nmod transcript_witness_tests;\n\n"
+      }
+    ]
+  },
+  {
+    "source": "tests/cleanup_backends.rs",
+    "archive": "tests__cleanup_backends.rs.before.txt",
+    "original_sha256": "d23ca98a9af550c86fda3c220c23c90b577f12aa6577549cd14839e469bd85d4",
+    "patch": [
+      {
+        "old_start": 49,
+        "old_end": 49,
+        "replacement": "// The path-included model uses the actual compiler invocation payer. This\n// forwarder has no ledger, budget constructor, allowance, credit or refund.\nmod bounded_output {\n    pub(crate) fn reserve_active_preserving(bytes: usize, floor: usize) -> bool {\n        semaprax::reserve_transcript_witness_preserving(bytes, floor)\n    }\n}\n\n"
+      }
+    ]
   }
 ]

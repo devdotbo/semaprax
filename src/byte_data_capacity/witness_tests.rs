@@ -1,4 +1,4 @@
-use super::*;
+use crate::byte_data_capacity::*;
 fn write(site: &str) -> CapacityFlow {
     CapacityFlow::StdoutWrite {
         site: site.into(),
@@ -418,7 +418,7 @@ fn complete_original_receivers_and_current_named_hook_projection_are_source_exac
             "{:x}",
             crate::digest_hex::LowerHex(Sha256::digest(projection.as_bytes()))
         ),
-        "dfa654ec03a43b55a21f286d016e227a44fdfd0d1d0dc235b4e396fbef075b01"
+        "2290f7fdd985b3cc33e382db9eedb9f65bb7b25bf95c2ed475aec07b639bd884"
     );
     let rows: serde_json::Value = serde_json::from_str(projection).unwrap();
     let originals = [
@@ -431,6 +431,8 @@ fn complete_original_receivers_and_current_named_hook_projection_are_source_exac
         ("src/byte_data_capacity/fused.rs", include_str!("../../docs/evidence/transcript-flow-witness-821/src__byte_data_capacity__fused.rs.before.txt"), include_str!("../../src/byte_data_capacity/fused.rs")),
         ("src/byte_data_capacity/tests.rs", include_str!("../../docs/evidence/transcript-flow-witness-821/src__byte_data_capacity__tests.rs.before.txt"), include_str!("../../src/byte_data_capacity/tests.rs")),
         ("src/byte_data_capacity/fused_tests.rs", include_str!("../../docs/evidence/transcript-flow-witness-821/src__byte_data_capacity__fused_tests.rs.before.txt"), include_str!("../../src/byte_data_capacity/fused_tests.rs")),
+        ("src/lib.rs", include_str!("../../docs/evidence/transcript-flow-witness-821/src__lib.rs.before.txt"), include_str!("../../src/lib.rs")),
+        ("tests/cleanup_backends.rs", include_str!("../../docs/evidence/transcript-flow-witness-821/tests__cleanup_backends.rs.before.txt"), include_str!("../../tests/cleanup_backends.rs")),
     ];
     for row in rows.as_array().unwrap() {
         let (_, original, current) = originals
@@ -509,4 +511,23 @@ fn optional_owned_help_clone_is_paid_and_omits_after_sticky_refusal() {
     assert!(refused && copy.witness_help.is_none());
     assert_eq!(receipt.unwrap().requested, 1);
     assert_eq!(copy.to_string(), selected.to_string());
+}
+
+#[test]
+fn reservation_only_facade_uses_existing_payer_zero_and_sticky_refusal() {
+    let ((), refused, paid) = crate::bounded_output::with_limit_usage(9, || {
+        assert!(!crate::reserve_transcript_witness_preserving(10, 0));
+        assert!(crate::reserve_transcript_witness_preserving(4, 0));
+        assert!(crate::bounded_output::reserve_active_required(5));
+        assert!(crate::reserve_transcript_witness_preserving(0, 0));
+    });
+    assert!(!refused);
+    assert_eq!(paid, 9);
+    let ((), refused, paid, receipt) = crate::bounded_output::with_limit_usage_refusal(0, || {
+        assert!(!crate::bounded_output::reserve_active_required(1));
+        assert!(!crate::reserve_transcript_witness_preserving(0, 0));
+    });
+    assert!(refused);
+    assert_eq!(paid, 0);
+    assert_eq!(receipt.unwrap().requested, 1);
 }
