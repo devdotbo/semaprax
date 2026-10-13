@@ -80,3 +80,5 @@ executable in the comparison harness. The frozen-prefix SHA assertion checks
 exactly one added `cfg(test)` per entry, removes only those two ownership
 attributes and retains the original SHA for all remaining bytes. Production
 uses the funded receiver; no unpriced fallback or lint waiver is introduced.
+The saved lifecycle extension and its private import likewise have test-only
+ownership. Their complete original comparison body remains unchanged.

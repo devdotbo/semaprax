@@ -264,6 +264,8 @@ pub(crate) fn is_authenticated_nested_projected_byte_loan(
     }
     ty == ResolvedType::Bytes
 }
+#[cfg(test)]
+use inspection::extend_resolved_lifecycle_effects;
 #[allow(
     unused_imports,
     reason = "private Workspace Semantic Graph Phase-A inspection seam"
@@ -273,25 +275,23 @@ pub(crate) use inspection::{
     budgeted_workspace_expression_identity, budgeted_workspace_expression_identity_text,
     validate_attached_identity_references, workspace_expression_identity,
 };
-use inspection::{
-    extend_resolved_lifecycle_effects, path_is_prefix, reject_nul_identity,
-    validate_nul_free_identities,
-};
+use inspection::{path_is_prefix, reject_nul_identity, validate_nul_free_identities};
 pub(crate) use inspection::{visit_resolved_calls, visit_workspace_call_sites};
 
 pub(crate) use inspection::validate_core_with_storage as validate_core;
 #[cfg(test)]
 pub(crate) use type_reachability::owned_oracle::owned_reachable_types as owned_reachable_types_oracle;
 pub(crate) use type_reachability::{
-    authored_nominal_declarations, is_admitted_nested_owned_byte_record, is_flat_owned_byte_record,
-    reachable_authored_types, reachable_authored_types_with_roots, reachable_scalar_authored_types,
-    BorrowedTypeInventory,
+    BorrowedTypeInventory, authored_nominal_declarations, is_admitted_nested_owned_byte_record,
+    is_flat_owned_byte_record, reachable_authored_types, reachable_authored_types_with_roots,
+    reachable_scalar_authored_types,
 };
-pub(crate) use validation::resolved_type_contains_owned_bytes;
 #[cfg(test)]
 use validation::HirValidator;
+pub(crate) use validation::resolved_type_contains_owned_bytes;
 pub(crate) use workspace_link::{
-    copy_scalar_type, link_https_command_io_workspace, link_https_entry_workspace,
+    COPY_SCALAR_NAMES, LinkedScalarProjectParts, PACKAGE_SCALAR_NAME, copy_scalar_type,
+    link_https_command_io_workspace, link_https_entry_workspace,
     link_language_command_io_workspace, link_line_command_io_workspace,
     link_network_command_io_workspace, link_network_entry_workspace, link_owned_data_api_workspace,
     link_package_scalar_workspace, link_scalar_project_exports, link_scalar_project_workspace,
@@ -307,8 +307,7 @@ pub(crate) use workspace_link::{
     useful_data_workspace_parameter_admitted, useful_data_workspace_return_admitted,
     validate_stream_collection_record_program, validate_stream_data_program,
     validate_stream_nested_outcome_program, validate_stream_owned_program,
-    validate_stream_record_program, validate_stream_text_program, LinkedScalarProjectParts,
-    COPY_SCALAR_NAMES, PACKAGE_SCALAR_NAME,
+    validate_stream_record_program, validate_stream_text_program,
 };
 
 #[allow(dead_code, reason = "private Workspace Semantic Graph Phase-A seam")]
@@ -328,7 +327,7 @@ mod cache_codec;
 mod declaration_index;
 pub(crate) mod identity_resolution;
 mod ordinary_identity;
-pub use declaration_index::{dispose_declaration_index_for_private_contract, DeclarationIndex};
+pub use declaration_index::{DeclarationIndex, dispose_declaration_index_for_private_contract};
 pub(crate) use declaration_index::{TypeFactsPayer, TypeFlags};
 
 // Resolved data model and shared probes, re-exported so this module and its
@@ -361,7 +360,7 @@ use monomorphize::{
     materialize_function_template, resolved_owned_record_substitutions,
     resolved_scalar_substitutions, same_function_meaning,
 };
-pub use row_loan::{RowLoan, RowLoanVersion, ROW_LOAN_V1};
+pub use row_loan::{ROW_LOAN_V1, RowLoan, RowLoanVersion};
 pub(crate) use validation::byte_traversal::{
     function_uses as byte_traversal_function_uses, partial_receiver as is_partial_byte_receiver,
     program_uses as byte_traversal_program_uses, region as byte_traversal_region,
@@ -421,10 +420,6 @@ pub(crate) fn bounded_owned_record_template_for_function<'a>(
     }
     matched
 }
-pub(crate) use nodes::{
-    admitted_owned_byte_prelude_instance, is_refutable_match_scalar, is_scalar_resolved_type,
-    LinkedDeclarationFact, LinkedOwnedDataParts, LinkedScalarFunction,
-};
 pub use nodes::{
     ByteSliceExtent, ByteSliceProvenance, ByteSliceRangeStep, ByteSliceRootKind, Declaration,
     DeclarationKind, IdentityOrigin, OwnershipMode, ResolvedBinding, ResolvedFieldDeclaration,
@@ -435,6 +430,10 @@ pub use nodes::{
     ResolvedResourceDropKind, ResolvedType, ResolvedTypeDeclaration, ResolvedTypeDeclarationKind,
     ResolvedTypeParameterDeclaration, ResolvedVariantCaseDeclaration, ResolvedYieldsClause,
     TypeFacts, VectorFieldProvenance,
+};
+pub(crate) use nodes::{
+    LinkedDeclarationFact, LinkedOwnedDataParts, LinkedScalarFunction,
+    admitted_owned_byte_prelude_instance, is_refutable_match_scalar, is_scalar_resolved_type,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1108,7 +1107,9 @@ mod generic_environment_reuse_tests {
     #[test]
     fn current_byte_helper_body_proofs_keep_full_fresh_verdict_and_scalar_generic_reuse() {
         const BYTES: &str = include_str!("../tests/owned_data/byte_helper_renewal.spx");
-        let source = format!("{BYTES}\n@id(\"reuse.scalar\") fn scalar<T>(value:T)->T {{value}}\n@id(\"reuse.extra\") fn extra()->i64 {{scalar<i64>(7)}}\n");
+        let source = format!(
+            "{BYTES}\n@id(\"reuse.scalar\") fn scalar<T>(value:T)->T {{value}}\n@id(\"reuse.extra\") fn extra()->i64 {{scalar<i64>(7)}}\n"
+        );
         let previous = parse(&source);
         let (old, work) = fresh(&previous);
         let costs = work.costs();
@@ -1164,9 +1165,11 @@ mod generic_environment_reuse_tests {
         assert!(!refused);
         let invalid_oracle = full_verdict(&allocating, None);
         assert_eq!(invalid_oracle.as_ref().unwrap_err()[0].code, "SPX-T252");
-        assert!(invalid_oracle.as_ref().unwrap_err()[0]
-            .message
-            .contains("call `leaf` is not admitted in loop bodies"));
+        assert!(
+            invalid_oracle.as_ref().unwrap_err()[0]
+                .message
+                .contains("call `leaf` is not admitted in loop bodies")
+        );
         assert_eq!(
             full_verdict(&allocating, Some((&previous, &old, &costs)))
                 .as_ref()
@@ -1240,7 +1243,10 @@ mod generic_environment_reuse_tests {
     }
     #[test]
     fn current_agent_metadata_replays_with_no_previous_agent_authority() {
-        let source = format!("{}\n@id(\"reuse.scalar\") fn scalar<T>(value:T)->T {{value}}\n@id(\"reuse.extra\") fn extra()->i64 {{scalar<i64>(7)}}\n", crate::parser::agent_embedded_tests::source());
+        let source = format!(
+            "{}\n@id(\"reuse.scalar\") fn scalar<T>(value:T)->T {{value}}\n@id(\"reuse.extra\") fn extra()->i64 {{scalar<i64>(7)}}\n",
+            crate::parser::agent_embedded_tests::source()
+        );
         let previous = parse(&source);
         let (old, work) = fresh(&previous);
         let costs = work.costs();

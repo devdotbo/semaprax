@@ -927,6 +927,7 @@ pub(super) fn resolved_lifecycle_effects(
     Ok(effects)
 }
 
+#[cfg(test)]
 pub(super) fn extend_resolved_lifecycle_effects(
     program: &ResolvedProgram,
     ty: &ResolvedType,

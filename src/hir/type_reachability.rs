@@ -647,12 +647,10 @@ fn classify_nested_owned_byte_record(
     // These root branches need neither an owned clone nor a traversal cursor.
     // Preserve the exact profile result; nominal roots retain the complete walk.
     match root {
-        ResolvedType::Bytes => {
-            return NestedOwnedRecordAdmission::Admitted(NestedOwnedRecordFacts {
-                byte_leaves: 1,
-                visited_fields: 0,
-            });
-        }
+        ResolvedType::Bytes => NestedOwnedRecordAdmission::Admitted(NestedOwnedRecordFacts {
+            byte_leaves: 1,
+            visited_fields: 0,
+        }),
         ResolvedType::I64
         | ResolvedType::I32
         | ResolvedType::Char
@@ -660,7 +658,7 @@ fn classify_nested_owned_byte_record(
         | ResolvedType::Usize
         | ResolvedType::F32
         | ResolvedType::F64
-        | ResolvedType::Bool => return NestedOwnedRecordAdmission::NoOwnedBytes,
+        | ResolvedType::Bool => NestedOwnedRecordAdmission::NoOwnedBytes,
         ResolvedType::Never
         | ResolvedType::Unit
         | ResolvedType::ArrayU8(_)
@@ -673,7 +671,7 @@ fn classify_nested_owned_byte_record(
         | ResolvedType::OnceFunctionI64
         | ResolvedType::OnceFunctionI64Pair
         | ResolvedType::MutFunctionI64
-        | ResolvedType::Function { .. } => return NestedOwnedRecordAdmission::OutsideProfile,
+        | ResolvedType::Function { .. } => NestedOwnedRecordAdmission::OutsideProfile,
         ResolvedType::Nominal {
             declaration,
             arguments,
