@@ -18,7 +18,11 @@ fn raw_inventory_classifier_keeps_complete_original_diagnostic_fields() {
                     results.push((
                         crate::cleanup::type_needs_resource_cleanup(&program, ty)
                             .map_err(|m| Diagnostic::io("SPX-H006", m)),
-                        inventory_needs_drop(&program, function, ty, &mut budget),
+                        inventory_needs_drop(
+                            &program,
+                            ty,
+                            &mut tests::payer(function, &mut budget),
+                        ),
                     ));
                 }
                 results
@@ -44,7 +48,7 @@ fn raw_missing_cleanup_facts_refusal_keeps_message_without_replay_prefix() {
     let (current, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
         let mut budget = ReplayBudget::new();
         reserve_program_skeleton_work(&program, std::iter::once(function), &mut budget).unwrap();
-        inventory_needs_drop(&program, function, &ty, &mut budget)
+        inventory_needs_drop(&program, &ty, &mut tests::payer(function, &mut budget))
     });
     assert!(!refused);
     assert_eq!(current, old);
@@ -62,10 +66,27 @@ fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapte
         .unwrap();
     let projected = format!("{head}#[cfg(test)]\nthread_local! {{ static SAVED:{tail}");
     let projected = projected
+        .strip_suffix("\n#[cfg(test)]\nmod inventory_substitute_tests;\n")
+        .unwrap()
+        .strip_suffix("\nmod inventory_substitute;\n\nmod inventory_clone;\n")
+        .unwrap()
         .strip_suffix("\n#[cfg(test)]\nmod inventory_tests;\n")
         .unwrap();
     assert_eq!(
         projected,
         include_str!("../../../../docs/evidence/schema-summary/paid_type_facts.rs.before")
     );
+}
+
+#[test]
+fn full_droppability_source_keeps_complete_original_plus_raw_text_adapter() {
+    let current = include_str!("droppability.rs");
+    let (original, adapter) = current
+        .split_once("\n// Raw ordinary inventory text")
+        .expect("documented additive raw text adapter");
+    assert_eq!(
+        original,
+        include_str!("../../../../docs/evidence/schema-summary/droppability.rs.before")
+    );
+    assert!(adapter.contains("text::raw(payer, message)"));
 }

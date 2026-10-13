@@ -198,3 +198,11 @@ pub(super) fn oracle_key_for_test<P: crate::hir::TypeFactsPayer>(
 ) -> Result<String, Diagnostic> {
     key::identity(ty, payer)
 }
+
+// Raw ordinary inventory text on the already-held caller payer.
+pub(super) fn inventory_text<P: crate::hir::TypeFactsPayer>(
+    payer: &mut P,
+    message: std::fmt::Arguments<'_>,
+) -> Result<String, Diagnostic> {
+    text::raw(payer, message)
+}

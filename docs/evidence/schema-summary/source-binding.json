@@ -14,6 +14,10 @@
     "src/cleanup_plan/replay/paid_type_facts.rs": {
       "archive": "docs/evidence/schema-summary/paid_type_facts.rs.before",
       "sha256": "1b6d7788aea9d77557197d687437c04554b7e790a15f5d7e261983e80ff665fa"
+    },
+    "src/cleanup_plan/replay/paid_type_facts/droppability.rs": {
+      "archive": "docs/evidence/schema-summary/droppability.rs.before",
+      "sha256": "3640caed18c0fc91e757c519adc4911792d5f2a41fa9b1adea8276c7a1519abe"
     }
   },
   "current_sources": {
@@ -21,8 +25,14 @@
     "src/cleanup/schema_summary/generic_record.rs": "a46d2b2b6b83918f72eab634ced94c6982b4e25f92b3b585afd4b40f84328c1a",
     "src/cleanup/schema_summary/support.rs": "eb9a6cd7961d586370fce7b30552ef0e5ccd4c5d23032a9717447fe32efbe6f2",
     "src/cleanup/schema_summary/tests.rs": "56c3e5775113bb14b6f772d46aec97a6e33550c69ccf9430d550141c7fa4b585",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "59729cca379e7df4e4e6551fe7310a4c1712b4c6013af3d8fa1e987cddbc1442",
-    "src/cleanup_plan/replay/paid_type_facts.rs": "9812c70c7ffb3e15cf8e9b56dedc0a251a90496e87d63c4179d1101dd34256a9"
+    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "e77421f14cdba62a7eb0c6c51be67fde1b84a15809519d4eb014156f01a46c74",
+    "src/cleanup_plan/replay/paid_type_facts.rs": "ab7c6df3911730cd337c5342f402f43ea8915fa69f807c7dc1ff8d2a26c90c05",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs": "31d0898c1209042544909910f91aab105012637e57e94d5865edc4b120e7718a",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs": "1e906cb976199607796a215d34503b0bb29bcc81641bfa3e64b557439cfbfb2f",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs": "b2142ac664080361be6a80f8c472d91137f34a15c37e610c1c9632fdc2518f56",
+    "src/cleanup_plan/replay/paid_type_facts/droppability.rs": "50553857f7a33d60b245f66bdc3c380f65b8ba5ae5fa53e776fd2b419da80e76",
+    "tests/hir_module_boundaries.rs": "cefae9b9e3a3d6331cee217c8a6430881a07cba498fc061854b5baa6539d0b78",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "6542d8e02d56314ad5170994db1b0ab4f079c5a98d48bb473745d954b998b8c7"
   },
   "pending_selectors": [
     "cleanup::schema_summary::tests::complete_ordinary_summary_matches_full_receiver_and_receiving_drop",
@@ -31,6 +41,18 @@
     "cleanup::schema_summary::tests::independently_compiled_full_producer_sources_remain_byte_exact",
     "cleanup_plan::replay::paid_type_facts::inventory_tests::raw_inventory_classifier_keeps_complete_original_diagnostic_fields",
     "cleanup_plan::replay::paid_type_facts::inventory_tests::raw_missing_cleanup_facts_refusal_keeps_message_without_replay_prefix",
-    "cleanup_plan::replay::paid_type_facts::inventory_tests::full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter"
-  ]
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::full_zero_one_seventeen_nested_arguments_keep_ordinary_substitution_and_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::foreign_then_missing_parameter_keeps_complete_raw_first_error_and_zero_sticky",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::substitution_uses_existing_cumulative_work_without_allowance_or_reset",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::held_substitution_payer_refuses_cross_invocation_before_construction",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::raw_missing_parameter_and_each_actual_reservation_boundary_keep_sticky_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::full_droppability_source_keeps_complete_original_plus_raw_text_adapter"
+  ],
+  "review": {
+    "receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-constructor-review-814-f9aad-20261013/receipt.json",
+    "status": "independent review of pre-correction helpers; local dispositions and exact source projections checked statically; controls unexecuted",
+    "provider_list_price_estimate_usd": 0.2244366,
+    "actual_billing": "unknown"
+  }
 }

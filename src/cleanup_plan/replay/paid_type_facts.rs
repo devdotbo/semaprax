@@ -224,21 +224,14 @@ pub(super) fn needs_drop(
 /// This is constructor plumbing only, not a schema-selection/admission route.
 pub(super) fn inventory_needs_drop(
     program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
     ty: &ResolvedType,
-    budget: &mut ReplayBudget,
+    payer: &mut Payer<'_>,
 ) -> Result<bool, Diagnostic> {
-    let mut payer = Payer {
-        function,
-        budget,
-        ledger: ClassifierLedger::capture(),
-    };
-    match droppability::needs_drop_paid(program, ty, &mut payer) {
+    payer.current()?;
+    match droppability::needs_drop_paid(program, ty, payer) {
         Ok(value) => Ok(value),
         Err(droppability::Failure::Physical(error)) => Err(error),
-        Err(droppability::Failure::Semantic(message)) => {
-            Err(Diagnostic::io("SPX-H006", message))
-        }
+        Err(droppability::Failure::Semantic(message)) => Err(Diagnostic::io("SPX-H006", message)),
     }
 }
 
@@ -341,3 +334,10 @@ mod oracle_work_tests;
 
 #[cfg(test)]
 mod inventory_tests;
+
+mod inventory_substitute;
+
+mod inventory_clone;
+
+#[cfg(test)]
+mod inventory_substitute_tests;

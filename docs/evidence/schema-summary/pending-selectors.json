@@ -9,6 +9,12 @@
     "cleanup::schema_summary::tests::independently_compiled_full_producer_sources_remain_byte_exact",
     "cleanup_plan::replay::paid_type_facts::inventory_tests::raw_inventory_classifier_keeps_complete_original_diagnostic_fields",
     "cleanup_plan::replay::paid_type_facts::inventory_tests::raw_missing_cleanup_facts_refusal_keeps_message_without_replay_prefix",
-    "cleanup_plan::replay::paid_type_facts::inventory_tests::full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter"
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::full_zero_one_seventeen_nested_arguments_keep_ordinary_substitution_and_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::foreign_then_missing_parameter_keeps_complete_raw_first_error_and_zero_sticky",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::substitution_uses_existing_cumulative_work_without_allowance_or_reset",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::held_substitution_payer_refuses_cross_invocation_before_construction",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::raw_missing_parameter_and_each_actual_reservation_boundary_keep_sticky_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::full_droppability_source_keeps_complete_original_plus_raw_text_adapter"
   ]
 }
