@@ -258,7 +258,8 @@ pub(super) fn error(
     message: impl Into<String>,
     span: Span,
 ) -> Diagnostic {
-    Diagnostic::error(code, message, span).at_path(program.path())
+    let diagnostic = Diagnostic::error(code, message, span).at_path(program.path());
+    super::hints::with_authoring_repair_help(diagnostic)
 }
 
 pub(super) fn invalid_stable_id(

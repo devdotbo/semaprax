@@ -1286,9 +1286,10 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | Some(1), None|`SPX-T203`, `SPX-T202`|Option<i64>::Some { value: 1 }, Option<i64>::None {}|
 | s.len() on string|SPX-T203|string_len(s); only classes have methods|
 | str_as_bytes/nested string_as_str|`SPX-T263`, `SPX-T266`|Named String: str_as_bytes(string_as_str(text)); bind loop-carried slices beforehand|
-| direct output repeats per path / is loop-reachable|SPX-T269|Writes outside loops; profile caps: stdout+stderr ≤65536 bytes default; v28 appends ≤1 MiB|
+| direct output repeats per path / is loop-reachable|SPX-T269|Build bounded output; publish once outside loops/cycles; default stdout+stderr ≤65536 bytes; v28 direct appends ≤1 MiB|
 | string_as_str("literal")|SPX-T266|let s = "literal"; string_as_str(s)|
 | payload/generic ==|SPX-T207|Match; == only payload-free/nongeneric variants|
+| invalid/duplicate pattern binding|SPX-M104|Fresh unique local; result is reserved; record/variant payloads: field: fresh_alias; keep field names unchanged|
 | payload in or-pattern|SPX-M105|Payload-free only; split payload arms|
 | String/int/invalid Vec|`SPX-T001`/`SPX-T281`|String/scalars; explicit Copy Vec<T>; authenticated imports|
 | bad [modules]|SPX-J100|2–16 sorted sources; one bounded nonentry test module: entry="app", sources=["a.spx","b.spx"], tests=["app.tests"] [Manifest](PACKAGE-MANIFEST-V1.md)|

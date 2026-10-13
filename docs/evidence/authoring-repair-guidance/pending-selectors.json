@@ -1,0 +1,50 @@
+{
+  "status": "source-only; execution and owning pin producer pending",
+  "issues": [
+    820,
+    821
+  ],
+  "checks": [
+    {
+      "target": "lib",
+      "selector": "source_verify::hints::authoring_repair_tests::optional_help_pays_exact_backing_and_preserves_primary"
+    },
+    {
+      "target": "lib",
+      "selector": "source_verify::hints::authoring_repair_tests::short_zero_and_reserved_floor_keep_the_primary_without_refusal"
+    },
+    {
+      "target": "lib",
+      "selector": "source_verify::hints::authoring_repair_tests::sticky_refusal_and_existing_help_remain_authoritative"
+    },
+    {
+      "target": "lib",
+      "selector": "source_verify::hints::authoring_repair_tests::reasons_do_not_decorate_unrelated_fields_or_transcript_errors"
+    },
+    {
+      "target": "language",
+      "selector": "verifier_hints::pattern_collision_explains_alias_without_replacing_the_outer_binding"
+    },
+    {
+      "target": "language",
+      "selector": "verifier_hints::transcript_repeated_writes_explain_bounded_publication"
+    }
+  ],
+  "producer": {
+    "target": "documentation",
+    "selector": "agent_quick_reference::regenerate_diagnostic_help",
+    "ignored": true
+  },
+  "required_retained_owners": [
+    "source_verify scoped recovery full collisions/unknown fields corpus",
+    "CLI diagnostic_help_is_exact_complete_and_cheaper_than_the_index",
+    "documentation diagnostic_help_is_pinned_and_covers_compiler_checked_examples",
+    "language owned_string_into_stdout_write_names_the_conversion"
+  ],
+  "limitations": [
+    "No genuine flow witnesses implemented; issue821 stays open",
+    "Successful optional help consumes actual budget and may move later required work",
+    "Primary message/path allocation unchanged",
+    "No runtime, token-saving or application-fit claim"
+  ]
+}

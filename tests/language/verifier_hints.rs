@@ -794,3 +794,40 @@ fn standard_library_repair_includes_the_catalog_profile_prerequisite() {
     assert!(help(&diagnostic).contains("from std.num as abs;"));
     assert_eq!(diagnostic.message, "unknown function `abs`");
 }
+
+#[test]
+fn pattern_collision_explains_alias_without_replacing_the_outer_binding() {
+    let source = "module habit.alias; @id(\"app.main\") fn main() -> i64 { let value = 7; match (Option<i64>::Some { value: 1 }) { Option::Some { value } => value, Option::None {} => 0, } }";
+    let found = diagnostics(source);
+    let collision = found.iter().find(|d| d.code == "SPX-M104").unwrap();
+    assert_eq!(
+        collision.message,
+        "invalid or duplicate pattern binding `value`"
+    );
+    assert_eq!(collision.path.as_deref(), Some("habit.spx"));
+    assert_eq!(
+        &source[collision.span.unwrap().start..collision.span.unwrap().end],
+        "value"
+    );
+    assert!(help(collision).contains("field: fresh_alias"));
+    assert!(help(collision).contains("`result` is reserved"));
+    let corrected = source.replace(
+        "Option::Some { value } => value",
+        "Option::Some { value: parsed_number } => parsed_number",
+    );
+    assert!(diagnostics(&corrected).is_empty());
+}
+
+#[test]
+fn transcript_repeated_writes_explain_bounded_publication() {
+    let source = "module habit.publish; permit { process.stdout.write } @id(\"app.main\") fn main() -> i64 uses { process.stdout.write } { let text = \"hi\"; let bytes = str_as_bytes(string_as_str(text)); let first = stdout_write(bytes); let second = stdout_write(bytes); 0 }";
+    let diagnostic = only(source, "SPX-T269");
+    assert_eq!(
+        diagnostic.message,
+        "stdout_write path reaches 2 sites; limit is 1"
+    );
+    assert!(help(&diagnostic).contains("publish once per stream"));
+    assert!(help(&diagnostic).contains("selected profile's byte limits"));
+    let corrected = source.replace("let second = stdout_write(bytes);", "");
+    assert!(diagnostics(&corrected).is_empty());
+}

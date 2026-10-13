@@ -1392,7 +1392,7 @@ mod tests {
             concat!(
                 "SPX-T269\n",
                 "wrote: direct output repeats per path / is loop-reachable\n",
-                "fix: Writes outside loops; profile caps: stdout+stderr ≤65536 bytes default; v28 appends ≤1 MiB\n",
+                "fix: Build bounded output; publish once outside loops/cycles; default stdout+stderr ≤65536 bytes; v28 direct appends ≤1 MiB\n",
             )
         );
         for (code, expected) in [

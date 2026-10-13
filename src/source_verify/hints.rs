@@ -733,3 +733,123 @@ pub(super) fn moved_resource_help(ty: &Type, name: &str) -> String {
         _ => "borrow the resource if the callee does not need ownership".to_owned(),
     }
 }
+
+/// Presentation-only guidance for exact compiler-authored refusal families.
+/// These strings explain admitted syntax; they do not fabricate a fresh name,
+/// a flow witness, source-edit authority, or a larger execution profile.
+fn authoring_repair_help(code: &str, message: &str) -> Option<&'static str> {
+    match code {
+        "SPX-M104" if message.starts_with("invalid or duplicate pattern binding `") => Some(
+            "use a valid alias unique in this scope; `result` is reserved. For a payload, keep the field name and write `field: fresh_alias`, then use that alias in the arm; `fresh_alias` is an example, so check it is unused",
+        ),
+        "SPX-T269" if message.starts_with("stdout_write path reaches ")
+            || message.starts_with("stderr_write path reaches ") => Some(
+            "construct bounded output first, then publish once per stream on each path with stdout_write or stderr_write; keep the selected profile's byte limits",
+        ),
+        "SPX-T269" if message == "transcript output is reachable from a while condition" => Some(
+            "keep transcript publication out of the while condition; compute the condition without output and publish bounded output once after the loop",
+        ),
+        "SPX-T269" if message == "a while body may contain only direct runtime-bounded append output" => Some(
+            "build output within the selected profile's bounds and publish once after the loop; direct runtime-bounded append is a separate admitted shape, and an indirect writer is not that shape",
+        ),
+        "SPX-T269" if message == "transcript-write executable closure is cyclic" => Some(
+            "keep transcript writers out of cyclic call closures; construct output within the selected profile's bounds and publish once from an acyclic caller",
+        ),
+        _ => None,
+    }
+}
+
+pub(super) fn with_authoring_repair_help(mut diagnostic: Diagnostic) -> Diagnostic {
+    if diagnostic.help.is_some() {
+        return diagnostic;
+    }
+    let Some(text) = authoring_repair_help(diagnostic.code, &diagnostic.message) else {
+        return diagnostic;
+    };
+    // Optional presentation must never select a new refusal or consume the
+    // authoritative diagnostic floor. Sticky refusal rejects even fitting help.
+    // Admitted help consumes real bytes; later required-work boundaries can move.
+    if !crate::bounded_output::reserve_active_preserving(text.len(), 0) {
+        return diagnostic;
+    }
+    let mut help = String::new();
+    if help.try_reserve_exact(text.len()).is_err() || help.capacity() != text.len() {
+        return diagnostic;
+    }
+    help.push_str(text);
+    diagnostic.help = Some(help);
+    diagnostic
+}
+
+#[cfg(test)]
+mod authoring_repair_tests {
+    use super::*;
+    fn primary() -> Diagnostic {
+        Diagnostic::io_static("SPX-M104", "invalid or duplicate pattern binding `value`")
+    }
+    #[test]
+    fn optional_help_pays_exact_backing_and_preserves_primary() {
+        let original = primary();
+        let length = authoring_repair_help(original.code, &original.message)
+            .unwrap()
+            .len();
+        let (found, overflow, used) = crate::bounded_output::with_limit_usage(length, || {
+            with_authoring_repair_help(original.clone())
+        });
+        assert!(!overflow);
+        assert_eq!(used, length);
+        assert_eq!(found.help.as_ref().unwrap().capacity(), length);
+        let mut stripped = found;
+        stripped.help = None;
+        assert_eq!(stripped, original);
+    }
+    #[test]
+    fn short_zero_and_reserved_floor_keep_the_primary_without_refusal() {
+        let length = authoring_repair_help(primary().code, &primary().message)
+            .unwrap()
+            .len();
+        for limit in [0, length - 1, length] {
+            let (found, overflow, used, refusal) =
+                crate::bounded_output::with_limit_usage_refusal(limit, || {
+                    if limit == length {
+                        assert!(crate::bounded_output::set_active_floor(1));
+                    }
+                    with_authoring_repair_help(primary())
+                });
+            assert_eq!(found, primary());
+            assert!(!overflow);
+            assert_eq!(used, 0);
+            assert_eq!(refusal, None);
+        }
+    }
+    #[test]
+    fn sticky_refusal_and_existing_help_remain_authoritative() {
+        let (found, overflow, used, refusal) =
+            crate::bounded_output::with_limit_usage_refusal(4096, || {
+                assert!(!crate::bounded_output::reserve_active_required(4097));
+                with_authoring_repair_help(primary())
+            });
+        assert_eq!(found, primary());
+        assert!(overflow);
+        assert_eq!(used, 0);
+        assert_eq!(refusal.unwrap().requested, 4097);
+        let original = primary().with_help("existing authoritative help");
+        assert_eq!(with_authoring_repair_help(original.clone()), original);
+    }
+    #[test]
+    fn reasons_do_not_decorate_unrelated_fields_or_transcript_errors() {
+        assert!(
+            authoring_repair_help("SPX-M104", "unknown or duplicate pattern field `x`").is_none()
+        );
+        assert!(authoring_repair_help("SPX-T269", "stdout_write expects Slice<u8>").is_none());
+        for message in [
+            "stdout_write path reaches 2 sites; limit is 1",
+            "stderr_write path reaches 2 sites; limit is 1",
+            "transcript output is reachable from a while condition",
+            "a while body may contain only direct runtime-bounded append output",
+            "transcript-write executable closure is cyclic",
+        ] {
+            assert!(authoring_repair_help("SPX-T269", message).is_some());
+        }
+    }
+}
