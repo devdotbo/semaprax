@@ -92,7 +92,38 @@ fn forwarding_zero_work_authenticates_without_backing_and_stale_subject_refuses(
     assert_eq!((used, first), (0, None));
     assert_eq!((metrics.allocated, metrics.live), (0, 0));
     assert!(!metrics.invalid);
+    // A finished scope leaves no account; the existing lease contract reports
+    // Missing here. Replacing it with a new epoch exercises Expired separately.
+    assert_eq!(lease.charge_work(0), Err(OracleRefusal::Missing));
+    let replacement = OracleScope::open_with_work(0, 0).unwrap();
     assert_eq!(lease.charge_work(0), Err(OracleRefusal::Expired));
+    let ((refused, metrics), active_refused, used, first) =
+        crate::bounded_output::with_limit_usage_refusal(0, || {
+            crate::test_allocation_observer::measure(|| {
+                let mut budget =
+                    ReplayBudget::with_skeleton_limit_oracle(MAX_REPLAY_WORK_UNITS, lease);
+                let mut payer = Payer {
+                    function,
+                    budget: &mut budget,
+                    ledger: ClassifierLedger::capture(),
+                };
+                let error = payer.oracle_work(0, "replaced zero work");
+                let refused = error.is_err();
+                drop(error);
+                drop(payer);
+                drop(budget);
+                refused
+            })
+        });
+    assert!(refused && !active_refused);
+    assert_eq!((used, first), (0, None));
+    assert_eq!((metrics.allocated, metrics.live), (0, 0));
+    assert!(!metrics.invalid);
+    let receipt = replacement.finish();
+    assert_eq!(
+        (receipt.charged, receipt.work, receipt.work_calls),
+        (0, 0, 0)
+    );
 }
 
 #[test]
