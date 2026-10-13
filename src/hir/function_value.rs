@@ -64,6 +64,8 @@ pub(crate) fn walk<'a>(function: &'a ResolvedFunction, mut visit: impl FnMut(&'a
         super::push_resolved_expression_children_in_authored_order(expr, &mut pending);
     }
 }
+mod paid_walk;
+pub(crate) use paid_walk::walk as try_walk;
 #[cfg(test)]
 mod funded;
 #[cfg(test)]
@@ -223,7 +225,7 @@ pub(crate) fn invocation_params(
 pub(crate) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     super::closure::mutable::validate_uses(program)?;
     super::closure::borrowed::validate_uses(program)?;
-    if !requires_function_values(program) {
+    if !paid_walk::requires(program)? {
         return Ok(());
     }
     if target_universe(program).len() + super::closure::inventory(program).len() > 256 {

@@ -70,6 +70,7 @@ fn complete_frozen_receiver_and_shared_boundaries_match_static_body_provenance()
         assert!(record["complete_function_bodies"].as_u64().unwrap() > 0);
     }
     let original_closure = qualified_closure_identity_projection();
+    let original_mutable = qualified_mutable_walk_projection();
     let unchanged = [
         (
             "src/hir/resolve_expr/path_arena.rs",
@@ -126,6 +127,8 @@ fn complete_frozen_receiver_and_shared_boundaries_match_static_body_provenance()
         // additionally bound to exact full-current source equality above.
         let publication_source = if *source == "src/hir/closure/resolve.rs" {
             original_closure
+        } else if *source == "src/hir/closure/mutable.rs" {
+            original_mutable
         } else {
             current
         };
@@ -183,4 +186,44 @@ fn full_current_closure_source_is_exact_original_held_identity_projection() {
         record["sha256"].as_str().unwrap(),
         "bd47e88b57a91b87c272da799f45834097b43dd069ff3c652d3af53a4754e9ea"
     );
+}
+
+// Exactly three fallible traversal hooks; every old source byte remains bound.
+fn qualified_mutable_walk_projection() -> &'static str {
+    let original = include_str!(
+        "../../../docs/evidence/borrowed-root-bindings/src__hir__closure__mutable.rs.txt"
+    );
+    let retained = include_str!(
+        "../../../docs/evidence/overlay-transitive-funding/mutable_closure_before_paid_walk.txt"
+    );
+    let current = include_str!("../closure/mutable.rs");
+    assert_eq!(retained, original);
+    let old = "function_value::walk(function,";
+    let paid = "function_value::try_walk(function,";
+    assert_eq!(original.matches(old).count(), 3);
+    assert_eq!(original.matches(paid).count(), 0);
+    assert_eq!(original.matches("\n        });").count(), 3);
+    assert_eq!(current.matches(old).count(), 0);
+    assert_eq!(current.matches(paid).count(), 3);
+    assert_eq!(current.matches("\n        })?;").count(), 3);
+    let expected = original
+        .replace(old, paid)
+        .replace("\n        });", "\n        })?;");
+    assert_eq!(current, expected);
+    original
+}
+#[test]
+fn full_current_mutable_source_is_exact_original_three_paid_walk_hooks() {
+    let original = qualified_mutable_walk_projection();
+    let proof: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../docs/evidence/borrowed-root-bindings/source-provenance.json"
+    ))
+    .unwrap();
+    let record = proof["unchanged_full_sources"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["path"] == "src/hir/closure/mutable.rs")
+        .unwrap();
+    assert_eq!(digest(original), record["sha256"].as_str().unwrap());
 }

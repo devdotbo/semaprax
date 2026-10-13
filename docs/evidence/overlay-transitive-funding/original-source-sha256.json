@@ -1,0 +1,20 @@
+{
+  "base": "17efd2ed52a97f41eec05c75d56e01ade219b392",
+  "full_original_sources": [
+    {
+      "path": "src/hir/function_value.rs",
+      "snapshot": "function_value_before_paid_walk.txt",
+      "sha256": "c8a6df21a20baa534c65e7efdd838405302830d545d58acffe508deac0f92c8c"
+    },
+    {
+      "path": "src/hir/closure/mutable.rs",
+      "snapshot": "mutable_closure_before_paid_walk.txt",
+      "sha256": "5d3e92bf28d00358943ae616ec4cc993d00a718cb1f67b85394aa183e2dbeb0b"
+    },
+    {
+      "path": "src/hir/closure/borrowed.rs",
+      "snapshot": "borrowed_closure_before_paid_walk.txt",
+      "sha256": "7eca9ef5789443234913045f2c8272387b1bf85b072888cd000c312bec11cbcd"
+    }
+  ]
+}

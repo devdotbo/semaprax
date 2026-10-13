@@ -320,7 +320,7 @@ fn validate_local_binding(
             .iter()
             .map(|instance| &instance.function),
     ) {
-        super::super::function_value::walk(function, |expression| {
+        super::super::function_value::try_walk(function, |expression| {
             if let ResolvedExprKind::Block { statements, .. }
             | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
             {
@@ -340,7 +340,7 @@ fn validate_local_binding(
                     }
                 }
             }
-        });
+        })?;
     }
     if found != 1 || !mutable {
         return Err(hir_error(
@@ -365,7 +365,7 @@ pub(crate) fn validate_uses(program: &ResolvedProgram) -> Result<(), Diagnostic>
         }
         let mut receiver_ids = BTreeSet::new();
         let mut invalid = false;
-        super::super::function_value::walk(function, |expression| {
+        super::super::function_value::try_walk(function, |expression| {
             if let ResolvedExprKind::Invoke { callable, args } = &expression.kind {
                 if callable.ty.is_mut_function() {
                     receiver_ids.insert(callable.id.clone());
@@ -388,15 +388,15 @@ pub(crate) fn validate_uses(program: &ResolvedProgram) -> Result<(), Diagnostic>
                     }
                 }
             }
-        });
-        super::super::function_value::walk(function, |expression| {
+        })?;
+        super::super::function_value::try_walk(function, |expression| {
             if expression.ty.is_mut_function()
                 && matches!(expression.kind, ResolvedExprKind::Place(_))
                 && !receiver_ids.contains(&expression.id)
             {
                 invalid = true;
             }
-        });
+        })?;
         if invalid {
             return Err(hir_error(
                 "mutable receiver cannot be copied, escape, or reenter during argument staging",

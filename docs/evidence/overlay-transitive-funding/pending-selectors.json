@@ -1,0 +1,85 @@
+{
+  "executed": false,
+  "selectors": [
+    {
+      "harness": "lib",
+      "selector": "hir::function_value::paid_walk::tests::paid_production_walk_keeps_complete_old_order_roots_templates_and_presence"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::function_value::paid_walk::tests::paid_production_walk_spill_exact_short_sticky_and_drop_are_literal"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::function_value::paid_walk::tests::complete_old_walk_presence_and_uses_sources_remain_exact"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::resolver_scope::source_audit::full_current_mutable_source_is_exact_original_three_paid_walk_hooks"
+    },
+    {
+      "harness": "lib",
+      "selector": "workspace_graph::expected_projection::borrowed_imports::tests::full::complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal"
+    },
+    {
+      "harness": "lib",
+      "selector": "workspace_graph::expected_projection::borrowed_imports::tests::full::receiving::full_standalone_and_receiving_overlay_construction_retention_and_drop_tradeoffs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::tests::production_chain_observes_actual_backing_debits_complete_drop_and_exact_short_sticky"
+    },
+    {
+      "harness": "source_locked_contracts",
+      "selector": "hir_module_boundaries::core_validation_has_no_resolution_cleanup_build_or_physical_authority"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::borrowed_closures::borrowed_closures_preserve_parameter_capture_in_canonical_graph"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::borrowed_closures::borrowed_closures_refuse_escape_alias_and_nonparameter_capture"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::borrowed_closures::borrowed_closures_preserve_the_callers_owner_loan"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::borrowed_closures::borrowed_closures_reject_forged_capture_mode_mutability_and_root"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::borrowed_closures::borrowed_closures_execute_on_interpreter_native_and_core_wasm"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::mutable_closures::mutable_closures_keep_distinct_canonical_syntax_and_types"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::mutable_closures::mutable_closures_refuse_missing_state_update"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::mutable_closures::mutable_closures_reject_every_noncanonical_fixed_signature"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::mutable_closures::mutable_closures_reject_forged_retained_signature_independently"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::mutable_closures::mutable_closures_execute_same_receiver_and_independent_construction_on_all_backends"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::mutable_closures::mutable_closures_refuse_receiver_and_update_profile_widening"
+    },
+    {
+      "harness": "language",
+      "selector": "function_values::mutable_closures::mutable_closures_independently_reject_forged_body_and_receiver"
+    }
+  ]
+}
