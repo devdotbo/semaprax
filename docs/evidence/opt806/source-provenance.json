@@ -93,6 +93,11 @@
     "original": "docs/evidence/opt806/proposal-corpus-original.rs.txt",
     "original_sha256": "250e0745ec8ecad0efb0a790976d950552822771cb1115e3e225bc681289d032"
   },
+  "full_source_archive": {
+    "path": "docs/evidence/opt806/baseline-sources.json",
+    "sha256": "b9adcfc078092e44a4f89268db2533c43c236728af2f9f26ab2342d0513a0176",
+    "source_count": 17
+  },
   "proposal": "d36d47daef42e5d7e06e16a7ebade20be66ba95e",
   "qualification": "Static source/literal provenance only. No Cargo, build or test execution.",
   "schema": "semaprax.scoped-diagnostic-recovery-source-provenance.v1",
@@ -115,6 +120,34 @@
       "method": "check_generic_function_cycles",
       "path": "src/source_verify/declaration/functions/old.rs",
       "sha256": "28b4525d01a872a41ffe1237643a4559c517dfa1e6e7210a81544928ba3d3710"
+    },
+    {
+      "path": "src/source_verify/oracle/calls.rs",
+      "sha256": "d22054818db87790cae7dc7432bd3af9dc16d3d9f822c37cdb6e12e60d26b215"
+    },
+    {
+      "path": "src/source_verify/oracle/for_traversal.rs",
+      "sha256": "32d67e092d9876f4c5257c2c0016cc1217ff698816894b6321666fe0851ad934"
+    },
+    {
+      "path": "src/source_verify/oracle/intrinsic_calls.rs",
+      "sha256": "600dbf30cec0f6ef63dbabd65cfddf24fb34727ae15249b3ced53f3df842cc10"
+    },
+    {
+      "path": "src/source_verify/oracle/lexical_exit.rs",
+      "sha256": "df786885f1066bbf52549d597395deaffded312538c3f6b0d49a3df42a723df9"
+    },
+    {
+      "path": "src/source_verify/oracle/matching.rs",
+      "sha256": "b74e37cbf3cba3158c85d83885c9053b4bef67b4c5c43567fc588409dbe7db65"
+    },
+    {
+      "path": "src/source_verify/oracle/stdin_stream.rs",
+      "sha256": "23e4aacebc2779d8751c9462227e01189216c3b05e4caf8708f3dd2abe5568e4"
+    },
+    {
+      "path": "src/source_verify/oracle/while_oracle.rs",
+      "sha256": "bb18949b8bf93dbdfe07208364df7a4ff93a0849737372d4d21eea0ccd64d68e"
     }
   ]
 }

@@ -24,12 +24,13 @@ allowance, source bound or frame limit was invented.
 ## Preservation evidence
 
 `source-provenance.py` performs static source comparison, not compiler execution.
-Its adjacent JSON records ten complete legacy receiving bodies and four
+Its adjacent JSON records ten complete legacy receiving bodies and eleven
 unchanged original body/file rows against the exact baseline, with explicit
 name/visibility/checkpoint/inert-state adaptations. It also checks all sixty
 original PR804 source literals against `proposal-corpus-original.rs.txt`, copied
 from `d36d47daef42e5d7e06e16a7ebade20be66ba95e`. Multiline literal contents are
-compared, not dedented. Full original recursive and function receivers remain
+compared, not dedented. `baseline-sources.json` retains all seventeen complete
+original source files, including every recursive oracle child, with exact byte hashes. Full original recursive and function receivers remain
 independent. Both existing source-text audits join every new recovery/legacy
 child. The original iterative verifier corpus is unchanged.
 
@@ -68,7 +69,7 @@ producer and inspect the generated delta; do not manually relax a hash:
 cargo test --locked -p semaprax --test documentation agent_quick_reference::regenerate_diagnostic_help -- --ignored --exact
 ```
 
-The standard full quality profile remains required later by the owning gates.
+The explicit user instruction excludes full quality gates for this work.
 No Cargo, build, test, compiler binary, Clippy or full gate ran during this lane,
 per explicit user instruction. `rustfmt` and `git diff --check` completed; the
 static provenance script completed. Graft executable/index were unavailable, so

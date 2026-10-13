@@ -97,7 +97,7 @@ constructor controls, `--test language variants_semantics`,
 `--test language verifier_hints`, `--test source_locked_contracts`,
 `--test module_size`, the Native Rust builder ledger-capacity owner,
 production-library Clippy, and any actual changed diagnostic/guidance-pin
-producer. The standard full profile remains a later owning gate.
+producer. Full profiles are excluded by the explicit user instruction for this work.
 
 No Cargo, build, test or full-profile gate was executed during this implementation
 batch, at the user's explicit instruction. These are authored controls, not

@@ -9,8 +9,17 @@ ROOT = Path(__file__).resolve().parents[3]
 BASE = "5728c9e48fe2afe5cd77e9edf000cbe171035bdb"
 TOKEN = re.compile(r'r(?P<hashes>\#{0,})"[\s\S]*?"(?P=hashes)|"(?:\\[\s\S]|[^"\\])*"|\'(?:\\[\s\S]|[^\'\\])\'|//[^\n]*|/\*[\s\S]*?\*/|\w+|[^\s]')
 
+ARCHIVE = json.loads((ROOT / "docs/evidence/opt806/baseline-sources.json").read_text())
+assert ARCHIVE["base"] == BASE
+ORIGINALS = {row["path"]: row for row in ARCHIVE["sources"]}
+for row in ORIGINALS.values():
+    assert hashlib.sha256(row["content"].encode()).hexdigest() == row["sha256"], row["path"]
+
 def original(path):
-    return subprocess.check_output(["git", "show", f"{BASE}:{path}"], cwd=ROOT, text=True)
+    archived = ORIGINALS[path]["content"]
+    exact_git = subprocess.check_output(["git", "show", f"{BASE}:{path}"], cwd=ROOT, text=True)
+    assert archived == exact_git, (path, "complete original source drift")
+    return archived
 
 def tokens(text):
     return [m.group() for m in TOKEN.finditer(text) if not m.group().startswith(("//", "/*"))]
@@ -75,7 +84,7 @@ for owner, method in [
     rows.append(dict(original=owner, saved=saved, method=method, body_tokens=len(old), sha256=digest(old), adaptations=adaptations))
 
 unchanged=[]
-for path in ["src/source_verify/oracle.rs", "src/source_verify/declaration/functions/old.rs"]:
+for path in ["src/source_verify/oracle.rs", "src/source_verify/declaration/functions/old.rs"] + sorted(path for path in ORIGINALS if path.startswith("src/source_verify/oracle/")):
     if path.endswith("functions/old.rs"):
         for method in ["check_function_declarations", "check_function_bodies", "check_generic_function_cycles"]:
             old=body(original(path),method);current=body((ROOT/path).read_text(),method)
@@ -95,6 +104,7 @@ def literals(text):
 assert literals(old_cases)==literals(new_cases),"60-case authored literal drift"
 report=dict(schema="semaprax.scoped-diagnostic-recovery-source-provenance.v1",base=BASE,
     proposal="d36d47daef42e5d7e06e16a7ebade20be66ba95e",body_receivers=rows,unchanged_receivers=unchanged,
+    full_source_archive=dict(path="docs/evidence/opt806/baseline-sources.json",source_count=len(ORIGINALS),sha256=hashlib.sha256((ROOT/"docs/evidence/opt806/baseline-sources.json").read_bytes()).hexdigest()),
     corpus=dict(original=corpus,adapted=adapted,literal_count=len(literals(old_cases)),literal_sha256=digest(literals(old_cases)),original_sha256=hashlib.sha256((ROOT/corpus).read_bytes()).hexdigest()),
     qualification="Static source/literal provenance only. No Cargo, build or test execution.")
 (ROOT/"docs/evidence/opt806/source-provenance.json").write_text(json.dumps(report,indent=2,sort_keys=True)+"\n")
