@@ -651,7 +651,7 @@ fn classify_nested_owned_byte_record(
             return NestedOwnedRecordAdmission::Admitted(NestedOwnedRecordFacts {
                 byte_leaves: 1,
                 visited_fields: 0,
-            })
+            });
         }
         ResolvedType::I64
         | ResolvedType::I32
@@ -674,21 +674,40 @@ fn classify_nested_owned_byte_record(
         | ResolvedType::OnceFunctionI64Pair
         | ResolvedType::MutFunctionI64
         | ResolvedType::Function { .. } => return NestedOwnedRecordAdmission::OutsideProfile,
-        ResolvedType::Nominal { .. } => {}
+        ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } => classify_nested_owned_byte_record_head(declarations, declaration, arguments),
     }
+}
+
+fn classify_nested_owned_byte_record_head<'a>(
+    declarations: &'a DeclarationIndex,
+    declaration: &'a DeclarationId,
+    arguments: &'a [ResolvedType],
+) -> NestedOwnedRecordAdmission {
+    use std::borrow::Cow;
+
+    #[derive(PartialEq)]
+    struct Head<'a> {
+        declaration: Cow<'a, DeclarationId>,
+        arguments: Cow<'a, [ResolvedType]>,
+    }
+
     enum Frame<'a> {
         Type(ResolvedType, usize),
-        Fields(
-            DeclarationId,
-            &'a [ResolvedFieldDeclaration],
-            Vec<ResolvedType>,
-            usize,
-            usize,
-        ),
+        Nominal(Head<'a>, usize),
+        Fields(&'a [ResolvedFieldDeclaration], usize, usize),
         LeaveRecord,
     }
 
-    let mut frames = vec![Frame::Type(root.clone(), 1)];
+    let mut frames = vec![Frame::Nominal(
+        Head {
+            declaration: Cow::Borrowed(declaration),
+            arguments: Cow::Borrowed(arguments),
+        },
+        1,
+    )];
     let mut active = Vec::new();
     let mut byte_leaves = 0usize;
     let mut visited_fields = 0usize;
@@ -718,12 +737,23 @@ fn classify_nested_owned_byte_record(
                 },
                 depth,
             ) => {
+                frames.push(Frame::Nominal(
+                    Head {
+                        declaration: Cow::Owned(declaration),
+                        arguments: Cow::Owned(arguments),
+                    },
+                    depth,
+                ));
+            }
+            Frame::Nominal(head, depth) => {
+                let declaration = head.declaration.as_ref();
+                let arguments = head.arguments.as_ref();
                 if depth > MAX_NESTED_OWNED_RECORD_DEPTH {
                     return NestedOwnedRecordAdmission::LimitExceeded;
                 }
                 saw_generic_instance |= !arguments.is_empty();
                 if declarations
-                    .type_parameters(&declaration)
+                    .type_parameters(declaration)
                     .is_none_or(|parameters| parameters.len() != arguments.len())
                     || arguments.iter().any(|argument| {
                         *argument != ResolvedType::Bytes
@@ -731,27 +761,22 @@ fn classify_nested_owned_byte_record(
                             && !matches!(argument, ResolvedType::Nominal { .. })
                     })
                     || declarations
-                        .declaration(&declaration)
+                        .declaration(declaration)
                         .is_none_or(|item| item.kind != DeclarationKind::Record)
                 {
                     return NestedOwnedRecordAdmission::OutsideProfile;
                 }
-                let Some(fields) = declarations.record_fields(&declaration) else {
+                let Some(fields) = declarations.record_fields(declaration) else {
                     return NestedOwnedRecordAdmission::OutsideProfile;
                 };
-                let identity = ResolvedType::Nominal {
-                    declaration: declaration.clone(),
-                    arguments: arguments.clone(),
-                };
-                // Structural equality is the complete length-delimited key
-                // equality, without constructing text or tree nodes. The
-                // active path is bounded by the unchanged depth limit.
-                if active.contains(&identity) {
+                // Complete structural nominal equality includes every argument tree.
+                // Retain the environment once until its LeaveRecord continuation.
+                if active.contains(&head) {
                     return NestedOwnedRecordAdmission::Recursive;
                 }
-                active.push(identity);
+                active.push(head);
                 frames.push(Frame::LeaveRecord);
-                frames.push(Frame::Fields(declaration, fields, arguments, 0, depth));
+                frames.push(Frame::Fields(fields, 0, depth));
             }
             Frame::Type(
                 ResolvedType::Never
@@ -775,7 +800,7 @@ fn classify_nested_owned_byte_record(
                 | ResolvedType::Bool,
                 _,
             ) => unreachable!("admitted scalar handled above"),
-            Frame::Fields(declaration, fields, arguments, index, depth) => {
+            Frame::Fields(fields, index, depth) => {
                 let Some(field) = fields.get(index) else {
                     continue;
                 };
@@ -783,16 +808,17 @@ fn classify_nested_owned_byte_record(
                 if visited_fields > MAX_NESTED_OWNED_RECORD_FIELDS {
                     return NestedOwnedRecordAdmission::LimitExceeded;
                 }
-                frames.push(Frame::Fields(
-                    declaration.clone(),
-                    fields,
-                    arguments.clone(),
-                    index + 1,
-                    depth,
-                ));
-                let Ok(field_ty) = substitute_type(&field.ty, &declaration, &arguments) else {
+                let head = active
+                    .last()
+                    .expect("field continuation has an active record");
+                let Ok(field_ty) = substitute_type(
+                    &field.ty,
+                    head.declaration.as_ref(),
+                    head.arguments.as_ref(),
+                ) else {
                     return NestedOwnedRecordAdmission::OutsideProfile;
                 };
+                frames.push(Frame::Fields(fields, index + 1, depth));
                 frames.push(Frame::Type(field_ty, depth + 1));
             }
             Frame::LeaveRecord => {
@@ -942,12 +968,10 @@ pub(super) fn record_args_ok(
     arguments
         .iter()
         .all(|argument| matches!(argument, ResolvedType::I64 | ResolvedType::Bool))
-        || is_admitted_nested_owned_byte_record(
-            declarations,
-            &ResolvedType::Nominal {
-                declaration: declaration.clone(),
-                arguments: arguments.to_vec(),
-            },
+        || matches!(
+            classify_nested_owned_byte_record_head(declarations, declaration, arguments),
+            NestedOwnedRecordAdmission::Admitted(facts)
+                if facts.byte_leaves != 0 && facts.visited_fields <= MAX_NESTED_OWNED_RECORD_FIELDS
         )
 }
 
@@ -1063,3 +1087,8 @@ mod tests {
 mod leaf_saved;
 #[cfg(test)]
 mod leaf_tests;
+
+#[cfg(test)]
+mod nominal_saved;
+#[cfg(test)]
+mod nominal_tests;

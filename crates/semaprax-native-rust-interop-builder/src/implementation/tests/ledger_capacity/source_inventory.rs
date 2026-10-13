@@ -134,6 +134,8 @@ macro_rules! reachability_leaf_source_inventory {
             include_str!("../../../../../src/hir/type_reachability.rs"),
             include_str!("../../../../../src/hir/type_reachability/leaf_saved.rs"),
             include_str!("../../../../../src/hir/type_reachability/leaf_tests.rs"),
+            include_str!("../../../../../src/hir/type_reachability/nominal_saved.rs"),
+            include_str!("../../../../../src/hir/type_reachability/nominal_tests.rs"),
         )
     };
 }
