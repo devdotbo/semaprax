@@ -103,8 +103,12 @@ fn nested_destructure_and_field_substitution_match_full_old_receivers_through_dr
         result: Box::new(ResolvedType::ArrayU8(16)),
     }];
     let substituted = crate::hir::substitute_type(&template, &root, &arguments).unwrap();
-    let run = |allowance| {
-        let scope = OracleScope::open(allowance).unwrap();
+    let run = |allowance, work| {
+        let scope = if work == 0 {
+            OracleScope::open(allowance).unwrap()
+        } else {
+            OracleScope::open_with_work(allowance, work).unwrap()
+        };
         let lease = scope.lease();
         let ((same, retry, metrics), refused, used, first) =
             crate::bounded_output::with_limit_usage_refusal(0, || {
@@ -154,7 +158,7 @@ fn nested_destructure_and_field_substitution_match_full_old_receivers_through_dr
         );
         (same, retry, receipt, metrics.allocated)
     };
-    let (same, retry, baseline, allocated) = run(1 << 20);
+    let (same, retry, baseline, allocated) = run(1 << 20, 1 << 25);
     assert!(
         same,
         "full nested receiver and all six original error fields"
@@ -162,12 +166,24 @@ fn nested_destructure_and_field_substitution_match_full_old_receivers_through_dr
     assert_eq!(retry, Ok(()));
     assert!(allocated > 0);
     assert!(baseline.first_refusal.is_none());
-    let (same, retry, exact, _) = run(baseline.charged);
+    let (same, retry, exact, _) = run(baseline.charged, baseline.work);
     assert!(same);
     assert_eq!(retry, Ok(()));
-    assert_eq!(exact.charged, baseline.charged);
+    assert_eq!(
+        (exact.charged, exact.work),
+        (baseline.charged, baseline.work)
+    );
+    assert!(baseline.work > 0);
+    for work in [baseline.work - 1, 0] {
+        let (same, retry, receipt, _) = run(baseline.charged, work);
+        assert!(!same, "work refusal cannot publish a semantic comparison");
+        assert_eq!(retry, Err(OracleRefusal::Sticky));
+        assert!(receipt.first_work_refusal.is_some());
+        assert_eq!(receipt.work_allowance, work);
+        assert!(receipt.work <= work);
+    }
     for allowance in [baseline.charged - 1, 0] {
-        let (same, retry, receipt, _) = run(allowance);
+        let (same, retry, receipt, _) = run(allowance, baseline.work);
         assert!(!same);
         assert_eq!(retry, Err(OracleRefusal::Sticky));
         assert!(receipt.first_refusal.is_some());
@@ -226,7 +242,7 @@ fn unfunded_nominal_admission_refuses_before_its_original_owning_predicate() {
     .unwrap();
     assert!(original.nested);
     assert_eq!(original.bindings.len(), 1);
-    let scope = OracleScope::open(1 << 20).unwrap();
+    let scope = OracleScope::open_with_work(1 << 20, 1 << 25).unwrap();
     let lease = scope.lease();
     let ((metrics, retry), refused, used, first) =
         crate::bounded_output::with_limit_usage_refusal(0, || {
