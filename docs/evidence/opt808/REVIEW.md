@@ -79,3 +79,25 @@ retain the current scaffold guidance and complete owned String-loop refusal
 controls. CLI-HELP-V5 and SUMMARY are additive append/list merges; retain both
 722 and 808 notes. No source audit body was relocated; both new test submodules
 are explicitly attached to their existing owning harnesses.
+
+## Descriptor-copy review correction at 0703
+
+The native backend copies each primitive String pointer from checked Vec storage
+with memcpy. The original v2 physical assertions incorrectly expected all copy
+traffic to equal decoding plus only final payload materialization. The correction
+preserves the backend, original total observer, exact input/output fixtures and
+complete fault receiver. A probe-only forwarding layer identifies the exact
+compiler String-slot extraction and verifies both its live descriptor owner and
+a distinct live String owner. All forwards still reach the original total
+memcpy observer once. Independent non-slot counters retain every other transfer;
+complete independent wire bytes between distinct live owners identify final
+payload materialization. No counter is subtracted, normalized or disabled.
+
+A pointer-width eight-byte actual owned payload and separately owned descriptor
+control perform the same-sized copies: the former remains a payload, the latter
+a descriptor. Preflight/short/value refusal retains decoding non-slot bytes and
+adds real descriptor bytes to TOTAL; successful encoding retains those descriptor
+bytes plus exactly one complete wire transfer and two actual allocations. All
+original fatal/recoverable fault, read-only input, publication and Drop controls
+remain. Exact selectors are the same two native string_vectors tests; no new
+binary or production change. Source-only: no compiler/build/test/probe executed.

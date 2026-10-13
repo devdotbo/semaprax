@@ -52,10 +52,13 @@ Canonical source, current-HIR/graph, repeated generation and exact plan replay
 controls remain part of the original owners.
 
 The native probes retain the complete original allocation fault receiver and
-observe actual decoded allocations, zero additional allocation/copy traffic for
-slot reads and preflight/short/value refusals, then exactly one buffer and one
-String allocation and one final payload memcpy. They retain actual receiving
-Drop and fatal unpublished-result controls; fatal retirement is not zero-leak
+observe actual decoded allocations, zero additional allocation or non-slot copy
+traffic for slot reads and preflight/short/value refusals, then exactly one buffer
+and one String allocation and one final complete payload memcpy. Slot extraction
+also performs
+real descriptor memcpy; total copy counters retain every such byte, with separate
+operation/owner-based counters and an eight-byte payload classification control.
+They retain actual receiving Drop and fatal unpublished-result controls; fatal retirement is not zero-leak
 recovery evidence. Interpreter/native O0/O2/Core-Wasm parity and these physical
 observations are authored definitions, not results. No backend, hosted, live
 agent-cost, or full issue-completion claim is established before execution.
