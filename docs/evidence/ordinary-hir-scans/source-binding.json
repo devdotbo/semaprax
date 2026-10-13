@@ -4,9 +4,9 @@
   "base_head": "47cbc2f7487485dd23ac2ecfcdc1afea2a86f3d3",
   "status": "static only; original bodies byte-exact and registered; no compiler/runtime qualification",
   "source_hashes": {
-    "CHANGELOG.md": "294037fb13b499173950d12b8b1e2a0cf4c8b1a315bedc3b5908dc6f4a03a3bc",
+    "CHANGELOG.md": "2fc60390ebdf9fcc7f9678b7fffba62cf1ecd271e2f473baf64e2b111b8cfc55",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "ed6b57227da0fdf18613489c360eaa1b369a54b8d57053f21064e57edb320dd3",
-    "docs/ARCHITECTURE.md": "0493fb14da1226b0d686abb89838a715e2e9e6ff93f1bf34bf55d22ab4472f67",
+    "docs/ARCHITECTURE.md": "f83470240cb424f55ed2d1e6fd96600fdf7387e997438beeb20b43d0c70b4dcc",
     "src/hir.rs": "9c3160576bc61c4cf14df030e409acaeba2451605c0354c991a1be98f7062691",
     "src/hir/iterator_loop.rs": "3295874fa719aa58acf8f31ee73956aed757ac7ad25fa7fad39f599c830fe9aa",
     "src/hir/iterator_loop/paid.rs": "6baee339c5d405624fffced4257c9c13ed3933e01a076464c63ea683ca23a48b",
