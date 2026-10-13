@@ -227,6 +227,14 @@ fn complete_original_function_and_collection_receivers_keep_source_provenance() 
         "b712e23fef515940e7202d3321d98a9bbb1ff16a3b52f6935c01cdad8f4b1799"
     );
     let collection = include_str!("../../declared_collection.rs");
+    // Only the two saved receiver entries gained test-only ownership; their
+    // complete original bodies and every other byte still bind the frozen SHA.
+    let mut collection = collection.to_owned();
+    for entry in ["contains", "validate_function"] {
+        let guarded = format!("#[cfg(test)]\npub(crate) fn {entry}(");
+        assert_eq!(collection.matches(&guarded).count(), 1);
+        collection = collection.replacen(&guarded, &format!("pub(crate) fn {entry}("), 1);
+    }
     let original = collection
         .split_once("\nmod paid;")
         .unwrap()

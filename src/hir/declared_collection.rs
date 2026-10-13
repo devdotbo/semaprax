@@ -42,6 +42,7 @@ pub(crate) fn vector(index: &DeclarationIndex, ty: &ResolvedType) -> bool {
         && matches!(arguments.as_slice(),[element] if text_element(index,element)))
 }
 /// Transitive refusal, independent of selected entry/reachability and cache facts.
+#[cfg(test)]
 pub(crate) fn contains(index: &DeclarationIndex, root: &ResolvedType) -> bool {
     if super::collection_outcome::runtime_admitted(index, root) {
         return false;
@@ -111,6 +112,7 @@ pub(crate) fn contains(index: &DeclarationIndex, root: &ResolvedType) -> bool {
     }
     false
 }
+#[cfg(test)]
 pub(crate) fn validate_function(
     index: &DeclarationIndex,
     f: &ResolvedFunction,

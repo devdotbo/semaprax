@@ -73,3 +73,10 @@ application-fit claim. Other preflight walkers, genuine generic proof return
 trees and dynamic semantic-error formatting retain their existing ownership;
 combined exact focused allocation/Drop qualification remains pending. The cap,
 refusal selection and observer remain unchanged.
+
+The complete original declaration-collection `contains` and `validate_function`
+entries now have test-only ownership. Their old bodies remain unchanged and
+executable in the comparison harness. The frozen-prefix SHA assertion checks
+exactly one added `cfg(test)` per entry, removes only those two ownership
+attributes and retains the original SHA for all remaining bytes. Production
+uses the funded receiver; no unpriced fallback or lint waiver is introduced.
