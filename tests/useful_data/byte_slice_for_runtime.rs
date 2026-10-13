@@ -397,3 +397,6 @@ fn raw_wasm(root: &Path, name: &str, module: &[u8], expected: i64) {
     );
     assert_eq!(output.stdout, b"byte-slice-for-ok\n");
 }
+
+#[path = "byte_slice_for_runtime/catalog_identifier.rs"]
+mod catalog_identifier;

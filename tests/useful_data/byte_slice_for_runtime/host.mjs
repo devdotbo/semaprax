@@ -2,6 +2,9 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const bytes=await readFile(process.argv[2]),kind=process.argv[3],expected=BigInt(process.argv[4]);
+const catalog=/^catalog-(failure-)?(0|[1-9][0-9]*)$/.exec(kind);
+const failure=kind==='failure'||Boolean(catalog?.[1]);
+const expectedAllocated=kind==='success'?256+new TextEncoder().encode('SEMAPRAX').length:kind==='failure'?3:catalog?Number(catalog[2]):0;
 const module=await WebAssembly.compile(bytes);
 const names=['spx_add','spx_sub','spx_mul','spx_div','spx_rem','spx_neg','spx_contract_fail','spx_bytes_copy','spx_bytes_get','spx_bytes_drop','spx_bytes_as_slice'];
 assert.deepEqual(WebAssembly.Module.imports(module),names.map(name=>({module:'env',name,kind:'function'})));
@@ -41,10 +44,10 @@ for(let run=0;run<4;run++){
     spx_add:(a,b)=>checked(a+b),spx_sub:(a,b)=>checked(a-b),spx_mul:(a,b)=>checked(a*b),
     spx_div:(a,b)=>{assert(b!==0n);return checked(a/b)},spx_rem:(a,b)=>{assert(b!==0n);return a%b},spx_neg:a=>checked(-a),
     spx_contract_fail:status=>{
-      assert.equal(kind,'failure');assert.equal(status,9,'requires status contract.v1/code1');
+      assert(failure);assert.equal(status,9,'requires status contract.v1/code1');
       assert.equal(++reports,1,'exactly one selected report');
       assert.equal(owners.size,0,'report follows complete non-result cleanup');
-      assert.equal(copies,1);assert.equal(drops,1);assert.equal(allocated,3);
+      assert.equal(copies,1);assert.equal(drops,1);assert.equal(allocated,expectedAllocated);
       throw Error('contract');
     },
     spx_bytes_copy:carrier=>{
@@ -66,13 +69,13 @@ for(let run=0;run<4;run++){
   assert.equal(copies,0);assert.equal(allocated,0);assert.equal(owners.size,0);
   let value,error;
   try{value=instance.exports.semaprax_main()}catch(e){error=e}
-  if(kind==='failure'){assert(error,'body failure returned');assert.match(error.message,/^contract$/);assert.equal(value,undefined)}
+  if(failure){assert(error,'body failure returned');assert.match(error.message,/^contract$/);assert.equal(value,undefined)}
   else {assert.equal(error,undefined);assert.equal(value,expected)}
-  assert.equal(reports,kind==='failure'?1:0);
+  assert.equal(reports,failure?1:0);
   assert.equal(owners.size,0,'all reached owned carriers settle');
-  const count=kind==='success'?2:kind==='failure'?1:0;
+  const count=kind==='success'?2:kind==='failure'||catalog?1:0;
   assert.equal(copies,count);assert.equal(drops,count);
   // Complete success source copies the 256-byte array and 8-byte SEMAPRAX String.
-  assert.equal(allocated,kind==='success'?256+new TextEncoder().encode('SEMAPRAX').length:kind==='failure'?3:0);
+  assert.equal(allocated,expectedAllocated);
 }
 console.log('byte-slice-for-ok');
