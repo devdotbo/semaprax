@@ -238,10 +238,9 @@ fn finite_fresh_rows_preserve_first_failure_without_result_or_leaked_owner() {
     run_wasm(&body, 0, 1, "field-bad-word");
 }
 
-#[test]
-fn owned_row_traversal_keeps_previous_indexed_string_view_scoped_to_iteration() {
-    run(
-        r#"@id("app.main") fn main()->i64 {
+// Complete original direct-index fixture remains a refusal control: a
+// traversal field read authenticates the current iteration index.
+const PREVIOUS_INDEXED_DIRECT: &str = r#"@id("app.main") fn main()->i64 {
  let rows=vec_push<Row>(vec_push<Row>(vec_with_capacity<Row>(2usize),Row{priority:7,title:"a",payload:bytes_zeroed(0usize)}),Row{priority:11,title:"b",payload:bytes_zeroed(0usize)});
  let mut good=true;
  for borrow row at index in rows {
@@ -253,7 +252,37 @@ fn owned_row_traversal_keeps_previous_indexed_string_view_scoped_to_iteration() 
  }
  let renewed=vec_sort_owned<Row>(rows);
  if good && vec_len<Row>(renewed)==2usize {29}else{0}
-}"#,
-        29,
+}"#;
+
+#[test]
+fn owned_row_traversal_keeps_previous_indexed_string_view_scoped_to_iteration() {
+    // Both byte views expire in this shared-borrow helper call within the
+    // iteration. Preserve exact a/b bytes, inequality, lengths and owner reentry.
+    let admitted = format!(
+        r#"@id("app.previous_diff") fn previous_diff(rows:borrow Vec<Row>, index:usize, current:borrow str)->bool {{
+ let previous=vec_field<Row>(rows,index-1usize,"title"); let left=str_as_bytes(previous); let right=str_as_bytes(current);
+ let unequal=match byte_get(left,0usize) {{ Option::Some {{ value:a }} => match byte_get(right,0usize) {{ Option::Some {{ value:b }} => a!=b && a==97u8 && b==98u8, Option::None {{}} => false, }}, Option::None {{}} => false, }};
+ unequal && byte_len(left)==1usize && byte_len(right)==1usize
+}}
+{}"#,
+        PREVIOUS_INDEXED_DIRECT.replace(
+            r#"if index>0usize { let previous=vec_field<Row>(rows,index-1usize,"title"); let left=str_as_bytes(previous); let right=str_as_bytes(current);
+   let unequal=match byte_get(left,0usize) { Option::Some { value:a } => match byte_get(right,0usize) { Option::Some { value:b } => a!=b && a==97u8 && b==98u8, Option::None {} => false, }, Option::None {} => false, };
+   good=good && unequal && byte_len(left)==1usize && byte_len(right)==1usize; }"#,
+            "if index>0usize { good=good && previous_diff(rows,index,current); }",
+        ),
     );
+    assert_ne!(admitted, PREVIOUS_INDEXED_DIRECT);
+    run(&admitted, 29);
+}
+
+#[test]
+fn direct_previous_indexed_read_retains_the_exact_traversal_index_refusal() {
+    let source = format!("{DECLARATION}{PREVIOUS_INDEXED_DIRECT}");
+    let parsed = semaprax::check(&source, "previous-indexed-direct.spx").unwrap();
+    let diagnostic = semaprax::hir::resolve(&parsed).unwrap_err();
+    assert_eq!(diagnostic.code, "SPX-H006");
+    assert!(diagnostic.message.contains(
+        "record traversal length, index, nominal reads or whole-root freeze proof is invalid"
+    ));
 }
