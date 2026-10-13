@@ -1,5 +1,9 @@
 # HIR borrowed generic reachability v1
 
+Status: source-only; current-head executable qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Private source contract for one bounded lane. Qualification is pending: no
 Cargo, build or test ran in the implementation lane, and no measured number is
 claimed here.

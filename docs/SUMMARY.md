@@ -802,3 +802,6 @@ Audience: all documentation readers.
 - [Ordinary substitution and classifier leaf source batch](evidence/opt806/substitution-leaves.md)
 - [OPT806 separate refusal dependency handoff](evidence/opt806-dependency/HANDOFF.md)
 - [OPT810 independent oracle funding audit](evidence/opt810-oracle-funding/REVIEW.md)
+
+- [Borrowed generic reachability v1](HIR-BORROWED-GENERIC-REACHABILITY-V1.md)
+- [Scoped recovery qualification v1](SCOPED-RECOVERY-QUALIFICATION-V1.md)
