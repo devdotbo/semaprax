@@ -15,6 +15,7 @@
     "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::substitution_uses_existing_cumulative_work_without_allowance_or_reset",
     "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::held_substitution_payer_refuses_cross_invocation_before_construction",
     "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::raw_missing_parameter_and_each_actual_reservation_boundary_keep_sticky_drop",
-    "cleanup_plan::replay::paid_type_facts::inventory_tests::full_droppability_source_keeps_complete_original_plus_raw_text_adapter"
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::full_droppability_source_keeps_complete_original_plus_raw_text_adapter",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::raw_utf8_owner_comparison_and_diagnostic_writes_use_the_same_finite_work"
   ]
 }

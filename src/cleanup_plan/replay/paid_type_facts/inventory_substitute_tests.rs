@@ -346,3 +346,71 @@ fn raw_missing_parameter_and_each_actual_reservation_boundary_keep_sticky_drop()
         }
     }
 }
+
+#[test]
+fn raw_utf8_owner_comparison_and_diagnostic_writes_use_the_same_finite_work() {
+    let program = fixture();
+    let function = &program.functions[0];
+    let owner = DeclarationId::new("target.λ");
+    let template = ResolvedType::TypeParameter {
+        owner: DeclarationId::new("forged.λ"),
+        index: 0,
+    };
+    let expected = crate::hir::substitute_type(&template, &owner, &[]);
+    let message_bytes = expected.as_ref().unwrap_err().message.len();
+    let ((spent, measured), refused, paid) =
+        crate::bounded_output::with_limit_usage(usize::MAX, || {
+            measure(|| {
+                let mut budget = ReplayBudget::new();
+                budget
+                    .charge(function, 0, "raw text work receiver setup")
+                    .unwrap();
+                let initial = budget.remaining;
+                let first = substitute(&template, &owner, &[], function, &mut budget);
+                assert_eq!(first, expected);
+                let spent = initial - budget.remaining;
+                assert!(spent >= message_bytes + owner.as_str().len() + 2);
+                let second = substitute(&template, &owner, &[], function, &mut budget);
+                assert_eq!(second, expected);
+                assert_eq!(initial - budget.remaining, 2 * spent);
+                drop(second);
+                drop(first);
+                drop(budget);
+                spent
+            })
+        });
+    assert!(!refused && !measured.invalid);
+    assert!(measured.allocated <= paid);
+    assert_eq!(measured.allocated, measured.freed);
+    assert_eq!(measured.live, 0);
+    for work in [spent, spent - 1, 0] {
+        let ((matched, measured), refused, paid) =
+            crate::bounded_output::with_limit_usage(usize::MAX, || {
+                measure(|| {
+                    let mut budget = ReplayBudget::new();
+                    budget
+                        .charge(function, 0, "raw text finite work setup")
+                        .unwrap();
+                    budget.remaining = work;
+                    let result = substitute(&template, &owner, &[], function, &mut budget);
+                    let matched = result == expected;
+                    if work < spent {
+                        assert!(!matched && result.is_err() && budget.refusal_spent);
+                        let before = current_metrics();
+                        let retry = substitute(&template, &owner, &[], function, &mut budget);
+                        assert!(retry.is_err());
+                        assert_eq!(current_metrics().allocated, before.allocated);
+                        drop(retry);
+                    }
+                    drop(result);
+                    drop(budget);
+                    matched
+                })
+            });
+        assert_eq!(matched, work == spent);
+        assert!(!refused && !measured.invalid);
+        assert!(measured.allocated <= paid);
+        assert_eq!(measured.allocated, measured.freed);
+        assert_eq!(measured.live, 0);
+    }
+}

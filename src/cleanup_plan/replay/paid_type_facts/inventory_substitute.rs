@@ -3,7 +3,7 @@
 use super::*;
 
 fn raw(payer: &mut Payer<'_>, message: std::fmt::Arguments<'_>) -> Diagnostic {
-    match droppability::inventory_text(payer, message) {
+    match inventory_text::raw(payer, message) {
         Ok(message) => Diagnostic::io("SPX-H006", message),
         Err(error) => error,
     }
@@ -26,7 +26,7 @@ pub(super) fn substitute(
         index,
     } = template
     {
-        if actual != owner {
+        if !inventory_text::owner_matches(actual, owner, payer)? {
             return Err(raw(
                 payer,
                 format_args!(
@@ -71,7 +71,7 @@ pub(super) fn substitute(
                         owner: actual,
                         index,
                     } => {
-                        if actual != owner {
+                        if !inventory_text::owner_matches(actual, owner, payer)? {
                             return Err(raw(payer, format_args!("type template for `{owner}` contains foreign parameter owner `{actual}`")));
                         }
                         let index_usize = usize::try_from(*index).map_err(|_| {

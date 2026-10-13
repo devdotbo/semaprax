@@ -341,3 +341,5 @@ mod inventory_clone;
 
 #[cfg(test)]
 mod inventory_substitute_tests;
+
+mod inventory_text;

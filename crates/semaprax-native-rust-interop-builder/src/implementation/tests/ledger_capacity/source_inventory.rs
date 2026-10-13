@@ -963,6 +963,7 @@ macro_rules! lower_source_inventory {
             include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_text.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/skeleton_work.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/dag_storage.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs"),

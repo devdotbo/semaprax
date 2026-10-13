@@ -214,6 +214,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_text.rs"),
         include_str!("../src/cleanup_plan/replay/allocation/oracle.rs"),
         include_str!("../src/cleanup_plan/replay/allocation/oracle/tests.rs"),
         include_str!("../src/hir/vec_loop_renewal.rs"),
