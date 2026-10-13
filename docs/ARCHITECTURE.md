@@ -4664,3 +4664,10 @@ authored declarations through resolution and Drop. Cache-enabled calls retain
 the affine receiving directories and their original terminal publication path.
 The complete old imported constructor and full funding controls remain independent;
 this storage distinction supplies no forecast discount or graph budget increase.
+
+`hir/validation/variant_or/covered.rs` owns sorted borrowed variant-case coverage
+for the iterative validator. Its carrier fits the original BTreeSet frame slot
+and reuses prepaid continuation Storage for growth and speculative checkpoints.
+Or-pattern checks retain lexical condition/alternative order; guarded candidates
+are discarded and failed checkpoints preserve the prior root. The complete old
+BTreeSet helper and old dispatch remain independent compiled controls.

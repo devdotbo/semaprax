@@ -4,9 +4,9 @@
 //! the parent module.
 mod function_lookup;
 mod function_scope;
-mod identity_scratch;
-mod identity_insert;
 mod identity_directory;
+mod identity_insert;
+mod identity_scratch;
 #[cfg(test)]
 mod owned_iterative_oracle;
 mod scope_checkpoint;
@@ -1621,9 +1621,7 @@ impl<'a> HirValidator<'a> {
         }
         Ok(())
     }
-    fn reachable_function_instances(
-        &self,
-    ) -> Result<generic_template::Reachable<'a>, Diagnostic> {
+    fn reachable_function_instances(&self) -> Result<generic_template::Reachable<'a>, Diagnostic> {
         generic_template::reachable_instances(self.program)
     }
     #[cfg(test)]
@@ -1986,7 +1984,7 @@ impl<'a> HirValidator<'a> {
                 outer: scope_checkpoint::Scope,
                 outer_ids: scope_checkpoint::IdSnapshot,
                 arm_scopes: scope_checkpoint::Storage<scope_checkpoint::Scope>,
-                covered: BTreeSet<DeclarationId>,
+                covered: variant_or::Covered<'e>,
                 wildcard_seen: bool,
                 result: Option<(ResolvedType, OwnershipMode)>,
                 path: &'e str,
@@ -2001,7 +1999,7 @@ impl<'a> HirValidator<'a> {
                 outer: scope_checkpoint::Scope,
                 outer_ids: scope_checkpoint::IdSnapshot,
                 arm_scopes: scope_checkpoint::Storage<scope_checkpoint::Scope>,
-                covered: BTreeSet<DeclarationId>,
+                covered: variant_or::Covered<'e>,
                 wildcard_seen: bool,
                 result: Option<(ResolvedType, OwnershipMode)>,
                 path: &'e str,
@@ -2146,10 +2144,7 @@ impl<'a> HirValidator<'a> {
                         + ids(outer_ids)
                         + arm_scopes.capacity() * std::mem::size_of::<scope_checkpoint::Scope>()
                         + arm_scopes.iter().map(scope).sum::<usize>()
-                        + covered.len()
-                            * (std::mem::size_of::<DeclarationId>()
-                                + std::mem::size_of::<BTreeSet<DeclarationId>>())
-                        + covered.iter().map(|id| id.as_str().len()).sum::<usize>()
+                        + covered.owned_capacity()
                         + result
                             .as_ref()
                             .map_or(0, |(ty, _)| resolved_type_owned_capacity(ty))
@@ -4818,7 +4813,7 @@ impl<'a> HirValidator<'a> {
                             outer,
                             outer_ids,
                             arm_scopes: scope_checkpoint::Storage::with_capacity(arms.len())?,
-                            covered: BTreeSet::new(),
+                            covered: variant_or::Covered::new(),
                             wildcard_seen: false,
                             result: None,
                             path,
@@ -4947,7 +4942,7 @@ impl<'a> HirValidator<'a> {
                                 if wildcard_seen
                                     || pattern_variant != variant
                                     || covered.contains(case)
-                                    || (arm.guard.is_none() && !covered.insert(case.clone()))
+                                    || (arm.guard.is_none() && !covered.insert(case)?)
                                 {
                                     return Err(hir_error(
                                         "resolved match has an unreachable or foreign case pattern",
@@ -5043,8 +5038,8 @@ impl<'a> HirValidator<'a> {
                                 ));
                             }
                             ResolvedMatchPattern::Or(alternatives) => {
-                                let mut candidate = covered.clone();
-                                variant_or::cover_variant_or_pattern(
+                                let mut candidate = covered.checkpoint()?;
+                                variant_or::cover_borrowed(
                                     alternatives,
                                     variant,
                                     cases,
@@ -5737,7 +5732,13 @@ impl<'a> HirValidator<'a> {
             }
 
             ResolvedExprKind::Closure { .. } => {
-                self.validate_closure_owned_reference(function, expression, scope, path, allow_moves)?;
+                self.validate_closure_owned_reference(
+                    function,
+                    expression,
+                    scope,
+                    path,
+                    allow_moves,
+                )?;
                 (expression.ty.clone(), expression.ownership)
             }
             ResolvedExprKind::FunctionReference { target } => {

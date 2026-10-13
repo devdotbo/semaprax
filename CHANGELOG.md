@@ -7017,3 +7017,8 @@ The detailed 0.3.5, 0.2.0, and 0.1.0 history is preserved in the [changelog arch
   the actual uncached resolved-core route. Retain complete cache receiving owners
   and full old oracle assertions. Constructor/Drop and full semantic controls are
   authored; the independent recursive full-receiver funding deficit remains open.
+
+- Replace iterative variant-match coverage tree constructors with sorted borrowed
+  case backing and prepaid speculative Or checkpoints. Preserve complete old
+  coverage/dispatch controls, diagnostic bytes and all limits; physical Drop,
+  exact-short and full receiver controls are authored pending focused execution.

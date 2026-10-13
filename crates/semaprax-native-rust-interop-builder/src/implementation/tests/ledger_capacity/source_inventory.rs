@@ -672,6 +672,9 @@ macro_rules! hir_validator_source_inventory {
             include_str!("../../../../../src/hir/validation/record_pattern/owned.rs"),
             include_str!("../../../../../src/hir/validation/record_pattern/tests.rs"),
             include_str!("../../../../../src/hir/validation/variant_or.rs"),
+            include_str!("../../../../../src/hir/validation/variant_or/covered.rs"),
+            include_str!("../../../../../src/hir/validation/variant_or/covered/tests.rs"),
+
             include_str!("../../../../../src/hir/validation/iterative_while_admission_tests.rs"),
         )
     };
