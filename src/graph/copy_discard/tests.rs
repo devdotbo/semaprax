@@ -245,6 +245,17 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
         "{return 0;}",
         "{if byte_len(bytes_as_slice(payload))==0usize {0}else{1}}",
     );
+    // A valued match without a lexical descendant remains an ordinary match,
+    // even when its scalar result is unused. Preserve that exact counterpart.
+    let (_, valued) = resolved(&reachable);
+    assert!(!crate::hir::copy_discard_program_uses(&valued));
+    assert_full_replay(&valued);
+    // The nested while's real break supplies a reachable lexical descendant.
+    // Its dynamic byte-length condition stays outside finite authentication.
+    let reachable = original.replace(
+        "{return 0;}",
+        "{while byte_len(bytes_as_slice(payload))>0usize {break;0} 0}",
+    );
     let (ast, program) = resolved(&reachable);
     assert!(crate::hir::copy_discard_program_uses(&program));
     assert!(!authenticate_finite_composition(&program).unwrap());
