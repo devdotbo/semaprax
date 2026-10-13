@@ -343,7 +343,7 @@ fn phase_overlap_pairs_current_staging_and_full_held_index_without_previous_buil
 #[test]
 fn full_original_capacity_receiver_and_controls_remain_exact_with_only_index_hook() {
     use sha2::{Digest, Sha256};
-    let controls = include_str!("../../../../evidence/capacity-census-811-residual/src__cleanup_plan__build__capacity_observation__tests.rs.before.txt");
+    let controls = include_str!("../../../../docs/evidence/capacity-census-811-residual/src__cleanup_plan__build__capacity_observation__tests.rs.before.txt");
     assert_eq!(
         format!(
             "{:x}",
@@ -351,7 +351,7 @@ fn full_original_capacity_receiver_and_controls_remain_exact_with_only_index_hoo
         ),
         "b3ef73fcea5448341a333c2d14569db50ffb09e801dd7b9c61235cd6790bf6bc"
     );
-    let helper = include_str!("../../../../evidence/capacity-census-811-residual/src__cleanup_plan__build__helper_index.rs.before.txt");
+    let helper = include_str!("../../../../docs/evidence/capacity-census-811-residual/src__cleanup_plan__build__helper_index.rs.before.txt");
     assert_eq!(
         format!(
             "{:x}",
@@ -359,7 +359,7 @@ fn full_original_capacity_receiver_and_controls_remain_exact_with_only_index_hoo
         ),
         "c5efac6b49131bbe0e04dfadc9a62e1333ff27df0b6983336168327657e052d1"
     );
-    let legacy = include_str!("../../../../evidence/capacity-census-811-residual/src__cleanup_plan__build__capacity_observation__legacy.rs.before.txt");
+    let legacy = include_str!("../../../../docs/evidence/capacity-census-811-residual/src__cleanup_plan__build__capacity_observation__legacy.rs.before.txt");
     assert_eq!(
         format!(
             "{:x}",

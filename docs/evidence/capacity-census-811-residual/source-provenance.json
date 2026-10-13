@@ -3,22 +3,22 @@
   "original_sources": [
     {
       "path": "src/cleanup_plan/build/capacity_observation/tests.rs",
-      "archive": "evidence/capacity-census-811-residual/src__cleanup_plan__build__capacity_observation__tests.rs.before.txt",
+      "archive": "docs/evidence/capacity-census-811-residual/src__cleanup_plan__build__capacity_observation__tests.rs.before.txt",
       "sha256": "b3ef73fcea5448341a333c2d14569db50ffb09e801dd7b9c61235cd6790bf6bc"
     },
     {
       "path": "src/cleanup_plan/build/helper_index.rs",
-      "archive": "evidence/capacity-census-811-residual/src__cleanup_plan__build__helper_index.rs.before.txt",
+      "archive": "docs/evidence/capacity-census-811-residual/src__cleanup_plan__build__helper_index.rs.before.txt",
       "sha256": "c5efac6b49131bbe0e04dfadc9a62e1333ff27df0b6983336168327657e052d1"
     },
     {
       "path": "src/cleanup_plan/build/capacity_observation.rs",
-      "archive": "evidence/capacity-census-811-residual/src__cleanup_plan__build__capacity_observation.rs.before.txt",
+      "archive": "docs/evidence/capacity-census-811-residual/src__cleanup_plan__build__capacity_observation.rs.before.txt",
       "sha256": "81e921674977ce7adf75ea8f9b7028208f392ca4247a93dce91e51418e338f85"
     },
     {
       "path": "src/cleanup_plan/build/capacity_observation/legacy.rs",
-      "archive": "evidence/capacity-census-811-residual/src__cleanup_plan__build__capacity_observation__legacy.rs.before.txt",
+      "archive": "docs/evidence/capacity-census-811-residual/src__cleanup_plan__build__capacity_observation__legacy.rs.before.txt",
       "sha256": "3a8240040c0580868d4a465be868a99192e72c5d2a6cc9cbb614e625f849db13"
     }
   ],
