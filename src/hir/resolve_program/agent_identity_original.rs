@@ -1,6 +1,7 @@
 //! Complete frozen 5ff resolver receiver and agent builder, compiled by parity controls.
 use super::*;
-use crate::hir::{record_invariants, FunctionResolutionWork, FunctionReuse};
+use crate::hir::{record_invariants, DeclarationIndex, FunctionResolutionWork, FunctionReuse};
+use crate::Program;
 
 impl Resolver<'_> {
     pub(in crate::hir) fn resolve_agent_identity_original(

@@ -287,8 +287,8 @@ pub(in crate::hir) fn refusal_report() -> Vec<Diagnostic> {
 /// A checked structural invariant added to the checked scalar Agent fixture.
 pub(in crate::hir) fn invariant_agent_program() -> Program {
     let mut program = agent_program();
-    let extra = crate::check("module invariant.agent;\n@id(\"range.type\") record Range { @id(\"range.lo\") lo:i64, @id(\"range.hi\") hi:i64, } requires lo <= hi\n@id(\"extra.main\") fn main()->i64 { 0 }\n", "invariant-agent.spx").unwrap();
-    program.types.extend(extra.types);
+    let mut extra = crate::check("module invariant.agent;\n@id(\"range.type\") record Range { @id(\"range.lo\") lo:i64, @id(\"range.hi\") hi:i64, } requires lo <= hi\n@id(\"extra.main\") fn main()->i64 { 0 }\n", "invariant-agent.spx").unwrap();
+    program.types.append(&mut extra.types);
     assert!(!crate::source_verify::verify(&program)
         .iter()
         .any(|error| error.severity.is_error()));

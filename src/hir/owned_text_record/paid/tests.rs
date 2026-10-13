@@ -483,7 +483,7 @@ fn full_saved_receiver_sources_remain_byte_identical_and_program_selection_match
     ] {
         assert_eq!(
             format!(
-                "{}",
+                "{:x}",
                 crate::digest_hex::LowerHex(Sha256::digest(source.as_bytes()))
             ),
             expected
