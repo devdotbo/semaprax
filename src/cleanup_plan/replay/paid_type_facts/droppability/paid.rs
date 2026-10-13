@@ -2,7 +2,7 @@
 use super::*;
 use crate::hir::TypeFactsPayer;
 use std::borrow::Cow;
-pub(super) fn needs_drop<P: TypeFactsPayer>(
+pub(in crate::cleanup_plan::replay::paid_type_facts) fn needs_drop<P: TypeFactsPayer>(
     program: &dyn crate::cleanup::ReplayContext,
     ty: &ResolvedType,
     payer: &mut P,

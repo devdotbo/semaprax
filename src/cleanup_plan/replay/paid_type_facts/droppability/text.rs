@@ -124,7 +124,7 @@ pub(super) fn raw<P: TypeFactsPayer>(
         None => Ok(value.expect("raw diagnostic formatter completed")),
     }
 }
-pub(super) fn replay_diagnostic<P: TypeFactsPayer>(
+pub(in crate::cleanup_plan::replay::paid_type_facts) fn replay_diagnostic<P: TypeFactsPayer>(
     function: &ResolvedFunction,
     message: &str,
     payer: &mut P,
