@@ -88,6 +88,9 @@ String calls and matches over Copy scalars or variants with only Copy scalar
 payloads, with ordinary exhaustiveness and guard checks.
 [Loop Copy Variant Construction v1](LOOP-COPY-VARIANT-CONSTRUCTION-V1.md)
 additionally admits concrete Copy-scalar constructors within those loops.
+[Copy Record Collections v1](COPY-RECORD-COLLECTIONS-V1.md) additionally admits
+construction and projection of a flat Copy record, and private calls that take
+or return one by value.
 
 [IO Lines v1](IO-LINES-V1.md#cursor-transitions) owns the additive same-owner
 renewal of an explicitly identified one-`Bytes`-plus-`usize` record. Its

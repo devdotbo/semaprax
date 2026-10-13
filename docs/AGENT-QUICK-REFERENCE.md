@@ -223,14 +223,15 @@ fn main() -> i64
   Its body still needs a final expression, but that value is discarded; the
   condition controls repetition. While bodies admit
   Copy-scalar operations, user calls with declared read-only input effects
-  taking Copy scalars or flat Copy variants, borrowed byte slices, named `str`
+  taking Copy scalars, flat Copy variants or
+  [flat Copy records](COPY-RECORD-COLLECTIONS-V1.md), borrowed byte slices, named `str`
   views, exact compiler-owned `borrow Vec<T>` for Copy-scalar `T`, or consumed
-  strings and returning a scalar, flat Copy variant or string, matches over Copy
+  strings and returning a scalar, flat Copy variant/record or string, matches over Copy
   scalars or variants with only Copy scalar payloads,
   and string literals and `string_*` calls (each iteration releases its own
   strings). Match arms may yield strings or flat Copy variants. Concrete variants with only Copy
-  scalar payloads may be constructed there, including direct match scrutinees;
-  record/non-Copy variant construction, other aggregate-returning calls, and
+  scalar payloads and flat Copy records may be constructed there, including direct match scrutinees;
+  other record/variant construction, other aggregate-returning calls, and
   surrounding ownership changes are `SPX-T252`. Conditions settle temporary
   Strings before each Boolean decision ([condition lifetime](STRING-CONDITION-LIFETIMES-V1.md)). Copy variant guards admit ordinary checked bool calls/blocks and
   case/wildcard/or patterns, require exhaustive unguarded fallback, and cannot

@@ -17,8 +17,9 @@ use crate::ast::{ParamMode, Type, TypeDeclarationKind};
 use crate::hir::{OwnershipMode, ResolvedType};
 use crate::source_verify::is_scalar_source_type;
 
-/// One source parameter a loop-body call admits: a Copy scalar or flat Copy variant, a borrowed
-/// byte slice, named `str`, or exact Copy-scalar Vec, or an owned `string` the call consumes.
+/// One source parameter a loop-body call admits: a Copy scalar, flat Copy variant or flat Copy
+/// record, a borrowed byte slice, named `str`, or exact Copy-scalar Vec, or an owned `string` the
+/// call consumes.
 pub(crate) fn ast_param_admitted(program: &dyn ProgramSource, mode: ParamMode, ty: &Type) -> bool {
     match mode {
         ParamMode::Value => {
@@ -69,7 +70,8 @@ pub(crate) fn effects_admitted(effects: &[String]) -> bool {
     })
 }
 
-/// One source result a loop-body call admits: a Copy scalar, flat Copy variant or new `string`.
+/// One source result a loop-body call admits: a Copy scalar, flat Copy variant, flat Copy record
+/// or new `string`.
 pub(crate) fn ast_result_admitted(program: &dyn ProgramSource, ty: &Type) -> bool {
     is_scalar_source_type(ty)
         || *ty == Type::String
