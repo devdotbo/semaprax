@@ -1,7 +1,9 @@
 //! Validation and read-only inspection over resolved HIR.
 
 use super::*;
+mod audit_pending;
 pub(super) mod calls;
+use audit_pending::Pending;
 
 #[cfg(test)]
 pub(super) fn validate_with_static_text(
@@ -208,7 +210,7 @@ fn audit_resolved_type(root: &ResolvedType) -> Result<(), Diagnostic> {
         }
         ResolvedType::Function { .. } | ResolvedType::Nominal { .. } => {}
     }
-    let mut pending = vec![root];
+    let mut pending = Pending::new(root);
     while let Some(ty) = pending.pop() {
         match ty {
             ResolvedType::Function { parameters, result } => {
@@ -276,7 +278,7 @@ fn audit_resolved_record_match_pattern(
 }
 
 fn audit_resolved_expression(root: &ResolvedExpr) -> Result<(), Diagnostic> {
-    let mut pending = vec![root];
+    let mut pending = Pending::new(root);
     while let Some(expression) = pending.pop() {
         reject_nul_identity("resolved expression", expression.id.as_str())?;
         audit_resolved_type(&expression.ty)?;
@@ -540,7 +542,16 @@ fn audit_hir_place(place: &Place) -> Result<(), Diagnostic> {
 }
 
 fn audit_field_liveness_shape(root: &crate::cleanup::FieldLivenessShape) -> Result<(), Diagnostic> {
-    let mut pending = vec![root];
+    // These terminal shapes have precisely the same verdict as popping only
+    // the root in the full walker. No inventory normalization is implied.
+    match root {
+        crate::cleanup::FieldLivenessShape::NoDrop => return Ok(()),
+        crate::cleanup::FieldLivenessShape::Leaf { lifecycle, .. } => {
+            return reject_nul_identity("cleanup lifecycle", lifecycle.as_str());
+        }
+        _ => {}
+    }
+    let mut pending = Pending::new(root);
     while let Some(shape) = pending.pop() {
         match shape {
             crate::cleanup::FieldLivenessShape::NoDrop => {}

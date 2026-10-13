@@ -383,3 +383,5 @@ fn path_prefix_matching_is_directional() {
 }
 
 mod type_identity;
+
+mod inline_worklists;
