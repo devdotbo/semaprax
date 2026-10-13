@@ -1,8 +1,8 @@
 //! Root classification before outer carriers; saved paid and original callbacks
 //! remain independent. Physical accounting is separate from conservative debit.
 use super::super::{
-    tests::{fixtures, payer},
     ReplayBudget, ResolvedProgram,
+    tests::{fixtures, payer},
 };
 use super::*;
 use crate::bounded_output::{active_remaining, reserve_active_required, with_limit_usage_refusal};
@@ -112,12 +112,65 @@ fn root_first_full_cached_hostile_leaf_parity_exact_short_zero_sticky_and_drop()
             assert!(!refused && !old.invalid && old.live == 0);
             assert_eq!(old.allocated, old.freed);
             let (((), wide), refused, acquired, _) = observe(&changed, &ty, usize::MAX, false);
-            assert!(!refused && acquired > 0 && acquired < old_used);
+            assert!(!refused && acquired < old_used);
             assert!(!wide.invalid && wide.live == 0 && wide.allocated == wide.freed);
             assert!(wide.allocated <= acquired && wide.highwater <= acquired);
             // Leaf roots cannot allocate a traversal carrier; any remaining
             // allocation belongs to paid classifier or exact semantic text.
             assert!(wide.allocated <= old.allocated);
+            let expected_zero = match &ty {
+                // These exact built-in leaf roots construct no classifier or
+                // outer traversal carrier. Hostile true Copy facts instead
+                // require the original semantic error key/text constructors.
+                ResolvedType::Unit
+                | ResolvedType::I64
+                | ResolvedType::I32
+                | ResolvedType::Char
+                | ResolvedType::U8
+                | ResolvedType::Usize
+                | ResolvedType::F32
+                | ResolvedType::F64
+                | ResolvedType::Bool => cached != Some(true),
+                ResolvedType::Bytes
+                | ResolvedType::String
+                | ResolvedType::StringMap
+                | ResolvedType::OnceFunction
+                | ResolvedType::OnceFunctionI64
+                | ResolvedType::OnceFunctionI64Pair
+                | ResolvedType::Str
+                | ResolvedType::SliceU8
+                | ResolvedType::MutFunctionI64 => true,
+                ResolvedType::ArrayU8(37) => cached == Some(false),
+                ResolvedType::TypeParameter {
+                    index: u32::MAX, ..
+                } => cached.is_some(),
+                ResolvedType::Function { parameters, .. } => {
+                    // The literal 128-child query exceeds the borrowed cache
+                    // census and must retain the complete paid constructor.
+                    assert_eq!(parameters.len(), 128);
+                    false
+                }
+                _ => panic!("new root requires an independent acquisition expectation"),
+            };
+            if expected_zero {
+                assert_eq!(acquired, 0, "known absent constructors: {ty:?}/{cached:?}");
+                // A real fast route constructs nothing: healthy zero only
+                // authenticates the existing ledger, so every limit admits it.
+                assert_eq!(wide.allocated, 0);
+                let (((), zero), refused, used, first) = observe(&changed, &ty, 0, false);
+                assert!(
+                    !refused
+                        && first.is_none()
+                        && used == 0
+                        && zero.allocated == 0
+                        && zero.live == 0
+                );
+                continue;
+            }
+            assert!(
+                acquired > 0,
+                "original required constructors: {ty:?}/{cached:?}"
+            );
             let (((), exact), refused, used, _) = observe(&changed, &ty, acquired, false);
             assert!(!refused && used == acquired && !exact.invalid && exact.live == 0);
             assert_eq!(exact.allocated, exact.freed);

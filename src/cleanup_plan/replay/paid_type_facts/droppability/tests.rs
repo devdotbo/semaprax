@@ -1,5 +1,5 @@
 //! Full old walks, hostile payloads and actual receiving/Drop on one payer.
-use super::super::{tests::fixtures, tests::payer, ReplayBudget, ResolvedProgram};
+use super::super::{ReplayBudget, ResolvedProgram, tests::fixtures, tests::payer};
 use super::*;
 use crate::bounded_output::{active_remaining, reserve_active_required, with_limit_usage_refusal};
 use crate::hir::{TypeFacts, TypeFactsPayer};
@@ -252,9 +252,12 @@ fn paid_outer_exact_short_zero_sticky_drop_accounts_actual_backing_separately() 
 }
 
 // Semantic key-floor oracle deliberately has no physical ledger: the two full
-// key bodies get separate identical logical budgets. Actual funding is tested
-// above with the original invocation payer, not this independent oracle.
-struct SemanticPayer;
+// key bodies get separate identical logical budgets. Scope: this is independent
+// UNPAID logical-frontier parity against the original identity_key (whose
+// format! is the budgeted macro), not a funding claim and not a closed unpriced
+// comparison. Physical funding is exercised separately with the real payer
+// (see key_tests) through Drop.
+pub(super) struct SemanticPayer;
 impl TypeFactsPayer for SemanticPayer {
     fn bytes(&mut self, _: usize) -> Result<(), Diagnostic> {
         Ok(())

@@ -1,4 +1,9 @@
-//! Raw semantic text and the original key's sole capped nominal-child frontier.
+//! Raw semantic text, strict identity-key text and the original key's capped
+//! nominal-child frontier. Semantic/final diagnostics stay physical-paid RAW
+//! (`text`/`append_raw`). Only the identity key uses `strict_text`/`append_strict`,
+//! which keep the original budgeted_format logical frontier. Qualification: the
+//! logical parity tests run with an independent unpaid payer; physical funding is
+//! exercised separately with the real payer. No production funding claim is made.
 use crate::bounded_output::classifier_string::{ClassifierString, GrowthFailure};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedFunction, TypeFactsPayer};
@@ -91,6 +96,24 @@ impl<P: TypeFactsPayer> Storage<'_, P> {
     pub(super) fn text(&mut self, arguments: fmt::Arguments<'_>) -> Option<String> {
         let mut output = self.encoded()?;
         self.append_raw(&mut output, arguments)?;
+        Some(output.into_string())
+    }
+    /// Identity-key only: original budgeted_format semantics. The first logical
+    /// decline stops the formatter and discards the output (empty string).
+    pub(super) fn append_strict(
+        &mut self,
+        output: &mut ClassifierString,
+        arguments: fmt::Arguments<'_>,
+    ) -> Option<()> {
+        if self.first.is_some() {
+            return None;
+        }
+        let result = output.strict(arguments, &mut |bytes| self.payer.bytes(bytes));
+        self.growth(result)
+    }
+    pub(super) fn strict_text(&mut self, arguments: fmt::Arguments<'_>) -> Option<String> {
+        let mut output = self.encoded()?;
+        self.append_strict(&mut output, arguments)?;
         Some(output.into_string())
     }
     pub(super) fn literal(&mut self, value: &str) -> Option<String> {

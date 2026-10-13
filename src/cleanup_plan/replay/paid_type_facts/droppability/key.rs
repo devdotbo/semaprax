@@ -1,4 +1,7 @@
 //! Exact original key traversal with physical backing acquired by its caller.
+//! Outer format! calls (zero-argument nominal, array, type parameter, assembled
+//! nominal, function prefix) are STRICT like the original budgeted macro; nominal
+//! child encoding is capped; function children are raw; literals take no sink.
 use super::text::Storage;
 use crate::hir::TypeFactsPayer as Payer;
 use crate::hir::{DeclarationId, ResolvedType};
@@ -10,7 +13,7 @@ fn build<P: Payer>(ty: &ResolvedType, storage: &mut Storage<'_, P>) -> Option<St
     } = ty
     {
         if arguments.is_empty() {
-            return storage.text(format_args!(
+            return storage.strict_text(format_args!(
                 "nominal:{}:{}:0:",
                 declaration.as_str().len(),
                 declaration
@@ -80,7 +83,7 @@ fn build<P: Payer>(ty: &ResolvedType, storage: &mut Storage<'_, P>) -> Option<St
                     storage.push(&mut keys, key)?;
                 }
                 ResolvedType::ArrayU8(length) => {
-                    let key = storage.text(format_args!("array:u8:{length}"))?;
+                    let key = storage.strict_text(format_args!("array:u8:{length}"))?;
                     storage.push(&mut keys, key)?;
                 }
                 ResolvedType::F32 => {
@@ -116,7 +119,7 @@ fn build<P: Payer>(ty: &ResolvedType, storage: &mut Storage<'_, P>) -> Option<St
                     storage.push(&mut keys, key)?;
                 }
                 ResolvedType::TypeParameter { owner, index } => {
-                    let key = storage.text(format_args!(
+                    let key = storage.strict_text(format_args!(
                         "parameter:{}:{}:{index}",
                         owner.as_str().len(),
                         owner
@@ -138,7 +141,7 @@ fn build<P: Payer>(ty: &ResolvedType, storage: &mut Storage<'_, P>) -> Option<St
                     .checked_sub(count + 1)
                     .expect("function key children retained");
                 let mut key = storage.encoded()?;
-                storage.append_raw(&mut key, format_args!("function:v1:{count}:"))?;
+                storage.append_strict(&mut key, format_args!("function:v1:{count}:"))?;
                 for child in keys.drain(split..) {
                     storage.append_raw(&mut key, format_args!("{}:{child}", child.len()))?;
                 }
@@ -153,7 +156,7 @@ fn build<P: Payer>(ty: &ResolvedType, storage: &mut Storage<'_, P>) -> Option<St
                 for key in keys.drain(split..) {
                     storage.append(&mut encoded, format_args!("{}:{key}", key.len()))?;
                 }
-                let key = storage.text(format_args!(
+                let key = storage.strict_text(format_args!(
                     "nominal:{}:{}:{}:{}",
                     declaration.as_str().len(),
                     declaration,

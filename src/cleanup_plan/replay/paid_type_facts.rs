@@ -166,3 +166,5 @@ fn with_saved_classifier<T>(run: impl FnOnce() -> T) -> T {
 }
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod zero_tests;

@@ -177,11 +177,13 @@ pub(super) fn needs_drop(
 #[cfg(test)]
 mod helper_tests;
 mod key;
+#[cfg(test)]
+mod key_tests;
 mod paid;
 #[cfg(test)]
-mod saved_paid;
-#[cfg(test)]
 mod root_tests;
+#[cfg(test)]
+mod saved_paid;
 #[cfg(test)]
 mod tests;
 mod text;
