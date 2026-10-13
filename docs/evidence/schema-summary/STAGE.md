@@ -21,3 +21,32 @@ The new private shape-profile inspector walks the complete already-derived shape
 New funded helpers reject a detached LegacyUnobserved replay budget with allocation-free static text; the complete original ordinary substitution and inventory APIs retain unfunded compatibility. The raw String constructor also prepays initialized retained-prefix copy work before growth. Independent tool-free Sonnet 5.5 text review completed in 120.82 seconds at 389,988,352-byte peak owned RSS; provider list-price estimate $0.1872086, actual billing unknown. It found no hard blocker in the supplied spans and led to explicit backing-payer preconditions, retained-prefix work and early comparison/text-work refusal controls. This review is bound to its pre-correction packet; no execution or whole-collector funding is established.
 
 Concrete remaining adoption barrier: variant_record_field calls collection_outcome::nested::record_field, whose ordinary nested admission allocates invariant identities, owned type frames and BTreeSet active paths. Variant leaf lifecycle also consults collection-outcome admission and resource lookup. Full metadata authenticity and argument-dependent classification must get their own paid traversal and unchanged first-error/source-forgery controls before the collector is wired into schema selection. An unpaid ordinary metadata call wrapped by a paid outer result is not a funded route.
+
+## Held immutable metadata and nested receiver stage
+
+The new lookup uses the existing DeclarationIndex BTree maps through a private
+borrowed query key. Each actual byte comparison receives work from the same
+ReplayBudget callback. An exhausted callback stops further work and withholds
+the entire provisional read result; the stateful query never mutates a map.
+Root identities and reserved `#invariant` suffixes retain every UTF-8/null byte.
+No copied directory, temporary identity String/Arc, fresh quota or credit exists.
+
+The complete nested receiver fork borrows immutable types/identities, prepays
+actual pending/active Vec growth and preserves original case/field validation,
+vector family order, delayed boolean alternatives and 64/256/4096 limits.
+The existing paid flat Vec predicates use that same read-only Index view. The
+full original nested and declaration-index sources remain compiled and are
+archived without changing their digests; projections remove only the new child
+registration. Exact payload equality relies on the prior complete receiver's
+zero-argument nominal proof, so candidates carrying any argument stay unequal.
+
+Six new owning controls cover root/suffix/null ordering, comparator refusal,
+held work exact/short/zero, cumulative payer refusal, forged/cyclic metadata,
+full original field/type verdicts and actual allocation through receiving Drop.
+They are authored and unexecuted. Physical errors remain typed errors, never
+semantic false or authority to publish a provisional value.
+
+Production schema selection is still unchanged. The ordinary summary prototype
+remains unadopted; complete flags/drop classifier, shape construction and
+collector/plumbing funding must be finished before any integration or paid/gain
+claim. This stage does not identify an actual application refusal's inner cause.

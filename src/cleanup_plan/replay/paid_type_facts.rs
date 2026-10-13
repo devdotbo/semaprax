@@ -345,3 +345,7 @@ mod inventory_substitute_tests;
 mod inventory_text;
 
 mod inventory_profile;
+
+mod inventory_metadata;
+
+mod inventory_nested;

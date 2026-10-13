@@ -480,6 +480,8 @@ macro_rules! hir_resolver_source_inventory {
             include_str!("../../../../../src/hir/cache_codec.rs"),
             concat!(
                 include_str!("../../../../../src/hir/declaration_index.rs"),
+                include_str!("../../../../../src/hir/declaration_index/inventory_lookup.rs"),
+                include_str!("../../../../../src/hir/declaration_index/inventory_lookup/tests.rs"),
                 include_str!("../../../../../src/hir/declaration_index/owner_name.rs"),
                 include_str!("../../../../../src/hir/declaration_index/owner_name/tests.rs"),
                 include_str!("../../../../../src/hir/declaration_index/leaf_drop_tests.rs")
@@ -966,6 +968,9 @@ macro_rules! lower_source_inventory {
             include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_text.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_metadata.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_nested.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_nested/tests.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/skeleton_work.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/dag_storage.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs"),

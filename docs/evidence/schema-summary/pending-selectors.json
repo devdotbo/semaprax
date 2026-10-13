@@ -21,6 +21,12 @@
     "cleanup_plan::replay::paid_type_facts::inventory_profile::tests::full_profile_receiver_preserves_canonical_shapes_limits_and_prepaid_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_profile::tests::semantic_profile_limit_stays_inline_until_the_complete_final_boundary",
     "cleanup_plan::replay::paid_type_facts::inventory_profile::tests::complete_original_cleanup_root_remains_byte_exact_with_paid_profile_separate",
-    "cleanup_plan::replay::paid_type_facts::inventory_profile::tests::completed_profile_cannot_publish_after_same_budget_sticky_refusal"
+    "cleanup_plan::replay::paid_type_facts::inventory_profile::tests::completed_profile_cannot_publish_after_same_budget_sticky_refusal",
+    "hir::declaration_index::inventory_lookup::tests::complete_root_suffix_utf8_null_order_and_first_refusal_withhold_read_results",
+    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_nested_receiver_arguments_case_order_exact_work_backing_and_receiving_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::borrowed_full_payload_field_identity_and_type_match_complete_original",
+    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::held_metadata_root_suffix_zero_one_short_and_sticky_work_keep_original_queries",
+    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::complete_original_nested_and_index_sources_stay_independent_and_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_forged_cycle_missing_arity_and_case_metadata_keep_original_refusal_order"
   ]
 }
