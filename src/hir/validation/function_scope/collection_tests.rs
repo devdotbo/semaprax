@@ -14,7 +14,7 @@ fn collection_program() -> ResolvedProgram {
         "{}\n{}",
         crate::hir::iterative_validator_tests::SOURCE,
         r#"@id("collection.seed") fn collection_seed(value: borrow Vec<i64>) -> i64 { 0 }
-@id("collection.text") record CollectionText { @id("collection.text.value") value: String, }
+@id("collection.text") record CollectionText { @id("collection.text.value") value: string, }
 @id("collection.carrier") record CollectionCarrier { @id("collection.carrier.rows") rows: Vec<CollectionText>, }
 "#,
     );

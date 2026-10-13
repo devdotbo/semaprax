@@ -250,11 +250,21 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
     let (_, valued) = resolved(&reachable);
     assert!(!crate::hir::copy_discard_program_uses(&valued));
     assert_full_replay(&valued);
-    // The nested while's real break supplies a reachable lexical descendant.
-    // Its dynamic byte-length condition stays outside finite authentication.
-    let reachable = original.replace(
+    // Preserve the complete unconditional-break counterpart as a parser refusal.
+    let unconditional_break = original.replace(
         "{return 0;}",
         "{while byte_len(bytes_as_slice(payload))>0usize {break;0} 0}",
+    );
+    let rejected_break =
+        crate::check(&unconditional_break, "graph-v84-composition.spx").unwrap_err();
+    assert!(rejected_break
+        .iter()
+        .any(|diagnostic| diagnostic.code == "SPX-P209"));
+    // A guarded break keeps the trailing expression reachable. The loop uses
+    // the checked byte-view alias required by the existing while receiver.
+    let reachable = original.replace(
+        "{return 0;}",
+        "{let view=bytes_as_slice(payload); while byte_len(view)>0usize {if byte_len(view)>0usize {break;} 0} 0}",
     );
     let (ast, program) = resolved(&reachable);
     assert!(crate::hir::copy_discard_program_uses(&program));
