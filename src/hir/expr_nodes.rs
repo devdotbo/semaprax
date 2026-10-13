@@ -111,6 +111,7 @@ pub enum ResolvedExprKind {
     /// The literal selector is resolved into `field`, never a runtime String.
     /// `bytes` denotes only the exact fused str_as_bytes(String-field) form.
     VecFieldRead {
+        origin: super::VecFieldReadOrigin,
         element: ResolvedType,
         field: DeclarationId,
         bytes: bool,

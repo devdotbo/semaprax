@@ -550,6 +550,37 @@ fn independent_original_type_drop_builders_and_complete_receiver_are_byte_locked
     let original =
         include_str!("../../../../../docs/evidence/ordinary-dag-drop/original-skeleton-work.txt");
     let saved = include_str!("saved.rs");
+    // Audit the actual compiled receiver, including the complete frozen file
+    // and the only appended access bridges, rather than an unused archive.
+    use sha2::Digest;
+    assert_eq!(saved.len(), 14172);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(sha2::Sha256::digest(saved.as_bytes()))
+        ),
+        "fd8afd796f7f05555b304fed01cdf92fd1fafa069f99c6b20f371fd3ffc43223"
+    );
+    let compiled = include_str!("saved_receiver.rs");
+    let (compiled_original, compiled_bridges) = compiled.split_at(saved.len());
+    assert_eq!(compiled_original.as_bytes(), saved.as_bytes());
+    assert_eq!(
+        compiled_bridges,
+        r#"
+// Test-only lexical access bridges; the complete saved receiver above is verbatim.
+impl Observations {
+    pub(super) fn union_for_test(members: Vec<Observations>) -> Self {
+        Self::union(members)
+    }
+}
+
+impl SkeletonWork<'_, '_> {
+    pub(super) fn charge_for_test(&mut self, units: usize, phase: &str) -> Result<(), Diagnostic> {
+        self.charge(units, phase)
+    }
+}
+"#
+    );
     let start = original
         .find("#[derive(Clone, Default)]\npub(super) struct Observations")
         .unwrap();
@@ -575,10 +606,32 @@ fn independent_original_type_drop_builders_and_complete_receiver_are_byte_locked
     let start = original_builders.find("impl SkeletonWork").unwrap();
     let end = original_builders.find("#[cfg(test)]\nmod tests;").unwrap();
     assert!(saved.contains(&original_builders[start..end]));
-    let receiver = include_str!("tests.rs").replace(
-        "use super::saved::{ObservationDag, ObservationDagKind, Observations, SkeletonWork};\n",
-        "",
+    let receiver_source = include_str!("tests.rs");
+    assert_eq!(
+        receiver_source
+            .matches("Observations::union_for_test(old_members)")
+            .count(),
+        1
     );
+    assert_eq!(
+        receiver_source
+            .matches("work.charge_for_test(0, \"sticky ordinal work\")")
+            .count(),
+        1
+    );
+    let receiver = receiver_source
+        .replace(
+            "use super::saved::{ObservationDag, ObservationDagKind, Observations, SkeletonWork};\n",
+            "",
+        )
+        .replace(
+            "Observations::union_for_test(old_members)",
+            "Observations::union(old_members)",
+        )
+        .replace(
+            "work.charge_for_test(0, \"sticky ordinal work\")",
+            "work.charge(0, \"sticky ordinal work\")",
+        );
     let storage_source = include_str!("../dag_storage/tests.rs");
     assert_eq!(
         storage_source

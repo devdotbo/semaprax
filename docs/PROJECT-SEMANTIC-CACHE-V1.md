@@ -364,3 +364,9 @@ Agent origin/target/kind/model-wait metadata drift. Corrupted prior Agent payloa
 provide no current authority. Actual paid allocation/Drop and exact/one-short
 byte-caller controls are authored. Original generic and Vec/Box owners remain;
 all these additions await coordinated execution and make no efficiency claim.
+
+The source-only [Scoped Vec Field Source Forms v1](SCOPED-VEC-FIELD-SOURCE-FORMS-V1.md)
+successor selects `semaprax.project-checked-module-hir.v11`: it retains the
+Explicit/Traversal form of each scoped field read and independently replays it
+against canonical source. v10 payloads are not decoded under v11; frontend AST
+wire is unchanged. Actual owning cache qualification remains pending.

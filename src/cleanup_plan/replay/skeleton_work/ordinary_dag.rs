@@ -5,6 +5,7 @@ use super::*;
 use std::rc::Rc;
 mod frontier;
 #[cfg(test)]
+#[path = "ordinary_dag/saved_receiver.rs"]
 mod saved;
 
 impl SkeletonWork<'_, '_> {

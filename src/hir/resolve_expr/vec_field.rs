@@ -76,6 +76,7 @@ impl Resolver<'_> {
             ty,
             ownership,
             kind: ResolvedExprKind::VecFieldRead {
+                origin: crate::hir::VecFieldReadOrigin::Explicit,
                 element,
                 field,
                 bytes: false,
@@ -102,6 +103,7 @@ impl Resolver<'_> {
             return None;
         };
         let ResolvedExprKind::VecFieldRead {
+            origin,
             element,
             field,
             bytes: false,
@@ -118,6 +120,7 @@ impl Resolver<'_> {
             ty: ResolvedType::SliceU8,
             ownership: OwnershipMode::Borrow,
             kind: ResolvedExprKind::VecFieldRead {
+                origin: *origin,
                 element: element.clone(),
                 field: field.clone(),
                 bytes: true,

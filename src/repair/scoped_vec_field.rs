@@ -8,12 +8,14 @@ impl StructuralRebase<'_> {
     ) -> Result<(), Vec<Diagnostic>> {
         let (
             ResolvedExprKind::VecFieldRead {
+                origin: left_origin,
                 element: left_element,
                 field: left_field,
                 bytes: left_bytes,
                 args: left_args,
             },
             ResolvedExprKind::VecFieldRead {
+                origin: right_origin,
                 element: right_element,
                 field: right_field,
                 bytes: right_bytes,
@@ -23,7 +25,7 @@ impl StructuralRebase<'_> {
         else {
             return Err(rebase_mismatch());
         };
-        if left_element != right_element
+        if left_origin != right_origin || left_element != right_element
             || left_field != right_field
             || left_bytes != right_bytes
             || left_args.len() != 2

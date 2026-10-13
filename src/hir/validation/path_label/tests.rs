@@ -289,12 +289,14 @@ fn streamed_argument_labels_preserve_all_original_special_prefixes() {
             args: vec![],
         },
         ResolvedExprKind::VecFieldRead {
+            origin: crate::hir::VecFieldReadOrigin::Explicit,
             element: ResolvedType::String,
             field: DeclarationId::new("row.field"),
             bytes: false,
             args: vec![],
         },
         ResolvedExprKind::VecFieldRead {
+            origin: crate::hir::VecFieldReadOrigin::Explicit,
             element: ResolvedType::String,
             field: DeclarationId::new("row.field"),
             bytes: true,

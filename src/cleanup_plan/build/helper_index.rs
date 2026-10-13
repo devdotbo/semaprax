@@ -304,6 +304,8 @@ pub(crate) fn build_program_plans(
     #[cfg(test)]
     CONSTRUCTION_STARTED.with(|started| started.set(true));
     let index = ModuleIndex::new(program)?;
+    #[cfg(test)]
+    capacity_observation::held_index(index.owned_capacity_bytes());
     let count = program
         .functions
         .len()

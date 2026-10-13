@@ -25,6 +25,7 @@ fn permits(
 ) -> Option<bool> {
     match &parent.kind {
         ResolvedExprKind::VecFieldRead {
+            origin,
             element,
             field,
             bytes,
@@ -52,7 +53,7 @@ fn permits(
             };
             if !whole_vector(vector, proof)
                 || element != proof.element
-                || !place_is(index, proof.row_index)
+                || !field_index(*origin, index, proof.row_index)
                 || !result_matches
             {
                 return None;

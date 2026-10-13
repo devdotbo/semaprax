@@ -133,7 +133,10 @@ pub(in crate::hir) fn project<'p>(
                 field_id,
                 vec![source, index],
             )
-            .map(Some);
+            .map(|mut read| {
+                if let ResolvedExprKind::VecFieldRead { origin, .. } = &mut read.kind { *origin = super::super::VecFieldReadOrigin::Traversal; }
+                Some(read)
+            });
     }
     let fields = resolver
         .declarations

@@ -667,6 +667,7 @@ impl<'s, 'a> Walk<'s, 'a> {
             (
                 A::Project { base, field, .. },
                 K::VecFieldRead {
+                    origin: crate::hir::VecFieldReadOrigin::Traversal,
                     element,
                     field: field_id,
                     bytes: false,

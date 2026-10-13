@@ -138,6 +138,7 @@ pub(in crate::cleanup_plan::replay) fn field(
     budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     let ResolvedExprKind::VecFieldRead {
+        origin: _,
         element,
         field,
         bytes,

@@ -105,7 +105,7 @@ pub(crate) fn graph_schema_from_parts_and_instances_with_renewal_authority(
         .chain(instances.iter().map(|i| &i.function))
         .any(function_requires)
     {
-        Ok(SCHEMA)
+        Err(Diagnostic::io("SPX-G410", "scoped Vec field source forms require complete current Graph v85 authority"))
     } else {
         match renewal_authority { None => super::owned_nested_outcome::graph_schema_from_parts_and_instances(interfaces, types, functions, templates, instances), Some(_) => super::owned_nested_outcome::graph_schema_from_parts_and_instances_with_renewal_authority(interfaces, types, functions, templates, instances, renewal_authority), }
     }
@@ -139,6 +139,7 @@ pub(super) fn graph_json(
     Ok(graph)
 }
 pub(super) fn contract_json(
+    origin: hir::VecFieldReadOrigin,
     element: &ResolvedType,
     field: &DeclarationId,
     bytes: bool,
@@ -150,9 +151,9 @@ pub(super) fn contract_json(
         .collect::<Result<Vec<_>, _>>()?
         .budgeted_join(",");
     Ok(format!(
-        "{{\"kind\":\"vec_field_read\",\"element_type\":{},\"field\":{},\"bytes\":{bytes},\"args\":[{arguments}]}}",
+        "{{\"kind\":\"vec_field_read\",\"element_type\":{},\"field\":{},\"bytes\":{bytes},\"source_form\":{},\"args\":[{arguments}]}}",
         type_json(element),
-        quote_json(field.as_str())
+        quote_json(field.as_str()), quote_json(origin.as_str())
     ))
 }
 pub(super) fn attach_provenance(mut base: String, provenance: &hir::ByteSliceProvenance) -> String {

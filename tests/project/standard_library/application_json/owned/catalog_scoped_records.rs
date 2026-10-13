@@ -177,6 +177,31 @@ fn typed_catalog_derives_codecs_and_preserves_all_23_functional_cases() {
     })
     .unwrap();
     let adopted_order = std::fs::read_to_string(root.join("src/order.spx")).unwrap();
+    // Isolate only byte-for adoption; retain the current row traversal and
+    // substitute the literal pre-adoption helper from the independent archive.
+    let frozen_order = include_str!("../../../../../docs/evidence/application-traversal-plan-adoption/order_before_traversal.txt");
+    let marker = "@id(\"catalog.identifier\")";
+    let next = "@id(\"catalog.valid_sorted_tags\")";
+    let old_helper =
+        &frozen_order[frozen_order.find(marker).unwrap()..frozen_order.find(next).unwrap()];
+    let begin = adopted_order.find(marker).unwrap();
+    let end = adopted_order.find(next).unwrap();
+    let helper_only_order = format!(
+        "{}{}{}",
+        &adopted_order[..begin],
+        old_helper,
+        &adopted_order[end..]
+    );
+    std::fs::write(root.join("src/order.spx"), helper_only_order).unwrap();
+    let helper_only_c =
+        project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+            codegen::emit_hir_c_with_stdin_stream_collection_records(
+                snapshot.public_api_program(),
+                "catalog.command",
+            )
+            .map_err(|error| vec![error])
+        })
+        .unwrap();
     std::fs::write(root.join("src/order.spx"), include_str!("../../../../../docs/evidence/application-traversal-plan-adoption/order_before_traversal.txt")).unwrap();
     let indexed_c = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
         codegen::emit_hir_c_with_stdin_stream_collection_records(
@@ -218,10 +243,11 @@ fn typed_catalog_derives_codecs_and_preserves_all_23_functional_cases() {
         .map_err(|error| vec![error])
     })
     .unwrap();
-    // All four sources execute every frozen raw-byte/all-channel row unchanged.
+    // All five sources execute every frozen raw-byte/all-channel row unchanged.
     for (route, source) in [
         ("slot-views", &c_source),
         ("original-indexed-validation", &indexed_c),
+        ("original-indexed-helper-only", &helper_only_c),
         ("joined", &joined_c),
         ("tag-wrapper", &wrapper_c),
     ] {
@@ -277,5 +303,69 @@ fn typed_vec_constructor_retains_exact_explicit_chain_application_control() {
     assert!(!original.contains("vec_of<"));
     assert!(adopted.contains("vec_of<InputItem>"));
     super::vec_constructor_adoption::assert_application_control(&root, adopted, original);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn identifier_byte_for_keeps_string_slot_and_record_field_callers() {
+    let root = crate::standard_library::temporary("catalog-byte-for-callers");
+    stage(&root);
+    let original_tests = std::fs::read_to_string(root.join("src/tests.spx")).unwrap();
+    let adopted_order = std::fs::read_to_string(root.join("src/order.spx")).unwrap();
+    let frozen = include_str!("../../../../../docs/evidence/application-traversal-plan-adoption/order_before_traversal.txt");
+    let marker = "@id(\"catalog.identifier\")";
+    let next = "@id(\"catalog.valid_sorted_tags\")";
+    let begin = adopted_order.find(marker).unwrap();
+    let end = adopted_order.find(next).unwrap();
+    let old_helper = &frozen[frozen.find(marker).unwrap()..frozen.find(next).unwrap()];
+    let manual = format!(
+        "{}{}{}",
+        &adopted_order[..begin],
+        old_helper,
+        &adopted_order[end..]
+    );
+    for (name, literal, expected) in [
+        ("empty", "\"\"", false),
+        ("single", "\"A\"", true),
+        ("classes", "\"AZaz09_-\"", true),
+        ("sixteen", "\"0123456789ABCDEF\"", true),
+        ("seventeen", "\"0123456789ABCDEFG\"", false),
+        ("first", "\"@ab\"", false),
+        ("middle", "\"a@b\"", false),
+        ("last", "\"ab@\"", false),
+        ("nul", "\"a\\u{0}b\"", false),
+        ("utf8", "\"é\"", false),
+    ] {
+        let imports = "use function @id(\"catalog.valid_sorted_tags\") from catalog.order as valid_tags;\nuse function @id(\"catalog.valid_sorted_items\") from catalog.order as valid_items;\n";
+        let source = original_tests.replacen(
+            "@id(\"catalog.tests.main\")",
+            &format!("{imports}\n@id(\"catalog.tests.main\")"),
+            1,
+        );
+        let probe = format!(
+            r#"
+@id("catalog.tests.byte_for_callers")
+fn test_byte_for_callers()->i64 {{
+    let tags=vec_push<string>(vec_with_capacity<string>(1usize),{literal});
+    let items=vec_push<InputItem>(vec_with_capacity<InputItem>(1usize),InputItem{{id:{literal},department:1,priority:1,stock:1,topup:1,mark:1u8}});
+    let slot=valid_tags(tags);
+    let field=valid_items(items);
+    if slot=={expected} && field=={expected} {{0}}else{{1}}
+}}
+"#
+        );
+        std::fs::write(root.join("src/tests.spx"), canonical(&(source + &probe))).unwrap();
+        for (route, order) in [("byte-for", &adopted_order), ("indexed-helper", &manual)] {
+            std::fs::write(root.join("src/order.spx"), order).unwrap();
+            project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
+                assert_eq!(snapshot.manifest().schema(), project::PROJECT_SCHEMA_V31);
+                let tests = snapshot.execute_test(&project::ProjectExecutionOptions::default())?;
+                assert!(tests.command_succeeded(), "{name}/{route}");
+                assert_eq!(tests.cases().len(), 3, "{name}/{route}");
+                Ok(())
+            })
+            .unwrap();
+        }
+    }
     std::fs::remove_dir_all(root).unwrap();
 }

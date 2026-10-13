@@ -81,6 +81,19 @@ pub mod authentication;
 pub(crate) mod bounded_output;
 pub(crate) mod box_ops;
 pub(crate) mod byte_data_capacity;
+
+/// Reservation-only bridge for the independently compiled transcript model.
+/// Uses the invocation's existing compiler payer, with no quota or authority
+/// creation. A false return omits optional help; it never replaces a refusal.
+#[doc(hidden)]
+pub fn reserve_transcript_witness_preserving(bytes: usize, floor: usize) -> bool {
+    bounded_output::reserve_active_preserving(bytes, floor)
+}
+
+#[cfg(test)]
+#[path = "byte_data_capacity/witness_tests.rs"]
+mod transcript_witness_tests;
+
 pub(crate) mod byte_ops;
 pub mod c_header;
 pub(crate) mod cache_codec;

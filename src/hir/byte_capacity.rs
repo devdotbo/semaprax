@@ -1238,8 +1238,13 @@ pub(crate) fn analyze_byte_data_capacity(
     program: &ResolvedProgram,
 ) -> Result<crate::byte_data_capacity::ProgramCapacitySummary, Diagnostic> {
     let inputs = byte_data_capacity_inputs(program)?;
-    crate::byte_data_capacity::analyze(&inputs)
-        .map_err(|error| Diagnostic::io(error.diagnostic.code(), error.to_string()))
+    crate::byte_data_capacity::analyze(&inputs).map_err(|error| {
+        let diagnostic = Diagnostic::io(error.diagnostic.code(), error.to_string());
+        match error.witness_help {
+            Some(help) => diagnostic.with_help(help),
+            None => diagnostic,
+        }
+    })
 }
 
 mod fused_selection;

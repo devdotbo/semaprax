@@ -350,6 +350,7 @@ use capacity_probe::{
     resolved_variant_case_owned_capacity, type_facts_outer_baseline,
     validation_scope_owned_capacity,
 };
+mod vec_field_origin; pub use vec_field_origin::VecFieldReadOrigin;
 pub use expr_nodes::{
     PatternValue, ResolvedClosureCapture, ResolvedExpr, ResolvedExprKind, ResolvedFieldInitializer,
     ResolvedMatchArm, ResolvedMatchPattern, ResolvedMatchPatternField,

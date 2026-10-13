@@ -8,12 +8,12 @@
     "src/cleanup_plan/replay.rs": "337ff2be4427d5df388ea986f62c68aaefacc342e7b51fb31a709d5bc6c891cf",
     "src/cleanup_plan/replay/expression_facts.rs": "4a376604a03dbe2d90db4cc322092b25ec926f4ee716dba3c3c1f8676ad1a038",
     "src/cleanup_plan/replay/expression_facts/capacity.rs": "ee3bbd81a54e829a6859f5636ed272bc8a9f28177f4f8f4cf99b590243c967bd",
-    "src/cleanup_plan/replay/expression_facts/tests/payloads.rs": "d1226902c11a4cdbc6dbe42ee17229033174dcc2123c3add52e0aa83b5de61bf",
+    "src/cleanup_plan/replay/expression_facts/tests/payloads.rs": "b91cf8efbacb0c394458b8f3dcbecdc8b78a7d24d24688cc1bd5c88762ae138e",
     "src/cleanup_plan/replay/lexical_replay.rs": "20e1f53661791728da24801f90ff31228173d5f5d4125a8dac541dc2e8c80981",
     "src/cleanup_plan/replay/scalar_replay.rs": "71c43c4c023be68c6673d348909b56a4362dbedafe5f8457b5c7808b94647873",
     "src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs": "725fbcf0b55db270de67a019d45f08259cf731721483da5fb598c7ff3d0f25e2",
     "src/cleanup_plan/replay/structural_control/blocks.rs": "04b3b312866bde5572832a8a753cd963edcef45ec6f7dbcc5c2023bbba40928e",
-    "tests/hir_module_boundaries.rs": "026859a2ea76dfb0ca3358841398d5cf1e0d90983ba85dae018c337ec55920e5",
+    "tests/hir_module_boundaries.rs": "3dc042a281bcd627aaee07c45aceb1032d8802f8d00ac6ccad6a7e6989830b03",
     "docs/evidence/expression-fact-arena/original_capacity.txt": "f95245c44f2ec9ba13d288f58ceac361a3b3784d752fab16d4595de1b9b347ba",
     "docs/evidence/expression-fact-arena/original_facts.txt": "ff2ce0e84fe159c585901635fe49d356ac1342ccfeecd0ebe20ffb815d98e398",
     "docs/evidence/expression-fact-arena/original_receivers.txt": "6325749010bdbfec9b7172f1bed9e3aff18b41d2ad5236b099a67a855e0406c6",
@@ -22,7 +22,7 @@
     "src/cleanup_plan/replay/expression_facts/receiving.rs": "4e35f87c1f78006a0f36583a8be6b75488a98856be32ecefdbd33e3526064e23",
     "src/cleanup_plan/replay/expression_facts/saved.rs": "0aef16929be73f5fe43438565c98a17f00cf52cd4169a4bc33cc99e6f184650a",
     "src/cleanup_plan/replay/expression_facts/tests/arena.rs": "2885db6402ef58382423cde7bb1ad3dfd0706ac7c6ba76146d34d9765b722609",
-    "src/cleanup_plan/replay/expression_facts/tests/payloads/arena.rs": "5e854912ac6e4cf09748f66a2ec9a8ac3b755a557fa44d83a3a1218f657fb7af",
+    "src/cleanup_plan/replay/expression_facts/tests/payloads/arena.rs": "3b1e27a8eedd06339788aca28c75b4d9699fe268e0f51a450a574e3028e28623",
     "src/cleanup_plan/replay/selected_entry/tests/fact_errors/arena.rs": "6de451ceaa7d875cb553b94fa290f3f5c6d52e2b7e6b7e4d47a7803db9335e7f"
   }
 }

@@ -17,8 +17,8 @@
   "measurement": "Retained output bytes; not net input tokens, retransmission, cost, or demonstrated improvement",
   "current_source_sha256": {
     "docs/AGENT-QUICK-REFERENCE.md": "8c56d7147f4c4ab3c8c641e0563f2a9f43726d50921b00d59a585899a293786f",
-    "src/cli/help.rs": "ed52ecbf7ccc300eb1f9c009a6f9038768a7ea061e8fe07c8d36be5e3ec308d6",
-    "src/cli/help/library.rs": "47304d004d1f3c6e64b6d55c3b48976e291875aead319b3b5a24217b0cd15a35"
+    "src/cli/help.rs": "3aa5e3bdaedea4f21a19d127146e73bc7b15bbd9faa070c85ceee78ea85350df",
+    "src/cli/help/library.rs": "08a88d3e4f53167549be0c1cf82b186b733703995f16307b5dd711e6dd094ae2"
   },
   "preserved": [
     "explicit full-catalog API and bytes",

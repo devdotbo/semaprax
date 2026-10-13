@@ -178,6 +178,7 @@ fn selection_invariant(
     detail: &str,
 ) -> crate::byte_data_capacity::CapacityError {
     crate::byte_data_capacity::CapacityError {
+        witness_help: None,
         diagnostic: crate::byte_data_capacity::CapacityDiagnostic::Invariant,
         function: function.map(str::to_owned),
         detail: detail.to_owned(),

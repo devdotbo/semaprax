@@ -182,7 +182,12 @@ fn complete_old_preflight_bodies_and_real_function_scope_paid_joins_are_locked()
         include_str!("../iterator_loop.rs"),
         include_str!("../iterator_loop/renewal.rs"),
         include_str!("../validation/unsafe_scan.rs"),
-        include_str!("../byte_capacity.rs"),
+        concat!(
+            include_str!("../byte_capacity.rs"),
+            include_str!("../byte_capacity/fused_selection.rs"),
+            include_str!("../../byte_data_capacity.rs"),
+            include_str!("../../byte_data_capacity/witnesses.rs"),
+        ),
     ];
     // Each archive delimiter marks a full independently compiled definition.
     for (old, current) in saved

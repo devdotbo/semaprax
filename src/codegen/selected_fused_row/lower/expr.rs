@@ -80,6 +80,7 @@ impl Lower<'_, '_> {
             }
             K::Binary { op, left, right } => self.binary(e, *op, left, right),
             K::VecFieldRead {
+                origin: _,
                 element,
                 field,
                 bytes,

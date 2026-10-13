@@ -137,6 +137,7 @@ fn expression_json(
             expression_json(end, roots)?
         ),
         ResolvedExprKind::VecFieldRead {
+            origin: crate::hir::VecFieldReadOrigin::Explicit,
             element,
             field,
             bytes,
@@ -150,6 +151,7 @@ fn expression_json(
                 .collect::<Result<Vec<_>, _>>()?
                 .budgeted_join(",")
         ),
+        ResolvedExprKind::VecFieldRead { .. } => return Err(projection_error("row-derived field source form is outside package report v2 contracts")),
         ResolvedExprKind::Call {
             callee,
             type_arguments,

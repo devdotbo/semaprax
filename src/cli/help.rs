@@ -1468,7 +1468,7 @@ mod tests {
         );
 
         let p106 = diagnostic_entry("SPX-P106").unwrap();
-        assert_eq!(p106.matches("\nwrote: ").count(), 8);
+        assert_eq!(p106.matches("\nwrote: ").count(), 9);
         assert!(p106.contains("Declare a record"));
         assert_eq!(
             diagnostic_entry("spx-t208").unwrap_err(),

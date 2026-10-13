@@ -24,7 +24,7 @@ fn ordinary_empty_union_preserves_saved_multiset_and_literal_node_storage_throug
     let members = || (0..4).map(|_| Observations::default()).collect::<Vec<_>>();
     let old_members = members();
     let new_members = members();
-    let (_, old) = measure(|| drop(Observations::union(old_members)));
+    let (_, old) = measure(|| drop(Observations::union_for_test(old_members)));
     let ((), new) = measure(|| {
         let value = work.ordinary_union(new_members).unwrap();
         let root = value.prefix.as_ref().unwrap();
@@ -92,7 +92,7 @@ fn ordinary_empty_union_preserves_saved_multiset_and_literal_node_storage_throug
         assert_eq!(work.budget.skeleton_spent, nodes);
         if !accepted {
             let charged = work.budget.physical.as_ref().unwrap().charged();
-            assert!(work.charge(0, "sticky ordinal work").is_err());
+            assert!(work.charge_for_test(0, "sticky ordinal work").is_err());
             assert_eq!(work.budget.physical.as_ref().unwrap().charged(), charged);
         }
     }

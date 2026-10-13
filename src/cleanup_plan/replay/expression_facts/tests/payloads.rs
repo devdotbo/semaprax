@@ -57,6 +57,7 @@ fn all_operation_payloads_preserve_saved_owned_facts_and_exact_current_reference
                 end: Box::new(scalar("payload.end")),
             },
             ResolvedExprKind::VecFieldRead {
+                origin: crate::hir::VecFieldReadOrigin::Explicit,
                 element: ResolvedType::I64,
                 field: DeclarationId::new("payload.field"),
                 bytes: false,

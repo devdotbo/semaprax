@@ -1,5 +1,17 @@
 # Changelog
 
+- Remove the standalone validator's unpriced per-function permit-set collection
+  through borrowed exact membership. Keep the complete original receiver and
+  error-order controls; author allocation and phase-isolation controls. Runtime
+  qualification and attribution to the outstanding eight-byte deficit remain
+  pending.
+
+- Author bounded transcript-refusal call, loop and genuine-cycle witnesses
+  (#821), preserving primary diagnostics and complete independent model controls.
+  Optional help uses the existing payer; the separate model harness forwards
+  only a reservation operation through a hidden library facade. Focused runtime
+  qualification and diagnostic-pin production remain pending.
+
 - Author funded borrowed inline scratch for ordinary HIR iterator, renewal and
   unsafe preflight scans (#817), retaining full independent original receivers
   and their distinct child/error order. Spill backing and authorization nodes
@@ -7041,3 +7053,9 @@ The detailed 0.3.5, 0.2.0, and 0.1.0 history is preserved in the [changelog arch
   old receiver. Construction and release work share the existing replay budget.
   Legacy refusal destruction remains a documented compatibility boundary;
   allocation, weak-reference and cross-ledger qualification is pending.
+
+Source-only successor: scoped Vec field reads retain their authored explicit
+lookup or row-derived form so checked previous-row lookups compose with a
+whole-root record traversal freeze. Row indices and source replay remain
+strict; Graph v85/current checked cache v11 and focused hostile/backend owners
+are authored. Qualification is pending; Catalog corpus and limits are unchanged.

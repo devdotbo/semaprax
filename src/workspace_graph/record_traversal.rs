@@ -38,8 +38,9 @@ pub(super) struct Expected<'a> {
     pub(super) reads: Vec<Read<'a>>,
     pub(super) loops: Vec<Loop<'a>>,
     pub(super) loans: Vec<row_loan::Lend<'a>>,
+    pub(super) explicit: Vec<field_origin::Site<'a>>,
 }
-mod row_loan;
+mod row_loan; mod field_origin;
 #[derive(Clone)]
 struct Binding<'a> {
     name: &'a str,
@@ -250,7 +251,7 @@ pub(super) fn collect<'a>(program: &'a Program, programs: &'a [Program]) -> Resu
     let mut expected = Expected {
         reads: Vec::new(),
         loops: Vec::new(),
-        loans: Vec::new(),
+        loans: Vec::new(), explicit: Vec::new(),
     };
     for function in &program.functions {
         if !has_traversal(&function.body) {
@@ -297,6 +298,14 @@ fn walk<'a>(
     row: Option<&Row<'a>>,
     out: &mut Expected<'a>,
 ) -> Result<()> {
+    if let Some((arguments, inner)) = field_origin::explicit(expression) {
+        field_origin::push(&mut out.explicit, function, path, program, programs, expression, inner)?;
+        for (index, argument) in arguments.iter().take(2).enumerate() {
+            let child_path = if inner { budgeted_format(format_args!("{path}.arg.0.arg.{index}")) } else { budgeted_format(format_args!("{path}.arg.{index}")) };
+            walk(program, programs, function, argument, &child_path, bindings, row, out)?;
+        }
+        return Ok(());
+    }
     let selected = match &expression.kind {
         ExprKind::Project { base, field, .. } => row
             .filter(|row| matches!(&base.kind, ExprKind::Var(name) if name == row.name))
@@ -576,9 +585,6 @@ fn element_matches(element: &hir::ResolvedType, declaration: &TypeDeclaration) -
 pub(super) fn validate(programs: &[Program], modules: &[WorkspaceResolvedModule]) -> Result<()> {
     for program in programs {
         let expected = collect(program, programs)?;
-        if expected.loops.is_empty() {
-            continue;
-        }
         let module = modules
             .iter()
             .find(|module| module.module == program.module)
@@ -600,15 +606,17 @@ pub(super) fn validate(programs: &[Program], modules: &[WorkspaceResolvedModule]
                 return Err(refusal());
             };
             if loop_count == 0 {
+                field_origin::refuse_orphan(&resolved.body)?;
                 continue;
             }
             let mut pending = vec![&resolved.body];
             let mut matched_loops = 0;
             let mut actual_loops = 0;
-            let mut matched_reads = 0;
+            let mut matched_reads = 0; let mut matched_explicit = 0;
             let mut matched_loans = 0;
             while let Some(expression) = pending.pop() {
                 hir::vec_constructor::authenticate(expression).map_err(|_| refusal())?;
+                matched_explicit += field_origin::validate(&expected, function, expression)?;
                 if matches!(&expression.kind, hir::ResolvedExprKind::Block { statements, .. }
                     if matches!(statements.first(), Some(hir::ResolvedStatement::Let { binding, .. }) if binding.name == "#for-borrow-length"))
                 {
@@ -690,6 +698,7 @@ pub(super) fn validate(programs: &[Program], modules: &[WorkspaceResolvedModule]
                         (element, field, args)
                     } else {
                         let hir::ResolvedExprKind::VecFieldRead {
+                            origin,
                             element,
                             field,
                             bytes,
@@ -698,7 +707,7 @@ pub(super) fn validate(programs: &[Program], modules: &[WorkspaceResolvedModule]
                         else {
                             return Err(refusal());
                         };
-                        if *bytes != read.bytes {
+                        if *origin != hir::VecFieldReadOrigin::Traversal || *bytes != read.bytes {
                             return Err(refusal());
                         }
                         (element, field, args)
@@ -716,6 +725,7 @@ pub(super) fn validate(programs: &[Program], modules: &[WorkspaceResolvedModule]
                 }
                 hir::push_resolved_expression_children_in_authored_order(expression, &mut pending);
             }
+            if matched_explicit != expected.explicit.iter().filter(|site| site.function.stable_id == function.stable_id).count() { return Err(refusal()); }
             if actual_loops != loop_count
                 || matched_loops != loop_count
                 || matched_loans != row_loan::count(&expected.loans, function)

@@ -62,6 +62,7 @@ impl Emitter<'_> {
                 args,
             } => self.emit_call(expr, callee, instance.as_ref(), type_arguments, args),
             ResolvedExprKind::VecFieldRead {
+                origin: _,
                 element,
                 field,
                 bytes,

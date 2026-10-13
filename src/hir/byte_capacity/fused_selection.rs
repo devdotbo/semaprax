@@ -96,7 +96,13 @@ pub(crate) fn analyze_selected_byte_data_capacity<'a>(
         &inputs,
         crate::byte_data_capacity::AllocationStrategy::FusedConstructionV1,
     )
-    .map_err(|error| Diagnostic::io(error.diagnostic.code(), error.to_string()))?;
+    .map_err(|error| {
+        let primary = Diagnostic::io(error.diagnostic.code(), error.to_string());
+        match error.witness_help {
+            Some(help) => primary.with_help(help),
+            None => primary,
+        }
+    })?;
     if summary
         .function(function)
         .is_none_or(|summary| summary.fused_backing_events != 1)

@@ -278,7 +278,11 @@ fn verify_profile<'p>(
                 == crate::byte_data_capacity::CapacityDiagnostic::Allocation)
                 .then(|| fusion::refusal_help(program))
                 .flatten();
+            let witness_help = capacity.witness_help;
             let mut diagnostic = error(program, capacity.diagnostic.code(), capacity.detail, span);
+            if let Some(witness_help) = witness_help {
+                diagnostic = diagnostic.with_help(witness_help);
+            }
             if let Some(help) = help {
                 diagnostic = diagnostic.with_help(help);
             }

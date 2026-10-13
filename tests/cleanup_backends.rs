@@ -47,6 +47,14 @@ mod byte_ops {
     pub(crate) const MAX_OWNED_BYTE_VALUE_BYTES: u64 = 131_072;
 }
 
+// The path-included model uses the actual compiler invocation payer. This
+// forwarder has no ledger, budget constructor, allowance, credit or refund.
+mod bounded_output {
+    pub(crate) fn reserve_active_preserving(bytes: usize, floor: usize) -> bool {
+        semaprax::reserve_transcript_witness_preserving(bytes, floor)
+    }
+}
+
 #[path = "cleanup_backends/arc_zones_model.rs"]
 mod arc_zones_model;
 #[path = "cleanup_backends/byte_data_capacity_v1.rs"]

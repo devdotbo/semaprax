@@ -232,3 +232,17 @@ fn older_scalar_for_and_primitive_owned_vector_profiles_stay_closed() {
             .any(|diagnostic| diagnostic.code == "SPX-T284"));
     }
 }
+
+#[test]
+fn explicit_index_reads_cannot_hide_transfer_or_nested_traversal() {
+    let control = parse(&source("for borrow row at index in rows {let selected=vec_field<Row>(rows,index,\"text\");str_len_bytes(selected)}0"), "field-origin-control.spx").unwrap();
+    assert!(verify::verify(&control).is_empty());
+    for (body, code) in [
+        ("for borrow row at index in rows { let selected=vec_field<Row>(rows,{let moved=consume(rows);0usize},\"text\");0 }0", "SPX-T265"),
+        ("for borrow row at index in rows { let selected=vec_field<Row>(rows,{for byte in row.data {0}0usize},\"text\");0 }0", "SPX-T284"),
+    ] {
+        let parsed = parse(&source(body), "field-origin-hostile.spx").unwrap();
+        let diagnostics = verify::verify(&parsed);
+        assert!(diagnostics.iter().any(|diagnostic| diagnostic.code == code), "{body}: {diagnostics:?}");
+    }
+}

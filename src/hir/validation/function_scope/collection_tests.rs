@@ -28,7 +28,7 @@ fn generic_collection_program() -> ResolvedProgram {
         crate::hir::iterative_validator_tests::SOURCE,
         r#"@id("collection.seed") fn collection_seed(value: borrow Vec<i64>) -> i64 { 0 }
 @id("collection.text") record CollectionText { @id("collection.text.value") value: string, }
-@id("collection.generic") record CollectionGeneric<T> { @id("collection.generic.rows") rows: Vec<CollectionText>, @id("collection.generic.tag") tag: T, }
+@id("collection.generic") record CollectionGeneric<T> { @id("collection.generic.rows") rows: Vec<T>, @id("collection.generic.tag") tag: T, }
 "#,
     );
     crate::hir::resolve(&crate::check(&source, "collection-generic.spx").unwrap()).unwrap()

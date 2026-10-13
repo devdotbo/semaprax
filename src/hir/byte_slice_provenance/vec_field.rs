@@ -31,6 +31,7 @@ pub(super) fn origin(
         });
     }
     let ResolvedExprKind::VecFieldRead {
+        origin: _,
         element,
         field,
         bytes,

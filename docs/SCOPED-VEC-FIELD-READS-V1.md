@@ -111,3 +111,9 @@ The scoped semantic gates are `hir::vec_field::tests` (6),
 `project::incremental::snapshot::vec_field::tests` (1). Backend, graph and
 source-index gates live in their existing owning harnesses. None of these new
 source-authored gates is execution evidence until the grouped check succeeds.
+
+The source-only successor
+[Scoped Vec Field Source Forms v1](SCOPED-VEC-FIELD-SOURCE-FORMS-V1.md) preserves
+ordinary checked indices inside a record traversal while independently binding
+row-derived reads to that traversal's exact row index. Graph v85 and checked
+module cache v11 retain the distinction; qualification is pending.

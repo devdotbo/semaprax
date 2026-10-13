@@ -268,6 +268,7 @@ impl<'a> Lower<'a> {
             K::Place(place) => self.place(e, place),
             K::BorrowPlace { operation, place } => self.str_bytes(e, operation, place),
             K::VecFieldRead {
+                origin: _,
                 element,
                 field,
                 bytes,

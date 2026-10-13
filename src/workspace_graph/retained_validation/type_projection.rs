@@ -357,6 +357,7 @@ mod tests {
         let mut expression = main.body.clone();
         let outer_identity = expression.id.clone();
         expression.kind = hir::ResolvedExprKind::VecFieldRead {
+            origin: crate::hir::VecFieldReadOrigin::Explicit,
             element: hir::ResolvedType::Nominal {
                 declaration: hir::DeclarationId::new("lib.row"),
                 arguments: vec![hir::ResolvedType::Nominal {

@@ -82,11 +82,11 @@ pub(super) fn expr_json(
         ResolvedExprKind::RowLoan { loan, args } => {
             super::row_loan::expression_json(program, &header, loan, args)?
         }
-        ResolvedExprKind::VecFieldRead { element, field, bytes, args } => {
+        ResolvedExprKind::VecFieldRead { origin, element, field, bytes, args } => {
             let arguments = args.iter().map(|arg| expr_json(program, arg))
                 .collect::<Result<Vec<_>, _>>()?.budgeted_join(",");
-            format!("{{{header},\"kind\":\"vec_field_read\",\"element_type\":{},\"field\":{},\"bytes\":{bytes},\"args\":[{arguments}]}}",
-                type_json(element), quote_json(field.as_str()))
+            format!("{{{header},\"kind\":\"vec_field_read\",\"element_type\":{},\"field\":{},\"bytes\":{bytes},\"source_form\":{},\"args\":[{arguments}]}}",
+                type_json(element), quote_json(field.as_str()), quote_json(origin.as_str()))
         }
         ResolvedExprKind::Call {
             callee,

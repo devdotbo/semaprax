@@ -97,3 +97,11 @@ Application scheduling qualification, allocation-fault sweeps over this
 composed loop route, maximum-capacity traversal, and full hostile cache and
 backend generation substitution matrices remain unqualified. No isolated
 performance gain or completed issue is claimed before the grouped gates.
+
+## Ordinary indexed reads within the freeze
+
+[Scoped Vec Field Source Forms v1](SCOPED-VEC-FIELD-SOURCE-FORMS-V1.md) retains
+row-derived reads' exact row index while admitting an independently checked
+ordinary `vec_field` lookup at another index within the same whole-root freeze.
+The source-form tag grants no authority; complete source/cache/workspace replay
+rejects form laundering. Qualifying execution is pending.
