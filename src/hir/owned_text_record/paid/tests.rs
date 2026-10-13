@@ -468,6 +468,23 @@ fn funded_text_classifiers_zero_debit_and_sticky_refusal() {
     assert!(!overflow);
 }
 
+const ORIGINAL_SELECTION_SOURCE: &str = "module text.saved; @id(\"saved.row\") record Row { @id(\"saved.field\") field: String, } @id(\"saved.main\") fn main() -> i64 { 0 }";
+
+#[test]
+fn original_uppercase_string_selection_fixture_keeps_full_unknown_type_refusal() {
+    let path = std::path::Path::new("saved.spx");
+    let diagnostics = crate::check(ORIGINAL_SELECTION_SOURCE, path).unwrap_err();
+    assert_eq!(
+        diagnostics
+            .iter()
+            .map(|diagnostic| diagnostic.code)
+            .collect::<Vec<_>>(),
+        ["SPX-T001"]
+    );
+    let source = crate::parse(ORIGINAL_SELECTION_SOURCE, path).unwrap();
+    assert_eq!(crate::hir::resolve(&source).unwrap_err(), diagnostics);
+}
+
 #[test]
 fn full_saved_receiver_sources_remain_byte_identical_and_program_selection_matches() {
     use sha2::{Digest, Sha256};
@@ -489,7 +506,9 @@ fn full_saved_receiver_sources_remain_byte_identical_and_program_selection_match
             expected
         );
     }
-    let source = crate::parse("module text.saved; @id(\"saved.row\") record Row { @id(\"saved.field\") field: String, } @id(\"saved.main\") fn main() -> i64 { 0 }", std::path::Path::new("saved.spx")).unwrap();
+    let admitted = ORIGINAL_SELECTION_SOURCE.replace("field: String", "field: string");
+    assert_ne!(admitted, ORIGINAL_SELECTION_SOURCE);
+    let source = crate::check(&admitted, std::path::Path::new("saved.spx")).unwrap();
     let program = crate::hir::resolve(&source).unwrap();
     assert_eq!(
         saved::program_uses_strings(&program),
@@ -507,4 +526,37 @@ fn borrowed_scalar_record_reduces_full_original_allocation_through_drop() {
     assert!(!old.invalid && !old.leaked && !new.invalid && !new.leaked);
     assert!(old.allocated > new.allocated);
     assert!(new.allocated <= new.paid && new.highwater <= new.paid);
+}
+
+#[test]
+fn inline_scalar_children_and_paid_spills_keep_full_saved_receiver_and_drop() {
+    let mut index = fixture();
+    let id = DeclarationId::new("text.row");
+    let field = index.record_fields[&id][0].clone();
+    let ty = nominal("text.row", Vec::new());
+    for count in [0, 1, 2, 17] {
+        index
+            .record_fields
+            .insert(id.clone(), vec![field.clone(); count]);
+        let old = observe(LIMIT, || Ok(saved::contains_string(&ty, &index)));
+        let new = observe(LIMIT, || contains_string(&ty, &index));
+        assert_eq!(old.verdict, Some(false));
+        assert_eq!(old.verdict, new.verdict);
+        assert!(!old.invalid && !old.leaked && !new.invalid && !new.leaked);
+        assert!(old.allocated > new.allocated);
+        if count == 1 {
+            // The same visited-node allocation remains. Only the saved initial
+            // one-element Cow Vec backing disappears from the full receiver.
+            assert_eq!(
+                old.allocated,
+                new.allocated + std::mem::size_of::<Cow<'_, ResolvedType>>()
+            );
+        }
+        check(
+            false,
+            || contains_string(&ty, &index),
+            "inline scalar/spill backing",
+        );
+        parity(&index, &ty);
+    }
 }

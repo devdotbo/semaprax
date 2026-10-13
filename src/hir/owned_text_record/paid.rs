@@ -244,8 +244,15 @@ pub(crate) fn contains_string<'a>(
                     }
                 };
                 if let Some(next) = next {
-                    reserve(&mut pending, 1)?;
-                    pending.push(next);
+                    // Reuse the already-live inline slot for the last child.
+                    // Spill earlier children in authored order, so the same
+                    // last-authored child is still visited first. A singleton
+                    // borrows its field without acquiring any pending backing.
+                    if inline.is_some() {
+                        reserve(&mut pending, 1)?;
+                        pending.push(inline.take().expect("inline child checked"));
+                    }
+                    inline = Some(next);
                 }
             }
         }
