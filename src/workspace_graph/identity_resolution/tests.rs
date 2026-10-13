@@ -381,11 +381,15 @@ fn actual_selective_import_receiver_matches_fresh_owned_for_vec_and_box() {
     // Exact transparent wrappers authenticate their canonical declaration name
     // as well as persistent identity and body. Keep those names in the linked
     // projection; imported aliases are a separate source-admission concern.
-    let cases=[
-        (include_str!("../../../std/collections/src/collections.spx"),
-         "module receiver.vec; use function @id(\"std.collections.vec.with-capacity\") from std.collections as with_capacity; use function @id(\"std.collections.vec.push\") from std.collections as push; use function @id(\"std.collections.vec.get\") from std.collections as get; @id(\"receiver.helper\") fn helper()->i64 {1} @id(\"receiver.main\") fn main()->i64 {let empty=with_capacity<i64>(2usize); let values=push<i64>(empty,42); get<i64>(values,0usize)}"),
-        (include_str!("../../../std/mem/src/mem.spx"),
-         "module receiver.box; use function @id(\"std.mem.box.new\") from std.mem as new; use function @id(\"std.mem.box.into-inner\") from std.mem as into_inner; @id(\"receiver.helper\") fn helper()->i64 {1} @id(\"receiver.main\") fn main()->i64 {into_inner<i64>(new<i64>(42))}"),
+    let cases = [
+        (
+            include_str!("../../../std/collections/src/collections.spx"),
+            "module receiver.vec; use function @id(\"std.collections.vec.with-capacity\") from std.collections as with_capacity; use function @id(\"std.collections.vec.push\") from std.collections as push; use function @id(\"std.collections.vec.get\") from std.collections as get; @id(\"receiver.helper\") fn helper()->i64 {1} @id(\"receiver.main\") fn main()->i64 {let empty=with_capacity<i64>(2usize); let values=push<i64>(empty,42); get<i64>(values,0usize)}",
+        ),
+        (
+            include_str!("../../../std/mem/src/mem.spx"),
+            "module receiver.box; use function @id(\"std.mem.box.new\") from std.mem as new; use function @id(\"std.mem.box.into-inner\") from std.mem as into_inner; @id(\"receiver.helper\") fn helper()->i64 {1} @id(\"receiver.main\") fn main()->i64 {into_inner<i64>(new<i64>(42))}",
+        ),
     ];
     for (provider, caller) in cases {
         let previous = [
@@ -469,11 +473,13 @@ fn actual_selective_import_receiver_matches_fresh_owned_for_vec_and_box() {
             assert_eq!(result.3, oracle.1.static_text());
             assert!(result.2 > 0);
             assert_eq!(super::acquisitions(), before + 1);
-            assert!(crate::hir::resolve_source(
-                input.source(),
-                layout.presentation(&current[0], input.source()).unwrap()
-            )
-            .is_err());
+            assert!(
+                crate::hir::resolve_source(
+                    input.source(),
+                    layout.presentation(&current[0], input.source()).unwrap()
+                )
+                .is_err()
+            );
         }
         // A retained generic wrapper with the wrong persistent identity must
         // still undergo ordinary source verification, even with a warm cache.
@@ -555,7 +561,19 @@ fn direct_paid_inner_receivers_preserve_complete_independent_legacy_function_wor
     let program = crate::check(SOURCE, "identity-workspace.spx").unwrap();
     let owned = Input::Owned(program.clone());
     let borrowed = Input::Borrowed(SyntheticProgramView::new(&program, Vec::new()).unwrap());
-    let oracle = crate::hir::resolve_with_function_reuse(&program, None, None, None, None).unwrap();
+    // FunctionResolutionWork::costs records active cumulative builder debits.
+    // Keep the original unbounded receiver as a semantic control, and acquire
+    // the same application ledger before comparing its physical work report.
+    let unbounded =
+        crate::hir::resolve_with_function_reuse(&program, None, None, None, None).unwrap();
+    let (oracle, failed, _) = with_limit_usage(crate::workspace_graph::MAX_BUILDER_BYTES, || {
+        crate::hir::resolve_with_function_reuse(&program, None, None, None, None).unwrap()
+    });
+    assert!(!failed);
+    assert_eq!(oracle.0, unbounded.0);
+    assert_eq!(oracle.1.reused(), unbounded.1.reused());
+    assert_eq!(oracle.1.static_text(), unbounded.1.static_text());
+    assert!(unbounded.1.costs().values().all(|cost| *cost == 0));
     let expected_reused = oracle.1.reused();
     let expected_static = oracle.1.static_text();
     let expected_costs = oracle.1.costs();
