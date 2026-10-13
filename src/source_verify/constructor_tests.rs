@@ -24,6 +24,16 @@ fn compare_public_source(source: &str) {
     let _ = verify(&program);
     assert_eq!(program, before);
 }
+/// The one pinned intentional-recovery fixture: current public verification
+/// differs from the saved old declaration pass by exactly the dependent read.
+fn compare_public_intentional(source: &str) {
+    let program = crate::parse(source, "constructor-full-public.spx").unwrap();
+    let before = program.clone();
+    let current = super::verify(&program);
+    let old = declaration::old::verify(&program);
+    super::recovery_tests::intentional_wrong_field::assert_public(source, &current, &old);
+    assert_eq!(program, before);
+}
 const GENERIC: &str = r#"module constructor.generic;
 @id("packet") record Packet { @id("packet.n") n:i64, }
 @id("identity") fn identity<T>(value:T)->T {value}
@@ -233,31 +243,112 @@ fn complete_old_private_presentation_keeps_exact_subject_provider_and_authored_s
         json(&declaration::old::verify(&program))
     );
 }
+fn assert_observed_drop(
+    label: &str,
+    current: crate::test_allocation_observer::Metrics,
+    old: crate::test_allocation_observer::Metrics,
+) {
+    assert!(
+        !current.invalid && !old.invalid && current.live == 0 && old.live == 0,
+        "{label}: current={current:?} old={old:?}"
+    );
+    assert_eq!(
+        current.allocated, current.freed,
+        "{label}: current={current:?}"
+    );
+    assert_eq!(old.allocated, old.freed, "{label}: old={old:?}");
+    assert!(
+        current.allocations < old.allocations && current.allocated < old.allocated,
+        "{label}: current={current:?} old={old:?}"
+    );
+}
 #[test]
 fn full_public_receiver_and_secondary_directories_observe_actual_requests_through_drop() {
     let program = crate::parse(GENERIC, "constructor-physical.spx").unwrap();
+    // `prelude::declarations()` is a process-lived OnceLock that the first
+    // verifier or TypeTable would otherwise initialize inside the measured
+    // scope, leaving its owner live after Drop. Hold exactly that immutable
+    // table before any measured invocation; nothing else is warmed.
+    let held = crate::prelude::declarations();
+    let identity = (held.as_ptr(), held.len());
     let ((), current) = measure(|| {
         drop(super::verify(&program));
     });
     let ((), old) = measure(|| {
         drop(declaration::old::verify(&program));
     });
-    assert!(!current.invalid && !old.invalid && current.live == 0 && old.live == 0);
-    assert_eq!(current.allocated, current.freed);
-    assert_eq!(old.allocated, old.freed);
-    assert!(current.allocations < old.allocations && current.allocated < old.allocated);
+    assert_observed_drop("full verify", current, old);
     let ((), current) = measure(|| {
         drop(TypeTable::new(&program));
     });
     let ((), old) = measure(|| {
         drop(TypeTable::new_owned_reference(&program));
     });
-    assert!(!current.invalid && !old.invalid && current.live == 0 && old.live == 0);
-    assert_eq!(current.allocated, current.freed);
-    assert_eq!(old.allocated, old.freed);
-    assert!(current.allocations < old.allocations && current.allocated < old.allocated);
+    assert_observed_drop("type table", current, old);
+    let after = crate::prelude::declarations();
+    assert_eq!(identity, (after.as_ptr(), after.len()));
+    assert!(std::ptr::eq(held, after));
+    // Complete current/old Diagnostic parity, deliberately outside observation.
+    assert_eq!(
+        json(&super::verify(&program)),
+        json(&declaration::old::verify(&program))
+    );
     // Ordinary verifier setup remains public; these are actual requested layouts,
     // not ledger attribution, budget discounts, RSS or application-fit evidence.
+}
+#[test]
+fn cold_process_prelude_acquisition_is_a_separate_process_lifetime_scope() {
+    // The OnceLock is shared by every test in this process, so this scope is
+    // cold only when no other test acquired it first. Both outcomes are
+    // asserted; a cold acquisition is retained for the process lifetime and is
+    // never part of a measured verifier invocation.
+    let (identity, acquisition) = measure(|| {
+        let held = crate::prelude::declarations();
+        (held.as_ptr(), held.len())
+    });
+    assert!(!acquisition.invalid, "{acquisition:?}");
+    if acquisition.allocations == 0 {
+        assert_eq!(acquisition.live, 0, "warm: {acquisition:?}");
+    } else {
+        assert!(acquisition.live > 0, "cold: {acquisition:?}");
+        assert!(
+            acquisition.allocated > acquisition.freed,
+            "cold: {acquisition:?}"
+        );
+    }
+    let again = crate::prelude::declarations();
+    assert_eq!(identity, (again.as_ptr(), again.len()));
+    assert_eq!(again.len(), 11);
+}
+#[test]
+fn complete_prelude_owner_construction_drops_through_actual_measurement() {
+    let held = crate::prelude::declarations();
+    let owned = crate::prelude::owned_declarations_for_tests();
+    let reference = crate::prelude::original_initializer_reference();
+    assert_eq!(owned, reference);
+    assert_eq!(owned.as_slice(), held);
+    assert!(!std::ptr::eq(owned.as_ptr(), held.as_ptr()));
+    drop(owned);
+    drop(reference);
+    let ((), construction) = measure(|| {
+        drop(crate::prelude::owned_declarations_for_tests());
+    });
+    assert!(!construction.invalid, "{construction:?}");
+    assert!(construction.allocations > 0, "{construction:?}");
+    assert_eq!(
+        construction.allocated, construction.freed,
+        "{construction:?}"
+    );
+    assert_eq!(construction.live, 0, "{construction:?}");
+    let ((), original) = measure(|| {
+        drop(crate::prelude::original_initializer_reference());
+    });
+    assert!(!original.invalid, "{original:?}");
+    assert!(original.allocations > 0, "{original:?}");
+    assert_eq!(original.allocated, original.freed, "{original:?}");
+    assert_eq!(original.live, 0, "{original:?}");
+    assert_eq!(construction, original);
+    assert!(std::ptr::eq(held, crate::prelude::declarations()));
 }
 #[test]
 fn requires_borrows_same_entry_state_and_body_ensures_keep_order_and_input_unchanged() {
@@ -281,6 +372,8 @@ fn complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps() 
         include_str!("recovery_legacy/records.rs"),
         include_str!("recovery_legacy/match_arms.rs"),
         include_str!("recovery_tests/refusal_dependency.rs"),
+        include_str!("recovery_tests/intentional_wrong_field.rs"),
+        include_str!("../prelude.rs"),
         include_str!("declaration.rs"),
         include_str!("declaration/functions.rs"),
         include_str!("declaration/old.rs"),
@@ -293,6 +386,8 @@ fn complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps() 
     );
     assert!(source.contains("entry_variables = variables.clone()"));
     assert!(source.contains("complete old field index"));
+    assert!(source.contains("DECLARATIONS.get_or_init(owned_declarations)"));
+    assert!(source.contains("fn original_initializer_reference"));
     for part in [
         include_str!("declaration/functions/old.rs"),
         include_str!("declaration/old.rs"),

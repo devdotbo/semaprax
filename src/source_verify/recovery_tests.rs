@@ -6,6 +6,8 @@ use super::recovery::Recovery;
 use super::type_table::TypeTable;
 #[path = "recovery_tests/boundaries.rs"]
 mod boundaries;
+#[path = "recovery_tests/intentional_wrong_field.rs"]
+pub(super) mod intentional_wrong_field;
 #[path = "recovery_tests/proposal_corpus.rs"]
 mod proposal_corpus;
 #[path = "recovery_tests/refusal_dependency.rs"]

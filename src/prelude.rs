@@ -64,9 +64,45 @@ pub(crate) const RESULT_ERR_ERROR_ID: &str = "core.result.err.error";
 pub(crate) const VEC_ID: &str = "core.vec";
 pub(crate) const BOX_ID: &str = "core.box";
 
+/// The owning construction of the process prelude table. The `OnceLock` below
+/// is its only production caller; declarations, order and bytes are unchanged.
+fn owned_declarations() -> Vec<TypeDeclaration> {
+    vec![
+        option(),
+        result(),
+        owned_vec(),
+        owned_box(),
+        owned_iter(),
+        iter_step(),
+        immutable_list(),
+        list_step(),
+        crate::stdin_stream_ops::declaration(),
+        collections::declaration(false),
+        collections::declaration(true),
+    ]
+}
+
 pub(crate) fn declarations() -> &'static [TypeDeclaration] {
     static DECLARATIONS: OnceLock<Vec<TypeDeclaration>> = OnceLock::new();
-    DECLARATIONS.get_or_init(|| {
+    DECLARATIONS.get_or_init(owned_declarations)
+}
+
+/// Test-only access to a fresh, caller-owned copy of the same construction,
+/// so allocation controls can measure it through Drop without the cache.
+#[cfg(test)]
+pub(crate) fn owned_declarations_for_tests() -> Vec<TypeDeclaration> {
+    owned_declarations()
+}
+
+/// Independent reference: the complete original `OnceLock` initializer body,
+/// retained verbatim before the owning factory was extracted.
+#[cfg(test)]
+#[allow(
+    clippy::redundant_closure_call,
+    reason = "complete original OnceLock initializer retained byte-exact as an independent receiving oracle"
+)]
+pub(crate) fn original_initializer_reference() -> Vec<TypeDeclaration> {
+    (|| {
         vec![
             option(),
             result(),
@@ -80,7 +116,7 @@ pub(crate) fn declarations() -> &'static [TypeDeclaration] {
             collections::declaration(false),
             collections::declaration(true),
         ]
-    })
+    })()
 }
 
 pub(crate) fn declarations_for_program(program: &dyn ProgramSource) -> &'static [TypeDeclaration] {

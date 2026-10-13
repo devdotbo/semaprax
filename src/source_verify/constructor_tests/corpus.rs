@@ -194,8 +194,12 @@ fn diagnostics_key(
         .collect()
 }
 
-fn compare_scalar_body(source: &str) {
-    super::compare_public_source(source);
+fn compare_scalar_receivers(source: &str, intentional: bool) {
+    if intentional {
+        super::compare_public_intentional(source);
+    } else {
+        super::compare_public_source(source);
+    }
     let program = crate::parse(source, Path::new("iterative-verifier.spx")).unwrap();
     let current = program
         .functions
@@ -275,10 +279,22 @@ fn compare_scalar_body(source: &str) {
         assert_eq!(expected.native_unit_discard, actual.native_unit_discard);
     }
     drop(iterative);
-    assert_eq!(
-        diagnostics_key(&oracle_diagnostics),
-        diagnostics_key(&iterative_diagnostics)
-    );
+    if intentional {
+        crate::source_verify::recovery_tests::intentional_wrong_field::assert_scalar(
+            source,
+            &oracle_diagnostics,
+            &iterative_diagnostics,
+        );
+    } else {
+        assert_eq!(
+            diagnostics_key(&oracle_diagnostics),
+            diagnostics_key(&iterative_diagnostics)
+        );
+    }
+}
+
+fn compare_scalar_body(source: &str) {
+    compare_scalar_receivers(source, false);
 }
 
 #[test]
@@ -892,7 +908,9 @@ fn loop_copy_construction_matches_recursive_oracle() {
         "let x=Option<string>::None {}; 0",
         "match (Option<i64>::Some { value: 1 }) { Option::Some { wrong: n } => n, Option::None {} => 0, }",
     ] {
-        compare_scalar_body(&format!("module t; @id(\"t.main\") fn main()->i64 {{ while false {{ {body} }} 0 }}"));
+        let source = format!("module t; @id(\"t.main\") fn main()->i64 {{ while false {{ {body} }} 0 }}");
+        let pinned = crate::source_verify::recovery_tests::intentional_wrong_field::is_pinned(&source);
+        compare_scalar_receivers(&source, pinned);
     }
 }
 
