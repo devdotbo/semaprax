@@ -1,5 +1,12 @@
 # Changelog
 
+- Author root-first caller-paid cleanup droppability: classify the borrowed root
+  once before outer traversal storage, retaining hostile cache precedence, exact
+  semantic errors and complete nominal traversal. Preserve the full prior paid
+  receiver verbatim and the independent ordinary callback; add focused root and
+  nominal exact/short/zero/sticky/physical Drop controls. Source-only; no runtime
+  qualification, broader funding repair or G171/application-fit claim.
+
 - Extend the paid outer droppability source corpus with isolated zero-budget
   helper-allocation controls over real parsed declaration IDs, owned-record and
   owned-leaf Vec signatures, concrete generic records and refused variants.

@@ -3895,7 +3895,12 @@ These areas are deliberately outside the public compiler contract:
   with a paid fact callback as an independent test oracle. Its
   `droppability/{paid,key,text}.rs` children acquire borrowed-root/owned-child
   pending and visited backing, complete substitution and raw semantic/final
-  replay diagnostic strings through that same invocation payer. The separate
+  replay diagnostic strings through that same invocation payer. The paid root
+  classifier runs once before outer carriers: terminal and leaf decisions retain
+  exact cache/diagnostic precedence, while nominal traversal carries its first
+  paid facts into the complete original walk. `droppability/saved_paid.rs`
+  preserves the entire prior paid receiver independently for tests; the original
+  ordinary callback and cleanup receiver remain intact. The separate
   key retains raw outer formatting and the original capped nominal-child
   frontier; absent visited keys acquire conservative BTree node upper bounds. These internal owners grant no replay admission
   and make no all-profile funding claim. `replay/supplemental.rs`

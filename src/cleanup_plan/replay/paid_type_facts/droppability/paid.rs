@@ -12,6 +12,59 @@ pub(in crate::cleanup_plan::replay::paid_type_facts) fn needs_drop<P: TypeFactsP
         payer.bytes(0).map_err(Failure::Physical)?;
         return Ok(false);
     }
+    // The root classifier retains exact hostile-cache precedence and uses the
+    // existing caller payer. Only nominal roots need an outer traversal carrier.
+    let first = program
+        .declarations()
+        .type_flags_paid(ty, &mut *payer)
+        .map_err(Failure::Physical)?;
+    let Some(first) = first else {
+        let key = super::key::identity(ty, payer).map_err(Failure::Physical)?;
+        return Err(Failure::Semantic(
+            super::text::raw(payer, format_args!("type `{key}` has no cleanup facts"))
+                .map_err(Failure::Physical)?,
+        ));
+    };
+    if !first.needs_drop {
+        return Ok(false);
+    }
+    match ty {
+        ResolvedType::Bytes
+        | ResolvedType::String
+        | ResolvedType::StringMap
+        | ResolvedType::OnceFunction
+        | ResolvedType::OnceFunctionI64
+        | ResolvedType::OnceFunctionI64Pair
+        | ResolvedType::TypeParameter { .. } => return Ok(true),
+        ResolvedType::Str
+        | ResolvedType::SliceU8
+        | ResolvedType::Function { .. }
+        | ResolvedType::MutFunctionI64 => return Ok(false),
+        ResolvedType::Nominal { .. } => {}
+        ResolvedType::Never
+        | ResolvedType::Unit
+        | ResolvedType::I64
+        | ResolvedType::I32
+        | ResolvedType::Char
+        | ResolvedType::U8
+        | ResolvedType::Usize
+        | ResolvedType::ArrayU8(_)
+        | ResolvedType::F32
+        | ResolvedType::F64
+        | ResolvedType::Bool => {
+            let key = super::key::identity(ty, payer).map_err(Failure::Physical)?;
+            return Err(Failure::Semantic(
+                super::text::raw(
+                    payer,
+                    format_args!("copy type `{key}` unexpectedly requires cleanup"),
+                )
+                .map_err(Failure::Physical)?,
+            ));
+        }
+    }
+    // The first pending member is exactly this borrowed root; carry its paid
+    // facts once rather than charging or classifying it a second time.
+    let mut first = Some(first);
     payer
         .bytes(
             std::mem::size_of::<Vec<Cow<'_, ResolvedType>>>()
@@ -23,10 +76,13 @@ pub(in crate::cleanup_plan::replay::paid_type_facts) fn needs_drop<P: TypeFactsP
     pending.push(Cow::Borrowed(ty));
     let mut visited = BTreeSet::new();
     while let Some(ty) = pending.pop() {
-        let facts = program
-            .declarations()
-            .type_flags_paid(ty.as_ref(), &mut *payer)
-            .map_err(Failure::Physical)?;
+        let facts = match first.take() {
+            Some(facts) => Some(facts),
+            None => program
+                .declarations()
+                .type_flags_paid(ty.as_ref(), &mut *payer)
+                .map_err(Failure::Physical)?,
+        };
         let Some(facts) = facts else {
             let key = super::key::identity(ty.as_ref(), payer).map_err(Failure::Physical)?;
             return Err(Failure::Semantic(

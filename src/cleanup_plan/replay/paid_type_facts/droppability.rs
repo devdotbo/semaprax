@@ -179,6 +179,10 @@ mod helper_tests;
 mod key;
 mod paid;
 #[cfg(test)]
+mod saved_paid;
+#[cfg(test)]
+mod root_tests;
+#[cfg(test)]
 mod tests;
 mod text;
 pub(super) use paid::needs_drop as needs_drop_paid;

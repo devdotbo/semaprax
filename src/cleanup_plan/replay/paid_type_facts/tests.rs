@@ -382,6 +382,7 @@ fn complete_classifier_source_join_keeps_the_existing_payer_and_full_receiver_in
         include_str!("../paid_type_facts.rs"),
         include_str!("droppability.rs"),
         include_str!("droppability/paid.rs"),
+        include_str!("droppability/saved_paid.rs"),
         include_str!("droppability/key.rs"),
         include_str!("droppability/text.rs"),
         include_str!("../../../hir/declaration_index/flags/paid.rs"),
@@ -406,6 +407,7 @@ fn complete_classifier_source_join_keeps_the_existing_payer_and_full_receiver_in
         include_str!("tests.rs"),
         include_str!("droppability/tests.rs"),
         include_str!("droppability/helper_tests.rs"),
+        include_str!("droppability/root_tests.rs"),
         include_str!("../../../cleanup.rs"),
         include_str!("../../../hir/declaration_index/flags.rs"),
     ];

@@ -72,6 +72,15 @@ pub(super) fn parity(program: &ResolvedProgram, ty: &ResolvedType) {
             .type_flags(ty))))
     );
     let function = &program.functions[0];
+    let mut saved_budget = ReplayBudget::new();
+    assert_eq!(
+        old,
+        semantic(super::saved_paid::needs_drop(
+            program,
+            ty,
+            &mut payer(function, &mut saved_budget)
+        ))
+    );
     let mut budget = ReplayBudget::new();
     assert_eq!(
         old,
