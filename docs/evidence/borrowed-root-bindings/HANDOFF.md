@@ -16,8 +16,9 @@ local can merely defer the original upfront copy, not eliminate it. Every
 original map field and sorted-map lookup,
 shadowing, mutation and sibling/parent isolation remains at its original owner.
 Nested expression and input lifetimes are synchronous; no scope pointer is
-published into HIR. Closure publication and paid capture constructors are
-byte-identical, not redirected to a new funding or ownership policy.
+published into HIR. At this batch's base, closure publication and paid capture
+constructors were byte-identical. The later held-owner producer below preserves
+the publication and paid-capture ownership policy.
 
 The empty root is an explicit storage tradeoff: the Cow carrier may request
 more bytes than the original empty-map Rc. The physical observer compares empty,
@@ -64,3 +65,15 @@ Only rustfmt syntax formatting, diff inspection and the static source producer
 ran here. No Cargo, compiler, build, test or full gate ran. Runtime allocation,
 semantic/canonical/cache/loan behavior and actual residual improvement remain
 pending the root's focused qualification. No root checkout or target was edited.
+
+The later dynamic-identity producer migration replaces exactly one temporary
+closure owner ID with the same pass's held declaration ID. The entire original
+5ff source is identical to the retained eb02 archive and keeps its original
+`bd47e88b57a91b87c272da799f45834097b43dd069ff3c652d3af53a4754e9ea`
+digest. Both static producer and executable source guard require the full
+current file to equal that archive after exactly this one named replacement;
+all other bytes and all original assertions remain guarded. The complete frozen
+closure receiver remains compiled in `borrowed_root_oracle`. A symbolic generic
+capture fixture compares full current/original HIR and Diagnostics and receiving
+Drop, reaching the owner query that scalar capture would skip. These new owning
+selectors remain pending execution; no original hash or baseline is regenerated.

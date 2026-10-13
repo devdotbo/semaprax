@@ -362,3 +362,38 @@ fn detached_traversal_rows_keep_complete_binding_metadata_and_actual_drop() {
     assert_eq!(observed.live, 0);
     assert_eq!(input.len(), 1);
 }
+
+const GENERIC_TEMPLATE_CLOSURE: &str = r#"
+module test.generic_template_closure;
+@id("gc.fill") fn fill<T>(values:own Vec<T>,replacement:T)->Vec<T>{
+    let length=vec_len<T>(values);
+    let mut output=vec_with_capacity<T>(length);
+    let mut index=0usize;
+    while index<length {
+        let callback=fn(item:T)->T{replacement};
+        output=vec_push<T>(output,callback(vec_get<T>(values,index)));
+        index=index+1usize;
+        index<length
+    }
+    output
+}
+@id("gc.main") fn main()->i64{
+    let i64s=fill<i64>(vec_push<i64>(vec_with_capacity<i64>(1usize),1),2);
+    let i32s=fill<i32>(vec_push<i32>(vec_with_capacity<i32>(1usize),1i32),2i32);
+    let u8s=fill<u8>(vec_push<u8>(vec_with_capacity<u8>(1usize),1u8),2u8);
+    let usizes=fill<usize>(vec_push<usize>(vec_with_capacity<usize>(1usize),1usize),2usize);
+    let chars=fill<char>(vec_push<char>(vec_with_capacity<char>(1usize),'a'),'b');
+    let f32s=fill<f32>(vec_push<f32>(vec_with_capacity<f32>(1usize),1.0f32),2.0f32);
+    let f64s=fill<f64>(vec_push<f64>(vec_with_capacity<f64>(1usize),1.0f64),2.0f64);
+    let bools=fill<bool>(vec_push<bool>(vec_with_capacity<bool>(1usize),true),false);
+    if vec_len<i64>(i64s)+vec_len<i32>(i32s)+vec_len<u8>(u8s)+vec_len<usize>(usizes)+vec_len<char>(chars)+vec_len<f32>(f32s)+vec_len<f64>(f64s)+vec_len<bool>(bools)==8usize {0} else {1}
+}
+"#;
+
+#[test]
+fn frozen_generic_closure_receiver_keeps_held_owner_projection_and_actual_drop() {
+    // Symbolic T captures reach the migrated owner query; concrete scalar
+    // captures alone would short-circuit before it. The full original receiver
+    // compares all HIR/Diagnostic fields and observes both results through Drop.
+    receiver(GENERIC_TEMPLATE_CLOSURE, true);
+}

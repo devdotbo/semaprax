@@ -222,6 +222,7 @@ macro_rules! hir_resolver_source_inventory {
                 include_str!("../../../../../src/hir/borrowed_scalar/option_u8/metered.rs"),
                 include_str!("../../../../../src/hir/resolver_scope.rs"),
                 include_str!("../../../../../src/hir/resolver_scope/source_audit.rs"),
+                include_str!("../../../../../src/hir/resolver_scope/tests.rs"),
                 include_str!("../../../../../src/hir/row_loan.rs"),
                 include_str!("../../../../../src/hir/row_loan/producer.rs"),
                 include_str!("../../../../../src/hir/row_loan/validate.rs"),

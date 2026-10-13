@@ -29,7 +29,16 @@ for row in json.loads((OUT/'frozen-source-map.json').read_text()):
 # Complete unchanged services/types at intentional shared API boundaries; paid publication untouched.
 unchanged=[]
 for path in ['src/hir/resolve_expr/path_arena.rs','src/hir/closure.rs','src/hir/closure/resolve.rs','src/hir/closure/once.rs','src/hir/closure/mutable.rs','src/hir/closure/paid.rs','src/hir/closure/paid/copy.rs','src/hir/closure/paid/tests.rs','src/hir/closure/paid/original_tests.rs','src/hir/resolve_expr_reference.rs','src/hir/capacity_probe.rs']:
- before=frozen(path);after=(ROOT/path).read_text();assert before==after,path;unchanged.append(dict(path=path,sha256=sha(after)))
+ before=frozen(path);after=(ROOT/path).read_text()
+ if path=='src/hir/closure/resolve.rs':
+  old='&DeclarationId::new(source_function.stable_id.clone())';held='&self.declarations.held_identity(&source_function.stable_id)'
+  assert before.count(old)==1 and before.count(held)==0,path
+  assert after.count(old)==0 and after.count(held)==1,path
+  assert after==before.replace(old,held,1),path
+  assert (OUT/(path.replace('/','__')+'.txt')).read_text()==before,path
+ else:assert before==after,path
+ # Original digest remains immutable, including the exact projected producer.
+ unchanged.append(dict(path=path,sha256=sha(before)))
 # The row schema itself remains the exact shared Binding payload ABI.
 def declaration(s,name):
  t=tokens(s);i=next(i for i in range(len(t)-1) if t[i:i+2]==['struct',name]);start=t.index('{',i);depth=0

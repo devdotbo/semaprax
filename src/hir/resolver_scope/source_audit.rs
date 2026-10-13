@@ -69,6 +69,7 @@ fn complete_frozen_receiver_and_shared_boundaries_match_static_body_provenance()
         );
         assert!(record["complete_function_bodies"].as_u64().unwrap() > 0);
     }
+    let original_closure = qualified_closure_identity_projection();
     let unchanged = [
         (
             "src/hir/resolve_expr/path_arena.rs",
@@ -121,8 +122,15 @@ fn complete_frozen_receiver_and_shared_boundaries_match_static_body_provenance()
         .zip(proof["unchanged_full_sources"].as_array().unwrap())
     {
         assert_eq!(*source, record["path"].as_str().unwrap());
+        // Keep the original full-source digest; the one migrated producer is
+        // additionally bound to exact full-current source equality above.
+        let publication_source = if *source == "src/hir/closure/resolve.rs" {
+            original_closure
+        } else {
+            current
+        };
         assert_eq!(
-            digest(current),
+            digest(publication_source),
             record["sha256"].as_str().unwrap(),
             "unchanged full publication/service {source}"
         );
@@ -138,4 +146,41 @@ fn complete_frozen_receiver_and_shared_boundaries_match_static_body_provenance()
     let frozen_dispatch = include_str!("../borrowed_root_oracle/resolve_expr.rs");
     assert!(frozen_dispatch.contains("Rc::new(bindings.clone())"));
     assert!(!frozen_dispatch.contains("Cow::"));
+}
+
+/// Preserve the full original and qualify precisely one additive producer hook.
+/// Every other source byte, including all diagnostic literals, is unchanged.
+fn qualified_closure_identity_projection() -> &'static str {
+    let original = include_str!(
+        "../../../docs/evidence/borrowed-root-bindings/src__hir__closure__resolve.rs.txt"
+    );
+    let current = include_str!("../closure/resolve.rs");
+    let old = "&DeclarationId::new(source_function.stable_id.clone())";
+    let held = "&self.declarations.held_identity(&source_function.stable_id)";
+    assert_eq!(original.matches(old).count(), 1);
+    assert_eq!(original.matches(held).count(), 0);
+    assert_eq!(current.matches(old).count(), 0);
+    assert_eq!(current.matches(held).count(), 1);
+    assert_eq!(current, original.replacen(old, held, 1));
+    original
+}
+
+#[test]
+fn full_current_closure_source_is_exact_original_held_identity_projection() {
+    let original = qualified_closure_identity_projection();
+    let proof: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../docs/evidence/borrowed-root-bindings/source-provenance.json"
+    ))
+    .unwrap();
+    let record = proof["unchanged_full_sources"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|record| record["path"] == "src/hir/closure/resolve.rs")
+        .unwrap();
+    assert_eq!(digest(original), record["sha256"].as_str().unwrap());
+    assert_eq!(
+        record["sha256"].as_str().unwrap(),
+        "bd47e88b57a91b87c272da799f45834097b43dd069ff3c652d3af53a4754e9ea"
+    );
 }
