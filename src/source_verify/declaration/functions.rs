@@ -972,6 +972,7 @@ pub(super) fn check_function_bodies<'p>(
             .iter()
             .map(|parameter| parameter.name.as_str())
             .collect::<HashSet<_>>();
+        let return_frontier = diagnostics.len();
         check_declared_type(
             program,
             &template.return_type,
@@ -980,6 +981,9 @@ pub(super) fn check_function_bodies<'p>(
             &type_parameters,
             diagnostics,
         );
+        let return_unknown = diagnostics[return_frontier..]
+            .iter()
+            .any(|diagnostic| diagnostic.code == "SPX-T001");
         for param in &template.params {
             check_declared_type(
                 program,
@@ -1195,6 +1199,7 @@ pub(super) fn check_function_bodies<'p>(
                 if !actual.native_unit
                     && actual.ty != Type::Never
                     && actual.ty != function.return_type
+                    && !return_unknown
                 {
                     diagnostics.push(error(
                         program,
@@ -1215,6 +1220,7 @@ pub(super) fn check_function_bodies<'p>(
                     ));
                 }
                 if actual.ty != Type::Never
+                    && (actual.native_unit || actual.ty == function.return_type)
                     && types.needs_drop(&function.return_type)
                     && actual.mode != ParamMode::Own
                 {

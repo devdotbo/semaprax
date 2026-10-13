@@ -339,6 +339,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 .cloned()
                 .collect::<Vec<_>>();
             let arm_scope = self.scopes.len();
+            self.recovery.fork(Some(scope), arm_scope);
             self.scopes.push(VerifierScope {
                 bindings: self.scopes[scope].bindings.clone(),
                 local_borrow_count: self.scopes[scope].local_borrow_count,

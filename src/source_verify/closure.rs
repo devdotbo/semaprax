@@ -271,6 +271,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             bindings.insert(param.name.clone(), scalar_binding(param.ty.clone()));
         }
         let scope = self.scopes.len();
+        self.recovery.fork(None, scope);
         self.scopes.push(VerifierScope {
             bindings,
             local_borrow_count: 0,

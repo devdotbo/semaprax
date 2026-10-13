@@ -273,6 +273,13 @@ fn requires_borrows_same_entry_state_and_body_ensures_keep_order_and_input_uncha
 fn complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps() {
     let source = concat!(
         include_str!("../source_verify.rs"),
+        include_str!("recovery.rs"),
+        include_str!("recovery_legacy.rs"),
+        include_str!("recovery_legacy/enter.rs"),
+        include_str!("recovery_legacy/blocks.rs"),
+        include_str!("recovery_legacy/operators.rs"),
+        include_str!("recovery_legacy/records.rs"),
+        include_str!("recovery_legacy/match_arms.rs"),
         include_str!("declaration.rs"),
         include_str!("declaration/functions.rs"),
         include_str!("declaration/old.rs"),

@@ -4558,3 +4558,17 @@ constructors retain `Into<String>` semantics and owned capacity; explicit
 receivers. Diagnostic encoding is independent of facade major negotiation.
 [Embedding API v3](EMBEDDING-API-V3.md) owns this source-incompatible migration;
 report vectors and dynamic output storage retain their existing owners.
+
+
+Private source diagnostic recovery lives in `source_verify/recovery.rs`: borrowed
+authored names are keyed by actual lexical scope ordinals and published only
+after initializer completion. Existing checked binding/ownership checks and
+valid function values retain precedence; detached closure scopes and per-arm
+pattern markers preserve independent errors and exhaustiveness. Known annotation
+neutralization is restricted to cleanup-inert real values because existing call
+ownership consumes checked metadata. Complete independent receiving bodies live
+in the test-only `recovery_legacy` tree; source-text audits join every child.
+The ordinary directory has no replay-constructor payer and retains unpaid
+storage; no verifier bound or phase allowance is changed.
+[Scoped diagnostic recovery v1](SCOPED-DIAGNOSTIC-RECOVERY-V1.md) owns the exact
+source-authored boundary and pending qualification.

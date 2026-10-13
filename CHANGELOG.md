@@ -22,6 +22,7 @@
   priority, canonical merge order and complete original BTree receivers. Add
   full rotation, snapshot, ordered cursor, every-byte refusal and physical Drop
   controls. Source-only; qualification and allocation effects remain pending.
+- Author scoped refused-binding diagnostic recovery (OPT806/#799): retain lexical declaration frontiers, original ownership and independent closure/match-coverage errors, complete saved receiving bodies and the 60-case old/current corpus. Annotation neutralization is limited to cleanup-inert real values; ordinary recovery directory storage remains unpaid. Execution and qualification are pending under [Scoped diagnostic recovery v1](docs/SCOPED-DIAGNOSTIC-RECOVERY-V1.md).
 
 - Author constructor-local HIR closure funding for capture and nested-body identity
   insertions, canonical identity/result backing, parameter names/types, and the

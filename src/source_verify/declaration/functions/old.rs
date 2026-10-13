@@ -18,10 +18,10 @@ use crate::source_verify::declared_type::{
 };
 use crate::source_verify::declared_type::{declared_collection::reject_function, generic_result};
 use crate::source_verify::diagnostics::{
-    error, invalid_stable_id, reject_native_unit_value, reject_reserved_host_id, require_bool,
+    error, invalid_stable_id, reject_native_unit_value, reject_reserved_host_id,
     source_identifier,
 };
-use crate::source_verify::iterative::check_expr_with_helpers;
+use crate::source_verify::recovery_legacy::{check_expr_with_helpers_legacy as check_expr_with_helpers, require_bool_legacy as require_bool};
 use crate::source_verify::type_table::TypeTable;
 use std::collections::{BTreeSet, HashMap, HashSet};
 pub(in crate::source_verify::declaration) fn check_function_declarations<'p>(

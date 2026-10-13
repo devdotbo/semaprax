@@ -166,6 +166,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             block_scope,
             index: next,
             outer_names,
+            recovery_checkpoint: self.recovery.checkpoint(self.diagnostics),
         });
         self.frames.push(VerifierFrame::Enter {
             expression: next_statement.value(),

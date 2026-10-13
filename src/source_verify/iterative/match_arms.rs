@@ -83,6 +83,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         &mut self,
         mut state: VariantMatchState<'p>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.recovery_legacy {
+            return self.recovery_old_frame_prepare_variant_match_arm(state);
+        }
         if state.index >= state.arms.len() {
             if !state.wildcard_seen {
                 if let (Some(variant_name), Some(cases)) =
@@ -131,6 +135,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         }
         let arm = &state.arms[state.index];
         let arm_scope = self.scopes.len();
+        self.recovery.fork(Some(state.parent_scope), arm_scope);
         self.scopes.push(VerifierScope {
             bindings: state.baseline.clone(),
             local_borrow_count: state
@@ -170,6 +175,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 span,
                 ..
             } => {
+                let checkpoint = self.recovery.checkpoint(self.diagnostics);
                 let compatible = state.variant_name.as_deref() == Some(type_name);
                 let declared_case = compatible
                     .then_some(state.declared_cases)
@@ -271,6 +277,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                 active_loans: BTreeSet::new(),
                                 borrow_origin: None,
                             },
+                        );
+                    } else {
+                        self.recovery.refused_let(
+                            arm_scope,
+                            &field.binding,
+                            checkpoint,
+                            self.diagnostics,
                         );
                     }
                 }
@@ -519,6 +532,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         }
         let arm = &state.arms[state.index];
         let arm_scope = self.scopes.len();
+        self.recovery.fork(Some(state.parent_scope), arm_scope);
         self.scopes.push(VerifierScope {
             bindings: state.baseline.clone(),
             local_borrow_count: state

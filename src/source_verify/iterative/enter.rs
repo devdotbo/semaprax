@@ -29,6 +29,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         expression: &'p Expr,
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.recovery_legacy {
+            return self.recovery_old_frame_enter(expression, scope);
+        }
+
         match &expression.kind {
             ExprKind::VecConstructor { .. } => {
                 let hygienic = *self.constructor_hygiene.get_or_insert_with(|| {
@@ -206,7 +211,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         .and_then(|function| function_value_signature(function))
                         .map(CheckedValue::value)
                 });
-                if value.is_none() {
+                if value.is_none() && !self.recovery.reads_refused(scope, name) {
                     self.diagnostics.push(hints::with_optional_help(
                         error(
                             self.program,
@@ -217,7 +222,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         hints::variant_shorthand_help(name).map(str::to_owned),
                     ));
                 }
-                self.values.push(value);
+                // Preserve every real binding/ownership check above before
+                // neutralizing inference that depends on this declaration.
+                let refused = value.is_some() && self.recovery.reads_known_refused(scope, name);
+                self.values.push(if refused { None } else { value });
             }
             ExprKind::Unary { op, value } => {
                 self.frames.push(VerifierFrame::ResumeUnary {
@@ -1064,6 +1072,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     .cloned()
                     .collect::<Vec<_>>();
                 let block_scope = self.scopes.len();
+                self.recovery.fork(Some(scope), block_scope);
                 self.scopes.push(VerifierScope {
                     bindings: self.scopes[scope].bindings.clone(),
                     local_borrow_count: self.scopes[scope].local_borrow_count,
@@ -1142,6 +1151,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             block_scope,
                             index: 0,
                             outer_names,
+                            recovery_checkpoint: self.recovery.checkpoint(self.diagnostics),
                         });
                         self.frames.push(VerifierFrame::Enter {
                             expression: first_statement.value(),
@@ -1288,6 +1298,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     name: type_name.clone(),
                     arguments: type_arguments.clone(),
                 };
+                let reported = self.diagnostics.len();
                 check_declared_type(
                     self.program,
                     &instance,
@@ -1297,7 +1308,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     self.diagnostics,
                 );
                 let declared_fields = effective_record_fields(self.types, &instance);
-                if declared_fields.is_none() {
+                if declared_fields.is_none()
+                    && !self.diagnostics[reported..]
+                        .iter()
+                        .any(|diagnostic| diagnostic.severity.is_error())
+                {
                     self.diagnostics.push(error(
                         self.program,
                         "SPX-T215",

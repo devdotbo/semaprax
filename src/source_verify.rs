@@ -60,6 +60,9 @@ mod place;
 pub(crate) mod private_names;
 mod record_invariants;
 mod record_traversal;
+mod recovery;
+#[cfg(test)]
+mod recovery_legacy;
 mod scope;
 mod sort_keys;
 pub(crate) mod static_text;
@@ -194,6 +197,9 @@ struct IterativeVerifier<'a, 'p> {
     allow_moves: bool,
     diagnostics: &'a mut Vec<Diagnostic>,
     scopes: Vec<VerifierScope>,
+    recovery: recovery::Recovery<'p>,
+    #[cfg(test)]
+    recovery_legacy: bool,
     frames: Vec<VerifierFrame<'p>>,
     values: Vec<Option<CheckedValue>>,
     /// Byte spans of the `bytes_set` calls this function admits as a
@@ -238,6 +244,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             .values()
             .filter(|binding| binding.borrow_origin.is_some())
             .count();
+        let recovery =
+            recovery::Recovery::signature(program, current, &variables, types, diagnostics);
         Self {
             program,
             current,
@@ -252,6 +260,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 bindings: variables,
                 local_borrow_count,
             }],
+            recovery,
+            #[cfg(test)]
+            recovery_legacy: false,
             frames: Vec::new(),
             values: Vec::new(),
             buffer_reopen_sites: std::collections::BTreeSet::new(),
@@ -302,3 +313,7 @@ pub(crate) use declaration::fusion::inventory as construction_fusion_candidate;
 
 #[cfg(test)]
 mod constructor_tests;
+
+#[cfg(test)]
+#[path = "source_verify/recovery_tests.rs"]
+mod recovery_tests;

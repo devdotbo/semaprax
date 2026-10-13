@@ -152,6 +152,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     block_scope,
                     index,
                     outer_names,
+                    recovery_checkpoint,
                 } => self.frame_resume_block_statement(
                     expression,
                     statements,
@@ -160,6 +161,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     block_scope,
                     index,
                     outer_names,
+                    recovery_checkpoint,
                 )?,
                 VerifierFrame::ResumeWhileCondition {
                     condition,

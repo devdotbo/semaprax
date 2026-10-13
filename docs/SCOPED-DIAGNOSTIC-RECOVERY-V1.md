@@ -1,0 +1,105 @@
+# Scoped diagnostic recovery v1
+
+Status: source-authored bounded implementation and controls; execution pending.
+
+Audience: compiler contributors and diagnostic-tool authors.
+
+Issue #806 adapts the sound portions of #799/#800/#804. Recovery is private to
+source verification. It grants no HIR, graph, cleanup, backend, storage-payment,
+or program-admission authority. This changes diagnostic selection on already
+refused source; codes, messages, help, paths and spans retain their original
+owners and presentation schemas.
+
+## Exact scope and precedence
+
+`source_verify/recovery.rs` retains borrowed authored names and original
+diagnostic ordinals in lazily acquired rows keyed by the existing lexical scope
+ordinal. Scope entry records its parent and resets reused ordinals. A completed
+initializer publishes a refused `let` only when its continuation observed a new
+error or a read already bound to an original refusal. Reads before declaration
+and self-initializer reads remain original errors. Ended blocks and former
+sibling arms provide no facts to later scopes.
+
+Existing binding, availability, partial-move, native-unit, escaping-owner and
+function-value checks precede recovery. A missing-declaration marker never
+outranks a real checked binding or valid function value. A successful binding
+clears its same-scope missing marker. Closure scopes have no recovery parent;
+capture admission and independent closure errors remain intact.
+
+There is no authored-function traversal on a dependent read. Lookup visits only
+the active directory ancestry. Ordinary successful scope forks acquire no
+directory. Signature recovery rechecks each affected parameter once per invocation after an
+existing `SPX-T001`, binds the complete authoritative refusal to the real binding
+metadata, and never repeats declared-type checking per read. Overlapping forged
+spans and duplicate parameter names cannot substitute another binding/type.
+
+## Intentional changes and retained boundaries
+
+- String arithmetic already refused by `SPX-T250` and unary operands already
+  refused by `SPX-T206` provide no fabricated operator result.
+- A missing local read or alias of a completed refused initializer adds no
+  repeated `SPX-T202`. Other names retain their independent errors.
+- `SPX-O104` is judged only when the real body type matched the declared result,
+  or native-unit refusal still requires the original checks.
+- A known annotation mismatch may neutralize later inference only for a real
+  cleanup-inert by-value non-native-unit binding. The actual binding type and
+  mode remain unchanged. Owned and borrowed values retain all original call
+  transfers, loan checks and diagnostics. Broader annotation recovery remains
+  open until refusal dependency is separate from ownership metadata; returning
+  `None` where ownership consumes it would hide real errors.
+- Unknown parameter types neutralize inference only for cleanup-inert declared
+  carriers whose existing `SPX-T001` exactly identifies that parameter. Existing
+  but inadmissible types and ownership-mode errors retain original behavior.
+  Unknown result types use the declaration pass's own diagnostic frontier.
+- Unknown record types retain their declared-type root error, duplicate fields
+  and independent field-value errors, while dropping only repeated missing-type
+  field symptoms. Known records retain complete field checks.
+- An absent payload binding in a refused variant pattern gets a marker only in
+  that arm, after all original pattern/name/binding checks. Independent missing
+  coverage (`SPX-M101`), other names, siblings and closure errors survive.
+  No match-wide coverage suppression is admitted.
+
+## Storage and unchanged limits
+
+The declaration recheck scratch and directory's Vec rows and BTreeMap nodes are real acquisitions even though
+the keys borrow source. Ordinary source verification has no physical replay
+constructor payer. These acquisitions are explicitly unpaid ordinary residual
+storage. No phase allowance, forecast increase, verifier limit increase, paid
+authority or zero-allocation error-path claim is introduced.
+
+Existing source bounds, frame limits, and exact 320-byte verifier-frame and
+312-byte variant-match-state assertions remain. Observer controls select actual
+requested allocation layouts through receiving Drop; they do not infer RSS,
+agent-token savings or paid capacity from borrowed key length.
+
+## Full preservation receivers and qualification
+
+The unchanged recursive oracle remains independent. Test-only
+`source_verify/recovery_legacy.rs` and its enter, blocks, operators, records and
+match_arms children preserve the complete receiving bodies from
+`5728c9e48fe2afe5cd77e9edf000cbe171035bdb`. Only names/visibility, the additional
+continuation field and inert test-only state are adapted. The saved declaration
+receiver uses these bodies and the saved contract receiver; original recursive
+and function-declaration bodies are retained. Source-text audit joins include
+every added recovery/legacy child.
+
+`source_verify::recovery_tests` owns the complete 60-module authored corpus from
+PR #804 at `d36d47daef42e5d7e06e16a7ebade20be66ba95e`, exact old ordered code
+lists, separately stated current lists, first diagnostic equality and complete
+original diagnostic subsequence preservation. Its boundary child covers
+scope/closure/function precedence, owned and borrowed annotation controls,
+independent match coverage and actual repeated receiver acquisition/Drop.
+The original `iterative_verifier_tests` corpus remains unchanged.
+
+Required next-batch selectors: `--lib source_verify::recovery_tests`,
+`--lib source_verify::iterative_verifier_tests`, source-verifier declaration and
+constructor controls, `--test language variants_semantics`,
+`--test language verifier_hints`, `--test source_locked_contracts`,
+`--test module_size`, the Native Rust builder ledger-capacity owner,
+production-library Clippy, and any actual changed diagnostic/guidance-pin
+producer. The standard full profile remains a later owning gate.
+
+No Cargo, build, test or full-profile gate was executed during this implementation
+batch, at the user's explicit instruction. These are authored controls, not
+passing or current-head execution evidence. No hosted, measured token/cost/turn,
+public-support or production-support claim is made.

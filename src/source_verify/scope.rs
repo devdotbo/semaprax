@@ -88,6 +88,7 @@ pub(super) enum VerifierFrame<'a> {
         block_scope: usize,
         index: usize,
         outer_names: Vec<String>,
+        recovery_checkpoint: super::recovery::Checkpoint,
     },
     ResumeWhileCondition {
         condition: &'a Expr,

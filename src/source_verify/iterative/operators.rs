@@ -22,6 +22,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         operand: &'p Expr,
         op: UnaryOp,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.recovery_legacy {
+            return self.recovery_old_frame_resume_unary(expression, operand, op);
+        }
+
         let Some(actual) = self.values.pop().flatten() else {
             self.values.push(None);
             return Ok(());
@@ -34,7 +39,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             (UnaryOp::Neg, None) => Type::I64,
             (UnaryOp::Not, _) => Type::Bool,
         };
-        if !actual.native_unit && actual.ty != expected {
+        let mismatched = !actual.native_unit && actual.ty != expected;
+        if mismatched {
             self.diagnostics.push(error(
                 self.program,
                 "SPX-T206",
@@ -43,7 +49,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             ));
         }
         reject_native_unit_value(self.program, operand, &actual, self.diagnostics);
-        self.values.push(Some(CheckedValue::value(expected)));
+        self.values
+            .push((!mismatched).then(|| CheckedValue::value(expected)));
         Ok(())
     }
 
@@ -67,6 +74,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         };
         let evaluated_scope = if lazy {
             let index = self.scopes.len();
+            self.recovery.fork(Some(scope), index);
             self.scopes.push(VerifierScope {
                 bindings: self.scopes[scope].bindings.clone(),
                 local_borrow_count: self.scopes[scope].local_borrow_count,
@@ -106,6 +114,19 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         evaluated_scope: usize,
         baseline_names: Vec<String>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.recovery_legacy {
+            return self.recovery_old_frame_resume_binary_right(
+                expression,
+                op,
+                left,
+                left_value,
+                scope,
+                evaluated_scope,
+                baseline_names,
+            );
+        }
+
         let right_value = self.values.pop().unwrap_or(None);
         if evaluated_scope != scope {
             if evaluated_scope + 1 != self.scopes.len() {
@@ -204,6 +225,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 )
                 .with_help(crate::source_verify::hints::STRING_OPERATOR_HELP),
             );
+            if matches!(
+                op,
+                BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem
+            ) {
+                self.values.push(None);
+                return Ok(());
+            }
         }
         let (expected, output) = match op {
             BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem => {
@@ -342,6 +370,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             .cloned()
             .collect::<Vec<_>>();
         let then_scope = self.scopes.len();
+        self.recovery.fork(Some(scope), then_scope);
         self.scopes.push(VerifierScope {
             bindings: self.scopes[scope].bindings.clone(),
             local_borrow_count: self.scopes[scope].local_borrow_count,
@@ -381,6 +410,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             .expect("active then scope index checked above")
             .bindings;
         let else_scope = self.scopes.len();
+        self.recovery.fork(Some(scope), else_scope);
         self.scopes.push(VerifierScope {
             bindings: self.scopes[scope].bindings.clone(),
             local_borrow_count: self.scopes[scope].local_borrow_count,

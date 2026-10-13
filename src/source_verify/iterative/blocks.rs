@@ -43,7 +43,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         block_scope: usize,
         index: usize,
         outer_names: Vec<String>,
+        recovery_checkpoint: crate::source_verify::recovery::Checkpoint,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.recovery_legacy {
+            return self.recovery_old_frame_resume_block_statement(
+                expression,
+                statements,
+                tail,
+                parent_scope,
+                block_scope,
+                index,
+                outer_names,
+            );
+        }
+
         let actual = self.values.pop().unwrap_or(None);
         match &statements[index] {
             Statement::Let {
@@ -86,6 +100,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     // the value's exact type or an ancestor class
                     // whose prefix consumes the value cleanly; the
                     // binding carries the declared type.
+                    let mut annotation_refused = false;
                     let mut binding_ty = actual.ty.clone();
                     let mut binding_mode = actual.mode;
                     if let Some(declared_ty) = declared {
@@ -124,6 +139,20 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                 ParamMode::Value
                             };
                         } else {
+                            annotation_refused = match declared_ty {
+                                Type::Named { name, .. } => self.types.declaration(name).is_some(),
+                                Type::I64
+                                | Type::I32
+                                | Type::Char
+                                | Type::U8
+                                | Type::Usize
+                                | Type::F32
+                                | Type::F64
+                                | Type::Bool
+                                | Type::String
+                                | Type::Bytes => true,
+                                _ => false,
+                            };
                             let diagnostic = if matches!(
                                 (&actual.ty, declared_ty),
                                 (Type::ArrayU8(_), Type::ArrayU8(_))
@@ -207,6 +236,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         activate_local_loan(&mut self.scopes[block_scope].bindings, origin);
                         self.scopes[block_scope].local_borrow_count += 1;
                     }
+                    self.recovery.clear(block_scope, name);
                     self.scopes[block_scope].bindings.insert(
                         name.clone(),
                         Binding {
@@ -222,6 +252,27 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             active_loans: BTreeSet::new(),
                             borrow_origin,
                         },
+                    );
+                    // None must never erase call-boundary ownership/loan
+                    // checks for a real owner or a borrowed value.
+                    if annotation_refused
+                        && !self.types.needs_drop(&actual.ty)
+                        && actual.mode == ParamMode::Value
+                        && !actual.native_unit
+                    {
+                        self.recovery.refused_annotation(
+                            block_scope,
+                            name,
+                            recovery_checkpoint,
+                            self.diagnostics,
+                        );
+                    }
+                } else {
+                    self.recovery.refused_let(
+                        block_scope,
+                        name,
+                        recovery_checkpoint,
+                        self.diagnostics,
                     );
                 }
             }
