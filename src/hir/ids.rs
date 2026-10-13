@@ -570,6 +570,10 @@ mod shared_identity_tests;
 #[path = "ids/declaration_backing_tests.rs"]
 mod declaration_backing_tests;
 
+#[cfg(test)]
+#[path = "ids/legacy_constructor_boundary_tests.rs"]
+mod legacy_constructor_boundary_tests;
+
 impl FunctionInstanceId {
     pub fn derive(template: &DeclarationId, arguments: &[ResolvedType]) -> Self {
         let mut encoded_arguments = crate::bounded_output::CappedString::new();
