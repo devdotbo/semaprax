@@ -5,24 +5,13 @@ pub(super) fn inspect(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
     payer: &crate::bounded_output::cfg_reservation::CfgReservation,
+    work: &mut WorkCounter<'_>,
 ) -> Result<bool, Diagnostic> {
-    let mut roots = Vec::new();
-    storage::extend(
-        &mut roots,
-        function
-            .requires
-            .iter()
-            .chain(std::iter::once(&function.body))
-            .chain(function.ensures.iter()),
-        Some(payer),
-    )?;
-    let mut expressions = Vec::new();
-    let mut pending = Vec::new();
-    storage::extend(&mut pending, roots.iter().rev().copied(), Some(payer))?;
-    while let Some(expression) = pending.pop() {
-        storage::push(&mut expressions, expression, Some(payer))?;
-        paid_children::push_children(expression, &mut pending, Some(payer))?;
-    }
+    // Complete discovery still precedes every alias/ownership diagnostic.
+    // Retain its actual paid spill and replay the immutable borrowed traversal.
+    let mut discovery = paid_cursor::Cursor::new(function, payer);
+    while discovery.next(work)?.is_some() {}
+    discovery.reset()?;
 
     let mut aliases = cfg_directory::Map::<ValueId, Place>::new(payer)?;
     let mut bound = cfg_directory::Map::<ExpressionId, ValueId>::new(payer)?;
@@ -35,7 +24,7 @@ pub(super) fn inspect(
             Some(payer),
         )?;
     }
-    for expression in &expressions {
+    while let Some(expression) = discovery.next(work)? {
         native_view::inventory_aliases_paid(program, expression, &mut aliases, Some(payer))?;
         if let ResolvedExprKind::Match { arms, .. } = &expression.kind {
             for arm in arms {
@@ -76,7 +65,8 @@ pub(super) fn inspect(
 
     let provisional = provisional_result::root(function);
     let mut root_ownership = cfg_directory::Map::<ValueId, bool>::new(payer)?;
-    for expression in expressions {
+    discovery.reset()?;
+    while let Some(expression) = discovery.next(work)? {
         if let Some(proof) = traversal::paid::inspect(program, expression, payer)? {
             if storage::expression_place(proof.source, Some(payer))?
                 .is_some_and(|place| ownership.get(&place.root) == Some(&OwnershipMode::Own))

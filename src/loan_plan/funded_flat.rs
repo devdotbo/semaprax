@@ -27,9 +27,9 @@ pub(super) fn build(
         traversal::paid::inspect(program, region, payer).map(|proof| proof.is_some())
     })?;
     let result = (|| {
-        if paid_candidate::inspect(program, function, payer)? {
-            let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
-            work.allocation = Some(payer);
+        let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
+        work.allocation = Some(payer);
+        if paid_candidate::inspect(program, function, payer, &mut work)? {
             paid_plan::build(program, function, &mut work)
         } else {
             let mut plan = LoanPlan::empty_v1();

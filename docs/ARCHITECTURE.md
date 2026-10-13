@@ -4683,3 +4683,16 @@ collector remains compiled in `allocation/tests/shape_before.rs`, beside the
 older independent receiver. Exact full-body source projection, literal spill,
 whole collector Drop and pending qualification controls are recorded in
 `docs/evidence/cleanup-shape-cursor/HANDOFF.md`.
+
+
+`loan_plan/paid_cursor.rs` owns borrowed preorder discovery for the funded
+candidate receiver. One pure full discovery preflight precedes the complete
+alias/ownership pass and candidate inspection; its inline references and
+prepaid spill remain held and reused through receiver Drop. Each actual cursor
+visit consumes the same existing `WorkCounter` later used by plan construction.
+No independent allowance, new depth cap or expression vector is introduced.
+The full previous paid candidate and funded receiver remain independently
+compiled for exact plan, work, priority and backing comparisons in
+`paid_candidate_before.rs` and `paid_cursor/funded_before.rs`. Source-only
+qualification restrictions and exact pending owners are recorded under
+`docs/evidence/paid-loan-cursors/`.

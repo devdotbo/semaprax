@@ -65,9 +65,12 @@ mod origin;
 pub(crate) mod owned_capacity;
 mod paid_candidate;
 #[cfg(test)]
+mod paid_candidate_before;
+#[cfg(test)]
 mod paid_candidate_legacy;
 mod paid_cfg;
 mod paid_children;
+mod paid_cursor;
 mod paid_live;
 mod paid_materialize;
 #[cfg(test)]

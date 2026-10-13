@@ -1,0 +1,59 @@
+{
+  "frozen_old_commit": "17efd2ed52a97f41eec05c75d56e01ade219b392",
+  "status": "source-only; no build/test execution",
+  "sources": [
+    {
+      "path": "src/loan_plan/paid_cursor.rs",
+      "sha256": "98b959f27238e7dd340cac7761a3c91d3fd9a5326e82439aacbeafb99ac8e513",
+      "lines": 222
+    },
+    {
+      "path": "src/loan_plan/paid_cursor/tests.rs",
+      "sha256": "6762b1ac29bb4cb98ecf4e74a5f842496cc2657af976bb731ca63983a8e8ead9",
+      "lines": 330
+    },
+    {
+      "path": "src/loan_plan/paid_cursor/funded_before.rs",
+      "sha256": "1b7f24cd45c5d34691de1f686fbec730988896c62a2db3872669d11302e7de7c",
+      "lines": 78
+    },
+    {
+      "path": "src/loan_plan/paid_candidate_before.rs",
+      "sha256": "2171767962fc58bd699165f3023910712146871fadc6b2bc6077a02d7374bbbe",
+      "lines": 224
+    },
+    {
+      "path": "src/loan_plan/paid_candidate.rs",
+      "sha256": "1e0b84ebde6ce7c110238cfb35f68f5daf1befbc2a2648e1f49203a302aa1f22",
+      "lines": 214
+    },
+    {
+      "path": "src/loan_plan/funded_flat.rs",
+      "sha256": "b76f461cb0128d82337c5e7aebe4e69d19f046b0b40c4b3b66e7fdc213140d3c",
+      "lines": 84
+    },
+    {
+      "path": "src/loan_plan/paid_children.rs",
+      "sha256": "2d4dbf70b4e0555e3a95bf9a1abe19990d0239d5f34ffe5cdc140f68aa5be141",
+      "lines": 117
+    }
+  ],
+  "complete_old_bindings": [
+    {
+      "archived": "docs/evidence/paid-loan-cursors/paid_candidate_before.txt",
+      "git_object": "17efd2ed52a97f41eec05c75d56e01ade219b392:src/loan_plan/paid_candidate.rs",
+      "sha256": "2171767962fc58bd699165f3023910712146871fadc6b2bc6077a02d7374bbbe"
+    },
+    {
+      "archived": "docs/evidence/paid-loan-cursors/funded_flat_before.txt",
+      "git_object": "17efd2ed52a97f41eec05c75d56e01ade219b392:src/loan_plan/funded_flat.rs",
+      "sha256": "50d842bbc31c8d811fdf2135528e959f066f459c8dcec0f0b5d1d231026297fb"
+    },
+    {
+      "archived": "docs/evidence/paid-loan-cursors/paid_children_before.txt",
+      "git_object": "17efd2ed52a97f41eec05c75d56e01ade219b392:src/loan_plan/paid_children.rs",
+      "sha256": "2d4dbf70b4e0555e3a95bf9a1abe19990d0239d5f34ffe5cdc140f68aa5be141"
+    }
+  ],
+  "full_current_hook_projections": "Exact four candidate hooks and one funded WorkCounter hook; assertions join the complete old source, not a reduced span. Dispatcher match checked against the complete unchanged paid_children receiver; no variant omitted."
+}

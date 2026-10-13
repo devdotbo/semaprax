@@ -1,0 +1,159 @@
+{
+  "status": "source-only; registration inferred from authored Rust modules, not executable --list",
+  "selectors": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::paid_cursor::tests::full_old_discovery_order_and_count_are_kept_across_inline_spill_and_root_reset",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/paid_cursor/tests.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::paid_cursor::tests::cursor_spill_is_prepaid_exact_short_sticky_and_reused_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/paid_cursor/tests.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::paid_cursor::tests::every_cursor_pass_spends_the_same_existing_work_allowance",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/paid_cursor/tests.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::paid_cursor::tests::complete_saved_planner_and_candidate_match_all_plans_and_unchanged_plan_work",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/paid_cursor/tests.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::paid_cursor::tests::full_old_current_planner_backing_includes_receiver_drop_and_no_expression_materialization",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/paid_cursor/tests.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::paid_cursor::tests::late_spill_preflight_precedes_early_alias_cycle_and_keeps_full_old_diagnostics",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/paid_cursor/tests.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::paid_cursor::tests::complete_old_candidate_and_funded_receivers_are_exact_and_current_hooks_are_scoped",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/paid_cursor/tests.rs",
+      "new": true
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::tests::funded_flat_receiver_keeps_complete_saved_plan_and_current_member_boundary",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/funded_flat/tests.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::tests::empty_semantic_diagnostic_is_not_a_physical_tag_or_paid_report",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/funded_flat/tests.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::tests::actual_flat_adjacency_and_fixed_queue_arrays_have_exact_short_drop_payment",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/funded_flat/tests.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::tests::complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/funded_flat/tests.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::tests::owning_root_projected_vec_and_string_loans_use_one_paid_owner_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/funded_flat/tests.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::directories_tests::complete_old_btree_receiver_constructor_drop_exact_short_and_original_applications",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/funded_flat/directories_tests.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::directories_tests::complete_old_btree_plan_and_checked_work_first_errors_keep_exact_priority",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/loan_plan/funded_flat/directories_tests.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "hir_module_boundaries",
+      "selector": "core_validation_has_no_resolution_cleanup_build_or_physical_authority",
+      "expected": 1,
+      "ignored": 0,
+      "source": "tests/hir_module_boundaries.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax",
+      "harness": "module_size",
+      "selector": "no_module_exceeds_its_recorded_size",
+      "expected": 1,
+      "ignored": 0,
+      "source": "tests/module_size.rs",
+      "new": false
+    },
+    {
+      "package": "semaprax-native-rust-interop-builder",
+      "harness": "lib",
+      "selector": "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions",
+      "expected": 1,
+      "ignored": 0,
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity.rs",
+      "new": false
+    }
+  ],
+  "also_required": "Unchanged actual affected application owners, including libCatalogNormalizer, must be qualified by the root driver without corpus/cap changes; no application fit claim."
+}
