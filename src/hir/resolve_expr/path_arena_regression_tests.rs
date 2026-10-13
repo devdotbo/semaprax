@@ -194,4 +194,5 @@ fn arena_resolver_matches_text_reference_across_roots_owners_and_widths() {
         .unwrap();
 }
 
+#[path = "path_arena_regression_tests/whole_program.rs"]
 mod whole_program;
