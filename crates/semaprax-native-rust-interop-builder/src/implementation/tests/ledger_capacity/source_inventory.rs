@@ -950,6 +950,19 @@ macro_rules! verifier_source_inventory {
 macro_rules! lower_source_inventory {
     () => {
         concat!(
+            include_str!("../../../../../src/cleanup_plan/replay/skeleton_work.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/dag_storage.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves/old.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/oracle_entry.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs"),
+            include_str!("../../../../../src/test_allocation_observer.rs"),
+            include_str!("../../../../../src/test_allocation_observer/free_order.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/saved.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena/producer.rs"),

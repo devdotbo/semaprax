@@ -7035,3 +7035,9 @@ The detailed 0.3.5, 0.2.0, and 0.1.0 history is preserved in the [changelog arch
   case backing and prepaid speculative Or checkpoints. Preserve complete old
   coverage/dispatch controls, diagnostic bytes and all limits; physical Drop,
   exact-short and full receiver controls are authored pending focused execution.
+
+- Prepay ordinary replay DAG destruction frontiers and checked structural bounds
+  before node publication, retaining the original destructor and an independent
+  old receiver. Construction and release work share the existing replay budget.
+  Legacy refusal destruction remains a documented compatibility boundary;
+  allocation, weak-reference and cross-ledger qualification is pending.

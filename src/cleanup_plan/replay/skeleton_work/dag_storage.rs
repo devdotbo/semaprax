@@ -10,14 +10,14 @@ use std::rc::Rc;
 
 pub(super) struct DestructionScratch {
     pub(super) pending: Vec<Rc<ObservationDag>>,
-    registered_edges: usize,
+    pub(super) registered_edges: usize,
     // One checked construction sequence belongs to this shared frontier.
     // Children must share it; a detached/other-session memo hit still checks Rc.
-    next_ordinal: usize,
+    pub(super) next_ordinal: usize,
 }
 
 impl ObservationDagKind {
-    fn edges(&self) -> usize {
+    pub(super) fn edges(&self) -> usize {
         match self {
             Self::Seq(prefix, _) => usize::from(prefix.is_some()),
             Self::Cat(parts) | Self::Alt(parts) => parts.len(),
@@ -68,7 +68,7 @@ impl SkeletonWork<'_, '_> {
                 "factored DAG crosses its destruction reservation",
             ));
         }
-        {
+        let pending_bound = {
             let mut frontier = scratch.borrow_mut();
             let edges = frontier
                 .registered_edges
@@ -86,7 +86,18 @@ impl SkeletonWork<'_, '_> {
                 "factored destruction frontier",
             )?;
             frontier.registered_edges = edges;
-        }
+            // Every selected descendant was published in this same session,
+            // and every actual edge was checked and registered beforehand.
+            // This immutable cumulative edge count is a structural upper bound
+            // even when the session has other live or previously dropped nodes.
+            // Empty nodes need no pending slot. Ordinary parents may retain
+            // excess capacity for a foreign selected child; they pay it in full.
+            if kind.edges() == 0 {
+                0
+            } else {
+                edges
+            }
+        };
         self.budget.reserve_bytes(
             self.function,
             physical_clone::rc_backing_bytes::<ObservationDag>(),
@@ -106,6 +117,7 @@ impl SkeletonWork<'_, '_> {
         };
         Ok(Rc::new(ObservationDag {
             ordinal: Some(ordinal),
+            pending_bound: Some(pending_bound),
             kind,
             scratch: Some(scratch),
         }))
@@ -295,3 +307,13 @@ impl SkeletonWork<'_, '_> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+impl SkeletonWork<'_, '_> {
+    pub(super) fn selected_dag_for_foreign_control(
+        &mut self,
+        kind: ObservationDagKind,
+    ) -> Result<Rc<ObservationDag>, Diagnostic> {
+        self.charged_dag(kind)
+    }
+}

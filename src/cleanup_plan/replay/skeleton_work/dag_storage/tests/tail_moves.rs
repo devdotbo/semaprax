@@ -231,6 +231,7 @@ fn union_probe(
             Ok::<(), Diagnostic>(())
         })();
         drop(work.dag_scratch.take());
+        drop(work.ordinary_scratch.take());
         match result {
             Ok(()) => Ok(work.budget.physical.as_ref().unwrap().charged() - before),
             Err(error) => {
@@ -434,6 +435,7 @@ fn merge_probe(
             result
         })();
         drop(work.dag_scratch.take());
+        drop(work.ordinary_scratch.take());
         match result {
             Ok(()) => Ok(work.budget.physical.as_ref().unwrap().charged() - before),
             Err(error) => {
@@ -715,6 +717,7 @@ fn extension_probe(
             Ok::<(), Diagnostic>(())
         })();
         drop(work.dag_scratch.take());
+        drop(work.ordinary_scratch.take());
         match result {
             Ok(()) => Ok((
                 work.budget.physical.as_ref().unwrap().charged() - before,
@@ -902,6 +905,7 @@ fn selected_4096_nonempty_event_tails_keep_literal_old_current_removed_through_r
             // are both released in this actual allocator window.
             drop(result);
             drop(work.dag_scratch.take());
+            drop(work.ordinary_scratch.take());
             if !accepted {
                 let charged = work.budget.physical.as_ref().unwrap().charged();
                 drop(

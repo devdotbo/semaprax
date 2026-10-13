@@ -5,6 +5,8 @@
 //! These metrics are requested backing bytes, not malloc usable bytes or RSS.
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::{Cell, RefCell};
+mod free_order;
+pub(crate) use free_order::watch_free_order;
 
 // Fixed test instrumentation capacity: the original 4096-row selected gate
 // holds 4096 title allocations plus its frame, row/slot tables and owned
@@ -134,6 +136,7 @@ impl State {
         self.metrics.highwater = self.metrics.highwater.max(live);
     }
     fn freed(&mut self, pointer: usize, bytes: usize) {
+        free_order::record_free(pointer);
         let actual = if let Some(registry) = &mut self.extended {
             let Some(actual) = registry.remove(pointer) else {
                 return;

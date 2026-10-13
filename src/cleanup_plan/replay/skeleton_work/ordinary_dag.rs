@@ -1,8 +1,11 @@
 //! Ordinary construction ordinals order storage only; the memo checks Rc identity.
-//! This keeps the legacy destructor and semantic observation ordering. New nodes
+//! This keeps the original destructor and semantic observation ordering. New nodes
 //! and every new tail/member carrier are paid on the existing replay ledger.
 use super::*;
 use std::rc::Rc;
+mod frontier;
+#[cfg(test)]
+mod saved;
 
 impl SkeletonWork<'_, '_> {
     pub(super) fn ordinary_dag(
@@ -17,14 +20,39 @@ impl SkeletonWork<'_, '_> {
                 "ordinary DAG construction ordinal overflowed",
             )
         })?;
+        // The incoming kind remains owned by this frame throughout admission.
+        // Any refusal releases the frontier borrow before dropping its children.
+        let release = kind
+            .edges()
+            .checked_mul(2)
+            .and_then(|edges| edges.checked_add(1))
+            .ok_or_else(|| {
+                self.budget.budget_refusal(
+                    self.function,
+                    "ordinary DAG metadata and release work overflowed",
+                    "",
+                )
+            })?;
+        self.charge(release, "ordinary DAG bound fold and prepaid release")?;
+        let pending_bound = kind.pending_bound().ok_or_else(|| {
+            self.budget.budget_refusal(
+                self.function,
+                "observation DAG destruction bound overflowed",
+                "",
+            )
+        })?;
+        let scratch = self.ordinary_frontier(pending_bound)?;
         self.budget.reserve_bytes(
             self.function,
             physical_clone::rc_backing_bytes::<ObservationDag>(),
             "ordinary observation DAG node",
         )?;
-        let mut node = ObservationDag::legacy(kind);
-        node.ordinal = Some(ordinal);
-        let node = Rc::new(node);
+        let node = Rc::new(ObservationDag {
+            ordinal: Some(ordinal),
+            kind,
+            pending_bound: Some(pending_bound),
+            scratch,
+        });
         self.next_ordinary_dag = next;
         Ok(node)
     }
@@ -182,3 +210,6 @@ impl SkeletonWork<'_, '_> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod frontier_tests;

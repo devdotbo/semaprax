@@ -17,6 +17,7 @@ pub(super) struct SkeletonWork<'a, 'b> {
     pub(super) renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings<'a>,
     pub(super) active_copy_region: Option<ExpressionId>,
     dag_scratch: Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
+    ordinary_scratch: Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
     next_ordinary_dag: usize,
     held_renewals: Option<&'a crate::cleanup_plan::renewal_profile::RenewalBindings<'a>>,
     ordinary_index: Option<&'b crate::loop_calls::byte_writer::ModuleIndex<'a>>,
@@ -53,6 +54,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             continuations: None,
             active_copy_region: None,
             dag_scratch: None,
+            ordinary_scratch: None,
             next_ordinary_dag: 0,
             held_renewals: None,
             ordinary_index: index,
@@ -100,6 +102,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings::empty(),
             active_copy_region: None,
             dag_scratch: None,
+            ordinary_scratch: None,
             next_ordinary_dag: 0,
             held_renewals: Some(held_renewals),
             ordinary_index: None,
@@ -389,6 +392,8 @@ pub(super) struct Observations {
 pub(super) struct ObservationDag {
     pub(super) ordinal: Option<usize>,
     pub(super) kind: ObservationDagKind,
+    // Immutable structural bound, independent of any payer or scratch session.
+    pending_bound: Option<usize>,
     scratch: Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
 }
 
@@ -430,6 +435,7 @@ impl ObservationDag {
     pub(super) fn legacy(kind: ObservationDagKind) -> Self {
         Self {
             ordinal: None,
+            pending_bound: kind.pending_bound(),
             kind,
             scratch: None,
         }

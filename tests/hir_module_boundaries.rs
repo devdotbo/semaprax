@@ -267,7 +267,25 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/lexical_exit/owner_funded.rs"),
         include_str!("../src/cleanup_plan/replay/allocation/oracle/invocation.rs"),
         include_str!("../src/cleanup_plan/replay/allocation/oracle/diagnostic.rs"),
-        include_str!("../src/cleanup_plan/replay/skeleton_work/oracle_entry.rs"),
+        concat!(
+            include_str!("../src/cleanup_plan/replay/skeleton_work.rs"),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/dag_storage.rs"),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs"),
+            include_str!(
+                "../src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs"
+            ),
+            include_str!(
+                "../src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves/old.rs"
+            ),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/oracle_entry.rs"),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs"),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs"),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs"),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs"),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs"),
+            include_str!("../src/test_allocation_observer.rs"),
+            include_str!("../src/test_allocation_observer/free_order.rs"),
+        ),
         include_str!("../src/cleanup_plan/replay/factored/oracle_hook.rs"),
         include_str!("../src/cleanup_plan/replay/oracle_controls.rs"),
         include_str!("../src/cleanup_plan/replay/nested_shape.rs"),

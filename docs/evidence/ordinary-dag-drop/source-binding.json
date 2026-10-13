@@ -1,0 +1,38 @@
+{
+  "schema": "semaprax.source-binding.v1",
+  "issue": 819,
+  "base_head": "9df9a15c53d87ed8f2e56eb522a128c26cde44be",
+  "state": "source-only-unexecuted",
+  "source_hashes": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "a1fe230f8de6872929362ca71e29d7557e3b8221d2703180bfe6b4c9b5a4ec1d",
+    "src/cleanup_plan/replay/skeleton_work.rs": "f6163b3cc48322bf40549c18cccf8ea412a52a450daadd82d7f93e5daa6b8716",
+    "src/cleanup_plan/replay/skeleton_work/dag_storage.rs": "500a40cbfbbef50ff44a26f237f2b93cea7358a64ccb1105293ade4fa078f6bb",
+    "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs": "6f3aeb448ee3b4bb202d027c93eebbcec8a5c0854496792d53a66206525871f8",
+    "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs": "7ee5d27f2ae13fa859875cfdc9715b88ad6137996a1362840254a667b3d34f68",
+    "src/cleanup_plan/replay/skeleton_work/oracle_entry.rs": "75d42153c3897309db6865b2cd5a840d9d4a351aabd2a7a77b08674a0add485d",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs": "c3dd733ac5eae9dd6e613bd19c99394e05a25bee6a360acd50f04c16670015cb",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs": "d8564be6acde2c6def66fc5ec06b3890545609f198f34e225773f78cfc42ae0c",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs": "e4805ae9d76e3bbd6f1b5d706100c0742ecebb8d8de7c92555d1ef2bf696ab9a",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs": "fd8afd796f7f05555b304fed01cdf92fd1fafa069f99c6b20f371fd3ffc43223",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs": "7c764d431ceed0c1f43ba094581bfc96598e6583606c58dc8b1ab32a12f95690",
+    "src/test_allocation_observer.rs": "f3ab093d0bec8e84d98baedfb88e26ec97c1a66022638bd1bf5301ff25844fac",
+    "src/test_allocation_observer/free_order.rs": "f3b372a2eedde6d0e238580a57e5fbcb1ca14144a479e052a0f37be009e6fc48",
+    "tests/hir_module_boundaries.rs": "dc5d53642d71f646d47818c5b26153e9a4b2bd8058c812b2d0e11ede95446622"
+  },
+  "original_snapshot_hashes": {
+    "original-dag-storage-tests.txt": "23e881c2747e87a7ce410a1d74ab3e66f8334e47cd9bcb5a3a9ce75d8cc3c910",
+    "original-ordinary-dag-tests.txt": "160e8e95338eaf2c2b554138c1dcc21d1037497be7fefcdf2d20e62588353200",
+    "original-ordinary-dag.txt": "114c8c07b89ba6a40d51dcf068b921e4a87df97e56b95e07f4e5c0556aa007b9",
+    "original-skeleton-work.txt": "2d92df6e549b06a5f0667e1060f46d38edbb045079c522ef21588c8ff2da2bd4",
+    "original-tail-moves.txt": "d99e422bef75525fc6796899ba82ba10230bfaaa1e7ea22fed680998dd5c1f98"
+  },
+  "complete_original_receivers": {
+    "node_kind_drop": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+    "ordinary_constructors": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+    "old_empty_union": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs"
+  },
+  "limits_changed": false,
+  "ordinary_existing_budget_work_admission_changed": true,
+  "selected_session_policy_changed": false,
+  "legacy_refusal_allocation_remaining": true
+}

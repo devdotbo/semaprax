@@ -91,6 +91,7 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             continuations: None,
             active_copy_region: None,
             dag_scratch: None,
+            ordinary_scratch: None,
             next_ordinary_dag: 0,
             held_renewals: None,
             ordinary_index: index,

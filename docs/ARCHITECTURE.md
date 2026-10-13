@@ -4710,3 +4710,17 @@ compiled for exact plan, work, priority and backing comparisons in
 `paid_candidate_before.rs` and `paid_cursor/funded_before.rs`. Source-only
 qualification restrictions and exact pending owners are recorded under
 `docs/evidence/paid-loan-cursors/`.
+
+Ordinary cleanup replay DAG constructors in
+`cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs` retain an immutable
+checked pending bound per node and prepay a reusable Work-owned destruction
+frontier before publication. The existing destructor and tail order remain the
+owner of release behavior. Bound-fold, future edge-pop and node-release work use
+the existing replay budget; ordinary low-work admission therefore changes.
+Selected nodes retain their existing session policy and expose a conservative
+immutable registered-edge bound to ordinary parents, whose actual excess
+frontier capacity is paid in full. Legacy nodes and incoming legacy kinds after
+constructor refusal retain their original allocating destructor. The independent
+old node/kind/destructor and ordinary constructors remain compiled in the owning
+test module; [the source packet](evidence/ordinary-dag-drop/README.md) records
+the physical boundary and pending controls.

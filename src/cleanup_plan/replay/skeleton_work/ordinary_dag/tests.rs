@@ -1,3 +1,4 @@
+use super::saved::{ObservationDag, ObservationDagKind, Observations, SkeletonWork};
 use super::*;
 use crate::test_allocation_observer::measure;
 

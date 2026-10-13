@@ -86,6 +86,7 @@ fn storage_probe(
         // with `work`, so explicitly drop its owner inside the measured region.
         drop(root);
         drop(work.dag_scratch.take());
+        drop(work.ordinary_scratch.take());
         Ok(work.budget.physical.as_ref().unwrap().charged() - before)
     })
 }
@@ -285,6 +286,7 @@ fn shared_prefix_probe(
         })();
         // Release the session scratch inside observation even on refusal.
         drop(work.dag_scratch.take());
+        drop(work.ordinary_scratch.take());
         match result {
             Ok(()) => Ok((
                 work.budget.physical.as_ref().unwrap().charged() - before,
