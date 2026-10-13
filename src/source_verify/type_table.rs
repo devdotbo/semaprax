@@ -9,6 +9,7 @@ use crate::ast::{
 };
 use std::collections::{HashMap, HashSet};
 
+mod native_containers;
 mod nested_generic_function;
 
 /// Class Inheritance v1: resolves a method against a receiver class's
@@ -144,12 +145,7 @@ impl<'a> TypeTable<'a> {
             }
         }
         Self {
-            native_owned_containers: [
-                crate::ast::ImportResult::OwnedOptionString,
-                crate::ast::ImportResult::OwnedResultStringI64,
-                crate::ast::ImportResult::OwnedResultStringOptionI64,
-            ]
-            .map(|kind| crate::ast::ImportResult::container_enabled(program, &kind.value_type())),
+            native_owned_containers: native_containers::flags(program),
             declarations,
             #[cfg(test)]
             declared_fields: None,

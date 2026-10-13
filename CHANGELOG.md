@@ -6929,3 +6929,5 @@ The detailed 0.3.5, 0.2.0, and 0.1.0 history is preserved in the [changelog arch
   digest-bound standalone Web route. Combined executable gates remain pending.
 
 - OPT #750: remaining retained byte-helper and finite scratch proof walkers use saved borrowed cursors with actual enlarged scratch reservations; independent order/work/depth and allocator-layout regressions are authored, not yet executed.
+
+- Source native-container flag discovery compares the exact native import result kinds directly, retaining the original owned-Type constructor as an independent control and removing its discarded temporary backing. Source-only pending focused qualification.

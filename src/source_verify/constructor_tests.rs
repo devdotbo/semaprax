@@ -285,6 +285,7 @@ fn complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps() 
         include_str!("declaration/old.rs"),
         include_str!("declaration/functions/old.rs"),
         include_str!("type_table.rs"),
+        include_str!("type_table/native_containers.rs"),
         include_str!("type_table/old.rs"),
         include_str!("constructor_tests.rs"),
         include_str!("constructor_tests/corpus.rs")
