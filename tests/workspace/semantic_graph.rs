@@ -1,3 +1,4 @@
+include!("semantic_graph/source_inventory.rs");
 use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -588,44 +589,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     );
     let projection_type_rewrite =
         include_str!("../../src/workspace_graph/expected_projection/type_rewrite.rs");
-    let projection_private_layout = concat!(
-        include_str!("../../src/workspace_graph/expected_projection/private_layout.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/registry.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/sorting.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/ledger.rs"),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/registry/tests.rs"
-        ),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/names.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/shape.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/roots.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/owner_index.rs"),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/owner_index/tests.rs"
-        ),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority_invocation.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority_invocation/tests.rs"),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/authority_tests.rs"
-        ),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/authority_view.rs"
-        ),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/authority_oracle.rs"
-        ),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/authority_view_tests.rs"
-        ),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/tests.rs"),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/function_tests.rs"
-        ),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/function_runtime.rs"
-        ),
-    );
+    let projection_private_layout = semantic_graph_private_layout_source_inventory!();
     let projection = format!(
         "{projection_private_layout}\n{projection_type_rewrite}\n{projection_import_stub}\n{projection_uncached_peak}\n{projection_root}\n{projection_local_identity}\n{projection_call_identity}\n{projection_call_sites}\n{projection_cost}\n{projection_declaration_cost}\n{projection_identity_slots}\n{projection_statement_segment}\n{projection_defaults}"
     );
