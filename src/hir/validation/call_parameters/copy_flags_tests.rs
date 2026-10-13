@@ -142,7 +142,7 @@ fn full_original_byte_corpus_keeps_exact_place_and_intrinsic_borrow_diagnostics(
         let mut pending = vec![&function.body];
         while let Some(expression) = pending.pop() {
             if let ResolvedExprKind::Call {
-                callee, arguments, ..
+                callee, args: arguments, ..
             } = &expression.kind
             {
                 if let Some(operation) = crate::byte_ops::by_id(callee.as_str()) {
