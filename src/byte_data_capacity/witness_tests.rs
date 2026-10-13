@@ -1,4 +1,5 @@
 use crate::byte_data_capacity::*;
+use std::collections::BTreeMap;
 fn write(site: &str) -> CapacityFlow {
     CapacityFlow::StdoutWrite {
         site: site.into(),
@@ -287,7 +288,7 @@ permit { process.stdout.write }
 "#;
     let ast = crate::parse(SOURCE, std::path::Path::new("witness.spx")).unwrap();
     let mut program = crate::hir::resolve(&ast).unwrap();
-    let admitted = crate::hir::byte_capacity::byte_data_capacity_inputs(&program).unwrap();
+    let admitted = crate::hir::byte_data_capacity_inputs(&program).unwrap();
     assert_eq!(
         format!("{:?}", analyze(&admitted).unwrap()),
         format!("{:?}", before::analyze(&old_inputs(&admitted)).unwrap())
@@ -318,9 +319,9 @@ permit { process.stdout.write }
     };
     // Hostile independent HIR projection only: no canonical-plan/validator
     // authority is granted by this changed tree.
-    let hostile = crate::hir::byte_capacity::byte_data_capacity_inputs(&program).unwrap();
+    let hostile = crate::hir::byte_data_capacity_inputs(&program).unwrap();
     let error = refusal(&hostile);
-    let independent = crate::hir::byte_capacity::analyze_byte_data_capacity(&program).unwrap_err();
+    let independent = crate::hir::analyze_byte_data_capacity(&program).unwrap_err();
     assert_eq!(independent.code, error.diagnostic.code());
     assert_eq!(independent.message.as_ref(), error.to_string());
     assert_eq!(independent.help, error.witness_help);

@@ -7,7 +7,7 @@
     "CHANGELOG.md": "f1e6d1e05e47113d1397c0d0c29f8e15c62264c65f49095fa51d53c04410019a",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "ed6b57227da0fdf18613489c360eaa1b369a54b8d57053f21064e57edb320dd3",
     "docs/ARCHITECTURE.md": "713ccd0dec253e55aa6dbc2a18b128a2e2e947c70425a6c8921d135b08a7a081",
-    "src/hir.rs": "982d546ebb6c591537c057d9d68f95276d7ca8ca0170e6c8b99b1d9ec5b31381",
+    "src/hir.rs": "6e34e43aad959134bd7c406a52d4d913827aa6934e4c767186971a4b162d6412",
     "src/hir/iterator_loop.rs": "3295874fa719aa58acf8f31ee73956aed757ac7ad25fa7fad39f599c830fe9aa",
     "src/hir/iterator_loop/paid.rs": "6baee339c5d405624fffced4257c9c13ed3933e01a076464c63ea683ca23a48b",
     "src/hir/iterator_loop/renewal.rs": "8951fdff100645816c03094331768562e847d74bf3b275b321a09a0cea2fa167",

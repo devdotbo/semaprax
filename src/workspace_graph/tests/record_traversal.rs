@@ -493,7 +493,10 @@ fn explicit_and_row_field_read_forms_are_source_bound_in_both_directions() {
         false
     }
     for target in [hir::VecFieldReadOrigin::Explicit, hir::VecFieldReadOrigin::Traversal] {
-        let mut modules = build.hir.modules.clone();
+        let mut modules = build_owned(vec![canonical_source("app.spx", source)])
+            .unwrap()
+            .hir
+            .modules;
         let reader = modules[0].functions.iter_mut().find(|f| f.id.as_str() == "reader").unwrap();
         assert!(change(&mut reader.body, target));
         let error = super::super::record_traversal::validate(&programs, &modules).unwrap_err();

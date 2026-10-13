@@ -365,7 +365,7 @@ pub(crate) fn loop_output<'a>(
         write!(out, ". {REPAIR}")
     })
 }
-pub(crate) fn cycle<'a>(
+pub(super) fn cycle<'a>(
     functions: &BTreeMap<&'a str, ValidatedFunction<'a>>,
     residual: &BTreeMap<&'a str, usize>,
     start: &'a str,
