@@ -23,6 +23,13 @@
   caps and request policy. Add complete request/response, exact-wire, replay and
   actual allocation/Drop definitions; executable qualification remains pending.
 
+- Author allocation-free ordinary substitution for structurally nonrecursive
+  roots, preserving generic owner/name priority, exact diagnostics and cloned
+  compound results. Avoid nonnominal nested-record classifier root carriers
+  while keeping original profile refusals. Preserve full frozen substituters
+  and current/original classifier controls; add real caller boundary/Drop
+  gates. Source-only; no whole-resolver funding or G171 claim.
+
 - Extend the paid outer droppability source corpus with isolated zero-budget
   helper-allocation controls over real parsed declaration IDs, owned-record and
   owned-leaf Vec signatures, concrete generic records and refused variants.

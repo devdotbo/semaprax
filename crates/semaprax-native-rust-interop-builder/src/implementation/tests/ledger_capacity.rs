@@ -309,10 +309,10 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             include_str!("../../../../../src/hir/ids/metered_owner.rs")
         ),
         include_str!("../../../../../src/hir/inspection.rs"),
-        include_str!("../../../../../src/hir/monomorphize.rs"),
+        substitution_leaf_source_inventory!(),
         include_str!("../../../../../src/hir/record_evolution.rs"),
         include_str!("../../../../../src/hir/resolve_native_rust_result.rs"),
-        include_str!("../../../../../src/hir/type_reachability.rs"),
+        reachability_leaf_source_inventory!(),
         include_str!("../../../../../src/hir/type_reachability/classifier_tests.rs"),
         include_str!("../../../../../src/hir/type_reachability/classifier_tests/old.rs"),
         concat!(

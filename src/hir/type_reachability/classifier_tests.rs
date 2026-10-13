@@ -158,3 +158,7 @@ fn classifier_query_allocation_reduction_settles_through_drop() {
     assert_eq!(used, 0);
     assert_eq!(first.unwrap().requested, 1);
 }
+
+pub(super) fn leaf_parity(index: &DeclarationIndex, ty: &ResolvedType) {
+    parity(index, ty);
+}

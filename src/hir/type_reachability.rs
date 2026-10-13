@@ -644,6 +644,38 @@ fn classify_nested_owned_byte_record(
     declarations: &DeclarationIndex,
     root: &ResolvedType,
 ) -> NestedOwnedRecordAdmission {
+    // These root branches need neither an owned clone nor a traversal cursor.
+    // Preserve the exact profile result; nominal roots retain the complete walk.
+    match root {
+        ResolvedType::Bytes => {
+            return NestedOwnedRecordAdmission::Admitted(NestedOwnedRecordFacts {
+                byte_leaves: 1,
+                visited_fields: 0,
+            })
+        }
+        ResolvedType::I64
+        | ResolvedType::I32
+        | ResolvedType::Char
+        | ResolvedType::U8
+        | ResolvedType::Usize
+        | ResolvedType::F32
+        | ResolvedType::F64
+        | ResolvedType::Bool => return NestedOwnedRecordAdmission::NoOwnedBytes,
+        ResolvedType::Never
+        | ResolvedType::Unit
+        | ResolvedType::ArrayU8(_)
+        | ResolvedType::String
+        | ResolvedType::Str
+        | ResolvedType::SliceU8
+        | ResolvedType::StringMap
+        | ResolvedType::TypeParameter { .. }
+        | ResolvedType::OnceFunction
+        | ResolvedType::OnceFunctionI64
+        | ResolvedType::OnceFunctionI64Pair
+        | ResolvedType::MutFunctionI64
+        | ResolvedType::Function { .. } => return NestedOwnedRecordAdmission::OutsideProfile,
+        ResolvedType::Nominal { .. } => {}
+    }
     enum Frame<'a> {
         Type(ResolvedType, usize),
         Fields(
@@ -1026,3 +1058,8 @@ mod tests {
         ));
     }
 }
+
+#[cfg(test)]
+mod leaf_saved;
+#[cfg(test)]
+mod leaf_tests;

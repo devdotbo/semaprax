@@ -31,6 +31,52 @@ pub(crate) fn substitute_type(
     owner: &DeclarationId,
     arguments: &[ResolvedType],
 ) -> Result<ResolvedType, Diagnostic> {
+    match template {
+        ResolvedType::TypeParameter {
+            owner: parameter_owner,
+            index,
+        } => {
+            if parameter_owner != owner {
+                return Err(hir_error(format!(
+                    "type template for `{owner}` contains foreign parameter owner `{parameter_owner}`"
+                )));
+            }
+            return arguments
+                .get(usize::try_from(*index).map_err(|_| {
+                    hir_error(format!("type parameter index {index} does not fit usize"))
+                })?)
+                .cloned()
+                .ok_or_else(|| {
+                    hir_error(format!(
+                        "type template for `{owner}` references missing parameter {index}"
+                    ))
+                });
+        }
+        ResolvedType::Nominal { arguments, .. } if arguments.is_empty() => {
+            return Ok(template.clone())
+        }
+        ResolvedType::Never
+        | ResolvedType::Unit
+        | ResolvedType::I64
+        | ResolvedType::I32
+        | ResolvedType::Char
+        | ResolvedType::U8
+        | ResolvedType::Usize
+        | ResolvedType::ArrayU8(_)
+        | ResolvedType::F32
+        | ResolvedType::F64
+        | ResolvedType::Bool
+        | ResolvedType::String
+        | ResolvedType::OnceFunction
+        | ResolvedType::OnceFunctionI64
+        | ResolvedType::OnceFunctionI64Pair
+        | ResolvedType::MutFunctionI64
+        | ResolvedType::Bytes
+        | ResolvedType::Str
+        | ResolvedType::SliceU8
+        | ResolvedType::StringMap => return Ok(template.clone()),
+        ResolvedType::Nominal { .. } | ResolvedType::Function { .. } => {}
+    }
     enum Frame<'a> {
         Enter(&'a ResolvedType),
         Finish(&'a DeclarationId, usize),
@@ -138,6 +184,43 @@ pub(super) fn substitute_source_function_type(
     arguments: &[Type],
     template: &Type,
 ) -> Option<Type> {
+    match template {
+        Type::Named {
+            name,
+            arguments: nested,
+        } if nested.is_empty() => {
+            // A generic parameter name takes precedence over a nominal name,
+            // including missing actual arguments and duplicate parameter names.
+            if let Some(index) = function
+                .type_parameters
+                .iter()
+                .position(|parameter| parameter.name == *name)
+            {
+                return arguments.get(index).cloned();
+            }
+            return Some(template.clone());
+        }
+        Type::Never
+        | Type::I64
+        | Type::I32
+        | Type::Char
+        | Type::U8
+        | Type::Usize
+        | Type::ArrayU8(_)
+        | Type::F32
+        | Type::F64
+        | Type::Bool
+        | Type::String
+        | Type::OnceFunction
+        | Type::OnceFunctionI64
+        | Type::OnceFunctionI64Pair
+        | Type::MutFunctionI64
+        | Type::Bytes
+        | Type::Str
+        | Type::SliceU8
+        | Type::StringMap => return Some(template.clone()),
+        Type::Named { .. } | Type::Function { .. } => {}
+    }
     enum Frame<'a> {
         Enter(&'a Type),
         Finish(&'a str, usize),
@@ -1101,3 +1184,8 @@ fn materialize_record_pattern_fields(
         })
         .collect()
 }
+
+#[cfg(test)]
+mod substitution_leaf_tests;
+#[cfg(test)]
+pub(super) mod substitution_saved;

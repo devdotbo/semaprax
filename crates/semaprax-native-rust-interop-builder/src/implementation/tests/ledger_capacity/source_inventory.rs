@@ -117,3 +117,23 @@ macro_rules! diagnostic_source_inventory {
         )
     };
 }
+
+// Complete substituters and the saved current caller, alongside original gates.
+macro_rules! substitution_leaf_source_inventory {
+    () => {
+        concat!(
+            include_str!("../../../../../src/hir/monomorphize.rs"),
+            include_str!("../../../../../src/hir/monomorphize/substitution_saved.rs"),
+            include_str!("../../../../../src/hir/monomorphize/substitution_leaf_tests.rs"),
+        )
+    };
+}
+macro_rules! reachability_leaf_source_inventory {
+    () => {
+        concat!(
+            include_str!("../../../../../src/hir/type_reachability.rs"),
+            include_str!("../../../../../src/hir/type_reachability/leaf_saved.rs"),
+            include_str!("../../../../../src/hir/type_reachability/leaf_tests.rs"),
+        )
+    };
+}
