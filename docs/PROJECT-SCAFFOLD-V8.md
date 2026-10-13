@@ -35,3 +35,10 @@ alongside all existing legacy scaffold, standalone creation and held-parent
 publication controls. CLI parsing retains closed, case-sensitive values and
 explicit duplicate-option refusal. No gates were executed when authoring this
 version; earlier hosted evidence does not qualify v8.
+
+The frozen guide intro is restored to its original pinned bytes. Commit
+`1bd740386` had changed that paragraph in the v2–v7 producer and its literal
+fixture without changing capsule versions or regenerating the original pins.
+V8 alone publishes the updated bounded route guidance. The original v2 digest,
+file hashes, full literal comparison, 5100-byte descriptor and replay assertions
+remain unchanged; focused executable confirmation is pending.

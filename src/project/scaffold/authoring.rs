@@ -12,7 +12,7 @@ pub(super) fn derive(name: &str, template: &str) -> Result<ProjectScaffoldV1, Ve
         .find(|file| file.path == "AGENTS.md")
         .expect("every scaffold has an agent guide");
     let current = guide.utf8()
-        .replace("Start with `semaprax help language`;\nlist exact topics with `semaprax help language topics` and read one with\n`semaprax help language <topic>`. Use `semaprax help language all` for the full\nreference.",
+        .replace("Before writing source, list\nthe language topics with `semaprax help language topics` and read only the one\nyou need with `semaprax help language <topic>`.",
                  "Start with `semaprax help language author:routes`, then select the route for\nyour project's profile and target. `semaprax help language topics` lists exact\nsections; `semaprax help library <module|name|stable-id>` gives dependency and\nprofile prerequisites. Read one bounded card before requesting the full reference.")
         .replace("A function body is statements followed by exactly one tail expression. There",
                  "A function body ends with a value expression or an admitted terminal return. There")

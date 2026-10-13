@@ -1,10 +1,10 @@
-use semaprax::assurance_manifest::project::{generate_from_snapshot, ProjectAssuranceOptions};
+use semaprax::assurance_manifest::project::{ProjectAssuranceOptions, generate_from_snapshot};
 use semaprax::project::{
-    derive_project_scaffold_v1, derive_project_scaffold_v1_with_layout, replay_project_scaffold_v1,
-    with_authenticated_project, ScaffoldLayout, PROJECT_SCAFFOLD_TEMPLATES,
     PROJECT_SCAFFOLD_TEMPLATE_SOURCE_COMMAND_FILE_TEXT,
     PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD,
-    PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_DATA,
+    PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_DATA, PROJECT_SCAFFOLD_TEMPLATES, ScaffoldLayout,
+    derive_project_scaffold_v1, derive_project_scaffold_v1_with_layout, replay_project_scaffold_v1,
+    with_authenticated_project,
 };
 use sha2::{Digest, Sha256};
 
@@ -210,7 +210,7 @@ const PATHS: [&str; 5] = [
 fn expected_files() -> [Vec<u8>; 5] {
     [
         b"# demo-project\n\nA small calculator project created by SEMAPRAX.\n\n```sh\nsemaprax check .\nsemaprax test .\nsemaprax run .\nsemaprax build . --target web -o web\n```\n\nRead `AGENTS.md` before editing the source, whether you are a person or a\ncoding agent: it lists the commands and the rules that differ from other\nlanguages.\n".to_vec(),
-        b"# Agent guide for demo-project\n\nThis is a SEMAPRAX project. `semaprax.toml` lists its modules; the compiler\nis the authority on what the language admits. Start with `semaprax help language`;\nlist exact topics with `semaprax help language topics` and read one with\n`semaprax help language <topic>`. Use `semaprax help language all` for the full\nreference.\n\n## Commands\n\n- `semaprax check .` parses, resolves, type-checks, and verifies every module.\n- `semaprax test .` runs `demo_project.tests`; `semaprax run .` runs the entry and prints its `i64`.\n- `semaprax fmt <file>` rewrites one file in canonical form.\n- `semaprax build . --target web -o dist/web` emits a browser package.\n- `semaprax help <command>` prints one command's exact grammar.\n\n## Rules that differ from other languages\n\n- Every file starts with `module dotted.name;`, and every declaration carries\n  `@id(\"...\")`. The id is the stable identity: rename freely, never change an id.\n- A function body is statements followed by exactly one tail expression. There\n  is no `return`, `break`, range `for`, `else if`, cast, tuple, or unit value.\n- `if` always has `else`; a `while` body ends with the bool that decides\n  whether to loop again.\n- Contracts are `requires` and `ensures` lines; effects are `permit` at module\n  level plus `uses` on every function that performs or calls into one.\n- Check the whole project, not one file: modules import each other, so a\n  single file reports `SPX-G172` or `SPX-T105`.\n- A new module must be listed in `sources` in `semaprax.toml`, and a test\n  module in `tests`.\n- Tests live in the `tests` module: `fn main() -> i64` returns 0 on success, and\n  every `fn test_<name>() -> i64` with an `@id` runs as a named case that\n  `semaprax test .` reports on failure.\n- Diagnostics carry stable `SPX-` codes and, where the compiler knows the fix,\n  a `help:` line. Plain output is smaller than `--json`, which is for tools.\n\n## Installed Agent Skill workflow\n\nGenerated from `semaprax agent skill`; each verb names its authority class:\n\n- `apply` (source_write): `semaprax apply-semantic-workspace-change-evidence <root> <proposal.json> <evidence.json>`\n- `context` (read_only): `semaprax context <file|project> <symbol|stable-id> [--direction forward|reverse|both] [--depth N] [--max-bytes N] [--max-nodes N] [--filters ...]`\n- `impact` (read_only): `semaprax impact <file> <patch.spatch> [--depth N] [--max-bytes N] [--max-nodes N]`\n- `inspect` (read_only): `semaprax graph <file>`\n- `propose` (candidate_only): `semaprax change preview <project> <operation> ... [--evidence|--structural-diff]`\n- `publish` (publication): `semaprax project-candidate-git-publish <manifest> <capsule.json> <approved-candidate-digest> <host-policy.json>`\n- `rebase` (candidate_only): `semaprax change rebase <base-project> <operation> ... --onto <onto-project> [--revision digest] [--onto-revision digest]`\n- `repair` (source_write): `semaprax repair <file> <repair-id> --persistent-id <persistent-id>`\n- `review` (read_only): `semaprax review <file> <patch.spatch>`\n- `test` (test_execute): `semaprax test [<dir>|semaprax.toml|--manifest-path path] [--json] [--max-steps N] [--max-bytes N]`\n".to_vec(),
+        b"# Agent guide for demo-project\n\nThis is a SEMAPRAX project. `semaprax.toml` lists its modules; the compiler\nis the authority on what the language admits. Before writing source, list\nthe language topics with `semaprax help language topics` and read only the one\nyou need with `semaprax help language <topic>`.\n\n## Commands\n\n- `semaprax check .` parses, resolves, type-checks, and verifies every module.\n- `semaprax test .` runs `demo_project.tests`; `semaprax run .` runs the entry and prints its `i64`.\n- `semaprax fmt <file>` rewrites one file in canonical form.\n- `semaprax build . --target web -o dist/web` emits a browser package.\n- `semaprax help <command>` prints one command's exact grammar.\n\n## Rules that differ from other languages\n\n- Every file starts with `module dotted.name;`, and every declaration carries\n  `@id(\"...\")`. The id is the stable identity: rename freely, never change an id.\n- A function body is statements followed by exactly one tail expression. There\n  is no `return`, `break`, range `for`, `else if`, cast, tuple, or unit value.\n- `if` always has `else`; a `while` body ends with the bool that decides\n  whether to loop again.\n- Contracts are `requires` and `ensures` lines; effects are `permit` at module\n  level plus `uses` on every function that performs or calls into one.\n- Check the whole project, not one file: modules import each other, so a\n  single file reports `SPX-G172` or `SPX-T105`.\n- A new module must be listed in `sources` in `semaprax.toml`, and a test\n  module in `tests`.\n- Tests live in the `tests` module: `fn main() -> i64` returns 0 on success, and\n  every `fn test_<name>() -> i64` with an `@id` runs as a named case that\n  `semaprax test .` reports on failure.\n- Diagnostics carry stable `SPX-` codes and, where the compiler knows the fix,\n  a `help:` line. Plain output is smaller than `--json`, which is for tools.\n\n## Installed Agent Skill workflow\n\nGenerated from `semaprax agent skill`; each verb names its authority class:\n\n- `apply` (source_write): `semaprax apply-semantic-workspace-change-evidence <root> <proposal.json> <evidence.json>`\n- `context` (read_only): `semaprax context <file|project> <symbol|stable-id> [--direction forward|reverse|both] [--depth N] [--max-bytes N] [--max-nodes N] [--filters ...]`\n- `impact` (read_only): `semaprax impact <file> <patch.spatch> [--depth N] [--max-bytes N] [--max-nodes N]`\n- `inspect` (read_only): `semaprax graph <file>`\n- `propose` (candidate_only): `semaprax change preview <project> <operation> ... [--evidence|--structural-diff]`\n- `publish` (publication): `semaprax project-candidate-git-publish <manifest> <capsule.json> <approved-candidate-digest> <host-policy.json>`\n- `rebase` (candidate_only): `semaprax change rebase <base-project> <operation> ... --onto <onto-project> [--revision digest] [--onto-revision digest]`\n- `repair` (source_write): `semaprax repair <file> <repair-id> --persistent-id <persistent-id>`\n- `review` (read_only): `semaprax review <file> <patch.spatch>`\n- `test` (test_execute): `semaprax test [<dir>|semaprax.toml|--manifest-path path] [--json] [--max-steps N] [--max-bytes N]`\n".to_vec(),
         b"schema = \"semaprax.project.v1\"\nname = \"demo-project\"\nentry = \"demo_project.app\"\nsources = [\"src/app.spx\", \"src/tests.spx\"]\nweb_exports = [\"demo-project.add\"]\ntests = [\"demo_project.tests\"]\n".to_vec(),
         b"module demo_project.app;\n\n@id(\"demo-project.add\")\nfn add(left: i64, right: i64) -> i64\n{\n    left + right\n}\n\n@id(\"demo-project.app.main\")\nfn main() -> i64\n{\n    add(19, 23)\n}\n".to_vec(),
         b"module demo_project.tests;\n\n@id(\"demo-project.tests.main\")\nfn main() -> i64\n{\n    if 19 + 23 == 42 { 0 } else { 1 }\n}\n".to_vec(),
@@ -220,9 +220,11 @@ fn expected_files() -> [Vec<u8>; 5] {
 fn assert_digest(value: &str) {
     assert!(value.starts_with("sha256:"), "{value}");
     assert_eq!(value.len(), "sha256:".len() + 64, "{value}");
-    assert!(value["sha256:".len()..]
-        .bytes()
-        .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)));
+    assert!(
+        value["sha256:".len()..]
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    );
 }
 
 fn sha256(bytes: &[u8]) -> String {
@@ -426,9 +428,11 @@ fn library_template_derives_the_package_shape_and_replays_only_as_itself() {
         assert_eq!(file.sha256(), sha256(file.bytes()));
     }
     let canonical = derived.canonical_bytes();
-    assert!(canonical
-        .windows(b"\"template\":\"library\"".len())
-        .any(|window| window == b"\"template\":\"library\""));
+    assert!(
+        canonical
+            .windows(b"\"template\":\"library\"".len())
+            .any(|window| window == b"\"template\":\"library\"")
+    );
     let replayed =
         replay_project_scaffold_v1(NAME, "library", &canonical, derived.digest()).unwrap();
     assert_eq!(replayed.canonical_bytes(), canonical);
@@ -558,8 +562,7 @@ fn tables_layout_derives_a_v3_capsule_and_replays_only_as_itself() {
     assert_eq!(tables.template(), "calculator");
     assert_eq!(tables.project_name(), NAME);
     assert_eq!(
-        serde_json::from_slice::<serde_json::Value>(&tables.canonical_bytes()).unwrap()["limits"]
-            ["files"],
+        serde_json::from_slice::<serde_json::Value>(&tables.canonical_bytes()).unwrap()["limits"]["files"],
         6
     );
     assert_digest(tables.digest());
@@ -586,15 +589,21 @@ fn tables_layout_derives_a_v3_capsule_and_replays_only_as_itself() {
         ]
     );
     assert_eq!(tables.files()[2].bytes(), CALCULATOR_TABLES_MANIFEST);
-    assert!(tables.files()[1]
-        .utf8()
-        .contains("Project v1 function boundaries"));
-    assert!(tables.files()[3]
-        .utf8()
-        .contains("use function @id(\"demo-project.add\") from demo_project.core as add;"));
-    assert!(tables.files()[4]
-        .utf8()
-        .starts_with("module demo_project.core;\n"));
+    assert!(
+        tables.files()[1]
+            .utf8()
+            .contains("Project v1 function boundaries")
+    );
+    assert!(
+        tables.files()[3]
+            .utf8()
+            .contains("use function @id(\"demo-project.add\") from demo_project.core as add;")
+    );
+    assert!(
+        tables.files()[4]
+            .utf8()
+            .starts_with("module demo_project.core;\n")
+    );
     for file in tables.files() {
         assert_eq!(file.sha256(), sha256(file.bytes()));
     }
@@ -614,20 +623,24 @@ fn tables_layout_derives_a_v3_capsule_and_replays_only_as_itself() {
     assert_eq!(replayed.canonical_bytes(), tables.canonical_bytes());
 
     // The frozen digest cannot validate the table bytes, and vice versa.
-    assert!(replay_project_scaffold_v1(
-        NAME,
-        "calculator",
-        &tables.canonical_bytes(),
-        frozen.digest()
-    )
-    .is_err());
-    assert!(replay_project_scaffold_v1(
-        NAME,
-        "calculator",
-        &frozen.canonical_bytes(),
-        tables.digest()
-    )
-    .is_err());
+    assert!(
+        replay_project_scaffold_v1(
+            NAME,
+            "calculator",
+            &tables.canonical_bytes(),
+            frozen.digest()
+        )
+        .is_err()
+    );
+    assert!(
+        replay_project_scaffold_v1(
+            NAME,
+            "calculator",
+            &frozen.canonical_bytes(),
+            tables.digest()
+        )
+        .is_err()
+    );
 
     // The library template also lowers to a v3 table capsule.
     let library =
@@ -997,7 +1010,9 @@ fn service_template_composes_bundled_dependencies_and_only_derives_under_tables_
     assert!(manifest.contains("schema = \"semaprax.manifest.v1\"\n"));
     assert!(manifest.contains("profile = \"useful-data.v1\"\n"));
     assert!(manifest.contains("entry = \"demo_project.app\"\n"));
-    assert!(manifest.contains("sources = [\"src/app.spx\", \"src/core.spx\", \"src/tests.spx\"]\n"));
+    assert!(
+        manifest.contains("sources = [\"src/app.spx\", \"src/core.spx\", \"src/tests.spx\"]\n")
+    );
     assert!(manifest.contains("tests = [\"demo_project.tests\"]\n"));
     assert!(manifest.contains(
         "web = [\"demo_project.core.identifier_is_valid\", \"demo_project.core.method_is_rejected\"]\n"
@@ -1199,8 +1214,7 @@ fn service_scaffold_configuration_is_closed_and_credential_free() {
         "host configuration selects the named snapshot profile"
     );
     assert_eq!(
-        schema["allOf"][1]["then"]["properties"]["database"]["properties"]["dsn_secret_ref"]
-            ["const"],
+        schema["allOf"][1]["then"]["properties"]["database"]["properties"]["dsn_secret_ref"]["const"],
         serde_json::Value::Null,
         "host configuration never interprets a DSN as snapshot storage"
     );
