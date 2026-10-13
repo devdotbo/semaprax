@@ -1,5 +1,9 @@
 # HIR final-validation construction handoff
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Branch `codex/hir-final-validation-scratch-1a680` starts from exact integrated
 `1a680e93e`. This batch is disjoint from monomorphize leaf substitution and nested
 record root classifiers, and does not edit their owners. Root integration is

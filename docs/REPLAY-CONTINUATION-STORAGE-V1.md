@@ -1,5 +1,9 @@
 # Replay continuation storage v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Internal ordinary whole-program replay retains one empty continuation backing
 for the exact immutable current Program. Acquisition remains lazy at the first
 expression-skeleton entry after the original preceding checks. The existing

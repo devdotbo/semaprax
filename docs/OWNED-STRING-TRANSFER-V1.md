@@ -1,5 +1,7 @@
 # Owned String Transfer v1
 
+Audience: compiler contributors and reviewers.
+
 Status: source implementation and 15 owning controls authored for OPT790.
 Unexecuted; current-head qualification remains pending.
 This contract does not expand public aggregate/UTF-8 ABIs or frozen profiles.

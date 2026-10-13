@@ -1,6 +1,8 @@
 # Borrowed Str Equality v1
 
-Source implementation checkpoint for OPT #767; current-head executable
+Audience: compiler contributors and reviewers.
+
+Status: source implementation checkpoint for OPT #767; current-head executable
 qualification is pending. This is an exact-byte comparison of two already
 admitted `borrow str` operands. `==` returns true precisely when their byte
 lengths and every UTF-8 byte agree; `!=` is its Boolean complement. Empty

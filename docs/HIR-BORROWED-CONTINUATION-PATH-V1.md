@@ -1,5 +1,9 @@
 # HIR borrowed continuation paths v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Iterative validation retains each Enter frame's exact expected path as a borrowed
 parent plus a static suffix and up to two decimal indices. It preserves the
 full NUL, owner/domain/length/path identity, uniqueness and type checks. Only

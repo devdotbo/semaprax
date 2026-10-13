@@ -1,5 +1,9 @@
 # Declaration identity backing v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 The private carrier has only valid text: CompilerStatic(&'static str) from a closed
 compiler declaration enum, or Shared(Arc<str>). The actual 64-bit size/alignment and
 Option footprint are asserted against the former String carrier. Equality, order,

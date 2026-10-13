@@ -1,5 +1,9 @@
 # Selected replay recovering constructor v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 This internal ownership adapter changes no source admission, graph family,
 physical/work ceiling, or authority proof. Source qualification is pending.
 

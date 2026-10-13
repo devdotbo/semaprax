@@ -1,5 +1,7 @@
 # Root-first paid droppability source batch
 
+Audience: compiler contributors and reviewers.
+
 Status: source-only; executable qualification pending.
 
 Base: `58ee1bcad`. Prepared branch: `codex/resource-followups-58`.

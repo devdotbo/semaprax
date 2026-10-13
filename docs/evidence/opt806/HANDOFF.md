@@ -1,5 +1,9 @@
 # OPT806 scoped recovery handoff
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Source-authored batch on `codex/scoped-diagnostic-recovery-5728`, based on
 `5728c9e48fe2afe5cd77e9edf000cbe171035bdb`. The containing commit is the source
 candidate to qualify; this handoff does not claim executed compiler evidence.

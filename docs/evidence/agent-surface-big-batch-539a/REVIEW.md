@@ -1,5 +1,9 @@
 # Agent surface batch for issue #722; NDJSON context #760
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Base: `539a5232c6e31b53be0552865db3f34dbb9f5753`. Source-only changes; no Cargo, build, compiler, tests, or public actions executed.
 
 - Scaffold current-guidance v8 has a separate digest domain and explicit `--layout current`. Both new-project consumers select it. Legacy Frozen/Tables derivation, original AGENTS literal, non-guide source fixtures, and all legacy refusal controls remain intact. V8 replay compares complete canonical descriptor bytes.

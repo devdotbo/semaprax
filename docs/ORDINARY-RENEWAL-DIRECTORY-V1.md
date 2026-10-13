@@ -1,5 +1,9 @@
 # Ordinary renewal phase directory V1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 This private implementation retains independently reconstructed ordinary facts
 for one exact immutable program and function. Construction and replay build
 separate directories. Attached cleanup plans and selected primitive receipts

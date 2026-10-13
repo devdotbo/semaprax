@@ -1,5 +1,7 @@
 # Ordinary substitution and classifier leaf source batch
 
+Audience: compiler contributors and reviewers.
+
 Status: source-only; executable qualification pending.
 Base: `58ee1bcad`; branch `codex/substitution-leaves-58`.
 

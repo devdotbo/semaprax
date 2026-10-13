@@ -1,5 +1,9 @@
 # HIR validation function directory v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 This private storage change gives no new source, HIR, cache, selected-profile or
 backend authority. Qualification is pending.
 

@@ -1,5 +1,9 @@
 # OPT806 separate refusal dependency handoff
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Branch `codex/refusal-dependency-big-batch-539a` starts at frozen integrated
 `539a5232c`. Prior recovery commits remain on their original branch. This source
 batch removes annotation recovery's global `None` substitution; unknown

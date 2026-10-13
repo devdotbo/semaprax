@@ -1,5 +1,7 @@
 # Bounded NDJSON framing v1
 
+Audience: compiler contributors and reviewers.
+
 Status: source implementation and owning regression definitions authored; executable qualification pending. This is the bounded LF-only Catalog Normalizer composition tracked by [OPT #760](https://github.com/wavect/semaprax/issues/760). It does not change the LogLens line policy or the Catalog restock command.
 
 ## API and authority

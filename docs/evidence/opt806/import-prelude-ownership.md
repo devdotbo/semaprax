@@ -1,5 +1,7 @@
 # Imported receiver process-owner isolation
 
+Audience: compiler contributors and reviewers.
+
 Status: source-only repair preparation; executable confirmation pending.
 Base: `58ee1bcad`; branch `codex/import-prelude-drop-58`.
 

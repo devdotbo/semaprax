@@ -1,5 +1,9 @@
 # HIR borrowed aggregate metadata v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 The iterative HIR validator retains current declaration field/case slices and
 current expression declaration IDs/type arguments across record construction,
 variant construction, record replacement and variant-match frames. It avoids

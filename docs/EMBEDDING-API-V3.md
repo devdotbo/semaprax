@@ -1,5 +1,7 @@
 # Embedding API v3
 
+Audience: compiler contributors and reviewers.
+
 Status: source-authored Rust facade migration; executable qualification pending.
 The completion matrix owns broader product status.
 

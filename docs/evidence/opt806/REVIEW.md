@@ -1,5 +1,9 @@
 # OPT806 source review preparation
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 The static provenance script executed successfully in the integrated checkout
 at `2adb721123ea9d9460fed12e2d3891e9bba1455e`, after the source cherry-pick. It
 resolves the checkout from its own path and reads the exact baseline Git object;

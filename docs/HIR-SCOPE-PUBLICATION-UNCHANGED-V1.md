@@ -1,5 +1,9 @@
 # Unchanged HIR scope publication v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Qualification pending. The private iterative validator still owns its initial
 publication snapshot. On a changed snapshot it removes absent keys, updates
 only bindings whose complete equality differs, and clones new keys and values.

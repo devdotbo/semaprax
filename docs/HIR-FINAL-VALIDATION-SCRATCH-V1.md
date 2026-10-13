@@ -1,5 +1,9 @@
 # HIR final-validation scratch v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 This private source batch changes comparison and scratch carriers only. Complete
 validation, source/HIR identity checks, ownership/loan/cleanup semantics, both
 backend type carriers, and the literal 67,108,864-byte builder limit remain.

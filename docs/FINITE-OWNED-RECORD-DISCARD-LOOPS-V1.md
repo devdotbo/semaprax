@@ -1,5 +1,9 @@
 # Finite owned-record discard loops v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 This source tranche is pending executable qualification. It preserves the
 ordinary allocation limits and does not authorize arbitrary allocating while
 bodies.

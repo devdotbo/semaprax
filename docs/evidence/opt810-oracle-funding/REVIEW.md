@@ -1,5 +1,7 @@
 # OPT810 independent oracle funding audit
 
+Audience: compiler contributors and reviewers.
+
 Status: source audit and residual recommendation only. OPT810 remains open.
 No compiler, Cargo, build, test, runtime allocation probe, or new Claude call ran.
 No Rust, observer, cap, debit, assertion, receiver, or source-audit inventory changed.

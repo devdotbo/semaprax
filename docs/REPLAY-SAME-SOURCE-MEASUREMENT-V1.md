@@ -1,5 +1,7 @@
 # Same-source replay constructor measurements v1
 
+Audience: compiler contributors and reviewers.
+
 Status: focused owners authored; no measurements have been executed or gains
 established by this change. This is bounded evidence for OPT #749/#750, not a
 full replay or application execution qualification.

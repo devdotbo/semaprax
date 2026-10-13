@@ -1,5 +1,9 @@
 # Typed structural replay refusals v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Four private structural error families carry sealed data: repeated/unknown status
 ExpressionId, noncontiguous slot index, and repeated StorageId. Shared immutable
 identity handles and Copy indices preserve the original subject without rendering

@@ -1,5 +1,7 @@
 # JSON codec suitability discovery v1
 
+Audience: compiler contributors and reviewers.
+
 Status: source implementation; executable qualification pending. This additive
 #773 surface does not close #722's archived-question replay and fresh-trial
 measurement obligations.

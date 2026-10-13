@@ -1,5 +1,7 @@
 # Whole-subtree owned-record pattern binding v2
 
+Audience: compiler contributors and reviewers.
+
 Status: source implementation; qualification pending. OPT779 remains open until
 its source, HIR, cleanup, cache and three-backend acceptance gates pass.
 

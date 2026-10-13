@@ -1,5 +1,9 @@
 # Ordinary borrowed status comparison v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Ordinary independent cleanup replay reconstructs each required failure producer
 from current HIR and compares its borrowed operands with the attached status
 row. It no longer constructs an owned temporary status table, cloned propagated

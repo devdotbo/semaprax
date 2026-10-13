@@ -1,5 +1,7 @@
 # Borrowed owner/name lookup source batch
 
+Audience: compiler contributors and reviewers.
+
 Status: source-only; executable qualification pending.
 Base: `58ee1bcad`; branch `codex/borrowed-owner-name-58`.
 

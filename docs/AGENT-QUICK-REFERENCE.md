@@ -1241,7 +1241,6 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | vec_of missing type/reserved name/oversized expansion|SPX-P220|Use vec_of<T>(items), one admitted type and existing bounds; vec_of is reserved|
 | forged constructor/generated owner capture|SPX-T318|Reparse canonical vec_of source; use an explicit Vec chain to read intermediate owners|
 | native cleanup refusal postcheck|SPX-B104|Check cleanup; String-condition scalar match “parent is not canonical”: backend bug|
-| explicit fused source account or selection refused|SPX-F130|Use the exact source-only fused-construction-v1 shape with main() -> i64 and explicit managed bytes 1..=1073741824; refusal has no ordinary fallback|
 | for range|SPX-P106|while; mut counter; discard tail|
 | assignment loop|SPX-P203|Scalar tail, e.g. 0|
 | local named result|`SPX-S109`, `SPX-T201`|Rename binding/uses to outcome; result denotes return only in ensures|
@@ -1277,6 +1276,7 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | factory import lacks exact type|SPX-G172|Directly import exact/nested exposed type identities (help); inference grants no import authority|
 | noncanonical Project source|SPX-G170|semaprax fmt <manifest>; blocked discovery: semaprax fmt --manifest <manifest>, then retry|
 | interpreter: source-command.v1/v28 Project|SPX-F102|Interpreter lacks argv/files; semaprax build <manifest> --target native -o <fresh-path>; run in Project dir. Tests: semaprax test <project> --target native [Tests](PROJECT-NATIVE-TEST-V1.md)|
+| explicit fused source account or selection refused|SPX-F130|Use the exact source-only fused-construction-v1 shape with main() -> i64 and explicit managed bytes 1..=1073741824; refusal has no ordinary fallback|
 | output exists|SPX-I307|Fresh --output; no overwrite; remove only confirmed own artifacts|
 | f()? in main|SPX-T218|Result-only; main matches|
 | array literal|SPX-T262|Byte arrays; Vec<i64> otherwise|
@@ -1510,12 +1510,7 @@ in any order. ASCII identifiers are unique, 1–16 letters/digits/`_`/`-`;
 nonempty rows need an identifier. Encoders borrow vectors, accept `output_limit`.
 `json_<Request>_owned_decode` returns independent Strings: release normalized
 Bytes after decode. Stream errors use raw offsets before Ready, normalized
-offsets afterwards. Nonstream `utf8-owned-request.v1` requires canonical
-`--max-string-bytes 1..64` decoded bytes; empty/duplicate/Unicode/NUL values
-are allowed, arrays remain 0..8/0..256, including rows with no identifiers.
-External borrowed input ≤65,536 bytes; internal owned Bytes views ≤131,072.
-Source field names stay ASCII. See `author:json-utf8-owned-request`.
-Owned runtime is private `owned-data-api.v1` or native v30; v29 Copy views
+offsets afterwards. Owned runtime is private `owned-data-api.v1` or native v30; v29 Copy views
 retain source lifetime. Qualification/#724 pending.
 
 Typed source: `author:json-request-response`, [ShiftSim](../examples/shiftsim-typed-record-successor/README.md).
@@ -1526,10 +1521,6 @@ cd examples/shiftsim-typed-record-successor
 semaprax json-codec . --plan codec-plan.json --output codecs.candidate.json
 ```
 
-One immutable authored revision per bundle. Project
-admission checks before publishing original schemas,
-candidate sources and exact receipts. Install through ordinary source/managed
-authority; receipts grant none. See [codec plans](APPLICATION-JSON-CODEC-PLAN-V1.md).
 
 Single-codec profiles:
 
@@ -1542,13 +1533,14 @@ semaprax json-codec . --source src/response.spx --type shiftsim.report \
   --max-string-bytes 16
 ```
 
-Derive both from unchanged bootstrap; replay each against that revision with
-exact path/record ID/profile/bounds before installing either. First installation
-changes revision; edits remove evidence. CLI leaves source/manifests untouched. Owning tests: `catalog_scoped_records`.
+For single codecs, derive both outputs from the unchanged bootstrap; replay each
+against that revision with exact path/record ID/profile/bounds before copying either output.
+Installing one generated module first changes the revision; edits remove evidence.
+CLI leaves source/manifests untouched. Tests: `standard_library::application_json::owned::catalog_scoped_records::`.
 
 `author:json-nested-response`: `bounded-nested-response.v1` requires both
 `--max-string-bytes 1..64` and `--max-array-items 1..256`. Acyclic records:
-depth 8, ≤64 expanded paths, 1..8 fields, ≤2 expanded Vec fields of Copy scalars
+depth 8, ≤64 expanded paths, 1..8 fields, up to two expanded Vec fields of Copy scalars
 or flat rows with ≤2 Strings. Primitive `Vec<string>` refuses SPX-J180 in v1.
 Additive `bounded-nested-response.v2` reads those slots using
 `vec_str_at(values, at)` within named `borrow Vec<string>` helpers; its
@@ -1557,9 +1549,9 @@ The same caps and independent caller profile/loan checks remain authoritative.
 `json_Root_nested_response_encoded_len(value: borrow Root)` preflights all fields;
 `json_Root_nested_response_encode(value: borrow Root, output_limit: usize)` returns
 `Encoded { text }` or `Refused { required }`. `usize::MAX` signals string/array
-or 131072-byte output bounds exceeded. Allocate output after full preflight,
+or 131072-byte output bounds exceeded. Allocate output only after complete preflight,
 in declaration order, without clones. Owners retain runtime bounds;
-request decode's 264-String census does not limit response encoding.
+The request 264 new-String census does not limit this response selector.
 No capability/profile/decoder/business mapping.
 See [nested response v1](APPLICATION-JSON-NESTED-RESPONSE-V1.md) and
 [String-vector response v2](APPLICATION-JSON-NESTED-RESPONSE-V2.md).
@@ -1568,29 +1560,44 @@ See [nested response v1](APPLICATION-JSON-NESTED-RESPONSE-V1.md) and
 `author:nested-outcomes`: v32 nested success/error carriers. Import signature
 roots (SPX-G172). [Private layouts](PRIVATE-NOMINAL-LAYOUT-CLOSURE-V1.md) may be
 inferred; authored child names need imports. Bind variant payloads with
-`match own`; keep arm commas inside braces. Aggregate results require an
-independently admitted finite collection outcome; ordinary String/general
-variants gain no authority.
+`match own`; keep each match-arm comma **inside** its closing brace. Aggregate
+results require an independently admitted finite collection outcome;
+ordinary String/general variant joins do not gain that authority.
 
 Stream Ready owns its payload: `Outcome::Ready { value } => match own value`,
 then exact `OrderRequest { configuration, lines, urgent }`, then owning match
-on configuration. Consume owners once; views stay within owner lifetime;
+on configuration; do not retain a borrowed Ready byte slice. Consume owners once;
+views stay within owner lifetime;
 no dummy owners. Success/stderr/status:
 `examples/stream-nested-order-json-project/src/app.command.spx`.
 Normalizer `Ready { bytes, length }` passes exactly
 `byte_range(bytes_as_slice(bytes), 0usize, length)` while bytes remains live.
 
-Decoded rows: `vec_field<Patient>(request.patients,index,"priority")`.
-String borrows retain the named Vec through last use. Response encoding
-of `Report { assignments: Vec<Assignment>, metrics: Metrics }` supplies no
-request decoding/business mapping. Checked helpers; caller's admitted
-Project profile controls runtime. Qualification pending.
 
 ## Detailed profile rules
 
 Exact topics name `help language detail:<slug>` to retrieve one complete section
 below. `help language all` retains this appendix and every compiler-checked
 example; lookup does not change admission or qualification status.
+
+### JSON profile details
+
+One immutable authored revision per bundle. Project
+admission checks before publishing original schemas,
+candidate sources and exact receipts. Install through ordinary source/managed
+authority; receipts grant none. See [codec plans](APPLICATION-JSON-CODEC-PLAN-V1.md).
+
+Nonstream `utf8-owned-request.v1` requires canonical
+`--max-string-bytes 1..64` decoded bytes; empty/duplicate/Unicode/NUL values
+are allowed, arrays remain 0..8/0..256, including rows with no identifiers.
+External borrowed input ≤65,536 bytes; internal owned Bytes views ≤131,072.
+Source field names stay ASCII. See `author:json-utf8-owned-request`.
+
+Decoded rows: `vec_field<Patient>(request.patients,index,"priority")`.
+String borrows retain the named Vec through last use. Response encoding
+of `Report { assignments: Vec<Assignment>, metrics: Metrics }` supplies no
+request decoding/business mapping. Checked helpers; caller's admitted
+Project profile controls runtime. Qualification pending.
 
 ### Record profile details
 

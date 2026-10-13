@@ -1,5 +1,7 @@
 # Workspace report owner v1
 
+Audience: compiler contributors and reviewers.
+
 Status: source-authored additive Rust facade API; executable qualification pending.
 This is a bounded OPT781 tranche, not completion of report or application funding.
 

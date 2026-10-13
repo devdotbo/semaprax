@@ -1,5 +1,7 @@
 # Validator Scope Checkpoints v1
 
+Audience: compiler contributors and reviewers.
+
 Status: private source implementation; OPT795 remains open. This document owns
 storage and payment invariants, not execution evidence or a language extension.
 [RFC 0001](RFC-0001.md) and [Resource ABI](RFC-0003-CLEANUP-AND-RESOURCE-ABI.md)

@@ -1,5 +1,9 @@
 # HIR module permit directory v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Qualification pending. Complete HIR validation and its independent core caller
 prepare exact-current Program-bound storage outside the pure validator. This
 extends their function directory with a sorted borrowed permit-reference Vec.

@@ -1,5 +1,9 @@
 # Borrowed native container admission flags — source batch
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Base:58ee1bcad7d0bf4b714ddcb76e527962f404ea17. Owning source:source_verify/type_table/native_containers.rs.
 
 TypeTable::new previously constructed and dropped three complete Type trees only to convert them back into exactly OwnedOptionString, OwnedResultStringI64 and OwnedResultStringOptionI64. The borrowed query compares those same enum values against native imports. It leaves all source, ownership, native authority and backend verification unchanged. NATIVE-RUST-RICH-INTEROP-V1 closed constructor admission remains authoritative.

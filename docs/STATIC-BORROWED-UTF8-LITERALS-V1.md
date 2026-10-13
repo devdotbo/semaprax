@@ -1,5 +1,7 @@
 # Static borrowed UTF-8 literals v1
 
+Audience: compiler contributors and reviewers.
+
 Status: authored direct-source and retained Project adapter for OPT #740;
 qualification pending. Retained static literals combined with lexical renewal
 still have a closed composition route, described below. This is not a completed

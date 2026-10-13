@@ -1,5 +1,9 @@
 # Focused runtime fixture and source-inventory repairs
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Base: 7a488688b34e72edd3442a3ad669862d0400f560. Source only; no compiler build,
 test, runtime, or full gate executed in this private lane.
 

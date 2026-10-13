@@ -1,5 +1,7 @@
 # Native fused source account v1
 
+Audience: compiler contributors and reviewers.
+
 Status: authored OPT #768 receiver; current-head executable qualification pending.
 This contract applies only to the explicit source-only `fused-construction-v1`
 profile. Ordinary source, Project, cache/graph imports and public providers do

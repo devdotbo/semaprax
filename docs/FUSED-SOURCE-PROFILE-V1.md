@@ -1,5 +1,7 @@
 # Fused source profile v1
 
+Audience: compiler contributors and reviewers.
+
 Status: authored source for OPT #768; executable qualification is pending. This
 profile does not close the broader #747 ownership and backend obligations.
 

@@ -1,5 +1,9 @@
 # Borrowed cleanup replay call payloads v1
 
+Status: source checkpoint; current-head owning execution qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 The production expression-fact collector retains references to the exact held
 HIR argument slices, type-argument slices and concrete instance IDs. Invoke
 retains one callable type reference; ByteRange retains three expression
