@@ -105,7 +105,11 @@ impl<P: TypeFactsPayer> Storage<'_, P> {
                 arguments,
                 &mut self.payer,
                 &mut |bytes, payer| payer.bytes(bytes),
-                &mut |bytes, payer| payer.classifier_reserve_sink(bytes),
+                &mut |bytes, payer| {
+                    payer.oracle_work(1, "classifier formatter chunk")?;
+                    payer.oracle_work(bytes, "classifier formatter copy")?;
+                    payer.classifier_reserve_sink(bytes)
+                },
             );
             return self.growth(result);
         }
@@ -119,6 +123,19 @@ impl<P: TypeFactsPayer> Storage<'_, P> {
     ) -> Option<()> {
         if self.first.is_some() {
             return None;
+        }
+        #[cfg(test)]
+        if self.payer.classifier_sink_is_explicit() {
+            let result = output.raw_explicit(
+                arguments,
+                &mut self.payer,
+                &mut |bytes, payer| payer.bytes(bytes),
+                &mut |bytes, payer| {
+                    payer.oracle_work(1, "classifier formatter chunk")?;
+                    payer.oracle_work(bytes, "classifier formatter copy")
+                },
+            );
+            return self.growth(result);
         }
         let result = output.raw(arguments, &mut |bytes| self.payer.bytes(bytes));
         self.growth(result)
@@ -144,7 +161,11 @@ impl<P: TypeFactsPayer> Storage<'_, P> {
                 arguments,
                 &mut self.payer,
                 &mut |bytes, payer| payer.bytes(bytes),
-                &mut |bytes, payer| payer.classifier_reserve_sink(bytes),
+                &mut |bytes, payer| {
+                    payer.oracle_work(1, "classifier formatter chunk")?;
+                    payer.oracle_work(bytes, "classifier formatter copy")?;
+                    payer.classifier_reserve_sink(bytes)
+                },
             );
             return self.growth(result);
         }

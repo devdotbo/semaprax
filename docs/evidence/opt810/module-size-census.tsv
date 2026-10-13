@@ -1,8 +1,8 @@
 # Source-only census; no executable qualification. Base 5ff88aa99040a597f60cf10f66bc50582ccc1e8e
 # path\tlines\tunchanged_limit
 src/bounded_output/classifier_string.rs	218	1500
-src/bounded_output/classifier_string/explicit.rs	150	1500
-src/bounded_output/classifier_string/explicit/tests.rs	134	1500
+src/bounded_output/classifier_string/explicit.rs	169	1500
+src/bounded_output/classifier_string/explicit/tests.rs	183	1500
 src/byte_ops.rs	717	1500
 src/byte_ops/funded.rs	90	1500
 src/cleanup_plan/renewal_profile.rs	299	1500
@@ -35,7 +35,7 @@ src/cleanup_plan/replay/paid_type_facts.rs	316	1500
 src/cleanup_plan/replay/paid_type_facts/droppability.rs	200	1500
 src/cleanup_plan/replay/paid_type_facts/droppability/key.rs	196	1500
 src/cleanup_plan/replay/paid_type_facts/droppability/paid.rs	317	1500
-src/cleanup_plan/replay/paid_type_facts/droppability/text.rs	205	1500
+src/cleanup_plan/replay/paid_type_facts/droppability/text.rs	226	1500
 src/cleanup_plan/replay/paid_type_facts/oracle_logical_tests.rs	169	1500
 src/cleanup_plan/replay/paid_type_facts/oracle_work_tests.rs	206	1500
 src/cleanup_plan/replay/path_summary.rs	187	1500
@@ -69,7 +69,7 @@ src/hir.rs	1446	1500
 src/hir/declaration_index/flags/paid.rs	232	1500
 src/hir/declaration_index/flags/paid/compute.rs	392	1500
 src/hir/declaration_index/flags/paid/key.rs	175	1500
-src/hir/declaration_index/flags/paid/storage.rs	284	1500
+src/hir/declaration_index/flags/paid/storage.rs	305	1500
 src/hir/declaration_index/flags/paid/substitute.rs	81	1500
 src/hir/function_value.rs	398	1500
 src/hir/function_value/funded.rs	149	1500

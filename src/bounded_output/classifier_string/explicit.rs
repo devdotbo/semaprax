@@ -24,6 +24,25 @@ impl ClassifierString {
             .map(|_| ())
     }
 
+    /// Raw has no logical reservation: a successful work callback cannot
+    /// silently decline a chunk. The original complete raw receiver is kept.
+    pub(crate) fn raw_explicit<S, E>(
+        &mut self,
+        arguments: fmt::Arguments<'_>,
+        storage: &mut S,
+        pay: &mut impl FnMut(usize, &mut S) -> Result<(), E>,
+        work: &mut impl FnMut(usize, &mut S) -> Result<(), E>,
+    ) -> Result<(), GrowthFailure<E>> {
+        self.write_explicit(
+            arguments,
+            storage,
+            pay,
+            &mut |bytes, state| work(bytes, state).map(|()| true),
+            false,
+        )
+        .map(|_| ())
+    }
+
     pub(crate) fn strict_explicit<S, E>(
         &mut self,
         arguments: fmt::Arguments<'_>,

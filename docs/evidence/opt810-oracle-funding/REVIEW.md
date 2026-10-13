@@ -182,3 +182,27 @@ counting and transitive admission predicates still lack complete work funding.
 The live panic payload and original owning pair require fresh executable
 qualification after those gaps close. No comparison is skipped or cached; the
 two complete old owning fixtures and original hook source remain unchanged.
+
+## Explicit formatter dispatch and copy work — source checkpoint
+
+The two opted-account Storage receivers now debit one writer-dispatch unit and
+complete chunk-copy bytes before each strict/capped logical reservation. Work
+refusal is a typed payment error before physical growth. Raw uses a new explicit
+receiver with a Result<(), E> callback: success always retains the chunk and
+never reserves logical text; refusal cannot masquerade as an empty semantic
+value. The complete original ClassifierString receiver remains byte exact.
+Existing finite-account key controls compare both complete old key receivers
+through Drop and derive exact byte/work and one-short/zero controls from one
+cumulative upfront allowance. The original strict/capped logical frontier test
+remains complete. An additive full raw formatter control compares every chunk
+and observes a first work error before any backing growth. All controls remain
+unrun; only leaf formatting, diff checking, source joins and size census ran.
+
+Claude Sonnet 5.5 authored the bounded 16,896-byte two-file draft without tools.
+Local review applied it to both Storage owners and strengthened the raw callback
+type to exclude logical false. Actual wall 42.755287625 s, API 39.619 s, owned
+process-group peak 311181312 bytes; API list cost $0.0899549, not invoice cost.
+OPT810 stays open and the live hook inactive. Arbitrary Display code before a
+writer call, the separate two-pass diagnostic counting receiver, cache Ord and
+full-tree equality/cycle predicates still require finite-account work funding;
+this checkpoint does not claim them paid or the original owning pair fixed.

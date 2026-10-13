@@ -132,3 +132,52 @@ fn logical_payment_error_is_typed_and_precedes_backing_growth() {
     assert_eq!(physical_calls, 0);
     assert_eq!(output.as_str(), "");
 }
+
+#[test]
+fn complete_raw_receiver_keeps_all_chunks_and_refuses_work_before_growth() {
+    let original = std::fmt::format(format_args!("{}", Chunks));
+    let (current, refused, used, first) = with_limit_usage_refusal(0, || {
+        let mut output =
+            ClassifierString::acquire_explicit(&mut |_| Ok::<_, &'static str>(())).unwrap();
+        let mut visits = 0;
+        output
+            .raw_explicit(
+                format_args!("{}", Chunks),
+                &mut (),
+                &mut |_, _| Ok(()),
+                &mut |bytes, _| {
+                    visits += 1 + bytes;
+                    Ok(())
+                },
+            )
+            .unwrap();
+        assert_eq!(visits, 2 + original.len());
+        output.into_string()
+    });
+    assert_eq!(current, original);
+    assert!(!refused);
+    assert_eq!((used, first), (0, None));
+    let mut output =
+        ClassifierString::acquire_explicit(&mut |_| Ok::<_, &'static str>(())).unwrap();
+    let mut physical_calls = 0;
+    let mut work_calls = 0;
+    let error = output.raw_explicit(
+        format_args!("{}", Chunks),
+        &mut (),
+        &mut |_, _| {
+            physical_calls += 1;
+            Ok(())
+        },
+        &mut |_, _| {
+            work_calls += 1;
+            Err("first work refusal")
+        },
+    );
+    assert!(matches!(
+        error,
+        Err(GrowthFailure::Payment("first work refusal"))
+    ));
+    assert_eq!((physical_calls, work_calls), (0, 1));
+    assert_eq!(output.as_str(), "");
+    assert_eq!(output.bytes.capacity(), 0);
+}
