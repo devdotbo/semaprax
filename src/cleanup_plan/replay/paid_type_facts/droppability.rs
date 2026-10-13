@@ -189,3 +189,12 @@ mod tests;
 mod text;
 pub(super) use paid::needs_drop as needs_drop_paid;
 pub(super) use text::replay_diagnostic;
+
+/// Test-only forwarding seam for complete key receiver allocation observations.
+#[cfg(test)]
+pub(super) fn oracle_key_for_test<P: crate::hir::TypeFactsPayer>(
+    ty: &ResolvedType,
+    payer: &mut P,
+) -> Result<String, Diagnostic> {
+    key::identity(ty, payer)
+}

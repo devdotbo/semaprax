@@ -21,7 +21,7 @@ mod oracle;
 #[cfg(test)]
 pub(super) use oracle::{
     authority, authority_for_function, enter, opt_in, opted, raw_error_funded, replay_error_funded,
-    InvocationRefusal, OracleLease, OracleRefusal, OracleScope, ReplayFailure,
+    InvocationRefusal, OracleLease, OracleReceipt, OracleRefusal, OracleScope, ReplayFailure,
 };
 pub(super) fn set_key<K: Ord + ClonePayload>(
     function: &ResolvedFunction,

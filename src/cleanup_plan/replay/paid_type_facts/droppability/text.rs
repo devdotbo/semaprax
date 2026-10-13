@@ -59,6 +59,13 @@ impl<P: TypeFactsPayer> Storage<'_, P> {
             ),
             // Both original raw String and capped String writes expect success.
             Err(GrowthFailure::Formatter) => {
+                #[cfg(test)]
+                if self.payer.classifier_sink_is_explicit() {
+                    let error = self
+                        .payer
+                        .construction_refusal("explicit cleanup formatter failed");
+                    return self.receive(Err(error));
+                }
                 panic!("a formatting trait implementation returned an error")
             }
         };
@@ -67,6 +74,11 @@ impl<P: TypeFactsPayer> Storage<'_, P> {
     pub(super) fn encoded(&mut self) -> Option<ClassifierString> {
         if self.first.is_some() {
             return None;
+        }
+        #[cfg(test)]
+        if self.payer.classifier_sink_is_explicit() {
+            let result = ClassifierString::acquire_explicit(&mut |bytes| self.payer.bytes(bytes));
+            return self.growth(result);
         }
         let result = ClassifierString::acquire(&mut |bytes| self.payer.bytes(bytes));
         self.growth(result)
@@ -78,6 +90,16 @@ impl<P: TypeFactsPayer> Storage<'_, P> {
     ) -> Option<()> {
         if self.first.is_some() {
             return None;
+        }
+        #[cfg(test)]
+        if self.payer.classifier_sink_is_explicit() {
+            let result = output.capped_explicit(
+                arguments,
+                &mut self.payer,
+                &mut |bytes, payer| payer.bytes(bytes),
+                &mut |bytes, payer| payer.classifier_reserve_sink(bytes),
+            );
+            return self.growth(result);
         }
         let result = output.capped(arguments, &mut |bytes| self.payer.bytes(bytes));
         self.growth(result)
@@ -107,6 +129,16 @@ impl<P: TypeFactsPayer> Storage<'_, P> {
     ) -> Option<()> {
         if self.first.is_some() {
             return None;
+        }
+        #[cfg(test)]
+        if self.payer.classifier_sink_is_explicit() {
+            let result = output.strict_explicit(
+                arguments,
+                &mut self.payer,
+                &mut |bytes, payer| payer.bytes(bytes),
+                &mut |bytes, payer| payer.classifier_reserve_sink(bytes),
+            );
+            return self.growth(result);
         }
         let result = output.strict(arguments, &mut |bytes| self.payer.bytes(bytes));
         self.growth(result)

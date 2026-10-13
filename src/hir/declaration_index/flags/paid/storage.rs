@@ -11,6 +11,19 @@ pub(crate) trait Payer {
     fn clone_type(&mut self, ty: &ResolvedType) -> Result<ResolvedType, Diagnostic>;
     fn boxed_type(&mut self, ty: ResolvedType) -> Result<Box<ResolvedType>, Diagnostic>;
     fn construction_refusal(&mut self, message: &'static str) -> Diagnostic;
+    /// Explicit test account only; the default keeps the captured production
+    /// logical receiver. This selector grants no payment or subject authority.
+    #[cfg(test)]
+    fn classifier_sink_is_explicit(&self) -> bool {
+        false
+    }
+    #[cfg(test)]
+    fn classifier_reserve_sink(&mut self, _bytes: usize) -> Result<bool, Diagnostic> {
+        Err(Diagnostic::io_static(
+            "SPX-H006",
+            "explicit classifier sink has no payer",
+        ))
+    }
 }
 
 impl<P: Payer + ?Sized> Payer for &mut P {
@@ -31,6 +44,15 @@ impl<P: Payer + ?Sized> Payer for &mut P {
     }
     fn construction_refusal(&mut self, message: &'static str) -> Diagnostic {
         (**self).construction_refusal(message)
+    }
+
+    #[cfg(test)]
+    fn classifier_sink_is_explicit(&self) -> bool {
+        (**self).classifier_sink_is_explicit()
+    }
+    #[cfg(test)]
+    fn classifier_reserve_sink(&mut self, bytes: usize) -> Result<bool, Diagnostic> {
+        (**self).classifier_reserve_sink(bytes)
     }
 }
 
@@ -113,13 +135,27 @@ impl<P: Payer> Storage<P> {
             ),
             // Original CappedString .ok()? drops the partial output on a
             // formatter error without publishing a physical allocation refusal.
-            Err(GrowthFailure::Formatter) => return None,
+            Err(GrowthFailure::Formatter) => {
+                #[cfg(test)]
+                if self.payer.classifier_sink_is_explicit() {
+                    let error = self
+                        .payer
+                        .construction_refusal("explicit classifier formatter failed");
+                    return self.receive(Err(error));
+                }
+                return None;
+            }
         };
         self.receive(Err(error))
     }
     pub(super) fn encoded(&mut self) -> Option<ClassifierString> {
         if self.first.is_some() {
             return None;
+        }
+        #[cfg(test)]
+        if self.payer.classifier_sink_is_explicit() {
+            let result = ClassifierString::acquire_explicit(&mut |bytes| self.payer.bytes(bytes));
+            return self.growth(result);
         }
         let result = ClassifierString::acquire(&mut |bytes| self.payer.bytes(bytes));
         self.growth(result)
@@ -131,6 +167,16 @@ impl<P: Payer> Storage<P> {
     ) -> Option<()> {
         if self.first.is_some() {
             return None;
+        }
+        #[cfg(test)]
+        if self.payer.classifier_sink_is_explicit() {
+            let result = output.capped_explicit(
+                arguments,
+                &mut self.payer,
+                &mut |bytes, payer| payer.bytes(bytes),
+                &mut |bytes, payer| payer.classifier_reserve_sink(bytes),
+            );
+            return self.growth(result);
         }
         let result = output.capped(arguments, &mut |bytes| self.payer.bytes(bytes));
         self.growth(result)
@@ -154,6 +200,16 @@ impl<P: Payer> Storage<P> {
         if self.first.is_some() {
             return None;
         }
+        #[cfg(test)]
+        if self.payer.classifier_sink_is_explicit() {
+            let result = output.strict_explicit(
+                arguments,
+                &mut self.payer,
+                &mut |bytes, payer| payer.bytes(bytes),
+                &mut |bytes, payer| payer.classifier_reserve_sink(bytes),
+            );
+            return self.growth(result);
+        }
         let result = output.strict(arguments, &mut |bytes| self.payer.bytes(bytes));
         self.growth(result)
     }
@@ -162,6 +218,11 @@ impl<P: Payer> Storage<P> {
             return None;
         }
         let mut output = self.encoded()?;
+        #[cfg(test)]
+        if self.payer.classifier_sink_is_explicit() {
+            self.append_strict(&mut output, arguments)?;
+            return Some(output.into_string());
+        }
         let result = output.strict(arguments, &mut |bytes| self.payer.bytes(bytes));
         self.growth(result)?;
         Some(output.into_string())

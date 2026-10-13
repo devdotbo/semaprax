@@ -34,6 +34,27 @@ impl Payer<'_> {
     }
 }
 impl TypeFactsPayer for Payer<'_> {
+    #[cfg(test)]
+    fn classifier_sink_is_explicit(&self) -> bool {
+        self.budget.oracle_lease().is_some()
+    }
+
+    #[cfg(test)]
+    fn classifier_reserve_sink(&mut self, bytes: usize) -> Result<bool, Diagnostic> {
+        self.current()?;
+        if self.budget.oracle_lease().is_none() {
+            return Err(Diagnostic::io_static(
+                "SPX-H006",
+                "explicit classifier sink requires its account payer",
+            ));
+        }
+        // Logical text and replacement backing share the SAME finite account,
+        // just as the ordinary paid receiver reserves both against its ledger.
+        // Account exhaustion is a typed sticky refusal, never partial key text.
+        self.budget
+            .reserve_bytes(self.function, bytes, "type-fact classifier logical text")?;
+        Ok(true)
+    }
     fn bytes(&mut self, bytes: usize) -> Result<(), Diagnostic> {
         self.current()?;
         self.budget
@@ -271,3 +292,6 @@ mod oracle_payer_tests {
         assert_eq!(invocation.exit(), Ok(()));
     }
 }
+
+#[cfg(test)]
+mod oracle_logical_tests;

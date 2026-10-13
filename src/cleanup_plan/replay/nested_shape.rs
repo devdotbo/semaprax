@@ -1,3 +1,5 @@
+#[cfg(test)]
+use super::{allocation, MAX_REPLAY_WORK_UNITS};
 use super::{selected_profile, ReplayBudget};
 use crate::cleanup::{FieldLiveness, FieldLivenessShape, LivenessFlagId};
 use crate::diagnostic::Diagnostic;
