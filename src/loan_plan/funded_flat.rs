@@ -29,6 +29,8 @@ pub(super) fn build(
     let result = (|| {
         let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
         work.allocation = Some(payer);
+        #[cfg(test)]
+        work_boundary::apply(&mut work);
         if paid_candidate::inspect(program, function, payer, &mut work)? {
             paid_plan::build(program, function, &mut work)
         } else {
@@ -82,3 +84,6 @@ mod tests;
 
 #[cfg(test)]
 mod directories_tests;
+
+#[cfg(test)]
+mod work_boundary;

@@ -218,7 +218,27 @@ fn growing_probe_replacements_use_exact_needed_backing_and_clear_all_entries() {
     let mut smaller = plan("small");
     smaller.loans.truncate(1);
     smaller.endpoints[0].live_before = vec![LoanId(0)].into_boxed_slice();
-    let plans = vec![smaller, plan("larger")];
+    let larger = plan("larger");
+    let live_count = |plan: &LoanPlan| {
+        plan.endpoints
+            .iter()
+            .map(|endpoint| match endpoint.point.phase {
+                LoanPointPhase::Before => endpoint.live_before.len(),
+                LoanPointPhase::After => endpoint.live_after.len(),
+            })
+            .sum::<usize>()
+    };
+    assert_eq!(live_count(&smaller), 2);
+    assert_eq!(live_count(&larger), 3);
+    assert!(smaller
+        .endpoints
+        .iter()
+        .flat_map(|endpoint| match endpoint.point.phase {
+            LoanPointPhase::Before => endpoint.live_before.iter(),
+            LoanPointPhase::After => endpoint.live_after.iter(),
+        })
+        .all(|loan| *loan == LoanId(0)));
+    let plans = vec![smaller, larger];
     let saved = caller_before::from_plans(&program, plans.clone()).unwrap();
     let current = caller::from_plans_reused(&program, plans).unwrap();
     equal(&current, &saved);
@@ -259,6 +279,7 @@ fn complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are
     }
     assert_eq!(projected, old);
     let mut compiled_old = include_str!("../caller_before.rs").to_owned();
+    // Remove the longer indentation first: the shorter line is its substring.
     for field in [
         "            _scratch: Scratch::default(),\n",
         "        _scratch: Scratch::default(),\n",
@@ -297,6 +318,26 @@ fn full_current_and_complete_saved_prepare_pay_every_actual_acquisition_through_
     let directory = crate::hir::function_directory::caller::prepare(&program).unwrap();
     let seed = ConstructorSeed::authenticate(&program, Some(&directory)).unwrap();
     let expected = old::Inventory::rebuild(&program).unwrap();
+    let nonempty = program
+        .functions
+        .iter()
+        .chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        )
+        .filter(|function| {
+            !crate::loan_plan::build_plan(&program, function)
+                .unwrap()
+                .loans
+                .is_empty()
+        })
+        .count();
+    assert!(
+        nonempty >= 2,
+        "strict scratch comparison requires two actual nonempty plans"
+    );
     let run = |saved, limit| {
         with_limit_usage_refusal(limit, || {
             measure(|| {

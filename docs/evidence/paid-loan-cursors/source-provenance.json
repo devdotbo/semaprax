@@ -9,8 +9,8 @@
     },
     {
       "path": "src/loan_plan/paid_cursor/tests.rs",
-      "sha256": "6762b1ac29bb4cb98ecf4e74a5f842496cc2657af976bb731ca63983a8e8ead9",
-      "lines": 330
+      "sha256": "36d74075307777d67fcbcc5694c32d7d553fdb8ef0c208cb42e93bba3fb87202",
+      "lines": 349
     },
     {
       "path": "src/loan_plan/paid_cursor/funded_before.rs",
@@ -29,8 +29,8 @@
     },
     {
       "path": "src/loan_plan/funded_flat.rs",
-      "sha256": "b76f461cb0128d82337c5e7aebe4e69d19f046b0b40c4b3b66e7fdc213140d3c",
-      "lines": 84
+      "sha256": "3c4084c88c10993169b65b9bf3a16de490f14b98754cba4966b5f7af56df7d99",
+      "lines": 89
     },
     {
       "path": "src/loan_plan/paid_children.rs",

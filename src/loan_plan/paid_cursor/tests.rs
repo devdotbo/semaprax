@@ -151,6 +151,18 @@ fn complete_saved_planner_and_candidate_match_all_plans_and_unchanged_plan_work(
         let discovery_count = old_order(f).len();
         let ((), refused, _) = with_limit_usage(usize::MAX, || {
             let owner = CfgReservation::acquire().unwrap();
+            let old_order = old_order(f);
+            let mut cursor = Cursor::new(f, &owner);
+            let mut discovery_work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
+            for expected in &old_order {
+                assert!(std::ptr::eq(
+                    cursor.next(&mut discovery_work).unwrap().unwrap(),
+                    *expected
+                ));
+            }
+            assert!(cursor.next(&mut discovery_work).unwrap().is_none());
+            assert_eq!(discovery_work.used, old_order.len());
+            drop(cursor);
             let old = funded_before::build(&program, f, &owner)
                 .unwrap_or_else(|_| panic!("old full planner refused"));
             let current = funded_flat::build(&program, f, &owner)
@@ -303,7 +315,14 @@ fn complete_old_candidate_and_funded_receivers_are_exact_and_current_hooks_are_s
     );
     let current_hook = "        let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);\n        work.allocation = Some(payer);\n        if paid_candidate::inspect(program, function, payer, &mut work)? {\n";
     let original_hook = "        if paid_candidate::inspect(program, function, payer)? {\n            let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);\n            work.allocation = Some(payer);\n";
-    let current = include_str!("../funded_flat.rs");
+    let mut current = include_str!("../funded_flat.rs").to_owned();
+    for test_hook in [
+        "        #[cfg(test)]\n        work_boundary::apply(&mut work);\n",
+        "\n#[cfg(test)]\nmod work_boundary;\n",
+    ] {
+        assert_eq!(current.matches(test_hook).count(), 1);
+        current = current.replacen(test_hook, "", 1);
+    }
     assert_eq!(current.matches(current_hook).count(), 1);
     assert_eq!(current.replacen(current_hook, original_hook, 1), funded);
     let children =

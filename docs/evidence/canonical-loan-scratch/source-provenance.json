@@ -29,8 +29,8 @@
     },
     {
       "path": "src/hir/canonical_loan_storage/tests/reuse.rs",
-      "sha256": "d7cb73a837eb24fe83297218f372f5bf8d5fd78b89b7899cc522dbbee9e6b3cb",
-      "lines": 358
+      "sha256": "2bd1a332ce3626f2d4917f7283df448b2379f5133b25109e454ce507463b41fd",
+      "lines": 399
     }
   ],
   "old_objects": [
