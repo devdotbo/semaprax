@@ -1,0 +1,39 @@
+{
+  "base": "fb1bbbeef84f04664dc561dc5874b2e6325f2255",
+  "failure_subject": "bf29fd8dd3df354df0b055686fc3f4f48e3cfb92",
+  "failure_log": "/Volumes/Semaprax/lane-prompts/large-arena-loan-scratch-817818-bf29-20261013/owning-selected-46.log",
+  "failure_log_sha256": "774b7182acacbbf045ca977b5da213fe2e10ac6cee12c34fc16b614eeb86796b",
+  "original_test_sha256": "f5a37ad25f978acf93d5d3ebeeb60744c95084b5b0f0924ab6e70ad938fcf245",
+  "current_test_sha256": "fb827ced2088e8b9a0cba17112796d9822cd72cb459e412f1fc7e430bbb4188e",
+  "complete_original_inverse_equality": true,
+  "original_literal_fixture_unchanged": true,
+  "complete_positive_diagnostic_body_unchanged": true,
+  "production": [
+    {
+      "path": "src/hir/declared_collection.rs",
+      "blob": "f9448be9f56b9f85f5cb1569debe6fbc1754256a",
+      "sha256": "0013da61f7321ab7d71cabddefbabae2d9a1795227242f8261b90a2d5899ee15"
+    },
+    {
+      "path": "src/hir/declared_collection/paid.rs",
+      "blob": "b15e094efdd1a971ed363d97d9432dd068a9464c",
+      "sha256": "eae7f2007f0532f871526acc8514b32d937b5547638422326f4fb0f49ac67acb"
+    },
+    {
+      "path": "src/hir/declared_collection/paid/early.rs",
+      "blob": "d8ef8471c821ae47c9e179a52f0d8e462514ee43",
+      "sha256": "b2402eab3c82b1edda4bc7e10a80eb51d8476474c7bcf249b8aae8581fdba37b"
+    },
+    {
+      "path": "src/hir/owned_collection_record.rs",
+      "blob": "c4d4d2b2af79ef6cb3214a73dee28c37e50f04b6",
+      "sha256": "a342437ea17264cf1af97907b020dad02d9ecf6e64dc53a14982e811bdc75079"
+    },
+    {
+      "path": "src/hir/validation/function_scope/old.rs",
+      "blob": "b7ee07751f8d28628c55dbf7202f77d8c8892aa8",
+      "sha256": "b712e23fef515940e7202d3321d98a9bbb1ff16a3b52f6935c01cdad8f4b1799"
+    }
+  ],
+  "execution": "source only; unexecuted"
+}

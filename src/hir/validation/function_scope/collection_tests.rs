@@ -20,6 +20,19 @@ fn collection_program() -> ResolvedProgram {
     );
     crate::hir::resolve(&crate::check(&source, "collection-positive.spx").unwrap()).unwrap()
 }
+// This additive application has one real declaration parameter. Unlike the
+// original monomorphic carrier, it has no executable collection-record profile.
+fn generic_collection_program() -> ResolvedProgram {
+    let source = format!(
+        "{}\n{}",
+        crate::hir::iterative_validator_tests::SOURCE,
+        r#"@id("collection.seed") fn collection_seed(value: borrow Vec<i64>) -> i64 { 0 }
+@id("collection.text") record CollectionText { @id("collection.text.value") value: string, }
+@id("collection.generic") record CollectionGeneric<T> { @id("collection.generic.rows") rows: Vec<CollectionText>, @id("collection.generic.tag") tag: T, }
+"#,
+    );
+    crate::hir::resolve(&crate::check(&source, "collection-generic.spx").unwrap()).unwrap()
+}
 fn function<'a>(program: &'a ResolvedProgram, id: &str) -> &'a ResolvedFunction {
     program
         .functions
@@ -216,12 +229,58 @@ fn original_resource_with_forged_collection_fields_has_no_record_authority() {
 }
 
 #[test]
-fn funded_scan_keeps_positive_transitive_refusal_and_full_diagnostic_bytes() {
+fn original_collection_carrier_is_runtime_admitted_and_not_logically_refused() {
     let program = collection_program();
     let token = ResolvedType::Nominal {
         declaration: DeclarationId::new("collection.carrier"),
         arguments: Vec::new(),
     };
+    assert!(crate::hir::owned_collection_record::admitted(
+        &token,
+        &program.declarations
+    ));
+    assert!(!crate::hir::declared_collection::contains(
+        &program.declarations,
+        &token
+    ));
+    assert!(
+        !crate::hir::declared_collection::contains_funded(&program.declarations, &token).unwrap()
+    );
+    let mut function = function(&program, "token.consume").clone();
+    function.return_type = token;
+    crate::hir::declared_collection::validate_function(&program.declarations, &function).unwrap();
+    crate::hir::declared_collection::validate_function_funded(&program.declarations, &function)
+        .unwrap();
+}
+
+#[test]
+fn funded_scan_keeps_positive_transitive_refusal_and_full_diagnostic_bytes() {
+    let program = generic_collection_program();
+    let token = ResolvedType::Nominal {
+        declaration: DeclarationId::new("collection.generic"),
+        arguments: vec![function(&program, "collection.seed").return_type.clone()],
+    };
+    let declaration = token.nominal_id().unwrap();
+    assert_eq!(
+        program
+            .declarations
+            .type_parameters(declaration)
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(
+        program
+            .declarations
+            .declaration(declaration)
+            .unwrap()
+            .identity_origin,
+        IdentityOrigin::Explicit
+    );
+    assert!(!crate::hir::owned_collection_record::admitted(
+        &token,
+        &program.declarations
+    ));
     assert!(crate::hir::declared_collection::contains(
         &program.declarations,
         &token
@@ -243,6 +302,36 @@ fn funded_scan_keeps_positive_transitive_refusal_and_full_diagnostic_bytes() {
         actual.message,
         "declaration-only text collection cannot occur in an executable signature or body"
     );
+}
+
+#[test]
+fn generic_collection_positive_keeps_exact_short_sticky_and_whole_drop() {
+    let program = generic_collection_program();
+    let token = ResolvedType::Nominal {
+        declaration: DeclarationId::new("collection.generic"),
+        arguments: vec![function(&program, "collection.seed").return_type.clone()],
+    };
+    let (old, old_metrics) =
+        measure(|| crate::hir::declared_collection::contains(&program.declarations, &token));
+    assert!(old && !old_metrics.invalid && old_metrics.live == 0);
+    assert_eq!(old_metrics.allocated, old_metrics.freed);
+    let (verdict, wide, refused, paid, receipt) = lifetime(&program, &token, LIMIT);
+    assert_eq!(verdict, Some(old));
+    assert!(!refused && !receipt && !wide.invalid && paid > 0);
+    assert!(wide.allocated <= paid && wide.highwater <= paid);
+    assert_eq!(wide.allocated, wide.freed);
+    assert_eq!(wide.live, 0);
+    let (verdict, exact, refused, used, receipt) = lifetime(&program, &token, paid);
+    assert_eq!(verdict, Some(old));
+    assert!(!refused && !receipt && used == paid);
+    assert_eq!(exact, wide);
+    for limit in [paid - 1, 0] {
+        let (verdict, short, refused, used, receipt) = lifetime(&program, &token, limit);
+        assert!(verdict.is_none() && refused && receipt && !short.invalid);
+        assert!(used <= limit && short.allocated <= used && short.highwater <= used);
+        assert_eq!(short.allocated, short.freed);
+        assert_eq!(short.live, 0);
+    }
 }
 
 #[test]
