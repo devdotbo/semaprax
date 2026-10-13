@@ -1,5 +1,12 @@
 # Changelog
 
+- Record the recovery constructor funding design and source-authored executable
+  boundaries for real unpaid acquisition/work, zero/exact-observed/one-short
+  limits, sticky refusal and complete receiving Drop. Preserve ordinary
+  six-field diagnostics and independent original receivers. Payment remains
+  unimplemented: its failure needs a separate result through the source verifier.
+  No runtime qualification or admission-budget change is claimed.
+
 - Source-authored borrowed-root HIR scopes defer complete binding-map copies until
   actual scope mutation, preserving full map fields, sibling isolation and owned
   publication. The complete frozen nonrecursive receiver and helper/frame bodies

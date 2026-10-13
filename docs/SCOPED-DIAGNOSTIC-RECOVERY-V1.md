@@ -83,6 +83,16 @@ Existing source bounds, frame limits, and exact 320-byte verifier-frame and
 requested allocation layouts through receiving Drop; they do not infer RSS,
 agent-token savings or paid capacity from borrowed key length.
 
+The source-authored `recovery_tests/funding_boundary.rs` controls additionally
+pin actual unpaid constructor/work behavior under zero, exact-observed,
+one-short and already-sticky active budgets, complete receiving Drop, and
+ordinary six-field diagnostic compatibility. They do not establish a paid
+route. [Recovery constructor funding design v1](RECOVERY-CONSTRUCTOR-FUNDING-DESIGN-V1.md)
+records the separate capacity-failure transport and acquisition owners required
+before implementation. The explicitly authorized fallback stops at design
+because the current bool/Option/unit and source-Diagnostic result channels cannot
+faithfully propagate a payment refusal. Controls are authored, not executed.
+
 ## Full preservation receivers and qualification
 
 The unchanged recursive oracle remains independent. Test-only

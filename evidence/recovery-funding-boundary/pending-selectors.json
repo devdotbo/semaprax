@@ -1,0 +1,86 @@
+[
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::funding_boundary::zero_budget_neither_funds_nor_changes_directory_allocation_and_work",
+    "status": "source-authored, not executed"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::funding_boundary::sticky_refusal_preserves_first_receipt_and_actual_recovery_storage",
+    "status": "source-authored, not executed"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::funding_boundary::observed_layout_exact_and_one_short_are_not_a_paid_recovery_frontier",
+    "status": "source-authored, not executed"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::funding_boundary::zero_budget_does_not_fund_expression_identity_entries",
+    "status": "source-authored, not executed"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::funding_boundary::signature_recheck_allocates_uncharged_under_zero_budget",
+    "status": "source-authored, not executed"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::funding_boundary::all_six_diagnostic_fields_survive_active_budgets_for_recovery_fixtures",
+    "status": "source-authored, not executed"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::funding_boundary::full_production_verification_allocates_uncharged_under_zero_budget",
+    "status": "source-authored, not executed"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::funding_boundary::complete_old_and_new_receivers_independently_keep_the_intentional_delta_under_active_budget",
+    "status": "source-authored, not executed"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::lazy_directory_reuses_ordinals_and_never_scans_authored_function_nodes",
+    "status": "existing independent owner; not executed in this lane"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::directory_and_full_receivers_observe_real_acquisition_and_receiving_drop",
+    "status": "existing independent owner; not executed in this lane"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::refusal_dependency::actual_dependency_directory_and_repeated_receiver_acquisitions_release_through_drop",
+    "status": "existing independent owner; not executed in this lane"
+  },
+  {
+    "package": "semaprax-native-rust-interop-builder",
+    "harness": "lib",
+    "selector": "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions",
+    "status": "actual source-reader owner, not executed"
+  },
+  {
+    "package": "semaprax",
+    "harness": "source_locked_contracts",
+    "selector": "a_contract_that_reads_a_module_root_also_reads_its_submodules",
+    "status": "source reader gate, not executed"
+  },
+  {
+    "package": "semaprax",
+    "harness": "module_size",
+    "selector": "no_module_exceeds_its_recorded_size",
+    "status": "registration checked below; not executed"
+  }
+]

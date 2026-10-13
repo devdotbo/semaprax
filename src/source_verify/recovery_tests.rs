@@ -8,6 +8,8 @@ use super::type_table::TypeTable;
 mod boundaries;
 #[path = "recovery_tests/fixture_controls.rs"]
 mod fixture_controls;
+#[path = "recovery_tests/funding_boundary.rs"]
+mod funding_boundary;
 #[path = "recovery_tests/intentional_wrong_field.rs"]
 pub(super) mod intentional_wrong_field;
 #[path = "recovery_tests/proposal_corpus.rs"]
