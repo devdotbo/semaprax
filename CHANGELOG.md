@@ -14,6 +14,13 @@
   receiving source joins remain connected. Source-only; focused qualification
   and complete dynamic producer migration remain pending.
 
+- Author paid borrowed executable text/collection profiles and an exact immutable
+  declaration-index observation directory shared across primary validator clones.
+  Preserve complete independent original receivers, substitutions, structural
+  limits, diagnostic order and sticky refusal; author cold/warm and real Drop
+  controls. Source-only; focused qualification, total funding and application fit
+  remain pending.
+
 - Source-authored borrowed-root HIR scopes defer complete binding-map copies until
   actual scope mutation, preserving full map fields, sibling isolation and owned
   publication. The complete frozen nonrecursive receiver and helper/frame bodies

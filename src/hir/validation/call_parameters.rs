@@ -189,10 +189,7 @@ impl HirValidator<'_> {
                                 &self.program.declarations,
                                 param.ty,
                             )
-                            || crate::hir::owned_text_record::runtime_admitted(
-                                param.ty,
-                                &self.program.declarations,
-                            )
+                            || self.executable_profiles.runtime_admitted(param.ty)?
                             || resolved_type_is_direct_owned_variant(self.program, param.ty)
                             || resolved_type_is_flat_owned_byte_variant(self.program, param.ty))
                             && matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)
@@ -200,10 +197,8 @@ impl HirValidator<'_> {
                                 &argument.kind,
                                 ResolvedExprKind::Place(place) if place.projections.is_empty()
                             )
-                    } else if crate::hir::owned_text_record::runtime_admitted(
-                        param.ty,
-                        &self.program.declarations,
-                    ) || resolved_type_is_direct_owned_variant(self.program, param.ty)
+                    } else if self.executable_profiles.runtime_admitted(param.ty)?
+                        || resolved_type_is_direct_owned_variant(self.program, param.ty)
                     {
                         matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)
                             && matches!(

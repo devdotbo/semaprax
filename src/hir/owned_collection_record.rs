@@ -1,6 +1,10 @@
 //! Independent internal record composition; Vec element profiles stay frozen.
+#[cfg(test)]
+use super::{copy_record_collection, owned_leaf_collection};
 use super::{DeclarationId, DeclarationIndex, DeclarationKind, IdentityOrigin, ResolvedType};
 use std::collections::BTreeSet;
+#[cfg(test)]
+pub(crate) mod saved;
 
 pub(crate) fn vector(index: &DeclarationIndex, ty: &ResolvedType) -> bool {
     matches!(ty, ResolvedType::Nominal { declaration, arguments }

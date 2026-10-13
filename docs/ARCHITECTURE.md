@@ -190,6 +190,19 @@ original lifecycle collector remains in `inspection.rs`; the complete prior
 paid function receiver also remains in `function_scope/backing_saved.rs`. These private owners
 preserve the original structural bounds, traversal and diagnostic order; combined
 focused physical qualification remains pending.
+
+`hir/owned_text_record/paid.rs` owns funded executable text containment and
+text-record admission, with the existing paid collection shape receiver retaining
+the complete fallback. Owned substitutions retain their independent semantic
+route and pay each actual backing constructor. The complete prior executable
+receivers remain in the owning `saved.rs` children.
+`hir/validation/executable_profiles.rs` owns one exact immutable-index observation
+directory shared by primary validator clones and nested closure validators.
+Only known zero-argument non-generic record observations are memoized; every
+request authenticates sticky refusal, and per-expression validation remains
+independent. The reference-counted carrier and directory backing are prepaid.
+Physical qualification and complete validator funding remain separate.
+
 The map-entry adapter retains map publication and its charges. Persistent inputs
 have no physical publication map; their guard returns the selected root on Drop.
 `scope_checkpoint/transaction.rs` pays each actual node carrier and owning Node

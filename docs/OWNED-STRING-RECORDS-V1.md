@@ -105,3 +105,31 @@ The borrowed field-substitution identity shortcut names every current leaf
 `ResolvedType` variant explicitly. New variants must be reviewed by the compiler
 exhaustiveness check; nominal arguments, function types and type parameters
 retain the original fallible substitution route and saved owned oracle.
+
+## Paid executable classification and local observations
+
+The independent executable validator pays text containment, bounded text-record
+admission and collection-record fallback backing before acquisition. Borrowed
+root and retained field types replace discarded owning clones; owned generic
+substitutions remain complete, with constructor funding before their worklists,
+argument vectors and callable result boxes. The exact borrowed invariant lookup
+retains arbitrary stored declaration presence and complete UTF-8 byte ordering.
+The original depth, visited-field and owned-leaf bounds, active-path cycle rules,
+structural type equality, field order/owner/origin checks and traversal order
+remain the admission authority.
+
+`hir/validation/executable_profiles.rs` holds pure observations for known
+zero-argument, non-generic nominal records in one primary validation invocation.
+The immutable DeclarationIndex is retained by reference; borrowed keys come from
+that exact index, and validator clones share the same paid directory. Generic,
+callable and unknown types keep the complete uncached classifier route. A memo
+observation never skips expression validation or changes its semantic ordering;
+every request and hit still authenticates sticky refusal through a zero-byte
+reservation. The directory and reference-counted carrier are paid before
+construction and retained through actual Drop, with no persistent or fingerprint
+authority. Full independent prior classifiers remain test-only receivers.
+
+This is source-authored private funding work. Focused cold/warm, exact/short,
+forgery, separate-index, substitution and real allocation-through-Drop controls
+require coordinated execution. It does not establish complete validator funding,
+whole-application fit, a new cap, backend promotion or public support.

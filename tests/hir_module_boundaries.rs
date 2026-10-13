@@ -4,6 +4,13 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         concat!(
             concat!(
                 include_str!("../src/hir/validation.rs"),
+                include_str!("../src/hir/validation/executable_profiles.rs"),
+                include_str!("../src/hir/validation/executable_profiles/tests.rs"),
+                include_str!("../src/hir/owned_text_record/paid.rs"),
+                include_str!("../src/hir/owned_text_record/paid/substitution.rs"),
+                include_str!("../src/hir/owned_text_record/paid/tests.rs"),
+                include_str!("../src/hir/owned_text_record/saved.rs"),
+                include_str!("../src/hir/owned_collection_record/saved.rs"),
                 include_str!("../src/hir/validation/identity_insert.rs"),
                 include_str!("../src/hir/validation/identity_insert/tests.rs"),
                 include_str!("../src/hir/validation/identity_insert/coarse.rs"),
@@ -294,10 +301,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
     let format_macro = root.find("macro_rules! format {").unwrap();
     let validation_module = root.find("mod validation;").unwrap();
     assert!(format_macro < validation_module);
-    assert!(
-        root[format_macro..validation_module]
-            .contains("crate::bounded_output::budgeted_format(format_args!")
-    );
+    assert!(root[format_macro..validation_module]
+        .contains("crate::bounded_output::budgeted_format(format_args!"));
     assert!(validation.contains("format!("));
     for forbidden in ["std::format", "::format!", "use std::format"] {
         assert!(

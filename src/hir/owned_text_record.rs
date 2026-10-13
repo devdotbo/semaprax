@@ -1,7 +1,12 @@
 //! Independent additive internal-record profile; public Bytes ABIs remain frozen.
+#[cfg(test)]
+use super::{hir_error, owned_collection_record, substitute_type, ResolvedProgram};
 use super::{DeclarationIndex, DeclarationKind, ResolvedType};
 use std::borrow::Cow;
 use std::collections::BTreeSet;
+pub(crate) mod paid;
+#[cfg(test)]
+pub(crate) mod saved;
 
 /// Ordinary internal record runtime only. Frozen Project selectors use
 /// `admitted` so a new composition cannot widen their private ABI silently.

@@ -6,7 +6,7 @@ mod original_receiver;
 
 impl HirValidator<'_> {
     pub(super) fn validate_type(&self, ty: &ResolvedType) -> Result<(), Diagnostic> {
-        crate::hir::owned_text_record::validate_use(ty, &self.program.declarations)?;
+        self.executable_profiles.validate_use(ty)?;
         enum Frame<'a> {
             Enter(&'a ResolvedType),
             Finish(&'a ResolvedType),

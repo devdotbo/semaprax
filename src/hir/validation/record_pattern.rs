@@ -87,10 +87,7 @@ impl HirValidator<'_> {
                             &self.program.declarations,
                             &expected,
                         )
-                        && !super::super::owned_text_record::runtime_admitted(
-                            &expected,
-                            &self.program.declarations,
-                        )
+                        && !self.executable_profiles.runtime_admitted(&expected)?
                     {
                         return Err(hir_error(
                             "ownership-aware record pattern is outside the bounded nested owned-Bytes profile",

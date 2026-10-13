@@ -33,6 +33,7 @@ mod closure;
 pub(in crate::hir) mod constructor_seed;
 mod contract_owners;
 mod effect_keys;
+mod executable_profiles;
 mod generic_record_composition;
 mod generic_template;
 mod host_command;
@@ -72,6 +73,7 @@ pub(super) struct HirValidator<'a> {
     byte_traversal_observer: Option<&'a std::cell::Cell<bool>>,
     byte_helpers: Option<&'a crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     nominal_facts: nominal_facts::Lookup<'a>,
+    executable_profiles: executable_profiles::Lookup<'a>,
     functions: function_lookup::Lookup<'a>,
     expression_ids: identity_directory::Set<ExpressionId>,
     value_ids: identity_directory::Set<ValueId>,
@@ -113,7 +115,7 @@ impl<'a> HirValidator<'a> {
     ) -> Result<Self, Diagnostic> {
         let seed = constructor_seed::ConstructorSeed::authenticate(program, directory)?;
         let canonical_loans = canonical_loans::Inventory::rebuild(program)?;
-        Self::from_constructor(seed, canonical_loans::Lookup::Legacy(canonical_loans))
+        Self::from_constructor(seed, canonical_loans::Lookup::Legacy(canonical_loans), None)
     }
     pub(in crate::hir) fn with_storage(
         seed: constructor_seed::ConstructorSeed<'a>,
@@ -124,11 +126,33 @@ impl<'a> HirValidator<'a> {
                 "canonical shared-loan storage does not belong to the current program",
             ));
         }
-        Self::from_constructor(seed, canonical_loans::Lookup::Borrowed(storage))
+        Self::from_constructor(seed, canonical_loans::Lookup::Borrowed(storage), None)
+    }
+    // A nested closure keeps its original constructor order, while the primary
+    // invocation owns the one classifier directory through every validator clone.
+    fn with_profiles(
+        program: &'a ResolvedProgram,
+        directory: Option<&'a super::function_directory::Directory<'a>>,
+        storage: Option<&'a super::canonical_loan_storage::Storage<'a>>,
+        profiles: executable_profiles::Lookup<'a>,
+    ) -> Result<Self, Diagnostic> {
+        let seed = constructor_seed::ConstructorSeed::authenticate(program, directory)?;
+        let canonical_loans = if let Some(storage) = storage {
+            if !storage.is_current(seed.program) {
+                return Err(hir_error(
+                    "canonical shared-loan storage does not belong to the current program",
+                ));
+            }
+            canonical_loans::Lookup::Borrowed(storage)
+        } else {
+            canonical_loans::Lookup::Legacy(canonical_loans::Inventory::rebuild(program)?)
+        };
+        Self::from_constructor(seed, canonical_loans, Some(profiles))
     }
     fn from_constructor(
         seed: constructor_seed::ConstructorSeed<'a>,
         canonical_loans: canonical_loans::Lookup<'a>,
+        profiles: Option<executable_profiles::Lookup<'a>>,
     ) -> Result<Self, Diagnostic> {
         Ok(Self {
             program: seed.program,
@@ -137,6 +161,13 @@ impl<'a> HirValidator<'a> {
             byte_traversal_observer: None,
             byte_helpers: None,
             nominal_facts: nominal_facts::Lookup::default(),
+            executable_profiles: match profiles {
+                Some(profiles) if profiles.is_current(&seed.program.declarations) => profiles,
+                Some(_) => return Err(hir_error_static(
+                    "executable profile observations do not belong to the current declaration index",
+                )),
+                None => executable_profiles::Lookup::new(&seed.program.declarations)?,
+            },
             functions: seed.functions,
             expression_ids: identity_directory::Set::new(),
             value_ids: identity_directory::Set::new(),
@@ -518,10 +549,7 @@ impl<'a> HirValidator<'a> {
                             &self.program.declarations,
                             &root,
                         )
-                        && !super::owned_text_record::runtime_admitted(
-                            &root,
-                            &self.program.declarations,
-                        )
+                        && !self.executable_profiles.runtime_admitted(&root)?
                     {
                         return Err(hir_error(
                             "resolved owned-Bytes record is outside the bounded acyclic nested profile",
@@ -2180,6 +2208,7 @@ impl<'a> HirValidator<'a> {
                     + frames.iter().map(frame_owned_capacity).sum::<usize>()
                     + frame_owned_capacity(&frame)
                     + self.nominal_facts.owned_capacity()
+                    + self.executable_profiles.owned_capacity()
                     + self
                         .byte_helpers
                         .map_or(0, |index| index.owned_capacity_bytes())

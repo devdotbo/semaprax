@@ -62,15 +62,12 @@ impl HirValidator<'_> {
         }
         let body = super::super::closure::paid::function(self.program, expression)?;
         let execution = FunctionExecutionId::Monomorphic(body.id.clone());
-        let mut checked = if let Some(storage) = self.canonical_loans.shared() {
-            let seed = constructor_seed::ConstructorSeed::authenticate(
-                self.program,
-                self.functions.directory(),
-            )?;
-            HirValidator::with_storage(seed, storage)?
-        } else {
-            HirValidator::with_directory(self.program, self.functions.directory())?
-        };
+        let mut checked = HirValidator::with_profiles(
+            self.program,
+            self.functions.directory(),
+            self.canonical_loans.shared(),
+            self.executable_profiles.clone(),
+        )?;
         checked.validate_function(&body, &execution)?;
         // Preserve expression-before-value merge order and each full prefix
         // on duplicate/refusal; each actual new node has its own constructor payer.
