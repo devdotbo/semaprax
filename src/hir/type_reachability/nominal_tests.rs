@@ -17,9 +17,9 @@ fn nominal(id: &str, arguments: Vec<ResolvedType>) -> ResolvedType {
         arguments,
     }
 }
-fn fixture() -> DeclarationIndex {
-    let source = crate::parse(
-        r#"module nominal.environment;
+// Keep the original invalid source as a diagnostic control. Structural
+// classifier tests also need forged HIR outside the source-admitted profile.
+const ORIGINAL_SOURCE: &str = r#"module nominal.environment;
 @id("nominal.box") record Box<T> { @id("nominal.box.value") value:T, }
 @id("nominal.pair") record Pair<T,U> {
  @id("nominal.pair.left") left:T,
@@ -29,12 +29,32 @@ fn fixture() -> DeclarationIndex {
 @id("nominal.plain") record Plain { @id("nominal.plain.bytes") bytes:Bytes, }
 @id("nominal.class") class Closed<T> { @id("nominal.class.value") value:T, }
 @id("nominal.main") fn main()->i64 {0}
-"#,
-        "nominal-environment.spx",
-    )
-    .unwrap();
-    crate::hir::resolve(&source).unwrap().declarations
+"#;
+
+fn fixture() -> DeclarationIndex {
+    let admitted = ORIGINAL_SOURCE.replace(
+        "@id(\"nominal.full\") record Full<T,U> { @id(\"nominal.full.bytes\") bytes:Bytes, }",
+        "@id(\"nominal.full\") record Full<T,U> { @id(\"nominal.full.bytes\") bytes:T, }",
+    );
+    assert_ne!(admitted, ORIGINAL_SOURCE);
+    let source = crate::parse(&admitted, "nominal-environment.spx").unwrap();
+    let mut index = crate::hir::resolve(&source).unwrap().declarations;
+    // Restore precisely the old classifier input after successful source
+    // checking. This does not admit generic owned Bytes in the language.
+    let full = DeclarationId::new("nominal.full");
+    index.record_fields.get_mut(&full).unwrap()[0].ty = ResolvedType::Bytes;
+    index
 }
+
+#[test]
+fn nominal_original_generic_owned_bytes_keeps_both_source_refusals() {
+    let source = crate::parse(ORIGINAL_SOURCE, "nominal-environment.spx").unwrap();
+    let diagnostics = crate::hir::resolve(&source).unwrap_err();
+    for code in ["SPX-T268", "SPX-T223"] {
+        assert!(diagnostics.iter().any(|diagnostic| diagnostic.code == code));
+    }
+}
+
 fn parity(index: &DeclarationIndex, root: &ResolvedType, expected: (u8, usize, usize)) {
     assert_eq!(
         summary(classify_nested_owned_byte_record(index, root)),

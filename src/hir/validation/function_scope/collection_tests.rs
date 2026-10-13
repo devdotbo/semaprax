@@ -1,10 +1,24 @@
 //! Funded declaration-only collection scan controls against its complete owned receiver.
 use super::*;
-use crate::test_allocation_observer::{Metrics, measure};
+use crate::test_allocation_observer::{measure, Metrics};
 const LIMIT: usize = 64 * 1024 * 1024;
 fn program() -> ResolvedProgram {
     let source = crate::hir::iterative_validator_tests::SOURCE;
     crate::hir::resolve(&crate::check(source, "collection-scope.spx").unwrap()).unwrap()
+}
+// The original hostile fixture has no Vec reference and therefore no
+// authenticated compiler-owned Vec declaration. Preserve it unchanged; use
+// a checked, additive fixture for positive collection/profile boundaries.
+fn collection_program() -> ResolvedProgram {
+    let source = format!(
+        "{}\n{}",
+        crate::hir::iterative_validator_tests::SOURCE,
+        r#"@id("collection.seed") fn collection_seed(value: borrow Vec<i64>) -> i64 { 0 }
+@id("collection.text") record CollectionText { @id("collection.text.value") value: String, }
+@id("collection.carrier") record CollectionCarrier { @id("collection.carrier.rows") rows: Vec<CollectionText>, }
+"#,
+    );
+    crate::hir::resolve(&crate::check(&source, "collection-positive.spx").unwrap()).unwrap()
 }
 fn function<'a>(program: &'a ResolvedProgram, id: &str) -> &'a ResolvedFunction {
     program
@@ -182,7 +196,7 @@ fn funded_function_scan_preserves_owned_reference_diagnostics_and_refusal_order(
 mod funded_early;
 
 #[test]
-fn funded_scan_keeps_positive_transitive_refusal_and_full_diagnostic_bytes() {
+fn original_resource_with_forged_collection_fields_has_no_record_authority() {
     let mut program = program();
     let token = function(&program, "token.consume").params[0].ty.clone();
     let root_id = token.nominal_id().unwrap().clone();
@@ -192,6 +206,22 @@ fn funded_scan_keeps_positive_transitive_refusal_and_full_diagnostic_bytes() {
         .declarations
         .record_fields
         .insert(root_id, vec![field]);
+    assert!(!crate::hir::declared_collection::contains(
+        &program.declarations,
+        &token
+    ));
+    assert!(
+        !crate::hir::declared_collection::contains_funded(&program.declarations, &token).unwrap()
+    );
+}
+
+#[test]
+fn funded_scan_keeps_positive_transitive_refusal_and_full_diagnostic_bytes() {
+    let program = collection_program();
+    let token = ResolvedType::Nominal {
+        declaration: DeclarationId::new("collection.carrier"),
+        arguments: Vec::new(),
+    };
     assert!(crate::hir::declared_collection::contains(
         &program.declarations,
         &token

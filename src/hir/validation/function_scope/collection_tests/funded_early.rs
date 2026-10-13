@@ -316,7 +316,7 @@ fn add_record(index: &mut DeclarationIndex, id: &str, types: Vec<ResolvedType>) 
 #[test]
 fn funded_early_profiles_preserve_exact_depth_leaf_and_field_limits() {
     for depth in [64, 65] {
-        let mut program = program();
+        let mut program = collection_program();
         let mut root = vector_of(ResolvedType::I64);
         for level in 0..depth {
             root = add_record(
@@ -334,7 +334,7 @@ fn funded_early_profiles_preserve_exact_depth_leaf_and_field_limits() {
         );
     }
     for leaves in [256, 257] {
-        let mut program = program();
+        let mut program = collection_program();
         let root = add_record(
             &mut program.declarations,
             &format!("boundary.leaves.{leaves}"),
@@ -349,7 +349,7 @@ fn funded_early_profiles_preserve_exact_depth_leaf_and_field_limits() {
         );
     }
     for fields in [4096, 4097] {
-        let mut program = program();
+        let mut program = collection_program();
         let mut types = vec![ResolvedType::I64; fields];
         types[0] = vector_of(ResolvedType::I64);
         let root = add_record(
