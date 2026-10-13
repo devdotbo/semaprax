@@ -1200,9 +1200,9 @@ impl<'a> HirValidator<'a> {
                 .iter()
                 .zip(&self.program.function_instances)
                 .any(|((id, template, arguments), actual)| {
-                    id != &actual.id
-                        || template != &actual.template
-                        || arguments != &actual.type_arguments
+                    *id != &actual.id
+                        || *template != &actual.template
+                        || *arguments != actual.type_arguments.as_slice()
                 })
         {
             return Err(hir_error(
@@ -1594,7 +1594,7 @@ impl<'a> HirValidator<'a> {
     }
     fn reachable_function_instances(
         &self,
-    ) -> Result<Vec<(FunctionInstanceId, DeclarationId, Vec<ResolvedType>)>, Diagnostic> {
+    ) -> Result<generic_template::Reachable<'a>, Diagnostic> {
         generic_template::reachable_instances(self.program)
     }
     #[cfg(test)]

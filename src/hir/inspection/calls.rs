@@ -1,12 +1,12 @@
 //! Borrowed call preorder; a refusal stops before subsequent call activity.
 use super::*;
 
-pub(crate) fn try_visit_resolved_calls<E>(
-    expression: &ResolvedExpr,
+pub(crate) fn try_visit_resolved_calls<'e, E>(
+    expression: &'e ResolvedExpr,
     visit: &mut impl FnMut(
-        &DeclarationId,
-        Option<&FunctionInstanceId>,
-        &[ResolvedType],
+        &'e DeclarationId,
+        Option<&'e FunctionInstanceId>,
+        &'e [ResolvedType],
     ) -> Result<(), E>,
 ) -> Result<(), E> {
     match &expression.kind {

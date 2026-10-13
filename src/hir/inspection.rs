@@ -986,9 +986,9 @@ pub(super) fn extend_resolved_lifecycle_effects(
     collect(program, ty, &mut BTreeSet::new(), effects)
 }
 
-pub(crate) fn visit_resolved_calls(
-    expression: &ResolvedExpr,
-    visit: &mut impl FnMut(&DeclarationId, Option<&FunctionInstanceId>, &[ResolvedType]),
+pub(crate) fn visit_resolved_calls<'e>(
+    expression: &'e ResolvedExpr,
+    visit: &mut impl FnMut(&'e DeclarationId, Option<&'e FunctionInstanceId>, &'e [ResolvedType]),
 ) {
     let result = calls::try_visit_resolved_calls(expression, &mut |callee, instance, arguments| {
         visit(callee, instance, arguments);
