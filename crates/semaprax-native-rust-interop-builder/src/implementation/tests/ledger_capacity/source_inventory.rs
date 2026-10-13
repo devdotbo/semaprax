@@ -959,6 +959,9 @@ macro_rules! lower_source_inventory {
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/capacity.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/errors.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/tests.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving_before.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/tests/arena.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/tests/errors/old/capacity.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/tests/errors/old.rs"),
@@ -1028,11 +1031,22 @@ macro_rules! lower_source_inventory {
 macro_rules! hir_final_validation_source_inventory {
     () => {
         concat!(
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+            include_str!(
+                "../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory.rs"
+            ),
+            include_str!(
+                "../../../../../src/cleanup_plan/replay/expression_facts/receiving/tests.rs"
+            ),
+            include_str!(
+                "../../../../../src/cleanup_plan/replay/expression_facts/receiving_before.rs"
+            ),
             include_str!("../../../../../src/cleanup_plan/replay/nested_shape/paid/scratch.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/nested_shape/paid_before.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/ordinary_inventory/before.rs"),
-            include_str!("../../../../../src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs"),
-
+            include_str!(
+                "../../../../../src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs"
+            ),
             include_str!("../../../../../src/hir/nodes/import_result_type.rs"),
             include_str!("../../../../../src/hir/nodes/import_result_type/tests.rs"),
             include_str!("../../../../../src/hir/validation/callable_types/inline_frames.rs"),

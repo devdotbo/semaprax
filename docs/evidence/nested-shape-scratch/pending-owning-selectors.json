@@ -7,8 +7,8 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
-      "line": 24,
-      "sha256": "531a21fefa0f6be93714c12aca212aed80db10196cc70a7aeb5587d241a64720",
+      "line": 25,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
       "status": "new/unexecuted"
     },
     {
@@ -17,8 +17,8 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
-      "line": 67,
-      "sha256": "531a21fefa0f6be93714c12aca212aed80db10196cc70a7aeb5587d241a64720",
+      "line": 68,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
       "status": "new/unexecuted"
     },
     {
@@ -27,8 +27,8 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
-      "line": 184,
-      "sha256": "531a21fefa0f6be93714c12aca212aed80db10196cc70a7aeb5587d241a64720",
+      "line": 185,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
       "status": "new/unexecuted"
     },
     {
@@ -37,8 +37,8 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
-      "line": 239,
-      "sha256": "531a21fefa0f6be93714c12aca212aed80db10196cc70a7aeb5587d241a64720",
+      "line": 240,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
       "status": "new/unexecuted"
     },
     {
@@ -47,8 +47,8 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
-      "line": 275,
-      "sha256": "531a21fefa0f6be93714c12aca212aed80db10196cc70a7aeb5587d241a64720",
+      "line": 276,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
       "status": "new/unexecuted"
     },
     {
@@ -57,8 +57,8 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
-      "line": 341,
-      "sha256": "531a21fefa0f6be93714c12aca212aed80db10196cc70a7aeb5587d241a64720",
+      "line": 344,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
       "status": "new/unexecuted"
     },
     {
@@ -67,8 +67,8 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
-      "line": 396,
-      "sha256": "531a21fefa0f6be93714c12aca212aed80db10196cc70a7aeb5587d241a64720",
+      "line": 399,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
       "status": "new/unexecuted"
     },
     {
@@ -77,8 +77,8 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
-      "line": 466,
-      "sha256": "531a21fefa0f6be93714c12aca212aed80db10196cc70a7aeb5587d241a64720",
+      "line": 469,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
       "status": "new/unexecuted"
     },
     {
@@ -87,7 +87,7 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
-      "line": 47,
+      "line": 48,
       "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
       "status": "original unchanged bodies/pending current qualification"
     },
@@ -97,7 +97,7 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
-      "line": 72,
+      "line": 73,
       "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
       "status": "original unchanged bodies/pending current qualification"
     },
@@ -107,7 +107,7 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
-      "line": 100,
+      "line": 101,
       "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
       "status": "original unchanged bodies/pending current qualification"
     },
@@ -117,7 +117,7 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
-      "line": 152,
+      "line": 153,
       "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
       "status": "original unchanged bodies/pending current qualification"
     },
@@ -127,7 +127,7 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
-      "line": 194,
+      "line": 195,
       "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
       "status": "original unchanged bodies/pending current qualification"
     },
@@ -137,7 +137,7 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
-      "line": 233,
+      "line": 234,
       "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
       "status": "original unchanged bodies/pending current qualification"
     },
@@ -147,7 +147,7 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
-      "line": 266,
+      "line": 267,
       "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
       "status": "original unchanged bodies/pending current qualification"
     },
@@ -157,7 +157,7 @@
       "expected_tests": 1,
       "expected_ignored": 0,
       "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
-      "line": 304,
+      "line": 305,
       "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
       "status": "original unchanged bodies/pending current qualification"
     }

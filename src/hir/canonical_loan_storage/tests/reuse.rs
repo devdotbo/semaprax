@@ -277,6 +277,23 @@ fn complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are
         assert_eq!(projected.matches(current).count(), 1, "{}", hook["name"]);
         projected = projected.replacen(current, hook["original"].as_str().unwrap(), 1);
     }
+    // Independent saved source predates allocation-free test attribution.
+    // Remove only the three exact guarded hooks; every old body byte still
+    // participates in the final equality below.
+    for hook in [
+        "    #[cfg(test)]\n    let _operation = crate::bounded_output::stage_debits::operation_guard(\n        crate::bounded_output::stage_debits::Operation::CoreValidation,\n    );\n",
+        "    #[cfg(test)]\n    let _operation = crate::bounded_output::stage_debits::operation_guard(\n        crate::bounded_output::stage_debits::Operation::CanonicalLoanStorage,\n    );\n",
+    ] {
+        assert_eq!(projected.matches(hook).count(), 1);
+        projected = projected.replacen(hook, "", 1);
+    }
+    let guarded_constructor = "    let validator = {\n        #[cfg(test)]\n        let _operation = crate::bounded_output::stage_debits::operation_guard(\n            crate::bounded_output::stage_debits::Operation::ValidatorConstructor,\n        );\n        HirValidator::with_storage(seed, &storage)?\n    };";
+    assert_eq!(projected.matches(guarded_constructor).count(), 1);
+    projected = projected.replacen(
+        guarded_constructor,
+        "    let validator = HirValidator::with_storage(seed, &storage)?;",
+        1,
+    );
     assert_eq!(projected, old);
     let mut compiled_old = include_str!("../caller_before.rs").to_owned();
     // Remove the longer indentation first: the shorter line is its substring.

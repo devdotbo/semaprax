@@ -17,18 +17,18 @@
     },
     {
       "path": "src/bounded_output/stage_debits.rs",
-      "sha256": "4cc1f22c83088c0e83bc7647d0e0a759e3185ec275097534462fdb6b5359f3bd",
-      "lines": 174
+      "sha256": "8ae7ecfcb70273e34732644fd904965bc3379d7c83001e8fe6cc01401c817932",
+      "lines": 181
     },
     {
       "path": "src/bounded_output/stage_debits/tests.rs",
-      "sha256": "4b6265da52b4594939bdeb3d5eae186aaf220bc3c1b726d1ce1235ceb215caf9",
-      "lines": 173
+      "sha256": "ac219d2ecdc33d0e5cce88b652eff3cf60e5498e65e12f7d23eb522e9611df4d",
+      "lines": 199
     },
     {
       "path": "src/hir/canonical_loan_storage/caller.rs",
-      "sha256": "7721b2f9dc7b2fb438dcb1665eaaef8a90aad83a0089b735358b2ed7688469a9",
-      "lines": 343
+      "sha256": "0b318a2caf95d16f10843da5e33434ae25f56aca42becd475e44893ec6079af4",
+      "lines": 406
     },
     {
       "path": "src/hir/function_directory/caller.rs",
@@ -65,5 +65,6 @@
       "sha256": "9a0a032349bea1f517b1787cc8fbcf2088969ff82d6023b7f37ca43b086ef868",
       "lines": 689
     }
-  ]
+  ],
+  "successor_observation_note": "Source-only successor: retain last completed Copy trace separately from original maximum-consumed trace; no Budget or ReservationRefusal layout, source authority, reservation or retry change. Original denied review was not retried. New receipt controls and identical authenticated decoded-fingerprint Project check are pending execution."
 }

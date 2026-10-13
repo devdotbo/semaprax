@@ -687,3 +687,29 @@ fn pattern_source_workspace_fits_unchanged_builder_budget() {
 
 #[path = "edge_proof_storage.rs"]
 mod edge_proof_storage;
+
+/// The identical authenticated Project check used before the owning backend
+/// conformance run. No backend compilation, alternate source, raised cap, or
+/// inference from a requested byte count participates in this attribution.
+#[test]
+fn decoded_fingerprint_project_check_records_final_attempt_attribution() {
+    use crate::bounded_output::stage_debits::{take_completed, take_last_completed};
+    take_completed();
+    take_last_completed();
+    let manifest =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("std/data-json-dec/semaprax.toml");
+    let result = crate::project::with_authenticated_project(&manifest, |snapshot| snapshot.check());
+    let maximum = take_completed();
+    let last = take_last_completed();
+    eprintln!("decoded-fingerprint-attribution cap={MAX_BUILDER_BYTES} maximum={maximum:?} final={last:?} result={result:?}");
+    if let Err(diagnostics) = result {
+        assert!(!diagnostics.is_empty());
+        assert_eq!(diagnostics[0].code, "SPX-G171");
+        let trace = last.expect("actual refused core attempt");
+        let refusal = trace
+            .first_operation_refusal
+            .expect("original first-refusal write");
+        assert!(refusal.requested > 0);
+        assert!(trace.sum() == trace.consumed && trace.consumed <= MAX_BUILDER_BYTES);
+    }
+}

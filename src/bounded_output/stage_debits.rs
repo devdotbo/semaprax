@@ -61,6 +61,7 @@ impl Trace {
 thread_local! {
     static CURRENT: Cell<Trace> = const { Cell::new(Trace::EMPTY) };
     static COMPLETED: Cell<Option<Trace>> = const { Cell::new(None) };
+    static LAST_COMPLETED: Cell<Option<Trace>> = const { Cell::new(None) };
 }
 // No Budget field or allocation: address equality only selects this diagnostic
 // observation scope and grants no source, identity, or budget authority.
@@ -156,6 +157,7 @@ impl Drop for Guard {
             trace.consumed,
             "every committed debit exactly once"
         );
+        LAST_COMPLETED.with(|completed| completed.set(Some(trace)));
         COMPLETED.with(|completed| {
             if completed
                 .get()
@@ -168,6 +170,11 @@ impl Drop for Guard {
 }
 pub(crate) fn take_completed() -> Option<Trace> {
     COMPLETED.with(|completed| completed.take())
+}
+/// Final attempt, separately from the historical maximum-consumed attempt.
+/// Observation only: neither receipt changes the ordinary budget or retry path.
+pub(crate) fn take_last_completed() -> Option<Trace> {
+    LAST_COMPLETED.with(|completed| completed.take())
 }
 
 #[cfg(test)]

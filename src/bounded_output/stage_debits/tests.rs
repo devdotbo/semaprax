@@ -171,3 +171,29 @@ fn operation_scope_restores_after_unwind_and_nested_foreign_budget_cannot_tag_pa
     with_limit_usage_refusal(0, || assert!(!reserve_active_required(1)));
     assert!(take_completed().is_none());
 }
+
+#[test]
+fn last_attempt_is_distinct_from_maximum_consumed_and_does_not_allocate() {
+    take_completed();
+    take_last_completed();
+    for (mode, used) in [(2, 8), (6, 3)] {
+        let (((), metrics), overflow, paid, refusal) = with_limit_usage_refusal(10, || {
+            crate::test_allocation_observer::measure(|| {
+                let _trace = start(0, 0, mode);
+                assert!(reserve_active_required(used));
+            })
+        });
+        assert!(!overflow && refusal.is_none());
+        assert_eq!(paid, used);
+        assert!(!metrics.invalid);
+        assert_eq!(
+            (metrics.allocations, metrics.allocated, metrics.live),
+            (0, 0, 0)
+        );
+    }
+    let maximum = take_completed().unwrap();
+    let last = take_last_completed().unwrap();
+    assert_eq!((maximum.mode, maximum.consumed), (2, 8));
+    assert_eq!((last.mode, last.consumed), (6, 3));
+    assert!(take_completed().is_none() && take_last_completed().is_none());
+}
