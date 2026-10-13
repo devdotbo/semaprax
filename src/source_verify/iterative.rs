@@ -272,6 +272,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
     }
 }
 
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_expr_iterative(
     program: &dyn ProgramSource,
@@ -298,6 +299,7 @@ pub(super) fn check_expr_iterative(
         None,
     )
 }
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_expr_with_helpers<'a, 'p>(
     program: &'p dyn ProgramSource,
