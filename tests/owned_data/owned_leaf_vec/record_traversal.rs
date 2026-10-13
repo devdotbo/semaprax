@@ -280,7 +280,9 @@ fn owned_row_traversal_keeps_previous_indexed_string_view_scoped_to_iteration() 
 fn direct_previous_indexed_read_retains_the_exact_traversal_index_refusal() {
     let source = format!("{DECLARATION}{PREVIOUS_INDEXED_DIRECT}");
     let parsed = semaprax::check(&source, "previous-indexed-direct.spx").unwrap();
-    let diagnostic = semaprax::hir::resolve(&parsed).unwrap_err();
+    let diagnostics = semaprax::hir::resolve(&parsed).unwrap_err();
+    assert_eq!(diagnostics.len(), 1);
+    let diagnostic = &diagnostics[0];
     assert_eq!(diagnostic.code, "SPX-H006");
     assert!(diagnostic.message.contains(
         "record traversal length, index, nominal reads or whole-root freeze proof is invalid"
