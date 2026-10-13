@@ -97,3 +97,5 @@ fn collect<'a>(
     visiting.remove(&id);
     Ok(())
 }
+
+pub(super) mod completed;

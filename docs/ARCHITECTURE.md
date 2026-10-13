@@ -184,6 +184,12 @@ preflight, and its `early.rs` child owns the unchanged early profile traversal.
 Typed pending and ordered-set backing is paid before construction; an existing
 borrowed invariant lookup replaces discarded formatted identities. The complete
 original collection receivers remain in `declared_collection.rs`.
+`function_scope/lifecycle/completed.rs` owns one function's monotone required-effect
+set and completed exact zero-argument lifecycle roots. Successful roots borrow
+identities from the immutable program; generic instances retain the complete
+funded collection route. Inline keys select storage only, with prepaid spill
+backing and sticky authentication on every hit. The complete prior function
+receiver remains compiled in `function_scope/lifecycle_receiver_saved.rs`.
 `function_scope/lifecycle.rs` owns borrowed declared-effect keys, borrowed active
 lifecycle identities and prepaid distinct imported effect payloads. The complete
 original lifecycle collector remains in `inspection.rs`; the complete prior

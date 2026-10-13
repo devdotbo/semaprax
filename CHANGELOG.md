@@ -7006,3 +7006,9 @@ The detailed 0.3.5, 0.2.0, and 0.1.0 history is preserved in the [changelog arch
 
 - Restore the originally pinned legacy scaffold guide introduction; keep current
   bounded route guidance in capsule v8. No legacy digest or limit was updated.
+
+- Avoid repeated final-HIR lifecycle collection for successful exact zero-argument
+  declarations within one function's growing effect obligations. Preserve complete
+  prior receivers and generic collection; allocation-through-Drop, exact-short,
+  diagnostic and repeated-call controls are authored. Application fit under the
+  unchanged graph cap remains pending focused qualification.

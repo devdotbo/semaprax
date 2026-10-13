@@ -1,0 +1,13 @@
+{
+  "base": "fde751e20236152d581e31ce6bf2b1d3e11ede45",
+  "original_sha256": {
+    "src/hir/validation/function_scope.rs": "d4a6b7e8f4ec7a9a886ec69943ead6fbd57cd91317dc49818c0f0cf5d5a8d88c",
+    "src/hir/validation/function_scope/lifecycle.rs": "2210a8ff174fc1d2a678d1b6ced71a5ef12cd1cb94c45b26bd8e722fb6d07fda"
+  },
+  "preservation": "Full function receiver compiled under named method projections; complete lifecycle.rs unchanged except child registration; original receivers and existing assertions unchanged.",
+  "qualification": "No Cargo/build/tests. G171 application fit and 4520-byte causal attribution pending root runtime. No cap, credit, debit discount or pins changed.",
+  "key": "Exact zero-argument nominal declaration retained by immutable program; generic/missing/mismatched parameters use full old collector.",
+  "funding": "Each spill replacement backing paid in full before acquisition including overlap; eight inline entries select storage only and are not admission limits.",
+  "work": "Test-only actual complete-collector invocation counter; no existing work allowance changed. Warm hits check sticky active ledger.",
+  "graft_tokens_saved": 148632
+}

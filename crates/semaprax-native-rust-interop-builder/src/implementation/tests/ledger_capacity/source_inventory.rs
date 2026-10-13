@@ -987,6 +987,13 @@ macro_rules! hir_final_validation_source_inventory {
             include_str!("../../../../../src/hir/validation/function_scope/backing_saved.rs"),
             include_str!("../../../../../src/hir/validation/function_scope/tests.rs"),
             include_str!("../../../../../src/hir/validation/function_scope/lifecycle.rs"),
+            include_str!("../../../../../src/hir/validation/function_scope/lifecycle/completed.rs"),
+            include_str!(
+                "../../../../../src/hir/validation/function_scope/lifecycle/completed/tests.rs"
+            ),
+            include_str!(
+                "../../../../../src/hir/validation/function_scope/lifecycle_receiver_saved.rs"
+            ),
             include_str!("../../../../../src/hir/validation/function_scope/collection_tests.rs"),
             include_str!(
                 "../../../../../src/hir/validation/function_scope/collection_tests/funded_early.rs"

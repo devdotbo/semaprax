@@ -45,17 +45,13 @@ impl HirValidator<'_> {
             )));
         }
         let declared_effects = lifecycle::declared_effects(&function.effects)?;
-        let mut required_lifecycle_effects = BTreeSet::new();
+        let mut required_lifecycle_effects = lifecycle::completed::Collector::new(self.program);
         for param in &function.params {
             if param.ownership == OwnershipMode::Own {
-                lifecycle::extend_funded(self.program, &param.ty, &mut required_lifecycle_effects)?;
+                required_lifecycle_effects.extend(&param.ty)?;
             }
         }
-        lifecycle::extend_funded(
-            self.program,
-            &function.return_type,
-            &mut required_lifecycle_effects,
-        )?;
+        required_lifecycle_effects.extend(&function.return_type)?;
         crate::hir::inspection::calls::try_visit_resolved_calls(
             &function.body,
             &mut |callee, instance, type_arguments| {
@@ -70,11 +66,7 @@ impl HirValidator<'_> {
                     return Ok(());
                 }
                 if let Some(target) = self.program.resolve_call_target(callee, instance) {
-                    lifecycle::extend_funded(
-                        self.program,
-                        &target.return_type,
-                        &mut required_lifecycle_effects,
-                    )
+                    required_lifecycle_effects.extend(&target.return_type)
                 } else if self.proof_generic_calls {
                     // The generic proof boundary genuinely produces an owned substituted type.
                     let return_type = generic_template::proof_return_type(
@@ -83,11 +75,7 @@ impl HirValidator<'_> {
                         instance,
                         type_arguments,
                     )?;
-                    lifecycle::extend_funded(
-                        self.program,
-                        &return_type,
-                        &mut required_lifecycle_effects,
-                    )
+                    required_lifecycle_effects.extend(&return_type)
                 } else {
                     Err(hir_error(format!("function `{callee}` is not indexed")))
                 }
@@ -270,3 +258,6 @@ mod lifecycle;
 
 #[cfg(test)]
 mod backing_saved;
+
+#[cfg(test)]
+mod lifecycle_receiver_saved;
