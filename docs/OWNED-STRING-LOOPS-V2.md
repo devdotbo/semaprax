@@ -11,7 +11,9 @@ own local evidence; they do not establish hosted or public ABI support.
 A `while` or `for` body may call a monomorphic user function
 whose result is a Copy scalar, flat Copy variant or `string`, and whose parameters are Copy
 scalars or flat Copy variants, named borrowed byte slices or `str` views, exact
-compiler-owned `borrow Vec<T>` values for Copy-scalar `T`, or consumed strings. The
+compiler-owned `borrow Vec<T>` values for Copy-scalar `T`, or consumed strings.
+[Copy Record Collections v1](COPY-RECORD-COLLECTIONS-V1.md) additively admits a
+flat Copy record as a by-value parameter or result of such a call. The
 closed read-only effects `process.args.read`, `fs.read`, and
 `process.environment.read` are admitted when ordinarily declared and permitted;
 other effectful user calls stay refused. Body-local Strings stage
@@ -64,7 +66,9 @@ guards retain `SPX-T254`. Owned or borrowed non-Copy
 scrutinees, including `Option<string>`, remain
 `SPX-T252`. [Loop Copy Variant Construction v1](LOOP-COPY-VARIANT-CONSTRUCTION-V1.md)
 adds direct concrete Copy-scalar variant construction in bodies and otherwise
-admitted conditions. Other variant construction, records, postfix `?`,
+admitted conditions. Other variant construction, records outside the
+[Copy Record Collections v1](COPY-RECORD-COLLECTIONS-V1.md) and owned-leaf
+profiles, record updates, postfix `?`,
 generic calls outside an existing admitted intrinsic, and write-effect user calls
 retain their refusals. This widening changes no graph or CleanupPlan schema:
 ordinary match decisions and per-iteration cleanup facts retain their existing
