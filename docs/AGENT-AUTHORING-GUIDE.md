@@ -1,6 +1,7 @@
 # SEMAPRAX authoring guide
 
 Status: executable qualification pending.
+Audience: coding agents.
 
 ## Source
 
@@ -8,7 +9,6 @@ Use `semaprax fmt <file>`, then `semaprax check <file>`.
 Native: `semaprax build <file> --target native -o <path>`.
 The `fused-construction-v1` opt-in requires `--managed-bytes N`;
 qualification pending. Web source profiles: `internal-strings-v1` or `text-toolkit-v1`.
-Project profiles are distinct.
 
 ## Project
 
