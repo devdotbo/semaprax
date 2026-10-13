@@ -70,6 +70,14 @@ fn retained_vec_box_class_and_invariant_sources_match_full_owning_projection() {
             _ => None,
         };
         if let Some(code) = expected_refusal {
+            // Graph serialization owns its own source verification. The
+            // flattened projection never authenticates a reserved wrapper
+            // outside the ordinary linked boundary.
+            let graph_errors = crate::graph::to_json(&owned).unwrap_err();
+            assert!(
+                graph_errors.iter().any(|error| error.code == code),
+                "{graph_errors:?}"
+            );
             for unauthenticated in [
                 hir::identity_resolution::resolve(
                     &owned,

@@ -102,10 +102,15 @@ fn parity(caller: &str, provider: &str) {
         crate::format::canonical(&key),
         crate::format::canonical(&before)
     );
-    assert_eq!(
-        crate::graph::to_json(&key).unwrap(),
-        crate::graph::to_json(&before).unwrap()
-    );
+    // Graph construction reruns source verification, so it needs the same
+    // authenticated linked origin as both full HIR receivers above.
+    let (actual_graph, expected_graph) = linked(|| {
+        (
+            crate::graph::to_json(&key).unwrap(),
+            crate::graph::to_json(&before).unwrap(),
+        )
+    });
+    assert_eq!(actual_graph, expected_graph);
     if let Some(pointer) = generated_type {
         assert_eq!(
             key.types[programs[0].types.len()].stable_id.as_ptr(),
