@@ -11,3 +11,14 @@ Two full owner regressions compare direct and actual prepared Session work/backi
 Runtime191 was an environment failure spawning node at runtime.rs99; no fixture source/assertions changed. Root owns the next invocation PATH correction.
 
 P106 help had eight rows despite the nine-row route contract. The existing compiler-checked return; example was absent from its table. Its existing fix is now indexed as the ninth row, and AGENT-DIAGNOSTIC-HELP.json is the exact table-derived projection. Existing CLI assertions/caps stay unchanged. The exact response is 531 UTF-8 bytes, nine wrote entries. The guide-byte/pin owning producers need actual root qualification; no digest pins were guessed or rewritten.
+
+Fixture construction repair after the combined bbd test compile: workspace modules
+retain their real owned representation and do not implement Clone. The foreign,
+duplicate-namespace and standalone-equal-input cases now use independently
+resolved copies of the existing tiny fixture, constructed outside any allocator
+observer. The duplicate case consumes a genuine module from a second resolved
+fixture. Complete caller-function equality and distinct actual pointers are
+asserted before authentication. Empty membership and fresh-owner receipt reuse
+refusals, sticky retries, and standalone independently authenticated success
+remain unchanged. No production Clone or detached namespace authority is added.
+Source-only rustfmt/diff checks; no build or runtime qualification is claimed.

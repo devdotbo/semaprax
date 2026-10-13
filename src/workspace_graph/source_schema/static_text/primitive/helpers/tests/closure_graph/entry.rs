@@ -670,14 +670,31 @@ fn current_scan_receipt_rejects_detached_equal_clone_and_namespace_transplants()
     let build = tiny(0);
     let module = caller(&build);
     let anchor = &module.functions[0];
-    let detached = module.clone();
-    let mut duplicate = build.hir.modules.clone();
-    duplicate.push(module.clone());
+    // Independently resolve the exact same fixture. Workspace modules retain
+    // their real owners and deliberately do not expose a production Clone.
+    let detached_build = tiny(0);
+    let detached = caller(&detached_build);
+    assert_eq!(detached.functions, module.functions);
+    assert!(!std::ptr::eq(detached, module));
+    let mut duplicate_build = tiny(0);
+    let mut duplicate_source = tiny(0);
+    let duplicate_index = duplicate_source
+        .hir
+        .modules
+        .iter()
+        .position(|candidate| candidate.module == module.module)
+        .unwrap();
+    duplicate_build
+        .hir
+        .modules
+        .push(duplicate_source.hir.modules.remove(duplicate_index));
+    let duplicate = caller(&duplicate_build);
     for (subject, modules) in [
-        (&detached, build.hir.modules.as_slice()),
-        (module, duplicate.as_slice()),
+        (detached, build.hir.modules.as_slice()),
+        (duplicate, duplicate_build.hir.modules.as_slice()),
         (module, &[][..]),
     ] {
+        let anchor = &subject.functions[0];
         let mut preparation =
             SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
         assert!(authenticate(subject, modules, &build.hir.declarations, &mut preparation).is_err());
@@ -695,14 +712,19 @@ fn current_scan_receipt_rejects_detached_equal_clone_and_namespace_transplants()
     assert!(restarted
         .try_charge(anchor, 0, "forbidden new membership owner")
         .is_err());
-    // Equal clones are valid only as a separately authenticated complete
-    // immutable input. No receipt from `build` is accepted as its authority.
-    let modules = build.hir.modules.clone();
-    let subject = modules.iter().find(|m| m.module == module.module).unwrap();
+    // Equal resolved copies are valid only as a separately authenticated
+    // complete immutable input. No receipt from `build` grants authority.
+    let standalone = tiny(0);
+    let subject = caller(&standalone);
     let mut preparation =
         SelectedReplayPreparation::with_limits(&subject.functions[0], 32_000_000, 1 << 26).unwrap();
-    let context =
-        authenticate(subject, &modules, &build.hir.declarations, &mut preparation).unwrap();
+    let context = authenticate(
+        subject,
+        &standalone.hir.modules,
+        &standalone.hir.declarations,
+        &mut preparation,
+    )
+    .unwrap();
     assert!(std::ptr::eq(context.local.module, subject));
     assert!(!std::ptr::eq(context.local.module, module));
     drop(context);
