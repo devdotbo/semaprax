@@ -287,7 +287,7 @@ fn unknown_field_refusals_drop_only_exact_dependent_reads_in_every_context() {
     );
     check_unknown_field(
         "match x { Option::Some { wrong: n } => n, Option::None {} => n, }",
-        &[("=> n", 3, "n")],
+        &[("wrong: n } => n", 14, "n")],
         &[M104, M104, T202, T202],
         &[M104, M104, T202],
     );
