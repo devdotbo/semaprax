@@ -5,7 +5,7 @@
   "status": "unexecuted; static source comparisons, module registrations, budgets and include resolution only",
   "source_hashes": {
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "792cfbc35ecec61ad265fbccdcc88576d6e77e18ec560bf0df9a49f3893952e2",
-    "src/cleanup_plan/replay.rs": "5daeac25458e585c67bb80c0701d2e08a9011db1f5afd39ca05db91c01caa104",
+    "src/cleanup_plan/replay.rs": "58befe1a9da44d20864389c03a42dee8202751132b5f5105f2ac601633af5e7f",
     "src/cleanup_plan/replay/expression_facts.rs": "bd26157302dd48bc3df7b8635ac9d277a64978a23e2c438a0865dfdd88ccd2ea",
     "src/cleanup_plan/replay/expression_facts/capacity.rs": "ee3bbd81a54e829a6859f5636ed272bc8a9f28177f4f8f4cf99b590243c967bd",
     "src/cleanup_plan/replay/expression_facts/tests/payloads.rs": "d1226902c11a4cdbc6dbe42ee17229033174dcc2123c3add52e0aa83b5de61bf",
