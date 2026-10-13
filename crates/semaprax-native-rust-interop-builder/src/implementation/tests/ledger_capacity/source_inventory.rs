@@ -63,6 +63,7 @@ macro_rules! loan_cfg_source_inventory {
         concat!(
             include_str!("../../../../../src/loan_plan/storage.rs"),
             include_str!("../../../../../src/loan_plan/funded_flat.rs"),
+            include_str!("../../../../../src/loan_plan/funded_flat/work_boundary.rs"),
             include_str!("../../../../../src/loan_plan/funded_flat/tests.rs"),
             include_str!("../../../../../src/loan_plan/paid_candidate.rs"),
             include_str!("../../../../../src/loan_plan/paid_candidate_before.rs"),
@@ -1027,6 +1028,11 @@ macro_rules! lower_source_inventory {
 macro_rules! hir_final_validation_source_inventory {
     () => {
         concat!(
+            include_str!("../../../../../src/cleanup_plan/replay/nested_shape/paid/scratch.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/nested_shape/paid_before.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/ordinary_inventory/before.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs"),
+
             include_str!("../../../../../src/hir/nodes/import_result_type.rs"),
             include_str!("../../../../../src/hir/nodes/import_result_type/tests.rs"),
             include_str!("../../../../../src/hir/validation/callable_types/inline_frames.rs"),
