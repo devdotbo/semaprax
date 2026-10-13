@@ -71,14 +71,16 @@ use std::cell::Cell;
 
 use super::{
     BlockId, CleanupPlace, CleanupRegionId, CleanupResultSource, CleanupTerminator,
-    CleanupTransition, ConditionalVariantCase, ConditionalVariantEntry, EdgeCondition, EdgeId,
-    ExitContinuation, ExitTarget, StagedCopyResultSource, StatusCase, StatusLane, StatusProducer,
-    StatusSource, StatusSourceId, StorageId, CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11,
-    CLEANUP_PLAN_SCHEMA_V12, CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14,
-    CLEANUP_PLAN_SCHEMA_V15, CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V2,
-    CLEANUP_PLAN_SCHEMA_V3, CLEANUP_PLAN_SCHEMA_V4, CLEANUP_PLAN_SCHEMA_V5, CLEANUP_PLAN_SCHEMA_V6,
-    CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
+    CleanupTransition, EdgeCondition, EdgeId, ExitContinuation, ExitTarget, StagedCopyResultSource,
+    StatusCase, StatusLane, StatusProducer, StatusSource, StatusSourceId, StorageId,
+    CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11, CLEANUP_PLAN_SCHEMA_V12,
+    CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14, CLEANUP_PLAN_SCHEMA_V15,
+    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V2, CLEANUP_PLAN_SCHEMA_V3,
+    CLEANUP_PLAN_SCHEMA_V4, CLEANUP_PLAN_SCHEMA_V5, CLEANUP_PLAN_SCHEMA_V6, CLEANUP_PLAN_SCHEMA_V7,
+    CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
 };
+#[cfg(test)]
+use super::{ConditionalVariantCase, ConditionalVariantEntry};
 use crate::ast::{BinaryOp, UnaryOp};
 use crate::cleanup::ReplayContext;
 use crate::cleanup::{CleanupStorageOrigin, FieldLivenessShape, LivenessFlagId};
@@ -122,8 +124,8 @@ mod lexical_skeleton;
 mod mixed_result_tests;
 mod nested_shape;
 mod ordinary_inventory;
-mod paid_type_facts;
 mod ordinary_renewals;
+mod paid_type_facts;
 mod path_join;
 mod renewal;
 mod string_replacement;
@@ -1534,7 +1536,6 @@ fn expression_path_counts(
     Ok(result)
 }
 
-#[cfg(test)]
 struct ExpectedSupplementalSlot {
     storage: StorageId,
     ty: ResolvedType,

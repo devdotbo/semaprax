@@ -178,6 +178,7 @@ impl ClassifierString {
         Ok(true)
     }
 
+    #[cfg(test)]
     pub(crate) fn as_str(&self) -> &str {
         &self.bytes
     }
