@@ -962,6 +962,13 @@ path readers.
 
 ### Validated HIR
 
+`hir/declaration_index/owner_name.rs` owns borrowed logarithmic field/case
+lookup on the existing `(DeclarationId, String)` BTree keys. A private trait
+object compares the exact `DeclarationId::Ord` followed by name byte order;
+stack queries borrow their owner/name and return the map's original value
+reference. Stored keys, cache encoding, duplicate insertion, namespace rules
+and caller verification remain under their existing owners.
+
 `project/json_codec/suitability.rs` owns the read-only exact-type explanation
 and bounded whole-row continuation. Its `inspection` child retains compact facts
 for the complete ordered profile inventory; `paging` renders and moves only

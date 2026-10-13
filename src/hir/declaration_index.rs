@@ -6,6 +6,7 @@ pub(crate) use flags::{TypeFactsPayer, TypeFlags};
 pub(super) mod identity_payer;
 mod linked_owned_data;
 mod owned_builtin;
+mod owner_name;
 mod primitive_replay;
 mod projection;
 mod source;
@@ -238,8 +239,7 @@ impl DeclarationIndex {
     }
 
     pub fn field_id(&self, owner: &DeclarationId, name: &str) -> Option<&DeclarationId> {
-        self.fields_by_owner_name
-            .get(&(owner.clone(), name.to_owned()))
+        owner_name::get(&self.fields_by_owner_name, owner, name)
     }
 
     pub fn record_fields(&self, owner: &DeclarationId) -> Option<&[ResolvedFieldDeclaration]> {
@@ -275,8 +275,7 @@ impl DeclarationIndex {
     }
 
     pub fn case_id(&self, owner: &DeclarationId, name: &str) -> Option<&DeclarationId> {
-        self.cases_by_owner_name
-            .get(&(owner.clone(), name.to_owned()))
+        owner_name::get(&self.cases_by_owner_name, owner, name)
     }
 
     pub fn variant_cases(

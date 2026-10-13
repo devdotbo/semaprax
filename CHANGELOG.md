@@ -7,6 +7,11 @@
   nominal exact/short/zero/sticky/physical Drop controls. Source-only; no runtime
   qualification, broader funding repair or G171/application-fit claim.
 
+- Author borrowed logarithmic field/case lookup on unchanged DeclarationIndex
+  tuple BTree keys. Preserve exact DeclarationId/name ordering and returned
+  references; retain independent full old lookups and hostile/real-owner
+  allocation-through-Drop controls. Source-only; runtime qualification pending.
+
 - Extend the paid outer droppability source corpus with isolated zero-budget
   helper-allocation controls over real parsed declaration IDs, owned-record and
   owned-leaf Vec signatures, concrete generic records and refused variants.

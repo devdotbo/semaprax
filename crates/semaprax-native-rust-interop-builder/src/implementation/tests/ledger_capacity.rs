@@ -329,6 +329,8 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/hir/cache_codec.rs"),
         concat!(
             include_str!("../../../../../src/hir/declaration_index.rs"),
+            include_str!("../../../../../src/hir/declaration_index/owner_name.rs"),
+            include_str!("../../../../../src/hir/declaration_index/owner_name/tests.rs"),
             include_str!("../../../../../src/hir/declaration_index/leaf_drop_tests.rs")
         ),
         include_str!("../../../../../src/hir/declaration_index/source.rs"),
