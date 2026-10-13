@@ -258,9 +258,19 @@ fn complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal() {
         super::initialization::complete_original_receiver_before_measurement(&programs);
         let authored = index_authored(&programs).unwrap();
         let observe = |limit, retain| {
-            with_limit_usage_refusal(limit, || {
+            let mut phases = [(
+                "unreached",
+                crate::test_allocation_observer::Metrics::default(),
+                None,
+            ); 8];
+            let measured = with_limit_usage_refusal(limit, || {
                 measure(|| {
                     let registry = LayoutRegistry::new(&programs, &authored);
+                    phases[0] = (
+                        "registry",
+                        crate::test_allocation_observer::current_metrics(),
+                        crate::bounded_output::active_remaining(),
+                    );
                     let result = (|| {
                         let costs =
                             super::super::super::synthetic_builder_bytes_scoped_with_registry(
@@ -274,8 +284,18 @@ fn complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal() {
                             )?;
                         reserve_builder_structure(costs.raw_clone_and_hir)?;
                         let view = construct(&programs[0], &authored, &programs, &registry)?;
+                        phases[1] = (
+                            "construct",
+                            crate::test_allocation_observer::current_metrics(),
+                            crate::bounded_output::active_remaining(),
+                        );
                         let layout = registry.get(&programs[0], &authored, &programs)?;
                         let presentation = layout.presentation(&programs[0], &view)?;
+                        phases[2] = (
+                            "presentation",
+                            crate::test_allocation_observer::current_metrics(),
+                            crate::bounded_output::active_remaining(),
+                        );
                         let resolved = linked(|| {
                             hir::identity_resolution::resolve_source(&view, presentation, |bytes| {
                                 reserve_builder_structure(bytes)
@@ -286,8 +306,23 @@ fn complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal() {
                             hir::identity_resolution::Failure::Semantic(error) => vec![error],
                             hir::identity_resolution::Failure::Identity(errors) => errors,
                         })?;
+                        phases[3] = (
+                            "resolution",
+                            crate::test_allocation_observer::current_metrics(),
+                            crate::bounded_output::active_remaining(),
+                        );
                         hir::validate(&resolved.0).map_err(|error| vec![error])?;
+                        phases[4] = (
+                            "validation",
+                            crate::test_allocation_observer::current_metrics(),
+                            crate::bounded_output::active_remaining(),
+                        );
                         drop(resolved);
+                        phases[5] = (
+                            "resolved_drop",
+                            crate::test_allocation_observer::current_metrics(),
+                            crate::bounded_output::active_remaining(),
+                        );
                         if retain {
                             drop(
                                 super::super::super::borrowed_leaf::Input::Borrowed(view)
@@ -296,6 +331,11 @@ fn complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal() {
                         } else {
                             drop(view);
                         }
+                        phases[6] = (
+                            "receiving_drop",
+                            crate::test_allocation_observer::current_metrics(),
+                            crate::bounded_output::active_remaining(),
+                        );
                         Ok::<(), Vec<Diagnostic>>(())
                     })();
                     if crate::bounded_output::active_refused() {
@@ -309,20 +349,26 @@ fn complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal() {
                     }
                     drop(result);
                     drop(registry);
+                    phases[7] = (
+                        "registry_drop",
+                        crate::test_allocation_observer::current_metrics(),
+                        crate::bounded_output::active_remaining(),
+                    );
                 })
-            })
+            });
+            (measured, phases)
         };
         for retain in [false, true] {
-            let (((), observed), refused, required, _) = observe(usize::MAX, retain);
+            let ((((), observed), refused, required, _), phases) = observe(usize::MAX, retain);
             assert!(!refused && !observed.invalid && observed.live == 0);
             assert_eq!(observed.allocated, observed.freed);
             assert!(
                 observed.allocated <= required && observed.highwater <= required,
-                "caller={caller} retain={retain} observed={observed:?} required={required}"
+                "caller={caller} retain={retain} observed={observed:?} required={required} phases={phases:?}"
             );
-            let (((), observed), refused, paid, _) = observe(required, retain);
+            let ((((), observed), refused, paid, _), _) = observe(required, retain);
             assert!(!refused && !observed.invalid && observed.live == 0 && paid == required);
-            let (((), observed), refused, _, first) = observe(required - 1, retain);
+            let ((((), observed), refused, _, first), _) = observe(required - 1, retain);
             assert!(refused && first.is_some() && !observed.invalid && observed.live == 0);
         }
     }
