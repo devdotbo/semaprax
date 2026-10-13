@@ -259,12 +259,12 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Direct nested decoding remains unchanged. Contract: docs/APPLICATION-JSON-NESTED-REQUEST-V1.md; caller route language-command-io.nested-outcome.v1 remains independently checked.\n"
         ).to_owned()),
         "author:json-nested-response" => Ok(concat!(
-            "Bounded nested JSON response source implementation; execution qualification is separate.\n",
-            "Select bounded-nested-response.v1 with canonical --max-string-bytes 1..64 and --max-array-items 1..256. The caller's Project must independently admit every generated ordinary borrowed read and owning result. No capability or runtime profile is granted.\n",
-            "Schema: explicit monomorphic acyclic records, depth at most 8, at most 64 expanded paths, 1..8 fields per record, i64/u8/usize/bool/string leaves and at most two expanded already-admitted Vec fields. Vec elements are Copy scalars or flat 1..8-field rows with at most two Strings. Primitive Vec<string> refuses (SPX-J180): there is no nonallocating primitive String view. No optional/variant schema, recursion or new Vec element shape.\n",
-            "json_Root_nested_response_encoded_len(value: borrow Root) -> usize preflights the complete value. json_Root_nested_response_encode(value: borrow Root, output_limit: usize) returns RootJsonNestedResponseEncode::Encoded { text: string } or Refused { required: usize }. usize::MAX means a value violates selected string/array or 131072-byte output bounds.\n",
-            "Preflight completes before output allocation; ordinary borrowed field reads render in declaration order without cloning rows or String payloads. Existing String/Vec owners retain ordinary runtime bounds; the decoder's 264 newly decoded String census does not apply. Encode-only: no decoder, stream normalizer or business-data transformation.\n",
-            "Exact contract: docs/APPLICATION-JSON-NESTED-RESPONSE-V1.md. Compare author:json-collection-response for the fixed Report/Vec<Row>/Metrics shape and author:json-nested-request for decoder-only Vec<string> admission.\n"
+            "Bounded nested JSON response source; qualification pending.\n",
+            "bounded-nested-response.v1 and additive bounded-nested-response.v2 require canonical --max-string-bytes 1..64 and --max-array-items 1..256. Caller Project/profile/capabilities independently admit ordinary reads and results.\n",
+            "Explicit monomorphic acyclic records: depth 8, at most 64 expanded paths, 1..8 fields each, i64/u8/usize/bool/string leaves and at most two expanded Vec fields. Elements: Copy scalars or flat 1..8-field rows with at most two Strings. V1: Primitive Vec<string> refuses (SPX-J180). V2 adds vec_str_at(values,at) inside named borrow Vec<string> helpers; no clones, projected/temporary slot roots, optional/variant schema, recursion or new Vec shape.\n",
+            "V1 APIs: json_Root_nested_response_encoded_len(value: borrow Root) -> usize and json_Root_nested_response_encode(value: borrow Root, output_limit: usize) -> RootJsonNestedResponseEncode. V2 uses nested_response_v2 and RootJsonNestedResponseV2Encode, with nested-response-v2 identities. Outcomes: Encoded { text: string } or Refused { required: usize }; usize::MAX means selected value or 131072-byte output bounds exceeded.\n",
+            "Complete preflight before output allocation; render in declaration order without String/row clones. One Bytes reservation plus final String copy, not zero-copy. Owners retain runtime bounds; 264 newly decoded String census does not apply to borrowed response inspection. Encode-only; no decoder, normalizer or business-data mapping.\n",
+            "Contracts: docs/APPLICATION-JSON-NESTED-RESPONSE-V1.md and docs/APPLICATION-JSON-NESTED-RESPONSE-V2.md. Compare author:json-collection-response and author:json-nested-request.\n"
         ).to_owned()),
         "author:json-request-response" => Ok(concat!(
             "Typed request/response composition; current qualification is pending. Use the bounded plan to derive both replacements against one immutable authored revision and validate their combined candidate. In examples/shiftsim-typed-record-successor, from that directory:\n",
@@ -833,6 +833,10 @@ mod tests {
         let nested_response = lookup("author:json-nested-response").unwrap();
         for required in [
             "bounded-nested-response.v1",
+            "bounded-nested-response.v2",
+            "vec_str_at(values,at)",
+            "nested-response-v2 identities",
+            "final String copy",
             "Primitive Vec<string> refuses (SPX-J180)",
             "usize::MAX",
             "before output allocation",

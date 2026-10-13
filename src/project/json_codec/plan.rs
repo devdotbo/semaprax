@@ -107,6 +107,14 @@ pub(super) fn profile_fields(
             Some(max_string_bytes),
             Some(max_array_items),
         ),
+        NestedResponseV2 {
+            max_string_bytes,
+            max_array_items,
+        } => (
+            "bounded-nested-response.v2",
+            Some(max_string_bytes),
+            Some(max_array_items),
+        ),
         NestedResponse {
             max_string_bytes,
             max_array_items,

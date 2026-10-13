@@ -1,5 +1,7 @@
 //! Nested response derivation and unchanged three-backend owning command closure.
 use super::*;
+#[path = "nested_response/string_vectors.rs"]
+mod string_vectors;
 #[path = "nested_response/writer.rs"]
 mod writer;
 

@@ -36,6 +36,12 @@ pub(super) fn parse(
                 max_array_items: bound(items, 256)?,
             })
         }
+        (Some("bounded-nested-response.v2"), Some(bytes), Some(items)) => {
+            Some(JsonCodecProfile::NestedResponseV2 {
+                max_string_bytes: bound(bytes, 64)?,
+                max_array_items: bound(items, 256)?,
+            })
+        }
         (Some("bounded-nested-response.v1"), Some(bytes), Some(items)) => {
             Some(JsonCodecProfile::NestedResponse {
                 max_string_bytes: bound(bytes, 64)?,

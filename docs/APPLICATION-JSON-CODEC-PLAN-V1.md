@@ -33,6 +33,11 @@ identified record in that source. Each source path and selected record identity
 is unique. Two entries replacing the same module overlap and refuse, including
 entries selecting different records or profiles in that module.
 
+The additive `bounded-nested-response.v2` selector requires both bound fields
+and binds its distinct generated identities in the existing entry receipt.
+Its source contract is [nested response v2](APPLICATION-JSON-NESTED-RESPONSE-V2.md);
+the plan envelope, replay and publication authority remain unchanged.
+
 `profile` uses the existing closed selector spellings; `flat-scalars.v1` explicitly
 selects the original default. `max_string_bytes` and `max_array_items` are JSON
 integers present only when required by the selected profile. All existing schema,

@@ -17,6 +17,12 @@
   fixed-result checks and ownership boundaries remain selected. Focused
   qualification is pending; no Cargo or full gate ran in the implementation lane.
 
+- Author additive bounded-nested-response.v2 for primitive String vectors using
+  existing named borrowed slot views, complete preflight and the original writer.
+  Preserve the independently callable v1 receiver and refusal controls, ordinary
+  caps and request policy. Add complete request/response, exact-wire, replay and
+  actual allocation/Drop definitions; executable qualification remains pending.
+
 - Extend the paid outer droppability source corpus with isolated zero-budget
   helper-allocation controls over real parsed declaration IDs, owned-record and
   owned-leaf Vec signatures, concrete generic records and refused variants.

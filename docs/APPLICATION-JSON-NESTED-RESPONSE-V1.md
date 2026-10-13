@@ -196,3 +196,11 @@ and explicit memcpy traffic for empty, 16/64-byte ASCII, Unicode, controls and
 quote/backslash inputs in one context. It is not a full application, full-row
 physical measurement, accepted fresh trial, billed cost, or an executed gain.
 Executable qualification and matched application trials remain pending.
+
+## Additive String-slot response successor
+
+The primitive String-vector refusal above remains frozen for this v1 selector.
+[Response v2](APPLICATION-JSON-NESTED-RESPONSE-V2.md) composes the separately
+authored `vec_str_at` primitive through named borrowed helper parameters. It
+uses a different selector and generated identity namespace without changing
+v1 outputs/refusals or request materialization policy. Qualification is pending.

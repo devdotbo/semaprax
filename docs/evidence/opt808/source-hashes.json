@@ -1,0 +1,163 @@
+{
+  "base": "58ee1bcad7d0bf4b714ddcb76e527962f404ea17",
+  "paths": {
+    "CHANGELOG.md": {
+      "sha256": "595e4361c192598fa7b170edd8c9c4d5eee72c4b525cc98e5565c6474b045fcf",
+      "bytes": 505801,
+      "lines": 6925
+    },
+    "crates/semaprax-toolchain/tests/cli_help_surface_v1.rs": {
+      "sha256": "c8cafb8c6e6747bc8890f4b2d6faa82e78205bf285eada924d34b528391c5b9f",
+      "bytes": 30146,
+      "lines": 627
+    },
+    "docs/AGENT-QUICK-REFERENCE.md": {
+      "sha256": "a732797d69346b4c223d313b85e668eba6671c61a77859e065ff83d6b8fa7ea7",
+      "bytes": 78357,
+      "lines": 1728
+    },
+    "docs/APPLICATION-JSON-CODEC-PLAN-V1.md": {
+      "sha256": "738927bf10f1cba72696c1266c3c7a1b82f6e0f17619ed51bdd2e4bab52fd10e",
+      "bytes": 6259,
+      "lines": 104
+    },
+    "docs/APPLICATION-JSON-NESTED-RESPONSE-V1.md": {
+      "sha256": "c5439e0a3fdeb0c58b6fcec575d1237b79e7cdfd54fe4897e2ee688c87958af5",
+      "bytes": 12934,
+      "lines": 206
+    },
+    "docs/APPLICATION-JSON-NESTED-RESPONSE-V2.md": {
+      "sha256": "a43a0827d06ee2604bbf02cddff762014e6c8e6bc4eb37a42c65d42af212c7da",
+      "bytes": 4314,
+      "lines": 66
+    },
+    "docs/CLI-HELP-V5.md": {
+      "sha256": "9e492880f01c902f27795fb4bf46ce941c3590f4049faab5d839137b6019dc1d",
+      "bytes": 6868,
+      "lines": 116
+    },
+    "docs/SUMMARY.md": {
+      "sha256": "0982de9f2a2352dcd327061c48c4d8eb1dfff2b7ce6ef4ac88620676eea47c70",
+      "bytes": 47088,
+      "lines": 754
+    },
+    "src/cli/help/authoring.rs": {
+      "sha256": "7470e307400d0009748f70db5e20250af782f550a290800d4aa6e567f905840c",
+      "bytes": 83735,
+      "lines": 1146
+    },
+    "src/cli/json_codec.rs": {
+      "sha256": "38315cd240fe0558b05473fe2527c7b0e39619cb36e219f369ff4414dec40371",
+      "bytes": 19620,
+      "lines": 470
+    },
+    "src/cli/json_codec/profile.rs": {
+      "sha256": "31c83d841512cd70ec1c97f1b0d128e65107d7944af91ea6979a5c84d21dbf5e",
+      "bytes": 2751,
+      "lines": 64
+    },
+    "src/project/json_codec.rs": {
+      "sha256": "4c24db6c7b8e4b9246435e44b92fb48cd11c36aa9b8a0c9a4be03da74d616a29",
+      "bytes": 13063,
+      "lines": 345
+    },
+    "src/project/json_codec/collection_response/writer.spx": {
+      "sha256": "752e03f2a054a0d1cdb316962e007db2cc06903ec8fc2bab2c4a3eff05ab747b",
+      "bytes": 4407,
+      "lines": 49
+    },
+    "src/project/json_codec/nested_request/descriptor.rs": {
+      "sha256": "928f25f2851264e08d7b4586d4ea5a5643a71466a29d8752b35cac7b55d58410",
+      "bytes": 8416,
+      "lines": 258
+    },
+    "src/project/json_codec/nested_response.rs": {
+      "sha256": "de94e3f3af03d958b3226543b34eaaeda8ba2bd5581cd5e04e61a3f1cef5b0f0",
+      "bytes": 5104,
+      "lines": 159
+    },
+    "src/project/json_codec/nested_response/emit.rs": {
+      "sha256": "5b5020ee0afbb6ff28284b227c004dc3c5f103bce22a3ad586cb5d47e2b93e8c",
+      "bytes": 11048,
+      "lines": 279
+    },
+    "src/project/json_codec/nested_response/tests.rs": {
+      "sha256": "d7f9497b7254c96cc30213e134e3031f04a1ead07ca045ad6b53539f31b68dac",
+      "bytes": 11211,
+      "lines": 270
+    },
+    "src/project/json_codec/plan.rs": {
+      "sha256": "0a85ce06e0010668bdc2fdce33365a3b45b6d93937f15e5e34ae171b33c4f4fc",
+      "bytes": 10599,
+      "lines": 295
+    },
+    "src/project/json_codec/utf8.rs": {
+      "sha256": "be5836d3115dcdfdfc2691a349d61704de67eaa10572951e1cf55f84c5ea726a",
+      "bytes": 5643,
+      "lines": 164
+    },
+    "src/project/json_codec/utf8/text.rs": {
+      "sha256": "aaeffa6eb666e1ff3e5be44689304b0a4d8a7bd82222ad0158fb5d160a98f149",
+      "bytes": 3381,
+      "lines": 88
+    },
+    "src/project/json_codec/utf8/text.spx": {
+      "sha256": "245acb104302ea1156923a78ea0f975ad5da47854b4f0c01c0c49508a03647f2",
+      "bytes": 2722,
+      "lines": 58
+    },
+    "tests/cli_help_surface_v1.rs": {
+      "sha256": "6248d3d7b66784423c3f5e35cede0100e2511966b0c38b1f7bc128f7771f224f",
+      "bytes": 40068,
+      "lines": 855
+    },
+    "tests/documentation.rs": {
+      "sha256": "ce2595957fd3e019736dc4b007f9ced94b1e2c63c75bd812444c9d975e4d25d3",
+      "bytes": 27298,
+      "lines": 738
+    },
+    "tests/native/string_settlement/codec_allocation.rs": {
+      "sha256": "8c350e08fafcccbf185a4aac5778f1e36ec59675b5e88af326f2f3dc8fc2b300",
+      "bytes": 7309,
+      "lines": 181
+    },
+    "tests/native/string_settlement/codec_allocation/allocator.c": {
+      "sha256": "15b0fa1d5bbae23f030d1cc7421c5f540e3557dd5b9ebe1392e729fe2aef9037",
+      "bytes": 532,
+      "lines": 13
+    },
+    "tests/native/string_settlement/codec_allocation/probe.c": {
+      "sha256": "9ea14e70abda98da106c14e9bb3643b9997501b0a567e0c19c66b12ab359e3e0",
+      "bytes": 7279,
+      "lines": 130
+    },
+    "tests/native/string_settlement/codec_allocation/string_vectors.rs": {
+      "sha256": "b8f7f1497a738f52e871cf37742a806d99f91ea118af3b6f64af329a9cd71b18",
+      "bytes": 11641,
+      "lines": 272
+    },
+    "tests/project/standard_library/application_json/nested_response.rs": {
+      "sha256": "01385972ac8d5293e16abe7aa4a2825e1a0d8a185621510dd3cfd11dbe4c6644",
+      "bytes": 19346,
+      "lines": 456
+    },
+    "tests/project/standard_library/application_json/nested_response/string_vectors.rs": {
+      "sha256": "50dfbf223f42bd4f648b5ab962849d2fa3dae86b5319f361594c70f0a29f2faf",
+      "bytes": 22437,
+      "lines": 567
+    }
+  },
+  "frozen": [
+    "src/project/json_codec/nested_request/descriptor.rs",
+    "src/project/json_codec/utf8/text.spx",
+    "src/project/json_codec/collection_response/writer.spx",
+    "tests/native/string_settlement/codec_allocation/allocator.c",
+    "tests/native/string_settlement/codec_allocation/probe.c"
+  ],
+  "v1_emitter_original_literal_sequence": "preserved after resolving V1 version placeholders",
+  "quick_reference_fenced_examples": "byte-identical",
+  "authoring_card": {
+    "bytes": 1664,
+    "lexical_units": 355
+  }
+}

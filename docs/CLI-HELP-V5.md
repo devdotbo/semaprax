@@ -131,3 +131,8 @@ unchanged. Generated catalogs must be refreshed by their existing producer.
 [Scaffold capsule v8](PROJECT-SCAFFOLD-V8.md) carries corrected bounded discovery
 and control-flow guidance for newly created projects while preserving earlier
 capsule replay bytes.
+
+The same nested-response authoring card now names additive
+`bounded-nested-response.v2` String-slot composition, its distinct identities
+and unchanged caps; v1 refusal remains explicit. Both source versions await
+focused executable qualification. Contract: [v2](APPLICATION-JSON-NESTED-RESPONSE-V2.md).

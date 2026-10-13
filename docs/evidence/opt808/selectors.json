@@ -1,0 +1,562 @@
+{
+  "schema": "semaprax.source-handoff-selectors.v1",
+  "issue": 808,
+  "base": "58ee1bcad7d0bf4b714ddcb76e527962f404ea17",
+  "execution": "not run; source-only handoff",
+  "rows": [
+    {
+      "package": "semaprax",
+      "target": [
+        "--lib"
+      ],
+      "test": "project::json_codec::nested_response::tests::nested_response_emits_recursive_borrowed_preflight_and_declaration_order",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/project/json_codec/nested_response/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--lib"
+      ],
+      "test": "project::json_codec::nested_response::tests::nested_response_retains_copy_scalar_and_copy_record_vector_reads",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/project/json_codec/nested_response/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--lib"
+      ],
+      "test": "project::json_codec::nested_response::tests::nested_response_refuses_unborrowable_or_broadened_schema_before_generation",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/project/json_codec/nested_response/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--lib"
+      ],
+      "test": "project::json_codec::nested_response::tests::nested_response_template_like_names_and_repeated_records_remain_opaque",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/project/json_codec/nested_response/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--lib"
+      ],
+      "test": "project::json_codec::nested_response::tests::nested_response_v2_primitive_strings_use_named_borrowed_slots_and_distinct_identities",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/project/json_codec/nested_response/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--lib"
+      ],
+      "test": "project::json_codec::nested_response::tests::nested_response_v2_preserves_two_path_bounds_and_frozen_request_policy",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/project/json_codec/nested_response/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--lib"
+      ],
+      "test": "project::json_codec::nested_response::tests::nested_response_v2_namespace_selection_keeps_authored_marker_names_opaque",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/project/json_codec/nested_response/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::nested_response_borrowed_unicode_rows_exact_and_one_short_output_agree_on_backends",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::nested_response_empty_arrays_and_actual_string_array_plus_one_refuse_before_publication",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::nested_response_nested_sibling_scalar_and_copy_record_vectors_preserve_order",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::nested_request_to_response_uses_same_contract_and_detached_owners",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::nested_response_256_two_string_rows_and_direct_string_use_existing_owner_limits",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::nested_response_escaped_output_cap_refuses_without_rendering_partial_text",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::nested_response_selected_exact_eight_and_late_dynamic_string_plus_one_settle_owners",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::nested_response_new_authenticated_schema_refuses_prior_artifact_claim",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::writer::writer_all_control_escapes_and_numeric_extrema_preserve_original_wire_bytes",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response/writer.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::writer::derived_quote_writer_reserves_exact_bytes_and_copies_final_string_once",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response/writer.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::string_vectors::primitive_string_request_decision_response_keeps_duplicate_unicode_and_boundary_slots",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response/string_vectors.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::string_vectors::primitive_string_response_actual_item_and_byte_plus_one_refuse_before_publication",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response/string_vectors.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::string_vectors::primitive_string_response_two_nested_paths_preserve_exact_and_one_short_bytes",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response/string_vectors.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::string_vectors::primitive_string_response_maximum_escaping_exact_output_cap_and_plus_one",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response/string_vectors.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "project"
+      ],
+      "test": "standard_library::application_json::nested_response::string_vectors::primitive_string_response_plan_receipts_and_live_revision_reject_forged_versions",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/project/standard_library/application_json/nested_response/string_vectors.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "native"
+      ],
+      "test": "string_settlement::codec_allocation::composed_nested_codec_allocation_failures_preserve_return_and_fatal_boundaries",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/native/string_settlement/codec_allocation.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "native"
+      ],
+      "test": "string_settlement::codec_allocation::string_vectors::primitive_string_codec_reads_and_short_refusal_allocate_nothing_then_copy_final_string_once",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/native/string_settlement/codec_allocation/string_vectors.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "native"
+      ],
+      "test": "string_settlement::codec_allocation::string_vectors::primitive_string_codec_actual_byte_and_item_plus_one_preflight_never_reserve_output",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/native/string_settlement/codec_allocation/string_vectors.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--bin",
+        "semaprax"
+      ],
+      "test": "cli_driver::cli::json_codec::tests::stream_nested_codec_cli_requires_closed_bounds_before_authority",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/cli/json_codec.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--bin",
+        "semaprax"
+      ],
+      "test": "cli_driver::cli::json_codec::tests::nested_codec_cli_bounds_are_canonical_closed_and_profile_specific",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/cli/json_codec.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--bin",
+        "semaprax"
+      ],
+      "test": "cli_driver::cli::json_codec::tests::codec_cli_grammar_is_exact_and_publication_never_overwrites",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/cli/json_codec.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--bin",
+        "semaprax"
+      ],
+      "test": "cli_driver::cli::help::authoring::tests::routes_and_search_are_bounded_exact_and_have_complete_continuations",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/cli/help/authoring.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--bin",
+        "semaprax"
+      ],
+      "test": "cli_driver::cli::help::authoring::tests::exact_page_budget_and_one_short_preserve_all_entry_bytes",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/cli/help/authoring.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": [
+        "--bin",
+        "semaprax-full"
+      ],
+      "test": "driver::cli::json_codec::tests::stream_nested_codec_cli_requires_closed_bounds_before_authority",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/cli/json_codec.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": [
+        "--bin",
+        "semaprax-full"
+      ],
+      "test": "driver::cli::json_codec::tests::nested_codec_cli_bounds_are_canonical_closed_and_profile_specific",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/cli/json_codec.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": [
+        "--bin",
+        "semaprax-full"
+      ],
+      "test": "driver::cli::json_codec::tests::codec_cli_grammar_is_exact_and_publication_never_overwrites",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/cli/json_codec.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": [
+        "--bin",
+        "semaprax-full"
+      ],
+      "test": "driver::cli::help::authoring::tests::routes_and_search_are_bounded_exact_and_have_complete_continuations",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/cli/help/authoring.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": [
+        "--bin",
+        "semaprax-full"
+      ],
+      "test": "driver::cli::help::authoring::tests::exact_page_budget_and_one_short_preserve_all_entry_bytes",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "src/cli/help/authoring.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "cli_help_surface_v1"
+      ],
+      "test": "standalone_scoped_help_is_exhaustive_exact_capability_aware_and_inert",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/cli_help_surface_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": [
+        "--test",
+        "cli_help_surface_v1"
+      ],
+      "test": "full_scoped_help_is_exhaustive_exact_capability_aware_and_inert",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "crates/semaprax-toolchain/tests/cli_help_surface_v1.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "documentation"
+      ],
+      "test": "agent_quick_reference::typed_json_application_routes_keep_exact_ownership_and_replay_boundaries",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/documentation.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "documentation"
+      ],
+      "test": "agent_quick_reference::diagnostic_help_is_pinned_and_covers_compiler_checked_examples",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/documentation.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "documentation"
+      ],
+      "test": "agent_quick_reference::unmarked_blocks_verify_cleanly_and_are_canonical",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/documentation.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "documentation"
+      ],
+      "test": "agent_quick_reference::marked_blocks_produce_exactly_the_named_diagnostic",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/documentation.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "documentation"
+      ],
+      "test": "local_markdown_links_resolve",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/documentation.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": [
+        "--test",
+        "documentation"
+      ],
+      "test": "documentation_catalog_and_metadata_are_complete",
+      "args": [
+        "--",
+        "--exact"
+      ],
+      "source_path": "tests/documentation.rs"
+    }
+  ],
+  "producers": [],
+  "producer_note": "No generated pins changed. Existing diagnostic-help producer is unnecessary: all diagnostic table rows and fenced examples retained byte-identically. No new module-size producer; statically bounded sources."
+}

@@ -4,6 +4,8 @@
 //! neither zero-owner cleanup nor recovery; that part of OPT-724 remains unmet.
 use super::{codegen, compile_and_run, fs, symbol, Ordering, OBSERVER, SERIAL, STDIO};
 use semaprax::{format, hir, parse, project};
+#[path = "codec_allocation/string_vectors.rs"]
+mod string_vectors;
 
 const SCHEMA: &str = r#"module consumer.schema;
 @id("fault.config") record Config {@id("fault.config.label") label:string,@id("fault.config.retry") retry:usize,}

@@ -164,3 +164,107 @@ fn nested_response_template_like_names_and_repeated_records_remain_opaque() {
         1
     );
 }
+
+fn generate_v2(source: &str, strings: usize, rows: usize) -> Result<String, Vec<Diagnostic>> {
+    let program = crate::parse(source, "schema-v2.spx").unwrap();
+    derive_v2(&program, &program.types[2], strings, rows)
+}
+
+#[test]
+fn nested_response_v2_primitive_strings_use_named_borrowed_slots_and_distinct_identities() {
+    let schema = SCHEMA.replace("Vec<Row>", "Vec<string>");
+    assert_eq!(generate(&schema, 64, 256).unwrap_err()[0].code, "SPX-J180");
+    let output = generate_v2(&schema, 64, 256).unwrap();
+    assert_eq!(output, generate_v2(&schema, 64, 256).unwrap());
+    assert!(output.contains("values:borrow Vec<string>"));
+    assert!(output.contains("let value=vec_str_at(values,at);"));
+    assert!(output.contains("json_Report_nested_response_v2_utf8_quoted_len(value)"));
+    assert!(output.contains("json_Report_nested_response_v2_writer_quote(value,cursor,next)"));
+    for absent in [
+        "vec_get<string>",
+        "vec_clone_at",
+        "string_concat",
+        "string_from_i64",
+        "vec_str_at(value.rows",
+    ] {
+        assert!(!output.contains(absent), "{absent}");
+    }
+    assert_eq!(output.matches("bytes_zeroed_bounded(").count(), 1);
+    assert_eq!(output.matches("string_from_utf8(").count(), 1);
+    let api = output
+        .split("fn json_Report_nested_response_v2_encode(")
+        .nth(1)
+        .unwrap();
+    assert!(
+        api.find("required>output_limit").unwrap() < api.find("bytes_zeroed_bounded(").unwrap()
+    );
+    assert!(output.contains("ReportJsonNestedResponseV2Encode::Encoded{text:string_from_utf8(bytes_as_slice(finished))}"));
+    let parsed = crate::parse(&output, "v2.spx").unwrap();
+    assert!(parsed
+        .functions
+        .iter()
+        .all(|f| f.stable_id.starts_with("r.root.json.nested-response-v2.")));
+    let canonical = crate::format::canonical(&parsed);
+    assert_eq!(
+        canonical,
+        crate::format::canonical(&crate::parse(&canonical, "roundtrip.spx").unwrap())
+    );
+}
+
+#[test]
+fn nested_response_v2_preserves_two_path_bounds_and_frozen_request_policy() {
+    let two = SCHEMA
+        .replace("Vec<Row>", "Vec<string>")
+        .replace("retry:usize", "retry:Vec<string>");
+    let output = generate_v2(&two, 64, 256).unwrap();
+    assert_eq!(
+        output.matches("let value=vec_str_at(values,at);").count(),
+        4
+    );
+    assert_eq!(output.matches("count<=256usize").count(), 2);
+    assert!(output.contains("value.config.retry"));
+    assert!(output.contains("value.rows"));
+    let program = crate::parse(&two, "request-policy.spx").unwrap();
+    assert_eq!(
+        descriptor::validate(&program, &program.types[2], 64, 256)
+            .err()
+            .unwrap()[0]
+            .code,
+        "SPX-J180"
+    );
+    for (strings, items) in [(0, 256), (65, 256), (64, 0), (64, 257)] {
+        assert_eq!(
+            generate_v2(&two, strings, items).unwrap_err()[0].code,
+            "SPX-J180"
+        );
+    }
+    for schema in [
+        two.replace("ok:bool", "ok:Vec<string>"),
+        two.replace("ok:bool", "ok:Report"),
+        two.replace("rows:Vec<string>", "rows:Vec<Vec<string>>"),
+        two.replace("@id(\"r.config.label\")", ""),
+    ] {
+        assert_eq!(
+            generate_v2(&schema, 64, 256).unwrap_err()[0].code,
+            "SPX-J180"
+        );
+    }
+    let scalar = generate(SCHEMA, 16, 8).unwrap();
+    assert!(!scalar.contains("nested-response-v2"));
+    let v2 = generate_v2(SCHEMA, 16, 8).unwrap();
+    assert_ne!(v2, scalar);
+}
+
+#[test]
+fn nested_response_v2_namespace_selection_keeps_authored_marker_names_opaque() {
+    let schema = SCHEMA
+        .replace("Vec<Row>", "Vec<string>")
+        .replace("Report", "__ROW__nested_response_v2")
+        .replace("r.root", "r.__BOUND__.nested-response-v2");
+    let output = generate_v2(&schema, 16, 8).unwrap();
+    let parsed = crate::parse(&output, "opaque-v2.spx").unwrap();
+    assert!(parsed.functions.iter().all(|f| f
+        .stable_id
+        .starts_with("r.__BOUND__.nested-response-v2.json.nested-response-v2.")));
+    assert!(output.contains("borrow __ROW__nested_response_v2"));
+}

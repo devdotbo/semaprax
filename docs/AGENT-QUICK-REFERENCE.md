@@ -1549,8 +1549,11 @@ changes revision; edits remove evidence. CLI leaves source/manifests untouched. 
 `author:json-nested-response`: `bounded-nested-response.v1` requires both
 `--max-string-bytes 1..64` and `--max-array-items 1..256`. Acyclic records:
 depth 8, ≤64 expanded paths, 1..8 fields, ≤2 expanded Vec fields of Copy scalars
-or flat rows with ≤2 Strings. Primitive `Vec<string>` refuses SPX-J180;
-decoder admission grants no primitive String view.
+or flat rows with ≤2 Strings. Primitive `Vec<string>` refuses SPX-J180 in v1.
+Additive `bounded-nested-response.v2` reads those slots using
+`vec_str_at(values, at)` within named `borrow Vec<string>` helpers; its
+`nested_response_v2` APIs and `nested-response-v2` identities are distinct.
+The same caps and independent caller profile/loan checks remain authoritative.
 `json_Root_nested_response_encoded_len(value: borrow Root)` preflights all fields;
 `json_Root_nested_response_encode(value: borrow Root, output_limit: usize)` returns
 `Encoded { text }` or `Refused { required }`. `usize::MAX` signals string/array
@@ -1558,7 +1561,8 @@ or 131072-byte output bounds exceeded. Allocate output after full preflight,
 in declaration order, without clones. Owners retain runtime bounds;
 request decode's 264-String census does not limit response encoding.
 No capability/profile/decoder/business mapping.
-See [nested response](APPLICATION-JSON-NESTED-RESPONSE-V1.md).
+See [nested response v1](APPLICATION-JSON-NESTED-RESPONSE-V1.md) and
+[String-vector response v2](APPLICATION-JSON-NESTED-RESPONSE-V2.md).
 
 `author:collection-records`: v31 `Report { rows: Vec<Row> }`;
 `author:nested-outcomes`: v32 nested success/error carriers. Import signature

@@ -721,6 +721,8 @@ Audience: all documentation readers.
 - [Bounded application collection response source v1](APPLICATION-JSON-COLLECTION-RESPONSE-V1.md)
 - [Bounded nested application request JSON v1](APPLICATION-JSON-NESTED-REQUEST-V1.md)
 - [Bounded nested application response JSON v1](APPLICATION-JSON-NESTED-RESPONSE-V1.md)
+- [Bounded nested application response JSON v2](APPLICATION-JSON-NESTED-RESPONSE-V2.md)
+- [OPT808 source handoff](evidence/opt808/REVIEW.md)
 - [Bulk UTF-8 String v1](BULK-UTF8-STRING-V1.md)
 - [Checked Literal Format v1](CHECKED-LITERAL-FORMAT-V1.md)
 - [Checked String Allocation v1](CHECKED-STRING-ALLOCATION-V1.md)

@@ -59,6 +59,11 @@ pub enum JsonCodecProfile {
         max_string_bytes: usize,
         max_array_items: usize,
     },
+    /// Additive borrowed String-vector response encoding; v1 stays frozen.
+    NestedResponseV2 {
+        max_string_bytes: usize,
+        max_array_items: usize,
+    },
     /// Direct finite nested decoding with one existing vector carrier.
     NestedRequest {
         max_string_bytes: usize,
@@ -321,6 +326,10 @@ fn profile_fragment(
             max_string_bytes,
             max_array_items,
         } => nested_response::derive(program, declaration, max_string_bytes, max_array_items)?,
+        JsonCodecProfile::NestedResponseV2 {
+            max_string_bytes,
+            max_array_items,
+        } => nested_response::derive_v2(program, declaration, max_string_bytes, max_array_items)?,
         JsonCodecProfile::NestedRequest {
             max_string_bytes,
             max_array_items,

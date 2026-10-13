@@ -9,15 +9,74 @@ use crate::ast::{Program, Type, TypeDeclaration};
 use crate::diagnostic::Diagnostic;
 use std::fmt::Write as _;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum Version {
+    V1,
+    V2,
+}
+impl Version {
+    const fn family(self) -> &'static str {
+        match self {
+            Self::V1 => "nested-response",
+            Self::V2 => "nested-response-v2",
+        }
+    }
+    const fn namespace(self) -> &'static str {
+        match self {
+            Self::V1 => "nested_response",
+            Self::V2 => "nested_response_v2",
+        }
+    }
+    const fn result(self) -> &'static str {
+        match self {
+            Self::V1 => "JsonNestedResponseEncode",
+            Self::V2 => "JsonNestedResponseV2Encode",
+        }
+    }
+}
+
+pub(super) fn derive_v2(
+    program: &Program,
+    root: &TypeDeclaration,
+    max_string_bytes: usize,
+    max_array_items: usize,
+) -> Result<String, Vec<Diagnostic>> {
+    derive_version(
+        program,
+        root,
+        max_string_bytes,
+        max_array_items,
+        Version::V2,
+    )
+}
+
 pub(super) fn derive(
     program: &Program,
     root: &TypeDeclaration,
     max_string_bytes: usize,
     max_array_items: usize,
 ) -> Result<String, Vec<Diagnostic>> {
+    derive_version(
+        program,
+        root,
+        max_string_bytes,
+        max_array_items,
+        Version::V1,
+    )
+}
+
+fn derive_version(
+    program: &Program,
+    root: &TypeDeclaration,
+    max_string_bytes: usize,
+    max_array_items: usize,
+    version: Version,
+) -> Result<String, Vec<Diagnostic>> {
     let shape = descriptor::validate_response(program, root, max_string_bytes, max_array_items)
         .map_err(response_diagnostics)?;
-    validate_reads(&shape.root)?;
+    if version == Version::V1 {
+        validate_reads(&shape.root)?;
+    }
     let mut output = format!("module {};\n", program.module);
     for (module, name, alias) in [
         ("digits", "i64_len", "jv_i64_len"),
@@ -29,13 +88,18 @@ pub(super) fn derive(
     ] {
         writeln!(output, "use function @id(\"std.data.json.{module}.{name}\") from std.data.json.{module} as {alias};").unwrap();
     }
-    output.push_str(&super::utf8::nested_response_text(root, max_string_bytes));
+    output.push_str(&super::utf8::nested_response_text_version(
+        root,
+        max_string_bytes,
+        version.family(),
+        version.namespace(),
+    ));
     output.push_str(&super::collection_response::writer::source(
         root,
-        "nested-response",
-        "nested_response",
+        version.family(),
+        version.namespace(),
     ));
-    output.push_str(&emit::source(root, &shape.root, max_array_items));
+    output.push_str(&emit::source(root, &shape.root, max_array_items, version));
     Ok(output)
 }
 
@@ -85,6 +149,7 @@ fn type_name(ty: &Type) -> String {
         Type::U8 => "u8".into(),
         Type::Usize => "usize".into(),
         Type::Bool => "bool".into(),
+        Type::String => "string".into(),
         Type::Named { name, arguments } if arguments.is_empty() => name.clone(),
         _ => unreachable!("validated borrowed element"),
     }
