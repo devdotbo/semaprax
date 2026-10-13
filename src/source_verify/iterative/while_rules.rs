@@ -574,7 +574,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         results.pop().unwrap_or(Err(()))
     }
 
-    pub(super) fn admits_record_owner_renewal(&self, binding: &str, value: &Expr) -> bool {
+    pub(in crate::source_verify) fn admits_record_owner_renewal(
+        &self,
+        binding: &str,
+        value: &Expr,
+    ) -> bool {
         if self.byte_helper_assignment(binding, value) {
             return true;
         }

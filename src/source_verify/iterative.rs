@@ -348,7 +348,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             |index| index.target(target),
         )
     }
-    fn byte_helper_assignment(&self, name: &str, value: &Expr) -> bool {
+    pub(in crate::source_verify) fn byte_helper_assignment(
+        &self,
+        name: &str,
+        value: &Expr,
+    ) -> bool {
         self.byte_helpers.map_or_else(
             || crate::loop_calls::byte_writer::source_assignment(self.program, name, value),
             |index| index.assignment(name, value),

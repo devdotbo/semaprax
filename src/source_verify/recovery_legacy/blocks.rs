@@ -1,7 +1,7 @@
 use crate::ast::{Expr, ParamMode, Statement, Type};
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::binding::{Availability, Binding};
-use crate::source_verify::diagnostics::{error, is_scalar_source_type, reject_native_unit_value};
+use crate::source_verify::diagnostics::{error, is_scalar_source_type};
 use crate::source_verify::loans::{
     activate_local_loan, has_active_overlapping_loan, local_borrow_origin,
     mark_value_sources_moved, release_dead_local_loans,

@@ -1,8 +1,10 @@
-use crate::ast::{MatchMode, MatchPattern, ParamMode, Type};
+use crate::ast::{MatchMode, MatchPattern, ParamMode};
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::binding::{Availability, Binding};
 use crate::source_verify::diagnostics::{error, source_identifier};
-use crate::source_verify::private_names::{missing_case, type_name};
+use crate::source_verify::loans::merge_moved;
+use crate::source_verify::place::{join_definitely_partial, join_moved_places};
+use crate::source_verify::private_names::missing_case;
 use crate::source_verify::scope::{VariantMatchState, VerifierFrame, VerifierScope};
 use crate::source_verify::type_table::TypeTable;
 use crate::source_verify::variant_or::{

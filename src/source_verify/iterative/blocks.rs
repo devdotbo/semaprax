@@ -13,7 +13,11 @@ use crate::source_verify::IterativeVerifier;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
-    pub(super) fn check_string_replacement_entry(&mut self, statement: &Statement, scope: usize) {
+    pub(in crate::source_verify) fn check_string_replacement_entry(
+        &mut self,
+        statement: &Statement,
+        scope: usize,
+    ) {
         if let Statement::Assign {
             name,
             name_span,

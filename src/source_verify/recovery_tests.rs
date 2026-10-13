@@ -4,7 +4,9 @@ use super::binding::{Availability, Binding};
 use super::check_expr;
 use super::recovery::Recovery;
 use super::type_table::TypeTable;
+#[path = "recovery_tests/boundaries.rs"]
 mod boundaries;
+#[path = "recovery_tests/proposal_corpus.rs"]
 mod proposal_corpus;
 use crate::ast::{ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
