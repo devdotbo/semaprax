@@ -262,6 +262,7 @@ pub(super) fn resolved_call_params(
 ) -> Result<Vec<ResolvedParam>, Diagnostic> {
     if callee.as_str() == crate::vec_field::ID {
         let ResolvedExprKind::VecFieldRead {
+            origin: _,
             element,
             field,
             bytes,

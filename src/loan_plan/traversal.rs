@@ -17,6 +17,14 @@ fn place_is(expression: &ResolvedExpr, binding: &ResolvedBinding) -> bool {
         && expression.ownership == binding.ownership
         && matches!(&expression.kind, ResolvedExprKind::Place(place) if place.root == binding.id && place.projections.is_empty())
 }
+// Explicit lookup retains its ordinary bounds-checked index. Row syntax keeps
+// its exact snapshot; neither form exempts any root occurrence in the index.
+fn field_index(origin: crate::hir::VecFieldReadOrigin, index: &ResolvedExpr, row_index: &ResolvedBinding) -> bool {
+    match origin {
+        crate::hir::VecFieldReadOrigin::Explicit => index.ty == ResolvedType::Usize && index.ownership == OwnershipMode::Value,
+        crate::hir::VecFieldReadOrigin::Traversal => place_is(index, row_index),
+    }
+}
 fn usize_value(expression: &ResolvedExpr, expected: usize) -> bool {
     expression.ty == ResolvedType::Usize
         && expression.ownership == OwnershipMode::Value
@@ -71,6 +79,7 @@ pub(super) fn inspect_counted<'a>(
         charge(work)?;
         match &expression.kind {
             ResolvedExprKind::VecFieldRead {
+                origin,
                 element: read_element,
                 field,
                 bytes,
@@ -83,7 +92,7 @@ pub(super) fn inspect_counted<'a>(
                             || vector.ownership != source.ownership
                             || !matches!(&vector.kind, ResolvedExprKind::Place(place) if place == owner)
                             || read_element != element
-                            || !place_is(index, row_index)
+                            || !field_index(*origin, index, row_index)
                             || crate::hir::vec_field::field(program.declarations(), element, field)
                                 .and_then(|selected| selected.result_type(*bytes))
                                 != Some(expression.ty.clone())
@@ -232,6 +241,7 @@ pub(super) fn draft_bytes(
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)] mod origin_tests;
 
 /// Row Loan v1 replay facts of one exact lowered owned-leaf traversal region,
 /// reconstructed by the same structural prefix as the traversal freeze.

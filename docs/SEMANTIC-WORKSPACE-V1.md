@@ -192,3 +192,8 @@ workspace/product objective remains separately gated.
 Graph v84 adds the explicit lexical CopyDiscard statement described in
 [Finite owned-record discard loops v1](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md).
 No-feature graph selection remains unchanged.
+
+Graph v85 retains the checked Explicit/Traversal form of scoped Vec field reads,
+as specified in [Scoped Vec Field Source Forms v1](SCOPED-VEC-FIELD-SOURCE-FORMS-V1.md).
+It preserves every admitted inner fact; malformed aliases and frozen evidence
+routes remain closed. Source-only qualification is pending.

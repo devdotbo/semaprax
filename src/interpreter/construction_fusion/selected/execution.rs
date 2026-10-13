@@ -89,6 +89,7 @@ impl<'s, 'a> Engine<'s, 'a> {
             K::Block { statements, tail } => self.block(expression, statements, tail, depth),
             K::ConstructRecord { fields, .. } => self.construct(expression, fields, depth),
             K::VecFieldRead {
+                origin: _,
                 element,
                 field,
                 bytes,

@@ -7053,3 +7053,9 @@ The detailed 0.3.5, 0.2.0, and 0.1.0 history is preserved in the [changelog arch
   old receiver. Construction and release work share the existing replay budget.
   Legacy refusal destruction remains a documented compatibility boundary;
   allocation, weak-reference and cross-ledger qualification is pending.
+
+Source-only successor: scoped Vec field reads retain their authored explicit
+lookup or row-derived form so checked previous-row lookups compose with a
+whole-root record traversal freeze. Row indices and source replay remain
+strict; Graph v85/current checked cache v11 and focused hostile/backend owners
+are authored. Qualification is pending; Catalog corpus and limits are unchanged.

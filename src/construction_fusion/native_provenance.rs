@@ -179,6 +179,7 @@ fn classify<'a>(
         }
     }
     if let K::VecFieldRead {
+        origin: _,
         element,
         field,
         bytes,

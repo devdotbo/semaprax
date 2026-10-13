@@ -280,11 +280,98 @@ fn owned_row_traversal_keeps_previous_indexed_string_view_scoped_to_iteration() 
 fn direct_previous_indexed_read_retains_the_exact_traversal_index_refusal() {
     let source = format!("{DECLARATION}{PREVIOUS_INDEXED_DIRECT}");
     let parsed = semaprax::check(&source, "previous-indexed-direct.spx").unwrap();
-    let diagnostics = semaprax::hir::resolve(&parsed).unwrap_err();
-    assert_eq!(diagnostics.len(), 1);
-    let diagnostic = &diagnostics[0];
+    let mut resolved = semaprax::hir::resolve(&parsed).unwrap();
+    semaprax::hir::validate(&resolved).unwrap();
+    fn forge(expression: &mut semaprax::hir::ResolvedExpr) -> bool {
+        use semaprax::hir::{ResolvedExprKind as K, ResolvedStatement as S, VecFieldReadOrigin as O};
+        if let K::VecFieldRead { origin: O::Explicit, args, .. } = &expression.kind {
+            if matches!(args.get(1).map(|arg| &arg.kind), Some(K::Binary { .. })) {
+                let K::VecFieldRead { origin, .. } = &mut expression.kind else { unreachable!() };
+                *origin = O::Traversal; return true;
+            }
+        }
+        match &mut expression.kind {
+            K::Block { statements, tail } => {
+                for statement in statements {
+                    match statement {
+                        S::While { condition, body, .. } | S::LexicalWhile { condition, body, .. } => { if forge(condition) || forge(body) { return true; } }
+                        _ => if forge(statement.value_mut()) { return true; },
+                    }
+                }
+                forge(tail)
+            }
+            K::If { then_branch, else_branch, .. } => forge(then_branch) || forge(else_branch),
+            _ => false,
+        }
+    }
+    let main = resolved.functions.iter_mut().find(|f| f.id.as_str() == "app.main").unwrap();
+    assert!(forge(&mut main.body));
+    let diagnostic = semaprax::hir::validate(&resolved).unwrap_err();
     assert_eq!(diagnostic.code, "SPX-H006");
-    assert!(diagnostic.message.contains(
-        "record traversal length, index, nominal reads or whole-root freeze proof is invalid"
-    ));
+    assert!(diagnostic.message.contains("record traversal length, index, nominal reads or whole-root freeze proof is invalid"));
+}
+
+#[test]
+fn ordinary_previous_row_lookup_composes_with_byte_predicate_and_lexical_exits() {
+    run(
+        r#"@id("app.sentinel") fn sentinel()->bool requires false { true }
+@id("app.ascii") fn ascii(text:borrow str)->bool {
+ let bytes=str_as_bytes(text);
+ for byte in bytes {
+  if byte<65u8 || byte>90u8 { return false; };
+  if byte==63u8 { let unreachable=sentinel(); 0 };
+  0
+ }
+ true
+}
+@id("app.main") fn main()->i64 {
+ let empty=vec_with_capacity<Row>(3usize);
+ let first=vec_push<Row>(empty,Row{priority:7,title:"A",payload:bytes_zeroed(0usize)});
+ let second=vec_push<Row>(first,Row{priority:11,title:"B",payload:bytes_zeroed(0usize)});
+ let rows=vec_push<Row>(second,Row{priority:13,title:"?",payload:bytes_zeroed(0usize)});
+ let mut order=0; let mut seen=0;
+ for borrow row at index in rows {
+  order=order*10+i64_from_usize(index)+1;
+  let current=row.title;
+  if index==0usize { continue; };
+  let previous=vec_field<Row>(rows,index-1usize,"title");
+  if ascii(current) && str_len_bytes(previous)==1 { seen=seen+1; };
+  if index==2usize { break; };
+  0
+ }
+ let renewed=vec_sort_owned<Row>(rows);
+ if order==123 && seen==1 && vec_len<Row>(renewed)==3usize {29}else{0}
+}"#,
+        29,
+    );
+}
+
+#[test]
+fn ordinary_lookup_failure_inside_traversal_keeps_sticky_status_and_cleanup() {
+    let body = r#"@id("app.sentinel") fn sentinel()->i64 requires false { 0 }
+@id("app.main") fn main()->i64 {
+ let empty=vec_with_capacity<Row>(1usize);
+ let rows=vec_push<Row>(empty,Row{priority:7,title:"A",payload:bytes_zeroed(0usize)});
+ for borrow row in rows {
+  let current=row.title;
+  let previous=vec_field<Row>(rows,1usize,"title");
+  let never=sentinel();
+  str_len_bytes(current)+str_len_bytes(previous)+never
+ }
+ 0
+}"#;
+    let source = format!("{DECLARATION}{body}");
+    let path = std::env::temp_dir().join(format!("field-origin-failure-{}-{}.spx", std::process::id(), SEQUENCE.fetch_add(1, Ordering::Relaxed)));
+    std::fs::write(&path, &source).unwrap();
+    let result = semaprax::interpreter::interpret(&path, "app.main", &[], &Default::default()).unwrap();
+    std::fs::remove_file(path).unwrap();
+    semaprax::interpreter::verify_envelope(&result.envelope).unwrap();
+    assert!(!result.returned);
+    let wire: serde_json::Value = serde_json::from_str(&result.envelope).unwrap();
+    let outcome = &wire["payload"]["outcome"];
+    assert_eq!(outcome["status"]["domain_id"], "semaprax.vec.v1");
+    assert_eq!(outcome["status"]["code"], 2);
+    assert!(outcome.get("value").is_none());
+    super::super::scoped_vec_field_native::run_status(&source, 2, "semaprax.vec.v1", 0);
+    super::run_wasm_status(body, 2, 0, "none", Some("semaprax.vec.v1"));
 }

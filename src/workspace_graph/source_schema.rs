@@ -389,6 +389,7 @@ fn select<'a>(
             }
         }
     }
+    if module.functions.iter().chain(module.function_instances.iter().map(|i| &i.function)).any(|f| std::iter::once(&f.body).chain(&f.requires).chain(&f.ensures).any(crate::vec_field::expression_uses)) { return Ok("semaprax.graph.v85"); }
     if module
         .functions
         .iter()
@@ -659,7 +660,7 @@ mod tests {
             let mut build = build_source(source);
             assert_eq!(
                 build.source_graph_schemas().unwrap()["app/main.spx"],
-                "semaprax.graph.v75"
+                "semaprax.graph.v85"
             );
             build.hir.modules[0]
                 .functions

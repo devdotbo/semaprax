@@ -96,6 +96,7 @@ pub(super) fn render_expr(
             render_args(walker, args, output);
         }
         ResolvedExprKind::VecFieldRead {
+            origin: _,
             element,
             field,
             bytes,

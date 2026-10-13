@@ -3,7 +3,7 @@
 //! Unsupported semantic nodes refuse, rather than being omitted from the hash.
 use crate::hir::*;
 use sha2::{Digest, Sha256};
-const DOMAIN: &[u8] = b"semaprax.retained-primitive-body.v1\0";
+const DOMAIN: &[u8] = b"semaprax.retained-primitive-body.v2\0";
 struct Encoder<'a> {
     hash: Sha256,
     work: usize,
@@ -408,6 +408,7 @@ impl Encoder<'_> {
                 Some(())
             }
             E::VecFieldRead {
+                origin,
                 element,
                 field,
                 bytes,
@@ -416,7 +417,7 @@ impl Encoder<'_> {
                 if !admitted_vec_element(element) || args.len() != 2 {
                     return None;
                 }
-                self.text("vec-field-read")?;
+                self.text("vec-field-read")?; self.text(origin.as_str())?;
                 self.ty(element)?;
                 self.text(field.as_str())?;
                 self.bytes(&[u8::from(*bytes)])?;

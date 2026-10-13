@@ -653,6 +653,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => self.emit_leaf_expr(expr),
             ResolvedExprKind::VecFieldRead {
+                origin: _,
                 element,
                 field,
                 bytes,

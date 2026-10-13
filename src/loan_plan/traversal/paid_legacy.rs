@@ -36,6 +36,7 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
         charge(work)?;
         match &expression.kind {
             ResolvedExprKind::VecFieldRead {
+                origin: _,
                 element: read_element,
                 field,
                 bytes,

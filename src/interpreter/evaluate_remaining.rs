@@ -407,6 +407,7 @@ impl Evaluator<'_> {
                 })))
             }
             ResolvedExprKind::VecFieldRead {
+                origin: _,
                 element,
                 field,
                 bytes,

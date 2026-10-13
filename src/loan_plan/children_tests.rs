@@ -358,6 +358,7 @@ fn argument_list_arms_report_their_arguments_in_order() {
     let read = expr(
         "read",
         ResolvedExprKind::VecFieldRead {
+            origin: crate::hir::VecFieldReadOrigin::Explicit,
             element: ResolvedType::Bool,
             field: DeclarationId::new("read.field"),
             bytes: false,

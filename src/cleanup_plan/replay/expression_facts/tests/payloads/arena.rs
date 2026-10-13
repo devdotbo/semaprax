@@ -37,6 +37,7 @@ fn arena_all_operation_kinds_zero_one_seventeen_keep_complete_owned_oracle() {
                 end: Box::new(scalar("payload.end")),
             },
             ResolvedExprKind::VecFieldRead {
+                origin: crate::hir::VecFieldReadOrigin::Explicit,
                 element: ResolvedType::I64,
                 field: DeclarationId::new("payload.field"),
                 bytes: false,

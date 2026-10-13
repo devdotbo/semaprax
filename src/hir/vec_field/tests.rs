@@ -91,6 +91,7 @@ fn field_identity_result_source_and_child_order_forgeries_fail_replay() {
         let mut program = checked(SOURCE);
         let expr = first(&mut program);
         let ResolvedExprKind::VecFieldRead {
+            origin: _,
             element,
             field,
             bytes,

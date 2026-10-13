@@ -324,9 +324,10 @@ codec_enum!(ResolvedExprKind {
     24=>Try{operand,result,ok_case,ok_field,err_case,err_field,residual_type},
     25=>TryOption{operand,option,some_case,some_field,none_case,residual_type},
     26=>UpdateRecord{base,record,fields},27=>Project{base,field},28=>Upcast{source},29=>FunctionReference{target},30=>Invoke{callable,args},31=>Closure{parameters,captures,body},
-    32=>Yield{request},33=>LiteralFormat{template,args},34=>VecFieldRead{element,field,bytes,args},35=>LexicalExit{kind,target,value},36=>BorrowedUtf8Literal(value),37=>VecConstructor{element,count,statements,tail},
+    32=>Yield{request},33=>LiteralFormat{template,args},34=>VecFieldRead{origin,element,field,bytes,args},35=>LexicalExit{kind,target,value},36=>BorrowedUtf8Literal(value),37=>VecConstructor{element,count,statements,tail},
     38=>RowLoan{loan,args}
 });
+codec_enum!(VecFieldReadOrigin { 0=>Explicit,1=>Traversal });
 // Row Loan v1: decoded descriptors carry no authority until complete HIR
 // validation replays their call slot, traversal region and callee proof.
 codec_enum!(RowLoanVersion { 0=>V1 });

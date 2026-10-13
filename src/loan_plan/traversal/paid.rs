@@ -36,6 +36,7 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
         charge(work)?;
         match &expression.kind {
             ResolvedExprKind::VecFieldRead {
+                origin,
                 element: read_element,
                 field,
                 bytes,
@@ -48,7 +49,7 @@ pub(in crate::loan_plan) fn inspect_counted<'a>(
                             || vector.ownership != source.ownership
                             || !matches!(&vector.kind, ResolvedExprKind::Place(place) if place == owner)
                             || read_element != element
-                            || !place_is(index, row_index)
+                            || !field_index(*origin, index, row_index)
                             || crate::hir::vec_field::field(program.declarations(), element, field)
                                 .and_then(|selected| selected.result_type(*bytes))
                                 .as_ref()

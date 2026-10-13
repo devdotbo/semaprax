@@ -4734,3 +4734,11 @@ constructor refusal retain their original allocating destructor. The independent
 old node/kind/destructor and ordinary constructors remain compiled in the owning
 test module; [the source packet](evidence/ordinary-dag-drop/README.md) records
 the physical boundary and pending controls.
+
+Scoped field-read source forms are retained by `src/hir/vec_field_origin.rs`,
+resolved at ordinary calls and row projections, and independently reconstructed
+by the traversal receiver and row census. The workspace source-site join lives
+in `src/workspace_graph/record_traversal/field_origin.rs`; the outer Graph v85
+layer lives in `src/graph/vec_field_origin.rs`. The source-only contract is
+[Scoped Vec Field Source Forms v1](SCOPED-VEC-FIELD-SOURCE-FORMS-V1.md); this
+metadata grants no authority and leaves backend operations unchanged.

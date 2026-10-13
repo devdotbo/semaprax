@@ -169,6 +169,7 @@ impl SemanticSourceIndex {
             (
                 _,
                 ResolvedExprKind::VecFieldRead {
+                    origin: crate::hir::VecFieldReadOrigin::Explicit,
                     element,
                     field,
                     bytes,

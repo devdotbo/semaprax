@@ -8,6 +8,7 @@ impl HirValidator<'_> {
         scope: &dyn ScopeRead,
     ) -> Result<ResolvedType, Diagnostic> {
         let ResolvedExprKind::VecFieldRead {
+            origin: _,
             element,
             field,
             bytes,
