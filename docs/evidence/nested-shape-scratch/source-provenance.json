@@ -1,0 +1,105 @@
+{
+  "base": "47cbc2f7487485dd23ac2ecfcdc1afea2a86f3d3",
+  "archived_sources": {
+    "src/cleanup_plan/replay/nested_shape/paid.rs": {
+      "archive": "src__cleanup_plan__replay__nested_shape__paid.rs.before.txt",
+      "sha256": "ebcd2e4ac0668c7f0117aae32c0900721d24719e425c7ced3cd93da1c69dd422"
+    },
+    "src/cleanup_plan/replay/nested_shape.rs": {
+      "archive": "src__cleanup_plan__replay__nested_shape.rs.before.txt",
+      "sha256": "b7875ad1c94cf9934621511d27ed0c54e8c02c591af9c5c98f4e8debeda5d702"
+    },
+    "src/cleanup_plan/replay/ordinary_inventory.rs": {
+      "archive": "src__cleanup_plan__replay__ordinary_inventory.rs.before.txt",
+      "sha256": "5049f4d8b103626ebaf1034150850c10d8dba41e74f1fb75912a331df572a82b"
+    },
+    "src/cleanup_plan/replay/ordinary_inventory/tests.rs": {
+      "archive": "src__cleanup_plan__replay__ordinary_inventory__tests.rs.before.txt",
+      "sha256": "c76079bac3a7d71784be9600f6e31355b4b541e8b2505f3fc5b23fdbaf75f28d"
+    }
+  },
+  "current_projection": {
+    "src/cleanup_plan/replay/nested_shape/paid.rs": [
+      {
+        "from": "mod scratch;\npub(super) use scratch::Scratch;\nuse scratch::{CaseMeta, Frame};\n\npub(super) fn derive(\n    program: &dyn crate::cleanup::ReplayContext,\n    function: &ResolvedFunction,\n    root: &ResolvedType,\n    next_flag: &mut u32,\n    depth: usize,\n    budget: &mut Budget,\n    physical: &mut ReplayBudget,\n) -> Result<FieldLivenessShape, Diagnostic> {\n    derive_reusing(\n        program,\n        function,\n        root,\n        next_flag,\n        (depth, budget),\n        physical,\n        &mut Scratch::default(),\n    )\n}\n\npub(super) fn derive_reusing(\n    program: &dyn crate::cleanup::ReplayContext,\n    function: &ResolvedFunction,\n    root: &ResolvedType,\n    next_flag: &mut u32,\n    bounds: (usize, &mut Budget),\n    physical: &mut ReplayBudget,\n    scratch: &mut Scratch,\n) -> Result<FieldLivenessShape, Diagnostic> {\n    let (depth, budget) = bounds;\n",
+        "to": "pub(super) fn derive(\n    program: &dyn crate::cleanup::ReplayContext,\n    function: &ResolvedFunction,\n    root: &ResolvedType,\n    next_flag: &mut u32,\n    depth: usize,\n    budget: &mut Budget,\n    physical: &mut ReplayBudget,\n) -> Result<FieldLivenessShape, Diagnostic> {\n    struct CaseMeta {\n        case: DeclarationId,\n        case_index: u32,\n        fields: Vec<(DeclarationId, u32)>,\n    }\n    enum Frame {\n        Enter(ResolvedType, usize),\n        FinishRecord(DeclarationId, Vec<(DeclarationId, u32)>),\n        FinishVariant(DeclarationId, Vec<CaseMeta>),\n    }\n\n",
+        "count": 1
+      },
+      {
+        "from": "    let mut lease = scratch.lease();\n    let (frames, shapes) = lease.parts();",
+        "to": "    let mut frames = Vec::new();",
+        "count": 1
+      },
+      {
+        "from": "function, frames, 1, \"independent shape frames\"",
+        "to": "function, &mut frames, 1, \"independent shape frames\"",
+        "count": 1
+      },
+      {
+        "from": "    frames.push(Frame::Enter(root.clone(), depth));\n",
+        "to": "    frames.push(Frame::Enter(root.clone(), depth));\n    let mut shapes = Vec::<FieldLivenessShape>::new();\n",
+        "count": 1
+      },
+      {
+        "from": "                        shapes,",
+        "to": "                        &mut shapes,",
+        "count": 6
+      },
+      {
+        "from": "                    shapes,",
+        "to": "                    &mut shapes,",
+        "count": 2
+      },
+      {
+        "from": "                            frames,",
+        "to": "                            &mut frames,",
+        "count": 2
+      }
+    ],
+    "src/cleanup_plan/replay/nested_shape.rs": [
+      {
+        "from": "#[cfg(test)]\nmod paid_before;\n/// Scratch and its sole payer remain owned through the complete receiving call.\n/// No address, cache key or retained observation can confer payer authority.\npub(super) struct PaidShapeReceiver<'a> {\n    scratch: paid::Scratch,\n    physical: &'a mut ReplayBudget,\n}\nimpl<'a> PaidShapeReceiver<'a> {\n    pub(super) fn new(physical: &'a mut ReplayBudget) -> Self {\n        Self {\n            scratch: paid::Scratch::default(),\n            physical,\n        }\n    }\n    pub(super) fn derive(\n        &mut self,\n        program: &dyn crate::cleanup::ReplayContext,\n        function: &ResolvedFunction,\n        ty: &ResolvedType,\n        next_flag: &mut u32,\n    ) -> Result<FieldLivenessShape, Diagnostic> {\n        paid::derive_reusing(\n            program,\n            function,\n            ty,\n            next_flag,\n            (0, &mut Budget::default()),\n            self.physical,\n            &mut self.scratch,\n        )\n    }\n    pub(super) fn budget(&mut self) -> &mut ReplayBudget {\n        self.physical\n    }\n    #[cfg(test)]\n    pub(super) fn capacities(&self) -> (usize, usize) {\n        self.scratch.capacities()\n    }\n    #[cfg(test)]\n    pub(super) fn settled(&self) -> bool {\n        self.scratch.settled()\n    }\n}\n\n#[cfg(test)]\npub(super) fn expected_shape_for_type_paid_before(\n    program: &dyn crate::cleanup::ReplayContext,\n    function: &ResolvedFunction,\n    ty: &ResolvedType,\n    next_flag: &mut u32,\n    physical: &mut ReplayBudget,\n) -> Result<FieldLivenessShape, Diagnostic> {\n    paid_before::derive(\n        program,\n        function,\n        ty,\n        next_flag,\n        0,\n        &mut Budget::default(),\n        physical,\n    )\n}\n\n",
+        "to": "",
+        "count": 1
+      }
+    ],
+    "src/cleanup_plan/replay/ordinary_inventory.rs": [
+      {
+        "from": "    let mut shape_receiver = nested_shape::PaidShapeReceiver::new(budget);\n",
+        "to": "",
+        "count": 1
+      },
+      {
+        "from": "shape_receiver.derive(",
+        "to": "nested_shape::expected_shape_for_type_paid(",
+        "count": 1
+      },
+      {
+        "from": "            &mut independently_derived_flag,\n",
+        "to": "            &mut independently_derived_flag,\n            budget,\n",
+        "count": 1
+      },
+      {
+        "from": "    let budget = shape_receiver.budget();\n",
+        "to": "",
+        "count": 1
+      },
+      {
+        "from": "\n#[cfg(test)]\nmod before;\n",
+        "to": "",
+        "count": 1
+      }
+    ],
+    "src/cleanup_plan/replay/ordinary_inventory/tests.rs": [
+      {
+        "from": "\nmod scratch_reuse;\n",
+        "to": "",
+        "count": 1
+      }
+    ]
+  },
+  "compiled_old": {
+    "paid_before.rs": "byte-exact complete original paid.rs",
+    "ordinary_inventory/before.rs": "complete original receiver prefix; removes only three child registrations; names full paid_before receiver explicitly; existing original BTree receiver unchanged"
+  }
+}

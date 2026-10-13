@@ -364,3 +364,5 @@ fn complete_paid_shape_receivers_keep_original_flags_exact_short_sticky_and_drop
         }
     }
 }
+
+mod scratch_reuse;

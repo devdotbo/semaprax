@@ -68,6 +68,70 @@ pub(super) fn expected_shape_for_type_paid(
     )
 }
 
+#[cfg(test)]
+mod paid_before;
+/// Scratch and its sole payer remain owned through the complete receiving call.
+/// No address, cache key or retained observation can confer payer authority.
+pub(super) struct PaidShapeReceiver<'a> {
+    scratch: paid::Scratch,
+    physical: &'a mut ReplayBudget,
+}
+impl<'a> PaidShapeReceiver<'a> {
+    pub(super) fn new(physical: &'a mut ReplayBudget) -> Self {
+        Self {
+            scratch: paid::Scratch::default(),
+            physical,
+        }
+    }
+    pub(super) fn derive(
+        &mut self,
+        program: &dyn crate::cleanup::ReplayContext,
+        function: &ResolvedFunction,
+        ty: &ResolvedType,
+        next_flag: &mut u32,
+    ) -> Result<FieldLivenessShape, Diagnostic> {
+        paid::derive_reusing(
+            program,
+            function,
+            ty,
+            next_flag,
+            (0, &mut Budget::default()),
+            self.physical,
+            &mut self.scratch,
+        )
+    }
+    pub(super) fn budget(&mut self) -> &mut ReplayBudget {
+        self.physical
+    }
+    #[cfg(test)]
+    pub(super) fn capacities(&self) -> (usize, usize) {
+        self.scratch.capacities()
+    }
+    #[cfg(test)]
+    pub(super) fn settled(&self) -> bool {
+        self.scratch.settled()
+    }
+}
+
+#[cfg(test)]
+pub(super) fn expected_shape_for_type_paid_before(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    ty: &ResolvedType,
+    next_flag: &mut u32,
+    physical: &mut ReplayBudget,
+) -> Result<FieldLivenessShape, Diagnostic> {
+    paid_before::derive(
+        program,
+        function,
+        ty,
+        next_flag,
+        0,
+        &mut Budget::default(),
+        physical,
+    )
+}
+
 /// Depth-first shape derivation over an explicit work stack.
 ///
 /// A record chain is as deep as the program admits, and the legacy flat

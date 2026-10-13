@@ -6,6 +6,10 @@ use crate::cleanup_plan::replay::ordinary_inventory::{
     substitute,
 };
 
+mod scratch;
+pub(super) use scratch::Scratch;
+use scratch::{CaseMeta, Frame};
+
 pub(super) fn derive(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -15,28 +19,38 @@ pub(super) fn derive(
     budget: &mut Budget,
     physical: &mut ReplayBudget,
 ) -> Result<FieldLivenessShape, Diagnostic> {
-    struct CaseMeta {
-        case: DeclarationId,
-        case_index: u32,
-        fields: Vec<(DeclarationId, u32)>,
-    }
-    enum Frame {
-        Enter(ResolvedType, usize),
-        FinishRecord(DeclarationId, Vec<(DeclarationId, u32)>),
-        FinishVariant(DeclarationId, Vec<CaseMeta>),
-    }
+    derive_reusing(
+        program,
+        function,
+        root,
+        next_flag,
+        (depth, budget),
+        physical,
+        &mut Scratch::default(),
+    )
+}
 
+pub(super) fn derive_reusing(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    root: &ResolvedType,
+    next_flag: &mut u32,
+    bounds: (usize, &mut Budget),
+    physical: &mut ReplayBudget,
+    scratch: &mut Scratch,
+) -> Result<FieldLivenessShape, Diagnostic> {
+    let (depth, budget) = bounds;
     physical.reserve_clone(function, root, "independent shape root type")?;
-    let mut frames = Vec::new();
-    physical.reserve_vec(function, &mut frames, 1, "independent shape frames")?;
+    let mut lease = scratch.lease();
+    let (frames, shapes) = lease.parts();
+    physical.reserve_vec(function, frames, 1, "independent shape frames")?;
     frames.push(Frame::Enter(root.clone(), depth));
-    let mut shapes = Vec::<FieldLivenessShape>::new();
     while let Some(frame) = frames.pop() {
         match frame {
             Frame::Enter(ty, depth) => {
                 if !type_needs_drop_with_budget(program, function, &ty, physical)? {
                     push(
-                        &mut shapes,
+                        shapes,
                         FieldLivenessShape::NoDrop,
                         function,
                         physical,
@@ -54,7 +68,7 @@ pub(super) fn derive(
                     charge_leaf(function, budget)?;
                     let flag = next_flag_id(function, next_flag)?;
                     push(
-                        &mut shapes,
+                        shapes,
                         FieldLivenessShape::Leaf {
                             flag,
                             lifecycle: DeclarationId::paid_borrowed(id, |bytes| {
@@ -83,7 +97,7 @@ pub(super) fn derive(
                 {
                     charge_leaf(function, budget)?;
                     push(
-                        &mut shapes,
+                        shapes,
                         FieldLivenessShape::Leaf {
                             flag: next_flag_id(function, next_flag)?,
                             lifecycle: DeclarationId::paid_borrowed(
@@ -124,7 +138,7 @@ pub(super) fn derive(
                     }
                     charge_leaf(function, budget)?;
                     push(
-                        &mut shapes,
+                        shapes,
                         FieldLivenessShape::Leaf {
                             flag: next_flag_id(function, next_flag)?,
                             lifecycle: DeclarationId::paid_borrowed(
@@ -147,7 +161,7 @@ pub(super) fn derive(
                 if crate::cleanup::is_owned_bounded_box_type(&ty) {
                     charge_leaf(function, budget)?;
                     push(
-                        &mut shapes,
+                        shapes,
                         FieldLivenessShape::Leaf {
                             flag: next_flag_id(function, next_flag)?,
                             lifecycle: DeclarationId::paid_borrowed(
@@ -197,7 +211,7 @@ pub(super) fn derive(
                         }
                         charge_leaf(function, budget)?;
                         push(
-                            &mut shapes,
+                            shapes,
                             FieldLivenessShape::Leaf {
                                 flag: next_flag_id(function, next_flag)?,
                                 lifecycle: drop.id.clone(),
@@ -241,7 +255,7 @@ pub(super) fn derive(
                         meta.extend(fields.iter().map(|field| (field.id.clone(), field.index)));
                         physical.reserve_vec(
                             function,
-                            &mut frames,
+                            frames,
                             fields.len().saturating_add(1),
                             "independent record frames",
                         )?;
@@ -325,7 +339,7 @@ pub(super) fn derive(
                         }
                         physical.reserve_vec(
                             function,
-                            &mut frames,
+                            frames,
                             entries.len().saturating_add(1),
                             "independent variant frames",
                         )?;
@@ -354,7 +368,7 @@ pub(super) fn derive(
                     },
                 ));
                 push(
-                    &mut shapes,
+                    shapes,
                     FieldLivenessShape::Record {
                         declaration,
                         fields: expected,
@@ -407,7 +421,7 @@ pub(super) fn derive(
                     });
                 }
                 push(
-                    &mut shapes,
+                    shapes,
                     FieldLivenessShape::Variant {
                         declaration,
                         cases: expected_cases,

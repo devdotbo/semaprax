@@ -1,0 +1,31 @@
+{
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 24597,
+      "cacheReadInputTokens": 535,
+      "cacheCreationInputTokens": 11049,
+      "webSearchRequests": 0,
+      "costUSD": 0.2902235,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 21698,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "total_cost_usd": 0.2902235,
+  "duration_ms": 208857,
+  "duration_api_ms": 208682,
+  "num_turns": 1,
+  "is_error": false,
+  "subtype": "success",
+  "purpose": "OPT819 discovery-only complete-definition review; no source edits",
+  "wall_seconds": 210.86760754200077,
+  "exit_code": 0,
+  "actual_billing": "unknown",
+  "tools_enabled": false,
+  "packet_bytes": 25031,
+  "packet_sha256": "da928b6813d7ba2a5e0396130cd9367d29f9bbc62a1204ec5e26a7afbf8120d5"
+}

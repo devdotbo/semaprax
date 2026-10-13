@@ -41,15 +41,15 @@ pub(super) fn validate_inventory_coverage(
             .and_then(|(_, slot)| (slot.id == *id).then(|| inventory_storage_id(&slot.origin)))
     };
     let mut independently_derived_flag = 0u32;
+    let mut shape_receiver = nested_shape::PaidShapeReceiver::new(budget);
     for (index, inventory_slot) in function.cleanup.slots.iter().enumerate() {
         let actual = &plan.slots[index];
         let expected_storage = inventory_storage_id(&inventory_slot.origin);
-        let independently_derived = nested_shape::expected_shape_for_type_paid(
+        let independently_derived = shape_receiver.derive(
             program,
             function,
             &inventory_slot.ty,
             &mut independently_derived_flag,
-            budget,
         )?;
         if inventory_slot.shape != independently_derived {
             return Err(replay_error(
@@ -73,6 +73,7 @@ pub(super) fn validate_inventory_coverage(
             ));
         }
     }
+    let budget = shape_receiver.budget();
     if usize::try_from(independently_derived_flag).ok() != Some(function.cleanup.flags.len()) {
         return Err(replay_error(
             function,
@@ -252,3 +253,6 @@ fn with_saved_receiver<T>(operation: impl FnOnce() -> T) -> T {
 }
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod before;
