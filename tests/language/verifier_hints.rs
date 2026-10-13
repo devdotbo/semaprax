@@ -694,3 +694,42 @@ fn borrowed_returns_and_scalar_methods_name_the_admitted_form() {
     );
     assert!(help(&method).contains("`abs(x)`"), "{method}");
 }
+
+#[test]
+fn a_narrow_integer_generic_argument_names_the_i64_round_trip() {
+    let option = only(
+        "module habit.o;\n@id(\"habit.f\")\nfn f(a: Option<usize>) -> i64\n{\n    0\n}\n@id(\"app.main\")\nfn main() -> i64\n{\n    0\n}\n",
+        "SPX-T223",
+    );
+    assert!(
+        help(&option).contains("instantiate `Option` with `i64`"),
+        "{option}"
+    );
+    assert!(
+        help(&option).contains("`i64_from_usize(value)`"),
+        "{option}"
+    );
+    assert!(
+        help(&option).contains("`usize_from_i64(value)`"),
+        "{option}"
+    );
+
+    let record = only(
+        "module habit.p;\n@id(\"habit.pair\")\nrecord Pair<T> {\n    @id(\"habit.pair.left\")\n    left: T,\n}\n@id(\"habit.f\")\nfn f(a: Pair<u8>) -> i64\n{\n    0\n}\n@id(\"app.main\")\nfn main() -> i64\n{\n    0\n}\n",
+        "SPX-T223",
+    );
+    assert!(help(&record).contains("`i64_from_u8(value)`"), "{record}");
+    assert!(help(&record).contains("`u8_from_i64(value)`"), "{record}");
+
+    // The form the hint names verifies, and no hint is invented for an
+    // argument without that round trip.
+    assert!(diagnostics(
+        "module habit.o;\n@id(\"habit.find\")\nfn find(index: usize) -> Option<i64>\n{\n    Option<i64>::Some { value: i64_from_usize(index) }\n}\n@id(\"app.main\")\nfn main() -> i64\n{\n    match find(3usize) { Option::Some { value: v } => i64_from_usize(usize_from_i64(v)), Option::None {} => 0, }\n}\n",
+    )
+    .is_empty());
+    let float = only(
+        "module habit.o;\n@id(\"habit.f\")\nfn f(a: Option<f64>) -> i64\n{\n    0\n}\n@id(\"app.main\")\nfn main() -> i64\n{\n    0\n}\n",
+        "SPX-T223",
+    );
+    assert!(float.help.is_none(), "{float}");
+}
