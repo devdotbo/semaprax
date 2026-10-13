@@ -19,7 +19,7 @@ use super::nodes::{
 };
 use super::resolve_expr_frame::{take_pair, take_results, take_triple, Frame};
 use super::type_reachability::record_args_ok;
-use super::{Binding, Place, PlaceProjection, Resolver};
+use super::{Binding, Place, PlaceProjection, Resolver, Scope};
 use path_arena::{PathArena, PathId, Seg, Step};
 
 mod byte_view;
@@ -47,7 +47,7 @@ impl Resolver<'_> {
         let mut paths = PathArena::new(path);
         let mut frames = vec![Frame::Enter {
             expr,
-            bindings: Rc::new(bindings.clone()),
+            bindings: super::resolver_scope::borrowed(bindings),
             path: PathId::ROOT,
         }];
         let mut results = Vec::new();
@@ -1620,7 +1620,7 @@ impl Resolver<'_> {
                         ty: value.ty.clone(),
                         span: *name_span,
                     };
-                    Rc::make_mut(&mut scope).insert(
+                    Rc::make_mut(&mut scope).to_mut().insert(
                         name.clone(),
                         Binding {
                             traversal_row: None,
@@ -2304,7 +2304,7 @@ impl Resolver<'_> {
                                         ty: field_ty.clone(),
                                         span: field.binding_span,
                                     };
-                                    Rc::make_mut(&mut arm_bindings).insert(
+                                    Rc::make_mut(&mut arm_bindings).to_mut().insert(
                                         field.binding.clone(),
                                         Binding {
                                             traversal_row: None,
@@ -2346,7 +2346,7 @@ impl Resolver<'_> {
                                     &scrutinee.ty,
                                     type_name,
                                     fields,
-                                    Rc::make_mut(&mut arm_bindings),
+                                    Rc::make_mut(&mut arm_bindings).to_mut(),
                                     &record,
                                     *pattern_span,
                                     mode,
@@ -2476,7 +2476,7 @@ impl Resolver<'_> {
                                     ty: scrutinee.ty.clone(),
                                     span: arm.pattern.span(),
                                 };
-                                Rc::make_mut(&mut arm_bindings).insert(
+                                Rc::make_mut(&mut arm_bindings).to_mut().insert(
                                     name.clone(),
                                     Binding {
                                         traversal_row: None,

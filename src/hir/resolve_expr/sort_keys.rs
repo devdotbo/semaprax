@@ -110,7 +110,7 @@ impl Resolver<'_> {
         expression: &Expr,
         types: &[crate::ast::Type],
         args: &'e [Expr],
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'e>,
         path: PathId,
     ) -> Result<[Frame<'e>; 2], Diagnostic> {
         let (element, callee) = self.prepare_sort_by(function, expression, types, args)?;

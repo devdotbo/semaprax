@@ -4081,7 +4081,7 @@ is unchanged. This index supplies no new type, source, or cache authority.
 | --- | --- |
 | Source projection | `src/ast.rs`, `src/lexer.rs`, `src/parser.rs`, `src/format.rs` |
 | Verification | `src/verify.rs`, `src/source_verify.rs`, `src/source_verify/` — `declaration/` owns the per-pass declaration checks, `iterative/` the frame machine, `oracle/` the test-only recursive cross-check, `function_value_inventory.rs` the lexical function-value reference/candidate inventory, `hints.rs` the shared fix hints both verifiers attach to unknown-function, generic-argument, literal-suffix, and borrowed-view diagnostics, and `loans.rs`/`place.rs` the loan lifecycle |
-| HIR | `src/hir.rs`, `src/hir/` — `ids.rs`, `nodes.rs`, and `expr_nodes.rs` own the data model; `resolve_*.rs` own AST lowering; `function_value.rs` owns independent callable target/signature validation; `validation.rs` owns core validation; `validation/canonical_loans.rs` independently rebuilds loan proof and retains each exact origin once behind private endpoint ordinals |
+| HIR | `src/hir.rs`, `src/hir/` — `ids.rs`, `nodes.rs`, and `expr_nodes.rs` own the data model; `resolve_*.rs` own AST lowering; `resolver_scope.rs` owns call-local borrowed-root Cow binding scopes and their complete-map mutation boundary; `borrowed_root_oracle/` retains the fixed test-only nonrecursive prior receiver and helper/frame bodies; `function_value.rs` owns independent callable target/signature validation; `validation.rs` owns core validation; `validation/canonical_loans.rs` independently rebuilds loan proof and retains each exact origin once behind private endpoint ordinals |
 | Primitive String Vec slot views | `src/vec_ops/string_slot.rs`, `src/source_verify/string_slot.rs`, `src/loan_plan/call_arguments.rs`, `src/graph/string_slots.rs` and `src/workspace_graph/expected_projection/string_slots.rs`; [Primitive String Vec Views v1](PRIMITIVE-STRING-VEC-VIEWS-V1.md) owns exact whole-root views, fixed builtin identity and Prelude v17 / Graph v80 replay. Backend execution qualification remains pending. |
 | Scoped record row loans | `src/hir/row_loan.rs` (descriptor, resolution seam, lent-parameter derivation) and `src/hir/row_loan/validate.rs` (independent call-slot, traversal and helper-body proof); `src/source_verify/record_traversal/row_loan.rs`; `src/hir/validation/row_loan.rs`; `src/interpreter/row_loan.rs`; `src/codegen/native_emit/expression/row_loan.rs`; `src/wasm/aggregate/row_loan.rs`; `src/cleanup_plan/row_loan.rs`; `src/graph/row_loan.rs`; `src/workspace_graph/record_traversal/row_loan.rs`; [Scoped Record Row Loan v1](SCOPED-RECORD-ROW-LOAN-V1.md) owns the call-only contract; executable qualification is pending |
 | Scoped Vec field reads | `src/vec_field.rs`, `src/hir/vec_field.rs`, `src/hir/byte_slice_provenance/vec_field.rs`, `src/codegen/native_emit/expression/vec_ops/field_read.rs`, `src/graph/scoped_vec_field.rs`, `src/patch/source_index.rs`, and `src/repair/scoped_vec_field.rs`; [Scoped Vec Field Reads v1](SCOPED-VEC-FIELD-READS-V1.md) owns the bounded contract; executable qualification is pending |
@@ -4154,7 +4154,10 @@ Two files exceed the budget because each is a single function whose locals are
 shared across every branch — `src/hir/resolve_expr.rs` and
 `src/economic_agent/agent_execute.rs`. Cutting those requires extract-method with
 new signatures, which is a behavioural change and needs its own review; it is not
-a relocation.
+a relocation. The fixed test-only `src/hir/borrowed_root_oracle/resolve_expr.rs`
+retains the complete frozen eb02 iterative receiver as an independent oracle.
+Its recorded size is fixed; splitting its dispatch would change the reference
+being compared, and it grants no additional production size allowance.
 
 ### Integration test harnesses
 

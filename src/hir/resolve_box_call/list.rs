@@ -8,7 +8,7 @@ pub(super) fn schedule<'expr>(
     frames: &mut Vec<Frame<'expr>>,
     type_arguments: &[Type],
     args: &'expr [Expr],
-    bindings: Rc<BTreeMap<String, Binding>>,
+    bindings: Scope<'expr>,
     path: PathId,
     span: Span,
     op: ListOp,

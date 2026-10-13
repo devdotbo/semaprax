@@ -165,6 +165,12 @@ fn compare() {
             for root in ["body", "contract.requires.0", "λ-root", ""] {
                 let body = &source_function.body;
                 let iterative = resolver.resolve_expr_iterative(owner, body, &bindings, root);
+                assert_eq!(
+                    iterative,
+                    crate::hir::borrowed_root_oracle::Resolver(&resolver)
+                        .expression(owner, body, &bindings, root),
+                    "complete frozen nonrecursive receiver under every path root"
+                );
                 let recursive =
                     resolver.resolve_expr_recursive_reference(owner, body, &bindings, root);
                 let resolved = assert_same(iterative, recursive);

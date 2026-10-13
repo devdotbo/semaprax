@@ -11,7 +11,7 @@ pub(super) struct ForOwnFrame<'a> {
     pub(super) statements: &'a [crate::ast::Statement],
     pub(super) tail: &'a Expr,
     pub(super) index: usize,
-    pub(super) scope: Rc<BTreeMap<String, Binding>>,
+    pub(super) scope: Scope<'a>,
     pub(super) resolved: Vec<ResolvedStatement>,
     pub(super) source: Option<ResolvedExpr>,
 }
@@ -24,7 +24,7 @@ pub(super) fn schedule<'a>(
     statements: &'a [crate::ast::Statement],
     tail: &'a Expr,
     index: usize,
-    scope: Rc<BTreeMap<String, Binding>>,
+    scope: Scope<'a>,
     resolved: Vec<ResolvedStatement>,
 ) {
     let crate::ast::Statement::ForOwn { values, .. } = &statements[index] else {
@@ -79,7 +79,7 @@ pub(super) fn resume<'a>(
         }
         let item_edge = [statement.then(Seg::ForOwnItem)];
         let mut scope = frame.scope.clone();
-        Rc::make_mut(&mut scope).insert(
+        Rc::make_mut(&mut scope).to_mut().insert(
             item.clone(),
             Binding {
                 traversal_row: None,
@@ -461,7 +461,7 @@ pub(super) fn resolve_reference(
 #[cfg(test)]
 pub(super) fn capacity(
     frame: &ForOwnFrame<'_>,
-    first_scope: &mut dyn FnMut(*const BTreeMap<String, Binding>) -> bool,
+    first_scope: &mut dyn FnMut(*const ()) -> bool,
 ) -> usize {
     use super::capacity_probe::*;
     std::mem::size_of::<ForOwnFrame<'_>>()
@@ -475,8 +475,8 @@ pub(super) fn capacity(
             .source
             .as_ref()
             .map_or(0, resolved_expr_owned_capacity)
-        + if first_scope(Rc::as_ptr(&frame.scope)) {
-            resolver_scope_owned_capacity(&frame.scope)
+        + if first_scope(Rc::as_ptr(&frame.scope) as *const ()) {
+            super::resolver_scope::owned_capacity(&frame.scope)
         } else {
             0
         }

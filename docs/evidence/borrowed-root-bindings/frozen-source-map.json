@@ -1,0 +1,206 @@
+[
+  {
+    "source": "src/hir/resolve_expr.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr.rs",
+    "sha256": "43ad89db4bf456ccb02ad085ff007030a7de1d16e52e71c52151453e22ec1879",
+    "bytes": 140849
+  },
+  {
+    "source": "src/hir/resolve_expr_frame.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr_frame.rs",
+    "sha256": "f6acad133b4102cef26fd9d6f328ebc2b46d23e9c4f2efbe42f92fe30afdffa9",
+    "bytes": 24999
+  },
+  {
+    "source": "src/hir/resolve_for.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_for.rs",
+    "sha256": "062062f0a6b61714f87cb3961e9bd7e3cb5e78ff1d4a21c0c08091feb282b516",
+    "bytes": 19259
+  },
+  {
+    "source": "src/hir/resolve_for_own.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_for_own.rs",
+    "sha256": "d9055e3e1615cf43064ae6f259c3b0b79882bded13e04b5c9cf5447364129b4c",
+    "bytes": 17347
+  },
+  {
+    "source": "src/hir/resolve_box_call.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_box_call.rs",
+    "sha256": "c7e002c11eabe2b9d9bbdebacc1d1e72a2be5d68241ca7c4340b78c97738f59b",
+    "bytes": 10160
+  },
+  {
+    "source": "src/hir/resolve_vec_call.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_vec_call.rs",
+    "sha256": "6c7ad1bdfc84b7786f237e45d68e2f304914d7f815086359f60a003006bdbc93",
+    "bytes": 14840
+  },
+  {
+    "source": "src/hir/resolve_expr/sort_keys.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/sort_keys.rs",
+    "sha256": "01e6f9c3632acc1cd92bb93d8e9b0bc7b104e33b80af65c1ffd5a4ac35a66c84",
+    "bytes": 4604
+  },
+  {
+    "source": "src/hir/resolve_expr/super_method.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/super_method.rs",
+    "sha256": "418659659d0207231490acb7e44eee2653f0b1268c7ef451ed5d54811ed3b329",
+    "bytes": 5067
+  },
+  {
+    "source": "src/hir/resolve_expr/capacity.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/capacity.rs",
+    "sha256": "2dd84195c90d53c619f0d7929be5c5877120791a4d233dda0a3d47666495340c",
+    "bytes": 2258
+  },
+  {
+    "source": "src/hir/resolve_expr/vec_field.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/vec_field.rs",
+    "sha256": "fa24eac85e93e51531a2a0d1eca09ae019f60314559b6b34655526bf6dc9dd7b",
+    "bytes": 5143
+  },
+  {
+    "source": "src/hir/resolve_expr/finish.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/finish.rs",
+    "sha256": "c5848605154f79d0eb903aa467010cb756eda6eb0b21f0549d08321b49de763a",
+    "bytes": 5090
+  },
+  {
+    "source": "src/hir/resolve_expr/vec_constructor.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/vec_constructor.rs",
+    "sha256": "ff7c9f2e0e3552cceea92367d8be28a9b7d51c3e30259d6716381c79a39e921f",
+    "bytes": 2582
+  },
+  {
+    "source": "src/hir/resolve_expr/lexical_exit.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/lexical_exit.rs",
+    "sha256": "1ebbfbdf91f9588105f016e9e947b47bd5e43e5fbdff07bdce7aace987eecd24",
+    "bytes": 3176
+  },
+  {
+    "source": "src/hir/resolve_expr/path_arena_regression_tests.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/path_arena_regression_tests.rs",
+    "sha256": "d74cdc3bf7ba9110abe91e879eff26402dead68118f2f595d1a5ae03d31274fd",
+    "bytes": 7898
+  },
+  {
+    "source": "src/hir/resolve_expr/path_arena_tests.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/path_arena_tests.rs",
+    "sha256": "bd046519046016578fac5605e865b0b39a3f68b9c3bf91a2e7dc286ee1e9e1d9",
+    "bytes": 13636
+  },
+  {
+    "source": "src/hir/resolve_expr/literal_format.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/literal_format.rs",
+    "sha256": "07782b97625367592bdccfdccd1bbb4f6cbff407bcf290b64667b85a643fed38",
+    "bytes": 4363
+  },
+  {
+    "source": "src/hir/resolve_expr/variable.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/variable.rs",
+    "sha256": "8c2bf8b6316e5cb3dc21d47af540a1c767b7085ba1daa2acd38d9166693be0b7",
+    "bytes": 1282
+  },
+  {
+    "source": "src/hir/resolve_expr/path_arena.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/path_arena.rs",
+    "sha256": "38a7e79c5d5dea9bb1469fd8fbb9ba856851c11c51671ab6f12f5b1160b28be1",
+    "bytes": 20174
+  },
+  {
+    "source": "src/hir/resolve_expr/byte_view.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/byte_view.rs",
+    "sha256": "6df7f7b92a99dfa68d24e8697f788a1e46c147a7144a855f9798ced1b3dc6567",
+    "bytes": 2079
+  },
+  {
+    "source": "src/hir/resolve_expr/capacity/tests.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr/capacity/tests.rs",
+    "sha256": "74f0e2fddc073cf517c042f149fa141a3f132709d0afc5468ce386c19d946b11",
+    "bytes": 3931
+  },
+  {
+    "source": "src/hir/resolve_expr_frame/capacity_old.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr_frame/capacity_old.rs",
+    "sha256": "37f56f30437ceb2dd49194ffe85220c9618232b034db6f3d3c771552d154ce52",
+    "bytes": 9214
+  },
+  {
+    "source": "src/hir/resolve_expr_frame/fixed_results.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr_frame/fixed_results.rs",
+    "sha256": "2497424e7f692a59a31c362eaebbf1d901965d2bc5eaa285ba674567462351b8",
+    "bytes": 2414
+  },
+  {
+    "source": "src/hir/resolve_expr_frame/fixed_results/tests.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_expr_frame/fixed_results/tests.rs",
+    "sha256": "192c298e9634e8fc814c54faccfd27c15ab55c2b0298877671fadae700756b61",
+    "bytes": 5522
+  },
+  {
+    "source": "src/hir/resolve_for/bytes.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_for/bytes.rs",
+    "sha256": "deef25b95f122b3eda37e25650556532daf1db66f0d608f7e43bdbda062bc448",
+    "bytes": 8414
+  },
+  {
+    "source": "src/hir/resolve_for/record.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_for/record.rs",
+    "sha256": "4e3e0e4c218725c645e223c9c60266832b117c68460ab7875a0adeca7b342c28",
+    "bytes": 12722
+  },
+  {
+    "source": "src/hir/resolve_for/bytes/tests.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_for/bytes/tests.rs",
+    "sha256": "68fdaed4cb7bf4075e4effef7ed7ed2c5ff2f326f252775dc25004f37550f4a5",
+    "bytes": 10165
+  },
+  {
+    "source": "src/hir/resolve_box_call/list.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_box_call/list.rs",
+    "sha256": "fe80e4e51ec3567fad1a2f776c59af1f835e471e6aad081d88d0f0a9eb139d59",
+    "bytes": 2853
+  },
+  {
+    "source": "src/hir/resolve_box_call/map.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_box_call/map.rs",
+    "sha256": "62451c0d2a1f2f5328c8cdef3be40e3fd1ba6f978caec189385310ea06bb8ee1",
+    "bytes": 3324
+  },
+  {
+    "source": "src/hir/resolve_box_call/iterator.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_box_call/iterator.rs",
+    "sha256": "ce0426bb2b4510c3da186b0c196a68b38275ad2371a0eb86e7f392fd2b3468ce",
+    "bytes": 3861
+  },
+  {
+    "source": "src/hir/closure/resolve.rs",
+    "receiver": "src/hir/borrowed_root_oracle/closure/resolve.rs",
+    "sha256": "bd47e88b57a91b87c272da799f45834097b43dd069ff3c652d3af53a4754e9ea",
+    "bytes": 9507
+  },
+  {
+    "source": "src/hir/closure/once.rs",
+    "receiver": "src/hir/borrowed_root_oracle/closure/once.rs",
+    "sha256": "f45f7909124dcca1ccf75b09b53e1af115f929852ddab7f2dbc2564f6f68d6c7",
+    "bytes": 17210
+  },
+  {
+    "source": "src/hir/closure/mutable.rs",
+    "receiver": "src/hir/borrowed_root_oracle/closure/mutable.rs",
+    "sha256": "5d3e92bf28d00358943ae616ec4cc993d00a718cb1f67b85394aa183e2dbeb0b",
+    "bytes": 14878
+  },
+  {
+    "source": "src/hir/resolve_pattern.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_pattern.rs",
+    "sha256": "d08427d6cbfb7a81daff194733fa206433980add63c74453002973d336eb07ed",
+    "bytes": 22914
+  },
+  {
+    "source": "src/hir/resolve_statement.rs",
+    "receiver": "src/hir/borrowed_root_oracle/resolve_statement.rs",
+    "sha256": "2d7eda19f9a9186b48aeb097af8ce2c0676cce97908ea48c09d1d993047cbb7a",
+    "bytes": 24563
+  }
+]

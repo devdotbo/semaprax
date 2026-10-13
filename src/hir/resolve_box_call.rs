@@ -1,4 +1,5 @@
 //! Exact compiler-owned `Box<T>` call lowering.
+use crate::hir::resolver_scope::Scope;
 
 use super::expr_nodes::{ResolvedExpr, ResolvedExprKind};
 #[cfg(test)]
@@ -69,7 +70,7 @@ impl OwnedGenericCallSite {
         frames: &mut Vec<Frame<'expr>>,
         type_arguments: &[Type],
         args: &'expr [Expr],
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         path: PathId,
         span: Span,
     ) -> Result<(), Diagnostic> {
@@ -170,11 +171,13 @@ pub(super) fn finish_owned(
         OwnedGenericCallSite::List(op) => list::finish(function, path, span, op, element, args),
     }
 }
-use super::{Binding, Resolver};
+#[cfg(test)]
+use super::Binding;
+use super::Resolver;
 use crate::ast::{Expr, Span, Type};
 use crate::diagnostic::Diagnostic;
+#[cfg(test)]
 use std::collections::BTreeMap;
-use std::rc::Rc;
 
 fn resolve_element(
     resolver: &Resolver<'_>,
@@ -207,7 +210,7 @@ pub(super) fn schedule<'expr>(
     frames: &mut Vec<Frame<'expr>>,
     type_arguments: &[Type],
     args: &'expr [Expr],
-    bindings: Rc<BTreeMap<String, Binding>>,
+    bindings: Scope<'expr>,
     path: PathId,
     span: Span,
     op: crate::box_ops::BoxOp,

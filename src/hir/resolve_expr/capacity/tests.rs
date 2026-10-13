@@ -2,12 +2,13 @@ use super::*;
 use crate::ast::{Expr, ExprKind, Span};
 use crate::hir::resolve_expr::path_arena::{PathArena, PathId, Seg};
 use crate::hir::resolve_expr_frame::capacity_old;
+use crate::hir::resolver_scope::Scope;
 use crate::hir::{Binding, DeclarationId, OwnershipMode, ResolvedType, ValueId};
 use std::collections::{BTreeMap, HashSet};
 use std::rc::Rc;
 
-fn scope(name: &str) -> Rc<BTreeMap<String, Binding>> {
-    Rc::new(BTreeMap::from([(
+fn scope(name: &str) -> Scope<'static> {
+    crate::hir::resolver_scope::owned(BTreeMap::from([(
         name.to_owned(),
         Binding {
             traversal_row: None,

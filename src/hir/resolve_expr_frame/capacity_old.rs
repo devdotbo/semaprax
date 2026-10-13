@@ -3,7 +3,7 @@ use super::*;
 
 pub(in crate::hir) fn frame_owned_capacity(
     frame: &Frame<'_>,
-    seen_scopes: &mut std::collections::HashSet<*const BTreeMap<String, Binding>>,
+    seen_scopes: &mut std::collections::HashSet<*const ()>,
 ) -> usize {
     if let Frame::ForOwn(frame) = frame {
         return for_own_capacity(frame, seen_scopes);
@@ -12,9 +12,9 @@ pub(in crate::hir) fn frame_owned_capacity(
     // shared by every frame and counted once by `resolve_expr::capacity`.
     // Continuations share immutable binding maps through `Rc`. Count
     // the owned map allocation once, not once per retaining frame.
-    let mut unique_scope_capacity = |scope: &Rc<BTreeMap<String, Binding>>| {
-        if seen_scopes.insert(Rc::as_ptr(scope)) {
-            resolver_scope_owned_capacity(scope)
+    let mut unique_scope_capacity = |scope: &Scope<'_>| {
+        if seen_scopes.insert(Rc::as_ptr(scope) as *const ()) {
+            crate::hir::resolver_scope::owned_capacity(scope)
         } else {
             0
         }
@@ -212,7 +212,7 @@ pub(in crate::hir) fn frame_owned_capacity(
 
 fn for_own_capacity(
     frame: &crate::hir::resolve_for_own::ForOwnFrame<'_>,
-    seen: &mut std::collections::HashSet<*const BTreeMap<String, Binding>>,
+    seen: &mut std::collections::HashSet<*const ()>,
 ) -> usize {
     std::mem::size_of::<crate::hir::resolve_for_own::ForOwnFrame<'_>>()
         + frame.resolved.capacity() * std::mem::size_of::<ResolvedStatement>()
@@ -225,8 +225,8 @@ fn for_own_capacity(
             .source
             .as_ref()
             .map_or(0, resolved_expr_owned_capacity)
-        + if seen.insert(Rc::as_ptr(&frame.scope)) {
-            resolver_scope_owned_capacity(&frame.scope)
+        + if seen.insert(Rc::as_ptr(&frame.scope) as *const ()) {
+            crate::hir::resolver_scope::owned_capacity(&frame.scope)
         } else {
             0
         }

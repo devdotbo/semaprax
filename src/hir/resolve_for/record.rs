@@ -22,7 +22,7 @@ pub(in crate::hir) fn schedule<'expr>(
     statements: &'expr [crate::ast::Statement],
     tail: &'expr crate::ast::Expr,
     position: usize,
-    scope: Rc<BTreeMap<String, Binding>>,
+    scope: Scope<'expr>,
     resolved: Vec<ResolvedStatement>,
 ) -> Result<(), crate::diagnostic::Diagnostic> {
     let crate::ast::Statement::ForBorrow {
@@ -264,13 +264,13 @@ pub(in crate::hir) fn lower(
     statement
 }
 
-type PreparedTraversal = (ResolvedBinding, ResolvedType, Rc<BTreeMap<String, Binding>>);
+type PreparedTraversal<'expr> = (ResolvedBinding, ResolvedType, Scope<'expr>);
 
 #[allow(clippy::too_many_arguments)]
-fn prepare(
+fn prepare<'expr>(
     resolver: &Resolver<'_>,
     function: &FunctionExecutionId,
-    scope: Rc<BTreeMap<String, Binding>>,
+    scope: Scope<'expr>,
     item: &str,
     item_span: Span,
     index: Option<&crate::ast::TraversalIndex>,
@@ -279,7 +279,7 @@ fn prepare(
     statement: ExprPath<'_>,
     item_edge: Step,
     region_edge: Step,
-) -> Result<PreparedTraversal, crate::diagnostic::Diagnostic> {
+) -> Result<PreparedTraversal<'expr>, crate::diagnostic::Diagnostic> {
     let fail = || {
         resolver.error("SPX-H006", "borrowed record traversal requires an immutable named Vec of an admitted explicit record", values.span)
     };
@@ -340,7 +340,7 @@ fn prepare(
         span: index.map_or(item_span, |index| index.span),
     };
     let mut body_scope = scope.clone();
-    let mutable = Rc::make_mut(&mut body_scope);
+    let mutable = Rc::make_mut(&mut body_scope).to_mut();
     if let Some(index) = index {
         mutable.insert(
             index.name.clone(),
@@ -394,7 +394,7 @@ pub(in crate::hir) fn resolve_reference(
     let (source, element, body_scope) = prepare(
         resolver,
         function,
-        Rc::new(scope.clone()),
+        super::super::resolver_scope::owned(scope.clone()),
         item,
         *item_span,
         index.as_ref(),

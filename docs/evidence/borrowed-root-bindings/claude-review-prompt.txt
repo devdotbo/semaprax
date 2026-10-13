@@ -1,0 +1,1477 @@
+Source-only Rust review. No tools, execution, builds, test commands, external actions or estimates. Review proposed Rc<Cow<BTreeMap>> borrowed-root change and independent frozen iterative Resolver wrapper namespace. Look for Rust type/privacy/lifetime mismatches, incorrect ownership/census/allocation tests, hidden weakening. Entire original mutable maps and publication remain, Cow to_mut at every mutation; new Frame cap592 unchanged. Namespace fallback via Deref shares unchanged type/declaration services, PathArena ABI and Row schema; all carrier-sensitive bodies copied. Return concrete blockers with exact paths; do not assert compilation/runtime success.
+diff --git a/src/hir/iterative_validator_tests.rs b/src/hir/iterative_validator_tests.rs
+index 6b23891b6..332b276e2 100644
+--- a/src/hir/iterative_validator_tests.rs
++++ b/src/hir/iterative_validator_tests.rs
+@@ -148,6 +148,16 @@ interface HostEcho permits { host.echo } {
+             .collect();
+         let iterative =
+             resolver.resolve_expr_iterative(&execution, &source_function.body, &bindings, "body");
++        assert_eq!(
++            iterative,
++            super::borrowed_root_oracle::Resolver(&resolver).expression(
++                &execution,
++                &source_function.body,
++                &bindings,
++                "body"
++            ),
++            "complete frozen nonrecursive receiver, including every Diagnostic field"
++        );
+         let recursive = resolver.resolve_expr_recursive_reference(
+             &execution,
+             &source_function.body,
+diff --git a/src/hir/resolve_box_call.rs b/src/hir/resolve_box_call.rs
+index 31c6fc054..c5dd99e84 100644
+--- a/src/hir/resolve_box_call.rs
++++ b/src/hir/resolve_box_call.rs
+@@ -1,4 +1,5 @@
+ //! Exact compiler-owned `Box<T>` call lowering.
++use crate::hir::resolver_scope::Scope;
+ 
+ use super::expr_nodes::{ResolvedExpr, ResolvedExprKind};
+ #[cfg(test)]
+@@ -69,7 +70,7 @@ impl OwnedGenericCallSite {
+         frames: &mut Vec<Frame<'expr>>,
+         type_arguments: &[Type],
+         args: &'expr [Expr],
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         path: PathId,
+         span: Span,
+     ) -> Result<(), Diagnostic> {
+@@ -207,7 +208,7 @@ pub(super) fn schedule<'expr>(
+     frames: &mut Vec<Frame<'expr>>,
+     type_arguments: &[Type],
+     args: &'expr [Expr],
+-    bindings: Rc<BTreeMap<String, Binding>>,
++    bindings: Scope<'expr>,
+     path: PathId,
+     span: Span,
+     op: crate::box_ops::BoxOp,
+diff --git a/src/hir/resolve_box_call/iterator.rs b/src/hir/resolve_box_call/iterator.rs
+index f0236e62e..161529bb5 100644
+--- a/src/hir/resolve_box_call/iterator.rs
++++ b/src/hir/resolve_box_call/iterator.rs
+@@ -7,7 +7,7 @@ pub(super) fn schedule<'expr>(
+     frames: &mut Vec<Frame<'expr>>,
+     type_arguments: &[Type],
+     args: &'expr [Expr],
+-    bindings: Rc<BTreeMap<String, Binding>>,
++    bindings: Scope<'expr>,
+     path: PathId,
+     span: Span,
+     op: IteratorOp,
+diff --git a/src/hir/resolve_box_call/list.rs b/src/hir/resolve_box_call/list.rs
+index c325c81e7..8f5a87b88 100644
+--- a/src/hir/resolve_box_call/list.rs
++++ b/src/hir/resolve_box_call/list.rs
+@@ -8,7 +8,7 @@ pub(super) fn schedule<'expr>(
+     frames: &mut Vec<Frame<'expr>>,
+     type_arguments: &[Type],
+     args: &'expr [Expr],
+-    bindings: Rc<BTreeMap<String, Binding>>,
++    bindings: Scope<'expr>,
+     path: PathId,
+     span: Span,
+     op: ListOp,
+diff --git a/src/hir/resolve_box_call/map.rs b/src/hir/resolve_box_call/map.rs
+index 288cdcdbd..38dd45515 100644
+--- a/src/hir/resolve_box_call/map.rs
++++ b/src/hir/resolve_box_call/map.rs
+@@ -8,7 +8,7 @@ pub(super) fn schedule<'expr>(
+     frames: &mut Vec<Frame<'expr>>,
+     type_arguments: &[Type],
+     args: &'expr [Expr],
+-    bindings: Rc<BTreeMap<String, Binding>>,
++    bindings: Scope<'expr>,
+     path: PathId,
+     span: Span,
+     op: MapOp,
+diff --git a/src/hir/resolve_expr.rs b/src/hir/resolve_expr.rs
+index 1168e643e..a2508b983 100644
+--- a/src/hir/resolve_expr.rs
++++ b/src/hir/resolve_expr.rs
+@@ -47,7 +47,7 @@ impl Resolver<'_> {
+         let mut paths = PathArena::new(path);
+         let mut frames = vec![Frame::Enter {
+             expr,
+-            bindings: Rc::new(bindings.clone()),
++            bindings: super::resolver_scope::borrowed(bindings),
+             path: PathId::ROOT,
+         }];
+         let mut results = Vec::new();
+@@ -1620,7 +1620,7 @@ impl Resolver<'_> {
+                         ty: value.ty.clone(),
+                         span: *name_span,
+                     };
+-                    Rc::make_mut(&mut scope).insert(
++                    Rc::make_mut(&mut scope).to_mut().insert(
+                         name.clone(),
+                         Binding {
+                             traversal_row: None,
+@@ -2304,7 +2304,7 @@ impl Resolver<'_> {
+                                         ty: field_ty.clone(),
+                                         span: field.binding_span,
+                                     };
+-                                    Rc::make_mut(&mut arm_bindings).insert(
++                                    Rc::make_mut(&mut arm_bindings).to_mut().insert(
+                                         field.binding.clone(),
+                                         Binding {
+                                             traversal_row: None,
+@@ -2346,7 +2346,7 @@ impl Resolver<'_> {
+                                     &scrutinee.ty,
+                                     type_name,
+                                     fields,
+-                                    Rc::make_mut(&mut arm_bindings),
++                                    Rc::make_mut(&mut arm_bindings).to_mut(),
+                                     &record,
+                                     *pattern_span,
+                                     mode,
+@@ -2476,7 +2476,7 @@ impl Resolver<'_> {
+                                     ty: scrutinee.ty.clone(),
+                                     span: arm.pattern.span(),
+                                 };
+-                                Rc::make_mut(&mut arm_bindings).insert(
++                                Rc::make_mut(&mut arm_bindings).to_mut().insert(
+                                     name.clone(),
+                                     Binding {
+                                         traversal_row: None,
+diff --git a/src/hir/resolve_expr/capacity/tests.rs b/src/hir/resolve_expr/capacity/tests.rs
+index c31d2699a..2cadbe0bd 100644
+--- a/src/hir/resolve_expr/capacity/tests.rs
++++ b/src/hir/resolve_expr/capacity/tests.rs
+@@ -2,12 +2,13 @@ use super::*;
+ use crate::ast::{Expr, ExprKind, Span};
+ use crate::hir::resolve_expr::path_arena::{PathArena, PathId, Seg};
+ use crate::hir::resolve_expr_frame::capacity_old;
++use crate::hir::resolver_scope::Scope;
+ use crate::hir::{Binding, DeclarationId, OwnershipMode, ResolvedType, ValueId};
+ use std::collections::{BTreeMap, HashSet};
+ use std::rc::Rc;
+ 
+-fn scope(name: &str) -> Rc<BTreeMap<String, Binding>> {
+-    Rc::new(BTreeMap::from([(
++fn scope(name: &str) -> Scope<'static> {
++    crate::hir::resolver_scope::owned(BTreeMap::from([(
+         name.to_owned(),
+         Binding {
+             traversal_row: None,
+diff --git a/src/hir/resolve_expr/lexical_exit.rs b/src/hir/resolve_expr/lexical_exit.rs
+index 3a21bac25..81b9fbad8 100644
+--- a/src/hir/resolve_expr/lexical_exit.rs
++++ b/src/hir/resolve_expr/lexical_exit.rs
+@@ -9,7 +9,7 @@ pub(super) fn schedule<'a>(
+     expr: &'a Expr,
+     kind: LexicalExitKind,
+     value: Option<&'a Expr>,
+-    bindings: &Rc<BTreeMap<String, Binding>>,
++    bindings: &Scope<'a>,
+     path: PathId,
+     nearest: Option<&ControlTarget>,
+     frames: &mut Vec<Frame<'a>>,
+diff --git a/src/hir/resolve_expr/literal_format.rs b/src/hir/resolve_expr/literal_format.rs
+index 98dc5c9ed..eff1f0c50 100644
+--- a/src/hir/resolve_expr/literal_format.rs
++++ b/src/hir/resolve_expr/literal_format.rs
+@@ -9,7 +9,7 @@ impl Resolver<'_> {
+         paths: &mut PathArena<'_>,
+         args: &'e [Expr],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'e>,
+         path: PathId,
+     ) {
+         if let Some(argument) = args.get(index) {
+@@ -33,7 +33,7 @@ impl Resolver<'_> {
+         expression: &Expr,
+         type_arguments: &[Type],
+         args: &'e [Expr],
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'e>,
+         path: PathId,
+     ) -> Result<[Frame<'e>; 2], Diagnostic> {
+         let template = self.prepare_literal_format(function, expression, type_arguments, args)?;
+diff --git a/src/hir/resolve_expr/path_arena_regression_tests.rs b/src/hir/resolve_expr/path_arena_regression_tests.rs
+index bab80ccff..15fd932b5 100644
+--- a/src/hir/resolve_expr/path_arena_regression_tests.rs
++++ b/src/hir/resolve_expr/path_arena_regression_tests.rs
+@@ -165,6 +165,12 @@ fn compare() {
+             for root in ["body", "contract.requires.0", "λ-root", ""] {
+                 let body = &source_function.body;
+                 let iterative = resolver.resolve_expr_iterative(owner, body, &bindings, root);
++                assert_eq!(
++                    iterative,
++                    crate::hir::borrowed_root_oracle::Resolver(&resolver)
++                        .expression(owner, body, &bindings, root),
++                    "complete frozen nonrecursive receiver under every path root"
++                );
+                 let recursive =
+                     resolver.resolve_expr_recursive_reference(owner, body, &bindings, root);
+                 let resolved = assert_same(iterative, recursive);
+diff --git a/src/hir/resolve_expr/sort_keys.rs b/src/hir/resolve_expr/sort_keys.rs
+index f3cbde49d..2cc3c7440 100644
+--- a/src/hir/resolve_expr/sort_keys.rs
++++ b/src/hir/resolve_expr/sort_keys.rs
+@@ -110,7 +110,7 @@ impl Resolver<'_> {
+         expression: &Expr,
+         types: &[crate::ast::Type],
+         args: &'e [Expr],
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'e>,
+         path: PathId,
+     ) -> Result<[Frame<'e>; 2], Diagnostic> {
+         let (element, callee) = self.prepare_sort_by(function, expression, types, args)?;
+diff --git a/src/hir/resolve_expr/vec_constructor.rs b/src/hir/resolve_expr/vec_constructor.rs
+index 25a605821..1a01a9c25 100644
+--- a/src/hir/resolve_expr/vec_constructor.rs
++++ b/src/hir/resolve_expr/vec_constructor.rs
+@@ -2,16 +2,17 @@
+ use crate::ast::Expr;
+ use crate::diagnostic::Diagnostic;
+ use crate::hir::resolve_expr_frame::Frame;
++use crate::hir::resolver_scope::Scope;
+ use crate::hir::{
+     Binding, FunctionExecutionId, ResolvedExpr, ResolvedExprKind, ResolvedType, Resolver,
+ };
+-use std::{collections::BTreeMap, rc::Rc};
++use std::collections::BTreeMap;
+ 
+ pub(super) fn schedule<'a>(
+     resolver: &Resolver<'_>,
+     function: &FunctionExecutionId,
+     expression: &'a Expr,
+-    bindings: Rc<BTreeMap<String, Binding>>,
++    bindings: Scope<'a>,
+     path: super::path_arena::PathId,
+     frames: &mut Vec<Frame<'a>>,
+ ) -> Result<(), Diagnostic> {
+diff --git a/src/hir/resolve_expr/vec_field.rs b/src/hir/resolve_expr/vec_field.rs
+index 8e457aad5..e509952d9 100644
+--- a/src/hir/resolve_expr/vec_field.rs
++++ b/src/hir/resolve_expr/vec_field.rs
+@@ -135,7 +135,7 @@ impl Resolver<'_> {
+         expression: &Expr,
+         types: &[crate::ast::Type],
+         args: &'e [Expr],
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'e>,
+         path: PathId,
+     ) -> Result<[Frame<'e>; 2], Diagnostic> {
+         let (element, field) = self.prepare_vec_field(function, expression, types, args)?;
+diff --git a/src/hir/resolve_expr_frame.rs b/src/hir/resolve_expr_frame.rs
+index 3ae32062f..f72e1da98 100644
+--- a/src/hir/resolve_expr_frame.rs
++++ b/src/hir/resolve_expr_frame.rs
+@@ -14,7 +14,7 @@ use crate::ast::{BinaryOp, Expr, Span, Statement, Type, UnaryOp};
+ use super::capacity_probe::{
+     resolved_expr_owned_capacity, resolved_field_initializer_owned_capacity,
+     resolved_match_arm_owned_capacity, resolved_statement_owned_capacity,
+-    resolved_type_owned_capacity, resolver_scope_owned_capacity,
++    resolved_type_owned_capacity,
+ };
+ use super::expr_nodes::{
+     ResolvedExpr, ResolvedFieldInitializer, ResolvedMatchArm, ResolvedMatchPattern,
+@@ -44,7 +44,7 @@ pub(super) enum Frame<'expr> {
+     ForOwn(Box<super::resolve_for_own::ForOwnFrame<'expr>>),
+     Enter {
+         expr: &'expr Expr,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         path: PathId,
+     },
+     FinishInvoke {
+@@ -96,7 +96,7 @@ pub(super) enum Frame<'expr> {
+     LiteralFormatArgNext {
+         args: &'expr [Expr],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         path: PathId,
+     },
+     FinishStrOp {
+@@ -133,14 +133,14 @@ pub(super) enum Frame<'expr> {
+     ChildNext {
+         children: &'expr [Expr],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         path: PathId,
+         segment: Seg,
+     },
+     MethodArgNext {
+         args: &'expr [Expr],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         path: PathId,
+     },
+     FinishUnary {
+@@ -158,7 +158,7 @@ pub(super) enum Frame<'expr> {
+         path: PathId,
+         op: BinaryOp,
+         right: &'expr Expr,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+     },
+     BlockNext {
+         span: Span,
+@@ -166,7 +166,7 @@ pub(super) enum Frame<'expr> {
+         statements: &'expr [Statement],
+         tail: &'expr Expr,
+         index: usize,
+-        scope: Rc<BTreeMap<String, Binding>>,
++        scope: Scope<'expr>,
+         resolved: Vec<ResolvedStatement>,
+     },
+     BlockAfterLet {
+@@ -175,7 +175,7 @@ pub(super) enum Frame<'expr> {
+         statements: &'expr [Statement],
+         tail: &'expr Expr,
+         index: usize,
+-        scope: Rc<BTreeMap<String, Binding>>,
++        scope: Scope<'expr>,
+         resolved: Vec<ResolvedStatement>,
+     },
+     BlockAfterAssign {
+@@ -184,7 +184,7 @@ pub(super) enum Frame<'expr> {
+         statements: &'expr [Statement],
+         tail: &'expr Expr,
+         index: usize,
+-        scope: Rc<BTreeMap<String, Binding>>,
++        scope: Scope<'expr>,
+         resolved: Vec<ResolvedStatement>,
+         target: ResolvedBinding,
+         /// Field Mutation v1: the resolved direct field and its
+@@ -197,7 +197,7 @@ pub(super) enum Frame<'expr> {
+         statements: &'expr [Statement],
+         tail: &'expr Expr,
+         index: usize,
+-        scope: Rc<BTreeMap<String, Binding>>,
++        scope: Scope<'expr>,
+         resolved: Vec<ResolvedStatement>,
+     },
+     BlockWhileCondition {
+@@ -208,7 +208,7 @@ pub(super) enum Frame<'expr> {
+         statements: &'expr [Statement],
+         tail: &'expr Expr,
+         index: usize,
+-        scope: Rc<BTreeMap<String, Binding>>,
++        scope: Scope<'expr>,
+         resolved: Vec<ResolvedStatement>,
+     },
+     BlockWhileBody {
+@@ -217,7 +217,7 @@ pub(super) enum Frame<'expr> {
+         statements: &'expr [Statement],
+         tail: &'expr Expr,
+         index: usize,
+-        scope: Rc<BTreeMap<String, Binding>>,
++        scope: Scope<'expr>,
+         resolved: Vec<ResolvedStatement>,
+         condition: Box<ResolvedExpr>,
+         condition_span: Span,
+@@ -228,7 +228,7 @@ pub(super) enum Frame<'expr> {
+         statements: &'expr [Statement],
+         tail: &'expr Expr,
+         index: usize,
+-        scope: Rc<BTreeMap<String, Binding>>,
++        scope: Scope<'expr>,
+         resolved: Vec<ResolvedStatement>,
+         source: ResolvedBinding,
+         element: ResolvedType,
+@@ -247,13 +247,13 @@ pub(super) enum Frame<'expr> {
+         path: PathId,
+         then_branch: &'expr Expr,
+         else_branch: &'expr Expr,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+     },
+     AfterIfThen {
+         span: Span,
+         path: PathId,
+         else_branch: &'expr Expr,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+     },
+     RecordNext {
+         span: Span,
+@@ -263,7 +263,7 @@ pub(super) enum Frame<'expr> {
+         arguments: Vec<ResolvedType>,
+         fields: &'expr [crate::ast::FieldInitializer],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         resolved: Vec<ResolvedFieldInitializer>,
+     },
+     RecordAfterField {
+@@ -274,7 +274,7 @@ pub(super) enum Frame<'expr> {
+         arguments: Vec<ResolvedType>,
+         fields: &'expr [crate::ast::FieldInitializer],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         resolved: Vec<ResolvedFieldInitializer>,
+         field: DeclarationId,
+     },
+@@ -288,7 +288,7 @@ pub(super) enum Frame<'expr> {
+         type_arguments: &'expr [Type],
+         fields: &'expr [crate::ast::FieldInitializer],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         resolved: Vec<ResolvedFieldInitializer>,
+     },
+     VariantAfterField {
+@@ -301,7 +301,7 @@ pub(super) enum Frame<'expr> {
+         type_arguments: &'expr [Type],
+         fields: &'expr [crate::ast::FieldInitializer],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         resolved: Vec<ResolvedFieldInitializer>,
+         field: DeclarationId,
+     },
+@@ -310,7 +310,7 @@ pub(super) enum Frame<'expr> {
+         path: PathId,
+         mode: ResolvedMatchMode,
+         arms: &'expr [crate::ast::MatchArm],
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+     },
+     MatchNext {
+         span: Span,
+@@ -318,7 +318,7 @@ pub(super) enum Frame<'expr> {
+         mode: ResolvedMatchMode,
+         arms: &'expr [crate::ast::MatchArm],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         scrutinee: ResolvedExpr,
+         matched_type: DeclarationId,
+         instance_arguments: Vec<ResolvedType>,
+@@ -331,7 +331,7 @@ pub(super) enum Frame<'expr> {
+         mode: ResolvedMatchMode,
+         arms: &'expr [crate::ast::MatchArm],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         scrutinee: ResolvedExpr,
+         matched_type: DeclarationId,
+         instance_arguments: Vec<ResolvedType>,
+@@ -348,7 +348,7 @@ pub(super) enum Frame<'expr> {
+         mode: ResolvedMatchMode,
+         arms: &'expr [crate::ast::MatchArm],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         scrutinee: ResolvedExpr,
+         resolved: Vec<ResolvedMatchArm>,
+     },
+@@ -358,7 +358,7 @@ pub(super) enum Frame<'expr> {
+         mode: ResolvedMatchMode,
+         arms: &'expr [crate::ast::MatchArm],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         scrutinee: ResolvedExpr,
+         resolved: Vec<ResolvedMatchArm>,
+         pattern: ResolvedMatchPattern,
+@@ -376,7 +376,7 @@ pub(super) enum Frame<'expr> {
+         span: Span,
+         path: PathId,
+         fields: &'expr [crate::ast::FieldInitializer],
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+     },
+     UpdateNext {
+         span: Span,
+@@ -385,7 +385,7 @@ pub(super) enum Frame<'expr> {
+         record: DeclarationId,
+         fields: &'expr [crate::ast::FieldInitializer],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         resolved: Vec<ResolvedFieldInitializer>,
+     },
+     UpdateAfterField {
+@@ -395,7 +395,7 @@ pub(super) enum Frame<'expr> {
+         record: DeclarationId,
+         fields: &'expr [crate::ast::FieldInitializer],
+         index: usize,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         resolved: Vec<ResolvedFieldInitializer>,
+         field: DeclarationId,
+     },
+@@ -409,7 +409,7 @@ pub(super) enum Frame<'expr> {
+         path: PathId,
+         method: &'expr str,
+         receiver: &'expr Expr,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         type_arguments: Vec<ResolvedType>,
+         args_len: usize,
+     },
+@@ -426,7 +426,7 @@ pub(super) enum Frame<'expr> {
+     /// interrupted continuation is re-pushed, preserving the slot bound.
+     StartUpcast {
+         source: &'expr Expr,
+-        bindings: Rc<BTreeMap<String, Binding>>,
++        bindings: Scope<'expr>,
+         slot_parent: PathId,
+         slot_edge: Step,
+         holder: DeclarationId,
+@@ -454,13 +454,13 @@ pub(super) fn take_results(results: &mut Vec<ResolvedExpr>, count: usize) -> Vec
+ #[cfg(test)]
+ pub(super) fn frame_owned_capacity(
+     frame: &Frame<'_>,
+-    seen_scopes: &mut std::collections::HashSet<*const BTreeMap<String, Binding>>,
++    seen_scopes: &mut std::collections::HashSet<*const ()>,
+ ) -> usize {
+     frame_owned_capacity_with(frame, &mut |pointer| seen_scopes.insert(pointer))
+ }
+ 
+ #[cfg(test)]
+-fn frame_scope<'a>(frame: &'a Frame<'_>) -> Option<&'a Rc<BTreeMap<String, Binding>>> {
++fn frame_scope<'a, 'scope>(frame: &'a Frame<'scope>) -> Option<&'a Scope<'scope>> {
+     match frame {
+         Frame::Enter { bindings, .. }
+         | Frame::ChildNext { bindings, .. }
+@@ -497,13 +497,10 @@ fn frame_scope<'a>(frame: &'a Frame<'_>) -> Option<&'a Rc<BTreeMap<String, Bindi
+ /// Borrow every retained scope, including boxed upcast resumes, in the same
+ /// order as the owned-capacity receiver. No pointer is retained or dereferenced.
+ #[cfg(test)]
+-pub(super) fn visit_frame_scopes(
+-    mut frame: &Frame<'_>,
+-    mut visit: impl FnMut(*const BTreeMap<String, Binding>),
+-) {
++pub(super) fn visit_frame_scopes(mut frame: &Frame<'_>, mut visit: impl FnMut(*const ())) {
+     loop {
+         if let Some(scope) = frame_scope(frame) {
+-            visit(Rc::as_ptr(scope));
++            visit((Rc::as_ptr(scope) as *const ()));
+         }
+         match frame {
+             Frame::StartUpcast { resume, .. } => frame = resume,
+@@ -515,15 +512,15 @@ pub(super) fn visit_frame_scopes(
+ #[cfg(test)]
+ pub(super) fn frame_owned_capacity_with(
+     frame: &Frame<'_>,
+-    first_scope: &mut dyn FnMut(*const BTreeMap<String, Binding>) -> bool,
++    first_scope: &mut dyn FnMut(*const ()) -> bool,
+ ) -> usize {
+     if let Frame::ForOwn(frame) = frame {
+         return super::resolve_for_own::capacity(frame, first_scope);
+     }
+     // Path coordinates are inline; their backing is counted once by the probe.
+     let scope = frame_scope(frame).map_or(0, |scope| {
+-        if first_scope(Rc::as_ptr(scope)) {
+-            resolver_scope_owned_capacity(scope)
++        if first_scope((Rc::as_ptr(scope) as *const ())) {
++            super::resolver_scope::owned_capacity(scope)
+         } else {
+             0
+         }
+@@ -698,7 +695,7 @@ mod literal_format_capacity_tests {
+     #[test]
+     fn literal_format_frames_count_template_paths_and_shared_scope_once() {
+         use super::super::resolve_expr::path_arena::PathArena;
+-        let bindings = Rc::new(BTreeMap::new());
++        let bindings = crate::hir::resolver_scope::owned(BTreeMap::new());
+         let template = "prefix {}".to_owned();
+         let mut paths = PathArena::new("body");
+         let path = paths.child_at(1, 1, PathId::ROOT, Seg::Arg.at(0));
+@@ -725,7 +722,7 @@ mod literal_format_capacity_tests {
+         };
+         assert_eq!(
+             frame_owned_capacity(&next, &mut seen),
+-            resolver_scope_owned_capacity(&bindings)
++            super::super::resolver_scope::owned_capacity(&bindings)
+         );
+         assert_eq!(seen.len(), 1);
+         assert_eq!(frame_owned_capacity(&next, &mut seen), 0);
+@@ -757,7 +754,7 @@ mod literal_format_capacity_tests {
+         assert_eq!(frame_owned_capacity(&frame, &mut seen), 0);
+         let start = Frame::StartUpcast {
+             source: &expr,
+-            bindings: Rc::new(BTreeMap::new()),
++            bindings: crate::hir::resolver_scope::owned(BTreeMap::new()),
+             slot_parent: PathId::ROOT,
+             slot_edge: Seg::ArgZero.into(),
+             holder: DeclarationId::new("holder"),
+@@ -765,7 +762,9 @@ mod literal_format_capacity_tests {
+             resume: Box::new(resume),
+         };
+         let scope = match &start {
+-            Frame::StartUpcast { bindings, .. } => resolver_scope_owned_capacity(bindings),
++            Frame::StartUpcast { bindings, .. } => {
++                super::super::resolver_scope::owned_capacity(bindings)
++            }
+             _ => unreachable!(),
+         };
+         assert_eq!(
+diff --git a/src/hir/resolve_expr_frame/capacity_old.rs b/src/hir/resolve_expr_frame/capacity_old.rs
+index 93364940e..168a75379 100644
+--- a/src/hir/resolve_expr_frame/capacity_old.rs
++++ b/src/hir/resolve_expr_frame/capacity_old.rs
+@@ -3,7 +3,7 @@ use super::*;
+ 
+ pub(in crate::hir) fn frame_owned_capacity(
+     frame: &Frame<'_>,
+-    seen_scopes: &mut std::collections::HashSet<*const BTreeMap<String, Binding>>,
++    seen_scopes: &mut std::collections::HashSet<*const ()>,
+ ) -> usize {
+     if let Frame::ForOwn(frame) = frame {
+         return for_own_capacity(frame, seen_scopes);
+@@ -12,9 +12,9 @@ pub(in crate::hir) fn frame_owned_capacity(
+     // shared by every frame and counted once by `resolve_expr::capacity`.
+     // Continuations share immutable binding maps through `Rc`. Count
+     // the owned map allocation once, not once per retaining frame.
+-    let mut unique_scope_capacity = |scope: &Rc<BTreeMap<String, Binding>>| {
+-        if seen_scopes.insert(Rc::as_ptr(scope)) {
+-            resolver_scope_owned_capacity(scope)
++    let mut unique_scope_capacity = |scope: &Scope<'_>| {
++        if seen_scopes.insert((Rc::as_ptr(scope) as *const ())) {
++            crate::hir::resolver_scope::owned_capacity(scope)
+         } else {
+             0
+         }
+@@ -212,7 +212,7 @@ pub(in crate::hir) fn frame_owned_capacity(
+ 
+ fn for_own_capacity(
+     frame: &crate::hir::resolve_for_own::ForOwnFrame<'_>,
+-    seen: &mut std::collections::HashSet<*const BTreeMap<String, Binding>>,
++    seen: &mut std::collections::HashSet<*const ()>,
+ ) -> usize {
+     std::mem::size_of::<crate::hir::resolve_for_own::ForOwnFrame<'_>>()
+         + frame.resolved.capacity() * std::mem::size_of::<ResolvedStatement>()
+@@ -225,8 +225,8 @@ fn for_own_capacity(
+             .source
+             .as_ref()
+             .map_or(0, resolved_expr_owned_capacity)
+-        + if seen.insert(Rc::as_ptr(&frame.scope)) {
+-            resolver_scope_owned_capacity(&frame.scope)
++        + if seen.insert((Rc::as_ptr(&frame.scope) as *const ())) {
++            crate::hir::resolver_scope::owned_capacity(&frame.scope)
+         } else {
+             0
+         }
+diff --git a/src/hir/resolve_for.rs b/src/hir/resolve_for.rs
+index d74a16366..d130be56d 100644
+--- a/src/hir/resolve_for.rs
++++ b/src/hir/resolve_for.rs
+@@ -1,4 +1,5 @@
+ //! Canonical lowering for bounded `for item in values` Vec traversal.
++use crate::hir::resolver_scope::Scope;
+ 
+ pub(super) mod bytes;
+ pub(super) mod record;
+@@ -26,7 +27,7 @@ pub(super) fn schedule<'expr>(
+     statements: &'expr [crate::ast::Statement],
+     tail: &'expr crate::ast::Expr,
+     index: usize,
+-    scope: Rc<BTreeMap<String, Binding>>,
++    scope: Scope<'expr>,
+     resolved: Vec<ResolvedStatement>,
+     item: &str,
+     values: &'expr crate::ast::Expr,
+@@ -72,7 +73,7 @@ pub(super) fn schedule<'expr>(
+     let statement = Seg::Statement.at(index);
+     let item_edge = [statement.then(Seg::ForItem)];
+     let mut body_scope = scope.clone();
+-    Rc::make_mut(&mut body_scope).insert(
++    Rc::make_mut(&mut body_scope).to_mut().insert(
+         item.to_owned(),
+         Binding {
+             traversal_row: None,
+@@ -121,7 +122,7 @@ pub(super) fn resume<'expr>(
+     statements: &'expr [crate::ast::Statement],
+     tail: &'expr crate::ast::Expr,
+     index: usize,
+-    scope: Rc<BTreeMap<String, Binding>>,
++    scope: Scope<'expr>,
+     mut resolved: Vec<ResolvedStatement>,
+     source: ResolvedBinding,
+     element: ResolvedType,
+diff --git a/src/hir/resolve_for/record.rs b/src/hir/resolve_for/record.rs
+index 28bce3c9a..17504267b 100644
+--- a/src/hir/resolve_for/record.rs
++++ b/src/hir/resolve_for/record.rs
+@@ -22,7 +22,7 @@ pub(in crate::hir) fn schedule<'expr>(
+     statements: &'expr [crate::ast::Statement],
+     tail: &'expr crate::ast::Expr,
+     position: usize,
+-    scope: Rc<BTreeMap<String, Binding>>,
++    scope: Scope<'expr>,
+     resolved: Vec<ResolvedStatement>,
+ ) -> Result<(), crate::diagnostic::Diagnostic> {
+     let crate::ast::Statement::ForBorrow {
+@@ -264,13 +264,13 @@ pub(in crate::hir) fn lower(
+     statement
+ }
+ 
+-type PreparedTraversal = (ResolvedBinding, ResolvedType, Rc<BTreeMap<String, Binding>>);
++type PreparedTraversal<'expr> = (ResolvedBinding, ResolvedType, Scope<'expr>);
+ 
+ #[allow(clippy::too_many_arguments)]
+-fn prepare(
++fn prepare<'expr>(
+     resolver: &Resolver<'_>,
+     function: &FunctionExecutionId,
+-    scope: Rc<BTreeMap<String, Binding>>,
++    scope: Scope<'expr>,
+     item: &str,
+     item_span: Span,
+     index: Option<&crate::ast::TraversalIndex>,
+@@ -279,7 +279,7 @@ fn prepare(
+     statement: ExprPath<'_>,
+     item_edge: Step,
+     region_edge: Step,
+-) -> Result<PreparedTraversal, crate::diagnostic::Diagnostic> {
++) -> Result<PreparedTraversal<'expr>, crate::diagnostic::Diagnostic> {
+     let fail = || {
+         resolver.error("SPX-H006", "borrowed record traversal requires an immutable named Vec of an admitted explicit record", values.span)
+     };
+@@ -340,7 +340,7 @@ fn prepare(
+         span: index.map_or(item_span, |index| index.span),
+     };
+     let mut body_scope = scope.clone();
+-    let mutable = Rc::make_mut(&mut body_scope);
++    let mutable = Rc::make_mut(&mut body_scope).to_mut();
+     if let Some(index) = index {
+         mutable.insert(
+             index.name.clone(),
+@@ -394,7 +394,7 @@ pub(in crate::hir) fn resolve_reference(
+     let (source, element, body_scope) = prepare(
+         resolver,
+         function,
+-        Rc::new(scope.clone()),
++        super::super::resolver_scope::owned(scope.clone()),
+         item,
+         *item_span,
+         index.as_ref(),
+diff --git a/src/hir/resolve_for_own.rs b/src/hir/resolve_for_own.rs
+index 834df00cc..50dcaa0f5 100644
+--- a/src/hir/resolve_for_own.rs
++++ b/src/hir/resolve_for_own.rs
+@@ -11,7 +11,7 @@ pub(super) struct ForOwnFrame<'a> {
+     pub(super) statements: &'a [crate::ast::Statement],
+     pub(super) tail: &'a Expr,
+     pub(super) index: usize,
+-    pub(super) scope: Rc<BTreeMap<String, Binding>>,
++    pub(super) scope: Scope<'a>,
+     pub(super) resolved: Vec<ResolvedStatement>,
+     pub(super) source: Option<ResolvedExpr>,
+ }
+@@ -24,7 +24,7 @@ pub(super) fn schedule<'a>(
+     statements: &'a [crate::ast::Statement],
+     tail: &'a Expr,
+     index: usize,
+-    scope: Rc<BTreeMap<String, Binding>>,
++    scope: Scope<'a>,
+     resolved: Vec<ResolvedStatement>,
+ ) {
+     let crate::ast::Statement::ForOwn { values, .. } = &statements[index] else {
+@@ -79,7 +79,7 @@ pub(super) fn resume<'a>(
+         }
+         let item_edge = [statement.then(Seg::ForOwnItem)];
+         let mut scope = frame.scope.clone();
+-        Rc::make_mut(&mut scope).insert(
++        Rc::make_mut(&mut scope).to_mut().insert(
+             item.clone(),
+             Binding {
+                 traversal_row: None,
+@@ -461,7 +461,7 @@ pub(super) fn resolve_reference(
+ #[cfg(test)]
+ pub(super) fn capacity(
+     frame: &ForOwnFrame<'_>,
+-    first_scope: &mut dyn FnMut(*const BTreeMap<String, Binding>) -> bool,
++    first_scope: &mut dyn FnMut(*const ()) -> bool,
+ ) -> usize {
+     use super::capacity_probe::*;
+     std::mem::size_of::<ForOwnFrame<'_>>()
+@@ -475,8 +475,8 @@ pub(super) fn capacity(
+             .source
+             .as_ref()
+             .map_or(0, resolved_expr_owned_capacity)
+-        + if first_scope(Rc::as_ptr(&frame.scope)) {
+-            resolver_scope_owned_capacity(&frame.scope)
++        + if first_scope((Rc::as_ptr(&frame.scope) as *const ())) {
++            super::resolver_scope::owned_capacity(&frame.scope)
+         } else {
+             0
+         }
+diff --git a/src/hir/resolve_vec_call.rs b/src/hir/resolve_vec_call.rs
+index 63b9084a2..65ce498b6 100644
+--- a/src/hir/resolve_vec_call.rs
++++ b/src/hir/resolve_vec_call.rs
+@@ -1,5 +1,6 @@
+ //! Exact compiler-owned `Vec<T>` call lowering shared by the production
+ //! iterative resolver and its test-only recursive reference.
++use crate::hir::resolver_scope::Scope;
+ 
+ use std::collections::BTreeMap;
+ use std::rc::Rc;
+@@ -175,7 +176,7 @@ pub(super) fn schedule<'expr>(
+     frames: &mut Vec<Frame<'expr>>,
+     type_arguments: &[Type],
+     args: &'expr [Expr],
+-    bindings: Rc<BTreeMap<String, Binding>>,
++    bindings: Scope<'expr>,
+     site: VecCallSite,
+ ) -> Result<(), Diagnostic> {
+     let VecCallSite { path, span, op } = site;
+
+FILE src/hir/resolver_scope.rs
+//! Call-local shared scopes: borrow the complete input until an actual mutation.
+use super::Binding;
+use std::{borrow::Cow, collections::BTreeMap, rc::Rc};
+pub(super) type Scope<'scope> = Rc<Cow<'scope, BTreeMap<String, Binding>>>;
+pub(super) fn borrowed(bindings: &BTreeMap<String, Binding>) -> Scope<'_> {
+    Rc::new(Cow::Borrowed(bindings))
+}
+#[cfg(test)]
+pub(super) fn owned(bindings: BTreeMap<String, Binding>) -> Scope<'static> {
+    Rc::new(Cow::Owned(bindings))
+}
+#[cfg(test)]
+pub(super) fn owned_capacity(scope: &Scope<'_>) -> usize {
+    // Real Rc value/control storage is retained even when its map is borrowed.
+    std::mem::size_of::<Cow<'_, BTreeMap<String, Binding>>>()
+        + 2 * std::mem::size_of::<usize>()
+        + match scope.as_ref() {
+            Cow::Borrowed(_) => 0,
+            Cow::Owned(map) => super::capacity_probe::resolver_scope_owned_capacity(map),
+        }
+}
+#[cfg(test)]
+mod tests;
+
+FILE src/hir/resolver_scope/tests.rs
+use super::*;
+use crate::hir::*;
+use crate::test_allocation_observer::measure;
+use std::path::Path;
+
+fn binding(name: &str, ty: ResolvedType, mutable: bool) -> Binding {
+    Binding {
+        traversal_row: None,
+        id: ValueId::new(name.to_owned()),
+        ty,
+        ownership: OwnershipMode::Value,
+        mutable,
+    }
+}
+fn complete_input(
+    map: &BTreeMap<String, Binding>,
+) -> Vec<(String, ValueId, ResolvedType, OwnershipMode, bool)> {
+    map.iter()
+        .map(|(name, b)| {
+            assert!(b.traversal_row.is_none());
+            (
+                name.clone(),
+                b.id.clone(),
+                b.ty.clone(),
+                b.ownership,
+                b.mutable,
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn borrowed_root_actual_storage_and_drop_keep_the_entire_input_map() {
+    for count in [0, 1, 64, 512] {
+        let input: BTreeMap<_, _> = (0..count)
+            .map(|i| {
+                let name = format!("λ.binding.{i:04}.{}", "wide".repeat(8));
+                (
+                    name.clone(),
+                    binding(
+                        &name,
+                        ResolvedType::Function {
+                            parameters: vec![ResolvedType::I64, ResolvedType::Bool],
+                            result: Box::new(ResolvedType::I64),
+                        },
+                        i % 2 == 0,
+                    ),
+                )
+            })
+            .collect();
+        let before = complete_input(&input);
+        let (_, old) = measure(|| {
+            let root = Rc::new(input.clone());
+            let children = [root.clone(), root.clone(), root.clone()];
+            assert_eq!(complete_input(&root), before);
+            drop(children);
+            drop(root);
+        });
+        let (_, current) = measure(|| {
+            let root = borrowed(&input);
+            let children = [root.clone(), root.clone(), root.clone()];
+            assert!(matches!(root.as_ref(), Cow::Borrowed(map) if std::ptr::eq(*map, &input)));
+            assert_eq!(root.len(), input.len());
+            drop(children);
+            drop(root);
+        });
+        for observation in [old, current] {
+            assert!(!observation.invalid);
+            assert_eq!(observation.allocated, observation.freed);
+            assert_eq!(observation.live, 0);
+        }
+        assert_eq!(current.allocations, 1);
+        assert_eq!(current.reallocations, 0);
+        assert_eq!(
+            current.allocated,
+            std::mem::size_of::<Cow<'_, BTreeMap<String, Binding>>>()
+                + 2 * std::mem::size_of::<usize>()
+        );
+        if count > 0 {
+            assert!(current.allocated < old.allocated);
+        }
+        assert_eq!(complete_input(&input), before);
+    }
+}
+
+#[test]
+fn complete_map_detach_keeps_siblings_every_field_and_real_drop() {
+    let input = BTreeMap::from([
+        (
+            "original".into(),
+            binding("original", ResolvedType::I64, true),
+        ),
+        (
+            "signature".into(),
+            binding(
+                "signature",
+                ResolvedType::Function {
+                    parameters: vec![ResolvedType::Bool],
+                    result: Box::new(ResolvedType::I64),
+                },
+                false,
+            ),
+        ),
+    ]);
+    let before = complete_input(&input);
+    let (_, observed) = measure(|| {
+        let root = borrowed(&input);
+        let mut child = root.clone();
+        Rc::make_mut(&mut child)
+            .to_mut()
+            .insert("local".into(), binding("local", ResolvedType::Bool, false));
+        assert!(matches!(root.as_ref(), Cow::Borrowed(_)));
+        assert!(matches!(child.as_ref(), Cow::Owned(_)));
+        assert!(!root.contains_key("local"));
+        assert!(child.contains_key("local"));
+        for (name, id, ty, ownership, mutable) in &before {
+            let value = &child[name];
+            assert_eq!(
+                (&value.id, &value.ty, &value.ownership, &value.mutable),
+                (id, ty, ownership, mutable)
+            );
+        }
+        let sibling = child.clone();
+        Rc::make_mut(&mut child)
+            .to_mut()
+            .get_mut("original")
+            .unwrap()
+            .mutable = false;
+        assert!(sibling["original"].mutable);
+        assert!(!child["original"].mutable);
+        assert!(input["original"].mutable);
+        assert!(owned_capacity(&root) < owned_capacity(&child));
+        drop(sibling);
+        drop(child);
+        drop(root);
+    });
+    assert!(!observed.invalid && observed.allocations > 1);
+    assert_eq!(observed.allocated, observed.freed);
+    assert_eq!(observed.live, 0);
+    assert_eq!(complete_input(&input), before);
+}
+
+fn receiver(source: &str, require_success: bool) {
+    let parsed = crate::parse(source, Path::new("borrowed-root.spx")).unwrap();
+    let resolver = crate::hir::Resolver {
+        program: &parsed,
+        byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(&parsed),
+        declarations: DeclarationIndex::from_verified(&parsed).unwrap(),
+        reuse: None,
+        function_work: FunctionResolutionWork::default(),
+        fused_producer: None,
+        partition_profile: false,
+    };
+    for function in &parsed.functions {
+        let execution =
+            FunctionExecutionId::Monomorphic(DeclarationId::new(function.stable_id.clone()));
+        let input: BTreeMap<_, _> = function
+            .params
+            .iter()
+            .enumerate()
+            .map(|(index, param)| {
+                let ty = resolver
+                    .resolve_function_type(function, &param.ty, param.span)
+                    .unwrap();
+                (
+                    param.name.clone(),
+                    Binding {
+                        traversal_row: None,
+                        id: ValueId::parameter(&execution, index),
+                        ty,
+                        ownership: param.ownership,
+                        mutable: false,
+                    },
+                )
+            })
+            .collect();
+        let before = complete_input(&input);
+        for root in ["body", "contract.requires.0", "λ.根", ""] {
+            let expected = crate::hir::borrowed_root_oracle::Resolver(&resolver).expression(
+                &execution,
+                &function.body,
+                &input,
+                root,
+            );
+            let current = resolver.resolve_expr_iterative(&execution, &function.body, &input, root);
+            // Eq compares every HIR and Diagnostic field; never only a code/message subset.
+            assert_eq!(current, expected, "{} at {root}", function.name);
+            if require_success {
+                assert!(current.is_ok(), "{current:?}");
+            }
+            assert_eq!(complete_input(&input), before);
+        }
+    }
+}
+
+#[test]
+fn complete_frozen_iterative_receiver_preserves_scopes_order_paths_and_ownership() {
+    receiver(
+        r#"module borrowed.root;
+@id("pair") record Pair { @id("pair.a") a:i64, @id("pair.b") b:i64, }
+@id("choice") variant Choice { @id("choice.a") A { @id("choice.a.v") v:i64, }, @id("choice.b") B, }
+@id("add") fn add(a:i64,b:i64)->i64 {a+b}
+@id("value") fn value(flag:bool, choice:Choice, pair:Pair)->i64 {
+ let first=add(1,2); let mut total=first;
+ if flag { let inner=3; total=total+inner; 0 } else { let inner=4; total=total+inner; 0 }
+ while total<0 {total=total+1; if total==2 {continue;} else {0} if total==3 {break;} else {0} 0}
+ let rebuilt=pair with {b:total};
+ let selected=match choice {Choice::A{v}=>v,Choice::B{}=>rebuilt.a,};
+ let scalar=match total {0=>selected,_=>total,};
+ let values=vec_push<i64>(vec_with_capacity<i64>(2usize),scalar);
+ for item in values {total=total+item;0}
+ if flag && false {return total;} else {0}
+ total
+}
+@id("main") fn main()->i64 {0}
+"#,
+        true,
+    );
+}
+
+#[test]
+fn frozen_closure_receiver_keeps_owned_capture_publication_and_borrow_boundaries() {
+    receiver(
+        r#"module borrowed.capture;
+@id("copy") fn copy(value:i64)->i64 {let call=fn(x:i64)->i64 {value+x}; call(2)}
+@id("main") fn main()->i64 {copy(7)}
+"#,
+        true,
+    );
+}
+
+#[test]
+fn complete_frozen_iterative_receiver_keeps_every_diagnostic_field_and_first_error() {
+    for body in [
+        "missing",
+        "let value=missing; later",
+        "let value=1; value=2; value",
+        "if missing {later} else {another}",
+        "let value=1; {let inner=2; inner} inner",
+        "1+true",
+        "break; 0",
+        "continue; 0",
+        "let values=vec_with_capacity<i64>(1usize); for values in values {0} 0",
+    ] {
+        let source = format!("module borrowed.refusal; @id(\"main\") fn main()->i64 {{{body}}}");
+        receiver(&source, false);
+    }
+}
+
+FILE src/hir/borrowed_root_oracle.rs
+//! Complete frozen eb02 iterative receiver; private test-only independent scopes.
+#![allow(dead_code)]
+use super::*;
+mod resolve_box_call;
+mod resolve_expr;
+mod resolve_expr_frame;
+mod resolve_for;
+mod resolve_for_own;
+mod resolve_vec_call;
+mod closure {
+    use super::*;
+    use crate::hir::closure::{borrowed, closure_id, paid, MAX_CAPTURES};
+    mod mutable;
+    mod once;
+    mod resolve;
+}
+pub(super) struct Resolver<'r, 'p>(pub(super) &'r super::Resolver<'p>);
+impl<'r, 'p> std::ops::Deref for Resolver<'r, 'p> {
+    type Target = super::Resolver<'p>;
+    fn deref(&self) -> &Self::Target {
+        self.0
+    }
+}
+impl Resolver<'_, '_> {
+    fn resolve_expr(
+        &self,
+        function: &FunctionExecutionId,
+        expr: &crate::ast::Expr,
+        bindings: &BTreeMap<String, Binding>,
+        path: &str,
+    ) -> Result<ResolvedExpr, Diagnostic> {
+        self.resolve_expr_iterative(function, expr, bindings, path)
+    }
+    pub(super) fn expression(
+        &self,
+        function: &FunctionExecutionId,
+        expr: &crate::ast::Expr,
+        bindings: &BTreeMap<String, Binding>,
+        path: &str,
+    ) -> Result<ResolvedExpr, Diagnostic> {
+        self.resolve_expr_iterative(function, expr, bindings, path)
+    }
+}
+
+FILE src/hir/borrowed_root_oracle/resolve_expr/vec_constructor.rs
+//! The source marker reuses one ordinary Block expression/result identity.
+use crate::ast::Expr;
+use crate::diagnostic::Diagnostic;
+use crate::hir::borrowed_root_oracle::resolve_expr_frame::Frame;
+use crate::hir::{
+    Binding, FunctionExecutionId, ResolvedExpr, ResolvedExprKind, ResolvedType,
+};
+use std::{collections::BTreeMap, rc::Rc};
+use super::super::Resolver;
+
+pub(super) fn schedule<'a>(
+    resolver: &Resolver<'_, '_>,
+    function: &FunctionExecutionId,
+    expression: &'a Expr,
+    bindings: Rc<BTreeMap<String, Binding>>,
+    path: super::path_arena::PathId,
+    frames: &mut Vec<Frame<'a>>,
+) -> Result<(), Diagnostic> {
+    let expansion =
+        crate::ast::vec_constructor::inspect(expression).map_err(crate::hir::hir_error)?;
+    let element =
+        resolver.resolve_call_type_argument(function, expansion.element, expression.span)?;
+    frames.push(Frame::FinishVecConstructor {
+        element,
+        count: expansion.count,
+    });
+    frames.push(Frame::Enter {
+        expr: expansion.value,
+        bindings,
+        path,
+    });
+    Ok(())
+}
+pub(in crate::hir) fn finish(
+    results: &mut Vec<ResolvedExpr>,
+    element: ResolvedType,
+    count: u32,
+) -> Result<(), Diagnostic> {
+    let mut expression = results.pop().expect("constructor block resolved");
+    let ResolvedExprKind::Block { statements, tail } = expression.kind else {
+        return Err(crate::hir::hir_error(
+            "Vec constructor did not lower to its block",
+        ));
+    };
+    expression.kind = ResolvedExprKind::VecConstructor {
+        element,
+        count,
+        statements,
+        tail,
+    };
+    crate::hir::vec_constructor::authenticate(&expression)?;
+    results.push(expression);
+    Ok(())
+}
+
+#[cfg(test)]
+impl Resolver<'_, '_> {
+    pub(in crate::hir) fn resolve_constructor_reference(
+        &self,
+        function: &FunctionExecutionId,
+        expr: &Expr,
+        bindings: &BTreeMap<String, Binding>,
+        path: &str,
+        nearest: Option<&crate::hir::ControlTarget>,
+    ) -> Result<ResolvedExpr, Diagnostic> {
+        let expansion =
+            crate::ast::vec_constructor::inspect(expr).map_err(crate::hir::hir_error)?;
+        let element = self.resolve_call_type_argument(function, expansion.element, expr.span)?;
+        let resolved = self.resolve_expr_recursive_reference_inner(
+            function,
+            expansion.value,
+            bindings,
+            path,
+            nearest,
+        )?;
+        let mut results = vec![resolved];
+        finish(&mut results, element, expansion.count)?;
+        Ok(results.pop().expect("reference constructor result"))
+    }
+}
+
+FILE src/hir/borrowed_root_oracle/closure/resolve.rs
+use super::*;
+use crate::ast::{Expr, ExprKind, Type};
+use std::collections::BTreeMap;
+
+fn source_type(ty: &ResolvedType, scope: &crate::ast::Function) -> Type {
+    match ty {
+        ResolvedType::I64 => Type::I64,
+        ResolvedType::Str => Type::Str,
+        ResolvedType::I32 => Type::I32,
+        ResolvedType::U8 => Type::U8,
+        ResolvedType::Usize => Type::Usize,
+        ResolvedType::Char => Type::Char,
+        ResolvedType::F32 => Type::F32,
+        ResolvedType::F64 => Type::F64,
+        ResolvedType::Bool => Type::Bool,
+        ResolvedType::TypeParameter { owner, index } if owner.as_str() == scope.stable_id => scope
+            .type_parameters
+            .get(*index as usize)
+            .map(|p| Type::Named {
+                name: p.name.clone(),
+                arguments: Vec::new(),
+            })
+            .unwrap_or(Type::String),
+        _ => Type::String,
+    }
+}
+
+impl Resolver<'_, '_> {
+    pub(in crate::hir) fn resolve_closure(
+        &self,
+        parent: &FunctionExecutionId,
+        expression: &Expr,
+        outer: &BTreeMap<String, Binding>,
+        path: &str,
+        reference: bool,
+    ) -> Result<ResolvedExpr, Diagnostic> {
+        let ExprKind::Closure {
+            params,
+            return_type,
+            body,
+            owning,
+            retained,
+            mutable,
+        } = &expression.kind
+        else {
+            unreachable!()
+        };
+        if *retained {
+            return self.resolve_once_closure(parent, expression, outer, path, reference);
+        }
+        if *mutable {
+            return self.resolve_mutable_closure(parent, expression, outer, path, reference);
+        }
+        if *owning {
+            // SPX-AI-021 bounded owning-capture profile: admitted and fully
+            // checked at the source level (see `source_verify::closure`),
+            // but not yet lowered to HIR/backends pending the independent
+            // review the profile's design calls for. Agreement-by-refusal:
+            // no backend observes a partially-lowered owning capture.
+            // See `docs/CLOSURES-OWNING-V1.md`.
+            return Err(hir_error(
+                "owning-capture closures are admitted and checked at the source level but are not yet lowered to HIR in this bounded profile; see docs/CLOSURES-OWNING-V1.md",
+            ));
+        }
+        let source_function = parent
+            .monomorphic_declaration()
+            .and_then(|id| {
+                self.program
+                    .functions()
+                    .iter()
+                    .find(|f| f.stable_id == id.as_str())
+            })
+            .ok_or_else(|| hir_error("nested closures are not admitted"))?;
+        if !source_function.type_parameters.is_empty()
+            && !crate::source_verify::generic_collection_profile(source_function)
+        {
+            return Err(hir_error(
+                "generic closures require the bounded collection profile",
+            ));
+        }
+        let types = outer
+            .iter()
+            .map(|(name, binding)| (name.as_str(), source_type(&binding.ty, source_function)))
+            .collect::<BTreeMap<_, _>>();
+        let type_refs = types.iter().map(|(name, ty)| (*name, ty)).collect();
+        let borrowed = crate::source_verify::borrowed_closure::profile(
+            self.program,
+            source_function,
+            expression,
+            &type_refs,
+        )?;
+        let mut names = if let Some(name) = &borrowed {
+            vec![name.clone()]
+        } else {
+            crate::source_verify::closure::capture_names_scoped(
+                self.program,
+                params,
+                return_type,
+                body,
+                &type_refs,
+                Some(source_function),
+            )?
+        };
+        names.sort_by(|a, b| outer[a].id.cmp(&outer[b].id));
+        let id = ExpressionId::new(parent, path);
+        let target = closure_id(&id);
+        if self.declarations.declaration(&target).is_some() {
+            return Err(hir_error(
+                "closure identity collides with a declared identity",
+            ));
+        }
+        let execution = FunctionExecutionId::Monomorphic(target);
+        let mut bindings = BTreeMap::new();
+        let mut captures = Vec::new();
+        for (index, name) in names.into_iter().enumerate() {
+            let captured = &outer[&name];
+            let ownership = if borrowed.is_some() {
+                OwnershipMode::Borrow
+            } else {
+                OwnershipMode::Value
+            };
+            if captured.ownership != ownership
+                || !((borrowed.is_some() && captured.ty == ResolvedType::Str)
+                    || (super::super::function_value::scalar(&captured.ty)
+                        || super::super::generic_collection::parameter(
+                            &captured.ty,
+                            &DeclarationId::new(source_function.stable_id.clone()),
+                            source_function.type_parameters.len(),
+                        )))
+            {
+                return Err(hir_error(
+                    "closure capture is not an unborrowed Copy scalar",
+                ));
+            }
+            let binding = ResolvedBinding {
+                id: ValueId::parameter(&execution, index),
+                name: name.clone(),
+                ownership,
+                ty: captured.ty.clone(),
+                span: expression.span,
+            };
+            bindings.insert(
+                name,
+                Binding {
+                    traversal_row: None,
+                    id: binding.id.clone(),
+                    ty: binding.ty.clone(),
+                    ownership,
+                    mutable: false,
+                },
+            );
+            captures.push(ResolvedClosureCapture {
+                binding,
+                value: ResolvedExpr {
+                    id: ExpressionId::new(parent, &format!("{path}.capture.{index}")),
+                    ty: captured.ty.clone(),
+                    ownership,
+                    kind: ResolvedExprKind::Place(Place {
+                        root: captured.id.clone(),
+                        projections: Vec::new(),
+                    }),
+                    span: expression.span,
+                },
+            });
+        }
+        let mut parameters = Vec::new();
+        for (index, param) in params.iter().enumerate() {
+            let ty = self.resolve_function_type(source_function, &param.ty, param.span)?;
+            let binding = ResolvedBinding {
+                id: ValueId::parameter(&execution, captures.len() + index),
+                name: param.name.clone(),
+                ownership: OwnershipMode::Value,
+                ty,
+                span: param.span,
+            };
+            bindings.insert(
+                param.name.clone(),
+                Binding {
+                    traversal_row: None,
+                    id: binding.id.clone(),
+                    ty: binding.ty.clone(),
+                    ownership: OwnershipMode::Value,
+                    mutable: false,
+                },
+            );
+            parameters.push(binding);
+        }
+        let ty = ResolvedType::Function {
+            parameters: parameters.iter().map(|p| p.ty.clone()).collect(),
+            result: Box::new(self.resolve_function_type(
+                source_function,
+                return_type,
+                expression.span,
+            )?),
+        };
+        #[cfg(test)]
+        let resolved_body = if reference {
+            self.resolve_expr_recursive_reference(&execution, body, &bindings, "body")?
+        } else {
+            self.resolve_expr(&execution, body, &bindings, "body")?
+        };
+        #[cfg(not(test))]
+        let resolved_body = {
+            let _ = reference;
+            self.resolve_expr(&execution, body, &bindings, "body")?
+        };
+        Ok(ResolvedExpr {
+            id,
+            ty,
+            ownership: OwnershipMode::Value,
+            kind: ResolvedExprKind::Closure {
+                parameters,
+                captures,
+                body: Box::new(resolved_body),
+            },
+            span: expression.span,
+        })
+    }
+}
+
+impl Resolver<'_, '_> {
+    // Private closure execution IDs do not name source declarations. Their
+    // scalar parameter/capture types retain the checked lexical generic owner.
+    pub(in crate::hir) fn resolve_binding_annotation(
+        &self,
+        execution: &FunctionExecutionId,
+        bindings: &BTreeMap<String, Binding>,
+        ty: &Type,
+        span: crate::ast::Span,
+    ) -> Result<ResolvedType, Diagnostic> {
+        if let Type::Named { name, arguments } = ty {
+            if arguments.is_empty() {
+                for binding in bindings.values() {
+                    let ResolvedType::TypeParameter { owner, .. } = &binding.ty else {
+                        continue;
+                    };
+                    if let Some(function) = self.program.functions().iter().find(|function| {
+                        function.stable_id == owner.as_str()
+                            && function
+                                .type_parameters
+                                .iter()
+                                .any(|parameter| parameter.name == *name)
+                    }) {
+                        return self.resolve_function_type(function, ty, span);
+                    }
+                }
+            }
+        }
+        self.resolve_expression_type(execution, ty, span)
+    }
+}

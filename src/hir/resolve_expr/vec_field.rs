@@ -135,7 +135,7 @@ impl Resolver<'_> {
         expression: &Expr,
         types: &[crate::ast::Type],
         args: &'e [Expr],
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'e>,
         path: PathId,
     ) -> Result<[Frame<'e>; 2], Diagnostic> {
         let (element, field) = self.prepare_vec_field(function, expression, types, args)?;

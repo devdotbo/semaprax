@@ -1,4 +1,5 @@
 //! Canonical lowering for bounded `for item in values` Vec traversal.
+use crate::hir::resolver_scope::Scope;
 
 pub(super) mod bytes;
 pub(super) mod record;
@@ -26,7 +27,7 @@ pub(super) fn schedule<'expr>(
     statements: &'expr [crate::ast::Statement],
     tail: &'expr crate::ast::Expr,
     index: usize,
-    scope: Rc<BTreeMap<String, Binding>>,
+    scope: Scope<'expr>,
     resolved: Vec<ResolvedStatement>,
     item: &str,
     values: &'expr crate::ast::Expr,
@@ -72,7 +73,7 @@ pub(super) fn schedule<'expr>(
     let statement = Seg::Statement.at(index);
     let item_edge = [statement.then(Seg::ForItem)];
     let mut body_scope = scope.clone();
-    Rc::make_mut(&mut body_scope).insert(
+    Rc::make_mut(&mut body_scope).to_mut().insert(
         item.to_owned(),
         Binding {
             traversal_row: None,
@@ -121,7 +122,7 @@ pub(super) fn resume<'expr>(
     statements: &'expr [crate::ast::Statement],
     tail: &'expr crate::ast::Expr,
     index: usize,
-    scope: Rc<BTreeMap<String, Binding>>,
+    scope: Scope<'expr>,
     mut resolved: Vec<ResolvedStatement>,
     source: ResolvedBinding,
     element: ResolvedType,

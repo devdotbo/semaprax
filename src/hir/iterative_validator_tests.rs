@@ -148,6 +148,16 @@ interface HostEcho permits { host.echo } {
             .collect();
         let iterative =
             resolver.resolve_expr_iterative(&execution, &source_function.body, &bindings, "body");
+        assert_eq!(
+            iterative,
+            super::borrowed_root_oracle::Resolver(&resolver).expression(
+                &execution,
+                &source_function.body,
+                &bindings,
+                "body"
+            ),
+            "complete frozen nonrecursive receiver, including every Diagnostic field"
+        );
         let recursive = resolver.resolve_expr_recursive_reference(
             &execution,
             &source_function.body,

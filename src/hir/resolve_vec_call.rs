@@ -1,8 +1,6 @@
 //! Exact compiler-owned `Vec<T>` call lowering shared by the production
 //! iterative resolver and its test-only recursive reference.
-
-use std::collections::BTreeMap;
-use std::rc::Rc;
+use crate::hir::resolver_scope::Scope;
 
 use crate::ast::{Expr, Span, Type};
 use crate::diagnostic::Diagnostic;
@@ -12,7 +10,7 @@ use super::ids::{DeclarationId, FunctionExecutionId};
 use super::nodes::{is_scalar_resolved_type, OwnershipMode, ResolvedBinding, ResolvedType};
 use super::resolve_expr::path_arena::{PathId, Seg};
 use super::resolve_expr_frame::Frame;
-use super::{Binding, ExprPath, Resolver};
+use super::{ExprPath, Resolver};
 
 pub(super) struct VecCallSite {
     pub(super) path: PathId,
@@ -175,7 +173,7 @@ pub(super) fn schedule<'expr>(
     frames: &mut Vec<Frame<'expr>>,
     type_arguments: &[Type],
     args: &'expr [Expr],
-    bindings: Rc<BTreeMap<String, Binding>>,
+    bindings: Scope<'expr>,
     site: VecCallSite,
 ) -> Result<(), Diagnostic> {
     let VecCallSite { path, span, op } = site;

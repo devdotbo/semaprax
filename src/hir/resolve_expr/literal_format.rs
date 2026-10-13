@@ -9,7 +9,7 @@ impl Resolver<'_> {
         paths: &mut PathArena<'_>,
         args: &'e [Expr],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'e>,
         path: PathId,
     ) {
         if let Some(argument) = args.get(index) {
@@ -33,7 +33,7 @@ impl Resolver<'_> {
         expression: &Expr,
         type_arguments: &[Type],
         args: &'e [Expr],
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'e>,
         path: PathId,
     ) -> Result<[Frame<'e>; 2], Diagnostic> {
         let template = self.prepare_literal_format(function, expression, type_arguments, args)?;

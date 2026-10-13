@@ -2,16 +2,18 @@
 use crate::ast::Expr;
 use crate::diagnostic::Diagnostic;
 use crate::hir::resolve_expr_frame::Frame;
-use crate::hir::{
-    Binding, FunctionExecutionId, ResolvedExpr, ResolvedExprKind, ResolvedType, Resolver,
-};
-use std::{collections::BTreeMap, rc::Rc};
+use crate::hir::resolver_scope::Scope;
+#[cfg(test)]
+use crate::hir::Binding;
+use crate::hir::{FunctionExecutionId, ResolvedExpr, ResolvedExprKind, ResolvedType, Resolver};
+#[cfg(test)]
+use std::collections::BTreeMap;
 
 pub(super) fn schedule<'a>(
     resolver: &Resolver<'_>,
     function: &FunctionExecutionId,
     expression: &'a Expr,
-    bindings: Rc<BTreeMap<String, Binding>>,
+    bindings: Scope<'a>,
     path: super::path_arena::PathId,
     frames: &mut Vec<Frame<'a>>,
 ) -> Result<(), Diagnostic> {

@@ -130,6 +130,10 @@ pub(crate) mod record_invariants;
 mod resolve_box_call;
 mod resolve_class;
 mod resolve_expr;
+mod resolver_scope;
+use resolver_scope::Scope;
+#[cfg(test)]
+mod borrowed_root_oracle;
 mod resolve_expr_frame;
 #[cfg(test)]
 mod resolve_expr_reference;

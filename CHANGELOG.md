@@ -1,5 +1,12 @@
 # Changelog
 
+- Source-authored borrowed-root HIR scopes defer complete binding-map copies until
+  actual scope mutation, preserving full map fields, sibling isolation and owned
+  publication. The complete frozen nonrecursive receiver and helper/frame bodies
+  remain an independent control. Actual empty-root carrier overhead and physical
+  allocation/Drop controls are explicit; focused qualification and measured
+  resolution-deficit improvement remain pending.
+
 - Source-authored HIR final-validation scratch batch removes discarded native
   result trees, small generic frame vectors and nominal key copies, projects
   Array/scalar callable flag misses, and constructs paid classifier Storage only

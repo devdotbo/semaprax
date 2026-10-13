@@ -9,7 +9,7 @@ pub(super) fn schedule<'a>(
     expr: &'a Expr,
     kind: LexicalExitKind,
     value: Option<&'a Expr>,
-    bindings: &Rc<BTreeMap<String, Binding>>,
+    bindings: &Scope<'a>,
     path: PathId,
     nearest: Option<&ControlTarget>,
     frames: &mut Vec<Frame<'a>>,
