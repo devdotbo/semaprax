@@ -439,7 +439,7 @@ fn diagnostics(source: &str) -> Vec<semaprax::diagnostic::Diagnostic> {
     verify::verify(&program)
 }
 
-const HELPERS: &str = "module test.refused;\n\n@id(\"refused.weight\")\nfn weight(line: string) -> i64\n{\n    string_len(line)\n}\n\n@id(\"refused.pair\")\nrecord Pair {\n    @id(\"refused.pair.a\")\n    a: i64,\n}\n\n@id(\"refused.first\")\nfn first(pair: Pair) -> i64\n{\n    pair.a\n}\n\n";
+const HELPERS: &str = "module test.refused;\n\n@id(\"refused.weight\")\nfn weight(line: string) -> i64\n{\n    string_len(line)\n}\n\n@id(\"refused.pair\")\nrecord Pair {\n    @id(\"refused.pair.a\")\n    a: i64,\n}\n\n@id(\"refused.first\")\nfn first(pair: Pair) -> i64\n{\n    pair.a\n}\n\n@id(\"refused.outer\")\nrecord Outer {\n    @id(\"refused.outer.inner\")\n    inner: Pair,\n}\n\n@id(\"refused.inner\")\nfn inner(outer: Outer) -> i64\n{\n    outer.inner.a\n}\n\n";
 
 #[test]
 fn shapes_outside_owned_string_loops_v2_stay_refused() {
@@ -454,8 +454,23 @@ fn shapes_outside_owned_string_loops_v2_stay_refused() {
         found[0].message,
         "ownership of `text` changes inside a while loop, which is not yet admitted"
     );
-    // A flat Copy record is an admitted by-value loop-call argument
-    // (`loop_calls::ast_param_admitted`), so this call verifies cleanly.
+    // A record with a record field is outside the flat Copy-record profile,
+    // so a call taking one by value is not a loop call.
+    let found = diagnostics(&format!(
+        "{HELPERS}@id(\"app.main\")\nfn main() -> i64\n{{\n    let outer = Outer {{ inner: Pair {{ a: 1 }} }};\n    let mut i = 0;\n    while i < 2 {{\n        i = i + inner(outer);\n        0\n    }}\n    i\n}}\n"
+    ));
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(found[0].code, "SPX-T252");
+    assert_eq!(
+        found[0].message,
+        "call `inner` is not admitted in loop bodies; use scalar/text signatures with read-only input effects. For output, build one string in the loop and write it once afterwards"
+    );
+}
+
+#[test]
+fn flat_copy_records_cross_loop_calls_by_value() {
+    // Copy Record Collections v1: a flat Copy record is an admitted by-value
+    // loop-call argument (`loop_calls::ast_param_admitted`).
     let found = diagnostics(&format!(
         "{HELPERS}@id(\"app.main\")\nfn main() -> i64\n{{\n    let mut i = 0;\n    while i < 2 {{\n        i = i + first(Pair {{ a: 1 }});\n        0\n    }}\n    i\n}}\n"
     ));
