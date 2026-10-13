@@ -10,14 +10,15 @@
     "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs": "6f3aeb448ee3b4bb202d027c93eebbcec8a5c0854496792d53a66206525871f8",
     "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs": "7ee5d27f2ae13fa859875cfdc9715b88ad6137996a1362840254a667b3d34f68",
     "src/cleanup_plan/replay/skeleton_work/oracle_entry.rs": "75d42153c3897309db6865b2cd5a840d9d4a351aabd2a7a77b08674a0add485d",
-    "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs": "c3dd733ac5eae9dd6e613bd19c99394e05a25bee6a360acd50f04c16670015cb",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs": "3d1a9ab1fd584910af3044e44a19e4c429263778cc611fa44c4a3df6250e2ab5",
     "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs": "d8564be6acde2c6def66fc5ec06b3890545609f198f34e225773f78cfc42ae0c",
-    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs": "e4805ae9d76e3bbd6f1b5d706100c0742ecebb8d8de7c92555d1ef2bf696ab9a",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8",
     "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs": "fd8afd796f7f05555b304fed01cdf92fd1fafa069f99c6b20f371fd3ffc43223",
-    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs": "7c764d431ceed0c1f43ba094581bfc96598e6583606c58dc8b1ab32a12f95690",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs": "d17dae8c6c00c034c06092531c4a45c97347c88fdd351fb7d7e11c6be09bb2ab",
     "src/test_allocation_observer.rs": "f3ab093d0bec8e84d98baedfb88e26ec97c1a66022638bd1bf5301ff25844fac",
     "src/test_allocation_observer/free_order.rs": "f3b372a2eedde6d0e238580a57e5fbcb1ca14144a479e052a0f37be009e6fc48",
-    "tests/hir_module_boundaries.rs": "026859a2ea76dfb0ca3358841398d5cf1e0d90983ba85dae018c337ec55920e5"
+    "tests/hir_module_boundaries.rs": "3dc042a281bcd627aaee07c45aceb1032d8802f8d00ac6ccad6a7e6989830b03",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs": "cd6cbb50e3d362456d3f032e0bbdb3887c8ef388e3bc08a15a43b185fa5d9d6f"
   },
   "original_snapshot_hashes": {
     "original-dag-storage-tests.txt": "23e881c2747e87a7ce410a1d74ab3e66f8334e47cd9bcb5a3a9ce75d8cc3c910",
@@ -27,12 +28,19 @@
     "original-tail-moves.txt": "d99e422bef75525fc6796899ba82ba10230bfaaa1e7ea22fed680998dd5c1f98"
   },
   "complete_original_receivers": {
-    "node_kind_drop": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
-    "ordinary_constructors": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+    "node_kind_drop": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+    "ordinary_constructors": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
     "old_empty_union": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs"
   },
   "limits_changed": false,
   "ordinary_existing_budget_work_admission_changed": true,
   "selected_session_policy_changed": false,
-  "legacy_refusal_allocation_remaining": true
+  "legacy_refusal_allocation_remaining": true,
+  "compiled_original_receiver": {
+    "frozen_archive": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+    "frozen_bytes": 14172,
+    "frozen_sha256": "fd8afd796f7f05555b304fed01cdf92fd1fafa069f99c6b20f371fd3ffc43223",
+    "compiled_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+    "bridge_only_suffix_byte_locked": true
+  }
 }

@@ -286,6 +286,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs"),
             include_str!("../src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs"),
             include_str!("../src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs"),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs"),
             include_str!("../src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs"),
             include_str!("../src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs"),
             include_str!("../src/test_allocation_observer.rs"),
