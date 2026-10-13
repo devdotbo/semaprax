@@ -13,7 +13,7 @@
     "src/hir/iterator_loop/renewal.rs": "8951fdff100645816c03094331768562e847d74bf3b275b321a09a0cea2fa167",
     "src/hir/iterator_loop/renewal/paid_scan.rs": "fedcf6ff959b52451d5fbcd7eddb8bee8f7c8963c300e97a8c54b8726c45dae1",
     "src/hir/ordinary_scan.rs": "f17e34eec31173524e333afca35facf4652364965959998bb5bc7db42e485b2b",
-    "src/hir/ordinary_scan/tests.rs": "4096b703146ed09604db95619b64d3570c3add502de829da9363373fbc87ed17",
+    "src/hir/ordinary_scan/tests.rs": "e8d4204ecea77fbe7abd8982a162ac8357b035c943afbcb3344b96db2b2ab1f3",
     "src/hir/validation.rs": "530ea6ed35440a84a5b07b4143930c25a8acc7b0424b7cbdb59f24cccd0108d1",
     "src/hir/validation/function_scope.rs": "fb2c97c98bcc97f1688df822d859d79a322318962faa59dc503e5b71bf2d5d69",
     "src/hir/validation/owner_renewal.rs": "def13efb28107cbe479b8fdff6ac04346ceaa936040f093a30265ae437bcd0bb",
