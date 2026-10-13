@@ -1,0 +1,66 @@
+{
+  "authored_count": 6,
+  "executed": false,
+  "selectors": [
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::shape_cursor_tests::complete_old_paid_shape_receiver_keeps_all_ordered_leaves_and_late_failures",
+      "source": "src/cleanup_plan/replay/allocation/tests/shape_cursor_tests.rs",
+      "ignored": false
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::shape_cursor_tests::inline_shape_roots_remove_only_real_worklist_backing_through_drop",
+      "source": "src/cleanup_plan/replay/allocation/tests/shape_cursor_tests.rs",
+      "ignored": false
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::shape_cursor_tests::shape_spill_exact_short_sticky_reuse_and_drop_use_literal_backing",
+      "source": "src/cleanup_plan/replay/allocation/tests/shape_cursor_tests.rs",
+      "ignored": false
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::shape_cursor_tests::full_paid_shape_source_snapshot_keeps_original_body_and_funding",
+      "source": "src/cleanup_plan/replay/allocation/tests/shape_cursor_tests.rs",
+      "ignored": false
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::shape_cursor_tests::current_shape_receiver_is_exact_full_original_with_named_cursor_hooks",
+      "source": "src/cleanup_plan/replay/allocation/tests/shape_cursor_tests.rs",
+      "ignored": false
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::shape_cursor_tests::complete_shape_collectors_are_independently_paid_through_drop",
+      "source": "src/cleanup_plan/replay/allocation/tests/shape_cursor_tests.rs",
+      "ignored": false
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::ordinary_builder_payment_never_grants_selected_admission_and_covers_index_drop",
+      "source": "src/cleanup_plan/replay/allocation/tests.rs",
+      "ignored": false
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::active_builder_zero_exact_short_refusal_is_sticky_and_moves_paid_text",
+      "source": "src/cleanup_plan/replay/allocation/tests.rs",
+      "ignored": false
+    },
+    {
+      "harness": "hir_module_boundaries",
+      "selector": "core_validation_has_no_resolution_cleanup_build_or_physical_authority",
+      "source": "tests/hir_module_boundaries.rs",
+      "ignored": false
+    },
+    {
+      "harness": "module_size",
+      "selector": "no_module_exceeds_its_recorded_size",
+      "source": "tests/module_size.rs",
+      "ignored": false
+    }
+  ]
+}

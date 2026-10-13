@@ -23,6 +23,7 @@ mod scalar_replay;
 mod selected_callees;
 mod selected_context;
 mod selected_entry;
+mod shape_cursor;
 mod status_construction;
 mod structural_control;
 mod structural_maps;
@@ -1628,6 +1629,7 @@ fn collect_leaves_paid(
 ) -> Result<Leaves, Diagnostic> {
     let mut leaves = BTreeMap::new();
     let mut places = BTreeSet::new();
+    let mut pending = shape_cursor::Pending::new();
     for slot in &function.cleanup_plan.slots {
         collect_shape(
             function,
@@ -1637,6 +1639,7 @@ fn collect_leaves_paid(
             &mut leaves,
             &mut places,
             budget,
+            &mut pending,
         )?;
     }
     for (expected, flag) in leaves.keys().enumerate() {
@@ -1650,24 +1653,20 @@ fn collect_leaves_paid(
     Leaves::new_with_budget(function, leaves, budget)
 }
 
-fn collect_shape(
+fn collect_shape<'shape>(
     function: &ResolvedFunction,
     storage: &StorageId,
     projections: &mut Vec<DeclarationId>,
-    shape: &FieldLivenessShape,
+    shape: &'shape FieldLivenessShape,
     leaves: &mut BTreeMap<LivenessFlagId, Leaf>,
     places: &mut BTreeSet<CleanupPlace>,
     budget: &mut ReplayBudget,
+    pending: &mut shape_cursor::Pending<'shape>,
 ) -> Result<(), Diagnostic> {
-    enum Item<'a> {
-        Shape(&'a FieldLivenessShape),
-        Push(&'a DeclarationId),
-        Pop,
-    }
+    use shape_cursor::Item;
 
     let initial_projection_depth = projections.len();
-    let mut pending = Vec::new();
-    budget.reserve_vec(function, &mut pending, 1, "shape worklist")?;
+    pending.reserve(function, budget, 1, "shape worklist")?;
     pending.push(Item::Shape(shape));
     let mut work = 0usize;
     while let Some(item) = pending.pop() {
@@ -1735,20 +1734,12 @@ fn collect_shape(
                         ));
                     }
                 }
-                budget.reserve_vec(
+                pending.reserve(
                     function,
-                    &mut pending,
+                    budget,
                     fields.len().saturating_mul(3),
                     "record shape worklist",
                 )?;
-                pending
-                    .try_reserve(fields.len().saturating_mul(3))
-                    .map_err(|_| {
-                        replay_error(
-                            function,
-                            "cleanup shape replay capacity exceeds address space",
-                        )
-                    })?;
                 for field in fields.iter().rev() {
                     pending.push(Item::Pop);
                     pending.push(Item::Shape(&field.shape));
@@ -1813,13 +1804,7 @@ fn collect_shape(
                             replay_error(function, "cleanup shape replay work overflowed")
                         })?;
                 }
-                budget.reserve_vec(function, &mut pending, item_count, "variant shape worklist")?;
-                pending.try_reserve(item_count).map_err(|_| {
-                    replay_error(
-                        function,
-                        "cleanup shape replay capacity exceeds address space",
-                    )
-                })?;
+                pending.reserve(function, budget, item_count, "variant shape worklist")?;
                 for case in cases.iter().rev() {
                     pending.push(Item::Pop);
                     for field in case.fields.iter().rev() {

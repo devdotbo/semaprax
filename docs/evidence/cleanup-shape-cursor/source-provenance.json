@@ -1,0 +1,18 @@
+{
+  "base": "17efd2ed52a97f41eec05c75d56e01ade219b392",
+  "original_path": "src/cleanup_plan/replay.rs",
+  "original_span": [
+    "fn collect_leaves_paid(",
+    "fn validate_status_sources("
+  ],
+  "full_paid_receiver_sha256": "b254906a5f694b156e3632d3bb7d72aa5beb4d27b5f7a929cbd225bdd9ac5736",
+  "compiled_saved_receiver": "src/cleanup_plan/replay/allocation/tests/shape_before.rs",
+  "compiled_projection": [
+    "remove exact added module doc/use header",
+    "remove exact pub(super) export on collect_leaves_paid",
+    "restore one blank separator outside closing body"
+  ],
+  "unchanged_prior_oracle": "src/cleanup_plan/replay/allocation/tests/old.rs",
+  "prior_oracle_sha256": "28b8c1a81b73974a7dc6b4e88a689e07c1d19131a88e57ced4f44435b328b6d9",
+  "qualification": "source-only"
+}

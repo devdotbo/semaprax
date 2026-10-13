@@ -1,0 +1,58 @@
+{
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 4627,
+      "cacheReadInputTokens": 535,
+      "cacheCreationInputTokens": 9284,
+      "webSearchRequests": 0,
+      "costUSD": 0.0834635,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 3670,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 9284,
+    "cache_read_input_tokens": 535,
+    "output_tokens": 4627,
+    "output_tokens_details": {
+      "thinking_tokens": 3670
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 9284,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 4627,
+        "cache_read_input_tokens": 535,
+        "cache_creation_input_tokens": 9284,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 9284
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "total_cost_usd": 0.0834635,
+  "duration_ms": 38759,
+  "actual_billing": "unknown",
+  "packet_bytes": 22668,
+  "tools_enabled": false,
+  "provider_result": "**Verdict: no production-semantics or funding blockers in the code shown.** I'm not inventing a bug to fill the review.\n\n**Invariants I checked**\n- **Spill implies inline full.** Spill is only written when `len == INLINE`, and `pop` drains spill before inline. So LIFO order matches the old `Vec` exactly, including a group that straddles the inline/spill boundary.\n- **`reserve` matches `push` routing.** When spill is empty, `available = INLINE - len` and only the remainder is prepaid. When spill is non-empty, `available = 0` and the full group is prepaid against `spill.len() + additional`. After pops empty the spill, the inline-full case still gives `available = 0`.\n- **Group sizes match.**\n  - Initial: reserve 1, push 1.\n  - Record: reserve `3n`, push `3n`.\n  - Variant: reserve `\u03a3(2 + 3f)`, push Pop + `3f` + Push per case, which is `2 + 3f`.\n  \n  So the `assert!` in `push` cannot fire on these paths.\n- **Sticky refusal is preserved.** `reserve_bytes(0)` runs before any inline-only return. In the unpaid payer case, `reserve_vec` returns early and the `try_reserve` that follows keeps the fallible growth. That is stricter than the old code, whose initial `push` after an unpaid `reserve_vec` was infallible.\n- **Spill reuse across slots is safe.** `work` still resets per `collect_shape` call, as before. A successful call always drains `pending`. On error the cursor is dropped through `?`, so stale items are never observed. The shared `'shape` lifetime borrows from `function.cleanup_plan.slots`, which outlives the loop.\n- **Work limit and projection checks are unchanged.** `MAX_REPLAY_WORK_UNITS` and the projection balance checks are byte-for-byte the same as the old receiver.\n\n**Non-blocking notes**\n1. `push` uses a release-mode `assert!`. The invariant holds for all current callers, but a future caller that skips `reserve` would panic rather than return a `Diagnostic`. Consider a `debug_assert!` plus a fallible fallback, or keep it as a deliberate contract.\n2. Spill capacity is a high-water mark that persists across slots and is paid once, where the old code paid per slot. That is correct for actual-heap payment. It does assume the budget never expects a release or credit when the old per-slot `Vec` dropped. If it did, this is cheaper than before, not a funding hole.\n3. The `reserve_bytes(0)` inside `reserve_vec` is called twice per `reserve`. It is idempotent, so harmless.\n\n**Not reviewed:** `budget_refusal` is cut off mid-expression in the paste, so I can't vouch for its payer logic."
+}

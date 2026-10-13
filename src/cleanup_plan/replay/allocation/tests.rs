@@ -1,6 +1,8 @@
 //! The active builder pays storage; it never authenticates selected replay.
 use super::*;
 mod old;
+mod shape_before;
+mod shape_cursor_tests;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::{current_metrics, measure};
 fn program() -> ResolvedProgram {

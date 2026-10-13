@@ -4671,3 +4671,15 @@ and reuses prepaid continuation Storage for growth and speculative checkpoints.
 Or-pattern checks retain lexical condition/alternative order; guarded candidates
 are discarded and failed checkpoints preserve the prior root. The complete old
 BTreeSet helper and old dispatch remain independent compiled controls.
+
+
+`cleanup_plan/replay/shape_cursor.rs` owns the ordinary leaf collector's borrowed
+Shape/Push/Pop event storage. Thirty-two events are inline; larger authored event
+groups acquire ordinary paid fallible spill backing before construction and
+reuse it across slots. Every group retains sticky zero-byte authentication.
+The complete ordered shape dispatcher, projection clones, leaf indexes, work
+limits and diagnostic checks remain in `replay.rs`. The complete previous paid
+collector remains compiled in `allocation/tests/shape_before.rs`, beside the
+older independent receiver. Exact full-body source projection, literal spill,
+whole collector Drop and pending qualification controls are recorded in
+`docs/evidence/cleanup-shape-cursor/HANDOFF.md`.

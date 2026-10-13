@@ -17,6 +17,9 @@ macro_rules! byte_writer_source_inventory {
                 "../../../../../src/loop_calls/byte_writer/validation_frontier/ordinary_receiver.rs"
             ),
             include_str!("../../../../../src/cleanup_plan/renewal_profile/ordinary/validation.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/shape_cursor.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/allocation/tests/shape_before.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/allocation/tests/shape_cursor_tests.rs"),
             include_str!("../../../../../src/cleanup_plan/build/helper_index/ordinary_view.rs"),
             include_str!("../../../../../src/cleanup_plan/build/helper_index/validation.rs"),
             include_str!("../../../../../src/cleanup_plan/build/lexical_control/validation.rs"),
