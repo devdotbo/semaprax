@@ -47,7 +47,13 @@ fn compound_types_keep_full_old_diagnostics_and_unbounded_spill() {
         } else {
             assert!(current.allocations > 0);
         }
-        assert!(saved.allocations > 0);
+        if width == 0 {
+            // eb02 already optimized the zero-argument nominal root. Keep
+            // that current baseline; this batch removes no allocation here.
+            assert_eq!(saved.allocations, 0);
+        } else {
+            assert!(saved.allocations > 0);
+        }
     }
     // Result precedes reverse parameter order in the full old stack.
     let ty = ResolvedType::Function {
@@ -284,15 +290,7 @@ fn inline_stack_keeps_new_children_ahead_of_older_spill_and_refills() {
 #[test]
 fn complete_saved_receivers_are_bound_to_the_frozen_archive() {
     let frozen = include_str!("inline_worklists/frozen_walkers.txt");
-    let type_body = include_str!("type_identity/old.rs");
-    let type_body = type_body[type_body.find("pub(super) fn audit_resolved_type").unwrap()..]
-        .replacen("pub(super) fn", "fn", 1);
-    let start = frozen.find("fn audit_resolved_type(").unwrap();
-    let end = frozen
-        .find("\nfn audit_resolved_record_match_pattern(")
-        .unwrap();
-    let expected = format!("{}{}\n{}", &frozen[..start], type_body, &frozen[end..])
-        .replace("super::ControlTarget", "crate::hir::ControlTarget");
+    let expected = frozen.replace("super::ControlTarget", "crate::hir::ControlTarget");
     let saved = include_str!("inline_worklists/old.rs");
     let start = saved
         .find("pub(super) fn validate_nul_free_identities(")

@@ -4,9 +4,11 @@ Frozen source: `eb02a89b6174bced05e02f6ede2ebcda55cd5893`,
 `src/hir/inspection.rs:40-905` plus its complete `audit_control_target`.
 `frozen_walkers.txt` retains these original bytes. `old.rs` retains the full
 independent program/attached/type/expression/shape receivers and their metadata
-helpers. Its only traversal substitution is the independently saved allocating
-type walker from `inspection/tests/type_identity/old.rs`; the copied control
-helper uses an absolute module path. Wrappers expose complete receivers.
+helpers, including the exact frozen type walker with its scalar and
+zero-argument fast paths. Only the copied control helper uses an absolute
+module path. Wrappers expose complete receivers. The older allocating type
+oracle in `inspection/tests/type_identity/old.rs` stays separate and untouched;
+it is not the baseline for this batch's actual allocation comparisons.
 
 Production changes only worklist construction in the three iterative walkers
 and the exact terminal NoDrop/Leaf returns. Push/extend/pop order and metadata

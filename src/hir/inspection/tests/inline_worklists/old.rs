@@ -137,6 +137,40 @@ pub(crate) fn validate_attached_identity_references(
 }
 
 fn audit_resolved_type(root: &ResolvedType) -> Result<(), Diagnostic> {
+    // These exact leaves contain neither declaration identities nor child
+    // types. The original walk allocated one worklist only to pop the root.
+    match root {
+        ResolvedType::OnceFunction
+        | ResolvedType::OnceFunctionI64
+        | ResolvedType::OnceFunctionI64Pair
+        | ResolvedType::MutFunctionI64
+        | ResolvedType::Never
+        | ResolvedType::Unit
+        | ResolvedType::I64
+        | ResolvedType::I32
+        | ResolvedType::Char
+        | ResolvedType::U8
+        | ResolvedType::Usize
+        | ResolvedType::ArrayU8(_)
+        | ResolvedType::F32
+        | ResolvedType::F64
+        | ResolvedType::Bool
+        | ResolvedType::String
+        | ResolvedType::Bytes
+        | ResolvedType::Str
+        | ResolvedType::SliceU8
+        | ResolvedType::StringMap => return Ok(()),
+        ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } if arguments.is_empty() => {
+            return reject_nul_identity("resolved nominal type", declaration.as_str());
+        }
+        ResolvedType::TypeParameter { owner, .. } => {
+            return reject_nul_identity("resolved type-parameter owner", owner.as_str());
+        }
+        ResolvedType::Function { .. } | ResolvedType::Nominal { .. } => {}
+    }
     let mut pending = vec![root];
     while let Some(ty) = pending.pop() {
         match ty {
@@ -178,7 +212,6 @@ fn audit_resolved_type(root: &ResolvedType) -> Result<(), Diagnostic> {
     }
     Ok(())
 }
-
 
 fn audit_resolved_record_match_pattern(
     record: &DeclarationId,
