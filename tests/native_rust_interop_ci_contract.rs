@@ -115,6 +115,7 @@ fn read_private_implementation_tests() -> String {
             "resolved_disposal",
             "linked_bundle",
             "indexed_scalar",
+            "row_loan_closed",
         ],
     )
 }

@@ -57,11 +57,19 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 include_str!("../src/hir/inspection/tests/inline_worklists/frozen_walkers.txt"),
                 include_str!("../src/hir/validation/function_lookup.rs"),
                 include_str!("../src/hir/validation/function_lookup/permits.rs"),
-                include_str!("../src/hir/function_directory.rs"),
+                concat!(
+                    include_str!("../src/hir/function_directory.rs"),
+                    "\n",
+                    include_str!("../src/hir/function_directory/caller.rs")
+                ),
                 include_str!("../src/hir/validation/type_requirement.rs"),
                 include_str!("../src/hir/validation/canonical_loans.rs"),
                 include_str!("../src/hir/validation/constructor_seed.rs"),
-                include_str!("../src/hir/canonical_loan_storage.rs"),
+                concat!(
+                    include_str!("../src/hir/canonical_loan_storage.rs"),
+                    "\n",
+                    include_str!("../src/hir/canonical_loan_storage/caller.rs")
+                ),
                 include_str!("../src/hir/canonical_loan_storage/deferred.rs"),
                 include_str!("../src/hir/canonical_loan_storage/deferred/tests.rs"),
                 include_str!("../src/hir/canonical_loan_storage/deferred/tests/selected.rs"),

@@ -182,9 +182,11 @@ impl Sources {
                 [
                     read(repository, "src/cli/help.rs"),
                     read(repository, "src/cli/help/authoring.rs"),
+                    read(repository, "src/cli/help/language_details.rs"),
                 ]
                 .join("\n"),
                 read(repository, "src/cli/help/library.rs"),
+                read(repository, "src/cli/help/reference_links.rs"),
                 read(repository, "src/cli/help/shapes.rs"),
                 read(repository, "src/cli/help/diagnostic_index.rs"),
                 read(repository, "src/doctor.rs"),

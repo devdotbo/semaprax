@@ -360,7 +360,11 @@ fn stdin_stream_collection_record_template_has_exact_bytes_and_passes_check() {
 fn generated_project_validation_never_reopens_the_ambient_staging_tree() {
     let implementation = include_str!("../src/new_project.rs");
     let scaffold = concat!(
-        include_str!("../../../src/project/scaffold.rs"),
+        concat!(
+            include_str!("../../../src/project/scaffold.rs"),
+            "\n",
+            include_str!("../../../src/project/scaffold/authoring.rs")
+        ),
         include_str!("../../../src/project/scaffold/service_config.rs"),
         include_str!("../../../src/project/scaffold/collection_records.rs"),
     );

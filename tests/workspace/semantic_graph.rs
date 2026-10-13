@@ -344,255 +344,24 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     // shared helpers", so the read has to follow the module, not just its root
     // file: a helper relocated into a sibling submodule must still count as
     // present in the root and absent from the projection.
-    let root = format!(
-        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
-        concat!(
-            concat!(
-                include_str!("../../src/workspace_graph.rs"),
-                include_str!("../../src/workspace_graph/identity_resolution.rs"),
-                include_str!("../../src/workspace_graph/identity_resolution/tests.rs"),
-                include_str!("../../src/workspace_graph/identity_resolution/tests/refusal_reference.rs"),
-                include_str!("../../src/workspace_graph/identity_resolution/tests/legacy_receiver.rs"),
-                include_str!("../../src/workspace_graph/paid_view.rs"),
-                include_str!("../../src/workspace_report.rs"),
-                include_str!("../../src/workspace_report/tests.rs"),
-                include_str!("../../src/workspace_graph/forecast_observation.rs"),
-                include_str!("../../src/workspace_graph/import_validation.rs"),
-                include_str!("../../src/workspace_graph/retain_module.rs"),
-                include_str!("../../src/workspace_graph/checked_retention.rs"),
-                include_str!("../../src/hir/items.rs"),
-                include_str!("../../src/workspace_graph/checked_retention/retain.rs"),
-                include_str!("../../src/workspace_graph/owned_generics/available.rs"),
-                include_str!("../../src/workspace_graph/static_text.rs"),
-                include_str!("../../src/workspace_graph/static_text/primitive.rs"),
-                include_str!("../../src/workspace_graph/static_text/scalar_helpers.rs"),
-                include_str!(
-                    "../../src/workspace_graph/static_text/scalar_helpers/borrowed_records.rs"
-                ),
-                include_str!("../../src/workspace_graph/static_text/record_closure.rs"),
-                include_str!("../../src/workspace_graph/static_text/scalar_lexical.rs"),
-                include_str!("../../src/workspace_graph/static_text/scalar_lexical/census.rs"),
-                include_str!(
-                    "../../src/workspace_graph/static_text/scalar_helpers/capture_directory.rs"
-                ),
-                include_str!(
-                    "../../src/workspace_graph/static_text/scalar_helpers/capture_directory/authored.rs"
-                ),
-                include_str!("../../src/hir/borrowed_scalar.rs"),
-                include_str!("../../src/hir/borrowed_scalar/option_u8.rs"),
-                include_str!("../../src/hir/borrowed_scalar/option_u8/metered.rs"),
-                include_str!("../../src/hir/borrowed_scalar/option_u8/tests.rs"),
-                include_str!("../../src/hir/borrowed_scalar/option_u8/tests/metered.rs"),
-                include_str!("../../src/hir/declaration_index/primitive_replay/option_u8.rs"),
-                include_str!(
-                    "../../src/workspace_graph/static_text/primitive/function_matching.rs"
-                ),
-                include_str!("../../src/workspace_graph/static_text/primitive/body_digest.rs"),
-                include_str!("../../src/workspace_graph/static_text/primitive/records.rs"),
-                "\n",
-                include_str!("../../src/workspace_graph/package.rs"),
-                "\n",
-                include_str!("../../src/workspace_graph/record_traversal.rs"),
-                "\n",
-                include_str!("../../src/workspace_graph/source_schema.rs"),
-                include_str!("../../src/workspace_graph/source_schema/scalar_lexical.rs"),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/scalar_lexical/received.rs"
-                ),
-                include_str!("../../src/workspace_graph/source_schema/scalar_lexical/tests.rs"),
-                include_str!("../../src/workspace_graph/source_schema/static_text.rs"),
-                include_str!("../../src/workspace_graph/source_schema/static_text/primitive.rs"),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers.rs"
-                ),
-                include_str!("../../src/workspace_graph/source_schema/static_text/primitive/helpers/purity_tests.rs"),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/types.rs"
-                ),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/graph.rs"
-                ),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/local.rs"
-                ),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/tests.rs"
-                ),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/tests/runtime.rs"
-                ),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/tests/closure_graph.rs"
-                ),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/tests/closure_graph/oracle.rs"
-                ),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/helpers/tests/closure_graph/entry.rs"
-                ),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/records.rs"
-                ),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/records/prepared.rs"
-                ),
-                include_str!("../../src/hir/declaration_index/primitive_replay/vector.rs"),
-                include_str!(
-                    "../../src/hir/declaration_index/primitive_replay/helper_signature.rs"
-                ),
-                include_str!(
-                    "../../src/workspace_graph/source_schema/static_text/primitive/records/tests/prepared.rs"
-                ),
-                "\n",
-                include_str!("../../src/workspace_graph/source_schema/byte_helper.rs"),
-                "\n",
-                include_str!("../../src/workspace_graph/source_schema/byte_helper/proofs.rs"),
-                "\n",
-                include_str!(
-                    "../../src/workspace_graph/source_schema/byte_helper/type_authority.rs"
-                )
-            ),
-            include_str!("../../src/workspace_graph/type_names.rs"),
-            include_str!("../../src/workspace_graph/shape_identity.rs"),
-            include_str!("../../src/workspace_graph/operation_sidecar.rs"),
-            concat!(
-                include_str!("../../src/graph/copy_discard.rs"),
-                "\n",
-                include_str!("../../src/graph/copy_discard/finite_composition.rs"),
-                "\n",
-                include_str!("../../src/graph/copy_discard/tests.rs")
-            ),
-            include_str!("../../src/workspace_graph/operation_sidecar/tokens.rs"),
-            concat!(
-                include_str!("../../src/workspace_graph/operation_sidecar/fingerprint.rs"),
-                include_str!("../../src/workspace_graph/operation_sidecar/constructor.rs")
-            )
-        ),
-        include_str!("../../src/workspace_graph/builder_bytes_report.rs"),
-        include_str!("../../src/workspace_graph/checked_value_retention.rs"),
-        include_str!("../../src/workspace_graph/diagnostics.rs"),
-        include_str!("../../src/workspace_graph/diagnostics/invocation.rs"),
-        include_str!("../../src/workspace_graph/diagnostics/invocation/tests.rs"),
-        include_str!("../../src/workspace_graph/generic_type_import.rs"),
-        concat!(
-            include_str!("../../src/workspace_graph/owned_generics.rs"),
-            include_str!("../../src/hir/type_reachability/inventory.rs"),
-            include_str!("../../src/hir/type_reachability/classifier_tests.rs"),
-            include_str!("../../src/hir/type_reachability/classifier_tests/old.rs"),
-            include_str!("../../src/hir/type_reachability/nominal_saved.rs"),
-            include_str!("../../src/hir/type_reachability/nominal_tests.rs"),
-            include_str!("../../src/workspace_graph/owned_generics/borrowed_inventory_tests.rs"),
-            include_str!("../../src/workspace_graph/owned_generics/retention.rs"),
-            include_str!("../../src/workspace_graph/owned_generics/retention/tests.rs")
-        ),
-        concat!(
-            include_str!("../../src/workspace_graph/owned_function_import.rs"),
-            include_str!("../../src/workspace_graph/owned_function_import/text_collections.rs")
-        ),
-        concat!(
-            include_str!("../../src/workspace_graph/prelude_binding.rs"),
-            include_str!("../../src/workspace_graph/prelude_binding/collection_selection.rs"),
-            include_str!("../../src/workspace_graph/prelude_binding/vec_selection.rs")
-        ),
-        include_str!("../../src/workspace_graph/project_render.rs"),
-        include_str!("../../src/workspace_graph/session_protocol_decl.rs"),
-        concat!(
-            include_str!("../../src/workspace_graph/agent_execution.rs"),
-            include_str!("../../src/workspace_graph/indexed_rust.rs"),
-            include_str!("../../src/workspace_graph/native_law.rs")
-        ),
-        concat!(
-            include_str!("../../src/workspace_graph/source_callables.rs"),
-            include_str!("../../src/workspace_graph/source_callables/path_cursor.rs")
-        ),
-        include_str!("../../src/workspace_graph/callee_inventory.rs"),
-        concat!(
-            include_str!("../../src/workspace_graph/retained_validation.rs"),
-            include_str!("../../src/workspace_graph/retained_validation/authority.rs"),
-            include_str!("../../src/workspace_graph/retained_validation/capability_projection.rs"),
-            include_str!("../../src/workspace_graph/retained_validation/compact_calls.rs"),
-            include_str!("../../src/workspace_graph/retained_validation/edge_projection.rs"),
-            include_str!("../../src/workspace_graph/retained_validation/profile_names.rs"),
-            include_str!("../../src/workspace_graph/retained_validation/stream_admission.rs"),
-            include_str!("../../src/workspace_graph/retained_validation/type_reference.rs"),
-            include_str!("../../src/workspace_graph/retained_validation/traversal_type_sites.rs"),
-            include_str!("../../src/workspace_graph/retained_validation/type_projection.rs")
-        ),
-        include_str!("../../src/workspace_graph/retained_validation/dependency_closure.rs"),
-        include_str!("../../src/workspace_graph/retained_validation/scalar_link.rs"),
-        concat!(
-            include_str!("../../src/workspace_graph/retained_vectors.rs"),
-            include_str!("../../src/workspace_graph/loan_retention.rs"),
-            include_str!("../../src/workspace_graph/loan_retention/tests.rs"),
-            include_str!("../../src/workspace_graph/loan_retention/scratch_tests.rs")
-        ),
-        include_str!("../../src/workspace_graph/validation.rs"),
-        include_str!("../../src/workspace_graph/dependency_pruning.rs"),
-    );
+    let root = semantic_graph_root_source_inventory!();
     let root = root.as_str();
-    let projection_root = concat!(
-        concat!(
-            concat!(
-                include_str!("../../src/workspace_graph/expected_projection.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/vec_constructor.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/held_projection.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_leaf.rs"),
-                include_str!(
-                    "../../src/workspace_graph/expected_projection/borrowed_leaf/tests.rs"
-                ),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_leaf/checked_key.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_leaf/checked_key/tests.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/alias_clone.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/alias_helpers.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/old.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/initialization.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/receiving.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full/receiving.rs"),
-                include_str!("../../src/bounded_output/key_directory.rs"),
-                include_str!("../../src/bounded_output/key_directory/tests.rs"),
-                include_str!("../../src/ast/program_source/receiving_roots.rs"),
-                include_str!("../../src/ast/program_source/generated_roots.rs"),
-                include_str!("../../src/ast/program_source.rs")
-            ),
-            "\n",
-            include_str!("../../src/workspace_graph/expected_projection/record_traversal.rs")
-        ),
-        include_str!("../../src/workspace_graph/expected_projection/sort_keys.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/field_unique.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/string_slots.rs")
-    );
+    let projection_root = semantic_graph_projection_root_source_inventory!();
     let projection_local_identity =
-        include_str!("../../src/workspace_graph/expected_projection/local_identity.rs");
-    let projection_call_identity =
-        include_str!("../../src/workspace_graph/expected_projection/call_identity.rs");
-    let projection_call_sites =
-        include_str!("../../src/workspace_graph/expected_projection/call_sites.rs");
-    let projection_cost = concat!(
-        include_str!("../../src/workspace_graph/expected_projection/cost.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/uncached_absence_tests.rs"),
-    );
+        semantic_graph_projection_child_source_inventory!(local_identity);
+    let projection_call_identity = semantic_graph_projection_child_source_inventory!(call_identity);
+    let projection_call_sites = semantic_graph_projection_child_source_inventory!(call_sites);
+    let projection_cost = semantic_graph_projection_child_source_inventory!(cost);
     let projection_declaration_cost =
-        include_str!("../../src/workspace_graph/expected_projection/declaration_cost.rs");
+        semantic_graph_projection_child_source_inventory!(declaration_cost);
     let projection_identity_slots =
-        include_str!("../../src/workspace_graph/expected_projection/identity_slots.rs");
+        semantic_graph_projection_child_source_inventory!(identity_slots);
     let projection_statement_segment =
-        include_str!("../../src/workspace_graph/expected_projection/statement_segment.rs");
-    let projection_defaults =
-        include_str!("../../src/workspace_graph/expected_projection/defaults.rs");
-    let projection_import_stub = concat!(
-        include_str!("../../src/workspace_graph/expected_projection/import_stub.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/import_stub/byte_helper.rs"),
-    );
-    let projection_uncached_peak = concat!(
-        include_str!("../../src/workspace_graph/expected_projection/uncached_peak.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/retention.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/cached_exact.rs"),
-    );
-    let projection_type_rewrite =
-        include_str!("../../src/workspace_graph/expected_projection/type_rewrite.rs");
+        semantic_graph_projection_child_source_inventory!(statement_segment);
+    let projection_defaults = semantic_graph_projection_child_source_inventory!(defaults);
+    let projection_import_stub = semantic_graph_projection_child_source_inventory!(import_stub);
+    let projection_uncached_peak = semantic_graph_projection_child_source_inventory!(uncached_peak);
+    let projection_type_rewrite = semantic_graph_projection_child_source_inventory!(type_rewrite);
     let projection_private_layout = semantic_graph_private_layout_source_inventory!();
     let projection = format!(
         "{projection_private_layout}\n{projection_type_rewrite}\n{projection_import_stub}\n{projection_uncached_peak}\n{projection_root}\n{projection_local_identity}\n{projection_call_identity}\n{projection_call_sites}\n{projection_cost}\n{projection_declaration_cost}\n{projection_identity_slots}\n{projection_statement_segment}\n{projection_defaults}"
@@ -701,8 +470,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
 
     // Keep the complete child union for structural audits. The native/Wasm
     // fixture driver has host effects only behind its exact test-only module.
-    let private_root =
-        include_str!("../../src/workspace_graph/expected_projection/private_layout.rs");
+    let private_root = semantic_graph_private_layout_source_inventory!();
     assert!(private_root.contains(
         "#[cfg(test)]\n#[path = \"private_layout/function_runtime.rs\"]\nmod function_runtime;"
     ));

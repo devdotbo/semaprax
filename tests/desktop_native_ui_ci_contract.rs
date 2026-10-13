@@ -18,6 +18,18 @@ fn private_native_ui_is_platform_real_feature_gated_and_source_locked() {
         [
             [
                 read(root, "src/codegen.rs"),
+                read(root, "src/codegen/selected_fused_row.rs"),
+                read(root, "src/codegen/selected_fused_row/cleanup.rs"),
+                read(root, "src/codegen/selected_fused_row/crossing.rs"),
+                read(root, "src/codegen/selected_fused_row/emit.rs"),
+                read(root, "src/codegen/selected_fused_row/layout.rs"),
+                read(root, "src/codegen/selected_fused_row/lower.rs"),
+                read(root, "src/codegen/selected_fused_row/lower/expr.rs"),
+                read(root, "src/codegen/selected_fused_row/lower/plan.rs"),
+                read(root, "src/codegen/selected_fused_row/lower/prefix.rs"),
+                read(root, "src/codegen/selected_fused_row/precursor.rs"),
+                read(root, "src/codegen/selected_fused_row/selection.rs"),
+                read(root, "src/codegen/selected_fused_row/source_profile.rs"),
                 read(root, "src/codegen/checked_final_utf8_preflight.rs"),
                 read(root, "src/codegen/checked_string_allocation.rs"),
                 read(root, "src/codegen/native_adapter_abi.rs"),
