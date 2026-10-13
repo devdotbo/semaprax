@@ -1,0 +1,63 @@
+{
+  "qualification": "source-only; all controls unexecuted",
+  "selectors": [
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::repeated_construction_does_not_feed_previous_aggregate_back_into_builder"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::large_then_small_retains_persistent_max_but_reports_local_components"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::scope_restores_on_success_refusal_and_nested_construction_without_prior_input"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::ownership_census_adds_missing_ordinary_conditional_and_string_move_terms"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::helper_empty_builder_counts_held_ordinary_directory_and_receiving_drop"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::checked_owned_variant_builder_attributes_real_conditional_state_through_drop"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::standalone_builder_and_invocation_overlap_remain_distinct_after_reconstruction"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::staged_component_keeps_earlier_retained_maximum_and_nested_builder_is_standalone"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::phase_overlap_pairs_current_staging_and_full_held_index_without_previous_builder"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::full_original_capacity_receiver_and_controls_remain_exact_with_only_index_hook"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::helper_index::tests::construction_index_reuses_exact_sites_and_preserves_independent_plan_bytes"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::helper_index::tests::construction_exact_one_short_and_zero_budget_leave_attached_plans_unchanged"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::iterative_lowering_tests::inventory_and_cleanup_capacity_cover_owned_hostile_families"
+    },
+    {
+      "harness": "semaprax-native-rust-interop-builder::lib",
+      "selector": "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions"
+    }
+  ],
+  "new_rust_children": [],
+  "note": "The earlier OPT811 pending file incorrectly labels the pin owner build::tests; this file binds actual iterative_lowering_tests registration."
+}
