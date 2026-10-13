@@ -123,3 +123,31 @@ pub(super) fn vector(
         )
     })
 }
+
+// The caller must supply the complete identity key produced by its paid key
+// constructor. A root spelling alone never authenticates generic arguments.
+pub(super) fn cached_identity<'a>(
+    index: &'a DeclarationIndex,
+    key: &str,
+    payer: &mut Payer<'_>,
+) -> Result<Option<&'a crate::hir::TypeFacts>, Diagnostic> {
+    with_work(payer, |work| {
+        index.inventory_probes().cached_identity(key, work)
+    })
+}
+pub(super) fn named_type<'a>(
+    index: &'a DeclarationIndex,
+    name: &str,
+    payer: &mut Payer<'_>,
+) -> Result<Option<&'a DeclarationId>, Diagnostic> {
+    with_work(payer, |work| {
+        index.inventory_probes().named_type(name, work)
+    })
+}
+pub(super) fn case_fields<'a>(
+    index: &'a DeclarationIndex,
+    key: &DeclarationId,
+    payer: &mut Payer<'_>,
+) -> Result<Option<&'a Vec<ResolvedFieldDeclaration>>, Diagnostic> {
+    with_work(payer, |work| index.inventory_probes().case_rows(key, work))
+}

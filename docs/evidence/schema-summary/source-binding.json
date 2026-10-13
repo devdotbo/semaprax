@@ -50,11 +50,11 @@
     "src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs": "1b3dff363b517686e0624dd29a8c703e9b5b09928d29f1da11345510f1695869",
     "src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs": "82942c977e8f197b0f1669e795830895648f2f72e28daa1915513ad2cc72d5ee",
     "src/hir/declaration_index.rs": "932d3b2d6ee8ca7d9fd558154e7b978477b2110365cada42e5e0365b57f9363c",
-    "src/hir/declaration_index/inventory_lookup.rs": "d64c42c1444f2803c1e4bf93308bdeb0afefeeed55e91644268a13d8dfd5e7d0",
-    "src/hir/declaration_index/inventory_lookup/tests.rs": "a0ed40e868a4b767cc67b57fed26d9d59112e885b5de1e78d01684d205837b51",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_metadata.rs": "dc557ddf5e7731ef44a9d3d53edb42950b4d81d178ad2b82f6e1be76c443f9f7",
+    "src/hir/declaration_index/inventory_lookup.rs": "738cb13ee0551ee3aba7c7b5cdf76b3a861b77645f6a50c45199d66a625eb8b4",
+    "src/hir/declaration_index/inventory_lookup/tests.rs": "fefd9df62f17d349458bd7d76b7c2c918988454e09e7739f1a6eb0ed98a43e6b",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_metadata.rs": "b787b725d1a06551e10541af820c2932540de8e4cffdafd70013f7284d844cb6",
     "src/cleanup_plan/replay/paid_type_facts/inventory_nested.rs": "3677393835677f8cd45b6dd3012c8ab149609aac5eb32aaed0affc565ae0473c",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_nested/tests.rs": "efd4c9434519ab7b82f6a44f4c1bd29f1f4677d1b7c27423a29324254ba41f89"
+    "src/cleanup_plan/replay/paid_type_facts/inventory_nested/tests.rs": "0c1848c85970bc44e8a2f5d1e8ff0b0ee56f1f4f15f1567588f7308226a42cd7"
   },
   "pending_selectors": [
     "cleanup::schema_summary::tests::complete_ordinary_summary_matches_full_receiver_and_receiving_drop",
@@ -81,7 +81,8 @@
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::borrowed_full_payload_field_identity_and_type_match_complete_original",
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::held_metadata_root_suffix_zero_one_short_and_sticky_work_keep_original_queries",
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::complete_original_nested_and_index_sources_stay_independent_and_byte_exact",
-    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_forged_cycle_missing_arity_and_case_metadata_keep_original_refusal_order"
+    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_forged_cycle_missing_arity_and_case_metadata_keep_original_refusal_order",
+    "hir::declaration_index::inventory_lookup::tests::full_string_directory_keys_preserve_value_precedence_and_withhold_refused_values"
   ],
   "review": {
     "receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-constructor-review-814-f9aad-20261013/process-receipt.json",
@@ -125,7 +126,8 @@
       "peak_process_group_rss_bytes": 348160000,
       "resource_refusal": null,
       "verdict": "no concrete compile/semantic blocker in three-file source review; all four visibility/zero-charge/invariant/test-path checks verified against exact source; no execution"
-    }
+    },
+    "string_extension": "same immutable comparator now covers complete String cache/name keys and case field rows; locally source-reviewed, six prior controls extended plus one new exact test, all unexecuted; Claude review receipt remains bound to its earlier three-file payload"
   },
   "integrated_current_root": "767e7f4c7",
   "integration_note": "Private merge preserves complete f9 originals; only current HIR receiving-union hash changed. No production summary adoption."

@@ -20,6 +20,16 @@ impl Key for DeclarationId {
         (self.as_str().as_bytes(), &[])
     }
 }
+impl Key for String {
+    fn parts(&self) -> (&[u8], &[u8]) {
+        (self.as_bytes(), &[])
+    }
+}
+impl<'a> Borrow<dyn Key + 'a> for String {
+    fn borrow(&self) -> &(dyn Key + 'a) {
+        self
+    }
+}
 impl<'a> Borrow<dyn Key + 'a> for DeclarationId {
     fn borrow(&self) -> &(dyn Key + 'a) {
         self
@@ -123,6 +133,29 @@ fn get<'a, V>(
     }
 }
 
+fn get_text<'a, V>(
+    map: &'a BTreeMap<String, V>,
+    key: &str,
+    work: &mut Work<'_>,
+) -> Result<Option<&'a V>, ()> {
+    units(work, 0)?;
+    let meter = Meter {
+        work: RefCell::new(work),
+        failed: Cell::new(false),
+    };
+    let query = Query {
+        head: key.as_bytes(),
+        tail: &[],
+        meter: &meter,
+    };
+    let result = map.get(&query as &dyn Key);
+    if meter.failed.get() {
+        Err(())
+    } else {
+        Ok(result)
+    }
+}
+
 pub(crate) struct Probes<'a>(&'a DeclarationIndex);
 impl DeclarationIndex {
     pub(crate) fn inventory_probes(&self) -> Probes<'_> {
@@ -153,6 +186,28 @@ impl Index for Probes<'_> {
     }
 }
 impl<'a> Probes<'a> {
+    pub(crate) fn cached_identity(
+        &self,
+        key: &str,
+        work: &mut Work<'_>,
+    ) -> Result<Option<&'a TypeFacts>, ()> {
+        get_text(&self.0.type_facts_by_id, key, work)
+    }
+    pub(crate) fn named_type(
+        &self,
+        name: &str,
+        work: &mut Work<'_>,
+    ) -> Result<Option<&'a DeclarationId>, ()> {
+        get_text(&self.0.types_by_name, name, work)
+    }
+    pub(crate) fn case_rows(
+        &self,
+        key: &DeclarationId,
+        work: &mut Work<'_>,
+    ) -> Result<Option<&'a Vec<ResolvedFieldDeclaration>>, ()> {
+        get(&self.0.case_fields, key, &[], work)
+    }
+
     pub(crate) fn declared(
         &self,
         key: &DeclarationId,

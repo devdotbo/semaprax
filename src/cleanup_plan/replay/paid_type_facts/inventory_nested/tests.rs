@@ -154,9 +154,24 @@ fn held_metadata_root_suffix_zero_one_short_and_sticky_work_keep_original_querie
     let program = fixture();
     let index = &program.declarations;
     let function = &program.functions[0];
-    for text in ["n.Outcome", "n.Config", "missing", "é\0🦀suffix"] {
+    for text in [
+        "n.Outcome",
+        "n.Config",
+        "Config",
+        "Outcome",
+        "missing",
+        "é\0🦀suffix",
+    ] {
         let key = DeclarationId::new(text);
-        let expected = (index.declaration(&key), index.has_record_invariant(&key));
+        // Key construction is outside this query-only allocation observation;
+        // the production caller must use the genuine paid complete constructor.
+        let full_key = nominal(text, vec![]).identity_key();
+        let expected = (
+            index.declaration(&key),
+            index.has_record_invariant(&key),
+            index.cached_zero_argument_facts(&key),
+            index.type_id(text),
+        );
         let (work, refused) = crate::bounded_output::with_limit(usize::MAX, || {
             let mut budget = ReplayBudget::new();
             budget.charge(function, 0, "metadata receiver").unwrap();
@@ -164,7 +179,9 @@ fn held_metadata_root_suffix_zero_one_short_and_sticky_work_keep_original_querie
             let mut payer = super::super::tests::payer(function, &mut budget);
             let value = metadata::declared(index, &key, &mut payer).unwrap();
             let present = metadata::has_invariant(index, &key, &mut payer).unwrap();
-            assert_eq!((value, present), expected);
+            let cached = metadata::cached_identity(index, &full_key, &mut payer).unwrap();
+            let named = metadata::named_type(index, text, &mut payer).unwrap();
+            assert_eq!((value, present, cached, named), expected);
             before - payer.budget.remaining
         });
         assert!(!refused);
@@ -182,8 +199,15 @@ fn held_metadata_root_suffix_zero_one_short_and_sticky_work_keep_original_querie
                         let mut payer = super::super::tests::payer(function, &mut budget);
                         let result =
                             metadata::declared(index, &key, &mut payer).and_then(|value| {
-                                metadata::has_invariant(index, &key, &mut payer)
-                                    .map(|present| (value, present))
+                                metadata::has_invariant(index, &key, &mut payer).and_then(
+                                    |present| {
+                                        metadata::cached_identity(index, &full_key, &mut payer)
+                                            .and_then(|cached| {
+                                                metadata::named_type(index, text, &mut payer)
+                                                    .map(|named| (value, present, cached, named))
+                                            })
+                                    },
+                                )
                             });
                         let failed = result.is_err();
                         if limit == work {

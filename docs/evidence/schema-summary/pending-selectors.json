@@ -27,6 +27,7 @@
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::borrowed_full_payload_field_identity_and_type_match_complete_original",
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::held_metadata_root_suffix_zero_one_short_and_sticky_work_keep_original_queries",
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::complete_original_nested_and_index_sources_stay_independent_and_byte_exact",
-    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_forged_cycle_missing_arity_and_case_metadata_keep_original_refusal_order"
+    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_forged_cycle_missing_arity_and_case_metadata_keep_original_refusal_order",
+    "hir::declaration_index::inventory_lookup::tests::full_string_directory_keys_preserve_value_precedence_and_withhold_refused_values"
   ]
 }

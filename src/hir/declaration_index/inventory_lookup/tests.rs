@@ -82,3 +82,59 @@ fn complete_root_suffix_utf8_null_order_and_first_refusal_withhold_read_results(
     )
     .is_err());
 }
+
+#[test]
+fn full_string_directory_keys_preserve_value_precedence_and_withhold_refused_values() {
+    let map: BTreeMap<String, usize> = ["", "a", "a\0tail", "nominal:2:é:0:", "🦀suffix"]
+        .into_iter()
+        .enumerate()
+        .map(|(index, text)| (text.to_owned(), index))
+        .collect();
+    for query in [
+        "",
+        "a",
+        "a\0tail",
+        "nominal:2:é:0:",
+        "🦀suffix",
+        "absent",
+        "🦀",
+    ] {
+        let expected = map.get(query);
+        let mut work = 0usize;
+        assert_eq!(
+            get_text(&map, query, &mut |units| {
+                work += units;
+                true
+            })
+            .unwrap(),
+            expected
+        );
+        for limit in [0, work - 1, work] {
+            let mut remaining = limit;
+            let mut first = false;
+            let mut late = 0;
+            let result = get_text(&map, query, &mut |units| {
+                if first {
+                    late += 1;
+                    return false;
+                }
+                match remaining.checked_sub(units) {
+                    Some(value) => {
+                        remaining = value;
+                        true
+                    }
+                    None => {
+                        first = true;
+                        false
+                    }
+                }
+            });
+            assert_eq!(late, 0);
+            if limit < work {
+                assert!(first && result.is_err());
+            } else {
+                assert_eq!(result.unwrap(), expected);
+            }
+        }
+    }
+}
