@@ -226,6 +226,9 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_ordered.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_ordered/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_flags.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_flags/families.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_flags/tests.rs"),
         include_str!(
             "../src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests/constructors.rs"
         ),
@@ -374,6 +377,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/typed_storage/collections.rs"),
         include_str!("../src/hir/declaration_index/flags/paid.rs"),
         include_str!("../src/hir/declaration_index/inventory_lookup.rs"),
+        include_str!("../src/hir/declaration_index/inventory_lookup/compound.rs"),
+        include_str!("../src/hir/declaration_index/inventory_lookup/compound/tests.rs"),
         include_str!("../src/hir/declaration_index/inventory_lookup/tests.rs"),
         include_str!("../src/hir/declaration_index/inventory_lookup/nominal.rs"),
         include_str!("../src/hir/declaration_index/flags/paid/builtin.rs"),

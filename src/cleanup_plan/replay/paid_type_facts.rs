@@ -353,3 +353,5 @@ mod inventory_nested;
 mod inventory_encoded;
 
 mod inventory_ordered;
+
+mod inventory_flags;

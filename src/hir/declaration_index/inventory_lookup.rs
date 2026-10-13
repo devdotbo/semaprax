@@ -6,11 +6,16 @@ use std::borrow::Borrow;
 use std::cell::{Cell, RefCell};
 use std::cmp::Ordering;
 
+mod compound;
+
 trait Key {
     fn parts(&self) -> (&[u8], &[u8]);
     fn segments(&self) -> [&[u8]; 5] {
         let (head, tail) = self.parts();
         [head, tail, &[], &[], &[]]
+    }
+    fn plan(&self) -> Option<&compound::Plan<'_>> {
+        None
     }
     fn metered(&self) -> bool {
         false
@@ -58,20 +63,62 @@ impl Ord for dyn Key + '_ {
         }
         let mut a = self.segments().into_iter().flatten().copied();
         let mut b = other.segments().into_iter().flatten().copied();
-        loop {
-            // Pay before fetching/comparing the next complete UTF-8 byte pair.
-            if !work.visit(1) {
-                return Ordering::Equal;
+        match (self.plan(), other.plan()) {
+            (None, None) => compare_streams(|_| a.next(), |_| b.next(), work),
+            (Some(plan), None) => {
+                if !work.visit(compound::CURSOR_INITIALIZATION_WORK) {
+                    return Ordering::Equal;
+                }
+                let mut cursor = plan.bytes();
+                compare_streams(|visit| cursor.next(visit), |_| b.next(), work)
             }
-            match (a.next(), b.next()) {
-                (Some(a), Some(b)) => match a.cmp(&b) {
-                    Ordering::Equal => {}
-                    order => return order,
-                },
-                (None, None) => return Ordering::Equal,
-                (None, Some(_)) => return Ordering::Less,
-                (Some(_), None) => return Ordering::Greater,
+            (None, Some(plan)) => {
+                if !work.visit(compound::CURSOR_INITIALIZATION_WORK) {
+                    return Ordering::Equal;
+                }
+                let mut cursor = plan.bytes();
+                compare_streams(|_| a.next(), |visit| cursor.next(visit), work)
             }
+            (Some(left), Some(right)) => {
+                if !work.visit(2 * compound::CURSOR_INITIALIZATION_WORK) {
+                    return Ordering::Equal;
+                }
+                let mut a = left.bytes();
+                let mut b = right.bytes();
+                compare_streams(|visit| a.next(visit), |visit| b.next(visit), work)
+            }
+        }
+    }
+}
+// Only reads use this comparator. After first refusal no further callback is
+// run and its stopping equality has no authority; every provisional map value
+// is withheld by the receiving probe before use.
+fn compare_streams(
+    mut a: impl FnMut(&dyn Fn(usize) -> bool) -> Option<u8>,
+    mut b: impl FnMut(&dyn Fn(usize) -> bool) -> Option<u8>,
+    work: &dyn Key,
+) -> Ordering {
+    let visit = |n| work.visit(n);
+    loop {
+        if !work.visit(1) {
+            return Ordering::Equal;
+        }
+        let left = a(&visit);
+        if !work.visit(0) {
+            return Ordering::Equal;
+        }
+        let right = b(&visit);
+        if !work.visit(0) {
+            return Ordering::Equal;
+        }
+        match (left, right) {
+            (Some(a), Some(b)) => match a.cmp(&b) {
+                Ordering::Equal => {}
+                order => return order,
+            },
+            (None, None) => return Ordering::Equal,
+            (None, Some(_)) => return Ordering::Less,
+            (Some(_), None) => return Ordering::Greater,
         }
     }
 }
@@ -304,3 +351,62 @@ impl DeclarationIndex {
 }
 
 mod nominal;
+
+struct CompoundQuery<'a, 'b, 'c, 'd> {
+    plan: &'a compound::Plan<'a>,
+    meter: &'b Meter<'c, 'd>,
+}
+impl Key for CompoundQuery<'_, '_, '_, '_> {
+    fn parts(&self) -> (&[u8], &[u8]) {
+        (&[], &[])
+    }
+    fn plan(&self) -> Option<&compound::Plan<'_>> {
+        Some(self.plan)
+    }
+    fn metered(&self) -> bool {
+        true
+    }
+    fn visit(&self, units: usize) -> bool {
+        self.meter.visit(units)
+    }
+}
+impl<'a> Probes<'a> {
+    /// None means only that the unchanged inline optimization census declined;
+    /// the caller must then use its complete paid owned canonical key. Err
+    /// withholds every provisional read after first work refusal.
+    pub(crate) fn cached_compound(
+        &self,
+        ty: &ResolvedType,
+        work: &mut Work<'_>,
+    ) -> Result<Option<Option<&'a TypeFacts>>, ()> {
+        units(work, 0)?;
+        let meter = Meter {
+            work: RefCell::new(work),
+            failed: Cell::new(false),
+        };
+        let plan = compound::Plan::new(ty, &|n| meter.visit(n));
+        if meter.failed.get() {
+            return Err(());
+        }
+        let Some(plan) = plan else {
+            return Ok(None);
+        };
+        let query = CompoundQuery {
+            plan: &plan,
+            meter: &meter,
+        };
+        let result = self.0.type_facts_by_id.get(&query as &dyn Key);
+        if meter.failed.get() {
+            Err(())
+        } else {
+            Ok(Some(result))
+        }
+    }
+}
+
+#[cfg(test)]
+impl DeclarationIndex {
+    pub(crate) fn inventory_insert_fact_for_test(&mut self, ty: &ResolvedType, facts: TypeFacts) {
+        self.type_facts_by_id.insert(ty.identity_key(), facts);
+    }
+}

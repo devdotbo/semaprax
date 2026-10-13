@@ -167,3 +167,13 @@ pub(super) fn cached_zero_argument<'a>(
 }
 
 pub(super) mod admission;
+
+pub(super) fn cached_compound<'a>(
+    index: &'a DeclarationIndex,
+    ty: &ResolvedType,
+    payer: &mut Payer<'_>,
+) -> Result<Option<Option<&'a crate::hir::TypeFacts>>, Diagnostic> {
+    with_work(payer, |work| {
+        index.inventory_probes().cached_compound(ty, work)
+    })
+}

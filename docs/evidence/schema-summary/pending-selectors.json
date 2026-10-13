@@ -39,6 +39,13 @@
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_native_authored_admission_first_lookup_order_and_forged_metadata_keep_paid_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::online_avl_keeps_complete_owned_map_receiver_rotations_duplicates_removal_and_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::actual_avl_backing_and_work_zero_exact_short_keep_first_refusal_and_receiving_drop",
-    "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::paid_avl_reuses_deleted_slots_and_retains_actual_frontier_capacity"
+    "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::paid_avl_reuses_deleted_slots_and_retains_actual_frontier_capacity",
+    "hir::declaration_index::inventory_lookup::compound::tests::complete_paid_compound_cursor_keeps_all_original_type_bytes_cache_facts_and_drop",
+    "hir::declaration_index::inventory_lookup::compound::tests::every_compound_work_refusal_withholds_full_cache_value_and_runs_no_later_callback",
+    "hir::declaration_index::inventory_lookup::compound::tests::compound_optimization_decline_remains_distinct_from_work_refusal_and_keeps_saved_sources",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_flag_only_fold_matches_independent_owned_facts_all_fields_cases_and_receiving_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_generic_zero_one_seventeen_arguments_functions_and_forged_cache_precedence_keep_old_flags",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_cycle_forgery_and_missing_metadata_keep_original_none_and_success_priority",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_original_owned_facts_compute_and_builtin_bodies_remain_independent_byte_exact"
   ]
 }

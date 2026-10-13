@@ -106,7 +106,7 @@ fn execute(map: &mut Map<bool>, op: Op, payer: &mut Payer<'_>) -> Result<Option<
             // The caller separately owns key creation/copy/final release; the
             // map never clones it or claims authority over an unpaid payload.
             inventory_metadata::step(payer, 1)?;
-            let key = inventory_text::raw(format_args!("{key}"), payer)?;
+            let key = inventory_text::raw(payer, format_args!("{key}"))?;
             map.insert(key, value, payer)
         }
         Op::Get(key) => map.get(key, payer).map(|found| found.copied()),

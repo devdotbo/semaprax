@@ -70,6 +70,26 @@
       "sha256": "bc301f5a2539ab4d3148d19c33ac895d318bffd043e038d80613af6f6ab29276",
       "captured_receiver_head": "6aaaceb97",
       "note": "Complete independently compiled receiver; archive only source provenance, no test code hidden."
+    },
+    "src/hir/declaration_index/flags/nominal_key.rs": {
+      "archive": "docs/evidence/schema-summary/nominal-key.rs.before",
+      "sha256": "b14dfdb70872c6452d8dec1f20ba385ddedad3a63d70fae12badfe51d6a43642",
+      "note": "Complete independently compiled original body remains unchanged; archive is source provenance only."
+    },
+    "src/hir/declaration_index/flags/nominal_key/compound.rs": {
+      "archive": "docs/evidence/schema-summary/nominal-compound.rs.before",
+      "sha256": "178ad1e3b82208b06dc3af9edd663e022d3de6e5aee11dd56c9ec7e9a16d8acf",
+      "note": "Complete independently compiled original body remains unchanged; archive is source provenance only."
+    },
+    "src/hir/declaration_index/flags/paid/compute.rs": {
+      "archive": "docs/evidence/schema-summary/flags-paid-compute.rs.before",
+      "sha256": "e3cb4d9e04b9beea8611557f4d533c8b6fe4d58961834ec21617c28ce7f235cf",
+      "note": "Complete independently compiled original body remains unchanged; archive is source provenance only."
+    },
+    "src/hir/declaration_index/flags/paid/builtin.rs": {
+      "archive": "docs/evidence/schema-summary/flags-paid-builtin.rs.before",
+      "sha256": "d36a1bd7e376c1f0fd3b2251039f95172e2869d6ed10b2e6f78305f3275a0539",
+      "note": "Complete independently compiled original body remains unchanged; archive is source provenance only."
     }
   },
   "current_sources": {
@@ -77,22 +97,22 @@
     "src/cleanup/schema_summary/generic_record.rs": "a46d2b2b6b83918f72eab634ced94c6982b4e25f92b3b585afd4b40f84328c1a",
     "src/cleanup/schema_summary/support.rs": "eb9a6cd7961d586370fce7b30552ef0e5ccd4c5d23032a9717447fe32efbe6f2",
     "src/cleanup/schema_summary/tests.rs": "56c3e5775113bb14b6f772d46aec97a6e33550c69ccf9430d550141c7fa4b585",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "5142ab18025837683f9dfdab73de47cfa08963df93b8a5c4e995a864ea77796b",
-    "src/cleanup_plan/replay/paid_type_facts.rs": "21d267b5e907ae00df98eae2b335a9875669343fec017a7d994c15b68d8833ea",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "edfc2bf2e3c4efeca6af0e7bbca4f461bf38e0fb8a3717ed2880c076a3ef500e",
+    "src/cleanup_plan/replay/paid_type_facts.rs": "6e8c1554c56e7a05669aef09bbe72ab4dade064ec78afe4a3cd4a5f920980a5e",
     "src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs": "211e19f9df39443f84d5f582b6c149f87d91e43161ea81fbe1a6899040310019",
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs": "9edcfe04ec45408193fe8d7969b2cd2bf756498df9d5b43e4c2d6fcb569644e2",
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs": "a22ad9d3b05506fcb2c1e4ccbb9a175486305fd792de5bfb4fcab031aa5bdf52",
     "src/cleanup_plan/replay/paid_type_facts/droppability.rs": "50553857f7a33d60b245f66bdc3c380f65b8ba5ae5fa53e776fd2b419da80e76",
-    "tests/hir_module_boundaries.rs": "8e2df963ad79b924fcab75aae34541e47b33afed4638181bf4dcde58b67a2e45",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "47fe3be79d5a79b44c39170b00be4a935606b485061a5d8a62973c6db56b2e56",
+    "tests/hir_module_boundaries.rs": "5d78f64cf682e53b1dae2fcb68f76b6cd76701dd670f6f7c55b0c2d96f34534f",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "5fbb34ee50871cb25bf2339487f801c98553f403301dc6378ea5f7611d5e1dcc",
     "src/cleanup_plan/replay/paid_type_facts/inventory_text.rs": "34c5813dc5dff46bd9dd9eee480fea834c2e4d82f8eb22e7a1abfc81288493fa",
     "src/cleanup.rs": "e2a653179270f02ca7d56cfffc11e503043fd00068aac09152a89a493660159f",
     "src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs": "1b3dff363b517686e0624dd29a8c703e9b5b09928d29f1da11345510f1695869",
     "src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs": "82942c977e8f197b0f1669e795830895648f2f72e28daa1915513ad2cc72d5ee",
     "src/hir/declaration_index.rs": "586684b48f58eea49ca017a4f1b8ab54fee3a874366d9ef0e10c2e31b8cd46c3",
-    "src/hir/declaration_index/inventory_lookup.rs": "b5386601e5b29b293769910a0864ab8d2dc26de818ee1c5ddb7bcadafc78de30",
+    "src/hir/declaration_index/inventory_lookup.rs": "718c7c9ca23f86dc08b0b61d265db12abc78ce17fc80f209d7508c5586b2b911",
     "src/hir/declaration_index/inventory_lookup/tests.rs": "dfbba96b64d32e9fccedbfa651bdf94dbb2bf335e3378cd5184f446fc41bcaf6",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_metadata.rs": "e5ac7c5630ce44900c47c62ca6a2d16bc7069a3e68e3e3a2603421ea74477485",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_metadata.rs": "770c3cff455542a3741de5bc6a49d7ece104a5d001b8476bdbaa0dc3ff0ac26e",
     "src/cleanup_plan/replay/paid_type_facts/inventory_nested.rs": "3677393835677f8cd45b6dd3012c8ab149609aac5eb32aaed0affc565ae0473c",
     "src/cleanup_plan/replay/paid_type_facts/inventory_nested/tests.rs": "3964ddbf7760f9f0279784320f29ecc881f203fa45058fef5173da24bc1f7ebe",
     "src/bounded_output/classifier_string.rs": "9d705f651e1b826c14377c3b5418a31a44bb36f069f7dca987b7f519df1c3f11",
@@ -113,7 +133,12 @@
     "src/hir/declaration_index/flags/paid/key.rs": "db8d77be0fa2d0dcd9607ef616328e580919c89221b861944b145ad5c7269038",
     "src/hir/declaration_index/flags/paid/inventory_constructor.rs": "9891daeb9f7df0a5880f4e6345cafd1b6bc5aaf74e1f8b6a58c97701bd29153c",
     "src/cleanup_plan/replay/paid_type_facts/inventory_ordered.rs": "5968a1ac5a231cd84094ca65c4238d3873d455dd50f3d30684c3f982d2ab172f",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_ordered/tests.rs": "3591b52e1db02bc86cc50a77afebaecf0d62f9afcfb8b50652b92400e8390fea"
+    "src/cleanup_plan/replay/paid_type_facts/inventory_ordered/tests.rs": "b6d09e7fcda025ba9b7140f0ad88e2d25190b35e8b5d9b0fd9b80aa40973ea7c",
+    "src/hir/declaration_index/inventory_lookup/compound.rs": "5e6cadee2de8116015fbe0d753a9d1f2d991be8e2b41e9b988b07801c61c6d5b",
+    "src/hir/declaration_index/inventory_lookup/compound/tests.rs": "78403bb30782b80c9b68681f4739e183b080f99deace4866a53169f817901b23",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_flags.rs": "08b445adf6ca5e73ba91135f2488b71ed08aa720db3c25ba270c6bfaeb72074d",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_flags/families.rs": "86728bdc3a0bb2c2eff94ddc8cd47a8fc8c31ec2ae3a2ccc33432f15300b30fc",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_flags/tests.rs": "14cf9394c4ed38362d381bf3d6e21f3d4942cd25f654970ad29d17021c0acd2e"
   },
   "pending_selectors": [
     "cleanup::schema_summary::tests::complete_ordinary_summary_matches_full_receiver_and_receiving_drop",
@@ -152,7 +177,14 @@
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_native_authored_admission_first_lookup_order_and_forged_metadata_keep_paid_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::online_avl_keeps_complete_owned_map_receiver_rotations_duplicates_removal_and_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::actual_avl_backing_and_work_zero_exact_short_keep_first_refusal_and_receiving_drop",
-    "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::paid_avl_reuses_deleted_slots_and_retains_actual_frontier_capacity"
+    "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::paid_avl_reuses_deleted_slots_and_retains_actual_frontier_capacity",
+    "hir::declaration_index::inventory_lookup::compound::tests::complete_paid_compound_cursor_keeps_all_original_type_bytes_cache_facts_and_drop",
+    "hir::declaration_index::inventory_lookup::compound::tests::every_compound_work_refusal_withholds_full_cache_value_and_runs_no_later_callback",
+    "hir::declaration_index::inventory_lookup::compound::tests::compound_optimization_decline_remains_distinct_from_work_refusal_and_keeps_saved_sources",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_flag_only_fold_matches_independent_owned_facts_all_fields_cases_and_receiving_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_generic_zero_one_seventeen_arguments_functions_and_forged_cache_precedence_keep_old_flags",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_cycle_forgery_and_missing_metadata_keep_original_none_and_success_priority",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_original_owned_facts_compute_and_builtin_bodies_remain_independent_byte_exact"
   ],
   "review": {
     "receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-constructor-review-814-f9aad-20261013/process-receipt.json",
@@ -266,7 +298,14 @@
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_native_authored_admission_first_lookup_order_and_forged_metadata_keep_paid_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::online_avl_keeps_complete_owned_map_receiver_rotations_duplicates_removal_and_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::actual_avl_backing_and_work_zero_exact_short_keep_first_refusal_and_receiving_drop",
-    "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::paid_avl_reuses_deleted_slots_and_retains_actual_frontier_capacity"
+    "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::paid_avl_reuses_deleted_slots_and_retains_actual_frontier_capacity",
+    "hir::declaration_index::inventory_lookup::compound::tests::complete_paid_compound_cursor_keeps_all_original_type_bytes_cache_facts_and_drop",
+    "hir::declaration_index::inventory_lookup::compound::tests::every_compound_work_refusal_withholds_full_cache_value_and_runs_no_later_callback",
+    "hir::declaration_index::inventory_lookup::compound::tests::compound_optimization_decline_remains_distinct_from_work_refusal_and_keeps_saved_sources",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_flag_only_fold_matches_independent_owned_facts_all_fields_cases_and_receiving_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_generic_zero_one_seventeen_arguments_functions_and_forged_cache_precedence_keep_old_flags",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_cycle_forgery_and_missing_metadata_keep_original_none_and_success_priority",
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_original_owned_facts_compute_and_builtin_bodies_remain_independent_byte_exact"
   ],
   "mandatory_constructor_work": {
     "status": "private additive source; full classifier state and production inventory collector still pending",
@@ -313,6 +352,63 @@
       "Initialized copy, old-buffer release, traversal and fixed-size rotation/link actions use existing replay work; byte counts are not work.",
       "Keys and values remain caller-owned paid payloads; no duplicate diagnostic clone or paid fallback.",
       "Complete independent BTreeMap trace plus allocation-through-Drop, zero/exact/short/sticky and deletion-slot reuse controls authored, not executed."
+    ]
+  },
+  "compound_work_review": {
+    "status": "180-second timeout, no valid provider output or approval; local source review continues",
+    "receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-compound-review-814-20261014/process-receipt.json",
+    "wall_seconds": 181.8354324999964,
+    "peak_process_group_rss_bytes": 317210624,
+    "resource_refusal": "180s review deadline",
+    "payload_bytes": 33112,
+    "provider_list_cost_usd": null,
+    "actual_billing": "unknown"
+  },
+  "flag_only_receiver": {
+    "status": "complete private classifier component authored; outer needs_drop/streaming shape/collector and production adoption pending; no execution",
+    "preserves": [
+      "Complete original owned TypeFacts/key/compute/builtin receivers independently compiled, unchanged byte exact.",
+      "Full canonical argument/Function key and current cache precedence, including forged cached facts.",
+      "All native/authored/builtin/generic admission predicates and complete structural child/field/case order.",
+      "Existing cumulative ReplayBudget callbacks before dynamic key comparisons/census/decimal/cursor and actual fallible backing."
+    ],
+    "omits": "Only discarded layout serialization/cloning; immutable root borrowed; invocation-local visiting/memo retains exact full owned keys.",
+    "controls": "44 authored exact selectors, unexecuted; no application fit, causal gain, whole route funding or issue closure claim."
+  },
+  "flags_families_review": {
+    "exit_code": 0,
+    "wall_seconds": 61.059801042007166,
+    "payload_bytes": 20350,
+    "tools_enabled": false,
+    "code_execution": false,
+    "peak_process_group_rss_bytes": 331218944,
+    "resource_refusal": null,
+    "actual_model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 7987,
+        "cacheReadInputTokens": 1966,
+        "cacheCreationInputTokens": 12482,
+        "webSearchRequests": 0,
+        "costUSD": 0.12999860000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 6084,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "provider_list_cost_usd": 0.12999860000000002,
+    "actual_billing": "unknown",
+    "status": "Source-only narrow four-file review; no definite blocker in supplied predicates; omitted-reference limitations checked locally, no compiler/runtime approval",
+    "dispositions": [
+      "iterator_ops::resolved_element_is_admitted_in is scalar-or-runtime_element; runtime_element and runtime_with_work both test owned-leaf layout then owned-record element.",
+      "copy_record_collection::admitted is exactly fields(...).is_some(); fields_with_work retains kind/origin/arity/field-bound and scalar checks.",
+      "function_value module public; copy_record/owned_leaf/owned_record modules and work APIs pub(crate), map ID constants pub(crate).",
+      "Function signature original cap8 and scalar leaf predicate retained; Map/Set leaf sets and owned-byte Option/Result combinations checked against full original bodies.",
+      "with_work explicitly adapts Result<T,()> to first typed Diagnostic, not reviewer speculative signature assumptions.",
+      "Probes is one borrowed DeclarationIndex reference, no directory construction; scalar callees match fixed variant tags and never recurse."
     ]
   }
 }
