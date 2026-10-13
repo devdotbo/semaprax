@@ -1,0 +1,9 @@
+{
+  "base": "bbd8929c86185691269f8c24050dbfbaf807d38f",
+  "qualification": "SOURCE_ONLY_UNEXECUTED",
+  "repair": "Explicit path = full/transient.rs agrees with the existing adjacent full/receiving.rs registration and actual bbd E0583 diagnostic. No relocation/dedent or test-body changes.",
+  "preserved_children_sha256": {
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/full/transient.rs": "e30c1a6a7a5a974722c6b70965dfd2d5f889c1944fc43dc96d269307599a1bf0",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/full/receiving.rs": "b17f58e7c4a6e45b67deb0e685bcea5655cfac22f34d6667daf458df989975f0"
+  }
+}
