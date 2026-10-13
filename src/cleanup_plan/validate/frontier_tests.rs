@@ -3,9 +3,13 @@ use crate::hir::ResolvedExprKind;
 use crate::loop_calls::byte_writer::validation_frontier::Frontier;
 use crate::loop_calls::byte_writer::{self, resolved_target};
 const HELPERS: &str = include_str!("../../../tests/owned_data/byte_helper_renewal.spx");
-const LEXICAL: &str = r#"module frontier.lexical;
+const NORMALIZED_RETURN: &str = r#"module frontier.lexical;
 @id("first") fn first()->i64 {0}
 @id("late") fn late()->i64 {return 1;}
+"#;
+const LEXICAL: &str = r#"module frontier.lexical;
+@id("first") fn first()->i64 {0}
+@id("late") fn late()->i64 {let mut count=0;while count<2 {count=count+1;if count==1 {break;}else{0};0} count}
 "#;
 fn program(source: &str) -> ResolvedProgram {
     let parsed = crate::parse(source, "validation-frontier.spx").unwrap();
@@ -42,12 +46,12 @@ fn old(program: &ResolvedProgram) -> Result<(), Diagnostic> {
 fn new(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     crate::cleanup_plan::validate_program(program)
 }
-fn attached(program: &ResolvedProgram) -> Vec<Vec<u8>> {
+fn attached(program: &ResolvedProgram) -> Vec<CleanupPlan> {
     program
         .functions
         .iter()
         .chain(program.function_instances.iter().map(|i| &i.function))
-        .map(|f| crate::cache_codec::encode(&f.cleanup_plan).unwrap())
+        .map(|f| f.cleanup_plan.clone())
         .collect()
 }
 fn parity(program: &ResolvedProgram) {
@@ -62,6 +66,7 @@ fn deferred_frontier_preserves_full_ordinary_lexical_generic_and_helper_plans() 
     for source in [
         HELPERS,
         LEXICAL,
+        NORMALIZED_RETURN,
         r#"module frontier.vec;
 @id("row") record Row {@id("row.s") text:string,@id("row.n") n:i64,}
 @id("main") fn main()->i64 {let mut rows=vec_with_capacity<Row>(1usize);let mut bytes=bytes_zeroed(1usize);let mut i=0;
@@ -76,9 +81,9 @@ fn deferred_frontier_preserves_full_ordinary_lexical_generic_and_helper_plans() 
 @id("main") fn main()->i64 {let rows=vec_push<Row>(vec_with_capacity<Row>(1usize),Row{a:bytes_zeroed(1usize),n:1,b:bytes_zeroed(1usize)});let mut target=vec_with_capacity<Row>(1usize);
  for own row in vec_into_iter<Row>(rows) {target=vec_push<Row>(target,row);0} 0}"#,
         r#"module frontier.generic;
-@id("box") record Box<T> {@id("box.value") value:T,}
-@id("relay") fn relay<T>(value:own Box<T>)->Box<T> {value}
-@id("main") fn main()->i64 {let value=relay<Bytes>(Box<Bytes>{value:bytes_zeroed(1usize)});0}"#,
+@id("box") record Box<A,T> {@id("box.payload") payload:A,@id("box.value") value:T,}
+@id("relay") fn relay<T>(value:own Box<Bytes,T>)->Box<Bytes,T> {value}
+@id("main") fn main()->i64 {let value=relay<i64>(Box<Bytes,i64>{payload:bytes_zeroed(1usize),value:42});0}"#,
     ] {
         let program = program(source);
         old(&program).unwrap();
@@ -95,10 +100,7 @@ fn deferred_frontier_preserves_full_ordinary_lexical_generic_and_helper_plans() 
                 &program, &current,
             )
             .unwrap();
-            assert_eq!(
-                crate::cache_codec::encode(&rebuilt).unwrap(),
-                crate::cache_codec::encode(&function.cleanup_plan).unwrap()
-            );
+            assert_eq!(rebuilt, function.cleanup_plan);
             current.finish().unwrap();
             frontier.advance().unwrap();
         }
@@ -341,4 +343,24 @@ fn deferred_frontier_large_plain_member_overhead_and_complete_drop_are_observed(
             );
         }
     }
+}
+
+#[test]
+fn original_symbolic_box_ownership_and_normalized_return_controls_remain_closed() {
+    let original = r#"module frontier.generic;
+@id("box") record Box<T> {@id("box.value") value:T,}
+@id("relay") fn relay<T>(value:own Box<T>)->Box<T> {value}
+@id("main") fn main()->i64 {let value=relay<Bytes>(Box<Bytes>{value:bytes_zeroed(1usize)});0}"#;
+    let errors = crate::check(original, "validation-frontier.spx").unwrap_err();
+    assert!(errors.iter().any(|error| error.code == "SPX-O002"));
+    assert!(errors.iter().any(|error| error.code == "SPX-T225"));
+    let mut normalized = program(NORMALIZED_RETURN);
+    assert!(normalized
+        .functions
+        .iter()
+        .all(|function| function.cleanup_plan.lexical_control.is_none()));
+    normalized.functions[1].id = crate::hir::DeclarationId::new("foreign.normalized");
+    old(&normalized).unwrap();
+    new(&normalized).unwrap();
+    parity(&normalized);
 }

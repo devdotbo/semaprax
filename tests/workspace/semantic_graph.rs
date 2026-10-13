@@ -634,6 +634,9 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         "pub(super) fn materialize(view: SyntheticProgramView<'_>) -> Result<Program, Vec<Diagnostic>> {",
         "pub(super) fn materialize_receiving(",
         "pub(super) fn construct(",
+        // Complete cfg(test) prelude initialization receiver stays in this
+        // joined inventory; it grants no production facade or ambient authority.
+        "pub(super) fn complete_original_receiver_before_measurement(programs: &[Program]) {",
         "pub(super) fn collect_edges(",
         "pub(super) fn verify(",
         "pub(super) fn verify(",

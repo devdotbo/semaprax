@@ -46,13 +46,42 @@ const INVARIANT_CALLER: &str = r#"module overlay.invariant_app;
 use type @id("overlay.row") from overlay.invariant_provider as Imported;
 @id("overlay.invariant.main") fn main()->i64 { let row=Imported{x:41}; let updated=row with {x:42}; updated.x }"#;
 
+// Invariants stay authored in their own module. The imported inert function
+// keeps the real provider overlay present without opening forbidden type imports.
+const INVARIANT_LOCAL_CALLER: &str = r#"module overlay.invariant_app;
+use function @id("overlay.invariant_provider.inert") from overlay.invariant_provider as inert;
+@id("overlay.local.row") record Row {@id("overlay.local.row.x") x:i64,} requires x>=0
+@id("overlay.invariant.main") fn main()->i64 {let row=Row{x:41};let updated=row with {x:42};inert();updated.x}"#;
+
+fn original_invariant_import_is_still_refused() {
+    let programs = sources(INVARIANT_CALLER, INVARIANT_PROVIDER);
+    let authored = index_authored(&programs).unwrap();
+    let modules = crate::workspace_graph::index_modules(&programs).unwrap();
+    let registry = LayoutRegistry::new(&programs, &authored);
+    let errors = crate::workspace_graph::import_validation::validate_uses_with_registry(
+        &programs,
+        &modules,
+        &authored,
+        Some(&registry),
+    )
+    .unwrap_err();
+    assert_eq!(errors.len(), 1, "{errors:?}");
+    assert_eq!(errors[0].code, "SPX-G172");
+    assert_eq!(errors[0].path.as_deref(), Some("caller.spx"));
+    assert_eq!(
+        errors[0].help.as_deref(),
+        Some("construct and update the record through functions of its own module")
+    );
+}
+
 #[test]
 fn retained_vec_box_class_and_invariant_sources_match_full_owning_projection() {
+    original_invariant_import_is_still_refused();
     for (caller, provider) in [
         (VEC_CALLER, VEC_PROVIDER),
         (BOX_CALLER, BOX_PROVIDER),
         (CLASS_CALLER, CLASS_PROVIDER),
-        (INVARIANT_CALLER, INVARIANT_PROVIDER),
+        (INVARIANT_LOCAL_CALLER, INVARIANT_PROVIDER),
     ] {
         parity(caller, provider);
         let programs = sources(caller, provider);
@@ -218,11 +247,12 @@ fn invariant_and_wrapper_invalid_cases_keep_the_entire_old_error_order() {
 
 #[test]
 fn complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal() {
+    original_invariant_import_is_still_refused();
     for (caller, provider) in [
         (VEC_CALLER, VEC_PROVIDER),
         (BOX_CALLER, BOX_PROVIDER),
         (CLASS_CALLER, CLASS_PROVIDER),
-        (INVARIANT_CALLER, INVARIANT_PROVIDER),
+        (INVARIANT_LOCAL_CALLER, INVARIANT_PROVIDER),
     ] {
         let programs = sources(caller, provider);
         super::initialization::complete_original_receiver_before_measurement(&programs);
@@ -286,7 +316,10 @@ fn complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal() {
             let (((), observed), refused, required, _) = observe(usize::MAX, retain);
             assert!(!refused && !observed.invalid && observed.live == 0);
             assert_eq!(observed.allocated, observed.freed);
-            assert!(observed.allocated <= required && observed.highwater <= required);
+            assert!(
+                observed.allocated <= required && observed.highwater <= required,
+                "caller={caller} retain={retain} observed={observed:?} required={required}"
+            );
             let (((), observed), refused, paid, _) = observe(required, retain);
             assert!(!refused && !observed.invalid && observed.live == 0 && paid == required);
             let (((), observed), refused, _, first) = observe(required - 1, retain);

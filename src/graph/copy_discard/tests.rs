@@ -41,13 +41,11 @@ fn full_current_finite_discard_composes_flat_loans_with_nested_storage_in_v84() 
             .find(|f| f.id.as_str() == "score")
             .unwrap();
         assert!(!score.loan_plan.loans.is_empty());
-        assert!(
-            score
-                .loan_plan
-                .loans
-                .iter()
-                .all(|loan| loan.origin.projections.is_empty())
-        );
+        assert!(score
+            .loan_plan
+            .loans
+            .iter()
+            .all(|loan| loan.origin.projections.is_empty()));
         assert_full_replay(&program);
         assert!(authenticate_finite_composition(&program).unwrap());
         assert_eq!(graph_schema(&program).unwrap(), SCHEMA);
@@ -75,12 +73,10 @@ fn full_current_finite_discard_composes_flat_loans_with_nested_storage_in_v84() 
 fn current_v84_composition_does_not_lend_frozen_or_detached_parts_authority() {
     let (ast, program) = resolved(SOURCE);
     assert_eq!(legacy_graph_schema(&program).unwrap_err().code, "SPX-G410");
-    assert!(
-        crate::graph::to_legacy_json(&ast)
-            .unwrap_err()
-            .iter()
-            .any(|e| e.code == "SPX-G410")
-    );
+    assert!(crate::graph::to_legacy_json(&ast)
+        .unwrap_err()
+        .iter()
+        .any(|e| e.code == "SPX-G410"));
     assert_eq!(
         crate::graph::to_legacy_hir_json(&program, "source-only")
             .unwrap_err()
@@ -241,6 +237,14 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
         "{return 0;}",
         "{if byte_len(bytes_as_slice(payload))==0usize {return 0;}else{0}}",
     );
+    // The complete mixed returning/fallthrough arm remains an independent
+    // parser refusal; an ordinary valued arm supplies the nonfinite success.
+    let mixed = crate::check(&reachable, "graph-v84-composition.spx").unwrap_err();
+    assert!(mixed.iter().any(|diagnostic| diagnostic.code == "SPX-P210"));
+    let reachable = original.replace(
+        "{return 0;}",
+        "{if byte_len(bytes_as_slice(payload))==0usize {0}else{1}}",
+    );
     let (ast, program) = resolved(&reachable);
     assert!(crate::hir::copy_discard_program_uses(&program));
     assert!(!authenticate_finite_composition(&program).unwrap());
@@ -250,13 +254,11 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
         .find(|f| f.id.as_str() == "inspect")
         .unwrap();
     assert!(!inspect.loan_plan.loans.is_empty());
-    assert!(
-        inspect
-            .loan_plan
-            .loans
-            .iter()
-            .all(|loan| loan.origin.projections.len() == 2)
-    );
+    assert!(inspect
+        .loan_plan
+        .loans
+        .iter()
+        .all(|loan| loan.origin.projections.len() == 2));
     assert_full_replay(&program);
     assert_eq!(graph_schema(&program).unwrap(), SCHEMA);
     let graph = crate::graph::to_json(&ast).unwrap();
