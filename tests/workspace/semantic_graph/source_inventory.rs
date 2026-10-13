@@ -109,7 +109,8 @@ macro_rules! semantic_graph_root_source_inventory {
                 concat!(
                     include_str!("../../src/workspace_graph/record_traversal.rs"),
                     "\n",
-                    include_str!("../../src/workspace_graph/record_traversal/row_loan.rs")
+                    include_str!("../../src/workspace_graph/record_traversal/row_loan.rs"),
+                    include_str!("../../src/workspace_graph/record_traversal/field_origin.rs")
                 ),
                 "\n",
                 include_str!("../../src/workspace_graph/source_schema.rs"),
