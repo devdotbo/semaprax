@@ -11,6 +11,24 @@ fn generate(source: &str, strings: usize, rows: usize) -> Result<String, Vec<Dia
     derive(&program, &program.types[2], strings, rows)
 }
 
+/// The generated bounded-String helper bodies, so a bound is checked in the
+/// helper that owns it rather than anywhere in the output.
+fn utf8_helper_bodies(output: &str) -> (&str, &str) {
+    let body = |name: &str| {
+        output
+            .split(name)
+            .nth(1)
+            .unwrap()
+            .split("@id(")
+            .next()
+            .unwrap()
+    };
+    (
+        body("fn json_Report_nested_response_owned_valid("),
+        body("fn json_Report_nested_response_utf8_quoted_len("),
+    )
+}
+
 #[test]
 fn nested_response_emits_recursive_borrowed_preflight_and_declaration_order() {
     let output = generate(SCHEMA, 16, 8).unwrap();
@@ -23,7 +41,19 @@ fn nested_response_emits_recursive_borrowed_preflight_and_declaration_order() {
     assert!(!output.contains("vec_clone_at"));
     assert!(!output.contains("vec_into_iter"));
     assert!(output.contains("count<=8usize"));
-    assert!(output.contains("length<=16usize"));
+    assert!(output.contains("ju_bounded_valid(bytes,16usize)"));
+    assert!(output.contains("ju_quoted_len(bytes,16usize)"));
+    let (owned_valid, quoted_len) = utf8_helper_bodies(&output);
+    assert!(owned_valid.contains("ju_bounded_valid(bytes,16usize)"));
+    assert!(quoted_len.contains("ju_quoted_len(bytes,16usize)"));
+    let second = generate(SCHEMA, 15, 8).unwrap();
+    assert!(second.contains("ju_bounded_valid(bytes,15usize)"));
+    assert!(second.contains("ju_quoted_len(bytes,15usize)"));
+    let (second_valid, second_quoted) = utf8_helper_bodies(&second);
+    assert!(second_valid.contains("ju_bounded_valid(bytes,15usize)"));
+    assert!(second_quoted.contains("ju_quoted_len(bytes,15usize)"));
+    assert!(!second_valid.contains("16usize"));
+    assert!(!second_quoted.contains("16usize"));
     assert!(output.contains("size>131072usize-total"));
     let api = output
         .split("fn json_Report_nested_response_encode(")

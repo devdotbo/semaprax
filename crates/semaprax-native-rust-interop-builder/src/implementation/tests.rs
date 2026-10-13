@@ -114,6 +114,8 @@ const TESTS_SOURCE: &str = concat!(
     include_str!("tests/phase_b_publication.rs"),
     include_str!("tests/artifact_replay.rs"),
     include_str!("tests/ledger_capacity.rs"),
+    include_str!("tests/ledger_capacity/scope_projection.rs"),
+    include_str!("tests/ledger_capacity/source_inventory.rs"),
     include_str!("tests/phase_b_toolchain.rs"),
     include_str!("tests/phase_b_staging.rs"),
     concat!(
@@ -126,6 +128,7 @@ const TESTS_SOURCE: &str = concat!(
     include_str!("tests/indexed_scalar.rs"),
     include_str!("tests/cleanup_regions.rs"),
     include_str!("tests/resolved_disposal.rs"),
+    include_str!("tests/row_loan_closed.rs"),
     include_str!("tests/linked_bundle.rs"),
 );
 
