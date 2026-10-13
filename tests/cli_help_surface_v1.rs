@@ -150,10 +150,14 @@ fn cli_language_projects_distinguishes_the_private_stream_data_profile() {
             "missing project help detail: {detail}"
         );
     }
-    let index = help.find("Start with `help library` for the module index").unwrap();
+    let index = help
+        .find("Start with `help library` for the module index")
+        .unwrap();
     let exact = help.find("`help library <module|name|stable-id>`").unwrap();
     let page = help.find("`help language find:<word>:0`").unwrap();
-    let export = help.find("Use `help library all` only for an explicit full offline").unwrap();
+    let export = help
+        .find("Use `help library all` only for an explicit full offline")
+        .unwrap();
     assert!(index < exact && exact < page && page < export);
     std::fs::remove_dir(working_directory).unwrap();
 }
