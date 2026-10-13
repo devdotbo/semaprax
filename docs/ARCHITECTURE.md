@@ -4657,3 +4657,10 @@ attached-plan terms without feeding an earlier aggregate back into the model.
 The complete original census and feedback expression remain compiled controls.
 This is a component-model upper, not allocator high-water, RSS or budget proof;
 legacy text-length and collection allowances remain explicit audit gaps.
+
+Uncached resolved-core calls use `borrowed_leaf::Input::construct_transient`
+for imported overlays. This owns only generated declaration backing and borrows
+authored declarations through resolution and Drop. Cache-enabled calls retain
+the affine receiving directories and their original terminal publication path.
+The complete old imported constructor and full funding controls remain independent;
+this storage distinction supplies no forecast discount or graph budget increase.

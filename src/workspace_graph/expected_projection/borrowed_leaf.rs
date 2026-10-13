@@ -149,6 +149,25 @@ impl<'a> Input<'a> {
                 .map(Self::Owned)
         }
     }
+    /// A live uncached resolver will drop its projection rather than publish a key.
+    /// Acquire only generated backing; authored declarations remain source-held.
+    pub(in crate::workspace_graph) fn construct_transient(
+        program: &'a Program,
+        authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+        programs: &[Program],
+        registry: &private_layout::registry::LayoutRegistry<'_>,
+    ) -> Result<Self, Vec<Diagnostic>> {
+        if eligible(program) {
+            construct(program).map(Self::Borrowed)
+        } else if super::borrowed_imports::eligible(program, authored, programs) {
+            super::borrowed_imports::construct(program, authored, programs, registry)
+                .map(Self::Borrowed)
+        } else {
+            synthetic_program_with_registry(program, authored, programs, Some(registry))
+                .map(Self::Owned)
+        }
+    }
+
     pub(in crate::workspace_graph) fn construct_receiving(
         program: &'a Program,
         authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,

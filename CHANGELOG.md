@@ -7012,3 +7012,8 @@ The detailed 0.3.5, 0.2.0, and 0.1.0 history is preserved in the [changelog arch
   prior receivers and generic collection; allocation-through-Drop, exact-short,
   diagnostic and repeated-call controls are authored. Application fit under the
   unchanged graph cap remains pending focused qualification.
+
+- Avoid authored cache-key spare directory backing for imported projections on
+  the actual uncached resolved-core route. Retain complete cache receiving owners
+  and full old oracle assertions. Constructor/Drop and full semantic controls are
+  authored; the independent recursive full-receiver funding deficit remains open.

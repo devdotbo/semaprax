@@ -283,6 +283,7 @@ macro_rules! semantic_graph_projection_root_source_inventory {
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/initialization.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/receiving.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full/receiving.rs"),
+                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full/transient.rs"),
                 include_str!("../../src/bounded_output/key_directory.rs"),
                 include_str!("../../src/bounded_output/key_directory/tests.rs"),
                 include_str!("../../src/ast/program_source/receiving_roots.rs"),

@@ -4374,15 +4374,21 @@ fn build_resolved_core(
         }
         let synthetic = staged!(
             SyntheticModule,
-            expected_projection::borrowed_leaf::Input::construct_receiving(
-                program,
-                authored,
-                programs,
-                layouts,
-                frontend
-                    .as_deref()
-                    .is_none_or(|cache| cache.permits_borrowed_cold_source(&program.path))
-            )
+            if frontend.is_none() {
+                expected_projection::borrowed_leaf::Input::construct_transient(
+                    program, authored, programs, layouts,
+                )
+            } else {
+                expected_projection::borrowed_leaf::Input::construct_receiving(
+                    program,
+                    authored,
+                    programs,
+                    layouts,
+                    frontend
+                        .as_deref()
+                        .is_none_or(|cache| cache.permits_borrowed_cold_source(&program.path)),
+                )
+            }
         )?;
         // Exact stubs/spans and the unconditional prebound govern hits.
         let cached = staged!(
