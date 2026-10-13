@@ -1,5 +1,10 @@
 # Changelog
 
+- Restore the original common diagnostic help shortlist by ranking the explicit
+  fused-profile F130 advice after ordinary diagnostic advice. Exact profile help
+  and the complete inventory stay available; both old exact CLI owners remain
+  unchanged. Focused controller regression is authored; execution is pending.
+
 - Record the recovery constructor funding design and source-authored executable
   boundaries for real unpaid acquisition/work, zero/exact-observed/one-short
   limits, sticky refusal and complete receiving Drop. Preserve ordinary

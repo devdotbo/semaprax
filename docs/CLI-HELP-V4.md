@@ -114,10 +114,14 @@ and hidden-command refusal are otherwise unchanged in bytes and status.
 case-sensitive `SPX-*` code returns only the common failed form and correction
 rows indexed for that code. `codes` and bare `help diagnostic` return a
 common-code shortlist with commands for exact-code advice and the complete
-`help language mistakes-index` table. The shortlist ranks codes by the number
-of indexed failed forms, descending, then by exact code; this is advice
-coverage, not measured diagnostic frequency. It includes at most twelve whole
-codes, reserving space for both navigation commands within the byte bound.
+`help language mistakes-index` table. Ordinary diagnostic advice precedes
+`SPX-F130`, which belongs to the explicit `fused-construction-v1` source profile.
+Within each group the shortlist ranks codes by the number of indexed failed
+forms, descending, then by exact code; this is advice coverage, not measured
+diagnostic frequency. Adding that opt-in profile's advice does not displace
+ordinary builder-budget advice (`SPX-G171`) from the common list. Exact
+`SPX-F130` help and the complete diagnostic inventory retain every indexed row.
+The shortlist includes at most twelve whole codes, reserving space for both navigation commands within the byte bound.
 Adding an indexed code does not require it to fit this shortlist: every code
 remains available through exact lookup and the complete table.
 The response is derived from the diagnostic-index table in the compiler-checked

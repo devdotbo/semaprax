@@ -74,11 +74,13 @@ pub(super) fn response(query: &str, entries: &[serde_json::Value]) -> Result<Str
 }
 
 fn shortlist(entries: &[serde_json::Value]) -> String {
-    // Prioritize codes with more indexed failed forms, then exact code. This
-    // order describes advice coverage, not measured diagnostic frequency.
+    // Ordinary diagnostic advice precedes advice for the explicit fused
+    // source profile. Within each group, prioritize indexed failed forms and
+    // then exact code; this describes coverage, not measured frequency.
     let mut ranked: Vec<_> = entries.iter().collect();
     ranked.sort_by_key(|entry| {
         (
+            entry["code"].as_str() == Some("SPX-F130"),
             std::cmp::Reverse(entry["rows"].as_array().unwrap().len()),
             entry["code"].as_str().unwrap(),
         )
@@ -189,5 +191,39 @@ mod tests {
         assert!(response(&long_code, &entries)
             .unwrap()
             .starts_with(&long_code));
+    }
+
+    #[test]
+    fn ordinary_common_codes_survive_explicit_fused_profile_advice_growth() {
+        let catalog: serde_json::Value =
+            serde_json::from_str(super::super::DIAGNOSTIC_INDEX).unwrap();
+        let mut entries = catalog["entries"].as_array().unwrap().clone();
+        let original_fused = response("SPX-F130", &entries).unwrap();
+        assert!(original_fused.contains("fused-construction-v1"));
+        assert!(original_fused.contains("refusal has no ordinary fallback"));
+        assert!(original_fused.len() <= 1_024);
+        let expected = concat!(
+            "Common diagnostic codes:\n",
+            "  SPX-P106 SPX-H006 SPX-T252 SPX-T203 SPX-G170 SPX-P003 SPX-P201 SPX-T205 SPX-T266 SPX-B104 SPX-F102 SPX-G171\n",
+            "Fix: semaprax help diagnostic <code>\n",
+            "All: semaprax help language mistakes-index\n",
+        );
+        assert_eq!(response("codes", &entries).unwrap(), expected);
+        let profile = entries
+            .iter_mut()
+            .find(|entry| entry["code"] == "SPX-F130")
+            .unwrap();
+        let row = profile["rows"][0].clone();
+        profile["rows"] = serde_json::Value::Array(vec![row; 9]);
+        assert_eq!(response("codes", &entries).unwrap(), expected);
+        entries.reverse();
+        assert_eq!(response("codes", &entries).unwrap(), expected);
+        let complete = language_summary(super::super::DIAGNOSTIC_INDEX);
+        assert!(complete.lines().any(|line| line.trim() == "SPX-F130"));
+        let original_entries = catalog["entries"].as_array().unwrap();
+        assert_eq!(
+            response("SPX-F130", original_entries).unwrap(),
+            original_fused
+        );
     }
 }
