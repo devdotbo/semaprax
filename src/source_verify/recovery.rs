@@ -81,7 +81,16 @@ impl<'p> Recovery<'p> {
             if let Some(origin) = scratch
                 .iter()
                 .filter(|refusal| refusal.code == "SPX-T001")
-                .find_map(|refusal| diagnostics.iter().position(|original| original == refusal))
+                .find_map(|refusal| {
+                    diagnostics.iter().position(|original| {
+                        original.code == refusal.code
+                            && original.severity == refusal.severity
+                            && original.message == refusal.message
+                            && original.path == refusal.path
+                            && original.span == refusal.span
+                            && original.help == refusal.help
+                    })
+                })
             {
                 recovery.ensure(0);
                 recovery.scopes[0]
