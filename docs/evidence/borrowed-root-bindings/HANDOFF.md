@@ -1,5 +1,9 @@
 # Borrowed-root binding scopes: source-only handoff
 
+Status: private source batch; executable qualification pending.
+
+Audience: compiler contributors and reviewers.
+
 Base: `eb02a89b6174bced05e02f6ede2ebcda55cd5893`.
 Private branch: `codex/borrowed-root-bindings-eb02`.
 Worktree: `/Volumes/Semaprax/worktrees/borrowed-root-bindings-eb02/AI-Lang`.

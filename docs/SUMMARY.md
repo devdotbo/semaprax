@@ -805,3 +805,4 @@ Audience: all documentation readers.
 
 - [Borrowed generic reachability v1](HIR-BORROWED-GENERIC-REACHABILITY-V1.md)
 - [Scoped recovery qualification v1](SCOPED-RECOVERY-QUALIFICATION-V1.md)
+- [Borrowed root bindings source handoff](evidence/borrowed-root-bindings/HANDOFF.md)
