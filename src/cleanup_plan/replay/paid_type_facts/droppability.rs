@@ -174,6 +174,8 @@ pub(super) fn needs_drop(
     }
 }
 
+#[cfg(test)]
+mod helper_tests;
 mod key;
 mod paid;
 #[cfg(test)]

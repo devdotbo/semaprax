@@ -63,7 +63,7 @@ fn roots(program: &ResolvedProgram) -> Vec<ResolvedType> {
     }
     roots
 }
-fn parity(program: &ResolvedProgram, ty: &ResolvedType) {
+pub(super) fn parity(program: &ResolvedProgram, ty: &ResolvedType) {
     let old = crate::cleanup::type_needs_resource_cleanup(program, ty);
     assert_eq!(
         old,

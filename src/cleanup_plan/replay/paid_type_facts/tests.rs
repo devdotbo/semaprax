@@ -405,6 +405,7 @@ fn complete_classifier_source_join_keeps_the_existing_payer_and_full_receiver_in
         include_str!("../../../bounded_output/classifier_string/tests.rs"),
         include_str!("tests.rs"),
         include_str!("droppability/tests.rs"),
+        include_str!("droppability/helper_tests.rs"),
         include_str!("../../../cleanup.rs"),
         include_str!("../../../hir/declaration_index/flags.rs"),
     ];

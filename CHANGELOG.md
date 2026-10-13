@@ -1,5 +1,13 @@
 # Changelog
 
+- Extend the paid outer droppability source corpus with isolated zero-budget
+  helper-allocation controls over real parsed declaration IDs, owned-record and
+  owned-leaf Vec signatures, concrete generic records and refused variants.
+  Independently inspect declaration clone sharing and owned Diagnostic receiving;
+  pair each full receiver with exact/short/zero/sticky and actual Drop controls.
+  Source audit found only borrowed metadata and inline helper state on these
+  routes; executable allocation qualification remains pending.
+
 - Author caller-paid outer cleanup droppability construction on the existing
   replay type-fact payer: borrowed root and complete owned pending/visited
   payloads, substitution, original raw/capped diagnostic keys, semantic text
