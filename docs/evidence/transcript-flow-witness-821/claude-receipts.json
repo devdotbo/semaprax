@@ -1,0 +1,66 @@
+[
+  {
+    "exit_code": 143,
+    "wall_seconds": 302.4219132090002,
+    "tools_enabled": false,
+    "code_execution": false,
+    "resource_refusal": "300s review deadline",
+    "actual_billing": "unknown",
+    "lane": "author",
+    "packet_sha256": "5d80961259bb8ad83a7607489d80c7f0bfa13d799360ab4a27a377a588b355c3",
+    "actual_model_usage": null,
+    "provider_list_cost_usd": null,
+    "review_result": "No complete result before deadline; usage and billing unknown.",
+    "provider": "unknown",
+    "cost_basis": "unknown"
+  },
+  {
+    "exit_code": 143,
+    "wall_seconds": 301.21590316700167,
+    "tools_enabled": false,
+    "code_execution": false,
+    "resource_refusal": "300s review deadline",
+    "actual_billing": "unknown",
+    "lane": "final",
+    "packet_sha256": "eb9ca21731d88834bb69114c728e40220294abc6d2c6e259564faecda281b223",
+    "actual_model_usage": null,
+    "provider_list_cost_usd": null,
+    "review_result": "No complete result before deadline; usage and billing unknown.",
+    "provider": "unknown",
+    "cost_basis": "unknown"
+  },
+  {
+    "exit_code": 0,
+    "wall_seconds": 122.03698816699762,
+    "tools_enabled": false,
+    "code_execution": false,
+    "resource_refusal": null,
+    "actual_billing": "unknown",
+    "lane": "compact",
+    "packet_sha256": "9b3898a20a8b6895fc919212eb413d19123d1eec602d309fdcb36d795163b688",
+    "actual_model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 15504,
+        "cacheReadInputTokens": 535,
+        "cacheCreationInputTokens": 8625,
+        "webSearchRequests": 0,
+        "costUSD": 0.18959750000000003,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 13119,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "provider": "firstParty",
+    "provider_list_cost_usd": 0.18959750000000003,
+    "review_result": "# Review of `witnesses.rs`\n\nI found no semantic or soundness blockers. The only blockers are two Clippy lints, which matter if CI runs `-D warnings`. Nothing was built, so everything below comes from reading the code and the definitions you pasted.\n\n## Blockers\n\n**1. `clippy::large_enum_variant` on `Frame`.**\n- `Trace` holds 16 `Option<Step>` slots. Each `Step` has three `&str` fields plus a tag, so about 56 bytes each. That puts `Trace` near 900 bytes and `Frame::Enter` near 930 bytes, against 16 bytes for `Finish`. This is far over the 200-byte threshold.\n- Fix: annotate the enum, matching the file's existing `reason =` style:\n  ```rust\n  #[allow(\n      clippy::large_enum_variant,\n      reason = \"frames are paid up front; boxing would add unpaid infallible allocation\"\n  )]\n  enum Frame<'a> { ... }\n  ```\n- Do not use `Box`. It would add an allocation outside `pay` that aborts on failure, which breaks your prepay invariant.\n\n**2. `clippy::needless_lifetimes` on `impl<'a> Value<'a>`.**\n- Neither `empty` nor `sequence` names `'a`. Recent Clippy flags this.\n- Fix: `impl Value<'_> { ... }`.\n- `impl<'a> Trace<'a>` is fine, because `push` names `Step<'a>`.\n\n## Checked and correct\n\n- **Cursor order.**\n  - Children are pushed in reverse, so they pop left to right. Values are therefore pushed in child order.\n  - `Finish` pops last child first. `child.sequence(value)` thus prepends earlier children, which gives left-to-right hits.\n  - For alternatives, `child.count >= value.count` while popping right to left leaves the leftmost child on ties.\n  - Loops push `body` and then `condition`, so `condition` pops first and wins ties. This matches the stated leftmost-tie rule.\n- **Value accounting.** Every `Enter` yields exactly one value:\n  - A selected leaf pushes a value.\n  - `Call` pushes the callee's `Enter`, and that callee's value stands in for the call.\n  - A composite pushes a value through `Finish`.\n  - Everything else pushes `Value::empty()`.\n  - An empty `Sequence` or `Alternative` has `children: 0` and pushes an empty value.\n  - The final \"exactly one value left\" check is therefore sound.\n- **Branch genuineness.** An `Alternative` keeps one child's value and never merges across children. A loop is an alternative of condition and body, so it never claims two sequential writes. Hits therefore come from a single executable path.\n- **Stack invariants.** `len == 32 + spill.len()` holds when `len >= 32`. A failed spill push returns before `len` changes. Pop from the spill and from the inline array both match push.\n- **Prepay order.**\n  - `Work`, both stacks (inline header plus all 32 slots), `Size` and the `chain` array are paid before they are initialized.\n  - Spill growth pays the full replacement backing before `try_reserve_exact`.\n  - `output` pays `Size`, then the final `String`, before allocating.\n  - `text.capacity() != size.0` and the `text.len() == size.0` check make the second render safe against a hidden infallible `String` regrow.\n- **Cycle genuineness.** Every edge in the chain comes from `item.callees.contains(current)`, so each edge is a real call.\n  - The chain walks callers from `start`.\n  - `begin` is the first occurrence of the repeated node. Any acyclic tail before `begin` is excluded.\n  - Rendering runs `used` down to `begin`, so it goes caller to callee and starts and ends on the same identity.\n  - A self-call renders as `\"a\" -> \"a\"`.\n- **Types and borrows.**\n  - `&input.execution` and `&input.function` reborrow through `&&'a T` at `'a`. This is fine, assuming `function` is a `String`.\n  - Struct-field shorthand `site` and `callee` (`&String` to `&str`) coerces.\n  - `BTreeMap<&str, _>::get(callee.as_str())` resolves through `Borrow<str> for &str`.\n  - `render(out)` with `out: &mut dyn Write` reborrows implicitly.\n  - `|out| …` closures satisfy `Fn(&mut dyn Write)`.\n  - `[None; N]` is valid because `Option<Step>` is `Copy`.\n- **No other likely lints.** `needless_range_loop` doesn't fire in `cycle`, because the loop variable is also used arithmetically and as a range bound. `new_without_default` doesn't apply, because `Stack::new` returns `Option<Self>`.\n\n## Non-blocking notes\n\nAll of these fail closed, meaning the witness is omitted and the primary refusal is unchanged.\n\n- **`cycle` assumes `residual` is the Kahn remaining in-degree over callers.** With that orientation, every remaining node has a remaining caller, so the predecessor search always succeeds. If `residual` counts callees instead, the search may return `None`. That omits the witness but never emits a false chain. Confirm the orientation and keep a test with a cycle plus a downstream tail.\n- **`cycle` worst-case work.** It can need about `4096 * 16 + 17` steps against `OPERATIONS = 65_536`. A maximal graph with a 16-step chain would be omitted. This is acceptable by your omission policy. If you want that case covered, make the cycle budget `OPERATIONS + STEPS * 2`.\n- **`capacity() != target` is stricter than the `Vec` contract.** `try_reserve_exact` may over-allocate in theory, though in practice it does not for non-ZST `T`. A mismatch returns `None`, which is safe. Do not relax it to `<`, because that would underpay.\n- **Stack footprint.** Both `Stack`s are inline, about 30 KB for frames and 60 KB for values. `Stack::new()` returns by value, so debug builds can hold several copies. This is fine on the main thread or a default 2 MB thread. Be aware of it if this ever runs on a thread with a smaller stack.\n- **A trace deeper than 16 call steps returns `None` for the whole evaluation.** It does not skip just that branch. This is deliberate and correct, because skipping could change which alternative wins the max. Add a test pinning this behavior.\n\n## Suggested tests\n\n- A tie between alternatives resolves leftmost.\n- A sequence containing `[write, call→write]` renders the first two hits in order.\n- A loop with one write in the condition and one in the body returns a `repeated` count below 2.\n- A call chain of exactly 16 versus 17 call steps.\n- `Query::LoopBody` includes a direct append only after a call prefix.\n- A budget refusal at each prepay site (`Work`, `Stack::new`, spill, `output`) leaves the primary refusal untouched.",
+    "cost_basis": "list",
+    "post_review_local_corrections": [
+      "Uniform frame replaces large enum; elided Value impl lifetime.",
+      "Paid optional help cloning; independent HIR fused route forwards optional help."
+    ]
+  }
+]

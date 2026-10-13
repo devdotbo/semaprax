@@ -1,0 +1,192 @@
+[
+  {
+    "source": "src/byte_data_capacity.rs",
+    "archive": "src__byte_data_capacity.rs.before.txt",
+    "original_sha256": "e35475676203f8aad0542c6866f7d2bd63aad18b3b9b77a7b65f15bb41c9422a",
+    "patch": [
+      {
+        "old_start": 228,
+        "old_end": 229,
+        "replacement": "#[derive(Debug, Eq, PartialEq)]\n"
+      },
+      {
+        "old_start": 233,
+        "old_end": 233,
+        "replacement": "    pub witness_help: Option<String>,\n}\n\nimpl Clone for CapacityError {\n    fn clone(&self) -> Self {\n        Self {\n            diagnostic: self.diagnostic,\n            function: self.function.clone(),\n            detail: self.detail.clone(),\n            // The original primary clones stay unchanged. Optional new owned\n            // help is acquired only through its independently paid constructor.\n            witness_help: self.witness_help.as_deref().and_then(witnesses::clone_help),\n        }\n    }\n"
+      },
+      {
+        "old_start": 380,
+        "old_end": 382,
+        "replacement": "        let child_bytes = fold_flow(\n            &item.input.execution,\n            FoldMode::Array,\n            identity,\n            &summaries,\n            &by_id,\n        )?\n        .0;\n"
+      },
+      {
+        "old_start": 409,
+        "old_end": 409,
+        "replacement": "            &by_id,\n"
+      },
+      {
+        "old_start": 453,
+        "old_end": 453,
+        "replacement": "            &by_id,\n"
+      },
+      {
+        "old_start": 461,
+        "old_end": 462,
+        "replacement": "                let mut selected = transcript_error(\n"
+      },
+      {
+        "old_start": 467,
+        "old_end": 468,
+        "replacement": "                );\n                selected.witness_help = witnesses::repeated(\n                    &item.input.execution,\n                    identity,\n                    &by_id,\n                    witnesses::Query::Stdout,\n                );\n                return Err(selected);\n"
+      },
+      {
+        "old_start": 470,
+        "old_end": 471,
+        "replacement": "                let mut selected = transcript_error(\n"
+      },
+      {
+        "old_start": 476,
+        "old_end": 477,
+        "replacement": "                );\n                selected.witness_help = witnesses::repeated(\n                    &item.input.execution,\n                    identity,\n                    &by_id,\n                    witnesses::Query::Stderr,\n                );\n                return Err(selected);\n"
+      },
+      {
+        "old_start": 802,
+        "old_end": 802,
+        "replacement": "            witness_help: (diagnostic == CapacityDiagnostic::Transcript)\n                .then(|| witnesses::cycle(functions, &indegree, identity))\n                .flatten(),\n"
+      },
+      {
+        "old_start": 812,
+        "old_end": 812,
+        "replacement": "    inputs: &BTreeMap<&str, &FunctionCapacityInput>,\n"
+      },
+      {
+        "old_start": 1061,
+        "old_end": 1062,
+        "replacement": "                        let mut selected = transcript_error(\n"
+      },
+      {
+        "old_start": 1064,
+        "old_end": 1065,
+        "replacement": "                        );\n                        let component = match node {\n                            CapacityFlow::Loop { condition, .. }\n                            | CapacityFlow::FiniteOwnedLoop { condition, .. }\n                            | CapacityFlow::FusedConstruction { condition, .. } => {\n                                condition.as_ref()\n                            }\n                            _ => unreachable!(),\n                        };\n                        selected.witness_help =\n                            witnesses::loop_output(component, function, inputs, \"condition\");\n                        return Err(selected);\n"
+      },
+      {
+        "old_start": 1071,
+        "old_end": 1072,
+        "replacement": "                        let mut selected = transcript_error(\n"
+      },
+      {
+        "old_start": 1074,
+        "old_end": 1075,
+        "replacement": "                        );\n                        let component = match node {\n                            CapacityFlow::Loop { body, .. }\n                            | CapacityFlow::FiniteOwnedLoop { body, .. }\n                            | CapacityFlow::FusedConstruction { body, .. } => body.as_ref(),\n                            _ => unreachable!(),\n                        };\n                        selected.witness_help =\n                            witnesses::loop_output(component, function, inputs, \"body\");\n                        return Err(selected);\n"
+      },
+      {
+        "old_start": 1273,
+        "old_end": 1273,
+        "replacement": "        witness_help: None,\n"
+      },
+      {
+        "old_start": 1281,
+        "old_end": 1281,
+        "replacement": "        witness_help: None,\n"
+      },
+      {
+        "old_start": 1289,
+        "old_end": 1289,
+        "replacement": "        witness_help: None,\n"
+      },
+      {
+        "old_start": 1297,
+        "old_end": 1297,
+        "replacement": "        witness_help: None,\n"
+      },
+      {
+        "old_start": 1317,
+        "old_end": 1317,
+        "replacement": "\n#[cfg(test)]\nmod before;\n#[cfg(test)]\nmod witness_tests;\nmod witnesses;\n"
+      }
+    ]
+  },
+  {
+    "source": "src/hir/byte_capacity.rs",
+    "archive": "src__hir__byte_capacity.rs.before.txt",
+    "original_sha256": "444af2ac0ff7571f5be8fe2cf1e74b269e4a625383cad8a4ba80688c62ae3737",
+    "patch": [
+      {
+        "old_start": 1240,
+        "old_end": 1242,
+        "replacement": "    crate::byte_data_capacity::analyze(&inputs).map_err(|error| {\n        let diagnostic = Diagnostic::io(error.diagnostic.code(), error.to_string());\n        match error.witness_help {\n            Some(help) => diagnostic.with_help(help),\n            None => diagnostic,\n        }\n    })\n"
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/declaration.rs",
+    "archive": "src__source_verify__declaration.rs.before.txt",
+    "original_sha256": "e2538165df71db1658e351ec8adaeb998c2d35e743046bc83e291fedce3c492d",
+    "patch": [
+      {
+        "old_start": 280,
+        "old_end": 280,
+        "replacement": "            let witness_help = capacity.witness_help;\n"
+      },
+      {
+        "old_start": 281,
+        "old_end": 281,
+        "replacement": "            if let Some(witness_help) = witness_help {\n                diagnostic = diagnostic.with_help(witness_help);\n            }\n"
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/capacity/command_io.rs",
+    "archive": "src__source_verify__capacity__command_io.rs.before.txt",
+    "original_sha256": "a3a27a1c95b2f18a28b5479e51bad571c5a779b23fa8f3d4f3a15cb70cd24300",
+    "patch": [
+      {
+        "old_start": 105,
+        "old_end": 105,
+        "replacement": "        witness_help: None,\n"
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/capacity/fused_selection.rs",
+    "archive": "src__source_verify__capacity__fused_selection.rs.before.txt",
+    "original_sha256": "0513f5e0ba16017cc08d6dea083960f5dd9533de2dff005b06af8f850d03b7ea",
+    "patch": [
+      {
+        "old_start": 180,
+        "old_end": 180,
+        "replacement": "        witness_help: None,\n"
+      }
+    ]
+  },
+  {
+    "source": "src/hir/byte_capacity/fused_selection.rs",
+    "archive": "src__hir__byte_capacity__fused_selection.rs.before.txt",
+    "original_sha256": "f3e31f540ead171f5f5fb63455399c40c974787fbff611490cb45c092ccbcd05",
+    "patch": [
+      {
+        "old_start": 98,
+        "old_end": 99,
+        "replacement": "    .map_err(|error| {\n        let primary = Diagnostic::io(error.diagnostic.code(), error.to_string());\n        match error.witness_help {\n            Some(help) => primary.with_help(help),\n            None => primary,\n        }\n    })?;\n"
+      }
+    ]
+  },
+  {
+    "source": "src/byte_data_capacity/fused.rs",
+    "archive": "src__byte_data_capacity__fused.rs.before.txt",
+    "original_sha256": "f8094892f23d7d5cc556d7aa032a45d05d38f70da86432ae70c8c183a6000371",
+    "patch": []
+  },
+  {
+    "source": "src/byte_data_capacity/tests.rs",
+    "archive": "src__byte_data_capacity__tests.rs.before.txt",
+    "original_sha256": "2953ff38990eb722977bd3f1c49b8fa3ef6c4fc1aa93c214eaaa2cdd162d622b",
+    "patch": []
+  },
+  {
+    "source": "src/byte_data_capacity/fused_tests.rs",
+    "archive": "src__byte_data_capacity__fused_tests.rs.before.txt",
+    "original_sha256": "4cdb8c7e19a6950080695c7707f4c7d7e99d43cf8050422f547a5f0bdf19cf58",
+    "patch": []
+  }
+]

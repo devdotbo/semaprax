@@ -226,11 +226,25 @@ impl CapacityDiagnostic {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct CapacityError {
     pub diagnostic: CapacityDiagnostic,
     pub function: Option<String>,
     pub detail: String,
+    pub witness_help: Option<String>,
+}
+
+impl Clone for CapacityError {
+    fn clone(&self) -> Self {
+        Self {
+            diagnostic: self.diagnostic,
+            function: self.function.clone(),
+            detail: self.detail.clone(),
+            // The original primary clones stay unchanged. Optional new owned
+            // help is acquired only through its independently paid constructor.
+            witness_help: self.witness_help.as_deref().and_then(witnesses::clone_help),
+        }
+    }
 }
 
 impl fmt::Display for CapacityError {
@@ -378,8 +392,14 @@ pub(crate) fn analyze_with_strategy(
 
     for identity in array_order.into_iter().rev() {
         let item = &validated[identity];
-        let child_bytes =
-            fold_flow(&item.input.execution, FoldMode::Array, identity, &summaries)?.0;
+        let child_bytes = fold_flow(
+            &item.input.execution,
+            FoldMode::Array,
+            identity,
+            &summaries,
+            &by_id,
+        )?
+        .0;
         let active = item.frame_bytes.checked_add(child_bytes).ok_or_else(|| {
             array_error(
                 identity,
@@ -407,6 +427,7 @@ pub(crate) fn analyze_with_strategy(
             FoldMode::Allocation,
             identity,
             &summaries,
+            &by_id,
         )?;
         if allocation.sites > MAX_BYTES_COPY_SITES {
             return Err(allocation_error(
@@ -451,6 +472,7 @@ pub(crate) fn analyze_with_strategy(
             FoldMode::Transcript,
             identity,
             &summaries,
+            &by_id,
         )?;
         let mut stdout_sites = 0;
         let mut stderr_sites = 0;
@@ -459,22 +481,36 @@ pub(crate) fn analyze_with_strategy(
         let mut transcript_bytes = 0;
         for path in &transcript.paths {
             if path.stdout_sites > MAX_STDOUT_WRITES_PER_PATH {
-                return Err(transcript_error(
+                let mut selected = transcript_error(
                     identity,
                     format!(
                         "stdout_write path reaches {} sites; limit is {}",
                         path.stdout_sites, MAX_STDOUT_WRITES_PER_PATH
                     ),
-                ));
+                );
+                selected.witness_help = witnesses::repeated(
+                    &item.input.execution,
+                    identity,
+                    &by_id,
+                    witnesses::Query::Stdout,
+                );
+                return Err(selected);
             }
             if path.stderr_sites > MAX_STDERR_WRITES_PER_PATH {
-                return Err(transcript_error(
+                let mut selected = transcript_error(
                     identity,
                     format!(
                         "stderr_write path reaches {} sites; limit is {}",
                         path.stderr_sites, MAX_STDERR_WRITES_PER_PATH
                     ),
-                ));
+                );
+                selected.witness_help = witnesses::repeated(
+                    &item.input.execution,
+                    identity,
+                    &by_id,
+                    witnesses::Query::Stderr,
+                );
+                return Err(selected);
             }
             stdout_sites = stdout_sites.max(path.stdout_sites);
             stderr_sites = stderr_sites.max(path.stderr_sites);
@@ -800,6 +836,9 @@ fn relevant_topological_order<'a>(
             diagnostic,
             function: Some(identity.to_owned()),
             detail: detail.to_owned(),
+            witness_help: (diagnostic == CapacityDiagnostic::Transcript)
+                .then(|| witnesses::cycle(functions, &indegree, identity))
+                .flatten(),
         });
     }
     Ok(order)
@@ -810,6 +849,7 @@ fn fold_flow(
     mode: FoldMode,
     function: &str,
     summaries: &BTreeMap<String, FunctionCapacitySummary>,
+    inputs: &BTreeMap<&str, &FunctionCapacityInput>,
 ) -> Result<(u64, AllocationSummary, TranscriptSummary), CapacityError> {
     enum Frame<'a> {
         Enter(&'a CapacityFlow),
@@ -1059,20 +1099,40 @@ fn fold_flow(
                     let condition = &children[0].2;
                     let body = &children[1].2;
                     if condition.paths.iter().any(TranscriptPath::has_output) {
-                        return Err(transcript_error(
+                        let mut selected = transcript_error(
                             function,
                             "transcript output is reachable from a while condition",
-                        ));
+                        );
+                        let component = match node {
+                            CapacityFlow::Loop { condition, .. }
+                            | CapacityFlow::FiniteOwnedLoop { condition, .. }
+                            | CapacityFlow::FusedConstruction { condition, .. } => {
+                                condition.as_ref()
+                            }
+                            _ => unreachable!(),
+                        };
+                        selected.witness_help =
+                            witnesses::loop_output(component, function, inputs, "condition");
+                        return Err(selected);
                     }
                     if body.paths.iter().any(|path| {
                         path.stdout_sites != 0
                             || path.stderr_sites != 0
                             || path.indirect_append_sites != 0
                     }) {
-                        return Err(transcript_error(
+                        let mut selected = transcript_error(
                             function,
                             "a while body may contain only direct runtime-bounded append output",
-                        ));
+                        );
+                        let component = match node {
+                            CapacityFlow::Loop { body, .. }
+                            | CapacityFlow::FiniteOwnedLoop { body, .. }
+                            | CapacityFlow::FusedConstruction { body, .. } => body.as_ref(),
+                            _ => unreachable!(),
+                        };
+                        selected.witness_help =
+                            witnesses::loop_output(component, function, inputs, "body");
+                        return Err(selected);
                     }
                 }
                 values.push((array_bytes, allocation, transcript));
@@ -1271,6 +1331,7 @@ fn array_error(function: &str, detail: impl Into<String>) -> CapacityError {
         diagnostic: CapacityDiagnostic::Array,
         function: Some(function.to_owned()),
         detail: detail.into(),
+        witness_help: None,
     }
 }
 
@@ -1279,6 +1340,7 @@ fn allocation_error(function: &str, detail: impl Into<String>) -> CapacityError 
         diagnostic: CapacityDiagnostic::Allocation,
         function: Some(function.to_owned()),
         detail: detail.into(),
+        witness_help: None,
     }
 }
 
@@ -1287,6 +1349,7 @@ fn transcript_error(function: &str, detail: impl Into<String>) -> CapacityError 
         diagnostic: CapacityDiagnostic::Transcript,
         function: Some(function.to_owned()),
         detail: detail.into(),
+        witness_help: None,
     }
 }
 
@@ -1295,6 +1358,7 @@ fn invariant(function: Option<&str>, detail: impl Into<String>) -> CapacityError
         diagnostic: CapacityDiagnostic::Invariant,
         function: function.map(str::to_owned),
         detail: detail.into(),
+        witness_help: None,
     }
 }
 
@@ -1315,3 +1379,9 @@ mod tests;
 #[cfg(test)]
 #[path = "byte_data_capacity/fused_tests.rs"]
 mod fused_tests;
+
+#[cfg(test)]
+mod before;
+#[cfg(test)]
+mod witness_tests;
+mod witnesses;

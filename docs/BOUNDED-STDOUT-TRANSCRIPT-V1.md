@@ -122,3 +122,24 @@ network, stderr, arbitrary sinks, callbacks, streaming, multiple writes,
 partial transcript observation, flushing during semantic execution, async,
 threads, WASI, Component Model I/O, terminal behavior, encoding, line
 buffering, locale, process inheritance, or physical write durability.
+
+## Optional checked-flow refusal witnesses
+
+Transcript-capacity refusals may include a bounded counterexample reconstructed
+from the same immutable, validated capacity projection after selection. A
+repeated-write witness names the first two writes of one checked flow alternative
+and their actual call sites; separate alternatives are never combined as
+sequential writes. A loop witness identifies the selected enclosing condition
+or body and a reachable writer, including indirect calls. A cycle witness is an
+actual closed chain of checked call edges, rather than a residual function that
+merely depends on a cycle. Loop projections do not carry source identities, so
+this help does not invent a loop source location.
+
+Witness reconstruction is optional. Its extra operations, inline cursor,
+replacing spill backing and exact UTF-8 output are paid before acquisition on
+the invocation's existing budget. A bounded work/output/trace limit or inability
+to fund the witness omits the help; it never changes the selected primary
+code/message/span, admits source, or raises a profile limit. These are checked
+counterexamples, not a runtime trace or a guarantee that a particular branch
+will execute. Complete original capacity receivers remain independent test
+controls. Owning qualification of the new witness implementation is pending.
