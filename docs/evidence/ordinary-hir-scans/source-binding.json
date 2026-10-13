@@ -15,7 +15,7 @@
     "src/hir/ordinary_scan.rs": "f17e34eec31173524e333afca35facf4652364965959998bb5bc7db42e485b2b",
     "src/hir/ordinary_scan/tests.rs": "e8d4204ecea77fbe7abd8982a162ac8357b035c943afbcb3344b96db2b2ab1f3",
     "src/hir/validation.rs": "530ea6ed35440a84a5b07b4143930c25a8acc7b0424b7cbdb59f24cccd0108d1",
-    "src/hir/validation/function_scope.rs": "fb2c97c98bcc97f1688df822d859d79a322318962faa59dc503e5b71bf2d5d69",
+    "src/hir/validation/function_scope.rs": "9360d9f5f6d86bfddf94a74453a69519b4f59a11ddcff56ab07fae525b49b5b1",
     "src/hir/validation/owner_renewal.rs": "def13efb28107cbe479b8fdff6ac04346ceaa936040f093a30265ae437bcd0bb",
     "src/hir/validation/unsafe_scan.rs": "2309786e3789e9a0983d1e846f5c19eb71422bae727b2c73db49c0a814be089d",
     "src/hir/validation/unsafe_scan/paid.rs": "98019a0d1a3c5cf8c3f1a3901f3c7c4f56948695e49c40d3e7558f2bbb2376e3",

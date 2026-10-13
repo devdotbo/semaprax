@@ -1,5 +1,11 @@
 # Changelog
 
+- Remove the standalone validator's unpriced per-function permit-set collection
+  through borrowed exact membership. Keep the complete original receiver and
+  error-order controls; author allocation and phase-isolation controls. Runtime
+  qualification and attribution to the outstanding eight-byte deficit remain
+  pending.
+
 - Author bounded transcript-refusal call, loop and genuine-cycle witnesses
   (#821), preserving primary diagnostics and complete independent model controls.
   Optional help uses the existing payer; the separate model harness forwards
