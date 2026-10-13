@@ -349,3 +349,5 @@ mod inventory_profile;
 mod inventory_metadata;
 
 mod inventory_nested;
+
+mod inventory_encoded;

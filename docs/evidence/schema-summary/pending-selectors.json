@@ -28,6 +28,9 @@
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::held_metadata_root_suffix_zero_one_short_and_sticky_work_keep_original_queries",
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::complete_original_nested_and_index_sources_stay_independent_and_byte_exact",
     "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_forged_cycle_missing_arity_and_case_metadata_keep_original_refusal_order",
-    "hir::declaration_index::inventory_lookup::tests::full_string_directory_keys_preserve_value_precedence_and_withhold_refused_values"
+    "hir::declaration_index::inventory_lookup::tests::full_string_directory_keys_preserve_value_precedence_and_withhold_refused_values",
+    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::real_encoded_constructor_work_exact_short_zero_and_receiving_drop_keep_all_utf8",
+    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::complete_original_logical_frontier_suppression_strict_and_raw_modes_stay_equal",
+    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::full_classifier_string_original_body_remains_independent_of_work_receiver"
   ]
 }

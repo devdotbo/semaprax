@@ -216,3 +216,5 @@ mod tests;
 
 #[cfg(test)]
 mod explicit;
+
+mod inventory_work;

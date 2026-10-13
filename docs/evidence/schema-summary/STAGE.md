@@ -50,3 +50,23 @@ Production schema selection is still unchanged. The ordinary summary prototype
 remains unadopted; complete flags/drop classifier, shape construction and
 collector/plumbing funding must be finished before any integration or paid/gain
 claim. This stage does not identify an actual application refusal's inner cause.
+
+## Ordinary encoded text work stage
+
+The original ClassifierString body and all its ordinary/test receivers remain
+compiled and byte exact. An additive child supplies acquire/capped/strict/raw
+methods with a caller context for both backing and cumulative work callbacks.
+It retains reserve/reserve_sink precedence, suppressed chunks, strict clearing,
+formatter-error handling and the original physical growth/capacity behavior.
+Actual UTF-8 copy work follows successful logical admission; replacement work
+counts the initialized old prefix before the entire new backing is acquired.
+Typed callback refusal remains Payment, stops future callbacks and is never
+converted into Formatter or a logical-overflow semantic observation.
+
+A held ReplayBudget adapter and three authored controls cover complete UTF-8,
+zero/exact/short work and backing through receiving Drop, every old logical mode
+and a full original-source equality projection. Separate no-op observing
+callbacks are only logical oracles and make no funding claim. This source stage
+was authored by bounded tool-free Claude and reviewed locally; no Rust execution
+has occurred. Complete flags/droppability/shape/collector funding and production
+adoption remain pending, with no gain or application-fit claim.
