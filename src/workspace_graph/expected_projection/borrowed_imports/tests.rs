@@ -510,5 +510,7 @@ fn literal_imported_directory_replacements_and_authored_payloads_are_removed() {
     }
 }
 
+#[path = "tests/alias_helpers.rs"]
+mod alias_helpers;
 #[path = "tests/full.rs"]
 mod full;

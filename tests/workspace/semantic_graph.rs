@@ -543,7 +543,9 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_leaf/checked_key.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_leaf/checked_key/tests.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports.rs"),
+                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/alias_clone.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests.rs"),
+                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/alias_helpers.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/old.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/initialization.rs"),
@@ -635,6 +637,9 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         // Keep both in the full union and reject any other added helper.
         "pub(super) fn materialize(view: SyntheticProgramView<'_>) -> Result<Program, Vec<Diagnostic>> {",
         "pub(super) fn materialize_receiving(",
+        "pub(super) fn type_payload(original: &TypeDeclaration) -> TypeDeclaration {",
+        "pub(super) fn retained_function(original: &Function, alias: &str) -> Function {",
+        "pub(super) fn signature_function(original: &Function, alias: &str) -> Function {",
         "pub(super) fn construct(",
         // Complete cfg(test) prelude initialization receiver stays in this
         // joined inventory; it grants no production facade or ambient authority.

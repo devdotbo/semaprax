@@ -1,5 +1,7 @@
 //! Exact-source imported overlays, including ordinary classified retained
 //! wrappers and invariant/class roots. Views confer no import authority.
+#[path = "borrowed_imports/alias_clone.rs"]
+mod alias_clone;
 #[path = "borrowed_imports/receiving.rs"]
 mod receiving;
 use super::{
@@ -187,7 +189,7 @@ pub(in crate::workspace_graph) fn construct<'a>(
             ast_type_declaration_cost(declaration, &mut cost)?;
             pay_teardown(&cost)?;
         }
-        types.push(declaration.clone());
+        types.push(alias_clone::type_payload(declaration));
         let copy = types.last_mut().expect("inserted type");
         copy.name = crate::bounded_output::budgeted_clone(&import.alias);
         super::super::generic_type_import::rewrite_declaration_with_layout(
@@ -206,7 +208,7 @@ pub(in crate::workspace_graph) fn construct<'a>(
             ast_type_declaration_cost(entry.declaration, &mut cost)?;
             pay_teardown(&cost)?;
         }
-        types.push(entry.declaration.clone());
+        types.push(alias_clone::type_payload(entry.declaration));
         let copy = types.last_mut().expect("inserted private type");
         copy.name = crate::bounded_output::budgeted_clone(&entry.alias);
         super::super::generic_type_import::rewrite_declaration_with_layout(
@@ -284,12 +286,11 @@ pub(in crate::workspace_graph) fn construct<'a>(
                 pay_teardown(&cost)?;
             }
         }
-        let mut function = if retain_body {
-            original.clone()
+        let function = if retain_body {
+            alias_clone::retained_function(original, &import.alias)
         } else {
-            import_stub::signature(original)
+            alias_clone::signature_function(original, &import.alias)
         };
-        function.name = crate::bounded_output::budgeted_clone(&import.alias);
         functions.push(function);
         if retain_body {
             continue;

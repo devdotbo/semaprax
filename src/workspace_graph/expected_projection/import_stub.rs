@@ -78,6 +78,37 @@ pub(super) fn signature(function: &Function) -> Function {
     }
 }
 
+/// Same signature as `signature`, named by `name` without ever cloning the
+/// original name. The alias is the last clone, where the old overwrite paid it.
+pub(super) fn named_signature(function: &Function, name: &str) -> Function {
+    let stable_id = function.stable_id.clone();
+    let type_parameters = function.type_parameters.clone();
+    let params = function.params.clone();
+    let return_type = function.return_type.clone();
+    let effects = function.effects.clone();
+    let name = crate::bounded_output::budgeted_clone(name);
+    Function {
+        stable_id,
+        explicit_id: function.explicit_id,
+        name,
+        name_span: function.name_span,
+        type_parameters,
+        params,
+        return_type,
+        effects,
+        yields: None,
+        follows: None,
+        requires: Vec::new(),
+        ensures: Vec::new(),
+        // Replaced by the rewritten return type's checked default before use.
+        body: Expr {
+            kind: ExprKind::Int(0),
+            span: function.body.span,
+        },
+        span: function.span,
+    }
+}
+
 // A non-executable renewal prototype forwards existing storage. Constructing
 // a default here would invent an allocation in the caller's loop; the real
 // provider body is retained and its capacity/effects replayed before linking.

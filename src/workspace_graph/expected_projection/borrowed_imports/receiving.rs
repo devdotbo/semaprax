@@ -1,9 +1,9 @@
 //! Complete original import walk with real receiving directory ownership.
 //! Ordinary and warm views retain additional spare storage, deliberately.
 use super::{
-    ast_function_cost, ast_function_signature_cost, ast_type_declaration_cost, budgeted_format,
-    default_expr, directory, eligible, graph_error, import_stub, iterative, pay_default_teardown,
-    pay_signature, pay_teardown, pay_teardown_minimum, pay_type, refusal,
+    alias_clone, ast_function_cost, ast_function_signature_cost, ast_type_declaration_cost,
+    budgeted_format, default_expr, directory, eligible, graph_error, import_stub, iterative,
+    pay_default_teardown, pay_signature, pay_teardown, pay_teardown_minimum, pay_type, refusal,
     reserve_builder_structure, type_rewrite, AuthoredDeclaration, LayoutRegistry, StructuralCost,
 };
 use crate::ast::program_source::SyntheticProgramView;
@@ -60,7 +60,9 @@ pub(in crate::workspace_graph) fn construct_receiving<'a>(
             ast_type_declaration_cost(declaration, &mut cost)?;
             pay_teardown(&cost)?;
         }
-        types.push(declaration.clone()).map_err(|()| refusal())?;
+        types
+            .push(alias_clone::type_payload(declaration))
+            .map_err(|()| refusal())?;
         let copy = types.last_mut().expect("inserted type");
         copy.name = crate::bounded_output::budgeted_clone(&import.alias);
         super::super::super::generic_type_import::rewrite_declaration_with_layout(
@@ -80,7 +82,7 @@ pub(in crate::workspace_graph) fn construct_receiving<'a>(
             pay_teardown(&cost)?;
         }
         types
-            .push(entry.declaration.clone())
+            .push(alias_clone::type_payload(entry.declaration))
             .map_err(|()| refusal())?;
         let copy = types.last_mut().expect("inserted private type");
         copy.name = crate::bounded_output::budgeted_clone(&entry.alias);
@@ -167,12 +169,11 @@ pub(in crate::workspace_graph) fn construct_receiving<'a>(
                 pay_teardown(&cost)?;
             }
         }
-        let mut function = if retain_body {
-            original.clone()
+        let function = if retain_body {
+            alias_clone::retained_function(original, &import.alias)
         } else {
-            import_stub::signature(original)
+            alias_clone::signature_function(original, &import.alias)
         };
-        function.name = crate::bounded_output::budgeted_clone(&import.alias);
         functions.push(function).map_err(|()| refusal())?;
         if retain_body {
             continue;
