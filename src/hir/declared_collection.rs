@@ -149,5 +149,6 @@ mod tests;
 
 mod paid;
 pub(crate) use paid::validate_function as validate_function_funded;
+pub(crate) use paid::early as funded_early;
 #[cfg(test)]
-pub(crate) use paid::{contains_funded, early as funded_early};
+pub(crate) use paid::contains_funded;
