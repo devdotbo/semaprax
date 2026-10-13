@@ -416,10 +416,6 @@ fn authenticate_inner<'a>(
     resources: &mut SelectedReplayPreparation,
 ) -> Result<Closure<'a>, Refused> {
     let anchor = module.functions.first().ok_or(Refused::MISMATCH)?;
-    boundary(
-        super::current_module(module, modules, resources, anchor),
-        "current module",
-    )?;
     resources.try_reserve_array::<Closure<'_>>(anchor, 1, "imported scalar closure owner")?;
     let mut local = boundary(
         local::authenticate(module, facts, resources, anchor),
@@ -491,7 +487,34 @@ pub(super) fn authenticate<'a>(
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
 ) -> Result<Closure<'a>, Refused> {
-    let result = authenticate_inner(module, modules, facts, resources);
+    let result = (|| {
+        let anchor = module.functions.first().ok_or(Refused::MISMATCH)?;
+        let current = boundary(
+            super::current_module_receipt(module, modules, resources, anchor),
+            "current module",
+        )?;
+        authenticate_current(current, facts, resources)
+    })();
+    if result.is_err() {
+        resources.fail();
+    }
+    result
+}
+
+/// Consume the actual caller's completed membership scan. Namespace, source,
+/// signatures and every selected target still pass their ordinary checks.
+/// The receiver derives both inputs from the receipt rather than accepting a
+/// second module/slice that could be a clone or transplant.
+pub(super) fn authenticate_current<'a>(
+    current: super::CurrentModule<'a>,
+    facts: &BTreeMap<String, WorkspaceDeclarationFact>,
+    resources: &mut SelectedReplayPreparation,
+) -> Result<Closure<'a>, Refused> {
+    if !std::ptr::eq(current.owner, resources) {
+        resources.fail();
+        return Err(Refused::MISMATCH);
+    }
+    let result = authenticate_inner(current.module, current.modules, facts, resources);
     if result.is_err() {
         resources.fail();
     }

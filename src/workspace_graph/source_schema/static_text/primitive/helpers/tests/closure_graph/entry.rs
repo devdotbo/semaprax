@@ -20,6 +20,11 @@ fn saved<'a>(
     facts: &BTreeMap<String, WorkspaceDeclarationFact>,
     resources: &mut SelectedReplayPreparation,
 ) -> Result<Closure<'a>, Refused> {
+    // The complete production entry authenticates current membership before
+    // either algorithm. Execute and charge that shared prelude here too, on
+    // the same owner; the full saved receiver below remains untouched.
+    let anchor = module.functions.first().ok_or(Refused::MISMATCH)?;
+    super::super::super::current_module_receipt(module, modules, resources, anchor)?;
     oracle::authenticate(module, modules, facts, resources).map(|(closure, _)| closure)
 }
 const SAVED: Flow = saved;
@@ -613,4 +618,93 @@ fn stale_later_providers_keep_saved_entry_verdicts_and_sticky_owners() {
             assert_eq!(resources.remaining(), remaining);
         }
     }
+}
+
+/// The real source-authenticated receiving route consumes the scan it already
+/// performed. This is the same full session, not a probe outside its owner.
+#[test]
+fn prepared_receiving_reuses_one_exact_current_scan_through_session_and_drop() {
+    const WORK: usize = 32_000_000;
+    for noise in [0, 24] {
+        let build = tiny(noise);
+        let module = caller(&build);
+        let anchor = &module.functions[0];
+        let direct = limited(&build, CURRENT, WORK, 1 << 26).unwrap();
+        let (received, observed) = crate::test_allocation_observer::measure(|| {
+            let preparation =
+                SelectedReplayPreparation::with_limits(anchor, WORK, 1 << 26).unwrap();
+            crate::workspace_graph::source_schema::static_text::primitive::with_prepared_test_context(
+                module,
+                &build.hir.modules,
+                &build.hir.declarations,
+                preparation,
+                |context, preparation| {
+                    let mut session = SelectedReplaySession::from_preparation(
+                        context, anchor, preparation,
+                    ).unwrap();
+                    assert_eq!(context.function_count(), 2);
+                    session.validate_scalar(context.function_at(1).unwrap()).unwrap();
+                    session.validate(context.function_at(0).unwrap()).unwrap();
+                    let metrics = session.metrics();
+                    drop(session);
+                    metrics
+                },
+            ).unwrap()
+        });
+        assert_eq!(
+            WORK - received.0,
+            direct.work,
+            "one complete membership scan"
+        );
+        assert_eq!(
+            received.1, direct.bytes,
+            "same caller-owned backing through Drop"
+        );
+        assert!(!observed.invalid && observed.live == 0);
+        assert_eq!(observed.allocated, observed.freed);
+    }
+}
+
+#[test]
+fn current_scan_receipt_rejects_detached_equal_clone_and_namespace_transplants() {
+    let build = tiny(0);
+    let module = caller(&build);
+    let anchor = &module.functions[0];
+    let detached = module.clone();
+    let mut duplicate = build.hir.modules.clone();
+    duplicate.push(module.clone());
+    for (subject, modules) in [
+        (&detached, build.hir.modules.as_slice()),
+        (module, duplicate.as_slice()),
+        (module, &[][..]),
+    ] {
+        let mut preparation =
+            SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
+        assert!(authenticate(subject, modules, &build.hir.declarations, &mut preparation).is_err());
+        assert!(preparation
+            .try_charge(anchor, 0, "sticky current-module refusal")
+            .is_err());
+    }
+    let mut paid = SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
+    let current =
+        super::super::super::current_module_receipt(module, &build.hir.modules, &mut paid, anchor)
+            .unwrap();
+    let mut restarted =
+        SelectedReplayPreparation::with_limits(anchor, 32_000_000, 1 << 26).unwrap();
+    assert!(authenticate_current(current, &build.hir.declarations, &mut restarted).is_err());
+    assert!(restarted
+        .try_charge(anchor, 0, "forbidden new membership owner")
+        .is_err());
+    // Equal clones are valid only as a separately authenticated complete
+    // immutable input. No receipt from `build` is accepted as its authority.
+    let modules = build.hir.modules.clone();
+    let subject = modules.iter().find(|m| m.module == module.module).unwrap();
+    let mut preparation =
+        SelectedReplayPreparation::with_limits(&subject.functions[0], 32_000_000, 1 << 26).unwrap();
+    let context =
+        authenticate(subject, &modules, &build.hir.declarations, &mut preparation).unwrap();
+    assert!(std::ptr::eq(context.local.module, subject));
+    assert!(!std::ptr::eq(context.local.module, module));
+    drop(context);
+    drop(preparation);
 }

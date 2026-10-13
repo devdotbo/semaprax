@@ -163,6 +163,10 @@
           "wrote": "for range"
         },
         {
+          "fix": "return 42; or the tail expression 42",
+          "wrote": "return; without a value"
+        },
+        {
           "fix": "Declare a record",
           "wrote": "tuple"
         },

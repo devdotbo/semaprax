@@ -271,17 +271,19 @@ pub(in crate::workspace_graph) fn with_prepared_test_context<T>(
     apply: impl FnOnce(&dyn ReplayContext, crate::cleanup_plan::SelectedReplayPreparation) -> T,
 ) -> Result<T, Vec<Diagnostic>> {
     let anchor = module.functions.first().ok_or_else(fail)?;
-    current_module(module, modules, &mut preparation, anchor).map_err(legacy)?;
     let imported = module
         .static_text
         .as_ref()
         .and_then(|i| i.lexical.as_ref())
         .is_some_and(|i| i.imported);
     if imported {
+        let current =
+            current_module_receipt(module, modules, &mut preparation, anchor).map_err(legacy)?;
         let context =
-            helpers::authenticate(module, modules, facts, &mut preparation).map_err(legacy)?;
+            helpers::authenticate_current(current, facts, &mut preparation).map_err(legacy)?;
         return Ok(apply(&context, preparation));
     }
+    current_module(module, modules, &mut preparation, anchor).map_err(legacy)?;
     preparation
         .try_reserve_array::<Context<'_>>(anchor, 1, "held test source context")
         .map_err(legacy)?;
@@ -292,6 +294,14 @@ pub(in crate::workspace_graph) fn with_prepared_test_context<T>(
 
 /// Exact object membership in the live module slice, with a unique path and
 /// namespace. Shared by every retained source receiver.
+/// An invocation-local exact module/slice membership and namespace receipt.
+/// Only the charged complete scan constructs it; it carries no wire authority.
+/// Its borrowed pointers cannot be transplanted to an equal or changed input.
+pub(in crate::workspace_graph::source_schema) struct CurrentModule<'a> {
+    module: &'a WorkspaceResolvedModule,
+    modules: &'a [WorkspaceResolvedModule],
+    owner: *const crate::cleanup_plan::SelectedReplayPreparation,
+}
 pub(in crate::workspace_graph::source_schema) fn current_module(
     module: &WorkspaceResolvedModule,
     modules: &[WorkspaceResolvedModule],
@@ -325,4 +335,23 @@ pub(in crate::workspace_graph::source_schema) fn current_module(
         return Err(Refused::MISMATCH);
     }
     Ok(())
+}
+
+fn current_module_receipt<'a>(
+    module: &'a WorkspaceResolvedModule,
+    modules: &'a [WorkspaceResolvedModule],
+    preparation: &mut crate::cleanup_plan::SelectedReplayPreparation,
+    anchor: &ResolvedFunction,
+) -> Result<CurrentModule<'a>, Refused> {
+    current_module(module, modules, preparation, anchor)?;
+    preparation.try_reserve_array::<CurrentModule<'_>>(
+        anchor,
+        1,
+        "retained current module membership receipt",
+    )?;
+    Ok(CurrentModule {
+        module,
+        modules,
+        owner: preparation,
+    })
 }

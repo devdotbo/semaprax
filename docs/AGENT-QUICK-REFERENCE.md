@@ -1242,6 +1242,7 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | forged constructor/generated owner capture|SPX-T318|Reparse canonical vec_of source; use an explicit Vec chain to read intermediate owners|
 | native cleanup refusal postcheck|SPX-B104|Check cleanup; String-condition scalar match “parent is not canonical”: backend bug|
 | for range|SPX-P106|while; mut counter; discard tail|
+| return; without a value|SPX-P106|return 42; or the tail expression 42|
 | assignment loop|SPX-P203|Scalar tail, e.g. 0|
 | local named result|`SPX-S109`, `SPX-T201`|Rename binding/uses to outcome; result denotes return only in ensures|
 | owned/aggregate/borrowed statement result|SPX-T315|Bind explicitly; intermediate Copy scalar expr; admitted|

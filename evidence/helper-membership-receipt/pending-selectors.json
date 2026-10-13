@@ -1,0 +1,18 @@
+{
+  "package": "semaprax",
+  "harness": "lib",
+  "selectors": [
+    "workspace_graph::source_schema::static_text::primitive::helpers::tests::closure_graph::entry::tiny_closures_with_many_irrelevant_providers_and_long_legal_ids_keep_saved_costs",
+    "workspace_graph::source_schema::static_text::primitive::helpers::tests::closure_graph::entry::prepared_receiving_reuses_one_exact_current_scan_through_session_and_drop",
+    "workspace_graph::source_schema::static_text::primitive::helpers::tests::closure_graph::entry::current_scan_receipt_rejects_detached_equal_clone_and_namespace_transplants"
+  ],
+  "cli_owners": [
+    "standalone_scoped_help_is_exhaustive_exact_capability_aware_and_inert",
+    "full_scoped_help_is_exhaustive_exact_capability_aware_and_inert"
+  ],
+  "documentation_owners": [
+    "agent_quick_reference::diagnostic_help_is_pinned_and_covers_compiler_checked_examples",
+    "agent_quick_reference::marked_blocks_produce_exactly_the_named_diagnostic"
+  ],
+  "status": "source-only; no Cargo/build/tests; all originals preserved"
+}
