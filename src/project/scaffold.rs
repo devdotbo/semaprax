@@ -10,6 +10,8 @@
 
 use serde_json::Value;
 
+#[path = "scaffold/authoring.rs"]
+mod authoring;
 #[path = "scaffold/collection_records.rs"]
 mod collection_records;
 #[path = "scaffold/service_config.rs"]
@@ -54,6 +56,8 @@ pub const PROJECT_SCAFFOLD_SCHEMA_V5: &str = "semaprax.project-scaffold.v5";
 pub const PROJECT_SCAFFOLD_SCHEMA_V6: &str = "semaprax.project-scaffold.v6";
 /// Capsule schema for the additive Project v31 collection-record command.
 pub const PROJECT_SCAFFOLD_SCHEMA_V7: &str = "semaprax.project-scaffold.v7";
+/// Corrected, bounded authoring guidance; all prior capsule schemas remain frozen.
+pub const PROJECT_SCAFFOLD_SCHEMA_V8: &str = "semaprax.project-scaffold.v8";
 pub const PROJECT_SCAFFOLD_TEMPLATE_CALCULATOR: &str = "calculator";
 pub const PROJECT_SCAFFOLD_TEMPLATE_LIBRARY: &str = "library";
 /// A multi-user service composed from bounded bundled standard-library decision
@@ -204,7 +208,7 @@ pub fn project_scaffold_inventory_with_layout(
         &PROJECT_SCAFFOLD_STDIN_STREAM_COLLECTION_RECORD_INVENTORY
     } else if template == PROJECT_SCAFFOLD_TEMPLATE_SOURCE_COMMAND_FILE_TEXT {
         &PROJECT_SCAFFOLD_SOURCE_COMMAND_FILE_TEXT_INVENTORY
-    } else if layout == ScaffoldLayout::Tables {
+    } else if matches!(layout, ScaffoldLayout::Tables | ScaffoldLayout::Current) {
         &PROJECT_SCAFFOLD_TABLES_INVENTORY
     } else {
         &PROJECT_SCAFFOLD_INVENTORY
@@ -230,6 +234,8 @@ const DIGEST_DOMAIN_V7: &[u8] = b"semaprax.project-scaffold.digest.v7\0";
 pub enum ScaffoldLayout {
     Frozen,
     Tables,
+    /// Table manifest with current guidance under independent capsule v8.
+    Current,
 }
 
 impl ScaffoldLayout {
@@ -237,6 +243,7 @@ impl ScaffoldLayout {
         match self {
             Self::Frozen => PROJECT_SCAFFOLD_SCHEMA,
             Self::Tables => PROJECT_SCAFFOLD_SCHEMA_V3,
+            Self::Current => PROJECT_SCAFFOLD_SCHEMA_V8,
         }
     }
 
@@ -244,12 +251,14 @@ impl ScaffoldLayout {
         match self {
             Self::Frozen => DIGEST_DOMAIN,
             Self::Tables => DIGEST_DOMAIN_V3,
+            Self::Current => authoring::DIGEST_DOMAIN,
         }
     }
 
     fn from_schema(schema: &str) -> Option<Self> {
         match schema {
             PROJECT_SCAFFOLD_SCHEMA => Some(Self::Frozen),
+            PROJECT_SCAFFOLD_SCHEMA_V8 => Some(Self::Current),
             PROJECT_SCAFFOLD_SCHEMA_V3
             | PROJECT_SCAFFOLD_SCHEMA_V4
             | PROJECT_SCAFFOLD_SCHEMA_V5
@@ -468,6 +477,9 @@ pub fn derive_project_scaffold_v1_with_layout(
     template: &str,
     layout: ScaffoldLayout,
 ) -> Result<ProjectScaffoldV1, Vec<Diagnostic>> {
+    if layout == ScaffoldLayout::Current {
+        return authoring::derive(project_name, template);
+    }
     let template = validate_template(template)?;
     validate_project_name(project_name)?;
     let is_service = template == PROJECT_SCAFFOLD_TEMPLATE_SERVICE;
@@ -532,9 +544,9 @@ pub fn derive_project_scaffold_v1_with_layout(
     } else {
         match (template == PROJECT_SCAFFOLD_TEMPLATE_LIBRARY, layout) {
             (true, ScaffoldLayout::Frozen) => LIBRARY_MANIFEST,
-            (true, ScaffoldLayout::Tables) => LIBRARY_MANIFEST_TABLES,
+            (true, ScaffoldLayout::Tables | ScaffoldLayout::Current) => LIBRARY_MANIFEST_TABLES,
             (false, ScaffoldLayout::Frozen) => MANIFEST,
-            (false, ScaffoldLayout::Tables) => MANIFEST_TABLES,
+            (false, ScaffoldLayout::Tables | ScaffoldLayout::Current) => MANIFEST_TABLES,
         }
     };
     let sources: Vec<&str> = if is_stdin_stream_collection_record {
@@ -596,7 +608,7 @@ pub fn derive_project_scaffold_v1_with_layout(
                 LIBRARY_TESTS,
             ],
             (false, ScaffoldLayout::Frozen) => vec![README, AGENTS, manifest, APP, TESTS],
-            (false, ScaffoldLayout::Tables) => {
+            (false, ScaffoldLayout::Tables | ScaffoldLayout::Current) => {
                 vec![README, AGENTS, manifest, APP_TABLES, CORE, TESTS]
             }
         }
@@ -913,7 +925,9 @@ fn render_descriptor_tail(artifact: &ProjectScaffoldV1) -> String {
 }
 
 fn capsule_schema(template: &str, layout: ScaffoldLayout) -> &'static str {
-    if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD {
+    if layout == ScaffoldLayout::Current {
+        PROJECT_SCAFFOLD_SCHEMA_V8
+    } else if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD {
         PROJECT_SCAFFOLD_SCHEMA_V7
     } else if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_DATA {
         PROJECT_SCAFFOLD_SCHEMA_V6
@@ -946,19 +960,19 @@ fn artifact_digest(
     canonical_without_digest: &str,
 ) -> String {
     let mut hash = Sha256::new();
-    hash.update(
-        if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD {
-            DIGEST_DOMAIN_V7
-        } else if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_DATA {
-            DIGEST_DOMAIN_V6
-        } else if template == PROJECT_SCAFFOLD_TEMPLATE_SOURCE_COMMAND_FILE_TEXT {
-            DIGEST_DOMAIN_V5
-        } else if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_TEXT {
-            DIGEST_DOMAIN_V4
-        } else {
-            layout.digest_domain()
-        },
-    );
+    hash.update(if layout == ScaffoldLayout::Current {
+        authoring::DIGEST_DOMAIN
+    } else if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD {
+        DIGEST_DOMAIN_V7
+    } else if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_DATA {
+        DIGEST_DOMAIN_V6
+    } else if template == PROJECT_SCAFFOLD_TEMPLATE_SOURCE_COMMAND_FILE_TEXT {
+        DIGEST_DOMAIN_V5
+    } else if template == PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_TEXT {
+        DIGEST_DOMAIN_V4
+    } else {
+        layout.digest_domain()
+    });
     hash.update((canonical_without_digest.len() as u64).to_le_bytes());
     hash.update(canonical_without_digest.as_bytes());
     format!("sha256:{:x}", crate::digest_hex::LowerHex(hash.finalize()))

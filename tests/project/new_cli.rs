@@ -102,7 +102,7 @@ fn read_tree(root: &Path) -> BTreeMap<String, Vec<u8>> {
 }
 
 fn scaffold_files(name: &str, template: &str) -> BTreeMap<String, Vec<u8>> {
-    derive_project_scaffold_v1_with_layout(name, template, ScaffoldLayout::Tables)
+    derive_project_scaffold_v1_with_layout(name, template, ScaffoldLayout::Current)
         .unwrap()
         .files()
         .iter()

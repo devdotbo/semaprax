@@ -1,0 +1,82 @@
+{
+  "crates/semaprax-toolchain/src/new_project.rs": {
+    "sha256": "1a968edb1d7baf2d534930007be0f7a85670261d2b0c2259bac783a008ffa3c8",
+    "lines": 486
+  },
+  "crates/semaprax-toolchain/src/new_project/templates.rs": {
+    "sha256": "f2fa5bc0e2b5645c8ca555e8d7a9c3d5e0ebeaf71740a41262b0784685f863da",
+    "lines": 24
+  },
+  "crates/semaprax-toolchain/tests/cli_new_project_v1.rs": {
+    "sha256": "f2dae1a413507910c3bc571e5ca1edd97991098ae0f79fbd1f17898d75752663",
+    "lines": 693
+  },
+  "docs/CLI-HELP-V5.md": {
+    "sha256": "9c9f7ef0acf1b15c63465cf57c66ed46c98b0f85f8bb747a3f04a3b8912e2b83",
+    "lines": 133
+  },
+  "docs/NEW-PROJECT-STANDALONE-V1.md": {
+    "sha256": "9e9e3d3c0ac2d0956a756a61859e167dd3ebf4bde8d428ca300848a7ba51ba10",
+    "lines": 99
+  },
+  "docs/PROJECT-SCAFFOLD-V3.md": {
+    "sha256": "793d07230559282288142dcf840a2f485fbd9b70d3beb668d22a600199a54f23",
+    "lines": 126
+  },
+  "src/cli/help.rs": {
+    "sha256": "b0253d47bf086641664c8a6d245ae7fc17c1703770c74edda8dafe2c8587aa96",
+    "lines": 1499
+  },
+  "src/cli/help/library.rs": {
+    "sha256": "47304d004d1f3c6e64b6d55c3b48976e291875aead319b3b5a24217b0cd15a35",
+    "lines": 228
+  },
+  "src/cli_driver/project_scaffold_options.rs": {
+    "sha256": "16f374c6afc923399d9c85acb83b4534e28e061b615e08443edc49d8b87df9c5",
+    "lines": 215
+  },
+  "src/project/create.rs": {
+    "sha256": "65cbdff188a47f2534e852770221b4f505137e6c192b0ec9c75c7494cc5e6296",
+    "lines": 185
+  },
+  "src/project/mod.rs": {
+    "sha256": "26412b3e24d6a94ce791aa775df30329ddc6d973db850f3022776707c9778f66",
+    "lines": 1473
+  },
+  "src/project/scaffold.rs": {
+    "sha256": "6fe3d7ae150da45ff83c66a4a3f98ec940c802b1bcfe2d07bd5d486d241be7cd",
+    "lines": 994
+  },
+  "src/source_verify/hints.rs": {
+    "sha256": "7852a0f82a57a7014a7248bccc51d755a62dbb9a81c377c6aad30fc5b357ef5f",
+    "lines": 735
+  },
+  "tests/cli_help_surface_v1.rs": {
+    "sha256": "7a7612c78253c7feb8226c7ab19cc9dcf09619578a3e1d46ca6fea8b5b6f6a7c",
+    "lines": 855
+  },
+  "tests/language/verifier_hints.rs": {
+    "sha256": "c0f01d18fe4a22717dce27f955af5c73b95d9e55a5df9d3500337b5ad91ceaa8",
+    "lines": 796
+  },
+  "tests/project/new_cli.rs": {
+    "sha256": "db637f39178465f96e49af0310296dac445682c6a02befa47aa4257d91d46437",
+    "lines": 460
+  },
+  "tests/project/scaffold.rs": {
+    "sha256": "326ef4258829593fc093beb9d0a088df4292376162f659c7d84fd6a811c00e0e",
+    "lines": 1345
+  },
+  "tests/project/scaffold_cli.rs": {
+    "sha256": "0ed785febae7b6d5c3264c364696c83e81bf7506aa804af079387f6b413e2907",
+    "lines": 238
+  },
+  "src/project/scaffold/authoring.rs": {
+    "sha256": "ddc9878af9da16784dac6f6c696b69854018b6824d38ac661992fb3e32e3523e",
+    "lines": 40
+  },
+  "docs/PROJECT-SCAFFOLD-V8.md": {
+    "sha256": "e71775dcc93ca7ccf40d0f0d3c54fb0e8fa91c8a7974b17773915c08721ba4e8",
+    "lines": 37
+  }
+}

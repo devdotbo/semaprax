@@ -1258,3 +1258,88 @@ fn service_scaffold_configuration_is_closed_and_credential_free() {
         );
     }
 }
+
+#[test]
+fn current_guidance_capsule_preserves_legacy_sources_and_replays_all_templates() {
+    for template in PROJECT_SCAFFOLD_TEMPLATES {
+        let legacy = derive_project_scaffold_v1_with_layout(
+            "current-guide",
+            template,
+            ScaffoldLayout::Tables,
+        )
+        .unwrap();
+        let current = derive_project_scaffold_v1_with_layout(
+            "current-guide",
+            template,
+            ScaffoldLayout::Current,
+        )
+        .unwrap();
+        assert_eq!(
+            current.schema(),
+            semaprax::project::PROJECT_SCAFFOLD_SCHEMA_V8
+        );
+        assert_eq!(current.project_schema(), legacy.project_schema());
+        assert_ne!(current.digest(), legacy.digest());
+        assert_eq!(current.files().len(), legacy.files().len());
+        for (old, new) in legacy.files().iter().zip(current.files()) {
+            assert_eq!(old.path(), new.path());
+            if old.path() != "AGENTS.md" {
+                assert_eq!(old.bytes(), new.bytes(), "{template}: {}", old.path());
+                assert_eq!(old.sha256(), new.sha256());
+            } else {
+                let guide = new.utf8();
+                assert!(
+                    guide.contains("semaprax help language author:routes"),
+                    "{template}"
+                );
+                assert!(
+                    guide.contains("semaprax help language author:lexical-exits"),
+                    "{template}"
+                );
+                assert!(
+                    guide.contains("A `while` condition decides whether to loop"),
+                    "{template}"
+                );
+                assert!(!guide.contains("is no `return`, `break`"), "{template}");
+                assert!(
+                    !guide.contains("body ends with the bool that decides"),
+                    "{template}"
+                );
+                assert!(new.bytes().len() <= old.bytes().len() + 1024);
+                assert_ne!(old.sha256(), new.sha256());
+            }
+        }
+        for artifact in [&legacy, &current] {
+            let replay = replay_project_scaffold_v1(
+                "current-guide",
+                template,
+                &artifact.canonical_bytes(),
+                artifact.digest(),
+            )
+            .unwrap();
+            assert_eq!(replay.canonical_bytes(), artifact.canonical_bytes());
+        }
+        let bytes = current.canonical_bytes();
+        assert_eq!(
+            replay_project_scaffold_v1("current-guide", template, &bytes, legacy.digest())
+                .unwrap_err()[0]
+                .code,
+            "SPX-J115"
+        );
+        let forged =
+            String::from_utf8(bytes)
+                .unwrap()
+                .replacen(current.schema(), legacy.schema(), 1);
+        assert_eq!(
+            replay_project_scaffold_v1(
+                "current-guide",
+                template,
+                forged.as_bytes(),
+                current.digest()
+            )
+            .unwrap_err()[0]
+                .code,
+            "SPX-J115"
+        );
+    }
+}

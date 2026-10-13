@@ -36,8 +36,9 @@ pub(super) fn parse(arguments: &[String]) -> Result<(&str, &str, project::Scaffo
                 layout = Some(match value.as_str() {
                     "frozen" => project::ScaffoldLayout::Frozen,
                     "tables" => project::ScaffoldLayout::Tables,
+                    "current" => project::ScaffoldLayout::Current,
                     _ => {
-                        eprintln!("project-scaffold layout must be frozen or tables");
+                        eprintln!("project-scaffold layout must be frozen, tables, or current");
                         return Err(2);
                     }
                 });
@@ -127,6 +128,7 @@ mod tests {
         for (spelling, expected) in [
             ("frozen", project::ScaffoldLayout::Frozen),
             ("tables", project::ScaffoldLayout::Tables),
+            ("current", project::ScaffoldLayout::Current),
         ] {
             let arguments = argv(&["--name", "demo", "--layout", spelling]);
             assert_eq!(parse(&arguments).unwrap().2, expected);

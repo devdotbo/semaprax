@@ -1,0 +1,1042 @@
+{
+  "base": "539a5232c6e31b53be0552865db3f34dbb9f5753",
+  "executed": false,
+  "exact_selectors": [
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::every_shipped_template_walks_the_documented_quickstart_journey",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::every_shipped_template_fits_the_default_assurance_budget",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::derivation_is_literal_ordered_deterministic_and_self_replaying",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::agents_md_lists_every_installed_public_workflow_verb_and_nothing_else",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::names_templates_and_expected_replay_subject_are_bounded",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::library_template_derives_the_package_shape_and_replays_only_as_itself",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::replay_rejects_noncanonical_and_semantically_reminted_capsules",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::tables_layout_derives_a_v3_capsule_and_replays_only_as_itself",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::stdin_stream_text_template_selects_one_native_v25_command",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::stdin_stream_data_template_selects_one_native_v27_command_and_borrowed_vec_helper",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::stdin_stream_collection_record_template_selects_project_v31_and_replays",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::source_command_file_text_template_selects_native_v26_and_decimal_dependency",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::service_template_composes_bundled_dependencies_and_only_derives_under_tables_layout",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::checked_in_task_service_matches_the_normalized_service_projection",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::service_scaffold_configuration_is_closed_and_credential_free",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold::current_guidance_capsule_preserves_legacy_sources_and_replays_all_templates",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold_cli::public_cli_prints_the_library_capsule_for_the_library_template",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold_cli::public_cli_prints_the_service_capsule_for_the_service_template_under_tables_layout",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold_cli::public_cli_refuses_the_service_template_under_the_default_frozen_layout",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold_cli::public_cli_prints_only_the_exact_replayable_capsule",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold_cli::malformed_options_fail_before_capsule_output_or_activity",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold_cli::semantic_and_capacity_failures_publish_no_partial_document",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold_cli::public_cli_emits_the_table_layout_capsule_with_layout_tables",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold_cli::a_bad_layout_value_fails_before_any_output",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "scaffold_cli::public_cli_current_guidance_is_exact_replayable_and_inert",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/scaffold_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "new_cli::standalone_new_creates_the_exact_template_and_the_project_works",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/new_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "new_cli::project_commands_normalize_user_spelled_manifest_paths",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/new_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "new_cli::standalone_new_creates_the_library_template_and_the_project_works",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/new_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "new_cli::standalone_new_creates_the_service_template_and_the_project_works",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/new_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "new_cli::standalone_new_creates_the_stream_text_template_and_tests_owned_string_helpers",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/new_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "new_cli::standalone_new_creates_the_source_command_file_text_template",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/new_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "new_cli::standalone_new_refuses_existing_invalid_and_parentless_destinations",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/new_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "new_cli::standalone_new_is_listed_by_help_and_describes_its_grammar",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/new_cli.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "language"
+      },
+      "selector": "verifier_hints::misspelled_builtin_suggests_the_nearest_reserved_name",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/language/verifier_hints.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "language"
+      },
+      "selector": "verifier_hints::misspelled_declared_function_suggests_the_declaration",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/language/verifier_hints.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "language"
+      },
+      "selector": "verifier_hints::print_family_points_at_stdout_write",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/language/verifier_hints.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "language"
+      },
+      "selector": "verifier_hints::distant_names_get_the_declare_or_import_hint_instead_of_a_guess",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/language/verifier_hints.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "language"
+      },
+      "selector": "verifier_hints::bundled_standard_library_function_names_the_dependency_route",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/language/verifier_hints.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "language"
+      },
+      "selector": "verifier_hints::foreign_conversion_and_assert_names_point_at_the_admitted_route",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/language/verifier_hints.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "language"
+      },
+      "selector": "verifier_hints::byte_conversion_is_compiler_owned_and_typo_names_intrinsic",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/language/verifier_hints.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "language"
+      },
+      "selector": "verifier_hints::collection_typos_use_canonical_operation_names_without_admitting_calls",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/language/verifier_hints.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "language"
+      },
+      "selector": "verifier_hints::collection_typo_ties_do_not_guess_or_override_a_declared_function",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/language/verifier_hints.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "language"
+      },
+      "selector": "verifier_hints::standard_library_repair_includes_the_catalog_profile_prerequisite",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/language/verifier_hints.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::project_scaffold_options::tests::name_is_required_and_the_other_two_options_have_defaults",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::project_scaffold_options::tests::every_admitted_template_and_layout_value_is_stored",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::project_scaffold_options::tests::option_order_does_not_change_the_parse",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::project_scaffold_options::tests::a_repeated_option_is_an_error_rather_than_last_or_first_wins",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::project_scaffold_options::tests::a_value_taking_option_never_swallows_the_following_flag",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::project_scaffold_options::tests::unknown_flags_and_unexpected_positionals_are_refused",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::project_scaffold_options::tests::template_and_layout_vocabularies_are_closed_and_case_sensitive",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::cli::help::library::tests::pattern_exact_lookup_adds_one_bounded_usage_card_with_real_imports_and_owner_flow",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help/library.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::cli::help::library::tests::ndjson_exact_lookup_keeps_complete_source_example_and_current_receiver_rules",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help/library.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::cli::help::library::tests::default_is_a_complete_module_index_and_all_selects_the_full_catalog",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help/library.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::cli::help::tests::catalog_and_dispatcher_are_closed_and_aliases_unique",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::cli::help::tests::guide_names_only_catalog_commands_and_stays_one_screen",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::cli::help::tests::library_catalog_is_the_generated_repository_document",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "bin": "semaprax"
+      },
+      "selector": "cli_driver::cli::help::tests::library_entry_is_exact_deterministic_and_compact",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::project_scaffold_options::tests::name_is_required_and_the_other_two_options_have_defaults",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::project_scaffold_options::tests::every_admitted_template_and_layout_value_is_stored",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::project_scaffold_options::tests::option_order_does_not_change_the_parse",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::project_scaffold_options::tests::a_repeated_option_is_an_error_rather_than_last_or_first_wins",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::project_scaffold_options::tests::a_value_taking_option_never_swallows_the_following_flag",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::project_scaffold_options::tests::unknown_flags_and_unexpected_positionals_are_refused",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::project_scaffold_options::tests::template_and_layout_vocabularies_are_closed_and_case_sensitive",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli_driver/project_scaffold_options.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::cli::help::library::tests::pattern_exact_lookup_adds_one_bounded_usage_card_with_real_imports_and_owner_flow",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help/library.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::cli::help::library::tests::ndjson_exact_lookup_keeps_complete_source_example_and_current_receiver_rules",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help/library.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::cli::help::library::tests::default_is_a_complete_module_index_and_all_selects_the_full_catalog",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help/library.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::cli::help::tests::catalog_and_dispatcher_are_closed_and_aliases_unique",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::cli::help::tests::guide_names_only_catalog_commands_and_stays_one_screen",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::cli::help::tests::library_catalog_is_the_generated_repository_document",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "driver::cli::help::tests::library_entry_is_exact_deterministic_and_compact",
+      "args": [
+        "--exact"
+      ],
+      "source": "src/cli/help.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "cli_help_surface_v1"
+      },
+      "selector": "standalone_help_is_exact_capability_aware_and_inert",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/cli_help_surface_v1.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "cli_help_surface_v1"
+      },
+      "selector": "standalone_scoped_help_is_exhaustive_exact_capability_aware_and_inert",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/cli_help_surface_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "calculator_template_has_exact_deterministic_bytes",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "library_template_has_exact_bytes_and_passes_the_developer_loop",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "service_template_has_exact_bytes_and_passes_the_developer_loop",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "source_command_file_text_template_has_exact_bytes_and_passes_check",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "stdin_stream_collection_record_template_has_exact_bytes_and_passes_check",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "generated_project_validation_never_reopens_the_ambient_staging_tree",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "generated_project_passes_check_test_and_web_build",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "existing_invalid_and_directory_link_destinations_are_rejected",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "injected_write_failure_never_publishes_and_cleans_owned_staging",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "post_hold_parent_substitution_fails_before_any_staged_file_write",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "parent_substitution_cannot_redirect_staged_writes_or_publication",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "stage_substitution_cannot_receive_writes_or_be_published",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "unexpected_template_entries_are_rejected_without_filesystem_authority",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "test": "cli_new_project_v1"
+      },
+      "selector": "publication_is_confined_to_the_selected_parent",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/tests/cli_new_project_v1.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "new_project::binding_tests::staging_collision_is_skipped_before_any_final_path_creation",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/src/new_project/binding_tests.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "new_project::binding_tests::skipped_collisions_consume_the_existing_attempt_budget",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/src/new_project/binding_tests.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "new_project::binding_tests::relative_and_parent_relative_destinations_keep_the_original_return_value",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/src/new_project/binding_tests.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "new_project::binding_tests::post_publish_parent_and_output_displacement_preserve_both_trees",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/src/new_project/binding_tests.rs"
+    },
+    {
+      "package": "semaprax-toolchain",
+      "target": {
+        "bin": "semaprax-full"
+      },
+      "selector": "new_project::binding_tests::original_ancestor_alias_is_rechecked_without_adopting_its_new_target",
+      "args": [
+        "--exact"
+      ],
+      "source": "crates/semaprax-toolchain/src/new_project/binding_tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "target": {
+        "test": "project"
+      },
+      "selector": "standard_library::committed_catalogs_match_the_sources",
+      "args": [
+        "--exact"
+      ],
+      "source": "tests/project/standard_library.rs"
+    }
+  ],
+  "producer": {
+    "package": "semaprax",
+    "target": {
+      "test": "project"
+    },
+    "selector": "standard_library::regenerate_catalogs",
+    "args": [
+      "--ignored",
+      "--exact"
+    ],
+    "source": "tests/project/standard_library.rs",
+    "run_only_if_catalog_is_stale": true
+  }
+}

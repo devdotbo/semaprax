@@ -121,3 +121,6 @@ byte guard that the frozen default did not move.
 The capsule is checked bytes only. It owns no filesystem, process, environment,
 current-directory, target-emission, or publication authority, and makes no
 release or host-support claim.
+
+Current guidance is an additive [v8 capsule](PROJECT-SCAFFOLD-V8.md), selected
+with `--layout current`; the frozen `tables` selector above retains v3–v7 bytes.

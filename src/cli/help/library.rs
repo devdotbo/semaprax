@@ -18,6 +18,18 @@ Captures require status 1 and index < capture_count; byte offsets are relative t
 Guide: std/pattern/README.md
 "#;
 
+// Reuse the complete source-owned example rather than a drifting fragment.
+const NDJSON_USAGE: &str = concat!(
+    "\nstd.data.ndjson usage (authored; qualification pending)\n",
+    "Manifest: [dependencies] std.data.ndjson = \"^0.1.0\"; [package] profile = \"owned-data-api.v1\".\n",
+    "Check global_fault before framing; body <=65536 bytes, <=256 records; line <=512 bytes.\n",
+    "Frame cuts describe CURRENT bytes; frame_matches does not authenticate an owner or generation.\n",
+    "basic_fault forms the current receiving range; keep the input owner live. Fault categories: 0 OK, 1 limit, 2 UTF-8, 3 empty.\n",
+    "JSON grammar and publication remain the caller's responsibility.\n```spx\n",
+    include_str!("../../../std/data-ndjson/src/examples.spx"),
+    "```\nGuide: docs/BOUNDED-NDJSON-FRAMING-V1.md\n",
+);
+
 pub(super) fn library_help(query: Option<&str>) -> Result<String, String> {
     match query {
         None => Ok(library_index()),
@@ -59,6 +71,7 @@ pub(super) fn library_entry(query: &str) -> Result<String, String> {
         .expect("generated standard-library JSON must contain modules");
     let mut output = String::new();
     let mut pattern_selected = false;
+    let mut ndjson_selected = false;
     for module in modules {
         let module_id = module["module"]
             .as_str()
@@ -78,6 +91,7 @@ pub(super) fn library_entry(query: &str) -> Result<String, String> {
                 continue;
             }
             pattern_selected |= module_id == "std.pattern";
+            ndjson_selected |= module_id == "std.data.ndjson";
             if !output.is_empty() {
                 output.push('\n');
             }
@@ -118,6 +132,9 @@ pub(super) fn library_entry(query: &str) -> Result<String, String> {
         if pattern_selected {
             output.push_str(PATTERN_USAGE);
         }
+        if ndjson_selected {
+            output.push_str(NDJSON_USAGE);
+        }
         Ok(output)
     }
 }
@@ -157,6 +174,34 @@ mod tests {
             .unwrap()
             .contains(PATTERN_USAGE));
         assert!(library_entry("std.pattern.internal.read-token").is_err());
+        assert_eq!(library_help(Some("all")).unwrap(), LIBRARY_CATALOG);
+    }
+
+    #[test]
+    fn ndjson_exact_lookup_keeps_complete_source_example_and_current_receiver_rules() {
+        assert!(NDJSON_USAGE.len() <= 1536);
+        assert!(semaprax::agent_economics::lexical_tokens(NDJSON_USAGE) <= 384);
+        let example = include_str!("../../../std/data-ndjson/src/examples.spx");
+        assert!(NDJSON_USAGE.contains(&format!("```spx\n{example}```\n")));
+        for query in ["std.data.ndjson", "std.data.ndjson.frame-at", "frame_at"] {
+            let entry = library_entry(query).unwrap();
+            assert!(entry.ends_with(NDJSON_USAGE), "{query}");
+            assert_eq!(entry.matches("std.data.ndjson usage (").count(), 1);
+            assert!(entry.contains("CURRENT bytes"));
+            assert!(entry.contains("does not authenticate an owner or generation"));
+            assert!(entry.contains("Check global_fault before framing"));
+            assert!(
+                entry.contains("JSON grammar and publication remain the caller's responsibility")
+            );
+            if query == "std.data.ndjson.frame-at" {
+                assert!(entry.len() <= 2048);
+                assert!(semaprax::agent_economics::lexical_tokens(&entry) <= 512);
+            }
+        }
+        assert!(!library_entry("std.core.compare")
+            .unwrap()
+            .contains(NDJSON_USAGE));
+        assert!(library_entry("std.data.ndjson.internal.frame").is_err());
         assert_eq!(library_help(Some("all")).unwrap(), LIBRARY_CATALOG);
     }
 

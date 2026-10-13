@@ -93,3 +93,7 @@ the standalone binary alone. The source-command case pins its Project v26
 manifest, dependency, sample input, and successful `check`; interpreter
 test/run are intentional `SPX-F102` refusals and native execution remains with
 the Project v26 owner gate.
+
+Newly created projects now select [scaffold capsule v8](PROJECT-SCAFFOLD-V8.md)
+for corrected authoring guidance. Existing capsule selectors remain replayable;
+this source change awaits its focused creation and refusal gates.

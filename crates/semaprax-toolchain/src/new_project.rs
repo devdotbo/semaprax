@@ -152,7 +152,7 @@ fn create_with_serial_template(
     let scaffold = project::derive_project_scaffold_v1_with_layout(
         name,
         template,
-        project::ScaffoldLayout::Tables,
+        project::ScaffoldLayout::Current,
     )
     .map_err(|diagnostics| {
         NewProjectFailure::creation(format!(
@@ -169,9 +169,9 @@ fn create_with_serial_template(
         .iter()
         .map(ProjectScaffoldFileV1::path)
         .collect::<Vec<_>>();
-    validate_template_inventory(template, project::ScaffoldLayout::Tables, &paths)
+    validate_template_inventory(template, project::ScaffoldLayout::Current, &paths)
         .map_err(NewProjectFailure::creation)?;
-    let expected = expected_files(template, project::ScaffoldLayout::Tables, files)?;
+    let expected = expected_files(template, project::ScaffoldLayout::Current, files)?;
 
     let file_name = requested_destination.file_name().ok_or_else(|| {
         NewProjectFailure::creation("new project destination must name one directory")

@@ -745,3 +745,52 @@ fn a_narrow_integer_generic_argument_names_the_i64_round_trip() {
     );
     assert!(float.help.is_none(), "{float}");
 }
+
+#[test]
+fn collection_typos_use_canonical_operation_names_without_admitting_calls() {
+    for (typo, expected) in [
+        ("vec_pus", "vec_push"),
+        ("list_con", "list_cons"),
+        ("map_ad", "map_add"),
+        ("box_ne", "box_new"),
+        ("iter_nex", "iter_next"),
+    ] {
+        let source = format!(
+            "module habit.collection;\n@id(\"app.main\")\nfn main() -> i64\n{{\n    {typo}()\n}}\n"
+        );
+        let diagnostic = only(&source, "SPX-T203");
+        assert_eq!(diagnostic.message, format!("unknown function `{typo}`"));
+        assert_eq!(help(&diagnostic), format!("did you mean `{expected}`?"));
+    }
+}
+
+#[test]
+fn collection_typo_ties_do_not_guess_or_override_a_declared_function() {
+    let prefix = "module habit.collection;\n@id(\"habit.put\")\nfn vec_put() -> i64 { 0 }\n";
+    let ambiguous = format!("{prefix}@id(\"app.main\")\nfn main() -> i64 {{ vec_pus() }}\n");
+    let diagnostic = only(&ambiguous, "SPX-T203");
+    assert!(help(&diagnostic).starts_with("declare `vec_pus`"));
+    assert!(!help(&diagnostic).contains("did you mean"));
+    let declared = "module habit.collection;\n@id(\"habit.pus\")\nfn vec_pus() -> i64 { 7 }\n@id(\"app.main\")\nfn main() -> i64 { vec_pus() }\n";
+    assert!(diagnostics(declared).is_empty());
+}
+
+#[test]
+fn standard_library_repair_includes_the_catalog_profile_prerequisite() {
+    let catalog: serde_json::Value =
+        serde_json::from_str(include_str!("../../std/catalog.json")).unwrap();
+    let module = catalog["modules"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|module| module["module"] == "std.num")
+        .unwrap();
+    let profile = module["required_profile"].as_str().unwrap();
+    let diagnostic = only(
+        "module habit.std;\n@id(\"app.main\")\nfn main() -> i64 { abs(-3) }\n",
+        "SPX-T203",
+    );
+    assert!(help(&diagnostic).contains(&format!("[package] profile = \"{profile}\"")));
+    assert!(help(&diagnostic).contains("from std.num as abs;"));
+    assert_eq!(diagnostic.message, "unknown function `abs`");
+}

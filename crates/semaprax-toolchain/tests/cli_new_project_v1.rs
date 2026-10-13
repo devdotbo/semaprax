@@ -138,7 +138,7 @@ fn calculator_template_has_exact_deterministic_bytes() {
     let scaffold = semaprax::project::derive_project_scaffold_v1_with_layout(
         "demo-project",
         "calculator",
-        semaprax::project::ScaffoldLayout::Tables,
+        semaprax::project::ScaffoldLayout::Current,
     )
     .unwrap();
     assert_eq!(
@@ -177,7 +177,7 @@ fn library_template_has_exact_bytes_and_passes_the_developer_loop() {
     let scaffold = semaprax::project::derive_project_scaffold_v1_with_layout(
         "demo-lib",
         "library",
-        semaprax::project::ScaffoldLayout::Tables,
+        semaprax::project::ScaffoldLayout::Current,
     )
     .unwrap();
     assert_eq!(
@@ -229,7 +229,7 @@ fn service_template_has_exact_bytes_and_passes_the_developer_loop() {
     let scaffold = semaprax::project::derive_project_scaffold_v1_with_layout(
         "demo-svc",
         "service",
-        semaprax::project::ScaffoldLayout::Tables,
+        semaprax::project::ScaffoldLayout::Current,
     )
     .unwrap();
     assert_eq!(
@@ -282,7 +282,7 @@ fn source_command_file_text_template_has_exact_bytes_and_passes_check() {
     let scaffold = semaprax::project::derive_project_scaffold_v1_with_layout(
         "decimal-command",
         "source-command-file-text",
-        semaprax::project::ScaffoldLayout::Tables,
+        semaprax::project::ScaffoldLayout::Current,
     )
     .unwrap();
     assert_eq!(
@@ -332,7 +332,7 @@ fn stdin_stream_collection_record_template_has_exact_bytes_and_passes_check() {
     let scaffold = semaprax::project::derive_project_scaffold_v1_with_layout(
         "collection-command",
         "stdin-stream-collection-record",
-        semaprax::project::ScaffoldLayout::Tables,
+        semaprax::project::ScaffoldLayout::Current,
     )
     .unwrap();
     assert_eq!(

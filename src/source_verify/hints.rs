@@ -83,6 +83,10 @@ fn standard_library_function(name: &str) -> Option<&'static StandardFunction> {
                     .to_owned();
                 let entry = StandardFunction {
                     dependency: dependency.to_owned(),
+                    profile: module["required_profile"]
+                        .as_str()
+                        .expect("a standard-library module has a profile")
+                        .to_owned(),
                     provider: provider.to_owned(),
                     id: declaration["id"].as_str().unwrap_or_default().to_owned(),
                     signature: declaration["head"][0]
@@ -103,6 +107,7 @@ fn standard_library_function(name: &str) -> Option<&'static StandardFunction> {
 
 struct StandardFunction {
     dependency: String,
+    profile: String,
     provider: String,
     id: String,
     signature: String,
@@ -149,13 +154,14 @@ pub(super) fn unknown_function(
     if let Some(function) = standard_library_function(name) {
         let StandardFunction {
             dependency,
+            profile,
             provider,
             id,
             signature,
         } = function;
         return diagnostic.with_help(format!(
             "`{signature}` is in `{provider}`: add `[dependencies] {dependency} = \"^0.1.0\"` to \
-             `semaprax.toml` and import it directly after the `module` line: `use function \
+             `semaprax.toml`, select the required `[package] profile = \"{profile}\"`, and import it directly after the `module` line: `use function \
              @id(\"{id}\") from {provider} as {name};`"
         ));
     }
@@ -203,6 +209,20 @@ fn nearest_function_name(name: &str, functions: &HashMap<&str, &Function>) -> Op
         ]
         .iter()
         .map(|candidate| (*candidate).to_owned()),
+    );
+    // Enumerate the same compiler-owned operation identities used for admission.
+    candidates.extend(crate::vec_ops::ALL.iter().map(|op| op.name().to_owned()));
+    candidates.extend(crate::list_ops::ALL.iter().map(|op| op.name().to_owned()));
+    candidates.extend(
+        crate::map_ops::MapOp::ALL
+            .iter()
+            .map(|op| op.name().to_owned()),
+    );
+    candidates.extend(crate::box_ops::ALL.iter().map(|op| op.name().to_owned()));
+    candidates.extend(
+        crate::iterator_ops::ALL
+            .iter()
+            .map(|op| op.name().to_owned()),
     );
     candidates.sort();
     candidates.dedup();

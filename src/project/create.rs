@@ -54,17 +54,17 @@ pub fn create_project(
     name: &str,
     template: &str,
 ) -> Result<PathBuf, CreateProjectError> {
-    let scaffold = derive_project_scaffold_v1_with_layout(name, template, ScaffoldLayout::Tables)
+    let scaffold = derive_project_scaffold_v1_with_layout(name, template, ScaffoldLayout::Current)
         .map_err(|diagnostics| {
-        CreateProjectError::new(format!(
-            "cannot derive the {template} template: {}",
-            diagnostics
-                .iter()
-                .map(ToString::to_string)
-                .collect::<Vec<_>>()
-                .join("; ")
-        ))
-    })?;
+            CreateProjectError::new(format!(
+                "cannot derive the {template} template: {}",
+                diagnostics
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            ))
+        })?;
     let requested_destination = std::path::absolute(destination).map_err(|error| {
         CreateProjectError::new(format!("cannot resolve new project destination: {error}"))
     })?;

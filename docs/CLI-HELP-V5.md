@@ -109,3 +109,25 @@ normal guard arm remains exact `else { 0 }`. A retained private function
 signature does not authorize authored type names, cases or constructors without
 the corresponding explicit type import. Diagnostic help is regenerated only
 through the owning documentation projection, never edited as a pin shortcut.
+
+## Exact NDJSON discovery and repair prerequisites
+
+Exact library lookup for `std.data.ndjson`, its public declaration name, or its
+stable identity appends one bounded usage card. It embeds the complete existing
+`std/data-ndjson/src/examples.spx` bytes, preserving the package's independently
+owned compiler gates. The card names the dependency and owning API profile,
+global and per-line bounds, current-input frame checks, structured fault
+categories, and the caller's JSON/publication responsibilities. It does not
+claim origin authentication for numeric cuts or executable qualification.
+Default module inventory and explicit full-catalog output retain their owners.
+
+Unknown-function repair hints enumerate admitted Vec, List, Map/Set, Box and
+iterator operation registries, preserving ambiguity refusal and declared-name
+precedence. Exact bundled-function repairs include the generated catalog's
+required profile with the existing dependency, identity and signature. These
+are help-only changes; diagnostic identity, span and compiler admission stay
+unchanged. Generated catalogs must be refreshed by their existing producer.
+
+[Scaffold capsule v8](PROJECT-SCAFFOLD-V8.md) carries corrected bounded discovery
+and control-flow guidance for newly created projects while preserving earlier
+capsule replay bytes.
