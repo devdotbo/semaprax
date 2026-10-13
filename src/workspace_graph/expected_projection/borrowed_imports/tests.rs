@@ -13,6 +13,8 @@ use crate::hir;
 use crate::test_allocation_observer::measure;
 use crate::workspace_graph::{import_validation, index_authored, index_modules};
 use std::collections::BTreeMap;
+#[path = "tests/initialization.rs"]
+mod initialization;
 #[path = "tests/old.rs"]
 mod old;
 const PROVIDER: &str = include_str!("../private_layout/function_provider.spx");
@@ -235,6 +237,7 @@ fn duplicate_aliases_identities_and_late_wrong_types_preserve_old_diagnostics() 
 fn complete_active_payer_resolution_and_drop_keep_exact_short_and_sticky_refusal() {
     for (caller, provider) in [(SCALAR_CALLER, SCALAR_PROVIDER), (CALLER, PROVIDER)] {
         let programs = sources(caller, provider);
+        initialization::complete_original_receiver_before_measurement(&programs);
         let authored = index_authored(&programs).unwrap();
         let observe = |limit, retain| {
             with_limit_usage_refusal(limit, || {

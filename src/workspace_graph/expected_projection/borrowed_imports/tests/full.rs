@@ -225,6 +225,7 @@ fn complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal() {
         (INVARIANT_CALLER, INVARIANT_PROVIDER),
     ] {
         let programs = sources(caller, provider);
+        super::initialization::complete_original_receiver_before_measurement(&programs);
         let authored = index_authored(&programs).unwrap();
         let observe = |limit, retain| {
             with_limit_usage_refusal(limit, || {
