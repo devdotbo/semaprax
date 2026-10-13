@@ -117,16 +117,16 @@ fn shape<'a>(
     }
     Ok(marked == expected)
 }
-pub(crate) fn record_admitted<'a>(
-    root: &'a ResolvedType,
-    index: &'a DeclarationIndex,
+pub(crate) fn record_admitted(
+    root: &ResolvedType,
+    index: &DeclarationIndex,
 ) -> Result<bool, Diagnostic> {
     fund(Some(0))?;
     shape(index, root, 1, 0, false, true)
 }
-fn success<'a>(
-    index: &'a DeclarationIndex,
-    fields: &'a [crate::hir::ResolvedFieldDeclaration],
+fn success(
+    index: &DeclarationIndex,
+    fields: &[crate::hir::ResolvedFieldDeclaration],
 ) -> Result<bool, Diagnostic> {
     match fields {
         [value] => shape(index, &value.ty, 2, 4, true, true),
@@ -137,9 +137,9 @@ fn error(fields: &[crate::hir::ResolvedFieldDeclaration]) -> bool {
     matches!(fields, [code, offset, field]
         if code.ty == ResolvedType::I64 && offset.ty == ResolvedType::Usize && field.ty == ResolvedType::I64)
 }
-pub(crate) fn nested_admitted<'a>(
-    index: &'a DeclarationIndex,
-    ty: &'a ResolvedType,
+pub(crate) fn nested_admitted(
+    index: &DeclarationIndex,
+    ty: &ResolvedType,
 ) -> Result<bool, Diagnostic> {
     fund(Some(0))?;
     let ResolvedType::Nominal {
@@ -195,9 +195,9 @@ pub(crate) fn nested_admitted<'a>(
     }
     Ok(success(index, &cases[1].fields)? && error(&cases[0].fields))
 }
-pub(crate) fn runtime_admitted<'a>(
-    index: &'a DeclarationIndex,
-    ty: &'a ResolvedType,
+pub(crate) fn runtime_admitted(
+    index: &DeclarationIndex,
+    ty: &ResolvedType,
 ) -> Result<bool, Diagnostic> {
     fund(Some(0))?;
     Ok(crate::hir::collection_outcome::admitted(index, ty)

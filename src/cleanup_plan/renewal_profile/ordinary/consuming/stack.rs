@@ -70,7 +70,7 @@ impl<'a> Stack<'a> {
     /// most OVERFLOW frames is covered by the LIMIT initialization units.
     fn grow(&mut self, admission: &mut Admission<'_>) -> Result<(), Refusal> {
         let doubled = admission.arithmetic(self.overflow.capacity().checked_mul(2))?;
-        let count = doubled.max(INLINE).min(OVERFLOW);
+        let count = doubled.clamp(INLINE, OVERFLOW);
         let cell = size_of::<ChildCursor<'a>>();
         let bytes = admission.arithmetic(
             count

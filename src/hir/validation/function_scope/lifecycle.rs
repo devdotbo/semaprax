@@ -31,9 +31,9 @@ pub(super) fn declared_effects(effects: &[String]) -> Result<BTreeSet<&str>, Dia
     }
     Ok(keys)
 }
-pub(super) fn extend_funded<'a>(
-    program: &'a ResolvedProgram,
-    ty: &'a ResolvedType,
+pub(super) fn extend_funded(
+    program: &ResolvedProgram,
+    ty: &ResolvedType,
     effects: &mut BTreeSet<String>,
 ) -> Result<(), Diagnostic> {
     fund(Some(0))?;
