@@ -120,12 +120,6 @@ fn generated_v2(response: project::JsonCodecProfile, invalid: bool) -> String {
 // Probe-only forwarding: count the exact emitted descriptor operation while the
 // original total-copy observer still sees every production memcpy.
 fn observe_slot_copies(generated: String) -> String {
-    let backend = include_str!("../../../../src/codegen/native_emit/expression/vec_ops/string_slot.rs");
-    for exact in [
-        "layout.kinds.as_slice() != [9] || layout.offsets.as_slice() != [0]",
-        "spx_leaf_read_field(spx_ctx, &({}), &{}, {}, UINT32_C(0), &{field})",
-        "memcpy(&{text}, {field}, sizeof({text}));",
-    ] { assert!(backend.contains(exact), "String-slot metadata ownership premise changed: {exact}"); }
     let backend =
         include_str!("../../../../src/codegen/native_emit/expression/vec_ops/string_slot.rs");
     for exact in [
