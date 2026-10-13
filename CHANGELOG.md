@@ -1,5 +1,11 @@
 # Changelog
 
+- Author bounded transcript-refusal call, loop and genuine-cycle witnesses
+  (#821), preserving primary diagnostics and complete independent model controls.
+  Optional help uses the existing payer; the separate model harness forwards
+  only a reservation operation through a hidden library facade. Focused runtime
+  qualification and diagnostic-pin production remain pending.
+
 - Author funded borrowed inline scratch for ordinary HIR iterator, renewal and
   unsafe preflight scans (#817), retaining full independent original receivers
   and their distinct child/error order. Spill backing and authorization nodes
