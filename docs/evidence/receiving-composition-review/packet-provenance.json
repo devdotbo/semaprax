@@ -1,0 +1,8 @@
+{
+  "source_head": "043f82f046a195ab01f4fc404659cff31f81cf3d",
+  "packet_bytes": 119180,
+  "packet_sha256": "cafdbb866e8e8fc8c483e29a5638c1f8937c16dec6a1443c72a2bfb4d6955517",
+  "scope": "Owned canonical scratch + paidloan cursor + shape cursor composition, current tests including full prepare eighth + complete saved receivers + exact source-provenance artifacts",
+  "no_root_mutations": true,
+  "no_build_test_execution": true
+}
