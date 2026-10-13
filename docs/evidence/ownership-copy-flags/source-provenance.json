@@ -67,7 +67,7 @@
       },
       {
         "name": "src/hir/validation/nominal_facts.rs: exact full-current ownership hook 3",
-        "from": "}\n\n// The exact nominal receiver stays first; only its owning fallback changes.\nimpl HirValidator<'_> {\n    pub(super) fn borrowed_ownership_copy(\n        &self,\n        ty: &ResolvedType,\n    ) -> Result<Option<bool>, Diagnostic> {\n        ownership_flags::Payer::authenticate()?;\n        if let Some(facts) = self.nominal_facts.get(self.program, ty)? {\n            Ok(Some(facts.copy))\n        } else {\n            self.program\n                .declarations\n                .type_flags_paid(ty, ownership_flags::Payer)\n                .map(|facts| facts.map(|facts| facts.copy))\n        }\n    }\n}\n\n#[cfg(test)]\nmod tests;\n",
+        "from": "}\n\n// The exact nominal receiver stays first; only its owning fallback changes.\nimpl HirValidator<'_> {\n    pub(super) fn borrowed_ownership_copy(\n        &self,\n        ty: &ResolvedType,\n    ) -> Result<Option<bool>, Diagnostic> {\n        ownership_flags::Payer::authenticate()?;\n        if let Some(facts) = self.nominal_facts.get(self.program, ty)? {\n            Ok(Some(facts.copy))\n        } else {\n            self.program\n                .declarations\n                .type_flags_paid_lazy(\n                    ty,\n                    ownership_flags::Payer::authenticate,\n                    ownership_flags::Payer::new,\n                )\n                .map(|facts| facts.map(|facts| facts.copy))\n        }\n    }\n}\n\n#[cfg(test)]\nmod tests;\n",
         "to": "}\n\n#[cfg(test)]\nmod tests;\n",
         "count": 1
       }

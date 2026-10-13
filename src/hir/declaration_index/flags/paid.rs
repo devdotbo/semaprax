@@ -53,6 +53,46 @@ impl DeclarationIndex {
         self.type_flags_paid_construct(ty, payer)
     }
 
+    /// Invocation-local lazy state: authenticates the same caller before the
+    /// complete fast observations, and constructs its paid carrier only for
+    /// the existing fallback. The ordinary payer receiver remains independent.
+    pub(crate) fn type_flags_paid_lazy<P: TypeFactsPayer>(
+        &self,
+        ty: &ResolvedType,
+        authenticate: impl FnOnce() -> Result<(), Diagnostic>,
+        make_payer: impl FnOnce() -> Result<P, Diagnostic>,
+    ) -> Result<Option<TypeFlags>, Diagnostic> {
+        authenticate()?;
+        if matches!(
+            ty,
+            ResolvedType::Never
+                | ResolvedType::Unit
+                | ResolvedType::I64
+                | ResolvedType::I32
+                | ResolvedType::Char
+                | ResolvedType::U8
+                | ResolvedType::Usize
+                | ResolvedType::F32
+                | ResolvedType::F64
+                | ResolvedType::Bool
+                | ResolvedType::String
+                | ResolvedType::Bytes
+                | ResolvedType::Str
+                | ResolvedType::SliceU8
+                | ResolvedType::StringMap
+                | ResolvedType::OnceFunction
+                | ResolvedType::OnceFunctionI64
+                | ResolvedType::OnceFunctionI64Pair
+                | ResolvedType::MutFunctionI64
+        ) {
+            return Ok(self.type_flags(ty));
+        }
+        if let Some(Some(facts)) = super::cached_facts(self, ty) {
+            return Ok(Some(TypeFlags::from(facts)));
+        }
+        self.type_flags_paid_construct(ty, make_payer()?)
+    }
+
     // Keeping this constructor out of the fast receiving frame ensures its
     // complete Storage<P> object is initialized only for a real miss/fallback.
     #[inline(never)]

@@ -3,8 +3,19 @@ use super::*;
 use crate::cleanup_plan::ReplayClonePayload;
 use std::mem::size_of;
 
-pub(super) struct Payer;
+pub(super) struct Payer {
+    clone_cursor_paid: bool,
+}
 impl Payer {
+    // Constructed only for one lexical type_flags_paid invocation. The inline
+    // payer is itself funded before publication; Storage's containing carrier
+    // keeps its unchanged independent reservation when this payer moves in.
+    pub(super) fn new() -> Result<Self, Diagnostic> {
+        pay(Some(size_of::<Self>()))?;
+        Ok(Self {
+            clone_cursor_paid: false,
+        })
+    }
     pub(super) fn authenticate() -> Result<(), Diagnostic> {
         pay(Some(0))
     }
@@ -53,6 +64,11 @@ impl TypeFactsPayer for Payer {
         pay(crate::cleanup_plan::replay_btree_node_upper::<K, V>())
     }
     fn clone_type(&mut self, ty: &ResolvedType) -> Result<ResolvedType, Diagnostic> {
+        Self::authenticate()?;
+        if !self.clone_cursor_paid {
+            pay(Some(size_of::<[Option<(&ResolvedType, usize)>; 514]>()))?;
+            self.clone_cursor_paid = true;
+        }
         pay(ty.clone_payload_bytes())?;
         Ok(ty.clone())
     }

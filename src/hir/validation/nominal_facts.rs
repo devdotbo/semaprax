@@ -220,7 +220,11 @@ impl HirValidator<'_> {
         } else {
             self.program
                 .declarations
-                .type_flags_paid(ty, ownership_flags::Payer)
+                .type_flags_paid_lazy(
+                    ty,
+                    ownership_flags::Payer::authenticate,
+                    ownership_flags::Payer::new,
+                )
                 .map(|facts| facts.map(|facts| facts.copy))
         }
     }

@@ -1,0 +1,37 @@
+{
+  "base": "9285aa27183b63f418546385720f76e42a2fcb3a",
+  "qualification": "source-only; unexecuted",
+  "complete_original_paid_source_sha256": "12f1218a6606519c1facdfb622abee4fd9eb6e2a35e2c2a1a91c91cff7343d86",
+  "exact_additive_lazy_span": "    /// Invocation-local lazy state: authenticates the same caller before the\n    /// complete fast observations, and constructs its paid carrier only for\n    /// the existing fallback. The ordinary payer receiver remains independent.\n    pub(crate) fn type_flags_paid_lazy<P: TypeFactsPayer>(\n        &self,\n        ty: &ResolvedType,\n        authenticate: impl FnOnce() -> Result<(), Diagnostic>,\n        make_payer: impl FnOnce() -> Result<P, Diagnostic>,\n    ) -> Result<Option<TypeFlags>, Diagnostic> {\n        authenticate()?;\n        if matches!(\n            ty,\n            ResolvedType::Never\n                | ResolvedType::Unit\n                | ResolvedType::I64\n                | ResolvedType::I32\n                | ResolvedType::Char\n                | ResolvedType::U8\n                | ResolvedType::Usize\n                | ResolvedType::F32\n                | ResolvedType::F64\n                | ResolvedType::Bool\n                | ResolvedType::String\n                | ResolvedType::Bytes\n                | ResolvedType::Str\n                | ResolvedType::SliceU8\n                | ResolvedType::StringMap\n                | ResolvedType::OnceFunction\n                | ResolvedType::OnceFunctionI64\n                | ResolvedType::OnceFunctionI64Pair\n                | ResolvedType::MutFunctionI64\n        ) {\n            return Ok(self.type_flags(ty));\n        }\n        if let Some(Some(facts)) = super::cached_facts(self, ty) {\n            return Ok(Some(TypeFlags::from(facts)));\n        }\n        self.type_flags_paid_construct(ty, make_payer()?)\n    }\n\n",
+  "complete_original_paid_inverse_equality": true,
+  "literal_fast_gate_equality": true,
+  "all_four_original_ownership_source_inverses": true,
+  "full_original_tests_prefix_sha256": "8504303f9f674708321469df2070fe75cca78a3e1b2ed5739a696e1de1c4ef43",
+  "unchanged_walker_sources": [
+    {
+      "path": "src/hir/declaration_index/flags/paid/compute.rs",
+      "blob": "a484224c827a4d8e6061144258b5d6224aac53a4",
+      "sha256": "e3cb4d9e04b9beea8611557f4d533c8b6fe4d58961834ec21617c28ce7f235cf"
+    },
+    {
+      "path": "src/hir/declaration_index/flags/paid/key.rs",
+      "blob": "ecd782dcdd0df8c60f79118182026319619b5425",
+      "sha256": "db8d77be0fa2d0dcd9607ef616328e580919c89221b861944b145ad5c7269038"
+    },
+    {
+      "path": "src/hir/declaration_index/flags/paid/storage.rs",
+      "blob": "db2cfd96a76fa555b3116849580aff8ddb09d870",
+      "sha256": "34e921b863df7ca15514408fab51936e2ffed0a60c116393e679f3013328abf3"
+    },
+    {
+      "path": "src/hir/declaration_index/flags/paid/substitute.rs",
+      "blob": "e0bfe96abbb6e2aab7e2d662d09bef511a76b364",
+      "sha256": "80f6b353b1a73a3c7dff8635dd36760510ff7e5daf1f1d4f03853e7f7302a77a"
+    },
+    {
+      "path": "src/cleanup_plan/replay/physical_clone.rs",
+      "blob": "5d60a5b51c2553cbfbbc26df90ad9773d506cbfc",
+      "sha256": "7562958a30b1c75afadc4d2110b42b06a209e3f54b3a8e5111ecdd08d6488bb6"
+    }
+  ]
+}

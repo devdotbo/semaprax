@@ -388,3 +388,224 @@ fn generic_copy_fallback_pays_complete_backing_drop_exact_short_and_sticky() {
     });
     assert!(!physical.invalid && physical.live == 0 && physical.allocated == physical.freed);
 }
+
+#[test]
+fn clone_payer_literal_backing_cursor_once_exact_short_and_sticky_drop() {
+    use crate::cleanup_plan::ReplayClonePayload;
+    use std::mem::size_of;
+    let ty = ResolvedType::Function {
+        parameters: vec![
+            ResolvedType::Nominal {
+                declaration: DeclarationId::new("copy:é\0.args"),
+                arguments: vec![ResolvedType::I64, ResolvedType::Bool],
+            },
+            ResolvedType::I64,
+        ],
+        result: Box::new(ResolvedType::Nominal {
+            declaration: DeclarationId::new("copy:é\0.result"),
+            arguments: Vec::new(),
+        }),
+    };
+    let payload = 5 * size_of::<ResolvedType>();
+    assert_eq!(ty.clone_payload_bytes(), Some(payload));
+    let (_, old) = measure(|| {
+        let copy = ty.clone();
+        assert_eq!(copy, ty);
+        drop(copy);
+    });
+    assert!(!old.invalid && old.live == 0);
+    assert_eq!(old.allocated, payload);
+    assert_eq!(old.freed, payload);
+    let setup = size_of::<Payer>() + 514 * size_of::<Option<(&ResolvedType, usize)>>();
+    let exact = setup + 2 * payload;
+    let observe = |limit| {
+        crate::bounded_output::with_limit_usage_refusal(limit, || {
+            measure(|| {
+                let mut payer = match Payer::new() {
+                    Ok(payer) => payer,
+                    Err(error) => {
+                        drop(error);
+                        return false;
+                    }
+                };
+                let result = (|| {
+                    let first = payer.clone_type(&ty)?;
+                    assert_eq!(first, ty);
+                    let remaining = crate::bounded_output::active_remaining().unwrap();
+                    let second = payer.clone_type(&ty)?;
+                    assert_eq!(second, ty);
+                    assert_eq!(
+                        remaining - crate::bounded_output::active_remaining().unwrap(),
+                        payload
+                    );
+                    drop((first, second));
+                    Ok::<_, Diagnostic>(())
+                })();
+                if let Err(error) = result {
+                    let before = crate::test_allocation_observer::current_metrics();
+                    let remaining = crate::bounded_output::active_remaining();
+                    let retry = payer.clone_type(&ResolvedType::I64).unwrap_err();
+                    assert_eq!(retry.code, "SPX-H006");
+                    assert_eq!(remaining, crate::bounded_output::active_remaining());
+                    assert_eq!(before, crate::test_allocation_observer::current_metrics());
+                    drop((error, retry));
+                    false
+                } else {
+                    true
+                }
+            })
+        })
+    };
+    let ((ok, wide), refused, paid, first) = observe(usize::MAX);
+    assert!(ok && !refused && first.is_none());
+    assert_eq!(paid, exact);
+    assert_eq!(wide.allocated, 2 * payload);
+    assert_eq!(wide.allocated, wide.freed);
+    assert!(!wide.invalid && wide.live == 0);
+    let ((ok, same), refused, paid, first) = observe(exact);
+    assert!(ok && !refused && first.is_none() && paid == exact);
+    assert_eq!(same, wide);
+    for limit in [0, setup - 1, setup + payload - 1, exact - 1] {
+        let ((ok, short), refused, paid, first) = observe(limit);
+        assert!(!ok && refused && first.is_some() && paid <= limit);
+        assert!(!short.invalid && short.live == 0 && short.allocated <= paid);
+        assert_eq!(short.allocated, short.freed);
+    }
+}
+
+#[test]
+fn clone_payer_keeps_deep_census_boundary_and_failed_clone_sticky() {
+    let cursor = 514 * std::mem::size_of::<Option<(&ResolvedType, usize)>>();
+    for depth in [1, 32, 514, 515] {
+        let mut ty = ResolvedType::I64;
+        for _ in 1..depth {
+            ty = ResolvedType::Nominal {
+                declaration: DeclarationId::new("deep:é\0.copy"),
+                arguments: vec![ty],
+            };
+        }
+        let ((accepted, metrics), refused, paid, receipt) =
+            crate::bounded_output::with_limit_usage_refusal(usize::MAX, || {
+                measure(|| {
+                    let mut payer = Payer::new().unwrap();
+                    let result = payer.clone_type(&ty);
+                    let accepted = result.is_ok();
+                    if depth <= 514 {
+                        assert_eq!(result.as_ref().unwrap(), &ty);
+                    } else {
+                        let error = result.as_ref().unwrap_err();
+                        assert_eq!(error.code, "SPX-H006");
+                        assert_eq!(error.message, "ownership type flags layout overflowed");
+                        let before = crate::test_allocation_observer::current_metrics();
+                        drop(payer.clone_type(&ResolvedType::I64).unwrap_err());
+                        assert_eq!(before, crate::test_allocation_observer::current_metrics());
+                    }
+                    drop(result);
+                    accepted
+                })
+            });
+        assert_eq!(accepted, depth <= 514);
+        assert_eq!(refused, depth > 514);
+        assert_eq!(receipt.is_some(), depth > 514);
+        assert!(!metrics.invalid && metrics.live == 0 && metrics.allocated <= paid);
+        assert_eq!(metrics.allocated, metrics.freed);
+        if depth > 514 {
+            assert_eq!(paid, std::mem::size_of::<Payer>() + cursor);
+            assert_eq!(metrics.allocated, 0);
+            assert_eq!(receipt.unwrap().requested, usize::MAX);
+        }
+    }
+}
+
+#[test]
+fn lazy_flags_payer_keeps_zero_limit_primitives_and_full_forged_cache_precedence() {
+    let mut index = DeclarationIndex::default();
+    let types = [
+        ResolvedType::I64,
+        ResolvedType::ArrayU8(12),
+        ResolvedType::Function {
+            parameters: vec![ResolvedType::I64],
+            result: Box::new(ResolvedType::Bool),
+        },
+        ResolvedType::Nominal {
+            declaration: DeclarationId::new("cache:é\0.copy"),
+            arguments: vec![ResolvedType::I64],
+        },
+    ];
+    for ty in &types {
+        index.type_facts_by_id.insert(
+            ty.identity_key(),
+            TypeFacts {
+                copy: false,
+                contains_resource: true,
+                sized: false,
+                needs_drop: true,
+                layout_key: "literal-hostile-cache-layout".to_owned(),
+            },
+        );
+    }
+    for ty in &types {
+        let old = index.type_flags(ty);
+        let ((result, metrics), refused, paid, first) =
+            crate::bounded_output::with_limit_usage_refusal(0, || {
+                measure(|| {
+                    index
+                        .type_flags_paid_lazy(
+                            ty,
+                            Payer::authenticate,
+                            || -> Result<Payer, Diagnostic> {
+                                panic!("fast receiver must not construct a payer")
+                            },
+                        )
+                        .unwrap()
+                })
+            });
+        assert_eq!(result, old);
+        assert!(!refused && first.is_none() && paid == 0);
+        assert_eq!(metrics, crate::test_allocation_observer::Metrics::default());
+    }
+    let unknown = ResolvedType::Nominal {
+        declaration: DeclarationId::new("unknown:é\0.copy"),
+        arguments: vec![ResolvedType::I64],
+    };
+    let ((result, metrics), refused, paid, first) =
+        crate::bounded_output::with_limit_usage_refusal(0, || {
+            measure(|| index.type_flags_paid_lazy(&unknown, Payer::authenticate, Payer::new))
+        });
+    assert!(result.is_err() && refused && paid == 0);
+    assert_eq!(first.unwrap().requested, std::mem::size_of::<Payer>());
+    assert_eq!(metrics, crate::test_allocation_observer::Metrics::default());
+}
+
+#[test]
+fn complete_original_paid_entry_and_lazy_fast_gates_stay_source_exact() {
+    use sha2::{Digest, Sha256};
+    let original =
+        include_str!("../../../../docs/evidence/ownership-clone-census/paid.rs.before.txt");
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+        ),
+        "12f1218a6606519c1facdfb622abee4fd9eb6e2a35e2c2a1a91c91cff7343d86"
+    );
+    let current = include_str!("../../declaration_index/flags/paid.rs");
+    let start = current
+        .find("    /// Invocation-local lazy state:")
+        .unwrap();
+    let end = current[start..]
+        .find("    // Keeping this constructor out of the fast receiving frame")
+        .unwrap()
+        + start;
+    let projected = format!("{}{}", &current[..start], &current[end..]);
+    assert_eq!(projected, original);
+    let gates = |body: &str| {
+        let start = body.find("        if matches!(\n").unwrap();
+        let end = body[start..]
+            .find("        self.type_flags_paid_construct")
+            .unwrap()
+            + start;
+        body[start..end].to_owned()
+    };
+    assert_eq!(gates(&current[start..end]), gates(original));
+}
