@@ -218,6 +218,30 @@ pub(super) fn needs_drop(
         )?),
     }
 }
+/// Raw ordinary inventory diagnostic adapter. The classifier's semantic String
+/// has already acquired backing from this same payer; moving it into Diagnostic
+/// must not append the independent-replay prefix or allocate a second message.
+/// This is constructor plumbing only, not a schema-selection/admission route.
+pub(super) fn inventory_needs_drop(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    ty: &ResolvedType,
+    budget: &mut ReplayBudget,
+) -> Result<bool, Diagnostic> {
+    let mut payer = Payer {
+        function,
+        budget,
+        ledger: ClassifierLedger::capture(),
+    };
+    match droppability::needs_drop_paid(program, ty, &mut payer) {
+        Ok(value) => Ok(value),
+        Err(droppability::Failure::Physical(error)) => Err(error),
+        Err(droppability::Failure::Semantic(message)) => {
+            Err(Diagnostic::io("SPX-H006", message))
+        }
+    }
+}
+
 #[cfg(test)]
 thread_local! { static SAVED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) }; }
 #[cfg(test)]
@@ -314,3 +338,6 @@ mod oracle_logical_tests;
 
 #[cfg(test)]
 mod oracle_work_tests;
+
+#[cfg(test)]
+mod inventory_tests;

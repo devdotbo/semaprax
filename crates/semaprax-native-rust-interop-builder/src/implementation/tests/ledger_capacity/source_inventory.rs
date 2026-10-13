@@ -955,6 +955,11 @@ macro_rules! verifier_source_inventory {
 macro_rules! lower_source_inventory {
     () => {
         concat!(
+            include_str!("../../../../../src/cleanup/schema_summary.rs"),
+            include_str!("../../../../../src/cleanup/schema_summary/generic_record.rs"),
+            include_str!("../../../../../src/cleanup/schema_summary/support.rs"),
+            include_str!("../../../../../src/cleanup/schema_summary/tests.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/skeleton_work.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/dag_storage.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs"),

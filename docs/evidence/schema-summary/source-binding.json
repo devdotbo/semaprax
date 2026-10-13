@@ -1,0 +1,36 @@
+{
+  "issue": "https://github.com/wavect/semaprax/issues/814",
+  "base": "f9aadf17cbca430480f8bcf40afbcb58cd9a0711",
+  "status": "private staged receiver; production adoption and complete constructor funding pending",
+  "original_sources": {
+    "src/cleanup/inventory_builder.rs": {
+      "archive": "docs/evidence/schema-summary/inventory_builder.rs.before",
+      "sha256": "a00caa48b822a64862c176eb74acf2be1387b59b5af2298577167099c75ec356"
+    },
+    "src/cleanup/generic_record.rs": {
+      "archive": "docs/evidence/schema-summary/generic_record.rs.before",
+      "sha256": "a46d2b2b6b83918f72eab634ced94c6982b4e25f92b3b585afd4b40f84328c1a"
+    },
+    "src/cleanup_plan/replay/paid_type_facts.rs": {
+      "archive": "docs/evidence/schema-summary/paid_type_facts.rs.before",
+      "sha256": "1b6d7788aea9d77557197d687437c04554b7e790a15f5d7e261983e80ff665fa"
+    }
+  },
+  "current_sources": {
+    "src/cleanup/schema_summary.rs": "54e038e5d81554bf704ec082d2b16b0c82632e78ffd22cf607a754281a18073d",
+    "src/cleanup/schema_summary/generic_record.rs": "a46d2b2b6b83918f72eab634ced94c6982b4e25f92b3b585afd4b40f84328c1a",
+    "src/cleanup/schema_summary/support.rs": "eb9a6cd7961d586370fce7b30552ef0e5ccd4c5d23032a9717447fe32efbe6f2",
+    "src/cleanup/schema_summary/tests.rs": "56c3e5775113bb14b6f772d46aec97a6e33550c69ccf9430d550141c7fa4b585",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "59729cca379e7df4e4e6551fe7310a4c1712b4c6013af3d8fa1e987cddbc1442",
+    "src/cleanup_plan/replay/paid_type_facts.rs": "9812c70c7ffb3e15cf8e9b56dedc0a251a90496e87d63c4179d1101dd34256a9"
+  },
+  "pending_selectors": [
+    "cleanup::schema_summary::tests::complete_ordinary_summary_matches_full_receiver_and_receiving_drop",
+    "cleanup::schema_summary::tests::late_missing_type_preserves_full_first_diagnostic_after_earlier_owners",
+    "cleanup::schema_summary::tests::discovery_indices_survive_discarded_directories_and_empty_flags",
+    "cleanup::schema_summary::tests::independently_compiled_full_producer_sources_remain_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::raw_inventory_classifier_keeps_complete_original_diagnostic_fields",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::raw_missing_cleanup_facts_refusal_keeps_message_without_replay_prefix",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter"
+  ]
+}

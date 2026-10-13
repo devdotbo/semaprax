@@ -1,0 +1,14 @@
+{
+  "package": "semaprax",
+  "harness": "lib",
+  "status": "authored, unexecuted; staged source not integration-ready",
+  "selectors": [
+    "cleanup::schema_summary::tests::complete_ordinary_summary_matches_full_receiver_and_receiving_drop",
+    "cleanup::schema_summary::tests::late_missing_type_preserves_full_first_diagnostic_after_earlier_owners",
+    "cleanup::schema_summary::tests::discovery_indices_survive_discarded_directories_and_empty_flags",
+    "cleanup::schema_summary::tests::independently_compiled_full_producer_sources_remain_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::raw_inventory_classifier_keeps_complete_original_diagnostic_fields",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::raw_missing_cleanup_facts_refusal_keeps_message_without_replay_prefix",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter"
+  ]
+}
