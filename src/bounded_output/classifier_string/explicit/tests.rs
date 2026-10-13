@@ -144,7 +144,7 @@ fn complete_raw_receiver_keeps_all_chunks_and_refuses_work_before_growth() {
             .raw_explicit(
                 format_args!("{}", Chunks),
                 &mut (),
-                &mut |_, _| Ok(()),
+                &mut |_, _| Ok::<(), &'static str>(()),
                 &mut |bytes, _| {
                     visits += 1 + bytes;
                     Ok(())
