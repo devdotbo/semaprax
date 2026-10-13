@@ -62,8 +62,8 @@
     },
     {
       "path": "src/workspace_graph/tests/builder_limits.rs",
-      "sha256": "9a0a032349bea1f517b1787cc8fbcf2088969ff82d6023b7f37ca43b086ef868",
-      "lines": 689
+      "sha256": "29709e4090b08d472d6fbde25132a8d3ab61a917e0a777c4798f794fa943f411",
+      "lines": 715
     }
   ],
   "successor_observation_note": "Source-only successor: retain last completed Copy trace separately from original maximum-consumed trace; no Budget or ReservationRefusal layout, source authority, reservation or retry change. Original denied review was not retried. New receipt controls and identical authenticated decoded-fingerprint Project check are pending execution."
