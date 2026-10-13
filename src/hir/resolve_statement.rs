@@ -15,6 +15,9 @@ use super::monomorphize::substitute_type;
 use super::nodes::{is_scalar_resolved_type, DeclarationKind, ResolvedBinding, ResolvedType};
 use super::{Binding, Resolver};
 
+#[cfg(test)]
+pub(in crate::hir) mod text_reference;
+
 impl Resolver<'_> {
     pub(super) fn resolve_expr(
         &self,
@@ -23,6 +26,11 @@ impl Resolver<'_> {
         bindings: &BTreeMap<String, Binding>,
         path: &str,
     ) -> Result<ResolvedExpr, Diagnostic> {
+        #[cfg(test)]
+        if text_reference::active() {
+            text_reference::note_expression();
+            return self.resolve_expr_recursive_reference(function, expr, bindings, path);
+        }
         self.resolve_expr_iterative(function, expr, bindings, path)
     }
 

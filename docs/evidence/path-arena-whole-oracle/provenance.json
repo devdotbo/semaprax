@@ -1,0 +1,18 @@
+{
+  "base": "69dfb984c9ebe9412653706f9eaa3652e3c3afaf",
+  "shared_boundary": "Signatures, types, non-expression helper resolution, source verification, plan construction and complete HIR validation remain ordinary shared services. Old program assembly is complete saved 5ff receiver, expression dispatch complete recursive text reference.",
+  "original_sources": {
+    "src/hir/resolve_statement.rs": {
+      "git_object": "c249b947abdef0ce6a0aba24c86407df4d0c2da4",
+      "sha256": "2d7eda19f9a9186b48aeb097af8ce2c0676cce97908ea48c09d1d993047cbb7a"
+    },
+    "src/hir/resolve_program/agent_identity_original.rs": {
+      "git_object": "e6c7be832c14ae1794a75081bb3e0e97db3aa00c",
+      "sha256": "9a6abc2e657ab88eb7536a0bd60717fa0c8b49486d30253cd08675cd5e1f941c"
+    },
+    "src/hir/resolve_expr_reference.rs": {
+      "git_object": "d52f5a54da6fb86be0f22b831771f39bdf5021cb",
+      "sha256": "23612278e943d9eaecffab56af1db8b8296bea2a97743638b3ea8697a959a420"
+    }
+  }
+}
