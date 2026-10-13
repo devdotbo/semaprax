@@ -831,3 +831,58 @@ fn transcript_repeated_writes_explain_bounded_publication() {
     let corrected = source.replace("let second = stdout_write(bytes);", "");
     assert!(diagnostics(&corrected).is_empty());
 }
+
+#[test]
+fn pattern_duplicate_alias_and_reserved_result_keep_complete_primary_diagnostics() {
+    use semaprax::ast::Span;
+
+    for (payload, body, primary, marker, offset, count) in [
+        ("value: n, value: n", "n", "n", "value: n }", 7, 2),
+        ("value: result", "0", "result", "value: result }", 7, 1),
+    ] {
+        let source = format!(
+            "module habit.alias; @id(\"app.main\") fn main() -> i64 {{ match (Option<i64>::Some {{ value: 1 }}) {{ Option::Some {{ {payload} }} => {body}, Option::None {{}} => 0, }} }}"
+        );
+        let found = diagnostics(&source);
+        assert_eq!(found.len(), count, "{source}: {found:?}");
+        let selected = found.last().unwrap();
+        assert!(help(selected).contains("field: fresh_alias"));
+        assert!(help(selected).contains("`result` is reserved"));
+        let start = source.find(marker).unwrap() + offset;
+        assert_eq!(&source[start..start + primary.len()], primary);
+        let expected = Diagnostic::error(
+            "SPX-M104",
+            format!("invalid or duplicate pattern binding `{primary}`"),
+            Span {
+                start,
+                end: start + primary.len(),
+                line: 1,
+                column: start + 1,
+            },
+        )
+        .at_path("habit.spx");
+        let mut actual_primary = selected.clone();
+        actual_primary.help = None;
+        assert_eq!(actual_primary.json(), expected.json());
+        if count == 2 {
+            let start = source.find(marker).unwrap();
+            let expected_field = Diagnostic::error(
+                "SPX-M104",
+                "unknown or duplicate pattern field `value` in `Option::Some`",
+                Span {
+                    start,
+                    end: start + "value: n".len(),
+                    line: 1,
+                    column: start + 1,
+                },
+            )
+            .at_path("habit.spx");
+            assert_eq!(found[0].json(), expected_field.json());
+        }
+        let corrected = source.replace(payload, "value: parsed_number").replace(
+            &format!("=> {body}, Option::None"),
+            "=> parsed_number, Option::None",
+        );
+        assert!(diagnostics(&corrected).is_empty(), "{corrected}");
+    }
+}
