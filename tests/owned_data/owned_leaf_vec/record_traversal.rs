@@ -373,5 +373,5 @@ fn ordinary_lookup_failure_inside_traversal_keeps_sticky_status_and_cleanup() {
     assert_eq!(outcome["status"]["code"], 2);
     assert!(outcome.get("value").is_none());
     super::super::scoped_vec_field_native::run_status(&source, 2, "semaprax.vec.v1", 0);
-    super::run_wasm_status(body, 2, 0, "none", Some("semaprax.vec.v1"));
+    super::run_wasm_status(body, 2, 0, "vec-view", Some("semaprax.vec.v1"));
 }
