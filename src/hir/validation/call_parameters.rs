@@ -150,14 +150,18 @@ impl HirValidator<'_> {
         argument: &ResolvedExpr,
         param: ParameterView<'_>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if ownership_flags::original_selected() {
+            return self.validate_argument_ownership_view_before(argument, param);
+        }
         let actual = argument.ownership;
-        let facts = self.borrowed_type_facts(param.ty)?.ok_or_else(|| {
+        let facts = self.borrowed_ownership_copy(param.ty)?.ok_or_else(|| {
             hir_error_at_span(
                 argument.span,
                 format!("type `{}` has no semantic facts", param.ty.identity_key()),
             )
         })?;
-        let valid = if facts.copy {
+        let valid = if facts {
             actual == OwnershipMode::Value && param.ownership == OwnershipMode::Value
         } else {
             match param.ownership {
@@ -229,3 +233,8 @@ impl HirValidator<'_> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod copy_before;
+#[cfg(test)]
+mod copy_flags_tests;

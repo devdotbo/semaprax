@@ -11,6 +11,7 @@ impl HirValidator<'_> {
         execution: &FunctionExecutionId,
     ) -> Result<(), Diagnostic> {
         self.use_legacy_identities();
+        let _ownership = ownership_flags::original_guard();
         self.validate_function_owned_reference_body(function, execution)
     }
     pub(in crate::hir) fn validate_expr_iterative_owned_reference(
@@ -23,6 +24,7 @@ impl HirValidator<'_> {
         allowed_effects: Option<effect_keys::Allowed<'_>>,
     ) -> Result<(), Diagnostic> {
         self.use_legacy_identities();
+        let _ownership = ownership_flags::original_guard();
         self.validate_expr_iterative_owned_reference_body(
             function,
             expression,
@@ -42,6 +44,7 @@ impl HirValidator<'_> {
         allowed_effects: Option<&BTreeSet<String>>,
     ) -> Result<(), Diagnostic> {
         self.use_legacy_identities();
+        let _ownership = ownership_flags::original_guard();
         self.validate_expr_recursive_reference_body(
             function,
             expression,
@@ -60,6 +63,7 @@ impl HirValidator<'_> {
         allow_moves: bool,
     ) -> Result<(), Diagnostic> {
         self.use_legacy_identities();
+        let _ownership = ownership_flags::original_guard();
         self.validate_closure_owned_reference_body(function, expression, scope, path, allow_moves)
     }
     pub(in crate::hir::validation) fn validate_template_closure_owned_reference<'value>(
@@ -71,6 +75,7 @@ impl HirValidator<'_> {
         path: &str,
     ) -> Result<(), Diagnostic> {
         self.use_legacy_identities();
+        let _ownership = ownership_flags::original_guard();
         self.validate_template_closure_owned_reference_body(
             template, execution, expression, values, path,
         )

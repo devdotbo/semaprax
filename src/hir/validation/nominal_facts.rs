@@ -4,6 +4,7 @@
 //! metadata is owned here; validator clones share that metadata. Other types and
 //! absent retained entries keep the original owning/recomputation path.
 use super::*;
+#[cfg(test)]
 use std::borrow::Cow;
 use std::cell::OnceCell;
 #[cfg(test)]
@@ -193,6 +194,7 @@ impl<'a> Lookup<'a> {
     }
 }
 
+#[cfg(test)]
 impl<'a> HirValidator<'a> {
     pub(super) fn borrowed_type_facts(
         &self,
@@ -202,6 +204,24 @@ impl<'a> HirValidator<'a> {
             Ok(Some(Cow::Borrowed(facts)))
         } else {
             Ok(self.program.declarations.type_facts(ty).map(Cow::Owned))
+        }
+    }
+}
+
+// The exact nominal receiver stays first; only its owning fallback changes.
+impl HirValidator<'_> {
+    pub(super) fn borrowed_ownership_copy(
+        &self,
+        ty: &ResolvedType,
+    ) -> Result<Option<bool>, Diagnostic> {
+        ownership_flags::Payer::authenticate()?;
+        if let Some(facts) = self.nominal_facts.get(self.program, ty)? {
+            Ok(Some(facts.copy))
+        } else {
+            self.program
+                .declarations
+                .type_flags_paid(ty, ownership_flags::Payer)
+                .map(|facts| facts.map(|facts| facts.copy))
         }
     }
 }

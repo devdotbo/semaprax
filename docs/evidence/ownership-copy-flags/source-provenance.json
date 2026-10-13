@@ -1,0 +1,128 @@
+{
+  "base": "bf29fd8dd3df354df0b055686fc3f4f48e3cfb92",
+  "qualification": "source-only, not executed",
+  "original_sources": {
+    "src/hir/validation.rs": {
+      "archive": "validation.rs.before.txt",
+      "sha256": "9e878bead4d3d748764a55e10c51edd93146f1998d5eafd896205b31f1067ad6"
+    },
+    "src/hir/validation/nominal_facts.rs": {
+      "archive": "nominal_facts.rs.before.txt",
+      "sha256": "f85363333cd6d13d361f1e41c967d7033d2934627d30758d8188b66ff6a9a873"
+    },
+    "src/hir/validation/identity_directory/oracle_entries.rs": {
+      "archive": "oracle_entries.rs.before.txt",
+      "sha256": "3b42c48e7dd26991eb4e773952d69c7934118f2fea666ff8b687947e4fa6ece1"
+    },
+    "src/hir/validation/call_parameters.rs": {
+      "archive": "call_parameters.rs.before.txt",
+      "sha256": "3be63c3a568b23436a6e5897669266202ea71033003b963891de196094b9b4aa"
+    },
+    "expected_ownership": {
+      "archive": "expected_ownership.before.txt",
+      "sha256": "70d1af41ec7068192db12503d5db6ac92922ce6dcef36a635721844b30b7aac5"
+    },
+    "is_owned_resource": {
+      "archive": "is_owned_resource.before.txt",
+      "sha256": "bffbf162d46f6c7e15339f00332f69018c07d44b738736ebb453b215ac70c5e4"
+    },
+    "validate_argument_ownership_view": {
+      "archive": "validate_argument_ownership_view.before.txt",
+      "sha256": "c89a9ba94b04a69f60e49e56261c497cd1033a2f2c70051625fe6fc3679343a8"
+    }
+  },
+  "full_current_projection": {
+    "src/hir/validation.rs": [
+      {
+        "name": "src/hir/validation.rs: exact full-current ownership hook 1",
+        "from": "mod native_borrow;\nmod nominal_facts;\nmod ownership_flags;\nmod owned_buffer;\nmod owned_result_try;\n",
+        "to": "mod native_borrow;\nmod nominal_facts;\nmod owned_buffer;\nmod owned_result_try;\n",
+        "count": 1
+      },
+      {
+        "name": "src/hir/validation.rs: exact full-current ownership hook 2",
+        "from": "            return Ok(false);\n        }\n        #[cfg(test)]\n        if ownership_flags::original_selected() {\n            return self.is_owned_resource_before(ty, ownership);\n        }\n        self.borrowed_ownership_copy(ty)?\n            .map(|facts| !facts && ownership == OwnershipMode::Own)\n            .ok_or_else(|| {\n                hir_error(format!(\n",
+        "to": "            return Ok(false);\n        }\n        self.borrowed_type_facts(ty)?\n            .map(|facts| !facts.copy && ownership == OwnershipMode::Own)\n            .ok_or_else(|| {\n                hir_error(format!(\n",
+        "count": 1
+      },
+      {
+        "name": "src/hir/validation.rs: exact full-current ownership hook 3",
+        "from": "            return Ok(OwnershipMode::Value);\n        }\n        #[cfg(test)]\n        if ownership_flags::original_selected() {\n            return self.expected_ownership_before(ty, non_copy);\n        }\n        self.borrowed_ownership_copy(ty)?\n            .map(|facts| {\n                if facts {\n                    OwnershipMode::Value\n                } else {\n",
+        "to": "            return Ok(OwnershipMode::Value);\n        }\n        self.borrowed_type_facts(ty)?\n            .map(|facts| {\n                if facts.copy {\n                    OwnershipMode::Value\n                } else {\n",
+        "count": 1
+      }
+    ],
+    "src/hir/validation/nominal_facts.rs": [
+      {
+        "name": "src/hir/validation/nominal_facts.rs: exact full-current ownership hook 1",
+        "from": "//! absent retained entries keep the original owning/recomputation path.\nuse super::*;\n#[cfg(test)]\nuse std::borrow::Cow;\nuse std::cell::OnceCell;\n",
+        "to": "//! absent retained entries keep the original owning/recomputation path.\nuse super::*;\nuse std::borrow::Cow;\nuse std::cell::OnceCell;\n",
+        "count": 1
+      },
+      {
+        "name": "src/hir/validation/nominal_facts.rs: exact full-current ownership hook 2",
+        "from": "}\n\n#[cfg(test)]\nimpl<'a> HirValidator<'a> {\n    pub(super) fn borrowed_type_facts(\n",
+        "to": "}\n\nimpl<'a> HirValidator<'a> {\n    pub(super) fn borrowed_type_facts(\n",
+        "count": 1
+      },
+      {
+        "name": "src/hir/validation/nominal_facts.rs: exact full-current ownership hook 3",
+        "from": "}\n\n// The exact nominal receiver stays first; only its owning fallback changes.\nimpl HirValidator<'_> {\n    pub(super) fn borrowed_ownership_copy(\n        &self,\n        ty: &ResolvedType,\n    ) -> Result<Option<bool>, Diagnostic> {\n        ownership_flags::Payer::authenticate()?;\n        if let Some(facts) = self.nominal_facts.get(self.program, ty)? {\n            Ok(Some(facts.copy))\n        } else {\n            self.program\n                .declarations\n                .type_flags_paid(ty, ownership_flags::Payer)\n                .map(|facts| facts.map(|facts| facts.copy))\n        }\n    }\n}\n\n#[cfg(test)]\nmod tests;\n",
+        "to": "}\n\n#[cfg(test)]\nmod tests;\n",
+        "count": 1
+      }
+    ],
+    "src/hir/validation/identity_directory/oracle_entries.rs": [
+      {
+        "name": "src/hir/validation/identity_directory/oracle_entries.rs: exact full-current ownership hook 1",
+        "from": "    ) -> Result<(), Diagnostic> {\n        self.use_legacy_identities();\n        let _ownership = ownership_flags::original_guard();\n        self.validate_function_owned_reference_body(function, execution)\n    }\n",
+        "to": "    ) -> Result<(), Diagnostic> {\n        self.use_legacy_identities();\n        self.validate_function_owned_reference_body(function, execution)\n    }\n",
+        "count": 1
+      },
+      {
+        "name": "src/hir/validation/identity_directory/oracle_entries.rs: exact full-current ownership hook 2",
+        "from": "    ) -> Result<(), Diagnostic> {\n        self.use_legacy_identities();\n        let _ownership = ownership_flags::original_guard();\n        self.validate_expr_iterative_owned_reference_body(\n            function,\n",
+        "to": "    ) -> Result<(), Diagnostic> {\n        self.use_legacy_identities();\n        self.validate_expr_iterative_owned_reference_body(\n            function,\n",
+        "count": 1
+      },
+      {
+        "name": "src/hir/validation/identity_directory/oracle_entries.rs: exact full-current ownership hook 3",
+        "from": "    ) -> Result<(), Diagnostic> {\n        self.use_legacy_identities();\n        let _ownership = ownership_flags::original_guard();\n        self.validate_expr_recursive_reference_body(\n            function,\n",
+        "to": "    ) -> Result<(), Diagnostic> {\n        self.use_legacy_identities();\n        self.validate_expr_recursive_reference_body(\n            function,\n",
+        "count": 1
+      },
+      {
+        "name": "src/hir/validation/identity_directory/oracle_entries.rs: exact full-current ownership hook 4",
+        "from": "    ) -> Result<(), Diagnostic> {\n        self.use_legacy_identities();\n        let _ownership = ownership_flags::original_guard();\n        self.validate_closure_owned_reference_body(function, expression, scope, path, allow_moves)\n    }\n",
+        "to": "    ) -> Result<(), Diagnostic> {\n        self.use_legacy_identities();\n        self.validate_closure_owned_reference_body(function, expression, scope, path, allow_moves)\n    }\n",
+        "count": 1
+      },
+      {
+        "name": "src/hir/validation/identity_directory/oracle_entries.rs: exact full-current ownership hook 5",
+        "from": "    ) -> Result<(), Diagnostic> {\n        self.use_legacy_identities();\n        let _ownership = ownership_flags::original_guard();\n        self.validate_template_closure_owned_reference_body(\n            template, execution, expression, values, path,\n",
+        "to": "    ) -> Result<(), Diagnostic> {\n        self.use_legacy_identities();\n        self.validate_template_closure_owned_reference_body(\n            template, execution, expression, values, path,\n",
+        "count": 1
+      }
+    ],
+    "src/hir/validation/call_parameters.rs": [
+      {
+        "name": "src/hir/validation/call_parameters.rs: exact full-current ownership hook 1",
+        "from": "        param: ParameterView<'_>,\n    ) -> Result<(), Diagnostic> {\n        #[cfg(test)]\n        if ownership_flags::original_selected() {\n            return self.validate_argument_ownership_view_before(argument, param);\n        }\n        let actual = argument.ownership;\n        let facts = self.borrowed_ownership_copy(param.ty)?.ok_or_else(|| {\n            hir_error_at_span(\n                argument.span,\n",
+        "to": "        param: ParameterView<'_>,\n    ) -> Result<(), Diagnostic> {\n        let actual = argument.ownership;\n        let facts = self.borrowed_type_facts(param.ty)?.ok_or_else(|| {\n            hir_error_at_span(\n                argument.span,\n",
+        "count": 1
+      },
+      {
+        "name": "src/hir/validation/call_parameters.rs: exact full-current ownership hook 2",
+        "from": "            )\n        })?;\n        let valid = if facts {\n            actual == OwnershipMode::Value && param.ownership == OwnershipMode::Value\n        } else {\n",
+        "to": "            )\n        })?;\n        let valid = if facts.copy {\n            actual == OwnershipMode::Value && param.ownership == OwnershipMode::Value\n        } else {\n",
+        "count": 1
+      },
+      {
+        "name": "src/hir/validation/call_parameters.rs: exact full-current ownership hook 3",
+        "from": "#[cfg(test)]\nmod tests;\n\n#[cfg(test)]\nmod copy_before;\n#[cfg(test)]\nmod copy_flags_tests;\n",
+        "to": "#[cfg(test)]\nmod tests;\n",
+        "count": 1
+      }
+    ]
+  }
+}

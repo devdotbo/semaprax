@@ -40,6 +40,7 @@ mod host_command;
 mod lexical_exit;
 mod native_borrow;
 mod nominal_facts;
+mod ownership_flags;
 mod owned_buffer;
 mod owned_result_try;
 pub(super) mod owner_renewal;
@@ -7979,8 +7980,12 @@ impl<'a> HirValidator<'a> {
         if *ty == ResolvedType::Never {
             return Ok(false);
         }
-        self.borrowed_type_facts(ty)?
-            .map(|facts| !facts.copy && ownership == OwnershipMode::Own)
+        #[cfg(test)]
+        if ownership_flags::original_selected() {
+            return self.is_owned_resource_before(ty, ownership);
+        }
+        self.borrowed_ownership_copy(ty)?
+            .map(|facts| !facts && ownership == OwnershipMode::Own)
             .ok_or_else(|| {
                 hir_error(format!(
                     "type `{}` has no semantic facts",
@@ -8216,9 +8221,13 @@ impl<'a> HirValidator<'a> {
         if *ty == ResolvedType::Never {
             return Ok(OwnershipMode::Value);
         }
-        self.borrowed_type_facts(ty)?
+        #[cfg(test)]
+        if ownership_flags::original_selected() {
+            return self.expected_ownership_before(ty, non_copy);
+        }
+        self.borrowed_ownership_copy(ty)?
             .map(|facts| {
-                if facts.copy {
+                if facts {
                     OwnershipMode::Value
                 } else {
                     non_copy

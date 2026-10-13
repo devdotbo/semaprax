@@ -1,0 +1,17 @@
+    fn is_owned_resource(
+        &self,
+        ty: &ResolvedType,
+        ownership: OwnershipMode,
+    ) -> Result<bool, Diagnostic> {
+        if *ty == ResolvedType::Never {
+            return Ok(false);
+        }
+        self.borrowed_type_facts(ty)?
+            .map(|facts| !facts.copy && ownership == OwnershipMode::Own)
+            .ok_or_else(|| {
+                hir_error(format!(
+                    "type `{}` has no semantic facts",
+                    ty.identity_key()
+                ))
+            })
+    }

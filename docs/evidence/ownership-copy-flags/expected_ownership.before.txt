@@ -1,0 +1,23 @@
+    fn expected_ownership(
+        &self,
+        ty: &ResolvedType,
+        non_copy: OwnershipMode,
+    ) -> Result<OwnershipMode, Diagnostic> {
+        if *ty == ResolvedType::Never {
+            return Ok(OwnershipMode::Value);
+        }
+        self.borrowed_type_facts(ty)?
+            .map(|facts| {
+                if facts.copy {
+                    OwnershipMode::Value
+                } else {
+                    non_copy
+                }
+            })
+            .ok_or_else(|| {
+                hir_error(format!(
+                    "type `{}` has no semantic facts",
+                    ty.identity_key()
+                ))
+            })
+    }
