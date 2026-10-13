@@ -674,7 +674,7 @@ fn current_scan_receipt_rejects_detached_equal_clone_and_namespace_transplants()
     // their real owners and deliberately do not expose a production Clone.
     let detached_build = tiny(0);
     let detached = caller(&detached_build);
-    assert_eq!(detached.functions, module.functions);
+    assert!(detached.functions.iter().eq(module.functions.iter()));
     assert!(!std::ptr::eq(detached, module));
     let mut duplicate_build = tiny(0);
     let mut duplicate_source = tiny(0);
