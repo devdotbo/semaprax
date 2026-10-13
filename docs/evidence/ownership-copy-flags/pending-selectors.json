@@ -15,7 +15,7 @@
       "ignored": 0,
       "source": "src/hir/validation/ownership_flags/tests.rs",
       "line": 35,
-      "sha256": "8504303f9f674708321469df2070fe75cca78a3e1b2ed5739a696e1de1c4ef43",
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
       "role": "new copy owner"
     },
     {
@@ -25,7 +25,7 @@
       "ignored": 0,
       "source": "src/hir/validation/ownership_flags/tests.rs",
       "line": 85,
-      "sha256": "8504303f9f674708321469df2070fe75cca78a3e1b2ed5739a696e1de1c4ef43",
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
       "role": "new copy owner"
     },
     {
@@ -35,7 +35,7 @@
       "ignored": 0,
       "source": "src/hir/validation/ownership_flags/tests.rs",
       "line": 147,
-      "sha256": "8504303f9f674708321469df2070fe75cca78a3e1b2ed5739a696e1de1c4ef43",
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
       "role": "new copy owner"
     },
     {
@@ -45,7 +45,7 @@
       "ignored": 0,
       "source": "src/hir/validation/ownership_flags/tests.rs",
       "line": 186,
-      "sha256": "8504303f9f674708321469df2070fe75cca78a3e1b2ed5739a696e1de1c4ef43",
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
       "role": "new copy owner"
     },
     {
@@ -55,7 +55,7 @@
       "ignored": 0,
       "source": "src/hir/validation/ownership_flags/tests.rs",
       "line": 233,
-      "sha256": "8504303f9f674708321469df2070fe75cca78a3e1b2ed5739a696e1de1c4ef43",
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
       "role": "new copy owner"
     },
     {
@@ -65,7 +65,7 @@
       "ignored": 0,
       "source": "src/hir/validation/ownership_flags/tests.rs",
       "line": 328,
-      "sha256": "8504303f9f674708321469df2070fe75cca78a3e1b2ed5739a696e1de1c4ef43",
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
       "role": "new copy owner"
     },
     {
