@@ -726,6 +726,7 @@ Audience: all documentation readers.
 - [Bulk UTF-8 String v1](BULK-UTF8-STRING-V1.md)
 - [Checked Literal Format v1](CHECKED-LITERAL-FORMAT-V1.md)
 - [Checked String Allocation v1](CHECKED-STRING-ALLOCATION-V1.md)
+- [Scoped Replay Oracle Account v1](SCOPED-REPLAY-ORACLE-ACCOUNT-V1.md)
 - [Checked final UTF-8 native integration design](CHECKED-STRING-FINAL-UTF8-NATIVE-DESIGN.md)
 - [Native final UTF-8 allocation v1](NATIVE-FINAL-UTF8-ALLOCATION-V1.md)
 - [Copy Record Collections v1](COPY-RECORD-COLLECTIONS-V1.md)

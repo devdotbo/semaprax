@@ -6,6 +6,8 @@
 //! pointer checks add explicit work, and new ordinary DAG storage is prepaid.
 use super::*;
 mod dag_storage;
+#[cfg(test)]
+mod oracle_entry;
 mod ordinary_dag;
 
 pub(super) struct SkeletonWork<'a, 'b> {
@@ -41,6 +43,10 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         budget: &'b mut ReplayBudget,
         index: Option<&'b crate::loop_calls::byte_writer::ModuleIndex<'a>>,
     ) -> Result<Self, Diagnostic> {
+        #[cfg(test)]
+        if let Some(lease) = budget.oracle_lease() {
+            return Self::oracle_with_index(program, function, budget, index, lease);
+        }
         Ok(Self {
             function,
             budget,

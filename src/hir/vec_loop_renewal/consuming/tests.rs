@@ -79,6 +79,38 @@ fn consuming_row_reuses_canonical_reservation_and_replays_missing_or_forged_epoc
     }
 }
 #[test]
+fn funded_consuming_append_matches_the_original_and_pays_every_cursor_and_entry() {
+    use crate::hir::funded::payer::assert_every_boundary;
+    let program = checked();
+    let function = &program.functions[0];
+    let names = |found: &BTreeMap<ExpressionId, &ResolvedBinding>| {
+        found
+            .iter()
+            .map(|(at, binding)| (at.as_str().to_owned(), binding.id.as_str().to_owned()))
+            .collect::<Vec<_>>()
+    };
+    let mut old = BTreeMap::new();
+    append_bindings(&program, function, &mut old);
+    assert_eq!(old.len(), 1);
+    let (value, _, charged) = assert_every_boundary(|reserve| {
+        let mut found = BTreeMap::new();
+        append_bindings_funded(&program, function, &mut found, reserve)?;
+        Ok(names(&found))
+    });
+    assert_eq!(value, names(&old), "same entries as the original append");
+    // One held cursor, then in each of the two scans the nested body walk and
+    // both declaration walks, plus the single published entry.
+    let at = old.keys().next().unwrap();
+    let entry = funded::entry_bytes_for_test::<&ResolvedBinding>(at);
+    assert_eq!(charged, 7 * std::mem::size_of::<Frames<'_>>() + entry);
+    // The funded entry number is the very bound the ACTIVE route debits.
+    let ((), refused, used) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+        assert!(reserve_entry::<&ResolvedBinding>(at));
+    });
+    assert!(!refused);
+    assert_eq!(used, entry);
+}
+#[test]
 fn actual_yielded_item_seed_mutability_and_record_authority_are_independent() {
     let program = checked();
     let function = &program.functions[0];

@@ -48,6 +48,17 @@ impl ReplayBudget {
                     }
                     crate::bounded_output::reserve_active_required(0)
                 }
+                #[cfg(test)]
+                AllocationPayer::Oracle(lease) => {
+                    if self.refusal_spent || lease.refused() {
+                        return Err(self.budget_refusal(
+                            function,
+                            "ordinary builder already failed",
+                            "",
+                        ));
+                    }
+                    lease.charge(0).is_ok()
+                }
                 AllocationPayer::SelectedReservation => self
                     .physical
                     .as_deref_mut()
@@ -72,6 +83,10 @@ impl ReplayBudget {
                 !self.refusal_spent
                     && !crate::bounded_output::active_refused()
                     && crate::bounded_output::reserve_active_required(bytes)
+            }
+            #[cfg(test)]
+            AllocationPayer::Oracle(lease) => {
+                !self.refusal_spent && !lease.refused() && lease.charge(bytes).is_ok()
             }
             AllocationPayer::SelectedReservation => self
                 .physical

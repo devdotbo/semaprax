@@ -84,6 +84,46 @@ fn owned_payload_renewal_replays_exact_history_and_rejects_missing_proof() {
     assert_eq!(bindings_in(&drift, function).len(), 1);
     assert!(crate::hir::validate(&drift).is_err());
 }
+fn normalized(found: BTreeMap<ExpressionId, &ResolvedBinding>) -> Vec<(String, String)> {
+    found
+        .into_iter()
+        .map(|(at, binding)| (at.as_str().to_owned(), binding.id.as_str().to_owned()))
+        .collect()
+}
+#[test]
+fn funded_vec_receiver_matches_the_original_and_refuses_at_every_boundary() {
+    use crate::hir::funded::payer::{assert_every_boundary, Payer};
+    let program = checked();
+    let function = &program.functions[0];
+    let old = normalized(bindings_in(&program, function));
+    assert_eq!(old.len(), 2);
+    let (value, calls, charged) = assert_every_boundary(|reserve| {
+        Ok(normalized(bindings_in_funded(&program, function, reserve)?))
+    });
+    assert_eq!(value, old, "entries and order are the original's");
+    assert!(calls > 10 && charged > 0);
+    // A refusal is never a manufactured smaller set.
+    let mut refusing = Payer::refusing_at(0);
+    assert!(bindings_in_funded(&program, function, &mut |bytes| refusing.pay(bytes)).is_err());
+    // Stale subject: drifted declarations are re-derived, not trusted from a
+    // previous run, and the funded route agrees with the original on them.
+    let mut drift = program.clone();
+    forge_record_field_for_test(
+        &mut drift.declarations,
+        &DeclarationId::new("row"),
+        ResolvedType::I64,
+    );
+    let drifted = normalized(bindings_in(&drift, &drift.functions[0]));
+    let (stale, _, _) = assert_every_boundary(|reserve| {
+        Ok(normalized(bindings_in_funded(
+            &drift,
+            &drift.functions[0],
+            reserve,
+        )?))
+    });
+    assert_eq!(stale, drifted);
+    assert_eq!(stale.len(), 1);
+}
 #[test]
 fn owned_payload_renewal_requires_exact_element_mode_and_whole_source() {
     let program = checked();

@@ -1,6 +1,10 @@
 use super::*;
+#[cfg(test)]
+mod funded;
 mod selected;
 pub(super) mod validation;
+#[cfg(test)]
+pub(crate) use funded::{checked_bindings_funded, checked_bindings_funded_with_work};
 #[cfg(test)]
 pub(crate) use selected::checked_absent_with_work_reservation;
 pub(crate) use selected::checked_bindings_with_reservation_and_work;
@@ -444,6 +448,7 @@ pub(super) fn checked_bindings_with<'a>(
         |binding, value, _| admitted(binding, value),
         |bytes, _| crate::bounded_output::reserve_active_required(bytes),
         |_, _| Ok(()),
+        |_| {},
     )
 }
 fn checked_bindings_with_storage<'a, S>(
@@ -457,6 +462,9 @@ fn checked_bindings_with_storage<'a, S>(
     ) -> Result<bool, crate::diagnostic::Diagnostic>,
     mut reserve: impl FnMut(usize, &mut S) -> bool,
     mut debit: impl FnMut(usize, &mut S) -> Result<(), crate::diagnostic::Diagnostic>,
+    // Told, with no effect on the verdict, that the entry vector itself could
+    // not be laid out or allocated; work and depth verdicts never call it.
+    mut physical: impl FnMut(&mut S),
 ) -> Result<HelperBindings<'a>, crate::diagnostic::Diagnostic> {
     let error = census_error;
     let mut found = HelperBindings::default();
@@ -489,12 +497,18 @@ fn checked_bindings_with_storage<'a, S>(
                                 .len()
                                 .checked_mul(3)
                                 .and_then(|n| n.checked_add(1))
-                                .ok_or_else(error)?;
+                                .ok_or_else(|| {
+                                    physical(storage);
+                                    error()
+                                })?;
                             debit(insertion, storage)?;
                             work = work.checked_sub(insertion).ok_or_else(error)?;
                             found
                                 .insert_with(&value.id, binding, |bytes| reserve(bytes, storage))
-                                .ok_or_else(error)?;
+                                .ok_or_else(|| {
+                                    physical(storage);
+                                    error()
+                                })?;
                         }
                     }
                 }

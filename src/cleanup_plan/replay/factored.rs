@@ -1076,6 +1076,11 @@ fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedF
     SKELETON_MATERIALIZATIONS.with(|count| count.set(saved));
 }
 
+// Pending oracle receiver is exercised only by its explicit private tests.
+// The live hook above remains the complete original ordinary receiver.
+#[cfg(test)]
+mod oracle_hook;
+
 #[cfg(test)]
 #[path = "factored/lexical_plan_tests.rs"]
 mod lexical_plan_tests;

@@ -69,6 +69,10 @@ mod owner;
 #[cfg(test)]
 pub(crate) use owner::validate_monomorphic_owner_with_work;
 pub(crate) use owner::{owner, owner_with, validate_owner};
+#[cfg(test)]
+mod owner_funded;
+#[cfg(test)]
+pub(crate) use owner_funded::{owner_funded, requires_funded, OwnerVerdict};
 
 pub(super) mod rekey;
 

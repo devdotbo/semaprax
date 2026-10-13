@@ -5,6 +5,10 @@ use super::{
 };
 use std::collections::BTreeMap;
 pub(crate) mod empty_clone;
+#[cfg(test)]
+mod funded;
+#[cfg(test)]
+pub(crate) use funded::append_bindings_funded;
 
 #[derive(Clone, Copy)]
 pub(crate) struct Site<'a> {

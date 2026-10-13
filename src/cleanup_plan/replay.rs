@@ -200,6 +200,7 @@ impl ReplayBudget {
         if self.lent_skeleton {
             return self.charge_skeleton(function, units, phase);
         }
+        self.charge_oracle_work(function, units, phase)?;
         self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
             self.budget_refusal(
                 function,
@@ -240,6 +241,7 @@ impl ReplayBudget {
         if self.refusal_spent {
             return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
         }
+        self.charge_oracle_work(function, units, phase)?;
         let spent = self.skeleton_spent.checked_add(units).ok_or_else(|| {
             self.budget_refusal(
                 function,
@@ -580,7 +582,7 @@ fn validate_structure_with_budget_storage<'hir>(
     if plan.schema != expected_schema {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "uses cleanup-plan schema `{}` instead of HIR-derived `{expected_schema}`",
                 plan.schema
             ),
@@ -1713,7 +1715,7 @@ fn collect_shape(
                 if leaves.insert(*flag, leaf.clone()).is_some() {
                     return Err(replay_error(
                         function,
-                        format!("liveness flag {} is repeated", flag.0),
+                        format_args!("liveness flag {} is repeated", flag.0),
                     ));
                 }
                 if !places.insert(leaf.place) {
@@ -2232,7 +2234,7 @@ fn validate_blocks_and_edges(
                     .map_err(|_| {
                         replay_error(
                             function,
-                            format!("call commit has unknown callee `{}`", fact.callee),
+                            format_args!("call commit has unknown callee `{}`", fact.callee),
                         )
                     })?;
                     if params.len() != fact.arguments.len() {
@@ -3611,7 +3613,7 @@ fn expression_skeleton_run<'hir>(
                                     .ok_or_else(|| {
                                         replay_error(
                                             function,
-                                            format!("unknown skeleton callee `{callee}`"),
+                                            format_args!("unknown skeleton callee `{callee}`"),
                                         )
                                     })?;
                                 if work.budget.selected()
@@ -4538,7 +4540,7 @@ fn expression_skeleton_run<'hir>(
                 if !replaced.insert(field_id) {
                     return Err(replay_error(
                         function,
-                        format!("record update repeats field `{}`", field.field),
+                        format_args!("record update repeats field `{}`", field.field),
                     ));
                 }
                 let suffixes = produced.take().expect("update field path retained");
@@ -5006,12 +5008,15 @@ fn authenticated_try_stage_source(
     }
     for id in [result, ok_case, ok_field, err_case, err_field] {
         let declaration = program.declarations().declaration(id).ok_or_else(|| {
-            replay_error(function, format!("postfix `?` references unknown `{id}`"))
+            replay_error(
+                function,
+                format_args!("postfix `?` references unknown `{id}`"),
+            )
         })?;
         if declaration.identity_origin != IdentityOrigin::CompilerOwned {
             return Err(replay_error(
                 function,
-                format!("postfix `?` reference `{id}` is not compiler-owned"),
+                format_args!("postfix `?` reference `{id}` is not compiler-owned"),
             ));
         }
     }
@@ -5105,13 +5110,13 @@ fn authenticated_try_option_stage_source(
         let declaration = program.declarations().declaration(id).ok_or_else(|| {
             replay_error(
                 function,
-                format!("Option postfix `?` references unknown `{id}`"),
+                format_args!("Option postfix `?` references unknown `{id}`"),
             )
         })?;
         if declaration.identity_origin != IdentityOrigin::CompilerOwned {
             return Err(replay_error(
                 function,
-                format!("Option postfix `?` reference `{id}` is not compiler-owned"),
+                format_args!("Option postfix `?` reference `{id}` is not compiler-owned"),
             ));
         }
     }
@@ -5784,7 +5789,7 @@ fn finish_update_paths(
         .ok_or_else(|| {
             replay_error(
                 function,
-                format!("record update has unknown record `{record}`"),
+                format_args!("record update has unknown record `{record}`"),
             )
         })?;
     let arguments = record_destructure::update::concrete_arguments(function, expression, record)?;
@@ -6280,7 +6285,10 @@ fn transfer_completed_paths(
             continue;
         }
         let source = path.owned_source.take().ok_or_else(|| {
-            replay_error(function, format!("{description} has no HIR cleanup source"))
+            replay_error(
+                function,
+                format_args!("{description} has no HIR cleanup source"),
+            )
         })?;
         let transfer_at = work.clone_owned(&at, "completed transfer expression clone")?;
         let transfer_destination =
@@ -7110,7 +7118,7 @@ fn require_expression(
     } else {
         Err(replay_error(
             function,
-            format!("cleanup plan references unknown expression `{expression}`"),
+            format_args!("cleanup plan references unknown expression `{expression}`"),
         ))
     }
 }
@@ -7125,7 +7133,7 @@ fn require_status(
     } else {
         Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup plan references unknown status source `{}`",
                 source.expression
             ),
@@ -7140,10 +7148,106 @@ fn block_exists(function: &ResolvedFunction, block: BlockId) -> bool {
 }
 
 fn u32_index(function: &ResolvedFunction, index: usize, what: &str) -> Result<u32, Diagnostic> {
-    u32::try_from(index).map_err(|_| replay_error(function, format!("too many {what}s")))
+    u32::try_from(index).map_err(|_| replay_error(function, format_args!("too many {what}s")))
 }
 
-fn replay_error(function: &ResolvedFunction, message: impl Into<String>) -> Diagnostic {
+/// Borrowing message bridge for `replay_error`. Nothing is owned until the
+/// route is chosen: the ordinary route reproduces the original allocations, the
+/// test-only funded route counts and prepays before constructing any text.
+enum ReplayMessage<'a> {
+    Borrowed(&'a str),
+    Owned(String),
+    Formatted(std::fmt::Arguments<'a>),
+}
+
+impl<'a> From<&'a str> for ReplayMessage<'a> {
+    fn from(message: &'a str) -> Self {
+        Self::Borrowed(message)
+    }
+}
+
+impl<'a> From<&'a String> for ReplayMessage<'a> {
+    fn from(message: &'a String) -> Self {
+        Self::Borrowed(message.as_str())
+    }
+}
+
+impl From<String> for ReplayMessage<'_> {
+    fn from(message: String) -> Self {
+        Self::Owned(message)
+    }
+}
+
+impl<'a> From<std::fmt::Arguments<'a>> for ReplayMessage<'a> {
+    fn from(message: std::fmt::Arguments<'a>) -> Self {
+        Self::Formatted(message)
+    }
+}
+
+impl ReplayMessage<'_> {
+    /// The original owned argument: borrowed text converts as `Into<String>`
+    /// did, an owned String moves unchanged, arguments format once as the
+    /// original pre-call `format!` did.
+    fn into_original(self) -> String {
+        match self {
+            Self::Borrowed(message) => message.into(),
+            Self::Owned(message) => message,
+            Self::Formatted(arguments) => std::fmt::format(arguments),
+        }
+    }
+}
+
+fn replay_error<'a>(
+    function: &ResolvedFunction,
+    message: impl Into<ReplayMessage<'a>>,
+) -> Diagnostic {
+    let message = message.into();
+    #[cfg(test)]
+    match allocation::authority_for_function(function) {
+        Ok(None) => {}
+        Ok(Some(lease)) => return funded_replay_error(lease, function, message),
+        Err(_) => {
+            // A stale or expired subject never falls back to the production
+            // ledger or the ordinary allocation route.
+            return Diagnostic::io_static(
+                "SPX-H006",
+                "oracle invocation authority refused a replay diagnostic",
+            );
+        }
+    }
+    replay_error_old(function, message.into_original())
+}
+
+/// Funded route. Borrowed and formatted messages are counted and prepaid before
+/// any diagnostic text exists. An already owned String was allocated by the
+/// caller before this call and cannot be prepaid: the account records that as a
+/// sticky physical failure so the live hook fails visibly, never a free pass.
+#[cfg(test)]
+fn funded_replay_error(
+    lease: allocation::OracleLease,
+    function: &ResolvedFunction,
+    message: ReplayMessage<'_>,
+) -> Diagnostic {
+    let result = match &message {
+        ReplayMessage::Borrowed(text) => {
+            allocation::replay_error_funded(lease, function, format_args!("{text}"))
+        }
+        ReplayMessage::Formatted(arguments) => {
+            allocation::replay_error_funded(lease, function, *arguments)
+        }
+        ReplayMessage::Owned(text) => {
+            lease.fail_physical("replay diagnostic message was allocated before its prepayment");
+            allocation::replay_error_funded(lease, function, format_args!("{text}"))
+        }
+    };
+    match result {
+        Ok(diagnostic) => diagnostic,
+        Err(failure) => failure.into_diagnostic(),
+    }
+}
+
+/// Original `replay_error` body, unchanged and independent of the bridge.
+fn replay_error_old(function: &ResolvedFunction, message: impl Into<String>) -> Diagnostic {
     Diagnostic::io(
         "SPX-H006",
         format!(
@@ -7153,6 +7257,9 @@ fn replay_error(function: &ResolvedFunction, message: impl Into<String>) -> Diag
         ),
     )
 }
+
+#[cfg(test)]
+mod oracle_controls;
 
 #[cfg(test)]
 #[path = "replay_tests.rs"]

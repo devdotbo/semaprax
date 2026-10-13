@@ -12,11 +12,21 @@ pub(super) struct Failure {
 pub(super) enum Payer<'p> {
     Selected(&'p mut PhysicalReservation),
     ActiveBuilder,
+    #[cfg(test)]
+    Oracle(crate::cleanup_plan::replay::allocation::OracleLease),
 }
 impl Payer<'_> {
     fn reserve(&mut self, bytes: usize) -> Result<(), ()> {
         match self {
             Self::Selected(physical) => physical.reserve(bytes).map_err(|_| ()),
+            #[cfg(test)]
+            Self::Oracle(lease) => {
+                if lease.refused() {
+                    Err(())
+                } else {
+                    lease.charge(bytes).map_err(|_| ())
+                }
+            }
             Self::ActiveBuilder => {
                 if crate::bounded_output::active_refused()
                     || !crate::bounded_output::reserve_active_required(bytes)

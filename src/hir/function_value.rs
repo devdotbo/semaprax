@@ -64,6 +64,10 @@ pub(crate) fn walk<'a>(function: &'a ResolvedFunction, mut visit: impl FnMut(&'a
         super::push_resolved_expression_children_in_authored_order(expr, &mut pending);
     }
 }
+#[cfg(test)]
+mod funded;
+#[cfg(test)]
+pub(crate) use funded::{walk_funded, walk_funded_paying};
 pub fn target_universe(program: &ResolvedProgram) -> Vec<&ResolvedFunction> {
     let mut ids = BTreeSet::new();
     for f in program.functions.iter().chain(

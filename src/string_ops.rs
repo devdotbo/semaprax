@@ -80,7 +80,14 @@
 //! A value the target type cannot hold selects the checked
 //! `semaprax.convert.v1` status: code 1 for out of range, code 2 for NaN.
 
+#[cfg(test)]
+mod concat_funded;
 pub(crate) mod conditions;
+#[cfg(test)]
+pub(crate) use concat_funded::{
+    is_same_owner_concat_hir_funded, same_owner_concat_appends_funded,
+    same_owner_concat_operands_funded,
+};
 pub(crate) mod take;
 
 #[cfg(test)]

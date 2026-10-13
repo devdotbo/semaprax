@@ -680,6 +680,11 @@ pub(crate) fn requires_same_owner_set(function: &crate::hir::ResolvedFunction) -
 }
 
 #[cfg(test)]
+mod funded;
+#[cfg(test)]
+pub(crate) use funded::same_owner_set_bindings_funded;
+
+#[cfg(test)]
 mod tests {
     /// `tests/cleanup_backends.rs` path-includes `src/byte_data_capacity.rs`,
     /// which reads this ceiling through `crate::byte_ops`. That harness cannot
