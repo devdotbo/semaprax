@@ -100,3 +100,5 @@ that earlier provider payload. No lint suppression or work allowance was added.
 These constructors and predicates remain private staged work: full ordered
 classifier state, shape construction, streaming collector and genuine schema
 production adoption are still required before integration or funding claims.
+
+The private ordered carrier now uses online AVL insertion/removal and exact full UTF-8 keys, with fallible prepaid backing and existing cumulative work. It retains an independent BTreeMap receiving trace. Three new controls are authored and unexecuted. It has not been adopted by the production inventory classifier.

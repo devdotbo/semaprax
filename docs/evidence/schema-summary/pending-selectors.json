@@ -36,6 +36,9 @@
     "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::constructors::complete_callable_nominal_identity_zero_one_seventeen_arguments_keep_paid_work_and_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::constructors::complete_inline_semantic_substitution_refusal_and_nested_argument_clone_keep_original",
     "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::constructors::complete_prior_key_substitution_and_storage_receivers_remain_independent_byte_exact",
-    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_native_authored_admission_first_lookup_order_and_forged_metadata_keep_paid_drop"
+    "cleanup_plan::replay::paid_type_facts::inventory_nested::tests::full_native_authored_admission_first_lookup_order_and_forged_metadata_keep_paid_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::online_avl_keeps_complete_owned_map_receiver_rotations_duplicates_removal_and_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::actual_avl_backing_and_work_zero_exact_short_keep_first_refusal_and_receiving_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_ordered::tests::paid_avl_reuses_deleted_slots_and_retains_actual_frontier_capacity"
   ]
 }

@@ -224,6 +224,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/bounded_output/classifier_string/inventory_work.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_encoded.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_ordered.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_ordered/tests.rs"),
         include_str!(
             "../src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests/constructors.rs"
         ),
