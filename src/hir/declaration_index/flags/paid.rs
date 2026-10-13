@@ -26,6 +26,25 @@ impl DeclarationIndex {
             None => Ok(result),
         }
     }
+    // Same complete classifier substitution, also usable by outer cleanup walks
+    // that already discard the inner semantic Diagnostic. None is semantic;
+    // the original payer's first physical refusal stays a held Diagnostic.
+    pub(crate) fn substitute_type_paid<P: TypeFactsPayer>(
+        &self,
+        ty: &ResolvedType,
+        owner: &crate::hir::DeclarationId,
+        arguments: &[ResolvedType],
+        mut payer: P,
+    ) -> Result<Option<ResolvedType>, Diagnostic> {
+        payer.bytes(size_of::<Storage<P>>())?;
+        let mut storage = Storage { payer, first: None };
+        let value = substitute::resolve(ty, owner, arguments, &mut storage);
+        match storage.first {
+            Some(error) => Err(error),
+            None => Ok(value),
+        }
+    }
+
     fn flags_paid<P: TypeFactsPayer>(
         &self,
         ty: &ResolvedType,

@@ -11,7 +11,7 @@ fn literal(file: &'static str) -> &'static str {
         .unwrap()
         .0
 }
-fn fixtures() -> [ResolvedProgram; 3] {
+pub(super) fn fixtures() -> [ResolvedProgram; 3] {
     let replay = include_str!("../../replay_tests.rs");
     let try_source = replay
         .split_once("const TRY_SOURCE: &str = r#\"")
@@ -28,7 +28,7 @@ fn fixtures() -> [ResolvedProgram; 3] {
     .map(|source| crate::hir::resolve(&crate::parse(source, "classifier.spx").unwrap()).unwrap())
 }
 
-fn payer<'a>(function: &'a ResolvedFunction, budget: &'a mut ReplayBudget) -> Payer<'a> {
+pub(super) fn payer<'a>(function: &'a ResolvedFunction, budget: &'a mut ReplayBudget) -> Payer<'a> {
     Payer {
         function,
         budget,
@@ -381,6 +381,9 @@ fn complete_classifier_source_join_keeps_the_existing_payer_and_full_receiver_in
         include_str!("../../../bounded_output/classifier_string.rs"),
         include_str!("../paid_type_facts.rs"),
         include_str!("droppability.rs"),
+        include_str!("droppability/paid.rs"),
+        include_str!("droppability/key.rs"),
+        include_str!("droppability/text.rs"),
         include_str!("../../../hir/declaration_index/flags/paid.rs"),
         include_str!("../../../hir/declaration_index/flags/paid/admission.rs"),
         include_str!("../../../hir/declaration_index/flags/paid/builtin.rs"),
@@ -401,6 +404,7 @@ fn complete_classifier_source_join_keeps_the_existing_payer_and_full_receiver_in
         production,
         include_str!("../../../bounded_output/classifier_string/tests.rs"),
         include_str!("tests.rs"),
+        include_str!("droppability/tests.rs"),
         include_str!("../../../cleanup.rs"),
         include_str!("../../../hir/declaration_index/flags.rs"),
     ];

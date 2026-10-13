@@ -1,8 +1,10 @@
-//! Complete ordinary droppability receiver, with only its fact lookup paid.
-//! Pending/visited/substitution and semantic String failures remain the original
-//! allocating boundary. cleanup.rs retains the complete independent old body.
+//! Complete ordinary callback receiver retained as an independent test oracle.
+//! The paid child acquires its outer traversal, substitution and semantic text
+//! through the caller payer; cleanup.rs retains the independent original body.
 use crate::diagnostic::Diagnostic;
-use crate::hir::{ResolvedType, ResolvedTypeDeclarationKind, TypeFlags};
+#[cfg(test)]
+use crate::hir::TypeFlags;
+use crate::hir::{ResolvedType, ResolvedTypeDeclarationKind};
 use std::collections::BTreeSet;
 
 pub(super) enum Failure {
@@ -10,6 +12,7 @@ pub(super) enum Failure {
     Semantic(String),
 }
 
+#[cfg(test)]
 pub(super) fn needs_drop(
     program: &dyn crate::cleanup::ReplayContext,
     ty: &ResolvedType,
@@ -170,3 +173,11 @@ pub(super) fn needs_drop(
         None => result.map_err(Failure::Semantic),
     }
 }
+
+mod key;
+mod paid;
+#[cfg(test)]
+mod tests;
+mod text;
+pub(super) use paid::needs_drop as needs_drop_paid;
+pub(super) use text::replay_diagnostic;

@@ -13,6 +13,27 @@ pub(crate) trait Payer {
     fn construction_refusal(&mut self, message: &'static str) -> Diagnostic;
 }
 
+impl<P: Payer + ?Sized> Payer for &mut P {
+    fn bytes(&mut self, bytes: usize) -> Result<(), Diagnostic> {
+        (**self).bytes(bytes)
+    }
+    fn grow<T>(&mut self, values: &mut Vec<T>, additional: usize) -> Result<(), Diagnostic> {
+        (**self).grow(values, additional)
+    }
+    fn node<K, V>(&mut self) -> Result<(), Diagnostic> {
+        (**self).node::<K, V>()
+    }
+    fn clone_type(&mut self, ty: &ResolvedType) -> Result<ResolvedType, Diagnostic> {
+        (**self).clone_type(ty)
+    }
+    fn boxed_type(&mut self, ty: ResolvedType) -> Result<Box<ResolvedType>, Diagnostic> {
+        (**self).boxed_type(ty)
+    }
+    fn construction_refusal(&mut self, message: &'static str) -> Diagnostic {
+        (**self).construction_refusal(message)
+    }
+}
+
 pub(super) struct Storage<P> {
     pub(super) payer: P,
     pub(super) first: Option<Diagnostic>,

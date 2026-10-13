@@ -3892,8 +3892,12 @@ These areas are deliberately outside the public compiler contract:
   bodies remain independent. `bounded_output/classifier_string.rs` owns physical
   string growth while preserving original logical floor/partial-output rules.
   `paid_type_facts/droppability.rs` retains the complete ordinary cleanup walk
-  with a paid fact callback; its outer pending/visited/substitution/semantic
-  String storage remains unpaid. These internal owners grant no replay admission
+  with a paid fact callback as an independent test oracle. Its
+  `droppability/{paid,key,text}.rs` children acquire borrowed-root/owned-child
+  pending and visited backing, complete substitution and raw semantic/final
+  replay diagnostic strings through that same invocation payer. The separate
+  key retains raw outer formatting and the original capped nominal-child
+  frontier; absent visited keys acquire conservative BTree node upper bounds. These internal owners grant no replay admission
   and make no all-profile funding claim. `replay/supplemental.rs`
   independently reconstructs their argument slots.
 - `src/hir/workspace_link/native_owner.rs` admits only the destructor of a

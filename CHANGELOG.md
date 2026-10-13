@@ -1,5 +1,14 @@
 # Changelog
 
+- Author caller-paid outer cleanup droppability construction on the existing
+  replay type-fact payer: borrowed root and complete owned pending/visited
+  payloads, substitution, original raw/capped diagnostic keys, semantic text
+  and final replay diagnostics. Preserve independent full old receivers and
+  exact cache/diagnostic precedence; add success/hostile, logical-floor,
+  exact/short/zero/sticky and receiving/unwind/Drop controls. Absent visited keys
+  acquire conservative BTree node bounds, separate from actual allocations.
+  Source-only; executable qualification and broader funding claims remain pending.
+
 - Author a constructor-local paid ordered HIR identity directory. Stage shared
   or weak AVL suffixes before changing unique prefixes, retaining duplicate
   priority, canonical merge order and complete original BTree receivers. Add

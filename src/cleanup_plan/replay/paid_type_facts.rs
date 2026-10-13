@@ -138,13 +138,18 @@ pub(super) fn needs_drop(
         return crate::cleanup::type_needs_resource_cleanup(program, ty)
             .map_err(|message| replay_error(function, message));
     }
-    droppability::needs_drop(program, ty, |ty| {
-        flags(program.declarations(), function, ty, budget)
-    })
-    .map_err(|failure| match failure {
-        droppability::Failure::Physical(error) => error,
-        droppability::Failure::Semantic(message) => replay_error(function, message),
-    })
+    let mut payer = Payer {
+        function,
+        budget,
+        ledger: ClassifierLedger::capture(),
+    };
+    match droppability::needs_drop_paid(program, ty, &mut payer) {
+        Ok(value) => Ok(value),
+        Err(droppability::Failure::Physical(error)) => Err(error),
+        Err(droppability::Failure::Semantic(message)) => Err(droppability::replay_diagnostic(
+            function, &message, &mut payer,
+        )?),
+    }
 }
 #[cfg(test)]
 thread_local! { static SAVED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) }; }
