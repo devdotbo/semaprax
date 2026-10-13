@@ -4,6 +4,24 @@
 use super::*;
 use std::fmt::{self, Write};
 
+/// The new funded constructor API never treats a detached ordinary budget
+/// as backing authority. The complete old unfunded compatibility API remains.
+pub(super) fn current(payer: &mut Payer<'_>) -> Result<(), Diagnostic> {
+    payer.current()?;
+    if !payer.budget.pays_allocations() {
+        return Err(Diagnostic::io_static(
+            "SPX-H006",
+            "ordinary inventory constructors require a live backing payer",
+        ));
+    }
+    payer.budget.reserve_bytes(
+        payer.function,
+        0,
+        "inventory held paid constructor authentication",
+    )?;
+    Ok(())
+}
+
 struct Text<'a, 'b> {
     payer: &'a mut Payer<'b>,
     bytes: String,
@@ -11,7 +29,7 @@ struct Text<'a, 'b> {
 }
 impl Text<'_, '_> {
     fn append(&mut self, value: &str) -> Result<(), Diagnostic> {
-        self.payer.current()?;
+        current(self.payer)?;
         let function = self.payer.function;
         self.payer
             .budget
@@ -29,6 +47,13 @@ impl Text<'_, '_> {
                     .construction_refusal("inventory diagnostic string capacity overflowed")
             })?;
             let target = required.max(doubled).max(8);
+            // Replacement may copy the complete initialized old prefix. Pay
+            // that real copy bound separately; heap capacity is not work.
+            self.payer.budget.charge(
+                function,
+                self.bytes.len(),
+                "inventory diagnostic retained bytes recopied",
+            )?;
             // Pay the complete replacement while the previous backing is live.
             self.payer.budget.reserve_bytes(
                 function,
@@ -70,7 +95,7 @@ pub(super) fn raw(
     payer: &mut Payer<'_>,
     arguments: fmt::Arguments<'_>,
 ) -> Result<String, Diagnostic> {
-    payer.current()?;
+    current(payer)?;
     let mut text = Text {
         payer,
         bytes: String::new(),
@@ -82,7 +107,9 @@ pub(super) fn raw(
     }
     // Match the complete original formatter's contract for a trait formatter
     // which returns fmt::Error without a typed acquisition/work refusal.
-    formatted.expect("a formatting trait implementation returned an error");
+    formatted.expect(
+        "a formatting trait implementation returned an error when the underlying stream did not",
+    );
     Ok(text.bytes)
 }
 
@@ -91,20 +118,28 @@ pub(super) fn owner_matches(
     owner: &DeclarationId,
     payer: &mut Payer<'_>,
 ) -> Result<bool, Diagnostic> {
-    payer.current()?;
+    same_bytes(actual.as_str(), owner.as_str(), payer)
+}
+
+pub(super) fn same_bytes(
+    actual: &str,
+    expected: &str,
+    payer: &mut Payer<'_>,
+) -> Result<bool, Diagnostic> {
+    current(payer)?;
     let function = payer.function;
     payer
         .budget
-        .charge(function, 2, "inventory parameter owner length inspection")?;
-    if actual.as_str().len() != owner.as_str().len() {
+        .charge(function, 2, "inventory held identity length inspection")?;
+    if actual.len() != expected.len() {
         return Ok(false);
     }
     // Equal-length identity equality compares these held UTF-8 bytes. This
     // explicit comparison bound is independent of any backing reservation.
     payer.budget.charge(
         function,
-        actual.as_str().len(),
-        "inventory parameter owner bytes compared",
+        actual.len(),
+        "inventory held identity bytes compared",
     )?;
-    Ok(actual == owner)
+    Ok(actual == expected)
 }

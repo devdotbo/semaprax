@@ -66,6 +66,8 @@ fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapte
         .unwrap();
     let projected = format!("{head}#[cfg(test)]\nthread_local! {{ static SAVED:{tail}");
     let projected = projected
+        .strip_suffix("\nmod inventory_profile;\n")
+        .unwrap()
         .strip_suffix("\nmod inventory_text;\n")
         .unwrap()
         .strip_suffix("\n#[cfg(test)]\nmod inventory_substitute_tests;\n")

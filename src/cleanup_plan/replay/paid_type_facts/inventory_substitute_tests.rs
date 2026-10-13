@@ -383,7 +383,14 @@ fn raw_utf8_owner_comparison_and_diagnostic_writes_use_the_same_finite_work() {
     assert!(measured.allocated <= paid);
     assert_eq!(measured.allocated, measured.freed);
     assert_eq!(measured.live, 0);
-    for work in [spent, spent - 1, 0] {
+    for work in [
+        spent,
+        spent - 1,
+        0,
+        1,
+        3 + owner.as_str().len() - 1,
+        3 + owner.as_str().len(),
+    ] {
         let ((matched, measured), refused, paid) =
             crate::bounded_output::with_limit_usage(usize::MAX, || {
                 measure(|| {
@@ -391,9 +398,14 @@ fn raw_utf8_owner_comparison_and_diagnostic_writes_use_the_same_finite_work() {
                     budget
                         .charge(function, 0, "raw text finite work setup")
                         .unwrap();
+                    assert!(budget.pays_allocations() && budget.refusal_text.is_some());
+                    let construction_start = current_metrics();
                     budget.remaining = work;
                     let result = substitute(&template, &owner, &[], function, &mut budget);
                     let matched = result == expected;
+                    if work <= 3 + owner.as_str().len() {
+                        assert_eq!(current_metrics().allocated, construction_start.allocated);
+                    }
                     if work < spent {
                         assert!(!matched && result.is_err() && budget.refusal_spent);
                         let before = current_metrics();
@@ -413,4 +425,46 @@ fn raw_utf8_owner_comparison_and_diagnostic_writes_use_the_same_finite_work() {
         assert_eq!(measured.allocated, measured.freed);
         assert_eq!(measured.live, 0);
     }
+}
+
+#[test]
+fn detached_paid_constructor_refuses_without_affecting_complete_ordinary_compatibility() {
+    let program = fixture();
+    let function = &program.functions[0];
+    let argument = ResolvedType::Function {
+        parameters: vec![ResolvedType::Bytes; 17],
+        result: Box::new(ResolvedType::Unit),
+    };
+    let template = ResolvedType::TypeParameter {
+        owner: function.id.clone(),
+        index: 0,
+    };
+    assert!(
+        crate::hir::substitute_type(&template, &function.id, std::slice::from_ref(&argument))
+            .is_ok()
+    );
+    let (refused, observed) = measure(|| {
+        let mut budget = ReplayBudget::unobserved();
+        let result = substitute(
+            &template,
+            &function.id,
+            std::slice::from_ref(&argument),
+            function,
+            &mut budget,
+        );
+        let error = result.unwrap_err();
+        assert_eq!(
+            error,
+            Diagnostic::io_static(
+                "SPX-H006",
+                "ordinary inventory constructors require a live backing payer"
+            )
+        );
+        drop(error);
+        drop(budget);
+        true
+    });
+    assert!(refused && !observed.invalid);
+    assert_eq!(observed.allocated, 0);
+    assert_eq!(observed.live, 0);
 }

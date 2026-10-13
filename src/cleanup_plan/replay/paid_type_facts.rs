@@ -227,7 +227,7 @@ pub(super) fn inventory_needs_drop(
     ty: &ResolvedType,
     payer: &mut Payer<'_>,
 ) -> Result<bool, Diagnostic> {
-    payer.current()?;
+    inventory_text::current(payer)?;
     match droppability::needs_drop_paid(program, ty, payer) {
         Ok(value) => Ok(value),
         Err(droppability::Failure::Physical(error)) => Err(error),
@@ -343,3 +343,5 @@ mod inventory_clone;
 mod inventory_substitute_tests;
 
 mod inventory_text;
+
+mod inventory_profile;

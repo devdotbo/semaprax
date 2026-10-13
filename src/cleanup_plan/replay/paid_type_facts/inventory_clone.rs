@@ -4,7 +4,7 @@ use super::*;
 // Final child counts are already known. Match the ordinary Vec clone's exact
 // backing rather than using the dynamic scratch frontier's growth policy.
 pub(super) fn exact<T>(count: usize, payer: &mut Payer<'_>) -> Result<Vec<T>, Diagnostic> {
-    payer.current()?;
+    inventory_text::current(payer)?;
     payer
         .budget
         .reserve_array::<T>(payer.function, count, "inventory fixed type children")?;
@@ -53,7 +53,7 @@ pub(super) fn clone_type(
     payer: &mut Payer<'_>,
 ) -> Result<ResolvedType, Diagnostic> {
     let function = payer.function;
-    payer.current()?;
+    inventory_text::current(payer)?;
     payer
         .budget
         .charge(function, 1, "inventory cloned type root")?;

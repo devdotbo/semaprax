@@ -16,7 +16,7 @@ pub(super) fn substitute(
     payer: &mut Payer<'_>,
 ) -> Result<ResolvedType, Diagnostic> {
     let function = payer.function;
-    payer.current()?;
+    inventory_text::current(payer)?;
     payer
         .budget
         .charge(function, 1, "inventory substitution root")?;

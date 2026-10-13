@@ -18,6 +18,10 @@
     "src/cleanup_plan/replay/paid_type_facts/droppability.rs": {
       "archive": "docs/evidence/schema-summary/droppability.rs.before",
       "sha256": "3640caed18c0fc91e757c519adc4911792d5f2a41fa9b1adea8276c7a1519abe"
+    },
+    "src/cleanup.rs": {
+      "archive": "docs/evidence/schema-summary/cleanup.rs.before",
+      "sha256": "dd0fecd259a9b8d06feba500e9cf13dbdccae7f7a21c3f2dd94ec8659cee521a"
     }
   },
   "current_sources": {
@@ -25,15 +29,18 @@
     "src/cleanup/schema_summary/generic_record.rs": "a46d2b2b6b83918f72eab634ced94c6982b4e25f92b3b585afd4b40f84328c1a",
     "src/cleanup/schema_summary/support.rs": "eb9a6cd7961d586370fce7b30552ef0e5ccd4c5d23032a9717447fe32efbe6f2",
     "src/cleanup/schema_summary/tests.rs": "56c3e5775113bb14b6f772d46aec97a6e33550c69ccf9430d550141c7fa4b585",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "deb58de66d1c906868fb7fa1ffc702d59d9c97e0f98aaa0c9602874fb647029f",
-    "src/cleanup_plan/replay/paid_type_facts.rs": "b9f12156ab821b937ce14b013be70d2bd8071e2e5c9ba9358b51412bd5a16ce4",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs": "31d0898c1209042544909910f91aab105012637e57e94d5865edc4b120e7718a",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs": "37c8c7ba45f0b6715d7cd3a4942d2ea11fb28e23b9f687911c5ecf61f4353d53",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs": "87ac8dcdcda35af830267a16fc1683bd79134febbfd01cf182f042f691a6b9c0",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "4d8805020fe2aaf58f3cd3f59a73a7019964e3694a73b0d31071eaf4bf684c22",
+    "src/cleanup_plan/replay/paid_type_facts.rs": "aa934005b920d78904051002d8c99f0205e20cede00590c17b272541f30bda02",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs": "211e19f9df39443f84d5f582b6c149f87d91e43161ea81fbe1a6899040310019",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs": "9edcfe04ec45408193fe8d7969b2cd2bf756498df9d5b43e4c2d6fcb569644e2",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs": "a22ad9d3b05506fcb2c1e4ccbb9a175486305fd792de5bfb4fcab031aa5bdf52",
     "src/cleanup_plan/replay/paid_type_facts/droppability.rs": "50553857f7a33d60b245f66bdc3c380f65b8ba5ae5fa53e776fd2b419da80e76",
-    "tests/hir_module_boundaries.rs": "f5202e2a7b2507669f38c0938d016bd675e23c904111b3e86ef87f4c36249eb5",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "59f98739e22089b43bf96b74f42a8ceb4d2e4f7c2cf350b4e588835f5d3313d6",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_text.rs": "7af1f83ea6dfdcf863870bf544c1558c9e30ee5e2fd67300f0f729ee18be7cc3"
+    "tests/hir_module_boundaries.rs": "41e0a2886ff7255838b1a679f00191aefc6b4c37e57cc32762e3596ad6deed80",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "dd666fa8697be1e56b098999f2a29809816cba0eaaf72d52936db3ed0a76d394",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_text.rs": "34c5813dc5dff46bd9dd9eee480fea834c2e4d82f8eb22e7a1abfc81288493fa",
+    "src/cleanup.rs": "e2a653179270f02ca7d56cfffc11e503043fd00068aac09152a89a493660159f",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs": "1b3dff363b517686e0624dd29a8c703e9b5b09928d29f1da11345510f1695869",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs": "82942c977e8f197b0f1669e795830895648f2f72e28daa1915513ad2cc72d5ee"
   },
   "pending_selectors": [
     "cleanup::schema_summary::tests::complete_ordinary_summary_matches_full_receiver_and_receiving_drop",
@@ -49,12 +56,24 @@
     "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::held_substitution_payer_refuses_cross_invocation_before_construction",
     "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::raw_missing_parameter_and_each_actual_reservation_boundary_keep_sticky_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_tests::full_droppability_source_keeps_complete_original_plus_raw_text_adapter",
-    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::raw_utf8_owner_comparison_and_diagnostic_writes_use_the_same_finite_work"
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::raw_utf8_owner_comparison_and_diagnostic_writes_use_the_same_finite_work",
+    "cleanup_plan::replay::paid_type_facts::inventory_substitute_tests::detached_paid_constructor_refuses_without_affecting_complete_ordinary_compatibility",
+    "cleanup_plan::replay::paid_type_facts::inventory_profile::tests::full_profile_receiver_preserves_canonical_shapes_limits_and_prepaid_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_profile::tests::semantic_profile_limit_stays_inline_until_the_complete_final_boundary",
+    "cleanup_plan::replay::paid_type_facts::inventory_profile::tests::complete_original_cleanup_root_remains_byte_exact_with_paid_profile_separate",
+    "cleanup_plan::replay::paid_type_facts::inventory_profile::tests::completed_profile_cannot_publish_after_same_budget_sticky_refusal"
   ],
   "review": {
-    "receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-constructor-review-814-f9aad-20261013/receipt.json",
+    "receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-constructor-review-814-f9aad-20261013/process-receipt.json",
     "status": "independent review of pre-correction helpers; local dispositions and exact source projections checked statically; controls unexecuted",
     "provider_list_price_estimate_usd": 0.2244366,
     "actual_billing": "unknown"
+  },
+  "text_review": {
+    "receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-text-review-814-20261013/process-receipt.json",
+    "model": "claude-sonnet-5-5",
+    "provider_list_price_estimate_usd": 0.1872086,
+    "actual_billing": "unknown",
+    "status": "pre-correction source review; retained-prefix work and early-work controls corrected locally; no runtime qualification"
   }
 }
