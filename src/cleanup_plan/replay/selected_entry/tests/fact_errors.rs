@@ -58,11 +58,23 @@ fn paid_fact_cursor_and_growth_exact_short_keep_first_receipt_and_drop_one_owner
     });
     assert!(!refused);
     // Layout twin of FactCapacity's four held fields, not its implementation.
+    struct LeaseLayout {
+        _epoch: u64,
+        _thread: std::marker::PhantomData<*const ()>,
+    }
     #[allow(dead_code, reason = "independent physical layout twin")]
     enum PayerLayout<'a> {
         Selected(&'a mut PhysicalReservation),
         ActiveBuilder,
+        // The test build retains an epoch and a zero-sized thread-affinity
+        // marker for the independently funded oracle payer. Its discriminant
+        // also belongs to the actual selected Tree carrier's inline backing.
+        Oracle(LeaseLayout),
     }
+    assert_eq!(
+        size_of::<LeaseLayout>(),
+        size_of::<super::super::super::allocation::OracleLease>()
+    );
     struct CapacityLayout<'a> {
         _function: &'a ResolvedFunction,
         _physical: PayerLayout<'a>,

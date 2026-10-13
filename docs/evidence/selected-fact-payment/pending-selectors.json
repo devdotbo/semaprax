@@ -1,0 +1,18 @@
+[
+  {
+    "harness": "semaprax::lib",
+    "selector": "cleanup_plan::replay::selected_entry::tests::fact_errors::paid_fact_cursor_and_growth_exact_short_keep_first_receipt_and_drop_one_owner",
+    "expected": 1,
+    "ignored": 0,
+    "source": "src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs",
+    "source_sha256": "725fbcf0b55db270de67a019d45f08259cf731721483da5fb598c7ff3d0f25e2"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "cleanup_plan::replay::selected_entry::tests::fact_errors::paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts",
+    "expected": 1,
+    "ignored": 0,
+    "source": "src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs",
+    "source_sha256": "725fbcf0b55db270de67a019d45f08259cf731721483da5fb598c7ff3d0f25e2"
+  }
+]
