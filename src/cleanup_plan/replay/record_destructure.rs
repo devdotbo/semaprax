@@ -186,6 +186,10 @@ pub(super) fn replay(
     fields: &[ResolvedRecordMatchPatternField],
     mode: ResolvedMatchMode,
 ) -> Result<ExpectedDestructure, Diagnostic> {
+    #[cfg(test)]
+    if let Some(result) = funded::replay(program, function, record, instance, fields, mode) {
+        return result;
+    }
     let mut queue = VecDeque::from([Pending {
         record,
         instance,
@@ -355,3 +359,6 @@ pub(super) fn replay(
             .collect(),
     })
 }
+
+#[cfg(test)]
+mod funded;

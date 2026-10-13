@@ -5389,7 +5389,13 @@ fn validate_match_skeleton_shape(
                 return Ok(is_record);
             }
             for declaration in declarations {
-                let field_ty = crate::hir::substitute_type(&declaration.ty, record, arguments)?;
+                let field_ty = nested_shape::substitute_type_current(
+                    program,
+                    function,
+                    &declaration.ty,
+                    record,
+                    arguments,
+                )?;
                 let field = fields
                     .iter()
                     .find(|field| field.field == declaration.id)
@@ -5794,7 +5800,8 @@ fn finish_update_paths(
         })?;
     let arguments = record_destructure::update::concrete_arguments(function, expression, record)?;
     for field in declarations {
-        let field_ty = crate::hir::substitute_type(&field.ty, record, arguments)?;
+        let field_ty =
+            nested_shape::substitute_type_current(program, function, &field.ty, record, arguments)?;
         if replaced.contains(&field.id) || !type_needs_drop(program, function, &field_ty)? {
             continue;
         }

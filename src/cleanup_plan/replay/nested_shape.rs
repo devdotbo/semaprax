@@ -479,3 +479,36 @@ pub(super) fn type_needs_drop_with_budget(
     }
     super::paid_type_facts::needs_drop(program, function, ty, budget)
 }
+
+/// Authenticate the unbudgeted caller before any substitution acquisition. A
+/// helper budget owns no allowance: its payer is the same cumulative account.
+pub(super) fn substitute_type_current(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    template: &ResolvedType,
+    owner: &DeclarationId,
+    arguments: &[ResolvedType],
+) -> Result<ResolvedType, Diagnostic> {
+    #[cfg(test)]
+    match allocation::authority(program, function) {
+        Ok(Some(lease)) => {
+            let mut budget = ReplayBudget::with_skeleton_limit_oracle(MAX_REPLAY_WORK_UNITS, lease);
+            return super::ordinary_inventory::substitute::substitute_type(
+                template,
+                owner,
+                arguments,
+                function,
+                &mut budget,
+            );
+        }
+        Ok(None) => {}
+        Err(_) => {
+            return Err(Diagnostic::io_static(
+                "SPX-H006",
+                "oracle invocation authority refused field substitution",
+            ))
+        }
+    }
+    let _ = (program, function);
+    crate::hir::substitute_type(template, owner, arguments)
+}
