@@ -7,6 +7,10 @@ pub(in crate::hir) enum Refused {
     Capacity,
 }
 pub(in crate::hir) fn prepare(program: &ResolvedProgram) -> Result<Directory<'_>, Refused> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::FunctionDirectory,
+    );
     let count = program.functions.len();
     let bytes = count
         .checked_mul(std::mem::size_of::<Entry<'_>>())

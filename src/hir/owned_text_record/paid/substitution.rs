@@ -71,6 +71,10 @@ pub(super) fn substitute<'t>(
     owner: &'t DeclarationId,
     arguments: &'t [ResolvedType],
 ) -> Result<Option<ResolvedType>, Diagnostic> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::TextSubstitution,
+    );
     fund(Some(0))?;
     enum Frame<'f> {
         Enter(&'f ResolvedType),

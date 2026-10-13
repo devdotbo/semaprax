@@ -20,6 +20,10 @@ pub(in crate::hir::validation) fn failure(requested: usize, message: &'static st
     hir_error_static(message)
 }
 pub(in crate::hir::validation) fn reserve(bytes: Option<usize>) -> Result<(), Diagnostic> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::ScopeCheckpoint,
+    );
     let Some(bytes) = bytes else {
         return Err(failure(
             usize::MAX,

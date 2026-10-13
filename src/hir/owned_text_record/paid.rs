@@ -61,6 +61,10 @@ pub(crate) fn admitted<'a>(
     root: &'a ResolvedType,
     declarations: &'a DeclarationIndex,
 ) -> Result<bool, Diagnostic> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::TextRuntime,
+    );
     fund(Some(0))?;
     if !matches!(root, ResolvedType::Nominal { .. }) {
         return Ok(false);
@@ -159,6 +163,10 @@ pub(crate) fn contains_string<'a>(
     root: &'a ResolvedType,
     declarations: &'a DeclarationIndex,
 ) -> Result<bool, Diagnostic> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::TextContains,
+    );
     fund(Some(0))?;
     if !matches!(root, ResolvedType::Nominal { declaration, .. }
         if declarations.declaration(declaration).is_some_and(|item| item.kind == DeclarationKind::Record))

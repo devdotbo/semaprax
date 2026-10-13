@@ -4,10 +4,37 @@ use super::{active, Budget, ReservationStage};
 use std::cell::Cell;
 use std::rc::Rc;
 
+/// Fixed diagnostic coordinates only; no allocation, source key or authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum Operation {
+    FunctionDirectory,
+    CanonicalLoanStorage,
+    CoreValidation,
+    ValidatorConstructor,
+    FunctionValues,
+    AttachedIdentities,
+    CleanupInventory,
+    CleanupReplay,
+    TextRuntime,
+    TextContains,
+    TextSubstitution,
+    ScopeCheckpoint,
+    Lifecycle,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct OperationRefusal {
+    pub(crate) operation: Option<Operation>,
+    pub(crate) requested: usize,
+    pub(crate) remaining: usize,
+    pub(crate) floor: usize,
+    pub(crate) stage: Option<ReservationStage>,
+}
 const COUNT: usize = ReservationStage::RetainedLoanSidecars as usize + 2;
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Trace {
     owner: usize,
+    operation: Option<Operation>,
+    pub(crate) first_operation_refusal: Option<OperationRefusal>,
     pub(crate) initial: usize,
     pub(crate) consumed: usize,
     pub(crate) prebound: usize,
@@ -18,6 +45,8 @@ pub(crate) struct Trace {
 impl Trace {
     const EMPTY: Self = Self {
         owner: 0,
+        operation: None,
+        first_operation_refusal: None,
         initial: 0,
         consumed: 0,
         prebound: 0,
@@ -43,6 +72,59 @@ pub(super) fn debit(budget: &Budget, bytes: usize) {
             trace.debits[ordinal] = trace.debits[ordinal]
                 .checked_add(bytes)
                 .expect("stage debit overflow cannot exceed the finite budget");
+            current.set(trace);
+        }
+    });
+}
+/// The existing budget Rc is held solely to prevent address reuse while this
+/// observation guard lives. It cannot acquire storage or change budget state.
+pub(crate) struct OperationGuard {
+    owner: Option<Rc<Budget>>,
+    previous: Option<Operation>,
+}
+pub(crate) fn operation_guard(operation: Operation) -> OperationGuard {
+    let mut previous = None;
+    let owner = active().filter(|budget| {
+        CURRENT.with(|current| {
+            let mut trace = current.get();
+            if trace.owner != Rc::as_ptr(budget) as usize {
+                return false;
+            }
+            previous = trace.operation.replace(operation);
+            current.set(trace);
+            true
+        })
+    });
+    OperationGuard { owner, previous }
+}
+impl Drop for OperationGuard {
+    fn drop(&mut self) {
+        if let Some(owner) = &self.owner {
+            CURRENT.with(|current| {
+                let mut trace = current.get();
+                if trace.owner == Rc::as_ptr(owner) as usize {
+                    trace.operation = self.previous;
+                    current.set(trace);
+                }
+            });
+        }
+    }
+}
+// Called only at the original first-refusal write. Nested/foreign budgets do
+// not enter this exact core receipt; their original settlement still runs.
+pub(super) fn refusal(budget: &Budget, requested: usize) {
+    CURRENT.with(|current| {
+        let mut trace = current.get();
+        if trace.owner == budget as *const Budget as usize
+            && trace.first_operation_refusal.is_none()
+        {
+            trace.first_operation_refusal = Some(OperationRefusal {
+                operation: trace.operation,
+                requested,
+                remaining: budget.remaining.get(),
+                floor: budget.floor.get(),
+                stage: budget.stage.get(),
+            });
             current.set(trace);
         }
     });

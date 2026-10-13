@@ -24,10 +24,34 @@ pub(super) fn validate_with_loan_comparison<'a>(
         fused,
         Some(&directory),
     )?;
-    super::function_value::validate_program(program)?;
-    validate_attached_identity_references(program)?;
-    crate::cleanup::validate_program(program)?;
-    crate::cleanup_plan::validate_program(program)?;
+    {
+        #[cfg(test)]
+        let _operation = crate::bounded_output::stage_debits::operation_guard(
+            crate::bounded_output::stage_debits::Operation::FunctionValues,
+        );
+        super::function_value::validate_program(program)?;
+    }
+    {
+        #[cfg(test)]
+        let _operation = crate::bounded_output::stage_debits::operation_guard(
+            crate::bounded_output::stage_debits::Operation::AttachedIdentities,
+        );
+        validate_attached_identity_references(program)?;
+    }
+    {
+        #[cfg(test)]
+        let _operation = crate::bounded_output::stage_debits::operation_guard(
+            crate::bounded_output::stage_debits::Operation::CleanupInventory,
+        );
+        crate::cleanup::validate_program(program)?;
+    }
+    {
+        #[cfg(test)]
+        let _operation = crate::bounded_output::stage_debits::operation_guard(
+            crate::bounded_output::stage_debits::Operation::CleanupReplay,
+        );
+        crate::cleanup_plan::validate_program(program)?;
+    }
     Ok((selected, deferred))
 }
 

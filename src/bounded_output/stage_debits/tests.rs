@@ -92,3 +92,82 @@ fn exact_budget_stage_trace_preserves_nested_settlement_refusal_and_unwind_witho
     }
     assert_eq!(take_completed().unwrap().consumed, 7);
 }
+
+#[test]
+fn operation_guards_keep_complete_untagged_refusal_and_actual_zero_allocation() {
+    for tagged in [false, true] {
+        take_completed();
+        let (((), metrics), overflow, used, refusal) = with_limit_usage_refusal(3, || {
+            let _trace = start(0, 0, 6);
+            crate::test_allocation_observer::measure(|| {
+                let _operation = tagged.then(|| operation_guard(Operation::TextContains));
+                assert!(reserve_active_required(3));
+                assert!(!reserve_active_required(1));
+                assert!(!reserve_active_required(0));
+            })
+        });
+        assert_eq!((overflow, used), (true, 3));
+        assert!(!metrics.invalid);
+        assert_eq!(
+            (metrics.allocations, metrics.allocated, metrics.live),
+            (0, 0, 0)
+        );
+        let first = refusal.unwrap();
+        assert_eq!(
+            (first.requested, first.remaining, first.floor, first.stage),
+            (1, 0, 0, None)
+        );
+        let trace = take_completed().unwrap();
+        let operation = trace.first_operation_refusal.unwrap();
+        assert_eq!(
+            (
+                operation.requested,
+                operation.remaining,
+                operation.floor,
+                operation.stage
+            ),
+            (first.requested, first.remaining, first.floor, first.stage)
+        );
+        assert_eq!(
+            operation.operation,
+            tagged.then_some(Operation::TextContains)
+        );
+        assert_eq!((trace.sum(), trace.consumed), (3, 3));
+    }
+}
+
+#[test]
+fn operation_scope_restores_after_unwind_and_nested_foreign_budget_cannot_tag_parent() {
+    take_completed();
+    let (_, overflow, used, first) = with_limit_usage_refusal(2, || {
+        let _trace = start(0, 0, 6);
+        let _parent = operation_guard(Operation::CoreValidation);
+        let error = catch_unwind(AssertUnwindSafe(|| {
+            let _nested = operation_guard(Operation::TextSubstitution);
+            std::panic::panic_any(23usize);
+        }));
+        assert!(error.is_err());
+        with_limit_usage_refusal(1, || {
+            // This operation guard authenticates the child budget, which is
+            // not the observed parent. Its refusal must not enter the trace.
+            let _foreign = operation_guard(Operation::Lifecycle);
+            assert!(!reserve_active_required(2));
+        });
+        assert!(reserve_active_required(2));
+        assert!(!reserve_active_required(1));
+        let _later = operation_guard(Operation::ScopeCheckpoint);
+        assert!(!reserve_active_required(99));
+    });
+    assert!(overflow && used == 2);
+    assert_eq!(first.unwrap().requested, 1);
+    let trace = take_completed().unwrap();
+    assert_eq!(
+        trace.first_operation_refusal.unwrap().operation,
+        Some(Operation::CoreValidation)
+    );
+    assert_eq!(trace.first_operation_refusal.unwrap().requested, 1);
+    assert_eq!((trace.sum(), trace.consumed), (2, 2));
+    // The observer and operation restored before this unrelated ledger.
+    with_limit_usage_refusal(0, || assert!(!reserve_active_required(1)));
+    assert!(take_completed().is_none());
+}

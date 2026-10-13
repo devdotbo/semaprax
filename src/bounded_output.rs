@@ -182,6 +182,8 @@ fn active() -> Option<Rc<Budget>> {
 
 fn record_refusal(budget: &Budget, length: usize) {
     if budget.first_refusal.get().is_none() {
+        #[cfg(test)]
+        stage_debits::refusal(budget, length);
         budget.first_refusal.set(Some(ReservationRefusal {
             requested: length,
             remaining: budget.remaining.get(),

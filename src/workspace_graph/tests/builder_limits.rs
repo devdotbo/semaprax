@@ -1,5 +1,29 @@
 use super::*;
 
+// Render fixture bindings before construction and receipts only after it.
+// Neither formatting participates in the watched ledger or can grant authority.
+fn print_operation_sources(profile: &str, sources: &[WorkspaceSource]) {
+    eprintln!(
+        "validation-operation-profile profile={profile} cap={MAX_BUILDER_BYTES} sources={}",
+        sources.len()
+    );
+    for source in sources {
+        let digest = Sha256::digest(source.source.as_bytes());
+        eprintln!(
+            "validation-operation-source profile={profile} path={} bytes={} sha256={:x}",
+            source.path,
+            source.source.len(),
+            crate::digest_hex::LowerHex(digest)
+        );
+    }
+}
+fn print_operation_receipt(profile: &str) {
+    let trace = crate::bounded_output::stage_debits::take_completed();
+    eprintln!(
+        "validation-operation-receipt profile={profile} cap={MAX_BUILDER_BYTES} trace={trace:?}"
+    );
+}
+
 fn minimum_successful_builder_limit(sources: &[WorkspaceSource]) -> usize {
     assert!(build_owned_with_builder_limit(sources.to_vec(), MAX_BUILDER_BYTES).is_ok());
     let mut low = 0usize;
@@ -481,8 +505,11 @@ fn catalog_normalizer_compact_core_fits_production_builder_cap() {
         },
     ]);
     sources.sort_by(|left, right| left.path.cmp(&right.path));
-    let built = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES)
-        .unwrap_or_else(|errors| {
+    print_operation_sources("catalog-normalizer-compact-original", &sources);
+    crate::bounded_output::stage_debits::take_completed();
+    let result = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES);
+    print_operation_receipt("catalog-normalizer-compact-original");
+    let built = result.unwrap_or_else(|errors| {
             let programs = parsed_sources(&sources);
             let authored = index_authored(&programs).unwrap();
             let module_paths = index_modules(&programs).unwrap();
@@ -628,7 +655,7 @@ fn import_free_edge_replay_does_not_materialize_unused_paths() {
 
 #[test]
 fn pattern_source_workspace_fits_unchanged_builder_budget() {
-    let sources = [
+    let sources: Vec<WorkspaceSource> = [
         (
             "src/examples.spx",
             include_str!("../../../std/pattern/src/examples.spx"),
@@ -648,7 +675,11 @@ fn pattern_source_workspace_fits_unchanged_builder_budget() {
         source: source.to_owned(),
     })
     .collect();
-    let built = build_owned(sources).unwrap_or_else(|errors| panic!("{errors:?}"));
+    print_operation_sources("pattern-original", &sources);
+    crate::bounded_output::stage_debits::take_completed();
+    let result = build_owned(sources);
+    print_operation_receipt("pattern-original");
+    let built = result.unwrap_or_else(|errors| panic!("{errors:?}"));
     assert_eq!(built.hir.modules.len(), 3);
     assert!(built.usage.builder_bytes <= MAX_BUILDER_BYTES);
     assert!(built.hir.module_paths.contains_key("std.pattern"));

@@ -98,13 +98,23 @@ pub(in crate::hir) fn validate_with_comparison<'a>(
     fused: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
     directory: Option<&Directory<'a>>,
 ) -> Result<(bool, Deferred<'a>), Diagnostic> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::CoreValidation,
+    );
     // Preserve ModuleIndex before the complete constructor preflight, and the
     // preflight before every independent canonical-plan rebuild/allocation.
     let observation = crate::hir::validation::owner_renewal::Observation::default();
     let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
     let seed = ConstructorSeed::authenticate(program, directory)?;
     let (storage, deferred) = prepare_with_comparison(&seed, program)?;
-    let validator = HirValidator::with_storage(seed, &storage)?;
+    let validator = {
+        #[cfg(test)]
+        let _operation = crate::bounded_output::stage_debits::operation_guard(
+            crate::bounded_output::stage_debits::Operation::ValidatorConstructor,
+        );
+        HirValidator::with_storage(seed, &storage)?
+    };
     let selected = crate::hir::validation::owner_renewal::validate_prepared(
         program,
         fused,
@@ -124,6 +134,10 @@ fn prepare_with_comparison<'a>(
     seed: &ConstructorSeed<'_>,
     program: &'a ResolvedProgram,
 ) -> Result<(Storage<'a>, Deferred<'a>), Diagnostic> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::CanonicalLoanStorage,
+    );
     if !std::ptr::eq(seed.program(), program) {
         return Err(hir_error(
             "canonical shared-loan constructor belongs to another program",
