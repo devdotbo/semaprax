@@ -109,6 +109,7 @@ impl<'a> HirValidator<'a> {
     pub(super) fn new(program: &'a ResolvedProgram) -> Result<Self, Diagnostic> {
         Self::with_directory(program, None)
     }
+    #[cfg(test)]
     pub(super) fn with_directory(
         program: &'a ResolvedProgram,
         directory: Option<&'a super::function_directory::Directory<'a>>,

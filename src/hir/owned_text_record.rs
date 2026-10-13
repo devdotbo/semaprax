@@ -173,6 +173,7 @@ pub(crate) fn contains_string(root: &ResolvedType, declarations: &DeclarationInd
     false
 }
 
+#[cfg(test)]
 pub(crate) fn validate_use(
     root: &ResolvedType,
     declarations: &DeclarationIndex,
