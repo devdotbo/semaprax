@@ -201,7 +201,10 @@ fn receiver(source: &str, require_success: bool) {
             if require_success {
                 assert!(current.is_ok(), "{current:?}");
             } else {
-                assert!(current.is_err(), "refusal fixture unexpectedly admitted");
+                assert!(
+                    current.is_err(),
+                    "refusal fixture unexpectedly admitted: {source}"
+                );
             }
             // Original and borrowed-root receivers own their complete result and
             // selected diagnostic through actual Drop inside the same observer.
@@ -276,7 +279,7 @@ fn complete_frozen_iterative_receiver_keeps_every_diagnostic_field_and_first_err
         "let value=1; value=2; value",
         "if missing {later} else {another}",
         "if true {let inner=2; inner} else {inner}",
-        "1+true",
+        "1+missing",
         "break; 0",
         "continue; 0",
         "let values=vec_with_capacity<i64>(1usize); for values in values {0} 0",
@@ -284,6 +287,27 @@ fn complete_frozen_iterative_receiver_keeps_every_diagnostic_field_and_first_err
         let source = format!("module borrowed.refusal; @id(\"main\") fn main()->i64 {{{body}}}");
         receiver(&source, false);
     }
+}
+
+#[test]
+fn complete_frozen_iterative_receiver_keeps_mixed_binary_lowering_and_source_refusal() {
+    // Preserve the original hostile source. Expression lowering records both
+    // operand types; source verification owns the mismatch diagnostic, before
+    // either full resolver can publish checked HIR.
+    let source = "module borrowed.refusal; @id(\"main\") fn main()->i64 {1+true}";
+    receiver(source, true);
+    let path = Path::new("borrowed-root.spx");
+    let diagnostics = crate::check(source, path).unwrap_err();
+    assert_eq!(
+        diagnostics
+            .iter()
+            .map(|diagnostic| diagnostic.code)
+            .collect::<Vec<_>>(),
+        ["SPX-T208"]
+    );
+    let parsed = crate::parse(source, path).unwrap();
+    // Complete vector equality retains every diagnostic field and its order.
+    assert_eq!(crate::hir::resolve(&parsed).unwrap_err(), diagnostics);
 }
 
 #[test]

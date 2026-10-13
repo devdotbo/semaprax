@@ -105,8 +105,30 @@ fn nominal_environments_keep_shared_fields_full_trees_and_exact_active_equality(
     parity(&index, &full, (0, 1, 1));
     let full_id = DeclarationId::new("nominal.full");
     let mut field = index.record_fields[&full_id][0].clone();
-    let different = nominal("nominal.full", vec![opaque, ResolvedType::I64]);
+    let different = nominal("nominal.full", vec![opaque.clone(), ResolvedType::I64]);
     field.ty = different;
+    index
+        .record_fields
+        .insert(full_id.clone(), vec![field.clone()]);
+    // The previously unused foreign parameter now participates in field
+    // substitution. Both complete receivers refuse it before cycle detection.
+    parity(&index, &full, (2, 0, 0));
+
+    // Retain the complete opaque nominal/function tree, closing only the
+    // unbound result parameter so that substitution can reach the cycle.
+    let mut closed_opaque = opaque;
+    let ResolvedType::Nominal { arguments, .. } = &mut closed_opaque else {
+        unreachable!()
+    };
+    let ResolvedType::Function { result, .. } = &mut arguments[0] else {
+        unreachable!()
+    };
+    **result = ResolvedType::I64;
+    let full = nominal(
+        "nominal.full",
+        vec![closed_opaque.clone(), ResolvedType::Bool],
+    );
+    field.ty = nominal("nominal.full", vec![closed_opaque, ResolvedType::I64]);
     index.record_fields.insert(full_id, vec![field]);
     // The first child differs from the root, then its identical child cycles.
     parity(&index, &full, (3, 0, 0));
