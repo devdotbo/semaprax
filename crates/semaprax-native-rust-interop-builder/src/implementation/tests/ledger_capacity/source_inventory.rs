@@ -9,8 +9,12 @@ macro_rules! byte_writer_source_inventory {
             include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
             include_str!("../../../../../src/loop_calls/byte_writer/resolved/validation.rs"),
             include_str!("../../../../../src/loop_calls/byte_writer/validation_frontier.rs"),
-            include_str!("../../../../../src/loop_calls/byte_writer/validation_frontier/storage.rs"),
-            include_str!("../../../../../src/loop_calls/byte_writer/validation_frontier/ordinary_receiver.rs"),
+            include_str!(
+                "../../../../../src/loop_calls/byte_writer/validation_frontier/storage.rs"
+            ),
+            include_str!(
+                "../../../../../src/loop_calls/byte_writer/validation_frontier/ordinary_receiver.rs"
+            ),
             include_str!("../../../../../src/cleanup_plan/renewal_profile/ordinary/validation.rs"),
             include_str!("../../../../../src/cleanup_plan/build/helper_index/ordinary_view.rs"),
             include_str!("../../../../../src/cleanup_plan/build/helper_index/validation.rs"),
@@ -149,6 +153,17 @@ macro_rules! hir_final_validation_source_inventory {
             include_str!("../../../../../src/hir/validation/callable_types/inline_frames.rs"),
             include_str!("../../../../../src/hir/validation/callable_types/inline_frames/tests.rs"),
             include_str!("../../../../../src/hir/validation/callable_types/original_receiver.rs"),
+            include_str!("../../../../../src/hir/declared_collection/paid.rs"),
+            include_str!("../../../../../src/hir/declared_collection/paid/early.rs"),
+            include_str!("../../../../../src/hir/validation/function_scope.rs"),
+            include_str!("../../../../../src/hir/validation/function_scope/old.rs"),
+            include_str!("../../../../../src/hir/validation/function_scope/backing_saved.rs"),
+            include_str!("../../../../../src/hir/validation/function_scope/tests.rs"),
+            include_str!("../../../../../src/hir/validation/function_scope/lifecycle.rs"),
+            include_str!("../../../../../src/hir/validation/function_scope/collection_tests.rs"),
+            include_str!(
+                "../../../../../src/hir/validation/function_scope/collection_tests/funded_early.rs"
+            ),
             include_str!("ledger_capacity/source_inventory.rs")
         )
     };

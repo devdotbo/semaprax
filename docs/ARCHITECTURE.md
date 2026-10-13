@@ -179,6 +179,17 @@ holds the mutable scope borrow through the one consuming insertion; dropping it
 before insertion preserves the prior root. The complete prior
 map function is retained in `function_scope/old.rs` beside the saved expression
 and contract drivers; all children are joined into the validator source audit.
+`hir/declared_collection/paid.rs` owns the current function's borrowed collection
+preflight, and its `early.rs` child owns the unchanged early profile traversal.
+Typed pending and ordered-set backing is paid before construction; an existing
+borrowed invariant lookup replaces discarded formatted identities. The complete
+original collection receivers remain in `declared_collection.rs`.
+`function_scope/lifecycle.rs` owns borrowed declared-effect keys, borrowed active
+lifecycle identities and prepaid distinct imported effect payloads. The complete
+original lifecycle collector remains in `inspection.rs`; the complete prior
+paid function receiver also remains in `function_scope/backing_saved.rs`. These private owners
+preserve the original structural bounds, traversal and diagnostic order; combined
+focused physical qualification remains pending.
 The map-entry adapter retains map publication and its charges. Persistent inputs
 have no physical publication map; their guard returns the selected root on Drop.
 `scope_checkpoint/transaction.rs` pays each actual node carrier and owning Node

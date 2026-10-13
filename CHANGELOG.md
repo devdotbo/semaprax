@@ -7,6 +7,13 @@
   allocation/Drop controls are explicit; focused qualification and measured
   resolution-deficit improvement remain pending.
 
+- Author prepaid function collection traversal and lifecycle effect backing,
+  borrowing complete type/identity/effect keys and avoiding discarded invariant
+  identities. Preserve full independent original receivers, structural bounds,
+  diagnostics and sticky refusal controls; add actual allocation-through-Drop
+  definitions and complete source joins. Source-only; combined focused runtime
+  qualification and application fit remain pending.
+
 - Source-authored HIR final-validation scratch batch removes discarded native
   result trees, small generic frame vectors and nominal key copies, projects
   Array/scalar callable flag misses, and constructs paid classifier Storage only

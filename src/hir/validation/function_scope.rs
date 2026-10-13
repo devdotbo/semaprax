@@ -7,7 +7,10 @@ impl HirValidator<'_> {
         execution: &FunctionExecutionId,
     ) -> Result<(), Diagnostic> {
         crate::hir::lexical_exit::validate_function(self.program, function, execution)?;
-        crate::hir::declared_collection::validate_function(&self.program.declarations, function)?;
+        crate::hir::declared_collection::validate_function_funded(
+            &self.program.declarations,
+            function,
+        )?;
         crate::hir::iterator_loop::validate_function(function)?;
         owner_renewal::validate_function(self.program, self.byte_helpers, function)?;
         crate::hir::yield_aggregate::check_bytes_request_site_count(
@@ -41,22 +44,14 @@ impl HirValidator<'_> {
                 function.id
             )));
         }
-        let declared_effects = function
-            .effects
-            .iter()
-            .map(String::as_str)
-            .collect::<BTreeSet<_>>();
+        let declared_effects = lifecycle::declared_effects(&function.effects)?;
         let mut required_lifecycle_effects = BTreeSet::new();
         for param in &function.params {
             if param.ownership == OwnershipMode::Own {
-                extend_resolved_lifecycle_effects(
-                    self.program,
-                    &param.ty,
-                    &mut required_lifecycle_effects,
-                )?;
+                lifecycle::extend_funded(self.program, &param.ty, &mut required_lifecycle_effects)?;
             }
         }
-        extend_resolved_lifecycle_effects(
+        lifecycle::extend_funded(
             self.program,
             &function.return_type,
             &mut required_lifecycle_effects,
@@ -75,7 +70,7 @@ impl HirValidator<'_> {
                     return Ok(());
                 }
                 if let Some(target) = self.program.resolve_call_target(callee, instance) {
-                    extend_resolved_lifecycle_effects(
+                    lifecycle::extend_funded(
                         self.program,
                         &target.return_type,
                         &mut required_lifecycle_effects,
@@ -88,7 +83,7 @@ impl HirValidator<'_> {
                         instance,
                         type_arguments,
                     )?;
-                    extend_resolved_lifecycle_effects(
+                    lifecycle::extend_funded(
                         self.program,
                         &return_type,
                         &mut required_lifecycle_effects,
@@ -265,6 +260,13 @@ impl HirValidator<'_> {
 }
 
 #[cfg(test)]
+mod collection_tests;
+#[cfg(test)]
 mod old;
 #[cfg(test)]
 mod tests;
+
+mod lifecycle;
+
+#[cfg(test)]
+mod backing_saved;

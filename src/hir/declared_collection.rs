@@ -144,3 +144,8 @@ pub(crate) fn validate_function(
 
 #[cfg(test)]
 mod tests;
+
+mod paid;
+pub(crate) use paid::validate_function as validate_function_funded;
+#[cfg(test)]
+pub(crate) use paid::{contains_funded, early as funded_early};

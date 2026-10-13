@@ -56,3 +56,20 @@ invalid callable arity and arguments, cache misses, zero/exact/one-short/floor
 boundaries and retries. Exact selectors and complete baseline/current source
 bytes are in `evidence/hir-final-validation-scratch/`. The existing application
 selectors remain unchanged. Full quality gates are excluded by user instruction.
+
+The current function chain also delegates declaration-only collection scanning
+and lifecycle effect collection to private paid owners. Collection pending
+references and ordered-set nodes are reserved before their actual constructors;
+complete structural type equality, early admission predicates, authored child
+order and the existing shape limits remain. Existing invariant-key byte lookup
+avoids constructing a discarded identity. Lifecycle active IDs and declared
+effect keys borrow complete original values; distinct imported effect strings
+pay their owning bytes and node backing before cloning. The complete original
+collection, early-profile, lifecycle and function receivers remain independently
+executable. Source inventories join every new owner and its controls.
+
+These changes address concrete constructor backing, not a complete funding or
+application-fit claim. Other preflight walkers, genuine generic proof return
+trees and dynamic semantic-error formatting retain their existing ownership;
+combined exact focused allocation/Drop qualification remains pending. The cap,
+refusal selection and observer remain unchanged.
