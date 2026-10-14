@@ -101,7 +101,7 @@ impl<'a, T> IntoIterator for DeclSlices<'a, T> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::DeclSlices;
     #[test]
     fn complete_contiguous_receiver_keeps_original_forward_reverse_suffix_and_index_order() {
         let authored = ["prefix", "é", "漢字"];

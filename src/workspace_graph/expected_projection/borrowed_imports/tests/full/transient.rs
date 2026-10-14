@@ -1,5 +1,15 @@
 //! Real non-retaining production input, with the complete receiving route intact.
-use super::*;
+use super::{
+    linked, old, sources, BOX_CALLER, BOX_PROVIDER, CLASS_CALLER, CLASS_PROVIDER,
+    INVARIANT_CALLER, INVARIANT_PROVIDER, VEC_CALLER, VEC_PROVIDER,
+};
+use crate::ast::program_source::ProgramSource;
+use crate::bounded_output::with_limit_usage_refusal;
+use crate::diagnostic::Diagnostic;
+use crate::hir;
+use crate::test_allocation_observer::measure;
+use crate::workspace_graph::expected_projection::borrowed_imports::LayoutRegistry;
+use crate::workspace_graph::{index_authored, reserve_builder_structure};
 use crate::test_allocation_observer::Metrics;
 use crate::workspace_graph::expected_projection::borrowed_leaf::Input;
 

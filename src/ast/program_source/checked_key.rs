@@ -1,7 +1,11 @@
 //! Compiler-owned key state. Pending ownership cannot be read as a source.
 //! Publication follows transfer of the actual current parsed program.
 use super::generated_roots::GeneratedRoots;
-use super::*;
+use super::{DeclSlices, OverlayIdentity, ProgramSource, Subject};
+use crate::ast::{
+    AgentDeclaration, Function, InterfaceDeclaration, ModuleUse, Program, ProtocolDeclaration,
+    ProtocolImplementation, SessionProtocolDeclaration, TypeDeclaration,
+};
 use crate::workspace_graph::current_source::CurrentParsedSource;
 use std::sync::{Arc, OnceLock};
 

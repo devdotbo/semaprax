@@ -1,5 +1,7 @@
 //! Exactly the historical Program wire; an incomplete owner cannot encode.
-use super::*;
+use super::CheckedSource;
+use crate::ast::program_source::ProgramSource;
+use crate::ast::Program;
 use crate::cache_codec::{Codec, Decoder, Encoder, Result};
 fn sequence<'a, T: Codec + 'a>(
     out: &mut Encoder,
