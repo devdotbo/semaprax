@@ -355,7 +355,9 @@ fn complete_region_entry_and_four_variant_source_projections_restore_full_origin
     assert_eq!(
         format!(
             "{:x}",
-            Sha256::digest(include_str!("../regions_entry.rs").as_bytes())
+            crate::digest_hex::LowerHex(Sha256::digest(
+                include_str!("../regions_entry.rs").as_bytes()
+            ))
         ),
         "327237ebc01755438f25ff967fc327a3ffb4f9d6be2a2a54bad6a36803b7095b"
     );
@@ -373,7 +375,10 @@ fn complete_region_entry_and_four_variant_source_projections_restore_full_origin
     assert_eq!(records.as_array().unwrap().len(), sources.len());
     for (record, (current, original)) in records.as_array().unwrap().iter().zip(sources) {
         assert_eq!(
-            format!("{:x}", Sha256::digest(original.as_bytes())),
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+            ),
             record["sha256"].as_str().unwrap()
         );
         let mut current = current.to_owned();
@@ -402,7 +407,10 @@ fn complete_region_entry_and_four_variant_source_projections_restore_full_origin
     assert_eq!(records.as_array().unwrap().len(), originals.len());
     for (record, original) in records.as_array().unwrap().iter().zip(originals) {
         assert_eq!(
-            format!("{:x}", Sha256::digest(original.as_bytes())),
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+            ),
             record["sha256"].as_str().unwrap()
         );
         assert_eq!(record["before"].as_str().unwrap(), original);

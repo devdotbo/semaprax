@@ -316,7 +316,10 @@ fn complete_exit_work_exact_short_and_sticky_use_the_same_original_budget() {
 fn complete_root_receivers_and_only_named_paid_caller_projections_keep_original_bytes() {
     use sha2::{Digest, Sha256};
     assert_eq!(
-        format!("{:x}", Sha256::digest(include_bytes!("selected.rs"))),
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(include_bytes!("selected.rs")))
+        ),
         "446459444ef20047d571618c4c85c4cb1d8151f52bb1b587221c795bff0b52b9"
     );
     let inverse: serde_json::Value = serde_json::from_str(include_str!(concat!(
@@ -338,7 +341,10 @@ fn complete_root_receivers_and_only_named_paid_caller_projections_keep_original_
         ))
     );
     assert_eq!(
-        format!("{:x}", Sha256::digest(current.as_bytes())),
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+        ),
         "78f39b761c68fc9145736540359659eb7edd7a80253fcaec1716f7ce55fcc85e"
     );
     let records: serde_json::Value = serde_json::from_str(include_str!(concat!(
@@ -354,7 +360,10 @@ fn complete_root_receivers_and_only_named_paid_caller_projections_keep_original_
     assert_eq!(records.as_array().unwrap().len(), sources.len());
     for (record, (current, original)) in records.as_array().unwrap().iter().zip(sources) {
         assert_eq!(
-            format!("{:x}", Sha256::digest(original.as_bytes())),
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+            ),
             record["sha256"].as_str().unwrap()
         );
         let mut current = current.to_owned();
@@ -383,7 +392,10 @@ fn complete_root_receivers_and_only_named_paid_caller_projections_keep_original_
     assert_eq!(projections.as_array().unwrap().len(), originals.len());
     for (record, original) in projections.as_array().unwrap().iter().zip(originals) {
         assert_eq!(
-            format!("{:x}", Sha256::digest(original.as_bytes())),
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+            ),
             record["sha256"].as_str().unwrap()
         );
         let after = record["after"].as_str().unwrap();
