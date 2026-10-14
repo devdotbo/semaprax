@@ -22,7 +22,7 @@ pub(crate) fn resolve_source_checked_previous<'p, E>(
     let reuse = previous_program
         .zip(previous_resolved)
         .zip(previous_costs)
-        .filter(|((previous, _), _)| function_reuse_environment_is_exact(program, previous))
+        .filter(|((previous, _), _)| function_reuse_environment_is_exact(program, *previous))
         .map(|((previous, resolved), costs)| FunctionReuse {
             current: program,
             program: previous,

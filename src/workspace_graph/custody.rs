@@ -112,11 +112,11 @@ impl SourceCustody {
             add(
                 arc_carrier_bytes::<SourceMetadata>(),
                 arc_carrier_bytes::<CurrentParsedSource>(),
-            ),
+            )?,
             add(
                 size_of::<Arc<SourceMetadata>>(),
                 size_of::<Arc<CurrentParsedSource>>(),
-            ),
+            )?,
         )?;
         let construct_bytes = add(
             mul(count, per_module)?,

@@ -158,6 +158,9 @@ pub(crate) use type_reachability::is_admitted_copy_aggregate_variant_field;
 pub(crate) use type_reachability::{
     is_admitted_concrete_owned_byte_variant, is_admitted_owned_string_variant,
 };
+pub(crate) fn nested_record_copy_scalar_is_admitted(ty: &ResolvedType) -> bool {
+    type_reachability::nested_record_copy_scalar_is_admitted(ty)
+}
 mod validation;
 mod variant_equality;
 mod workspace_link;

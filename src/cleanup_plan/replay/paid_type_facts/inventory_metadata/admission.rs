@@ -101,7 +101,7 @@ pub(in crate::cleanup_plan::replay::paid_type_facts) fn authored_byte_variant(
     for argument in arguments {
         step(payer, 1)?;
         if *argument != ResolvedType::Bytes
-            && !crate::hir::type_reachability::nested_record_copy_scalar_is_admitted(argument)
+            && !crate::hir::nested_record_copy_scalar_is_admitted(argument)
         {
             return Ok(false);
         }
@@ -123,7 +123,7 @@ pub(in crate::cleanup_plan::replay::paid_type_facts) fn authored_byte_variant(
             step(payer, 1)?;
             if *field == ResolvedType::Bytes {
                 owns_bytes = true;
-            } else if !crate::hir::type_reachability::nested_record_copy_scalar_is_admitted(field) {
+            } else if !crate::hir::nested_record_copy_scalar_is_admitted(field) {
                 return Ok(false);
             }
         }

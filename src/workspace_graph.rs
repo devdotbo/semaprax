@@ -4146,7 +4146,7 @@ fn build_owned_inner(
                             .map(|layout| &layout.order[..programs.len()]),
                     )
                 )?;
-                Ok((core, custody))
+                Ok::<_, Vec<Diagnostic>>((core, custody))
             });
         core_builder_bytes = core_builder_bytes.max(consumed);
         if !overflowed {

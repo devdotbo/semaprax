@@ -216,7 +216,7 @@ fn validate_candidate_source(
         .sources
         .into_iter()
         .find(|source| source.path == source_path)
-        .map(|source| source.source)
+        .map(|source| source.source.into())
         .ok_or_else(|| refusal("JSON codec replacement is absent from its checked candidate"))
 }
 
