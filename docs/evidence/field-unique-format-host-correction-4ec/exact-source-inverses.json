@@ -1,0 +1,21 @@
+[
+  {
+    "path": "tests/owned_data/owned_leaf_vec/host.js",
+    "archive": "host.js.before.txt",
+    "sha256": "77e6e8c670f42bb0c3680e78d644b36bdc2f451e94e6325c62206e15782707d6",
+    "edits": [
+      {
+        "before": "",
+        "after": "// Same checked literal-format operations as createByteDataRuntime's\n// formatStep (src/wasm/browser_runtime.js). Owned results use this host's\n// existing counted allocator; Vec leaves retain their ordinary host policy.\nconst formatStep = (operation, left, right) => {\n  allocationOutsideSort('literal format');\n  if (!Number.isInteger(operation) || typeof left !== 'bigint' || typeof right !== 'bigint')\n    throw TypeError('literal format import shape invariant');\n  const stringBytes = carrier => {\n    const bytes = read(carrier);\n    if (!validUtf8(bytes)) throw Error('literal format String UTF-8 invariant');\n    return bytes;\n  };\n  let bytes;\n  try {\n    if (operation === 0) {\n      if (right !== 0n) throw Error('literal format copy operand invariant');\n      bytes = read(left);\n    } else if (operation === 1) {\n      const a = stringBytes(left), b = stringBytes(right);\n      if (a.byteLength > 65536 - b.byteLength) return 0n;\n      bytes = new Uint8Array(a.byteLength + b.byteLength);\n      bytes.set(a, 0); bytes.set(b, a.byteLength);\n    } else if (operation === 2 || operation === 3) {\n      if (right !== 0n) throw Error('literal format numeric operand invariant');\n      bytes = new TextEncoder().encode((operation === 3 ? BigInt.asUintN(64, left) : left).toString());\n    } else {\n      throw Error('literal format operation invariant');\n    }\n    if (bytes.byteLength > 65536 || nextPayload > 0x7fffffff) return 0n;\n    return ownBytes(bytes);\n  } catch (failure) {\n    if (failure instanceof RangeError) return 0n;\n    throw failure;\n  }\n};\n"
+      },
+      {
+        "before": "",
+        "after": "  spx_format_step_v1:formatStep,\n"
+      },
+      {
+        "before": "",
+        "after": "  if(requiredImports.some(entry=>entry.module==='env'&&entry.name==='spx_format_step_v1')){\n    const missingFormat={...env};delete missingFormat.spx_format_step_v1;\n    let absent=false;\n    try{await WebAssembly.instantiate(moduleBytes,{env:missingFormat})}\n    catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;absent=true}\n    if(!absent)throw Error('literal formatter linked without its actual private import');\n  }\n"
+      }
+    ]
+  }
+]

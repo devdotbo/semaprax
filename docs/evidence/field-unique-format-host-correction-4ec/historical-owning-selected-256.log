@@ -1,0 +1,16 @@
+
+running 1 test
+test owned_leaf_vec::field_unique::same_source_uniqueness_matches_clone_sort_oracle_and_preserves_owner_on_every_engine ... 
+thread 'owned_leaf_vec::field_unique::same_source_uniqueness_matches_clone_sort_oracle_and_preserves_owner_on_every_engine' (1473033) panicked at tests/owned_data/owned_leaf_vec/field_unique.rs:190:5:
+none: [LinkError: WebAssembly.instantiate(): Import #30 "env" "spx_format_step_v1": function import requires a callable]
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    owned_leaf_vec::field_unique::same_source_uniqueness_matches_clone_sort_oracle_and_preserves_owner_on_every_engine
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 342 filtered out; finished in 3.87s
+

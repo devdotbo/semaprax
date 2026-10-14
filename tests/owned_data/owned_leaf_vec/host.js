@@ -317,11 +317,47 @@ const arithmetic = (code, operation) => (a,b) => {
   if(value<-(1n<<63n)||value>(1n<<63n)-1n)throw Error(`status:${code}`);
   return value;
 };
+// Same checked literal-format operations as createByteDataRuntime's
+// formatStep (src/wasm/browser_runtime.js). Owned results use this host's
+// existing counted allocator; Vec leaves retain their ordinary host policy.
+const formatStep = (operation, left, right) => {
+  allocationOutsideSort('literal format');
+  if (!Number.isInteger(operation) || typeof left !== 'bigint' || typeof right !== 'bigint')
+    throw TypeError('literal format import shape invariant');
+  const stringBytes = carrier => {
+    const bytes = read(carrier);
+    if (!validUtf8(bytes)) throw Error('literal format String UTF-8 invariant');
+    return bytes;
+  };
+  let bytes;
+  try {
+    if (operation === 0) {
+      if (right !== 0n) throw Error('literal format copy operand invariant');
+      bytes = read(left);
+    } else if (operation === 1) {
+      const a = stringBytes(left), b = stringBytes(right);
+      if (a.byteLength > 65536 - b.byteLength) return 0n;
+      bytes = new Uint8Array(a.byteLength + b.byteLength);
+      bytes.set(a, 0); bytes.set(b, a.byteLength);
+    } else if (operation === 2 || operation === 3) {
+      if (right !== 0n) throw Error('literal format numeric operand invariant');
+      bytes = new TextEncoder().encode((operation === 3 ? BigInt.asUintN(64, left) : left).toString());
+    } else {
+      throw Error('literal format operation invariant');
+    }
+    if (bytes.byteLength > 65536 || nextPayload > 0x7fffffff) return 0n;
+    return ownBytes(bytes);
+  } catch (failure) {
+    if (failure instanceof RangeError) return 0n;
+    throw failure;
+  }
+};
 const env = {
   spx_add:arithmetic(1,(a,b)=>a+b), spx_sub:arithmetic(2,(a,b)=>a-b), spx_mul:arithmetic(3,(a,b)=>a*b),
   spx_div:arithmetic(4,(a,b)=>a/b), spx_rem:arithmetic(6,(a,b)=>a%b),
   spx_neg:a=>{if(a===-(1n<<63n))throw Error('status:8');return -a;},
   spx_contract_fail:status=>{throw Error(`status:${status}`)},
+  spx_format_step_v1:formatStep,
   spx_bytes_copy:alloc, spx_bytes_drop:drop, spx_bytes_as_slice:carrier=>{read(carrier);return carrier},
   spx_bytes_get:(carrier,index)=>read(carrier)[Number(index)]??-1,
   spx_bytes_zeroed:length=>{
@@ -731,6 +767,13 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
     for(const name of PAYLOAD_CONSUMERS)env[name]=shared.imports[name];
   }
   const requiredImports=WebAssembly.Module.imports(new WebAssembly.Module(moduleBytes));
+  if(requiredImports.some(entry=>entry.module==='env'&&entry.name==='spx_format_step_v1')){
+    const missingFormat={...env};delete missingFormat.spx_format_step_v1;
+    let absent=false;
+    try{await WebAssembly.instantiate(moduleBytes,{env:missingFormat})}
+    catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;absent=true}
+    if(!absent)throw Error('literal formatter linked without its actual private import');
+  }
   if(copyRecordCodec){
     if(!requiredImports.some(entry=>entry.name==='spx_vec_with_capacity') ||
        requiredImports.some(entry=>/^spx_vec_leaf_/.test(entry.name)))
