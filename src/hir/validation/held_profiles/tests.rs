@@ -2,8 +2,7 @@ use super::*;
 use crate::bounded_output::{with_limit, with_limit_usage};
 use crate::test_allocation_observer::measure;
 
-pub(in crate::hir::validation) fn fixture() -> ResolvedProgram {
-    let source = r#"module held.profile;
+const ORIGINAL_UNSUPPORTED_GENERIC_VECTOR_SOURCE: &str = r#"module held.profile;
 @id("held.box") record Boxed<T> { @id("held.box.field") field: T, }
 @id("held.bag") record Bag<T> { @id("held.bag.items") items: Vec<T>, }
 @id("held.take") fn take(value: borrow Bag<i64>, other: Boxed<i64>) -> i64 { 0 }
@@ -11,7 +10,12 @@ pub(in crate::hir::validation) fn fixture() -> ResolvedProgram {
 @id("held.id") fn identity<T>(value: own Box<T>) -> Box<T> { value }
 @id("held.main") fn main() -> i64 { let wrapped = identity<i64>(box_new<i64>(0)); box_into_inner<i64>(wrapped) }
 "#;
-    crate::hir::resolve(&crate::check(source, "held-generic.spx").unwrap()).unwrap()
+
+pub(in crate::hir::validation) fn fixture() -> ResolvedProgram {
+    let source = ORIGINAL_UNSUPPORTED_GENERIC_VECTOR_SOURCE
+        .replace("items: Vec<T>", "items: T")
+        .replace("borrow Bag<i64>", "borrow Bag<Vec<i64>>");
+    crate::hir::resolve(&crate::check(&source, "held-generic.spx").unwrap()).unwrap()
 }
 
 #[test]
@@ -105,4 +109,14 @@ fn bounded_directory_prepays_actual_replacement_drop_and_declines_optional_growt
         }
         assert_eq!(bound.held.len(), MAX_CACHE_ENTRIES);
     });
+}
+
+#[test]
+fn complete_original_generic_vector_field_source_keeps_full_t223_refusal() {
+    let source = ORIGINAL_UNSUPPORTED_GENERIC_VECTOR_SOURCE;
+    let parsed = crate::parse(source, "held-generic.spx").unwrap();
+    let expected = crate::verify::verify(&parsed);
+    let actual = crate::check(source, "held-generic.spx").unwrap_err();
+    assert_eq!(actual[0].code, "SPX-T223");
+    assert_eq!(actual, expected);
 }

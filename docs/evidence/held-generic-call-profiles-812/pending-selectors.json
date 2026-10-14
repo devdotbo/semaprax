@@ -35,6 +35,11 @@
       "harness": "lib",
       "selector": "hir::validation::call_parameters::held_tests::genuine_held_copy_observations_reuse_one_tree_and_foreign_detached_unknown_and_changed_arguments_keep_full_receiver",
       "source": "src/hir/validation/call_parameters/held_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::held_profiles::tests::complete_original_generic_vector_field_source_keeps_full_t223_refusal",
+      "source": "src/hir/validation/held_profiles/tests.rs"
     }
   ],
   "unchanged_required": [

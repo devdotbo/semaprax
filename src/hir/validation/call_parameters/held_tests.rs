@@ -231,7 +231,7 @@ fn genuine_held_copy_observations_reuse_one_tree_and_foreign_detached_unknown_an
                 validator
                     .executable_profiles
                     .copy_for_param(&view, |ty| validator.borrowed_ownership_copy(ty)),
-                validator.borrowed_ownership_copy(ty)
+                validator.borrowed_ownership_copy(view.ty)
             );
             let mut argument = call.function().body.clone();
             argument.ty = view.ty.clone();
