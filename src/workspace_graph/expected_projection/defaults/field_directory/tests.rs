@@ -148,6 +148,44 @@ fn successful_complete_default_acquisitions_are_observed_through_drop_at_exact_a
 #[test]
 fn complete_current_value_owner_sources_restore_every_original_byte() {
     use sha2::{Digest, Sha256};
+    // Named lexical adapters for the deeper compiled old receiver. Restore its
+    // complete original function, never only a signature or selected fields.
+    let saved = include_str!("../original.rs");
+    let saved_imports = r#####"use super::{
+    checked_builder_sum, collection_constructor, graph_error, reserve_builder_structure,
+    Diagnostic, Expr, ExprKind, FieldInitializer, Span, StructuralCost, Type, TypeDeclaration,
+    TypeDeclarationKind,
+};"#####;
+    assert_eq!(saved.matches(saved_imports).count(), 1);
+    let mut saved = saved.replacen(
+        saved_imports,
+        r#####"use super::{
+    collection_constructor, graph_error, reserve_builder_structure, Diagnostic, Expr, ExprKind,
+    FieldInitializer, Span, Type, TypeDeclaration, TypeDeclarationKind,
+};"#####,
+        1,
+    );
+    assert_eq!(saved.matches("super::super::type_rewrite::").count(), 2);
+    saved = saved.replace("super::super::type_rewrite::", "super::type_rewrite::");
+    assert_eq!(saved.matches("super::super::declaration_cost::").count(), 1);
+    saved = saved.replace(
+        "super::super::declaration_cost::",
+        "super::declaration_cost::",
+    );
+    let saved_prefix =
+        "//! Complete original recursive default receiver, independently compiled.\n";
+    assert!(saved.starts_with(saved_prefix));
+    let signature = "pub(in crate::workspace_graph::expected_projection) fn default_expr(";
+    assert_eq!(saved.matches(signature).count(), 1);
+    let function = &saved[saved.find(signature).unwrap()..];
+    let function = function.replacen(signature, "pub(super) fn default_expr(", 1);
+    let original = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/constructor-value-owners-824/src__workspace_graph__expected_projection__defaults.rs.before.txt"));
+    let start = original.find("pub(super) fn default_expr(").unwrap();
+    let end = original
+        .find("\n// Closed atoms require no type-name rewriting or aggregate default construction.")
+        .unwrap();
+    assert_eq!(function, &original[start..end]);
+
     let records: serde_json::Value = serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/docs/evidence/constructor-value-owners-824/exact-source-inverses.json"

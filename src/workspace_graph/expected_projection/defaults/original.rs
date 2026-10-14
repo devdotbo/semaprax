@@ -1,7 +1,8 @@
 //! Complete original recursive default receiver, independently compiled.
 use super::{
-    collection_constructor, graph_error, reserve_builder_structure, Diagnostic, Expr, ExprKind,
-    FieldInitializer, Span, Type, TypeDeclaration, TypeDeclarationKind,
+    checked_builder_sum, collection_constructor, graph_error, reserve_builder_structure,
+    Diagnostic, Expr, ExprKind, FieldInitializer, Span, StructuralCost, Type, TypeDeclaration,
+    TypeDeclarationKind,
 };
 
 pub(in crate::workspace_graph::expected_projection) fn default_expr(
@@ -19,12 +20,12 @@ pub(in crate::workspace_graph::expected_projection) fn default_expr(
             )])
         }
         ty if allow_owned
-            && super::type_rewrite::default_vector_element(ty, declarations).is_some() =>
+            && super::super::type_rewrite::default_vector_element(ty, declarations).is_some() =>
         {
-            let element = super::type_rewrite::default_vector_element(ty, declarations)
+            let element = super::super::type_rewrite::default_vector_element(ty, declarations)
                 .expect("closed vector default");
             let mut cost = StructuralCost::new();
-            super::declaration_cost::ast_type_cost(element, &mut cost)?;
+            super::super::declaration_cost::ast_type_cost(element, &mut cost)?;
             reserve_builder_structure(checked_builder_sum(
                 cost.total,
                 std::mem::size_of::<Expr>() + crate::vec_ops::WITH_CAPACITY_NAME.len(),
