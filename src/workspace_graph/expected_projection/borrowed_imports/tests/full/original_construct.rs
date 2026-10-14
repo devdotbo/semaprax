@@ -1,5 +1,13 @@
+use super::super::super::super::{
+    alias_clone, ast_function_cost, ast_function_signature_cost, ast_type_declaration_cost,
+    budgeted_format, directory, eligible, graph_error, iterative, pay_default_teardown,
+    pay_signature, pay_teardown, pay_teardown_minimum, pay_type, refusal,
+    reserve_builder_structure, type_rewrite, AuthoredDeclaration, BTreeMap, Diagnostic, Expr,
+    ExprKind, Function, GeneratedRoots, LayoutRegistry, ModuleUseKind, Program, StructuralCost,
+    SyntheticProgramView, Type, TypeDeclaration,
+};
 use crate::workspace_graph::expected_projection::import_stub::default_expr_original as default_expr;
-use crate::workspace_graph::expected_projection::borrowed_imports::*;
+use crate::workspace_graph::expected_projection::import_stub_original as import_stub;
 
 pub(in crate::workspace_graph) fn construct<'a>(
     program: &'a Program,

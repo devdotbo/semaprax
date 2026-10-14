@@ -1,11 +1,11 @@
-use crate::workspace_graph::expected_projection::import_stub::default_expr_original as default_expr;
 //! Saved complete owned projection producer, before imported borrowing.
 use super::{
-    active_builder_limit, budgeted_format, graph_error, import_stub, limit_error,
-    private_layout, reserve_builder_structure, type_rewrite, AuthoredDeclaration, BTreeMap,
-    Diagnostic, Expr, ExprKind, Function, ModuleUseKind, Program, Type, TypeDeclaration,
+    active_builder_limit, budgeted_format, graph_error, import_stub, limit_error, private_layout,
+    reserve_builder_structure, type_rewrite, AuthoredDeclaration, BTreeMap, Diagnostic, Expr,
+    ExprKind, Function, ModuleUseKind, Program, Type, TypeDeclaration,
 };
 use crate::ast::Span;
+use crate::workspace_graph::expected_projection::import_stub::default_expr_original as default_expr;
 
 pub(super) fn construct(
     program: &Program,

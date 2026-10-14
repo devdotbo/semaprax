@@ -1,9 +1,9 @@
 //! Complete original transient constructor and late-refusal publication controls.
+use super::super::super::{construct, LayoutRegistry};
 use super::{sources, BOX_CALLER, BOX_PROVIDER, VEC_CALLER, VEC_PROVIDER};
 use crate::ast::program_source::ProgramSource;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::measure;
-use crate::workspace_graph::expected_projection::borrowed_imports::{construct, LayoutRegistry};
 use crate::workspace_graph::index_authored;
 #[path = "original_construct.rs"]
 mod original_construct;
