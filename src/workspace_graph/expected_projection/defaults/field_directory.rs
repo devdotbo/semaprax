@@ -74,6 +74,7 @@ pub(super) fn build(
     Ok(output)
 }
 #[cfg(test)]
+#[path = "field_directory/tests.rs"]
 mod tests;
 
 #[cfg(test)]

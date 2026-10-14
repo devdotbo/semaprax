@@ -537,12 +537,15 @@ use type @id("row") from defaults.provider as ImportedRow;
     }
 }
 
+#[path = "defaults/field_directory.rs"]
 mod field_directory;
 #[cfg(test)]
+#[path = "defaults/original.rs"]
 pub(in crate::workspace_graph::expected_projection) mod original;
 
 #[cfg(test)]
 pub(in crate::workspace_graph::expected_projection) use field_directory::project_original_receiver;
 
 #[cfg(test)]
+#[path = "defaults/error_custody_tests.rs"]
 mod error_custody_tests;

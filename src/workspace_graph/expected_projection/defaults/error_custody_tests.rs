@@ -158,7 +158,7 @@ fn complete_static_error_source_and_independent_old_dispatch_preserve_all_origin
         record["before_sha256"].as_str().unwrap()
     );
     let mut current = include_str!("../defaults.rs").to_owned();
-    assert_eq!(record["edits"].as_array().unwrap().len(), 9);
+    assert_eq!(record["edits"].as_array().unwrap().len(), 12);
     for edit in record["edits"].as_array().unwrap().iter().rev() {
         let after = edit["after"].as_str().unwrap();
         assert_eq!(current.matches(after).count(), 1);

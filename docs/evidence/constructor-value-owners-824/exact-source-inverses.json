@@ -87,6 +87,21 @@
         "name": "closed-default-error-custody-controls",
         "before": "",
         "after": "\n#[cfg(test)]\nmod error_custody_tests;\n"
+      },
+      {
+        "name": "explicit-default-module-path-1",
+        "before": "mod field_directory;",
+        "after": "#[path = \"defaults/field_directory.rs\"]\nmod field_directory;"
+      },
+      {
+        "name": "explicit-default-module-path-2",
+        "before": "pub(in crate::workspace_graph::expected_projection) mod original;",
+        "after": "#[path = \"defaults/original.rs\"]\npub(in crate::workspace_graph::expected_projection) mod original;"
+      },
+      {
+        "name": "explicit-default-module-path-3",
+        "before": "mod error_custody_tests;",
+        "after": "#[path = \"defaults/error_custody_tests.rs\"]\nmod error_custody_tests;"
       }
     ]
   },
