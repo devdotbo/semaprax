@@ -113,7 +113,9 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
     assert_eq!(
         format!(
             "{:x}",
-            <sha2::Sha256 as sha2::Digest>::digest(original.as_bytes())
+            crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(
+                original.as_bytes()
+            ))
         ),
         "8541bd6ab7e58bd7a39eae3eef770e6ac29f104a6ea6923aa73287d2b6a8ed44"
     );
@@ -126,7 +128,9 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
     assert_eq!(
         format!(
             "{:x}",
-            <sha2::Sha256 as sha2::Digest>::digest(original.as_bytes())
+            crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(
+                original.as_bytes()
+            ))
         ),
         "0abc67a67c5c22b175b81e2ef82e46206421f6a974fa772ea40de40181467dd2"
     );
@@ -139,7 +143,7 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
     assert_eq!(
         format!(
             "{:x}",
-            <sha2::Sha256 as sha2::Digest>::digest(old.as_bytes())
+            crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(old.as_bytes()))
         ),
         "4c4f9dd06f00371bb571d1c7122e292fccabd7608b55160469c13350407555fd"
     );
@@ -159,7 +163,7 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
     assert_eq!(
         format!(
             "{:x}",
-            <sha2::Sha256 as sha2::Digest>::digest(old.as_bytes())
+            crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(old.as_bytes()))
         ),
         "9a34241c9eb97cc65b4c9330b372bc6e507599ab6ddf683d9c32567ddaf2ebe1"
     );
@@ -174,7 +178,7 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
     assert_eq!(
         format!(
             "{:x}",
-            <sha2::Sha256 as sha2::Digest>::digest(old.as_bytes())
+            crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(old.as_bytes()))
         ),
         "b24e08d4fb5ca49986917f97b61c72eb796a6dd079db5fc95cd0291a2bf06852"
     );
@@ -186,7 +190,7 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
     assert_eq!(
         format!(
             "{:x}",
-            <sha2::Sha256 as sha2::Digest>::digest(old.as_bytes())
+            crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(old.as_bytes()))
         ),
         "fb4ddcbbb38a9b81bd2f11d3781532729f869eaa890e1ac718806dc3d2d592a8"
     );
@@ -235,7 +239,7 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
     assert_eq!(
         format!(
             "{:x}",
-            <sha2::Sha256 as sha2::Digest>::digest(old.as_bytes())
+            crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(old.as_bytes()))
         ),
         "4dcfc2ca08c79396747d598370a743fb91bcd670bdb0f0820036626d8e78070b"
     );
@@ -284,7 +288,7 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
     assert_eq!(
         format!(
             "{:x}",
-            <sha2::Sha256 as sha2::Digest>::digest(old.as_bytes())
+            crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(old.as_bytes()))
         ),
         "6badd599deed511632f2cfc396a09ef8b04dbace494c1496a75a6bfdef8f200d"
     );
