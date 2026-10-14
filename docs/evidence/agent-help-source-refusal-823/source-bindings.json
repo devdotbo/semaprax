@@ -1,6 +1,6 @@
 {
   "source_before_sha256": "2dfab659f6399f528d262346bdbb11c67c1b0c67bbbee2df98b74c000d814955",
-  "source_after_sha256": "1ef9de8f9a84be66aefc7776d747abe7999200a0512069aee151fe595aef9f09",
+  "source_after_sha256": "4981d511167a4bdc7ec22d23bf6358d10782e8c0f654362cc29e7cc148e772ef",
   "actual_failed_owner_log": "/Volumes/Semaprax/lane-prompts/constructor-loan-intrinsic-85286-20261014/owning-selected-15.log",
   "actual_failed_owner_log_sha256": "2ef1b4ec65c7cac2ff0156358fa9886920dc894856d7ab220993ec3bc0c518ca",
   "historical_trace_discovery": "/Volumes/Semaprax/provenance/astra-shiftsim-help-exposure-e045-20261013.json",

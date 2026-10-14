@@ -54,6 +54,11 @@ const DIAGNOSTIC_T208: &str = concat!(
     "wrote: index + 1 when index: usize\n",
     "fix: Default i64; index + 1usize\n",
 );
+const DIAGNOSTIC_G171: &str = concat!(
+    "SPX-G171\n",
+    "wrote: resolved-core builder ledger refusal\n",
+    "fix: Preserve behavior/caps; record source, requested/remaining/floor and compiler stage. Reduce source or optimize its compiler owner. Ledger bytes are not RSS/peak; do not infer unknowns.\n",
+);
 
 fn guide_commands(guide: &str) -> Vec<&str> {
     guide
@@ -327,6 +332,12 @@ fn full_scoped_help_is_exhaustive_exact_capability_aware_and_inert() {
     std::fs::remove_dir(reference_dir).unwrap();
     std::fs::remove_dir(mistakes_dir).unwrap();
     std::fs::remove_dir(diagnostic_dir).unwrap();
+    let (g171, g171_dir) = invoke(&["help", "diagnostic", "SPX-G171"]);
+    assert!(g171.status.success());
+    assert!(g171.stderr.is_empty());
+    assert_eq!(g171.stdout, DIAGNOSTIC_G171.as_bytes());
+    assert!(g171.stdout.len() <= 256);
+    std::fs::remove_dir(g171_dir).unwrap();
     let (p106, p106_dir) = invoke(&["help", "diagnostic", "SPX-P106"]);
     assert!(p106.status.success());
     assert!(p106.stderr.is_empty());

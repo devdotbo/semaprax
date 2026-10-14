@@ -1286,7 +1286,7 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | x as i64|SPX-P106|Named checked conversion/suffix|
 | Rust/JS closure|SPX-P201|fn(x: i64) -> i64 { x + 1 }|
 | use std::io;|SPX-G170|Built-ins need no import; std.*: Project dependency + stable-ID import|
-| resolved-core builder ledger refusal|`SPX-G171`|Keep required behavior and caps; retain source and requested/remaining/floor plus the compiler-owned stage. Source reduction may help; compiler-owner optimization is another route. These are cumulative ledger bytes, not RSS/peak forecast; unknown is not inferred|
+| resolved-core builder ledger refusal|`SPX-G171`|Preserve behavior/caps; record source, requested/remaining/floor and compiler stage. Reduce source or optimize its compiler owner. Ledger bytes are not RSS/peak; do not infer unknowns.|
 | factory import lacks exact type|SPX-G172|Directly import exact/nested exposed type identities (help); inference grants no import authority|
 | noncanonical Project source|SPX-G170|semaprax fmt <manifest>; blocked discovery: semaprax fmt --manifest <manifest>, then retry|
 | interpreter: source-command.v1/v28 Project|SPX-F102|Interpreter lacks argv/files; semaprax build <manifest> --target native -o <fresh-path>; run in Project dir. Tests: semaprax test <project> --target native [Tests](PROJECT-NATIVE-TEST-V1.md)|

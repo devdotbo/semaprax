@@ -57,7 +57,7 @@ const DIAGNOSTIC_T208: &str = concat!(
 const DIAGNOSTIC_G171: &str = concat!(
     "SPX-G171\n",
     "wrote: resolved-core builder ledger refusal\n",
-    "fix: Use requested/remaining/floor plus the compiler-owned stage to choose a smaller graph; those are cumulative ledger bytes, not RSS/peak forecast; unknown is not inferred\n",
+    "fix: Preserve behavior/caps; record source, requested/remaining/floor and compiler stage. Reduce source or optimize its compiler owner. Ledger bytes are not RSS/peak; do not infer unknowns.\n",
 );
 
 /// The command named by every indented entry of the guided overview.
