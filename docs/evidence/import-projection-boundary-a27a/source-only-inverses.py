@@ -21,6 +21,10 @@ for path,digest in packet['complete_current_projection_members'].items():
     source=(root/path).read_bytes()
     assert sha(source)==digest
     assert b'use super::*;' not in source
-assert sha((root/'tests/workspace/semantic_graph.rs').read_bytes())==packet['unchanged_owning_guard_sha256']
+guard=(root/'tests/workspace/semantic_graph.rs').read_bytes()
+assert sha(guard)==packet['current_owning_guard_sha256']
+hook=packet['owning_guard_integration_inverse']['unique_remove'].encode()
+assert guard.count(hook)==1
+assert sha(guard.replace(hook,b'',1))==packet['prior_owning_guard_sha256']
 assert sha((root/'tests/workspace/semantic_graph/source_inventory.rs').read_bytes())==packet['unchanged_full_source_inventory_sha256']
 print('Source only: five whole-file inverses exact; all 68 unchanged joined projection members contain zero wildcard imports; actual Rust owners pending.')

@@ -74,7 +74,6 @@
     "src/workspace_graph/expected_projection/vec_constructor.rs": "4831e29cce4d39b5c263ffd3743d3cb2227ffc9c57f94e28763994cd78721e10",
     "tests/workspace/semantic_graph/source_inventory.rs": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829"
   },
-  "unchanged_owning_guard_sha256": "883db471a7279f88856c2ca9a67eed0c50e7636c70fd513dc8892fd515748b85",
   "unchanged_full_source_inventory_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
   "whole_inverse_hooks": [
     {
@@ -169,5 +168,12 @@
     "cargo_or_tests": false,
     "original_archives_changed": false,
     "transient_allocation_assertion_changed": false
+  },
+  "prior_owning_guard_sha256": "883db471a7279f88856c2ca9a67eed0c50e7636c70fd513dc8892fd515748b85",
+  "current_owning_guard_sha256": "ae0cbe842d6f44a002d1cb3914cb3ab7a18972e9680b1a9f61000c1379686835",
+  "owning_guard_integration_inverse": {
+    "unique_remove": "        // These two constructors are private to ast::program_source; the joined\n        // source keeps their exact facades without granting workspace authority.\n        \"pub(super) fn append(authored: &'a [T], generated: &'a [T]) -> Option<Self> {\",\n        \"pub(super) fn selected(\",\n",
+    "original_whole_guard_proof": "docs/evidence/projection-private-decl-facades-346690/source-binding.json",
+    "scope": "Only two observed existing private AST declaration facade entries; all original guard bytes reconstructed, full source inventory unchanged."
   }
 }
