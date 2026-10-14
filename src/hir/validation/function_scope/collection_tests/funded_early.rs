@@ -289,7 +289,7 @@ fn add_record(index: &mut DeclarationIndex, id: &str, types: Vec<ResolvedType>) 
     index.type_parameters.insert(id.clone(), Vec::new());
     let template = index.record_fields[&DeclarationId::new("owned.box")][0].clone();
     let template_metadata = index.declarations[&template.id].clone();
-    let fields = types
+    let fields: Vec<crate::hir::ResolvedFieldDeclaration> = types
         .into_iter()
         .enumerate()
         .map(|(position, ty)| {

@@ -1,0 +1,37 @@
+{
+  "source_base": "504b8381e28a1c4aab80d4d66c18e776dfe58def",
+  "qualification": "source-only test inference adapters; no Cargo/build/runtime",
+  "files": [
+    {
+      "path": "src/hir/owned_text_record/paid/tests.rs",
+      "archive": "docs/evidence/nominal-collect-test-adapters-504b/original/src__hir__owned_text_record__paid__tests.rs.before.txt",
+      "original_sha256": "8ea7173a52d53b2d5fb4184e7c620cb8c8be536ac277b4e629501cfddd7a1c57",
+      "current_sha256": "fa5985ec3fb6246ef4dede774ef492f4af21cc0571ec18835fe015a5bb1c856e",
+      "splices": [
+        {
+          "start": 1641,
+          "before": "    let fields = types\n",
+          "after": "    let fields: Vec<crate::hir::ResolvedFieldDeclaration> = types\n"
+        },
+        {
+          "start": 19376,
+          "before": "",
+          "after": "\n#[test]\nfn explicit_collect_types_preserve_complete_prior_text_and_early_profile_controls() {\n    use sha2::{Digest, Sha256};\n    let sources = [\n        (include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/src/hir/owned_text_record/paid/tests.rs\")), include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/nominal-collect-test-adapters-504b/original/src__hir__owned_text_record__paid__tests.rs.before.txt\")), \"8ea7173a52d53b2d5fb4184e7c620cb8c8be536ac277b4e629501cfddd7a1c57\"),\n        (include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/src/hir/validation/function_scope/collection_tests/funded_early.rs\")), include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/nominal-collect-test-adapters-504b/original/src__hir__validation__function_scope__collection_tests__funded_early.rs.before.txt\")), \"304f391011d2bb12acd4d4cd4827f8221d7e330f7bb50f1609865ba5ecf3a264\"),\n    ];\n    let inverse: serde_json::Value = serde_json::from_str(include_str!(concat!(\n        env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/nominal-collect-test-adapters-504b/exact-inverses.json\"\n    ))).unwrap();\n    assert_eq!(inverse[\"files\"].as_array().unwrap().len(), sources.len());\n    for (index, (current, original, fixed)) in sources.into_iter().enumerate() {\n        assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))), fixed);\n        let mut restored = current.to_owned();\n        for edit in inverse[\"files\"][index][\"splices\"].as_array().unwrap().iter().rev() {\n            let at = edit[\"start\"].as_u64().unwrap() as usize;\n            let after = edit[\"after\"].as_str().unwrap();\n            assert_eq!(restored.get(at..at + after.len()), Some(after));\n            restored.replace_range(at..at + after.len(), edit[\"before\"].as_str().unwrap());\n        }\n        assert_eq!(restored, original);\n    }\n}\n"
+        }
+      ]
+    },
+    {
+      "path": "src/hir/validation/function_scope/collection_tests/funded_early.rs",
+      "archive": "docs/evidence/nominal-collect-test-adapters-504b/original/src__hir__validation__function_scope__collection_tests__funded_early.rs.before.txt",
+      "original_sha256": "304f391011d2bb12acd4d4cd4827f8221d7e330f7bb50f1609865ba5ecf3a264",
+      "current_sha256": "8f53c3cf4ed6244a74d7f13c0055ef5f7fb920bd99ac4884196b87379e736c86",
+      "splices": [
+        {
+          "start": 11505,
+          "before": "    let fields = types\n",
+          "after": "    let fields: Vec<crate::hir::ResolvedFieldDeclaration> = types\n"
+        }
+      ]
+    }
+  ]
+}

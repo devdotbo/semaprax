@@ -48,7 +48,7 @@ fn add(index: &mut DeclarationIndex, template: &str, id: &str, types: Vec<Resolv
     let parameters = index.type_parameters[&template].clone();
     index.type_parameters.insert(id.clone(), parameters);
     let field = index.record_fields[&template][0].clone();
-    let fields = types
+    let fields: Vec<crate::hir::ResolvedFieldDeclaration> = types
         .into_iter()
         .map(|ty| {
             let mut field = field.clone();
@@ -558,5 +558,29 @@ fn inline_scalar_children_and_paid_spills_keep_full_saved_receiver_and_drop() {
             "inline scalar/spill backing",
         );
         parity(&index, &ty);
+    }
+}
+
+#[test]
+fn explicit_collect_types_preserve_complete_prior_text_and_early_profile_controls() {
+    use sha2::{Digest, Sha256};
+    let sources = [
+        (include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/hir/owned_text_record/paid/tests.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/nominal-collect-test-adapters-504b/original/src__hir__owned_text_record__paid__tests.rs.before.txt")), "8ea7173a52d53b2d5fb4184e7c620cb8c8be536ac277b4e629501cfddd7a1c57"),
+        (include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/hir/validation/function_scope/collection_tests/funded_early.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/nominal-collect-test-adapters-504b/original/src__hir__validation__function_scope__collection_tests__funded_early.rs.before.txt")), "304f391011d2bb12acd4d4cd4827f8221d7e330f7bb50f1609865ba5ecf3a264"),
+    ];
+    let inverse: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"), "/docs/evidence/nominal-collect-test-adapters-504b/exact-inverses.json"
+    ))).unwrap();
+    assert_eq!(inverse["files"].as_array().unwrap().len(), sources.len());
+    for (index, (current, original, fixed)) in sources.into_iter().enumerate() {
+        assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))), fixed);
+        let mut restored = current.to_owned();
+        for edit in inverse["files"][index]["splices"].as_array().unwrap().iter().rev() {
+            let at = edit["start"].as_u64().unwrap() as usize;
+            let after = edit["after"].as_str().unwrap();
+            assert_eq!(restored.get(at..at + after.len()), Some(after));
+            restored.replace_range(at..at + after.len(), edit["before"].as_str().unwrap());
+        }
+        assert_eq!(restored, original);
     }
 }
