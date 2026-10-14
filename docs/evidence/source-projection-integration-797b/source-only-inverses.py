@@ -38,7 +38,23 @@ p=root/'src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests/construc
 results.append({'owner':str(p.relative_to(root)),'source':'src/hir.rs','archive':str(archive.relative_to(root)),'archive_sha256':hashlib.sha256(archive.read_bytes()).hexdigest(),'archive_bytes':len(archive.read_bytes()),'whole_inverse_equal':True})
 paid=(root/'src/hir/declaration_index/flags/paid.rs').read_text();suffix='\nmod inventory_constructor;\npub(crate) use inventory_constructor::{\n    identity as inventory_identity, substitute as inventory_substitute, InventoryPayer,\n};\n';assert paid.endswith(suffix);assert paid[:-len(suffix)]==(root/'docs/evidence/schema-summary/flags-paid.rs.before').read_text()
 for n in ['key','substitute','storage']:assert (root/f'src/hir/declaration_index/flags/paid/{n}.rs').read_bytes()==(root/f'docs/evidence/schema-summary/flags-paid-{n}.rs.before').read_bytes()
-p=root/'src/hir/validation/canonical_loans/ownership_tests.rs';t=p.read_text();start=t.index('    let mut current = include_str!("../../validation.rs")');end=t.index('    let projected=current.replacen',start);current=apply((root/'src/hir/validation.rs').read_text(),t[start:end],p)
+p=root/'src/hir/validation/canonical_loans/ownership_tests.rs';t=p.read_text()
+# Recognize only the named 824 projection wrapper, allowing Rust syntax spacing.
+# Source bytes are never normalized: every inverse and final archive stays exact.
+anchor=r'let\s+mut\s+current\s*=\s*super::super::function_lookup::paid_custody::project_current\(\s*"src/hir/validation.rs"\s*,\s*include_str!\(\s*"../../validation.rs"\s*\)\s*\)\s*;'
+starts=list(re.finditer(anchor,t));assert len(starts)==1, 'unique named 824 validation projection wrapper'
+start=starts[0].end();end=t.index('    let projected=current.replacen',start)
+current=(root/'src/hir/validation.rs').read_text()
+records=json.loads((root/'docs/evidence/compat-constructor-preflight-824/exact-source-inverses.json').read_text())
+records=[record for record in records if record['source']=='src/hir/validation.rs']
+assert len(records)==1, 'unique named 824 validation source record'
+record=records[0]
+# Mirror project_current's complete named inverses in the same reverse order.
+for edit in reversed(record['edits']):
+ assert current.count(edit['after'])==1, 'unique named 824 validation source inverse'
+ current=current.replace(edit['after'],edit['before'],1)
+assert current==(root/'docs/evidence/compat-constructor-preflight-824'/record['archive']).read_text()
+current=apply(current,t[start:end],p)
 for n,o in [('let canonical_loans = canonical_loans::Lookup::current(&seed)?;\n        Self::from_constructor(seed, canonical_loans, None)','let canonical_loans = canonical_loans::Inventory::rebuild(program)?;\n        Self::from_constructor(seed, canonical_loans::Lookup::Legacy(canonical_loans), None)'),("storage: Option<canonical_loans::Lookup<'a>>","storage: Option<&'a super::canonical_loan_storage::Storage<'a>>"),('            storage\n        } else {\n            canonical_loans::Lookup::current(&seed)?','            canonical_loans::Lookup::Borrowed(storage)\n        } else {\n            canonical_loans::Lookup::Legacy(canonical_loans::Inventory::rebuild(program)?)')]:
  assert current.count(n)==1;current=current.replace(n,o,1)
 archive=root/'docs/evidence/compatibility-loan-custody/src__hir__validation.rs.before';assert current==archive.read_text()
