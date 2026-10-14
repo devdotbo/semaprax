@@ -38,7 +38,7 @@ pub(super) struct Expected<'a> {
     pub(super) reads: Vec<Read<'a>>,
     pub(super) loops: Vec<Loop<'a>>,
     pub(super) loans: Vec<row_loan::Lend<'a>>,
-    pub(super) explicit: Vec<field_origin::Site<'a>>,
+    explicit: Vec<field_origin::Site<'a>>,
 }
 mod row_loan; mod field_origin;
 #[derive(Clone)]

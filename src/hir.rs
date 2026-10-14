@@ -339,6 +339,8 @@ pub(crate) use declaration_index::{TypeFactsPayer, TypeFlags};
 pub(crate) use byte_capacity::{
     analyze_byte_data_capacity, push_resolved_expression_children_in_authored_order,
 };
+#[cfg(test)]
+pub(crate) use byte_capacity::byte_data_capacity_inputs;
 use byte_slice_provenance::derive_byte_slice_provenance;
 #[cfg(test)]
 pub(crate) use capacity_probe::{

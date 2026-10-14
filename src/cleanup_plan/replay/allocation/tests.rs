@@ -80,7 +80,11 @@ fn ordinary_builder_payment_never_grants_selected_admission_and_covers_index_dro
                 .unwrap();
         assert_eq!(active_upper, upper);
         let result = validate_structure_with_budget(&program, function, &mut active, None);
-        assert_eq!(active.remaining, legacy.remaining);
+        // The current Arena prepays search/rotation/receiving visits that the
+        // independent Tree route does not charge. Exact original Tree parity
+        // remains compiled in ordinary_before; skeleton parity stays exact.
+        assert!(active.remaining < legacy.remaining);
+        assert!(active.remaining > 0);
         assert_eq!(active.skeleton_spent, legacy.skeleton_spent);
         assert!(!active.selected() && active.physical.is_none());
         result
@@ -235,3 +239,6 @@ fn active_builder_zero_exact_short_refusal_is_sticky_and_moves_paid_text() {
     let mut unobserved = ReplayBudget::unobserved();
     indexes(function, &mut unobserved).unwrap();
 }
+
+mod accounting_scope;
+mod ordinary_before;

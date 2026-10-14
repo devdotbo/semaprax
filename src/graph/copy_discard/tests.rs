@@ -306,5 +306,12 @@ fn nonfinite_copy_discard_retains_the_existing_nested_projected_loan_route() {
         .origin
         .projections
         .clear();
-    assert_eq!(graph_schema(&forged).unwrap_err().code, "SPX-G410");
+    // The valid unprojected counterpart above retains its exact G410 refusal.
+    // Clearing a checked loan's projections instead corrupts HIR: graph
+    // selection must preserve the complete first validation diagnostic.
+    let expected = crate::hir::validate(&forged)
+        .and_then(|_| crate::loan_plan::validate_program(&forged))
+        .unwrap_err();
+    assert_eq!(expected.code, "SPX-H006");
+    assert_eq!(graph_schema(&forged).unwrap_err(), expected);
 }

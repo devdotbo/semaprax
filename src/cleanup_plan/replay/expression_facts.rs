@@ -617,3 +617,8 @@ mod tests {
 
 #[cfg(test)]
 mod receiving_before;
+
+#[cfg(test)]
+use crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20;
+#[cfg(test)]
+pub(super) mod ordinary_before;

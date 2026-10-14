@@ -194,7 +194,7 @@ fn row_index_and_explicit_type_root_field_and_freeze_forgeries_remain_refused() 
                 let ResolvedExprKind::Place(place) = &mut args[0].kind else {
                     unreachable!()
                 };
-                place.root = ValueId::new("forged.root".to_owned());
+                place.root = ValueId::intrinsic_parameter("forged.root", 0);
             }
             4 => *element = ResolvedType::I64,
             _ => *field = crate::hir::DeclarationId::new("foreign.text"),

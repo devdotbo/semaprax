@@ -5,7 +5,7 @@
     "expected": 1,
     "ignored": 0,
     "source": "src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs",
-    "source_sha256": "725fbcf0b55db270de67a019d45f08259cf731721483da5fb598c7ff3d0f25e2"
+    "source_sha256": "1fff759bb8c4fbf58e3ab41d81c3033e2464e09a362a7ece926b98784aef75a8"
   },
   {
     "harness": "semaprax::lib",
@@ -13,6 +13,6 @@
     "expected": 1,
     "ignored": 0,
     "source": "src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs",
-    "source_sha256": "725fbcf0b55db270de67a019d45f08259cf731721483da5fb598c7ff3d0f25e2"
+    "source_sha256": "1fff759bb8c4fbf58e3ab41d81c3033e2464e09a362a7ece926b98784aef75a8"
   }
 ]

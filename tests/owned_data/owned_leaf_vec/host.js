@@ -10,12 +10,15 @@ const refusal = process.argv[5] || '';
 // Dedicated private scalar String/Bytes witness, not a public Web adapter.
 const scalarView = refusal === 'scalar-view';
 const contractView = refusal === 'contract-view';
+const vecView = refusal === 'vec-view';
 const copyRecordCodec = refusal === 'copy-record-codec';
-const expectedDomain = (scalarView || contractView) ? process.argv[6] : null;
+const expectedDomain = (scalarView || contractView || vecView) ? process.argv[6] : null;
 if (scalarView && !['ok', 'semaprax.convert.v1'].includes(expectedDomain))
   throw Error('scalar-view requires an exact admitted normalized status domain');
 if (contractView && expectedDomain !== 'semaprax.contract.v1')
   throw Error('contract-view requires the exact contract status domain');
+if (vecView && !['ok', 'semaprax.vec.v1'].includes(expectedDomain))
+  throw Error('vec-view requires an exact admitted normalized status domain');
 // OPT #746: `shared-owner` and `shared-owner-lease` route every payload read,
 // allocation and drop through the private shared-owner host's hooks
 // (src/wasm/shared_owner/host.mjs, staged beside this file) and take its
@@ -814,9 +817,32 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
       trapped=true;
     }
     if(!trapped||calls!==1)throw Error('forged field-read result/descriptor did not trap');
+    // A broken host aborts the invocation, so its terminal teardown must also
+    // release resident record locals that never entered a vector. First keep
+    // the stronger independent check that vector Drop settles every child.
+    const vectorLeaves=new Set();
+    const rememberLeaf=word=>{
+      if(word===0n)return;
+      const {origin}=split(word);
+      if(!(origin&0x80000000))throw Error('vector teardown found a borrowed child');
+      vectorLeaves.add(origin&0x7fffffff);
+    };
+    for(const owner of vectors.values()){
+      if(owner.tag===9)for(const word of owner.values)rememberLeaf(word);
+      else if(owner.shape===undefined&&owner.tag===10)
+        for(const row of owner.values){rememberLeaf(row[0]);rememberLeaf(row[1]);}
+      else if(owner.shape!==undefined)
+        for(const row of owner.values)for(const field of fields(owner.shape))
+          if(field.code>=9)rememberLeaf(row[field.slot]);
+    }
     for(const owner of vectors.values())
       env.spx_vec_drop_v2(BigInt.asIntN(64,(owner.generation<<32n)|owner.authority_slot));
-    if(payloads.size||vectors.size||iterators.size||copies!==drops)throw Error('field trap teardown leaked');
+    for(const id of vectorLeaves)
+      if(payloads.has(id))throw Error('field trap vector Drop retained an owned child');
+    for(const [id,bytes] of payloads)
+      drop(BigInt.asIntN(64,((0x80000000n|BigInt(id))<<32n)|BigInt(bytes.length)));
+    if(payloads.size||vectors.size||iterators.size||copies!==drops)
+      throw Error(`field trap teardown leaked payloads=${payloads.size} vectors=${vectors.size} iterators=${iterators.size} copies=${copies} drops=${drops}`);
     return;
   }
   if(refusal==='sort-null'){
@@ -844,9 +870,9 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
     let selected=0,returned;
     try{returned=instance.exports.semaprax_main()}
     catch(error){if(!error.message.startsWith('status:'))throw error;selected=Number(error.message.slice(7))}
-    if(scalarView || contractView){
-      const domain=selected===0?'ok':selected===21||selected===22?'semaprax.convert.v1':selected===9||selected===10?'semaprax.contract.v1':null;
-      const code=selected===21||selected===22?selected-20:selected===9||selected===10?selected-8:selected;
+    if(scalarView || contractView || vecView){
+      const domain=selected===0?'ok':selected===21||selected===22?'semaprax.convert.v1':selected===9||selected===10?'semaprax.contract.v1':vecView&&selected>=13&&selected<=15?'semaprax.vec.v1':null;
+      const code=selected===21||selected===22?selected-20:selected===9||selected===10?selected-8:vecView&&selected>=13&&selected<=15?selected-12:selected;
       if(domain!==expectedDomain||code!==expectedStatus)
         throw Error(`normalized status ${domain}|${code}, expected ${expectedDomain}|${expectedStatus}`);
       if(selected&&returned!==undefined)throw Error('failed scalar view published a result');
@@ -858,6 +884,7 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
       throw Error(`leaks vec=${vectors.size} iter=${iterators.size} payload=${payloads.size} copies=${copies} drops=${drops}`);
     if(shared){shared.facade.audit();shared.facade.endInvocation(receipt)}
     if(refusal==='field-index-failure'&&fieldReads!==0)throw Error('index failure accessed row storage');
+    if(vecView&&fieldReads!==1)throw Error('traversal index failure did not preserve exactly the successful current-row read');
     if((refusal==='field-no-allocation'||refusal==='slot-no-copy')&&fieldReads<64)throw Error('repeated read guard was not exercised');
     if(refusal==='slot-no-copy'&&copies-beforeSlotCopies!==3)throw Error('String-slot reads copied payload storage');
     if(codecPushFailure&&codecPushAttempts!==Number(codecPushFailure[1]))

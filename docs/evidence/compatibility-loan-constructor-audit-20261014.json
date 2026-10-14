@@ -1,0 +1,158 @@
+{
+  "schema": "semaprax.source-audit.v1",
+  "status": "STATIC_SOURCE_AUDIT_NOT_RUNTIME_ATTRIBUTION",
+  "source_head": "b568a7d11c36319053d78c932814e8b6e49835f7",
+  "last_executed_failure_source": "5a81caa784ac8c75b6363c1f1a55496c464e8b2c",
+  "actual_failed_selector": "hir::validation::function_scope::lifecycle::completed::tests::actual_repeated_call_receiver_is_paid_through_drop_with_exact_short_and_sticky_refusal",
+  "failure": "actual.allocated <= paid && actual.highwater <= paid at completed/tests.rs:383",
+  "verified_trace": [
+    {
+      "source": "src/hir/validation/function_scope/lifecycle/completed/tests.rs",
+      "lines": [
+        351,
+        399
+      ],
+      "fact": "Both comparison arms include HirValidator::new in the whole allocation observation."
+    },
+    {
+      "source": "src/hir/validation.rs",
+      "lines": [
+        110,
+        130
+      ],
+      "fact": "The test compatibility constructor calls Inventory::rebuild; the production constructor lends authenticated caller storage."
+    },
+    {
+      "source": "src/hir/validation/canonical_loans.rs",
+      "lines": [
+        15,
+        84
+      ],
+      "fact": "The pure legacy receiver rebuilds plans and owns BTree/Vec directories, with no caller physical reservation in this constructor path."
+    },
+    {
+      "source": "src/loan_plan.rs",
+      "lines": [
+        184,
+        206
+      ],
+      "fact": "The ordinary build_plan route is distinct from the explicit reservation route; a no-candidate function can return an empty plan."
+    },
+    {
+      "source": "src/hir/canonical_loan_storage/caller.rs",
+      "lines": [
+        117,
+        147
+      ],
+      "fact": "The normal production caller acquires canonical storage before HirValidator::with_storage."
+    },
+    {
+      "source": "src/hir/validation/closure.rs",
+      "lines": [
+        63,
+        71
+      ],
+      "fact": "Nested closure construction receives canonical_loans.shared() from its actual parent."
+    }
+  ],
+  "limits": [
+    "No measured byte attribution to one constructor subphase.",
+    "The selected fixture loan counts and all transitive allocator sites are not inferred from this static review.",
+    "No production application budget fit, new executable pass, benchmark token saving or billing result.",
+    "The complete original observer, current/saved receivers, assertions and all prior failure logs remain unchanged."
+  ],
+  "packet_files": [
+    {
+      "path": "src/hir/validation/canonical_loans.rs",
+      "sha256": "2bbd9c41663655e5f012c20dbed9521d5a53c0196ba3333cf8ed4b56dfda57b7"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller.rs",
+      "sha256": "0b318a2caf95d16f10843da5e33434ae25f56aca42becd475e44893ec6079af4"
+    },
+    {
+      "path": "src/hir/validation/constructor_seed.rs",
+      "sha256": "182ef3a6b409c8bd4789cfe7379ccd79f9ff25cc0388d15aac040dfcc882861d"
+    },
+    {
+      "path": "src/hir/validation/function_scope.rs",
+      "sha256": "9360d9f5f6d86bfddf94a74453a69519b4f59a11ddcff56ab07fae525b49b5b1"
+    },
+    {
+      "path": "src/hir/validation/function_scope/lifecycle.rs",
+      "sha256": "5fd13ff6c69920abbbfca62effa9b44be55a1ecbe8651cf163f5ad5ad561ad5b"
+    },
+    {
+      "path": "src/hir/validation/function_scope/lifecycle/completed.rs",
+      "sha256": "15895b83280daba02f9c04fcc0613cfeebd35d35c76fa46dbf76001ef71c9733"
+    },
+    {
+      "path": "src/hir/validation/function_scope/lifecycle/completed/tests.rs",
+      "sha256": "6cfa82bd048fab7ac13fb9e128ee01e84ed856d23c6619ed078b7ef347eb83a7"
+    },
+    {
+      "path": "src/hir/validation/function_scope/lifecycle_receiver_saved.rs",
+      "sha256": "6b50e505b75dab5cb1c9316af0e8a88c2c23a0bc87a321faa4f90acc25b77b70"
+    },
+    {
+      "path": "src/hir/validation/executable_profiles.rs",
+      "sha256": "1ba0afaa5014c0d349b48fe45e657856cb49c1d5ed3c6ea786000a66df54cc1d"
+    },
+    {
+      "path": "src/hir/validation/nominal_facts.rs",
+      "sha256": "bef90c18deacc278b23cd8dac108a6df73dd3cfb4aed18b689263a39893bd7fa"
+    },
+    {
+      "path": "src/hir/validation.rs",
+      "sha256": "530ea6ed35440a84a5b07b4143930c25a8acc7b0424b7cbdb59f24cccd0108d1",
+      "provided_ranges": [
+        [
+          111,
+          185
+        ],
+        [
+          2045,
+          2185
+        ]
+      ]
+    },
+    {
+      "path": "/Volumes/Semaprax/lane-prompts/large-origin-witness-permits-consumers-5a81ca-20261014/owning-selected-45.log",
+      "sha256": "20b6fbdc3973be19f7ad225324ea97ff102d4f21d27362a1200873e23355f847"
+    },
+    {
+      "path": "src/loan_plan.rs",
+      "sha256": "369548317681a0e9856e2192a617dd27474fe91b5dae28b79081b440e2c3caf8",
+      "provided_to_claude": false,
+      "root_source_trace": true
+    },
+    {
+      "path": "src/hir/validation/closure.rs",
+      "sha256": "8b8900b9aea882a260cd3c366c908258bd3dbadba2372534fae39e3a84f4822d",
+      "provided_to_claude": false,
+      "root_source_trace": true
+    }
+  ],
+  "packet_sha256": "08f1e0df6f43988ae5fa2a5e4385194a40a04620b4e2af4eb6651f13bbf3170c",
+  "claude": {
+    "session_id": "1c7ba26d-e5d2-4e7e-b3e4-f8d588179bc5",
+    "process": {
+      "exit_code": 0,
+      "wall_seconds": 81.99957074999838,
+      "tools_enabled": false,
+      "code_execution": false,
+      "peak_process_group_rss_bytes": 374325248,
+      "resource_refusal": null
+    },
+    "provider_reported_cost_usd": 0.2480295,
+    "cost_basis": "list",
+    "actual_invoice_received": false,
+    "result_sha256": "8c7dacde3f6e3020e7c83a7ca091a2a957ab4b82bbec04544ec712a0b5fcdbd4"
+  },
+  "issue": {
+    "number": 824,
+    "url": "https://github.com/wavect/semaprax/issues/824",
+    "state": "open; implementation and qualification pending"
+  },
+  "next_action": "Implement an explicit complete compatibility caller-funding/ownership boundary, retain all original receivers, audit clone custody and then execute the unchanged owning gate in the consolidated batch."
+}

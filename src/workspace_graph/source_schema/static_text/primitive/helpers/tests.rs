@@ -413,7 +413,7 @@ fn complete_ordinary_provider_sources_remain_checked_while_selected_schema_refus
         PROVIDER.replace("{leaf_step(n)}", "{step(n)}"),
         PROVIDER.replace(
             "fn step(n:i64)->i64 {leaf_step(n)}",
-            "fn step(n:i64)->i64 {let label=str\"x\";if str_len_bytes(label)==1usize {n}else{0}}",
+            "fn step(n:i64)->i64 {let label=str\"x\";if str_len_bytes(label)==1 {n}else{0}}",
         ),
         PROVIDER.replace(
             "fn step(n:i64)->i64 {leaf_step(n)}",
@@ -1047,4 +1047,17 @@ fn imported_record_signature_equality_debits_the_actual_nominal_prefix() {
             assert_eq!(result.is_ok(), available == units);
         }
     }
+}
+
+#[test]
+fn original_static_text_provider_numeric_mismatch_keeps_checked_refusal() {
+    let provider = PROVIDER.replace(
+        "fn step(n:i64)->i64 {leaf_step(n)}",
+        "fn step(n:i64)->i64 {let label=str\"x\";if str_len_bytes(label)==1usize {n}else{0}}",
+    );
+    assert_ne!(provider, PROVIDER);
+    let errors = build(CALLER, &provider, LEAF)
+        .err()
+        .expect("source mismatch");
+    assert!(errors.iter().any(|error| error.code == "SPX-T207"));
 }

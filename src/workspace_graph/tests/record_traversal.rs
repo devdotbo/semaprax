@@ -469,9 +469,12 @@ fn explicit_and_row_field_read_forms_are_source_bound_in_both_directions() {
 }
 @id("app.main") fn main()->i64 {0}
 "#;
-    let input = vec![canonical_source("app.spx", source)];
-    let programs = parsed_sources(&input);
-    let build = build_owned(input).unwrap();
+    let input = || vec![
+        canonical_source("app.spx", source),
+        canonical_source("aux.spx", "module aux; @id(\"aux.marker\") fn marker()->i64 {0}"),
+    ];
+    let programs = parsed_sources(&input());
+    let build = build_owned(input()).unwrap();
     super::super::record_traversal::validate(&programs, &build.hir.modules).unwrap();
     fn change(expression: &mut hir::ResolvedExpr, target: hir::VecFieldReadOrigin) -> bool {
         if let hir::ResolvedExprKind::VecFieldRead { origin, .. } = &mut expression.kind {
@@ -493,7 +496,10 @@ fn explicit_and_row_field_read_forms_are_source_bound_in_both_directions() {
         false
     }
     for target in [hir::VecFieldReadOrigin::Explicit, hir::VecFieldReadOrigin::Traversal] {
-        let mut modules = build.hir.modules.clone();
+        let mut modules = build_owned(input())
+            .unwrap()
+            .hir
+            .modules;
         let reader = modules[0].functions.iter_mut().find(|f| f.id.as_str() == "reader").unwrap();
         assert!(change(&mut reader.body, target));
         let error = super::super::record_traversal::validate(&programs, &modules).unwrap_err();

@@ -1,0 +1,67 @@
+#[test]
+fn ordinary_builder_payment_never_grants_selected_admission_and_covers_index_drop() {
+    let program = program();
+    let function = &program.functions[0];
+    // Reference collections are constructed outside both the builder and the
+    // observer. Their original arbitrary-shape semantics remain independent.
+    let old_facts = expression_facts(function).unwrap();
+    let old_storage = old::validate_slots(function).unwrap();
+    let old_leaves = old::collect_leaves(function).unwrap();
+    let (((), metrics), refused, charged, receipt) = with_limit_usage_refusal(usize::MAX, || {
+        measure(|| {
+            let mut budget = ReplayBudget::new();
+            assert_eq!(budget.admission, AdmissionMode::Ordinary);
+            assert_eq!(budget.payer, AllocationPayer::ActiveBuilder);
+            assert!(budget.physical.is_none());
+            let facts = expression_facts::with_budget(function, &mut budget).unwrap();
+            let storage = validate_slots_paid(function, &mut budget).unwrap();
+            let leaves = collect_leaves_paid(function, &mut budget).unwrap();
+            assert_eq!(facts.len(), old_facts.len());
+            assert_eq!(storage, old_storage);
+            for (flag, leaf) in leaves.iter() {
+                assert_eq!(leaf.place, old_leaves[flag].place);
+                assert_eq!(leaf.lifecycle, old_leaves[flag].lifecycle);
+            }
+            assert!(!budget.selected());
+            drop((facts, storage, leaves, budget));
+        })
+    });
+    assert!(!refused && receipt.is_none() && !metrics.invalid);
+    assert!(metrics.allocations > 0);
+    assert!(metrics.allocated <= charged);
+    assert!(metrics.highwater <= charged);
+    assert_eq!(metrics.allocated, metrics.freed);
+    assert_eq!(metrics.live, 0);
+    // The actual ordinary replay entry keeps its complete authority checks.
+    let mut legacy = ReplayBudget::unobserved();
+    // Use the real caller's capped independent skeleton census. Directly
+    // calling the member receiver starts with no authorized skeleton work.
+    let upper =
+        reserve_program_skeleton_work(&program, std::iter::once(function), &mut legacy).unwrap();
+    assert!(upper > 0 && upper <= MAX_REPLAY_WORK_UNITS);
+    validate_structure_with_budget(&program, function, &mut legacy, None).unwrap();
+    let (checked, refused, _, _) = with_limit_usage_refusal(usize::MAX, || {
+        let mut active = ReplayBudget::new();
+        let active_upper =
+            reserve_program_skeleton_work(&program, std::iter::once(function), &mut active)
+                .unwrap();
+        assert_eq!(active_upper, upper);
+        let result = validate_structure_with_budget(&program, function, &mut active, None);
+        assert_eq!(active.remaining, legacy.remaining);
+        assert_eq!(active.skeleton_spent, legacy.skeleton_spent);
+        assert!(!active.selected() && active.physical.is_none());
+        result
+    });
+    checked.unwrap();
+    assert!(!refused);
+    let mut hostile = function.clone();
+    hostile.cleanup_plan.slots[0].id.0 += 1;
+    let old = old::validate_slots(&hostile).err().unwrap();
+    let (new, refused, _, _) = with_limit_usage_refusal(usize::MAX, || {
+        validate_slots_paid(&hostile, &mut ReplayBudget::new())
+            .err()
+            .unwrap()
+    });
+    assert_eq!(new, old);
+    assert!(!refused);
+}

@@ -1,0 +1,60 @@
+{
+  "status": "actual tools-disabled source consultation/review; no code execution or runtime qualification",
+  "final_source_audit_sha256": "9d3b090da77365aa573c1fdb6c1fcb6d54af71900c6b60ba3cba66e4f78f5bf8",
+  "reviews": [
+    {
+      "role": "source design consultation",
+      "actual_session_id": "e62617d0-3caa-45b4-8d20-64afa985c6ba",
+      "process_receipt": {
+        "exit_code": 0,
+        "wall_seconds": 233.2423565420031,
+        "tools_enabled": false,
+        "code_execution": false,
+        "peak_process_group_rss_bytes": 422658048,
+        "resource_refusal": null
+      },
+      "cli_reported_total_cost_usd": 0.4265875,
+      "actual_billing": "unknown; no task-cost improvement claim",
+      "packet_path": "/Volumes/Semaprax/lane-prompts/funded-planner-fact-owner-20261014",
+      "prompt_sha256": "2c4e5b185c64d02f51ad1823a21c072f89f0204b93505082bf2708a61cbbdd98",
+      "result_sha256": "138519a7157368a88f119c8e30296e210606625e2582a3bd0a5de7d6ec177ab3",
+      "result": "Separate earlier-stage actual result retained unchanged in external packet."
+    },
+    {
+      "role": "full source review; two blockers repaired",
+      "actual_session_id": "aa9b7c57-ea4c-4036-883f-7aae21630e77",
+      "process_receipt": {
+        "exit_code": 0,
+        "wall_seconds": 343.8245007079968,
+        "tools_enabled": false,
+        "code_execution": false,
+        "peak_process_group_rss_bytes": 408633344,
+        "resource_refusal": null
+      },
+      "cli_reported_total_cost_usd": 0.6761635,
+      "actual_billing": "unknown; no task-cost improvement claim",
+      "packet_path": "/Volumes/Semaprax/lane-prompts/funded-planner-fact-owner-20261014",
+      "prompt_sha256": "fb66e6d1315c87d7c922c7b72ba7a2df5da105c692c2a32170e44cccff2fa155",
+      "result_sha256": "bf174df84384c1165a33b9b5cef3d6f32a834f519287ffd88c9bdd275d95972e",
+      "result": "Separate earlier-stage actual result retained unchanged in external packet."
+    },
+    {
+      "role": "narrow final blocker verification; qualified no-blocker",
+      "actual_session_id": "cd03c799-352c-427e-9377-ff0f2e5f9554",
+      "process_receipt": {
+        "exit_code": 0,
+        "wall_seconds": 30.64841679100209,
+        "tools_enabled": false,
+        "code_execution": false,
+        "peak_process_group_rss_bytes": 342065152,
+        "resource_refusal": null
+      },
+      "cli_reported_total_cost_usd": 0.0816615,
+      "actual_billing": "unknown; no task-cost improvement claim",
+      "packet_path": "/Volumes/Semaprax/lane-prompts/funded-planner-fact-owner-20261014",
+      "prompt_sha256": "4498762a02c3a48ee1e98838234cdc2861e7ca15339f6931def81f6163c8953e",
+      "result_sha256": "ba8d8a630a0b58208f88be7ac5b0ba018ebd652cef6451156f107fe8597ef612",
+      "result": "**Verdict: qualified no-blocker on both items, from the pasted source only. Nothing was executed, and the `docs/evidence/*` files and `saved.rs` were not in the paste.**\n\n**Blocker 1 (receiver/Facts mismatch): resolved in source.**\n- `ordinary_before.rs` calls `saved::with_budget(function, budget).map(Facts::Tree)`. It takes the map by value, so there are no clones, aliases or extra budget charges.\n- `tree_facts_for_test` returns the same `saved::with_budget` result unwrapped. The two adapters therefore agree on the old map type.\n- The `Facts::Tree(tree)` arms in `receiving.rs` (`validate_status_sources` and `validate_blocks_and_edges`) forward `tree` to the old `super::super::validate_*` functions. The old complete receivers are therefore reached unchanged.\n- The inner `mod expression_facts` is wired correctly. `super::super::receiving` resolves to `expression_facts::receiving`, which is reachable from a descendant module. `with_budget` has the signature the owner body calls.\n- The test's `preamble + receiver + suffix` equals the shown file header and suffix. The `include_str!` relative paths from `allocation/tests/` resolve correctly: five `../` reach the crate root, `../../expression_facts/\u2026` reaches the replay directory, `../../../replay.rs` reaches `cleanup_plan/replay.rs`, and `../tests.rs` reaches `allocation/tests.rs`.\n\n**Blocker 2 (mod order): resolved.** The tail reads `mod accounting_scope; mod ordinary_before;`, which is alphabetical and matches rustfmt. It is also consistent with the test's `\"{}\\nmod accounting_scope;\\nmod ordinary_before;\\n\"` format string, provided `original` ends in a single newline. The `hir_module_boundaries` list includes all the new files shown.\n\n**Not verifiable from this paste:**\n1. `Facts::Tree`'s payload must be exactly `BTreeMap<ExpressionId, Option<CallFact<'hir>>>`. The `Facts` definition and `saved::with_budget`'s signature were not shown. A mismatch would be a compile error rather than a semantic one.\n2. The old owner body uses names such as `lexical_replay`, `structural_maps`, `continuation_storage` and `plan_structure_units`. They resolve only if `expression_facts.rs` has `use super::*` in scope, as the original module presumably did.\n3. The byte-equality assertions against `original-*.txt` and the `saved.rs` SHA-256 pin were not recomputed.\n4. The `entries_paid` zip in `accounting_scope.rs` assumes the `(id, current)` item types are compatible with `assert_eq!(old_id, id)` and with `.callee` and the other field comparisons.\n\nI found no concrete remaining blocker. A single `cargo test` run of `accounting_scope`, `ordinary_before`, `funded_flat` and `hir_module_boundaries` would settle items 1\u20134."
+    }
+  ]
+}

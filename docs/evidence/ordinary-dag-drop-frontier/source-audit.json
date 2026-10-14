@@ -1,0 +1,1160 @@
+{
+  "schema": "semaprax.ordinary-dag-drop-reachability.v1",
+  "issue": 819,
+  "source_subject": "cb55986d65e4707c203a950d38e76d55575927c6",
+  "source_tree": "5a69605d1787125bd62f2b12a4e9437a46124e67",
+  "state": "source-only-audit-no-cargo-no-test-execution",
+  "compiler_verified_reachability": false,
+  "source_induction_review_required": true,
+  "production_publication_sites": [
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs",
+      "line": 51,
+      "constructor": "ordinary_dag"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/dag_storage.rs",
+      "line": 118,
+      "constructor": "charged_dag"
+    }
+  ],
+  "all_src_dag_reference_files": {
+    "src/cleanup_plan/replay/continuation_storage/tests.rs": "a4ad39cd3531c7a22f8cb37e5af130b0e2c22085394db1498594cf1163062f77",
+    "src/cleanup_plan/replay/factored/borrowed_canonical/tests.rs": "603d7c7bfcbc1d6163b7395f048b7421665539806d7643cc0d9f38b61e48bfc6",
+    "src/cleanup_plan/replay/factored/dag_memo/tests.rs": "59e02eff3f2c90c8db58d48f91562400200a88ce8d741aa811ff671c42456e25",
+    "src/cleanup_plan/replay/factored/dag_memo.rs": "c1438c50cf2f92e686977f7d03f0ff3ca8840967027b16872b52af3536ef8ee4",
+    "src/cleanup_plan/replay/factored/instrumentation.rs": "6e9813abab2679cc9ff1c182450c34a92620cb7a2fa6868d96ebe50be466baad",
+    "src/cleanup_plan/replay/factored/lexical_plan_tests.rs": "a724d47eb969c5e1406260751cb9dbfd4ab523a38cc5750e1f26de6dde4cb074",
+    "src/cleanup_plan/replay/factored.rs": "34af23f292ac061e443a12ed1452a7cdf90fb428de994071c225d99a1500c0e2",
+    "src/cleanup_plan/replay/lexical_skeleton/tests.rs": "73bbaae49a238d03e2184b5bb7907c46e3268ad3730b4f0815cd8aa2f0bb0286",
+    "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves/old.rs": "9b388f625c838307880ade43dc48c8c346c0cddb06fc4c0bf46f2d28465ce35f",
+    "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs": "7ee5d27f2ae13fa859875cfdc9715b88ad6137996a1362840254a667b3d34f68",
+    "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs": "6f3aeb448ee3b4bb202d027c93eebbcec8a5c0854496792d53a66206525871f8",
+    "src/cleanup_plan/replay/skeleton_work/dag_storage.rs": "500a40cbfbbef50ff44a26f237f2b93cea7358a64ccb1105293ade4fa078f6bb",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs": "d8564be6acde2c6def66fc5ec06b3890545609f198f34e225773f78cfc42ae0c",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs": "fd8afd796f7f05555b304fed01cdf92fd1fafa069f99c6b20f371fd3ffc43223",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs": "cd6cbb50e3d362456d3f032e0bbdb3887c8ef388e3bc08a15a43b185fa5d9d6f",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs": "d17dae8c6c00c034c06092531c4a45c97347c88fdd351fb7d7e11c6be09bb2ab",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs": "3d1a9ab1fd584910af3044e44a19e4c429263778cc611fa44c4a3df6250e2ab5",
+    "src/cleanup_plan/replay/skeleton_work.rs": "f6163b3cc48322bf40549c18cccf8ea412a52a450daadd82d7f93e5daa6b8716"
+  },
+  "exhaustive_literal_constructor_and_definition_census": [
+    {
+      "file": "src/cleanup_plan/replay/factored/borrowed_canonical/tests.rs",
+      "line": 254,
+      "text": "let detached = Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/factored/dag_memo/tests.rs",
+      "line": 17,
+      "text": "Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/lexical_skeleton/tests.rs",
+      "line": 23,
+      "text": "path.observations.prefix = Some(std::rc::Rc::new(skeleton_work::ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/dag_storage.rs",
+      "line": 118,
+      "text": "Ok(Rc::new(ObservationDag {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 478,
+      "text": "let leaf = Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 482,
+      "text": "let child = Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 524,
+      "text": "let first = Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 528,
+      "text": "let mut forged = ObservationDag::legacy(ObservationDagKind::Seq(None, Vec::new()));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 590,
+      "text": "let old_drop_start = original.find(\"impl Drop for ObservationDag {\").unwrap();"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 592,
+      "text": ".find(\"\\nimpl ObservationDag {\")"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 595,
+      "text": "let current_drop_start = current.find(\"impl Drop for ObservationDag {\").unwrap();"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 597,
+      "text": ".find(\"\\nimpl ObservationDag {\")"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 47,
+      "text": "pub(super) struct ObservationDag {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 59,
+      "text": "impl Drop for ObservationDag {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 87,
+      "text": "impl ObservationDag {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 135,
+      "text": "let head = std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 139,
+      "text": "self.prefix = Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 154,
+      "text": "Some(head) => std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Cat(vec!["
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 167,
+      "text": "Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 178,
+      "text": "std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 186,
+      "text": "prefix: Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 275,
+      "text": "let mut node = ObservationDag::legacy(kind);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 47,
+      "text": "pub(super) struct ObservationDag {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 59,
+      "text": "impl Drop for ObservationDag {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 87,
+      "text": "impl ObservationDag {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 135,
+      "text": "let head = std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 139,
+      "text": "self.prefix = Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 154,
+      "text": "Some(head) => std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Cat(vec!["
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 167,
+      "text": "Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 178,
+      "text": "std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 186,
+      "text": "prefix: Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 275,
+      "text": "let mut node = ObservationDag::legacy(kind);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs",
+      "line": 51,
+      "text": "let node = Rc::new(ObservationDag {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 392,
+      "text": "pub(super) struct ObservationDag {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 406,
+      "text": "impl Drop for ObservationDag {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 434,
+      "text": "impl ObservationDag {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 483,
+      "text": "let head = std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 487,
+      "text": "self.prefix = Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 502,
+      "text": "Some(head) => std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Cat(vec!["
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 515,
+      "text": "Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 526,
+      "text": "std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 534,
+      "text": "prefix: Some(std::rc::Rc::new(ObservationDag::legacy("
+    }
+  ],
+  "historical_owner_results_path": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-results.json",
+  "historical_owner_results_sha256": "63b108c35a47730793af58b879523a3bcad239ec59f52e4b05da07c0438685a5",
+  "historical_owner_results_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+  "historical_results_are_not_current_head_receipts": true,
+  "relevant_source_comparison_to_historical_execution": {
+    "src/cleanup_plan/replay/skeleton_work.rs": {
+      "current_sha256": "f6163b3cc48322bf40549c18cccf8ea412a52a450daadd82d7f93e5daa6b8716",
+      "historical_sha256": "f6163b3cc48322bf40549c18cccf8ea412a52a450daadd82d7f93e5daa6b8716",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs": {
+      "current_sha256": "3d1a9ab1fd584910af3044e44a19e4c429263778cc611fa44c4a3df6250e2ab5",
+      "historical_sha256": "3d1a9ab1fd584910af3044e44a19e4c429263778cc611fa44c4a3df6250e2ab5",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs": {
+      "current_sha256": "d8564be6acde2c6def66fc5ec06b3890545609f198f34e225773f78cfc42ae0c",
+      "historical_sha256": "d8564be6acde2c6def66fc5ec06b3890545609f198f34e225773f78cfc42ae0c",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/skeleton_work/dag_storage.rs": {
+      "current_sha256": "500a40cbfbbef50ff44a26f237f2b93cea7358a64ccb1105293ade4fa078f6bb",
+      "historical_sha256": "500a40cbfbbef50ff44a26f237f2b93cea7358a64ccb1105293ade4fa078f6bb",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs": {
+      "current_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8",
+      "historical_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs": {
+      "current_sha256": "fd8afd796f7f05555b304fed01cdf92fd1fafa069f99c6b20f371fd3ffc43223",
+      "historical_sha256": "fd8afd796f7f05555b304fed01cdf92fd1fafa069f99c6b20f371fd3ffc43223",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs": {
+      "current_sha256": "cd6cbb50e3d362456d3f032e0bbdb3887c8ef388e3bc08a15a43b185fa5d9d6f",
+      "historical_sha256": "cd6cbb50e3d362456d3f032e0bbdb3887c8ef388e3bc08a15a43b185fa5d9d6f",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs": {
+      "current_sha256": "d17dae8c6c00c034c06092531c4a45c97347c88fdd351fb7d7e11c6be09bb2ab",
+      "historical_sha256": "d17dae8c6c00c034c06092531c4a45c97347c88fdd351fb7d7e11c6be09bb2ab",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs": {
+      "current_sha256": "6f3aeb448ee3b4bb202d027c93eebbcec8a5c0854496792d53a66206525871f8",
+      "historical_sha256": "6f3aeb448ee3b4bb202d027c93eebbcec8a5c0854496792d53a66206525871f8",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs": {
+      "current_sha256": "7ee5d27f2ae13fa859875cfdc9715b88ad6137996a1362840254a667b3d34f68",
+      "historical_sha256": "7ee5d27f2ae13fa859875cfdc9715b88ad6137996a1362840254a667b3d34f68",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves/old.rs": {
+      "current_sha256": "9b388f625c838307880ade43dc48c8c346c0cddb06fc4c0bf46f2d28465ce35f",
+      "historical_sha256": "9b388f625c838307880ade43dc48c8c346c0cddb06fc4c0bf46f2d28465ce35f",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/continuation_storage/tests.rs": {
+      "current_sha256": "a4ad39cd3531c7a22f8cb37e5af130b0e2c22085394db1498594cf1163062f77",
+      "historical_sha256": "a4ad39cd3531c7a22f8cb37e5af130b0e2c22085394db1498594cf1163062f77",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/factored/borrowed_canonical/tests.rs": {
+      "current_sha256": "603d7c7bfcbc1d6163b7395f048b7421665539806d7643cc0d9f38b61e48bfc6",
+      "historical_sha256": "603d7c7bfcbc1d6163b7395f048b7421665539806d7643cc0d9f38b61e48bfc6",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/factored/dag_memo/tests.rs": {
+      "current_sha256": "59e02eff3f2c90c8db58d48f91562400200a88ce8d741aa811ff671c42456e25",
+      "historical_sha256": "59e02eff3f2c90c8db58d48f91562400200a88ce8d741aa811ff671c42456e25",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/factored/dag_memo.rs": {
+      "current_sha256": "c1438c50cf2f92e686977f7d03f0ff3ca8840967027b16872b52af3536ef8ee4",
+      "historical_sha256": "c1438c50cf2f92e686977f7d03f0ff3ca8840967027b16872b52af3536ef8ee4",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/factored/instrumentation.rs": {
+      "current_sha256": "6e9813abab2679cc9ff1c182450c34a92620cb7a2fa6868d96ebe50be466baad",
+      "historical_sha256": "6e9813abab2679cc9ff1c182450c34a92620cb7a2fa6868d96ebe50be466baad",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/factored/lexical_plan_tests.rs": {
+      "current_sha256": "a724d47eb969c5e1406260751cb9dbfd4ab523a38cc5750e1f26de6dde4cb074",
+      "historical_sha256": "a724d47eb969c5e1406260751cb9dbfd4ab523a38cc5750e1f26de6dde4cb074",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/factored.rs": {
+      "current_sha256": "34af23f292ac061e443a12ed1452a7cdf90fb428de994071c225d99a1500c0e2",
+      "historical_sha256": "34af23f292ac061e443a12ed1452a7cdf90fb428de994071c225d99a1500c0e2",
+      "byte_identical": true
+    },
+    "src/cleanup_plan/replay/lexical_skeleton/tests.rs": {
+      "current_sha256": "73bbaae49a238d03e2184b5bb7907c46e3268ad3730b4f0815cd8aa2f0bb0286",
+      "historical_sha256": "73bbaae49a238d03e2184b5bb7907c46e3268ad3730b4f0815cd8aa2f0bb0286",
+      "byte_identical": true
+    }
+  },
+  "historical_exact_owning_controls": [
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::actual_empty_union_prepays_literal_frontier_node_backing_and_complete_work_drop",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-79.log",
+      "log_sha256": "f001673fc9b75c17cdf4e95cae242c0ec1ce5e174ec4e3acfe4e39c1f428752a",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::actual_weak_headers_and_nonempty_sequence_tails_keep_independent_original_drop_order",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-80.log",
+      "log_sha256": "a8d3f912b1a58a38287246bf0e2f4cf28dc21016364a6d31afd9b1450588dea5",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::duplicate_deep_dag_frontier_is_linear_and_all_publication_failures_drop_paid_children",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-81.log",
+      "log_sha256": "aea2ba0b6102aec8847d995d8e3af56f0432207b49efe7529977f42a6ffa85f4",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::complete_cat_alt_owned_tails_duplicate_and_external_owner_keep_saved_values",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-82.log",
+      "log_sha256": "dd47d183a33c150ed954a9fd0a0f16c11b7e6d7e34ba3c9e133edc8011c4b5d9",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::foreign_work_and_ledger_children_need_only_immutable_structural_bounds",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-83.log",
+      "log_sha256": "116179e7360ac1abf26176b548de24f04a7fab40f38be78caa7d49736910131a",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::successful_paid_parent_drains_legacy_children_but_zero_refusal_preserves_legacy_boundary",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-84.log",
+      "log_sha256": "2580bd21ef1979fe0058ab60073c256a539147fed4e715a6078eece38732dcf1",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::checked_bound_overflow_refuses_before_node_publication_and_preserves_sticky_payer",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-85.log",
+      "log_sha256": "bd8b08c117f3fdc0df813a599dc29589a400995e9ef864b1e01259b97c351bfb",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::independent_original_type_drop_builders_and_complete_receiver_are_byte_locked",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-86.log",
+      "log_sha256": "453509126dce0dbe123b2b4f710d4b1ddb49c903f29aa01f672cb14baff8bf57",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::foreign_selected_conservative_bound_is_paid_in_full_without_new_session_policy",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-87.log",
+      "log_sha256": "b425b16c1fc62739513fc39e0651beec7751bd10c3d9813fbfea73c89952e706",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::cat_alt_actual_member_backing_and_rc_release_order_pin_the_physical_frontier_difference",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-88.log",
+      "log_sha256": "1fc41392761c16fd4ba82fa81774389110e14cab739b2d7d72099afade02aba7",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::tests::ordinary_empty_union_preserves_saved_multiset_and_literal_node_storage_through_drop",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-89.log",
+      "log_sha256": "8fa627a6a1717d6361b84ed5d1b018f2970b07cc1e6d84b23c7d3dcdaf606c60",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::deep_shared_dag_creation_and_drop_fit_the_precharged_frontier",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-90.log",
+      "log_sha256": "a663571403c9068b90a7fee2ebeac7fbe6c77f240e32de4abca19dda1d1869ba",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::owned_extension_literal_clone_removal_survives_receiving_exact_short_and_drop",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-91.log",
+      "log_sha256": "30665eedb31146af739e95ac9588bccf0179d0aef1ae80081ea7d236b2d30c49",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::selected_4096_nonempty_event_tails_keep_literal_old_current_removed_through_receiver_drop",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-92.log",
+      "log_sha256": "2a6a2ccd59784a6b654835ad3a74b6a453474c39f829f9629c3d2422493321be",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::shared_prefix_creation_through_drop_has_exact_work_and_backing_limits",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-93.log",
+      "log_sha256": "a6cfce718cb233d9b4aed0b82dd2afe4b22eef236fa6f3e59f73384dd16ddfe3",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::owned_union_literal_clone_request_delta_and_exact_one_short_drop_receivers",
+      "historical_source_subject": "74d9031bf12d12a5d77226aeaae0be7e937cef37",
+      "exit_code": 0,
+      "executable_sha256": "05d10724870ff0576f13765be7b7b98b0c2e5d5a5e625fc7f41466331df26552",
+      "log": "/Volumes/Semaprax/lane-prompts/large-dag-capacity-catalog-consumers-74d903-20261013/owning-selected-94.log",
+      "log_sha256": "b7d9d9d1cbd1d06a8ab6e4bf18e34502d7193fbcf6e76f979cb04f13063c9671",
+      "exact_one_pass_zero_failed_zero_ignored": true
+    }
+  ],
+  "legacy_positive_allocation_control_unchanged": true,
+  "legacy_original_allocation_remaining": true,
+  "reachable_production_legacy_allocating_constructor_found": false,
+  "production_semantics_changed": false,
+  "new_or_widened_caps": false,
+  "saved_original_bytes": 14172,
+  "saved_original_sha256": "fd8afd796f7f05555b304fed01cdf92fd1fafa069f99c6b20f371fd3ffc43223",
+  "compiled_original_prefix_exact": true,
+  "protected_original_archives": {
+    "docs/evidence/ordinary-dag-drop/original-dag-storage-tests.txt": "23e881c2747e87a7ce410a1d74ab3e66f8334e47cd9bcb5a3a9ce75d8cc3c910",
+    "docs/evidence/ordinary-dag-drop/original-ordinary-dag-tests.txt": "160e8e95338eaf2c2b554138c1dcc21d1037497be7fefcdf2d20e62588353200",
+    "docs/evidence/ordinary-dag-drop/original-ordinary-dag.txt": "114c8c07b89ba6a40d51dcf068b921e4a87df97e56b95e07f4e5c0556aa007b9",
+    "docs/evidence/ordinary-dag-drop/original-skeleton-work.txt": "2d92df6e549b06a5f0667e1060f46d38edbb045079c522ef21588c8ff2da2bd4",
+    "docs/evidence/ordinary-dag-drop/original-tail-moves.txt": "d99e422bef75525fc6796899ba82ba10230bfaaa1e7ea22fed680998dd5c1f98"
+  },
+  "complete_original_issue_selector_coverage": [
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::actual_empty_union_prepays_literal_frontier_node_backing_and_complete_work_drop",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::actual_weak_headers_and_nonempty_sequence_tails_keep_independent_original_drop_order",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::duplicate_deep_dag_frontier_is_linear_and_all_publication_failures_drop_paid_children",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::complete_cat_alt_owned_tails_duplicate_and_external_owner_keep_saved_values",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::foreign_work_and_ledger_children_need_only_immutable_structural_bounds",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::successful_paid_parent_drains_legacy_children_but_zero_refusal_preserves_legacy_boundary",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::checked_bound_overflow_refuses_before_node_publication_and_preserves_sticky_payer",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::independent_original_type_drop_builders_and_complete_receiver_are_byte_locked",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::foreign_selected_conservative_bound_is_paid_in_full_without_new_session_policy",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::cat_alt_actual_member_backing_and_rc_release_order_pin_the_physical_frontier_difference",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::tests::ordinary_empty_union_preserves_saved_multiset_and_literal_node_storage_through_drop",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::deep_shared_dag_creation_and_drop_fit_the_precharged_frontier",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::owned_extension_literal_clone_removal_survives_receiving_exact_short_and_drop",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::selected_4096_nonempty_event_tails_keep_literal_old_current_removed_through_receiver_drop",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::shared_prefix_creation_through_drop_has_exact_work_and_backing_limits",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::owned_union_literal_clone_request_delta_and_exact_one_short_drop_receivers",
+      "historical_included": true,
+      "historical_exit_code": 0,
+      "current_head_execution": "pending-root"
+    }
+  ],
+  "source_census_alias_hits": 1,
+  "exhaustive_replay_legacy_freeze_insert_front_extend_call_census": [
+    {
+      "file": "src/cleanup_plan/replay/cfg_bounds/tests/old.rs",
+      "line": 83,
+      "text": "discover.extend(successors[index].iter().copied());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/cfg_bounds.rs",
+      "line": 111,
+      "text": "discover.extend((0..successors.len()).map(|ordinal| {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/context_closure/tests.rs",
+      "line": 47,
+      "text": "pending.extend(f.ensures.iter().rev());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/context_closure/tests.rs",
+      "line": 49,
+      "text": "pending.extend(f.requires.iter().rev());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/context_closure/tests.rs",
+      "line": 59,
+      "text": "pending.extend(children.into_iter().rev());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/expression_children.rs",
+      "line": 170,
+      "text": "pending.extend(function.requires.iter());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/expression_children.rs",
+      "line": 172,
+      "text": "pending.extend(function.ensures.iter());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/expression_children.rs",
+      "line": 185,
+      "text": "pending.extend(expected);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/factored/borrowed_canonical/tests.rs",
+      "line": 254,
+      "text": "let detached = Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/factored/borrowed_canonical/tests.rs",
+      "line": 328,
+      "text": "result.extend(enumerate(automaton, *child, sink));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/factored/dag_memo/tests.rs",
+      "line": 17,
+      "text": "Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/factored/dag_memo/tests.rs",
+      "line": 188,
+      "text": "let pointer = node as *const ObservationDag as usize;"
+    },
+    {
+      "file": "src/cleanup_plan/replay/factored/dag_memo/tests.rs",
+      "line": 201,
+      "text": "pending.extend(prefix.iter().map(|node| &**node))"
+    },
+    {
+      "file": "src/cleanup_plan/replay/factored/dag_memo/tests.rs",
+      "line": 204,
+      "text": "pending.extend(parts.iter().map(|node| &**node))"
+    },
+    {
+      "file": "src/cleanup_plan/replay/lexical_cert.rs",
+      "line": 544,
+      "text": "inventory.extend("
+    },
+    {
+      "file": "src/cleanup_plan/replay/lexical_cert.rs",
+      "line": 573,
+      "text": "leaving.extend(leaving_edges());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/lexical_hir.rs",
+      "line": 70,
+      "text": "facts.requires_boundaries.extend(boundaries);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/lexical_hir.rs",
+      "line": 80,
+      "text": "facts.ensures_boundaries.extend(boundaries);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/lexical_skeleton/tests.rs",
+      "line": 23,
+      "text": "path.observations.prefix = Some(std::rc::Rc::new(skeleton_work::ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/nested_shape/paid.rs",
+      "line": 255,
+      "text": "meta.extend(fields.iter().map(|field| (field.id.clone(), field.index)));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/nested_shape/paid.rs",
+      "line": 363,
+      "text": "expected.extend(meta.into_iter().zip(shapes.drain(start..)).map("
+    },
+    {
+      "file": "src/cleanup_plan/replay/nested_shape/paid.rs",
+      "line": 392,
+      "text": "children.extend(shapes.drain(start..));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/nested_shape/paid_before.rs",
+      "line": 241,
+      "text": "meta.extend(fields.iter().map(|field| (field.id.clone(), field.index)));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/nested_shape/paid_before.rs",
+      "line": 349,
+      "text": "expected.extend(meta.into_iter().zip(shapes.drain(start..)).map("
+    },
+    {
+      "file": "src/cleanup_plan/replay/nested_shape/paid_before.rs",
+      "line": 378,
+      "text": "children.extend(shapes.drain(start..));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/ordinary_inventory/before.rs",
+      "line": 30,
+      "text": "inventory_storage.extend(function.cleanup.slots.iter().enumerate());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/ordinary_inventory/substitute.rs",
+      "line": 64,
+      "text": "frames.extend(parameters.iter().rev().map(Frame::Enter));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/ordinary_inventory/substitute.rs",
+      "line": 262,
+      "text": "frames.extend(arguments.iter().rev().map(Frame::Enter));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/ordinary_inventory/substitute.rs",
+      "line": 282,
+      "text": "parameters.extend(resolved.drain(split..));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/ordinary_inventory/substitute.rs",
+      "line": 309,
+      "text": "nested.extend(resolved.drain(split..));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/ordinary_inventory.rs",
+      "line": 34,
+      "text": "inventory_storage.extend(function.cleanup.slots.iter().enumerate());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/paid_type_facts/droppability/helper_tests.rs",
+      "line": 233,
+      "text": "roots.extend(["
+    },
+    {
+      "file": "src/cleanup_plan/replay/paid_type_facts/droppability/key.rs",
+      "line": 43,
+      "text": "frames.extend(parameters.iter().rev().map(Frame::Enter));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/paid_type_facts/droppability/key.rs",
+      "line": 139,
+      "text": "frames.extend(arguments.iter().rev().map(Frame::Enter));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/paid_type_facts/droppability/tests.rs",
+      "line": 25,
+      "text": "roots.extend(function.params.iter().map(|parameter| parameter.ty.clone()));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/paid_type_facts/droppability/tests.rs",
+      "line": 27,
+      "text": "roots.extend(["
+    },
+    {
+      "file": "src/cleanup_plan/replay/paid_type_facts/tests.rs",
+      "line": 114,
+      "text": "roots.extend(function.params.iter().map(|parameter| parameter.ty.clone()));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/paid_type_facts/tests.rs",
+      "line": 441,
+      "text": "types.extend("
+    },
+    {
+      "file": "src/cleanup_plan/replay/path_join/storage.rs",
+      "line": 286,
+      "text": "result.extend("
+    },
+    {
+      "file": "src/cleanup_plan/replay/physical_storage/representative_measurements/applications.rs",
+      "line": 28,
+      "text": "paths.extend("
+    },
+    {
+      "file": "src/cleanup_plan/replay/primitive_fixture.rs",
+      "line": 22,
+      "text": "pending.extend(&function.requires);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/primitive_fixture.rs",
+      "line": 23,
+      "text": "pending.extend(&function.ensures);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/primitive_fixture.rs",
+      "line": 26,
+      "text": "pending.extend(crate::hir::lexical_exit::ChildCursor::new(expression));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/record_destructure/funded/admission/collection.rs",
+      "line": 89,
+      "text": "pending.extend("
+    },
+    {
+      "file": "src/cleanup_plan/replay/record_destructure/funded/admission/text.rs",
+      "line": 90,
+      "text": "pending.extend("
+    },
+    {
+      "file": "src/cleanup_plan/replay/renewal.rs",
+      "line": 286,
+      "text": "histories.extend(existing.map(|state| &state.live_order));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/resolved_call/param_view/tests.rs",
+      "line": 152,
+      "text": "views.extend(crate::byte_ops::ByteOp::ALL.into_iter().map(Params::Byte));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/resolved_call/param_view/tests.rs",
+      "line": 154,
+      "text": "views.extend("
+    },
+    {
+      "file": "src/cleanup_plan/replay/resolved_call/param_view/tests.rs",
+      "line": 173,
+      "text": "views.extend("
+    },
+    {
+      "file": "src/cleanup_plan/replay/selected_profile/receiving_tests.rs",
+      "line": 109,
+      "text": "pending.extend(crate::hir::lexical_exit::ChildCursor::new(node));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_bound.rs",
+      "line": 232,
+      "text": "arguments.extend(std::iter::repeat_n(repeated, 64));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 478,
+      "text": "let leaf = Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 482,
+      "text": "let child = Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 524,
+      "text": "let first = Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "line": 528,
+      "text": "let mut forged = ObservationDag::legacy(ObservationDagKind::Seq(None, Vec::new()));"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 81,
+      "text": "pending.extend(node.take_children());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 135,
+      "text": "let head = std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 139,
+      "text": "self.prefix = Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 152,
+      "text": "self.prefix = Some(match self.freeze() {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 154,
+      "text": "Some(head) => std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Cat(vec!["
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 167,
+      "text": "Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 177,
+      "text": "member.freeze().unwrap_or_else(|| {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 178,
+      "text": "std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 186,
+      "text": "prefix: Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+      "line": 275,
+      "text": "let mut node = ObservationDag::legacy(kind);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 81,
+      "text": "pending.extend(node.take_children());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 135,
+      "text": "let head = std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 139,
+      "text": "self.prefix = Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 152,
+      "text": "self.prefix = Some(match self.freeze() {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 154,
+      "text": "Some(head) => std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Cat(vec!["
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 167,
+      "text": "Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 177,
+      "text": "member.freeze().unwrap_or_else(|| {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 178,
+      "text": "std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 186,
+      "text": "prefix: Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+      "line": 275,
+      "text": "let mut node = ObservationDag::legacy(kind);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 156,
+      "text": "target.extend(paths);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 267,
+      "text": "target.extend(observations);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 305,
+      "text": "target.extend(observations);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 358,
+      "text": "observations.insert_front(observation.into());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 428,
+      "text": "pending.extend(node.take_children());"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 483,
+      "text": "let head = std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 487,
+      "text": "self.prefix = Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 500,
+      "text": "self.prefix = Some(match self.freeze() {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 502,
+      "text": "Some(head) => std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Cat(vec!["
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 515,
+      "text": "Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 525,
+      "text": "member.freeze().unwrap_or_else(|| {"
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 526,
+      "text": "std::rc::Rc::new(ObservationDag::legacy(ObservationDagKind::Seq("
+    },
+    {
+      "file": "src/cleanup_plan/replay/skeleton_work.rs",
+      "line": 534,
+      "text": "prefix: Some(std::rc::Rc::new(ObservationDag::legacy("
+    },
+    {
+      "file": "src/cleanup_plan/replay/string_replacement.rs",
+      "line": 57,
+      "text": "published.extend(fresh);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/strings/selected.rs",
+      "line": 81,
+      "text": "ordered.extend("
+    },
+    {
+      "file": "src/cleanup_plan/replay/strings/selected.rs",
+      "line": 87,
+      "text": "ordered.extend("
+    },
+    {
+      "file": "src/cleanup_plan/replay/transition.rs",
+      "line": 420,
+      "text": "state.live_order.extend(destination_flags);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/transition.rs",
+      "line": 524,
+      "text": "state.live_order.extend(flags);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/transition_storage.rs",
+      "line": 348,
+      "text": "history.extend("
+    },
+    {
+      "file": "src/cleanup_plan/replay/transition_storage.rs",
+      "line": 390,
+      "text": "state.live_order.extend(destination_flags);"
+    },
+    {
+      "file": "src/cleanup_plan/replay/transition_storage.rs",
+      "line": 394,
+      "text": ".extend(source_history.into_iter().map(|flag| {"
+    }
+  ],
+  "all_src_other_legacy_and_freeze_hits": [
+    "src/literal_format/move_tests.rs",
+    "src/project/npm.rs",
+    "src/project/npm/command.rs",
+    "src/project/npm/command_v3.rs",
+    "src/project/npm/command_v4.rs",
+    "src/project/npm/data.rs",
+    "src/project/npm/flat_owned_record.rs",
+    "src/project/npm/nested_owned_record.rs",
+    "src/project/npm/owned_data.rs",
+    "src/project/npm/owned_invocation.rs",
+    "src/public_generic_consumer/typescript_calling/render.rs",
+    "src/wasm.rs",
+    "src/wasm/aggregate/tests.rs",
+    "src/wasm/aggregate/tests/call_admission_gate.rs",
+    "src/wasm/aggregate/tests/owned_buffer.rs",
+    "src/wasm/aggregate_range_tests.rs",
+    "src/wasm/internal_strings/runtime.rs",
+    "src/wasm/internal_strings/runtime/tests.rs",
+    "src/wasm/internal_strings/tests.rs",
+    "src/wasm/project_web_build_tests.rs",
+    "src/wasm/scalar_emit.rs",
+    "src/wasm/selected_fused/tests.rs",
+    "src/wasm/shared_owner/tests.rs",
+    "src/wit_component.rs",
+    "src/workspace_graph/expected_projection/private_layout/authority.rs",
+    "src/workspace_graph/paid_view.rs"
+  ],
+  "all_src_dag_alias_census": "No ObservationDag as alias found; every literal ObservationDag reference file is source-bound.",
+  "claude_tool_free_consultations": {
+    "author": {
+      "result_path": "/Volumes/Semaprax/lane-prompts/incoming-failed-kind-drop-20261014/author-result.json",
+      "result_sha256": "a393003920e6346a0d550df035d12f3a69d98848d37381d718bd5c03752599f6",
+      "process_receipt_path": "/Volumes/Semaprax/lane-prompts/incoming-failed-kind-drop-20261014/author-process-receipt.json",
+      "process_receipt_sha256": "9d851c2a47970928e522142586744585428d0962eb24eeb1f2f907d6d55ef0b8",
+      "prompt_sha256": "1be7f9675521e9fbf77b8e901daf1d22a4e1b4909bd9663b8223d2d0056d15c1",
+      "exit_code": 0,
+      "wall_seconds": 220.90474441600236,
+      "tools_enabled": false,
+      "code_execution": false,
+      "peak_process_group_rss_bytes": 372342784,
+      "resource_refusal": null
+    },
+    "review": {
+      "result_path": "/Volumes/Semaprax/lane-prompts/incoming-failed-kind-drop-20261014/review-result.json",
+      "result_sha256": "ce5cc1b61feed628dce881252cfdaa26e6283ea81b088f9fe1081dab07abd128",
+      "process_receipt_path": "/Volumes/Semaprax/lane-prompts/incoming-failed-kind-drop-20261014/review-process-receipt.json",
+      "process_receipt_sha256": "bb7e78f57110e97422081b15521185659d6fc4d7319b38d2ad383570736911a2",
+      "prompt_sha256": "98ae97a4e37126ced223f66c7e245fd0f9557a847075bf9920ce081a3ae52195",
+      "exit_code": 0,
+      "wall_seconds": 65.83917133299838,
+      "tools_enabled": false,
+      "code_execution": false,
+      "peak_process_group_rss_bytes": 351600640,
+      "resource_refusal": null
+    }
+  },
+  "review_concrete_production_blockers": [],
+  "review_census_followups": [
+    "All src legacy/freezing/prepend references and replay extend calls inspected; generated JavaScript freeze and unrelated Rust carrier helpers excluded from DAG ownership argument.",
+    "All19 DAG-reference source files are byte-identical to74d903 historical owners.",
+    "No ObservationDag as alias found; Self initializer inside legacy explicitly accounted for by every legacy call."
+  ]
+}
