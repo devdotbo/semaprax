@@ -1,0 +1,26 @@
+diff --git a/scripts/update-prelude-forecast-pins.py b/scripts/update-prelude-forecast-pins.py
+index fda11604e..e07f45f03 100755
+--- a/scripts/update-prelude-forecast-pins.py
++++ b/scripts/update-prelude-forecast-pins.py
+@@ -29,6 +29,12 @@ OWNERS = {
+ def sha(data):
+     return "sha256:" + hashlib.sha256(data).hexdigest()
+ 
++def workspace_artifact_digest(payload):
++    # Exact owning formula: docs/WORKSPACE-SEMANTIC-GRAPH-V1.md and
++    # workspace_graph::artifact_digest. Document pin SHAs still hash full wires.
++    domain = b"semaprax.workspace-semantic-graph.artifact-digest.v1\0"
++    return sha(domain + len(payload).to_bytes(8, byteorder="little") + payload)
++
+ def require(condition, reason):
+     if not condition:
+         raise SystemExit(reason)
+@@ -88,7 +94,7 @@ def main():
+         digest = value["graph_digest"]
+         field = (',"graph_digest":"' + digest + '"').encode()
+         require(wires[name].count(field) == 1, "graph digest field framing drift")
+-        require(sha(wires[name].replace(field, b"", 1)) == digest, "graph digest does not bind full payload")
++        require(workspace_artifact_digest(wires[name].replace(field, b"", 1)) == digest, "graph digest does not bind domain/length/full payload")
+     for name, _ in ANALYSIS:
+         require(values[name]["workspace_graph_digest"] == graph["graph_digest"], "analysis graph binding differs: " + name)
+     edits = []
