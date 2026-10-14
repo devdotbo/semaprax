@@ -1,0 +1,14 @@
+{
+  "status": "source-only; not executed",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selectors": [
+        "cleanup_plan::replay::expression_facts::receiving::remaining::selected::tests::complete_ordered_selection_keeps_original_empty_duplicate_foreign_and_unicode_truth",
+        "cleanup_plan::replay::expression_facts::receiving::remaining::selected::tests::ordered_selection_acquires_no_backing_at_zero_or_sticky_and_preserves_first_refusal"
+      ]
+    }
+  ],
+  "required_retained_packet": "docs/evidence/remaining-receiving-exits-816/pending-selectors.json"
+}

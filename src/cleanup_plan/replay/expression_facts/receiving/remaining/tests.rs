@@ -315,6 +315,10 @@ fn complete_exit_work_exact_short_and_sticky_use_the_same_original_budget() {
 #[test]
 fn complete_root_receivers_and_only_named_paid_caller_projections_keep_original_bytes() {
     use sha2::{Digest, Sha256};
+    assert_eq!(
+        format!("{:x}", Sha256::digest(include_bytes!("selected.rs"))),
+        "446459444ef20047d571618c4c85c4cb1d8151f52bb1b587221c795bff0b52b9"
+    );
     let inverse: serde_json::Value = serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/docs/evidence/borrowed-selected-status-816/inverse.json"
