@@ -108,6 +108,7 @@ impl PrepaidSpend {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::bounded_output::{reserve_active_required, with_limit};
     #[test]
     fn strict_foreign_payer_and_deferred_original_sticky_refusals_are_preserved() {
         let (proof, refused) = with_limit(1024, || PrepaidAcquisition::acquire(16).unwrap());

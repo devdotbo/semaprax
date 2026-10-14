@@ -7,7 +7,7 @@ enum Frame<'a> {
     Children(&'a [ResolvedFieldDeclaration], usize, usize),
 }
 impl Builder<'_, '_> {
-    pub(super) fn shape(
+    pub(super) fn shape_original(
         &mut self,
         root: &ResolvedType,
     ) -> Result<(crate::cleanup::CleanupShapeProfile, bool), Diagnostic> {

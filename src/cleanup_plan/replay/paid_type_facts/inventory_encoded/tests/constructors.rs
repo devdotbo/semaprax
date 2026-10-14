@@ -82,7 +82,7 @@ fn complete_callable_nominal_identity_zero_one_seventeen_arguments_keep_paid_wor
             declaration: DeclarationId::new("type.é\0🦀"),
             arguments: vec![
                 ResolvedType::Function {
-                    parameters: vec![ResolvedType::ArrayU8(usize::MAX), ResolvedType::I64],
+                    parameters: vec![ResolvedType::ArrayU8(u32::MAX), ResolvedType::I64],
                     result: Box::new(ResolvedType::TypeParameter {
                         owner: function.id.clone(),
                         index: 17,
