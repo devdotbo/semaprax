@@ -1,5 +1,8 @@
 //! Complete original recursive default receiver, independently compiled.
-use super::*;
+use super::{
+    collection_constructor, graph_error, reserve_builder_structure, Diagnostic, Expr, ExprKind,
+    FieldInitializer, Span, Type, TypeDeclaration, TypeDeclarationKind,
+};
 
 pub(in crate::workspace_graph::expected_projection) fn default_expr(
     ty: &Type,
@@ -164,4 +167,3 @@ pub(in crate::workspace_graph::expected_projection) fn default_expr(
     };
     Ok(Expr { kind, span })
 }
-

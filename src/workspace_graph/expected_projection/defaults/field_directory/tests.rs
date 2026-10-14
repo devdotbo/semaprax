@@ -1,5 +1,6 @@
 //! Whole independent recursive default receiver, partial fields and actual current backing.
-use super::*;
+use super::project_original_receiver;
+use crate::ast::{Span, Type, TypeDeclaration, TypeDeclarationKind};
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::measure;
 const LIMIT: usize = 8 * 1024 * 1024;
@@ -165,7 +166,10 @@ fn complete_current_value_owner_sources_restore_every_original_byte() {
     for (record, (path, current, original)) in records.as_array().unwrap().iter().zip(sources) {
         assert_eq!(record["source"].as_str(), Some(path));
         assert_eq!(
-            format!("{:x}", Sha256::digest(original.as_bytes())),
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+            ),
             record["sha256"].as_str().unwrap()
         );
         assert_eq!(project_original_receiver(path, current), original);

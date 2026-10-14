@@ -1,6 +1,9 @@
 //! Actual lazy field Vec backing at the complete old successful-item frontier.
 //! Error Vec/text remain the unchanged diagnostic API and an explicit residual.
-use super::*;
+use super::{
+    active_builder_limit, limit_error, reserve_builder_structure, Diagnostic, FieldInitializer,
+    Span, TypeDeclaration,
+};
 use crate::ast::FieldDeclaration;
 fn physical() -> Vec<Diagnostic> {
     crate::bounded_output::refuse_active_required(usize::MAX);

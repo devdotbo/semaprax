@@ -237,6 +237,7 @@ impl<'a> SourceIndex<'a> {
     }
 }
 #[cfg(test)]
+#[path = "source_index/tests.rs"]
 mod tests;
 
 pub(crate) trait SourceHelpers {

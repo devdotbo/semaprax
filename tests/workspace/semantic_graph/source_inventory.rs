@@ -238,6 +238,7 @@ macro_rules! semantic_graph_root_source_inventory {
         include_str!("../../src/workspace_graph/builder_bytes_report.rs"),
         include_str!("../../src/workspace_graph/checked_value_retention.rs"),
         include_str!("../../src/workspace_graph/diagnostics.rs"),
+        include_str!("../../src/workspace_graph/diagnostics/borrowed_help_tests.rs"),
         include_str!("../../src/workspace_graph/diagnostics/invocation.rs"),
         include_str!("../../src/workspace_graph/diagnostics/invocation/tests.rs"),
         concat!(
@@ -390,7 +391,12 @@ macro_rules! semantic_graph_projection_child_source_inventory {
         include_str!("../../src/workspace_graph/expected_projection/statement_segment.rs")
     };
     (defaults) => {
-        include_str!("../../src/workspace_graph/expected_projection/defaults.rs")
+        concat!(
+            include_str!("../../src/workspace_graph/expected_projection/defaults.rs"),
+            include_str!("../../src/workspace_graph/expected_projection/defaults/field_directory.rs"),
+            include_str!("../../src/workspace_graph/expected_projection/defaults/field_directory/tests.rs"),
+            include_str!("../../src/workspace_graph/expected_projection/defaults/original.rs"),
+        )
     };
     (import_stub) => {
         concat!(
