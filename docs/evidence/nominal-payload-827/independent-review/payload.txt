@@ -1,0 +1,1817 @@
+Bounded independent review of unfinished private OPT827 source at e7f4d4bf6. No execution or completion claim. Focus concrete rollback/refusal allocation bugs, shared carrier/Drop safety, full old/current oracle/test validity, Rust typing. Existing caller prebound remains unchanged; new callback requests add full new node bounds/owners, no clone savings credit. Original full files retained under docs/evidence/nominal-payload-827/original. Old complete constructor independent cfgtest. Public standalone/cache/final linker remain explicit residuals. Index Drop takes construction scratch, drains case views then record/case payloads through nominal_payload::dispose; published indexes release construction scratch. Actual paid workspace receivers pass the SAME IdentityReservation reserve closure via identity_resolution::nominal. There is no replay work allowance or authority in this byte callback. Please distinguish hard blockers from known unfinished integration tasks.
+
+FILE src/hir/nominal_payload.rs
+1: //! Immutable nominal sequences. Backing reuse is storage, never type authority.
+2: use super::{
+3:     ResolvedFieldDeclaration, ResolvedType, ResolvedTypeParameterDeclaration,
+4:     ResolvedVariantCaseDeclaration,
+5: };
+6: use std::{
+7:     alloc::Layout,
+8:     fmt,
+9:     mem::size_of,
+10:     ops::{Deref, DerefMut},
+11:     sync::Arc,
+12: };
+13: mod codec;
+14: mod elements;
+15: pub(crate) mod map;
+16: 
+17: /// Declaration elements whose recursive types have an iterative disposer.
+18: #[doc(hidden)]
+19: mod sealed {
+20:     pub trait Sealed {}
+21: }
+22: impl sealed::Sealed for ResolvedFieldDeclaration {}
+23: impl sealed::Sealed for ResolvedVariantCaseDeclaration {}
+24: impl sealed::Sealed for ResolvedTypeParameterDeclaration {}
+25: pub trait NominalElement: sealed::Sealed + Clone + fmt::Debug + Eq {
+26:     fn drop_capacity<E>(
+27:         &self,
+28:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+29:     ) -> Result<usize, E>;
+30:     fn drain_types(&mut self, dispose: &mut impl FnMut(ResolvedType));
+31:     fn clone_bytes(&self) -> Option<usize>;
+32: }
+33: struct Owner<T: NominalElement> {
+34:     values: Vec<T>,
+35:     scratch: Vec<ResolvedType>,
+36: }
+37: impl<T: NominalElement> Owner<T> {
+38:     fn drain(&mut self, dispose: &mut impl FnMut(ResolvedType)) {
+39:         for value in &mut self.values {
+40:             value.drain_types(dispose);
+41:         }
+42:     }
+43: }
+44: impl<T: NominalElement> Drop for Owner<T> {
+45:     fn drop(&mut self) {
+46:         let scratch = &mut self.scratch;
+47:         for value in &mut self.values {
+48:             value.drain_types(&mut |ty| dispose(ty, scratch));
+49:         }
+50:     }
+51: }
+52: /// An owning legacy Vec or one acquired immutable owner. Equality/Debug/wire
+53: /// inspect complete ordered values, never addresses or representation tags.
+54: /// `From<Vec<_>>` moves legacy storage without an Arc allocation or new payer.
+55: /// New admitted producers must instead use `from_funded_vec`.
+56: pub struct NominalPayload<T: NominalElement> {
+57:     storage: Storage<T>,
+58: }
+59: #[derive(Debug, Eq, PartialEq)]
+60: pub enum NominalMutationError<E> {
+61:     Reservation(E),
+62:     Capacity,
+63: }
+64: enum Storage<T: NominalElement> {
+65:     Owned(Vec<T>),
+66:     Shared(Arc<Owner<T>>),
+67: }
+68: impl<T: NominalElement> NominalPayload<T> {
+69:     pub fn as_slice(&self) -> &[T] {
+70:         self.deref().as_slice()
+71:     }
+72:     /// Vec backing/payload must already belong to the caller. Refusal leaves
+73:     /// that complete Vec untouched; only successful acquisition moves it. This acquires
+74:     /// census scratch, last-owner disposal scratch, Arc backing, initializer,
+75:     /// and the receiving carrier before each corresponding allocation.
+76:     pub fn from_funded_vec<E>(
+77:         values: &mut Vec<T>,
+78:         mut reserve: impl FnMut(usize) -> Result<(), E>,
+79:     ) -> Result<Self, E> {
+80:         let mut capacity = 0;
+81:         for value in values.iter() {
+82:             capacity = capacity.max(value.drop_capacity(&mut reserve)?);
+83:         }
+84:         #[repr(C)]
+85:         struct ArcCarrier<T> {
+86:             strong: usize,
+87:             weak: usize,
+88:             value: T,
+89:         }
+90:         let backing = Layout::new::<ArcCarrier<Owner<T>>>().size();
+91:         let bytes = backing
+92:             .saturating_add(size_of::<Owner<T>>())
+93:             .saturating_add(size_of::<Self>())
+94:             .saturating_add(size_of::<Result<Self, E>>())
+95:             .saturating_add(capacity.saturating_mul(size_of::<ResolvedType>()));
+96:         reserve(bytes)?;
+97:         let scratch = Vec::with_capacity(capacity);
+98:         assert_eq!(
+99:             scratch.capacity(),
+100:             capacity,
+101:             "nominal exact disposal backing"
+102:         );
+103:         Ok(Self {
+104:             storage: Storage::Shared(Arc::new(Owner {
+105:                 values: std::mem::take(values),
+106:                 scratch,
+107:             })),
+108:         })
+109:     }
+110:     /// Explicit paid copy before mutation. Refusal leaves both old owners and
+111:     /// their complete values unchanged; no implicit Cow/Arc::make_mut exists.
+112:     pub fn try_make_mut<E>(
+113:         &mut self,
+114:         mut reserve: impl FnMut(usize) -> Result<(), E>,
+115:     ) -> Result<&mut Vec<T>, NominalMutationError<E>> {
+116:         if matches!(&self.storage, Storage::Shared(_)) {
+117:             // The existing iterative clone census uses this actual fixed
+118:             // cursor; acquire its stack carrier before invoking it.
+119:             reserve(size_of::<[Option<(&ResolvedType, usize)>; 514]>())
+120:                 .map_err(NominalMutationError::Reservation)?;
+121:             let bytes = self.len().checked_mul(size_of::<T>()).and_then(|initial| {
+122:                 self.iter()
+123:                     .try_fold(initial, |n, v| n.checked_add(v.clone_bytes()?))
+124:             });
+125:             let bytes = bytes
+126:                 .and_then(|bytes| size_of::<Vec<T>>().checked_add(bytes))
+127:                 .ok_or(NominalMutationError::Capacity)?;
+128:             reserve(bytes).map_err(NominalMutationError::Reservation)?;
+129:             let mut values = Vec::with_capacity(self.len());
+130:             assert_eq!(
+131:                 values.capacity(),
+132:                 self.len(),
+133:                 "nominal exact materialization backing"
+134:             );
+135:             values.extend(self.iter().cloned());
+136:             self.storage = Storage::Owned(values);
+137:         } else {
+138:             reserve(0).map_err(NominalMutationError::Reservation)?;
+139:         }
+140:         Ok(self.deref_mut())
+141:     }
+142:     /// Moves recursive roots only from the last owner into an already-paid
+143:     /// external disposal machine. Other immutable owners keep the full value.
+144:     #[doc(hidden)]
+145:     pub fn drain_recursive_types(mut self, mut dispose: impl FnMut(ResolvedType)) {
+146:         match &mut self.storage {
+147:             Storage::Owned(values) => {
+148:                 for value in values {
+149:                     value.drain_types(&mut dispose);
+150:                 }
+151:             }
+152:             Storage::Shared(owner) => {
+153:                 if let Some(owner) = Arc::get_mut(owner) {
+154:                     owner.drain(&mut dispose);
+155:                 }
+156:             }
+157:         }
+158:     }
+159:     pub(crate) fn is_shared(&self) -> bool {
+160:         matches!(self.storage, Storage::Shared(_))
+161:     }
+162:     #[cfg(test)]
+163:     pub(crate) fn same_owner(&self, other: &Self) -> bool {
+164:         matches!((&self.storage, &other.storage), (Storage::Shared(a), Storage::Shared(b)) if Arc::ptr_eq(a,b))
+165:     }
+166: }
+167: impl<T: NominalElement> From<Vec<T>> for NominalPayload<T> {
+168:     fn from(values: Vec<T>) -> Self {
+169:         Self {
+170:             storage: Storage::Owned(values),
+171:         }
+172:     }
+173: }
+174: impl<T: NominalElement> FromIterator<T> for NominalPayload<T> {
+175:     fn from_iter<I: IntoIterator<Item = T>>(values: I) -> Self {
+176:         values.into_iter().collect::<Vec<T>>().into()
+177:     }
+178: }
+179: impl<T: NominalElement> Default for NominalPayload<T> {
+180:     fn default() -> Self {
+181:         Vec::new().into()
+182:     }
+183: }
+184: impl<T: NominalElement> Clone for NominalPayload<T> {
+185:     fn clone(&self) -> Self {
+186:         match &self.storage {
+187:             Storage::Owned(v) => v.clone().into(),
+188:             Storage::Shared(v) => Self {
+189:                 storage: Storage::Shared(v.clone()),
+190:             },
+191:         }
+192:     }
+193: }
+194: impl<T: NominalElement> Deref for NominalPayload<T> {
+195:     type Target = Vec<T>;
+196:     fn deref(&self) -> &Vec<T> {
+197:         match &self.storage {
+198:             Storage::Owned(v) => v,
+199:             Storage::Shared(v) => &v.values,
+200:         }
+201:     }
+202: }
+203: impl<T: NominalElement> DerefMut for NominalPayload<T> {
+204:     fn deref_mut(&mut self) -> &mut Vec<T> {
+205:         match &mut self.storage {
+206:             Storage::Owned(v) => v,
+207:             Storage::Shared(_) => panic!("shared nominal mutation requires try_make_mut"),
+208:         }
+209:     }
+210: }
+211: impl<T: NominalElement> fmt::Debug for NominalPayload<T> {
+212:     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+213:         self.deref().fmt(f)
+214:     }
+215: }
+216: impl<T: NominalElement> PartialEq for NominalPayload<T> {
+217:     fn eq(&self, other: &Self) -> bool {
+218:         self.as_slice() == other.as_slice()
+219:     }
+220: }
+221: impl<T: NominalElement> Eq for NominalPayload<T> {}
+222: impl<T: NominalElement> PartialEq<Vec<T>> for NominalPayload<T> {
+223:     fn eq(&self, other: &Vec<T>) -> bool {
+224:         self.as_slice() == other.as_slice()
+225:     }
+226: }
+227: impl<'a, T: NominalElement> IntoIterator for &'a NominalPayload<T> {
+228:     type Item = &'a T;
+229:     type IntoIter = std::slice::Iter<'a, T>;
+230:     fn into_iter(self) -> Self::IntoIter {
+231:         self.iter()
+232:     }
+233: }
+234: impl<'a, T: NominalElement> IntoIterator for &'a mut NominalPayload<T> {
+235:     type Item = &'a mut T;
+236:     type IntoIter = std::slice::IterMut<'a, T>;
+237:     fn into_iter(self) -> Self::IntoIter {
+238:         self.deref_mut().iter_mut()
+239:     }
+240: }
+241: 
+242: // This is the old public fallback disposal policy for legacy Vec storage.
+243: // Funded shared owners use their preacquired scratch and never grow on Drop.
+244: impl<T: NominalElement> Drop for NominalPayload<T> {
+245:     fn drop(&mut self) {
+246:         if let Storage::Owned(values) = &mut self.storage {
+247:             let mut pending = Vec::new();
+248:             for value in values {
+249:                 value.drain_types(&mut |ty| match ty {
+250:                     ResolvedType::Nominal { arguments, .. } => pending.extend(arguments),
+251:                     ResolvedType::Function { parameters, result } => {
+252:                         pending.extend(parameters);
+253:                         pending.push(*result);
+254:                     }
+255:                     _ => {}
+256:                 });
+257:             }
+258:             while let Some(ty) = pending.pop() {
+259:                 match ty {
+260:                     ResolvedType::Nominal { arguments, .. } => pending.extend(arguments),
+261:                     ResolvedType::Function { parameters, result } => {
+262:                         pending.extend(parameters);
+263:                         pending.push(*result);
+264:                     }
+265:                     _ => {}
+266:                 }
+267:             }
+268:         }
+269:     }
+270: }
+271: pub(crate) fn dispose(ty: ResolvedType, scratch: &mut Vec<ResolvedType>) {
+272:     fn children(ty: ResolvedType, scratch: &mut Vec<ResolvedType>) {
+273:         match ty {
+274:             ResolvedType::Nominal { arguments, .. } => {
+275:                 for ty in arguments {
+276:                     assert!(scratch.len() < scratch.capacity());
+277:                     scratch.push(ty);
+278:                 }
+279:             }
+280:             ResolvedType::Function { parameters, result } => {
+281:                 for ty in parameters {
+282:                     assert!(scratch.len() < scratch.capacity());
+283:                     scratch.push(ty);
+284:                 }
+285:                 assert!(scratch.len() < scratch.capacity());
+286:                 scratch.push(*result);
+287:             }
+288:             _ => {}
+289:         }
+290:     }
+291:     children(ty, scratch);
+292:     while let Some(ty) = scratch.pop() {
+293:         children(ty, scratch);
+294:     }
+295: }
+296: #[cfg(test)]
+297: mod tests;
+
+FILE src/hir/nominal_payload/elements.rs
+1: //! Complete recursive-type census before shared acquisition.
+2: use super::*;
+3: use crate::cleanup_plan::replay::physical_clone::ClonePayload;
+4: fn capacity<E>(
+5:     root: &ResolvedType,
+6:     reserve: &mut impl FnMut(usize) -> Result<(), E>,
+7: ) -> Result<usize, E> {
+8:     fn push<'a, E>(
+9:         stack: &mut Vec<&'a ResolvedType>,
+10:         ty: &'a ResolvedType,
+11:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+12:     ) -> Result<(), E> {
+13:         if stack.len() == stack.capacity() {
+14:             let capacity = stack.capacity().saturating_mul(2).max(4);
+15:             reserve(
+16:                 size_of::<Vec<&ResolvedType>>()
+17:                     .saturating_add(capacity.saturating_mul(size_of::<&ResolvedType>())),
+18:             )?;
+19:             let mut next = Vec::with_capacity(capacity);
+20:             assert_eq!(next.capacity(), capacity);
+21:             next.extend(stack.drain(..));
+22:             *stack = next;
+23:         }
+24:         stack.push(ty);
+25:         Ok(())
+26:     }
+27:     // Leaves require neither a census heap nor last-owner Drop scratch.
+28:     if !matches!(root, ResolvedType::Nominal { arguments, .. } if !arguments.is_empty())
+29:         && !matches!(root, ResolvedType::Function { .. })
+30:     {
+31:         return Ok(0);
+32:     }
+33:     let mut stack = Vec::new();
+34:     push(&mut stack, root, reserve)?;
+35:     let mut highwater = 0;
+36:     while let Some(ty) = stack.pop() {
+37:         match ty {
+38:             ResolvedType::Nominal { arguments, .. } => {
+39:                 for child in arguments {
+40:                     push(&mut stack, child, reserve)?;
+41:                 }
+42:             }
+43:             ResolvedType::Function { parameters, result } => {
+44:                 for child in parameters {
+45:                     push(&mut stack, child, reserve)?;
+46:                 }
+47:                 push(&mut stack, result, reserve)?;
+48:             }
+49:             _ => {}
+50:         }
+51:         highwater = highwater.max(stack.len());
+52:     }
+53:     Ok(highwater)
+54: }
+55: impl NominalElement for ResolvedFieldDeclaration {
+56:     fn drop_capacity<E>(
+57:         &self,
+58:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+59:     ) -> Result<usize, E> {
+60:         capacity(&self.ty, reserve)
+61:     }
+62:     fn drain_types(&mut self, dispose: &mut impl FnMut(ResolvedType)) {
+63:         dispose(std::mem::replace(&mut self.ty, ResolvedType::Unit));
+64:     }
+65:     fn clone_bytes(&self) -> Option<usize> {
+66:         self.name.len().checked_add(self.ty.clone_payload_bytes()?)
+67:     }
+68: }
+69: impl NominalElement for ResolvedVariantCaseDeclaration {
+70:     fn drop_capacity<E>(
+71:         &self,
+72:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+73:     ) -> Result<usize, E> {
+74:         let mut n = 0;
+75:         for field in &self.fields {
+76:             n = n.max(field.drop_capacity(reserve)?);
+77:         }
+78:         Ok(n)
+79:     }
+80:     fn drain_types(&mut self, dispose: &mut impl FnMut(ResolvedType)) {
+81:         for field in &mut self.fields {
+82:             field.drain_types(dispose);
+83:         }
+84:     }
+85:     fn clone_bytes(&self) -> Option<usize> {
+86:         self.fields.iter().try_fold(
+87:             self.name.len().checked_add(
+88:                 self.fields
+89:                     .len()
+90:                     .checked_mul(size_of::<ResolvedFieldDeclaration>())?,
+91:             )?,
+92:             |n, f| n.checked_add(f.clone_bytes()?),
+93:         )
+94:     }
+95: }
+96: impl NominalElement for ResolvedTypeParameterDeclaration {
+97:     fn drop_capacity<E>(&self, _: &mut impl FnMut(usize) -> Result<(), E>) -> Result<usize, E> {
+98:         Ok(0)
+99:     }
+100:     fn drain_types(&mut self, _: &mut impl FnMut(ResolvedType)) {}
+101:     fn clone_bytes(&self) -> Option<usize> {
+102:         Some(self.name.len())
+103:     }
+104: }
+
+FILE src/hir/nominal_payload/map.rs
+1: //! Compatibility map insertion moves old Vec producers without new allocation.
+2: use super::*;
+3: use crate::hir::DeclarationId;
+4: use std::{
+5:     collections::BTreeMap,
+6:     ops::{Deref, DerefMut},
+7: };
+8: #[derive(Clone, Debug, Eq, PartialEq)]
+9: pub(crate) struct IndexMap<V>(pub(crate) BTreeMap<DeclarationId, V>);
+10: impl<V> Default for IndexMap<V> {
+11:     fn default() -> Self {
+12:         Self(BTreeMap::new())
+13:     }
+14: }
+15: impl<V> IndexMap<V> {
+16:     pub(crate) fn insert(&mut self, key: DeclarationId, values: impl Into<V>) -> Option<V> {
+17:         self.0.insert(key, values.into())
+18:     }
+19: }
+20: impl<V> Deref for IndexMap<V> {
+21:     type Target = BTreeMap<DeclarationId, V>;
+22:     fn deref(&self) -> &Self::Target {
+23:         &self.0
+24:     }
+25: }
+26: impl<V> DerefMut for IndexMap<V> {
+27:     fn deref_mut(&mut self) -> &mut Self::Target {
+28:         &mut self.0
+29:     }
+30: }
+31: impl<'a, V> IntoIterator for &'a IndexMap<V> {
+32:     type Item = (&'a DeclarationId, &'a V);
+33:     type IntoIter = std::collections::btree_map::Iter<'a, DeclarationId, V>;
+34:     fn into_iter(self) -> Self::IntoIter {
+35:         self.0.iter()
+36:     }
+37: }
+38: impl<V> IntoIterator for IndexMap<V> {
+39:     type Item = (DeclarationId, V);
+40:     type IntoIter = std::collections::btree_map::IntoIter<DeclarationId, V>;
+41:     fn into_iter(self) -> Self::IntoIter {
+42:         self.0.into_iter()
+43:     }
+44: }
+45: /// One case ordinal retains the same canonical outer cases owner. It allocates
+46: /// no per-case Arc or field Vec; legacy hostile/decoded indexes keep full Vecs.
+47: #[derive(Clone)]
+48: pub(crate) enum CaseFields {
+49:     Owned(NominalPayload<ResolvedFieldDeclaration>),
+50:     Case {
+51:         owner: NominalPayload<ResolvedVariantCaseDeclaration>,
+52:         ordinal: usize,
+53:     },
+54: }
+55: impl CaseFields {
+56:     pub(crate) fn canonical(
+57:         owner: NominalPayload<ResolvedVariantCaseDeclaration>,
+58:         ordinal: usize,
+59:     ) -> Self {
+60:         assert!(owner.is_shared());
+61:         assert!(ordinal < owner.len());
+62:         Self::Case { owner, ordinal }
+63:     }
+64:     pub(crate) fn drain(self, dispose: &mut impl FnMut(ResolvedType)) {
+65:         if let Self::Owned(fields) = self {
+66:             fields.drain_recursive_types(dispose);
+67:         }
+68:     }
+69: }
+70: impl From<Vec<ResolvedFieldDeclaration>> for CaseFields {
+71:     fn from(v: Vec<ResolvedFieldDeclaration>) -> Self {
+72:         Self::Owned(v.into())
+73:     }
+74: }
+75: impl Deref for CaseFields {
+76:     type Target = Vec<ResolvedFieldDeclaration>;
+77:     fn deref(&self) -> &Self::Target {
+78:         match self {
+79:             Self::Owned(v) => v,
+80:             Self::Case { owner, ordinal } => &owner[*ordinal].fields,
+81:         }
+82:     }
+83: }
+84: impl DerefMut for CaseFields {
+85:     fn deref_mut(&mut self) -> &mut Self::Target {
+86:         match self {
+87:             Self::Owned(values) => values,
+88:             Self::Case { .. } => {
+89:                 panic!("shared case-field mutation requires explicit paid materialization")
+90:             }
+91:         }
+92:     }
+93: }
+94: impl std::fmt::Debug for CaseFields {
+95:     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+96:         self.deref().fmt(f)
+97:     }
+98: }
+99: impl PartialEq for CaseFields {
+100:     fn eq(&self, other: &Self) -> bool {
+101:         self.as_slice() == other.as_slice()
+102:     }
+103: }
+104: impl Eq for CaseFields {}
+105: impl<'a> IntoIterator for &'a CaseFields {
+106:     type Item = &'a ResolvedFieldDeclaration;
+107:     type IntoIter = std::slice::Iter<'a, ResolvedFieldDeclaration>;
+108:     fn into_iter(self) -> Self::IntoIter {
+109:         self.iter()
+110:     }
+111: }
+
+FILE src/hir/declaration_index/nominal_rollback.rs
+1: //! Source-shaped disposal frontier acquired on the same actual caller owner.
+2: //! This scratch is storage only; neither source admission nor a type proof.
+3: use super::*;
+4: use std::{
+5:     mem::size_of,
+6:     ops::{Deref, DerefMut},
+7:     sync::{Arc, Mutex},
+8: };
+9: type Scratch = Arc<Mutex<Vec<ResolvedType>>>;
+10: #[derive(Default)]
+11: pub(in crate::hir) struct Workspace {
+12:     pub(super) scratch: Option<Scratch>,
+13:     pub(super) building: bool,
+14: }
+15: // Published canonical indexes own no legacy recursive field Vec. Their clones
+16: // share payload owners, each of which already owns its own disposal scratch.
+17: impl Clone for Workspace {
+18:     fn clone(&self) -> Self {
+19:         Self::default()
+20:     }
+21: }
+22: impl PartialEq for Workspace {
+23:     fn eq(&self, _: &Self) -> bool {
+24:         true
+25:     }
+26: }
+27: impl Eq for Workspace {}
+28: impl std::fmt::Debug for Workspace {
+29:     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+30:         f.write_str("private disposal storage")
+31:     }
+32: }
+33: fn frontier<E>(root: &Type, reserve: &mut impl FnMut(usize) -> Result<(), E>) -> Result<usize, E> {
+34:     fn push<'a, E>(
+35:         stack: &mut Vec<&'a Type>,
+36:         ty: &'a Type,
+37:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+38:     ) -> Result<(), E> {
+39:         if stack.len() == stack.capacity() {
+40:             let cap = stack.capacity().saturating_mul(2).max(4);
+41:             reserve(
+42:                 size_of::<Vec<&Type>>().saturating_add(cap.saturating_mul(size_of::<&Type>())),
+43:             )?;
+44:             let mut next = Vec::with_capacity(cap);
+45:             assert_eq!(next.capacity(), cap);
+46:             next.extend(stack.drain(..));
+47:             *stack = next;
+48:         }
+49:         stack.push(ty);
+50:         Ok(())
+51:     }
+52:     if !matches!(root,Type::Named{arguments,..} if !arguments.is_empty())
+53:         && !matches!(root, Type::Function { .. })
+54:     {
+55:         return Ok(0);
+56:     }
+57:     let mut stack = Vec::new();
+58:     push(&mut stack, root, reserve)?;
+59:     let mut maximum = 0;
+60:     while let Some(ty) = stack.pop() {
+61:         match ty {
+62:             Type::Named { arguments, .. } => {
+63:                 for child in arguments {
+64:                     push(&mut stack, child, reserve)?;
+65:                 }
+66:             }
+67:             Type::Function { parameters, result } => {
+68:                 for child in parameters {
+69:                     push(&mut stack, child, reserve)?;
+70:                 }
+71:                 push(&mut stack, result, reserve)?;
+72:             }
+73:             _ => {}
+74:         }
+75:         maximum = maximum.max(stack.len());
+76:     }
+77:     Ok(maximum)
+78: }
+79: /// Construction-only Vec guard. The original Vec allocation and order are
+80: /// unchanged; all local recursive values share the one prepaid rollback frontier.
+81: pub(super) struct PendingVec<T: nominal_payload::NominalElement> {
+82:     values: Vec<T>,
+83:     scratch: Option<Scratch>,
+84: }
+85: impl<T: nominal_payload::NominalElement> PendingVec<T> {
+86:     pub(super) fn into_vec(mut self) -> Vec<T> {
+87:         std::mem::take(&mut self.values)
+88:     }
+89: }
+90: impl<T: nominal_payload::NominalElement> Deref for PendingVec<T> {
+91:     type Target = Vec<T>;
+92:     fn deref(&self) -> &Vec<T> {
+93:         &self.values
+94:     }
+95: }
+96: impl<T: nominal_payload::NominalElement> DerefMut for PendingVec<T> {
+97:     fn deref_mut(&mut self) -> &mut Vec<T> {
+98:         &mut self.values
+99:     }
+100: }
+101: impl<T: nominal_payload::NominalElement> Drop for PendingVec<T> {
+102:     fn drop(&mut self) {
+103:         if let Some(scratch) = &self.scratch {
+104:             let mut scratch = scratch.lock().expect("construction disposal lock");
+105:             for value in &mut self.values {
+106:                 value.drain_types(&mut |ty| nominal_payload::dispose(ty, &mut scratch));
+107:             }
+108:         }
+109:     }
+110: }
+111: pub(super) struct PendingType {
+112:     value: Option<ResolvedType>,
+113:     scratch: Option<Scratch>,
+114: }
+115: impl PendingType {
+116:     pub(super) fn into_type(mut self) -> ResolvedType {
+117:         self.value.take().expect("present construction type")
+118:     }
+119: }
+120: impl Drop for PendingType {
+121:     fn drop(&mut self) {
+122:         if let (Some(ty), Some(scratch)) = (self.value.take(), &self.scratch) {
+123:             nominal_payload::dispose(ty, &mut scratch.lock().expect("construction disposal lock"));
+124:         }
+125:     }
+126: }
+127: impl Workspace {
+128:     pub(super) fn fields<T: nominal_payload::NominalElement>(
+129:         &self,
+130:         capacity: usize,
+131:     ) -> PendingVec<T> {
+132:         PendingVec {
+133:             values: Vec::with_capacity(capacity),
+134:             scratch: self.scratch.clone(),
+135:         }
+136:     }
+137:     pub(super) fn resolved_type(&self, value: ResolvedType) -> PendingType {
+138:         PendingType {
+139:             value: Some(value),
+140:             scratch: self.scratch.clone(),
+141:         }
+142:     }
+143:     pub(super) fn finish(&mut self) {
+144:         self.building = false;
+145:         // Every published nonempty sequence now has its own immutable paid
+146:         // owner. Never apply a source frontier to later host-mutated values.
+147:         self.scratch = None;
+148:     }
+149:     pub(super) fn acquire<E>(
+150:         program: &dyn ProgramSource,
+151:         prelude: &[crate::ast::TypeDeclaration],
+152:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+153:     ) -> Result<Self, E> {
+154:         // Replacing Vec map values enlarges actual BTree nodes. Acquire a
+155:         // complete current node upper bound per possible insertion in each
+156:         // changed map, in addition to the unchanged caller prebound. There is
+157:         // no credit for the old map or for omitted payload clones.
+158:         fn node<V>() -> usize {
+159:             crate::cleanup_plan::replay_btree_node_upper::<DeclarationId, V>()
+160:                 .expect("fixed nominal map layout")
+161:         }
+162:         for declaration in program.types().iter().chain(prelude) {
+163:             reserve(node::<NominalPayload<ResolvedTypeParameterDeclaration>>())?;
+164:             match &declaration.kind {
+165:                 TypeDeclarationKind::Record { .. } | TypeDeclarationKind::Class { .. } => {
+166:                     reserve(node::<NominalPayload<ResolvedFieldDeclaration>>())?;
+167:                 }
+168:                 TypeDeclarationKind::Variant { cases } => {
+169:                     reserve(node::<NominalPayload<ResolvedVariantCaseDeclaration>>())?;
+170:                     for _ in cases {
+171:                         reserve(node::<CaseFields>())?;
+172:                     }
+173:                 }
+174:                 TypeDeclarationKind::Resource { .. } => {}
+175:             }
+176:         }
+177:         for _ in program.functions() {
+178:             reserve(node::<NominalPayload<ResolvedTypeParameterDeclaration>>())?;
+179:         }
+180:         for declaration in program.types() {
+181:             if let TypeDeclarationKind::Class { methods, .. } = &declaration.kind {
+182:                 // The complete old producer rebuilds this class field entry.
+183:                 reserve(node::<NominalPayload<ResolvedFieldDeclaration>>())?;
+184:                 for _ in methods {
+185:                     reserve(node::<NominalPayload<ResolvedTypeParameterDeclaration>>())?;
+186:                 }
+187:             }
+188:         }
+189:         // Source types resolve shape-for-shape (parameters become scalar
+190:         // metadata leaves); inherited fields reuse those same type shapes.
+191:         // Traverse every declared field, not a nominal/prelude name filter.
+192:         let mut capacity = 0;
+193:         for declaration in program.types().iter().chain(prelude) {
+194:             match &declaration.kind {
+195:                 TypeDeclarationKind::Record { fields }
+196:                 | TypeDeclarationKind::Class { fields, .. } => {
+197:                     for field in fields {
+198:                         capacity = capacity.max(frontier(&field.ty, reserve)?);
+199:                     }
+200:                 }
+201:                 TypeDeclarationKind::Variant { cases } => {
+202:                     for case in cases {
+203:                         for field in &case.fields {
+204:                             capacity = capacity.max(frontier(&field.ty, reserve)?);
+205:                         }
+206:                     }
+207:                 }
+208:                 TypeDeclarationKind::Resource { .. } => {}
+209:             }
+210:         }
+211:         #[repr(C)]
+212:         struct ArcCarrier<T> {
+213:             strong: usize,
+214:             weak: usize,
+215:             value: T,
+216:         }
+217:         // At most one outer cases guard, one fields guard and one resolved
+218:         // field type coexist. Price both initialization and receiving slots.
+219:         let guards = 2 * size_of::<PendingVec<ResolvedVariantCaseDeclaration>>()
+220:             + 2 * size_of::<PendingVec<ResolvedFieldDeclaration>>()
+221:             + 2 * size_of::<PendingType>();
+222:         reserve(
+223:             size_of::<ArcCarrier<Mutex<Vec<ResolvedType>>>>()
+224:                 .saturating_add(guards)
+225:                 .saturating_add(size_of::<Self>())
+226:                 .saturating_add(size_of::<Result<Self, E>>())
+227:                 .saturating_add(capacity.saturating_mul(size_of::<ResolvedType>())),
+228:         )?;
+229:         let scratch = Vec::with_capacity(capacity);
+230:         assert_eq!(scratch.capacity(), capacity);
+231:         Ok(Self {
+232:             scratch: Some(Arc::new(Mutex::new(scratch))),
+233:             building: true,
+234:         })
+235:     }
+236: }
+
+FILE src/hir/declaration_index/nominal.rs
+1: //! Acquires canonical owners after the complete original index/type checks.
+2: use super::*;
+3: fn shared<T: nominal_payload::NominalElement, E>(
+4:     values: &mut NominalPayload<T>,
+5:     reserve: &mut impl FnMut(usize) -> Result<(), E>,
+6: ) -> Result<(), E> {
+7:     if values.is_shared() {
+8:         return reserve(0);
+9:     }
+10:     if values.is_empty() {
+11:         // Empty metadata owns no payload backing to share. Moving its legacy
+12:         // Vec carrier avoids a control block per monomorphic function.
+13:         return reserve(std::mem::size_of::<NominalPayload<T>>());
+14:     }
+15:     let owner = NominalPayload::from_funded_vec(&mut **values, reserve)?;
+16:     *values = owner;
+17:     Ok(())
+18: }
+19: impl DeclarationIndex {
+20:     pub(super) fn drain_legacy_type_roots(&mut self, mut dispose: impl FnMut(ResolvedType)) {
+21:         for (_, fields) in std::mem::take(&mut self.case_fields) {
+22:             fields.drain(&mut dispose);
+23:         }
+24:         for (_, fields) in std::mem::take(&mut self.record_fields) {
+25:             if !fields.is_shared() {
+26:                 fields.drain_recursive_types(&mut dispose);
+27:             }
+28:         }
+29:         for (_, cases) in std::mem::take(&mut self.variant_cases) {
+30:             if !cases.is_shared() {
+31:                 cases.drain_recursive_types(&mut dispose);
+32:             }
+33:         }
+34:     }
+35: 
+36:     pub(in crate::hir) fn record_payload(
+37:         &self,
+38:         owner: &DeclarationId,
+39:     ) -> Option<&NominalPayload<ResolvedFieldDeclaration>> {
+40:         self.record_fields.get(owner)
+41:     }
+42:     pub(in crate::hir) fn case_payload(
+43:         &self,
+44:         owner: &DeclarationId,
+45:     ) -> Option<&NominalPayload<ResolvedVariantCaseDeclaration>> {
+46:         self.variant_cases.get(owner)
+47:     }
+48:     pub(in crate::hir) fn parameter_payload(
+49:         &self,
+50:         owner: &DeclarationId,
+51:     ) -> Option<&NominalPayload<ResolvedTypeParameterDeclaration>> {
+52:         self.type_parameters.get(owner)
+53:     }
+54: 
+55:     pub(super) fn share_nominal_payloads<E>(
+56:         &mut self,
+57:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+58:     ) -> Result<(), E> {
+59:         for values in self.type_parameters.values_mut() {
+60:             shared(values, reserve)?;
+61:         }
+62:         for values in self.record_fields.values_mut() {
+63:             shared(values, reserve)?;
+64:         }
+65:         for values in self.variant_cases.values_mut() {
+66:             shared(values, reserve)?;
+67:         }
+68:         for cases in self.variant_cases.values() {
+69:             for (ordinal, case) in cases.iter().enumerate() {
+70:                 reserve(std::mem::size_of::<CaseFields>())?;
+71:                 self.case_fields.insert(
+72:                     case.id.clone(),
+73:                     CaseFields::canonical(cases.clone(), ordinal),
+74:                 );
+75:             }
+76:         }
+77:         Ok(())
+78:     }
+79: }
+
+FILE src/hir/declaration_index/identity_payer.rs
+1: //! Explicit identity payer for initial declaration-index construction.
+2: //! Semantic diagnostics retain their original owned compatibility contract.
+3: //! Identity refusal returns the exact caller error, without rendering a new
+4: //! Diagnostic, allocating a report, or consulting an ambient ledger.
+5: use super::*;
+6: 
+7: #[derive(Debug)]
+8: pub(in crate::hir) enum IdentityIndexError<E> {
+9:     Semantic(Diagnostic),
+10:     Identity(E),
+11: }
+12: impl<E> From<Diagnostic> for IdentityIndexError<E> {
+13:     fn from(error: Diagnostic) -> Self {
+14:         Self::Semantic(error)
+15:     }
+16: }
+17: 
+18: impl DeclarationIndex {
+19:     /// The caller owns this reservation callback and its refusal carrier.
+20:     /// Only bytes are requested from it; exact source text is constructed
+21:     /// internally, so callback presence cannot substitute declaration IDs.
+22:     #[cfg_attr(
+23:         not(test),
+24:         allow(
+25:             dead_code,
+26:             reason = "explicit index payer seam awaits caller-owned outward report migration"
+27:         )
+28:     )]
+29:     pub(in crate::hir) fn from_verified_with_identity_reservation<E>(
+30:         program: &dyn ProgramSource,
+31:         prelude: &[crate::ast::TypeDeclaration],
+32:         mut reserve: impl FnMut(usize) -> Result<(), E>,
+33:     ) -> Result<Self, IdentityIndexError<E>> {
+34:         Self::from_verified_with_identity_payer(program, prelude, &mut |text| {
+35:             DeclarationId::paid_borrowed(text, &mut reserve)
+36:         })
+37:     }
+38: 
+39:     /// Same explicit owner, now also acquiring the canonical nominal owners.
+40:     pub(in crate::hir) fn from_verified_with_nominal_reservation<E>(
+41:         program: &dyn ProgramSource,
+42:         prelude: &[crate::ast::TypeDeclaration],
+43:         mut reserve: impl FnMut(usize) -> Result<(), E>,
+44:     ) -> Result<Self, IdentityIndexError<E>> {
+45:         let workspace = super::nominal_rollback::Workspace::acquire(program, prelude, &mut reserve)
+46:             .map_err(IdentityIndexError::Identity)?;
+47:         let mut index = Self::build_nominal_index(
+48:             program,
+49:             prelude,
+50:             &mut |text| DeclarationId::paid_borrowed(text, &mut reserve),
+51:             true,
+52:             workspace,
+53:         )?;
+54:         index
+55:             .share_nominal_payloads(&mut reserve)
+56:             .map_err(IdentityIndexError::Identity)?;
+57:         index.nominal_drop_workspace.finish();
+58:         Ok(index)
+59:     }
+60: 
+61:     // Borrow the callback on the stack so this complete constructor specializes
+62:     // by its refusal carrier, rather than every caller closure type. No callback
+63:     // escapes and reservation order and owned identity construction stay exact.
+64:     pub(super) fn from_verified_with_identity_payer<E>(
+65:         program: &dyn ProgramSource,
+66:         prelude: &[crate::ast::TypeDeclaration],
+67:         identity: &mut dyn FnMut(&str) -> Result<DeclarationId, E>,
+68:     ) -> Result<Self, IdentityIndexError<E>> {
+69:         Self::build_nominal_index(
+70:             program,
+71:             prelude,
+72:             identity,
+73:             false,
+74:             super::nominal_rollback::Workspace::default(),
+75:         )
+76:     }
+77: 
+78:     fn build_nominal_index<E>(
+79:         program: &dyn ProgramSource,
+80:         prelude: &[crate::ast::TypeDeclaration],
+81:         identity: &mut dyn FnMut(&str) -> Result<DeclarationId, E>,
+82:         canonical_nominals: bool,
+83:         workspace: super::nominal_rollback::Workspace,
+84:     ) -> Result<Self, IdentityIndexError<E>> {
+85:         let mut index = Self::default();
+86:         index.nominal_drop_workspace = workspace;
+87:         for declaration in program.types().iter().chain(prelude) {
+88:             let kind = match declaration.kind {
+89:                 TypeDeclarationKind::Resource { .. } => DeclarationKind::Resource,
+90:                 TypeDeclarationKind::Record { .. } => DeclarationKind::Record,
+91:                 TypeDeclarationKind::Class { .. } => DeclarationKind::Class,
+92:                 TypeDeclarationKind::Variant { .. } => DeclarationKind::Variant,
+93:             };
+94:             index.insert_top_level(
+95:                 declaration.name.clone(),
+96:                 identity(&declaration.stable_id).map_err(IdentityIndexError::Identity)?,
+97:                 kind,
+98:                 if crate::prelude::is_compiler_owned_id(&declaration.stable_id) {
+99:                     IdentityOrigin::CompilerOwned
+100:                 } else if declaration.explicit_id {
+101:                     IdentityOrigin::Explicit
+102:                 } else {
+103:                     IdentityOrigin::Automatic
+104:                 },
+105:             );
+106:             let owner = index.inserted_identity(&declaration.stable_id);
+107:             let parameters = declaration
+108:                 .type_parameters
+109:                 .iter()
+110:                 .enumerate()
+111:                 .map(|(ordinal, parameter)| {
+112:                     Ok(ResolvedTypeParameterDeclaration {
+113:                         name: parameter.name.clone(),
+114:                         index: u32::try_from(ordinal).map_err(|_| {
+115:                             Diagnostic::error(
+116:                                 "SPX-H006",
+117:                                 format!("type `{}` has too many parameters", declaration.name),
+118:                                 declaration.span,
+119:                             )
+120:                             .at_path(program.path())
+121:                         })?,
+122:                         span: parameter.span,
+123:                     })
+124:                 })
+125:                 .collect::<Result<Vec<_>, Diagnostic>>()?;
+126:             index.type_parameters.insert(owner, parameters);
+127:         }
+128:         for interface in program.interfaces() {
+129:             let interface_id =
+130:                 identity(&interface.stable_id).map_err(IdentityIndexError::Identity)?;
+131:             index.insert_top_level(
+132:                 interface.name.clone(),
+133:                 interface_id.clone(),
+134:                 DeclarationKind::Interface,
+135:                 IdentityOrigin::Explicit,
+136:             );
+137:             for import in &interface.imports {
+138:                 let import_id =
+139:                     identity(&import.stable_id).map_err(IdentityIndexError::Identity)?;
+140:                 index
+141:                     .imports_by_key
+142:                     .insert(import.stable_id.clone(), import_id.clone());
+143:                 if import.native_rust {
+144:                     index
+145:                         .native_rust_imports_by_name
+146:                         .insert(import.name.clone(), import_id.clone());
+147:                 }
+148:                 index.insert_owned_declaration(
+149:                     interface_id.clone(),
+150:                     import.name.clone(),
+151:                     import_id,
+152:                     DeclarationKind::Import,
+153:                     IdentityOrigin::Explicit,
+154:                 );
+155:             }
+156:         }
+157:         for declaration in program.types().iter().chain(prelude) {
+158:             let TypeDeclarationKind::Resource { lifecycles } = &declaration.kind else {
+159:                 continue;
+160:             };
+161:             if let [lifecycle] = lifecycles.as_slice() {
+162:                 let lifecycle_id = lifecycle
+163:                     .stable_id
+164:                     .as_ref()
+165:                     .expect("verified lifecycle has an explicit identity");
+166:                 index.insert_owned_declaration(
+167:                     index.inserted_identity(&declaration.stable_id),
+168:                     "drop".to_owned(),
+169:                     identity(lifecycle_id).map_err(IdentityIndexError::Identity)?,
+170:                     DeclarationKind::ResourceDrop,
+171:                     IdentityOrigin::Explicit,
+172:                 );
+173:             }
+174:         }
+175:         for function in program.functions() {
+176:             let owner = identity(&function.stable_id).map_err(IdentityIndexError::Identity)?;
+177:             index.insert_top_level(
+178:                 function.name.clone(),
+179:                 owner.clone(),
+180:                 DeclarationKind::Function,
+181:                 if super::record_invariants::is_synthesized(&function.name) {
+182:                     IdentityOrigin::CompilerOwned
+183:                 } else if function.explicit_id {
+184:                     IdentityOrigin::Explicit
+185:                 } else {
+186:                     IdentityOrigin::Automatic
+187:                 },
+188:             );
+189:             let parameters = function
+190:                 .type_parameters
+191:                 .iter()
+192:                 .enumerate()
+193:                 .map(|(ordinal, parameter)| {
+194:                     Ok(ResolvedTypeParameterDeclaration {
+195:                         name: parameter.name.clone(),
+196:                         index: u32::try_from(ordinal).map_err(|_| {
+197:                             Diagnostic::error(
+198:                                 "SPX-H006",
+199:                                 format!("function `{}` has too many parameters", function.name),
+200:                                 function.span,
+201:                             )
+202:                             .at_path(program.path())
+203:                         })?,
+204:                         span: parameter.span,
+205:                     })
+206:                 })
+207:                 .collect::<Result<Vec<_>, Diagnostic>>()?;
+208:             index.type_parameters.insert(owner, parameters);
+209:         }
+210:         if program
+211:             .interfaces()
+212:             .iter()
+213:             .flat_map(|interface| &interface.imports)
+214:             .filter(|import| import.native_rust)
+215:             .any(|import| index.functions_by_name.contains_key(&import.name))
+216:         {
+217:             return Err(IdentityIndexError::Semantic(
+218:                 Diagnostic::error(
+219:                     "SPX-B107",
+220:                     "Native Rust Interop declaration set is unsupported: symbol collision",
+221:                     Span::default(),
+222:                 )
+223:                 .at_path(program.path()),
+224:             ));
+225:         }
+226:         for declaration in program.types().iter().chain(prelude) {
+227:             let (TypeDeclarationKind::Record { fields }
+228:             | TypeDeclarationKind::Class { fields, .. }) = &declaration.kind
+229:             else {
+230:                 continue;
+231:             };
+232:             let owner = index.inserted_identity(&declaration.stable_id);
+233:             let mut resolved_fields = index
+234:                 .nominal_drop_workspace
+235:                 .fields::<ResolvedFieldDeclaration>(fields.len());
+236:             for (ordinal, field) in fields.iter().enumerate() {
+237:                 let ty = index
+238:                     .resolve_source_type(&field.ty, Some(&owner))
+239:                     .ok_or_else(|| {
+240:                         Diagnostic::error(
+241:                             "SPX-H001",
+242:                             format!("unresolved field type `{}`", field.ty),
+243:                             field.span,
+244:                         )
+245:                         .at_path(program.path())
+246:                     })?;
+247:                 let field_index = u32::try_from(ordinal).map_err(|_| {
+248:                     Diagnostic::error(
+249:                         "SPX-H006",
+250:                         format!("record `{}` has too many fields", declaration.name),
+251:                         declaration.span,
+252:                     )
+253:                     .at_path(program.path())
+254:                 })?;
+255:                 let ty = index.nominal_drop_workspace.resolved_type(ty);
+256:                 let resolved = ResolvedFieldDeclaration {
+257:                     id: identity(&field.stable_id).map_err(IdentityIndexError::Identity)?,
+258:                     name: field.name.clone(),
+259:                     index: field_index,
+260:                     ty: ty.into_type(),
+261:                     span: field.span,
+262:                 };
+263:                 index.insert_field(
+264:                     owner.clone(),
+265:                     resolved.clone(),
+266:                     if field.explicit_id {
+267:                         IdentityOrigin::Explicit
+268:                     } else {
+269:                         IdentityOrigin::Automatic
+270:                     },
+271:                 );
+272:                 resolved_fields.push(resolved);
+273:             }
+274:             index
+275:                 .record_fields
+276:                 .insert(owner, resolved_fields.into_vec());
+277:         }
+278:         for declaration in program.types().iter() {
+279:             let TypeDeclarationKind::Class { fields, methods } = &declaration.kind else {
+280:                 continue;
+281:             };
+282:             let owner = index.inserted_identity(&declaration.stable_id);
+283:             let mut resolved_fields = index
+284:                 .nominal_drop_workspace
+285:                 .fields::<ResolvedFieldDeclaration>(fields.len());
+286:             for (ordinal, field) in fields.iter().enumerate() {
+287:                 let ty = index
+288:                     .resolve_source_type(&field.ty, Some(&owner))
+289:                     .ok_or_else(|| {
+290:                         Diagnostic::error(
+291:                             "SPX-H001",
+292:                             format!("unresolved class field type `{}`", field.ty),
+293:                             field.span,
+294:                         )
+295:                         .at_path(program.path())
+296:                     })?;
+297:                 let field_index = u32::try_from(ordinal).map_err(|_| {
+298:                     Diagnostic::error(
+299:                         "SPX-H006",
+300:                         format!("class `{}` has too many fields", declaration.name),
+301:                         declaration.span,
+302:                     )
+303:                     .at_path(program.path())
+304:                 })?;
+305:                 let ty = index.nominal_drop_workspace.resolved_type(ty);
+306:                 let resolved = ResolvedFieldDeclaration {
+307:                     id: identity(&field.stable_id).map_err(IdentityIndexError::Identity)?,
+308:                     name: field.name.clone(),
+309:                     index: field_index,
+310:                     ty: ty.into_type(),
+311:                     span: field.span,
+312:                 };
+313:                 index.insert_field(
+314:                     owner.clone(),
+315:                     resolved.clone(),
+316:                     if field.explicit_id {
+317:                         IdentityOrigin::Explicit
+318:                     } else {
+319:                         IdentityOrigin::Automatic
+320:                     },
+321:                 );
+322:                 resolved_fields.push(resolved);
+323:             }
+324:             index
+325:                 .record_fields
+326:                 .insert(owner.clone(), resolved_fields.into_vec());
+327:             for method in methods {
+328:                 let method_id =
+329:                     identity(&method.stable_id).map_err(IdentityIndexError::Identity)?;
+330:                 if index.declarations.contains_key(&method_id) {
+331:                     return Err(IdentityIndexError::Semantic(
+332:                         Diagnostic::error(
+333:                             "SPX-S102",
+334:                             format!("duplicate stable id `{}`", method.stable_id),
+335:                             method.span,
+336:                         )
+337:                         .at_path(program.path()),
+338:                     ));
+339:                 }
+340:                 index.insert_owned_declaration(
+341:                     owner.clone(),
+342:                     method.name.clone(),
+343:                     method_id,
+344:                     DeclarationKind::Function,
+345:                     if method.explicit_id {
+346:                         IdentityOrigin::Explicit
+347:                     } else {
+348:                         IdentityOrigin::Automatic
+349:                     },
+350:                 );
+351:                 if !method.type_parameters.is_empty() {
+352:                     return Err(IdentityIndexError::Semantic(
+353:                         Diagnostic::error(
+354:                             "SPX-T224",
+355:                             format!(
+356:                                 "class method `{}` cannot declare generic parameters in this slice",
+357:                                 method.name
+358:                             ),
+359:                             method.span,
+360:                         )
+361:                         .at_path(program.path()),
+362:                     ));
+363:                 }
+364:                 index
+365:                     .type_parameters
+366:                     .insert(index.inserted_identity(&method.stable_id), Vec::new());
+367:             }
+368:         }
+369:         for declaration in program.types().iter().chain(prelude) {
+370:             let TypeDeclarationKind::Variant { cases } = &declaration.kind else {
+371:                 continue;
+372:             };
+373:             let owner = index.inserted_identity(&declaration.stable_id);
+374:             let mut resolved_cases = index
+375:                 .nominal_drop_workspace
+376:                 .fields::<ResolvedVariantCaseDeclaration>(cases.len());
+377:             for (case_ordinal, case) in cases.iter().enumerate() {
+378:                 let case_id = identity(&case.stable_id).map_err(IdentityIndexError::Identity)?;
+379:                 let case_index = u32::try_from(case_ordinal).map_err(|_| {
+380:                     Diagnostic::error(
+381:                         "SPX-H006",
+382:                         format!("variant `{}` has too many cases", declaration.name),
+383:                         declaration.span,
+384:                     )
+385:                     .at_path(program.path())
+386:                 })?;
+387:                 index.insert_case(
+388:                     owner.clone(),
+389:                     case.name.clone(),
+390:                     case_id.clone(),
+391:                     if crate::prelude::is_compiler_owned_id(&case.stable_id) {
+392:                         IdentityOrigin::CompilerOwned
+393:                     } else if case.explicit_id {
+394:                         IdentityOrigin::Explicit
+395:                     } else {
+396:                         IdentityOrigin::Automatic
+397:                     },
+398:                 );
+399:                 let mut resolved_fields = index
+400:                     .nominal_drop_workspace
+401:                     .fields::<ResolvedFieldDeclaration>(case.fields.len());
+402:                 for (field_ordinal, field) in case.fields.iter().enumerate() {
+403:                     let ty = index
+404:                         .resolve_source_type(&field.ty, Some(&owner))
+405:                         .ok_or_else(|| {
+406:                             Diagnostic::error(
+407:                                 "SPX-H001",
+408:                                 format!("unresolved case field type `{}`", field.ty),
+409:                                 field.span,
+410:                             )
+411:                             .at_path(program.path())
+412:                         })?;
+413:                     let field_index = u32::try_from(field_ordinal).map_err(|_| {
+414:                         Diagnostic::error(
+415:                             "SPX-H006",
+416:                             format!(
+417:                                 "variant case `{}::{}` has too many fields",
+418:                                 declaration.name, case.name
+419:                             ),
+420:                             case.span,
+421:                         )
+422:                         .at_path(program.path())
+423:                     })?;
+424:                     let ty = index.nominal_drop_workspace.resolved_type(ty);
+425:                     let resolved = ResolvedFieldDeclaration {
+426:                         id: identity(&field.stable_id).map_err(IdentityIndexError::Identity)?,
+427:                         name: field.name.clone(),
+428:                         index: field_index,
+429:                         ty: ty.into_type(),
+430:                         span: field.span,
+431:                     };
+432:                     index.insert_case_field(
+433:                         case_id.clone(),
+434:                         resolved.clone(),
+435:                         if crate::prelude::is_compiler_owned_id(&field.stable_id) {
+436:                             IdentityOrigin::CompilerOwned
+437:                         } else if field.explicit_id {
+438:                             IdentityOrigin::Explicit
+439:                         } else {
+440:                             IdentityOrigin::Automatic
+441:                         },
+442:                     );
+443:                     resolved_fields.push(resolved);
+444:                 }
+445:                 if !canonical_nominals {
+446:                     index
+447:                         .case_fields
+448:                         .insert(case_id.clone(), resolved_fields.clone());
+449:                 }
+450:                 resolved_cases.push(ResolvedVariantCaseDeclaration {
+451:                     id: case_id,
+452:                     name: case.name.clone(),
+453:                     index: case_index,
+454:                     fields: resolved_fields.into_vec(),
+455:                     span: case.span,
+456:                 });
+457:             }
+458:             index.variant_cases.insert(owner, resolved_cases.into_vec());
+459:         }
+460:         index.materialize_class_inheritance(program)?;
+461:         if !index.populate_type_facts() {
+462:             return Err(IdentityIndexError::Semantic(
+463:                 Diagnostic::error(
+464:                     "SPX-T217",
+465:                     "record declarations contain an illegal by-value recursive layout",
+466:                     Span::default(),
+467:                 )
+468:                 .at_path(program.path()),
+469:             ));
+470:         }
+471:         Ok(index)
+472:     }
+473: }
+
+FILE src/hir/identity_resolution/nominal.rs
+1: //! Same complete source/reuse/invariant passes, with nominal payload bytes
+2: //! acquired on the existing explicit caller reservation. No new budget, source
+3: //! authority, invariant omission, or replay-work credit is introduced.
+4: use super::super::function_reuse_source::environment_is_exact as source_environment_is_exact;
+5: use super::*;
+6: pub(crate) fn resolve_checked_nominal<'p, E>(
+7:     program: &'p Program,
+8:     previous_program: Option<&Program>,
+9:     previous_resolved: Option<&ResolvedProgram>,
+10:     previous_costs: Option<&BTreeMap<String, usize>>,
+11:     private: Option<source_verify::private_names::PrivateNames<'p>>,
+12:     mut reserve: impl FnMut(usize) -> Result<(), E>,
+13: ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
+14:     #[cfg(feature = "unstable-workflow-profiling")]
+15:     let _workflow_span = crate::workflow_profile::span(crate::workflow_profile::Stage::Resolve);
+16:     let diagnostics = source_verify::verify_presenting(program, private);
+17:     if diagnostics
+18:         .iter()
+19:         .any(|diagnostic| diagnostic.severity.is_error())
+20:     {
+21:         return Err(Failure::Source(diagnostics));
+22:     }
+23:     let reuse = previous_program
+24:         .zip(previous_resolved)
+25:         .zip(previous_costs)
+26:         .filter(|((previous, _), _)| function_reuse_environment_is_exact(program, previous))
+27:         .map(|((previous, resolved), costs)| FunctionReuse {
+28:             current: program,
+29:             program: previous,
+30:             resolved,
+31:             costs,
+32:         });
+33:     resolve_verified_paid_nominal(program, reuse, &mut reserve)
+34: }
+35: 
+36: fn resolve_verified_paid_nominal<E>(
+37:     program: &Program,
+38:     reuse: Option<FunctionReuse<'_>>,
+39:     reserve: &mut impl FnMut(usize) -> Result<(), E>,
+40: ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
+41:     let clause_program = record_invariants::clause_program(program);
+42:     let inventory_program = clause_program.as_ref().unwrap_or(program);
+43:     let reuse = if clause_program.is_some() {
+44:         None
+45:     } else {
+46:         reuse
+47:     };
+48:     let resolved = pass_nominal(inventory_program, reuse, reserve)?;
+49:     let Some(desugared) = record_invariants::desugar(program, &resolved.0) else {
+50:         return Ok(resolved);
+51:     };
+52:     pass_nominal(&desugared, None, reserve)
+53: }
+54: 
+55: fn source_pass_nominal<E>(
+56:     program: &dyn ProgramSource,
+57:     reuse: Option<FunctionReuse<'_>>,
+58:     reserve: &mut impl FnMut(usize) -> Result<(), E>,
+59: ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
+60:     // SourceIndex precedes the DeclarationIndex, as in the legacy route.
+61:     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
+62:     let declarations = DeclarationIndex::from_verified_with_nominal_reservation(
+63:         program,
+64:         crate::prelude::declarations_for_program(program),
+65:         &mut *reserve,
+66:     )?;
+67:     (Resolver {
+68:         program,
+69:         byte_helpers,
+70:         declarations,
+71:         reuse,
+72:         function_work: FunctionResolutionWork::default(),
+73:         fused_producer: None,
+74:         partition_profile: false,
+75:     })
+76:     .resolve_with_agent_identities(|text| DeclarationId::paid_borrowed(text, &mut *reserve))
+77:     .map_err(Failure::from)
+78: }
+79: 
+80: fn pass_nominal<E>(
+81:     program: &Program,
+82:     reuse: Option<FunctionReuse<'_>>,
+83:     reserve: &mut impl FnMut(usize) -> Result<(), E>,
+84: ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
+85:     // Preserve the old Resolver field-evaluation order before index creation.
+86:     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
+87:     let declarations = DeclarationIndex::from_verified_with_nominal_reservation(
+88:         program,
+89:         crate::prelude::declarations_for_program(program),
+90:         &mut *reserve,
+91:     )?;
+92:     (Resolver {
+93:         program,
+94:         byte_helpers,
+95:         declarations,
+96:         reuse,
+97:         function_work: FunctionResolutionWork::default(),
+98:         fused_producer: None,
+99:         partition_profile: false,
+100:     })
+101:     .resolve_with_agent_identities(|text| DeclarationId::paid_borrowed(text, &mut *reserve))
+102:     .map_err(Failure::from)
+103: }
+104: 
+105: pub(crate) fn resolve_source_checked_previous_nominal<'p, E>(
+106:     program: &'p dyn ProgramSource,
+107:     previous_program: Option<&dyn ProgramSource>,
+108:     previous_resolved: Option<&ResolvedProgram>,
+109:     previous_costs: Option<&BTreeMap<String, usize>>,
+110:     private: Option<source_verify::private_names::PrivateNames<'p>>,
+111:     mut reserve: impl FnMut(usize) -> Result<(), E>,
+112: ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
+113:     #[cfg(feature = "unstable-workflow-profiling")]
+114:     let _workflow_span = crate::workflow_profile::span(crate::workflow_profile::Stage::Resolve);
+115:     let diagnostics = source_verify::verify_presenting(program, private);
+116:     if diagnostics
+117:         .iter()
+118:         .any(|diagnostic| diagnostic.severity.is_error())
+119:     {
+120:         return Err(Failure::Source(diagnostics));
+121:     }
+122:     let reuse = previous_program
+123:         .zip(previous_resolved)
+124:         .zip(previous_costs)
+125:         .filter(|((previous, _), _)| source_environment_is_exact(program, *previous))
+126:         .map(|((previous, resolved), costs)| FunctionReuse {
+127:             current: program,
+128:             program: previous,
+129:             resolved,
+130:             costs,
+131:         });
+132:     let clause_program = record_invariants::source::clause_program(program);
+133:     let inventory: &dyn ProgramSource = clause_program.as_ref().map_or(program, |owned| owned);
+134:     let resolved = source_pass_nominal(
+135:         inventory,
+136:         if clause_program.is_some() {
+137:             None
+138:         } else {
+139:             reuse
+140:         },
+141:         &mut reserve,
+142:     )?;
+143:     let Some(desugared) = record_invariants::source::desugar(program, &resolved.0) else {
+144:         return Ok(resolved);
+145:     };
+146:     pass_nominal(&desugared, None, &mut reserve)
+147: }
+148: 
+149: pub(crate) fn resolve_source_nominal<'p, E>(
+150:     program: &'p dyn ProgramSource,
+151:     private: Option<source_verify::private_names::PrivateNames<'p>>,
+152:     reserve: impl FnMut(usize) -> Result<(), E>,
+153: ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
+154:     resolve_source_checked_previous_nominal(program, None, None, None, private, reserve)
+155: }
+
+FILE src/hir/identity_resolution/nominal_tests.rs
+1: //! Full old index/receiver controls. These are source-authored, not runtime evidence.
+2: use super::*;
+3: use crate::test_allocation_observer::{current_metrics, measure};
+4: 
+5: const SOURCE: &str = r#"module nominal.shared;
+6: @id("row.type") record Row { @id("row.x") x:i64, }
+7: @id("base.type") class Base {
+8:     @id("base.x") x:i64,
+9:     @id("base.read") fn read(self:Base)->i64 {self.x}
+10: }
+11: @id("child.type") class Child : Base {
+12:     @id("child.y") y:i64,
+13:     @id("child.read") fn read(self:Child)->i64 {self.y}
+14: }
+15: @id("choice.type") variant Choice {
+16:     @id("choice.left") Left { @id("choice.left.x") x:i64, },
+17:     @id("choice.right") Right,
+18: }
+19: @id("app.main") fn main()->i64 {0}
+20: "#;
+21: #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+22: struct Stop(usize);
+23: 
+24: fn old(program: &Program) -> Result<(ResolvedProgram, FunctionResolutionWork), Diagnostic> {
+25:     // Full frozen receiver with the independently saved complete index. No
+26:     // shared constructor, payload oracle, schema substitute, or partial view.
+27:     (Resolver {
+28:         program,
+29:         byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(program),
+30:         declarations: DeclarationIndex::nominal_original_with_prelude(
+31:             program,
+32:             crate::prelude::declarations_for_program(program),
+33:         )?,
+34:         reuse: None,
+35:         function_work: FunctionResolutionWork::default(),
+36:         fused_producer: None,
+37:         partition_profile: false,
+38:     })
+39:     .resolve_agent_identity_original()
+40: }
+41: #[test]
+42: fn nominal_actual_paid_receiver_preserves_complete_old_hir_wire_and_shares_all_nominal_views() {
+43:     let program = crate::check(SOURCE, "nominal-shared.spx").unwrap();
+44:     let old = old(&program).unwrap();
+45:     let mut requests = Vec::new();
+46:     let current = resolve_checked_nominal(&program, None, None, None, None, |n| {
+47:         requests.push(n);
+48:         Ok::<_, Stop>(())
+49:     })
+50:     .unwrap();
+51:     assert_eq!(current.0, old.0);
+52:     assert_eq!(
+53:         crate::cache_codec::encode(&current.0).unwrap(),
+54:         crate::cache_codec::encode(&old.0).unwrap()
+55:     );
+56:     assert_eq!(current.1.reused(), old.1.reused());
+57:     assert!(!requests.is_empty());
+58:     for declaration in &current.0.types {
+59:         let index = &current.0.declarations;
+60:         let parameters = index.parameter_payload(&declaration.id).unwrap();
+61:         assert_eq!(parameters.as_ptr(), declaration.type_parameters.as_ptr());
+62:         match &declaration.kind {
+63:             ResolvedTypeDeclarationKind::Record { fields }
+64:             | ResolvedTypeDeclarationKind::Class { fields, .. } => {
+65:                 assert_eq!(
+66:                     fields.as_ptr(),
+67:                     index.record_payload(&declaration.id).unwrap().as_ptr()
+68:                 );
+69:             }
+70:             ResolvedTypeDeclarationKind::Variant { cases } => {
+71:                 assert_eq!(
+72:                     cases.as_ptr(),
+73:                     index.case_payload(&declaration.id).unwrap().as_ptr()
+74:                 );
+75:                 for case in cases {
+76:                     assert_eq!(
+77:                         case.fields.as_ptr(),
+78:                         index.case_fields(&case.id).unwrap().as_ptr()
+79:                     );
+80:                 }
+81:             }
+82:             ResolvedTypeDeclarationKind::Resource { .. } => {}
+83:         }
+84:     }
+85:     // Public projection of a missing fact must remain missing, not be repaired
+86:     // from the canonical outer cases merely because IDs happen to match.
+87:     let mut hostile = current.0.declarations.clone();
+88:     hostile.case_fields.remove("choice.left");
+89:     assert!(hostile
+90:         .case_fields(&DeclarationId::new("choice.left"))
+91:         .is_none());
+92:     let ((), drop) = measure(|| drop(current));
+93:     assert!(!drop.invalid);
+94:     assert_eq!(drop.allocated, 0);
+95: }
+96: #[test]
+97: fn nominal_full_constructor_refuses_at_every_actual_acquisition_and_releases_all_partial_owners() {
+98:     let nested = SOURCE
+99:         .replace(
+100:             "@id(\"row.x\") x:i64",
+101:             "@id(\"row.x\") x:Option<Option<i64>>",
+102:         )
+103:         .replace(
+104:             "@id(\"choice.left.x\") x:i64",
+105:             "@id(\"choice.left.x\") x:Option<Option<i64>>",
+106:         );
+107:     let program = crate::check(&nested, "nominal-shared.spx").unwrap();
+108:     let prelude = crate::prelude::declarations_for_program(&program);
+109:     let mut requests = Vec::new();
+110:     let full = DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
+111:         requests.push(n);
+112:         Ok::<_, Stop>(())
+113:     })
+114:     .unwrap();
+115:     let original = DeclarationIndex::nominal_original_with_prelude(&program, prelude).unwrap();
+116:     assert_eq!(full, original);
+117:     assert_eq!(
+118:         crate::cache_codec::encode(&full).unwrap(),
+119:         crate::cache_codec::encode(&original).unwrap()
+120:     );
+121:     for stop in 0..requests.len() {
+122:         let mut seen = 0;
+123:         let mut at_refusal = 0;
+124:         let (result, allocation) = measure(|| {
+125:             DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
+126:                 assert_eq!(n, requests[seen]);
+127:                 let at = seen;
+128:                 seen += 1;
+129:                 if at == stop {
+130:                     at_refusal = current_metrics().allocated;
+131:                     Err(Stop(at))
+132:                 } else {
+133:                     Ok(())
+134:                 }
+135:             })
+136:         });
+137:         assert!(matches!(result,Err(IdentityIndexError::Identity(Stop(at))) if at==stop));
+138:         assert_eq!(seen, stop + 1, "no callback retry after the selected error");
+139:         assert!(!allocation.invalid);
+140:         assert_eq!(allocation.live, 0);
+141:         assert_eq!(allocation.allocated, allocation.freed);
+142:         assert_eq!(
+143:             allocation.allocated, at_refusal,
+144:             "no allocation after selected refusal, including local/index Drop"
+145:         );
+146:     }
+147: }
+148: #[test]
+149: fn nominal_full_constructor_keeps_complete_old_semantic_diagnostic_order() {
+150:     for source in [
+151:         SOURCE.replace("Child : Base", "Child : Missing"),
+152:         SOURCE.replace("class Base {", "class Base : Child {"),
+153:         SOURCE.replace("@id(\"child.read\")", "@id(\"base.read\")"),
+154:     ] {
+155:         let program = crate::parse(&source, "nominal-invalid.spx").unwrap();
+156:         let prelude = crate::prelude::declarations_for_program(&program);
+157:         let old = DeclarationIndex::nominal_original_with_prelude(&program, prelude).unwrap_err();
+158:         let IdentityIndexError::Semantic(current) =
+159:             DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |_| {
+160:                 Ok::<_, Stop>(())
+161:             })
+162:             .unwrap_err()
+163:         else {
+164:             panic!("unexpected payer refusal")
+165:         };
+166:         assert_eq!(current, old);
+167:     }
+168: }
+
+FILE src/hir/nominal_payload/tests.rs
+1: //! Actual backing/last-owner Drop and refusal before acquisition controls.
+2: use super::*;
+3: use crate::bounded_output::{reserve_active_required, with_limit_usage_refusal};
+4: use crate::{ast::Span, hir::DeclarationId, test_allocation_observer::measure};
+5: fn field(ty: ResolvedType) -> ResolvedFieldDeclaration {
+6:     ResolvedFieldDeclaration {
+7:         id: DeclarationId::new("field"),
+8:         name: "x".to_owned(),
+9:         index: 0,
+10:         ty,
+11:         span: Span::default(),
+12:     }
+13: }
+14: fn reserve(bytes: usize) -> Result<(), ()> {
+15:     if reserve_active_required(bytes) {
+16:         Ok(())
+17:     } else {
+18:         Err(())
+19:     }
+20: }
+21: #[test]
+22: fn actual_nominal_owner_moves_complete_vec_and_shares_without_backing_clone() {
+23:     let mut fields = vec![field(ResolvedType::I64)];
+24:     let pointer = fields.as_ptr();
+25:     let original = fields.clone();
+26:     let mut debit = 0;
+27:     let (payload, metrics) = measure(|| {
+28:         NominalPayload::from_funded_vec(&mut fields, |bytes| {
+29:             debit += bytes;
+30:             Ok::<_, ()>(())
+31:         })
+32:         .unwrap()
+33:     });
+34:     assert!(fields.is_empty());
+35:     assert_eq!(payload.as_ptr(), pointer);
+36:     assert_eq!(payload.as_slice(), original.as_slice());
+37:     assert!(!metrics.invalid);
+38:     assert_eq!(metrics.allocations, 1);
+39:     assert!(debit >= metrics.allocated);
+40:     let ((), sharing) = measure(|| {
+41:         let copy = payload.clone();
+42:         assert!(payload.same_owner(&copy));
+43:         assert_eq!(copy.as_ptr(), pointer);
+44:         drop(copy);
+45:     });
+46:     assert_eq!(sharing.allocated, 0);
+47:     assert_eq!(sharing.live, 0);
+48:     assert!(!sharing.invalid);
+49:     let ((), drop) = measure(|| drop(payload));
+50:     assert_eq!(drop.allocated, 0);
+51:     assert!(!drop.invalid);
+52: }
+53: #[test]
+54: fn zero_one_short_exact_and_sticky_refusal_preserve_complete_input_before_allocation() {
+55:     let mut probe = vec![field(ResolvedType::I64)];
+56:     let mut exact = 0;
+57:     let paid = NominalPayload::from_funded_vec(&mut probe, |n| {
+58:         exact += n;
+59:         Ok::<_, ()>(())
+60:     })
+61:     .unwrap();
+62:     drop(paid);
+63:     for cap in [0, exact - 1, exact] {
+64:         let mut fields = vec![field(ResolvedType::I64)];
+65:         let original = fields.clone();
+66:         let pointer = fields.as_ptr();
+67:         let ((result, retry, allocation), overflowed, used, first) =
+68:             with_limit_usage_refusal(cap, || {
+69:                 let (result, allocation) =
+70:                     measure(|| NominalPayload::from_funded_vec(&mut fields, reserve));
+71:                 let retry = if result.is_err() {
+72:                     Some(reserve_active_required(0))
+73:                 } else {
+74:                     None
+75:                 };
+76:                 (result, retry, allocation)
+77:             });
+78:         assert!(!allocation.invalid);
+79:         if cap < exact {
+80:             assert!(result.is_err());
+81:             assert!(overflowed);
+82:             assert_eq!(used, 0);
+83:             assert_eq!(retry, Some(false));
+84:             assert_eq!(allocation.allocated, 0);
+85:             assert_eq!(fields, original);
+86:             assert_eq!(fields.as_ptr(), pointer);
+87:             let receipt = first.unwrap();
+88:             assert_eq!(receipt.requested, exact);
+89:             assert_eq!(receipt.remaining, cap);
+90:         } else {
+91:             assert!(result.is_ok());
+92:             assert!(!overflowed);
+93:             assert_eq!(used, exact);
+94:             assert!(first.is_none());
+95:             assert!(fields.is_empty());
+96:         }
+97:         drop(result);
+98:     }
+99: }
+100: #[test]
+101: fn shared_mutation_refuses_without_touching_either_full_owner() {
+102:     let mut fields = vec![field(ResolvedType::I64)];
+103:     let mut payload = NominalPayload::from_funded_vec(&mut fields, |_| Ok::<_, ()>(())).unwrap();
+104:     let other = payload.clone();
+105:     let pointer = payload.as_ptr();
+106:     let ((result, metrics), overflowed, _, _) =
+107:         with_limit_usage_refusal(0, || measure(|| payload.try_make_mut(reserve).map(|_| ())));
+108:     assert!(result.is_err());
+109:     assert!(overflowed);
+110:     assert_eq!(metrics.allocated, 0);
+111:     assert!(!metrics.invalid);
+112:     assert!(payload.same_owner(&other));
+113:     assert_eq!(payload.as_ptr(), pointer);
+114:     payload.try_make_mut(|_| Ok::<_, ()>(())).unwrap()[0].ty = ResolvedType::Bool;
+115:     assert_eq!(other[0].ty, ResolvedType::I64);
+116:     assert_eq!(payload[0].ty, ResolvedType::Bool);
+117: }
+118: #[test]
+119: fn nested_512_last_owner_drop_uses_only_its_preacquired_disposal_backing() {
+120:     let mut ty = ResolvedType::I64;
+121:     for _ in 0..512 {
+122:         ty = ResolvedType::Nominal {
+123:             declaration: DeclarationId::new("nested"),
+124:             arguments: vec![ty],
+125:         };
+126:     }
+127:     let mut fields = vec![field(ty)];
+128:     let mut charged = 0;
+129:     let (payload, construction) = measure(|| {
+130:         NominalPayload::from_funded_vec(&mut fields, |n| {
+131:             charged += n;
+132:             Ok::<_, ()>(())
+133:         })
+134:         .unwrap()
+135:     });
+136:     assert!(!construction.invalid);
+137:     assert!(charged >= construction.allocated);
+138:     let copy = payload.clone();
+139:     let ((), not_last) = measure(|| drop(payload));
+140:     assert_eq!(not_last.allocated, 0);
+141:     assert_eq!(not_last.freed, 0);
+142:     let ((), last) = measure(|| drop(copy));
+143:     assert_eq!(last.allocated, 0);
+144:     assert!(!last.invalid);
+145:     assert!(last.freed > 0);
+146: }
+
+FILE docs/evidence/nominal-payload-827/CHECKPOINT.md
+1: # Nominal payload 827: private source checkpoint v1
+2: 
+3: Basis: `4ec48420b6e78b1035a66cc406893c46c3028464`. This is an unfinished private source checkpoint, not an integration candidate or a completed optimization. No Cargo, build, test, runtime, or performance qualification has run on it.
+4: 
+5: The draft introduces an explicitly funded immutable outer nominal sequence, case-field coordinates retaining the complete outer cases owner, exact legacy Vec wire projections, and separate legacy constructors. The original pre-change files are retained in full under `original/`, bound by `source-inventory.json`. The complete old index constructor is independently compiled under cfg(test) in `nominal_original.rs`; the existing complete old resolver remains present with representation-only adapters.
+6: 
+7: The actual workspace paid owned and borrowed resolver entries forward their existing byte reservation owner into the new nominal constructor. No owner, cap, work credit, canonical cleanup reordering, or verifier exemption is introduced. Identity-only and public no-owner compatibility routes still retain legacy deep copies; final linker and decoded cache activation are residuals. No whole-product removal or fit claim is made.
+8: 
+9: ## Required before integration
+10: 
+11: * Complete construction-local recursive field/case refusal rollback: the current source-shaped index scratch does not yet cover every temporary Vec exit. No allocation after selected refusal may be introduced.
+12: * Restrict source-shaped scratch to construction; host-mutated published legacy payloads must not be dropped through an obsolete source frontier. Complete hostile-input cases must remain observable.
+13: * Complete explicit paid mutation overflow handling and mechanical owned/mutable consumers. No hidden copy-on-write or unfunded make_mut is permitted.
+14: * Audit every actual added map/header/control-block/carrier layout against the same owner, including simultaneous old/new storage during acquisition. Current draft is not a full physical payment proof.
+15: * Add complete old/current index and actual receiver wire/order/diagnostic/first-refusal/iterative-Drop controls, and join every new child into all source-custody contracts. Existing payload controls are authored only, not executed.
+16: * Integrate the separate 828 fixed base bundle only after its producer has an explicit bounded work contract. Existing byte callback does not grant declaration-work authority. The private 828 modules are not registered here.
+17: 
+18: The checkpoint intentionally remains unmerged while these conditions are unresolved.
+
+FILE docs/evidence/nominal-payload-827/ROLLBACK-v2.md
+1: # Construction rollback follow-up v2
+2: 
+3: This private source-only follow-up addresses two identified checkpoint gaps. One prepaid `Arc<Mutex<Vec<ResolvedType>>>` source-shaped frontier now covers the index, local case/field vectors, and the field type awaiting fallible identity acquisition. Each local guard shares that same scratch without allocating. Every current changed BTree map receives the full existing current-layout node upper bound per possible insertion, in addition to the unchanged caller prebound; existing paid primitive builders also use their actual enlarged value layouts. No old-map or clone-removal credit is subtracted. Full simultaneous outer/field/type guard initializers and receivers are reserved before construction.
+4: 
+5: After all immutable owners and case coordinates are acquired, construction scratch is released before publication. Published host mutation therefore cannot reuse a stale source frontier. Immutable payload mutation requires explicit paid materialization, with a typed capacity error rather than a saturated request followed by an unsupported clone. Case-coordinate mutation never invokes hidden copy-on-write. Legacy host/decoded values retain their compatibility mutation and disposal path.
+6: 
+7: Three new full-receiver controls are authored: complete independently saved index plus frozen resolver HIR/wire/order/pointer projections; every actual constructor acquisition refusal including nested nominal fields and exact no-allocation-after-selected-error counters; complete old/current semantic diagnostics for missing parents, inheritance cycles and duplicate method IDs. These controls have not run. Existing allocation/work/refusal/Drop controls remain required; source-custody joins, remaining mechanical Rust consumers, final-linker/public/no-owner activation and full physical qualification remain unfinished. No integration, completion, work-saving or app-fit claim is made.
