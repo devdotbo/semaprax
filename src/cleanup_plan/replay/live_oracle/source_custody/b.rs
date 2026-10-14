@@ -680,8 +680,32 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        // Undo only the two additive complete checkpoint merge receiver joins.
+        undo(&mut current, r###"                include_str!("../src/hir/validation/scope_checkpoint/merge.rs"),
+                include_str!("../src/hir/validation/scope_checkpoint/merge/saved.rs"),
+                include_str!("../src/hir/validation/scope_checkpoint/merge/tests.rs"),
+"###, r###"                include_str!("../src/hir/validation/scope_checkpoint/merge.rs"),
+"###);
+        // Exact formatting hook for the complete additive generic call-graph union.
+        undo(&mut current, r###"concat!(
+            include_str!("../src/hir/validation/generic_template.rs"),
+            include_str!("../src/hir/validation/generic_template/call_graph.rs"),
+            include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"),
+            include_str!("../src/hir/validation/generic_template/call_graph/original.rs"),
+            include_str!("../src/hir/validation/generic_template/call_graph/tests.rs")
+        )"###, r###"concat!(include_str!("../src/hir/validation/generic_template.rs"), include_str!("../src/hir/validation/generic_template/call_graph.rs"), include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../src/hir/validation/generic_template/call_graph/tests.rs"))"###);
         undo(&mut current, r###"concat!(include_str!("../src/hir/validation/generic_template.rs"), include_str!("../src/hir/validation/generic_template/call_graph.rs"), include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../src/hir/validation/generic_template/call_graph/tests.rs"))"###, r###"include_str!("../src/hir/validation/generic_template.rs")"###);
         // Undo only the additive complete intrinsic source union.
+        // Exact formatting hook; all intrinsic union members remain covered.
+        undo(&mut current, r###"concat!(
+                        include_str!("../src/hir/validation/constructor_seed/original.rs"),
+                        include_str!("../src/list_ops/original_constructor.rs"),
+                        include_str!("../src/iterator_ops/original_constructor.rs"),
+                        include_str!(
+                            "../src/hir/validation/constructor_seed/original_intrinsics.rs"
+                        ),
+                        include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs")
+                    )"###, r###"concat!(include_str!("../src/hir/validation/constructor_seed/original.rs"), include_str!("../src/list_ops/original_constructor.rs"), include_str!("../src/iterator_ops/original_constructor.rs"), include_str!("../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs"))"###);
         undo(&mut current, r###"concat!(include_str!("../src/hir/validation/constructor_seed/original.rs"), include_str!("../src/list_ops/original_constructor.rs"), include_str!("../src/iterator_ops/original_constructor.rs"), include_str!("../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs"))"###, r###"include_str!("../src/hir/validation/constructor_seed/original.rs")"###);
         // Exact 824 child joins retain full live coverage; the final comparison
         // still reconstructs the complete unchanged original HIR inventory.
