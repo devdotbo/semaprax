@@ -1,0 +1,51 @@
+{
+  "source": "src/workspace_graph/expected_projection/defaults.rs",
+  "before_sha256": "e3d79ed92419bd5f9969a72c8985a34bf0ae7b8c1a2f5e4f1daec380f119bc93",
+  "edits": [
+    {
+      "name": "closed-static-default-error-0",
+      "before": "graph_error(\n                \"SPX-G172\",\n                \"compiler-only completion marker has no default value\",\n            )",
+      "after": "Diagnostic::io_static(\n                \"SPX-G172\",\n                \"compiler-only completion marker has no default value\",\n            )"
+    },
+    {
+      "name": "closed-static-default-error-1",
+      "before": "graph_error(\n                \"SPX-G173\",\n                \"borrowed `str` has no synthesizable workspace default\",\n            )",
+      "after": "Diagnostic::io_static(\n                \"SPX-G173\",\n                \"borrowed `str` has no synthesizable workspace default\",\n            )"
+    },
+    {
+      "name": "closed-static-default-error-2",
+      "before": "graph_error(\n                \"SPX-G173\",\n                \"borrowed `Slice<u8>` has no synthesizable workspace default\",\n            )",
+      "after": "Diagnostic::io_static(\n                \"SPX-G173\",\n                \"borrowed `Slice<u8>` has no synthesizable workspace default\",\n            )"
+    },
+    {
+      "name": "closed-static-default-error-3",
+      "before": "graph_error(\n                \"SPX-G173\",\n                \"internal byte-data types have no synthesizable workspace default\",\n            )",
+      "after": "Diagnostic::io_static(\n                \"SPX-G173\",\n                \"internal byte-data types have no synthesizable workspace default\",\n            )"
+    },
+    {
+      "name": "closed-static-default-error-4",
+      "before": "graph_error(\n                        \"SPX-G173\",\n                        \"default imported type lookup disagrees\",\n                    )",
+      "after": "Diagnostic::io_static(\n                        \"SPX-G173\",\n                        \"default imported type lookup disagrees\",\n                    )"
+    },
+    {
+      "name": "closed-static-default-error-5",
+      "before": "graph_error(\"SPX-G172\", \"imported Copy variant has no case\")",
+      "after": "Diagnostic::io_static(\n                            \"SPX-G172\",\n                            \"imported Copy variant has no case\",\n                        )"
+    },
+    {
+      "name": "closed-static-default-error-6",
+      "before": "graph_error(\n                        \"SPX-G172\",\n                        \"resource return is not admitted\",\n                    )",
+      "after": "Diagnostic::io_static(\n                        \"SPX-G172\",\n                        \"resource return is not admitted\",\n                    )"
+    },
+    {
+      "name": "closed-static-default-error-7",
+      "before": "graph_error(\n                \"SPX-G172\",\n                \"generic return is not admitted\",\n            )",
+      "after": "Diagnostic::io_static(\n                \"SPX-G172\",\n                \"generic return is not admitted\",\n            )"
+    },
+    {
+      "name": "closed-default-error-custody-controls",
+      "before": "",
+      "after": "\n#[cfg(test)]\nmod error_custody_tests;\n"
+    }
+  ]
+}

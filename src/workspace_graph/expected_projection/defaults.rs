@@ -289,7 +289,7 @@ pub(super) fn default_expr(
     let span = Span::default();
     let kind = match ty {
         Type::Never => {
-            return Err(vec![graph_error(
+            return Err(vec![Diagnostic::io_static(
                 "SPX-G172",
                 "compiler-only completion marker has no default value",
             )])
@@ -338,13 +338,13 @@ pub(super) fn default_expr(
         Type::Bool => ExprKind::Bool(false),
         Type::String => ExprKind::String(String::new()),
         Type::Str => {
-            return Err(vec![graph_error(
+            return Err(vec![Diagnostic::io_static(
                 "SPX-G173",
                 "borrowed `str` has no synthesizable workspace default",
             )]);
         }
         Type::SliceU8 | Type::StringMap => {
-            return Err(vec![graph_error(
+            return Err(vec![Diagnostic::io_static(
                 "SPX-G173",
                 "borrowed `Slice<u8>` has no synthesizable workspace default",
             )]);
@@ -367,7 +367,7 @@ pub(super) fn default_expr(
         | Type::OnceFunctionI64Pair
         | Type::MutFunctionI64
         | Type::Function { .. } => {
-            return Err(vec![graph_error(
+            return Err(vec![Diagnostic::io_static(
                 "SPX-G173",
                 "internal byte-data types have no synthesizable workspace default",
             )]);
@@ -377,7 +377,7 @@ pub(super) fn default_expr(
                 .binary_search_by_key(&name.as_str(), |(name, _)| *name)
                 .map(|index| declarations[index].1)
                 .map_err(|_| {
-                    vec![graph_error(
+                    vec![Diagnostic::io_static(
                         "SPX-G173",
                         "default imported type lookup disagrees",
                     )]
@@ -392,7 +392,10 @@ pub(super) fn default_expr(
                 },
                 TypeDeclarationKind::Variant { cases } => {
                     let case = cases.first().ok_or_else(|| {
-                        vec![graph_error("SPX-G172", "imported Copy variant has no case")]
+                        vec![Diagnostic::io_static(
+                            "SPX-G172",
+                            "imported Copy variant has no case",
+                        )]
                     })?;
                     ExprKind::ConstructVariant {
                         type_name: crate::bounded_output::budgeted_clone(name),
@@ -404,7 +407,7 @@ pub(super) fn default_expr(
                     }
                 }
                 TypeDeclarationKind::Resource { .. } => {
-                    return Err(vec![graph_error(
+                    return Err(vec![Diagnostic::io_static(
                         "SPX-G172",
                         "resource return is not admitted",
                     )])
@@ -412,7 +415,7 @@ pub(super) fn default_expr(
             }
         }
         Type::Named { .. } => {
-            return Err(vec![graph_error(
+            return Err(vec![Diagnostic::io_static(
                 "SPX-G172",
                 "generic return is not admitted",
             )])
@@ -540,3 +543,6 @@ pub(in crate::workspace_graph::expected_projection) mod original;
 
 #[cfg(test)]
 pub(in crate::workspace_graph::expected_projection) use field_directory::project_original_receiver;
+
+#[cfg(test)]
+mod error_custody_tests;
