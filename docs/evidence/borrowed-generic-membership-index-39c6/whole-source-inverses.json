@@ -154,8 +154,14 @@
     "source": "tests/workspace/semantic_graph/source_inventory.rs",
     "archive": "docs/evidence/borrowed-generic-membership-index-39c6/source_inventory.rs.before.txt",
     "original_sha256": "42e3770bf56afc50f4a831e7b448df5a238d0be844d571d6b01a9defe399bcb5",
-    "current_sha256": "6ef5c9eb9182d70aa6906dc884da701c445739c64d1935bea1ecab86bc289fb7",
+    "current_sha256": "b3e5276b6bd016d1632ed6349ce34cd2e25fce762627b12c4416790ac02842be",
     "hooks": [
+      {
+        "name": "complete-root-format-22-source-members",
+        "after": "\"{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\"",
+        "before": "\"{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\"",
+        "count": 1
+      },
       {
         "name": "complete-ordinal-index-and-controls-union",
         "before": "        concat!(\n            include_str!(\"../../src/workspace_graph/generic_type_import.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/original.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/borrowed_tests.rs\"),\n        ),\n",

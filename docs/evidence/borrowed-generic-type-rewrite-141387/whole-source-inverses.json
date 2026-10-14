@@ -76,6 +76,12 @@
     "archive": "docs/evidence/borrowed-generic-type-rewrite-141387/source_inventory.rs.before.txt",
     "hooks": [
       {
+        "name": "complete-root-format-22-source-members",
+        "after": "\"{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\"",
+        "before": "\"{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\\n{}\"",
+        "count": 1
+      },
+      {
         "before": "include_str!(\"../../src/workspace_graph.rs\")",
         "after": "concat!(include_str!(\"../../src/workspace_graph.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/ordered.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/original.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/tests.rs\"))",
         "count": 1
@@ -127,9 +133,9 @@
       }
     ],
     "original_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
-    "current_sha256": "6ef5c9eb9182d70aa6906dc884da701c445739c64d1935bea1ecab86bc289fb7",
+    "current_sha256": "b3e5276b6bd016d1632ed6349ce34cd2e25fce762627b12c4416790ac02842be",
     "original_bytes": 23895,
-    "current_bytes": 26219,
+    "current_bytes": 26223,
     "whole_inverse": "PASS-source-only"
   }
 ]

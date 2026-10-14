@@ -20,8 +20,8 @@
     "bytes": 1381
   },
   "tests/workspace/semantic_graph/source_inventory.rs": {
-    "sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
-    "bytes": 25059
+    "sha256": "b3e5276b6bd016d1632ed6349ce34cd2e25fce762627b12c4416790ac02842be",
+    "bytes": 26223
   },
   "src/workspace_graph/generic_type_import/parameter_names.rs": {
     "sha256": "391f07555cafca7f17e8f214dacbf0d73049f0230b605e772fe4b3475f1644bd",
