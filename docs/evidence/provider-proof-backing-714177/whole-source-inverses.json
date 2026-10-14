@@ -337,7 +337,7 @@
       "archive": "11.before.txt",
       "original_sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
       "original_bytes": 85667,
-      "current_sha256": "49c78bc2b79880849076544e19874e744374f238ee0c0f49e38a7d5c3bb47316",
+      "current_sha256": "b81325c54a4ba4bc41e8ca54c39da2ecc2b589addf8067143982742473338775",
       "inverse": [
         {
           "hook": "explicit-provider-backing-edit-2",
@@ -368,6 +368,11 @@
           "hook": "final-source-union-composition-20261014-6",
           "current": "            include_str!(\"../../../../../src/hir/validation/function_scope.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/empty_ensures.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/empty_ensures/before.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/empty_ensures/tests.rs\"),\n            include_str!(\"../../../../../src/hir/ordinary_scan.rs\"),\n",
           "before": "            include_str!(\"../../../../../src/hir/validation/function_scope.rs\"),\n            include_str!(\"../../../../../src/hir/ordinary_scan.rs\"),\n"
+        },
+        {
+          "hook": "current-complete-collector-source-join-20261015-1",
+          "before": "            include_str!(\"../../../../../src/hir/validation/function_scope/lifecycle/completed.rs\"),\n            include_str!(\n",
+          "current": "            include_str!(\"../../../../../src/hir/validation/function_scope/lifecycle/completed.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/lifecycle/completed/inline_path.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/lifecycle/completed/before_inline.rs\"),\n            include_str!(\n"
         }
       ]
     },
