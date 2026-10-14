@@ -1,0 +1,1809 @@
+Fresh explicitly authorized source-only review of commit d93d7613700eda77bc6d34714e91a4e4c4820bb9. Review only the exact whitelisted source below. No tools or execution. Check actual default→stub→borrowed overlay→core propagation, complete diagnostic and first-failure preservation, Many Vec order/backing, complete initialized carrier charging, allocation/Drop observers, Rust visibility/lifetimes/API types, and source-control claims. Current scoped claim: only private One propagation; legacy helpers retain full Many/backing; outward into_legacy_unfunded Vec plus final public report remain explicit residual; no established constructor report owner, no reuse of 781 selected replay reports. No caps/refunds/old-header discounts. Legacy/receiving/original routes remain compiled. Additional full carriers intentionally change paid bytes and may cause earlier budget refusal; semantic comparison is when sufficiently funded, and exact/short/zero/sticky are independent old/current frontiers. Tests are authored and unexecuted. Flag concrete bugs, not hypothetical missing production support already excluded. Distinguish source-proved blockers from questions requiring compilation.
+
+=== src/workspace_graph/constructor_failure.rs:1-79 ===
+//! Internal error custody only; it grants no report allowance or authority.
+use super::{active_builder_limit, limit_error};
+use crate::diagnostic::Diagnostic;
+
+#[allow(
+    clippy::large_enum_variant,
+    reason = "the complete single diagnostic moves inline; boxing a refusal would acquire unowned backing"
+)]
+#[derive(Debug)]
+pub(super) enum Failure {
+    One(Diagnostic),
+    Many(Vec<Diagnostic>),
+}
+impl Failure {
+    pub(super) fn one(diagnostic: Diagnostic) -> Self {
+        Self::One(diagnostic)
+    }
+    pub(super) fn diagnostics(&self) -> &[Diagnostic] {
+        match self {
+            Self::One(diagnostic) => std::slice::from_ref(diagnostic),
+            Self::Many(diagnostics) => diagnostics,
+        }
+    }
+    /// Real compatibility acquisition, deliberately not described as paid.
+    /// Existing multi-error backing moves with every diagnostic in order.
+    pub(super) fn into_legacy_unfunded(self) -> Vec<Diagnostic> {
+        match self {
+            Self::One(diagnostic) => vec![diagnostic],
+            Self::Many(diagnostics) => diagnostics,
+        }
+    }
+}
+impl From<Vec<Diagnostic>> for Failure {
+    fn from(diagnostics: Vec<Diagnostic>) -> Self {
+        Self::Many(diagnostics)
+    }
+}
+impl From<Diagnostic> for Failure {
+    fn from(diagnostic: Diagnostic) -> Self {
+        Self::One(diagnostic)
+    }
+}
+pub(super) type Result<T> = std::result::Result<T, Failure>;
+pub(super) fn reserve(bytes: usize) -> Result<()> {
+    if crate::bounded_output::reserve_active(bytes) {
+        Ok(())
+    } else {
+        Err(Failure::One(limit_error(
+            "builder_bytes",
+            active_builder_limit(),
+        )))
+    }
+}
+
+/// Real resolved-core constructor chain. Legacy helper failures retain all
+/// diagnostics and backing; the default/stub/overlay chain carries One inline.
+pub(super) fn construct_transient_core<'a>(
+    program: &'a crate::ast::Program,
+    authored: &'a std::collections::BTreeMap<&'a str, super::AuthoredDeclaration<'a>>,
+    programs: &'a [crate::ast::Program],
+    registry: &super::expected_projection::private_layout::registry::LayoutRegistry<'_>,
+    core: &mut super::expected_projection::CoreProviderProofs<'a>,
+) -> Result<super::expected_projection::borrowed_leaf::Input<'a>> {
+    use super::expected_projection::{borrowed_imports, borrowed_leaf};
+    use borrowed_leaf::Input;
+    // Complete initialized Result layout, without a legacy header discount.
+    reserve(std::mem::size_of::<Result<Input<'a>>>())?;
+    if borrowed_leaf::eligible(program) {
+        borrowed_leaf::construct(program)
+            .map(Input::Borrowed)
+            .map_err(Failure::from)
+    } else if borrowed_imports::eligible(program, authored, programs) {
+        borrowed_imports::inline::construct_using(program, authored, programs, registry, Some(core))
+            .map(Input::Borrowed)
+    } else {
+        Input::construct_transient_core(program, authored, programs, registry, core)
+            .map_err(Failure::from)
+    }
+}
+
+=== src/workspace_graph/expected_projection/defaults/inline.rs:1-152 ===
+//! Same complete default evaluation with explicit internal error custody.
+use super::inline_fields as field_directory;
+use super::{
+    checked_builder_sum, Span, StructuralCost, Type, TypeDeclaration, TypeDeclarationKind,
+};
+use crate::ast::{Expr, ExprKind};
+use crate::diagnostic::Diagnostic;
+use crate::workspace_graph::constructor_failure::{reserve, Failure};
+pub(in crate::workspace_graph) fn default_expr(
+    ty: &Type,
+    declarations: &[(&str, &TypeDeclaration)],
+    allow_owned: bool,
+) -> Result<Expr, Failure> {
+    reserve(std::mem::size_of::<Result<Expr, Failure>>())?;
+    reserve(std::mem::size_of::<Expr>())?;
+    let span = Span::default();
+    let kind = match ty {
+        Type::Never => {
+            return Err(Failure::one(Diagnostic::io_static(
+                "SPX-G172",
+                "compiler-only completion marker has no default value",
+            )))
+        }
+        ty if allow_owned
+            && super::super::type_rewrite::default_vector_element(ty, declarations).is_some() =>
+        {
+            let element = super::super::type_rewrite::default_vector_element(ty, declarations)
+                .expect("closed vector default");
+            let mut cost = StructuralCost::new();
+            super::super::declaration_cost::ast_type_cost(element, &mut cost)?;
+            reserve(checked_builder_sum(
+                cost.total,
+                std::mem::size_of::<Expr>() + crate::vec_ops::WITH_CAPACITY_NAME.len(),
+            )?)?;
+            ExprKind::Call {
+                name: crate::bounded_output::budgeted_clone(crate::vec_ops::WITH_CAPACITY_NAME),
+                type_arguments: vec![element.clone()],
+                args: vec![Expr {
+                    kind: ExprKind::Usize(0),
+                    span,
+                }],
+            }
+        }
+        ty if allow_owned && crate::map_ops::ast_collection(ty) => {
+            let (name, arguments) = collection_constructor(ty);
+            reserve(std::mem::size_of::<Expr>() + std::mem::size_of_val(arguments))?;
+            ExprKind::Call {
+                name: crate::bounded_output::budgeted_clone(name),
+                type_arguments: arguments.to_vec(),
+                args: vec![Expr {
+                    kind: ExprKind::Usize(0),
+                    span,
+                }],
+            }
+        }
+        Type::I64 => ExprKind::Int(0),
+        Type::I32 => ExprKind::Int32(0),
+        Type::Char => ExprKind::Char(0),
+        Type::U8 => ExprKind::Uint8(0),
+        Type::Usize => ExprKind::Usize(0),
+        Type::F32 => ExprKind::Float32(0),
+        Type::F64 => ExprKind::Float64(0),
+        Type::Bool => ExprKind::Bool(false),
+        Type::String => ExprKind::String(String::new()),
+        Type::Str => {
+            return Err(Failure::one(Diagnostic::io_static(
+                "SPX-G173",
+                "borrowed `str` has no synthesizable workspace default",
+            )));
+        }
+        Type::SliceU8 | Type::StringMap => {
+            return Err(Failure::one(Diagnostic::io_static(
+                "SPX-G173",
+                "borrowed `Slice<u8>` has no synthesizable workspace default",
+            )));
+        }
+        Type::Bytes if allow_owned => {
+            reserve(std::mem::size_of::<Expr>())?;
+            ExprKind::Call {
+                name: crate::bounded_output::budgeted_clone(crate::byte_ops::ZEROED_NAME),
+                type_arguments: Vec::new(),
+                args: vec![Expr {
+                    kind: ExprKind::Usize(0),
+                    span,
+                }],
+            }
+        }
+        Type::ArrayU8(_)
+        | Type::Bytes
+        | Type::OnceFunction
+        | Type::OnceFunctionI64
+        | Type::OnceFunctionI64Pair
+        | Type::MutFunctionI64
+        | Type::Function { .. } => {
+            return Err(Failure::one(Diagnostic::io_static(
+                "SPX-G173",
+                "internal byte-data types have no synthesizable workspace default",
+            )));
+        }
+        Type::Named { name, arguments } if arguments.is_empty() => {
+            let declaration = declarations
+                .binary_search_by_key(&name.as_str(), |(name, _)| *name)
+                .map(|index| declarations[index].1)
+                .map_err(|_| {
+                    Failure::one(Diagnostic::io_static(
+                        "SPX-G173",
+                        "default imported type lookup disagrees",
+                    ))
+                })?;
+            match &declaration.kind {
+                TypeDeclarationKind::Record { fields }
+                | TypeDeclarationKind::Class { fields, .. } => ExprKind::ConstructRecord {
+                    type_name: crate::bounded_output::budgeted_clone(name),
+                    type_span: span,
+                    type_arguments: Vec::new(),
+                    fields: field_directory::build(fields, declarations, allow_owned)?,
+                },
+                TypeDeclarationKind::Variant { cases } => {
+                    let case = cases.first().ok_or_else(|| {
+                        Failure::one(Diagnostic::io_static(
+                            "SPX-G172",
+                            "imported Copy variant has no case",
+                        ))
+                    })?;
+                    ExprKind::ConstructVariant {
+                        type_name: crate::bounded_output::budgeted_clone(name),
+                        type_span: span,
+                        type_arguments: Vec::new(),
+                        case_name: crate::bounded_output::budgeted_clone(&case.name),
+                        case_span: span,
+                        fields: field_directory::build(&case.fields, declarations, allow_owned)?,
+                    }
+                }
+                TypeDeclarationKind::Resource { .. } => {
+                    return Err(Failure::one(Diagnostic::io_static(
+                        "SPX-G172",
+                        "resource return is not admitted",
+                    )))
+                }
+            }
+        }
+        Type::Named { .. } => {
+            return Err(Failure::one(Diagnostic::io_static(
+                "SPX-G172",
+                "generic return is not admitted",
+            )))
+        }
+    };
+    Ok(Expr { kind, span })
+}
+
+use super::collection_constructor;
+
+=== src/workspace_graph/expected_projection/defaults/inline_fields.rs:1-72 ===
+//! Complete field evaluation and paid lazy Vec growth, with inline errors.
+use super::{active_builder_limit, limit_error, FieldInitializer, Span, TypeDeclaration};
+use crate::ast::FieldDeclaration;
+use crate::workspace_graph::constructor_failure::{reserve, Failure};
+fn physical() -> Failure {
+    crate::bounded_output::refuse_active_required(usize::MAX);
+    Failure::one(limit_error("builder_bytes", active_builder_limit()))
+}
+fn make(
+    field: &FieldDeclaration,
+    declarations: &[(&str, &TypeDeclaration)],
+    allow_owned: bool,
+) -> Result<FieldInitializer, Failure> {
+    let span = Span::default();
+    reserve(std::mem::size_of::<Result<FieldInitializer, Failure>>())?;
+    reserve(std::mem::size_of::<FieldInitializer>())?;
+    Ok(FieldInitializer {
+        name: crate::bounded_output::budgeted_clone(&field.name),
+        name_span: span,
+        value: super::inline::default_expr(&field.ty, declarations, allow_owned)?,
+        span,
+    })
+}
+fn append(output: &mut Vec<FieldInitializer>, field: FieldInitializer) -> Result<(), Failure> {
+    reserve(std::mem::size_of::<Result<(), Failure>>())?;
+    reserve(0)?;
+    if output.len() == output.capacity() {
+        // Same non-byte minimum4 and geometric growth as the old Result<Vec>
+        // collection. Acquire only after this full field succeeds, before push.
+        let capacity = output.capacity().checked_mul(2).ok_or_else(physical)?.max(
+            if std::mem::size_of::<FieldInitializer>() <= 1024 {
+                4
+            } else {
+                1
+            },
+        );
+        let layout =
+            std::alloc::Layout::array::<FieldInitializer>(capacity).map_err(|_| physical())?;
+        reserve(layout.size())?;
+        output
+            .try_reserve_exact(capacity - output.len())
+            .map_err(|_| physical())?;
+        if output.capacity() != capacity {
+            return Err(physical());
+        }
+    }
+    output.push(field);
+    Ok(())
+}
+pub(in crate::workspace_graph) fn build(
+    fields: &[FieldDeclaration],
+    declarations: &[(&str, &TypeDeclaration)],
+    allow_owned: bool,
+) -> Result<Vec<FieldInitializer>, Failure> {
+    reserve(std::mem::size_of::<Result<Vec<FieldInitializer>, Failure>>())?;
+    reserve(0)?;
+    let Some((first, rest)) = fields.split_first() else {
+        reserve(std::mem::size_of::<Vec<FieldInitializer>>())?;
+        return Ok(Vec::new());
+    };
+    // The old fallible iterator builds the complete first item before creating
+    // its Vec. Preserve that semantic/error frontier before the modeled carrier.
+    let first = make(first, declarations, allow_owned)?;
+    reserve(std::mem::size_of::<Vec<FieldInitializer>>())?;
+    let mut output = Vec::new();
+    append(&mut output, first)?;
+    for field in rest {
+        append(&mut output, make(field, declarations, allow_owned)?)?;
+    }
+    reserve(0)?;
+    Ok(output)
+}
+
+=== src/workspace_graph/expected_projection/borrowed_imports/inline.rs:1-226 ===
+//! Complete overlay walk; only default refusal custody changes.
+use super::*;
+use crate::workspace_graph::constructor_failure::{reserve, Failure};
+
+pub(in crate::workspace_graph) fn construct_using<'p, 'a>(
+    program: &'p Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    registry: &LayoutRegistry<'_>,
+    core: Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,
+) -> Result<SyntheticProgramView<'p>, Failure> {
+    reserve(std::mem::size_of::<Result<SyntheticProgramView<'p>, Failure>>())?;
+    reserve_builder_structure(0)?;
+    if !eligible(program, authored, programs) {
+        return Err(Failure::one(graph_error(
+            "SPX-G173",
+            "imported borrowed projection requires the owned route",
+        )));
+    }
+    let layout = registry.get(program, authored, programs)?;
+    let explicit = program
+        .module_uses
+        .iter()
+        .filter(|import| import.kind == ModuleUseKind::Type)
+        .count();
+    let type_count = explicit
+        .checked_add(layout.entries.len())
+        .ok_or_else(refusal)?;
+    let recursive = iterative(program, authored);
+    if recursive {
+        pay_teardown_minimum()?;
+    }
+    let mut roots = if recursive {
+        GeneratedRoots::iterative(directory::<TypeDeclaration>(type_count)?, Vec::new())
+    } else {
+        GeneratedRoots::plain(directory::<TypeDeclaration>(type_count)?, Vec::new())
+    };
+    let types = &mut roots.types;
+    for import in program
+        .module_uses
+        .iter()
+        .filter(|import| import.kind == ModuleUseKind::Type)
+    {
+        let target = &authored[import.persistent_id.as_str()];
+        let declaration = target.ty.expect("validated type target");
+        pay_type(declaration)?;
+        if recursive {
+            let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+            ast_type_declaration_cost(declaration, &mut cost)?;
+            pay_teardown(&cost)?;
+        }
+        types.push(alias_clone::type_payload(declaration));
+        let copy = types.last_mut().expect("inserted type");
+        copy.name = crate::bounded_output::budgeted_clone(&import.alias);
+        reserve_builder_structure(0)?;
+        super::super::super::generic_type_import::rewrite_declaration_with_layout(
+            copy,
+            target.module,
+            program,
+            programs,
+            Some(&layout),
+        )?;
+    }
+    // Preserve the independent closure's exact order after explicit aliases.
+    for entry in &layout.entries {
+        pay_type(entry.declaration)?;
+        if recursive {
+            let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+            ast_type_declaration_cost(entry.declaration, &mut cost)?;
+            pay_teardown(&cost)?;
+        }
+        types.push(alias_clone::type_payload(entry.declaration));
+        let copy = types.last_mut().expect("inserted private type");
+        copy.name = crate::bounded_output::budgeted_clone(&entry.alias);
+        reserve_builder_structure(0)?;
+        super::super::super::generic_type_import::rewrite_declaration_with_layout(
+            copy,
+            entry.module,
+            program,
+            programs,
+            Some(&layout),
+        )?;
+    }
+    let all_count = program
+        .types
+        .len()
+        .checked_add(types.len())
+        .ok_or_else(refusal)?;
+    let mut type_index = directory::<(&str, &TypeDeclaration)>(all_count)?;
+    type_index.extend(
+        program
+            .types
+            .iter()
+            .chain(types.iter())
+            .map(|declaration| (declaration.name.as_str(), declaration)),
+    );
+    type_index.sort_unstable_by(|a, b| a.0.cmp(b.0));
+    if type_index.windows(2).any(|items| items[0].0 == items[1].0) {
+        return Err(Failure::one(graph_error(
+            "SPX-G173",
+            "synthetic workspace type-name index is not unique",
+        )));
+    }
+    let needs_main = !program
+        .functions
+        .iter()
+        .any(|function| function.name == "main")
+        && !program
+            .module_uses
+            .iter()
+            .any(|import| import.kind == ModuleUseKind::Function && import.alias == "main");
+    let imports = program
+        .module_uses
+        .iter()
+        .filter(|import| import.kind == ModuleUseKind::Function)
+        .count();
+    roots.functions = directory::<Function>(
+        imports
+            .checked_add(usize::from(needs_main))
+            .ok_or_else(refusal)?,
+    )?;
+    let functions = &mut roots.functions;
+    let mut byte_proofs = import_stub::core_proofs::Phase::new(authored, programs, core)
+        .map_err(|error| vec![error])?;
+    for import in program
+        .module_uses
+        .iter()
+        .filter(|import| import.kind == ModuleUseKind::Function)
+    {
+        let target = &authored[import.persistent_id.as_str()];
+        let original = target.function.expect("validated function target");
+        let retain_body = programs
+            .iter()
+            .find(|provider| provider.module == target.module)
+            .is_some_and(|provider| {
+                crate::vec_ops::source_wrapper(provider, original).is_some()
+                    || crate::box_ops::source_wrapper(provider, original).is_some()
+            });
+        if retain_body {
+            let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+            ast_function_cost(original, &mut cost)?;
+            reserve_builder_structure(cost.total)?;
+            pay_teardown(&cost)?;
+        } else {
+            pay_signature(original)?;
+            if recursive {
+                let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+                ast_function_signature_cost(original, &mut cost)?;
+                pay_teardown(&cost)?;
+            }
+        }
+        let function = if retain_body {
+            alias_clone::retained_function(original, &import.alias)
+        } else {
+            alias_clone::signature_function(original, &import.alias)
+        };
+        functions.push(function);
+        reserve_builder_structure(0)?;
+        if retain_body {
+            continue;
+        }
+        let function = functions.last_mut().expect("inserted signature");
+        for param in &mut function.params {
+            type_rewrite::rewrite_with_layout(
+                &mut param.ty,
+                target.module,
+                program,
+                programs,
+                Some(&layout),
+            )?;
+        }
+        type_rewrite::rewrite_with_layout(
+            &mut function.return_type,
+            target.module,
+            program,
+            programs,
+            Some(&layout),
+        )?;
+        if recursive {
+            pay_default_teardown(&function.return_type, &type_index)?;
+        }
+        function.body = import_stub::default_expr_inline(
+            function,
+            &type_index,
+            super::super::super::owned_function_import::admitted_with_layout(
+                program, target, authored, programs, &layout,
+            ),
+            import_stub::byte_helper_authorized(
+                original,
+                target.module,
+                byte_proofs.get().map_err(|error| vec![error])?,
+            )?,
+        )?;
+    }
+    // Same old rule also recognizes an imported alias named main.
+    if needs_main && !functions.iter().any(|function| function.name == "main") {
+        reserve_builder_structure(std::mem::size_of::<Expr>())?;
+        functions.push(Function {
+            stable_id: budgeted_format(format_args!("workspace.synthetic.main.{}", program.module)),
+            explicit_id: true,
+            name: crate::bounded_output::budgeted_clone("main"),
+            name_span: crate::ast::Span::default(),
+            type_parameters: Vec::new(),
+            params: Vec::new(),
+            return_type: Type::I64,
+            effects: Vec::new(),
+            yields: None,
+            follows: None,
+            requires: Vec::new(),
+            ensures: Vec::new(),
+            body: Expr {
+                kind: ExprKind::Int(0),
+                span: crate::ast::Span::default(),
+            },
+            span: crate::ast::Span::default(),
+        });
+        reserve_builder_structure(0)?;
+    }
+    drop(type_index);
+    // Infallible bounded string helpers record refusal and return empty text.
+    // A generated view must never publish that partial construction as success.
+    reserve_builder_structure(0)?;
+    let result = SyntheticProgramView::with_generated_owner(program, roots).ok_or_else(refusal)?;
+    byte_proofs.complete().map_err(|error| vec![error])?;
+    Ok(result)
+}
+
+=== src/workspace_graph/expected_projection/defaults/inline_tests.rs:1-373 ===
+//! Complete values, actual allocation through Drop, and explicit outward residual.
+use super::{inline, original, Type};
+use crate::bounded_output::with_limit_usage_refusal;
+use crate::test_allocation_observer::measure;
+use crate::workspace_graph::constructor_failure::Failure;
+const LIMIT: usize = 8 * 1024 * 1024;
+
+#[test]
+fn complete_default_and_stub_diagnostics_move_inline_and_outward_conversion_stays_observed() {
+    let mut program = crate::parse("module inline.defaults; @id(\"row\") record Row { @id(\"field.a\") a:i64, @id(\"field.z\") z:i64, } @id(\"main\") fn main()->i64 {0}", "inline-defaults.spx").unwrap();
+    let mut declaration = program.types.remove(0);
+    let mut types = vec![
+        Type::Never,
+        Type::Str,
+        Type::SliceU8,
+        Type::StringMap,
+        Type::Bytes,
+        Type::ArrayU8(4),
+        Type::OnceFunction,
+        Type::OnceFunctionI64,
+        Type::OnceFunctionI64Pair,
+        Type::MutFunctionI64,
+        Type::Function {
+            parameters: vec![Type::I64],
+            result: Box::new(Type::I64),
+        },
+        Type::Named {
+            name: "Absent.λ\0🙂".to_owned(),
+            arguments: vec![],
+        },
+        Type::Named {
+            name: "Row".to_owned(),
+            arguments: vec![Type::I64],
+        },
+    ];
+    for ty in types.drain(..) {
+        let old = original::default_expr(&ty, &[], false).unwrap_err();
+        let (((), physical), refused, _, first) = with_limit_usage_refusal(LIMIT, || {
+            measure(|| {
+                let error = inline::default_expr(&ty, &[], false).unwrap_err();
+                assert!(matches!(error, Failure::One(_)));
+                assert_eq!(error.diagnostics(), old.as_slice());
+                drop(error);
+            })
+        });
+        assert!(!refused && first.is_none());
+        assert!(
+            !physical.invalid
+                && physical.allocated == 0
+                && physical.freed == 0
+                && physical.live == 0
+        );
+        // The legacy Vec and all serialization stay INSIDE the observer.
+        let (((), outward), refused, _, first) = with_limit_usage_refusal(LIMIT, || {
+            measure(|| {
+                let error = inline::default_expr(&ty, &[], false)
+                    .unwrap_err()
+                    .into_legacy_unfunded();
+                assert_eq!(error, old);
+                assert_eq!(error[0].json(), old[0].json());
+                drop(error);
+            })
+        });
+        assert!(!refused && first.is_none());
+        assert!(
+            !outward.invalid
+                && outward.allocated > 0
+                && outward.allocated == outward.freed
+                && outward.live == 0
+        );
+        let mut function = program.functions[0].clone();
+        function.return_type = ty;
+        let expected =
+            super::super::import_stub_original::default_expr(&function, &[], false, false)
+                .unwrap_err();
+        let actual = super::super::import_stub::default_expr_inline(&function, &[], false, false)
+            .unwrap_err();
+        assert_eq!(actual.diagnostics(), expected.as_slice());
+    }
+    let nominal = Type::Named {
+        name: "Row".to_owned(),
+        arguments: vec![],
+    };
+    for case in 0..4 {
+        if case == 1 {
+            if let crate::ast::TypeDeclarationKind::Record { fields } = &mut declaration.kind {
+                fields[0].name = "earlier.λ\0🙂".to_owned();
+                fields[1].ty = Type::Str;
+            }
+        } else if case == 2 {
+            declaration.kind = crate::ast::TypeDeclarationKind::Variant { cases: vec![] };
+        } else if case == 3 {
+            declaration.kind = crate::ast::TypeDeclarationKind::Resource { lifecycles: vec![] };
+        }
+        let declarations = [("Row", &declaration)];
+        let old = original::default_expr(&nominal, &declarations, false);
+        let (((), physical), refused, _, first) = with_limit_usage_refusal(LIMIT, || {
+            measure(|| {
+                let actual = inline::default_expr(&nominal, &declarations, false);
+                match (&actual, &old) {
+                    (Ok(actual), Ok(old)) => assert_eq!(actual, old),
+                    (Err(actual), Err(old)) => assert_eq!(actual.diagnostics(), old.as_slice()),
+                    _ => panic!("full default result differs"),
+                }
+                drop(actual);
+            })
+        });
+        assert!(!refused && first.is_none());
+        assert!(!physical.invalid && physical.allocated == physical.freed && physical.live == 0);
+    }
+}
+
+#[test]
+fn many_preserves_every_field_order_and_existing_backing_without_reclassification() {
+    let diagnostics = vec![
+        crate::diagnostic::Diagnostic::error(
+            "SPX-G173",
+            "first.λ\0🙂",
+            crate::ast::Span::default(),
+        )
+        .at_path("first.spx")
+        .with_help("help.λ"),
+        crate::diagnostic::Diagnostic::io("SPX-G172", "second.🙂"),
+    ];
+    let expected = diagnostics;
+    let ((), physical) = measure(|| {
+        let diagnostics = expected.clone();
+        let pointer = diagnostics.as_ptr();
+        let capacity = diagnostics.capacity();
+        let error = Failure::from(diagnostics);
+        assert!(matches!(error, Failure::Many(_)));
+        assert_eq!(error.diagnostics(), expected.as_slice());
+        let outward = error.into_legacy_unfunded();
+        assert_eq!(outward.as_ptr(), pointer);
+        assert_eq!(outward.capacity(), capacity);
+        assert_eq!(outward, expected);
+        drop(outward);
+    });
+    assert!(
+        !physical.invalid
+            && physical.allocated > 0
+            && physical.allocated == physical.freed
+            && physical.live == 0
+    );
+}
+
+#[test]
+fn full_carrier_exact_short_zero_and_sticky_keep_first_receipt_without_legacy_offset() {
+    let observe = |limit, old_route| {
+        with_limit_usage_refusal(limit, || {
+            measure(|| {
+                if old_route {
+                    let result = original::default_expr(&Type::Str, &[], false);
+                    let code = result.as_ref().unwrap_err()[0].code;
+                    drop(result);
+                    code
+                } else {
+                    let result = inline::default_expr(&Type::Str, &[], false);
+                    let code = result.as_ref().unwrap_err().diagnostics()[0].code;
+                    drop(result);
+                    code
+                }
+            })
+        })
+    };
+    let ((code, physical), refused, paid, first) = observe(LIMIT, false);
+    assert_eq!(code, "SPX-G173");
+    assert!(!refused && first.is_none());
+    assert!(!physical.invalid && physical.allocated == 0 && physical.live == 0);
+    let ((old_code, old_physical), old_refused, old_paid, old_first) = observe(LIMIT, true);
+    assert_eq!(old_code, code);
+    assert!(!old_refused && old_first.is_none());
+    assert!(
+        !old_physical.invalid
+            && old_physical.allocated > 0
+            && old_physical.allocated == old_physical.freed
+            && old_physical.live == 0
+    );
+    assert_eq!(
+        paid,
+        old_paid + std::mem::size_of::<Result<crate::ast::Expr, Failure>>()
+    );
+    for (route, exact) in [(false, paid), (true, old_paid)] {
+        let ((code, physical), refused, used, first) = observe(exact, route);
+        assert_eq!(code, "SPX-G173");
+        assert!(!refused && first.is_none() && used == exact);
+        assert!(!physical.invalid && physical.allocated == physical.freed && physical.live == 0);
+        for limit in [0, exact - 1] {
+            let ((code, physical), refused, _, first) = observe(limit, route);
+            assert_eq!(code, "SPX-G171");
+            assert!(refused && first.is_some());
+            assert!(
+                !physical.invalid && physical.allocated == physical.freed && physical.live == 0
+            );
+        }
+    }
+    let (((), physical), refused, paid, first) = with_limit_usage_refusal(0, || {
+        measure(|| {
+            let error = inline::default_expr(&Type::Str, &[], false).unwrap_err();
+            let retry = inline::default_expr(&Type::I64, &[], false).unwrap_err();
+            assert_eq!(error.diagnostics(), retry.diagnostics());
+            drop(retry);
+            drop(error);
+        })
+    });
+    assert!(refused && paid == 0 && first.is_some());
+    assert!(!physical.invalid && physical.allocated == physical.freed && physical.live == 0);
+}
+
+#[test]
+fn live_core_constructor_chain_preserves_complete_old_overlay_and_full_drop() {
+    use super::super::{borrowed_imports_original, private_layout, CoreProviderProofs};
+    use crate::ast::program_source::ProgramSource;
+    use crate::workspace_graph::{constructor_failure, index_authored};
+    let sources = [
+        "module inline.app; use function @id(\"helper\") from inline.provider as increment; @id(\"app.main\") fn main()->i64 {increment(41)}",
+        "module inline.provider; @id(\"helper\") fn helper(value:i64)->i64 {value+1}",
+    ];
+    let mut programs = sources
+        .iter()
+        .map(|s| crate::parse(s, "inline-core.spx").unwrap())
+        .collect::<Vec<_>>();
+    for late_failure in [false, true] {
+        if late_failure {
+            programs[1].functions[0].return_type = Type::Str;
+        }
+        let authored = index_authored(&programs).unwrap();
+        let registry = private_layout::registry::LayoutRegistry::new(&programs, &authored);
+        let old =
+            borrowed_imports_original::construct(&programs[0], &authored, &programs, &registry);
+        let (((), old_physical), refused, _, first) = with_limit_usage_refusal(LIMIT, || {
+            measure(|| {
+                let result = borrowed_imports_original::construct(
+                    &programs[0],
+                    &authored,
+                    &programs,
+                    &registry,
+                );
+                match (&result, &old) {
+                    (Ok(actual), Ok(expected)) => {
+                        for (actual, expected) in
+                            actual.functions().iter().zip(expected.functions().iter())
+                        {
+                            assert_eq!(actual, expected);
+                        }
+                        assert_eq!(actual.functions().len(), expected.functions().len());
+                    }
+                    (Err(actual), Err(expected)) => assert_eq!(actual, expected),
+                    _ => panic!("independent old constructor differs"),
+                }
+                drop(result);
+            })
+        });
+        assert!(!refused && first.is_none());
+        assert!(
+            !old_physical.invalid
+                && old_physical.allocated == old_physical.freed
+                && old_physical.live == 0
+        );
+        let (((), physical), refused, _, first) = with_limit_usage_refusal(LIMIT, || {
+            measure(|| {
+                let mut core = CoreProviderProofs::new(&authored, &programs).unwrap();
+                let current = constructor_failure::construct_transient_core(
+                    &programs[0],
+                    &authored,
+                    &programs,
+                    &registry,
+                    &mut core,
+                );
+                match (&current, &old) {
+                    (Ok(current), Ok(old)) => {
+                        assert!(current.borrowed().is_some());
+                        let current = current.source();
+                        assert_eq!(current.functions().len(), old.functions().len());
+                        for (current, old) in current.functions().iter().zip(old.functions().iter())
+                        {
+                            assert_eq!(current, old);
+                        }
+                        assert_eq!(current.types().len(), old.types().len());
+                        for (current, old) in current.types().iter().zip(old.types().iter()) {
+                            assert_eq!(current, old);
+                        }
+                    }
+                    (Err(current), Err(old)) => {
+                        assert!(matches!(current, Failure::One(_)));
+                        assert_eq!(current.diagnostics(), old.as_slice());
+                    }
+                    _ => panic!("complete core constructor result differs"),
+                }
+                drop(current);
+                drop(core);
+            })
+        });
+        assert!(!refused && first.is_none());
+        assert!(!physical.invalid && physical.allocated == physical.freed && physical.live == 0);
+    }
+}
+
+#[test]
+fn complete_inline_sources_and_original_owners_have_exact_whole_file_inverses() {
+    use sha2::{Digest, Sha256};
+    let proof: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/constructor-inline-failure-825/exact-source-inverses.json"
+    )))
+    .unwrap();
+    let owners = [
+        include_str!("../../../workspace_graph.rs"),
+        include_str!("../defaults.rs"),
+        include_str!("../import_stub.rs"),
+        include_str!("../borrowed_imports.rs"),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/workspace/semantic_graph/source_inventory.rs"
+        )),
+    ];
+    let originals = [
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/constructor-inline-failure-825/0.before.txt"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/constructor-inline-failure-825/1.before.txt"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/constructor-inline-failure-825/2.before.txt"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/constructor-inline-failure-825/3.before.txt"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/constructor-inline-failure-825/4.before.txt"
+        )),
+    ];
+    let records = proof["owners"].as_array().unwrap();
+    assert_eq!(records.len(), owners.len());
+    for ((record, current), original) in records.iter().zip(owners).zip(originals) {
+        let mut restored = current.to_owned();
+        for edit in record["edits"].as_array().unwrap().iter().rev() {
+            let after = edit["after"].as_str().unwrap();
+            assert_eq!(restored.matches(after).count(), 1);
+            restored = restored.replacen(after, edit["before"].as_str().unwrap(), 1);
+        }
+        assert_eq!(restored, original);
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+            ),
+            record["before_sha256"].as_str().unwrap()
+        );
+    }
+    let children = [
+        include_str!("../../constructor_failure.rs"),
+        include_str!("inline.rs"),
+        include_str!("inline_fields.rs"),
+        include_str!("../borrowed_imports/inline.rs"),
+        include_str!("inline_tests.rs"),
+    ];
+    for (record, source) in proof["children"].as_array().unwrap().iter().zip(children) {
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(source.as_bytes()))
+            ),
+            record["sha256"].as_str().unwrap()
+        );
+    }
+}
+
+=== src/workspace_graph/expected_projection/import_stub.rs:145-235 ===
+        return function.params.first();
+    }
+    if !allow_owned
+        || !function.effects.is_empty()
+        || !function.type_parameters.is_empty()
+        || !is_record(&function.return_type)
+    {
+        return None;
+    }
+    let mut owner = None;
+    for parameter in &function.params {
+        match parameter.mode {
+            ParamMode::Own if parameter.ty == function.return_type && owner.is_none() => {
+                owner = Some(parameter)
+            }
+            ParamMode::Borrow
+                if is_record(&parameter.ty)
+                    || matches!(parameter.ty, Type::SliceU8 | Type::Str) => {}
+            ParamMode::Value if crate::vec_ops::ast_element_is_admitted(&parameter.ty) => {}
+            _ => return None,
+        }
+    }
+    owner
+}
+
+// A sealed Reader has no default constructor. Its non-executable import
+// prototype forwards its one existing owner; the provider's real body is
+// checked independently in the defining module and retained at link time.
+pub(super) fn default_expr(
+    function: &Function,
+    declarations: &[(&str, &crate::ast::TypeDeclaration)],
+    allow_owned: bool,
+    allow_byte_forward: bool,
+) -> Result<Expr, Vec<crate::diagnostic::Diagnostic>> {
+    let byte_owner = function.params.iter().find(|parameter| {
+        allow_byte_forward && parameter.mode == ParamMode::Own && parameter.ty == Type::Bytes
+    });
+    if let Some(parameter) = byte_owner.or_else(|| {
+        forward_parameter(function, allow_owned, |ty| {
+            let Type::Named { name, arguments } = ty else {
+                return false;
+            };
+            arguments.is_empty()
+                && declarations
+                    .iter()
+                    .any(|(candidate, declaration)| *candidate == name && record_shape(declaration))
+        })
+    }) {
+        super::reserve_builder_structure(std::mem::size_of::<Expr>())?;
+        return Ok(Expr {
+            kind: ExprKind::Var(crate::bounded_output::budgeted_clone(&parameter.name)),
+            span: crate::ast::Span::default(),
+        });
+    }
+    super::defaults::default_expr(&function.return_type, declarations, allow_owned)
+}
+
+pub(super) fn default_expr_inline(
+    function: &Function,
+    declarations: &[(&str, &crate::ast::TypeDeclaration)],
+    allow_owned: bool,
+    allow_byte_forward: bool,
+) -> Result<Expr, crate::workspace_graph::constructor_failure::Failure> {
+    crate::workspace_graph::constructor_failure::reserve(std::mem::size_of::<
+        Result<Expr, crate::workspace_graph::constructor_failure::Failure>,
+    >())?;
+    let byte_owner = function.params.iter().find(|parameter| {
+        allow_byte_forward && parameter.mode == ParamMode::Own && parameter.ty == Type::Bytes
+    });
+    if let Some(parameter) = byte_owner.or_else(|| {
+        forward_parameter(function, allow_owned, |ty| {
+            let Type::Named { name, arguments } = ty else {
+                return false;
+            };
+            arguments.is_empty()
+                && declarations
+                    .iter()
+                    .any(|(candidate, declaration)| *candidate == name && record_shape(declaration))
+        })
+    }) {
+        crate::workspace_graph::constructor_failure::reserve(std::mem::size_of::<Expr>())?;
+        return Ok(Expr {
+            kind: ExprKind::Var(crate::bounded_output::budgeted_clone(&parameter.name)),
+            span: crate::ast::Span::default(),
+        });
+    }
+    super::defaults::inline::default_expr(&function.return_type, declarations, allow_owned)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn default_expr_expanded_cost(
+
+=== src/workspace_graph/expected_projection/defaults/original.rs:1-170 ===
+//! Complete original recursive default receiver, independently compiled.
+use super::{
+    checked_builder_sum, collection_constructor, graph_error, reserve_builder_structure,
+    Diagnostic, Expr, ExprKind, FieldInitializer, Span, StructuralCost, Type, TypeDeclaration,
+    TypeDeclarationKind,
+};
+
+pub(in crate::workspace_graph::expected_projection) fn default_expr(
+    ty: &Type,
+    declarations: &[(&str, &TypeDeclaration)],
+    allow_owned: bool,
+) -> Result<Expr, Vec<Diagnostic>> {
+    reserve_builder_structure(std::mem::size_of::<Expr>())?;
+    let span = Span::default();
+    let kind = match ty {
+        Type::Never => {
+            return Err(vec![graph_error(
+                "SPX-G172",
+                "compiler-only completion marker has no default value",
+            )])
+        }
+        ty if allow_owned
+            && super::super::type_rewrite::default_vector_element(ty, declarations).is_some() =>
+        {
+            let element = super::super::type_rewrite::default_vector_element(ty, declarations)
+                .expect("closed vector default");
+            let mut cost = StructuralCost::new();
+            super::super::declaration_cost::ast_type_cost(element, &mut cost)?;
+            reserve_builder_structure(checked_builder_sum(
+                cost.total,
+                std::mem::size_of::<Expr>() + crate::vec_ops::WITH_CAPACITY_NAME.len(),
+            )?)?;
+            ExprKind::Call {
+                name: crate::bounded_output::budgeted_clone(crate::vec_ops::WITH_CAPACITY_NAME),
+                type_arguments: vec![element.clone()],
+                args: vec![Expr {
+                    kind: ExprKind::Usize(0),
+                    span,
+                }],
+            }
+        }
+        ty if allow_owned && crate::map_ops::ast_collection(ty) => {
+            let (name, arguments) = collection_constructor(ty);
+            reserve_builder_structure(
+                std::mem::size_of::<Expr>() + std::mem::size_of_val(arguments),
+            )?;
+            ExprKind::Call {
+                name: crate::bounded_output::budgeted_clone(name),
+                type_arguments: arguments.to_vec(),
+                args: vec![Expr {
+                    kind: ExprKind::Usize(0),
+                    span,
+                }],
+            }
+        }
+        Type::I64 => ExprKind::Int(0),
+        Type::I32 => ExprKind::Int32(0),
+        Type::Char => ExprKind::Char(0),
+        Type::U8 => ExprKind::Uint8(0),
+        Type::Usize => ExprKind::Usize(0),
+        Type::F32 => ExprKind::Float32(0),
+        Type::F64 => ExprKind::Float64(0),
+        Type::Bool => ExprKind::Bool(false),
+        Type::String => ExprKind::String(String::new()),
+        Type::Str => {
+            return Err(vec![graph_error(
+                "SPX-G173",
+                "borrowed `str` has no synthesizable workspace default",
+            )]);
+        }
+        Type::SliceU8 | Type::StringMap => {
+            return Err(vec![graph_error(
+                "SPX-G173",
+                "borrowed `Slice<u8>` has no synthesizable workspace default",
+            )]);
+        }
+        Type::Bytes if allow_owned => {
+            reserve_builder_structure(std::mem::size_of::<Expr>())?;
+            ExprKind::Call {
+                name: crate::bounded_output::budgeted_clone(crate::byte_ops::ZEROED_NAME),
+                type_arguments: Vec::new(),
+                args: vec![Expr {
+                    kind: ExprKind::Usize(0),
+                    span,
+                }],
+            }
+        }
+        Type::ArrayU8(_)
+        | Type::Bytes
+        | Type::OnceFunction
+        | Type::OnceFunctionI64
+        | Type::OnceFunctionI64Pair
+        | Type::MutFunctionI64
+        | Type::Function { .. } => {
+            return Err(vec![graph_error(
+                "SPX-G173",
+                "internal byte-data types have no synthesizable workspace default",
+            )]);
+        }
+        Type::Named { name, arguments } if arguments.is_empty() => {
+            let declaration = declarations
+                .binary_search_by_key(&name.as_str(), |(name, _)| *name)
+                .map(|index| declarations[index].1)
+                .map_err(|_| {
+                    vec![graph_error(
+                        "SPX-G173",
+                        "default imported type lookup disagrees",
+                    )]
+                })?;
+            match &declaration.kind {
+                TypeDeclarationKind::Record { fields }
+                | TypeDeclarationKind::Class { fields, .. } => ExprKind::ConstructRecord {
+                    type_name: crate::bounded_output::budgeted_clone(name),
+                    type_span: span,
+                    type_arguments: Vec::new(),
+                    fields: fields
+                        .iter()
+                        .map(|field| {
+                            reserve_builder_structure(std::mem::size_of::<FieldInitializer>())?;
+                            Ok(FieldInitializer {
+                                name: crate::bounded_output::budgeted_clone(&field.name),
+                                name_span: span,
+                                value: default_expr(&field.ty, declarations, allow_owned)?,
+                                span,
+                            })
+                        })
+                        .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?,
+                },
+                TypeDeclarationKind::Variant { cases } => {
+                    let case = cases.first().ok_or_else(|| {
+                        vec![graph_error("SPX-G172", "imported Copy variant has no case")]
+                    })?;
+                    ExprKind::ConstructVariant {
+                        type_name: crate::bounded_output::budgeted_clone(name),
+                        type_span: span,
+                        type_arguments: Vec::new(),
+                        case_name: crate::bounded_output::budgeted_clone(&case.name),
+                        case_span: span,
+                        fields: case
+                            .fields
+                            .iter()
+                            .map(|field| {
+                                reserve_builder_structure(std::mem::size_of::<FieldInitializer>())?;
+                                Ok(FieldInitializer {
+                                    name: crate::bounded_output::budgeted_clone(&field.name),
+                                    name_span: span,
+                                    value: default_expr(&field.ty, declarations, allow_owned)?,
+                                    span,
+                                })
+                            })
+                            .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?,
+                    }
+                }
+                TypeDeclarationKind::Resource { .. } => {
+                    return Err(vec![graph_error(
+                        "SPX-G172",
+                        "resource return is not admitted",
+                    )])
+                }
+            }
+        }
+        Type::Named { .. } => {
+            return Err(vec![graph_error(
+                "SPX-G172",
+                "generic return is not admitted",
+            )])
+        }
+    };
+    Ok(Expr { kind, span })
+}
+
+=== src/workspace_graph/expected_projection/borrowed_imports.rs:1-393 ===
+//! Exact-source imported overlays, including ordinary classified retained
+//! wrappers and invariant/class roots. Views confer no import authority.
+#[path = "borrowed_imports/alias_clone.rs"]
+mod alias_clone;
+#[path = "borrowed_imports/receiving.rs"]
+mod receiving;
+use super::{
+    active_builder_limit, ast_function_cost, ast_function_signature_cost,
+    ast_type_declaration_cost, budgeted_format, default_expr, graph_error, import_stub,
+    limit_error, reserve_builder_structure, type_rewrite, AuthoredDeclaration, LayoutRegistry,
+    StructuralCost,
+};
+use crate::ast::program_source::{generated_roots::GeneratedRoots, SyntheticProgramView};
+use crate::ast::{
+    Expr, ExprKind, Function, ModuleUseKind, Program, Type, TypeDeclaration, TypeDeclarationKind,
+};
+use crate::diagnostic::Diagnostic;
+pub(in crate::workspace_graph) use receiving::construct_receiving;
+use std::collections::BTreeMap;
+
+pub(in crate::workspace_graph) fn eligible(
+    program: &Program,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    _programs: &[Program],
+) -> bool {
+    !program.module_uses.is_empty()
+        && program
+            .module_uses
+            .iter()
+            .all(|import| authored.contains_key(import.persistent_id.as_str()))
+}
+fn refusal() -> Vec<Diagnostic> {
+    vec![limit_error("builder_bytes", active_builder_limit())]
+}
+fn directory<T>(count: usize) -> Result<Vec<T>, Vec<Diagnostic>> {
+    let bytes = count
+        .checked_mul(std::mem::size_of::<T>())
+        .ok_or_else(refusal)?;
+    reserve_builder_structure(bytes)?;
+    let values = Vec::with_capacity(count);
+    if values.capacity() != count {
+        return Err(refusal());
+    }
+    Ok(values)
+}
+fn pay_type(declaration: &TypeDeclaration) -> Result<(), Vec<Diagnostic>> {
+    let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+    ast_type_declaration_cost(declaration, &mut cost)?;
+    reserve_builder_structure(cost.total)
+}
+fn pay_signature(function: &Function) -> Result<(), Vec<Diagnostic>> {
+    let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+    ast_function_signature_cost(function, &mut cost)?;
+    reserve_builder_structure(cost.total)
+}
+
+// A geometric Vec worklist's cumulative requests are below four times its
+// element census; its initial nonbyte capacity is four. Raw inline AST cost
+// counts every node/header without a clone discount. Charge the full fourfold
+// census before cloning each recursive root, plus each worklist's minimum once.
+fn pay_teardown(cost: &StructuralCost) -> Result<(), Vec<Diagnostic>> {
+    reserve_builder_structure(cost.total.checked_mul(4).ok_or_else(refusal)?)
+}
+fn iterative(program: &Program, authored: &BTreeMap<&str, AuthoredDeclaration<'_>>) -> bool {
+    program.module_uses.iter().any(|import| {
+        let target = &authored[import.persistent_id.as_str()];
+        target
+            .function
+            .is_some_and(|function| !function.type_parameters.is_empty())
+            || target.ty.is_some_and(|ty| {
+                !ty.invariants().is_empty() || matches!(ty.kind, TypeDeclarationKind::Class { .. })
+            })
+    })
+}
+fn pay_teardown_minimum() -> Result<(), Vec<Diagnostic>> {
+    let bytes = [
+        std::mem::size_of::<Function>(),
+        std::mem::size_of::<Expr>(),
+        std::mem::size_of::<Type>(),
+        std::mem::size_of::<crate::ast::MatchPattern>(),
+        std::mem::size_of::<crate::ast::RecordMatchPatternField>(),
+    ]
+    .into_iter()
+    .try_fold(0usize, |sum, size| sum.checked_add(size))
+    .ok_or_else(refusal)?;
+    reserve_builder_structure(bytes.checked_mul(4).ok_or_else(refusal)?)
+}
+
+// Defaults can expand a shared record type repeatedly. Count that expanded
+// expression tree through borrowed declarations, rather than charging only the
+// unique type directory. This is storage payment, not default admission; the
+// original constructor still chooses forwarding, classifiers and first errors.
+fn pay_default_teardown(
+    ty: &Type,
+    declarations: &[(&str, &TypeDeclaration)],
+) -> Result<(), Vec<Diagnostic>> {
+    fn census(
+        ty: &Type,
+        declarations: &[(&str, &TypeDeclaration)],
+    ) -> Result<usize, Vec<Diagnostic>> {
+        let mut bytes = std::mem::size_of::<Expr>();
+        if let Type::Named { name, arguments } = ty {
+            if arguments.is_empty() {
+                if let Ok(index) =
+                    declarations.binary_search_by_key(&name.as_str(), |(name, _)| *name)
+                {
+                    let fields: &[crate::ast::FieldDeclaration] = match &declarations[index].1.kind
+                    {
+                        TypeDeclarationKind::Record { fields }
+                        | TypeDeclarationKind::Class { fields, .. } => fields,
+                        TypeDeclarationKind::Variant { cases } => {
+                            cases.first().map_or(&[], |case| &case.fields)
+                        }
+                        TypeDeclarationKind::Resource { .. } => &[],
+                    };
+                    for field in fields {
+                        bytes = bytes
+                            .checked_add(census(&field.ty, declarations)?)
+                            .ok_or_else(refusal)?;
+                    }
+                }
+            } else {
+                // Accepted compiler collection defaults have a root call,
+                // one scalar size operand and copied type arguments. Generic
+                // authored defaults still receive their old closed refusal.
+                bytes = bytes
+                    .checked_add(std::mem::size_of::<Expr>())
+                    .ok_or_else(refusal)?;
+                let mut cost = StructuralCost::raw_ast(true);
+                super::declaration_cost::ast_type_cost(ty, &mut cost)?;
+                bytes = bytes.checked_add(cost.total).ok_or_else(refusal)?;
+            }
+        } else if *ty == Type::Bytes || *ty == Type::StringMap {
+            bytes = bytes
+                .checked_add(std::mem::size_of::<Expr>())
+                .ok_or_else(refusal)?;
+        }
+        Ok(bytes)
+    }
+    reserve_builder_structure(
+        census(ty, declarations)?
+            .checked_mul(4)
+            .ok_or_else(refusal)?,
+    )
+}
+
+pub(in crate::workspace_graph) fn construct<'a>(
+    program: &'a Program,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    programs: &[Program],
+    registry: &LayoutRegistry<'_>,
+) -> Result<SyntheticProgramView<'a>, Vec<Diagnostic>> {
+    construct_using(program, authored, programs, registry, None)
+}
+
+pub(in crate::workspace_graph) fn construct_core<'a>(
+    program: &'a Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    registry: &LayoutRegistry<'_>,
+    core: &mut import_stub::core_proofs::CoreProviderProofs<'a>,
+) -> Result<SyntheticProgramView<'a>, Vec<Diagnostic>> {
+    construct_using(program, authored, programs, registry, Some(core))
+}
+
+pub(in crate::workspace_graph) fn construct_using<'p, 'a>(
+    program: &'p Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    registry: &LayoutRegistry<'_>,
+    core: Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,
+) -> Result<SyntheticProgramView<'p>, Vec<Diagnostic>> {
+    reserve_builder_structure(0)?;
+    if !eligible(program, authored, programs) {
+        return Err(vec![graph_error(
+            "SPX-G173",
+            "imported borrowed projection requires the owned route",
+        )]);
+    }
+    let layout = registry.get(program, authored, programs)?;
+    let explicit = program
+        .module_uses
+        .iter()
+        .filter(|import| import.kind == ModuleUseKind::Type)
+        .count();
+    let type_count = explicit
+        .checked_add(layout.entries.len())
+        .ok_or_else(refusal)?;
+    let recursive = iterative(program, authored);
+    if recursive {
+        pay_teardown_minimum()?;
+    }
+    let mut roots = if recursive {
+        GeneratedRoots::iterative(directory::<TypeDeclaration>(type_count)?, Vec::new())
+    } else {
+        GeneratedRoots::plain(directory::<TypeDeclaration>(type_count)?, Vec::new())
+    };
+    let types = &mut roots.types;
+    for import in program
+        .module_uses
+        .iter()
+        .filter(|import| import.kind == ModuleUseKind::Type)
+    {
+        let target = &authored[import.persistent_id.as_str()];
+        let declaration = target.ty.expect("validated type target");
+        pay_type(declaration)?;
+        if recursive {
+            let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+            ast_type_declaration_cost(declaration, &mut cost)?;
+            pay_teardown(&cost)?;
+        }
+        types.push(alias_clone::type_payload(declaration));
+        let copy = types.last_mut().expect("inserted type");
+        copy.name = crate::bounded_output::budgeted_clone(&import.alias);
+        reserve_builder_structure(0)?;
+        super::super::generic_type_import::rewrite_declaration_with_layout(
+            copy,
+            target.module,
+            program,
+            programs,
+            Some(&layout),
+        )?;
+    }
+    // Preserve the independent closure's exact order after explicit aliases.
+    for entry in &layout.entries {
+        pay_type(entry.declaration)?;
+        if recursive {
+            let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+            ast_type_declaration_cost(entry.declaration, &mut cost)?;
+            pay_teardown(&cost)?;
+        }
+        types.push(alias_clone::type_payload(entry.declaration));
+        let copy = types.last_mut().expect("inserted private type");
+        copy.name = crate::bounded_output::budgeted_clone(&entry.alias);
+        reserve_builder_structure(0)?;
+        super::super::generic_type_import::rewrite_declaration_with_layout(
+            copy,
+            entry.module,
+            program,
+            programs,
+            Some(&layout),
+        )?;
+    }
+    let all_count = program
+        .types
+        .len()
+        .checked_add(types.len())
+        .ok_or_else(refusal)?;
+    let mut type_index = directory::<(&str, &TypeDeclaration)>(all_count)?;
+    type_index.extend(
+        program
+            .types
+            .iter()
+            .chain(types.iter())
+            .map(|declaration| (declaration.name.as_str(), declaration)),
+    );
+    type_index.sort_unstable_by(|a, b| a.0.cmp(b.0));
+    if type_index.windows(2).any(|items| items[0].0 == items[1].0) {
+        return Err(vec![graph_error(
+            "SPX-G173",
+            "synthetic workspace type-name index is not unique",
+        )]);
+    }
+    let needs_main = !program
+        .functions
+        .iter()
+        .any(|function| function.name == "main")
+        && !program
+            .module_uses
+            .iter()
+            .any(|import| import.kind == ModuleUseKind::Function && import.alias == "main");
+    let imports = program
+        .module_uses
+        .iter()
+        .filter(|import| import.kind == ModuleUseKind::Function)
+        .count();
+    roots.functions = directory::<Function>(
+        imports
+            .checked_add(usize::from(needs_main))
+            .ok_or_else(refusal)?,
+    )?;
+    let functions = &mut roots.functions;
+    let mut byte_proofs = import_stub::core_proofs::Phase::new(authored, programs, core)
+        .map_err(|error| vec![error])?;
+    for import in program
+        .module_uses
+        .iter()
+        .filter(|import| import.kind == ModuleUseKind::Function)
+    {
+        let target = &authored[import.persistent_id.as_str()];
+        let original = target.function.expect("validated function target");
+        let retain_body = programs
+            .iter()
+            .find(|provider| provider.module == target.module)
+            .is_some_and(|provider| {
+                crate::vec_ops::source_wrapper(provider, original).is_some()
+                    || crate::box_ops::source_wrapper(provider, original).is_some()
+            });
+        if retain_body {
+            let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+            ast_function_cost(original, &mut cost)?;
+            reserve_builder_structure(cost.total)?;
+            pay_teardown(&cost)?;
+        } else {
+            pay_signature(original)?;
+            if recursive {
+                let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
+                ast_function_signature_cost(original, &mut cost)?;
+                pay_teardown(&cost)?;
+            }
+        }
+        let function = if retain_body {
+            alias_clone::retained_function(original, &import.alias)
+        } else {
+            alias_clone::signature_function(original, &import.alias)
+        };
+        functions.push(function);
+        reserve_builder_structure(0)?;
+        if retain_body {
+            continue;
+        }
+        let function = functions.last_mut().expect("inserted signature");
+        for param in &mut function.params {
+            type_rewrite::rewrite_with_layout(
+                &mut param.ty,
+                target.module,
+                program,
+                programs,
+                Some(&layout),
+            )?;
+        }
+        type_rewrite::rewrite_with_layout(
+            &mut function.return_type,
+            target.module,
+            program,
+            programs,
+            Some(&layout),
+        )?;
+        if recursive {
+            pay_default_teardown(&function.return_type, &type_index)?;
+        }
+        function.body = default_expr(
+            function,
+            &type_index,
+            super::super::owned_function_import::admitted_with_layout(
+                program, target, authored, programs, &layout,
+            ),
+            import_stub::byte_helper_authorized(
+                original,
+                target.module,
+                byte_proofs.get().map_err(|error| vec![error])?,
+            )?,
+        )?;
+    }
+    // Same old rule also recognizes an imported alias named main.
+    if needs_main && !functions.iter().any(|function| function.name == "main") {
+        reserve_builder_structure(std::mem::size_of::<Expr>())?;
+        functions.push(Function {
+            stable_id: budgeted_format(format_args!("workspace.synthetic.main.{}", program.module)),
+            explicit_id: true,
+            name: crate::bounded_output::budgeted_clone("main"),
+            name_span: crate::ast::Span::default(),
+            type_parameters: Vec::new(),
+            params: Vec::new(),
+            return_type: Type::I64,
+            effects: Vec::new(),
+            yields: None,
+            follows: None,
+            requires: Vec::new(),
+            ensures: Vec::new(),
+            body: Expr {
+                kind: ExprKind::Int(0),
+                span: crate::ast::Span::default(),
+            },
+            span: crate::ast::Span::default(),
+        });
+        reserve_builder_structure(0)?;
+    }
+    drop(type_index);
+    // Infallible bounded string helpers record refusal and return empty text.
+    // A generated view must never publish that partial construction as success.
+    reserve_builder_structure(0)?;
+    let result = SyntheticProgramView::with_generated_owner(program, roots).ok_or_else(refusal)?;
+    byte_proofs.complete().map_err(|error| vec![error])?;
+    Ok(result)
+}
+
+#[cfg(test)]
+#[path = "borrowed_imports/tests.rs"]
+mod tests;
+
+#[path = "borrowed_imports/inline.rs"]
+pub(in crate::workspace_graph) mod inline;
+
+=== src/workspace_graph.rs:4334-4430 ===
+#[allow(clippy::too_many_arguments)]
+fn build_resolved_core_current(
+    programs: &[Program],
+    module_paths: &BTreeMap<&str, &str>,
+    dependency_depths: &BTreeMap<&str, usize>,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    authenticated_sources: Option<&[WorkspaceSource]>,
+    mut frontend: Option<&mut crate::project::incremental::FrontendPass>,
+    layouts: &expected_projection::private_layout::registry::LayoutRegistry<'_>,
+    compact_order: Option<&[usize]>,
+) -> Result<ResolvedCore, Vec<Diagnostic>> {
+    let retained_output_only = compact_order.is_some();
+    let mut loan_scratch = loan_retention::RetentionScratch::default();
+    let mut expected_edges = Vec::new();
+    for program in programs {
+        staged!(
+            ExpectedEdges,
+            collect_expected_edges(
+                program,
+                programs,
+                module_paths,
+                authored,
+                &mut expected_edges,
+            )
+        )?;
+    }
+    checked_retention::reserve_input_carriers(programs.len())?;
+    // The final uncached attempt uses a compact index and sequential HIR
+    // filtering; earlier receipts retain the complete synthetic HIR vector.
+    let mut validation = retained_output_only
+        .then(|| staged!(CompactValidation, WorkspaceValidationIndex::new(programs)))
+        .transpose()?;
+    let authority = expected_projection::private_layout::authority::invocation::Invocation::new(
+        programs, authored,
+    );
+    let mut synthetic_modules = if retained_output_only {
+        Vec::new()
+    } else {
+        Vec::with_capacity(programs.len())
+    };
+    let mut modules = Vec::new();
+    let mut imported_vec_instances = BTreeMap::new();
+    if retained_output_only {
+        reserve_workspace_module_carrier(programs.len())?;
+        modules = Vec::with_capacity(programs.len());
+    }
+    // Earlier/cached forecasts retain the old inline Program carrier. The
+    // new tagged input adds one reused enclosing header, not one per module.
+    // Sequential uncached retention prices that same carrier in its peak.
+    if !retained_output_only {
+        reserve_builder_structure(expected_projection::borrowed_leaf::input_carrier_delta()?)?;
+    }
+    let mut core_proofs = expected_projection::CoreProviderProofs::new(authored, programs)
+        .map_err(|error| vec![error])?;
+    let mut synthetic_ast_peak = 0usize;
+    let mut selected_static_modules = static_text::SelectedModules::default();
+    for index in 0..programs.len() {
+        let program = &programs[compact_order.map_or(index, |order| order[index])];
+        if retained_output_only {
+            staged!(
+                UncachedSyntheticPeak,
+                expected_projection::uncached_peak::charge_uncached_synthetic_ast_core(
+                    program,
+                    authored,
+                    programs,
+                    &mut synthetic_ast_peak,
+                    Some(layouts),
+                    &mut core_proofs,
+                )
+            )?;
+        }
+        let synthetic = staged!(
+            SyntheticModule,
+            constructor_failure::construct_transient_core(
+                program,
+                authored,
+                programs,
+                layouts,
+                &mut core_proofs,
+            )
+            .map_err(constructor_failure::Failure::into_legacy_unfunded)
+        )?;
+        // Exact stubs/spans and the unconditional prebound govern hits.
+        let cached = staged!(
+            FrontendLookup,
+            frontend.as_deref_mut().and_then(|cache| match &synthetic {
+                expected_projection::borrowed_leaf::Input::Owned(input) =>
+                    cache.checked_module(&program.path, input),
+                expected_projection::borrowed_leaf::Input::Borrowed(input) =>
+                    cache.checked_module_source(&program.path, input),
+            })
+        );
+        let (resolved, static_text) = if let Some((resolved, resolver_bytes, original_loan_bytes)) =
+            cached
+        {
+            let before = crate::bounded_output::active_remaining()
+                .expect("resolved core has a builder budget");
+
+=== src/workspace_graph/diagnostics.rs:63-105 ===
+pub(super) fn graph_error(code: &'static str, message: impl Into<String>) -> Diagnostic {
+    Diagnostic::io(code, message)
+}
+
+pub(super) fn project_function_error(
+    module: &WorkspaceResolvedModule,
+    message: impl Into<String>,
+    span: Option<Span>,
+) -> Diagnostic {
+    Diagnostic::error(
+        "SPX-G172",
+        message,
+        span.unwrap_or(Span {
+            start: 0,
+            end: 0,
+            line: 1,
+            column: 1,
+        }),
+    )
+    .at_path(&module.path)
+}
+
+pub(super) fn limit_error(field: &'static str, maximum: usize) -> Diagnostic {
+    let error = graph_error(
+        "SPX-G171",
+        crate::bounded_output::budgeted_format(format_args!(
+            "Workspace Semantic Graph `{field}` exceeds {maximum}"
+        )),
+    );
+    if field != "builder_bytes" {
+        return error;
+    }
+    let help = builder_bytes_help(maximum);
+    if help.is_empty() {
+        return error;
+    }
+    error.with_help(help)
+}
+
+/// Which of the two `builder_bytes` bounds refused.
+///
+/// The static admission pre-charge forecasts the whole build before the graph
+/// builder allocates anything; live accumulation charges the structures the
+
+=== src/bounded_output.rs:250-291 ===
+    }
+    if length
+        .checked_add(budget.floor.get())
+        .is_none_or(|required| required > remaining)
+    {
+        return false;
+    }
+    budget.remaining.set(remaining - length);
+    #[cfg(test)]
+    stage_debits::debit(budget, length);
+    true
+}
+
+pub(crate) fn reserve_active(length: usize) -> bool {
+    let budget = active();
+    reserve(budget.as_deref(), length)
+}
+
+/// Required work cannot turn a reserved-floor refusal into successful output.
+/// Preserve the ordinary reservation debit while making every refusal sticky.
+pub(crate) fn reserve_active_required(length: usize) -> bool {
+    let budget = active();
+    let admitted = reserve(budget.as_deref(), length);
+    if !admitted {
+        if let Some(budget) = budget {
+            record_refusal(&budget, length);
+            budget.overflowed.set(true);
+        }
+    }
+    admitted
+}
+
+/// Fail a required allocator frontier without manufacturing another allocation
+/// request. Already selected receipts and actual debits remain unchanged.
+pub(crate) fn refuse_active_required(requested: usize) {
+    if let Some(budget) = active() {
+        record_refusal(&budget, requested);
+        budget.overflowed.set(true);
+    }
+}
+
+pub(crate) fn reserve_active_preserving(length: usize, floor: usize) -> bool {
+
+=== src/test_allocation_observer.rs:130-175 ===
+            note_invalid_reason("allocation counter overflow");
+            return;
+        };
+        self.metrics.allocated = allocated;
+        self.metrics.live = live;
+        self.metrics.allocations = count;
+        self.metrics.highwater = self.metrics.highwater.max(live);
+    }
+    fn freed(&mut self, pointer: usize, bytes: usize) {
+        free_order::record_free(pointer);
+        let actual = if let Some(registry) = &mut self.extended {
+            let Some(actual) = registry.remove(pointer) else {
+                return;
+            };
+            actual
+        } else {
+            let Some(slot) = self.slots.iter_mut().find(|slot| slot.pointer == pointer) else {
+                return;
+            };
+            let actual = slot.bytes;
+            *slot = EMPTY;
+            actual
+        };
+        if actual != bytes {
+            INVALID.with(|invalid| invalid.set(true));
+            note_invalid_reason("deallocation layout mismatch");
+        }
+        let (Some(freed), Some(live)) = (
+            self.metrics.freed.checked_add(actual),
+            self.metrics.live.checked_sub(actual),
+        ) else {
+            INVALID.with(|invalid| invalid.set(true));
+            note_invalid_reason("deallocation counter underflow or overflow");
+            return;
+        };
+        self.metrics.freed = freed;
+        self.metrics.live = live;
+    }
+}
+thread_local! {
+    // Const fixed storage is initialized before the phase; the observer never
+    // allocates a registry, grows a container or formats text in a callback.
+    static STATE: RefCell<State> = const {RefCell::new(State::new())};
+    static ACTIVE: Cell<bool> = const {Cell::new(false)};
+    static INVALID: Cell<bool> = const {Cell::new(false)};
+    static INVALID_REASON: Cell<Option<&'static str>> = const {Cell::new(None)};
