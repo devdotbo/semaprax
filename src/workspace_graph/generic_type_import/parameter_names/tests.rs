@@ -70,6 +70,20 @@ fn large_late_missing_duplicate_and_unicode_names_keep_old_membership_with_bound
 
 #[test]
 fn spill_backing_is_exact_paid_owned_and_short_zero_refusal_stays_g171_through_drop() {
+    for count in [0, 1, INLINE] {
+        let parameters = parameters(count);
+        let (result, refused, used, first) = with_limit_usage_refusal(0, || {
+            assert!(!crate::bounded_output::reserve_active_required(1));
+            BorrowedNames::new(&parameters).map(|_| ())
+        });
+        let errors = result.unwrap_err();
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].code, "SPX-G171");
+        assert!(refused && used == 0);
+        let first = first.unwrap();
+        assert_eq!(first.requested, 1);
+        assert_eq!(first.remaining, 0);
+    }
     for count in [INLINE + 1, 129, 4096] {
         let parameters = parameters(count);
         let observe = |limit| {

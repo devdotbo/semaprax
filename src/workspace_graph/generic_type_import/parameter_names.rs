@@ -37,6 +37,9 @@ fn refused(requested: usize) -> Vec<Diagnostic> {
 }
 impl<'a> BorrowedNames<'a> {
     pub(super) fn new(parameters: &'a [TypeParameterDeclaration]) -> Result<Self, Vec<Diagnostic>> {
+        if !crate::bounded_output::reserve_active_required(0) {
+            return Err(refused(0));
+        }
         let count = parameters.len();
         let ordinals = if count <= INLINE {
             let mut values = [0; INLINE];
@@ -59,12 +62,6 @@ impl<'a> BorrowedNames<'a> {
                 .try_reserve_exact(count)
                 .map_err(|_| refused(payload))?;
             if values.capacity() != count {
-                let excess = values
-                    .capacity()
-                    .saturating_sub(count)
-                    .checked_mul(std::mem::size_of::<usize>())
-                    .ok_or_else(|| refused(usize::MAX))?;
-                let _ = crate::bounded_output::reserve_active_required(excess);
                 return Err(refused(payload));
             }
             values.extend(0..count);
