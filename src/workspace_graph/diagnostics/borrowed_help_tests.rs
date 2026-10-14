@@ -183,10 +183,10 @@ fn complete_borrowed_help_source_restores_full_original_without_normalization() 
     assert_eq!(
         format!(
             "{:x}",
-            Sha256::digest(include_bytes!(concat!(
+            crate::digest_hex::LowerHex(Sha256::digest(include_bytes!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/borrowed-refusal-help-824/diagnostics.before.txt"
-            )))
+            ))))
         ),
         "c480b975897767ea2516b73112dd1547ea107841cbbe0537ed09b1de87b4b8bc"
     );
