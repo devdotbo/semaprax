@@ -52,10 +52,11 @@ fn existing_method_backing_fifo_inline_and_wide_spill_preserve_every_element() {
 
 #[test]
 fn class_method_drop_keeps_full_prior_and_original_metadata_and_expression_order() {
+    const WATCHED: usize = 20;
     let run = |before: bool, original: bool| {
         let (((), order), metrics) = measure(|| {
             let mut program = fixture(2, 2);
-            let mut pointers = [0usize; 20];
+            let mut pointers = [0usize; WATCHED];
             pointers[0] = program.path.as_ptr() as usize;
             pointers[1] = program.module.as_ptr() as usize;
             pointers[2] = program.functions[0].stable_id.as_ptr() as usize;
@@ -103,7 +104,7 @@ fn class_method_drop_keeps_full_prior_and_original_metadata_and_expression_order
             })
         });
         assert!(!metrics.invalid && !order.invalid);
-        assert_eq!(order.count, pointers.len());
+        assert_eq!(order.count, WATCHED);
         assert_eq!((metrics.live, metrics.allocated), (0, metrics.freed));
         order
     };
