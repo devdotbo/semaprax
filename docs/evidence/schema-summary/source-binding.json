@@ -120,7 +120,7 @@
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs": "fb5e511e1a4908860a55e74a9e862a847440d90d70f5647d618748ea63f4b07a",
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs": "a22ad9d3b05506fcb2c1e4ccbb9a175486305fd792de5bfb4fcab031aa5bdf52",
     "src/cleanup_plan/replay/paid_type_facts/droppability.rs": "50553857f7a33d60b245f66bdc3c380f65b8ba5ae5fa53e776fd2b419da80e76",
-    "tests/hir_module_boundaries.rs": "820663f9b7b7c288a5df7edab2db3b2b9fdb0d58ca7011fabdf9e69586e7b9ea",
+    "tests/hir_module_boundaries.rs": "dc4ebfe57ea401e3503d3e829c6eb0c21fff42b7aca2c4d4b666c6264e9962e4",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "3033977fea7706bd8f95b0016769f17ee206d81399e6f645697dc4a6e1ecb383",
     "src/cleanup_plan/replay/paid_type_facts/inventory_text.rs": "f0f3f5266fea382fab01c783c419f08afffa03da451b50952605cacc2ed12057",
     "src/cleanup.rs": "e2a653179270f02ca7d56cfffc11e503043fd00068aac09152a89a493660159f",
@@ -139,7 +139,7 @@
     "src/cleanup_plan/replay/paid_type_facts/inventory_metadata/admission.rs": "80b4b442245d5fa108f4bb7204f32f5c50a163efa80c36318d94e2fa5f3f9aaf",
     "src/hir/declaration_index/flags/paid/substitute.rs": "80f6b353b1a73a3c7dff8635dd36760510ff7e5daf1f1d4f03853e7f7302a77a",
     "src/hir/declaration_index/flags/paid/storage.rs": "34e921b863df7ca15514408fab51936e2ffed0a60c116393e679f3013328abf3",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests/constructors.rs": "9ab2c7b7f1fdc6cefb3b8c59e35bce4b0a06115f7f5a7bd836158391593d203e",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests/constructors.rs": "be7304c60d1f5987b24c5bcab89fb23cabbe42808c9c052bbe1141c5ee9e6bb5",
     "src/hir/declaration_index/flags/paid/admission.rs": "bc301f5a2539ab4d3148d19c33ac895d318bffd043e038d80613af6f6ab29276",
     "src/hir.rs": "a5efa3f9d058c37538b9f08a17f3286fad4b2342b54943d64f3a4ca69e6459e0",
     "src/hir/declaration_index/flags/paid.rs": "d7f2c5199f1a93c77e76c5e2654a342b1e24240c28f73b22c3f695c9bbdc94ec",
@@ -178,7 +178,7 @@
     "src/cleanup_plan/replay/schema/paid_summary/original_receiver.rs": "8e39bead4b03490de3d265871232efce1f0d65270cad6a9d6c48f67ca6e3c7fa",
     "src/cleanup_plan/replay/schema/paid_summary.rs": "dcdc3881d12701c95ce3fc353b4a063d12fcec3de665c16014a2890585c66440",
     "src/cleanup_plan/replay/schema.rs": "457de8afc4d39928fb22f4a78fbcedc386aece8c86a45110e18c6b7aed4837c4",
-    "src/cleanup_plan/replay.rs": "94f3f61ce4958cef4ead0c3d596aa422d0f0e7725a46436f6a80bb54233be068",
+    "src/cleanup_plan/replay.rs": "470e45827fd36635d7f39380ac86f430617ada2dbfda801fd8c2a460f0ab1bf0",
     "src/cleanup_plan/replay/paid_type_facts/tests.rs": "35caab993a7007fb6699441903f8dc33bdf4e73382f0d1b4338fa1e92531fca4"
   },
   "pending_selectors": [
