@@ -680,6 +680,8 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        // Undo only the additive complete intrinsic source union.
+        undo(&mut current, r###"concat!(include_str!("../src/hir/validation/constructor_seed/original.rs"), include_str!("../src/list_ops/original_constructor.rs"), include_str!("../src/iterator_ops/original_constructor.rs"), include_str!("../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs"))"###, r###"include_str!("../src/hir/validation/constructor_seed/original.rs")"###);
         // Exact 824 child joins retain full live coverage; the final comparison
         // still reconstructs the complete unchanged original HIR inventory.
         undo(&mut current, r###"                concat!(

@@ -29,7 +29,7 @@
     }
   },
   "source_hashes": {
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "bf581f57067a64d8ab0e07be85e92d17db59980bc0563aa55143d587341c043f",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "f94b73730996312b4a8fdfb8a47146ee1e370390ab63ebe7131ba93d3048faad",
     "src/semantic_workspace/reporting.rs": "6a1ee6dbaf59fd894b91feb841d54ad09f019add0b2d27aa22fe2c4ea5ea11ac",
     "src/semantic_workspace_change.rs": "e234b66dd9373362ccb9f0da4a11406c288b9e83db19fbe49f49f0c5d5574ab6",
     "src/semantic_workspace_change/reporting.rs": "b6181795b3face5d4ac706fb60019470432e11723b76b6427b00291985c72e45",
@@ -49,7 +49,7 @@
     "src/workspace_report/tests/caller.rs": "00296eeb8a8844ad5468e26c0f610da4e3a2e6774a5ecf28a02cedf4cf826d36",
     "tests/workspace/semantic_change.rs": "c4d6147101f49db29534a0ebaa038d4951538211feb29e27bf900695a3d14b63",
     "tests/workspace/semantic_change/reporting.rs": "181a95f73ed21f195bff18477d963f8f766089c77363cfe9795c6b779e2b9df4",
-    "tests/workspace/semantic_graph/source_inventory.rs": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
+    "tests/workspace/semantic_graph/source_inventory.rs": "0388db9893e209ec7dc1fd6f6a8f80f252382c4296e0a1be63594944cd60b648",
     "tests/workspace/semantic_operations.rs": "c97dbf2bb3def9e569ca4563f3c92de6ea248e96e9a77fa3c3a68642eac74a34",
     "tests/workspace/semantic_operations/reporting.rs": "4a9da0af75dd27877bd98be3e78489f4d7acd1d550be981712ee182fd96ce971",
     "tests/workspace/semantic_structural_change.rs": "2f89560dd516028c1c9d5b6ffc4821e7b85d4586232e340f14d49bf12bcc77e3",

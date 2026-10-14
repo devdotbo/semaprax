@@ -662,7 +662,7 @@ macro_rules! hir_validator_source_inventory {
                         include_str!("../../../../../src/hir/validation/call_signature.rs"),
                         include_str!("../../../../../src/hir/validation/effect_keys.rs"),
                         include_str!("../../../../../src/hir/validation/row_loan.rs"),
-                        concat!(include_str!("../../../../../src/hir/validation/constructor_seed.rs"), include_str!("../../../../../src/hir/validation/constructor_seed/original.rs")),
+                        concat!(include_str!("../../../../../src/hir/validation/constructor_seed.rs"), concat!(include_str!("../../../../../src/hir/validation/constructor_seed/original.rs"), include_str!("../../../../../src/list_ops/original_constructor.rs"), include_str!("../../../../../src/iterator_ops/original_constructor.rs"), include_str!("../../../../../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../../../../../src/hir/validation/constructor_seed/intrinsic_tests.rs"))),
                         include_str!("../../../../../src/hir/validation/contract_owners.rs"),
                         include_str!("../../../../../src/hir/validation/contract_owners/tests.rs"),
                         include_str!("../../../../../src/hir/validation/contract_owners/tests/old.rs"),

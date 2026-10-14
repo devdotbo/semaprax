@@ -26,5 +26,8 @@ assert sha(guard)==packet['current_owning_guard_sha256']
 hook=packet['owning_guard_integration_inverse']['unique_remove'].encode()
 assert guard.count(hook)==1
 assert sha(guard.replace(hook,b'',1))==packet['prior_owning_guard_sha256']
-assert sha((root/'tests/workspace/semantic_graph/source_inventory.rs').read_bytes())==packet['unchanged_full_source_inventory_sha256']
+inventory=(root/'tests/workspace/semantic_graph/source_inventory.rs').read_bytes()
+join=packet['source_inventory_additive_join_inverse']
+assert inventory.count(join['after'].encode())==1
+assert sha(inventory.replace(join['after'].encode(),join['before'].encode(),1))==packet['unchanged_full_source_inventory_sha256']
 print('Source only: five whole-file inverses exact; all 68 unchanged joined projection members contain zero wildcard imports; actual Rust owners pending.')

@@ -5,6 +5,10 @@
     "before_sha256": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7",
     "edits": [
       {
+        "before": "include_str!(\"../../../../../src/hir/validation/constructor_seed/original.rs\")",
+        "after": "concat!(include_str!(\"../../../../../src/hir/validation/constructor_seed/original.rs\"), include_str!(\"../../../../../src/list_ops/original_constructor.rs\"), include_str!(\"../../../../../src/iterator_ops/original_constructor.rs\"), include_str!(\"../../../../../src/hir/validation/constructor_seed/original_intrinsics.rs\"), include_str!(\"../../../../../src/hir/validation/constructor_seed/intrinsic_tests.rs\"))"
+      },
+      {
         "after": "            include_str!(\"../../../../../src/loan_plan/paid_live/funded_before.rs\"),\n",
         "before": ""
       },

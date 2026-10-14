@@ -101,7 +101,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 ),
                 concat!(
                     include_str!("../src/hir/validation/constructor_seed.rs"),
-                    include_str!("../src/hir/validation/constructor_seed/original.rs")
+                    concat!(include_str!("../src/hir/validation/constructor_seed/original.rs"), include_str!("../src/list_ops/original_constructor.rs"), include_str!("../src/iterator_ops/original_constructor.rs"), include_str!("../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs"))
                 ),
                 concat!(
                     include_str!("../src/hir/canonical_loan_storage.rs"),

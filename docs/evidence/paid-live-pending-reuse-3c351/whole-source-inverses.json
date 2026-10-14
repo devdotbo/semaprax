@@ -79,6 +79,11 @@
     "before_sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
     "hooks": [
       {
+        "before": "include_str!(\"../../../../../src/hir/validation/constructor_seed/original.rs\")",
+        "after": "concat!(include_str!(\"../../../../../src/hir/validation/constructor_seed/original.rs\"), include_str!(\"../../../../../src/list_ops/original_constructor.rs\"), include_str!(\"../../../../../src/iterator_ops/original_constructor.rs\"), include_str!(\"../../../../../src/hir/validation/constructor_seed/original_intrinsics.rs\"), include_str!(\"../../../../../src/hir/validation/constructor_seed/intrinsic_tests.rs\"))",
+        "count": 1
+      },
+      {
         "after": "            include_str!(\"../../../../../src/loan_plan/paid_plan/pre_live_reuse.rs\"),\n",
         "before": "",
         "count": 1

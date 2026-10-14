@@ -72,7 +72,7 @@
     "src/workspace_graph/expected_projection/uncached_absence_tests.rs": "5bf7f1b3590b48cdf481bc4a486d4689ed659b0740016d8a92ca9b334aa022de",
     "src/workspace_graph/expected_projection/uncached_peak.rs": "2156e41020aeb1cbf47b0fdaf29788ce90dbdb431109b63957f3b727d244bbf4",
     "src/workspace_graph/expected_projection/vec_constructor.rs": "4831e29cce4d39b5c263ffd3743d3cb2227ffc9c57f94e28763994cd78721e10",
-    "tests/workspace/semantic_graph/source_inventory.rs": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829"
+    "tests/workspace/semantic_graph/source_inventory.rs": "0388db9893e209ec7dc1fd6f6a8f80f252382c4296e0a1be63594944cd60b648"
   },
   "unchanged_full_source_inventory_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
   "whole_inverse_hooks": [
@@ -175,5 +175,10 @@
     "unique_remove": "        // These two constructors are private to ast::program_source; the joined\n        // source keeps their exact facades without granting workspace authority.\n        \"pub(super) fn append(authored: &'a [T], generated: &'a [T]) -> Option<Self> {\",\n        \"pub(super) fn selected(\",\n",
     "original_whole_guard_proof": "docs/evidence/projection-private-decl-facades-346690/source-binding.json",
     "scope": "Only two observed existing private AST declaration facade entries; all original guard bytes reconstructed, full source inventory unchanged."
+  },
+  "source_inventory_additive_join_inverse": {
+    "after": "concat!(include_str!(\"../../src/workspace_graph.rs\"), include_str!(\"../../src/list_ops/original_constructor.rs\"), include_str!(\"../../src/iterator_ops/original_constructor.rs\"), include_str!(\"../../src/hir/validation/constructor_seed/original_intrinsics.rs\"), include_str!(\"../../src/hir/validation/constructor_seed/intrinsic_tests.rs\"))",
+    "before": "include_str!(\"../../src/workspace_graph.rs\")",
+    "prior_full_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829"
   }
 }
