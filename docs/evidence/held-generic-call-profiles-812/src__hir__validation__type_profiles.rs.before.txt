@@ -1,0 +1,331 @@
+//! Closed type-profile predicates shared by both HIR validation passes.
+
+use super::*;
+
+/// Concrete vector storage is legal only inside its independently admitted
+/// whole record. Logical text schemas retain their existing declaration rule.
+pub(super) fn record_field_storage_instance_is_admitted(
+    program: &ResolvedProgram,
+    record: &DeclarationId,
+    field: &ResolvedType,
+) -> bool {
+    crate::hir::declared_collection::vector(&program.declarations, field)
+        || (crate::hir::owned_collection_record::vector(&program.declarations, field)
+            && crate::hir::owned_collection_record::admitted(
+                &ResolvedType::Nominal {
+                    declaration: record.clone(),
+                    arguments: Vec::new(),
+                },
+                &program.declarations,
+            ))
+}
+
+pub(super) fn template_ownership(
+    program: &ResolvedProgram,
+    template: &ResolvedFunctionTemplate,
+    ty: &ResolvedType,
+) -> OwnershipMode {
+    if let Some(ownership) = crate::vec_ops::template_ownership(template, ty) {
+        return ownership;
+    }
+    if let Some(ownership) = crate::box_ops::template_ownership(template, ty) {
+        return ownership;
+    }
+    if super::super::generic_variant::slot(
+        &program.declarations,
+        ty,
+        &template.id,
+        template.type_parameters.len(),
+    ) || (super::super::generic_variant::profile(program, template)
+        && *ty == ResolvedType::Bytes)
+        || super::super::generic_collection::slot(ty, &template.id, template.type_parameters.len())
+    {
+        return OwnershipMode::Own;
+    }
+    match ty {
+        ResolvedType::String => OwnershipMode::Own,
+        ResolvedType::Str => OwnershipMode::Borrow,
+        ResolvedType::Bytes if template_has_owned_record_slot(program, template) => {
+            OwnershipMode::Own
+        }
+        _ if super::super::generic_result::profile(template)
+            && (super::super::generic_result::slot(
+                ty,
+                &template.id,
+                template.type_parameters.len(),
+            ) || *ty == ResolvedType::Bytes) =>
+        {
+            OwnershipMode::Own
+        }
+        _ if crate::hir::type_reachability::is_nested_owned_byte_record_template(
+            &program.declarations,
+            ty,
+            &template.id,
+            template.type_parameters.len(),
+        ) =>
+        {
+            OwnershipMode::Own
+        }
+        _ => OwnershipMode::Value,
+    }
+}
+
+pub(super) fn template_has_owned_record_slot(
+    program: &ResolvedProgram,
+    template: &ResolvedFunctionTemplate,
+) -> bool {
+    if !template_contains_nested_owned_record_type(program, template) {
+        return template.params.iter().any(|parameter| {
+            parameter.ownership == OwnershipMode::Own
+                && crate::hir::type_reachability::is_flat_owned_byte_record_template(
+                    &program.declarations,
+                    &parameter.ty,
+                    &template.id,
+                    template.type_parameters.len(),
+                )
+        }) && crate::hir::type_reachability::is_flat_owned_byte_record_template(
+            &program.declarations,
+            &template.return_type,
+            &template.id,
+            template.type_parameters.len(),
+        );
+    }
+    let owned = template
+        .params
+        .iter()
+        .filter(|parameter| parameter.ownership == OwnershipMode::Own)
+        .collect::<Vec<_>>();
+    !owned.is_empty()
+        && crate::hir::type_reachability::is_nested_owned_byte_record_template(
+            &program.declarations,
+            &template.return_type,
+            &template.id,
+            template.type_parameters.len(),
+        )
+        && owned.iter().all(|parameter| {
+            crate::hir::type_reachability::is_nested_owned_byte_record_template(
+                &program.declarations,
+                &parameter.ty,
+                &template.id,
+                template.type_parameters.len(),
+            )
+        })
+}
+
+pub(super) fn template_contains_nested_owned_record_type(
+    program: &ResolvedProgram,
+    template: &ResolvedFunctionTemplate,
+) -> bool {
+    template
+        .params
+        .iter()
+        .map(|parameter| &parameter.ty)
+        .chain(std::iter::once(&template.return_type))
+        .any(|ty| {
+            crate::hir::type_reachability::is_nested_owned_byte_record_template(
+                &program.declarations,
+                ty,
+                &template.id,
+                template.type_parameters.len(),
+            ) && !crate::hir::type_reachability::is_flat_owned_byte_record_template(
+                &program.declarations,
+                ty,
+                &template.id,
+                template.type_parameters.len(),
+            )
+        })
+}
+
+pub(super) fn generic_instance_arguments_are_admitted(
+    program: &ResolvedProgram,
+    template_id: &DeclarationId,
+    arguments: &[ResolvedType],
+) -> bool {
+    if arguments.is_empty() {
+        return true;
+    }
+    if let Some(template) = program
+        .function_templates
+        .iter()
+        .find(|template| &template.id == template_id)
+    {
+        if crate::vec_ops::hir_arguments_are_admitted(program, template, arguments) {
+            return true;
+        }
+        if crate::box_ops::hir_arguments_are_admitted(program, template, arguments) {
+            return true;
+        }
+    }
+    let Some(template) = program
+        .function_templates
+        .iter()
+        .find(|template| &template.id == template_id)
+    else {
+        return false;
+    };
+    if super::super::generic_collection::profile(template) {
+        return super::super::generic_collection::arguments_for_count(
+            arguments,
+            template.type_parameters.len(),
+        );
+    }
+    if super::super::generic_variant::profile(program, template) {
+        return super::super::generic_variant::arguments(arguments);
+    }
+    if super::super::generic_result::profile(template) {
+        return super::super::generic_result::arguments(&template.return_type, arguments);
+    }
+    let nested = template_contains_nested_owned_record_type(program, template);
+    (arguments
+        .iter()
+        .all(|argument| matches!(argument, ResolvedType::I64 | ResolvedType::Bool))
+        && !nested)
+        || (arguments.len() == template.type_parameters.len()
+            && arguments.iter().all(|argument| {
+                crate::hir::type_reachability::nested_record_copy_scalar_is_admitted(argument)
+            })
+            && template_has_owned_record_slot(program, template))
+}
+
+pub(crate) fn resolved_type_contains_owned_bytes(
+    program: &ResolvedProgram,
+    ty: &ResolvedType,
+) -> bool {
+    let mut pending = vec![ty];
+    let mut visited = BTreeSet::new();
+    while let Some(ty) = pending.pop() {
+        match ty {
+            ResolvedType::Function { .. } => {}
+            ResolvedType::Bytes
+            | ResolvedType::OnceFunction
+            | ResolvedType::OnceFunctionI64
+            | ResolvedType::OnceFunctionI64Pair => return true,
+            ResolvedType::MutFunctionI64 => {}
+            ResolvedType::Nominal {
+                declaration,
+                arguments,
+            } => {
+                pending.extend(arguments);
+                if !visited.insert(declaration) {
+                    continue;
+                }
+                let Some(item) = program
+                    .types
+                    .iter()
+                    .find(|candidate| candidate.id == *declaration)
+                else {
+                    continue;
+                };
+                match &item.kind {
+                    ResolvedTypeDeclarationKind::Record { fields }
+                    | ResolvedTypeDeclarationKind::Class { fields, .. } => {
+                        pending.extend(fields.iter().map(|field| &field.ty));
+                    }
+                    ResolvedTypeDeclarationKind::Variant { cases } => pending.extend(
+                        cases
+                            .iter()
+                            .flat_map(|case| &case.fields)
+                            .map(|field| &field.ty),
+                    ),
+                    ResolvedTypeDeclarationKind::Resource { .. } => {}
+                }
+            }
+            ResolvedType::Never
+            | ResolvedType::Unit
+            | ResolvedType::I64
+            | ResolvedType::I32
+            | ResolvedType::Char
+            | ResolvedType::U8
+            | ResolvedType::Usize
+            | ResolvedType::ArrayU8(_)
+            | ResolvedType::F32
+            | ResolvedType::F64
+            | ResolvedType::Bool
+            | ResolvedType::String
+            | ResolvedType::Str
+            | ResolvedType::SliceU8
+            | ResolvedType::StringMap
+            | ResolvedType::TypeParameter { .. } => {}
+        }
+    }
+    false
+}
+
+pub(super) fn validate_nested_update_base_shape(
+    program: &ResolvedProgram,
+    base: &ResolvedExpr,
+    span: crate::ast::Span,
+) -> Result<(), Diagnostic> {
+    if crate::hir::owned_collection_record::admitted(&base.ty, &program.declarations) {
+        return Err(hir_error_at_span(
+            span,
+            "Vec-bearing record update is outside the nested collection-record profile",
+        ));
+    }
+    if (crate::hir::type_reachability::is_nested_nonflat_owned_byte_record(
+        &program.declarations,
+        &base.ty,
+    ) || crate::hir::owned_text_record::admitted(&base.ty, &program.declarations))
+        && !matches!(
+            &base.kind,
+            ResolvedExprKind::Place(place) if place.projections.is_empty()
+        )
+    {
+        return Err(hir_error_at_span(
+            span,
+            "SPX-O117: nested owned-record update requires an exact named owned base place",
+        ));
+    }
+    Ok(())
+}
+
+pub(super) fn resolved_type_is_flat_owned_byte_variant(
+    program: &ResolvedProgram,
+    ty: &ResolvedType,
+) -> bool {
+    if crate::iterator_ops::step_shape(&program.declarations, ty) {
+        return true;
+    }
+    let ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = ty
+    else {
+        return false;
+    };
+    if admitted_owned_byte_prelude_instance(declaration, arguments) {
+        return true;
+    }
+    if arguments.is_empty() {
+        return program.types.iter().any(|item| {
+            item.id == *declaration
+                && item.type_parameters.is_empty()
+                && matches!(&item.kind, ResolvedTypeDeclarationKind::Variant { cases }
+                    if cases.iter().flat_map(|case| &case.fields).any(|field| field.ty == ResolvedType::Bytes)
+                        && cases.iter().flat_map(|case| &case.fields).all(|field|
+                            field.ty == ResolvedType::Bytes
+                                || crate::hir::type_reachability::nested_record_copy_scalar_is_admitted(&field.ty)))
+        });
+    }
+    crate::hir::type_reachability::is_admitted_concrete_owned_byte_variant(
+        &program.declarations,
+        ty,
+    )
+}
+
+pub(super) fn resolved_type_is_direct_owned_variant(
+    program: &ResolvedProgram,
+    ty: &ResolvedType,
+) -> bool {
+    crate::hir::is_admitted_owned_string_variant(&program.declarations, ty)
+        || crate::hir::collection_outcome::runtime_admitted(&program.declarations, ty)
+}
+
+pub(super) fn requires_record_pattern(program: &ResolvedProgram, ty: &ResolvedType) -> bool {
+    !crate::hir::owned_collection_record::vector(&program.declarations, ty)
+        && matches!(ty, ResolvedType::Nominal { declaration, .. }
+            if program.declarations.declaration(declaration).is_some_and(|item| item.kind == DeclarationKind::Record))
+}
+
+#[cfg(test)]
+mod owned_bytes_tests;
