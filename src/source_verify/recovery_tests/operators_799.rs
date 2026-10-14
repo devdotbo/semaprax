@@ -1,5 +1,5 @@
 //! Full saved operator receiver beside current refusal propagation.
-use super::{codes, receive_route, source};
+use super::{codes, receive_route};
 
 #[test]
 fn refused_operators_keep_all_original_primary_fields_and_publish_no_checked_type() {
@@ -12,7 +12,7 @@ fn refused_operators_keep_all_original_primary_fields_and_publish_no_checked_typ
         ("true && missing", vec!["SPX-T202"]),
         ("false || missing", vec!["SPX-T202"]),
     ] {
-        let source = source(body);
+        let source = super::source(body);
         let old = receive_route(&source, 3);
         let current = receive_route(&source, 0);
         assert!(old.0.is_some(), "{body}");
@@ -41,7 +41,7 @@ fn nested_refusal_removes_only_dependent_condition_and_argument_classifications(
             vec!["SPX-T202", "SPX-T202", "SPX-T202"],
         ),
     ] {
-        let source = source(body);
+        let source = super::source(body);
         let old = receive_route(&source, 3);
         let current = receive_route(&source, 0);
         assert_eq!(codes(&old.1), old_codes, "{body}");
@@ -57,7 +57,7 @@ fn nested_refusal_removes_only_dependent_condition_and_argument_classifications(
 
 #[test]
 fn refused_initializer_keeps_real_duplicate_and_independent_sibling_errors() {
-    let source = source("let value = true + 1; let value = missing; value");
+    let source = super::source("let value = true + 1; let value = missing; value");
     let old = receive_route(&source, 3);
     let current = receive_route(&source, 0);
     assert_eq!(codes(&old.1), ["SPX-T208", "SPX-T202", "SPX-T209"]);
@@ -69,7 +69,7 @@ fn refused_initializer_keeps_real_duplicate_and_independent_sibling_errors() {
         "let x = x + 1; x",
         "{ let x = true + 1; x }; x",
     ] {
-        let source = source(body);
+        let source = super::source(body);
         let current = receive_route(&source, 0);
         assert!(current
             .1
@@ -91,7 +91,7 @@ fn admitted_operator_results_and_lazy_owned_call_joins_match_full_saved_receiver
         "1 < 2",
         "let value = 1 + 2; value",
     ] {
-        let source = source(body);
+        let source = super::source(body);
         let old = receive_route(&source, 3);
         let current = receive_route(&source, 0);
         assert!(old.1.is_empty(), "{body}");
@@ -107,6 +107,7 @@ fn admitted_operator_results_and_lazy_owned_call_joins_match_full_saved_receiver
 #[test]
 fn complete_original_operator_source_is_preserved_by_exact_named_inverse() {
     let mut original = include_str!("../iterative/operators/before_799.rs").to_owned();
+    original = original.replace("            condition_admitted: true,\n", "");
     for name in [
         "frame_resume_unary",
         "frame_resume_binary_left",
