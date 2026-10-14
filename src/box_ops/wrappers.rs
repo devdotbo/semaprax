@@ -66,8 +66,8 @@ pub(crate) fn source_wrapper(program: &dyn ProgramSource, function: &Function) -
         || function.params[0].name != "value"
         || function.params[0].mode
             != match op.param_ownership() {
-                OwnershipMode::Own => crate::ast::ParamMode::Own,
-                OwnershipMode::Borrow => crate::ast::ParamMode::Borrow,
+                crate::hir::OwnershipMode::Own => crate::ast::ParamMode::Own,
+                crate::hir::OwnershipMode::Borrow => crate::ast::ParamMode::Borrow,
                 _ => crate::ast::ParamMode::Value,
             }
         || !match op {
