@@ -258,7 +258,6 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_text.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs"),
-        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_metadata.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_metadata/admission.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_nested.rs"),
@@ -292,7 +291,6 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/frontier_tests.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/generic.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"),
-        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs"),
         include_str!("../src/cleanup_plan/replay/schema/paid_summary.rs"),
         include_str!("../src/cleanup_plan/replay/schema/paid_summary/original_receiver.rs"),
         include_str!("../src/cleanup_plan/replay/schema/paid_summary/tests.rs"),
@@ -570,3 +568,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "hir_module_boundaries/oracle_source_inventory.rs"]
+mod oracle_source_inventory;

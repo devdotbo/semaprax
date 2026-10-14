@@ -654,6 +654,19 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        undo(&mut current, r###"
+#[cfg(test)]
+#[path = "hir_module_boundaries/oracle_source_inventory.rs"]
+mod oracle_source_inventory;
+"###, "");
+        undo(&mut current, r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs"),
+"###, r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs"),
+"###);
+        undo(&mut current, r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"),
+"###, r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs"),
+"###);
         undo(&mut current, r###"                include_str!("../src/hir/validation/held_profiles.rs"),
                 include_str!("../src/hir/validation/held_profiles/tests.rs"),
                 include_str!("../src/hir/validation/held_profiles/source_audit.rs"),
