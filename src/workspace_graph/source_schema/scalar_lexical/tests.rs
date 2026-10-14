@@ -41,10 +41,13 @@ fn sources_with(app: &str, extra: &[(&str, &str)]) -> Vec<WorkspaceSource> {
 fn try_build_with(
     app: &str,
     extra: &[(&str, &str)],
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<
+    (WorkspaceGraphBuild, crate::workspace_graph::current_source::SourceFacts),
+    Vec<Diagnostic>,
+> {
     build_owned_retaining_sources_for_change(sources_with(app, extra), MAX_CHANGE_BUILDER_BYTES)
 }
-fn build(app: &str) -> (WorkspaceGraphBuild, Vec<WorkspaceSource>) {
+fn build(app: &str) -> (WorkspaceGraphBuild, crate::workspace_graph::current_source::SourceFacts) {
     try_build_with(app, &[]).unwrap()
 }
 fn module<'a>(build: &'a WorkspaceGraphBuild, path: &str) -> &'a WorkspaceResolvedModule {
@@ -277,13 +280,17 @@ fn current_source_namespace_member_and_layout_attacks_refuse_with_one_paid_repor
     let text = canonical(&source(BODY));
     let drift = canonical(&source(&BODY.replace("total+i", "total+i+1")));
     for attack in 0..10 {
-        let (mut build, mut sources) = build(&text);
+        let (mut build, sources) = build(&text);
         assert!(
             received(&build, PATH, &sources)
                 .unwrap_or_else(|_| panic!("paid source receipt required"))
                 .is_some(),
             "{attack}"
         );
+        // Preserve the original owned hostile source mutations after genuine
+        // metadata-backed positive admission, without mutating shared custody.
+        let mut sources: Vec<WorkspaceSource> =
+            sources.iter().map(|source| source.input().clone()).collect();
         let at = sources.iter().position(|s| s.path == PATH).unwrap();
         // Record exact current membership before corrupting the path. A lookup
         // by the stale authored path would panic before the paid receiver.

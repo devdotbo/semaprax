@@ -212,7 +212,7 @@ fn explicit_legacy_materialization_preserves_full_owned_report_and_original_pass
 
 fn scalar_build() -> (
     crate::workspace_graph::WorkspaceGraphBuild,
-    Vec<crate::workspace_graph::WorkspaceSource>,
+    crate::workspace_graph::current_source::SourceFacts,
 ) {
     // Exact persisted terminated-guard body from the independent scalar owner.
     const BODY: &str = "let mut i=0; let mut total=0; while i<3 { i=i+1; if i==2 {continue;} else {0}; total=total+i; 0 } total";
@@ -292,7 +292,7 @@ fn actual_schema_receiving_caller_keeps_zero_short_exact_paid_owner_until_final_
 }
 #[test]
 fn actual_source_drift_keeps_full_prior_literal_and_whole_receiving_debit_drop() {
-    let (build, mut sources) = scalar_build();
+    let (build, sources) = scalar_build();
     let old_success = build.source_graph_schemas_receiving(&sources).unwrap();
     assert_eq!(
         build
@@ -300,6 +300,10 @@ fn actual_source_drift_keeps_full_prior_literal_and_whole_receiving_debit_drop()
             .unwrap(),
         old_success
     );
+    // Independent owned hostile proposal; the actual retained metadata
+    // already passed both original receiving comparisons above.
+    let mut sources: Vec<crate::workspace_graph::WorkspaceSource> =
+        sources.iter().map(|source| source.input().clone()).collect();
     let before = sources[0].source.clone();
     let drift = "module calculator.app; @id(\"calculator.app.main\") fn main()->i64 { let mut i=0; let mut total=0; while i<3 { i=i+1; if i==2 {continue;} else {0}; total=total+i+1; 0 } total }";
     sources[0].source = crate::format::canonical(
