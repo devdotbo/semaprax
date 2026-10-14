@@ -54,6 +54,11 @@
           "name": "exact-current-hook-1",
           "before": "\n#[cfg(test)]\npub(super) mod original;\n",
           "after": "\n#[cfg(test)]\npub(super) mod original;\n\n#[cfg(test)]\nmod intrinsic_tests;\n#[cfg(test)]\nmod original_intrinsics;\n"
+        },
+        {
+          "name": "test-only-complete-original-authentication-bridge",
+          "before": "",
+          "after": "\n/// Test bridge to the complete independently compiled original constructor.\n#[cfg(test)]\npub(in crate::hir) fn original_authentication_error(program: &ResolvedProgram) -> Option<Diagnostic> {\n    original::ConstructorSeed::authenticate(program, None).err()\n}\n"
         }
       ]
     },
