@@ -4,7 +4,7 @@ use super::*;
 use crate::bounded_output::classifier_string::ClassifierLedger;
 use crate::hir::{DeclarationIndex, TypeFactsPayer};
 
-struct Payer<'a> {
+pub(super) struct Payer<'a> {
     function: &'a ResolvedFunction,
     budget: &'a mut ReplayBudget,
     ledger: ClassifierLedger,

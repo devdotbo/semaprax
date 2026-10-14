@@ -253,7 +253,7 @@ impl ProjectFrontendCache {
             }
         }
         for path in current.keys() {
-            if reset || !self.entries.contains_key(*path) {
+            if reset || !self.entries.contains_key(path) {
                 invalidated.insert((*path).to_owned());
             }
         }

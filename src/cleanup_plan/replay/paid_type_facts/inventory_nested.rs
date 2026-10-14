@@ -42,10 +42,9 @@ pub(super) fn record_shape(
         };
         match frame {
             Frame::Enter(ty, depth) => {
-                if metadata::vector(index, ty, payer)? {
-                    owned = true;
-                    leaves += 1;
-                } else if matches!(ty, ResolvedType::String | ResolvedType::Bytes) {
+                if metadata::vector(index, ty, payer)?
+                    || matches!(ty, ResolvedType::String | ResolvedType::Bytes)
+                {
                     owned = true;
                     leaves += 1;
                 } else if crate::vec_ops::resolved_element_is_admitted(ty) {

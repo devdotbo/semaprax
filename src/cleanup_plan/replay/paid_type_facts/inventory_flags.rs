@@ -262,11 +262,9 @@ fn compute(
                     push(&mut results, COPY, payer)?;
                     continue;
                 }
-                if let Some((_, flags)) = scalar(&ty) {
-                    if let Some(flags) = flags {
-                        push(&mut results, flags, payer)?;
-                        continue;
-                    }
+                if let Some((_, Some(flags))) = scalar(&ty) {
+                    push(&mut results, flags, payer)?;
+                    continue;
                 }
                 let native = metadata::admission::native_owned(index, &ty, payer)?
                     || families::resource_result(index, &ty, payer)?;
