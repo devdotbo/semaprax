@@ -30,6 +30,21 @@
       "package": "semaprax",
       "harness": "lib",
       "selector": "source_verify::declaration::functions::signature_refusal::tests::public_error_receipts_and_complete_drop_keep_zero_and_sticky_unpaid_boundary_explicit"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::known_outer_generic_parameter_profile_survives_a_missing_nested_component"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::actual_generic_contract_entries_share_exact_template_origin_and_keep_independent_roots"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::actual_contract_receiver_rejects_six_field_forgeries_and_foreign_body_origins"
     }
   ],
   "existing_failed_owner": "source_verify::recovery_tests::extended_components::generic_current_parameter_refusal_authenticates_exact_receipt_and_keeps_real_sibling",

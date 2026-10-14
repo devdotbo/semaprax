@@ -14,6 +14,15 @@ pub(super) fn unknown_component(
     types: &TypeTable<'_>,
     parameters: &HashSet<&str>,
 ) -> bool {
+    // A missing child cannot erase a profile failure of its known outer
+    // carrier (for example a by-value record or function-value signature).
+    // Only this slot's own unresolved root identity defers its shape check.
+    let Type::Named { name, .. } = ty else {
+        return false;
+    };
+    if parameters.contains(name.as_str()) || types.declaration(name).is_some() {
+        return false;
+    }
     let mut scratch = Vec::new();
     crate::source_verify::declared_type::check_declared_type(
         program,

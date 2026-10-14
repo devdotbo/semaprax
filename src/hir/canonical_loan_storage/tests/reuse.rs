@@ -277,6 +277,7 @@ fn complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are
     for addition in [
         "    let _stage = crate::bounded_output::reservation_stage_guard(\n        crate::bounded_output::ReservationStage::CanonicalLoanStorage,\n    );\n",
         "\n#[cfg(test)]\nmod stage_tests;\n",
+        "\n#[cfg(test)]\nmod sealed_before_stage;\n",
     ] {
         assert_eq!(projected.matches(addition).count(), 1);
         projected = projected.replacen(addition, "", 1);

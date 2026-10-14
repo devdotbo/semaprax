@@ -30,6 +30,11 @@
       "package": "semaprax",
       "harness": "lib",
       "selector": "workspace_graph::diagnostics::refusal_tests::final_attempt_help_never_imports_canonical_label_from_an_earlier_refused_attempt"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::caller::stage_tests::actual_shared_seal_stage_preserves_exact_short_zero_numeric_receipts_and_complete_drop"
     }
   ],
   "required_existing": [

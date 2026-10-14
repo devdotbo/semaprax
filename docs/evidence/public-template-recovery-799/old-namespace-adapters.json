@@ -66,6 +66,12 @@
       "before": "use self::identity::",
       "after": "use super::identity::",
       "count": 1
+    },
+    {
+      "source": "src/source_verify/declaration.rs",
+      "before": "use super::identity::{check_interface_identities, check_type_identities};\n",
+      "after": "use super::identity::{check_interface_identities, check_type_identities};\nuse super::fusion;\n",
+      "count": 1
     }
   ],
   "note": "Exact namespace/visibility/registration adapters only; complete production bodies retained. Prior test-only wrapper/registrations omitted to avoid duplicate nested harness registration."

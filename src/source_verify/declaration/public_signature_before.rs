@@ -12,6 +12,7 @@ use super::functions::public_signature_before::{
     check_function_bodies, check_function_declarations, check_generic_function_cycles_with_types,
 };
 use super::identity::{check_interface_identities, check_type_identities};
+use super::fusion;
 use crate::source_verify::capacity::{source_capacity_functions, verify_selected_capacity};
 use crate::source_verify::diagnostics::error;
 use crate::source_verify::type_table::TypeTable;

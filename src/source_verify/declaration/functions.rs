@@ -18,8 +18,8 @@ use crate::source_verify::declared_type::{
 };
 use crate::source_verify::declared_type::{declared_collection::reject_function, generic_result};
 use crate::source_verify::diagnostics::{
-    error, invalid_stable_id, reject_native_unit_value, reject_reserved_host_id, require_bool,
-    source_identifier,
+    error, invalid_stable_id, reject_native_unit_value, reject_reserved_host_id,
+    require_bool_with_signature, source_identifier,
 };
 use crate::source_verify::iterative::check_expr_with_signature_view;
 mod signature_refusal;
@@ -1176,7 +1176,7 @@ pub(super) fn check_function_bodies<'p>(
                         ));
                     }
                 });
-                require_bool(
+                require_bool_with_signature(
                     program,
                     function,
                     contract,
@@ -1186,6 +1186,7 @@ pub(super) fn check_function_bodies<'p>(
                     None,
                     diagnostics,
                     "precondition",
+                    signature_refusal::origin(program, template, function),
                 );
             }
 
@@ -1273,7 +1274,7 @@ pub(super) fn check_function_bodies<'p>(
                         ));
                     }
                 });
-                require_bool(
+                require_bool_with_signature(
                     program,
                     function,
                     contract,
@@ -1283,6 +1284,7 @@ pub(super) fn check_function_bodies<'p>(
                     Some(&function.return_type),
                     diagnostics,
                     "postcondition",
+                    signature_refusal::origin(program, template, function),
                 );
             }
 

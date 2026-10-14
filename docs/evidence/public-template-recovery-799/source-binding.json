@@ -3,12 +3,13 @@
   "qualification": "source-only; unexecuted controls",
   "current_source_sha256": {
     "src/source_verify/declaration.rs": "11b26f1bc56c129657268cf90436753cfaf037fa7c37ec49596284fd5d1bdcd8",
-    "src/source_verify/declaration/functions.rs": "29d0019f9348e39d97692e7fbdc81ed3e1ab2f9787bd293ec10383e547eb53a1",
+    "src/source_verify/declaration/functions.rs": "f35f83bf50de28c427b0c3a36a46219d45f18b8438dcdf5a58955a8e2e328898",
     "src/source_verify/iterative.rs": "63b2ba9fa75b9a8c5ff94630dfac3a680b2738f24fa10ffb13dac2070900bafc",
-    "src/source_verify/declaration/functions/signature_refusal.rs": "974a29e3bfaf09d1a3e49b394f46a13516349b3f00891202070cbfbb58970697",
-    "src/source_verify/declaration/functions/signature_refusal/tests.rs": "7bef1f74b02bd27056eec0a2f77fd555c54e55b7c6bd335aa6ec13eb8a0969fb",
+    "src/source_verify/declaration/functions/signature_refusal.rs": "b2dcf6f67e822d737c606bad10096f5c9b478a850d06197df9e707333971845c",
+    "src/source_verify/declaration/functions/signature_refusal/tests.rs": "d9e5ff27dbf7e368973eba6eb65cceddf9fdc482ccdae83bfdedc7c5315689d7",
     "src/source_verify/declaration/functions/public_signature_before.rs": "21cf514809f4f9d271d5497744d948203ecca1afbd924c4a22061884117bf129",
-    "src/source_verify/declaration/public_signature_before.rs": "32917afc0761c0d21c7b50990b828c18ffe386026b45fef6231225079eb3dfc3"
+    "src/source_verify/declaration/public_signature_before.rs": "7c385c983031164a5f1e292256c7ec0b4a387439ff7ab414050aab89f9a1fab3",
+    "src/source_verify/diagnostics.rs": "95bd8721029021074f39f5c76e4e0183771831112f591143e4a42bd90ce670d9"
   },
   "actual_prior_failure": {
     "path": "/Volumes/Semaprax/lane-prompts/large-next-consolidated-4ec48-nine-20261015/owning-selected-214.log",
@@ -18,5 +19,5 @@
   },
   "no_authentication_regeneration": true,
   "no_paid_verifier_claim": true,
-  "new_owner_count": 6
+  "new_owner_count": 9
 }

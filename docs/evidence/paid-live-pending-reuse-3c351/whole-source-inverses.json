@@ -80,6 +80,11 @@
     "hooks": [
       {
         "before": "",
+        "after": "            include_str!(\"../../../../../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs\"),\n",
+        "count": 1
+      },
+      {
+        "before": "",
         "after": "            include_str!(\"../../../../../src/loop_calls/byte_writer/source_index_original.rs\"),\n",
         "count": 2
       },

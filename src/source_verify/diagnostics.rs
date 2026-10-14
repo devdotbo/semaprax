@@ -2,7 +2,7 @@
 //! predicates that decide whether an identifier or scalar type is admitted.
 
 use super::binding::{Availability, Binding, CheckedValue};
-use super::iterative::check_expr_with_helpers_view;
+use super::iterative::{check_expr_with_helpers_view, check_expr_with_signature_view};
 use super::type_table::TypeTable;
 use crate::ast::program_source::ProgramSource;
 use crate::ast::{Expr, ExprKind, Function, ParamMode, Span, Type};
@@ -172,6 +172,33 @@ pub(super) fn require_bool(
     diagnostics: &mut Vec<Diagnostic>,
     kind: &str,
 ) {
+    require_bool_with_signature(
+        program,
+        function,
+        contract,
+        variables,
+        functions,
+        types,
+        result_type,
+        diagnostics,
+        kind,
+        None,
+    );
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn require_bool_with_signature<'p>(
+    program: &'p dyn ProgramSource,
+    function: &'p Function,
+    contract: &'p Expr,
+    variables: &HashMap<String, Binding>,
+    functions: &'p HashMap<&'p str, &'p Function>,
+    types: &'p TypeTable<'p>,
+    result_type: Option<&'p Type>,
+    diagnostics: &mut Vec<Diagnostic>,
+    kind: &str,
+    signature: Option<super::declaration::SignatureOrigin<'p>>,
+) {
     contract.visit_calls(&mut |callee, span| {
         if variables.contains_key(callee) { return; }
         if let Some(target) = functions.get(callee) {
@@ -223,19 +250,35 @@ pub(super) fn require_bool(
             );
         }
     }
-    let (contract_value, refusal_view) = check_expr_with_helpers_view(
-        program,
-        function,
-        contract,
-        &mut contract_variables,
-        functions,
-        types,
-        result_type,
-        false,
-        diagnostics,
-        None,
-        None,
-    );
+    let (contract_value, refusal_view) = match signature {
+        Some(signature) => check_expr_with_signature_view(
+            program,
+            function,
+            contract,
+            &mut contract_variables,
+            functions,
+            types,
+            result_type,
+            false,
+            diagnostics,
+            None,
+            None,
+            Some(signature),
+        ),
+        None => check_expr_with_helpers_view(
+            program,
+            function,
+            contract,
+            &mut contract_variables,
+            functions,
+            types,
+            result_type,
+            false,
+            diagnostics,
+            None,
+            None,
+        ),
+    };
     if let Some(value) = contract_value {
         if value.native_unit {
             reject_native_unit_value(program, contract, &value, diagnostics);

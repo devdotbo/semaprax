@@ -430,3 +430,6 @@ pub(super) fn append_for_receiving(
 
 #[cfg(test)]
 mod stage_tests;
+
+#[cfg(test)]
+mod sealed_before_stage;

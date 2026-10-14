@@ -12,15 +12,15 @@
     },
     {
       "path": "src/hir/canonical_loan_storage/caller.rs",
-      "sha256": "fc81b10797c6cba14ddaf2a375cadf1c2dc34a3af936e0738b321d45d39858c0"
+      "sha256": "bc7807b201ecd544c1241812b2a0e53f25ee8d3d57f7c71e9a8e036a13da7acd"
     },
     {
       "path": "src/hir/canonical_loan_storage/caller/stage_tests.rs",
-      "sha256": "637a3a01bbf3495f55bf53ed998f40114d64c275ee0a4754294a408194c675b0"
+      "sha256": "e90241af60e40d651d1d555dccfe1b0651f44b33ffc15bc5f2a21c6bcb30f081"
     },
     {
       "path": "src/hir/canonical_loan_storage/tests/reuse.rs",
-      "sha256": "885d9992c4e560f98914acd1bc438cf1b41295c8b1306b87146327f82eccb16d"
+      "sha256": "ddb347ae3c429a12e9037a2523bff4040a1793b8e9785d9ec8ba91a82f2f0789"
     },
     {
       "path": "src/workspace_graph/diagnostics/refusal_tests.rs",
@@ -29,6 +29,10 @@
     {
       "path": "docs/WORKSPACE-SEMANTIC-GRAPH-V1.md",
       "sha256": "9458bcb704d17c7ddeea350fbe2963008a48c023276c90193bcf894a9249cf18"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller/sealed_before_stage.rs",
+      "sha256": "e0e407c6d67b7bd0c38a2fa081144d27323f5addb9528ce487a71172c5c17475"
     }
   ],
   "unchanged_production_and_complete_old_sources": [

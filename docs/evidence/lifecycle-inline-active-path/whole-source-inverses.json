@@ -21,6 +21,10 @@
     "edits": [
       {
         "before": "",
+        "after": "                    include_str!(\"../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs\"),\n"
+      },
+      {
+        "before": "",
         "after": "                    include_str!(\"../src/bounded_output/canonical_stage_tests.rs\"),\n                    include_str!(\"../src/hir/canonical_loan_storage/caller/stage_tests.rs\"),\n"
       },
       {
@@ -38,6 +42,10 @@
     "archive": "interop_source_inventory.rs.before.txt",
     "original_sha256": "49c78bc2b79880849076544e19874e744374f238ee0c0f49e38a7d5c3bb47316",
     "edits": [
+      {
+        "before": "",
+        "after": "            include_str!(\"../../../../../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs\"),\n"
+      },
       {
         "before": "",
         "after": "            include_str!(\"../../../../../src/bounded_output/canonical_stage_tests.rs\"),\n            include_str!(\"../../../../../src/hir/canonical_loan_storage/caller/stage_tests.rs\"),\n"
