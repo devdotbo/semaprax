@@ -1,5 +1,10 @@
 # Changelog
 
+- Keep small Program teardown frontiers inline without changing original AST
+  destruction order or source/custody identities. Preserve the complete original
+  destructor/deep owner and add receiving/free-order controls; wider ordinary
+  spill remains unpriced and current qualification is pending.
+
 - Author current parsed-source custody and deferred checked cache keys (#796).
   Reuse actual restored source owners for Project linking, validate full key/path
   associations before publication, and retain metadata separately from ASTs.

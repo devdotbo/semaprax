@@ -2,6 +2,12 @@ use std::{fmt, mem};
 
 pub(crate) mod program_source;
 
+#[path = "ast/drop_frontier.rs"]
+mod drop_frontier;
+#[cfg(test)]
+#[path = "ast/drop_original.rs"]
+mod drop_original;
+
 #[doc(hidden)]
 pub mod expression_statement;
 #[path = "ast/session_protocol.rs"]
@@ -165,10 +171,10 @@ impl Drop for Program {
         // each node with a leaf before releasing its children from worklists.
         let mut functions = mem::take(&mut self.functions);
         let _agents = mem::take(&mut self.agents);
-        let mut types = Vec::new();
-        let mut expressions = Vec::new();
-        let mut patterns = Vec::new();
-        let mut record_patterns = Vec::new();
+        let mut types = drop_frontier::Stack::new();
+        let mut expressions = drop_frontier::Stack::new();
+        let mut patterns = drop_frontier::Stack::new();
+        let mut record_patterns = drop_frontier::Stack::new();
 
         for declaration in mem::take(&mut self.types) {
             if let Some(parent) = declaration.extends {

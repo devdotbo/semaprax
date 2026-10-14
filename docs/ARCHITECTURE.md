@@ -951,6 +951,13 @@ contract](DOCTOR-PROBE-V1.md).
 ### Canonical source
 
 `src/lexer.rs`, `src/parser.rs`, and `src/ast.rs` parse human-readable source.
+`ast/drop_frontier.rs` owns the four inline Program-teardown frontiers, preserving
+all original child scheduling and field destruction. Wider frontiers retain
+ordinary Vec spill, and the existing method-function accumulator remains an
+unpriced compatibility boundary. Drop never refuses destruction or grants a
+budget. `ast/drop_original.rs` compiles the complete prior destructor and its
+original deep-root owner independently; whole-source and actual free-order
+controls accompany the unchanged custody receiving observer.
 `ast/program_source` owns a sealed two-slice compiler input and a concrete
 presentation identity. `workspace_graph/expected_projection/borrowed_leaf`
 lends authored AST collections for admitted import-free synthetic inputs and

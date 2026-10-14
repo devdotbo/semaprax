@@ -1,0 +1,18 @@
+{
+  "harness": "semaprax::lib",
+  "qualification": "source-authored declarations only; unexecuted; root --list/count required",
+  "selectors": [
+    "ast::iterative_program_drop_tests::program_drop_is_iterative_for_every_recursive_ast_root_at_exact_depth",
+    "ast::drop_original::tests::program_drop_is_iterative_for_every_recursive_ast_root_at_exact_depth",
+    "ast::drop_frontier::tests::inline_spill_reentry_and_extend_keep_complete_vec_lifo_and_every_value",
+    "ast::drop_frontier::tests::inline_frontiers_acquire_no_heap_for_empty_and_small_receivers",
+    "ast::iterative_program_drop_tests::inline_program_teardown_and_zero_refusal_input_keep_full_owned_roots_without_acquisition",
+    "ast::iterative_program_drop_tests::complete_program_drop_keeps_original_actual_function_body_and_metadata_free_order",
+    "ast::iterative_program_drop_tests::ordinary_spill_teardown_keeps_exact_depth_wide_patterns_and_no_recursive_fallback",
+    "ast::iterative_program_drop_tests::entire_program_source_and_original_destructor_test_stay_exact_with_four_carrier_hooks",
+    "workspace_graph::custody::tests::actual_custody_receiving_backing_complete_drop_exact_short_and_zero_sticky",
+    "workspace_graph::custody::tests::deferred_key_reads_only_after_exact_restored_custody_and_rejects_equal_clone",
+    "workspace_graph::custody::tests::metadata_does_not_retain_ast_generations_and_deferred_receipt_keeps_original_payer",
+    "workspace::semantic_read::tests::actual_authority_finish_moves_exact_paid_setup_refusal_through_unlock_and_drop"
+  ]
+}
