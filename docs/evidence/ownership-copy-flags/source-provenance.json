@@ -39,6 +39,36 @@
         "to": "        Self::from_constructor(seed, canonical_loans, Some(profiles))\n    }\n    fn from_constructor(\n        seed: constructor_seed::ConstructorSeed<'a>,\n"
       },
       {
+        "name": "812-held-profile-exact-hook-2",
+        "from": "mod executable_profiles;\nmod generic_record_composition;\nmod generic_template;\nmod held_profiles;\nmod host_command;\nmod lexical_exit;\nmod native_borrow;\nmod nominal_facts;\nmod owned_buffer;\nmod owned_result_try;\npub(super) mod owner_renewal;\nmod ownership_flags;\nmod proof_return;\nmod record_pattern;\nmod record_traversal;\n",
+        "to": "mod executable_profiles;\nmod generic_record_composition;\nmod generic_template;\nmod host_command;\nmod lexical_exit;\nmod native_borrow;\nmod nominal_facts;\nmod ownership_flags;\nmod owned_buffer;\nmod owned_result_try;\npub(super) mod owner_renewal;\nmod proof_return;\nmod record_pattern;\nmod record_traversal;\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-3",
+        "from": "                Some(_) => return Err(hir_error_static(\n                    \"executable profile observations do not belong to the current declaration index\",\n                )),\n                None => executable_profiles::Lookup::for_program(seed.program)?,\n            },\n            functions: seed.functions,\n            expression_ids: identity_directory::Set::new(),\n",
+        "to": "                Some(_) => return Err(hir_error_static(\n                    \"executable profile observations do not belong to the current declaration index\",\n                )),\n                None => executable_profiles::Lookup::new(&seed.program.declarations)?,\n            },\n            functions: seed.functions,\n            expression_ids: identity_directory::Set::new(),\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-4",
+        "from": "                            }\n                            let mut intrinsic_parameters = None;\n                            let mut borrowed_parameters = None;\n                            let mut held_parameters = None;\n                            let retained_program = self.program;\n                            let (params, return_type) = if let Some(signature) =\n                                self.intrinsic_signature(callee, type_arguments, instance, args)?\n",
+        "to": "                            }\n                            let mut intrinsic_parameters = None;\n                            let mut borrowed_parameters = None;\n                            let retained_program = self.program;\n                            let (params, return_type) = if let Some(signature) =\n                                self.intrinsic_signature(callee, type_arguments, instance, args)?\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-5",
+        "from": "                                    call_signature::ResultType::Owned(op.return_type()),\n                                )\n                            } else {\n                                let retained_target = if self.executable_profiles.is_bound() {\n                                    held_parameters =\n                                        self.executable_profiles.call(callee, instance.as_ref());\n                                    held_parameters.map(|call| call.function())\n                                } else {\n                                    retained_program.resolve_call_target(callee, instance.as_ref())\n                                };\n                                let (params, return_type, target_effects) = if let Some(target) =\n                                    retained_target\n                                {\n                                    borrowed_parameters = Some(target.params.as_slice());\n                                    (\n",
+        "to": "                                    call_signature::ResultType::Owned(op.return_type()),\n                                )\n                            } else {\n                                let (params, return_type, target_effects) = if let Some(target) =\n                                    retained_program.resolve_call_target(callee, instance.as_ref())\n                                {\n                                    borrowed_parameters = Some(target.params.as_slice());\n                                    (\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-6",
+        "from": "                                (params, return_type)\n                            };\n                            let params = if let Some(parameters) = borrowed_parameters {\n                                held_parameters.map_or(\n                                    CallParameters::Borrowed(parameters),\n                                    CallParameters::Held,\n                                )\n                            } else {\n                                intrinsic_parameters.unwrap_or(CallParameters::Owned(params))\n                            };\n",
+        "to": "                                (params, return_type)\n                            };\n                            let params = if let Some(parameters) = borrowed_parameters {\n                                CallParameters::Borrowed(parameters)\n                            } else {\n                                intrinsic_parameters.unwrap_or(CallParameters::Owned(params))\n                            };\n",
+        "count": 1
+      },
+      {
         "name": "src/hir/validation.rs: exact full-current ownership hook 1",
         "from": "mod native_borrow;\nmod nominal_facts;\nmod ownership_flags;\nmod owned_buffer;\nmod owned_result_try;\n",
         "to": "mod native_borrow;\nmod nominal_facts;\nmod owned_buffer;\nmod owned_result_try;\n",
@@ -54,6 +84,24 @@
         "name": "src/hir/validation.rs: exact full-current ownership hook 3",
         "from": "            return Ok(OwnershipMode::Value);\n        }\n        #[cfg(test)]\n        if ownership_flags::original_selected() {\n            return self.expected_ownership_before(ty, non_copy);\n        }\n        self.borrowed_ownership_copy(ty)?\n            .map(|facts| {\n                if facts {\n                    OwnershipMode::Value\n                } else {\n",
         "to": "            return Ok(OwnershipMode::Value);\n        }\n        self.borrowed_type_facts(ty)?\n            .map(|facts| {\n                if facts.copy {\n                    OwnershipMode::Value\n                } else {\n",
+        "count": 1
+      },
+      {
+        "name": "824-current-constructor-lookup",
+        "from": "        let canonical_loans = canonical_loans::Lookup::current(&seed)?;\n        Self::from_constructor(seed, canonical_loans, None)",
+        "to": "        let canonical_loans = canonical_loans::Inventory::rebuild(program)?;\n        Self::from_constructor(seed, canonical_loans::Lookup::Legacy(canonical_loans), None)",
+        "count": 1
+      },
+      {
+        "name": "824-current-shared-storage-input",
+        "from": "        storage: Option<canonical_loans::Lookup<'a>>,\n        profiles: executable_profiles::Lookup<'a>,",
+        "to": "        storage: Option<&'a super::canonical_loan_storage::Storage<'a>>,\n        profiles: executable_profiles::Lookup<'a>,",
+        "count": 1
+      },
+      {
+        "name": "824-current-shared-storage-selection",
+        "from": "            storage\n        } else {\n            canonical_loans::Lookup::current(&seed)?",
+        "to": "            canonical_loans::Lookup::Borrowed(storage)\n        } else {\n            canonical_loans::Lookup::Legacy(canonical_loans::Inventory::rebuild(program)?)",
         "count": 1
       }
     ],
@@ -110,6 +158,72 @@
       }
     ],
     "src/hir/validation/call_parameters.rs": [
+      {
+        "name": "812-held-profile-exact-hook-1",
+        "from": "    VecField(&'a [ResolvedExpr]),\n    Owned(Vec<ResolvedParam>),\n    Borrowed(&'a [ResolvedParam]),\n    Held(held_profiles::Call<'a>),\n    Byte(ByteOp),\n    String(crate::string_ops::StringOp),\n    Str(crate::str_ops::StrOp),\n",
+        "to": "    VecField(&'a [ResolvedExpr]),\n    Owned(Vec<ResolvedParam>),\n    Borrowed(&'a [ResolvedParam]),\n    Byte(ByteOp),\n    String(crate::string_ops::StringOp),\n    Str(crate::str_ops::StrOp),\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-2",
+        "from": "    pub(super) ty: &'a ResolvedType,\n    pub(super) ownership: OwnershipMode,\n    identity: ParameterIdentity<'a>,\n    held: Option<held_profiles::Parameter<'a>>,\n}\n\nenum ParameterIdentity<'a> {\n",
+        "to": "    pub(super) ty: &'a ResolvedType,\n    pub(super) ownership: OwnershipMode,\n    identity: ParameterIdentity<'a>,\n}\n\nenum ParameterIdentity<'a> {\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-3",
+        "from": "}\n\nimpl<'a> ParameterView<'a> {\n    pub(in crate::hir::validation) fn held_view(carrier: held_profiles::Parameter<'a>) -> Self {\n        let parameter = carrier.param();\n        Self {\n            ty: &parameter.ty,\n            ownership: parameter.ownership,\n            identity: ParameterIdentity::Owned(&parameter.id),\n            held: Some(carrier),\n        }\n    }\n    pub(super) fn held(&self) -> Option<held_profiles::Parameter<'a>> {\n        self.held\n    }\n    fn owned(parameter: &'a ResolvedParam) -> Self {\n        Self {\n            ty: &parameter.ty,\n            ownership: parameter.ownership,\n            identity: ParameterIdentity::Owned(&parameter.id),\n            held: None,\n        }\n    }\n}\n",
+        "to": "}\n\nimpl<'a> ParameterView<'a> {\n    fn owned(parameter: &'a ResolvedParam) -> Self {\n        Self {\n            ty: &parameter.ty,\n            ownership: parameter.ownership,\n            identity: ParameterIdentity::Owned(&parameter.id),\n        }\n    }\n}\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-4",
+        "from": "                    OwnershipMode::Value\n                },\n                identity: ParameterIdentity::VecField(index),\n                held: None,\n            },\n            Self::LiteralFormat(args) => ParameterView {\n                ty: &args[index].ty,\n",
+        "to": "                    OwnershipMode::Value\n                },\n                identity: ParameterIdentity::VecField(index),\n            },\n            Self::LiteralFormat(args) => ParameterView {\n                ty: &args[index].ty,\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-5",
+        "from": "                    OwnershipMode::Value\n                },\n                identity: ParameterIdentity::LiteralFormat(index),\n                held: None,\n            },\n            Self::Owned(parameters) => ParameterView::owned(&parameters[index]),\n            Self::Borrowed(parameters) => ParameterView::owned(&parameters[index]),\n            Self::Held(call) => ParameterView::held_view(call.parameter(index)),\n            Self::Byte(operation) => ParameterView {\n                ty: &operation.param_types()[index],\n                ownership: operation.param_ownership(index),\n                identity: ParameterIdentity::Byte(*operation, index),\n                held: None,\n            },\n            Self::String(operation) => ParameterView {\n                ty: &operation.param_types()[index],\n                ownership: operation.param_ownership(index),\n                identity: ParameterIdentity::String(*operation, index),\n                held: None,\n            },\n            Self::Str(operation) => {\n                let ty = &operation.param_types()[index];\n",
+        "to": "                    OwnershipMode::Value\n                },\n                identity: ParameterIdentity::LiteralFormat(index),\n            },\n            Self::Owned(parameters) => ParameterView::owned(&parameters[index]),\n            Self::Borrowed(parameters) => ParameterView::owned(&parameters[index]),\n            Self::Byte(operation) => ParameterView {\n                ty: &operation.param_types()[index],\n                ownership: operation.param_ownership(index),\n                identity: ParameterIdentity::Byte(*operation, index),\n            },\n            Self::String(operation) => ParameterView {\n                ty: &operation.param_types()[index],\n                ownership: operation.param_ownership(index),\n                identity: ParameterIdentity::String(*operation, index),\n            },\n            Self::Str(operation) => {\n                let ty = &operation.param_types()[index];\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-6",
+        "from": "                        OwnershipMode::Value\n                    },\n                    identity: ParameterIdentity::Str(*operation, index),\n                    held: None,\n                }\n            }\n        }\n",
+        "to": "                        OwnershipMode::Value\n                    },\n                    identity: ParameterIdentity::Str(*operation, index),\n                }\n            }\n        }\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-7",
+        "from": "            | Self::VecField(_) => 0,\n            // Program retention already owns and accounts for this immutable\n            // signature. The call frame adds only its inline slice descriptor.\n            Self::Borrowed(_) | Self::Held(_) => 0,\n        }\n    }\n}\n",
+        "to": "            | Self::VecField(_) => 0,\n            // Program retention already owns and accounts for this immutable\n            // signature. The call frame adds only its inline slice descriptor.\n            Self::Borrowed(_) => 0,\n        }\n    }\n}\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-8",
+        "from": "            return self.validate_argument_ownership_view_before(argument, param);\n        }\n        let actual = argument.ownership;\n        let facts = self\n            .executable_profiles\n            .copy_for_param(&param, |ty| self.borrowed_ownership_copy(ty))?\n            .ok_or_else(|| {\n                hir_error_at_span(\n                    argument.span,\n                    format!(\"type `{}` has no semantic facts\", param.ty.identity_key()),\n                )\n            })?;\n        let valid = if facts {\n            actual == OwnershipMode::Value && param.ownership == OwnershipMode::Value\n        } else {\n",
+        "to": "            return self.validate_argument_ownership_view_before(argument, param);\n        }\n        let actual = argument.ownership;\n        let facts = self.borrowed_ownership_copy(param.ty)?.ok_or_else(|| {\n            hir_error_at_span(\n                argument.span,\n                format!(\"type `{}` has no semantic facts\", param.ty.identity_key()),\n            )\n        })?;\n        let valid = if facts {\n            actual == OwnershipMode::Value && param.ownership == OwnershipMode::Value\n        } else {\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-9",
+        "from": "                                &self.program.declarations,\n                                param.ty,\n                            )\n                            || self.executable_profiles.runtime_admitted_param(&param)?\n                            || resolved_type_is_direct_owned_variant(self.program, param.ty)\n                            || resolved_type_is_flat_owned_byte_variant(self.program, param.ty))\n                            && matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)\n",
+        "to": "                                &self.program.declarations,\n                                param.ty,\n                            )\n                            || self.executable_profiles.runtime_admitted(param.ty)?\n                            || resolved_type_is_direct_owned_variant(self.program, param.ty)\n                            || resolved_type_is_flat_owned_byte_variant(self.program, param.ty))\n                            && matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-10",
+        "from": "                                &argument.kind,\n                                ResolvedExprKind::Place(place) if place.projections.is_empty()\n                            )\n                    } else if self.executable_profiles.runtime_admitted_param(&param)?\n                        || resolved_type_is_direct_owned_variant(self.program, param.ty)\n                    {\n                        matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)\n",
+        "to": "                                &argument.kind,\n                                ResolvedExprKind::Place(place) if place.projections.is_empty()\n                            )\n                    } else if self.executable_profiles.runtime_admitted(param.ty)?\n                        || resolved_type_is_direct_owned_variant(self.program, param.ty)\n                    {\n                        matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)\n",
+        "count": 1
+      },
+      {
+        "name": "812-held-profile-exact-hook-11",
+        "from": "mod copy_before;\n#[cfg(test)]\nmod copy_flags_tests;\n\n#[cfg(test)]\nmod before_812;\n\n#[cfg(test)]\nmod held_tests;\n",
+        "to": "mod copy_before;\n#[cfg(test)]\nmod copy_flags_tests;\n",
+        "count": 1
+      },
       {
         "name": "src/hir/validation/call_parameters.rs: exact full-current ownership hook 1",
         "from": "        param: ParameterView<'_>,\n    ) -> Result<(), Diagnostic> {\n        #[cfg(test)]\n        if ownership_flags::original_selected() {\n            return self.validate_argument_ownership_view_before(argument, param);\n        }\n        let actual = argument.ownership;\n        let facts = self.borrowed_ownership_copy(param.ty)?.ok_or_else(|| {\n            hir_error_at_span(\n                argument.span,\n",

@@ -680,6 +680,29 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        // Exact 824 child joins retain full live coverage; the final comparison
+        // still reconstructs the complete unchanged original HIR inventory.
+        undo(&mut current, r###"                concat!(
+                    include_str!("../src/hir/validation/function_lookup.rs"),
+                    include_str!("../src/hir/validation/function_lookup/original.rs"),
+                    include_str!("../src/hir/validation/function_lookup/paid_custody.rs")
+                ),
+"###, r###"                include_str!("../src/hir/validation/function_lookup.rs"),
+"###);
+        undo(&mut current, r###"                concat!(
+                    include_str!("../src/hir/validation/constructor_seed.rs"),
+                    include_str!("../src/hir/validation/constructor_seed/original.rs")
+                ),
+"###, r###"                include_str!("../src/hir/validation/constructor_seed.rs"),
+"###);
+        undo(&mut current, r###"        concat!(
+            include_str!("../src/hir/validation/stdin_stream.rs"),
+            include_str!("../src/hir/validation/stdin_stream/paid.rs"),
+            include_str!("../src/hir/validation/stdin_stream/paid/analysis.rs"),
+            include_str!("../src/hir/validation/stdin_stream/paid/tests.rs")
+        ),
+"###, r###"        include_str!("../src/hir/validation/stdin_stream.rs"),
+"###);
         undo(&mut current, r###"
 #[cfg(test)]
 #[path = "hir_module_boundaries/oracle_source_inventory.rs"]
@@ -729,7 +752,6 @@ mod oracle_source_inventory;
         include_str!("../src/string_ops/concat_funded/work.rs"),
         include_str!("../src/string_ops/conditions/funded/work.rs"),
         include_str!("../src/workspace_graph/identity_resolution/tests/oracle_owner_before.rs"),
-
         include_str!("../src/hir/ordinary_scan.rs"),
         include_str!("../src/hir/ordinary_scan/tests.rs"),
         include_str!("../src/hir/function_value/funded.rs"),
@@ -744,13 +766,17 @@ mod oracle_source_inventory;
         );
         undo(
             &mut current,
-            r#"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape_original.rs"),
+            r#"        include_str!(
+            "../src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape_original.rs"
+        ),
 "#,
             "",
         );
         undo(
             &mut current,
-            r#"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/frontier_tests.rs"),
+            r#"        include_str!(
+            "../src/cleanup_plan/replay/paid_type_facts/inventory_summary/frontier_tests.rs"
+        ),
 "#,
             "",
         );

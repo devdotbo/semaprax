@@ -1,0 +1,29 @@
+{
+  "qualification": "unexecuted; retained registrations unchanged",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::validation::ownership_flags::tests::full_original_ownership_methods_and_all_hooked_sources_are_exactly_bound",
+      "source": "src/hir/validation/ownership_flags/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::live_oracle::source_custody::a::complete_original_sources_and_compiled_owning_receivers_remain_exact",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::live_oracle::source_custody::b::complete_original_sources_and_compiled_owning_receivers_remain_exact",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::validation::canonical_loans::ownership_tests::complete_old_constructor_inventory_caller_and_closure_source_projections_remain_exact",
+      "source": "src/hir/validation/canonical_loans/ownership_tests.rs"
+    }
+  ]
+}

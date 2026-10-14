@@ -1,0 +1,33 @@
+{
+  "base": "3c351d58f2dc008afd497bb435af62d3ab299edf",
+  "qualification": "source-only; no Rust execution",
+  "whole_ownership_proofs": [
+    {
+      "source": "src/hir/validation.rs",
+      "archive_sha256": "9e878bead4d3d748764a55e10c51edd93146f1998d5eafd896205b31f1067ad6",
+      "whole_inverse_equal": true,
+      "unique_named_hooks": 12
+    },
+    {
+      "source": "src/hir/validation/nominal_facts.rs",
+      "archive_sha256": "f85363333cd6d13d361f1e41c967d7033d2934627d30758d8188b66ff6a9a873",
+      "whole_inverse_equal": true,
+      "unique_named_hooks": 3
+    },
+    {
+      "source": "src/hir/validation/identity_directory/oracle_entries.rs",
+      "archive_sha256": "3b42c48e7dd26991eb4e773952d69c7934118f2fea666ff8b687947e4fa6ece1",
+      "whole_inverse_equal": true,
+      "unique_named_hooks": 5
+    },
+    {
+      "source": "src/hir/validation/call_parameters.rs",
+      "archive_sha256": "3be63c3a568b23436a6e5897669266202ea71033003b963891de196094b9b4aa",
+      "whole_inverse_equal": true,
+      "unique_named_hooks": 14
+    }
+  ],
+  "whole_opt810_source_proofs": 36,
+  "archives_and_original_hashes_changed": false,
+  "new_rust_children": []
+}
