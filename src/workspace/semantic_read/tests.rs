@@ -228,20 +228,29 @@ fn actual_authority_finish_moves_exact_paid_setup_refusal_through_unlock_and_dro
     let function = functions.get(0).unwrap();
     let form = Form::new("SPX-T781", "retained authority setup failure");
     let bytes = std::mem::size_of::<crate::diagnostic::Diagnostic>() + form.message().len();
+    // Inline snapshots cover the complete existing acquisition/finish/Drop route.
+    // They do not open child observations or change payment or counted backing.
+    let mut boundaries = [crate::test_allocation_observer::Metrics::default(); 6];
     let ((), cost) = crate::test_allocation_observer::measure(|| {
         let acquired = Acquired::try_acquire(Physical::new(bytes), form)
             .unwrap_or_else(|_| panic!("exact report"));
+        boundaries[0] = crate::test_allocation_observer::current_metrics();
         let pointers = acquired.backing();
         let refusal = acquired.prepare(function).err().unwrap();
+        boundaries[1] = crate::test_allocation_observer::current_metrics();
         let failure =
             crate::workspace_report::WorkspaceReportFailure::selected(refusal, Some(form));
+        boundaries[2] = crate::test_allocation_observer::current_metrics();
         let mut failure = authority.finish_reporting::<()>(Err(failure)).unwrap_err();
+        boundaries[3] = crate::test_allocation_observer::current_metrics();
         assert_eq!(failure.reported().unwrap().as_ptr(), pointers.0);
         assert_eq!(failure.reported().unwrap()[0].message.as_ptr(), pointers.1);
         let ledger = failure.selected_owner_mut().unwrap().ledger_mut().unwrap();
         let first = ledger.reserve(0).unwrap_err();
         assert_eq!(ledger.reserve(1).unwrap_err(), first);
+        boundaries[4] = crate::test_allocation_observer::current_metrics();
         drop(failure);
+        boundaries[5] = crate::test_allocation_observer::current_metrics();
     });
     assert!(!cost.invalid);
     assert_eq!(
@@ -252,7 +261,8 @@ fn actual_authority_finish_moves_exact_paid_setup_refusal_through_unlock_and_dro
             cost.live,
             cost.freed
         ),
-        (2, 0, bytes, 0, bytes)
+        (2, 0, bytes, 0, bytes),
+        "complete authority route; boundaries [report acquired, prepared refusal, affine failure, finish returned after authority Drop, sticky retries, failure dropped]={boundaries:?}"
     );
     fixture.assert_sources_unchanged();
     fixture.assert_lock_released();

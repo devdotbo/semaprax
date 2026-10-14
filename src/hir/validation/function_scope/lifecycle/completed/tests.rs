@@ -356,40 +356,67 @@ fn actual_repeated_call_receiver_is_paid_through_drop_with_exact_short_and_stick
         .find(|f| f.id.as_str() == "lifecycle.repeat")
         .unwrap();
     let execution = FunctionExecutionId::Monomorphic(function.id.clone());
+    #[derive(Clone, Copy, Debug)]
+    struct Boundary {
+        metrics: crate::test_allocation_observer::Metrics,
+        remaining: Option<usize>,
+    }
+    fn boundary() -> Boundary {
+        Boundary {
+            metrics: crate::test_allocation_observer::current_metrics(),
+            remaining: crate::bounded_output::active_remaining(),
+        }
+    }
     let observe = |limit, shared| {
         with_limit_usage_refusal(limit, || {
             measure(|| {
+                // Fixed inline snapshots attribute the same complete measured route.
+                // They create no nested observation, allocation, debit, or exclusion.
+                let mut boundaries = [None; 5];
+                boundaries[0] = Some(boundary());
                 let result = HirValidator::new(&program).and_then(|mut validator| {
-                    if shared {
+                    boundaries[1] = Some(boundary());
+                    let result = if shared {
                         validator.validate_function(function, &execution)
                     } else {
                         validator.validate_function_lifecycle_saved(function, &execution)
-                    }
+                    };
+                    boundaries[2] = Some(boundary());
+                    result
                 });
+                // and_then has dropped the validator before handing back its result.
+                boundaries[3] = Some(boundary());
                 let ok = result.is_ok();
                 if !ok {
                     assert!(!crate::bounded_output::reserve_active_required(0));
                 }
                 drop(result);
-                ok
+                boundaries[4] = Some(boundary());
+                (ok, boundaries)
             })
         })
     };
-    let ((ok, actual), refused, paid, first) = observe(LIMIT, true);
-    let ((old_ok, old), old_refused, old_paid, old_first) = observe(LIMIT, false);
+    let (((ok, boundaries), actual), refused, paid, first) = observe(LIMIT, true);
+    let (((old_ok, old_boundaries), old), old_refused, old_paid, old_first) = observe(LIMIT, false);
     assert!(ok && old_ok && !refused && !old_refused && first.is_none() && old_first.is_none());
+    for route in [&boundaries, &old_boundaries] {
+        for point in route.iter().flatten() {
+            assert!(!point.metrics.invalid && point.remaining.is_some());
+        }
+    }
     assert!(!actual.invalid && !old.invalid && actual.live == 0 && old.live == 0);
     assert!(actual.allocated == actual.freed && old.allocated == old.freed);
     assert!(
         actual.allocated <= paid && actual.highwater <= paid,
-        "complete receiver actual={actual:?} paid={paid} old={old:?} old_paid={old_paid}"
+        "complete receiver actual={actual:?} paid={paid} old={old:?} old_paid={old_paid}; boundaries [before constructor, constructed, validated before validator Drop, validator dropped, result dropped]: current={boundaries:?} old={old_boundaries:?}"
     );
-    assert!(old.allocated <= old_paid && old.highwater <= old_paid);
+    assert!(old.allocated <= old_paid && old.highwater <= old_paid,
+        "complete saved receiver old={old:?} old_paid={old_paid}; boundaries={old_boundaries:?}");
     assert!(paid < old_paid && actual.allocated < old.allocated);
-    let ((ok, exact), refused, used, first) = observe(paid, true);
+    let (((ok, _), exact), refused, used, first) = observe(paid, true);
     assert!(ok && !refused && used == paid && first.is_none() && !exact.invalid && exact.live == 0);
     for limit in [0, paid - 1] {
-        let ((ok, actual), refused, used, first) = observe(limit, true);
+        let (((ok, _), actual), refused, used, first) = observe(limit, true);
         assert!(
             !ok && refused
                 && first.is_some()

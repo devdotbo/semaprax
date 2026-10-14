@@ -1,0 +1,48 @@
+{
+  "status": "SOURCE_ONLY_ATTRIBUTION_PENDING_ACTUAL_EXECUTION",
+  "base": "43db802ea9d892a5a9a44d2eafa8468d98633979",
+  "actual_failure_evidence": "/Volumes/Semaprax/provenance/frozen-f8d390-selected-failures-20261014.json",
+  "actual_failure_indices": [
+    82,
+    201
+  ],
+  "package": "semaprax",
+  "harness": "lib",
+  "exact_pending_selectors": [
+    "hir::validation::function_scope::lifecycle::completed::tests::actual_repeated_call_receiver_is_paid_through_drop_with_exact_short_and_sticky_refusal",
+    "workspace::semantic_read::tests::actual_authority_finish_moves_exact_paid_setup_refusal_through_unlock_and_drop"
+  ],
+  "files": {
+    "src/hir/validation/function_scope/lifecycle/completed/tests.rs": {
+      "whole_before_archive": "docs/evidence/retention-finish-boundaries-43db/src__hir__validation__function_scope__lifecycle__completed__tests.rs.before",
+      "before_sha256": "bea6d668d76b0f0c46c3de2dfec9dc43d36398bff771847212905dc2809d175e",
+      "receiving_sha256": "6d206793bd66b8779d953b3fab3e1d816373a18d57aeb82ac7af57fcb285c10d"
+    },
+    "src/workspace/semantic_read/tests.rs": {
+      "whole_before_archive": "docs/evidence/retention-finish-boundaries-43db/src__workspace__semantic_read__tests.rs.before",
+      "before_sha256": "3871ca1e385c556602d0bb0a9335c4c4435b6f2e375836d993e7854eb3eb3697",
+      "receiving_sha256": "dfe3e2749cb0980033fbf549bd3a64e865b0c92e2aa55f9f78ffc05ebcbc0347"
+    }
+  },
+  "unchanged_original_receivers_and_production": {
+    "src/hir/validation/function_scope/lifecycle_receiver_saved.rs": "6b50e505b75dab5cb1c9316af0e8a88c2c23a0bc87a321faa4f90acc25b77b70",
+    "src/hir/validation/function_scope/lifecycle.rs": "5fd13ff6c69920abbbfca62effa9b44be55a1ecbe8651cf163f5ad5ad561ad5b",
+    "evidence/final-validation-lifecycle-completed/src__hir__validation__function_scope.rs.txt": "d4a6b7e8f4ec7a9a886ec69943ead6fbd57cd91317dc49818c0f0cf5d5a8d88c",
+    "src/workspace/semantic_read.rs": "17ff388fa360bda567ef6ca6d16b192bb83688fdf2ba01c7e850ce5734cb86dd",
+    "src/hir/validation.rs": "df2442a9f040d8950374ee135128a10ae43fe7ddbcf73a9cea6b7d941fa4068e",
+    "src/hir/validation/function_lookup.rs": "c04171d4e17bd5b93f67927fff05afae4f9d9da880a632cdea54f3770e7f97a9",
+    "src/hir/validation/canonical_loans.rs": "b89f798211bc0264cd52194db8a5e54b31ead7824e92f4392195883d15cb4a58",
+    "src/hir/canonical_loan_storage/caller.rs": "bc304cfbb469891c8eb8cdc150a395affba58dadd3ae3b9a136c6c7f40076056",
+    "src/test_allocation_observer.rs": "f3ab093d0bec8e84d98baedfb88e26ec97c1a66022638bd1bf5301ff25844fac",
+    "src/bounded_output.rs": "aa0f0ebaafab779509d90414d1d64b831e33d4af2864c4fd814f5643c29eeac0"
+  },
+  "verification": {
+    "rustfmt_parse_stdout": "PASS_SOURCE_ONLY_NO_REWRITE",
+    "git_diff_check": "PASS",
+    "cargo_or_test_execution": false,
+    "production_payment_changes": false,
+    "quota_changes": false,
+    "measurement_resets_or_exclusions": false,
+    "new_selectors": false
+  }
+}
