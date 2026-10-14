@@ -206,8 +206,76 @@ fn exact_short_and_zero_work_match_the_complete_old_receiver() {
             assert_eq!(budget.remaining, 0);
         } else {
             assert!(current.is_err());
-            assert!(budget.charge(&function, 0, "sticky work refusal").is_err());
+            // These deliberately detached LegacyUnobserved ledgers retain
+            // the complete old counter policy: Err selects the receiver's
+            // result, but does not poison a raw zero-unit counter probe.
+            let remaining = budget.remaining;
+            let old_zero = old_budget.charge(&function, 0, "legacy work-state probe");
+            let zero = budget.charge(&function, 0, "legacy work-state probe");
+            assert_eq!(zero, old_zero);
+            assert!(zero.is_ok());
+            assert_eq!(budget.remaining, remaining);
+            assert_eq!(budget.remaining, old_budget.remaining);
+            assert_eq!(budget.refusal_spent, old_budget.refusal_spent);
+            assert!(!budget.refusal_spent);
         }
+    }
+
+    // The real ordinary comparison propagates the first id() Err at `?`;
+    // it does not retry or evaluate the plan root after that refusal.
+    let source = include_str!("../../factored.rs");
+    let (_, receiving) = source
+        .split_once("let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);")
+        .unwrap();
+    let (receiving, _) = receiving.split_once("Ok(Some(hir == plan))").unwrap();
+    assert!(receiving
+        .contains("let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {"));
+    assert!(receiving
+        .contains("let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {"));
+    assert_eq!(receiving.matches("canonical.id(").count(), 2);
+    assert!(!receiving.contains(".or_else(") && !receiving.contains(".unwrap_or"));
+
+    // Exercise that same two-result boundary with both complete receivers,
+    // retaining the first full Diagnostic and counting actual id() entries.
+    fn receive(
+        mut id: impl FnMut(usize) -> Result<Option<usize>, Diagnostic>,
+        roots: &[usize],
+    ) -> Result<Option<bool>, Diagnostic> {
+        let Some(hir) = id(roots[4])? else {
+            return Ok(None);
+        };
+        let Some(plan) = id(roots[5])? else {
+            return Ok(None);
+        };
+        Ok(Some(hir == plan))
+    }
+    for limit in [spent - 1, 0] {
+        let mut old_budget = ReplayBudget::new();
+        old_budget.remaining = limit;
+        let mut budget = ReplayBudget::new();
+        budget.remaining = limit;
+        let mut old_receiver = canonical_before::Receiver::new(&automaton, sink);
+        let mut receiver = Canonicalizer::new(&automaton, sink);
+        let mut old_calls = 0;
+        let mut calls = 0;
+        let expected = receive(
+            |root| {
+                old_calls += 1;
+                old_receiver.id(&function, vec![(root, 1)], &mut old_budget)
+            },
+            &roots,
+        );
+        let actual = receive(
+            |root| {
+                calls += 1;
+                receiver.id(&function, vec![(root, 1)], &mut budget)
+            },
+            &roots,
+        );
+        assert_eq!(actual, expected);
+        assert!(actual.is_err());
+        assert_eq!((calls, old_calls), (1, 1));
+        assert_eq!(budget.remaining, old_budget.remaining);
     }
 }
 
