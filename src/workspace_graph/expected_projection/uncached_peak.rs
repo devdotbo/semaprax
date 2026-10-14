@@ -166,8 +166,7 @@ pub(in crate::workspace_graph) fn charge_uncached_synthetic_ast_core<'a>(
                 None,
                 true,
                 (4, super::cached_exact::Retention::Parsed),
-                registry,
-                core,
+                (registry, core),
             )?
             .synthetic_ast,
             super::borrowed_leaf::input_carrier_delta()?,

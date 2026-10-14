@@ -30,12 +30,10 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
         maximum_identity,
         include_imports,
         profile,
-        registry,
-        None,
+        (registry, None),
     )
 }
 
-#[allow(clippy::too_many_arguments)]
 pub(in crate::workspace_graph) fn synthetic_builder_bytes_core<'a>(
     program: &Program,
     authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
@@ -43,8 +41,10 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_core<'a>(
     maximum_identity: Option<usize>,
     include_imports: bool,
     profile: (u8, cached_exact::Retention),
-    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
-    core: &mut import_stub::core_proofs::CoreProviderProofs<'a>,
+    proofs: (
+        Option<&private_layout::registry::LayoutRegistry<'_>>,
+        &mut import_stub::core_proofs::CoreProviderProofs<'a>,
+    ),
 ) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
     synthetic_builder_bytes_scoped_with_retention_with_registry_using(
         program,
@@ -53,8 +53,7 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_core<'a>(
         maximum_identity,
         include_imports,
         profile,
-        registry,
-        Some(core),
+        (proofs.0, Some(proofs.1)),
     )
 }
 
@@ -67,9 +66,12 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
     maximum_identity: Option<usize>,
     include_imports: bool,
     profile: (u8, cached_exact::Retention),
-    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
-    core: Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,
+    proofs: (
+        Option<&private_layout::registry::LayoutRegistry<'_>>,
+        Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,
+    ),
 ) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
+    let (registry, core) = proofs;
     let (layout_mode, retention) = profile;
     let mut raw = StructuralCost::raw_ast(layout_mode >= 1).with_inline_values(layout_mode >= 2);
     ast_program_cost(program, &mut raw, include_imports)?;

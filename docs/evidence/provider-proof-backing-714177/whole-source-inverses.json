@@ -79,8 +79,28 @@
       "archive": "4.before.txt",
       "original_sha256": "64b694567f2881244476cfe66f7088d01061f7ee8b07f86a7f4756a831fc2f7d",
       "original_bytes": 18151,
-      "current_sha256": "c355323caf04e14b685317689fedecb51c7a76f609569a7ef2a263614b992e72",
+      "current_sha256": "78952cede1ba2ad17dddc43fb22a3e3c423154755721f34f3e58c6bcad62f187",
       "inverse": [
+        {
+          "hook": "borrowed-registry-core-context-1",
+          "current": "        include_imports,\n        profile,\n        (registry, None),\n    )\n}\n\npub(in crate::workspace_graph) fn synthetic_builder_bytes_core<'a>(\n    program: &Program,\n",
+          "before": "        include_imports,\n        profile,\n        registry,\n        None,\n    )\n}\n\n#[allow(clippy::too_many_arguments)]\npub(in crate::workspace_graph) fn synthetic_builder_bytes_core<'a>(\n    program: &Program,\n"
+        },
+        {
+          "hook": "borrowed-registry-core-context-2",
+          "current": "    include_imports: bool,\n    profile: (u8, cached_exact::Retention),\n    proofs: (\n        Option<&private_layout::registry::LayoutRegistry<'_>>,\n        &mut import_stub::core_proofs::CoreProviderProofs<'a>,\n    ),\n) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {\n    synthetic_builder_bytes_scoped_with_retention_with_registry_using(\n",
+          "before": "    include_imports: bool,\n    profile: (u8, cached_exact::Retention),\n    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,\n    core: &mut import_stub::core_proofs::CoreProviderProofs<'a>,\n) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {\n    synthetic_builder_bytes_scoped_with_retention_with_registry_using(\n"
+        },
+        {
+          "hook": "borrowed-registry-core-context-3",
+          "current": "        include_imports,\n        profile,\n        (proofs.0, Some(proofs.1)),\n    )\n}\n",
+          "before": "        include_imports,\n        profile,\n        registry,\n        Some(core),\n    )\n}\n"
+        },
+        {
+          "hook": "borrowed-registry-core-context-4",
+          "current": "    include_imports: bool,\n    profile: (u8, cached_exact::Retention),\n    proofs: (\n        Option<&private_layout::registry::LayoutRegistry<'_>>,\n        Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,\n    ),\n) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {\n    let (registry, core) = proofs;\n    let (layout_mode, retention) = profile;\n    let mut raw = StructuralCost::raw_ast(layout_mode >= 1).with_inline_values(layout_mode >= 2);\n",
+          "before": "    include_imports: bool,\n    profile: (u8, cached_exact::Retention),\n    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,\n    core: Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,\n) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {\n    let (layout_mode, retention) = profile;\n    let mut raw = StructuralCost::raw_ast(layout_mode >= 1).with_inline_values(layout_mode >= 2);\n"
+        },
         {
           "hook": "explicit-provider-backing-edit-9",
           "current": "    }\n    byte_proofs.complete().map_err(|error| vec![error])?;\n",
@@ -176,8 +196,13 @@
       "archive": "7.before.txt",
       "original_sha256": "2156e41020aeb1cbf47b0fdaf29788ce90dbdb431109b63957f3b727d244bbf4",
       "original_bytes": 12889,
-      "current_sha256": "bd2a7c0e83ee239e14574cd5348cc4595ecfc59f71b9fe1d580d94a309fcb71d",
+      "current_sha256": "32427c03af500f5778ce103666cc43481069497993baba20646c0944165d8440",
       "inverse": [
+        {
+          "hook": "borrowed-registry-core-context-1",
+          "current": "                true,\n                (4, super::cached_exact::Retention::Parsed),\n                (registry, core),\n            )?\n            .synthetic_ast,\n",
+          "before": "                true,\n                (4, super::cached_exact::Retention::Parsed),\n                registry,\n                core,\n            )?\n            .synthetic_ast,\n"
+        },
         {
           "hook": "explicit-provider-backing-edit-1",
           "current": "\n// CORE_PEAK_BEGIN\npub(in crate::workspace_graph) fn charge_uncached_synthetic_ast_core<'a>(\n    program: &Program,\n    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,\n    programs: &'a [Program],\n    retained_peak: &mut usize,\n    registry: Option<&LayoutRegistry<'_>>,\n    core: &mut super::CoreProviderProofs<'a>,\n) -> Result<(), Vec<Diagnostic>> {\n    let bytes = if super::borrowed_leaf::eligible(program) {\n        super::borrowed_leaf::ast_peak(program)?\n    } else {\n        checked_usage(\n            super::held_projection::synthetic_builder_bytes_core(\n                program,\n                authored,\n                programs,\n                None,\n                true,\n                (4, super::cached_exact::Retention::Parsed),\n                registry,\n                core,\n            )?\n            .synthetic_ast,\n            super::borrowed_leaf::input_carrier_delta()?,\n            \"builder_bytes\",\n            active_builder_limit(),\n        )?\n    };\n    // The uncached path drops this AST before constructing the next one.\n    // Preserve a monotonic peak reservation; never refund earlier charges.\n    if bytes > *retained_peak {\n        super::reserve_builder_structure(bytes - *retained_peak)?;\n        *retained_peak = bytes;\n    }\n    Ok(())\n}\n// CORE_PEAK_END\n",

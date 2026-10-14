@@ -297,8 +297,7 @@ fn complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_c
                         None,
                         true,
                         (4, cached_exact::Retention::Parsed),
-                        Some(&registry),
-                        &mut core,
+                        (Some(&registry), &mut core),
                     )
                     .unwrap();
                     assert_eq!(
