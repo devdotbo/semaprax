@@ -111,6 +111,118 @@ mod tests {
             OwnerVerdict::Missing.diagnostic().message,
             "unregistered lexical function requires an explicit authenticated execution context"
         );
+
+        // Keep the complete plain-owner control above. Exercise the actual
+        // terminated guard and its already-admitted unterminated receiver with
+        // the separate existing work callback as well as the byte payer.
+        #[derive(Debug)]
+        struct Limit {
+            remaining: usize,
+            used: usize,
+            refusal: Option<&'static str>,
+            label: &'static str,
+        }
+        impl Limit {
+            fn new(remaining: usize, label: &'static str) -> Self {
+                Self {
+                    remaining,
+                    used: 0,
+                    refusal: None,
+                    label,
+                }
+            }
+            fn charge(&mut self, amount: usize) -> Result<(), &'static str> {
+                if let Some(first) = self.refusal {
+                    return Err(first);
+                }
+                let Some(remaining) = self.remaining.checked_sub(amount) else {
+                    self.refusal = Some(self.label);
+                    return Err(self.label);
+                };
+                self.remaining = remaining;
+                self.used = self.used.checked_add(amount).expect("bounded test debit");
+                Ok(())
+            }
+        }
+        let mut debit_pairs = Vec::new();
+        for terminator in ["", ";"] {
+            let source = format!("module guard.bounds; @id(\"main\") fn main()->i64 {{ let mut i=0; while i<3 {{ i=i+1; if i==2 {{continue;}} else {{0}}{terminator} i=i+0; 0 }} i }}");
+            let checked = crate::check(&source, "guard-bounds.spx").unwrap();
+            let program = crate::hir::resolve(&checked).unwrap();
+            let function = &program.functions[0];
+            let original_owner = super::super::owner(&program, function).unwrap();
+            let original_requires = super::super::requires(function).unwrap();
+            assert!(original_requires, "real lexical guard required");
+            let run = |bytes: &mut Limit, work: &mut Limit| {
+                let mut reserve = |amount| bytes.charge(amount);
+                let mut visit = |amount| work.charge(amount);
+                let owner = owner_funded_with_work(&program, function, &mut reserve, &mut visit)?;
+                let required = requires_funded_with_work(function, &mut reserve, &mut visit)?;
+                Ok::<_, FundedError<&'static str>>((owner, required))
+            };
+            // Derive exact cumulative charges from the real complete receiver;
+            // no guessed quota or production allowance is introduced.
+            let mut bytes = Limit::new(usize::MAX, "byte refusal");
+            let mut work = Limit::new(usize::MAX, "work refusal");
+            assert_eq!(
+                run(&mut bytes, &mut work),
+                Ok((Ok(original_owner.clone()), original_requires))
+            );
+            assert!(bytes.used > 0 && work.used > 0);
+            let exact = (bytes.used, work.used);
+            debit_pairs.push(exact);
+            let mut bytes = Limit::new(exact.0, "byte refusal");
+            let mut work = Limit::new(exact.1, "work refusal");
+            let ((), observed) = crate::test_allocation_observer::measure(|| {
+                let result = run(&mut bytes, &mut work);
+                assert_eq!(result, Ok((Ok(original_owner.clone()), original_requires)));
+                // The receiving execution ID drops inside the observation.
+                drop(result);
+            });
+            assert!(!observed.invalid && observed.live == 0);
+            assert_eq!(observed.allocated, observed.freed);
+            assert!(observed.allocated <= bytes.used && observed.highwater <= bytes.used);
+            assert_eq!((bytes.remaining, work.remaining), (0, 0));
+            assert_eq!((bytes.used, work.used), exact);
+            assert!(bytes.refusal.is_none() && work.refusal.is_none());
+            for (byte_limit, work_limit, selected) in [
+                (0, exact.1, "byte refusal"),
+                (exact.0 - 1, exact.1, "byte refusal"),
+                (exact.0, 0, "work refusal"),
+                (exact.0, exact.1 - 1, "work refusal"),
+            ] {
+                let mut bytes = Limit::new(byte_limit, "byte refusal");
+                let mut work = Limit::new(work_limit, "work refusal");
+                let ((), observed) = crate::test_allocation_observer::measure(|| {
+                    let result = run(&mut bytes, &mut work);
+                    assert_eq!(result, Err(FundedError::Refused(selected)));
+                    drop(result);
+                });
+                assert!(!observed.invalid && observed.live == 0);
+                assert_eq!(observed.allocated, observed.freed);
+                assert!(observed.allocated <= bytes.used && observed.highwater <= bytes.used);
+                let used = (bytes.used, work.used);
+                if selected == "byte refusal" {
+                    assert_eq!(bytes.charge(0), Err(selected));
+                } else {
+                    assert_eq!(work.charge(0), Err(selected));
+                }
+                assert_eq!(
+                    (bytes.used, work.used),
+                    used,
+                    "sticky refusal never resets or refunds"
+                );
+                assert_eq!(
+                    super::super::owner(&program, function).unwrap(),
+                    original_owner
+                );
+                assert_eq!(super::super::requires(function).unwrap(), original_requires);
+            }
+        }
+        assert_eq!(
+            debit_pairs[0], debit_pairs[1],
+            "same canonical guard has identical charged work and storage"
+        );
     }
 }
 
