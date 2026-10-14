@@ -1,0 +1,14 @@
+{
+  "new_rust_descendants": [
+    "src/cleanup_plan/build/capacity_observation/actual_attribution.rs",
+    "src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs",
+    "src/cleanup_plan/build/helper_index/original_plans.rs"
+  ],
+  "existing_owned_roots": [
+    "src/cleanup_plan/build/capacity_observation.rs",
+    "src/cleanup_plan/build/capacity_observation/tests.rs",
+    "src/cleanup_plan/build/helper_index.rs"
+  ],
+  "root_owns_final_union": true,
+  "complete_original_build_source_unchanged": "src/cleanup_plan/build.rs"
+}

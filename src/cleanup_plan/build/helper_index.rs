@@ -303,9 +303,13 @@ pub(crate) fn build_program_plans(
     }
     #[cfg(test)]
     CONSTRUCTION_STARTED.with(|started| started.set(true));
+    #[cfg(test)]
+    capacity_observation::actual_attribution::index_start();
     let index = ModuleIndex::new(program)?;
     #[cfg(test)]
     capacity_observation::held_index(index.owned_capacity_bytes());
+    #[cfg(test)]
+    capacity_observation::actual_attribution::index_end();
     let count = program
         .functions
         .len()
@@ -331,22 +335,26 @@ pub(crate) fn build_program_plans(
     capacity_observation::staged(&plans);
     for function in &program.functions {
         let execution = crate::hir::FunctionExecutionId::Monomorphic(function.id.clone());
-        plans.push(lexical_control::build_with_index(
+        plans.push(observe_finished_plan(lexical_control::build_with_index(
             program, function, &execution, &index,
-        )?);
+        )?));
         #[cfg(test)]
         capacity_observation::staged(&plans);
+        #[cfg(test)]
+        capacity_observation::actual_attribution::staging_after_push();
     }
     for instance in &program.function_instances {
         let execution = crate::hir::FunctionExecutionId::Generic(instance.id.clone());
-        plans.push(lexical_control::build_with_index(
+        plans.push(observe_finished_plan(lexical_control::build_with_index(
             program,
             &instance.function,
             &execution,
             &index,
-        )?);
+        )?));
         #[cfg(test)]
         capacity_observation::staged(&plans);
+        #[cfg(test)]
+        capacity_observation::actual_attribution::staging_after_push();
     }
     // Intrinsic parameter identities use infallible bounded formatting. A
     // refused format returns an empty diagnostic carrier and marks the ledger;
@@ -354,6 +362,8 @@ pub(crate) fn build_program_plans(
     if crate::bounded_output::active_refused() {
         return Err(plan_error("cleanup construction exceeded admitted scratch"));
     }
+    #[cfg(test)]
+    capacity_observation::actual_attribution::returning();
     Ok(plans)
 }
 
@@ -370,6 +380,8 @@ pub(crate) fn attach_program_plans(program: &mut ResolvedProgram) -> Result<(), 
         instance.function.cleanup_plan = plans.next().expect("complete staged instance inventory");
     }
     debug_assert!(plans.next().is_none());
+    #[cfg(test)]
+    capacity_observation::actual_attribution::published();
     Ok(())
 }
 
@@ -387,3 +399,15 @@ pub(super) fn attached_capacity_for_measurement(
 ) -> Result<usize, Diagnostic> {
     attached_capacity::program(program)
 }
+
+// Production is the standard identity move; test instrumentation copies raw
+// observer counters only, after the complete plan and before the original push.
+#[cfg(not(test))]
+use std::convert::identity as observe_finished_plan;
+#[cfg(test)]
+fn observe_finished_plan(plan: CleanupPlan) -> CleanupPlan {
+    capacity_observation::actual_attribution::staging_before_push();
+    plan
+}
+#[cfg(test)]
+pub(super) mod original_plans;

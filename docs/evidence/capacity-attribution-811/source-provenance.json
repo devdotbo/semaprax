@@ -1,0 +1,25 @@
+{
+  "base_commit": "f18f5a4ace2d7e4786f54f1fccbbfb77465e44e8",
+  "original_sources": [
+    {
+      "path": "src/cleanup_plan/build/helper_index.rs",
+      "archive": "src__cleanup_plan__build__helper_index.rs.before.txt",
+      "sha256": "1f2fa2d7674259652ce5e45d9fd53e4d18dc915b8c3e381dc3f4b52a44cac210"
+    },
+    {
+      "path": "src/cleanup_plan/build/capacity_observation.rs",
+      "archive": "src__cleanup_plan__build__capacity_observation.rs.before.txt",
+      "sha256": "96df701b7c571b3b7976dc9e334869f67083824d5a00f67f2c1f215569fd34ce"
+    },
+    {
+      "path": "src/cleanup_plan/build/capacity_observation/tests.rs",
+      "archive": "src__cleanup_plan__build__capacity_observation__tests.rs.before.txt",
+      "sha256": "e79da3035a46178cb00279319e5fd17aaaf9ab47a99ad911b1893ac3b3ee20de"
+    },
+    {
+      "path": "src/cleanup_plan/build.rs",
+      "archive": "src__cleanup_plan__build.rs.before.txt",
+      "sha256": "d2b0c09384cf4aa8c03112e5f96779bd36b938ba51f5ccde0db212df04a694e7"
+    }
+  ]
+}

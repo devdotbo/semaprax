@@ -369,7 +369,8 @@ fn full_original_capacity_receiver_and_controls_remain_exact_with_only_index_hoo
     );
     assert!(include_str!("tests.rs").starts_with(controls));
     assert_eq!(include_str!("legacy.rs"), legacy);
-    let current = include_str!("../helper_index.rs");
+    let current =
+        super::actual_attribution::project_original_helper(include_str!("../helper_index.rs"));
     let hook =
         "    #[cfg(test)]\n    capacity_observation::held_index(index.owned_capacity_bytes());\n";
     assert_eq!(current.matches(hook).count(), 1);
