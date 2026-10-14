@@ -1,0 +1,452 @@
+{
+  "source": "97be9f9cdea70ab0c77493d7cca9eb44746e454d",
+  "owning_pass_count": 70,
+  "owners": [
+    {
+      "selector": "source_verify::constructor_tests::complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-18.log",
+      "log_sha256": "02247c4bd9abed2f6e6d89ecfc9886bb8b47fae72fa74d2ad280243a64f309be"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::actual_contract_receiver_rejects_six_field_forgeries_and_foreign_body_origins",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-88.log",
+      "log_sha256": "f6c068e2674270d9c8766cc9b1135c90646b22a046a1978b77ea8244f35a9046"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::actual_generic_contract_entries_share_exact_template_origin_and_keep_independent_roots",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-87.log",
+      "log_sha256": "8d1e6e5dfa700f819063c7d4bdd7bb37371a67f902ded859e9522e3e683c5f9b"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::actual_public_generic_return_origin_removes_only_dependent_profile_body_and_result_failures",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-91.log",
+      "log_sha256": "c54b7b9b9f2a7a852cd9220c22b5b7b832c4a8e932355302a40afe230497229c"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::actual_public_missing_generic_argument_keeps_all_primary_and_independent_contract_roots",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-90.log",
+      "log_sha256": "83c4996a356c0f8a6f5820179dcd6d7b482ec7745e61c5566fc2d3eff695c822"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::borrowed_producer_origin_rejects_foreign_stale_and_malformed_templates_without_allocation",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-02.log",
+      "log_sha256": "7db9d54013ba16f77ebb99e0097f1228c1679cc6a721c83b3e44784bf3821628"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::complete_prior_public_four_diagnostics_become_exact_unknown_and_independent_sibling",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-00.log",
+      "log_sha256": "f06849c4caeafde91c0b054fdb15bb4a6ef1a7eb6f12d11b0214dc65634d1548"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::full_production_sources_and_complete_public_predecessors_keep_exact_inverses",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-04.log",
+      "log_sha256": "9a907ebcce1e968f4d3ca43c42375a6effa317d88c057c0e3690929af61e7ef3"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::known_outer_generic_parameter_profile_survives_a_missing_nested_component",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-86.log",
+      "log_sha256": "ea87d217bc4c60903e4d9bc9a9e30525cfc38f3e8015682853edaeeb9df65178"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::known_sibling_generic_profile_refusal_and_all_admitted_validation_stay_independent",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-01.log",
+      "log_sha256": "b178cb1484a473425edfc0aab7f998fb7fb44471c2c08309eedf4f81edc59896"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::paired_origin_requires_actual_binding_and_exact_return_receipt_including_foreign_and_stale_cases",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-92.log",
+      "log_sha256": "079b325915f02d1d6f7e6f4294132e6082570e3d09de3fff9dbe2918fe1e1584"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::public_error_receipts_and_complete_drop_keep_zero_and_sticky_unpaid_boundary_explicit",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-05.log",
+      "log_sha256": "399f0ed4cfce080017784f3bcef403570ffef959ba9703f1904bcadcba13e85e"
+    },
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::specialized_public_receiver_keeps_exact_six_field_authentication",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-03.log",
+      "log_sha256": "c99071242b909a0a115de208561c9ee12e8344c0be89c2bf554f5f390ae8ecf8"
+    },
+    {
+      "selector": "source_verify::iterative_verifier_tests::generic_inference_v2_frame_machine_matches_recursive_oracle",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-19.log",
+      "log_sha256": "2fc651c301fd2dd5bf4c7e110a07eb6888945013d7568ecf4e30596eab958324"
+    },
+    {
+      "selector": "source_verify::iterative_verifier_tests::scalar_frame_machine_matches_recursive_oracle",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-20.log",
+      "log_sha256": "ebe1688f86618b0a63b1341d5bb93678b086328dde7417c667b5b770318c98b5"
+    },
+    {
+      "selector": "source_verify::recovery_tests::boundaries::accepted_source_roundtrip_graph_revision_and_original_receiver_stay_equal",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-21.log",
+      "log_sha256": "3c27601c57a0c936050198a5a0f12d7988ded7b0ac3860221771524747c15c54"
+    },
+    {
+      "selector": "source_verify::recovery_tests::boundaries::existing_function_value_wins_over_a_missing_local_recovery_marker",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-22.log",
+      "log_sha256": "f674fadc6cf544fb75fc50a4e1898a28fc51ecc8c6deb3d9291deeb23f33c0b6"
+    },
+    {
+      "selector": "source_verify::recovery_tests::boundaries::noncapturing_and_nested_closure_refusals_remain_complete_original_errors",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-23.log",
+      "log_sha256": "2e0dd234eec3d0382b4f398f81ff726cc628ede89b32d8b45198b5407ec03164"
+    },
+    {
+      "selector": "source_verify::recovery_tests::boundaries::refused_pattern_names_stay_in_their_own_arm_and_do_not_hide_coverage_or_closures",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-24.log",
+      "log_sha256": "227f6156edc8a8ae3043c0eba1b6323d096ead2cc99806648fef292a5169be49"
+    },
+    {
+      "selector": "source_verify::recovery_tests::boundaries::unknown_record_keeps_duplicate_fields_and_independent_initializer_errors",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-25.log",
+      "log_sha256": "5c6af5be784934dbb294103ea3895b20819d36289e0e20f923f851790af941f4"
+    },
+    {
+      "selector": "source_verify::recovery_tests::callee_components::callee_component_refusal_requires_full_original_receipt_and_generic_owner_context",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-26.log",
+      "log_sha256": "03f3640d88e317f86a479b3ca8bed367bc3e17f3c61be030120d31a1ce0f9612"
+    },
+    {
+      "selector": "source_verify::recovery_tests::callee_components::complete_pre_component_entry_and_call_sources_remain_exact",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-27.log",
+      "log_sha256": "26dac572ab415149d43b4d1de6409571777dace26afb2c2e03bef7845ba78414"
+    },
+    {
+      "selector": "source_verify::recovery_tests::callee_components::initializer_keeps_first_real_argument_failure_ahead_of_return_dependency_origin",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-28.log",
+      "log_sha256": "92db9e75bb11255d2f1b625ce9affa5aee4ee0ccc0d288fa321d52b739dbd465"
+    },
+    {
+      "selector": "source_verify::recovery_tests::callee_components::refused_callee_parameter_excuses_only_its_type_comparison",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-29.log",
+      "log_sha256": "eea0b87eb9c5bf2a5adc516ff48a36fd0f38fef99a5ccebc5a78225bb8d3948d"
+    },
+    {
+      "selector": "source_verify::recovery_tests::callee_components::refused_callee_return_carries_original_origin_through_alias_and_zero_argument_call",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-30.log",
+      "log_sha256": "9ca78a5ddc49fcfe925855a95a8719f8303bed5063e10ee4805b93accba787f1"
+    },
+    {
+      "selector": "source_verify::recovery_tests::callee_components::refused_callee_return_keeps_independent_argument_and_sibling_errors",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-31.log",
+      "log_sha256": "79eea395312f0454f35bb8d1fdf2469d5bc755da62752cd9dfb3fb932d5cb395"
+    },
+    {
+      "selector": "source_verify::recovery_tests::callee_components::refused_parameter_keeps_known_sibling_owned_transfer_and_later_move_refusal",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-32.log",
+      "log_sha256": "1f14a8e9cd830aee030f40a6a8ae862497ba901c54ad575470227c9afca0e837"
+    },
+    {
+      "selector": "source_verify::recovery_tests::callee_components::refused_return_component_requires_exact_function_span_and_full_receipt",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-33.log",
+      "log_sha256": "7e86aa268ab3491f3342a2cd50f4b7d2ecc2ef26d656862574564a63c853422d"
+    },
+    {
+      "selector": "source_verify::recovery_tests::callee_components::valid_callee_result_keeps_independent_condition_mismatch_after_parameter_refusal",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-34.log",
+      "log_sha256": "3bfad36a54dd0dbca427da670562743f1ed2bbf1989d6aeb33fedea4df1d3871"
+    },
+    {
+      "selector": "source_verify::recovery_tests::callee_components::valid_signature_argument_failures_do_not_erase_independently_known_results",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-35.log",
+      "log_sha256": "52719cd17d0f6e4487299fb1cfd3cbd8472d700103c953a783a357d6eff21294"
+    },
+    {
+      "selector": "source_verify::recovery_tests::existing_bindings_function_values_moves_and_match_coverage_keep_complete_old_verdicts",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-36.log",
+      "log_sha256": "fc96f1e4ec6ffcf3e96faa3286d4bd122c4df242977e69d4d32db2c26871a92a"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::actual_failure_repair_keeps_complete_previous_component_receiver_and_projection",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-37.log",
+      "log_sha256": "9f9ebdb3b7ace7df6e4036d883cf0a3f5a21c31493afdb94cfa083a39e94f3e7"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::admitted_specialized_and_method_successes_keep_complete_old_values_and_receipts",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-38.log",
+      "log_sha256": "234cc9ebb6934ad5c6e6a4f6bb1b33c07e747ac9016f903e2355d5b3d09686d4"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::applied_parameter_refusal_is_not_a_missing_declaration_component",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-39.log",
+      "log_sha256": "594dd7ab346e1cbd19637f4b876d38229f9aaee71a602fcd2875f04c5bcbc308"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::complete_pre_extension_entry_call_and_record_receivers_are_byte_exact",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-40.log",
+      "log_sha256": "655192def10a930677a29015d006af23c48ae81d66bf159f40dd95c2f19434dd"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::complete_previous_current_parameter_signature_receiver_has_only_named_namespace_adapter",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-41.log",
+      "log_sha256": "8b81b8b1d1f0a1a1d66875520b0abc9dc6bf1c3ddf9b975c5851dbd95ffe4032"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::complete_signature_carrier_projection_preserves_all_unrelated_shared_fields",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-42.log",
+      "log_sha256": "dc569eab1b091741cd049864380298461718dfbb463e9788846355db7aec8875"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::declared_nominal_arity_refusal_keeps_complete_original_receipt_without_unknown_origin",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-43.log",
+      "log_sha256": "202694c7bd226aed7d0352f055bc2681d2a6794cc6b7313bb5cab3f077de417a"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::field_receipt_requires_exact_six_fields_and_in_scope_generic_parameters",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-44.log",
+      "log_sha256": "dc4486ee91adda33f34c23430c918a25e0cfe5be50393bd0c6078251d9850dac"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::generic_current_parameter_refusal_authenticates_exact_receipt_and_keeps_real_sibling",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-45.log",
+      "log_sha256": "869ee21c389f269f9fae600877012578fb97bb8ea0166f0d63baa39000748b12"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::inherited_raw_field_authentication_rejects_detached_or_changed_components",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-46.log",
+      "log_sha256": "78cc9cc83f293f6b1cf4acdaa4d78d8b83d36012531525c2c6b85c5e07334c44"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::method_parameter_refusal_uses_raw_ordinal_after_self_and_retains_known_result",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-47.log",
+      "log_sha256": "a09cc962657aa6ab1dd35d165fd6730d931591b58382e875f60021bc1f2901d4"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::method_unknown_return_withdraws_zero_and_nonzero_argument_aliases",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-48.log",
+      "log_sha256": "2f799a90355a033b13cd89e54fe052cf050ffa339483562da2b55dfde1072b3c"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::record_component_refusal_keeps_nominal_value_and_known_field_mismatch",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-49.log",
+      "log_sha256": "dcb51e59fee9eb00a3083c21910f0896b0b03e083203e9385f8998d3ea044a7a"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::record_projection_refusal_withdraws_only_unknown_component_and_keeps_sibling",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-50.log",
+      "log_sha256": "52abc8a62ace9f19c24635ef55e178d65dbf228035aa6353dda7d73c9f73ac07"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::specialized_raw_parameter_refusal_keeps_known_argument_and_result_diagnostics",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-51.log",
+      "log_sha256": "f7cd91d590320373f5fcb9f1051bd82e07eade71ae955bb9a6c4f6838b8e5582"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::specialized_unknown_return_withdraws_alias_without_erasing_sibling_refusal",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-52.log",
+      "log_sha256": "fc783eec1120d04070ab61b437626b00cf88865f8e839912bd462c6542df6ea0"
+    },
+    {
+      "selector": "source_verify::recovery_tests::extended_components::variant_and_update_components_keep_nominal_results_and_known_field_errors",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-53.log",
+      "log_sha256": "965fd5eee023d179ddf179b0e80da57742e3c9b1593e2e3ac30963e1c5316b91"
+    },
+    {
+      "selector": "source_verify::recovery_tests::flow_799::complete_matching_and_arm_receivers_have_exact_full_source_inverses",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-54.log",
+      "log_sha256": "e4498aa47ed3f7a61a71ac94134052c37440d96f09d088656c890d190459f28c"
+    },
+    {
+      "selector": "source_verify::recovery_tests::flow_799::known_match_missing_case_and_admitted_conditional_receivers_remain_exact",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-55.log",
+      "log_sha256": "1e16d7c66181afcad7483784283125beb17ab83b3bf702e56510f018b7655142"
+    },
+    {
+      "selector": "source_verify::recovery_tests::flow_799::nested_conditional_refusal_preserves_both_branch_errors_and_outer_sibling",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-56.log",
+      "log_sha256": "4419453439613641c1533e1b4a8698b8c814b4d36cc5af0aa9596bc76f49c591"
+    },
+    {
+      "selector": "source_verify::recovery_tests::flow_799::read_only_scrutinee_origin_is_frozen_before_later_pattern_and_body_errors",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-57.log",
+      "log_sha256": "60c5cfaf57163f76ffa61628c19a10795194723228c453997cc85d69fa8e218e"
+    },
+    {
+      "selector": "source_verify::recovery_tests::flow_799::refused_conditions_and_incompatible_branches_never_publish_checked_results",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-58.log",
+      "log_sha256": "6ed2f14c33f81e153ba49c250100f9f8cbab20da4000c98d3eb2e266f1035676"
+    },
+    {
+      "selector": "source_verify::recovery_tests::flow_799::unknown_match_keeps_independent_aggregate_body_refusal_without_scalar_unreachability",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-59.log",
+      "log_sha256": "cbd6c44471b2602ca6abb27371f9538680b35a2a1ad173cbb960ba0778ae0cc2"
+    },
+    {
+      "selector": "source_verify::recovery_tests::flow_799::unknown_match_keeps_independent_guard_errors_and_refused_names_stay_arm_local",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-60.log",
+      "log_sha256": "b4bbaf1f3cdfdc590635f9f6b9b923b3512f1a950785bf407cff3485c472d996"
+    },
+    {
+      "selector": "source_verify::recovery_tests::flow_799::unknown_match_keeps_real_duplicate_fields_bindings_and_outer_shadowing",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-61.log",
+      "log_sha256": "8b38b5eda5d41a75431a718d290da31615192cbc9581ec6faff77cd2dc2db43b"
+    },
+    {
+      "selector": "source_verify::recovery_tests::flow_799::unknown_match_scrutinee_supplies_no_pattern_type_and_keeps_independent_body_error",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-62.log",
+      "log_sha256": "613208848a7d37bfb986cc904a2c948ee0d4c0b27b23307d021e4bd53f82e0d7"
+    },
+    {
+      "selector": "source_verify::recovery_tests::operators_799::admitted_operator_results_and_lazy_owned_call_joins_match_full_saved_receiver",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-63.log",
+      "log_sha256": "bc8561a2a25bb5888399eb1a2e700ab3447ee4702b9d5b5739a4581d74039c87"
+    },
+    {
+      "selector": "source_verify::recovery_tests::operators_799::complete_original_operator_source_is_preserved_by_exact_named_inverse",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-64.log",
+      "log_sha256": "2b521e2e79d32ae79ede0e5b5a3392ad5773639a6d66ff574892266a6c101152"
+    },
+    {
+      "selector": "source_verify::recovery_tests::operators_799::nested_refusal_removes_only_dependent_condition_and_argument_classifications",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-65.log",
+      "log_sha256": "99dea7f6ecb87ae7694956a5c4014ae6dfb8dedce07bf0cc84edaaa3e980ee34"
+    },
+    {
+      "selector": "source_verify::recovery_tests::operators_799::refused_initializer_keeps_real_duplicate_and_independent_sibling_errors",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-66.log",
+      "log_sha256": "b815f7e9cb22d422d807dc728d753e7b89a3485f12e0e8dd4267f5e63e08c43d"
+    },
+    {
+      "selector": "source_verify::recovery_tests::operators_799::refused_operators_keep_all_original_primary_fields_and_publish_no_checked_type",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-67.log",
+      "log_sha256": "1d490b0bd1af57401dda3f3d7aeb15ae69b318116c8a7ae9980d804393fd7050"
+    },
+    {
+      "selector": "source_verify::recovery_tests::proposal_corpus::an_unknown_value_is_still_reported_when_no_refused_let_declares_it",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-68.log",
+      "log_sha256": "0aba5397cfc2d083df2a60829a459304789ca99c73191be54ae923a935b455ea"
+    },
+    {
+      "selector": "source_verify::recovery_tests::proposal_corpus::full_proposal_corpus_keeps_exact_old_verdicts_and_scoped_intentional_deltas",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-69.log",
+      "log_sha256": "096bd7690ce57e6b8b63002724282005e7a50600cb0cbbe69c12c85ce926c288"
+    },
+    {
+      "selector": "source_verify::recovery_tests::proposal_corpus::refused_patterns_and_signatures_excuse_only_their_own_names",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-70.log",
+      "log_sha256": "941ea0dfb741066fc01c24268bb395441f313c8597119f78e5e2c8dde3d41cd7"
+    },
+    {
+      "selector": "source_verify::recovery_tests::read_before_self_initializer_siblings_and_noncapturing_closures_remain_independent",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-71.log",
+      "log_sha256": "71a97bb28900f9475b9a19012e13b8c0a7d71f651a1312de2980e15987dd7b48"
+    },
+    {
+      "selector": "source_verify::recovery_tests::refusal_dependency::full_receiver_binding_ownership_place_and_loan_facts_equal_complete_original",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-72.log",
+      "log_sha256": "59f6b4282eba1f8eee3b297a022b440d1a9066938f58259342adc0d01821c66f"
+    },
+    {
+      "selector": "source_verify::recovery_tests::refusal_dependency::native_unit_refusal_keeps_full_original_metadata_and_capability_diagnostics",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-73.log",
+      "log_sha256": "82415160901a5ed24163676809833480369bd0074fd150985c9037760873e35f"
+    },
+    {
+      "selector": "source_verify::recovery_tests::refusal_dependency::owned_and_borrowed_annotation_views_keep_complete_original_ownership_errors",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-74.log",
+      "log_sha256": "0f6b65687467f9958ed365ad1e0aef20bd268280e8f2875cf3fe53fface1c319"
+    },
+    {
+      "selector": "variants_semantics::patterns_and_arm_results_are_checked_independently",
+      "exit_code": 0,
+      "log": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-75.log",
+      "log_sha256": "f8375a61da67f65158c633c5057c914ec9d61f02114396b6b9f59355f8f43a3f"
+    }
+  ],
+  "batch_selected": 94,
+  "batch_passed": 91,
+  "remaining_failures": [
+    {
+      "selector": "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+      "log_sha256": "9d10bfde0d99da0884b160cd284e5eefbe866db8347de0ed998a93a5a9812ada"
+    },
+    {
+      "selector": "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+      "log_sha256": "c17c2d3d47295e1e3a31bb38fc6286c36faaa5ca85854fae0a5b0198be72d311"
+    },
+    {
+      "selector": "workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core",
+      "log_sha256": "e68d5b4b607045eb2e0a4dcfaf79631c4edee67b5a070573410fbb7e4e37344e"
+    }
+  ],
+  "publication_verified": false,
+  "scope": "94 exact selected bodies, no full suite or full quality gate",
+  "build_exit": 0,
+  "build_receipt_sha256": "12aaaa4440db7e340c3a2c64f8ac9937d934be5974f8cf52f6b87cc9361c5017",
+  "production_lib_cli_clippy_exit": 0,
+  "clippy_receipt_sha256": "b68f18be035da42cfebc06e6fd889ba47e346d2326fa48d1d4f82110532813f8",
+  "runtime_receipt_sha256": "7db5f9dc3df4c7a795c03ddcc9bdc57d42a0f23a412e2ef7d20e23ba089299b8",
+  "new_live_benchmark": false,
+  "application_recovery": false,
+  "close_issue_after_remote_verification": 799
+}
