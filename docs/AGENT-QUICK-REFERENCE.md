@@ -57,6 +57,17 @@ for the exact shape, target accounting, fuel and publication boundary.
 do not promise that, so put durable intent in stable `@id` names, contracts,
 and tests.
 
+A workspace `SPX-G171` can refuse its static admission forecast or a later
+live compiler acquisition. Read the reported boundary before restructuring source:
+passing the forecast does not prove the live compiler fits. Preserve the required
+behavior and existing caps. A smaller reachable program can reduce pressure when
+it still meets the requirements; a compiler allocation or traversal improvement
+can also reduce the same ledger usage. If the required program still refuses,
+retain its exact source, compiler revision and complete diagnostic for a compiler
+issue. Requested/remaining bytes identify the first refusal, not the total bytes
+needed to make the program fit. Repeatedly splitting the same reachable source
+into more modules does not by itself reduce a summed source forecast.
+
 ## A complete file
 
 ```semaprax
@@ -1275,7 +1286,7 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | x as i64|SPX-P106|Named checked conversion/suffix|
 | Rust/JS closure|SPX-P201|fn(x: i64) -> i64 { x + 1 }|
 | use std::io;|SPX-G170|Built-ins need no import; std.*: Project dependency + stable-ID import|
-| resolved-core builder ledger refusal|`SPX-G171`|Use requested/remaining/floor plus the compiler-owned stage to choose a smaller graph; those are cumulative ledger bytes, not RSS/peak forecast; unknown is not inferred|
+| resolved-core builder ledger refusal|`SPX-G171`|Keep required behavior and caps; retain source and requested/remaining/floor plus the compiler-owned stage. Source reduction may help; compiler-owner optimization is another route. These are cumulative ledger bytes, not RSS/peak forecast; unknown is not inferred|
 | factory import lacks exact type|SPX-G172|Directly import exact/nested exposed type identities (help); inference grants no import authority|
 | noncanonical Project source|SPX-G170|semaprax fmt <manifest>; blocked discovery: semaprax fmt --manifest <manifest>, then retry|
 | interpreter: source-command.v1/v28 Project|SPX-F102|Interpreter lacks argv/files; semaprax build <manifest> --target native -o <fresh-path>; run in Project dir. Tests: semaprax test <project> --target native [Tests](PROJECT-NATIVE-TEST-V1.md)|
