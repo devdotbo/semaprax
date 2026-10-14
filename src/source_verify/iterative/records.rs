@@ -5,14 +5,17 @@ use crate::ast::{
     Expr, FieldDeclaration, ParamMode, Type, TypeDeclaration, VariantCaseDeclaration,
 };
 use crate::diagnostic::Diagnostic;
-use crate::source_verify::IterativeVerifier;
 use crate::source_verify::binding::CheckedValue;
 use crate::source_verify::diagnostics::{error, reject_native_unit_value};
 use crate::source_verify::loans::mark_value_sources_moved;
 use crate::source_verify::place::source_place;
 use crate::source_verify::scope::VerifierFrame;
-use crate::source_verify::type_table::{TypeTable, effective_record_fields};
+use crate::source_verify::type_table::{effective_record_fields, TypeTable};
+use crate::source_verify::IterativeVerifier;
 use std::collections::HashSet;
+
+#[cfg(test)]
+mod records_before_extended;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     #[allow(clippy::too_many_arguments)]
@@ -27,6 +30,19 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         index: usize,
         mut supplied: HashSet<&'p str>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.extended_before_799 {
+            return self.before_extended_frame_prepare_record_field(
+                expression,
+                type_name,
+                type_arguments,
+                fields,
+                declared_fields,
+                scope,
+                index,
+                supplied,
+            );
+        }
         #[cfg(test)]
         if self.recovery_legacy {
             return self.recovery_old_frame_prepare_record_field(
@@ -92,6 +108,19 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         index: usize,
         supplied: HashSet<&'p str>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.extended_before_799 {
+            return self.before_extended_frame_resume_record_field(
+                expression,
+                type_name,
+                type_arguments,
+                fields,
+                declared_fields,
+                scope,
+                index,
+                supplied,
+            );
+        }
         let actual = self.values.pop().unwrap_or(None);
         let field = &fields[index];
         let declared = self
@@ -113,7 +142,20 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     TypeTable::substitute_variant_type(declaration, type_arguments, &declared.ty)
                 })
                 .unwrap_or_else(|| declared.ty.clone());
-            if actual.ty != expected && !self.recovery.explains(&field.value, &expected) {
+            let refused_field = self
+                .recovery
+                .declared_field_refusal(
+                    type_name,
+                    declared,
+                    self.program,
+                    self.types,
+                    self.diagnostics,
+                )
+                .is_some();
+            if !refused_field
+                && actual.ty != expected
+                && !self.recovery.explains(&field.value, &expected)
+            {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T215",
@@ -216,6 +258,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         index: usize,
         mut supplied: HashSet<&'p str>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.extended_before_799 {
+            return self.before_extended_frame_prepare_variant_field(
+                expression,
+                type_name,
+                type_arguments,
+                case_name,
+                fields,
+                declaration,
+                case,
+                scope,
+                index,
+                supplied,
+            );
+        }
         let field = &fields[index];
         let declared = case.and_then(|case| {
             case.fields
@@ -258,6 +315,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         index: usize,
         supplied: HashSet<&'p str>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.extended_before_799 {
+            return self.before_extended_frame_resume_variant_field(
+                expression,
+                type_name,
+                type_arguments,
+                case_name,
+                fields,
+                declaration,
+                case,
+                scope,
+                index,
+                supplied,
+            );
+        }
         let actual = self.values.pop().unwrap_or(None);
         let field = &fields[index];
         let declared = case.and_then(|case| {
@@ -270,7 +342,20 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             let expected =
                 TypeTable::substitute_variant_type(declaration, type_arguments, &declared.ty)
                     .unwrap_or_else(|| declared.ty.clone());
-            if actual.ty != expected && !self.recovery.explains(&field.value, &expected) {
+            let refused_field = self
+                .recovery
+                .declared_field_refusal(
+                    type_name,
+                    declared,
+                    self.program,
+                    self.types,
+                    self.diagnostics,
+                )
+                .is_some();
+            if !refused_field
+                && actual.ty != expected
+                && !self.recovery.explains(&field.value, &expected)
+            {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T215",
@@ -361,6 +446,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         fields: &'p [crate::ast::FieldInitializer],
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.extended_before_799 {
+            return self.before_extended_frame_resume_update_base(expression, base, fields, scope);
+        }
         let Some(base_value) = self.values.pop().flatten() else {
             self.values.push(None);
             return Ok(());
@@ -463,6 +552,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         index: usize,
         mut supplied: HashSet<&'p str>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.extended_before_799 {
+            return self.before_extended_frame_prepare_update_field(
+                expression,
+                base_type,
+                fields,
+                declared_fields,
+                scope,
+                index,
+                supplied,
+            );
+        }
         let field = &fields[index];
         let declared = declared_fields
             .iter()
@@ -505,6 +606,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         index: usize,
         supplied: HashSet<&'p str>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.extended_before_799 {
+            return self.before_extended_frame_resume_update_field(
+                expression,
+                base_type,
+                fields,
+                declared_fields,
+                scope,
+                index,
+                supplied,
+            );
+        }
         let actual = self.values.pop().unwrap_or(None);
         let field = &fields[index];
         let declared = declared_fields
@@ -516,7 +629,23 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 .types
                 .record_field_type(&base_type, declared)
                 .unwrap_or_else(|| declared.ty.clone());
-            if actual.ty != expected && !self.recovery.explains(&field.value, &expected) {
+            let refused_field = match &base_type {
+                Type::Named { name, .. } => self
+                    .recovery
+                    .declared_field_refusal(
+                        name,
+                        declared,
+                        self.program,
+                        self.types,
+                        self.diagnostics,
+                    )
+                    .is_some(),
+                _ => false,
+            };
+            if !refused_field
+                && actual.ty != expected
+                && !self.recovery.explains(&field.value, &expected)
+            {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T215",

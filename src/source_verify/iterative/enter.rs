@@ -25,6 +25,8 @@ use std::collections::HashSet;
 
 #[cfg(test)]
 mod enter_before_components;
+#[cfg(test)]
+mod enter_before_extended;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     pub(super) fn frame_enter(
@@ -32,6 +34,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         expression: &'p Expr,
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_enter(expression, scope);
+        }
         #[cfg(test)]
         if self.operators_before_799 {
             return self.before_components_frame_enter(expression, scope);
@@ -903,10 +909,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         }
                         validation_specialize_signature(target, type_arguments).map(
                             |(params, return_type)| {
-                                VerifierFunctionSignature::Specialized {
+                                VerifierFunctionSignature::SourceSpecialized {
+                                    function: target,
                                     params,
                                     return_type,
-                                    implicit_unique_ownership: true,
                                 }
                             },
                         )
@@ -930,7 +936,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         self.types,
                     ),
                     VerifierCallTarget::Ordinary(Some(
-                        VerifierFunctionSignature::Specialized { params, .. },
+                        VerifierFunctionSignature::Specialized { params, .. }
+                        | VerifierFunctionSignature::SourceSpecialized { params, .. },
                     )) if params.iter().any(|p| {
                         crate::source_verify::declared_type::collection_record::vector(
                             self.types, &p.ty,

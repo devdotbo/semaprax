@@ -1,0 +1,20 @@
+{
+  "package": "semaprax",
+  "harness": "lib",
+  "status": "source-only; no tests/builds executed",
+  "selectors": [
+    "source_verify::recovery_tests::extended_components::specialized_raw_parameter_refusal_keeps_known_argument_and_result_diagnostics",
+    "source_verify::recovery_tests::extended_components::specialized_unknown_return_withdraws_alias_without_erasing_sibling_refusal",
+    "source_verify::recovery_tests::extended_components::admitted_specialized_and_method_successes_keep_complete_old_values_and_receipts",
+    "source_verify::recovery_tests::extended_components::method_parameter_refusal_uses_raw_ordinal_after_self_and_retains_known_result",
+    "source_verify::recovery_tests::extended_components::method_unknown_return_withdraws_zero_and_nonzero_argument_aliases",
+    "source_verify::recovery_tests::extended_components::record_component_refusal_keeps_nominal_value_and_known_field_mismatch",
+    "source_verify::recovery_tests::extended_components::record_projection_refusal_withdraws_only_unknown_component_and_keeps_sibling",
+    "source_verify::recovery_tests::extended_components::field_receipt_requires_exact_six_fields_and_in_scope_generic_parameters",
+    "source_verify::recovery_tests::extended_components::complete_pre_extension_entry_call_and_record_receivers_are_byte_exact",
+    "source_verify::recovery_tests::extended_components::variant_and_update_components_keep_nominal_results_and_known_field_errors",
+    "source_verify::recovery_tests::extended_components::inherited_raw_field_authentication_rejects_detached_or_changed_components",
+    "source_verify::recovery_tests::extended_components::complete_signature_carrier_projection_preserves_all_unrelated_shared_fields"
+  ],
+  "required_existing_source_owner": "source_verify::constructor_tests::complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps"
+}

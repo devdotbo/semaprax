@@ -202,6 +202,8 @@ struct IterativeVerifier<'a, 'p> {
     recovery_legacy: bool,
     #[cfg(test)]
     operators_before_799: bool,
+    #[cfg(test)]
+    extended_before_799: bool,
     frames: Vec<VerifierFrame<'p>>,
     values: Vec<Option<CheckedValue>>,
     /// Byte spans of the `bytes_set` calls this function admits as a
@@ -267,6 +269,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             recovery_legacy: false,
             #[cfg(test)]
             operators_before_799: false,
+            #[cfg(test)]
+            extended_before_799: false,
             frames: Vec::new(),
             values: Vec::new(),
             buffer_reopen_sites: std::collections::BTreeSet::new(),

@@ -1,0 +1,33 @@
+{
+  "base_head": "501b77e3588696c4e6be7f5f6e9f7263600160ed",
+  "current_source_hashes": {
+    "src/source_verify.rs": "76861a50727adc8ec919d63bf8665873d99fb8cc1e119f5cbab7e1fb299d6954",
+    "src/source_verify/scope.rs": "6feddce0667f7ce23407c14765bed38c1af92f1be6543cc9a5479aee9094c85f",
+    "src/source_verify/iterative/enter.rs": "a70c388c53646820a86e45f10031017ffd24523c3bb6f575119ee6b5401dbfb5",
+    "src/source_verify/iterative/calls.rs": "291a96a8250be42cbbd817660ba8c70e9a7d1d6b5b1e2dcf78157a40828227df",
+    "src/source_verify/iterative/records.rs": "3815d3c5ff48005151e871372f50a42d92eab84cb3d9f6d286d775684c4c2d4f",
+    "src/source_verify/recovery/callee_components.rs": "d388750a6e15cd25914cfa7f9393ef4abdd4775b7dacea27f067327ba9986551",
+    "src/source_verify/recovery_tests.rs": "ed763eb3a77915ae6cd57688d780bc9fd20931d865059ff10e3c6a9e0830197d",
+    "src/source_verify/recovery_tests/extended_components.rs": "99b7922d9715244f7607277544a2174b00de7514483a8dbb64dea74a36c46344",
+    "src/source_verify/iterative/enter/enter_before_extended.rs": "1cf4f774cf6e34f8dd3589881b5e62be72e5187058424bd7ddffeaf7d3056339",
+    "src/source_verify/iterative/calls/calls_before_extended.rs": "940b6120358c99e90101196d06e96aec5a884ff4f6600f77fa8e36149d76643b",
+    "src/source_verify/iterative/records/records_before_extended.rs": "01e067513231693880a91fac84413ce2d2d1cfd2c8693c69f571c3ae639c50b0",
+    "src/source_verify/constructor_tests.rs": "bf76532dc6818d1adab70f92157798957b0b78d6fb0d96ebf7110dec36f84718",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "b0197e5b19ad54942a8422ab8c5936f6777721ffebbfe6c84f7f309bee182d24"
+  },
+  "original_archive_hashes": {
+    "iterative__records.rs.before": "00e92f426a91970f6b5fd618d1042a49f0fc02dd4e81b0a7dd51a7cbd4bac421",
+    "iterative__calls.rs.before": "9383dc044168d091fa520dce37a3cd1b37a2a0cc07fd1572ed906813303f47bf",
+    "recovery__callee_components.rs.before": "f45f8df35c7eccd83b75751b1ad581e3349b1e6115f2f91c156c6f1ac888f495",
+    "scope.rs.before": "e18be5fdf21aa4cdfa2fb696b75e4e763a6b7e97ba13bb3b35cc109e1d9f6298",
+    "iterative__enter.rs.before": "56635fc0e12b86dce9238d66f7079d789c95c1e484d9a0947974d7f13f3f274c"
+  },
+  "source_only_static_checks": {
+    "archive_git_byte_equality": 5,
+    "whole_independent_receiver_inverse_equality": 3,
+    "max_changed_rust_lines": 1488,
+    "new_exact_authored_test_definitions": 12,
+    "test_execution": false
+  },
+  "review_payload_before_owner_membership_and_added_variant_inheritance_projection_controls": "54e5cea1ccaff41f908857f7b0edb2ed70024418106b9188caeddc826096389c"
+}

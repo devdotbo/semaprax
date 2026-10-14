@@ -18,6 +18,8 @@ use crate::source_verify::IterativeVerifier;
 
 #[cfg(test)]
 mod calls_before_components;
+#[cfg(test)]
+mod calls_before_extended;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     #[allow(clippy::too_many_arguments)]
@@ -31,6 +33,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         target: VerifierCallTarget<'p>,
         borrowed_bytes_loans: Vec<(String, SourceLoanId)>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_call_argument(
+                expression,
+                name,
+                args,
+                scope,
+                index,
+                target,
+                borrowed_bytes_loans,
+            );
+        }
         #[cfg(test)]
         if self.operators_before_799 || self.recovery_legacy {
             return self.before_components_frame_resume_call_argument(
@@ -121,19 +135,20 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 }
             }
             VerifierCallTarget::Ordinary(specialized) => {
-                let refused_parameter = match specialized {
-                    Some(VerifierFunctionSignature::Borrowed(function)) => self
-                        .recovery
-                        .callee_component_refusal(
-                            function,
-                            Some(index),
-                            self.program,
-                            self.types,
-                            self.diagnostics,
-                        )
-                        .is_some(),
-                    _ => false,
-                };
+                let refused_parameter = specialized
+                    .as_ref()
+                    .and_then(VerifierFunctionSignature::source_function)
+                    .is_some_and(|function| {
+                        self.recovery
+                            .callee_component_refusal(
+                                function,
+                                Some(index),
+                                self.program,
+                                self.types,
+                                self.diagnostics,
+                            )
+                            .is_some()
+                    });
                 if let Some(param) = specialized
                     .as_ref()
                     .and_then(|target| target.params().get(index))
@@ -290,15 +305,17 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 &borrowed_bytes_loans,
             );
             let refused_return = match &target {
-                VerifierCallTarget::Ordinary(Some(VerifierFunctionSignature::Borrowed(
-                    function,
-                ))) => self.recovery.callee_component_refusal(
-                    function,
-                    None,
-                    self.program,
-                    self.types,
-                    self.diagnostics,
-                ),
+                VerifierCallTarget::Ordinary(Some(signature)) => {
+                    signature.source_function().and_then(|function| {
+                        self.recovery.callee_component_refusal(
+                            function,
+                            None,
+                            self.program,
+                            self.types,
+                            self.diagnostics,
+                        )
+                    })
+                }
                 _ => None,
             };
             let output = match target {
@@ -377,6 +394,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         args: &'p [Expr],
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_method_receiver(
+                expression, receiver, method, args, scope,
+            );
+        }
         #[cfg(test)]
         if self.operators_before_799 || self.recovery_legacy {
             return self.before_components_frame_resume_method_receiver(
@@ -497,6 +520,17 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             self.diagnostics,
         );
         if args.is_empty() {
+            if let Some(origin) = self.recovery.callee_component_refusal(
+                method_fn,
+                None,
+                self.program,
+                self.types,
+                self.diagnostics,
+            ) {
+                self.recovery.read_callee_refusal(origin);
+                self.values.push(None);
+                return Ok(());
+            }
             self.values.push(Some(CheckedValue::returned(
                 method_fn.return_type.clone(),
                 self.types.needs_drop(&method_fn.return_type),
@@ -526,6 +560,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         index: usize,
     ) -> Result<(), Diagnostic> {
         #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_method_argument(
+                expression, method, args, scope, index,
+            );
+        }
+        #[cfg(test)]
         if self.operators_before_799 || self.recovery_legacy {
             return self.before_components_frame_resume_method_argument(
                 expression, method, args, scope, index,
@@ -534,11 +574,22 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         let actual = self.values.pop().unwrap_or(None);
         let argument = &args[index];
         if let Some(param) = method.params.get(index + 1) {
+            let refused_parameter = self
+                .recovery
+                .callee_component_refusal(
+                    method,
+                    Some(index + 1),
+                    self.program,
+                    self.types,
+                    self.diagnostics,
+                )
+                .is_some();
             if let Some(actual) = &actual {
                 reject_native_unit_value(self.program, argument, actual, self.diagnostics);
             }
             if actual.as_ref().is_some_and(|actual| {
-                !actual.native_unit
+                !refused_parameter
+                    && !actual.native_unit
                     && actual.ty != param.ty
                     && !self.recovery.explains(argument, &param.ty)
             }) {
@@ -583,6 +634,15 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 expression: argument,
                 scope,
             });
+        } else if let Some(origin) = self.recovery.callee_component_refusal(
+            method,
+            None,
+            self.program,
+            self.types,
+            self.diagnostics,
+        ) {
+            self.recovery.read_callee_refusal(origin);
+            self.values.push(None);
         } else {
             self.values.push(Some(CheckedValue::returned(
                 method.return_type.clone(),
@@ -598,6 +658,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         operand: &'p Expr,
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_try(expression, operand, scope);
+        }
         #[cfg(test)]
         if self.operators_before_799 || self.recovery_legacy {
             return self.before_components_frame_resume_try(expression, operand, scope);
@@ -727,6 +791,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         _request: &'p Expr,
     ) -> Result<(), Diagnostic> {
         #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_yield(_expression, _request);
+        }
+        #[cfg(test)]
         if self.operators_before_799 || self.recovery_legacy {
             return self.before_components_frame_resume_yield(_expression, _request);
         }
@@ -746,6 +814,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         base: &'p Expr,
         field: &'p str,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_project(expression, base, field);
+        }
         #[cfg(test)]
         if self.operators_before_799 || self.recovery_legacy {
             return self.before_components_frame_resume_project(expression, base, field);
@@ -792,6 +864,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             self.values.push(None);
             return Ok(());
         };
+        let field_refusal = match &base_value.ty {
+            Type::Named { name, .. } => self.recovery.declared_field_refusal(
+                name,
+                declared,
+                self.program,
+                self.types,
+                self.diagnostics,
+            ),
+            _ => None,
+        };
+        if let Some(origin) = field_refusal {
+            self.recovery.read_callee_refusal(origin);
+            self.values.push(None);
+            return Ok(());
+        }
         let projected = self
             .types
             .record_field_type(&base_value.ty, declared)
@@ -812,15 +899,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     pub(super) fn refused_callee_return(&mut self, target: &VerifierCallTarget<'p>) -> bool {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_refused_callee_return(target);
+        }
         let origin = match target {
-            VerifierCallTarget::Ordinary(Some(VerifierFunctionSignature::Borrowed(function))) => {
-                self.recovery.callee_component_refusal(
-                    function,
-                    None,
-                    self.program,
-                    self.types,
-                    self.diagnostics,
-                )
+            VerifierCallTarget::Ordinary(Some(signature)) => {
+                signature.source_function().and_then(|function| {
+                    self.recovery.callee_component_refusal(
+                        function,
+                        None,
+                        self.program,
+                        self.types,
+                        self.diagnostics,
+                    )
+                })
             }
             _ => None,
         };

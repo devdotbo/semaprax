@@ -1,0 +1,582 @@
+//! Raw declaration components remain distinct from valid result and nominal facts.
+use crate::ast::program_source::ProgramSource;
+use crate::diagnostic::Diagnostic;
+use crate::source_verify::{
+    declared_type::check_declared_type, type_table::TypeTable, IterativeVerifier,
+};
+use std::collections::{HashMap, HashSet};
+use std::path::Path;
+
+fn source(declarations: &str, body: &str) -> String {
+    format!("module t; {declarations} @id(\"t.main\") fn main()->i64{{{body}}}")
+}
+fn codes(diagnostics: &[Diagnostic]) -> Vec<&str> {
+    diagnostics.iter().map(|d| d.code).collect()
+}
+fn receive(source: &str, before: bool) -> (Option<crate::ast::Type>, Vec<Diagnostic>) {
+    let program = crate::parse(source, Path::new("extended-components.spx")).unwrap();
+    let types = TypeTable::new(&program);
+    let functions = program
+        .functions
+        .iter()
+        .map(|function| (function.name.as_str(), function))
+        .collect::<HashMap<_, _>>();
+    let main = functions["main"];
+    let mut diagnostics = Vec::new();
+    // Real signature checker creates the original receipts before body checking.
+    for function in program.functions() {
+        let parameters = function
+            .type_parameters
+            .iter()
+            .map(|parameter| parameter.name.as_str())
+            .collect::<HashSet<_>>();
+        check_declared_type(
+            &program,
+            &function.return_type,
+            function.span,
+            &types,
+            &parameters,
+            &mut diagnostics,
+        );
+        for parameter in &function.params {
+            check_declared_type(
+                &program,
+                &parameter.ty,
+                parameter.span,
+                &types,
+                &parameters,
+                &mut diagnostics,
+            );
+        }
+    }
+    for declaration in program.types() {
+        let parameters = declaration
+            .type_parameters
+            .iter()
+            .map(|p| p.name.as_str())
+            .collect::<HashSet<_>>();
+        let mut fields = Vec::new();
+        match &declaration.kind {
+            crate::ast::TypeDeclarationKind::Record { fields: declared }
+            | crate::ast::TypeDeclarationKind::Class {
+                fields: declared, ..
+            } => fields.extend(declared),
+            crate::ast::TypeDeclarationKind::Variant { cases } => {
+                for case in cases {
+                    fields.extend(&case.fields);
+                }
+            }
+            crate::ast::TypeDeclarationKind::Resource { .. } => {}
+        }
+        for field in fields {
+            check_declared_type(
+                &program,
+                &field.ty,
+                field.span,
+                &types,
+                &parameters,
+                &mut diagnostics,
+            );
+        }
+        if let crate::ast::TypeDeclarationKind::Class { methods, .. } = &declaration.kind {
+            for method in methods {
+                check_declared_type(
+                    &program,
+                    &method.return_type,
+                    method.span,
+                    &types,
+                    &parameters,
+                    &mut diagnostics,
+                );
+                for parameter in &method.params {
+                    check_declared_type(
+                        &program,
+                        &parameter.ty,
+                        parameter.span,
+                        &types,
+                        &parameters,
+                        &mut diagnostics,
+                    );
+                }
+            }
+        }
+    }
+    let variables = main
+        .params
+        .iter()
+        .map(|parameter| {
+            (
+                parameter.name.clone(),
+                crate::source_verify::binding::Binding {
+                    contract_local: false,
+                    traversal_row: None,
+                    ty: parameter.ty.clone(),
+                    mode: parameter.mode,
+                    availability: crate::source_verify::binding::Availability::Available,
+                    moved_places: HashMap::new(),
+                    definitely_partial: HashSet::new(),
+                    native_unit_discard: false,
+                    mutable: false,
+                    active_loans: std::collections::BTreeSet::new(),
+                    borrow_origin: None,
+                },
+            )
+        })
+        .collect();
+    let mut verifier = IterativeVerifier::new(
+        &program,
+        main,
+        variables,
+        &functions,
+        &types,
+        None,
+        true,
+        &mut diagnostics,
+    );
+    verifier.extended_before_799 = before;
+    let value = verifier.run(&main.body).unwrap().map(|value| value.ty);
+    drop(verifier);
+    (value, diagnostics)
+}
+
+#[test]
+fn specialized_raw_parameter_refusal_keeps_known_argument_and_result_diagnostics() {
+    let source = self::source(
+        "@id(\"t.f\") fn f<T>(a:T,b:Missing,c:bool)->i64{0}",
+        "if f<i64>(1,2,3){1}else{0}",
+    );
+    let old = receive(&source, true);
+    let current = receive(&source, false);
+    assert_eq!(
+        codes(&old.1),
+        ["SPX-T001", "SPX-T205", "SPX-T205", "SPX-T210"]
+    );
+    assert_eq!(codes(&current.1), ["SPX-T001", "SPX-T205", "SPX-T210"]);
+    assert_eq!(
+        current.1,
+        vec![old.1[0].clone(), old.1[2].clone(), old.1[3].clone()]
+    );
+    assert_eq!(current.0, old.0);
+}
+
+#[test]
+fn specialized_unknown_return_withdraws_alias_without_erasing_sibling_refusal() {
+    let source = self::source(
+        "@id(\"t.f\") fn f<T>(a:T)->Missing{0}",
+        "let alias=f<i64>(1); alias+missing_sibling",
+    );
+    let old = receive(&source, true);
+    let current = receive(&source, false);
+    assert_eq!(codes(&current.1), ["SPX-T001", "SPX-T202"]);
+    assert_eq!(current.1[0], old.1[0]);
+    assert_eq!(
+        current.1[1],
+        *old.1.iter().find(|d| d.code == "SPX-T202").unwrap()
+    );
+    assert_eq!(current.0, None);
+}
+
+#[test]
+fn admitted_specialized_and_method_successes_keep_complete_old_values_and_receipts() {
+    for (declarations, body) in [
+        ("@id(\"t.f\") fn f<T>(a:T)->T{a}", "f<i64>(1)+2"),
+        ("@id(\"t.c\") class C{@id(\"t.x\") x:i64,@id(\"t.get\") fn get(self:C,a:i64)->i64{self.x+a}}", "let c=C{x:1}; c.get(2)"),
+        ("@id(\"t.r\") record R{@id(\"t.x\") x:i64,}", "let r=R{x:1}; r.x+2"),
+    ] {
+        let source = self::source(declarations, body);
+        assert_eq!(receive(&source, false), receive(&source, true));
+        let program=crate::parse(&source, Path::new("extended-components.spx")).unwrap();
+        assert!(crate::source_verify::verify(&program).is_empty());
+    }
+}
+
+#[test]
+fn method_parameter_refusal_uses_raw_ordinal_after_self_and_retains_known_result() {
+    let source=self::source("@id(\"t.c\") class C{@id(\"t.x\") x:i64,@id(\"t.f\") fn f(self:C,a:Missing,b:bool)->i64{0}}", "let c=C{x:1}; if c.f(2,3){1}else{0}");
+    let old = receive(&source, true);
+    let current = receive(&source, false);
+    assert_eq!(
+        codes(&old.1),
+        ["SPX-T001", "SPX-T205", "SPX-T205", "SPX-T210"]
+    );
+    assert_eq!(
+        current.1,
+        vec![old.1[0].clone(), old.1[2].clone(), old.1[3].clone()]
+    );
+    assert_eq!(current.0, old.0);
+}
+
+#[test]
+fn method_unknown_return_withdraws_zero_and_nonzero_argument_aliases() {
+    for (params, args) in [("self:C", ""), ("self:C,a:i64", "1")] {
+        let declarations = format!(
+            "@id(\"t.c\") class C{{@id(\"t.x\") x:i64,@id(\"t.f\") fn f({params})->Missing{{0}}}}"
+        );
+        let source = self::source(
+            &declarations,
+            &format!("let c=C{{x:1}}; let alias=c.f({args}); alias+1"),
+        );
+        let old = receive(&source, true);
+        let current = receive(&source, false);
+        assert_eq!(codes(&current.1), ["SPX-T001"]);
+        assert_eq!(current.1[0], old.1[0]);
+        assert!(old.1.len() > current.1.len());
+        assert_eq!(current.0, None);
+    }
+}
+
+#[test]
+fn record_component_refusal_keeps_nominal_value_and_known_field_mismatch() {
+    let declarations =
+        "@id(\"t.r\") record R{@id(\"t.bad\") bad:Missing,@id(\"t.known\") known:bool,}";
+    let source = self::source(declarations, "if R{bad:1,known:2}{1}else{0}");
+    let old = receive(&source, true);
+    let current = receive(&source, false);
+    assert_eq!(
+        codes(&old.1),
+        ["SPX-T001", "SPX-T215", "SPX-T215", "SPX-T210"]
+    );
+    assert_eq!(
+        current.1,
+        vec![old.1[0].clone(), old.1[2].clone(), old.1[3].clone()]
+    );
+    assert_eq!(current.0, old.0);
+}
+
+#[test]
+fn record_projection_refusal_withdraws_only_unknown_component_and_keeps_sibling() {
+    let source = self::source(
+        "@id(\"t.r\") record R{@id(\"t.bad\") bad:Missing,@id(\"t.known\") known:i64,}",
+        "let r=R{bad:1,known:2}; let alias=r.bad; alias+missing_sibling",
+    );
+    let old = receive(&source, true);
+    let current = receive(&source, false);
+    assert_eq!(codes(&current.1), ["SPX-T001", "SPX-T202"]);
+    assert_eq!(current.1[0], old.1[0]);
+    assert_eq!(
+        current.1[1],
+        *old.1.iter().find(|d| d.code == "SPX-T202").unwrap()
+    );
+    assert_eq!(current.0, None);
+}
+
+#[test]
+fn field_receipt_requires_exact_six_fields_and_in_scope_generic_parameters() {
+    let source = self::source(
+        "@id(\"t.r\") record R<T>{@id(\"t.bad\") bad:Missing,@id(\"t.good\") good:T,}",
+        "0",
+    );
+    let program = crate::parse(&source, Path::new("extended-components.spx")).unwrap();
+    let types = TypeTable::new(&program);
+    let declaration = &program.types[0];
+    let crate::ast::TypeDeclarationKind::Record { fields } = &declaration.kind else {
+        panic!("record fixture")
+    };
+    let main = &program.functions[0];
+    let mut receipt = Vec::new();
+    check_declared_type(
+        &program,
+        &fields[0].ty,
+        fields[0].span,
+        &types,
+        &HashSet::from(["T"]),
+        &mut receipt,
+    );
+    let recovery = crate::source_verify::recovery::Recovery::signature(
+        &program,
+        main,
+        &HashMap::new(),
+        &types,
+        &receipt,
+    );
+    assert_eq!(
+        recovery.declared_field_refusal("R", &fields[0], &program, &types, &receipt),
+        Some(0)
+    );
+    for field in 0..6 {
+        let mut forged = receipt.clone();
+        match field {
+            0 => forged[0].code = "SPX-T205",
+            1 => forged[0].severity = crate::diagnostic::Severity::Warning,
+            2 => forged[0].message = "forged".into(),
+            3 => forged[0].path = Some("forged.spx".to_owned()),
+            4 => forged[0].span = None,
+            5 => forged[0].help = Some("forged".to_owned()),
+            _ => unreachable!(),
+        }
+        assert_eq!(
+            recovery.declared_field_refusal("R", &fields[0], &program, &types, &forged),
+            None
+        );
+    }
+    let forged = vec![
+        Diagnostic::error("SPX-T001", "unknown type `T`", fields[1].span).at_path(program.path()),
+    ];
+    assert_eq!(
+        recovery.declared_field_refusal("R", &fields[1], &program, &types, &forged),
+        None
+    );
+}
+
+#[test]
+fn complete_pre_extension_entry_call_and_record_receivers_are_byte_exact() {
+    for (saved, archive, registration) in [
+        (
+            include_str!("../iterative/enter/enter_before_extended.rs"),
+            include_str!(
+                "../../../docs/evidence/extended-components-799/iterative__enter.rs.before"
+            ),
+            Some("#[cfg(test)]\nmod enter_before_components;\n"),
+        ),
+        (
+            include_str!("../iterative/calls/calls_before_extended.rs"),
+            include_str!(
+                "../../../docs/evidence/extended-components-799/iterative__calls.rs.before"
+            ),
+            Some("#[cfg(test)]\nmod calls_before_components;\n"),
+        ),
+        (
+            include_str!("../iterative/records/records_before_extended.rs"),
+            include_str!(
+                "../../../docs/evidence/extended-components-799/iterative__records.rs.before"
+            ),
+            None,
+        ),
+    ] {
+        let mut restored = saved.replace("before_extended_", "");
+        if let Some(registration) = registration {
+            assert_eq!(
+                restored
+                    .matches("// Parent registers the complete prior component receiver.\n")
+                    .count(),
+                1
+            );
+            restored = restored.replace(
+                "// Parent registers the complete prior component receiver.\n",
+                registration,
+            );
+        }
+        assert_eq!(restored, archive);
+    }
+}
+
+#[test]
+fn variant_and_update_components_keep_nominal_results_and_known_field_errors() {
+    let source=self::source("@id(\"t.v\") variant V{@id(\"t.case\") Case{@id(\"t.bad\") bad:Missing,@id(\"t.known\") known:bool,},}","V::Case{bad:1,known:2}");
+    let old = receive(&source, true);
+    let current = receive(&source, false);
+    assert_eq!(codes(&old.1), ["SPX-T001", "SPX-T215", "SPX-T215"]);
+    assert_eq!(current.1, vec![old.1[0].clone(), old.1[2].clone()]);
+    assert_eq!(current.0, old.0);
+    assert!(current.0.is_some());
+    let source = self::source(
+        "@id(\"t.r\") record R{@id(\"t.bad\") bad:Missing,@id(\"t.known\") known:bool,}",
+        "let r=R{bad:1,known:true}; r with {bad:2,known:3}",
+    );
+    let old = receive(&source, true);
+    let current = receive(&source, false);
+    assert_eq!(
+        codes(&old.1),
+        ["SPX-T001", "SPX-T215", "SPX-T215", "SPX-T215"]
+    );
+    assert_eq!(current.1, vec![old.1[0].clone(), old.1[3].clone()]);
+    assert_eq!(current.0, old.0);
+    assert!(current.0.is_some());
+}
+
+#[test]
+fn inherited_raw_field_authentication_rejects_detached_or_changed_components() {
+    let source=self::source("@id(\"t.a\") class A{@id(\"t.bad\") bad:Missing,} @id(\"t.b\") class B:A{@id(\"t.known\") known:i64,}","0");
+    let program = crate::parse(&source, Path::new("extended-components.spx")).unwrap();
+    let types = TypeTable::new(&program);
+    let crate::ast::TypeDeclarationKind::Class { fields, .. } = &program.types[0].kind else {
+        panic!("class fixture")
+    };
+    let mut receipt = Vec::new();
+    check_declared_type(
+        &program,
+        &fields[0].ty,
+        fields[0].span,
+        &types,
+        &HashSet::new(),
+        &mut receipt,
+    );
+    let recovery = crate::source_verify::recovery::Recovery::signature(
+        &program,
+        &program.functions[0],
+        &HashMap::new(),
+        &types,
+        &receipt,
+    );
+    let merged = &types.merged_class_fields["B"][0];
+    assert_eq!(
+        recovery.declared_field_refusal("B", merged, &program, &types, &receipt),
+        Some(0)
+    );
+    let mut detached = merged.clone();
+    detached.stable_id.push_str(".forged");
+    assert_eq!(
+        recovery.declared_field_refusal("B", &detached, &program, &types, &receipt),
+        None
+    );
+    assert_eq!(
+        recovery.declared_field_refusal("MissingContainer", merged, &program, &types, &receipt),
+        None
+    );
+}
+
+#[test]
+fn complete_signature_carrier_projection_preserves_all_unrelated_shared_fields() {
+    let mut projected =
+        include_str!("../../../docs/evidence/extended-components-799/scope.rs.before").to_owned();
+    let before = r####"pub(super) enum VerifierFunctionSignature<'a> {
+    Borrowed(&'a Function),
+    Specialized {
+        params: Vec<Param>,
+        return_type: Type,
+        implicit_unique_ownership: bool,
+    },
+}
+"####;
+    let after = r####"pub(super) enum VerifierFunctionSignature<'a> {
+    Borrowed(&'a Function),
+    Specialized {
+        params: Vec<Param>,
+        return_type: Type,
+        implicit_unique_ownership: bool,
+    },
+    SourceSpecialized {
+        function: &'a Function,
+        params: Vec<Param>,
+        return_type: Type,
+    },
+}
+"####;
+    assert_eq!(projected.matches(before).count(), 1);
+    projected = projected.replacen(before, after, 1);
+    let before = r####"pub(super) fn verifier_signature_owned_capacity(
+    signature: &VerifierFunctionSignature<'_>,
+) -> usize {
+    match signature {
+        VerifierFunctionSignature::Borrowed(_) => 0,
+        VerifierFunctionSignature::Specialized {
+            params,
+            return_type,
+            ..
+        } => params
+            .capacity()
+            .saturating_mul(std::mem::size_of::<Param>())
+            .saturating_add(
+                params
+                    .iter()
+                    .map(|param| {
+                        param
+                            .name
+                            .capacity()
+                            .saturating_add(ast_type_owned_capacity(&param.ty))
+                    })
+                    .sum::<usize>(),
+            )
+            .saturating_add(ast_type_owned_capacity(return_type)),
+    }
+}
+"####;
+    let after = r####"pub(super) fn verifier_signature_owned_capacity(
+    signature: &VerifierFunctionSignature<'_>,
+) -> usize {
+    match signature {
+        VerifierFunctionSignature::Borrowed(_) => 0,
+        VerifierFunctionSignature::Specialized {
+            params,
+            return_type,
+            ..
+        }
+        | VerifierFunctionSignature::SourceSpecialized {
+            params,
+            return_type,
+            ..
+        } => params
+            .capacity()
+            .saturating_mul(std::mem::size_of::<Param>())
+            .saturating_add(
+                params
+                    .iter()
+                    .map(|param| {
+                        param
+                            .name
+                            .capacity()
+                            .saturating_add(ast_type_owned_capacity(&param.ty))
+                    })
+                    .sum::<usize>(),
+            )
+            .saturating_add(ast_type_owned_capacity(return_type)),
+    }
+}
+"####;
+    assert_eq!(projected.matches(before).count(), 1);
+    projected = projected.replacen(before, after, 1);
+    let before = r####"impl VerifierFunctionSignature<'_> {
+    pub(super) fn params(&self) -> &[Param] {
+        match self {
+            Self::Borrowed(function) => &function.params,
+            Self::Specialized { params, .. } => params,
+        }
+    }
+
+    pub(super) fn return_type(&self) -> &Type {
+        match self {
+            Self::Borrowed(function) => &function.return_type,
+            Self::Specialized { return_type, .. } => return_type,
+        }
+    }
+
+    pub(super) fn implicit_unique_ownership(&self) -> bool {
+        match self {
+            Self::Borrowed(_) => true,
+            Self::Specialized {
+                implicit_unique_ownership,
+                ..
+            } => *implicit_unique_ownership,
+        }
+    }
+}
+"####;
+    let after = r####"impl<'p> VerifierFunctionSignature<'p> {
+    pub(super) fn source_function(&self) -> Option<&'p Function> {
+        match self {
+            Self::Borrowed(function) | Self::SourceSpecialized { function, .. } => Some(*function),
+            Self::Specialized { .. } => None,
+        }
+    }
+
+    pub(super) fn params(&self) -> &[Param] {
+        match self {
+            Self::Borrowed(function) => &function.params,
+            Self::Specialized { params, .. } | Self::SourceSpecialized { params, .. } => params,
+        }
+    }
+
+    pub(super) fn return_type(&self) -> &Type {
+        match self {
+            Self::Borrowed(function) => &function.return_type,
+            Self::Specialized { return_type, .. } | Self::SourceSpecialized { return_type, .. } => {
+                return_type
+            }
+        }
+    }
+
+    pub(super) fn implicit_unique_ownership(&self) -> bool {
+        match self {
+            Self::Borrowed(_) | Self::SourceSpecialized { .. } => true,
+            Self::Specialized {
+                implicit_unique_ownership,
+                ..
+            } => *implicit_unique_ownership,
+        }
+    }
+}
+"####;
+    assert_eq!(projected.matches(before).count(), 1);
+    projected = projected.replacen(before, after, 1);
+    assert_eq!(projected, include_str!("../scope.rs"));
+}

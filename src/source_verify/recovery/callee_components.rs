@@ -62,3 +62,85 @@ impl<'p> Recovery<'p> {
         self.reads += 1;
     }
 }
+
+impl<'p> Recovery<'p> {
+    pub(in crate::source_verify) fn declared_field_refusal(
+        &self,
+        container: &str,
+        field: &crate::ast::FieldDeclaration,
+        program: &dyn ProgramSource,
+        types: &TypeTable<'_>,
+        diagnostics: &[Diagnostic],
+    ) -> Option<usize> {
+        if !self.unknown_declarations {
+            return None;
+        }
+        // Effective class fields can be borrowed from a cloned parent prefix.
+        // Authenticate the complete raw field against its actual declaring owner
+        // before using that owner's type parameters. The finite declaration
+        // count bounds malformed inheritance cycles without inventing an owner.
+        let mut declaration = types.declaration(container)?;
+        let mut owner = None;
+        for _ in 0..types.declarations.len() {
+            let holds_field = match &declaration.kind {
+                crate::ast::TypeDeclarationKind::Record { fields }
+                | crate::ast::TypeDeclarationKind::Class { fields, .. } => fields.contains(field),
+                crate::ast::TypeDeclarationKind::Variant { cases } => {
+                    cases.iter().any(|case| case.fields.contains(field))
+                }
+                crate::ast::TypeDeclarationKind::Resource { .. } => false,
+            };
+            if holds_field {
+                owner = Some(declaration);
+                break;
+            }
+            if !matches!(
+                declaration.kind,
+                crate::ast::TypeDeclarationKind::Class { .. }
+            ) {
+                break;
+            }
+            let Some(Type::Named { name, .. }) = declaration.extends.as_ref() else {
+                break;
+            };
+            let Some(parent) = types.declaration(name) else {
+                break;
+            };
+            declaration = parent;
+        }
+        let declaration = owner?;
+        if !diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "SPX-T001" && diagnostic.span == Some(field.span))
+        {
+            return None;
+        }
+        let parameters = declaration
+            .type_parameters
+            .iter()
+            .map(|parameter| parameter.name.as_str())
+            .collect::<HashSet<_>>();
+        let mut scratch = Vec::new();
+        check_declared_type(
+            program,
+            &field.ty,
+            field.span,
+            types,
+            &parameters,
+            &mut scratch,
+        );
+        scratch
+            .iter()
+            .filter(|refusal| refusal.code == "SPX-T001")
+            .find_map(|refusal| {
+                diagnostics.iter().position(|original| {
+                    original.code == refusal.code
+                        && original.severity == refusal.severity
+                        && original.message == refusal.message
+                        && original.path == refusal.path
+                        && original.span == refusal.span
+                        && original.help == refusal.help
+                })
+            })
+    }
+}

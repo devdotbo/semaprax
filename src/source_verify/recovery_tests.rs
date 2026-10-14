@@ -22,6 +22,8 @@ mod operators_799;
 mod flow_799;
 #[path = "recovery_tests/callee_components.rs"]
 mod callee_components;
+#[path = "recovery_tests/extended_components.rs"]
+mod extended_components;
 use crate::ast::{ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
 use crate::test_allocation_observer::measure;

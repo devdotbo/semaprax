@@ -340,6 +340,11 @@ pub(super) enum VerifierFunctionSignature<'a> {
         return_type: Type,
         implicit_unique_ownership: bool,
     },
+    SourceSpecialized {
+        function: &'a Function,
+        params: Vec<Param>,
+        return_type: Type,
+    },
 }
 
 #[cfg(test)]
@@ -349,6 +354,11 @@ pub(super) fn verifier_signature_owned_capacity(
     match signature {
         VerifierFunctionSignature::Borrowed(_) => 0,
         VerifierFunctionSignature::Specialized {
+            params,
+            return_type,
+            ..
+        }
+        | VerifierFunctionSignature::SourceSpecialized {
             params,
             return_type,
             ..
@@ -565,24 +575,33 @@ pub(super) fn verifier_frame_owned_capacity(frame: &VerifierFrame<'_>) -> usize 
     }
 }
 
-impl VerifierFunctionSignature<'_> {
+impl<'p> VerifierFunctionSignature<'p> {
+    pub(super) fn source_function(&self) -> Option<&'p Function> {
+        match self {
+            Self::Borrowed(function) | Self::SourceSpecialized { function, .. } => Some(*function),
+            Self::Specialized { .. } => None,
+        }
+    }
+
     pub(super) fn params(&self) -> &[Param] {
         match self {
             Self::Borrowed(function) => &function.params,
-            Self::Specialized { params, .. } => params,
+            Self::Specialized { params, .. } | Self::SourceSpecialized { params, .. } => params,
         }
     }
 
     pub(super) fn return_type(&self) -> &Type {
         match self {
             Self::Borrowed(function) => &function.return_type,
-            Self::Specialized { return_type, .. } => return_type,
+            Self::Specialized { return_type, .. } | Self::SourceSpecialized { return_type, .. } => {
+                return_type
+            }
         }
     }
 
     pub(super) fn implicit_unique_ownership(&self) -> bool {
         match self {
-            Self::Borrowed(_) => true,
+            Self::Borrowed(_) | Self::SourceSpecialized { .. } => true,
             Self::Specialized {
                 implicit_unique_ownership,
                 ..
