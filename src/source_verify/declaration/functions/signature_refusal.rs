@@ -140,7 +140,16 @@ impl<'p> SignatureOrigin<'p> {
                             .message
                             .ends_with("` is not an in-scope type parameter")
             })
-            .find_map(|refusal| diagnostics.iter().position(|original| original == refusal))
+            .find_map(|refusal| {
+                diagnostics.iter().position(|original| {
+                    original.code == refusal.code
+                        && original.severity == refusal.severity
+                        && original.message == refusal.message
+                        && original.path == refusal.path
+                        && original.span == refusal.span
+                        && original.help == refusal.help
+                })
+            })
     }
 
     pub(in crate::source_verify) fn template_for(
