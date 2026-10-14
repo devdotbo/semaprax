@@ -1,0 +1,17 @@
+{
+  "status": "source-only; no tests/builds",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selectors": [
+        "cleanup_plan::replay::allocation::oracle::tests::account_type_probe_fast_receivers_match_original_without_production_ledger_touch",
+        "cleanup_plan::replay::allocation::oracle::tests::funded_type_probe_receivers_keep_exact_work_bytes_zero_short_sticky_and_complete_drop",
+        "cleanup_plan::replay::paid_type_facts::inventory_tests::full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter",
+        "cleanup_plan::replay::live_oracle::source_custody::a::complete_original_sources_and_compiled_owning_receivers_remain_exact",
+        "cleanup_plan::replay::live_oracle::source_custody::b::complete_original_sources_and_compiled_owning_receivers_remain_exact"
+      ]
+    }
+  ],
+  "retain": "Root retains all36 OPT810 acceptance owners and current81118; no original test assertion/cap removed."
+}

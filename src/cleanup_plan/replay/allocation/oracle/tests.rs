@@ -793,10 +793,7 @@ fn account_type_probe_fast_receivers_match_original_without_production_ledger_to
         crate::test_allocation_observer::measure(|| {
             let invocation = super::enter(&program, function, lease).unwrap();
             for (ty, original) in types.iter().zip(&original) {
-                let received = crate::cleanup_plan::replay::nested_shape::type_needs_drop(
-                    &program, function, ty,
-                )
-                .unwrap();
+                let received = nested_shape::type_needs_drop(&program, function, ty).unwrap();
                 assert_eq!(received, *original);
             }
             assert_eq!(invocation.exit(), Ok(()));

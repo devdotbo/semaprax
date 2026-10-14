@@ -217,6 +217,12 @@ fn complete_prior_raw_and_zero_work_receivers_and_identity_formatter_remain_sour
     let old = include_str!(
         "../../../../docs/evidence/paid-classifier-receiving-f8/oracle-fast-owner.before.txt"
     );
+    // The complete old zero-backing owner uses the declared prior receiver;
+    // the independent funded current owner remains on its real production path.
+    let dispatch = "                let received = nested_shape::type_needs_drop(&program, function, ty).unwrap();";
+    let original_dispatch = "                let received = crate::cleanup_plan::replay::nested_shape::type_needs_drop(\n                    &program, function, ty,\n                )\n                .unwrap();";
+    assert_eq!(current.matches(dispatch).count(), 1);
+    let current = current.replacen(dispatch, original_dispatch, 1);
     let alias = "    use original_fast_type_probe as nested_shape;\n";
     assert_eq!(current.matches(alias).count(), 1);
     assert!(current.replacen(alias, "", 1).contains(old));
