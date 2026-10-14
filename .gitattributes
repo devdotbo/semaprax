@@ -42,3 +42,6 @@ tests/project/standard_library/fixtures/csv-multiline.csv -text -whitespace
 
 # Frozen #286 prior-model receipt retains exact diagnostic whitespace.
 docs/evidence/prelude-forecast-286/historical-owning-selected-286.log -text -whitespace
+
+# Frozen actual prelude pin producer logs retain original diagnostic whitespace.
+docs/evidence/prelude-forecast-actual-pins-a184d-20261015/actual-capture/*.log -text -whitespace

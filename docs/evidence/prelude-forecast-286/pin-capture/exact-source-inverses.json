@@ -15,6 +15,46 @@
       {
         "before": "\n    // Full current reports reproduce all eight original hashes by restoring\n",
         "after": "\n    for (name, wire) in [\n        (\"context.json\", &context),\n        (\"forward.json\", &forward),\n        (\"capability-context.json\", &capability_context),\n        (\"type-context.json\", &type_context),\n        (\"impact.json\", &impact),\n        (\"custom-impact.json\", &custom_impact),\n        (\"review.json\", &review),\n        (\"capability-review.json\", &capability_review),\n    ] {\n        capture_pin_candidate(name, wire.as_bytes());\n    }\n\n    // Full current reports reproduce all eight original hashes by restoring\n"
+      },
+      {
+        "before": "assert_eq!(graph.budget().used_builder_bytes(), 334_016);",
+        "after": "assert_eq!(graph.budget().used_builder_bytes(), 1_282_992);"
+      },
+      {
+        "before": "sha256:c5cbb726c4e888d9b6e945964e52d233af45d25c80dc292890343d5ad2079a2e",
+        "after": "sha256:8361b311df74602ac6ab9280c0743cdc7ff6b658eee2baacc6eb25510f9d8cc5"
+      },
+      {
+        "before": "sha256:26296de75d133f1563b1b4fc23049b6eb29f4b407a2369d4849a12e9a379f225",
+        "after": "sha256:d109817f230f7fe3ce9e96ae96cdc6f0197d9115bad094f9146dfca318446933"
+      },
+      {
+        "before": "sha256:190a00dfa539b7cef26a50dcbda97d522bb22699b02c6b904682d524806266c8",
+        "after": "sha256:7eb0b223cf811867f3e558491f1b04da30c78672662706bb7216c443547259af"
+      },
+      {
+        "before": "sha256:7ba1554e318ce8d56739e03a2987c90d5d7fdf1ff301b528ad67c1f8cd432a42",
+        "after": "sha256:eb9b08280546f8972e87b36f2faa36244f92a3abdca08051aaa548cad46ed127"
+      },
+      {
+        "before": "sha256:bccc97fe0ad0026b44544e1e7c27c72f4d266c6773de01e157dcc9492317dd83",
+        "after": "sha256:c46b9f0cba293ba6e8e67b6757b255ade800978f6b87a9a88a7f940d82ab7e4b"
+      },
+      {
+        "before": "sha256:6e0ea8e0fc10e31b325fdc33e41ab9030b75f393c2f0e4fec916be6a19abab62",
+        "after": "sha256:df474cb2064edbf584e9dc9c9a128ea1a7bd08bb7d438dd9cc67c829fe24f2a4"
+      },
+      {
+        "before": "sha256:421e0b0fba5f10c294d13bbfde592c9837468e074cacf6b113ab62051299b3bc",
+        "after": "sha256:50491debeb5cbd5b5217246e7a16bbeb9f49b1e72f2048da3a1cb9aefebee530"
+      },
+      {
+        "before": "sha256:864367757119c169b5f049542de643b2825bcc64794ae91784920e8d73d18faf",
+        "after": "sha256:37bc734f05e39fcf42215847887e71e6f96234d66d644f0e9bb95c8796cb9c8c"
+      },
+      {
+        "before": "sha256:812fa5e3a129b96f36eed9e686ec88e3b5118813f31106c42adae637c6c14b21",
+        "after": "sha256:065698f98a60a7a2d70955aa9c783e341627d44e179b6f8140e4293aa48a643c"
       }
     ]
   },
