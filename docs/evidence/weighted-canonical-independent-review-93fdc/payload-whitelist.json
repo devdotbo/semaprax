@@ -1,0 +1,100 @@
+{
+  "commit": "93fdc103c89fda0230538e568b3f8f661c55f399",
+  "source_sharing_authorized": true,
+  "tools": false,
+  "files": [
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+      "first_line": 1,
+      "last_line": 314,
+      "selected_bytes": 13153,
+      "selected_sha256": "7a76c2fead937deba2586ececdd09a5b3ee45a7fabbb70688be5dfcc39707358"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_before.rs",
+      "first_line": 1,
+      "last_line": 296,
+      "selected_bytes": 12231,
+      "selected_sha256": "98e94a76071f92554027b03caf86575ae0cad71c4f151e961a0c949afeb13ed7"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/tests.rs",
+      "first_line": 1,
+      "last_line": 237,
+      "selected_bytes": 9250,
+      "selected_sha256": "08fa7c2f03cfb7a53204219b0b7740ded3a160c5339c73172df3c055bded9fd2"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/storage.rs",
+      "first_line": 90,
+      "last_line": 108,
+      "selected_bytes": 516,
+      "selected_sha256": "4cedf4657291b702aa8e0d6a7e3a1e724943dff941e83f7dd8106cd996bad380"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "first_line": 45,
+      "last_line": 85,
+      "selected_bytes": 1344,
+      "selected_sha256": "26861e1af65cefa9b555b944cdcf375558bd38b5b270870478e8c77fc4cc8195"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "first_line": 165,
+      "last_line": 237,
+      "selected_bytes": 3085,
+      "selected_sha256": "c56c6504d41aca023a0ad3fd237eef3080e57a81cd5020bb391b81407b0b6db1"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "first_line": 798,
+      "last_line": 805,
+      "selected_bytes": 265,
+      "selected_sha256": "57682f28bbf3364cec39bcacd1c6414d5cb39955c4c325b4e8541ab1ad05510b"
+    },
+    {
+      "source": "src/cleanup_plan/replay/physical_budget.rs",
+      "first_line": 27,
+      "last_line": 178,
+      "selected_bytes": 5333,
+      "selected_sha256": "fa9803fec56dbb92fb6afc45697e65376f3c41d8e7c5e8d8e54c7cb7d6c8cfa2"
+    },
+    {
+      "source": "src/cleanup_plan/replay/physical_budget.rs",
+      "first_line": 227,
+      "last_line": 280,
+      "selected_bytes": 1708,
+      "selected_sha256": "46c53dfa496ced26d23f87aeb48e7d62d5e1ff08ed958c7eb547eac481d78828"
+    },
+    {
+      "source": "src/cleanup_plan/replay/physical_clone.rs",
+      "first_line": 450,
+      "last_line": 470,
+      "selected_bytes": 534,
+      "selected_sha256": "430e4a8887e7c5719f7291147ceb47d894679a701852f931cf141506c356919d"
+    },
+    {
+      "source": "src/cleanup_plan/replay.rs",
+      "first_line": 176,
+      "last_line": 220,
+      "selected_bytes": 1619,
+      "selected_sha256": "cd4a5513087560c2ec5b43d29795b8a11fe334a56c90daed913c81012dbe55b6"
+    },
+    {
+      "source": "src/test_allocation_observer.rs",
+      "first_line": 25,
+      "last_line": 42,
+      "selected_bytes": 570,
+      "selected_sha256": "bda61e304cfb12a0027c1a6e5132ed6c17308e9db6e64c33fd74a5be35396120"
+    },
+    {
+      "source": "src/test_allocation_observer.rs",
+      "first_line": 139,
+      "last_line": 175,
+      "selected_bytes": 1480,
+      "selected_sha256": "ddeb4b4abd9d8c4d8a6b970352ad5a4d622e5042f58880bec370d474aa81e18b"
+    }
+  ],
+  "payload_bytes": 53431,
+  "payload_sha256": "bb354af49db92255bfca2cfca611a02b881553bc11206162da9e27d8ee05a039"
+}
