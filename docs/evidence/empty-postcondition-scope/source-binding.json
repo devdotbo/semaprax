@@ -1,0 +1,28 @@
+{
+  "base": "1df902b7273b076d260cd89af73b86ed973aac1d",
+  "original": {
+    "path": "function_scope.rs.before.txt",
+    "sha256": "9360d9f5f6d86bfddf94a74453a69519b4f59a11ddcff56ab07fae525b49b5b1"
+  },
+  "additive_guard": "        // An absent postcondition cannot read a result binding. All result\n        // identity, body type and ownership checks above still precede success.\n        if function.ensures.is_empty() {\n            return scope_checkpoint::charge::reserve(Some(0));\n        }\n\n",
+  "registration": "\n#[cfg(test)]\nmod empty_ensures;\n",
+  "qualification": "source-only; no Rust execution",
+  "current_sources": {
+    "src/hir/validation/function_scope.rs": {
+      "sha256": "2cb5bf4ab361f172241d1c148788a5db09fdb264471818091ea1d83a1be41426",
+      "lines": 277
+    },
+    "src/hir/validation/function_scope/empty_ensures.rs": {
+      "sha256": "bcab7ced2ee3ab4110c1730dfb763568740051955f8d86950f502dff6a52b1aa",
+      "lines": 4
+    },
+    "src/hir/validation/function_scope/empty_ensures/before.rs": {
+      "sha256": "c411074597735df2e471b4bb197a18f23b72731c80eac4b70bdb761667a813c7",
+      "lines": 229
+    },
+    "src/hir/validation/function_scope/empty_ensures/tests.rs": {
+      "sha256": "1ae32b9f0ae27e7902e0026855d3a71491dbfcf0af2defac225ea8decb63d771",
+      "lines": 208
+    }
+  }
+}

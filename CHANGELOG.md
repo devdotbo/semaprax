@@ -1,5 +1,9 @@
 # Changelog
 
+- Avoid constructing an unused validator result scope for functions without
+  postconditions, while retaining all result/body checks and sticky funding
+  authentication. Complete original and receiving controls await qualification.
+
 - Author additive paid streaming constructor preflight and shared exact-program
   function-directory custody (#824), preserving complete independent originals,
   diagnostic ordering and unchanged whole receiver controls. Qualification is

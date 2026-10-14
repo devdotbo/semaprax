@@ -1,0 +1,46 @@
+{
+  "schema": "source-only.pending-exact-selectors.v1",
+  "qualification": "unexecuted",
+  "required_selectors": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::empty_ensures::tests::empty_and_nonempty_postconditions_keep_complete_prior_function_receiver"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::empty_ensures::tests::empty_postconditions_keep_late_identity_body_type_and_ownership_errors"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::empty_ensures::tests::unused_result_carrier_is_removed_with_exact_short_zero_and_complete_drop"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::empty_ensures::tests::no_result_carrier_success_still_authenticates_a_sticky_payer"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::empty_ensures::tests::whole_current_function_is_exact_prior_source_plus_named_empty_guard"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::tests::production_chain_matches_complete_saved_map_function_and_full_iterative_corpus"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::tests::production_chain_preserves_parameter_requires_body_result_and_ensures_first_errors"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::tests::production_chain_observes_actual_backing_debits_complete_drop_and_exact_short_sticky"
+    }
+  ]
+}

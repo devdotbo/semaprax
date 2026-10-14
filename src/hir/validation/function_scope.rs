@@ -202,6 +202,12 @@ impl HirValidator<'_> {
             )));
         }
 
+        // An absent postcondition cannot read a result binding. All result
+        // identity, body type and ownership checks above still precede success.
+        if function.ensures.is_empty() {
+            return scope_checkpoint::charge::reserve(Some(0));
+        }
+
         let mut ensures_scope = scope;
         let insertion = ensures_scope.prepare_insert()?;
         scope_checkpoint::charge::clone_type(&function.return_type)?;
@@ -266,3 +272,6 @@ mod lifecycle_receiver_saved;
 
 #[cfg(test)]
 mod phase_tests;
+
+#[cfg(test)]
+mod empty_ensures;
