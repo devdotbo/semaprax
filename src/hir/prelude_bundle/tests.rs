@@ -74,7 +74,8 @@ fn program() -> crate::ast::Program {
 fn complete_original_base_types_and_every_lookup_keep_exact_order_ids_and_payloads() {
     let program = program();
     let original = [super::original::option(), super::original::result()];
-    let original_index = DeclarationIndex::from_verified_with_prelude(&program, &original).unwrap();
+    let original_index =
+        DeclarationIndex::nominal_original_with_prelude(&program, &original).unwrap();
     let resolved = crate::hir::resolve(&program).unwrap();
     let local = DeclarationIndex::from_verified_with_prelude(&program, &[]).unwrap();
     let mut payer = Account::unlimited();
@@ -277,7 +278,7 @@ fn unused_and_parser_only_overlapping_names_keep_unconditional_base_selection() 
             format!("module bundle.overlap; {declaration} @id(\"entry\") fn main()->i64 {{0}}");
         let program = crate::parse(&source, "overlap.spx").unwrap();
         let original = [super::original::option(), super::original::result()];
-        let old = DeclarationIndex::from_verified_with_prelude(&program, &original).unwrap();
+        let old = DeclarationIndex::nominal_original_with_prelude(&program, &original).unwrap();
         let local = DeclarationIndex::from_verified_with_prelude(&program, &[]).unwrap();
         let mut payer = Account::unlimited();
         let bundle = BasePreludeBundle::acquire(&mut payer).unwrap();
