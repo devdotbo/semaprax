@@ -1,5 +1,5 @@
 //! Full old walks, hostile payloads and actual receiving/Drop on one payer.
-use super::super::{ReplayBudget, ResolvedProgram, tests::fixtures, tests::payer};
+use super::super::{tests::fixtures, tests::payer, ReplayBudget, ResolvedProgram};
 use super::*;
 use crate::bounded_output::{active_remaining, reserve_active_required, with_limit_usage_refusal};
 use crate::hir::{TypeFacts, TypeFactsPayer};
@@ -182,7 +182,7 @@ fn owned_walk() -> (ResolvedProgram, ResolvedType) {
     };
     let mut field = fields[0].clone();
     field.ty = child.clone();
-    *fields = vec![field; 16];
+    *fields = vec![field; 16].into();
     let root = ResolvedType::Nominal {
         declaration: item.id.clone(),
         arguments: Vec::new(),

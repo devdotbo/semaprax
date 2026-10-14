@@ -12,12 +12,14 @@ use std::sync::Arc;
 
 mod borrowed;
 mod fixed_work;
+mod invocation;
 mod materialize;
 mod merge;
 mod overlay;
 mod paid;
 mod producer;
 mod work_model;
+pub(crate) use invocation::{Invocation, InvocationFailure};
 pub(crate) use fixed_work::{FixedFailure, FixedSchemaPayer, WorkReceipt, WorkRefusal};
 pub(crate) use merge::merge_by_key;
 pub(crate) use overlay::Overlay;

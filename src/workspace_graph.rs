@@ -4471,8 +4471,8 @@ fn build_resolved_core_current(
             // resolved-core ledger before either route, and Setup stays Copy
             // until this legacy outer adapter.
             let (resolved, function_costs, reused_functions, static_text) =
-                identity_resolution::resolve_module(
-                    frontend.as_deref(),
+                identity_resolution::resolve_module_with_core(
+                    &mut core_proofs,frontend.as_deref(),
                     &program.path,
                     &synthetic,
                     private,

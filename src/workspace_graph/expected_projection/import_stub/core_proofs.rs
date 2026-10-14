@@ -17,6 +17,9 @@ fn error() -> Diagnostic {
 }
 
 pub(in crate::workspace_graph) struct CoreProviderProofs<'a> {
+    pub(in crate::workspace_graph) base_prelude: crate::hir::prelude_bundle::Invocation<
+        crate::bounded_output::identity_reservation::Refused,
+    >,
     authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
     programs: &'a [Program],
     ledger: ClassifierLedger,
@@ -36,6 +39,13 @@ impl<'a> CoreProviderProofs<'a> {
         let control = size_of::<Self>()
             .checked_add(size_of::<Phase<'_, 'a>>())
             .and_then(|n| n.checked_sub(size_of::<ByteHelperProofs<'a>>()))
+            .and_then(|n| {
+                n.checked_add(size_of::<
+                    crate::hir::prelude_bundle::Invocation<
+                        crate::bounded_output::identity_reservation::Refused,
+                    >,
+                >())
+            })
             .ok_or_else(error)?;
         if crate::bounded_output::active_remaining().is_none()
             || !crate::bounded_output::reserve_active_required(0)
@@ -44,6 +54,7 @@ impl<'a> CoreProviderProofs<'a> {
             return Err(error());
         }
         Ok(Self {
+            base_prelude: crate::hir::prelude_bundle::Invocation::new(),
             authored,
             programs,
             ledger: ClassifierLedger::capture(),
@@ -51,6 +62,13 @@ impl<'a> CoreProviderProofs<'a> {
             carrier_charged: false,
             poisoned: false,
         })
+    }
+    pub(in crate::workspace_graph) fn bind_base_owner(&mut self) {
+        let current = !self.poisoned && self.ledger.current();
+        self.base_prelude.bind_owner(current);
+        if !current {
+            self.poisoned = true;
+        }
     }
     fn bind(&mut self) -> Result<(), Diagnostic> {
         if self.poisoned

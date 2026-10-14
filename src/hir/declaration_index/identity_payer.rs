@@ -40,8 +40,21 @@ impl DeclarationIndex {
     pub(in crate::hir) fn from_verified_with_nominal_reservation<E>(
         program: &dyn ProgramSource,
         prelude: &[crate::ast::TypeDeclaration],
+        reserve: impl FnMut(usize) -> Result<(), E>,
+    ) -> Result<Self, IdentityIndexError<E>> {
+        Self::from_verified_with_nominal_base(program, prelude, None, reserve)
+    }
+
+    pub(in crate::hir) fn from_verified_with_nominal_base<E>(
+        program: &dyn ProgramSource,
+        prelude: &[crate::ast::TypeDeclaration],
+        base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
         mut reserve: impl FnMut(usize) -> Result<(), E>,
     ) -> Result<Self, IdentityIndexError<E>> {
+        if let Some(base) = base {
+            Self::reserve_base_receivers(base, &mut reserve)
+                .map_err(IdentityIndexError::Identity)?;
+        }
         let workspace = super::nominal_rollback::Workspace::acquire(program, prelude, &mut reserve)
             .map_err(IdentityIndexError::Identity)?;
         let mut index = Self::build_nominal_index(
@@ -50,6 +63,7 @@ impl DeclarationIndex {
             &mut |text| DeclarationId::paid_borrowed(text, &mut reserve),
             true,
             workspace,
+            base,
         )?;
         index
             .share_nominal_payloads(&mut reserve)
@@ -72,6 +86,7 @@ impl DeclarationIndex {
             identity,
             false,
             super::nominal_rollback::Workspace::default(),
+            None,
         )
     }
 
@@ -81,10 +96,23 @@ impl DeclarationIndex {
         identity: &mut dyn FnMut(&str) -> Result<DeclarationId, E>,
         canonical_nominals: bool,
         workspace: super::nominal_rollback::Workspace,
+        base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
     ) -> Result<Self, IdentityIndexError<E>> {
         let mut index = Self::default();
         index.nominal_drop_workspace = workspace;
         for declaration in program.types().iter().chain(prelude) {
+            if let Some(ty) = Self::base_type_for_source(base, prelude, declaration) {
+                index.insert_top_level(
+                    ty.name.clone(),
+                    ty.id.clone(),
+                    DeclarationKind::Variant,
+                    IdentityOrigin::CompilerOwned,
+                );
+                index
+                    .type_parameters
+                    .insert(ty.id.clone(), ty.type_parameters.clone());
+                continue;
+            }
             let kind = match declaration.kind {
                 TypeDeclarationKind::Resource { .. } => DeclarationKind::Resource,
                 TypeDeclarationKind::Record { .. } => DeclarationKind::Record,
@@ -370,6 +398,10 @@ impl DeclarationIndex {
             let TypeDeclarationKind::Variant { cases } = &declaration.kind else {
                 continue;
             };
+            if let Some(ty) = Self::base_type_for_source(base, prelude, declaration) {
+                index.insert_base_variant(ty);
+                continue;
+            }
             let owner = index.inserted_identity(&declaration.stable_id);
             let mut resolved_cases = index
                 .nominal_drop_workspace

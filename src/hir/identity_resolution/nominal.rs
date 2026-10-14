@@ -45,23 +45,25 @@ fn resolve_verified_paid_nominal<E>(
     } else {
         reuse
     };
-    let resolved = pass_nominal(inventory_program, reuse, reserve)?;
+    let resolved = pass_nominal(inventory_program, reuse, None, reserve)?;
     let Some(desugared) = record_invariants::desugar(program, &resolved.0) else {
         return Ok(resolved);
     };
-    pass_nominal(&desugared, None, reserve)
+    pass_nominal(&desugared, None, None, reserve)
 }
 
 fn source_pass_nominal<E>(
     program: &dyn ProgramSource,
     reuse: Option<FunctionReuse<'_>>,
+    base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
     reserve: &mut impl FnMut(usize) -> Result<(), E>,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
     // SourceIndex precedes the DeclarationIndex, as in the legacy route.
     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
-    let declarations = DeclarationIndex::from_verified_with_nominal_reservation(
+    let declarations = DeclarationIndex::from_verified_with_nominal_base(
         program,
         crate::prelude::declarations_for_program(program),
+        base,
         &mut *reserve,
     )?;
     (Resolver {
@@ -80,13 +82,15 @@ fn source_pass_nominal<E>(
 fn pass_nominal<E>(
     program: &Program,
     reuse: Option<FunctionReuse<'_>>,
+    base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
     reserve: &mut impl FnMut(usize) -> Result<(), E>,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
     // Preserve the old Resolver field-evaluation order before index creation.
     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
-    let declarations = DeclarationIndex::from_verified_with_nominal_reservation(
+    let declarations = DeclarationIndex::from_verified_with_nominal_base(
         program,
         crate::prelude::declarations_for_program(program),
+        base,
         &mut *reserve,
     )?;
     (Resolver {
@@ -138,12 +142,13 @@ pub(crate) fn resolve_source_checked_previous_nominal<'p, E>(
         } else {
             reuse
         },
+        None,
         &mut reserve,
     )?;
     let Some(desugared) = record_invariants::source::desugar(program, &resolved.0) else {
         return Ok(resolved);
     };
-    pass_nominal(&desugared, None, &mut reserve)
+    pass_nominal(&desugared, None, None, &mut reserve)
 }
 
 pub(crate) fn resolve_source_nominal<'p, E>(
@@ -152,4 +157,68 @@ pub(crate) fn resolve_source_nominal<'p, E>(
     reserve: impl FnMut(usize) -> Result<(), E>,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
     resolve_source_checked_previous_nominal(program, None, None, None, private, reserve)
+}
+
+#[derive(Debug)]
+pub(crate) enum NominalReceiverFailure {
+    Resolve(Failure<crate::bounded_output::identity_reservation::Refused>),
+    Base(
+        super::super::prelude_bundle::InvocationFailure<
+            crate::bounded_output::identity_reservation::Refused,
+        >,
+    ),
+}
+pub(crate) fn resolve_source_checked_previous_with_base<'p>(
+    program: &'p dyn ProgramSource,
+    previous_program: Option<&dyn ProgramSource>,
+    previous_resolved: Option<&ResolvedProgram>,
+    previous_costs: Option<&BTreeMap<String, usize>>,
+    private: Option<source_verify::private_names::PrivateNames<'p>>,
+    invocation: &mut super::super::prelude_bundle::Invocation<
+        crate::bounded_output::identity_reservation::Refused,
+    >,
+    mut reserve: impl FnMut(usize) -> Result<(), crate::bounded_output::identity_reservation::Refused>,
+) -> Result<(ResolvedProgram, FunctionResolutionWork), NominalReceiverFailure> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _workflow_span = crate::workflow_profile::span(crate::workflow_profile::Stage::Resolve);
+    let diagnostics = source_verify::verify_presenting(program, private);
+    if diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.severity.is_error())
+    {
+        return Err(NominalReceiverFailure::Resolve(Failure::Source(
+            diagnostics,
+        )));
+    }
+    let base = invocation
+        .ensure(&mut reserve)
+        .map_err(NominalReceiverFailure::Base)?;
+    let reuse = previous_program
+        .zip(previous_resolved)
+        .zip(previous_costs)
+        .filter(|((previous, _), _)| source_environment_is_exact(program, *previous))
+        .map(|((previous, resolved), costs)| FunctionReuse {
+            current: program,
+            program: previous,
+            resolved,
+            costs,
+        });
+    let clause_program = record_invariants::source::clause_program(program);
+    let inventory: &dyn ProgramSource = clause_program.as_ref().map_or(program, |owned| owned);
+    let resolved = source_pass_nominal(
+        inventory,
+        if clause_program.is_some() {
+            None
+        } else {
+            reuse
+        },
+        Some(base),
+        &mut reserve,
+    )
+    .map_err(NominalReceiverFailure::Resolve)?;
+    let Some(desugared) = record_invariants::source::desugar(program, &resolved.0) else {
+        return Ok(resolved);
+    };
+    pass_nominal(&desugared, None, Some(base), &mut reserve)
+        .map_err(NominalReceiverFailure::Resolve)
 }

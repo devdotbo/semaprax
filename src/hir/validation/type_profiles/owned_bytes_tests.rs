@@ -91,7 +91,7 @@ fn borrowed_owned_byte_query_keeps_text_visited_cycles_duplicate_kinds_and_unsub
         span: declaration.span,
     };
     declaration.kind = ResolvedTypeDeclarationKind::Record {
-        fields: vec![field.clone()],
+        fields: vec![field.clone()].into(),
     };
     program.types.push(declaration.clone());
     parity(&program, &nominal("query.cycle", Vec::new()), false);
@@ -105,7 +105,8 @@ fn borrowed_owned_byte_query_keeps_text_visited_cycles_duplicate_kinds_and_unsub
         fields: vec![ResolvedFieldDeclaration {
             ty: ResolvedType::Bytes,
             ..field.clone()
-        }],
+        }]
+        .into(),
         methods: Vec::new(),
     };
     // Original source order wins a duplicate exact identity; no pointer-key shortcut.
@@ -121,7 +122,8 @@ fn borrowed_owned_byte_query_keeps_text_visited_cycles_duplicate_kinds_and_unsub
         fields: vec![ResolvedFieldDeclaration {
             ty: parameters[0].clone(),
             ..field.clone()
-        }],
+        }]
+        .into(),
     };
     *program.types.last_mut().unwrap() = declaration.clone();
     parity(
@@ -151,7 +153,8 @@ fn borrowed_owned_byte_query_keeps_text_visited_cycles_duplicate_kinds_and_unsub
                 ..field
             }],
             ..case
-        }],
+        }]
+        .into(),
     };
     *program.types.last_mut().unwrap() = declaration.clone();
     parity(&program, &nominal("query.cycle", Vec::new()), true);

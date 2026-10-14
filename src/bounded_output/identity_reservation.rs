@@ -112,3 +112,7 @@ fn required(budget: &Budget, bytes: usize) -> Result<(), Refused> {
 
 #[cfg(test)]
 mod tests;
+
+mod base_prelude;
+
+mod producer_failure;

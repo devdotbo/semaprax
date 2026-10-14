@@ -137,3 +137,6 @@ pub(super) fn acquisitions() -> usize {
 
 #[cfg(test)]
 mod tests;
+
+mod base;
+pub(super) use base::resolve_module_with_core;

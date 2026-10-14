@@ -45,7 +45,11 @@ impl<V> IntoIterator for IndexMap<V> {
 /// One case ordinal retains the same canonical outer cases owner. It allocates
 /// no per-case Arc or field Vec; legacy hostile/decoded indexes keep full Vecs.
 #[derive(Clone)]
-pub(crate) enum CaseFields {
+pub(crate) struct CaseFields {
+    storage: CaseStorage,
+}
+#[derive(Clone)]
+enum CaseStorage {
     Owned(NominalPayload<ResolvedFieldDeclaration>),
     Case {
         owner: NominalPayload<ResolvedVariantCaseDeclaration>,
@@ -59,33 +63,37 @@ impl CaseFields {
     ) -> Self {
         assert!(owner.is_shared());
         assert!(ordinal < owner.len());
-        Self::Case { owner, ordinal }
+        Self {
+            storage: CaseStorage::Case { owner, ordinal },
+        }
     }
     pub(crate) fn drain(self, dispose: &mut impl FnMut(ResolvedType)) {
-        if let Self::Owned(fields) = self {
+        if let CaseStorage::Owned(fields) = self.storage {
             fields.drain_recursive_types(dispose);
         }
     }
 }
 impl From<Vec<ResolvedFieldDeclaration>> for CaseFields {
     fn from(v: Vec<ResolvedFieldDeclaration>) -> Self {
-        Self::Owned(v.into())
+        Self {
+            storage: CaseStorage::Owned(v.into()),
+        }
     }
 }
 impl Deref for CaseFields {
     type Target = Vec<ResolvedFieldDeclaration>;
     fn deref(&self) -> &Self::Target {
-        match self {
-            Self::Owned(v) => v,
-            Self::Case { owner, ordinal } => &owner[*ordinal].fields,
+        match &self.storage {
+            CaseStorage::Owned(v) => v,
+            CaseStorage::Case { owner, ordinal } => &owner[*ordinal].fields,
         }
     }
 }
 impl DerefMut for CaseFields {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        match self {
-            Self::Owned(values) => values,
-            Self::Case { .. } => {
+        match &mut self.storage {
+            CaseStorage::Owned(values) => values,
+            CaseStorage::Case { .. } => {
                 panic!("shared case-field mutation requires explicit paid materialization")
             }
         }

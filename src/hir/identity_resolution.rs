@@ -267,3 +267,8 @@ pub(crate) use nominal::{resolve_checked_nominal,resolve_source_nominal,resolve_
 
 #[cfg(test)]
 mod nominal_tests;
+
+pub(crate) use nominal::{resolve_source_checked_previous_with_base,NominalReceiverFailure};
+
+#[cfg(test)]
+pub(crate) mod nominal_original;
