@@ -4,11 +4,8 @@ use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::measure;
 fn program() -> crate::ast::Program {
     crate::parse(
-        include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/std/collections/src/collections.spx"
-        )),
-        "std-collections-wrapper.spx",
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/std/mem/src/mem.spx")),
+        "std-mem-wrapper.spx",
     )
     .unwrap()
 }
@@ -34,6 +31,20 @@ fn all_exact_std_source_wrappers_keep_original_body_signature_and_module_gates_w
         }
     }
     assert_eq!(accepted, 3);
+    // The original collections fixture is not a Box source and stays negative.
+    let collections = crate::parse(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/std/collections/src/collections.spx"
+        )),
+        "std-collections-wrapper.spx",
+    )
+    .unwrap();
+    for function in &collections.functions {
+        parity(&collections, function);
+        assert!(original::source_wrapper(&collections, function).is_none());
+        assert!(source_wrapper(&collections, function).is_none());
+    }
     for function in program
         .functions
         .iter()
@@ -92,7 +103,7 @@ fn all_exact_std_source_wrappers_keep_original_body_signature_and_module_gates_w
             assert!(source_wrapper(&program, &changed).is_none());
         }
         let mut foreign = program.clone();
-        foreign.module = "foreign.collections".to_owned();
+        foreign.module = "foreign.mem".to_owned();
         parity(&foreign, function);
         assert!(source_wrapper(&foreign, function).is_none());
         with_authenticated_linked_source(|| {
