@@ -4,9 +4,6 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         concat!(
             concat!(
                 include_str!("../src/hir/validation.rs"),
-                include_str!("../src/cleanup_plan/build/capacity_observation/actual_attribution.rs"),
-                include_str!("../src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs"),
-                include_str!("../src/cleanup_plan/build/helper_index/original_plans.rs"),
                 include_str!("../src/hir/validation/held_profiles.rs"),
                 include_str!("../src/hir/validation/held_profiles/tests.rs"),
                 include_str!("../src/hir/validation/held_profiles/source_audit.rs"),

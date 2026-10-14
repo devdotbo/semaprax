@@ -12,10 +12,10 @@
   "root_owns_final_union": true,
   "complete_original_build_source_unchanged": "src/cleanup_plan/build.rs",
   "actual_joined_source_readers": [
-    "tests/hir_module_boundaries.rs",
     "tests/workspace/semantic_graph/source_inventory.rs",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"
   ],
   "interop_package": "semaprax-native-rust-interop",
-  "status": "Source joins authored; actual qualification pending."
+  "status": "Source joins authored; actual qualification pending.",
+  "audit_domain_correction": "Cleanup construction/observation and complete original builder belong to workspace root and interop lower inventories. Core HIR validation retains all original sources and11held/fixedchildren; these3cleanupchildren are intentionally not HIR validation sources."
 }
