@@ -1,8 +1,13 @@
 //! Complete pre-recovery frame/state layouts, independently compiled.
-#![allow(dead_code, reason = "complete old carrier variants retain layout provenance")]
-use super::{BinaryOp, Binding, CheckedValue, Expr, FieldDeclaration, HashMap, HashSet,
-    ImportDeclaration, MatchMode, ScalarMatchState, SourceLoanId, Span, Statement,
-    Type, TypeDeclaration, UnaryOp, VariantCaseDeclaration, VerifierCallTarget};
+#![allow(
+    dead_code,
+    reason = "complete old carrier variants retain layout provenance"
+)]
+use super::{
+    BinaryOp, Binding, CheckedValue, Expr, FieldDeclaration, HashMap, HashSet, MatchMode,
+    ScalarMatchState, SourceLoanId, Span, Statement, Type, TypeDeclaration, UnaryOp,
+    VariantCaseDeclaration, VerifierCallTarget,
+};
 
 pub(super) enum OriginalVerifierFrame<'a> {
     ResumeLexicalReturn {
@@ -280,48 +285,73 @@ pub(super) struct OriginalVariantMatchState<'a> {
     pub(super) needs_drop: bool,
 }
 
-
 #[test]
 fn original_and_packed_carriers_keep_exact_existing_physical_models() {
-    assert_eq!(std::mem::size_of::<OriginalVerifierFrame<'static>>(),320);
-    assert_eq!(std::mem::size_of::<OriginalVariantMatchState<'static>>(),312);
-    assert_eq!(std::mem::size_of::<super::VerifierFrame<'static>>(),std::mem::size_of::<OriginalVerifierFrame<'static>>());
-    assert_eq!(std::mem::size_of::<super::VariantMatchState<'static>>(),std::mem::size_of::<OriginalVariantMatchState<'static>>());
-    assert_eq!(std::mem::size_of::<super::VariantMatchName>(),std::mem::size_of::<Option<String>>());
-    assert_eq!(std::mem::size_of::<super::VariantMatchName>(),24);
+    assert_eq!(std::mem::size_of::<OriginalVerifierFrame<'static>>(), 320);
+    assert_eq!(
+        std::mem::size_of::<OriginalVariantMatchState<'static>>(),
+        312
+    );
+    assert_eq!(
+        std::mem::size_of::<super::VerifierFrame<'static>>(),
+        std::mem::size_of::<OriginalVerifierFrame<'static>>()
+    );
+    assert_eq!(
+        std::mem::size_of::<super::VariantMatchState<'static>>(),
+        std::mem::size_of::<OriginalVariantMatchState<'static>>()
+    );
+    assert_eq!(
+        std::mem::size_of::<super::VariantMatchName>(),
+        std::mem::size_of::<Option<String>>()
+    );
+    assert_eq!(std::mem::size_of::<super::VariantMatchName>(), 24);
 }
 
 #[test]
 fn known_name_retains_exact_owned_storage_and_unknown_retains_complete_ordinal() {
-    let mut name=String::with_capacity(128);name.push_str("Choice");
-    let pointer=name.as_ptr();let capacity=name.capacity();
-    let known=super::VariantMatchName::Known(name);
-    assert_eq!(known.as_deref(),Some("Choice"));
-    assert_eq!(known.as_ref().unwrap().as_ptr(),pointer);
-    assert_eq!(known.as_ref().unwrap().capacity(),capacity);
-    assert_eq!(known.refused_input(),None);
-    for origin in [None,Some(0),Some(1),Some(usize::MAX)] {
-        let unknown=super::VariantMatchName::Unknown(origin);
-        assert_eq!(unknown.as_deref(),None);
-        assert_eq!(unknown.as_ref(),None);
-        assert_eq!(unknown.refused_input(),origin);
+    let mut name = String::with_capacity(128);
+    name.push_str("Choice");
+    let pointer = name.as_ptr();
+    let capacity = name.capacity();
+    let known = super::VariantMatchName::Known(name);
+    assert_eq!(known.as_deref(), Some("Choice"));
+    assert_eq!(known.as_ref().unwrap().as_ptr(), pointer);
+    assert_eq!(known.as_ref().unwrap().capacity(), capacity);
+    assert_eq!(known.refused_input(), None);
+    for origin in [None, Some(0), Some(1), Some(usize::MAX)] {
+        let unknown = super::VariantMatchName::Unknown(origin);
+        assert_eq!(unknown.as_deref(), None);
+        assert_eq!(unknown.as_ref(), None);
+        assert_eq!(unknown.refused_input(), origin);
     }
-    for name in [None,Some("Choice".to_owned())] {
-        let expected=name.clone();let adapted=super::VariantMatchName::from(name);
-        assert_eq!(adapted.as_ref(),expected.as_ref());
-        assert_eq!(adapted.refused_input(),None);
+    for name in [None, Some("Choice".to_owned())] {
+        let expected = name.clone();
+        let adapted = super::VariantMatchName::from(name);
+        assert_eq!(adapted.as_ref(), expected.as_ref());
+        assert_eq!(adapted.refused_input(), None);
     }
 }
 
 #[test]
 fn complete_original_frame_and_state_declarations_remain_byte_exact() {
-    let source=include_str!("layout_original.rs");
-    let start=source.find("pub(super) enum OriginalVerifierFrame").unwrap();
-    let definitions=source[start..].split_once("#[test]").unwrap().0
-        .replace("OriginalVerifierFrame","VerifierFrame")
-        .replace("OriginalVariantMatchState","VariantMatchState");
-    let original=include_str!("../../../docs/evidence/conditional-refusal-799/scope.rs.before");
-    let frame=&original[original.find("pub(super) enum VerifierFrame").unwrap()..original.find("#[allow(dead_code)]\npub(super) struct ScalarMatchState").unwrap()];
-    let state=&original[original.find("pub(super) struct VariantMatchState").unwrap()..original.find("pub(super) enum VerifierCallTarget").unwrap()];
-    assert_eq!(definitions,format!("{frame}{state}\n"));
+    let source = include_str!("layout_original.rs");
+    let start = source
+        .find("pub(super) enum OriginalVerifierFrame")
+        .unwrap();
+    let definitions = source[start..]
+        .split_once("#[test]")
+        .unwrap()
+        .0
+        .replace("OriginalVerifierFrame", "VerifierFrame")
+        .replace("OriginalVariantMatchState", "VariantMatchState");
+    let original = include_str!("../../../docs/evidence/conditional-refusal-799/scope.rs.before");
+    let frame = &original[original.find("pub(super) enum VerifierFrame").unwrap()
+        ..original
+            .find("#[allow(dead_code)]\npub(super) struct ScalarMatchState")
+            .unwrap()];
+    let state = &original[original
+        .find("pub(super) struct VariantMatchState")
+        .unwrap()
+        ..original.find("pub(super) enum VerifierCallTarget").unwrap()];
+    assert_eq!(definitions, format!("{frame}{state}"));
 }
