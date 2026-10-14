@@ -630,7 +630,14 @@ fn validate_structure_with_budget_storage<'hir>(
         helpers,
         budget,
     )?;
-    validate_exits(program, function, &storage, &leaves, &BTreeSet::new())?;
+    expression_facts::receiving::validate_exits(
+        program,
+        function,
+        &storage,
+        &leaves,
+        &BTreeSet::new(),
+        budget,
+    )?;
     structural_maps::validate_reference_coverage(function, budget)?;
     structural_control::validate_ordinary_cfg(function, budget)?;
     if !cleanup_inert_path_product_can_be_summarized(function)?

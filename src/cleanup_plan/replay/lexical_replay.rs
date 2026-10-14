@@ -143,7 +143,9 @@ fn validate_core<'hir, E: semantic_refusal::Error>(
             .filter(|exit| exit.kind == LexicalExitKind::Return)
             .filter_map(|exit| exit.value.map(|operand| operand.id.clone()))
             .collect::<BTreeSet<_>>();
-        validate_exits(program, function, &storage, &leaves, &operands)?;
+        expression_facts::receiving::validate_exits(
+            program, function, &storage, &leaves, &operands, budget,
+        )?;
         operands
     };
     // Keep the independently validated operand inventory live through certificate authentication.

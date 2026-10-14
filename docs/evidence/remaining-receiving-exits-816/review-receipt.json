@@ -1,0 +1,9 @@
+{
+  "status": "fresh receiving review rejected before execution/egress; no retry",
+  "provider_requested": "Anthropic",
+  "model_requested": "sonnet",
+  "packet_bytes": 49320,
+  "usage": null,
+  "billing": null,
+  "reason": "The command would transmit49,320bytes of additional private repository source to Anthropic; the trusted approval named onlysevenfiles, and genericClaude-use requests do not authorize this specific sensitive payload or destination. Do not bypass this rejection through a workaround or indirect execution."
+}

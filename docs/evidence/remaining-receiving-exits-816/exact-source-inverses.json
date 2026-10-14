@@ -1,0 +1,38 @@
+[
+  {
+    "source": "src/cleanup_plan/replay.rs",
+    "archive": "src__cleanup_plan__replay.rs.before.txt",
+    "sha256": "470e45827fd36635d7f39380ac86f430617ada2dbfda801fd8c2a460f0ab1bf0",
+    "edits": [
+      {
+        "name": "ordinary-exit-receiving-caller",
+        "before": "    validate_exits(program, function, &storage, &leaves, &BTreeSet::new())?;",
+        "after": "    expression_facts::receiving::validate_exits(\n        program,\n        function,\n        &storage,\n        &leaves,\n        &BTreeSet::new(),\n        budget,\n    )?;"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+    "archive": "src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt",
+    "sha256": "4e35f87c1f78006a0f36583a8be6b75488a98856be32ecefdbd33e3526064e23",
+    "edits": [
+      {
+        "name": "paid-exit-receiving-registration",
+        "before": "mod directory;\nuse directory::Directory;\n",
+        "after": "mod directory;\nmod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/lexical_replay.rs",
+    "archive": "src__cleanup_plan__replay__lexical_replay.rs.before.txt",
+    "sha256": "20e1f53661791728da24801f90ff31228173d5f5d4125a8dac541dc2e8c80981",
+    "edits": [
+      {
+        "name": "lexical-unselected-exit-receiving-caller",
+        "before": "        validate_exits(program, function, &storage, &leaves, &operands)?;",
+        "after": "        expression_facts::receiving::validate_exits(\n            program, function, &storage, &leaves, &operands, budget,\n        )?;"
+      }
+    ]
+  }
+]

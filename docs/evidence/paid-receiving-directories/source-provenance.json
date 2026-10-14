@@ -13,6 +13,11 @@
   "full_current_projection": {
     "src/cleanup_plan/replay/expression_facts/receiving.rs": [
       {
+        "name": "complete-paid-exit-receiving-registration",
+        "from": "mod directory;\nmod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n",
+        "to": "mod directory;\nuse directory::Directory;\n"
+      },
+      {
         "name": "receiving.rs: complete directory/hook projection 1",
         "from": "//! Complete ordinary receiving dispatch; old tree branches remain compiled independently.\nuse super::*;\nmod directory;\nuse directory::Directory;\n\npub(in crate::cleanup_plan::replay) fn validate_status_sources(\n",
         "to": "//! Complete ordinary receiving dispatch; old tree branches remain compiled independently.\nuse super::*;\n\npub(in crate::cleanup_plan::replay) fn validate_status_sources(\n",

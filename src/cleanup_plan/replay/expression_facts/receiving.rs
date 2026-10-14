@@ -1,7 +1,9 @@
 //! Complete ordinary receiving dispatch; old tree branches remain compiled independently.
 use super::*;
 mod directory;
+mod remaining;
 use directory::Directory;
+pub(in crate::cleanup_plan::replay) use remaining::validate_exits;
 
 pub(in crate::cleanup_plan::replay) fn validate_status_sources(
     function: &ResolvedFunction,

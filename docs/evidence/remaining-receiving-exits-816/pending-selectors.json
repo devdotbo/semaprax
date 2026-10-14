@@ -1,0 +1,16 @@
+{
+  "status": "source-only; not executed",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selectors": [
+        "cleanup_plan::replay::expression_facts::receiving::remaining::tests::complete_exit_receivers_preserve_all_old_fields_and_first_semantic_errors",
+        "cleanup_plan::replay::expression_facts::receiving::remaining::tests::complete_finalizer_receivers_keep_duplicate_lifecycle_case_and_guard_priority",
+        "cleanup_plan::replay::expression_facts::receiving::remaining::tests::actual_three_directory_receivers_are_prepaid_at_exact_short_zero_sticky_through_drop",
+        "cleanup_plan::replay::expression_facts::receiving::remaining::tests::complete_exit_work_exact_short_and_sticky_use_the_same_original_budget",
+        "cleanup_plan::replay::expression_facts::receiving::remaining::tests::complete_root_receivers_and_only_named_paid_caller_projections_keep_original_bytes"
+      ]
+    }
+  ]
+}
