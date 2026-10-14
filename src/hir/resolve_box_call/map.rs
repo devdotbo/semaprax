@@ -78,7 +78,7 @@ pub(super) fn finish<'p>(
         ty,
         span,
         kind: ResolvedExprKind::Call {
-            callee: DeclarationId::new(op.id()),
+            callee: DeclarationId::compiler(crate::hir::CompilerDeclaration::MapOperation(op)),
             type_arguments,
             instance: None,
             args,
@@ -107,3 +107,7 @@ pub(super) fn reference(
     }
     finish(function, call.path, call.span, op, collection, args)
 }
+
+#[cfg(test)]
+#[path = "map/identity_tests.rs"]
+mod identity_tests;

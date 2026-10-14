@@ -1,0 +1,13 @@
+{
+  "new_rust_descendants": [
+    "src/hir/ids/fixed_operation_tests.rs",
+    "src/hir/resolve_box_call/map/identity_tests.rs",
+    "src/hir/resolve_box_call/list/identity_tests.rs",
+    "src/hir/resolve_box_call/iterator/identity_tests.rs"
+  ],
+  "root_owned_union_files": [
+    "crates/semaprax-native-rust-interop-builder/src/implementation/source_inventory.rs",
+    "tests/hir_module_boundaries.rs"
+  ],
+  "status": "Root must join all four descendants to source-reading owners."
+}

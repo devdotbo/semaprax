@@ -676,3 +676,6 @@ pub(crate) use metered_owner::matches as monomorphic_owner_matches_with_work;
 
 #[cfg(test)]
 pub(crate) use metered_owner::general_matches as oracle_owner_matches_with_work;
+
+#[cfg(test)]
+pub(in crate::hir) mod fixed_operation_tests;

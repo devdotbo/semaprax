@@ -64,7 +64,7 @@ impl MapOp {
             Self::SetKeyAt => "set_key_at",
         }
     }
-    pub(crate) fn id(self) -> &'static str {
+    pub(crate) const fn id(self) -> &'static str {
         match self {
             Self::New => "core.collection.map.new.v2",
             Self::Add => "core.collection.map.add.v2",

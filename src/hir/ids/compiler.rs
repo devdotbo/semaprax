@@ -45,6 +45,9 @@ pub(crate) enum CompilerDeclaration {
     StdinReaderDrop,
     VecDrop,
     Command(ResolvedHostCommandOperation),
+    MapOperation(crate::map_ops::MapOp),
+    ListOperation(crate::list_ops::ListOp),
+    IteratorOperation(crate::iterator_ops::IteratorOp),
 }
 
 impl CompilerDeclaration {
@@ -86,6 +89,9 @@ impl CompilerDeclaration {
             Self::StdinReaderDrop => crate::stdin_stream_ops::DROP_ID,
             Self::VecDrop => crate::cleanup::VEC_DROP_LIFECYCLE_ID,
             Self::Command(operation) => crate::command_io_ops::id(operation),
+            Self::MapOperation(op) => op.id(),
+            Self::ListOperation(op) => op.id(),
+            Self::IteratorOperation(op) => op.id(),
         }
     }
 }

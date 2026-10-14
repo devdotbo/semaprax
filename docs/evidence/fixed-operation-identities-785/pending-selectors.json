@@ -1,0 +1,178 @@
+{
+  "status": "source-only; not executed",
+  "new": [
+    {
+      "harness": "lib",
+      "selector": "hir::ids::fixed_operation_tests::closed_operation_identities_keep_owned_wire_traits_and_zero_sticky_complete_drop",
+      "source_path": "src/hir/ids/fixed_operation_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::fixed_operation_tests::full_original_operation_sources_and_receivers_have_only_declared_identity_hooks",
+      "source_path": "src/hir/ids/fixed_operation_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::resolve_box_call::map::identity_tests::full_map_finish_keeps_frozen_outcomes_and_all_diagnostic_fields",
+      "source_path": "src/hir/resolve_box_call/map/identity_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::resolve_box_call::list::identity_tests::full_list_finish_keeps_frozen_outcomes_and_all_diagnostic_fields",
+      "source_path": "src/hir/resolve_box_call/list/identity_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::resolve_box_call::iterator::identity_tests::full_iterator_finish_keeps_frozen_outcomes_and_all_diagnostic_fields",
+      "source_path": "src/hir/resolve_box_call/iterator/identity_tests.rs"
+    }
+  ],
+  "retain_existing": [
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::every_projection_and_trait_matches_the_owned_string_oracle",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::cache_wire_is_the_former_owned_string_tuple_in_both_directions",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::backing_width_is_the_actual_requested_arc_layout",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::legacy_borrowed_text_is_valid_and_explicitly_unfunded_under_exhausted_budget",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::exact_owned_backing_and_one_short_return_no_refused_identity",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::clones_share_one_backing_without_allocation_charge_or_early_release",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::duplicates_stay_equal_values_with_independent_backings",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::valid_variants_preserve_empty_nul_unicode_and_have_no_forged_hash_state",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::refused_result_has_no_wire_and_decoder_keeps_both_cap_boundaries",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::selected_payer_reserves_exactly_the_backing_without_a_temporary_text",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::selected_payer_one_short_refuses_sticky_before_allocating",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::selected_payer_is_the_only_authority_consulted",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::qualified_identity_domains_have_no_legacy_constructor_or_refusal_carrier",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::compiler_statics_and_pure_queries_ignore_unrelated_exhausted_budget",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::declaration_backing_tests::borrowed_graph_keys_match_old_owned_lookup_without_temporary_payload",
+      "source_path": "src/hir/ids/declaration_backing_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::legacy_constructor_boundary_tests::arbitrary_conversion_runs_once_and_its_scratch_and_excess_capacity_are_observable",
+      "source_path": "src/hir/ids/legacy_constructor_boundary_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::legacy_constructor_boundary_tests::excess_capacity_changes_the_scratch_total_but_never_the_shared_backing",
+      "source_path": "src/hir/ids/legacy_constructor_boundary_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::legacy_constructor_boundary_tests::full_drop_returns_every_scratch_temporary_and_backing_to_the_allocator",
+      "source_path": "src/hir/ids/legacy_constructor_boundary_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::legacy_constructor_boundary_tests::owned_string_payload_is_consumed_unchanged_and_released_after_the_copy",
+      "source_path": "src/hir/ids/legacy_constructor_boundary_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::legacy_constructor_boundary_tests::legacy_borrowed_text_adds_a_temporary_string_that_paid_borrowed_does_not",
+      "source_path": "src/hir/ids/legacy_constructor_boundary_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::legacy_constructor_boundary_tests::legacy_construction_neither_charges_nor_reopens_nor_refuses_any_ledger",
+      "source_path": "src/hir/ids/legacy_constructor_boundary_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ids::legacy_constructor_boundary_tests::compiler_static_identity_stays_free_and_independent_of_legacy_and_refused_ledgers",
+      "source_path": "src/hir/ids/legacy_constructor_boundary_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ordinary_identity::tests::ordinary_public_identity_payment_preserves_two_pass_hir_and_removes_only_temporary_text",
+      "source_path": "src/hir/ordinary_identity/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ordinary_identity::tests::ordinary_public_identity_refusal_moves_paid_report_and_keeps_exact_first_sticky_receipt",
+      "source_path": "src/hir/ordinary_identity/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ordinary_identity::tests::ordinary_identity_setup_and_source_errors_preserve_legacy_public_priority",
+      "source_path": "src/hir/ordinary_identity/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ordinary_identity::tests::setup_refusal_reuses_one_invariant_inventory_and_preserves_legacy_diagnostic_and_drop",
+      "source_path": "src/hir/ordinary_identity/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ordinary_identity::agent_tests::analyzed_agent_identities_keep_hir_and_pay_exact_backing_beside_setup",
+      "source_path": "src/hir/ordinary_identity/agent_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ordinary_identity::agent_tests::public_analysis_refuses_each_agent_request_one_short_with_paid_report_and_sticky_receipt",
+      "source_path": "src/hir/ordinary_identity/agent_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::ordinary_identity::agent_tests::strict_constructor_moves_the_prepaid_report_after_a_late_agent_refusal",
+      "source_path": "src/hir/ordinary_identity/agent_tests.rs"
+    }
+  ],
+  "applications": "Retain original whole Catalog/Shift/Pattern and graph/cache owning corpus selectors at unchanged limits from root manifest; no narrowed replacement corpus."
+}

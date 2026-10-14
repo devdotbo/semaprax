@@ -65,7 +65,7 @@ pub(super) fn finish<'p>(
         ownership: OwnershipMode::Value,
         ty: op.resolved_return_type(),
         kind: ResolvedExprKind::Call {
-            callee: DeclarationId::new(op.id()),
+            callee: DeclarationId::compiler(crate::hir::CompilerDeclaration::ListOperation(op)),
             type_arguments: Vec::new(),
             instance: None,
             args,
@@ -98,3 +98,7 @@ pub(super) fn reference(
     }
     finish(function, call.path, call.span, op, ResolvedType::I64, args)
 }
+
+#[cfg(test)]
+#[path = "list/identity_tests.rs"]
+mod identity_tests;

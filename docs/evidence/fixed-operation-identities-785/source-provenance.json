@@ -1,0 +1,47 @@
+{
+  "base_commit": "d8df12a3b0283c9a8c3947021b4dcd3faf8565a0",
+  "original_sources": [
+    {
+      "path": "src/hir/ids.rs",
+      "archive": "src__hir__ids.rs.before.txt",
+      "sha256": "4c4f9dd06f00371bb571d1c7122e292fccabd7608b55160469c13350407555fd"
+    },
+    {
+      "path": "src/hir/ids/compiler.rs",
+      "archive": "src__hir__ids__compiler.rs.before.txt",
+      "sha256": "9a34241c9eb97cc65b4c9330b372bc6e507599ab6ddf683d9c32567ddaf2ebe1"
+    },
+    {
+      "path": "src/map_ops.rs",
+      "archive": "src__map_ops.rs.before.txt",
+      "sha256": "b24e08d4fb5ca49986917f97b61c72eb796a6dd079db5fc95cd0291a2bf06852"
+    },
+    {
+      "path": "src/hir/resolve_box_call/map.rs",
+      "archive": "src__hir__resolve_box_call__map.rs.before.txt",
+      "sha256": "fb4ddcbbb38a9b81bd2f11d3781532729f869eaa890e1ac718806dc3d2d592a8"
+    },
+    {
+      "path": "src/hir/resolve_box_call/list.rs",
+      "archive": "src__hir__resolve_box_call__list.rs.before.txt",
+      "sha256": "4dcfc2ca08c79396747d598370a743fb91bcd670bdb0f0820036626d8e78070b"
+    },
+    {
+      "path": "src/hir/resolve_box_call/iterator.rs",
+      "archive": "src__hir__resolve_box_call__iterator.rs.before.txt",
+      "sha256": "6badd599deed511632f2cfc396a09ef8b04dbace494c1496a75a6bfdef8f200d"
+    },
+    {
+      "path": "src/list_ops.rs",
+      "archive": "src__list_ops.rs.before.txt",
+      "sha256": "0abc67a67c5c22b175b81e2ef82e46206421f6a974fa772ea40de40181467dd2",
+      "unchanged": true
+    },
+    {
+      "path": "src/iterator_ops.rs",
+      "archive": "src__iterator_ops.rs.before.txt",
+      "sha256": "8541bd6ab7e58bd7a39eae3eef770e6ac29f104a6ea6923aa73287d2b6a8ed44",
+      "unchanged": true
+    }
+  ]
+}

@@ -66,7 +66,7 @@ pub(super) fn finish<'p>(
         ownership: OwnershipMode::Own,
         ty: op.resolved_return_type(&element),
         kind: ResolvedExprKind::Call {
-            callee: DeclarationId::new(op.id()),
+            callee: DeclarationId::compiler(crate::hir::CompilerDeclaration::IteratorOperation(op)),
             type_arguments: vec![element],
             instance: None,
             args,
@@ -115,3 +115,7 @@ fn resolve_element(
     }
     resolver.resolve_type(ty, span)
 }
+
+#[cfg(test)]
+#[path = "iterator/identity_tests.rs"]
+mod identity_tests;
