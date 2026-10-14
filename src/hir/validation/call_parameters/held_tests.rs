@@ -200,7 +200,19 @@ fn genuine_held_copy_observations_reuse_one_tree_and_foreign_detached_unknown_an
         assert_eq!(current, old);
         assert_eq!(lookup.held_entries(), 1);
     });
+    let checked_vec_argument = program
+        .functions
+        .iter()
+        .find(|function| function.id.as_str() == "held.take")
+        .unwrap()
+        .params
+        .iter()
+        .find(|parameter| parameter.name == "rows")
+        .unwrap()
+        .ty
+        .clone();
     for arguments in [
+        vec![checked_vec_argument],
         vec![],
         vec![ResolvedType::String],
         vec![ResolvedType::I64, ResolvedType::I64],

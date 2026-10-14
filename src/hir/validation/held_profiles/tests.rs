@@ -12,9 +12,17 @@ const ORIGINAL_UNSUPPORTED_GENERIC_VECTOR_SOURCE: &str = r#"module held.profile;
 "#;
 
 pub(in crate::hir::validation) fn fixture() -> ResolvedProgram {
+    // Generic copy records admit scalar arguments by value. Keep an independently
+    // checked Vec parameter for the hostile nested generic-argument receiver.
     let source = ORIGINAL_UNSUPPORTED_GENERIC_VECTOR_SOURCE
         .replace("items: Vec<T>", "items: T")
-        .replace("borrow Bag<i64>", "borrow Bag<Vec<i64>>");
+        .replace("borrow Bag<i64>", "Bag<i64>")
+        .replace(
+            "other: Boxed<i64>",
+            "other: Boxed<i64>, rows: borrow Vec<i64>",
+        );
+    assert_eq!(source.matches("items: T").count(), 1);
+    assert_eq!(source.matches("rows: borrow Vec<i64>").count(), 1);
     crate::hir::resolve(&crate::check(&source, "held-generic.spx").unwrap()).unwrap()
 }
 
@@ -118,5 +126,20 @@ fn complete_original_generic_vector_field_source_keeps_full_t223_refusal() {
     let expected = crate::verify::verify(&parsed);
     let actual = crate::check(source, "held-generic.spx").unwrap_err();
     assert_eq!(actual[0].code, "SPX-T223");
+    assert_eq!(actual, expected);
+}
+
+#[test]
+fn complete_previous_nested_generic_borrow_fixture_keeps_full_t223_and_o002_refusal() {
+    let source = ORIGINAL_UNSUPPORTED_GENERIC_VECTOR_SOURCE
+        .replace("items: Vec<T>", "items: T")
+        .replace("borrow Bag<i64>", "borrow Bag<Vec<i64>>");
+    let parsed = crate::parse(&source, "held-generic.spx").unwrap();
+    let expected = crate::verify::verify(&parsed);
+    let actual = crate::check(&source, "held-generic.spx").unwrap_err();
+    assert_eq!(actual[0].code, "SPX-T223");
+    assert!(actual
+        .iter()
+        .any(|diagnostic| diagnostic.code == "SPX-O002"));
     assert_eq!(actual, expected);
 }

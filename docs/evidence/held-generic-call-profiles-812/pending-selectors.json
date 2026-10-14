@@ -40,6 +40,11 @@
       "harness": "lib",
       "selector": "hir::validation::held_profiles::tests::complete_original_generic_vector_field_source_keeps_full_t223_refusal",
       "source": "src/hir/validation/held_profiles/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::held_profiles::tests::complete_previous_nested_generic_borrow_fixture_keeps_full_t223_and_o002_refusal",
+      "source": "src/hir/validation/held_profiles/tests.rs"
     }
   ],
   "unchanged_required": [
