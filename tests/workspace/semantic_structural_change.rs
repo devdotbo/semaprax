@@ -285,8 +285,11 @@ fn assert_failure_is_read_only<T>(
 fn public_api_getters_cli_and_whole_document_kats_are_exact() {
     let fixture = Fixture::new("api-cli-kat");
     let before = inventory(&fixture.root);
-    let artifacts =
-        semantic_workspace_structural_change::generate(&fixture.root, &fixture.proposal).unwrap();
+    let artifacts = semantic_workspace_structural_change::generate(&fixture.root, &fixture.proposal)
+        .unwrap_or_else(|diagnostics| {
+            let proposal = std::fs::read_to_string(&fixture.proposal);
+            panic!("full structural KAT generation refused; original proposal={proposal:?}; diagnostics={diagnostics:?}");
+        });
     let preview =
         semantic_workspace_structural_change::preview(&fixture.root, &fixture.proposal).unwrap();
     let evidence =

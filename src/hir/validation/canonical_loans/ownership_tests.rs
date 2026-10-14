@@ -150,11 +150,17 @@ fn attached_loan_drift_is_not_new_constructor_authority_and_whole_saved_receiver
         .find(|f| !f.loan_plan.loans.is_empty())
         .unwrap();
     function.loan_plan.loans[0].origin.projections.clear();
-    let old = HirValidator::original_with_directory(&program, None)
+    // The inner receiver derives fresh canonical facts and deliberately does
+    // not trust or compare the attached plan. Preserve that complete old
+    // acceptance independently, then compose its original outer plan finish.
+    let inner = HirValidator::original_with_directory(&program, None)
         .unwrap()
         .validate();
+    assert!(inner.is_ok());
+    let old =
+        inner.and_then(|selected| crate::loan_plan::validate_program(&program).map(|()| selected));
     let current = crate::bounded_output::with_limit_usage(usize::MAX, || {
-        HirValidator::new(&program).unwrap().validate()
+        crate::hir::validate_with_static_text(&program)
     })
     .0;
     assert!(old.is_err());
@@ -322,4 +328,42 @@ mod record_traversal;
     let start = archive.find("fn prepare_with_comparison<'a>(").unwrap();
     let end = archive[start..].find("\nfn append(").unwrap() + start;
     assert_eq!(old, &archive[start..end]);
+}
+
+// PUBLIC_BOUNDARY_SOURCE_INVERSE_GUARD
+#[test]
+fn complete_public_boundary_composition_preserves_original_owner_and_kat_source_bytes() {
+    let records: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../docs/evidence/public-boundary-fixture-repair/exact-source-inverses.json"
+    ))
+    .unwrap();
+    let sources = [
+        (include_str!("ownership_tests.rs"), include_str!("../../../../docs/evidence/public-boundary-fixture-repair/ownership-tests.before.txt")),
+        (include_str!("../../../../tests/workspace/semantic_change.rs"), include_str!("../../../../docs/evidence/public-boundary-fixture-repair/tests__workspace__semantic_change.rs.before.txt")),
+        (include_str!("../../../../tests/workspace/semantic_structural_change.rs"), include_str!("../../../../docs/evidence/public-boundary-fixture-repair/tests__workspace__semantic_structural_change.rs.before.txt")),
+        (include_str!("../../../../tests/workspace/semantic_change/reporting.rs"), include_str!("../../../../docs/evidence/public-boundary-fixture-repair/tests__workspace__semantic_change__reporting.rs.before.txt")),
+        (include_str!("../../../../tests/workspace/semantic_structural_change/reporting.rs"), include_str!("../../../../docs/evidence/public-boundary-fixture-repair/tests__workspace__semantic_structural_change__reporting.rs.before.txt")),
+    ];
+    assert_eq!(records.as_array().unwrap().len(), sources.len());
+    for (ordinal, (current, original)) in sources.into_iter().enumerate() {
+        let current = if ordinal == 0 {
+            current
+                .split_once("\n// PUBLIC_BOUNDARY_SOURCE_INVERSE_GUARD\n")
+                .unwrap()
+                .0
+        } else {
+            current
+        };
+        let mut restored = current.to_owned();
+        for edit in records[ordinal]["edits"].as_array().unwrap().iter().rev() {
+            let after = edit["after"].as_str().unwrap();
+            let before = edit["before"].as_str().unwrap();
+            assert_eq!(restored.matches(after).count(), 1, "unique named inverse");
+            restored = restored.replacen(after, before, 1);
+        }
+        assert_eq!(
+            restored, original,
+            "complete original source owner {ordinal}"
+        );
+    }
 }

@@ -1,0 +1,38 @@
+[
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::canonical_loans::ownership_tests::attached_loan_drift_is_not_new_constructor_authority_and_whole_saved_receiver_remains_complete"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::canonical_loans::ownership_tests::complete_old_constructor_inventory_caller_and_closure_source_projections_remain_exact"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::canonical_loans::ownership_tests::complete_public_boundary_composition_preserves_original_owner_and_kat_source_bytes"
+  },
+  {
+    "harness": "semaprax::workspace",
+    "selector": "semantic_change::public_api_cli_kat_parity_and_opaque_getters"
+  },
+  {
+    "harness": "semaprax::workspace",
+    "selector": "semantic_structural_change::public_api_getters_cli_and_whole_document_kats_are_exact"
+  },
+  {
+    "harness": "semaprax::workspace",
+    "selector": "semantic_change::reporting::typed_public_generation_verification_and_application_keep_full_legacy_bytes"
+  },
+  {
+    "harness": "semaprax::workspace",
+    "selector": "semantic_change::reporting::typed_public_evidence_refusal_keeps_complete_original_diagnostics"
+  },
+  {
+    "harness": "semaprax::workspace",
+    "selector": "semantic_structural_change::reporting::typed_public_generation_verification_and_application_keep_full_legacy_bytes"
+  },
+  {
+    "harness": "semaprax::workspace",
+    "selector": "semantic_structural_change::reporting::typed_public_evidence_refusal_keeps_complete_original_diagnostics"
+  }
+]

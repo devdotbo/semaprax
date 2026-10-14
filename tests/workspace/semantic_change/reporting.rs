@@ -35,7 +35,7 @@ fn typed_public_generation_verification_and_application_keep_full_legacy_bytes()
 
 #[test]
 fn typed_public_evidence_refusal_keeps_complete_original_diagnostics() {
-    let fixture = admitted_fixture("typed-report-negative");
+    let fixture = Fixture::new("typed-report-negative");
     let evidence = fixture.root.join("invalid-evidence.json");
     std::fs::write(&evidence, "{}\n").unwrap();
     let old =
@@ -134,14 +134,18 @@ fn admitted_fixture(label: &str) -> Fixture {
     semantic_workspace::initialize(&root, &path_set).unwrap();
     let graph = workspace_graph::snapshot(&root, "change.entry").unwrap();
     for module in graph.modules() {
-        assert!(matches!(
-            module.source_graph_schema(),
-            "semaprax.graph.v10"
-                | "semaprax.graph.v11"
-                | "semaprax.graph.v12"
-                | "semaprax.graph.v13"
-                | "semaprax.graph.v14"
-        ));
+        assert!(
+            matches!(
+                module.source_graph_schema(),
+                "semaprax.graph.v10"
+                    | "semaprax.graph.v11"
+                    | "semaprax.graph.v12"
+                    | "semaprax.graph.v13"
+                    | "semaprax.graph.v14"
+            ),
+            "actual positive fixture selected unsupported schema {}",
+            module.source_graph_schema()
+        );
     }
     let old_candidate = json(&canonical(provider_candidate(), "a/provider.spx"));
     let candidate = admitted_provider(provider_candidate(), "Metric", true);
