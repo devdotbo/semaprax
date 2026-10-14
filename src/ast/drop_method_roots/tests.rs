@@ -91,7 +91,7 @@ fn class_method_drop_keeps_full_prior_and_original_metadata_and_expression_order
             }
         }
         assert_eq!(next, pointers.len());
-        let (order, metrics) = measure(|| {
+        let (((), order), metrics) = measure(|| {
             watch_free_order(&pointers, || {
                 if before {
                     drop(crate::ast::drop_method_original::Original(program));
