@@ -53,6 +53,9 @@ macro_rules! semantic_graph_root_source_inventory {
                 concat!(
                     concat!(
                     include_str!("../../src/workspace_graph.rs"),
+                    include_str!("../../src/cleanup_plan/build/capacity_observation/actual_attribution.rs"),
+                    include_str!("../../src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs"),
+                    include_str!("../../src/cleanup_plan/build/helper_index/original_plans.rs"),
                     include_str!("../../src/hir/validation/held_profiles.rs"),
                     include_str!("../../src/hir/validation/held_profiles/tests.rs"),
                     include_str!("../../src/hir/validation/held_profiles/source_audit.rs"),
