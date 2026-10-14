@@ -1,0 +1,31 @@
+/// Tune only the fixture size, never the production bound. The largest legacy
+/// prebound that fits leaves less than one statement of room for actual core
+/// structures, forcing a real first-attempt overflow.
+fn core_retry_fixture() -> Vec<WorkspaceSource> {
+    let sources = |count| {
+        vec![
+            stub_charge_provider(count),
+            canonical_source(
+                "stub/consumer.spx",
+                "module stub.consumer; use function @id(\"stub.wide\") from stub.provider as wide; @id(\"stub.consumer.main\") fn main() -> i64 { wide(0) }",
+            ),
+        ]
+    };
+    let fits = |count| {
+        let programs = parsed_sources(&sources(count));
+        let authored = index_authored(&programs).unwrap();
+        expected_projection::retention_prebound_mode(&programs, &authored, false, 0).is_ok()
+    };
+    assert!(fits(1));
+    assert!(!fits(1024));
+    let (mut low, mut high) = (1, 1024);
+    while low + 1 < high {
+        let middle = low + (high - low) / 2;
+        if fits(middle) {
+            low = middle;
+        } else {
+            high = middle;
+        }
+    }
+    sources(low)
+}

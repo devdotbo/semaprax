@@ -1,0 +1,13 @@
+{
+  "path": "/Volumes/Semaprax/lane-prompts/recovery-paired-97be-20261015/owning-selected-16.log",
+  "sha256": "9d10bfde0d99da0884b160cd284e5eefbe866db8347de0ed998a93a5a9812ada",
+  "actual_exit": 101,
+  "actual_initial": 67086510,
+  "child_initial": 67075946,
+  "pre_core_debit": 32918,
+  "parent_final_debit": 34194,
+  "parent_overflow": false,
+  "first_refused_stage": "CorePrebound",
+  "first_prebound_consumed": 0,
+  "qualification": "actual97be failure; replacement fixture remains unexecuted"
+}

@@ -288,9 +288,10 @@ fn a_for_item_binding_is_charged_exactly_like_a_let_binding() {
     assert_eq!(charged, widened("let"));
 }
 
-/// Tune only the fixture size, never the production bound. The largest legacy
-/// prebound that fits leaves less than one statement of room for actual core
-/// structures, forcing a real first-attempt overflow.
+/// Tune only the fixture size, never the production bound. Select the largest
+/// count whose actual pre-core charges and unchanged legacy first reservation
+/// fit the enclosing owner. Runtime assertions must still prove the later core
+/// overflow, one nested attempt and two ordinary attempts.
 fn core_retry_fixture() -> Vec<WorkspaceSource> {
     let sources = |count| {
         vec![
@@ -302,9 +303,60 @@ fn core_retry_fixture() -> Vec<WorkspaceSource> {
         ]
     };
     let fits = |count| {
-        let programs = parsed_sources(&sources(count));
+        let mut candidate = sources(count);
+        candidate.sort_by(|left, right| left.path.cmp(&right.path));
+        let programs = parsed_sources(&candidate);
         let authored = index_authored(&programs).unwrap();
-        expected_projection::retention_prebound_mode(&programs, &authored, false, 0).is_ok()
+        let Ok(legacy) = expected_projection::retention_prebound_mode(
+            &programs, &authored, false, 0,
+        ) else { return false };
+        // The fixed fixture has only ordinary modules, no frontend or native
+        // law branch. Run their actual pre-core formatter and registry owners:
+        // the enclosing ledger keeps these debits before entering core.
+        let (actual, refused, pre_core) = crate::bounded_output::with_limit_usage(
+            MAX_BUILDER_BYTES,
+            || {
+                let mut programs = Vec::with_capacity(candidate.len());
+                let mut canonical_bytes = 0usize;
+                for source in &candidate {
+                    let (program, comments) = crate::parse_with_comments(
+                        &source.source, Path::new(&source.path),
+                    ).unwrap();
+                    crate::static_protocol::validate(&program).unwrap();
+                    let remaining = MAX_BUILDER_BYTES.saturating_sub(canonical_bytes);
+                    let (canonical, overflowed) = crate::bounded_output::with_limit(
+                        remaining,
+                        || format::comments::canonical_with_comments(&program, &comments),
+                    );
+                    if overflowed { return None; }
+                    assert_eq!(canonical, source.source);
+                    canonical_bytes = canonical_bytes.checked_add(canonical.len()).unwrap();
+                    programs.push(program);
+                }
+                crate::static_protocol::validate_workspace(&programs).unwrap();
+                let _pruned = dependency_pruning::prune(&mut programs, &candidate);
+                let modules = index_modules(&programs).unwrap();
+                let authored = index_authored(&programs).unwrap();
+                validate_synthetic_main_id_collisions(&programs, &authored).unwrap();
+                let registry = expected_projection::private_layout::registry::LayoutRegistry::new(
+                    &programs, &authored,
+                );
+                import_validation::validate_uses_with_registry(
+                    &programs, &modules, &authored, Some(&registry),
+                ).unwrap();
+                let _depths = validate_dependency_dag(&programs).unwrap();
+                let initial = expected_projection::cached_exact::initial_with_registry(
+                    &programs, &authored, true,
+                    expected_projection::cached_exact::Retention::Parsed, Some(&registry),
+                ).ok()?;
+                Some((initial, registry.receipt()))
+            },
+        );
+        let Some((initial, registry)) = actual else { return false };
+        !refused && initial.0 == legacy.0 && initial.3 == 1
+            && pre_core.checked_add(registry)
+                .and_then(|paid| paid.checked_add(initial.0))
+                .is_some_and(|paid| paid <= MAX_BUILDER_BYTES)
     };
     assert!(fits(1));
     assert!(!fits(1024));
@@ -322,6 +374,24 @@ fn core_retry_fixture() -> Vec<WorkspaceSource> {
 
 #[test]
 fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal() {
+    // Preserve the complete earlier fixture before changing only admissibility.
+    let current = include_str!("builder_limits.rs");
+    let start = current.find("/// Tune only the fixture size, never the production bound.").unwrap();
+    let end = start + current[start..].find("\n#[test]\nfn identity_prebound_production_core_retry").unwrap();
+    let mut restored = current[start..end].to_owned();
+    let inverse: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"), "/docs/evidence/canonical-preparation-stage-829/retry-precharge-fixture/exact-inverse.json"
+    ))).unwrap();
+    for splice in inverse["splices"].as_array().unwrap().iter().rev() {
+        let at = splice["start"].as_u64().unwrap() as usize;
+        let after = splice["after"].as_str().unwrap();
+        assert_eq!(restored.get(at..at + after.len()), Some(after));
+        restored.replace_range(at..at + after.len(), splice["before"].as_str().unwrap());
+    }
+    let original = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/canonical-preparation-stage-829/retry-precharge-fixture/complete-fixture.before.txt"));
+    use sha2::{Digest, Sha256};
+    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))), "4c8f8a2cac574013d6acb485d7af2c86699fb3b5b09be532c90786c6ec7add24");
+    assert_eq!(restored, original);
     let sources = core_retry_fixture();
     let programs = parsed_sources(&sources);
     let authored = index_authored(&programs).unwrap();

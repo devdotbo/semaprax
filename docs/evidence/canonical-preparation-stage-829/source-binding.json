@@ -36,7 +36,7 @@
     },
     {
       "path": "src/workspace_graph/tests/builder_limits.rs",
-      "sha256": "e41f9ff3d3e38b51a11790d84c6d04213ee5b1c0b5c9e6c1ad8b52a764f9ba79"
+      "sha256": "6ccadd41c2a5e782fd666fb02f9a599d3645ddf9d1f6888b99677b028a726821"
     }
   ],
   "unchanged_production_and_complete_old_sources": [
