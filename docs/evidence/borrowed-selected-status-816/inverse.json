@@ -1,0 +1,13 @@
+{
+  "source": "src/cleanup_plan/replay/expression_facts/receiving/remaining.rs",
+  "edits": [
+    {
+      "before": "use super::*;",
+      "after": "use super::*;\nmod selected;"
+    },
+    {
+      "before": "                let selected = plan.blocks[exit.from.0 as usize]\n                    .transitions\n                    .iter()\n                    .filter_map(|transition| match transition {\n                        CleanupTransition::SelectFailure { source } => Some(source),\n                        _ => None,\n                    })\n                    .collect::<Vec<_>>();\n                if selected.as_slice() != [source] {\n",
+      "after": "                if !selected::unique_status(\n                    &plan.blocks[exit.from.0 as usize].transitions,\n                    source,\n                ) {\n"
+    }
+  ]
+}

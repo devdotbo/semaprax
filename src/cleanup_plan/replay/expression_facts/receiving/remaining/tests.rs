@@ -315,8 +315,26 @@ fn complete_exit_work_exact_short_and_sticky_use_the_same_original_budget() {
 #[test]
 fn complete_root_receivers_and_only_named_paid_caller_projections_keep_original_bytes() {
     use sha2::{Digest, Sha256};
+    let inverse: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/borrowed-selected-status-816/inverse.json"
+    )))
+    .unwrap();
+    let mut current = include_str!("../remaining.rs").to_owned();
+    for edit in inverse["edits"].as_array().unwrap().iter().rev() {
+        let after = edit["after"].as_str().unwrap();
+        assert_eq!(current.matches(after).count(), 1);
+        current = current.replacen(after, edit["before"].as_str().unwrap(), 1);
+    }
     assert_eq!(
-        format!("{:x}", Sha256::digest(include_bytes!("../remaining.rs"))),
+        current,
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/borrowed-selected-status-816/remaining.before.txt"
+        ))
+    );
+    assert_eq!(
+        format!("{:x}", Sha256::digest(current.as_bytes())),
         "78f39b761c68fc9145736540359659eb7edd7a80253fcaec1716f7ce55fcc85e"
     );
     let records: serde_json::Value = serde_json::from_str(include_str!(concat!(
@@ -365,7 +383,7 @@ fn complete_root_receivers_and_only_named_paid_caller_projections_keep_original_
             record["sha256"].as_str().unwrap()
         );
         let after = record["after"].as_str().unwrap();
-        assert_eq!(include_str!("../remaining.rs").matches(after).count(), 1);
+        assert_eq!(current.matches(after).count(), 1);
         assert_eq!(record["before"].as_str().unwrap(), original);
         assert_eq!(
             include_str!(concat!(

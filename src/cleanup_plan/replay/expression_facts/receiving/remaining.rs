@@ -1,5 +1,6 @@
 //! Complete exits/finalizers: paid retained directories, unchanged place/chain helpers.
 use super::*;
+mod selected;
 
 pub(in crate::cleanup_plan::replay) fn validate_exits(
     program: &dyn crate::cleanup::ReplayContext,
@@ -126,15 +127,8 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
             ExitContinuation::LoopLatch { .. } => {}
             ExitContinuation::ReturnFailure { source } => {
                 super::require_status_paid(function, &statuses, source, budget)?;
-                let selected = plan.blocks[exit.from.0 as usize]
-                    .transitions
-                    .iter()
-                    .filter_map(|transition| match transition {
-                        CleanupTransition::SelectFailure { source } => Some(source),
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>();
-                if selected.as_slice() != [source] {
+                if !selected::unique_status(&plan.blocks[exit.from.0 as usize].transitions, source)
+                {
                     return Err(replay_error(
                         function,
                         "failure exit does not return its uniquely selected status",
