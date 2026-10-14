@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn typed_public_generation_verification_and_application_keep_full_legacy_bytes() {
-    let fixture = Fixture::new("typed-report-parity");
+    let fixture = admitted_fixture("typed-report-parity");
     let old =
         semantic_workspace_structural_change::generate(&fixture.root, &fixture.proposal).unwrap();
     let current =
@@ -27,7 +27,7 @@ fn typed_public_generation_verification_and_application_keep_full_legacy_bytes()
         &evidence,
     )
     .unwrap();
-    let legacy_fixture = Fixture::new("typed-report-legacy-apply");
+    let legacy_fixture = admitted_fixture("typed-report-legacy-apply");
     let legacy_artifacts = semantic_workspace_structural_change::generate(
         &legacy_fixture.root,
         &legacy_fixture.proposal,
@@ -46,7 +46,7 @@ fn typed_public_generation_verification_and_application_keep_full_legacy_bytes()
 
 #[test]
 fn typed_public_evidence_refusal_keeps_complete_original_diagnostics() {
-    let fixture = Fixture::new("typed-report-negative");
+    let fixture = admitted_fixture("typed-report-negative");
     let evidence = fixture.root.join("invalid-evidence.json");
     std::fs::write(&evidence, "{}\n").unwrap();
     let old =
@@ -110,4 +110,68 @@ fn assert_complete_report_equality(
         );
         assert_eq!(help.as_deref(), expected_help.as_deref());
     }
+}
+
+fn admitted_fixture(label: &str) -> Fixture {
+    let serial = SERIAL.fetch_add(1, Ordering::Relaxed);
+    let root = std::env::temp_dir().join(format!(
+        "semaprax-semantic-workspace-structural-change-v1-{label}-{}-{serial}",
+        std::process::id()
+    ));
+    std::fs::create_dir(&root).unwrap();
+    // The same record/field identities, effects and return value are retained.
+    // Irrefutable Copy extraction stays in the existing v13 evidence family.
+    let old = provider();
+    let body = "{ value.value }";
+    assert_eq!(old.matches(body).count(), 1);
+    let provider = old.replacen(
+        body,
+        "{ match value { Point { value: field } => field, } }",
+        1,
+    );
+    for (path, source) in [
+        ("a/provider.spx", provider.as_str()),
+        ("m/consumer.spx", consumer()),
+        ("n/island.spx", island()),
+        ("z/entry.spx", entry()),
+    ] {
+        write_source(&root, path, source);
+    }
+    let path_set = root.join("paths.json");
+    std::fs::write(&path_set, "{\"schema\":\"semaprax.workspace-semantic-path-set.v1\",\"files\":[{\"path\":\"a/provider.spx\"},{\"path\":\"m/consumer.spx\"},{\"path\":\"n/island.spx\"},{\"path\":\"z/entry.spx\"}]}\n").unwrap();
+    semantic_workspace::initialize(&root, &path_set).unwrap();
+    let graph = workspace_graph::snapshot(&root, "structural.entry").unwrap();
+    for module in graph.modules() {
+        assert!(matches!(
+            module.source_graph_schema(),
+            "semaprax.graph.v10"
+                | "semaprax.graph.v11"
+                | "semaprax.graph.v12"
+                | "semaprax.graph.v13"
+                | "semaprax.graph.v14"
+        ));
+    }
+    let proposal = root.join("structural-change.json");
+    std::fs::write(&proposal, proposal_source(&root)).unwrap();
+    Fixture { root, proposal }
+}
+
+#[test]
+fn full_original_projected_record_proposal_keeps_canonical_refusal_and_legacy_report() {
+    let fixture = Fixture::new("typed-original-unsupported");
+    let before = inventory(&fixture.root);
+    let old = semantic_workspace_structural_change::generate(&fixture.root, &fixture.proposal)
+        .err()
+        .expect("full original unsupported proposal must refuse");
+    let current =
+        semantic_workspace_structural_change::reporting::generate(&fixture.root, &fixture.proposal)
+            .err()
+            .expect("full original unsupported proposal must refuse");
+    assert_eq!(old[0].code, "SPX-G188");
+    assert_eq!(
+        old[0].message,
+        "Semantic Workspace Structural Change proposal is not canonical"
+    );
+    assert_complete_report_equality(current.reported().unwrap(), old.as_slice());
+    assert_eq!(inventory(&fixture.root), before);
 }
