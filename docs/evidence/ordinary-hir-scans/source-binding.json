@@ -14,7 +14,7 @@
     "src/hir/iterator_loop/renewal/paid_scan.rs": "fedcf6ff959b52451d5fbcd7eddb8bee8f7c8963c300e97a8c54b8726c45dae1",
     "src/hir/ordinary_scan.rs": "f17e34eec31173524e333afca35facf4652364965959998bb5bc7db42e485b2b",
     "src/hir/ordinary_scan/tests.rs": "e8d4204ecea77fbe7abd8982a162ac8357b035c943afbcb3344b96db2b2ab1f3",
-    "src/hir/validation.rs": "123c9653b777773baebfea4aaa6218c88179845cca8cdd62552bac6ea2357118",
+    "src/hir/validation.rs": "df2442a9f040d8950374ee135128a10ae43fe7ddbcf73a9cea6b7d941fa4068e",
     "src/hir/validation/function_scope.rs": "9360d9f5f6d86bfddf94a74453a69519b4f59a11ddcff56ab07fae525b49b5b1",
     "src/hir/validation/owner_renewal.rs": "def13efb28107cbe479b8fdff6ac04346ceaa936040f093a30265ae437bcd0bb",
     "src/hir/validation/unsafe_scan.rs": "2309786e3789e9a0983d1e846f5c19eb71422bae727b2c73db49c0a814be089d",
