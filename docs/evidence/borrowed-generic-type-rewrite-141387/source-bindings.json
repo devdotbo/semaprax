@@ -1,0 +1,26 @@
+{
+  "src/workspace_graph/generic_type_import.rs": {
+    "sha256": "1065b6f0dc8e285d62fa0b6503a5f044ba7445565b75b9b4b79737ec4e260c00",
+    "bytes": 10878
+  },
+  "src/workspace_graph/generic_type_import/original.rs": {
+    "sha256": "24d2c8507f1090f5a6124629be65423b0d38fc6eb12f6e626787e7365925f2da",
+    "bytes": 8134
+  },
+  "src/workspace_graph/generic_type_import/borrowed_tests.rs": {
+    "sha256": "a20a8d5a0c5e2e2986d795c45b038a2402427184131837d0f10251e90b9ccdfb",
+    "bytes": 20835
+  },
+  "src/workspace_graph/expected_projection/cost.rs": {
+    "sha256": "dc82998ecf0fc9660069c46c67de574ced77a7c33a2a1013aaaa70f15a0f4dc5",
+    "bytes": 40093
+  },
+  "src/workspace_graph/expected_projection/cost/generic_rewrite_test_bridge.rs": {
+    "sha256": "24a4e82d60552aa00c5798801beb0596b2fe8ac827499678ddf0f802484b13d1",
+    "bytes": 1364
+  },
+  "tests/workspace/semantic_graph/source_inventory.rs": {
+    "sha256": "dfa299a93ebbcdbf3bfe7a4ca30746ca547e71319665e39ad88b98cb77926717",
+    "bytes": 24541
+  }
+}

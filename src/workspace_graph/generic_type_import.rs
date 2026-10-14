@@ -1,14 +1,16 @@
 //! Narrow Project linking support for flat generic owned-record templates.
 
-use std::collections::BTreeSet;
-
-use crate::ast::{Program, Type, TypeDeclaration, TypeDeclarationKind};
+use crate::ast::{Program, Type, TypeDeclaration, TypeDeclarationKind, TypeParameterDeclaration};
 use crate::diagnostic::Diagnostic;
 
 use super::expected_projection::cost::StructuralCost;
 
 pub(super) fn template_is_admitted(declaration: &TypeDeclaration) -> bool {
-    let parameters = parameter_names(declaration);
+    #[cfg(test)]
+    if use_original_receiver(0) {
+        return original::template_is_admitted(declaration);
+    }
+    let parameters = &declaration.type_parameters;
     let TypeDeclarationKind::Record { fields } = &declaration.kind else {
         return false;
     };
@@ -26,7 +28,7 @@ pub(super) fn template_is_admitted(declaration: &TypeDeclaration) -> bool {
             | Type::Bool
             | Type::Bytes => true,
             Type::Named { name, arguments } => {
-                arguments.is_empty() && parameters.contains(name.as_str())
+                arguments.is_empty() && parameter_name_is_present(parameters, name)
             }
             Type::String
             | Type::Str
@@ -48,9 +50,19 @@ pub(super) fn rewrite_declaration_runtime_cost(
     programs: &[Program],
     cost: &mut StructuralCost,
 ) -> Result<(), Vec<Diagnostic>> {
-    let parameters = parameter_names(declaration);
-    for ty in declaration_types(declaration) {
-        if !is_parameter(ty, &parameters) {
+    #[cfg(test)]
+    if use_original_receiver(1) {
+        return original::rewrite_declaration_runtime_cost(
+            declaration,
+            target_module,
+            caller,
+            programs,
+            cost,
+        );
+    }
+    let parameters = &declaration.type_parameters;
+    visit_types(&declaration.kind, &mut |ty| {
+        if !is_parameter(ty, parameters) {
             super::expected_projection::rewrite_type_runtime_cost(
                 ty,
                 target_module,
@@ -59,7 +71,8 @@ pub(super) fn rewrite_declaration_runtime_cost(
                 cost,
             )?;
         }
-    }
+        Ok(())
+    })?;
     Ok(())
 }
 
@@ -71,6 +84,17 @@ pub(super) fn rewrite_declaration_runtime_cost_with_layout(
     cost: &mut StructuralCost,
     layout: Option<&super::expected_projection::private_layout::LayoutClosure<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
+    #[cfg(test)]
+    if use_original_receiver(2) {
+        return original::rewrite_declaration_runtime_cost_with_layout(
+            declaration,
+            target_module,
+            caller,
+            programs,
+            cost,
+            layout,
+        );
+    }
     if layout.is_none_or(|l| l.is_empty()) {
         return rewrite_declaration_runtime_cost(
             declaration,
@@ -121,7 +145,7 @@ pub(super) fn rewrite_declaration_runtime_cost_with_layout(
             return Err(vec![super::graph_error(
                 "SPX-G172",
                 "private layout rewriting requires a monomorphic record or result variant",
-            )])
+            )]);
         }
     }
     Ok(())
@@ -133,12 +157,17 @@ pub(super) fn rewrite_declaration(
     caller: &Program,
     programs: &[Program],
 ) -> Result<(), Vec<Diagnostic>> {
-    let parameters = parameter_names(declaration);
-    for ty in declaration_types_mut(declaration) {
-        if !is_parameter(ty, &parameters) {
+    #[cfg(test)]
+    if use_original_receiver(3) {
+        return original::rewrite_declaration(declaration, target_module, caller, programs);
+    }
+    let parameters = &declaration.type_parameters;
+    visit_types_mut(&mut declaration.kind, &mut |ty| {
+        if !is_parameter(ty, parameters) {
             super::expected_projection::rewrite_type(ty, target_module, caller, programs)?;
         }
-    }
+        Ok(())
+    })?;
     Ok(())
 }
 
@@ -149,6 +178,16 @@ pub(super) fn rewrite_declaration_with_layout(
     programs: &[Program],
     layout: Option<&super::expected_projection::private_layout::LayoutClosure<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
+    #[cfg(test)]
+    if use_original_receiver(4) {
+        return original::rewrite_declaration_with_layout(
+            declaration,
+            target_module,
+            caller,
+            programs,
+            layout,
+        );
+    }
     if layout.is_none_or(|l| l.is_empty()) {
         return rewrite_declaration(declaration, target_module, caller, programs);
     }
@@ -186,67 +225,129 @@ pub(super) fn rewrite_declaration_with_layout(
             return Err(vec![super::graph_error(
                 "SPX-G172",
                 "private layout rewriting requires a monomorphic record or result variant",
-            )])
+            )]);
         }
     }
     Ok(())
 }
 
-fn parameter_names(declaration: &TypeDeclaration) -> BTreeSet<String> {
-    declaration
-        .type_parameters
-        .iter()
-        .map(|parameter| parameter.name.clone())
-        .collect()
+fn parameter_name_is_present(parameters: &[TypeParameterDeclaration], name: &str) -> bool {
+    // Exactly BTreeSet<String>::contains(&str): UTF-8 text equality, including
+    // duplicate and empty names. No parameter or alias payload is cloned.
+    parameters.iter().any(|parameter| parameter.name == name)
 }
 
-fn is_parameter(ty: &Type, parameters: &BTreeSet<String>) -> bool {
+fn is_parameter(ty: &Type, parameters: &[TypeParameterDeclaration]) -> bool {
     matches!(ty, Type::Named { name, arguments }
-        if arguments.is_empty() && parameters.contains(name.as_str()))
+        if arguments.is_empty() && parameter_name_is_present(parameters, name))
 }
 
-fn declaration_types(declaration: &TypeDeclaration) -> Vec<&Type> {
-    match &declaration.kind {
-        TypeDeclarationKind::Record { fields } => fields.iter().map(|field| &field.ty).collect(),
-        TypeDeclarationKind::Class { fields, methods } => fields
-            .iter()
-            .map(|field| &field.ty)
-            .chain(methods.iter().flat_map(|method| {
-                method
-                    .params
-                    .iter()
-                    .map(|parameter| &parameter.ty)
-                    .chain(std::iter::once(&method.return_type))
-            }))
-            .collect(),
-        TypeDeclarationKind::Variant { cases } => cases
-            .iter()
-            .flat_map(|case| case.fields.iter().map(|field| &field.ty))
-            .collect(),
-        TypeDeclarationKind::Resource { .. } => unreachable!("resource imports are rejected"),
-    }
-}
-
-fn declaration_types_mut(declaration: &mut TypeDeclaration) -> Vec<&mut Type> {
-    match &mut declaration.kind {
+fn visit_types(
+    kind: &TypeDeclarationKind,
+    visit: &mut impl FnMut(&Type) -> Result<(), Vec<Diagnostic>>,
+) -> Result<(), Vec<Diagnostic>> {
+    match kind {
         TypeDeclarationKind::Record { fields } => {
-            fields.iter_mut().map(|field| &mut field.ty).collect()
+            for field in fields {
+                visit(&field.ty)?;
+            }
         }
-        TypeDeclarationKind::Class { fields, methods } => fields
-            .iter_mut()
-            .map(|field| &mut field.ty)
-            .chain(methods.iter_mut().flat_map(|method| {
-                method
-                    .params
-                    .iter_mut()
-                    .map(|parameter| &mut parameter.ty)
-                    .chain(std::iter::once(&mut method.return_type))
-            }))
-            .collect(),
-        TypeDeclarationKind::Variant { cases } => cases
-            .iter_mut()
-            .flat_map(|case| case.fields.iter_mut().map(|field| &mut field.ty))
-            .collect(),
+        TypeDeclarationKind::Class { fields, methods } => {
+            for field in fields {
+                visit(&field.ty)?;
+            }
+            for method in methods {
+                for parameter in &method.params {
+                    visit(&parameter.ty)?;
+                }
+                visit(&method.return_type)?;
+            }
+        }
+        TypeDeclarationKind::Variant { cases } => {
+            for case in cases {
+                for field in &case.fields {
+                    visit(&field.ty)?;
+                }
+            }
+        }
         TypeDeclarationKind::Resource { .. } => unreachable!("resource imports are rejected"),
     }
+    Ok(())
+}
+
+fn visit_types_mut(
+    kind: &mut TypeDeclarationKind,
+    visit: &mut impl FnMut(&mut Type) -> Result<(), Vec<Diagnostic>>,
+) -> Result<(), Vec<Diagnostic>> {
+    match kind {
+        TypeDeclarationKind::Record { fields } => {
+            for field in fields {
+                visit(&mut field.ty)?;
+            }
+        }
+        TypeDeclarationKind::Class { fields, methods } => {
+            for field in fields {
+                visit(&mut field.ty)?;
+            }
+            for method in methods {
+                for parameter in &mut method.params {
+                    visit(&mut parameter.ty)?;
+                }
+                visit(&mut method.return_type)?;
+            }
+        }
+        TypeDeclarationKind::Variant { cases } => {
+            for case in cases {
+                for field in &mut case.fields {
+                    visit(&mut field.ty)?;
+                }
+            }
+        }
+        TypeDeclarationKind::Resource { .. } => unreachable!("resource imports are rejected"),
+    }
+    Ok(())
+}
+
+// Lexical test adapters keep the complete old file byte-for-byte; its bodies
+// resolve their unchanged workspace helpers through this parent only.
+#[cfg(test)]
+use super::{expected_projection, graph_error};
+#[cfg(test)]
+#[path = "generic_type_import/borrowed_tests.rs"]
+mod borrowed_tests;
+#[cfg(test)]
+#[path = "generic_type_import/original.rs"]
+mod original;
+
+#[cfg(test)]
+thread_local! {
+    static ORIGINAL_RECEIVER: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static ORIGINAL_CALLS: std::cell::Cell<[usize; 5]> = const { std::cell::Cell::new([0; 5]) };
+}
+#[cfg(test)]
+fn use_original_receiver(operation: usize) -> bool {
+    let selected = ORIGINAL_RECEIVER.with(std::cell::Cell::get);
+    if selected {
+        ORIGINAL_CALLS.with(|calls| {
+            let mut observed = calls.get();
+            observed[operation] += 1;
+            calls.set(observed);
+        });
+    }
+    selected
+}
+#[cfg(test)]
+fn original_receiver_calls() -> [usize; 5] {
+    ORIGINAL_CALLS.with(std::cell::Cell::get)
+}
+#[cfg(test)]
+fn with_original_receiver<T>(operation: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            ORIGINAL_RECEIVER.with(|current| current.set(self.0));
+        }
+    }
+    let _restore = Restore(ORIGINAL_RECEIVER.with(|current| current.replace(true)));
+    operation()
 }

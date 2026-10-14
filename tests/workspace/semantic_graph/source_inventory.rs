@@ -240,7 +240,11 @@ macro_rules! semantic_graph_root_source_inventory {
         include_str!("../../src/workspace_graph/diagnostics.rs"),
         include_str!("../../src/workspace_graph/diagnostics/invocation.rs"),
         include_str!("../../src/workspace_graph/diagnostics/invocation/tests.rs"),
-        include_str!("../../src/workspace_graph/generic_type_import.rs"),
+        concat!(
+            include_str!("../../src/workspace_graph/generic_type_import.rs"),
+            include_str!("../../src/workspace_graph/generic_type_import/original.rs"),
+            include_str!("../../src/workspace_graph/generic_type_import/borrowed_tests.rs"),
+        ),
         concat!(
             include_str!("../../src/workspace_graph/owned_generics.rs"),
             include_str!("../../src/hir/type_reachability/inventory.rs"),
@@ -366,6 +370,9 @@ macro_rules! semantic_graph_projection_child_source_inventory {
     (cost) => {
         concat!(
             include_str!("../../src/workspace_graph/expected_projection/cost.rs"),
+            include_str!(
+                "../../src/workspace_graph/expected_projection/cost/generic_rewrite_test_bridge.rs"
+            ),
             include_str!("../../src/workspace_graph/expected_projection/uncached_absence_tests.rs"),
         )
     };

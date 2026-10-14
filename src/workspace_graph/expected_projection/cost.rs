@@ -976,3 +976,7 @@ mod exact_bundle_tests {
 #[cfg(test)]
 #[path = "uncached_absence_tests.rs"]
 mod uncached_absence_tests;
+
+#[cfg(test)]
+#[path = "cost/generic_rewrite_test_bridge.rs"]
+pub(in crate::workspace_graph) mod generic_rewrite_test_bridge;
