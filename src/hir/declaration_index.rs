@@ -159,7 +159,7 @@ impl DeclarationIndex {
             .variant_cases
             .iter()
             .map(|(owner, cases)| {
-                std::mem::size_of::<(DeclarationId, Vec<ResolvedVariantCaseDeclaration>)>()
+                std::mem::size_of::<(DeclarationId, NominalPayload<ResolvedVariantCaseDeclaration>)>()
                     + owner.as_str().len()
                     + cases.capacity() * std::mem::size_of::<ResolvedVariantCaseDeclaration>()
             })
@@ -168,7 +168,7 @@ impl DeclarationIndex {
             .type_parameters
             .iter()
             .map(|(owner, parameters)| {
-                std::mem::size_of::<(DeclarationId, Vec<ResolvedTypeParameterDeclaration>)>()
+                std::mem::size_of::<(DeclarationId, NominalPayload<ResolvedTypeParameterDeclaration>)>()
                     + owner.as_str().len()
                     + parameters.capacity()
                         * std::mem::size_of::<ResolvedTypeParameterDeclaration>()
@@ -1157,7 +1157,8 @@ pub fn dispose_declaration_index_for_private_contract(
 
 impl Drop for DeclarationIndex {
     fn drop(&mut self) {
-        if let Some(mut scratch) = self.nominal_drop_workspace.scratch.take() {
+        if let Some(scratch) = self.nominal_drop_workspace.scratch.take() {
+            let mut scratch=scratch.lock().expect("construction disposal lock");
             self.drain_recursive_types_for_private_contract(|ty| nominal_payload::dispose(ty, &mut scratch));
             return;
         }

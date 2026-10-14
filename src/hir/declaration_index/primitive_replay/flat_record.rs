@@ -110,12 +110,12 @@ impl DeclarationIndex {
             .ok_or_else(fail)?;
         let parameters = crate::cleanup_plan::replay_btree_node_upper::<
             DeclarationId,
-            Vec<ResolvedTypeParameterDeclaration>,
+            NominalPayload<ResolvedTypeParameterDeclaration>,
         >()
         .ok_or_else(fail)?;
         let record_fields = crate::cleanup_plan::replay_btree_node_upper::<
             DeclarationId,
-            Vec<ResolvedFieldDeclaration>,
+            NominalPayload<ResolvedFieldDeclaration>,
         >()
         .ok_or_else(fail)?;
         // Record ID copies: declaration key and ID, name value, parameter key

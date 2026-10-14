@@ -81,6 +81,16 @@ impl Deref for CaseFields {
         }
     }
 }
+impl DerefMut for CaseFields {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        match self {
+            Self::Owned(values) => values,
+            Self::Case { .. } => {
+                panic!("shared case-field mutation requires explicit paid materialization")
+            }
+        }
+    }
+}
 impl std::fmt::Debug for CaseFields {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.deref().fmt(f)

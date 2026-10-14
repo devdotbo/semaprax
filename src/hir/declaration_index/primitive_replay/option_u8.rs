@@ -137,7 +137,7 @@ impl DeclarationIndex {
         }
         let parameter = crate::cleanup_plan::replay_btree_node_upper::<
             DeclarationId,
-            Vec<ResolvedTypeParameterDeclaration>,
+            NominalPayload<ResolvedTypeParameterDeclaration>,
         >()
         .and_then(|n| n.checked_add(crate::prelude::OPTION_ID.len()))
         .and_then(|n| n.checked_add(std::mem::size_of::<ResolvedTypeParameterDeclaration>() + 1))
@@ -158,7 +158,7 @@ impl DeclarationIndex {
             + crate::prelude::OPTION_ID.len();
         let cases_bytes = crate::cleanup_plan::replay_btree_node_upper::<
             DeclarationId,
-            Vec<ResolvedVariantCaseDeclaration>,
+            NominalPayload<ResolvedVariantCaseDeclaration>,
         >()
         .and_then(|n| n.checked_add(crate::prelude::OPTION_ID.len()))
         .and_then(|n| n.checked_add(2 * std::mem::size_of::<ResolvedVariantCaseDeclaration>()))
@@ -197,13 +197,10 @@ impl DeclarationIndex {
         self.variant_cases
             .insert(DeclarationId::compiler(Id::Option), cases);
         for (id, some) in [(Id::OptionNone, false), (Id::OptionSome, true)] {
-            let bytes = crate::cleanup_plan::replay_btree_node_upper::<
-                DeclarationId,
-                Vec<ResolvedFieldDeclaration>,
-            >()
-            .and_then(|n| n.checked_add(id.text().len()))
-            .and_then(|n| n.checked_add(if some { field_bytes } else { 0 }))
-            .ok_or_else(fail)?;
+            let bytes = crate::cleanup_plan::replay_btree_node_upper::<DeclarationId, CaseFields>()
+                .and_then(|n| n.checked_add(id.text().len()))
+                .and_then(|n| n.checked_add(if some { field_bytes } else { 0 }))
+                .ok_or_else(fail)?;
             debit(bytes)?;
             physical.reserve(bytes).map_err(|_| fail())?;
             self.case_fields.insert(

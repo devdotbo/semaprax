@@ -54,13 +54,13 @@ impl DeclarationIndex {
             .and_then(|n| {
                 n.checked_add(crate::cleanup_plan::replay_btree_node_upper::<
                     DeclarationId,
-                    Vec<ResolvedTypeParameterDeclaration>,
+                    NominalPayload<ResolvedTypeParameterDeclaration>,
                 >()?)
             })
             .and_then(|n| {
                 n.checked_add(crate::cleanup_plan::replay_btree_node_upper::<
                     DeclarationId,
-                    Vec<ResolvedFieldDeclaration>,
+                    NominalPayload<ResolvedFieldDeclaration>,
                 >()?)
             })
             .and_then(|n| n.checked_add(id.len().checked_mul(5)?))

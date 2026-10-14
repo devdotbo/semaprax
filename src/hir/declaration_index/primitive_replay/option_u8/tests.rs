@@ -232,7 +232,7 @@ fn option_u8_replay_refuses_generic_compiler_owned_orphan_and_unfielded_entries(
                     .unwrap();
             }
             6 => index.declarations.get_mut(&row_id).unwrap().kind = DeclarationKind::Variant,
-            7 => *index.record_fields.get_mut(&row_id).unwrap() = Vec::new(),
+            7 => *index.record_fields.get_mut(&row_id).unwrap() = Vec::new().into(),
             8 => {
                 index
                     .declarations

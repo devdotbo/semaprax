@@ -56,6 +56,11 @@ impl<T: NominalElement> Drop for Owner<T> {
 pub struct NominalPayload<T: NominalElement> {
     storage: Storage<T>,
 }
+#[derive(Debug, Eq, PartialEq)]
+pub enum NominalMutationError<E> {
+    Reservation(E),
+    Capacity,
+}
 enum Storage<T: NominalElement> {
     Owned(Vec<T>),
     Shared(Arc<Owner<T>>),
@@ -107,16 +112,20 @@ impl<T: NominalElement> NominalPayload<T> {
     pub fn try_make_mut<E>(
         &mut self,
         mut reserve: impl FnMut(usize) -> Result<(), E>,
-    ) -> Result<&mut Vec<T>, E> {
+    ) -> Result<&mut Vec<T>, NominalMutationError<E>> {
         if matches!(&self.storage, Storage::Shared(_)) {
             // The existing iterative clone census uses this actual fixed
             // cursor; acquire its stack carrier before invoking it.
-            reserve(size_of::<[Option<(&ResolvedType, usize)>; 514]>())?;
+            reserve(size_of::<[Option<(&ResolvedType, usize)>; 514]>())
+                .map_err(NominalMutationError::Reservation)?;
             let bytes = self.len().checked_mul(size_of::<T>()).and_then(|initial| {
                 self.iter()
                     .try_fold(initial, |n, v| n.checked_add(v.clone_bytes()?))
             });
-            reserve(size_of::<Vec<T>>().saturating_add(bytes.unwrap_or(usize::MAX)))?;
+            let bytes = bytes
+                .and_then(|bytes| size_of::<Vec<T>>().checked_add(bytes))
+                .ok_or(NominalMutationError::Capacity)?;
+            reserve(bytes).map_err(NominalMutationError::Reservation)?;
             let mut values = Vec::with_capacity(self.len());
             assert_eq!(
                 values.capacity(),
@@ -126,7 +135,7 @@ impl<T: NominalElement> NominalPayload<T> {
             values.extend(self.iter().cloned());
             self.storage = Storage::Owned(values);
         } else {
-            reserve(0)?;
+            reserve(0).map_err(NominalMutationError::Reservation)?;
         }
         Ok(self.deref_mut())
     }

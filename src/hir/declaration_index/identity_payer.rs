@@ -54,7 +54,7 @@ impl DeclarationIndex {
         index
             .share_nominal_payloads(&mut reserve)
             .map_err(IdentityIndexError::Identity)?;
-        index.nominal_drop_workspace.building = false;
+        index.nominal_drop_workspace.finish();
         Ok(index)
     }
 
@@ -230,7 +230,9 @@ impl DeclarationIndex {
                 continue;
             };
             let owner = index.inserted_identity(&declaration.stable_id);
-            let mut resolved_fields = Vec::with_capacity(fields.len());
+            let mut resolved_fields = index
+                .nominal_drop_workspace
+                .fields::<ResolvedFieldDeclaration>(fields.len());
             for (ordinal, field) in fields.iter().enumerate() {
                 let ty = index
                     .resolve_source_type(&field.ty, Some(&owner))
@@ -250,11 +252,12 @@ impl DeclarationIndex {
                     )
                     .at_path(program.path())
                 })?;
+                let ty = index.nominal_drop_workspace.resolved_type(ty);
                 let resolved = ResolvedFieldDeclaration {
                     id: identity(&field.stable_id).map_err(IdentityIndexError::Identity)?,
                     name: field.name.clone(),
                     index: field_index,
-                    ty,
+                    ty: ty.into_type(),
                     span: field.span,
                 };
                 index.insert_field(
@@ -268,14 +271,18 @@ impl DeclarationIndex {
                 );
                 resolved_fields.push(resolved);
             }
-            index.record_fields.insert(owner, resolved_fields);
+            index
+                .record_fields
+                .insert(owner, resolved_fields.into_vec());
         }
         for declaration in program.types().iter() {
             let TypeDeclarationKind::Class { fields, methods } = &declaration.kind else {
                 continue;
             };
             let owner = index.inserted_identity(&declaration.stable_id);
-            let mut resolved_fields = Vec::with_capacity(fields.len());
+            let mut resolved_fields = index
+                .nominal_drop_workspace
+                .fields::<ResolvedFieldDeclaration>(fields.len());
             for (ordinal, field) in fields.iter().enumerate() {
                 let ty = index
                     .resolve_source_type(&field.ty, Some(&owner))
@@ -295,11 +302,12 @@ impl DeclarationIndex {
                     )
                     .at_path(program.path())
                 })?;
+                let ty = index.nominal_drop_workspace.resolved_type(ty);
                 let resolved = ResolvedFieldDeclaration {
                     id: identity(&field.stable_id).map_err(IdentityIndexError::Identity)?,
                     name: field.name.clone(),
                     index: field_index,
-                    ty,
+                    ty: ty.into_type(),
                     span: field.span,
                 };
                 index.insert_field(
@@ -313,7 +321,9 @@ impl DeclarationIndex {
                 );
                 resolved_fields.push(resolved);
             }
-            index.record_fields.insert(owner.clone(), resolved_fields);
+            index
+                .record_fields
+                .insert(owner.clone(), resolved_fields.into_vec());
             for method in methods {
                 let method_id =
                     identity(&method.stable_id).map_err(IdentityIndexError::Identity)?;
@@ -361,7 +371,9 @@ impl DeclarationIndex {
                 continue;
             };
             let owner = index.inserted_identity(&declaration.stable_id);
-            let mut resolved_cases = Vec::with_capacity(cases.len());
+            let mut resolved_cases = index
+                .nominal_drop_workspace
+                .fields::<ResolvedVariantCaseDeclaration>(cases.len());
             for (case_ordinal, case) in cases.iter().enumerate() {
                 let case_id = identity(&case.stable_id).map_err(IdentityIndexError::Identity)?;
                 let case_index = u32::try_from(case_ordinal).map_err(|_| {
@@ -384,7 +396,9 @@ impl DeclarationIndex {
                         IdentityOrigin::Automatic
                     },
                 );
-                let mut resolved_fields = Vec::with_capacity(case.fields.len());
+                let mut resolved_fields = index
+                    .nominal_drop_workspace
+                    .fields::<ResolvedFieldDeclaration>(case.fields.len());
                 for (field_ordinal, field) in case.fields.iter().enumerate() {
                     let ty = index
                         .resolve_source_type(&field.ty, Some(&owner))
@@ -407,11 +421,12 @@ impl DeclarationIndex {
                         )
                         .at_path(program.path())
                     })?;
+                    let ty = index.nominal_drop_workspace.resolved_type(ty);
                     let resolved = ResolvedFieldDeclaration {
                         id: identity(&field.stable_id).map_err(IdentityIndexError::Identity)?,
                         name: field.name.clone(),
                         index: field_index,
-                        ty,
+                        ty: ty.into_type(),
                         span: field.span,
                     };
                     index.insert_case_field(
@@ -436,11 +451,11 @@ impl DeclarationIndex {
                     id: case_id,
                     name: case.name.clone(),
                     index: case_index,
-                    fields: resolved_fields,
+                    fields: resolved_fields.into_vec(),
                     span: case.span,
                 });
             }
-            index.variant_cases.insert(owner, resolved_cases);
+            index.variant_cases.insert(owner, resolved_cases.into_vec());
         }
         index.materialize_class_inheritance(program)?;
         if !index.populate_type_facts() {
