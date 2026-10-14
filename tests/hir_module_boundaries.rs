@@ -375,6 +375,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/test_allocation_observer/free_order.rs"),
         ),
         include_str!("../src/cleanup_plan/replay/factored/oracle_hook.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/oracle_hook/closure_controls.rs"),
         include_str!("../src/cleanup_plan/replay/oracle_controls.rs"),
         include_str!("../src/cleanup_plan/replay/nested_shape.rs"),
         include_str!("../src/cleanup_plan/replay/nested_shape/paid.rs"),

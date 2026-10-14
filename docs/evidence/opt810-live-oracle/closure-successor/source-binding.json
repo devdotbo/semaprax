@@ -1,0 +1,48 @@
+{
+  "status": "SOURCE_ONLY_NO_BUILD_TEST_EXECUTION",
+  "base": "d8df12a3b0283c9a8c3947021b4dcd3faf8565a0",
+  "original_receivers": {
+    "src/cleanup_plan/replay/factored/oracle_hook.rs": {
+      "original_whole_archive": "docs/evidence/opt810-live-oracle/closure-successor/src__cleanup_plan__replay__factored__oracle_hook.rs.before",
+      "original_bytes": 10343,
+      "original_sha256": "2dfb910a9a4610d246e9d74da89ff411f957581b8ef87544adce67c6f21a3ec9",
+      "receiving_bytes": 10757,
+      "receiving_sha256": "d2e27e865bfe49f41639731b4148e32aef6177c87994874ef931a37487f2af46"
+    },
+    "src/cleanup_plan/replay/live_oracle/source_custody/a.rs": {
+      "original_whole_archive": "docs/evidence/opt810-live-oracle/closure-successor/src__cleanup_plan__replay__live_oracle__source_custody__a.rs.before",
+      "original_bytes": 31301,
+      "original_sha256": "0b7ed72502c654cd6bb0696134c0c32a19467c07bf9386942a79cf435e5857bd",
+      "receiving_bytes": 31795,
+      "receiving_sha256": "881697dc33b57afc589ab6b51abb0f3a6807c44221e21283a7d6500b85faf695"
+    },
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": {
+      "original_whole_archive": "docs/evidence/opt810-live-oracle/closure-successor/src__cleanup_plan__replay__live_oracle__source_custody__b.rs.before",
+      "original_bytes": 20763,
+      "original_sha256": "845fc5f26f76462fb827a13f6ee30b087fc0eba60a1d61fb996496d1a405a1f2",
+      "receiving_bytes": 20899,
+      "receiving_sha256": "e39bc5f8153c82a69e9a0e94c86a9a732159859cd66032d40cc263f891aa3178"
+    },
+    "tests/hir_module_boundaries.rs": {
+      "original_whole_archive": "docs/evidence/opt810-live-oracle/closure-successor/tests__hir_module_boundaries.rs.before",
+      "original_bytes": 37137,
+      "original_sha256": "820663f9b7b7c288a5df7edab2db3b2b9fdb0d58ca7011fabdf9e69586e7b9ea",
+      "receiving_bytes": 37230,
+      "receiving_sha256": "dc4ebfe57ea401e3503d3e829c6eb0c21fff42b7aca2c4d4b666c6264e9962e4"
+    }
+  },
+  "required_pending_lib_selectors": [
+    "cleanup_plan::replay::factored::oracle_hook::closure_controls::undecided_is_distinct_and_never_relabels_a_decided_mismatch",
+    "cleanup_plan::replay::factored::oracle_hook::closure_controls::complete_opted_hook_keeps_predebited_and_first_sticky_production_receipts_through_drop",
+    "cleanup_plan::replay::live_oracle::source_custody::a::complete_original_sources_and_compiled_owning_receivers_remain_exact",
+    "cleanup_plan::replay::live_oracle::source_custody::b::complete_original_sources_and_compiled_owning_receivers_remain_exact"
+  ],
+  "required_pending_language_selectors": [
+    "hir_module_boundaries::core_validation_has_no_resolution_cleanup_build_or_physical_authority"
+  ],
+  "retained_owning_lib_selectors": [
+    "project::incremental::cold_source_tests::explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse",
+    "workspace_graph::identity_resolution::tests::one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries"
+  ],
+  "qualification_note": "Root owns runtime/build; reuse exact unchanged historical qualification only with declared compiler/source provenance. This contribution changes cfg(test) Rust, so actual owning binary rebuild is required when root qualifies it."
+}

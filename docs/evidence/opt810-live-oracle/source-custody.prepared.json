@@ -164,8 +164,8 @@
       "archive": "docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__factored__oracle_hook.rs.before",
       "original_bytes": 10215,
       "original_sha256": "85a44e74c3a96de2df781dc2daebb26318c013e4d5701c481cd0bac6cbc9f0a4",
-      "receiving_bytes": 10343,
-      "receiving_sha256": "2dfb910a9a4610d246e9d74da89ff411f957581b8ef87544adce67c6f21a3ec9",
+      "receiving_bytes": 10757,
+      "receiving_sha256": "d2e27e865bfe49f41639731b4148e32aef6177c87994874ef931a37487f2af46",
       "whole_inverse_edits": [
         {
           "receiving_sha256": "02b1308c07f11d9697fc88d7563ce81534815e32f4f6ca9b352d1ca822144831",
@@ -630,8 +630,8 @@
       "archive": "docs/evidence/opt810-live-oracle/tests__hir_module_boundaries.rs.before",
       "original_bytes": 35630,
       "original_sha256": "9712bee50420446edecf3e489f7be076f9f48c150615af5c9947184e6ca31ac7",
-      "receiving_bytes": 36929,
-      "receiving_sha256": "1d4b55f60026c33e5a9b4cdfcf3893b2639047c971508a7173901164c970c30f",
+      "receiving_bytes": 37230,
+      "receiving_sha256": "dc4ebfe57ea401e3503d3e829c6eb0c21fff42b7aca2c4d4b666c6264e9962e4",
       "whole_inverse_edits": [
         {
           "receiving_sha256": "eefe0ae2aa94a38be619c5890b8bb63cfdb57d1a9ddb739b945043280345d263",
@@ -675,14 +675,12 @@
       "integrated_sha256": "691711d598899d5d5c84b0aea28203e2dd7071f5c111998b00ab51e82ed84777"
     },
     "src/cleanup_plan/replay/live_oracle/source_custody/a.rs": {
-      "bytes": 31301,
-      "sha256": "0b7ed72502c654cd6bb0696134c0c32a19467c07bf9386942a79cf435e5857bd",
-      "integrated_sha256": "0b7ed72502c654cd6bb0696134c0c32a19467c07bf9386942a79cf435e5857bd"
+      "bytes": 31795,
+      "sha256": "881697dc33b57afc589ab6b51abb0f3a6807c44221e21283a7d6500b85faf695"
     },
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": {
-      "bytes": 20470,
-      "sha256": "75e7b8a0c75efdb37ff5faf7c95ed2af56db45f4fc1824040f8a319fc8be9ce7",
-      "integrated_sha256": "845fc5f26f76462fb827a13f6ee30b087fc0eba60a1d61fb996496d1a405a1f2"
+      "bytes": 20899,
+      "sha256": "e39bc5f8153c82a69e9a0e94c86a9a732159859cd66032d40cc263f891aa3178"
     },
     "src/cleanup_plan/replay/nested_shape/paid/oracle.rs": {
       "bytes": 20120,
@@ -743,6 +741,10 @@
       "bytes": 3181,
       "sha256": "021beb18f9c1773563d2630e889aae0a6803f437026f0c312676f8084497d2fe",
       "integrated_sha256": "021beb18f9c1773563d2630e889aae0a6803f437026f0c312676f8084497d2fe"
+    },
+    "src/cleanup_plan/replay/factored/oracle_hook/closure_controls.rs": {
+      "bytes": 3919,
+      "sha256": "e0bd66462a8cd7a9a6fc840a0ce4997da2da549c9ea87547e542f1ed4e0ac854"
     }
   },
   "source_inverse_guard": "src/cleanup_plan/replay/live_oracle/source_custody.rs",
@@ -753,5 +755,7 @@
     "36aa86e7-d88b-4637-b251-162e74a07b70",
     "c9df5b62-bbb5-4d8b-950b-b0ee18ffff80"
   ],
-  "integration_note": "Whole original bytes unchanged; HIR source inverse accounts for exact oracle edits plus the two independently integrated shape source joins."
+  "integration_note": "Whole original bytes unchanged; HIR source inverse accounts for exact oracle edits plus the two independently integrated shape source joins.",
+  "closure_successor_base": "d8df12a3b0283c9a8c3947021b4dcd3faf8565a0",
+  "closure_successor_note": "Two narrow issue810 acceptance repairs; archives and original comparators/owners unchanged. Pending actual qualification."
 }

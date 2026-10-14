@@ -348,6 +348,23 @@ mod oracle_order;
     }
     {
         let mut current = include_str!("../../factored/oracle_hook.rs").to_owned();
+        undo(&mut current, r###"
+// Classification of an undecided result carries no comparison authority.
+fn require_decided(
+    function: &ResolvedFunction,
+    factored: &Result<Option<bool>, Diagnostic>,
+) {
+    assert!(
+        !matches!(factored, Ok(None)),
+        "funded factored skeleton comparison is undecided for `{}`",
+        function.id,
+    );
+}
+
+#[cfg(test)]
+mod closure_controls;
+"###, "");
+        undo(&mut current, "        require_decided(function, &factored);\n", "");
         undo(
             &mut current,
             r#"            let mut plan = plan_skeleton_paths(function, &mut enumerating)?;

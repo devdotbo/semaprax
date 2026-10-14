@@ -151,6 +151,7 @@ pub(super) fn cross_check_oracle(
         compare(program, function, &mut factored)
     });
     if let Ok(true) = enumerated {
+        require_decided(function, &factored);
         assert!(
             matches!(factored, Ok(Some(true))),
             "funded factored skeleton comparison disagrees with enumeration for `{}`: {:?}",
@@ -276,3 +277,18 @@ mod tests {
         drop(opt);
     }
 }
+
+// Classification of an undecided result carries no comparison authority.
+fn require_decided(
+    function: &ResolvedFunction,
+    factored: &Result<Option<bool>, Diagnostic>,
+) {
+    assert!(
+        !matches!(factored, Ok(None)),
+        "funded factored skeleton comparison is undecided for `{}`",
+        function.id,
+    );
+}
+
+#[cfg(test)]
+mod closure_controls;

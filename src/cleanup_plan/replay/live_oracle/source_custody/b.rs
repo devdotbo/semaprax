@@ -653,6 +653,8 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        undo(&mut current, r###"        include_str!("../src/cleanup_plan/replay/factored/oracle_hook/closure_controls.rs"),
+"###, "");
         undo(
             &mut current,
             r#"        include_str!("../src/hir/iterator_loop/renewal/paid_scan.rs"),
