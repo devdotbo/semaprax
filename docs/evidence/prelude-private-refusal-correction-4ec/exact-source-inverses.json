@@ -1,0 +1,13 @@
+[
+  {
+    "path": "src/workspace_graph/expected_projection/prelude_forecast_tests.rs",
+    "archive": "prelude_forecast_tests.rs.before.txt",
+    "sha256": "fa8180f858ef49d5294928b4dccde3442cf9c4c3babfaed47e7a3129fa8c8243",
+    "edits": [
+      {
+        "before": "        assert_eq!(sticky_error, error);\n        assert!(refused);\n        assert_eq!(paid, 0);\n        assert_eq!(first.unwrap().requested, 1);\n",
+        "after": "        // The unfunded private boundary cannot render public text after the\n        // first sticky refusal. Preserve the complete raw six-field receipt;\n        // the rich boundary above still compares its complete public receipt.\n        assert_eq!(\n            sticky_error.as_slice(),\n            &[crate::diagnostic::Diagnostic::io_static(\"SPX-G171\", \"\")]\n        );\n        assert_eq!(sticky_error[0].message_owned_capacity(), 0);\n        assert!(refused);\n        assert_eq!(paid, 0);\n        assert_eq!(\n            first,\n            Some(crate::bounded_output::ReservationRefusal {\n                requested: 1,\n                remaining: 0,\n                floor: 0,\n                stage: None,\n            })\n        );\n"
+      }
+    ]
+  }
+]

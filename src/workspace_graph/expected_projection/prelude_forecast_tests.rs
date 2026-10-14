@@ -96,10 +96,25 @@ fn independent_prelude_term_has_exact_short_zero_and_sticky_refusal_controls() {
             assert!(!reserve_active_required(0));
             selected_error
         });
-        assert_eq!(sticky_error, error);
+        // The unfunded private boundary cannot render public text after the
+        // first sticky refusal. Preserve the complete raw six-field receipt;
+        // the rich boundary above still compares its complete public receipt.
+        assert_eq!(
+            sticky_error.as_slice(),
+            &[crate::diagnostic::Diagnostic::io_static("SPX-G171", "")]
+        );
+        assert_eq!(sticky_error[0].message_owned_capacity(), 0);
         assert!(refused);
         assert_eq!(paid, 0);
-        assert_eq!(first.unwrap().requested, 1);
+        assert_eq!(
+            first,
+            Some(crate::bounded_output::ReservationRefusal {
+                requested: 1,
+                remaining: 0,
+                floor: 0,
+                stage: None,
+            })
+        );
     }
 }
 
