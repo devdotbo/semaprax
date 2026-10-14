@@ -179,17 +179,13 @@ fn complete_large_declared_generic_source_and_original_caller_keep_paid_g171_ord
     let caller=crate::parse("module parameter.caller; use type @id(\"row\") from parameter.provider as Imported; @id(\"main\") fn main()->i64 {0}","caller.spx").unwrap();
     let mut provider = provider;
     provider.types[0].type_parameters = parameters(129);
-    let TypeDeclarationKind::Record { fields } = &mut provider.types[0].kind else { unreachable!() };
-    fields[0].ty = Type::Named {name:"P000000".into(),arguments:vec![]};
-    assert!(original::template_is_admitted(&provider.types[0]));
-    let TypeDeclarationKind::Record { fields } = &mut provider.types[0].kind else { unreachable!() };
-    fields[0].ty = Type::Named {name:"P000000".into(),arguments:vec![]};
-    assert!(original::template_is_admitted(&provider.types[0]));
-    let TypeDeclarationKind::Record { fields } = &mut provider.types[0].kind else { unreachable!() };
-    fields[0].ty = Type::Named {name:"P000000".into(),arguments:vec![]};
-    assert!(original::template_is_admitted(&provider.types[0]));
-    let TypeDeclarationKind::Record { fields } = &mut provider.types[0].kind else { unreachable!() };
-    fields[0].ty = Type::Named {name:"P000000".into(),arguments:vec![]};
+    let TypeDeclarationKind::Record { fields } = &mut provider.types[0].kind else {
+        unreachable!()
+    };
+    fields[0].ty = Type::Named {
+        name: "P000000".into(),
+        arguments: vec![],
+    };
     assert!(original::template_is_admitted(&provider.types[0]));
     let programs = vec![provider, caller];
     let authored = crate::workspace_graph::index_authored(&programs).unwrap();

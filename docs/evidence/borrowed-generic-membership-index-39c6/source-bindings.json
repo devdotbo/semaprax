@@ -12,8 +12,8 @@
     "bytes": 3635
   },
   "src/workspace_graph/generic_type_import/parameter_names/tests.rs": {
-    "sha256": "418ef3ab113b3e7fd8deeeff36cd882f8d24b9424e368cb8ef5bc47a822e4fc6",
-    "bytes": 9356
+    "sha256": "a16366f53e3613db90accba0df8fff733f4f6ed9f9fe075099cef54fb9a2581c",
+    "bytes": 8674
   },
   "src/workspace_graph.rs": {
     "sha256": "6c0497495c52ad6d7b6a8262a0e3ec788a54b46036ddf7cbcdc6c2bca3d4a835",
