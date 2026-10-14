@@ -209,6 +209,7 @@ fn typed_finish_unlocks_once_and_moves_original_failure_without_publication() {
 
 #[test]
 fn actual_authority_finish_moves_exact_paid_setup_refusal_through_unlock_and_drop() {
+    use crate::cleanup::ReplayContext;
     use crate::cleanup_plan::{
         ReplayPhysicalReservation as Physical, SelectedReplayReport as Acquired,
         SelectedReplayReportForm as Form,
