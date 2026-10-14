@@ -25,13 +25,13 @@ fn paid_borrowed_search_matches_all_old_tables_and_exact_storage_drop() {
     for (id, value) in &index.type_parameters {
         assert!(std::ptr::eq(
             probes.parameters(id, &mut |_| true).unwrap().unwrap(),
-            value
+            &**value
         ));
     }
     for (id, value) in &index.record_fields {
         assert!(std::ptr::eq(
             probes.fields(id, &mut |_| true).unwrap().unwrap(),
-            value
+            &**value
         ));
     }
     let query = DeclarationId::new("absent");

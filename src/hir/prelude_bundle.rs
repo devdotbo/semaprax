@@ -29,6 +29,8 @@ mod producer;
 #[path = "prelude_bundle/work_model.rs"]
 mod work_model;
 pub(crate) use fixed_work::{FixedFailure, FixedSchemaPayer, WorkReceipt, WorkRefusal};
+#[cfg(test)]
+pub(crate) use invocation::ProducerFailure;
 pub(crate) use invocation::{Invocation, InvocationFailure};
 pub(crate) use merge::merge_by_key;
 pub(crate) use overlay::Overlay;

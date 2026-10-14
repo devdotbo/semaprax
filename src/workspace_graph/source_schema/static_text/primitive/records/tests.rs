@@ -95,7 +95,7 @@ fn captured_flat_layout_reconstructs_minimal_index_at_exact_and_one_short_withou
     };
     assert_eq!(
         context.declarations().record_fields(&record.id).unwrap(),
-        fields
+        fields.as_slice()
     );
     for field in fields {
         let declared = context.declarations().declaration(&field.id).unwrap();
@@ -149,8 +149,13 @@ fn captured_record_layout_namespace_and_constructor_body_drift_are_independently
         };
         match attack {
             0 => crate::workspace_graph::source_schema::materialize_host_fields(fields).swap(0, 1),
-            1 => crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].ty = hir::ResolvedType::Bytes,
-            2 => crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].index = 0,
+            1 => {
+                crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].ty =
+                    hir::ResolvedType::Bytes
+            }
+            2 => {
+                crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].index = 0
+            }
             3 => facts.get_mut("flat.Packet.text").unwrap().owner = None,
             4 => record.span.end = record.span.end.checked_add(1).unwrap(),
             _ => {
