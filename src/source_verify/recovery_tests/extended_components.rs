@@ -578,5 +578,91 @@ fn complete_signature_carrier_projection_preserves_all_unrelated_shared_fields()
 "####;
     assert_eq!(projected.matches(before).count(), 1);
     projected = projected.replacen(before, after, 1);
+    projected = projected.replacen(
+        "pub(super) struct VerifierScope",
+        "#[cfg(test)]\nmod layout_original;\n\npub(super) struct VerifierScope",
+        1,
+    );
+    let original_state = r####"pub(super) struct VariantMatchState<'a> {
+    pub(super) refused_input: Option<usize>,
+    pub(super) expression: &'a Expr,
+    pub(super) arms: &'a [crate::ast::MatchArm],
+    pub(super) parent_scope: usize,
+    pub(super) index: usize,
+    pub(super) outer_names: Vec<String>,
+    pub(super) baseline: HashMap<String, Binding>,
+    pub(super) arm_states: Vec<HashMap<String, Binding>>,
+    pub(super) covered: HashSet<String>,
+    pub(super) wildcard_seen: bool,
+    pub(super) result: Option<CheckedValue>,
+    pub(super) variant_name: Option<String>,
+    pub(super) variant_arguments: Vec<Type>,
+    pub(super) declared_cases: Option<&'a [VariantCaseDeclaration]>,
+    pub(super) guard_pending: bool,
+    pub(super) mode: MatchMode,
+    pub(super) needs_drop: bool,
+}
+
+"####;
+    let packed_state = r####"/// The known owned name and unknown-input provenance are mutually exclusive.
+/// Retain the original String allocation on known inputs; unknown inputs carry
+/// only the frozen diagnostic ordinal, never a fabricated name or checked type.
+const _: () =
+    assert!(std::mem::size_of::<VariantMatchName>() == std::mem::size_of::<Option<String>>());
+
+pub(super) enum VariantMatchName {
+    Known(String),
+    Unknown(Option<usize>),
+}
+
+impl VariantMatchName {
+    pub(super) fn as_ref(&self) -> Option<&String> {
+        match self {
+            Self::Known(name) => Some(name),
+            Self::Unknown(_) => None,
+        }
+    }
+    pub(super) fn as_deref(&self) -> Option<&str> {
+        self.as_ref().map(String::as_str)
+    }
+    pub(super) fn refused_input(&self) -> Option<usize> {
+        match self {
+            Self::Known(_) => None,
+            Self::Unknown(origin) => *origin,
+        }
+    }
+}
+
+impl From<Option<String>> for VariantMatchName {
+    fn from(name: Option<String>) -> Self {
+        match name {
+            Some(name) => Self::Known(name),
+            None => Self::Unknown(None),
+        }
+    }
+}
+
+pub(super) struct VariantMatchState<'a> {
+    pub(super) expression: &'a Expr,
+    pub(super) arms: &'a [crate::ast::MatchArm],
+    pub(super) parent_scope: usize,
+    pub(super) index: usize,
+    pub(super) outer_names: Vec<String>,
+    pub(super) baseline: HashMap<String, Binding>,
+    pub(super) arm_states: Vec<HashMap<String, Binding>>,
+    pub(super) covered: HashSet<String>,
+    pub(super) wildcard_seen: bool,
+    pub(super) result: Option<CheckedValue>,
+    pub(super) variant_name: VariantMatchName,
+    pub(super) variant_arguments: Vec<Type>,
+    pub(super) declared_cases: Option<&'a [VariantCaseDeclaration]>,
+    pub(super) guard_pending: bool,
+    pub(super) mode: MatchMode,
+    pub(super) needs_drop: bool,
+}
+
+"####;
+    assert_eq!(projected.matches(original_state).count(), 1);
+    projected = projected.replacen(original_state, packed_state, 1);
     assert_eq!(projected, include_str!("../scope.rs"));
 }

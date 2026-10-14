@@ -1,0 +1,13 @@
+{
+  "package": "semaprax",
+  "harness": "lib",
+  "status": "source-only; parent compiler proof pending; no bodies executed",
+  "selectors": [
+    "source_verify::scope::layout_original::original_and_packed_carriers_keep_exact_existing_physical_models",
+    "source_verify::scope::layout_original::known_name_retains_exact_owned_storage_and_unknown_retains_complete_ordinal",
+    "source_verify::scope::layout_original::complete_original_frame_and_state_declarations_remain_byte_exact",
+    "source_verify::recovery_tests::flow_799::packed_name_adapter_keeps_complete_saved_legacy_arm_body",
+    "source_verify::recovery_tests::flow_799::complete_matching_and_arm_receivers_have_exact_full_source_inverses",
+    "source_verify::recovery_tests::extended_components::complete_signature_carrier_projection_preserves_all_unrelated_shared_fields"
+  ]
+}

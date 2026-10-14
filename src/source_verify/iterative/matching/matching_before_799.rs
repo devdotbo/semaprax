@@ -542,7 +542,6 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }
         }
         let state = VariantMatchState {
-            refused_input: None,
             expression,
             arms,
             parent_scope: scope,
@@ -553,7 +552,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             covered: HashSet::new(),
             wildcard_seen: false,
             result: None,
-            variant_name,
+            variant_name: variant_name.into(),
             variant_arguments: variant_instance
                 .map(|(_, arguments)| arguments)
                 .unwrap_or_default(),

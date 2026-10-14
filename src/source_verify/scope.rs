@@ -13,6 +13,9 @@ use crate::ast::{
 use crate::diagnostic::Diagnostic;
 use std::collections::{HashMap, HashSet};
 
+#[cfg(test)]
+mod layout_original;
+
 pub(super) struct VerifierScope {
     pub(super) bindings: HashMap<String, Binding>,
     pub(super) local_borrow_count: usize,
@@ -304,8 +307,45 @@ pub(super) fn pattern_literal_type(value: crate::ast::PatternLiteral) -> Type {
     }
 }
 
+/// The known owned name and unknown-input provenance are mutually exclusive.
+/// Retain the original String allocation on known inputs; unknown inputs carry
+/// only the frozen diagnostic ordinal, never a fabricated name or checked type.
+const _: () =
+    assert!(std::mem::size_of::<VariantMatchName>() == std::mem::size_of::<Option<String>>());
+
+pub(super) enum VariantMatchName {
+    Known(String),
+    Unknown(Option<usize>),
+}
+
+impl VariantMatchName {
+    pub(super) fn as_ref(&self) -> Option<&String> {
+        match self {
+            Self::Known(name) => Some(name),
+            Self::Unknown(_) => None,
+        }
+    }
+    pub(super) fn as_deref(&self) -> Option<&str> {
+        self.as_ref().map(String::as_str)
+    }
+    pub(super) fn refused_input(&self) -> Option<usize> {
+        match self {
+            Self::Known(_) => None,
+            Self::Unknown(origin) => *origin,
+        }
+    }
+}
+
+impl From<Option<String>> for VariantMatchName {
+    fn from(name: Option<String>) -> Self {
+        match name {
+            Some(name) => Self::Known(name),
+            None => Self::Unknown(None),
+        }
+    }
+}
+
 pub(super) struct VariantMatchState<'a> {
-    pub(super) refused_input: Option<usize>,
     pub(super) expression: &'a Expr,
     pub(super) arms: &'a [crate::ast::MatchArm],
     pub(super) parent_scope: usize,
@@ -316,7 +356,7 @@ pub(super) struct VariantMatchState<'a> {
     pub(super) covered: HashSet<String>,
     pub(super) wildcard_seen: bool,
     pub(super) result: Option<CheckedValue>,
-    pub(super) variant_name: Option<String>,
+    pub(super) variant_name: VariantMatchName,
     pub(super) variant_arguments: Vec<Type>,
     pub(super) declared_cases: Option<&'a [VariantCaseDeclaration]>,
     pub(super) guard_pending: bool,

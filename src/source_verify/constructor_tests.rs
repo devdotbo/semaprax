@@ -371,6 +371,7 @@ fn complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps() 
         include_str!("iterative/enter/enter_before_extended.rs"),
         include_str!("iterative/calls/calls_before_extended.rs"),
         include_str!("iterative/records/records_before_extended.rs"),
+        include_str!("scope/layout_original.rs"),
         include_str!("iterative/enter/enter_before_components.rs"),
         include_str!("iterative/calls/calls_before_components.rs"),
         include_str!("recovery_legacy.rs"),

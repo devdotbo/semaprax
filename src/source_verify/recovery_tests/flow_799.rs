@@ -103,15 +103,22 @@ fn known_match_missing_case_and_admitted_conditional_receivers_remain_exact() {
 fn complete_matching_and_arm_receivers_have_exact_full_source_inverses() {
     let mut matching = include_str!("../iterative/matching/matching_before_799.rs")
         .replace("before_match_799_", "");
-    matching = matching.replace("            refused_input: None,\n", "");
+    matching = matching.replace(
+        "            variant_name: variant_name.into(),\n",
+        "            variant_name,\n",
+    );
     assert_eq!(
         matching,
         include_str!(
             "../../../docs/evidence/conditional-refusal-799/iterative__matching.rs.before"
         )
     );
-    let arms =
-        include_str!("../iterative/match_arms/arms_before_799.rs").replace("before_match_799_", "");
+    let arms = include_str!("../iterative/match_arms/arms_before_799.rs")
+        .replace("before_match_799_", "")
+        .replace(
+            "(state.variant_name.as_ref(), state.declared_cases)",
+            "(&state.variant_name, state.declared_cases)",
+        );
     assert_eq!(
         arms,
         include_str!(
@@ -158,4 +165,13 @@ fn unknown_match_keeps_independent_aggregate_body_refusal_without_scalar_unreach
     let current = receive_route(&source, 0);
     assert_eq!(codes(&current.1), ["SPX-T202"]);
     assert!(current.0.is_none());
+}
+
+#[test]
+fn packed_name_adapter_keeps_complete_saved_legacy_arm_body() {
+    let current = include_str!("../recovery_legacy/match_arms.rs").replace(
+        "(state.variant_name.as_ref(), state.declared_cases)",
+        "(&state.variant_name, state.declared_cases)",
+    );
+    assert_eq!(current,include_str!("../../../docs/evidence/packed-match-provenance-799/recovery_legacy__match_arms.rs.before"));
 }

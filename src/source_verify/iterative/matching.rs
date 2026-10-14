@@ -574,7 +574,6 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }
         }
         let state = VariantMatchState {
-            refused_input,
             expression,
             arms,
             parent_scope: scope,
@@ -585,7 +584,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             covered: HashSet::new(),
             wildcard_seen: false,
             result: None,
-            variant_name,
+            variant_name: match variant_name {
+                Some(name) => crate::source_verify::scope::VariantMatchName::Known(name),
+                None => crate::source_verify::scope::VariantMatchName::Unknown(refused_input),
+            },
             variant_arguments: variant_instance
                 .map(|(_, arguments)| arguments)
                 .unwrap_or_default(),

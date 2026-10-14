@@ -933,6 +933,7 @@ macro_rules! verifier_source_inventory {
                 include_str!("../../../../../src/source_verify/iterative/enter/enter_before_extended.rs"),
                 include_str!("../../../../../src/source_verify/iterative/calls/calls_before_extended.rs"),
                 include_str!("../../../../../src/source_verify/iterative/records/records_before_extended.rs"),
+                include_str!("../../../../../src/source_verify/scope/layout_original.rs"),
                 "\n",
                 include_str!("../../../../../src/source_verify/iterative/match_arms.rs"),
                 include_str!("../../../../../src/source_verify/iterative/match_arms/arms_before_799.rs"),

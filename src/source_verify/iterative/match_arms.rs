@@ -108,7 +108,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         if state.index >= state.arms.len() {
             if !state.wildcard_seen {
                 if let (Some(variant_name), Some(cases)) =
-                    (&state.variant_name, state.declared_cases)
+                    (state.variant_name.as_ref(), state.declared_cases)
                 {
                     if let Some(missing) = cases
                         .iter()
@@ -148,11 +148,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     &state.outer_names,
                 );
             }
-            self.values.push(if state.refused_input.is_some() {
-                None
-            } else {
-                state.result
-            });
+            self.values
+                .push(if state.variant_name.refused_input().is_some() {
+                    None
+                } else {
+                    state.result
+                });
             return Ok(());
         }
         let arm = &state.arms[state.index];
@@ -166,7 +167,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 .filter(|binding| binding.borrow_origin.is_some())
                 .count(),
         });
-        if let Some(origin) = state.refused_input {
+        if let Some(origin) = state.variant_name.refused_input() {
             self.prepare_refused_match_pattern(
                 &arm.pattern,
                 arm_scope,
@@ -378,7 +379,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }
         }
         let next = if let Some(guard) = &arm.guard {
-            if state.refused_input.is_none()
+            if state.variant_name.refused_input().is_none()
                 && !crate::source_verify::variant_guards::guard_shape(
                     guard,
                     &self.scopes[arm_scope].bindings,
@@ -438,7 +439,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     ));
                 }
             }
-            if state.refused_input.is_none()
+            if state.variant_name.refused_input().is_none()
                 && !crate::source_verify::variant_guards::ownership_unchanged(
                     &state.baseline,
                     &self.scopes[arm_scope].bindings,
@@ -482,7 +483,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         if let Some(value) = &arm_value {
             reject_native_unit_value(self.program, &arm.value, value, self.diagnostics);
         }
-        if state.refused_input.is_none()
+        if state.variant_name.refused_input().is_none()
             || arm_value
                 .as_ref()
                 .is_some_and(|value| !matches!(value.ty, Type::Named { .. }))

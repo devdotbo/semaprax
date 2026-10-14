@@ -90,7 +90,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         if state.index >= state.arms.len() {
             if !state.wildcard_seen {
                 if let (Some(variant_name), Some(cases)) =
-                    (&state.variant_name, state.declared_cases)
+                    (state.variant_name.as_ref(), state.declared_cases)
                 {
                     if let Some(missing) = cases
                         .iter()

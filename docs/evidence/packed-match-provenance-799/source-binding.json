@@ -1,0 +1,34 @@
+{
+  "base_head": "6ccac6c691ce9e55dc979bf323a8a71082d1d18f",
+  "original_probe": {
+    "head": "a2e4088a403a5487fd41e1d1f398547e8861e452",
+    "parent_executed_receipt": "/Volumes/Semaprax/lane-prompts/verifier-layout-probe-a2e408-20261014/owning-build.jsonl",
+    "actual_compiler_sizes": {
+      "VerifierFrame": 336,
+      "VariantMatchState": 328
+    },
+    "exit_code": 101,
+    "test_bodies": 0
+  },
+  "candidate_proof": "unchanged original320/312 assertions plus actual VariantMatchName sizeof == Option<String> sizeof; no new numeric model or allowance",
+  "original_archive_sha256": "75b17aa5ec28808c382d2c5bfa4ab6a91ddcbd804f1fc96f3092020bd409f7a4",
+  "current_source_hashes": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "2268e27d102a048eadbec6b4478ddddf3c4cacfa46c3478676cd394995cc77d3",
+    "src/source_verify/constructor_tests.rs": "a47d52960691d9ca39896dc938a4c8ad320eddaf37d406da7e67eddaeeac2cc0",
+    "src/source_verify/iterative/match_arms.rs": "c32f2cd5607faca80b4779fd9a675c7512df89097e9e3d67f467080a7f7a4237",
+    "src/source_verify/iterative/match_arms/arms_before_799.rs": "785954adec3bf8b9086e8f8ba4fa5481a3b914208ee7356adf0aa45261aa503d",
+    "src/source_verify/iterative/matching.rs": "1d1f534e9e536b658bd72cd4027eb72344bf6490000d55efbf354fec871439fd",
+    "src/source_verify/iterative/matching/matching_before_799.rs": "71b92d75a4126e289167418b110d03ad74729525aedac9c999f404a6f5054669",
+    "src/source_verify/recovery_legacy/match_arms.rs": "111693274eb072e3dc9d33d44b25db0de90780e1993a9a1d256b45e68e3a0203",
+    "src/source_verify/recovery_tests/extended_components.rs": "082330502db4b0c38e9c13cbd09831f75b06283b697683c65a5f47cae836a9d6",
+    "src/source_verify/recovery_tests/flow_799.rs": "a6752b707dbd65f3dccbb3d0b401c042c2e4b0f793fcf9d44d7d40f85caba538",
+    "src/source_verify/scope.rs": "ea01202a694f030acc597163cb157513cdda4cf39ca29abc6e7fab82f28878ef",
+    "src/source_verify/scope/layout_original.rs": "d7753d893e0cf10d9b381f33f23b390e0b379849e272c56549d025dd87d9c0c6"
+  },
+  "source_only_checks": [
+    "three whole saved receiver adapter inverses",
+    "entire shared scope projection",
+    "entire independent original frame/state declarations",
+    "allchangedRust below1500"
+  ]
+}
