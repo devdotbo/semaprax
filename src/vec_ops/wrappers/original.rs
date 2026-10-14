@@ -20,7 +20,7 @@ pub(crate) fn source_wrapper(program: &dyn ProgramSource, function: &Function) -
         name: "T".to_owned(),
         arguments: Vec::new(),
     };
-    let expected = super::ast_params(op, &parameter);
+    let expected = super::super::ast_params(op, &parameter);
     let expected_names: &[&str] = match op {
         VecOp::WithCapacity => &["capacity"],
         VecOp::Push => &["values", "value"],

@@ -20,7 +20,7 @@ pub(crate) fn source_wrapper(program: &dyn ProgramSource, function: &Function) -
         name: "T".to_owned(),
         arguments: Vec::new(),
     };
-    let expected = super::ast_params(op, &parameter);
+    let expected = super::super::ast_params(op, &parameter);
     if function.params.len() != 1
         || function.params[0].name != "value"
         || function.params[0].mode != expected[0].mode
