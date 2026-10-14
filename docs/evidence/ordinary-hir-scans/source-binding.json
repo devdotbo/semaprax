@@ -4,9 +4,9 @@
   "base_head": "47cbc2f7487485dd23ac2ecfcdc1afea2a86f3d3",
   "status": "static only; original bodies byte-exact and registered; no compiler/runtime qualification",
   "source_hashes": {
-    "CHANGELOG.md": "805601a33f2f6e41e0f61f82f1d9bb5d79ec99658e084ee4e426629a2f322d15",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "ed096ba582c35ea308abf8c49d6196d01963dc720fcb7d76886d13c6f723397a",
-    "docs/ARCHITECTURE.md": "2d1f1c53b8cd325add15110689a02cc737e1c9b0ed664a7c59c916aa7d53d1d7",
+    "CHANGELOG.md": "ff7addccd46c24742efbd11e9e5adbef370112f54171d8fb88990bcb1eb9b0e0",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "3033977fea7706bd8f95b0016769f17ee206d81399e6f645697dc4a6e1ecb383",
+    "docs/ARCHITECTURE.md": "bd377ce706f05c72b890bae00699714d8d376eefdf034f74c32c13d20eea1cd1",
     "src/hir.rs": "b01d0b5d825befcbd8b0d613a6c0b6a089b8e0f57b4b2ce33c78292ed2e15ef4",
     "src/hir/iterator_loop.rs": "3295874fa719aa58acf8f31ee73956aed757ac7ad25fa7fad39f599c830fe9aa",
     "src/hir/iterator_loop/paid.rs": "6baee339c5d405624fffced4257c9c13ed3933e01a076464c63ea683ca23a48b",
@@ -20,7 +20,7 @@
     "src/hir/validation/unsafe_scan.rs": "2309786e3789e9a0983d1e846f5c19eb71422bae727b2c73db49c0a814be089d",
     "src/hir/validation/unsafe_scan/paid.rs": "98019a0d1a3c5cf8c3f1a3901f3c7c4f56948695e49c40d3e7558f2bbb2376e3",
     "src/hir/validation/unsafe_scan/paid/tests.rs": "d91113e77145ef672b4ef02e47fee6b53e1e455217c62eb76d980ae6bb27654d",
-    "tests/hir_module_boundaries.rs": "9712bee50420446edecf3e489f7be076f9f48c150615af5c9947184e6ca31ac7",
+    "tests/hir_module_boundaries.rs": "57e51d8db9f6f4648bc553e106b4b7aacf556e9e63305a9210adf6e409c1134c",
     "docs/evidence/ordinary-hir-scans/pending-selectors.json": "810df9ee12898aa3dca1ddb2c1cbde7ce68a1af12b437339b4df62f49381a529",
     "docs/evidence/ordinary-hir-scans/README.md": "efdc3b583cd6bc790276fa986639f27e12a83d02294b85603c15080002af5143",
     "docs/evidence/ordinary-hir-scans/original-scans.txt": "2025f1da39517120b17790f3f20f17b02b67fd6cda3e21e7fb87af5d3bbd7102"
