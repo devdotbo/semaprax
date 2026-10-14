@@ -7,11 +7,11 @@ pub(crate) struct Probes<'a> {
     declarations: Vec<(&'a DeclarationId, &'a crate::hir::Declaration)>,
     parameters: Vec<(
         &'a DeclarationId,
-        &'a Vec<crate::hir::ResolvedTypeParameterDeclaration>,
+        &'a crate::hir::NominalPayload<crate::hir::ResolvedTypeParameterDeclaration>,
     )>,
     fields: Vec<(
         &'a DeclarationId,
-        &'a Vec<crate::hir::ResolvedFieldDeclaration>,
+        &'a crate::hir::NominalPayload<crate::hir::ResolvedFieldDeclaration>,
     )>,
 }
 fn collect<'a, V>(
@@ -89,14 +89,14 @@ impl Index for Probes<'_> {
         key: &DeclarationId,
         work: &mut Work<'_>,
     ) -> Result<Option<&Vec<crate::hir::ResolvedTypeParameterDeclaration>>, ()> {
-        get(&self.parameters, key, work)
+        get(&self.parameters, key, work).map(|value| value.map(|v| &**v))
     }
     fn fields(
         &self,
         key: &DeclarationId,
         work: &mut Work<'_>,
     ) -> Result<Option<&Vec<crate::hir::ResolvedFieldDeclaration>>, ()> {
-        get(&self.fields, key, work)
+        get(&self.fields, key, work).map(|value| value.map(|v| &**v))
     }
 }
 

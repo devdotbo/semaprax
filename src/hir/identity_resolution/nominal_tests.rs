@@ -166,3 +166,69 @@ fn nominal_full_constructor_keeps_complete_old_semantic_diagnostic_order() {
         assert_eq!(current, old);
     }
 }
+
+#[test]
+fn nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal() {
+    use crate::bounded_output::{reserve_active_required, with_limit_usage_refusal};
+    let program = crate::check(SOURCE, "nominal-owner.spx").unwrap();
+    let prelude = crate::prelude::declarations_for_program(&program);
+    let mut exact = 0usize;
+    drop(
+        DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
+            exact = exact.checked_add(n).unwrap();
+            Ok::<_, Stop>(())
+        })
+        .unwrap(),
+    );
+    for cap in [0, exact - 1, exact] {
+        let ((result, metrics), overflowed, used, first) = with_limit_usage_refusal(cap, || {
+            measure(|| {
+                DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
+                    if reserve_active_required(n) {
+                        Ok(())
+                    } else {
+                        Err(Stop(7))
+                    }
+                })
+            })
+        });
+        assert!(!metrics.invalid);
+        if cap == exact {
+            assert!(result.is_ok());
+            assert!(!overflowed);
+            assert_eq!(used, exact);
+            assert!(first.is_none());
+        } else {
+            assert!(matches!(result, Err(IdentityIndexError::Identity(Stop(7)))));
+            assert!(overflowed);
+            assert!(first.is_some());
+            assert_eq!(metrics.live, 0);
+            if cap == 0 {
+                assert_eq!(metrics.allocated, 0);
+            }
+        }
+        drop(result);
+    }
+    let ((result, metrics), overflowed, used, first) = with_limit_usage_refusal(0, || {
+        assert!(!reserve_active_required(1));
+        measure(|| {
+            DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
+                if reserve_active_required(n) {
+                    Ok(())
+                } else {
+                    Err(Stop(9))
+                }
+            })
+        })
+    });
+    assert!(matches!(result, Err(IdentityIndexError::Identity(Stop(9)))));
+    assert!(overflowed);
+    assert_eq!(used, 0);
+    assert_eq!(
+        first.unwrap().requested,
+        1,
+        "first actual owner refusal survives retries"
+    );
+    assert!(!metrics.invalid);
+    assert_eq!(metrics.allocated, 0);
+}

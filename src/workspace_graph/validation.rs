@@ -30,7 +30,7 @@ struct FunctionSignature {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct TypeSignature {
-    type_parameters: Vec<hir::ResolvedTypeParameterDeclaration>,
+    type_parameters: hir::NominalPayload<hir::ResolvedTypeParameterDeclaration>,
     kind: hir::ResolvedTypeDeclarationKind,
 }
 
