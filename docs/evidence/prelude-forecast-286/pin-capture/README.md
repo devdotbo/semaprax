@@ -75,3 +75,46 @@ cargo run --locked -p semaprax -- build /absolute/isolated-renamed-project/semap
 The renamed input is a separate copied calculator project with exactly the
 existing `fn add` → `fn sum` display rename. These commands are documented only;
 this packet does not run them or expand the current focused qualification.
+
+## Exact candidate-to-pin updater (prepared; not executed)
+
+`scripts/update-prelude-forecast-pins.py` defaults to a read-only proposed update.
+Only after root supplies its actual frozen-source captures and reviews the full
+wires:
+
+```sh
+python3 scripts/update-prelude-forecast-pins.py /absolute/root-capture \
+  --repo /absolute/private-pin-update-worktree \
+  --expected-capture-head ROOT_APPROVED_HEAD
+```
+
+It requires every initial lib/workspace wire, exact owning selectors, one-test
+logs, successful existing ignored producer, actual capture manifest/hash/length
+matches, frozen capture source, graph payload digest binding, unchanged graph
+schema/cap, and the same public graph binding in all eight analysis artifacts.
+It fails closed if any expected old literal is missing or occurs more than once.
+It uses no new numeric or hash value except those parsed/hashed from actual
+captured wire bytes. The original capture exit statuses remain evidence; a pin
+assertion failure does not become a successful gate.
+
+The exact change set is eleven literals:
+
+- `tests/workspace/semantic_graph.rs`: public `used_builder_bytes` and whole
+  document SHA from `public-graph.json`.
+- The same file's eight-element SHA array, in order: `context`, `forward`,
+  `capability-context`, `type-context`, `impact`, `custom-impact`, `review`,
+  `capability-review`, each hashed from its complete captured JSON bytes.
+- `src/workspace_graph/type_proof_tests.rs`: `document_sha` literal from the
+  existing ignored producer's complete `projection-wire.json` bytes.
+
+After reviewing that proposal, append `--apply --evidence-dir /absolute/fresh-pin-evidence`
+to preserve the complete actual capture, full pre-update source files, old pin
+values and exact before/after substitutions before updating those eleven source
+literals in the explicitly selected private worktree. This does not update root,
+browser pins, assertions, quotas, source schemas or other files. It does not
+rewrite historical receipts to resemble the new model. Root should refresh the
+nearby historical comments only with the actual validated accounting delta;
+the updater leaves existing history prose intact. Run the same three normal
+pin owners and existing qualification controls after cherry-picking the reviewed
+source change. No full gate, compiler invocation or producer execution is added
+by this updater.
