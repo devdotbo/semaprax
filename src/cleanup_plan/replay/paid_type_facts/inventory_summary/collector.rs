@@ -3,10 +3,10 @@
 //! match binding epochs, update-base materialization and temporary predicates
 //! retain their original locations. No identity clone feeds a discarded slot.
 use super::*;
-impl Builder<'_, '_> {
+impl<'s> Builder<'s, '_> {
     pub(super) fn collect_expression(
         &mut self,
-        expression: &ResolvedExpr,
+        expression: &'s ResolvedExpr,
     ) -> Result<(), Diagnostic> {
         enum Frame<'a> {
             Enter(&'a ResolvedExpr),
@@ -236,7 +236,7 @@ impl Builder<'_, '_> {
 
     fn collect_pattern_bindings(
         &mut self,
-        pattern: &crate::hir::ResolvedMatchPattern,
+        pattern: &'s crate::hir::ResolvedMatchPattern,
     ) -> Result<(), Diagnostic> {
         use crate::hir::{ResolvedMatchPattern, ResolvedRecordMatchFieldPattern};
 
@@ -343,7 +343,7 @@ impl Builder<'_, '_> {
         Ok(())
     }
 
-    fn collect_owned_temporary(&mut self, expression: &ResolvedExpr) -> Result<(), Diagnostic> {
+    fn collect_owned_temporary(&mut self, expression: &'s ResolvedExpr) -> Result<(), Diagnostic> {
         if expression.ownership == OwnershipMode::Own
             && self.needs_drop(&expression.ty)?
             && (expression.ty == ResolvedType::String

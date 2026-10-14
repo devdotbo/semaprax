@@ -1,0 +1,11 @@
+{
+  "children": [
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape_original.rs",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary/frontier_tests.rs"
+  ],
+  "existing_complete_sources": [
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary.rs",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape.rs",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"
+  ]
+}

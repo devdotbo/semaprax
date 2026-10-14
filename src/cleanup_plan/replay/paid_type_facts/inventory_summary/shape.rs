@@ -2,18 +2,32 @@
 use super::*;
 use crate::hir::ResolvedFieldDeclaration;
 use inventory_lifecycle::{outcome, variants};
-enum Frame<'a> {
+pub(super) enum Frame<'a> {
     Enter(&'a ResolvedType, usize),
     Children(&'a [ResolvedFieldDeclaration], usize, usize),
 }
-impl Builder<'_, '_> {
+impl<'s> Builder<'s, '_> {
     pub(super) fn shape(
         &mut self,
-        root: &ResolvedType,
+        root: &'s ResolvedType,
+    ) -> Result<(crate::cleanup::CleanupShapeProfile, bool), Diagnostic> {
+        // Preserve the complete original per-root header/work authentication.
+        // Only its previously empty backing is exchanged for this receiver's
+        // prepaid retained frontier. A panic drops the lent backing normally.
+        let mut frames = inventory_flags::vector(self.payer)?;
+        std::mem::swap(&mut frames, &mut self.shape_frames);
+        let result = self.shape_with(root, &mut frames);
+        frames.clear();
+        std::mem::swap(&mut frames, &mut self.shape_frames);
+        result
+    }
+    fn shape_with(
+        &mut self,
+        root: &'s ResolvedType,
+        frames: &mut Vec<Frame<'s>>,
     ) -> Result<(crate::cleanup::CleanupShapeProfile, bool), Diagnostic> {
         let mut profile = profile::Tracker::default();
-        let mut frames = inventory_flags::vector(self.payer)?;
-        inventory_flags::push(&mut frames, Frame::Enter(root, 0), self.payer)?;
+        inventory_flags::push(frames, Frame::Enter(root, 0), self.payer)?;
         loop {
             metadata::step(self.payer, 1)?;
             let Some(frame) = frames.pop() else {
@@ -25,11 +39,11 @@ impl Builder<'_, '_> {
                         continue;
                     };
                     inventory_flags::push(
-                        &mut frames,
+                        frames,
                         Frame::Children(fields, index + 1, depth),
                         self.payer,
                     )?;
-                    inventory_flags::push(&mut frames, Frame::Enter(&field.ty, depth), self.payer)?;
+                    inventory_flags::push(frames, Frame::Enter(&field.ty, depth), self.payer)?;
                 }
                 Frame::Enter(ty, depth) => {
                     if !self.needs_drop(ty)? {
@@ -93,7 +107,7 @@ impl Builder<'_, '_> {
                                 let child_depth =
                                     profile.record(depth, fields.len(), self.payer)?;
                                 inventory_flags::push(
-                                    &mut frames,
+                                    frames,
                                     Frame::Children(fields, 0, child_depth),
                                     self.payer,
                                 )?;

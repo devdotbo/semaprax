@@ -23,11 +23,12 @@ struct Builder<'a, 'b> {
     program: &'a dyn crate::cleanup::ReplayContext,
     payer: &'a mut Payer<'b>,
     summary: Summary,
+    shape_frames: Vec<shape::Frame<'a>>,
 }
 fn error(message: &'static str) -> Diagnostic {
     Diagnostic::io_static("SPX-H006", message)
 }
-impl Builder<'_, '_> {
+impl<'s> Builder<'s, '_> {
     fn needs_drop(&mut self, ty: &ResolvedType) -> Result<bool, Diagnostic> {
         inventory_drop::needs_drop(self.program, ty, self.payer)
     }
@@ -74,7 +75,7 @@ impl Builder<'_, '_> {
             inventory_text::raw(self.payer, format_args!("unknown cleanup type `{id}`"))?,
         ))
     }
-    fn add_slot(&mut self, ty: &ResolvedType) -> Result<bool, Diagnostic> {
+    fn add_slot(&mut self, ty: &'s ResolvedType) -> Result<bool, Diagnostic> {
         metadata::step(self.payer, 1)?;
         u32::try_from(self.summary.storage_count)
             .map_err(|_| error("too many cleanup storage candidates"))?;
@@ -91,18 +92,22 @@ impl Builder<'_, '_> {
 /// Publication occurs only after all original signature/contracts/body/ensures
 /// validation succeeds. Every fresh slot already finished its complete immutable
 /// shape profile, so the old final second pass cannot discover new semantics.
-pub(super) fn collect_with_payer(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
-    payer: &mut Payer<'_>,
+pub(super) fn collect_with_payer<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
+    function: &'a ResolvedFunction,
+    payer: &'a mut Payer<'_>,
 ) -> Result<Summary, Diagnostic> {
     inventory_text::current(payer)?;
     metadata::step(payer, 1)?;
     payer.bytes(std::mem::size_of::<Builder<'_, '_>>())?;
+    // The retained frontier header is included in Builder; pay its actual
+    // construction and eventual receiving-buffer release before publication.
+    metadata::step(payer, 2)?;
     let mut builder = Builder {
         program,
         payer,
         summary: Summary::default(),
+        shape_frames: Vec::new(),
     };
     for (parameter_index, parameter) in function.params.iter().enumerate() {
         metadata::step(builder.payer, 1)?;
@@ -139,3 +144,8 @@ pub(in crate::cleanup_plan::replay) fn collect(
     };
     collect_with_payer(program, function, &mut payer)
 }
+
+#[cfg(test)]
+mod frontier_tests;
+#[cfg(test)]
+mod shape_original;

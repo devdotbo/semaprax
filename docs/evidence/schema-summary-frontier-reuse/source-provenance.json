@@ -1,0 +1,21 @@
+{
+  "base": "f7aeaf32c",
+  "whole_original_sources": [
+    {
+      "source": "src/cleanup_plan/replay/paid_type_facts/inventory_summary.rs",
+      "archive": "docs/evidence/schema-summary-frontier-reuse/src__cleanup_plan__replay__paid_type_facts__inventory_summary.rs.before.txt",
+      "sha256": "d4c60de47700b6b01f9175c22e8946cf087faad3e3d2426cd4e43c881758d602"
+    },
+    {
+      "source": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape.rs",
+      "archive": "docs/evidence/schema-summary-frontier-reuse/src__cleanup_plan__replay__paid_type_facts__inventory_summary__shape.rs.before.txt",
+      "sha256": "992f7bf7190a9e2e8a094e8b0a40bbfa3303d123546d091b1cfa6da6dfd361fa"
+    },
+    {
+      "source": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs",
+      "archive": "docs/evidence/schema-summary-frontier-reuse/src__cleanup_plan__replay__paid_type_facts__inventory_summary__collector.rs.before.txt",
+      "sha256": "451ecfa47a925e9ff31628d30b9d9dde6aef029e40ee736cf516ca676e8491f6"
+    }
+  ],
+  "qualification": "source-only; no Rust execution"
+}

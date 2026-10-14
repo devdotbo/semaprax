@@ -1,0 +1,35 @@
+{
+  "qualification": "authored; unexecuted",
+  "new": [
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::paid_type_facts::inventory_summary::frontier_tests::repeated_shape_frontier_keeps_full_old_results_paid_backing_drop_and_short_sticky"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::paid_type_facts::inventory_summary::frontier_tests::complete_original_shape_receiver_keeps_every_fixture_root_and_full_flag_result"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::paid_type_facts::inventory_summary::frontier_tests::whole_original_shape_source_remains_byte_exact_with_one_named_receiver_hook"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::paid_type_facts::inventory_summary::frontier_tests::complete_current_shape_and_collector_are_exact_original_with_named_frontier_hooks"
+    }
+  ],
+  "unchanged_required": [
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::full_original_inventory_summary_preserves_complete_function_receiver_and_paid_drop"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::full_generic_zero_one_seventeen_arguments_missing_arity_and_late_error_keep_original_diagnostics"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::authenticated_summary_ignores_attached_inventory_and_plan_but_keeps_full_expression_walk"
+    }
+  ]
+}
