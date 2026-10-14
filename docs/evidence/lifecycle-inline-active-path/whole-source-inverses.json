@@ -22,6 +22,10 @@
       {
         "before": "",
         "after": "                include_str!(\"../src/hir/validation/function_scope/lifecycle/completed/inline_path.rs\"),\n                include_str!(\"../src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs\"),\n                include_str!(\"../src/hir/validation/function_scope/lifecycle/completed/before_inline.rs\"),\n"
+      },
+      {
+        "before": "        ),\n        include_str!(\"../src/cleanup_plan/replay/factored/oracle_hook.rs\"),\n",
+        "after": "        ),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/oracle_hook.rs\"),\n"
       }
     ]
   },
