@@ -32,8 +32,8 @@
     },
     {
       "path": "src/hir/function_directory/caller.rs",
-      "sha256": "39b539622ed91dd9bee4fcd43fbd08f8b1ed702cadbf2870d53826d3d076bf05",
-      "lines": 102
+      "sha256": "217896ad2e11c8bcbdfde236ec29a9cc1c00da142c9c18968a6015b79451127a",
+      "lines": 120
     },
     {
       "path": "src/hir/inspection.rs",

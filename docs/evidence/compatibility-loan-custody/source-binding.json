@@ -21,17 +21,17 @@
     }
   },
   "current_sources": {
-    "src/hir/validation.rs": "df2442a9f040d8950374ee135128a10ae43fe7ddbcf73a9cea6b7d941fa4068e",
+    "src/hir/validation.rs": "a1658fbfbf655245620b361b0c61b9f6d5afd40813641467cbdc081a320e8226",
     "src/hir/validation/canonical_loans.rs": "b89f798211bc0264cd52194db8a5e54b31ead7824e92f4392195883d15cb4a58",
     "src/hir/validation/canonical_loans/constructors_before.rs": "3ad47d80e1a9b90aa5c8404e586b227164de788bde7d8e2f24b2421b92030470",
-    "src/hir/validation/canonical_loans/ownership_tests.rs": "444fd7965708c59acb8f0f47bd284c15fe34291e0758c4a475bb29937b2599a1",
-    "src/hir/validation/closure.rs": "2043890e102162ad69d3a5126a8557c47a73c41ae05436f9a843b044437b5be9",
+    "src/hir/validation/canonical_loans/ownership_tests.rs": "12371250f3590b1ce8d99f6ee8e529fc72545702a43e937355974bbd4e9af22c",
+    "src/hir/validation/closure.rs": "1e327d09c2e401870db973e048de6249118b8753914167efc612e6ab72da9b51",
     "src/hir/canonical_loan_storage/caller.rs": "bc304cfbb469891c8eb8cdc150a395affba58dadd3ae3b9a136c6c7f40076056",
     "src/hir/canonical_loan_storage/caller/shared.rs": "ca16eccd943f2ae14971c372f66a2a27d907c2a6605348cd52d48252b1e762b3",
     "src/hir/canonical_loan_storage/caller/shared/tests.rs": "d2077ddc3cacca4232a8a08055e12095cada7f7fbca8b6521967ce55194519df",
     "src/hir/canonical_loan_storage/caller/owned_before.rs": "f119db223c35acd6e975e2825f5a6e4806508a49698989d94500ba8601fb456f",
-    "tests/hir_module_boundaries.rs": "328ec856a7c00f6ae3e0cc01811242505155cad169835881ddada6683f5ba2f1",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "0ccb1d8d559d6556078f7b2d9dee0c06dc678511984b8f1a719e84254d9c19dd"
+    "tests/hir_module_boundaries.rs": "3c2d29942d1cb42fba4bb7b23cb49feff3cd457a876042bdc79f266db6f4c2e4",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6"
   },
   "unchanged_full_observer": {
     "selector": "hir::validation::function_scope::lifecycle::completed::tests::actual_repeated_call_receiver_is_paid_through_drop_with_exact_short_and_sticky_refusal",
