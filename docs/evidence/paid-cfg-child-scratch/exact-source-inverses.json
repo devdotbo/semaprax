@@ -5,6 +5,22 @@
     "before_sha256": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7",
     "edits": [
       {
+        "after": "            include_str!(\"../../../../../src/loan_plan/paid_live/funded_before.rs\"),\n",
+        "before": ""
+      },
+      {
+        "after": "            include_str!(\"../../../../../src/loan_plan/paid_live/reuse_tests.rs\"),\n",
+        "before": ""
+      },
+      {
+        "after": "            include_str!(\"../../../../../src/loan_plan/paid_live/original.rs\"),\n",
+        "before": ""
+      },
+      {
+        "after": "            include_str!(\"../../../../../src/loan_plan/paid_plan/pre_live_reuse.rs\"),\n",
+        "before": ""
+      },
+      {
         "before": "            include_str!(\"../../../../../src/loan_plan/paid_cursor/funded_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_children.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_patterns.rs\"),\n",
         "after": "            include_str!(\"../../../../../src/loan_plan/paid_cursor/funded_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg/original.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_children.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_patterns.rs\"),\n"
       },

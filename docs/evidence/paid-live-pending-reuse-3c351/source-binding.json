@@ -1,0 +1,38 @@
+{
+  "status": "SOURCE_ONLY_PENDING_ACTUAL_QUALIFICATION",
+  "base": "3c351d58f2dc008afd497bb435af62d3ab299edf",
+  "current_sources": {
+    "src/loan_plan/paid_live.rs": "c8b13ac3035af8856893bbfb69fc1d100a39578dc53e96f4bbe8b6ecd6f1f138",
+    "src/loan_plan/paid_plan.rs": "98db139e9b14abb2126a887f760e4db2bbbd095a9a2b89df924bef71e68732f3",
+    "src/loan_plan/paid_live/original.rs": "9315163a396ddc3f3905dc8b56dd220ccbb6d852dd270d18f59a171308af4c26",
+    "src/loan_plan/paid_live/reuse_tests.rs": "9319968d8d8cbbc8715268b947382148f8aaaf1f2af796406f6bedc4fcca03ba",
+    "src/loan_plan/paid_live/funded_before.rs": "8acbf4f2aef5cb26524261c8ac27a9d0b6adce6334d43e11eb972fb88ef61401",
+    "src/loan_plan/paid_plan/pre_live_reuse.rs": "b3c41fc26643dee756d5882838d1ec3fd1a07b169a919953a6496305de5df8a2",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "bf581f57067a64d8ab0e07be85e92d17db59980bc0563aa55143d587341c043f"
+  },
+  "complete_unchanged_receivers_and_common_helpers": {
+    "src/loan_plan/paid_live/tests.rs": "c5a548987ed748c188e017716107b6eff46201a2bab354f16348555647874076",
+    "src/loan_plan/funded_flat.rs": "3c4084c88c10993169b65b9bf3a16de490f14b98754cba4966b5f7af56df7d99",
+    "src/loan_plan/funded_flat/tests.rs": "e50d3f5d90ba9c650eb8f1d5a7ecc0d385beff021f18f22d04628738ed44100f",
+    "src/loan_plan/funded_flat/directories_tests.rs": "e99b3ae25c4ef88bbeb148b752464bf11749ddab6fb62b2b8f25769ffe2571e1",
+    "src/loan_plan/funded_flat/work_boundary.rs": "706a4b53dbe3e980470a6156d06a6ef4f31fedcb357a61b7491b6a24c08b7733",
+    "src/loan_plan/paid_plan_legacy.rs": "718cf55938c62125e054707b0b927c04703c994fae0056985f3e5f190e9a61cd",
+    "src/loan_plan/saved_planner.rs": "d2cba7422238d465d0bd9a20791303fecf910c4860b074541c1c31202eb4c567",
+    "src/loan_plan/saved_planner/cfg_build.rs": "a6cc00aac578f71f6c5b00b68384538b5fce55fd525e0d1e86408831851c4de6",
+    "src/loan_plan/paid_cfg.rs": "b643acd17788fdd668e442270b5637f45c12c23f935472484a340aa3c607a1b0",
+    "src/loan_plan/paid_cfg/original.rs": "5a1995e3ae65126afa9a1f78b2c901d3f921b17a2d567055baf7a4a2995d0dea",
+    "src/loan_plan/work.rs": "74652abe119da9ddec5c6d01620c4fca502344da97299420ff38e2ed1c054b62",
+    "src/loan_plan/storage.rs": "ad0d110526038c1f07228668323d2ec123ef934dcece68d6713dff8f679017a6",
+    "src/loan_plan/cfg_directory.rs": "5092d6bbbc5cae4ec2f69da515f52c248d8d715b2e1de06e7d4aacfd9c8a1450",
+    "src/loan_plan/cfg_directory/tree.rs": "78341b54c85969c46c539c2d8af0e5e5b40c7ddb94bb5d25a669e13b4d315c7b",
+    "src/loan_plan.rs": "369548317681a0e9856e2192a617dd27474fe91b5dae28b79081b440e2c3caf8",
+    "src/hir/canonical_loan_storage/caller.rs": "bc304cfbb469891c8eb8cdc150a395affba58dadd3ae3b9a136c6c7f40076056"
+  },
+  "production_callers": [
+    "paid_plan::build initial live rows",
+    "paid_plan::build reborrow-parent growth"
+  ],
+  "no_source_forecast_changes": true,
+  "no_payer_caps_credits_or_refunds": true,
+  "historical_packet_drift": "Paid CFG old interop inverse already failed at base3c, due report style and824 constructor joins; new4joins composed only. Root owns final historical inverse repair. No old archive edits."
+}

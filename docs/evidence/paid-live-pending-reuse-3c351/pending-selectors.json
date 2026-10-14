@@ -1,0 +1,26 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED_ACTUAL_LIST_REQUIRED",
+  "harness": "semaprax::lib",
+  "new_exact_owners": [
+    "loan_plan::paid_live::reuse_tests::complete_original_and_reused_liveness_planners_keep_all_fields_actual_payment_and_drop",
+    "loan_plan::paid_live::reuse_tests::repeated_wide_deep_lifo_visits_charge_only_real_scratch_and_keep_exact_short_sticky_drop",
+    "loan_plan::paid_live::reuse_tests::all_liveness_semantic_work_frontiers_keep_first_diagnostic_and_full_original_rows",
+    "loan_plan::paid_live::reuse_tests::complete_reborrow_and_owned_nested_fixture_plans_keep_original_fields_and_current_member_refusal",
+    "loan_plan::paid_live::reuse_tests::every_small_reused_pending_acquisition_frontier_keeps_the_first_receipt_through_drop",
+    "loan_plan::paid_live::reuse_tests::complete_original_helpers_planner_facade_and_all_source_inventory_hooks_remain_exact"
+  ],
+  "retained_full_owners": [
+    "loan_plan::paid_live::tests::paid_seed_live_and_edge_receivers_equal_old_full_rows_and_checked_work_frontiers",
+    "loan_plan::paid_live::original::tests::paid_seed_live_and_edge_receivers_equal_old_full_rows_and_checked_work_frontiers",
+    "loan_plan::paid_live::funded_before::tests::complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop",
+    "loan_plan::paid_live::funded_before::directories_tests::complete_old_btree_receiver_constructor_drop_exact_short_and_original_applications",
+    "loan_plan::funded_flat::tests::complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop",
+    "loan_plan::funded_flat::directories_tests::complete_old_btree_receiver_constructor_drop_exact_short_and_original_applications",
+    "loan_plan::funded_flat::directories_tests::complete_old_btree_plan_and_checked_work_first_errors_keep_exact_priority"
+  ],
+  "interop_owner": "semaprax-native-rust-interop::lib implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions",
+  "application_owners_pending": [
+    "semaprax-toolchain::cli_new_project_v1 service_template_has_exact_bytes_and_passes_the_developer_loop",
+    "semaprax::lib workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap"
+  ]
+}

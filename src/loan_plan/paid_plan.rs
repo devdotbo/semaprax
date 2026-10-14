@@ -272,14 +272,16 @@ pub(super) fn build(
         work::Reachability::build(&cfg, drafts.iter().map(|draft| draft.start), work)?
     };
     let mut live = storage::vector(drafts.len(), payer)?;
+    let mut live_pending = Vec::new();
     for (index, draft) in drafts.iter().enumerate() {
-        live.push(paid_live::live_nodes(
+        live.push(paid_live::live_nodes_with_pending(
             &cfg,
             LoanId(index as u16),
             draft.start,
             &draft.seeds,
             &reachable,
             work,
+            &mut live_pending,
         )?);
     }
     for _ in 0..=drafts.len() {
@@ -294,13 +296,14 @@ pub(super) fn build(
             for node in live[child].iter(payer.expect("private funded entry"))? {
                 cfg_directory::set_insert(&mut seeds, *node, payer)?;
             }
-            live[parent] = paid_live::live_nodes(
+            live[parent] = paid_live::live_nodes_with_pending(
                 &cfg,
                 LoanId(parent as u16),
                 drafts[parent].start,
                 &seeds,
                 &reachable,
                 work,
+                &mut live_pending,
             )?;
             changed |= live[parent].len() != before;
         }
@@ -308,6 +311,7 @@ pub(super) fn build(
             break;
         }
     }
+    drop(live_pending);
     reject_cfg_overlaps_paid(program, &cfg, &aliases, &drafts, &live, work)?;
 
     let (mut edge_live, mut termination_edges) = paid_live::edge_liveness(&cfg, &live, work)?;
@@ -468,4 +472,17 @@ pub(super) fn resolve_parent_paid(
         root = alias.root.clone();
     }
     Ok(None)
+}
+
+#[cfg(test)]
+#[path = "paid_plan/pre_live_reuse.rs"]
+mod pre_live_reuse;
+
+#[cfg(test)]
+pub(super) fn build_before_live_reuse(
+    program: &ResolvedProgram,
+    function: &ResolvedFunction,
+    work: &mut WorkCounter,
+) -> Result<LoanPlan, Diagnostic> {
+    pre_live_reuse::build(program, function, work)
 }

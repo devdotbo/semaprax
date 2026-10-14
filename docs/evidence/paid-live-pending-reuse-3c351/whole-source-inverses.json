@@ -1,0 +1,103 @@
+[
+  {
+    "source": "src/loan_plan/paid_live.rs",
+    "archive": "docs/evidence/paid-live-pending-reuse-3c351/paid_live.rs.before.txt",
+    "before_sha256": "5db3f83bc1305f20ce478f2746360fdaea138ff98f87305560f1db2c9b1d4688",
+    "hooks": [
+      {
+        "after": "\n// Existing standalone owners retain their original one-visit scope.\n#[cfg(test)]\npub(super) fn live_nodes(\n    cfg: &Cfg<'_>,\n    loan: LoanId,\n    start: u16,\n    seeds: &cfg_directory::Set<u16>,\n    reachable: &work::Reachability,\n    work: &mut WorkCounter,\n) -> Result<cfg_directory::Set<u16>, Diagnostic> {\n    live_nodes_with_pending(cfg, loan, start, seeds, reachable, work, &mut Vec::new())\n}\n\n#[cfg(test)]\n#[path = \"paid_live/original.rs\"]\npub(super) mod original;\n#[cfg(test)]\n#[path = \"paid_live/reuse_tests.rs\"]\nmod reuse_tests;\n\n#[cfg(test)]\n#[path = \"paid_live/funded_before.rs\"]\nmod funded_before;\n\n// The complete prior funded facade delegates only to its complete prior plan;\n// its source/lexical checks and semantic/physical publication remain unchanged.\n#[cfg(test)]\nmod before_plan {\n    use super::*;\n    pub(super) fn build(\n        program: &ResolvedProgram,\n        function: &ResolvedFunction,\n        work: &mut WorkCounter,\n    ) -> Result<LoanPlan, Diagnostic> {\n        paid_plan::build_before_live_reuse(program, function, work)\n    }\n}\n\n// Lexical test bridges preserve the original helper's private signatures and\n// entire bodies; they only permit the complete old planner to call them.\n#[cfg(test)]\npub(super) mod before_plan_live {\n    use super::*;\n    pub(in crate::loan_plan) fn live_nodes(\n        cfg: &Cfg<'_>,\n        loan: LoanId,\n        start: u16,\n        seeds: &cfg_directory::Set<u16>,\n        reachable: &work::Reachability,\n        work: &mut WorkCounter,\n    ) -> Result<cfg_directory::Set<u16>, Diagnostic> {\n        original::live_nodes(cfg, loan, start, seeds, reachable, work)\n    }\n    pub(in crate::loan_plan) fn edge_liveness(\n        cfg: &Cfg<'_>,\n        live: &[cfg_directory::Set<u16>],\n        work: &mut WorkCounter,\n    ) -> Result<work::EdgeLiveness, Diagnostic> {\n        original::edge_liveness(cfg, live, work)\n    }\n}\n",
+        "before": "",
+        "count": 1
+      },
+      {
+        "after": "pub(super) fn live_nodes_with_pending(",
+        "before": "pub(super) fn live_nodes(",
+        "count": 1
+      },
+      {
+        "after": "    work: &mut WorkCounter,\n    pending: &mut Vec<u16>,\n) -> Result<cfg_directory::Set<u16>, Diagnostic> {",
+        "before": "    work: &mut WorkCounter,\n) -> Result<cfg_directory::Set<u16>, Diagnostic> {",
+        "count": 1
+      },
+      {
+        "after": "    let mut live = cfg_directory::Set::new(payer)?;\n    for seed",
+        "before": "    let mut live = cfg_directory::Set::new(payer)?;\n    let mut pending = Vec::new();\n    for seed",
+        "count": 1
+      },
+      {
+        "after": "super::storage::push(pending,",
+        "before": "super::storage::push(&mut pending,",
+        "count": 2
+      },
+      {
+        "after": "            pending,\n            cfg.predecessors",
+        "before": "            &mut pending,\n            cfg.predecessors",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "source": "src/loan_plan/paid_plan.rs",
+    "archive": "docs/evidence/paid-live-pending-reuse-3c351/paid_plan.rs.before.txt",
+    "before_sha256": "f42d8f1a0d2b5d426e58e4240ee825d59b1623cb83092b353f39b45174b1b7cc",
+    "hooks": [
+      {
+        "after": "\n#[cfg(test)]\n#[path = \"paid_plan/pre_live_reuse.rs\"]\nmod pre_live_reuse;\n\n#[cfg(test)]\npub(super) fn build_before_live_reuse(\n    program: &ResolvedProgram,\n    function: &ResolvedFunction,\n    work: &mut WorkCounter,\n) -> Result<LoanPlan, Diagnostic> {\n    pre_live_reuse::build(program, function, work)\n}\n",
+        "before": "",
+        "count": 1
+      },
+      {
+        "after": "    let mut live_pending = Vec::new();\n",
+        "before": "",
+        "count": 1
+      },
+      {
+        "after": "paid_live::live_nodes_with_pending(",
+        "before": "paid_live::live_nodes(",
+        "count": 2
+      },
+      {
+        "after": "            work,\n            &mut live_pending,\n",
+        "before": "            work,\n",
+        "count": 1
+      },
+      {
+        "after": "                work,\n                &mut live_pending,\n",
+        "before": "                work,\n",
+        "count": 1
+      },
+      {
+        "after": "    drop(live_pending);\n",
+        "before": "",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "archive": "docs/evidence/paid-live-pending-reuse-3c351/interop_source_inventory.rs.before.txt",
+    "before_sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
+    "hooks": [
+      {
+        "after": "            include_str!(\"../../../../../src/loan_plan/paid_plan/pre_live_reuse.rs\"),\n",
+        "before": "",
+        "count": 1
+      },
+      {
+        "after": "            include_str!(\"../../../../../src/loan_plan/paid_live/original.rs\"),\n",
+        "before": "",
+        "count": 1
+      },
+      {
+        "after": "            include_str!(\"../../../../../src/loan_plan/paid_live/reuse_tests.rs\"),\n",
+        "before": "",
+        "count": 1
+      },
+      {
+        "after": "            include_str!(\"../../../../../src/loan_plan/paid_live/funded_before.rs\"),\n",
+        "before": "",
+        "count": 1
+      }
+    ]
+  }
+]

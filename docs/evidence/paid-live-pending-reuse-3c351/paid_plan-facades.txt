@@ -1,0 +1,12 @@
+#[cfg(test)]
+#[path = "paid_plan/pre_live_reuse.rs"]
+mod pre_live_reuse;
+
+#[cfg(test)]
+pub(super) fn build_before_live_reuse(
+    program: &ResolvedProgram,
+    function: &ResolvedFunction,
+    work: &mut WorkCounter,
+) -> Result<LoanPlan, Diagnostic> {
+    pre_live_reuse::build(program, function, work)
+}

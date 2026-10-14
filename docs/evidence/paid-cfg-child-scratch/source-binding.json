@@ -4,8 +4,8 @@
   "scope": "Reuse one real paid borrowed-child scratch only inside one CFG discovery; no cap, frame/profile, work charge or semantic authority change.",
   "current_sources": {
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
-      "sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
-      "bytes": 83154
+      "sha256": "bf581f57067a64d8ab0e07be85e92d17db59980bc0563aa55143d587341c043f",
+      "bytes": 83488
     },
     "src/loan_plan/adjacency.rs": {
       "sha256": "cb1e73799e15c83b8158378f5e07963e76207bc1f4166eae698da0fe70d6ad09",
