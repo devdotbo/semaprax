@@ -21,6 +21,16 @@
   "current_projection": {
     "src/cleanup_plan/replay/nested_shape/paid.rs": [
       {
+        "from": "    #[cfg(test)]\n    if physical.oracle_lease().is_some() {\n        return oracle::derive_reusing(\n            program, function, root, next_flag, bounds, physical, scratch,\n        );\n    }\n",
+        "to": "",
+        "count": 1
+      },
+      {
+        "from": "\n#[cfg(test)]\nmod oracle;\n",
+        "to": "",
+        "count": 1
+      },
+      {
         "from": "mod scratch;\npub(super) use scratch::Scratch;\nuse scratch::{CaseMeta, Frame};\n\npub(super) fn derive(\n    program: &dyn crate::cleanup::ReplayContext,\n    function: &ResolvedFunction,\n    root: &ResolvedType,\n    next_flag: &mut u32,\n    depth: usize,\n    budget: &mut Budget,\n    physical: &mut ReplayBudget,\n) -> Result<FieldLivenessShape, Diagnostic> {\n    derive_reusing(\n        program,\n        function,\n        root,\n        next_flag,\n        (depth, budget),\n        physical,\n        &mut Scratch::default(),\n    )\n}\n\npub(super) fn derive_reusing(\n    program: &dyn crate::cleanup::ReplayContext,\n    function: &ResolvedFunction,\n    root: &ResolvedType,\n    next_flag: &mut u32,\n    bounds: (usize, &mut Budget),\n    physical: &mut ReplayBudget,\n    scratch: &mut Scratch,\n) -> Result<FieldLivenessShape, Diagnostic> {\n    let (depth, budget) = bounds;\n",
         "to": "pub(super) fn derive(\n    program: &dyn crate::cleanup::ReplayContext,\n    function: &ResolvedFunction,\n    root: &ResolvedType,\n    next_flag: &mut u32,\n    depth: usize,\n    budget: &mut Budget,\n    physical: &mut ReplayBudget,\n) -> Result<FieldLivenessShape, Diagnostic> {\n    struct CaseMeta {\n        case: DeclarationId,\n        case_index: u32,\n        fields: Vec<(DeclarationId, u32)>,\n    }\n    enum Frame {\n        Enter(ResolvedType, usize),\n        FinishRecord(DeclarationId, Vec<(DeclarationId, u32)>),\n        FinishVariant(DeclarationId, Vec<CaseMeta>),\n    }\n\n",
         "count": 1

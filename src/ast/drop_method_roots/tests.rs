@@ -53,45 +53,45 @@ fn existing_method_backing_fifo_inline_and_wide_spill_preserve_every_element() {
 #[test]
 fn class_method_drop_keeps_full_prior_and_original_metadata_and_expression_order() {
     let run = |before: bool, original: bool| {
-        let mut program = fixture(2, 2);
-        let mut pointers = [0usize; 20];
-        pointers[0] = program.path.as_ptr() as usize;
-        pointers[1] = program.module.as_ptr() as usize;
-        pointers[2] = program.functions[0].stable_id.as_ptr() as usize;
-        program.functions[0].body = Expr {
-            kind: ExprKind::String("root body".to_owned()),
-            span: Span::default(),
-        };
-        let ExprKind::String(text) = &program.functions[0].body.kind else {
-            unreachable!()
-        };
-        pointers[3] = text.as_ptr() as usize;
-        let mut next = 4;
-        for declaration in &mut program.types {
-            pointers[next] = declaration.stable_id.as_ptr() as usize;
-            pointers[next + 1] = declaration.name.as_ptr() as usize;
-            next += 2;
-            let TypeDeclarationKind::Class { fields, methods } = &mut declaration.kind else {
+        let (((), order), metrics) = measure(|| {
+            let mut program = fixture(2, 2);
+            let mut pointers = [0usize; 20];
+            pointers[0] = program.path.as_ptr() as usize;
+            pointers[1] = program.module.as_ptr() as usize;
+            pointers[2] = program.functions[0].stable_id.as_ptr() as usize;
+            program.functions[0].body = Expr {
+                kind: ExprKind::String("root body".to_owned()),
+                span: Span::default(),
+            };
+            let ExprKind::String(text) = &program.functions[0].body.kind else {
                 unreachable!()
             };
-            pointers[next] = fields[0].stable_id.as_ptr() as usize;
-            pointers[next + 1] = fields[0].name.as_ptr() as usize;
-            next += 2;
-            for method in methods {
-                pointers[next] = method.stable_id.as_ptr() as usize;
-                method.body = Expr {
-                    kind: ExprKind::String(format!("body.{next}")),
-                    span: Span::default(),
-                };
-                let ExprKind::String(text) = &method.body.kind else {
+            pointers[3] = text.as_ptr() as usize;
+            let mut next = 4;
+            for declaration in &mut program.types {
+                pointers[next] = declaration.stable_id.as_ptr() as usize;
+                pointers[next + 1] = declaration.name.as_ptr() as usize;
+                next += 2;
+                let TypeDeclarationKind::Class { fields, methods } = &mut declaration.kind else {
                     unreachable!()
                 };
-                pointers[next + 1] = text.as_ptr() as usize;
+                pointers[next] = fields[0].stable_id.as_ptr() as usize;
+                pointers[next + 1] = fields[0].name.as_ptr() as usize;
                 next += 2;
+                for method in methods {
+                    pointers[next] = method.stable_id.as_ptr() as usize;
+                    method.body = Expr {
+                        kind: ExprKind::String(format!("body.{next}")),
+                        span: Span::default(),
+                    };
+                    let ExprKind::String(text) = &method.body.kind else {
+                        unreachable!()
+                    };
+                    pointers[next + 1] = text.as_ptr() as usize;
+                    next += 2;
+                }
             }
-        }
-        assert_eq!(next, pointers.len());
-        let (((), order), metrics) = measure(|| {
+            assert_eq!(next, pointers.len());
             watch_free_order(&pointers, || {
                 if before {
                     drop(crate::ast::drop_method_original::Original(program));

@@ -5,7 +5,7 @@
     "src/ast.rs": "39d9c22cb0e8f6cc03b1ec828ee611f8a9455163a1872f6471e8f97f03045438",
     "src/ast/iterative_program_drop_tests.rs": "be4c4ef19ea06fc292c74eacc8aa7c1c101dc073ccfab3383f2a113256d54a60",
     "src/ast/drop_method_roots.rs": "c50a1b1eadce3eb0a8ba103f8023ade9a324dea13d42051c6dac94e81f439575",
-    "src/ast/drop_method_roots/tests.rs": "c52c478d0072daf84b8dcb6b456290ff40346b269daaf6343a962f178aaf7718",
+    "src/ast/drop_method_roots/tests.rs": "ff1bae4252a90f3d2b547f179fd30e236d6db0e696e9494194be874fd0bdb58e",
     "src/ast/drop_method_original.rs": "c2fed06ee4bfa2242a6d7f60045886c12f7eed0ab9ccd7cace566ac51edd3bcf"
   },
   "complete_old_archives_untouched": [
