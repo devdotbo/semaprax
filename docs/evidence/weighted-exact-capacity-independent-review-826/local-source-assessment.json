@@ -1,0 +1,41 @@
+{
+  "source_commit": "97480a13ecbefdc58d4bb47b4b37dd14a82f5063",
+  "scope": "one bounded read of omitted sources; no execution, edits or second review",
+  "conclusions": [
+    "Automaton.end creates a fresh node each time; movement appends without dedup. Thus widths1..4 have distinct successor target keys.",
+    "At width>=2 and u64MAX, distinct Failure-labelled child edges merge into the common sink; the second slot.checked_add(MAX) overflows. The raw reviewer claim that checked_add is unexercised is refuted by this source.",
+    "Width0 has no integration successor; the direct weighted_successor unit control tests an actual zero-width target map.",
+    "PhysicalReservation.reserve returns its sticky refusal before even a zero-byte request; the reviewer uncertainty is resolved from source.",
+    "A physical width2/3 integration probe remains an optional strengthening, not a demonstrated production defect."
+  ],
+  "sources": [
+    {
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "first_line": 341,
+      "last_line": 376,
+      "sha256": "55853667c9ad1ba464af6c167e2251fbdff6e1bf91fd398b6b7b588001311162",
+      "text": "impl Automaton {\n    fn node(\n        &mut self,\n        function: &ResolvedFunction,\n        budget: &mut ReplayBudget,\n    ) -> Result<usize, Diagnostic> {\n        budget.charge(function, 1, \"factored automaton node construction\")?;\n        budget.reserve_vec(function, &mut self.nodes, 1, \"factored automaton nodes\")?;\n        self.nodes.push(Node::default());\n        #[cfg(test)]\n        instrumentation::node();\n        Ok(self.nodes.len() - 1)\n    }\n\n    fn movement(\n        &mut self,\n        function: &ResolvedFunction,\n        budget: &mut ReplayBudget,\n        from: usize,\n        label: Label,\n        to: usize,\n    ) -> Result<(), Diagnostic> {\n        budget.charge(function, 1, \"factored automaton labelled movement\")?;\n        budget.reserve_vec(\n            function,\n            &mut self.nodes[from].moves,\n            1,\n            \"factored automaton moves\",\n        )?;\n        self.nodes[from].moves.push((label, to));\n        #[cfg(test)]\n        instrumentation::edge();\n        Ok(())\n    }\n\n    fn epsilon(\n"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "first_line": 418,
+      "last_line": 429,
+      "sha256": "04cb68761d1efb6e88bc1fb3441c176c3bf897c88dfbcd9697a0921e0bcdfb79",
+      "text": "    fn end(\n        &mut self,\n        function: &ResolvedFunction,\n        budget: &mut ReplayBudget,\n        sink: usize,\n        terminal: SkeletonTerminal,\n    ) -> Result<usize, Diagnostic> {\n        let node = self.node(function, budget)?;\n        self.movement(function, budget, node, Label::End(terminal), sink)?;\n        Ok(node)\n    }\n\n"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+      "first_line": 184,
+      "last_line": 215,
+      "sha256": "5dce725c6510153ebb4d70965d151bf65866aef8e44bede543b7640d89a504b0",
+      "text": "        let mut successors = BTreeMap::<Label, BTreeMap<usize, u64>>::new();\n        for (node, weight) in &closed {\n            let moves = &self.automaton.nodes[*node].moves;\n            budget.charge(\n                function,\n                moves.len().saturating_add(1),\n                \"factored skeleton subset construction\",\n            )?;\n            for (label, child) in moves {\n                if !successors.contains_key(label) {\n                    budget.reserve_btree_node::<Label, BTreeMap<usize, u64>>(\n                        function,\n                        \"factored successor label node\",\n                    )?;\n                }\n                let targets = successors.entry(label.clone()).or_default();\n                if !targets.contains_key(child) {\n                    budget.reserve_btree_node::<usize, u64>(\n                        function,\n                        \"factored successor target node\",\n                    )?;\n                }\n                let slot = targets.entry(*child).or_insert(0);\n                let Some(sum) = slot.checked_add(*weight) else {\n                    return Ok(None);\n                };\n                *slot = sum;\n            }\n        }\n        budget.reserve_array::<(Label, SharedWeighted)>(\n            function,\n            successors.len(),\n"
+    },
+    {
+      "source": "src/cleanup_plan/replay/physical_storage.rs",
+      "first_line": 33,
+      "last_line": 72,
+      "sha256": "4942105d75622642daf4c7227a6968cff9b1bc85486b23cada7a020e780630f5",
+      "text": "    /// No allocation or refund occurs here. Failed requests cannot subsequently\n    /// authorize even a zero-byte construction through this ledger.\n    pub(crate) fn reserve(&mut self, bytes: usize) -> Result<(), PhysicalRefusal> {\n        if let Some(refusal) = self.refusal {\n            return Err(refusal);\n        }\n        let Some(charged) = self.charged.checked_add(bytes) else {\n            return self.fail(PhysicalRefusal::Overflow);\n        };\n        let Some(remaining) = self.remaining.checked_sub(bytes) else {\n            return self.fail(PhysicalRefusal::LocalLimit);\n        };\n        if crate::bounded_output::active_refused()\n            || !crate::bounded_output::reserve_active_required(bytes)\n        {\n            return self.fail(PhysicalRefusal::EnclosingBudget);\n        }\n        self.charged = charged;\n        self.remaining = remaining;\n        Ok(())\n    }\n\n    /// `T` describes the actual allocated element, including its padding. Nested\n    /// String/Vec/map/identity backing is separate and must be charged by callers.\n    pub(crate) fn reserve_array<T>(&mut self, count: usize) -> Result<(), PhysicalRefusal> {\n        if let Some(refusal) = self.refusal {\n            return Err(refusal);\n        }\n        match count.checked_mul(std::mem::size_of::<T>()) {\n            Some(bytes) => self.reserve(bytes),\n            None => self.fail(PhysicalRefusal::Overflow),\n        }\n    }\n\n    pub(super) fn reject(&mut self) {\n        if self.refusal.is_none() {\n            self.refusal = Some(PhysicalRefusal::LocalLimit);\n        }\n    }\n\n"
+    }
+  ]
+}

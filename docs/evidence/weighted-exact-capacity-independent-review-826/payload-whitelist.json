@@ -1,0 +1,79 @@
+{
+  "commit": "97480a13ecbefdc58d4bb47b4b37dd14a82f5063",
+  "source_sharing_authorized": true,
+  "tools": false,
+  "files": [
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+      "first_line": 1,
+      "last_line": 325,
+      "selected_bytes": 13502,
+      "selected_sha256": "e0a17f1a06e63216b33a214ee1168aa4c3abc3cd08acee88607fda5dd10caa69"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/tests.rs",
+      "first_line": 1,
+      "last_line": 364,
+      "selected_bytes": 14662,
+      "selected_sha256": "f8bdbea27b005d69992824c42be4563475cb6934de36549acc2358c08de85f64"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_before.rs",
+      "first_line": 1,
+      "last_line": 296,
+      "selected_bytes": 12231,
+      "selected_sha256": "98e94a76071f92554027b03caf86575ae0cad71c4f151e961a0c949afeb13ed7"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/storage.rs",
+      "first_line": 90,
+      "last_line": 108,
+      "selected_bytes": 516,
+      "selected_sha256": "4cedf4657291b702aa8e0d6a7e3a1e724943dff941e83f7dd8106cd996bad380"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "first_line": 798,
+      "last_line": 818,
+      "selected_bytes": 831,
+      "selected_sha256": "77024d5ea993f36da4d3afe5f9951d8b691bca5fc99a735edb22535a6e1b06d9"
+    },
+    {
+      "source": "src/cleanup_plan/replay/physical_budget.rs",
+      "first_line": 27,
+      "last_line": 175,
+      "selected_bytes": 5243,
+      "selected_sha256": "f290a653cbbb03c687a4e741ce47229cf29478a52d9715b5f20764ce10db7a8e"
+    },
+    {
+      "source": "src/cleanup_plan/replay/physical_clone.rs",
+      "first_line": 450,
+      "last_line": 470,
+      "selected_bytes": 534,
+      "selected_sha256": "430e4a8887e7c5719f7291147ceb47d894679a701852f931cf141506c356919d"
+    },
+    {
+      "source": "src/cleanup_plan/replay.rs",
+      "first_line": 176,
+      "last_line": 220,
+      "selected_bytes": 1619,
+      "selected_sha256": "cd4a5513087560c2ec5b43d29795b8a11fe334a56c90daed913c81012dbe55b6"
+    },
+    {
+      "source": "src/test_allocation_observer.rs",
+      "first_line": 139,
+      "last_line": 175,
+      "selected_bytes": 1480,
+      "selected_sha256": "ddeb4b4abd9d8c4d8a6b970352ad5a4d622e5042f58880bec370d474aa81e18b"
+    },
+    {
+      "source": "docs/evidence/weighted-exact-successor-capacity-826/HANDOFF.md",
+      "first_line": 1,
+      "last_line": 36,
+      "selected_bytes": 2345,
+      "selected_sha256": "0bd1fdd2a36b4abd7a4c931249da0994bf00723c24d135ae531bd5c08aea556b"
+    }
+  ],
+  "payload_bytes": 55314,
+  "payload_sha256": "e3ab10b1b7245f88910fed3fb8de746e4d2b75606cf5a7a9afa5be2cf4940304"
+}
