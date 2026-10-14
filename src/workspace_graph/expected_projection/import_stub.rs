@@ -305,3 +305,33 @@ pub(super) fn default_expr_expanded_cost_with_layout(
         layout,
     )
 }
+
+#[cfg(test)]
+pub(super) fn default_expr_original(
+    function: &Function,
+    declarations: &[(&str, &crate::ast::TypeDeclaration)],
+    allow_owned: bool,
+    allow_byte_forward: bool,
+) -> Result<Expr, Vec<crate::diagnostic::Diagnostic>> {
+    let byte_owner = function.params.iter().find(|parameter| {
+        allow_byte_forward && parameter.mode == ParamMode::Own && parameter.ty == Type::Bytes
+    });
+    if let Some(parameter) = byte_owner.or_else(|| {
+        forward_parameter(function, allow_owned, |ty| {
+            let Type::Named { name, arguments } = ty else {
+                return false;
+            };
+            arguments.is_empty()
+                && declarations
+                    .iter()
+                    .any(|(candidate, declaration)| *candidate == name && record_shape(declaration))
+        })
+    }) {
+        super::reserve_builder_structure(std::mem::size_of::<Expr>())?;
+        return Ok(Expr {
+            kind: ExprKind::Var(crate::bounded_output::budgeted_clone(&parameter.name)),
+            span: crate::ast::Span::default(),
+        });
+    }
+    super::defaults::original::default_expr(&function.return_type, declarations, allow_owned)
+}

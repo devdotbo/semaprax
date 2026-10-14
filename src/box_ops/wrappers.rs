@@ -62,16 +62,22 @@ pub(crate) fn source_wrapper(program: &dyn ProgramSource, function: &Function) -
     if function.name != wrapper_name(op) {
         return None;
     }
-    let parameter = Type::Named {
-        name: "T".to_owned(),
-        arguments: Vec::new(),
-    };
-    let expected = super::ast_params(op, &parameter);
     if function.params.len() != 1
         || function.params[0].name != "value"
-        || function.params[0].mode != expected[0].mode
-        || function.params[0].ty != expected[0].ty
-        || function.return_type != op.ast_return_type(&parameter)
+        || function.params[0].mode
+            != match op.param_ownership() {
+                OwnershipMode::Own => crate::ast::ParamMode::Own,
+                OwnershipMode::Borrow => crate::ast::ParamMode::Borrow,
+                _ => crate::ast::ParamMode::Value,
+            }
+        || !match op {
+            BoxOp::New => generic_parameter(&function.params[0].ty),
+            _ => generic_box(&function.params[0].ty),
+        }
+        || !match op {
+            BoxOp::New => generic_box(&function.return_type),
+            _ => generic_parameter(&function.return_type),
+        }
     {
         return None;
     }
@@ -91,13 +97,16 @@ fn exact_source_body(body: &Expr, op: BoxOp, param: &crate::ast::Param) -> bool 
     };
     statements.is_empty()
         && name == op.name()
-        && type_arguments
-            == &[Type::Named {
-                name: "T".to_owned(),
-                arguments: Vec::new(),
-            }]
+        && matches!(type_arguments.as_slice(), [argument] if generic_parameter(argument))
         && matches!(args.as_slice(),[arg] if matches!(&arg.kind,ExprKind::Var(name) if name==&param.name))
 }
+fn generic_parameter(ty: &Type) -> bool {
+    matches!(ty, Type::Named { name, arguments } if name == "T" && arguments.is_empty())
+}
+fn generic_box(ty: &Type) -> bool {
+    matches!(ty, Type::Named { name, arguments } if name == "Box" && matches!(arguments.as_slice(), [element] if generic_parameter(element)))
+}
+
 pub(crate) fn source_parameter_is_admitted(
     program: &dyn ProgramSource,
     function: &Function,
@@ -214,4 +223,16 @@ pub(crate) fn template_ownership(
         BoxOp::Get => crate::hir::OwnershipMode::Borrow,
         BoxOp::New | BoxOp::IntoInner => crate::hir::OwnershipMode::Own,
     })
+}
+
+#[cfg(test)]
+mod original;
+#[cfg(test)]
+mod source_view_tests;
+#[cfg(test)]
+pub(crate) fn source_wrapper_original(
+    program: &dyn ProgramSource,
+    function: &Function,
+) -> Option<BoxOp> {
+    original::source_wrapper(program, function)
 }

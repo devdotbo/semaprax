@@ -1,6 +1,7 @@
+use crate::workspace_graph::expected_projection::import_stub::default_expr_original as default_expr;
 //! Saved complete owned projection producer, before imported borrowing.
 use super::{
-    active_builder_limit, budgeted_format, default_expr, graph_error, import_stub, limit_error,
+    active_builder_limit, budgeted_format, graph_error, import_stub, limit_error,
     private_layout, reserve_builder_structure, type_rewrite, AuthoredDeclaration, BTreeMap,
     Diagnostic, Expr, ExprKind, Function, ModuleUseKind, Program, Type, TypeDeclaration,
 };
@@ -76,8 +77,8 @@ pub(super) fn construct(
             .iter()
             .find(|provider| provider.module == target.module)
             .is_some_and(|provider| {
-                crate::vec_ops::source_wrapper(provider, target_function).is_some()
-                    || crate::box_ops::source_wrapper(provider, target_function).is_some()
+                crate::vec_ops::source_wrapper_original(provider, target_function).is_some()
+                    || crate::box_ops::source_wrapper_original(provider, target_function).is_some()
             });
         let mut function = if retain_body {
             target_function.clone()

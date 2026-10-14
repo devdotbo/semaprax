@@ -106,7 +106,10 @@ fn full_original_constructor_and_only_sticky_publication_changes_stay_source_bou
     let original = include_str!(
         "../../../../../../docs/evidence/transient-publication/original-construct.rs.txt"
     );
-    let saved = include_str!("original_construct.rs");
+    let saved = crate::workspace_graph::expected_projection::defaults::project_original_receiver(
+        "src/workspace_graph/expected_projection/borrowed_imports/tests/full/original_construct.rs",
+        include_str!("original_construct.rs"),
+    );
     let saved = saved
         .strip_prefix("use crate::workspace_graph::expected_projection::borrowed_imports::*;\n\n")
         .unwrap();

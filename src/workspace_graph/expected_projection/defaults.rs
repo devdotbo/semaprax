@@ -388,18 +388,7 @@ pub(super) fn default_expr(
                     type_name: crate::bounded_output::budgeted_clone(name),
                     type_span: span,
                     type_arguments: Vec::new(),
-                    fields: fields
-                        .iter()
-                        .map(|field| {
-                            reserve_builder_structure(std::mem::size_of::<FieldInitializer>())?;
-                            Ok(FieldInitializer {
-                                name: crate::bounded_output::budgeted_clone(&field.name),
-                                name_span: span,
-                                value: default_expr(&field.ty, declarations, allow_owned)?,
-                                span,
-                            })
-                        })
-                        .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?,
+                    fields: field_directory::build(fields, declarations, allow_owned)?,
                 },
                 TypeDeclarationKind::Variant { cases } => {
                     let case = cases.first().ok_or_else(|| {
@@ -411,19 +400,7 @@ pub(super) fn default_expr(
                         type_arguments: Vec::new(),
                         case_name: crate::bounded_output::budgeted_clone(&case.name),
                         case_span: span,
-                        fields: case
-                            .fields
-                            .iter()
-                            .map(|field| {
-                                reserve_builder_structure(std::mem::size_of::<FieldInitializer>())?;
-                                Ok(FieldInitializer {
-                                    name: crate::bounded_output::budgeted_clone(&field.name),
-                                    name_span: span,
-                                    value: default_expr(&field.ty, declarations, allow_owned)?,
-                                    span,
-                                })
-                            })
-                            .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?,
+                        fields: field_directory::build(&case.fields, declarations, allow_owned)?,
                     }
                 }
                 TypeDeclarationKind::Resource { .. } => {
@@ -556,3 +533,10 @@ use type @id("row") from defaults.provider as ImportedRow;
         assert!(default_expr(&shadow, &[("Vec", &parsed.types[0])], true).is_err());
     }
 }
+
+mod field_directory;
+#[cfg(test)]
+pub(in crate::workspace_graph::expected_projection) mod original;
+
+#[cfg(test)]
+pub(in crate::workspace_graph::expected_projection) use field_directory::project_original_receiver;

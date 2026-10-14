@@ -105,11 +105,6 @@ pub(crate) fn source_wrapper(program: &dyn ProgramSource, function: &Function) -
     if function.name != wrapper_name(op)? {
         return None;
     }
-    let parameter = Type::Named {
-        name: "T".to_owned(),
-        arguments: Vec::new(),
-    };
-    let expected = super::ast_params(op, &parameter);
     let expected_names: &[&str] = match op {
         VecOp::WithCapacity => &["capacity"],
         VecOp::Push => &["values", "value"],
@@ -126,15 +121,23 @@ pub(crate) fn source_wrapper(program: &dyn ProgramSource, function: &Function) -
         | VecOp::StrAt
         | VecOp::UniqueBy => return None,
     };
-    if function.params.len() != expected.len()
+    if function.params.len() != expected_names.len()
         || function
             .params
             .iter()
-            .zip(expected.iter().zip(expected_names))
-            .any(|(actual, (expected, name))| {
-                actual.name != *name || actual.mode != expected.mode || actual.ty != expected.ty
+            .zip(expected_names)
+            .enumerate()
+            .any(|(index, (actual, name))| {
+                let mode = match op.param_ownership(index) {
+                    OwnershipMode::Own => crate::ast::ParamMode::Own,
+                    OwnershipMode::Borrow => crate::ast::ParamMode::Borrow,
+                    _ => crate::ast::ParamMode::Value,
+                };
+                actual.name != *name
+                    || actual.mode != mode
+                    || !parameter_type(op, index, &actual.ty)
             })
-        || function.return_type != op.ast_return_type(&parameter)
+        || !return_type(op, &function.return_type)
     {
         return None;
     }
@@ -157,15 +160,37 @@ fn exact_source_body(body: &Expr, op: VecOp, params: &[crate::ast::Param]) -> bo
         return false;
     };
     name == op.name()
-        && type_arguments
-            == &[Type::Named {
-                name: "T".to_owned(),
-                arguments: Vec::new(),
-            }]
+        && matches!(type_arguments.as_slice(), [argument] if generic_parameter(argument))
         && args.len() == params.len()
         && args.iter().zip(params).all(
             |(argument, parameter)| matches!(&argument.kind, ExprKind::Var(name) if name == &parameter.name),
         )
+}
+
+fn generic_parameter(ty: &Type) -> bool {
+    matches!(ty, Type::Named { name, arguments } if name == "T" && arguments.is_empty())
+}
+fn generic_vec(ty: &Type) -> bool {
+    matches!(ty, Type::Named { name, arguments } if name == "Vec" && matches!(arguments.as_slice(), [element] if generic_parameter(element)))
+}
+fn parameter_type(op: VecOp, index: usize, ty: &Type) -> bool {
+    match (op, index) {
+        (VecOp::WithCapacity, 0) | (VecOp::Get | VecOp::ReserveExact | VecOp::Set, 1) => {
+            *ty == Type::Usize
+        }
+        (VecOp::Push, 1) | (VecOp::Set, 2) => generic_parameter(ty),
+        (_, 0) => generic_vec(ty),
+        _ => false,
+    }
+}
+fn return_type(op: VecOp, ty: &Type) -> bool {
+    if op.returns_owner() {
+        generic_vec(ty)
+    } else if matches!(op, VecOp::Len | VecOp::Capacity) {
+        *ty == Type::Usize
+    } else {
+        generic_parameter(ty)
+    }
 }
 
 pub(crate) fn source_parameter_is_admitted(
@@ -346,4 +371,16 @@ pub(crate) fn template_ownership(
                 return None;
             }
         })
+}
+
+#[cfg(test)]
+mod original;
+#[cfg(test)]
+mod source_view_tests;
+#[cfg(test)]
+pub(crate) fn source_wrapper_original(
+    program: &dyn ProgramSource,
+    function: &Function,
+) -> Option<VecOp> {
+    original::source_wrapper(program, function)
 }

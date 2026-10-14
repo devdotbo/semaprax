@@ -1,3 +1,4 @@
+use crate::workspace_graph::expected_projection::import_stub::default_expr_original as default_expr;
 use crate::workspace_graph::expected_projection::borrowed_imports::*;
 
 pub(in crate::workspace_graph) fn construct<'a>(
@@ -126,8 +127,8 @@ pub(in crate::workspace_graph) fn construct<'a>(
             .iter()
             .find(|provider| provider.module == target.module)
             .is_some_and(|provider| {
-                crate::vec_ops::source_wrapper(provider, original).is_some()
-                    || crate::box_ops::source_wrapper(provider, original).is_some()
+                crate::vec_ops::source_wrapper_original(provider, original).is_some()
+                    || crate::box_ops::source_wrapper_original(provider, original).is_some()
             });
         if retain_body {
             let mut cost = StructuralCost::raw_ast(true).with_inline_values(true);
