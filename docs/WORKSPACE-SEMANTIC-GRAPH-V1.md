@@ -275,6 +275,14 @@ all ten fields from authenticated AST occurrences, rejects missing, extra and
 duplicate occurrences, then checks retained HIR and capability projections.
 Every allocation still consumes the live ledger; the 64 MiB cap is unchanged.
 
+[Prelude forecast accounting v1](WORKSPACE-GRAPH-PRELUDE-FORECAST-V1.md)
+corrects the missing unconditional Option/Result retained-declaration term in
+all private forecast modes. For that term only it supersedes the historical
+fitting-receipt preservation clauses above and below. The complete original
+forecaster and receipts remain historical controls; graph schemas, quotas,
+expression discounts and live allocation charges are unchanged. Qualification
+of the source correction is pending.
+
 A present frontend has a separate mode-seven exact fallback after every older
 fitting receipt has been considered. It sums the synthetic AST and runtime cost
 of every module; it never selects the mode-five sequential peak or mode-six

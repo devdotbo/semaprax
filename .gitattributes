@@ -39,3 +39,6 @@ benchmarks/bend2-law-v1/evidence/law16-unified-*/** -text -whitespace
 benchmarks/bend2-law-v1/evidence/law16-guest-cache-*/** -text -whitespace
 # CSV framing fixture intentionally mixes record CRLF with embedded CRLF bytes.
 tests/project/standard_library/fixtures/csv-multiline.csv -text -whitespace
+
+# Frozen #286 prior-model receipt retains exact diagnostic whitespace.
+docs/evidence/prelude-forecast-286/historical-owning-selected-286.log -text -whitespace

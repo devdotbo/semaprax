@@ -51,6 +51,12 @@ pub(crate) use collections::{contract_bytes_v13, digest_text_v13};
 mod sorting;
 pub(crate) use sorting::{contract_bytes_v12, digest_text_v12};
 
+#[cfg(test)]
+#[path = "prelude/base_original.rs"]
+mod base_original;
+#[path = "prelude/base_schema.rs"]
+pub(crate) mod base_schema;
+
 pub(crate) const OPTION_ID: &str = "core.option";
 pub(crate) const OPTION_NONE_ID: &str = "core.option.none";
 pub(crate) const OPTION_SOME_ID: &str = "core.option.some";
@@ -839,53 +845,11 @@ fn case(id: &str, name: &str, fields: Vec<FieldDeclaration>) -> VariantCaseDecla
 }
 
 fn option() -> TypeDeclaration {
-    TypeDeclaration {
-        stable_id: OPTION_ID.to_owned(),
-        explicit_id: true,
-        name: "Option".to_owned(),
-        name_span: Span::default(),
-        type_parameters: vec![parameter("T")],
-        kind: TypeDeclarationKind::Variant {
-            cases: vec![
-                case(OPTION_NONE_ID, "None", Vec::new()),
-                case(
-                    OPTION_SOME_ID,
-                    "Some",
-                    vec![field(OPTION_SOME_VALUE_ID, "value", parameter_type("T"))],
-                ),
-            ],
-        },
-        extends: None,
-        invariants: None,
-        span: Span::default(),
-    }
+    base_schema::declaration(&base_schema::OPTION)
 }
 
 fn result() -> TypeDeclaration {
-    TypeDeclaration {
-        stable_id: RESULT_ID.to_owned(),
-        explicit_id: true,
-        name: "Result".to_owned(),
-        name_span: Span::default(),
-        type_parameters: vec![parameter("T"), parameter("E")],
-        kind: TypeDeclarationKind::Variant {
-            cases: vec![
-                case(
-                    RESULT_OK_ID,
-                    "Ok",
-                    vec![field(RESULT_OK_VALUE_ID, "value", parameter_type("T"))],
-                ),
-                case(
-                    RESULT_ERR_ID,
-                    "Err",
-                    vec![field(RESULT_ERR_ERROR_ID, "error", parameter_type("E"))],
-                ),
-            ],
-        },
-        extends: None,
-        invariants: None,
-        span: Span::default(),
-    }
+    base_schema::declaration(&base_schema::RESULT)
 }
 
 fn owned_vec() -> TypeDeclaration {

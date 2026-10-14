@@ -324,6 +324,9 @@ macro_rules! semantic_graph_projection_root_source_inventory {
                 include_str!("../../src/workspace_graph/expected_projection.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/vec_constructor.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/held_projection.rs"),
+                include_str!("../../src/workspace_graph/expected_projection/prelude_forecast.rs"),
+                include_str!("../../src/workspace_graph/expected_projection/prelude_forecast_tests.rs"),
+                include_str!("../../src/workspace_graph/expected_projection/prelude_forecast_original.rs"),
             include_str!("../../src/workspace_graph/expected_projection/held_projection_original.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_leaf.rs"),
                 include_str!(

@@ -270,8 +270,17 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
     let identity_carrier_bytes = identity_carriers
         .checked_mul(hir::ExpressionId::SHARED_ALLOCATION_CARRIER_BYTES)
         .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    // The resolver's source chain also retains the compiler-owned base
+    // variants. They are absent from synthetic AST and cannot spend an authored
+    // expression discount. Borrow their producer metadata, without warming or
+    // constructing the process prelude table during estimation.
+    let prelude_hir_upper = super::prelude_forecast::retained_upper(
+        &prelude::base_schema::BASE,
+        maximum_identity_bytes,
+    )?;
     let hir_upper = fixed_hir_upper
-        .checked_add(identity_carrier_bytes)
+        .checked_add(prelude_hir_upper)
+        .and_then(|bytes| bytes.checked_add(identity_carrier_bytes))
         .and_then(|bytes| bytes.checked_add(identity_occurrence_upper))
         .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
     let retained_clone_and_hir = checked_usage(

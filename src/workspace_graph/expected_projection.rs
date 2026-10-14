@@ -42,6 +42,15 @@ mod held_projection;
 mod identity_slots;
 #[path = "expected_projection/import_stub.rs"]
 mod import_stub;
+#[path = "expected_projection/prelude_forecast.rs"]
+mod prelude_forecast;
+#[cfg(test)]
+#[path = "expected_projection/prelude_forecast_original.rs"]
+#[allow(
+    dead_code,
+    reason = "complete independent prelude-forecast reference includes its original construction receivers"
+)]
+mod prelude_forecast_original;
 // CORE_PROOF_RECEIVERS_BEGIN
 #[cfg(test)]
 #[path = "expected_projection/borrowed_imports_original.rs"]

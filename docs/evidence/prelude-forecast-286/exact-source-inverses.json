@@ -1,0 +1,69 @@
+[
+  {
+    "path": "src/prelude.rs",
+    "archive": "src__prelude.rs.before.txt",
+    "sha256": "acfbd839aee3ce120bb05677374efb0005e7c3f324cd0dbd4976c5a09942fd80",
+    "edits": [
+      {
+        "before": "pub(crate) use sorting::{contract_bytes_v12, digest_text_v12};\n\n",
+        "after": "pub(crate) use sorting::{contract_bytes_v12, digest_text_v12};\n\n#[cfg(test)]\n#[path = \"prelude/base_original.rs\"]\nmod base_original;\n#[path = \"prelude/base_schema.rs\"]\npub(crate) mod base_schema;\n\n"
+      },
+      {
+        "before": "    TypeDeclaration {\n        stable_id: OPTION_ID.to_owned(),\n        explicit_id: true,\n        name: \"Option\".to_owned(),\n        name_span: Span::default(),\n        type_parameters: vec![parameter(\"T\")],\n        kind: TypeDeclarationKind::Variant {\n            cases: vec![\n                case(OPTION_NONE_ID, \"None\", Vec::new()),\n                case(\n                    OPTION_SOME_ID,\n                    \"Some\",\n                    vec![field(OPTION_SOME_VALUE_ID, \"value\", parameter_type(\"T\"))],\n                ),\n            ],\n        },\n        extends: None,\n        invariants: None,\n        span: Span::default(),\n    }\n",
+        "after": "    base_schema::declaration(&base_schema::OPTION)\n"
+      },
+      {
+        "before": "    TypeDeclaration {\n        stable_id: RESULT_ID.to_owned(),\n        explicit_id: true,\n        name: \"Result\".to_owned(),\n        name_span: Span::default(),\n        type_parameters: vec![parameter(\"T\"), parameter(\"E\")],\n        kind: TypeDeclarationKind::Variant {\n            cases: vec![\n                case(\n                    RESULT_OK_ID,\n                    \"Ok\",\n                    vec![field(RESULT_OK_VALUE_ID, \"value\", parameter_type(\"T\"))],\n                ),\n                case(\n                    RESULT_ERR_ID,\n                    \"Err\",\n                    vec![field(RESULT_ERR_ERROR_ID, \"error\", parameter_type(\"E\"))],\n                ),\n            ],\n        },\n        extends: None,\n        invariants: None,\n        span: Span::default(),\n    }\n",
+        "after": "    base_schema::declaration(&base_schema::RESULT)\n"
+      }
+    ]
+  },
+  {
+    "path": "src/workspace_graph/expected_projection.rs",
+    "archive": "src__workspace_graph__expected_projection.rs.before.txt",
+    "sha256": "65533cf9ba31f97cbc6618222b5a99bbb6b89dda14c34b686e541a8b77ce3a4c",
+    "edits": [
+      {
+        "before": "mod import_stub;\n// CORE_PROOF_RECEIVERS_BEGIN\n",
+        "after": "mod import_stub;\n#[path = \"expected_projection/prelude_forecast.rs\"]\nmod prelude_forecast;\n#[cfg(test)]\n#[path = \"expected_projection/prelude_forecast_original.rs\"]\n#[allow(\n    dead_code,\n    reason = \"complete independent prelude-forecast reference includes its original construction receivers\"\n)]\nmod prelude_forecast_original;\n// CORE_PROOF_RECEIVERS_BEGIN\n"
+      }
+    ]
+  },
+  {
+    "path": "src/workspace_graph/expected_projection/held_projection.rs",
+    "archive": "src__workspace_graph__expected_projection__held_projection.rs.before.txt",
+    "sha256": "78952cede1ba2ad17dddc43fb22a3e3c423154755721f34f3e58c6bcad62f187",
+    "edits": [
+      {
+        "before": "        .ok_or_else(|| vec![limit_error(\"builder_bytes\", active_builder_limit())])?;\n    let hir_upper = fixed_hir_upper\n",
+        "after": "        .ok_or_else(|| vec![limit_error(\"builder_bytes\", active_builder_limit())])?;\n    // The resolver's source chain also retains the compiler-owned base\n    // variants. They are absent from synthetic AST and cannot spend an authored\n    // expression discount. Borrow their producer metadata, without warming or\n    // constructing the process prelude table during estimation.\n    let prelude_hir_upper = super::prelude_forecast::retained_upper(\n        &prelude::base_schema::BASE,\n        maximum_identity_bytes,\n    )?;\n    let hir_upper = fixed_hir_upper\n"
+      },
+      {
+        "before": "        .checked_add(identity_carrier_bytes)\n",
+        "after": "        .checked_add(prelude_hir_upper)\n        .and_then(|bytes| bytes.checked_add(identity_carrier_bytes))\n"
+      }
+    ]
+  },
+  {
+    "path": "src/source_verify/constructor_tests.rs",
+    "archive": "src__source_verify__constructor_tests.rs.before.txt",
+    "sha256": "a47d52960691d9ca39896dc938a4c8ad320eddaf37d406da7e67eddaeeac2cc0",
+    "edits": [
+      {
+        "before": "        include_str!(\"../prelude.rs\"),\n        include_str!(\"declaration.rs\"),\n",
+        "after": "        include_str!(\"../prelude.rs\"),\n        include_str!(\"../prelude/base_schema.rs\"),\n        include_str!(\"../prelude/base_original.rs\"),\n        include_str!(\"declaration.rs\"),\n"
+      }
+    ]
+  },
+  {
+    "path": "tests/workspace/semantic_graph/source_inventory.rs",
+    "archive": "tests__workspace__semantic_graph__source_inventory.rs.before.txt",
+    "sha256": "b3e5276b6bd016d1632ed6349ce34cd2e25fce762627b12c4416790ac02842be",
+    "edits": [
+      {
+        "before": "                include_str!(\"../../src/workspace_graph/expected_projection/held_projection.rs\"),\n            include_str!(\"../../src/workspace_graph/expected_projection/held_projection_original.rs\"),\n",
+        "after": "                include_str!(\"../../src/workspace_graph/expected_projection/held_projection.rs\"),\n                include_str!(\"../../src/workspace_graph/expected_projection/prelude_forecast.rs\"),\n                include_str!(\"../../src/workspace_graph/expected_projection/prelude_forecast_tests.rs\"),\n                include_str!(\"../../src/workspace_graph/expected_projection/prelude_forecast_original.rs\"),\n            include_str!(\"../../src/workspace_graph/expected_projection/held_projection_original.rs\"),\n"
+      }
+    ]
+  }
+]

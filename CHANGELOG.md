@@ -8,6 +8,11 @@
   work debits and full source-custody controls; add physical backing, refusal
   and destruction controls. Runtime qualification and application fit remain
   pending; no ceiling changes.
+- Author the missing unconditional Option/Result retained-declaration term in
+  workspace forecasts (#286), using borrowed producer schema metadata
+  and existing checked layout factors. Preserve complete historical receipts,
+  complete original receivers, unchanged carrier gates and physical Drop
+  controls. Executable qualification and current-source fit remain pending.
 
 - Author additive paid streaming constructor preflight and shared exact-program
   function-directory custody (#824), preserving complete independent originals,

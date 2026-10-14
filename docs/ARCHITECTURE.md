@@ -1017,6 +1017,14 @@ statement spelling through the shared iterative formatter, including exact
 measurement of omitted normalization nodes. No alternate semantic tree is kept;
 [Statement If Canonical Source v1](STATEMENT-IF-CANONICAL-V1.md) owns the projection.
 
+`src/prelude/base_schema.rs` owns borrowed Option/Result construction metadata
+shared by the ordinary prelude producer and workspace forecasting.
+`expected_projection/prelude_forecast.rs` charges this unconditional retained
+prefix separately from synthetic AST and authored expression discounts, without
+initializing or duplicating the process prelude table. Complete original
+constructors and forecast receivers remain test-only controls; physical and
+forecast qualification is pending.
+
 `src/parser/vec_constructor.rs` forecasts and expands typed `vec_of<T>` source
 into separate ordinary capacity/push commits. `src/ast/vec_constructor.rs` and
 whole-function projection hygiene retain its syntax provenance;

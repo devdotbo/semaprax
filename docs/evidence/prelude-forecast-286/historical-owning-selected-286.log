@@ -1,0 +1,30 @@
+
+running 1 test
+test workspace_graph::expected_projection::cost::carrier_absence_tests::resolver_and_replay_highwater_stays_within_the_reduced_forecast ... 
+thread 'workspace_graph::expected_projection::cost::carrier_absence_tests::resolver_and_replay_highwater_stays_within_the_reduced_forecast' (10163408) panicked at src/workspace_graph/expected_projection/carrier_absence_tests.rs:746:9:
+gate.spx: highwater 222510 exceeds reduced forecast 204761
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    workspace_graph::expected_projection::cost::carrier_absence_tests::resolver_and_replay_highwater_stays_within_the_reduced_forecast
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8655 filtered out; finished in 0.06s
+
+
+Source-only owning funding diagnosis, 2026-10-14
+Private clean SSD base: 573d96216; /Volumes/Semaprax/worktrees/sol-carrier-funding-286-20261014/AI-Lang. No Cargo/build/runtime. No source mutation, test/cap change, forecast discount, observer normalization, or generated pin edit.
+Observed failure unchanged: gate.spx peak 222510 vs forecast 204761, gap 17749. This aggregate is NOT phase/constructor attribution.
+Owning contract read: WORKSPACE-SEMANTIC-GRAPH-V1.md161..180 (source-only upper prebound + independent actual ledger), 226..289 (exact profiles and unchanged earlier receipts).
+Concrete missing constructor input:
+- GATE has no authored types (carrier_absence_tests.rs229..237).
+- prelude.rs122..140 selects declarations()[..2] for this scalar program. These are Option and Result, prelude.rs841..889: 2 types, 3 type parameters, 4 cases, 3 case fields.
+- hir/declaration_index/identity_payer.rs48 loops program.types().iter().chain(prelude) and constructs declaration/name/type-parameter indexes. Lines321..407 build 4 resolved cases and 3 resolved fields, including resolved field backing copied into case_fields and variant_cases, plus declaration/field metadata maps.
+- hir/resolve_program.rs228..231 loops the same authored+selected-prelude declarations. Lines309..343 to_vec the cases and type parameters into the returned ResolvedProgram.types. The DeclarationIndex remains retained alongside these independent returned copies (lines503..518).
+- expected_projection/declaration_cost.rs406..408 costs ONLY program.types.
+- expected_projection/held_projection.rs77..93 derives raw authored AST + private layout, initializes empty runtime, then193..234 adds synthetic main/generic runtime. There is NO selected-prelude type census in this owning formula. Lines234..286 derive the entire structural/string/identity forecast from raw/runtime/generic inputs. prelude::all_ids at249 supplies a maximum identity byte length ONLY, not declaration/case/field/carrier or string occurrence costs.
+Therefore selected compiler prelude creates real retained backing not represented as its own input to the exact forecaster. Authored bookkeeping slack may incidentally cover it in older profiles, but that is not a derived selected-prelude payer.
+Candidate repair direction (not implemented or claimed passing): an owning forecaster term derived from the exact selected frozen prelude declaration shapes and current Layout footprints, including index and returned copies/constructor capacity, independently of carrier-free root discounts. Reuse ast_type_declaration_cost (expected_projection.rs421..470) only if proving its existing expansion bound covers all actual selected-prelude constructors; avoid counting a synthetic AST clone that never exists. Preserve every earlier fitting receipt as required by SPEC, preserve exact carrier-discount differential controls and current highwater assertion.
+Unresolved: the existing aggregate observer log does not prove whether selected-prelude backing alone explains all17749 bytes, nor locate the peak (source verification, resolve construction, initial replay, explicit replay). Existing phase capacity probes can help discriminate once ROOT permits a bounded runtime, but no runtime was attempted here. No arbitrary numeric allowance authored.
