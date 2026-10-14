@@ -163,6 +163,22 @@ fn inventory(root: &Path) -> Vec<(String, &'static str, Vec<u8>)> {
     result
 }
 
+/// Optional evidence sink for the actual owning producers. Existing assertions
+/// still execute, and an existing evidence file is never replaced.
+fn capture_pin_candidate(name: &str, bytes: &[u8]) {
+    let Some(directory) = std::env::var_os("SEMAPRAX_PRELUDE_PIN_CAPTURE_DIR") else {
+        return;
+    };
+    use std::io::Write as _;
+    let path = std::path::Path::new(&directory).join(name);
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .expect("fresh pin evidence file");
+    file.write_all(bytes).expect("capture complete actual wire");
+}
+
 fn document_digest(bytes: &[u8]) -> String {
     format!(
         "sha256:{:x}",
@@ -558,6 +574,7 @@ fn public_api_cli_bytes_getters_and_read_only_locking_are_exact() {
     fs2::FileExt::try_lock_shared(&shared).unwrap();
 
     let graph = workspace_graph::snapshot(&fixture.root, "public.app").unwrap();
+    capture_pin_candidate("public-graph.json", graph.to_json().as_bytes());
     assert_eq!(graph.workspace_revision(), fixture.revision);
     assert_eq!(
         graph.workspace_manifest_schema(),
@@ -986,6 +1003,19 @@ fn public_workspace_analysis_api_cli_kats_and_locking_are_exact() {
         serde_json::from_str::<serde_json::Value>(&capability_review).unwrap()["target"]["kind"],
         "capability"
     );
+
+    for (name, wire) in [
+        ("context.json", &context),
+        ("forward.json", &forward),
+        ("capability-context.json", &capability_context),
+        ("type-context.json", &type_context),
+        ("impact.json", &impact),
+        ("custom-impact.json", &custom_impact),
+        ("review.json", &review),
+        ("capability-review.json", &capability_review),
+    ] {
+        capture_pin_candidate(name, wire.as_bytes());
+    }
 
     // Full current reports reproduce all eight original hashes by restoring
     // only the measured workspace debit and authenticated digest bindings.

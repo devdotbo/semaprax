@@ -106,6 +106,18 @@ fn browser_known_answers_match_authenticated_baseline_and_rename_graphs() {
             &fixture_root.join("semaprax.toml"),
             |snapshot| {
                 let revision = snapshot.retain_revision();
+                if let Some(directory) = std::env::var_os("SEMAPRAX_PRELUDE_PIN_CAPTURE_DIR") {
+                    use std::io::Write as _;
+                    let path =
+                        std::path::Path::new(&directory).join(format!("calculator-{name}.json"));
+                    let mut file = std::fs::OpenOptions::new()
+                        .write(true)
+                        .create_new(true)
+                        .open(path)
+                        .expect("fresh calculator pin evidence file");
+                    file.write_all(revision.semantic_graph().as_bytes())
+                        .expect("capture complete actual calculator graph");
+                }
                 previous_digests.push(digest_without_checked_value_cursor_budget(
                     revision.semantic_graph(),
                 ));
