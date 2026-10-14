@@ -1,5 +1,11 @@
 use std::{fmt, mem};
 
+#[path = "ast/drop_method_roots.rs"]
+mod drop_method_roots;
+#[cfg(test)]
+#[path = "ast/drop_method_original.rs"]
+mod drop_method_original;
+
 pub(crate) mod program_source;
 
 #[path = "ast/drop_frontier.rs"]
@@ -169,7 +175,8 @@ impl Drop for Program {
         // Accepted source trees may reach the compiler's exact depth limit.
         // Take every recursive root before field drop glue runs, then replace
         // each node with a leaf before releasing its children from worklists.
-        let mut functions = mem::take(&mut self.functions);
+        let functions = mem::take(&mut self.functions);
+        let mut method_roots = drop_method_roots::MethodRoots::new();
         let _agents = mem::take(&mut self.agents);
         let mut types = drop_frontier::Stack::new();
         let mut expressions = drop_frontier::Stack::new();
@@ -198,7 +205,7 @@ impl Drop for Program {
                 }
                 TypeDeclarationKind::Class { fields, methods } => {
                     types.extend(fields.into_iter().map(|field| field.ty));
-                    functions.extend(methods);
+                    method_roots.push(methods);
                 }
             }
         }
@@ -214,7 +221,7 @@ impl Drop for Program {
                 types.push(method.return_type);
             }
         }
-        for function in functions {
+        for function in functions.into_iter().chain(method_roots.into_iter()) {
             types.extend(function.params.into_iter().map(|param| param.ty));
             types.push(function.return_type);
             if let Some(yields) = function.yields {

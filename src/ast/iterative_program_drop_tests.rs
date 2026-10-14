@@ -308,7 +308,7 @@ fn ordinary_spill_teardown_keeps_exact_depth_wide_patterns_and_no_recursive_fall
 
 #[test]
 fn entire_program_source_and_original_destructor_test_stay_exact_with_four_carrier_hooks() {
-    let mut current = include_str!("../ast.rs").to_owned();
+    let mut current = super::drop_method_roots::restore_source(include_str!("../ast.rs").to_owned());
     let registration = "#[path = \"ast/drop_frontier.rs\"]\nmod drop_frontier;\n#[cfg(test)]\n#[path = \"ast/drop_original.rs\"]\nmod drop_original;\n\n";
     assert_eq!(current.matches(registration).count(), 1);
     current = current.replacen(registration, "", 1);
@@ -338,6 +338,9 @@ fn entire_program_source_and_original_destructor_test_stay_exact_with_four_carri
         )
     );
     let children = concat!(
+        include_str!("drop_method_roots.rs"),
+        include_str!("drop_method_roots/tests.rs"),
+        include_str!("drop_method_original.rs"),
         include_str!("drop_frontier.rs"),
         include_str!("drop_original.rs"),
         include_str!("drop_original_tests.rs")

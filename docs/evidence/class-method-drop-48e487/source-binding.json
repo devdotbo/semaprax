@@ -1,0 +1,37 @@
+{
+  "status": "SOURCE_ONLY_PENDING_QUALIFICATION",
+  "base": "48e487749370553dc1ddfc5b29989a288297879b",
+  "current_sources": {
+    "src/ast.rs": "39d9c22cb0e8f6cc03b1ec828ee611f8a9455163a1872f6471e8f97f03045438",
+    "src/ast/iterative_program_drop_tests.rs": "be4c4ef19ea06fc292c74eacc8aa7c1c101dc073ccfab3383f2a113256d54a60",
+    "src/ast/drop_method_roots.rs": "c50a1b1eadce3eb0a8ba103f8023ade9a324dea13d42051c6dac94e81f439575",
+    "src/ast/drop_method_roots/tests.rs": "be7d4c2a81fbaf4a8e8bbb3aa958a564edf724594e08cc48a971e60c5bd0813d",
+    "src/ast/drop_method_original.rs": "c2fed06ee4bfa2242a6d7f60045886c12f7eed0ab9ccd7cace566ac51edd3bcf"
+  },
+  "complete_old_archives_untouched": [
+    {
+      "path": "docs/evidence/custody-ast-drop-frontier/ast.rs.before.txt",
+      "sha256": "9592deb72769b5da0ec095ac87df7928b59e58f2f5d5755bd92c9851e86d6025"
+    },
+    {
+      "path": "docs/evidence/custody-ast-drop-frontier/program-drop.before.txt",
+      "sha256": "764b9101ace64600e46afa17ee87d9d237cffdf27cdc45c50f591735fe9e7938"
+    },
+    {
+      "path": "docs/evidence/custody-ast-drop-frontier/iterative-program-drop-tests.before.txt",
+      "sha256": "95302c749e0c8623de114c9565b046358c43f868336c40b50dc66af7f68b2356"
+    },
+    {
+      "path": "src/ast/drop_original.rs",
+      "sha256": "977f90c406406f50e8041e6b0df02aabca5a4c39cd8372623e9c508d06ea40d4"
+    },
+    {
+      "path": "src/ast/drop_original_tests.rs",
+      "sha256": "95302c749e0c8623de114c9565b046358c43f868336c40b50dc66af7f68b2356"
+    }
+  ],
+  "actual_before_failure": "48e487 owning-selected-12.log overlay.class_app transient4995 vs receiving3147, expected616 source-derived spare; identified growth cap1\u21924 reacquires2464 causing net1848 excess",
+  "no_live_savings_claim": true,
+  "unpriced_residual": ">16 nonempty class method vectors acquire ordinary queue spill; existing type/expression frontiers retain ordinary unpriced spill",
+  "unchanged_predicates_and_caps": true
+}

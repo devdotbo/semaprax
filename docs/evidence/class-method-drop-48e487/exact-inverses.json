@@ -1,0 +1,32 @@
+{
+  "whole_ast_hooks": [
+    [
+      "#[path = \"ast/drop_method_roots.rs\"]\nmod drop_method_roots;\n#[cfg(test)]\n#[path = \"ast/drop_method_original.rs\"]\nmod drop_method_original;\n\n",
+      ""
+    ],
+    [
+      "        let functions = mem::take(&mut self.functions);\n        let mut method_roots = drop_method_roots::MethodRoots::new();",
+      "        let mut functions = mem::take(&mut self.functions);"
+    ],
+    [
+      "                    method_roots.push(methods);",
+      "                    functions.extend(methods);"
+    ],
+    [
+      "        for function in functions.into_iter().chain(method_roots.into_iter()) {",
+      "        for function in functions {"
+    ]
+  ],
+  "whole_current_test_hooks": [
+    [
+      "    let mut current = super::drop_method_roots::restore_source(include_str!(\"../ast.rs\").to_owned());",
+      "    let mut current = include_str!(\"../ast.rs\").to_owned();"
+    ],
+    [
+      "        include_str!(\"drop_method_roots.rs\"),\n        include_str!(\"drop_method_roots/tests.rs\"),\n        include_str!(\"drop_method_original.rs\"),\n",
+      ""
+    ]
+  ],
+  "original_AST_sha256": "0a019a46efa6a3d92ef1fd70137fad894ef52d97c3be833b339c51db4cdc0166",
+  "original_complete_current_tests_sha256": "d2f913870eb83ec9d760a3ffb4ace97967267abb01427a3031572a33e3581138"
+}
