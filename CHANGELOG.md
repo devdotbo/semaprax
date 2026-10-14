@@ -1,5 +1,10 @@
 # Changelog
 
+- Author current parsed-source custody and deferred checked cache keys (#796).
+  Reuse actual restored source owners for Project linking, validate full key/path
+  associations before publication, and retain metadata separately from ASTs.
+  Original receivers and cold/warm checks remain; qualification is pending.
+
 - Author a streaming paid ordinary cleanup-inventory summary (#814) at the real
   schema caller. Keep complete original producers/schema/receiving controls and
   compatibility admission; prepay backing and cumulative work from the existing

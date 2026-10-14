@@ -2720,6 +2720,21 @@ disjoint expression holes as well as whole-body holes; completed fills pass
 ordinary candidate admission and reauthenticate surviving selections against
 the resulting canonical source. Neither cache nor draft owns source authority.
 
+`workspace_graph/custody.rs` transfers the restored current invocation's
+parsed programs and source metadata into separate immutable owners. Its actual
+new directories, headers and authored-selection ordinals use the original core
+payer before acquisition. `current_source.rs` separates metadata-only file
+facts from parsed generations; metadata does not retain an AST. Project linking
+and `project/incremental/source_directory.rs` borrow the current parsed owners
+for source lookup and Agent/law extraction.
+
+`ast/program_source/checked_key.rs` owns deferred checked-key association. Full
+directory and exact key/path validation precede binding and cache publication;
+unbound keys cannot expose or encode a program. Unsupported source profiles
+retain the complete owning route. Source custody changes neither ordinary
+semantic revalidation nor source authority. Complete original source receivers
+and cold/warm controls remain independent; this source batch awaits execution.
+
 `project/image_reference.rs` exports exact image-bound stable function/facet
 selectors and resolves them only through ordinary admitted image provenance.
 Its conservative cross-revision rebind authenticates both images and the source
