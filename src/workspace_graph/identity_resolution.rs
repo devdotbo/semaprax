@@ -76,9 +76,15 @@ pub(super) fn resolve_module<'s>(
                         })
                         .or_else(|| {
                             synthetic.borrowed().and_then(|view| {
-                                cache.resolve_borrowed_cold_source_paid(
-                                    path, view, private, &mut owner,
-                                )
+                                if cache.permits_borrowed_cold_source(path) {
+                                    cache.resolve_borrowed_cold_source_paid(
+                                        path, view, private, &mut owner,
+                                    )
+                                } else {
+                                    cache.resolve_borrowed_source_paid(
+                                        path, view, private, &mut owner,
+                                    )
+                                }
                             })
                         })
                 })

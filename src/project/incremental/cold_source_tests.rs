@@ -80,7 +80,12 @@ fn checked_cold_source_preserves_limits_costs_current_key_and_body_reuse_fallbac
     let (borrowed, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
         let mut owner =
             crate::bounded_output::identity_reservation::IdentityReservation::acquire().unwrap();
-        pass.resolve_borrowed_cold_source_paid(&program.path, &changed_view, None, &mut owner)
+        let before = crate::bounded_output::active_remaining();
+        assert!(pass
+            .resolve_borrowed_cold_source_paid(&program.path, &changed_view, None, &mut owner)
+            .is_none());
+        assert_eq!(before, crate::bounded_output::active_remaining());
+        pass.resolve_borrowed_source_paid(&program.path, &changed_view, None, &mut owner)
             .unwrap()
             .unwrap()
     });

@@ -35,6 +35,19 @@ impl FrontendPass {
         private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
         owner: &mut IdentityReservation,
     ) -> Option<Result<SelectiveResolvedModule, SelectiveFailure>> {
+        if !self.permits_borrowed_cold_source(path) {
+            return None;
+        }
+        self.resolve_borrowed_source_paid(path, synthetic, private, owner)
+    }
+
+    pub(crate) fn resolve_borrowed_source_paid<'p>(
+        &self,
+        path: &str,
+        synthetic: &'p dyn crate::ast::program_source::ProgramSource,
+        private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
+        owner: &mut IdentityReservation,
+    ) -> Option<Result<SelectiveResolvedModule, SelectiveFailure>> {
         if !self.semantic {
             return None;
         }
