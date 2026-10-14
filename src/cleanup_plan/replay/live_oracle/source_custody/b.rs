@@ -926,6 +926,18 @@ mod oracle_source_inventory;
 "#,
             "",
         );
+        undo(
+            &mut current,
+            r####"                include_str!("../src/hir/validation/function_scope.rs"),
+                include_str!("../src/hir/validation/function_scope/empty_ensures.rs"),
+                include_str!("../src/hir/validation/function_scope/empty_ensures/before.rs"),
+                include_str!("../src/hir/validation/function_scope/empty_ensures/tests.rs"),
+                include_str!("../src/hir/ordinary_scan.rs"),
+"####,
+            r####"                include_str!("../src/hir/validation/function_scope.rs"),
+                include_str!("../src/hir/ordinary_scan.rs"),
+"####,
+        );
         assert_eq!(
             current,
             include_str!(
