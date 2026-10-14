@@ -1,0 +1,8 @@
+{
+  "reviewed_source": "ad057fd9fa034352d30d6d1c42d8cf4b3ac353b5",
+  "reviewed_commits": [
+    "e63653235",
+    "ad057fd9f"
+  ],
+  "followup": "Actual caller and explicit unobserved-ledger corrections address review findings; followup itself is not independently reviewed or executed."
+}

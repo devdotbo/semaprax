@@ -228,6 +228,8 @@ impl<'a> Canonicalizer<'a> {
         root: Weighted,
         budget: &mut ReplayBudget,
     ) -> Result<Option<usize>, Diagnostic> {
+        #[cfg(test)]
+        tests::note_actual_entry(budget);
         budget.reserve_array::<CanonicalFrame>(function, 1, "factored canonical initial frame")?;
         let root = own_weighted(function, budget, root)?;
         let root_copy = share_weighted(function, budget, &root)?;

@@ -178,19 +178,47 @@ fn immutable_shares_preserve_copy_work_and_zero_requests_cannot_clear_refusal() 
     assert_eq!(budget.physical.as_ref().unwrap().charged(), before);
 }
 
+thread_local! {
+    static ACTUAL_ENTRIES: std::cell::Cell<Option<(usize, usize)>> = const { std::cell::Cell::new(None) };
+}
+struct ActualEntries(Option<(usize, usize)>);
+impl ActualEntries {
+    fn open(limit: usize) -> Self {
+        Self(ACTUAL_ENTRIES.with(|state| state.replace(Some((limit, 0)))))
+    }
+    fn calls(&self) -> usize {
+        ACTUAL_ENTRIES.with(|state| state.get().unwrap().1)
+    }
+}
+impl Drop for ActualEntries {
+    fn drop(&mut self) {
+        ACTUAL_ENTRIES.with(|state| state.set(self.0));
+    }
+}
+pub(super) fn note_actual_entry(budget: &mut ReplayBudget) {
+    ACTUAL_ENTRIES.with(|state| {
+        if let Some((limit, calls)) = state.get() {
+            if calls == 0 {
+                budget.remaining = limit;
+            }
+            state.set(Some((limit, calls + 1)));
+        }
+    });
+}
+
 #[test]
 fn exact_short_and_zero_work_match_the_complete_old_receiver() {
     let function = fixture();
     let (automaton, sink, roots) = automaton(&function);
-    let mut full = ReplayBudget::new();
+    let mut full = ReplayBudget::unobserved();
     Canonicalizer::new(&automaton, sink)
         .id(&function, vec![(roots[4], 1)], &mut full)
         .unwrap();
     let spent = MAX_REPLAY_WORK_UNITS - full.remaining;
     for limit in [spent, spent - 1, 0] {
-        let mut old_budget = ReplayBudget::new();
+        let mut old_budget = ReplayBudget::unobserved();
         old_budget.remaining = limit;
-        let mut budget = ReplayBudget::new();
+        let mut budget = ReplayBudget::unobserved();
         budget.remaining = limit;
         let old = canonical_before::Receiver::new(&automaton, sink).id(
             &function,
@@ -221,61 +249,22 @@ fn exact_short_and_zero_work_match_the_complete_old_receiver() {
         }
     }
 
-    // The real ordinary comparison propagates the first id() Err at `?`;
-    // it does not retry or evaluate the plan root after that refusal.
-    let source = include_str!("../../factored.rs");
-    let (_, receiving) = source
-        .split_once("let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);")
-        .unwrap();
-    let (receiving, _) = receiving.split_once("Ok(Some(hir == plan))").unwrap();
-    assert!(receiving
-        .contains("let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {"));
-    assert!(receiving
-        .contains("let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {"));
-    assert_eq!(receiving.matches("canonical.id(").count(), 2);
-    assert!(!receiving.contains(".or_else(") && !receiving.contains(".unwrap_or"));
-
-    // Exercise that same two-result boundary with both complete receivers,
-    // retaining the first full Diagnostic and counting actual id() entries.
-    fn receive(
-        mut id: impl FnMut(usize) -> Result<Option<usize>, Diagnostic>,
-        roots: &[usize],
-    ) -> Result<Option<bool>, Diagnostic> {
-        let Some(hir) = id(roots[4])? else {
-            return Ok(None);
-        };
-        let Some(plan) = id(roots[5])? else {
-            return Ok(None);
-        };
-        Ok(Some(hir == plan))
-    }
-    for limit in [spent - 1, 0] {
-        let mut old_budget = ReplayBudget::new();
-        old_budget.remaining = limit;
-        let mut budget = ReplayBudget::new();
-        budget.remaining = limit;
-        let mut old_receiver = canonical_before::Receiver::new(&automaton, sink);
-        let mut receiver = Canonicalizer::new(&automaton, sink);
-        let mut old_calls = 0;
-        let mut calls = 0;
-        let expected = receive(
-            |root| {
-                old_calls += 1;
-                old_receiver.id(&function, vec![(root, 1)], &mut old_budget)
-            },
-            &roots,
+    // Exercise the actual ordinary comparison, including its real root
+    // reservations and first id() `?` boundary. The observer gives only that
+    // first real canonical entry a short test allowance; production ceilings
+    // and prior automaton-construction work are not changed.
+    let (program, function) =
+        super::super::lexical_plan_tests::fixture(super::super::lexical_plan_tests::WHILE);
+    for limit in [0, 1] {
+        let observation = ActualEntries::open(limit);
+        let mut budget = ReplayBudget::unobserved();
+        let result = super::super::compare(&program, &function, &mut budget);
+        assert!(result.is_err());
+        assert_eq!(
+            observation.calls(),
+            1,
+            "actual comparison must propagate the first canonical Err before the plan root"
         );
-        let actual = receive(
-            |root| {
-                calls += 1;
-                receiver.id(&function, vec![(root, 1)], &mut budget)
-            },
-            &roots,
-        );
-        assert_eq!(actual, expected);
-        assert!(actual.is_err());
-        assert_eq!((calls, old_calls), (1, 1));
-        assert_eq!(budget.remaining, old_budget.remaining);
     }
 }
 

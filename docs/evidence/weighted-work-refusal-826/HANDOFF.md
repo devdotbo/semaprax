@@ -38,3 +38,13 @@ once, then checks that its complete restored receiver equals the independently
 compiled full old receiver, before the unchanged whole-source archive equality.
 Static byte reconstruction confirms both full equalities. The old receiver is
 neither excluded nor replaced by a smaller signature-only control.
+
+A completed bounded tool-disabled Sonnet review identified that the added local
+receiving helper mirrored the production caller, and that `new()` depended on
+ambient test state. The followup replaces that helper/text scan with actual
+`factored::compare` execution. A scoped cfg(test)-only observer shortens the
+work allowance precisely at its first real shared canonical entry and counts
+actual entries. The owning control includes the real surrounding reservations
+and verifies only one id() entry on the returned Err. Detached parity uses
+explicit `ReplayBudget::unobserved()`. This is authored, unexecuted control
+coverage; no production work/budget policy is changed.
