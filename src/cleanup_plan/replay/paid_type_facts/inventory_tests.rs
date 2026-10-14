@@ -65,7 +65,16 @@ fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapte
         .split_once("#[cfg(test)]\nthread_local! { static SAVED:")
         .unwrap();
     let projected = format!("{head}#[cfg(test)]\nthread_local! {{ static SAVED:{tail}");
+    let projected = projected.replacen(
+        "#[cfg(test)]\npub(super) mod tests;",
+        "#[cfg(test)]\nmod tests;",
+        1,
+    );
     let projected = projected
+        .strip_suffix("\npub(super) mod inventory_summary;\n")
+        .unwrap()
+        .strip_suffix("\nmod inventory_lifecycle;\n")
+        .unwrap()
         .strip_suffix("\nmod inventory_drop;\n")
         .unwrap()
         .strip_suffix("\nmod inventory_raw_key;\n")

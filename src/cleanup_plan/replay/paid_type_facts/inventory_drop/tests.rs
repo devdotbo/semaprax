@@ -92,7 +92,7 @@ fn complete_outer_bool_receiver_keeps_original_fields_cases_substitution_priorit
             ResolvedType::String,
             ResolvedType::Str,
             ResolvedType::MutFunctionI64,
-            ResolvedType::ArrayU8(usize::MAX),
+            ResolvedType::ArrayU8(u32::MAX),
         ]);
         for root in roots {
             control(&program, &root);

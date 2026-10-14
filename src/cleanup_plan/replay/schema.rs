@@ -150,3 +150,5 @@ fn expression_has_explicit_variant_match(expression: &ResolvedExpr) -> bool {
         )
     })
 }
+
+pub(super) mod paid_summary;

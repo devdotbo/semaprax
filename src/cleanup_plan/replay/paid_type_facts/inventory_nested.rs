@@ -29,15 +29,17 @@ pub(super) fn record_shape(
     {
         return Ok(false);
     }
-    let mut pending = Vec::new();
-    payer.grow(&mut pending, 1)?;
-    pending.push(Frame::Enter(root, 2));
-    let mut active: Vec<&DeclarationId> = Vec::new();
+    let mut pending = inventory_flags::vector(payer)?;
+    inventory_flags::push(&mut pending, Frame::Enter(root, 2), payer)?;
+    let mut active: Vec<&DeclarationId> = inventory_flags::vector(payer)?;
     let mut fields = 4usize;
     let mut leaves = 0usize;
     let mut owned = false;
-    while let Some(frame) = pending.pop() {
+    loop {
         metadata::step(payer, 1)?;
+        let Some(frame) = pending.pop() else {
+            break;
+        };
         match frame {
             Frame::Enter(ty, depth) => {
                 if metadata::vector(index, ty, payer)? {
@@ -69,8 +71,7 @@ pub(super) fn record_shape(
                             return Ok(false);
                         }
                     }
-                    payer.grow(&mut active, 1)?;
-                    active.push(declaration);
+                    inventory_flags::push(&mut active, declaration, payer)?;
                     let Some(declared) = metadata::fields(index, declaration, payer)? else {
                         return Ok(false);
                     };
@@ -97,7 +98,8 @@ pub(super) fn record_shape(
                         payer.construction_refusal("inventory nested pending length overflowed")
                     })?;
                     metadata::step(payer, additional)?;
-                    payer.grow(&mut pending, additional)?;
+                    inventory_flags::grow(&mut pending, additional, payer)?;
+                    metadata::step(payer, additional)?; // future scheduled frame releases
                     pending.push(Frame::Leave(declaration));
                     pending.extend(
                         declared

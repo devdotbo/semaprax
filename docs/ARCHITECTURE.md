@@ -91,6 +91,13 @@ canonical .spx source or held Project inputs
 
 Every backend passes source verification and validated HIR. Cleanup-plan vectors
 are canonical runtime order; projections and backends must never sort or repair them.
+
+`cleanup_plan/replay/paid_type_facts/inventory_summary` owns the ordinary schema
+caller's streaming inventory validation and retained summary. Its lifecycle,
+shape and expression children preserve complete validation before publication;
+`schema/paid_summary` selects it only with the existing builder-like ReplayBudget.
+Complete original inventory/schema receivers remain independent compatibility
+and parity controls. Other schema probes retain their existing owners.
 `byte_data_capacity/witnesses.rs` owns optional bounded transcript-refusal help
 reconstructed from the same checked flow after the primary refusal is selected.
 It pays cursor, spill, visits and output through the existing invocation ledger;

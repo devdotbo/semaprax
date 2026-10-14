@@ -96,6 +96,8 @@ pub(super) fn raw(
     arguments: fmt::Arguments<'_>,
 ) -> Result<String, Diagnostic> {
     current(payer)?;
+    inventory_metadata::step(payer, 2)?; // carrier construction and receiving String release
+    payer.bytes(std::mem::size_of::<Text<'_, '_>>())?;
     let mut text = Text {
         payer,
         bytes: String::new(),

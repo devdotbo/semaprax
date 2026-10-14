@@ -56,11 +56,15 @@ pub(super) fn substitute(
         Finish(&'a DeclarationId, usize),
         Callable(usize),
     }
-    let mut frames = Vec::new();
-    payer.grow(&mut frames, 1)?;
+    let mut frames = inventory_flags::vector(payer)?;
+    scratch_grow(&mut frames, 1, payer)?;
     frames.push(Frame::Enter(template));
-    let mut resolved = Vec::new();
-    while let Some(frame) = frames.pop() {
+    let mut resolved = inventory_flags::vector(payer)?;
+    loop {
+        inventory_metadata::step(payer, 1)?;
+        let Some(frame) = frames.pop() else {
+            break;
+        };
         payer
             .budget
             .charge(function, 1, "inventory substitution frame")?;
@@ -82,7 +86,7 @@ pub(super) fn substitute(
                         })?;
                         let argument = arguments.get(index_usize).ok_or_else(|| raw(payer, format_args!("type template for `{owner}` references missing parameter {index}")))?;
                         let argument = inventory_clone::clone_type(argument, payer)?;
-                        payer.grow(&mut resolved, 1)?;
+                        scratch_grow(&mut resolved, 1, payer)?;
                         resolved.push(argument);
                     }
                     ResolvedType::Nominal {
@@ -94,7 +98,7 @@ pub(super) fn substitute(
                                 "inventory substitution frame count overflowed",
                             )
                         })?;
-                        payer.grow(&mut frames, additional)?;
+                        scratch_grow(&mut frames, additional, payer)?;
                         frames.push(Frame::Finish(declaration, arguments.len()));
                         payer.budget.charge(
                             function,
@@ -109,7 +113,7 @@ pub(super) fn substitute(
                                 "inventory substitution frame count overflowed",
                             )
                         })?;
-                        payer.grow(&mut frames, additional)?;
+                        scratch_grow(&mut frames, additional, payer)?;
                         frames.push(Frame::Callable(parameters.len()));
                         frames.push(Frame::Enter(result));
                         payer.budget.charge(
@@ -140,7 +144,7 @@ pub(super) fn substitute(
                     | ResolvedType::SliceU8
                     | ResolvedType::StringMap) => {
                         let leaf = inventory_clone::clone_type(leaf, payer)?;
-                        payer.grow(&mut resolved, 1)?;
+                        scratch_grow(&mut resolved, 1, payer)?;
                         resolved.push(leaf);
                     }
                 }
@@ -154,7 +158,7 @@ pub(super) fn substitute(
                 })?;
                 let mut arguments = inventory_clone::exact(count, payer)?;
                 arguments.extend(resolved.drain(split..));
-                payer.grow(&mut resolved, 1)?;
+                scratch_grow(&mut resolved, 1, payer)?;
                 resolved.push(ResolvedType::Nominal {
                     declaration: declaration.clone(),
                     arguments,
@@ -170,8 +174,9 @@ pub(super) fn substitute(
                     .ok_or_else(|| raw(payer, format_args!("incomplete callable parameters")))?;
                 let mut parameters = inventory_clone::exact(count, payer)?;
                 parameters.extend(resolved.drain(split..));
+                inventory_metadata::step(payer, 2)?; // box publication and eventual release
                 let result = payer.boxed_type(result)?;
-                payer.grow(&mut resolved, 1)?;
+                scratch_grow(&mut resolved, 1, payer)?;
                 resolved.push(ResolvedType::Function { parameters, result });
             }
         }
@@ -185,4 +190,14 @@ pub(super) fn substitute(
     Ok(resolved
         .pop()
         .expect("substitution result count checked above"))
+}
+
+fn scratch_grow<T>(
+    values: &mut Vec<T>,
+    additional: usize,
+    payer: &mut Payer<'_>,
+) -> Result<(), Diagnostic> {
+    inventory_metadata::step(payer, additional)?; // published slots
+    inventory_metadata::step(payer, additional)?; // eventual pop/drop visits
+    inventory_flags::grow(values, additional, payer)
 }

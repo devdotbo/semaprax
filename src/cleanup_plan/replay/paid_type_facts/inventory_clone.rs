@@ -5,6 +5,12 @@ use super::*;
 // backing rather than using the dynamic scratch frontier's growth policy.
 pub(super) fn exact<T>(count: usize, payer: &mut Payer<'_>) -> Result<Vec<T>, Diagnostic> {
     inventory_text::current(payer)?;
+    // Complete fixed child publication and its eventual element/buffer release.
+    // This is existing replay work, not a new constructor or drop allowance.
+    inventory_metadata::step(payer, count)?;
+    inventory_metadata::step(payer, count)?;
+    inventory_metadata::step(payer, 2)?;
+    payer.bytes(std::mem::size_of::<Vec<T>>())?;
     payer
         .budget
         .reserve_array::<T>(payer.function, count, "inventory fixed type children")?;
@@ -58,6 +64,7 @@ pub(super) fn clone_type(
         .budget
         .charge(function, 1, "inventory cloned type root")?;
     if !owns_backing(root) {
+        inventory_metadata::step(payer, 2)?; // received node and future release
         payer.bytes(0)?;
         return Ok(root.clone());
     }
@@ -66,11 +73,15 @@ pub(super) fn clone_type(
         Nominal(&'a DeclarationId, usize),
         Callable(usize),
     }
-    let mut pending = Vec::new();
-    let mut values = Vec::new();
-    payer.grow(&mut pending, 1)?;
+    let mut pending = inventory_flags::vector(payer)?;
+    let mut values = inventory_flags::vector(payer)?;
+    scratch_grow(&mut pending, 1, payer)?;
     pending.push(Frame::Enter(root));
-    while let Some(frame) = pending.pop() {
+    loop {
+        inventory_metadata::step(payer, 1)?;
+        let Some(frame) = pending.pop() else {
+            break;
+        };
         payer
             .budget
             .charge(function, 1, "inventory argument clone frame")?;
@@ -83,7 +94,7 @@ pub(super) fn clone_type(
                     let additional = arguments.len().checked_add(1).ok_or_else(|| {
                         payer.construction_refusal("inventory clone frame count overflowed")
                     })?;
-                    payer.grow(&mut pending, additional)?;
+                    scratch_grow(&mut pending, additional, payer)?;
                     pending.push(Frame::Nominal(declaration, arguments.len()));
                     payer.budget.charge(
                         function,
@@ -96,7 +107,7 @@ pub(super) fn clone_type(
                     let additional = parameters.len().checked_add(2).ok_or_else(|| {
                         payer.construction_refusal("inventory clone frame count overflowed")
                     })?;
-                    payer.grow(&mut pending, additional)?;
+                    scratch_grow(&mut pending, additional, payer)?;
                     pending.push(Frame::Callable(parameters.len()));
                     pending.push(Frame::Enter(result));
                     payer.budget.charge(
@@ -127,7 +138,7 @@ pub(super) fn clone_type(
                 | ResolvedType::SliceU8
                 | ResolvedType::StringMap
                 | ResolvedType::TypeParameter { .. }) => {
-                    payer.grow(&mut values, 1)?;
+                    scratch_grow(&mut values, 1, payer)?;
                     values.push(leaf.clone());
                 }
             },
@@ -138,7 +149,7 @@ pub(super) fn clone_type(
                     .ok_or_else(|| payer.construction_refusal("inventory clone children absent"))?;
                 let mut arguments = exact(count, payer)?;
                 arguments.extend(values.drain(start..));
-                payer.grow(&mut values, 1)?;
+                scratch_grow(&mut values, 1, payer)?;
                 values.push(ResolvedType::Nominal {
                     declaration: declaration.clone(),
                     arguments,
@@ -153,8 +164,9 @@ pub(super) fn clone_type(
                 })?;
                 let mut parameters = exact(count, payer)?;
                 parameters.extend(values.drain(start..));
+                inventory_metadata::step(payer, 2)?; // box publication and eventual release
                 let result = payer.boxed_type(result)?;
-                payer.grow(&mut values, 1)?;
+                scratch_grow(&mut values, 1, payer)?;
                 values.push(ResolvedType::Function { parameters, result });
             }
         }
@@ -163,4 +175,14 @@ pub(super) fn clone_type(
         return Err(payer.construction_refusal("inventory clone did not settle"));
     }
     Ok(values.pop().expect("inventory clone result count checked"))
+}
+
+fn scratch_grow<T>(
+    values: &mut Vec<T>,
+    additional: usize,
+    payer: &mut Payer<'_>,
+) -> Result<(), Diagnostic> {
+    inventory_metadata::step(payer, additional)?; // published slots
+    inventory_metadata::step(payer, additional)?; // eventual pop/drop visits
+    inventory_flags::grow(values, additional, payer)
 }

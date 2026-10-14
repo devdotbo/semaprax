@@ -36,8 +36,13 @@ impl<P: InventoryPayer> Storage<P> {
     ) -> Option<()> {
         self.work(0, "inventory vector authority")?;
         let required = values.len().checked_add(additional)?;
+        self.work(additional, "inventory published vector slots")?;
+        self.work(additional, "inventory eventual slot releases")?;
         if required > values.capacity() {
             self.work(values.len(), "inventory retained vector elements moved")?;
+            if values.capacity() != 0 {
+                self.work(1, "inventory old vector backing release")?;
+            }
         }
         self.grow(values, additional)
     }
@@ -91,6 +96,7 @@ impl<P: InventoryPayer> Storage<P> {
         if self.first.is_some() {
             return None;
         }
+        self.work(1, "inventory receiving classifier string release")?;
         let result = ClassifierString::acquire_with_work(
             &mut self.payer,
             &mut |bytes, payer| payer.bytes(bytes),

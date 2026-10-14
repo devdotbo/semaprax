@@ -95,7 +95,7 @@ fn complete_flag_only_fold_matches_independent_owned_facts_all_fields_cases_and_
             ResolvedType::String,
             ResolvedType::Bytes,
             ResolvedType::MutFunctionI64,
-            ResolvedType::ArrayU8(usize::MAX),
+            ResolvedType::ArrayU8(u32::MAX),
         ];
         for item in &program.types {
             roots.push(nominal(item.id.clone(), Vec::new()));

@@ -51,7 +51,7 @@ fn full_raw_structural_identity_keeps_nested_arguments_utf8_null_and_no_capped_m
             declaration: DeclarationId::new("é\0prefix:0:"),
             arguments: vec![
                 ResolvedType::Function {
-                    parameters: vec![ResolvedType::ArrayU8(usize::MAX), ResolvedType::I64],
+                    parameters: vec![ResolvedType::ArrayU8(u32::MAX), ResolvedType::I64],
                     result: Box::new(ResolvedType::TypeParameter {
                         owner: function.id.clone(),
                         index: 17

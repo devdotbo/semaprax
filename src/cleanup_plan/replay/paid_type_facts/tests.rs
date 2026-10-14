@@ -11,7 +11,7 @@ fn literal(file: &'static str) -> &'static str {
         .unwrap()
         .0
 }
-pub(super) fn fixtures() -> [ResolvedProgram; 3] {
+pub(in crate::cleanup_plan::replay) fn fixtures() -> [ResolvedProgram; 3] {
     let replay = include_str!("../../replay_tests.rs");
     let try_source = replay
         .split_once("const TRY_SOURCE: &str = r#\"")

@@ -1,3 +1,15 @@
+# OPT814 complete private paid inventory adoption
+
+Current private source replaces the discarded complete ordinary inventory in the actual cleanup-schema caller with a streaming summary. The complete original inventory, schema function and receiving function remain independently compiled and source-bound. Every original signature, contract, body, pattern, update, lifecycle and generic shape branch is validated before publication. Full immutable shape validation finishes before the retained nested/variant/iterator summary can select a schema.
+
+The new route uses the existing builder-like ReplayBudget for comparison/traversal work and fallible backing before acquisition, including old/new overlap and future receiving release. Unfunded and reservation-only compatibility retains the complete original route. No selected profile policy, quota, cap, refund or credit changes. Other existing schema probes retain their original implementation; this change does not establish aggregate funding of the whole schema receiver.
+
+Sixty exact controls are authored and source-registered, with complete original/current diagnostic parity, full allocation through receiving Drop, backing/work zero/exact/one-short and sticky refusal. No Cargo/build/tests/Clippy ran in this lane. No application fit, causal byte saving or OPT814 closure is claimed. The independently observed compatibility loan-constructor deficit is a separate owner (#824).
+
+The two new complete schema/receiving archives were captured at private 9d5023c16; all prior twenty original archive digests remain unchanged. Bounded tool-free Claude source reviews and actual usage receipts are retained in source-binding.json; they are not runtime qualification.
+
+## Earlier private stages (historical, superseded by current adoption above)
+
 # OPT814 private constructor stage
 
 The complete original ordinary inventory producer and generic-record receiver remain independently compiled and byte-exact. The new copied traversal retains cumulative slot/flag discovery counts, one current slot for immediate conditional-entry validation, and schema summary bits. It releases completed slot/flag/entry payloads instead of retaining complete output directories. It still materializes current-slot shapes, projections, types, generic substitutions and conditional-entry scratch.

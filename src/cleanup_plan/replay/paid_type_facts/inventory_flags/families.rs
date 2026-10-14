@@ -2,7 +2,7 @@
 use super::*;
 use crate::hir::{DeclarationKind, IdentityOrigin};
 
-pub(super) fn typed_collection(
+pub(in crate::cleanup_plan::replay::paid_type_facts) fn typed_collection(
     ty: &ResolvedType,
     payer: &mut Payer<'_>,
 ) -> Result<bool, Diagnostic> {
@@ -29,7 +29,10 @@ pub(super) fn typed_collection(
         [ResolvedType::String | ResolvedType::I64 | ResolvedType::Bool]
     ))
 }
-pub(super) fn signature(ty: &ResolvedType, payer: &mut Payer<'_>) -> Result<bool, Diagnostic> {
+pub(in crate::cleanup_plan::replay::paid_type_facts) fn signature(
+    ty: &ResolvedType,
+    payer: &mut Payer<'_>,
+) -> Result<bool, Diagnostic> {
     metadata::step(payer, 1)?;
     let ResolvedType::Function { parameters, result } = ty else {
         return Ok(false);
@@ -46,7 +49,7 @@ pub(super) fn signature(ty: &ResolvedType, payer: &mut Payer<'_>) -> Result<bool
     metadata::step(payer, 1)?;
     Ok(crate::hir::function_value::scalar(result))
 }
-pub(super) fn resource_result(
+pub(in crate::cleanup_plan::replay::paid_type_facts) fn resource_result(
     index: &DeclarationIndex,
     ty: &ResolvedType,
     payer: &mut Payer<'_>,
@@ -74,7 +77,7 @@ pub(super) fn resource_result(
     Ok(metadata::declared(index, resource, payer)?
         .is_some_and(|d| d.kind == DeclarationKind::Resource))
 }
-pub(super) fn owned_byte_prelude(
+pub(in crate::cleanup_plan::replay::paid_type_facts) fn owned_byte_prelude(
     id: &DeclarationId,
     arguments: &[ResolvedType],
     payer: &mut Payer<'_>,
@@ -182,7 +185,7 @@ fn leaf(
         Ok(crate::hir::owned_leaf_collection::layout_with_work(&probes, element, work)?.is_some())
     })
 }
-pub(super) fn builtin(
+pub(in crate::cleanup_plan::replay::paid_type_facts) fn builtin(
     index: &DeclarationIndex,
     id: &DeclarationId,
     arguments: &[ResolvedType],
@@ -244,7 +247,7 @@ pub(super) fn builtin(
     Ok(crate::box_ops::resolved_box_element_is_admitted(element))
 }
 
-pub(super) fn iterator_element(
+pub(in crate::cleanup_plan::replay::paid_type_facts) fn iterator_element(
     index: &DeclarationIndex,
     element: &ResolvedType,
     payer: &mut Payer<'_>,
@@ -258,7 +261,7 @@ pub(super) fn iterator_element(
         crate::hir::owned_leaf_collection::runtime_with_work(&probes, element, work)
     })
 }
-pub(super) fn vector_element(
+pub(in crate::cleanup_plan::replay::paid_type_facts) fn vector_element(
     index: &DeclarationIndex,
     element: &ResolvedType,
     payer: &mut Payer<'_>,

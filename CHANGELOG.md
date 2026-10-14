@@ -1,5 +1,11 @@
 # Changelog
 
+- Author a streaming paid ordinary cleanup-inventory summary (#814) at the real
+  schema caller. Keep complete original producers/schema/receiving controls and
+  compatibility admission; prepay backing and cumulative work from the existing
+  budget. Sixty exact source-bound controls await consolidated qualification;
+  no application fit or aggregate schema funding is claimed.
+
 - Remove the standalone validator's unpriced per-function permit-set collection
   through borrowed exact membership. Keep the complete original receiver and
   error-order controls; author allocation and phase-isolation controls. Runtime

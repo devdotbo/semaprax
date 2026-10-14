@@ -249,7 +249,7 @@ fn with_saved_classifier<T>(run: impl FnOnce() -> T) -> T {
     run()
 }
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;
 #[cfg(test)]
 mod zero_tests;
 
@@ -359,3 +359,7 @@ mod inventory_flags;
 mod inventory_raw_key;
 
 mod inventory_drop;
+
+mod inventory_lifecycle;
+
+pub(super) mod inventory_summary;

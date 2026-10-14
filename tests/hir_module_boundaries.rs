@@ -233,6 +233,25 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_raw_key/tests.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_drop.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_drop/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/step.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/native.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/outcome.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/equal.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/variants.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/tests.rs"),
+        include_str!(
+            "../src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/tests/native.rs"
+        ),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/profile.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/generic.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/schema/paid_summary.rs"),
+        include_str!("../src/cleanup_plan/replay/schema/paid_summary/original_receiver.rs"),
+        include_str!("../src/cleanup_plan/replay/schema/paid_summary/tests.rs"),
         include_str!(
             "../src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests/constructors.rs"
         ),

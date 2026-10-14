@@ -1,7 +1,7 @@
 {
   "package": "semaprax",
   "harness": "lib",
-  "status": "authored, unexecuted; staged source not integration-ready",
+  "status": "authored, unexecuted; complete paid inventory caller adoption, source review only",
   "selectors": [
     "cleanup::schema_summary::tests::complete_ordinary_summary_matches_full_receiver_and_receiving_drop",
     "cleanup::schema_summary::tests::late_missing_type_preserves_full_first_diagnostic_after_earlier_owners",
@@ -50,6 +50,18 @@
     "cleanup_plan::replay::paid_type_facts::inventory_raw_key::tests::full_raw_structural_identity_keeps_nested_arguments_utf8_null_and_no_capped_membership_collision",
     "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::complete_outer_bool_receiver_keeps_original_fields_cases_substitution_priority_and_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::full_outer_unknown_copy_forged_cache_diagnostics_and_generic_zero_one_seventeen_keep_old_receiver",
-    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::original_outer_paid_receiver_remains_complete_independent_and_byte_exact"
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::original_outer_paid_receiver_remains_complete_independent_and_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::complete_step_shape_zero_one_seventeen_and_forged_metadata_match_original_receiver",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::complete_outcome_flat_owned_nested_and_field_membership_match_all_original_metadata",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::complete_native_resource_result_receiver_and_exact_borrowed_type_equality_keep_old_authority",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::native::original_native_constructor_universe_split_interfaces_and_late_digest_drift_keep_exact_bool",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::full_original_inventory_summary_preserves_complete_function_receiver_and_paid_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::full_generic_zero_one_seventeen_arguments_missing_arity_and_late_error_keep_original_diagnostics",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::authenticated_summary_ignores_attached_inventory_and_plan_but_keeps_full_expression_walk",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::complete_old_inventory_and_generic_shape_sources_remain_independent_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::streaming_profile_counts_every_variant_field_nodrop_and_preserves_nested_byte_limits",
+    "cleanup_plan::replay::schema::paid_summary::tests::complete_schema_original_and_receiving_body_remain_byte_exact",
+    "cleanup_plan::replay::schema::paid_summary::tests::full_schema_and_receiving_oracle_keep_late_tampering_all_diagnostic_fields",
+    "cleanup_plan::replay::schema::paid_summary::tests::full_unfunded_compatibility_and_selected_reservation_receiver_stay_original"
   ]
 }

@@ -1,7 +1,7 @@
 {
   "issue": "https://github.com/wavect/semaprax/issues/814",
   "base": "f9aadf17cbca430480f8bcf40afbcb58cd9a0711",
-  "status": "private staged receiver; production adoption and complete constructor funding pending",
+  "status": "authored, unexecuted; complete paid inventory caller adoption, source review only",
   "original_sources": {
     "src/cleanup/inventory_builder.rs": {
       "archive": "docs/evidence/schema-summary/inventory_builder.rs.before",
@@ -95,6 +95,18 @@
       "archive": "docs/evidence/schema-summary/droppability-paid.rs.before",
       "sha256": "401589d0ca2cfb8b31b133e763bbc5211bbde12666a3c1b75580d0e326c1cbfb",
       "note": "Complete independently compiled original receiver remains unchanged; archive is provenance only."
+    },
+    "src/cleanup_plan/replay/schema.rs": {
+      "archive": "docs/evidence/schema-summary/schema.rs.before",
+      "sha256": "500cbf163204df0a3d86028691dd6662badc979cf4f861797c3e9c3d2b1e5f99",
+      "captured_receiver_head": "9d5023c16",
+      "note": "Complete original schema or receiving function remains independently compiled; archived bytes are source provenance only."
+    },
+    "src/cleanup_plan/replay.rs::validate_structure_with_budget_storage": {
+      "archive": "docs/evidence/schema-summary/validation-receiver.rs.before",
+      "sha256": "f42891b5e439b244d35c5a0a4c71950c19b67afc7e8ba58fa6efe64a4d312acd",
+      "captured_receiver_head": "9d5023c16",
+      "note": "Complete original schema or receiving function remains independently compiled; archived bytes are source provenance only."
     }
   },
   "current_sources": {
@@ -102,15 +114,15 @@
     "src/cleanup/schema_summary/generic_record.rs": "a46d2b2b6b83918f72eab634ced94c6982b4e25f92b3b585afd4b40f84328c1a",
     "src/cleanup/schema_summary/support.rs": "eb9a6cd7961d586370fce7b30552ef0e5ccd4c5d23032a9717447fe32efbe6f2",
     "src/cleanup/schema_summary/tests.rs": "56c3e5775113bb14b6f772d46aec97a6e33550c69ccf9430d550141c7fa4b585",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "342591d4741ff0f5142b24e5196ad470ba28cd734e53362417539263654d0f14",
-    "src/cleanup_plan/replay/paid_type_facts.rs": "a692fbb0017814725360efb8fb635b5dbdb16aaf6262aba339605bbd2796df44",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs": "211e19f9df39443f84d5f582b6c149f87d91e43161ea81fbe1a6899040310019",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs": "9edcfe04ec45408193fe8d7969b2cd2bf756498df9d5b43e4c2d6fcb569644e2",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "42e146d2c9e45e9c8a897523db9e98a7a2085d55f3b10f608518f04b69c552a9",
+    "src/cleanup_plan/replay/paid_type_facts.rs": "fd8d2e7267f65b7a8e7b6b5c42d2e518bb2e39f1501c787eaaaa4e80e72d19e2",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs": "cd6eddfa98cf8b0ad1eb9c5c1a43fe64d73724b15eb448b26dec9666779b9796",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs": "fb5e511e1a4908860a55e74a9e862a847440d90d70f5647d618748ea63f4b07a",
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs": "a22ad9d3b05506fcb2c1e4ccbb9a175486305fd792de5bfb4fcab031aa5bdf52",
     "src/cleanup_plan/replay/paid_type_facts/droppability.rs": "50553857f7a33d60b245f66bdc3c380f65b8ba5ae5fa53e776fd2b419da80e76",
-    "tests/hir_module_boundaries.rs": "0d302d802a581e880069ce51407a72d9c1552531757d41c431ccfc7a5bea5fcb",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "9bda71b25bcc5dfecc862b9de87b3d918c522c30b1b83685b956892a0fd9b2f1",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_text.rs": "34c5813dc5dff46bd9dd9eee480fea834c2e4d82f8eb22e7a1abfc81288493fa",
+    "tests/hir_module_boundaries.rs": "ce3dd588745915d204c8e33630e7b4a01d81c718773d488d9cb2cff085aac7c1",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "af1324aeb6db9aa99372ce014070129a7be26d123acd45916dd884d23a2d13cb",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_text.rs": "f0f3f5266fea382fab01c783c419f08afffa03da451b50952605cacc2ed12057",
     "src/cleanup.rs": "e2a653179270f02ca7d56cfffc11e503043fd00068aac09152a89a493660159f",
     "src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs": "1b3dff363b517686e0624dd29a8c703e9b5b09928d29f1da11345510f1695869",
     "src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs": "82942c977e8f197b0f1669e795830895648f2f72e28daa1915513ad2cc72d5ee",
@@ -118,7 +130,7 @@
     "src/hir/declaration_index/inventory_lookup.rs": "718c7c9ca23f86dc08b0b61d265db12abc78ce17fc80f209d7508c5586b2b911",
     "src/hir/declaration_index/inventory_lookup/tests.rs": "dfbba96b64d32e9fccedbfa651bdf94dbb2bf335e3378cd5184f446fc41bcaf6",
     "src/cleanup_plan/replay/paid_type_facts/inventory_metadata.rs": "770c3cff455542a3741de5bc6a49d7ece104a5d001b8476bdbaa0dc3ff0ac26e",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_nested.rs": "3677393835677f8cd45b6dd3012c8ab149609aac5eb32aaed0affc565ae0473c",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_nested.rs": "ed462cdb46c219dcddc55f3e58a4ce9cc23bb91e4164a140e34182dfdc5f58c3",
     "src/cleanup_plan/replay/paid_type_facts/inventory_nested/tests.rs": "3964ddbf7760f9f0279784320f29ecc881f203fa45058fef5173da24bc1f7ebe",
     "src/bounded_output/classifier_string.rs": "9d705f651e1b826c14377c3b5418a31a44bb36f069f7dca987b7f519df1c3f11",
     "src/bounded_output/classifier_string/inventory_work.rs": "937beca7d333b6091c64b4af6c9e20ff9809e63f1bbf364d0399f7db0dc4d7dc",
@@ -136,18 +148,38 @@
     "src/hir/declaration_index/flags/paid/inventory_constructor/key.rs": "e41e83fb304d80504025af20a66cfe300e9dbce35795760450f09cc84a2be618",
     "src/hir/declaration_index/inventory_lookup/nominal.rs": "0649d68d14e06d80041db677c814e1d3d7e676407969c6459ed529c566ed85aa",
     "src/hir/declaration_index/flags/paid/key.rs": "db8d77be0fa2d0dcd9607ef616328e580919c89221b861944b145ad5c7269038",
-    "src/hir/declaration_index/flags/paid/inventory_constructor.rs": "9891daeb9f7df0a5880f4e6345cafd1b6bc5aaf74e1f8b6a58c97701bd29153c",
+    "src/hir/declaration_index/flags/paid/inventory_constructor.rs": "f9e792451adc1733aca85a5c9070e90e65b52b5d755b61672b70769c27009d4c",
     "src/cleanup_plan/replay/paid_type_facts/inventory_ordered.rs": "5968a1ac5a231cd84094ca65c4238d3873d455dd50f3d30684c3f982d2ab172f",
     "src/cleanup_plan/replay/paid_type_facts/inventory_ordered/tests.rs": "b6d09e7fcda025ba9b7140f0ad88e2d25190b35e8b5d9b0fd9b80aa40973ea7c",
     "src/hir/declaration_index/inventory_lookup/compound.rs": "5e6cadee2de8116015fbe0d753a9d1f2d991be8e2b41e9b988b07801c61c6d5b",
     "src/hir/declaration_index/inventory_lookup/compound/tests.rs": "78403bb30782b80c9b68681f4739e183b080f99deace4866a53169f817901b23",
     "src/cleanup_plan/replay/paid_type_facts/inventory_flags.rs": "51d8f213d641c3980a57a64ba3d5153f21c7941bd0f378401f253978845f44b4",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_flags/families.rs": "4f4980700ffda213afb9db84c1d4248994a53d57930d4a131cd218edff4c6b69",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_flags/tests.rs": "14cf9394c4ed38362d381bf3d6e21f3d4942cd25f654970ad29d17021c0acd2e",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_flags/families.rs": "b5eb3e197c736e369314ae3294f17e23db25e624ef7b1b959bcd2694c82cbbc5",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_flags/tests.rs": "f20f5af266c1d7ac596033ecd9ffa905b54447f57ca4b59f7c7e31290343ed09",
     "src/cleanup_plan/replay/paid_type_facts/inventory_raw_key.rs": "a9d4e7322c4b66f1da3878fc087ce4fc2c0bda3c771795fd2fe66c75e5cec2f2",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_raw_key/tests.rs": "40216c06bb78296a1b44df610f7f26015bd04691e132f755fa67c0a8ab17fe86",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_raw_key/tests.rs": "d32de177199f9bc1561d1c31b6b19946d3a194a80e4681fc108c22775ae088b9",
     "src/cleanup_plan/replay/paid_type_facts/inventory_drop.rs": "097fc0734ceaa466e070e077478d3e52ed3785dcd3144256612da192feadfb4f",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_drop/tests.rs": "09854dc4be3e28c8f8c32be0c939d5eba830970c4d03f0d59c96d864eb6c63d0"
+    "src/cleanup_plan/replay/paid_type_facts/inventory_drop/tests.rs": "f2cdd2eb5843e305a7a2fd43bbf4f084095f1e39498b32f8539e546eddbac936",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle.rs": "10f36d210bc3ebeffb795e7aa7ff4e698c5a6c2d06805e610dc0f66466ca00ae",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary.rs": "d4c60de47700b6b01f9175c22e8946cf087faad3e3d2426cd4e43c881758d602",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/native.rs": "700bd10d6afb78257282c604c8ac747dff56fde201618fff53343d5b25693d30",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/outcome.rs": "92deb8935d14bf243e1605dc6b0701687a0fb1bfd3c98eb55b1f3899612e218b",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/variants.rs": "da7c19a8723026f9905398ad645f7ee02c5733fd79532450759495219d2bb098",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/equal.rs": "84e711e2c975d6595d8a731753f47ea4bc34a9f64345499509debe64d688a455",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/tests.rs": "6ddac437bdacaa9b59f182271d9e9a6a90d5893a4dd8a9720111e0243959b3b7",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/step.rs": "e31a9ff20c8174544cee603a653b3ffc037b94b234144ece14969dbbef5e2b76",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/tests/native.rs": "2f4fe70f7d814c4ff0892e52e879b858765bdfb83fa5d9f46df866d939fe04ad",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs": "451ecfa47a925e9ff31628d30b9d9dde6aef029e40ee736cf516ca676e8491f6",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary/generic.rs": "daca389b50cc0953aba995cdf5229e12179226e1ee08c7c57d955dd0e194a30c",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary/profile.rs": "5a3692dcf5afc13ce5a332cbca273905c14e939076df9d968e34c77a56f8be1d",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs": "e12b10a618a188ab50e94eb2861801a8846e4b3d92ac923dd051116620b97761",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape.rs": "992f7bf7190a9e2e8a094e8b0a40bbfa3303d123546d091b1cfa6da6dfd361fa",
+    "src/cleanup_plan/replay/schema/paid_summary/tests.rs": "2300de22d799d5060467af0804dd86e09392c14253a6478b59847f2638c05b79",
+    "src/cleanup_plan/replay/schema/paid_summary/original_receiver.rs": "34282d571ae1799853a80f4e757f18f1b94bc9f443064c95a4160e7f2b5fcbd8",
+    "src/cleanup_plan/replay/schema/paid_summary.rs": "dcdc3881d12701c95ce3fc353b4a063d12fcec3de665c16014a2890585c66440",
+    "src/cleanup_plan/replay/schema.rs": "457de8afc4d39928fb22f4a78fbcedc386aece8c86a45110e18c6b7aed4837c4",
+    "src/cleanup_plan/replay.rs": "f796f7a15c9a331651da34eaa531a2afbd00e7a54da3c1b3b3d56aa67aa9127e",
+    "src/cleanup_plan/replay/paid_type_facts/tests.rs": "35caab993a7007fb6699441903f8dc33bdf4e73382f0d1b4338fa1e92531fca4"
   },
   "pending_selectors": [
     "cleanup::schema_summary::tests::complete_ordinary_summary_matches_full_receiver_and_receiving_drop",
@@ -197,7 +229,19 @@
     "cleanup_plan::replay::paid_type_facts::inventory_raw_key::tests::full_raw_structural_identity_keeps_nested_arguments_utf8_null_and_no_capped_membership_collision",
     "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::complete_outer_bool_receiver_keeps_original_fields_cases_substitution_priority_and_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::full_outer_unknown_copy_forged_cache_diagnostics_and_generic_zero_one_seventeen_keep_old_receiver",
-    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::original_outer_paid_receiver_remains_complete_independent_and_byte_exact"
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::original_outer_paid_receiver_remains_complete_independent_and_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::complete_step_shape_zero_one_seventeen_and_forged_metadata_match_original_receiver",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::complete_outcome_flat_owned_nested_and_field_membership_match_all_original_metadata",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::complete_native_resource_result_receiver_and_exact_borrowed_type_equality_keep_old_authority",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::native::original_native_constructor_universe_split_interfaces_and_late_digest_drift_keep_exact_bool",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::full_original_inventory_summary_preserves_complete_function_receiver_and_paid_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::full_generic_zero_one_seventeen_arguments_missing_arity_and_late_error_keep_original_diagnostics",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::authenticated_summary_ignores_attached_inventory_and_plan_but_keeps_full_expression_walk",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::complete_old_inventory_and_generic_shape_sources_remain_independent_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::streaming_profile_counts_every_variant_field_nodrop_and_preserves_nested_byte_limits",
+    "cleanup_plan::replay::schema::paid_summary::tests::complete_schema_original_and_receiving_body_remain_byte_exact",
+    "cleanup_plan::replay::schema::paid_summary::tests::full_schema_and_receiving_oracle_keep_late_tampering_all_diagnostic_fields",
+    "cleanup_plan::replay::schema::paid_summary::tests::full_unfunded_compatibility_and_selected_reservation_receiver_stay_original"
   ],
   "review": {
     "receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-constructor-review-814-f9aad-20261013/process-receipt.json",
@@ -322,7 +366,19 @@
     "cleanup_plan::replay::paid_type_facts::inventory_raw_key::tests::full_raw_structural_identity_keeps_nested_arguments_utf8_null_and_no_capped_membership_collision",
     "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::complete_outer_bool_receiver_keeps_original_fields_cases_substitution_priority_and_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::full_outer_unknown_copy_forged_cache_diagnostics_and_generic_zero_one_seventeen_keep_old_receiver",
-    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::original_outer_paid_receiver_remains_complete_independent_and_byte_exact"
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::original_outer_paid_receiver_remains_complete_independent_and_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::complete_step_shape_zero_one_seventeen_and_forged_metadata_match_original_receiver",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::complete_outcome_flat_owned_nested_and_field_membership_match_all_original_metadata",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::complete_native_resource_result_receiver_and_exact_borrowed_type_equality_keep_old_authority",
+    "cleanup_plan::replay::paid_type_facts::inventory_lifecycle::tests::native::original_native_constructor_universe_split_interfaces_and_late_digest_drift_keep_exact_bool",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::full_original_inventory_summary_preserves_complete_function_receiver_and_paid_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::full_generic_zero_one_seventeen_arguments_missing_arity_and_late_error_keep_original_diagnostics",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::authenticated_summary_ignores_attached_inventory_and_plan_but_keeps_full_expression_walk",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::complete_old_inventory_and_generic_shape_sources_remain_independent_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_summary::tests::streaming_profile_counts_every_variant_field_nodrop_and_preserves_nested_byte_limits",
+    "cleanup_plan::replay::schema::paid_summary::tests::complete_schema_original_and_receiving_body_remain_byte_exact",
+    "cleanup_plan::replay::schema::paid_summary::tests::full_schema_and_receiving_oracle_keep_late_tampering_all_diagnostic_fields",
+    "cleanup_plan::replay::schema::paid_summary::tests::full_unfunded_compatibility_and_selected_reservation_receiver_stay_original"
   ],
   "mandatory_constructor_work": {
     "status": "private additive source; full classifier state and production inventory collector still pending",
@@ -435,5 +491,76 @@
     "order": "Original fast root bool paths, map-before-reader short-circuit, iterator/box/vector admission and reversed record/case/field scheduling; program type lookup visits exact original order/full identity equality.",
     "diagnostics": "Original raw H006 complete fields, full type identity, substitution-failure message; physical callback failure retains first Diagnostic and performs no further paid work.",
     "controls": "48 exact authored selectors; original ordinary cleanup function and complete old paid receiver are actual independent receiving oracles; all new controls unexecuted."
+  },
+  "production_adoption": {
+    "status": "authored complete private source; unexecuted",
+    "caller": "src/cleanup_plan/replay.rs::validate_structure_with_budget_storage",
+    "route": "schema::paid_summary::selected_with_budget",
+    "authority": "Existing builder-like ReplayBudget; unfunded and reservation-only compatibility uses complete original selected_schema_with_index.",
+    "scope": "Complete discarded ordinary inventory construction, type/shape/lifecycle validation and final profile summary. Other legacy schema probes are retained and not claimed fully funded.",
+    "diagnostics": "Complete original source/receiving oracle, six-field equality, first diagnostic and original limits; no runtime gain/application fit/issue closure claim.",
+    "controls": "60 exact authored controls, including whole summary allocation through receiving Drop, zero/exact/short/sticky backing and existing work."
+  },
+  "lifecycle_review": {
+    "receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-lifecycle-review-814-20261014/process-receipt.json",
+    "actual_receipt": {
+      "exit_code": 0,
+      "wall_seconds": 100.44817404200148,
+      "payload_bytes": 46044,
+      "tools_enabled": false,
+      "code_execution": false,
+      "peak_process_group_rss_bytes": 346963968,
+      "resource_refusal": null,
+      "actual_model_usage": {
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 13269,
+          "cacheReadInputTokens": 1966,
+          "cacheCreationInputTokens": 22505,
+          "webSearchRequests": 0,
+          "costUSD": 0.22291060000000001,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 11731,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "provider_list_cost_usd": 0.22291060000000001,
+      "actual_billing": "unknown"
+    },
+    "qualification": "Source-only supplied-span review; later local corrections and complete runtime qualification remain unexecuted."
+  },
+  "streaming_shape_review": {
+    "receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-streaming-shape-review-814-20261014/process-receipt.json",
+    "actual_receipt": {
+      "exit_code": 0,
+      "wall_seconds": 83.36650191700028,
+      "payload_bytes": 50270,
+      "tools_enabled": false,
+      "code_execution": false,
+      "peak_process_group_rss_bytes": 337100800,
+      "resource_refusal": null,
+      "actual_model_usage": {
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 10145,
+          "cacheReadInputTokens": 1966,
+          "cacheCreationInputTokens": 20630,
+          "webSearchRequests": 0,
+          "costUSD": 0.18417060000000002,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 8411,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "provider_list_cost_usd": 0.18417060000000002,
+      "actual_billing": "unknown"
+    },
+    "qualification": "Source-only supplied-span review; later local corrections and complete runtime qualification remain unexecuted."
   }
 }
