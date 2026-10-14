@@ -1,0 +1,17 @@
+{
+  "package": "semaprax",
+  "harness": "lib",
+  "status": "source-only; no tests/builds executed",
+  "selectors": [
+    "source_verify::recovery_tests::callee_components::refused_callee_parameter_excuses_only_its_type_comparison",
+    "source_verify::recovery_tests::callee_components::valid_callee_result_keeps_independent_condition_mismatch_after_parameter_refusal",
+    "source_verify::recovery_tests::callee_components::refused_callee_return_carries_original_origin_through_alias_and_zero_argument_call",
+    "source_verify::recovery_tests::callee_components::refused_callee_return_keeps_independent_argument_and_sibling_errors",
+    "source_verify::recovery_tests::callee_components::valid_signature_argument_failures_do_not_erase_independently_known_results",
+    "source_verify::recovery_tests::callee_components::complete_pre_component_entry_and_call_sources_remain_exact",
+    "source_verify::recovery_tests::callee_components::callee_component_refusal_requires_full_original_receipt_and_generic_owner_context",
+    "source_verify::recovery_tests::callee_components::refused_parameter_keeps_known_sibling_owned_transfer_and_later_move_refusal",
+    "source_verify::recovery_tests::callee_components::initializer_keeps_first_real_argument_failure_ahead_of_return_dependency_origin",
+    "source_verify::recovery_tests::callee_components::refused_return_component_requires_exact_function_span_and_full_receipt"
+  ]
+}

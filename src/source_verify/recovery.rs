@@ -32,6 +32,7 @@ pub(super) struct Checkpoint {
 
 #[derive(Default)]
 pub(super) struct Recovery<'p> {
+    unknown_declarations: bool,
     scopes: Vec<Scope<'p>>,
     last_read: Option<usize>,
     reads: usize,
@@ -61,6 +62,7 @@ impl<'p> Recovery<'p> {
         {
             return recovery;
         }
+        recovery.unknown_declarations = true;
         let mut parameters = None;
         let mut scratch = Vec::new();
         for parameter in &current.params {
@@ -305,3 +307,5 @@ impl<'p> Recovery<'p> {
         }
     }
 }
+
+mod callee_components;

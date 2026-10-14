@@ -365,6 +365,10 @@ fn complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps() 
     let source = concat!(
         include_str!("../source_verify.rs"),
         include_str!("recovery.rs"),
+        include_str!("recovery/callee_components.rs"),
+        include_str!("recovery_tests/callee_components.rs"),
+        include_str!("iterative/enter/enter_before_components.rs"),
+        include_str!("iterative/calls/calls_before_components.rs"),
         include_str!("recovery_legacy.rs"),
         include_str!("recovery_legacy/enter.rs"),
         include_str!("recovery_legacy/blocks.rs"),

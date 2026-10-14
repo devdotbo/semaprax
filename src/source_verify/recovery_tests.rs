@@ -20,6 +20,8 @@ mod refusal_dependency;
 mod operators_799;
 #[path = "recovery_tests/flow_799.rs"]
 mod flow_799;
+#[path = "recovery_tests/callee_components.rs"]
+mod callee_components;
 use crate::ast::{ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
 use crate::test_allocation_observer::measure;

@@ -3,7 +3,6 @@
 
 use crate::ast::{Expr, ExprKind, ImportResult, ParamMode, Statement, Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
-use crate::source_verify::IterativeVerifier;
 use crate::source_verify::arguments::{
     activate_borrowed_bytes_call_loans, source_byte_view_place_is_admitted,
 };
@@ -21,7 +20,11 @@ use crate::source_verify::scope::{
     VerifierCallTarget, VerifierFrame, VerifierFunctionSignature, VerifierScope,
 };
 use crate::source_verify::type_table::effective_record_fields;
+use crate::source_verify::IterativeVerifier;
 use std::collections::HashSet;
+
+#[cfg(test)]
+mod enter_before_components;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     pub(super) fn frame_enter(
@@ -29,6 +32,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         expression: &'p Expr,
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 {
+            return self.before_components_frame_enter(expression, scope);
+        }
         #[cfg(test)]
         if self.recovery_legacy {
             return self.recovery_old_frame_enter(expression, scope);
@@ -955,6 +962,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         scope,
                     });
                 } else {
+                    if self.refused_callee_return(&target) {
+                        self.values.push(None);
+                        return Ok(());
+                    }
                     self.values.push(Some(match target {
                         VerifierCallTarget::LiteralFormat => {
                             CheckedValue::returned(Type::String, true)

@@ -3,7 +3,6 @@
 
 use crate::ast::{Expr, Function, ImportResult, ParamMode, Type};
 use crate::diagnostic::Diagnostic;
-use crate::source_verify::IterativeVerifier;
 use crate::source_verify::arguments::{
     check_argument_ownership, release_borrowed_bytes_call_loans,
 };
@@ -15,6 +14,10 @@ use crate::source_verify::loans::mark_value_sources_moved;
 use crate::source_verify::private_names::type_name;
 use crate::source_verify::scope::{VerifierCallTarget, VerifierFrame, VerifierFunctionSignature};
 use crate::source_verify::type_table::{effective_record_fields, resolve_class_method};
+use crate::source_verify::IterativeVerifier;
+
+#[cfg(test)]
+mod calls_before_components;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     #[allow(clippy::too_many_arguments)]
@@ -28,6 +31,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         target: VerifierCallTarget<'p>,
         borrowed_bytes_loans: Vec<(String, SourceLoanId)>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_call_argument(
+                expression,
+                name,
+                args,
+                scope,
+                index,
+                target,
+                borrowed_bytes_loans,
+            );
+        }
         let actual = self.values.pop().unwrap_or(None);
         let argument = &args[index];
         match &target {
@@ -106,6 +121,19 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 }
             }
             VerifierCallTarget::Ordinary(specialized) => {
+                let refused_parameter = match specialized {
+                    Some(VerifierFunctionSignature::Borrowed(function)) => self
+                        .recovery
+                        .callee_component_refusal(
+                            function,
+                            Some(index),
+                            self.program,
+                            self.types,
+                            self.diagnostics,
+                        )
+                        .is_some(),
+                    _ => false,
+                };
                 if let Some(param) = specialized
                     .as_ref()
                     .and_then(|target| target.params().get(index))
@@ -114,7 +142,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         reject_native_unit_value(self.program, argument, actual, self.diagnostics);
                     }
                     if let Some(actual) = actual.as_ref().filter(|actual| {
-                        !actual.native_unit
+                        !refused_parameter
+                            && !actual.native_unit
                             && actual.ty != param.ty
                             && !self.recovery.explains(argument, &param.ty)
                     }) {
@@ -260,6 +289,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 &mut self.scopes[scope].bindings,
                 &borrowed_bytes_loans,
             );
+            let refused_return = match &target {
+                VerifierCallTarget::Ordinary(Some(VerifierFunctionSignature::Borrowed(
+                    function,
+                ))) => self.recovery.callee_component_refusal(
+                    function,
+                    None,
+                    self.program,
+                    self.types,
+                    self.diagnostics,
+                ),
+                _ => None,
+            };
             let output = match target {
                 VerifierCallTarget::LiteralFormat => {
                     Some(CheckedValue::returned(Type::String, true))
@@ -318,7 +359,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 }
                 value
             });
-            self.values.push(output);
+            if let Some(origin) = refused_return {
+                self.recovery.read_callee_refusal(origin);
+                self.values.push(None);
+            } else {
+                self.values.push(output);
+            }
         }
         Ok(())
     }
@@ -331,6 +377,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         args: &'p [Expr],
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_method_receiver(
+                expression, receiver, method, args, scope,
+            );
+        }
         let actual = self.values.pop().unwrap_or(None);
         let Some(receiver_value) = actual else {
             self.values.push(None);
@@ -473,6 +525,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         scope: usize,
         index: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_method_argument(
+                expression, method, args, scope, index,
+            );
+        }
         let actual = self.values.pop().unwrap_or(None);
         let argument = &args[index];
         if let Some(param) = method.params.get(index + 1) {
@@ -540,6 +598,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         operand: &'p Expr,
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_try(expression, operand, scope);
+        }
         let Some(operand_value) = self.values.pop().flatten() else {
             self.values.push(None);
             return Ok(());
@@ -664,6 +726,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         _expression: &'p Expr,
         _request: &'p Expr,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_yield(_expression, _request);
+        }
         self.values.pop();
         let value = self
             .current
@@ -680,6 +746,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         base: &'p Expr,
         field: &'p str,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_project(expression, base, field);
+        }
         let Some(base_value) = self.values.pop().flatten() else {
             self.values.push(None);
             return Ok(());
@@ -737,5 +807,28 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             native_unit: false,
         }));
         Ok(())
+    }
+}
+
+impl<'a, 'p> IterativeVerifier<'a, 'p> {
+    pub(super) fn refused_callee_return(&mut self, target: &VerifierCallTarget<'p>) -> bool {
+        let origin = match target {
+            VerifierCallTarget::Ordinary(Some(VerifierFunctionSignature::Borrowed(function))) => {
+                self.recovery.callee_component_refusal(
+                    function,
+                    None,
+                    self.program,
+                    self.types,
+                    self.diagnostics,
+                )
+            }
+            _ => None,
+        };
+        if let Some(origin) = origin {
+            self.recovery.read_callee_refusal(origin);
+            true
+        } else {
+            false
+        }
     }
 }
