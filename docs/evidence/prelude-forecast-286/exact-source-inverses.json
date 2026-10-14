@@ -52,6 +52,14 @@
       {
         "before": "        include_str!(\"../prelude.rs\"),\n        include_str!(\"declaration.rs\"),\n",
         "after": "        include_str!(\"../prelude.rs\"),\n        include_str!(\"../prelude/base_schema.rs\"),\n        include_str!(\"../prelude/base_original.rs\"),\n        include_str!(\"declaration.rs\"),\n"
+      },
+      {
+        "before": "        include_str!(\"declaration/functions.rs\"),\n",
+        "after": "        include_str!(\"declaration/functions.rs\"),\n        include_str!(\"declaration/functions/signature_refusal.rs\"),\n        include_str!(\"declaration/functions/signature_refusal/tests.rs\"),\n        include_str!(\"declaration/functions/public_signature_before.rs\"),\n        include_str!(\"declaration/public_signature_before.rs\"),\n"
+      },
+      {
+        "before": "    for part in [\n",
+        "after": "    for part in [\n        include_str!(\"declaration/functions/signature_refusal.rs\"),\n        include_str!(\"declaration/functions/signature_refusal/tests.rs\"),\n        include_str!(\"declaration/functions/public_signature_before.rs\"),\n        include_str!(\"declaration/public_signature_before.rs\"),\n"
       }
     ]
   },

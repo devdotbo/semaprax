@@ -795,6 +795,10 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        // Exact additive canonical-stage controls remain in the full source scan.
+        undo(&mut current, r###"                    include_str!("../src/bounded_output/canonical_stage_tests.rs"),
+                    include_str!("../src/hir/canonical_loan_storage/caller/stage_tests.rs"),
+"###, "");
         undo(&mut current, r###"                include_str!("../src/hir/validation/function_scope/lifecycle/completed/inline_path.rs"),
                 include_str!("../src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs"),
                 include_str!("../src/hir/validation/function_scope/lifecycle/completed/before_inline.rs"),

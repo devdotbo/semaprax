@@ -79,6 +79,41 @@
     "before_sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
     "hooks": [
       {
+        "before": "",
+        "after": "            include_str!(\"../../../../../src/loop_calls/byte_writer/source_index_original.rs\"),\n",
+        "count": 2
+      },
+      {
+        "before": "",
+        "after": "            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/merge/saved.rs\"),\n            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/merge/tests.rs\"),\n",
+        "count": 1
+      },
+      {
+        "before": "",
+        "after": "                include_str!(\"../../../../../src/hir/validation/function_scope/empty_ensures.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/empty_ensures/before.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/empty_ensures/tests.rs\"),\n",
+        "count": 2
+      },
+      {
+        "before": "",
+        "after": "                include_str!(\"../../../../../src/hir/validation/function_scope/lifecycle/completed/inline_path.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/lifecycle/completed/before_inline.rs\"),\n",
+        "count": 1
+      },
+      {
+        "before": "",
+        "after": "                include_str!(\"../../../../../src/source_verify/recovery/callee_components/callee_components_before_actual.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery/before_parameter_signature.rs\"),\n",
+        "count": 1
+      },
+      {
+        "before": "",
+        "after": "            include_str!(\"../../../../../src/bounded_output/canonical_stage_tests.rs\"),\n            include_str!(\"../../../../../src/hir/canonical_loan_storage/caller/stage_tests.rs\"),\n",
+        "count": 1
+      },
+      {
+        "before": "",
+        "after": "                include_str!(\"../../../../../src/source_verify/declaration/functions/signature_refusal.rs\"),\n                include_str!(\"../../../../../src/source_verify/declaration/functions/signature_refusal/tests.rs\"),\n                include_str!(\"../../../../../src/source_verify/declaration/functions/public_signature_before.rs\"),\n                include_str!(\"../../../../../src/source_verify/declaration/public_signature_before.rs\"),\n",
+        "count": 1
+      },
+      {
         "before": "                include_str!(\"../../../../../src/source_verify/iterative/records/records_before_extended.rs\"),\n                \"\\n\",\n",
         "after": "                include_str!(\"../../../../../src/source_verify/iterative/records/records_before_extended.rs\"),\n                include_str!(\"../../../../../src/source_verify/scope/layout_original.rs\"),\n                \"\\n\",\n",
         "count": 1

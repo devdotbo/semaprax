@@ -1,0 +1,98 @@
+{
+  "base": "c2909e508bf4eeefe08b8c1e4d5876129f473439",
+  "qualification": "source-only; no Cargo/build/test/Clippy/runtime",
+  "checks": [
+    {
+      "packet": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "path": "src/hir/validation/function_scope/lifecycle/completed.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "path": "tests/hir_module_boundaries.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "path": "src/loan_plan/paid_live.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "path": "src/loan_plan/paid_plan.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+      "path": "src/prelude.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+      "path": "src/workspace_graph/expected_projection.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+      "path": "src/workspace_graph/expected_projection/held_projection.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+      "path": "src/source_verify/constructor_tests.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+      "path": "tests/workspace/semantic_graph/source_inventory.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "public-template-recovery-799",
+      "path": "src/source_verify/declaration.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "public-template-recovery-799",
+      "path": "src/source_verify/declaration/public_signature_before.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "public-template-recovery-799",
+      "path": "src/source_verify/declaration/functions.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "public-template-recovery-799",
+      "path": "src/source_verify/declaration/functions/public_signature_before.rs",
+      "whole_original_equal": true
+    },
+    {
+      "packet": "public-template-recovery-799",
+      "path": "src/source_verify/iterative.rs",
+      "whole_original_equal": true
+    }
+  ],
+  "current_changed_file_sha256": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "a7b32b694af1e3af18dfc715a9758c975168c518b303c78d28618b6a3a36a0b1",
+    "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json": "37f71af362f43582a41ed2754c1e63768a4de3f519eeb8301df8c7d6ab5788b6",
+    "docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json": "0780cb648ed29df7761cb9c6decc67852a54050c133629fae1498b68a631955b",
+    "docs/evidence/prelude-forecast-286/exact-source-inverses.json": "4b36ac0c7479927955cb1f400e712b873269e4efe8de9242e3c7aed3b4fc252b",
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": "755022a9ed82a47bc296453f6264d17b9610bd352c87d54a5c3c20d255992627",
+    "src/source_verify/constructor_tests.rs": "79fc6385f511d98cdae7404b9100abc21dbd1e793dec7e004509f5f545def0e3",
+    "tests/hir_module_boundaries.rs": "ccf4a27c38171354f27646807811e17c0496a4d997963cbca87d7b7a13c66ce3"
+  },
+  "module_limit": 1500,
+  "all_six_new_children_below_limit": true,
+  "original_archive_bytes_and_sha_fields_unchanged": true
+}

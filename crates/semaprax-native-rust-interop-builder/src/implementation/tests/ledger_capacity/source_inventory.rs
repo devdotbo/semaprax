@@ -631,6 +631,8 @@ macro_rules! hir_validator_source_inventory {
         concat!(
             include_str!("../../../../../src/hir/function_directory/caller.rs"),
             include_str!("../../../../../src/hir/canonical_loan_storage.rs"),
+            include_str!("../../../../../src/bounded_output/canonical_stage_tests.rs"),
+            include_str!("../../../../../src/hir/canonical_loan_storage/caller/stage_tests.rs"),
             include_str!("../../../../../src/hir/canonical_loan_storage/deferred.rs"),
             include_str!("../../../../../src/hir/canonical_loan_storage/deferred/tests.rs"),
             include_str!(
@@ -868,6 +870,10 @@ macro_rules! verifier_source_inventory {
                 include_str!("../../../../../src/source_verify/declaration/declarations.rs"),
                 "\n",
                 include_str!("../../../../../src/source_verify/declaration/functions.rs"),
+                include_str!("../../../../../src/source_verify/declaration/functions/signature_refusal.rs"),
+                include_str!("../../../../../src/source_verify/declaration/functions/signature_refusal/tests.rs"),
+                include_str!("../../../../../src/source_verify/declaration/functions/public_signature_before.rs"),
+                include_str!("../../../../../src/source_verify/declaration/public_signature_before.rs"),
                 "\n",
                 include_str!(
                     "../../../../../src/source_verify/declaration/functions/traversal_scope.rs"

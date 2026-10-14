@@ -121,6 +121,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 ),
                 concat!(
                     include_str!("../src/hir/canonical_loan_storage.rs"),
+                    include_str!("../src/bounded_output/canonical_stage_tests.rs"),
+                    include_str!("../src/hir/canonical_loan_storage/caller/stage_tests.rs"),
                     "\n",
                     concat!(
                         concat!(

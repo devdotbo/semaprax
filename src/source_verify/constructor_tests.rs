@@ -396,6 +396,10 @@ fn complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps() 
         include_str!("../prelude/base_original.rs"),
         include_str!("declaration.rs"),
         include_str!("declaration/functions.rs"),
+        include_str!("declaration/functions/signature_refusal.rs"),
+        include_str!("declaration/functions/signature_refusal/tests.rs"),
+        include_str!("declaration/functions/public_signature_before.rs"),
+        include_str!("declaration/public_signature_before.rs"),
         include_str!("declaration/old.rs"),
         include_str!("declaration/functions/old.rs"),
         include_str!("type_table.rs"),
@@ -409,6 +413,10 @@ fn complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps() 
     assert!(source.contains("DECLARATIONS.get_or_init(owned_declarations)"));
     assert!(source.contains("fn original_initializer_reference"));
     for part in [
+        include_str!("declaration/functions/signature_refusal.rs"),
+        include_str!("declaration/functions/signature_refusal/tests.rs"),
+        include_str!("declaration/functions/public_signature_before.rs"),
+        include_str!("declaration/public_signature_before.rs"),
         include_str!("declaration/functions/old.rs"),
         include_str!("declaration/old.rs"),
         include_str!("type_table/old.rs"),
