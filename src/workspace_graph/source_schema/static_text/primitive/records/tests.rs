@@ -148,9 +148,9 @@ fn captured_record_layout_namespace_and_constructor_body_drift_are_independently
             panic!("record")
         };
         match attack {
-            0 => fields.swap(0, 1),
-            1 => fields[1].ty = hir::ResolvedType::Bytes,
-            2 => fields[1].index = 0,
+            0 => crate::workspace_graph::source_schema::materialize_host_fields(fields).swap(0, 1),
+            1 => crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].ty = hir::ResolvedType::Bytes,
+            2 => crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].index = 0,
             3 => facts.get_mut("flat.Packet.text").unwrap().owner = None,
             4 => record.span.end = record.span.end.checked_add(1).unwrap(),
             _ => {

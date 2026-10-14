@@ -1,0 +1,40 @@
+{
+  "qualification": "authored adapters; no Cargo/build/test execution",
+  "owners": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::source_schema::tests::nominal_renewal_schema_rejects_field_origin_layout_and_duplicate_authority_drift"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::source_schema::consuming_tests::higher_consuming_schema_cannot_mask_forged_record_origin_layout_or_cleanup"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::source_schema::byte_helper::tests::borrowed_nominal_authority_rejects_layout_field_type_and_provenance_drift"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::source_schema::static_text::tests::retained_lexical_composition::retained_vec_composition_rejects_element_layout_finalizer_and_renewal_drift"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::source_schema::static_text::tests::retained_lexical_composition::retained_imported_provider_identity_layout_path_and_body_drift_fail_closed"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::source_schema::static_text::primitive::records::tests::captured_record_layout_namespace_and_constructor_body_drift_are_independently_rejected"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::source_schema::tests::explicit_host_materialization_preserves_complete_original_hostile_controls"
+    }
+  ]
+}

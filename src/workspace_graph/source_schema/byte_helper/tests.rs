@@ -196,7 +196,7 @@ fn borrowed_nominal_authority_rejects_layout_field_type_and_provenance_drift() {
                 else {
                     panic!("record");
                 };
-                fields[0].ty = ResolvedType::Bool;
+                super::super::materialize_host_fields(fields)[0].ty = ResolvedType::Bool;
             }
             4 => {
                 let module = build

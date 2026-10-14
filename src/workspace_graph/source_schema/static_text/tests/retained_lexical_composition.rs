@@ -375,7 +375,7 @@ fn record_fields_mut<'a>(
     let hir::ResolvedTypeDeclarationKind::Record { fields } = &mut record.kind else {
         panic!("record")
     };
-    fields
+    crate::workspace_graph::source_schema::materialize_host_fields(fields)
 }
 
 #[test]

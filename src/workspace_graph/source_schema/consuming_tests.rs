@@ -51,7 +51,7 @@ fn higher_consuming_schema_cannot_mask_forged_record_origin_layout_or_cleanup() 
                 else {
                     panic!("record")
                 };
-                fields[1].ty = hir::ResolvedType::I64;
+                super::materialize_host_fields(fields)[1].ty = hir::ResolvedType::I64;
             }
             2 => build.hir.modules[0]
                 .signature_types

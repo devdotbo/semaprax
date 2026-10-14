@@ -470,6 +470,28 @@ fn select<'a>(
     .map_err(|error| vec![error])
 }
 
+// Hostile controls mutate a detached copy through the same explicit paid API
+// required of any shared owner. Later forged writes remain ordinary host input.
+#[cfg(test)]
+fn materialize_host_fields(
+    payload: &mut hir::NominalPayload<hir::ResolvedFieldDeclaration>,
+) -> &mut Vec<hir::ResolvedFieldDeclaration> {
+    let shared = payload.is_shared();
+    let (result, refused, used, first) = crate::bounded_output::with_limit_usage_refusal(
+        MAX_BUILDER_BYTES,
+        || payload.try_make_mut(|bytes| {
+            crate::bounded_output::reserve_active_required(bytes).then_some(()).ok_or(())
+        }).map(|_| ()) ,
+    );
+    assert!(!refused && first.is_none(), "host materialization must fit the unchanged builder cap");
+    if shared {
+        assert!(used > 0, "a shared host payload must explicitly pay for detachment");
+    }
+    result.expect("explicit paid host materialization");
+    // Successful explicit materialization left the legacy owned Vec carrier.
+    payload
+}
+
 #[cfg(test)]
 mod consuming_tests;
 
@@ -612,7 +634,7 @@ mod tests {
                     else {
                         panic!("record")
                     };
-                    fields[0].ty = hir::ResolvedType::Bool;
+                    materialize_host_fields(fields)[0].ty = hir::ResolvedType::Bool;
                 }
                 3 => {
                     build.hir.modules[0]
@@ -673,6 +695,32 @@ mod tests {
                 build.source_graph_schemas().unwrap_err()[0].code,
                 "SPX-G410"
             );
+        }
+    }
+    #[test]
+    fn explicit_host_materialization_preserves_complete_original_hostile_controls() {
+        use sha2::{Digest, Sha256};
+        let sources = [
+            (include_str!("source_schema.rs"), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema.rs")), "389e63a3e6075306619971be242c0b2a186aaa01024ff04206dcef5461e366b7"),
+            (include_str!("source_schema/consuming_tests.rs"), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__consuming_tests.rs")), "8feff6a9485dd619c77e5459a9c785e8837a7e2905cc8adb99b08dab62d9125d"),
+            (include_str!("source_schema/byte_helper/tests.rs"), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__byte_helper__tests.rs")), "194518112329c43d5e47f2a15a4387df0b0294182b1f51bb3d63e1f6822fcb3d"),
+            (include_str!("source_schema/static_text/tests/retained_lexical_composition.rs"), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__static_text__tests__retained_lexical_composition.rs")), "4a3b721df47651668991ca7a357462ffdedc3f792e6b582e8f75e85a3d5995e0"),
+            (include_str!("source_schema/static_text/primitive/records/tests.rs"), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__static_text__primitive__records__tests.rs")), "cb1a00842c2ee1693200cdecbb6b9d7a7fc6a3a3406964cced2f4752aed32abb"),
+        ];
+        let inverses: serde_json::Value = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"), "/docs/evidence/nominal-host-mutators-827-828/exact-inverses.json"
+        ))).unwrap();
+        assert_eq!(inverses["files"].as_array().unwrap().len(), sources.len());
+        for (index, (current, original, fixed_hash)) in sources.into_iter().enumerate() {
+            assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))), fixed_hash);
+            let mut restored = current.to_owned();
+            for splice in inverses["files"][index]["splices"].as_array().unwrap().iter().rev() {
+                let start = splice["start"].as_u64().unwrap() as usize;
+                let after = splice["after"].as_str().unwrap();
+                assert_eq!(restored.get(start..start + after.len()), Some(after));
+                restored.replace_range(start..start + after.len(), splice["before"].as_str().unwrap());
+            }
+            assert_eq!(restored, original);
         }
     }
 }

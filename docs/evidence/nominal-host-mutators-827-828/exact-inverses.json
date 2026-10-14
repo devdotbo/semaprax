@@ -1,0 +1,80 @@
+{
+  "source_base": "20e1bee0291b37dbf5e74c83c8c4f90b2da6b463",
+  "files": [
+    {
+      "path": "src/workspace_graph/source_schema.rs",
+      "archive": "docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema.rs",
+      "original_sha256": "389e63a3e6075306619971be242c0b2a186aaa01024ff04206dcef5461e366b7",
+      "current_sha256": "d8fc1d3e15cf39b77537c985a2d6168b9d82d80023e0b7b47bc114c579fec5b7",
+      "splices": [
+        {
+          "start": 16406,
+          "before": "",
+          "after": "// Hostile controls mutate a detached copy through the same explicit paid API\n// required of any shared owner. Later forged writes remain ordinary host input.\n#[cfg(test)]\nfn materialize_host_fields(\n    payload: &mut hir::NominalPayload<hir::ResolvedFieldDeclaration>,\n) -> &mut Vec<hir::ResolvedFieldDeclaration> {\n    let shared = payload.is_shared();\n    let (result, refused, used, first) = crate::bounded_output::with_limit_usage_refusal(\n        MAX_BUILDER_BYTES,\n        || payload.try_make_mut(|bytes| {\n            crate::bounded_output::reserve_active_required(bytes).then_some(()).ok_or(())\n        }).map(|_| ()) ,\n    );\n    assert!(!refused && first.is_none(), \"host materialization must fit the unchanged builder cap\");\n    if shared {\n        assert!(used > 0, \"a shared host payload must explicitly pay for detachment\");\n    }\n    result.expect(\"explicit paid host materialization\");\n    // Successful explicit materialization left the legacy owned Vec carrier.\n    payload\n}\n\n"
+        },
+        {
+          "start": 22063,
+          "before": "                    fields[0].ty = hir::ResolvedType::Bool;\n",
+          "after": "                    materialize_host_fields(fields)[0].ty = hir::ResolvedType::Bool;\n"
+        },
+        {
+          "start": 24298,
+          "before": "",
+          "after": "    #[test]\n    fn explicit_host_materialization_preserves_complete_original_hostile_controls() {\n        use sha2::{Digest, Sha256};\n        let sources = [\n            (include_str!(\"source_schema.rs\"), include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema.rs\")), \"389e63a3e6075306619971be242c0b2a186aaa01024ff04206dcef5461e366b7\"),\n            (include_str!(\"source_schema/consuming_tests.rs\"), include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__consuming_tests.rs\")), \"8feff6a9485dd619c77e5459a9c785e8837a7e2905cc8adb99b08dab62d9125d\"),\n            (include_str!(\"source_schema/byte_helper/tests.rs\"), include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__byte_helper__tests.rs\")), \"194518112329c43d5e47f2a15a4387df0b0294182b1f51bb3d63e1f6822fcb3d\"),\n            (include_str!(\"source_schema/static_text/tests/retained_lexical_composition.rs\"), include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__static_text__tests__retained_lexical_composition.rs\")), \"4a3b721df47651668991ca7a357462ffdedc3f792e6b582e8f75e85a3d5995e0\"),\n            (include_str!(\"source_schema/static_text/primitive/records/tests.rs\"), include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__static_text__primitive__records__tests.rs\")), \"cb1a00842c2ee1693200cdecbb6b9d7a7fc6a3a3406964cced2f4752aed32abb\"),\n        ];\n        let inverses: serde_json::Value = serde_json::from_str(include_str!(concat!(\n            env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/nominal-host-mutators-827-828/exact-inverses.json\"\n        ))).unwrap();\n        assert_eq!(inverses[\"files\"].as_array().unwrap().len(), sources.len());\n        for (index, (current, original, fixed_hash)) in sources.into_iter().enumerate() {\n            assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))), fixed_hash);\n            let mut restored = current.to_owned();\n            for splice in inverses[\"files\"][index][\"splices\"].as_array().unwrap().iter().rev() {\n                let start = splice[\"start\"].as_u64().unwrap() as usize;\n                let after = splice[\"after\"].as_str().unwrap();\n                assert_eq!(restored.get(start..start + after.len()), Some(after));\n                restored.replace_range(start..start + after.len(), splice[\"before\"].as_str().unwrap());\n            }\n            assert_eq!(restored, original);\n        }\n    }\n"
+        }
+      ]
+    },
+    {
+      "path": "src/workspace_graph/source_schema/consuming_tests.rs",
+      "archive": "docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__consuming_tests.rs",
+      "original_sha256": "8feff6a9485dd619c77e5459a9c785e8837a7e2905cc8adb99b08dab62d9125d",
+      "current_sha256": "7b0e26a9fe4afc91705edd5ac0117bd5ebb35fd72a0ac89bb4774a548ca2c87c",
+      "splices": [
+        {
+          "start": 1951,
+          "before": "                fields[1].ty = hir::ResolvedType::I64;\n",
+          "after": "                super::materialize_host_fields(fields)[1].ty = hir::ResolvedType::I64;\n"
+        }
+      ]
+    },
+    {
+      "path": "src/workspace_graph/source_schema/byte_helper/tests.rs",
+      "archive": "docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__byte_helper__tests.rs",
+      "original_sha256": "194518112329c43d5e47f2a15a4387df0b0294182b1f51bb3d63e1f6822fcb3d",
+      "current_sha256": "ca696de3f3e3605352f0c2fd8daa0744d9f2c99f4366bbf09dc545e830075dbc",
+      "splices": [
+        {
+          "start": 6752,
+          "before": "                fields[0].ty = ResolvedType::Bool;\n",
+          "after": "                super::super::materialize_host_fields(fields)[0].ty = ResolvedType::Bool;\n"
+        }
+      ]
+    },
+    {
+      "path": "src/workspace_graph/source_schema/static_text/tests/retained_lexical_composition.rs",
+      "archive": "docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__static_text__tests__retained_lexical_composition.rs",
+      "original_sha256": "4a3b721df47651668991ca7a357462ffdedc3f792e6b582e8f75e85a3d5995e0",
+      "current_sha256": "1a485ed35c91faf674fb5239334115b92c2548145fbf96bcd29af0d81e842322",
+      "splices": [
+        {
+          "start": 13084,
+          "before": "    fields\n",
+          "after": "    crate::workspace_graph::source_schema::materialize_host_fields(fields)\n"
+        }
+      ]
+    },
+    {
+      "path": "src/workspace_graph/source_schema/static_text/primitive/records/tests.rs",
+      "archive": "docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__static_text__primitive__records__tests.rs",
+      "original_sha256": "cb1a00842c2ee1693200cdecbb6b9d7a7fc6a3a3406964cced2f4752aed32abb",
+      "current_sha256": "3f69a4098592ddfe15fcc36e1b041be1855be49ba62646933175909c2526e696",
+      "splices": [
+        {
+          "start": 5760,
+          "before": "            0 => fields.swap(0, 1),\n            1 => fields[1].ty = hir::ResolvedType::Bytes,\n            2 => fields[1].index = 0,\n",
+          "after": "            0 => crate::workspace_graph::source_schema::materialize_host_fields(fields).swap(0, 1),\n            1 => crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].ty = hir::ResolvedType::Bytes,\n            2 => crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].index = 0,\n"
+        }
+      ]
+    }
+  ]
+}
