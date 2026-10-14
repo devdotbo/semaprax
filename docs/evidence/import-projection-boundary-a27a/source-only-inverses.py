@@ -10,6 +10,10 @@ for row in packet['whole_inverse_hooks']:
     archive=(root/row['archive']).read_bytes()
     assert sha(source)==row['receiving_sha256']
     assert sha(archive)==row['before_sha256']
+    for edit in row.get('additional_receiving_inverses', []):
+        new=edit['after'].encode();old=edit['before'].encode()
+        assert source.count(new)==1
+        source=source.replace(new,old,1)
     new=row['unique_new_imports'].encode();old=row['original_import'].encode()
     assert source.count(new)==1
     assert source.replace(new,old,1)==archive

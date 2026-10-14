@@ -24,7 +24,7 @@
     "src/workspace_graph/expected_projection/borrowed_imports/tests/full/original_construct.rs": "addbd5fc75f95d405bcb82b7efa519b75a1a2eba9e93d1fd609ee3ab8f19947b",
     "src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs": "2338bddf38ef3e6bbf2543ad8ab0d52c1ab68ddda8c01325895ffa2b723b6fe0",
     "src/workspace_graph/expected_projection/borrowed_imports/tests/full/receiving.rs": "b17f58e7c4a6e45b67deb0e685bcea5655cfac22f34d6667daf458df989975f0",
-    "src/workspace_graph/expected_projection/borrowed_imports/tests/full/transient.rs": "19afc4f28710fa2b4f6c900165a1cff4106a08e3c703d73e1a83bcea3021c529",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/full/transient.rs": "e2b5471e9834d97e7009da9f4b10e780a214c1b4d927c9f9b65d0b98460aebb2",
     "src/workspace_graph/expected_projection/borrowed_imports/tests/initialization.rs": "f2609c5d3880aa06992de4b92657912fbb579eaa00e7b44e19bfbad96a2eafa9",
     "src/workspace_graph/expected_projection/borrowed_imports/tests/old.rs": "157ba720a1292c5ffbf36823a1654e6bda84b9b61de8740baeaa0e146915a943",
     "src/workspace_graph/expected_projection/borrowed_leaf.rs": "84207cdd985a765401872579baf89bec60471e8c877cdcfb825952adb812fb9a",
@@ -117,10 +117,17 @@
       "source": "src/workspace_graph/expected_projection/borrowed_imports/tests/full/transient.rs",
       "archive": "docs/evidence/import-projection-boundary-a27a/src__workspace_graph__expected_projection__borrowed_imports__tests__full__transient.rs.before",
       "before_sha256": "d59b583633d6d16152925233fc232abcbcdc667c7739d1248b92e67fc7952baa",
-      "receiving_sha256": "19afc4f28710fa2b4f6c900165a1cff4106a08e3c703d73e1a83bcea3021c529",
+      "receiving_sha256": "e2b5471e9834d97e7009da9f4b10e780a214c1b4d927c9f9b65d0b98460aebb2",
       "unique_new_imports": "use super::{\n    linked, old, sources, BOX_CALLER, BOX_PROVIDER, CLASS_CALLER, CLASS_PROVIDER,\n    INVARIANT_CALLER, INVARIANT_PROVIDER, VEC_CALLER, VEC_PROVIDER,\n};\nuse crate::ast::program_source::ProgramSource;\nuse crate::bounded_output::with_limit_usage_refusal;\nuse crate::diagnostic::Diagnostic;\nuse crate::hir;\nuse crate::test_allocation_observer::measure;\nuse crate::workspace_graph::expected_projection::borrowed_imports::LayoutRegistry;\nuse crate::workspace_graph::{index_authored, reserve_builder_structure};\n",
       "original_import": "use super::*;\n",
-      "complete_inverse_equal": true
+      "complete_inverse_equal": true,
+      "additional_receiving_inverses": [
+        {
+          "name": "strict allocation assertion diagnostic context only",
+          "after": "        assert_eq!(\n            old.allocated, current.allocated + removed,\n            \"module={} expected_authored_spare_slots=(functions:{}, types:{}) expected_removed_bytes={removed}; current_route=construct_transient current={current:?} current_paid={paid}; old_route=construct_receiving old={old:?} old_paid={old_paid}\",\n            programs[0].module, programs[0].functions.len(), programs[0].types.len()\n        );\n",
+          "before": "        assert_eq!(old.allocated, current.allocated + removed);\n"
+        }
+      ]
     }
   ],
   "exact_pending_selectors": [

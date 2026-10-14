@@ -1,0 +1,18 @@
+{
+  "status": "SOURCE_ONLY_DIAGNOSTIC_CONTEXT_PENDING_ACTUAL_EXECUTION",
+  "base": "8ce5c0fb7d65d1a13e150bf2044c8aed011f57bf",
+  "source": "src/workspace_graph/expected_projection/borrowed_imports/tests/full/transient.rs",
+  "before_sha256": "19afc4f28710fa2b4f6c900165a1cff4106a08e3c703d73e1a83bcea3021c529",
+  "receiving_sha256": "e2b5471e9834d97e7009da9f4b10e780a214c1b4d927c9f9b65d0b98460aebb2",
+  "predicate_unchanged": "old.allocated == current.allocated + removed",
+  "exact_unique_context_inverse": {
+    "after": "        assert_eq!(\n            old.allocated, current.allocated + removed,\n            \"module={} expected_authored_spare_slots=(functions:{}, types:{}) expected_removed_bytes={removed}; current_route=construct_transient current={current:?} current_paid={paid}; old_route=construct_receiving old={old:?} old_paid={old_paid}\",\n            programs[0].module, programs[0].functions.len(), programs[0].types.len()\n        );\n",
+    "before": "        assert_eq!(old.allocated, current.allocated + removed);\n"
+  },
+  "counts_are": "Expected source-derived authored spare slots and sizeof-derived bytes, not asserted actual directory capacities",
+  "actual_allocator_snapshots_unchanged": true,
+  "owning_selector": "workspace_graph::expected_projection::borrowed_imports::tests::full::transient::actual_transient_import_constructor_removes_only_authored_cache_spare_and_pays_drop",
+  "harness": "semaprax::lib",
+  "Cargo_or_tests": false,
+  "original_archives_changed": false
+}

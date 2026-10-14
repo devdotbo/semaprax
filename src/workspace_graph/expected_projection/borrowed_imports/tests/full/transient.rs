@@ -57,7 +57,11 @@ fn actual_transient_import_constructor_removes_only_authored_cache_spare_and_pay
         assert!(ok && old_ok && !refused && !old_refused && !first && !old_first);
         let removed = programs[0].functions.len() * std::mem::size_of::<crate::ast::Function>()
             + programs[0].types.len() * std::mem::size_of::<crate::ast::TypeDeclaration>();
-        assert_eq!(old.allocated, current.allocated + removed);
+        assert_eq!(
+            old.allocated, current.allocated + removed,
+            "module={} expected_authored_spare_slots=(functions:{}, types:{}) expected_removed_bytes={removed}; current_route=construct_transient current={current:?} current_paid={paid}; old_route=construct_receiving old={old:?} old_paid={old_paid}",
+            programs[0].module, programs[0].functions.len(), programs[0].types.len()
+        );
         let generated =
             Input::construct_transient(&programs[0], &authored, &programs, &registry).unwrap();
         let view = generated.borrowed().unwrap();
