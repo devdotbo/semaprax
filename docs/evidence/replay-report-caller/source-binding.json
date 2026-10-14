@@ -41,19 +41,19 @@
     "src/semantic_workspace_structural_change/reporting.rs": "c96d766294222e9a90fa6e243308cb336bde4a278bc1bd05dd08199357e93768",
     "src/semantic_workspace_structural_change/reporting/prepare.rs": "fd016c1365373fb935a974c1c44f93b87e0e4da2d9e308c39cab558fd89e3cb8",
     "src/workspace/semantic_read.rs": "17ff388fa360bda567ef6ca6d16b192bb83688fdf2ba01c7e850ce5734cb86dd",
-    "src/workspace/semantic_read/tests.rs": "3871ca1e385c556602d0bb0a9335c4c4435b6f2e375836d993e7854eb3eb3697",
+    "src/workspace/semantic_read/tests.rs": "dfe3e2749cb0980033fbf549bd3a64e865b0c92e2aa55f9f78ffc05ebcbc0347",
     "src/workspace_graph/paid_view.rs": "a6f774b3ae0a31ebe02d8db7f66f204267477fe40d26f55f10d8a0a170b1c39d",
     "src/workspace_report.rs": "30c028325579c97df48d978d51dcab67f5331e91c53968fa4628178254ddfc76",
     "src/workspace_report/original.rs": "14d67340a4fdbb31429a1b9216eed82b9ee0cf6de8805583f04740f5cdfb6990",
     "src/workspace_report/tests.rs": "c453565bdada04c82302d55c226324e334e325fc29ecb489855531d8a00cd652",
     "src/workspace_report/tests/caller.rs": "00296eeb8a8844ad5468e26c0f610da4e3a2e6774a5ecf28a02cedf4cf826d36",
     "tests/workspace/semantic_change.rs": "d161ed6fadf92b518e48ace904e701bfa5b2644859340fafd37010816227c04f",
-    "tests/workspace/semantic_change/reporting.rs": "5ef9fbfd2836ff7a12feea43de5be573020be68fee9f61608321cf8f4423ac81",
+    "tests/workspace/semantic_change/reporting.rs": "e2cdfa00b312d7750d35dd765e3e5b4b8fdae55dd962cacdf43f5451019b179c",
     "tests/workspace/semantic_graph/source_inventory.rs": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
     "tests/workspace/semantic_operations.rs": "c97dbf2bb3def9e569ca4563f3c92de6ea248e96e9a77fa3c3a68642eac74a34",
     "tests/workspace/semantic_operations/reporting.rs": "4a9da0af75dd27877bd98be3e78489f4d7acd1d550be981712ee182fd96ce971",
     "tests/workspace/semantic_structural_change.rs": "ec963928ca32fc47883e7c23d65fc6f805883f09e1e5f3c6a4818e4f5d443826",
-    "tests/workspace/semantic_structural_change/reporting.rs": "a6fac9046e742ee9cf1c8c8123c45e096b5afed5011f3d691c24da68576181c3"
+    "tests/workspace/semantic_structural_change/reporting.rs": "163b5ff0a939c8580692c5fe8d9b9daa44be9af0ed595ecb8691c2b459147fee"
   },
   "new_routes": [
     "semantic_workspace_change::reporting::{generate,preview,evidence,verify,apply}",

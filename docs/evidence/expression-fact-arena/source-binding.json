@@ -13,7 +13,7 @@
     "src/cleanup_plan/replay/scalar_replay.rs": "48603f16f8fec4d6290a20cdc5729f0e8372c9064ec5d500f002760595056ef6",
     "src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs": "1fff759bb8c4fbf58e3ab41d81c3033e2464e09a362a7ece926b98784aef75a8",
     "src/cleanup_plan/replay/structural_control/blocks.rs": "04b3b312866bde5572832a8a753cd963edcef45ec6f7dbcc5c2023bbba40928e",
-    "tests/hir_module_boundaries.rs": "2dd739df78683738201afae62537dc9c296549e698a27fce28be1ad53af61241",
+    "tests/hir_module_boundaries.rs": "328ec856a7c00f6ae3e0cc01811242505155cad169835881ddada6683f5ba2f1",
     "docs/evidence/expression-fact-arena/original_capacity.txt": "f95245c44f2ec9ba13d288f58ceac361a3b3784d752fab16d4595de1b9b347ba",
     "docs/evidence/expression-fact-arena/original_facts.txt": "ff2ce0e84fe159c585901635fe49d356ac1342ccfeecd0ebe20ffb815d98e398",
     "docs/evidence/expression-fact-arena/original_receivers.txt": "6325749010bdbfec9b7172f1bed9e3aff18b41d2ad5236b099a67a855e0406c6",
