@@ -29,7 +29,7 @@ impl<'a> Active<'a> {
         }
         Ok(())
     }
-    fn remove(&mut self, id: &DeclarationId) {
+    fn remove(&mut self, id: &'a DeclarationId) {
         if let Some(slot) = self
             .inline
             .iter_mut()
