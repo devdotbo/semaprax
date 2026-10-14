@@ -60,7 +60,11 @@ mod tests {
         let old = extract(old, "pub(crate) fn resolve_source_checked<");
         let current = extract(current, "pub(crate) fn resolve_source_checked_previous<")
             .replace("resolve_source_checked_previous", "resolve_source_checked")
-            .replace("Option<&dyn ProgramSource>", "Option<&Program>");
+            .replace("Option<&dyn ProgramSource>", "Option<&Program>")
+            .replace(
+                "function_reuse_environment_is_exact(program, *previous)",
+                "function_reuse_environment_is_exact(program, previous)",
+            );
         assert_eq!(old, current);
     }
 }
