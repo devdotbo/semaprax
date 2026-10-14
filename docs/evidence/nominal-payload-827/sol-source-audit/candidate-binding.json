@@ -1,0 +1,59 @@
+{
+  "candidate": "20e1bee0291b37dbf5e74c83c8c4f90b2da6b463",
+  "execution": false,
+  "bounded_source_audit_only": true,
+  "rows": [
+    {
+      "source": "src/workspace_graph/identity_resolution/base.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/import_stub/core_proofs.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/workspace_graph.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/invocation.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/hir/identity_resolution/nominal.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/hir/declaration_index/nominal_base.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/hir/declaration_index/identity_payer.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/hir/declaration_index/nominal_rollback.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/hir/declaration_index/nominal.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/hir/nominal_payload/map.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/bounded_output/identity_reservation/base_prelude.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/bounded_output/identity_reservation/producer_failure.rs",
+      "matches_candidate": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/fixed_work.rs",
+      "matches_candidate": true
+    }
+  ]
+}
