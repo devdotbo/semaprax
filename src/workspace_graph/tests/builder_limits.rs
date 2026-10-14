@@ -331,17 +331,42 @@ fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refu
         expected_projection::retention_prebound_mode(&programs, &authored, true, 2).unwrap();
     assert!(original.1 <= MAX_BUILDER_BYTES && tight.1 < original.1);
 
+    // Capture the actual producer's ordered source/registry reservation before
+    // interpreting a legacy standalone forecast as a completed debit.
+    let mut ordered = sources.clone();
+    ordered.sort_by(|left, right| left.path.cmp(&right.path));
+    let ordered_programs = parsed_sources(&ordered);
+    let ordered_authored = index_authored(&ordered_programs).unwrap();
+    let ordered_modules = index_modules(&ordered_programs).unwrap();
+    let registry = expected_projection::private_layout::registry::LayoutRegistry::new(
+        &ordered_programs, &ordered_authored,
+    );
+    import_validation::validate_uses_with_registry(
+        &ordered_programs, &ordered_modules, &ordered_authored, Some(&registry),
+    ).unwrap();
+    let actual_initial = expected_projection::cached_exact::initial_with_registry(
+        &ordered_programs, &ordered_authored, true,
+        expected_projection::cached_exact::Retention::Parsed, Some(&registry),
+    ).unwrap();
+    let registry_receipt = registry.receipt();
+    crate::bounded_output::stage_debits::take_completed();
     CORE_BUILD_ATTEMPTS.with(|attempts| attempts.set(0));
-    let (nested, _, nested_debit) =
-        crate::bounded_output::with_limit_usage(MAX_BUILDER_BYTES, || {
-            build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES)
+    let (nested, nested_overflow, nested_debit, first_refusal) =
+        crate::bounded_output::with_limit_usage_refusal(MAX_BUILDER_BYTES, || {
+            let before = crate::bounded_output::active_remaining();
+            let result = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES);
+            eprintln!("identity-retry-parent before={before:?} after={:?}", crate::bounded_output::active_remaining());
+            result
         });
+    let trace = crate::bounded_output::stage_debits::take_completed();
+    eprintln!("identity-retry-contract legacy={original:?} tight={tight:?} actual_initial={actual_initial:?} registry_receipt={registry_receipt} nested_overflow={nested_overflow} nested_debit={nested_debit} first_refusal={first_refusal:?} trace={trace:?}");
     let errors = nested
         .err()
         .expect("enclosing budget must not be reset for retry");
     assert_eq!(errors[0].code, "SPX-G171");
     assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), 1);
-    assert!(nested_debit >= original.0);
+    assert!(nested_debit >= original.0,
+        "failed phase debit remains required: legacy={original:?}, actual_initial={actual_initial:?}, registry={registry_receipt}, debit={nested_debit}, first={first_refusal:?}, trace={trace:?}");
 
     CORE_BUILD_ATTEMPTS.with(|attempts| attempts.set(0));
     let built = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES).unwrap();

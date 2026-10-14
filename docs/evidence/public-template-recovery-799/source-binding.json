@@ -6,7 +6,7 @@
     "src/source_verify/declaration/functions.rs": "66c5704c3d423fb73c790c34bf273b30ed21e835790e6034b42e299f0a71a474",
     "src/source_verify/iterative.rs": "ab396db1af79d103ff988289513111d8ee8c902378320bcde9c04bce98b7e3c8",
     "src/source_verify/declaration/functions/signature_refusal.rs": "8c83998cd30140d73c4100ae4296b016bb9fae7f97a4abe51e04a61ca35843fb",
-    "src/source_verify/declaration/functions/signature_refusal/tests.rs": "8f3d2b544de29be9989aadf9cbe686b75e7ad49ba4512357d73155d8614d3065",
+    "src/source_verify/declaration/functions/signature_refusal/tests.rs": "0d61c9dc92671a1d01b840c9b7b3b2dd08bbd824ad1af3a1c85efe20b47f872a",
     "src/source_verify/declaration/functions/public_signature_before.rs": "21cf514809f4f9d271d5497744d948203ecca1afbd924c4a22061884117bf129",
     "src/source_verify/declaration/public_signature_before.rs": "7c385c983031164a5f1e292256c7ec0b4a387439ff7ab414050aab89f9a1fab3",
     "src/source_verify/diagnostics.rs": "95bd8721029021074f39f5c76e4e0183771831112f591143e4a42bd90ce670d9",

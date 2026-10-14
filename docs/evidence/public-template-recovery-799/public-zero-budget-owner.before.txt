@@ -1,0 +1,35 @@
+fn public_error_receipts_and_complete_drop_keep_zero_and_sticky_unpaid_boundary_explicit() {
+    let program = crate::parse(
+        &source("@id(\"t.f\") fn f<T>(b:Missing,c:bool)->i64{b+missing_sibling}"),
+        Path::new("public-template-recovery.spx"),
+    )
+    .unwrap();
+    let expected = crate::source_verify::verify(&program);
+    assert_eq!(codes(&expected), ["SPX-T220", "SPX-T202"]);
+    for poisoned in [false, true] {
+        let (((), metrics), refused, paid, first) =
+            crate::bounded_output::with_limit_usage_refusal(0, || {
+                if poisoned {
+                    assert!(!crate::bounded_output::reserve_active_required(1));
+                }
+                crate::test_allocation_observer::measure(|| {
+                    let current = crate::source_verify::verify(&program);
+                    assert_eq!(current, expected);
+                    drop(current);
+                })
+            });
+        assert_eq!(refused, poisoned);
+        assert_eq!(paid, 0);
+        assert_eq!(
+            first.map(|receipt| receipt.requested),
+            poisoned.then_some(1)
+        );
+        assert!(!metrics.invalid);
+        assert!(
+            metrics.allocated > 0,
+            "ordinary verifier storage remains unpaid"
+        );
+        assert_eq!(metrics.allocated, metrics.freed);
+        assert_eq!(metrics.live, 0);
+    }
+}

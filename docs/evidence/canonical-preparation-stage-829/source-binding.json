@@ -33,6 +33,10 @@
     {
       "path": "src/hir/canonical_loan_storage/caller/sealed_before_stage.rs",
       "sha256": "e0e407c6d67b7bd0c38a2fa081144d27323f5addb9528ce487a71172c5c17475"
+    },
+    {
+      "path": "src/workspace_graph/tests/builder_limits.rs",
+      "sha256": "e41f9ff3d3e38b51a11790d84c6d04213ee5b1c0b5c9e6c1ad8b52a764f9ba79"
     }
   ],
   "unchanged_production_and_complete_old_sources": [

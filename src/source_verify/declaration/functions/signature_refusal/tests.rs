@@ -291,7 +291,29 @@ fn public_error_receipts_and_complete_drop_keep_zero_and_sticky_unpaid_boundary_
     .unwrap();
     let expected = crate::source_verify::verify(&program);
     assert_eq!(codes(&expected), ["SPX-T220", "SPX-T202"]);
+    let old_expected = crate::source_verify::declaration::public_signature_before::verify(&program);
+    assert_eq!(
+        codes(&old_expected),
+        ["SPX-T224", "SPX-T220", "SPX-T202", "SPX-T208"]
+    );
     for poisoned in [false, true] {
+        let (((), old_metrics), old_refused, old_paid, old_first) =
+            crate::bounded_output::with_limit_usage_refusal(0, || {
+                if poisoned {
+                    assert!(!crate::bounded_output::reserve_active_required(1));
+                }
+                crate::test_allocation_observer::measure(|| {
+                    let actual = crate::source_verify::declaration::public_signature_before::verify(
+                        &program,
+                    );
+                    assert_eq!(actual, old_expected);
+                    drop(actual);
+                })
+            });
+        assert!(!old_metrics.invalid);
+        assert!(old_metrics.allocated > 0);
+        assert_eq!(old_metrics.allocated, old_metrics.freed);
+        assert_eq!(old_metrics.live, 0);
         let (((), metrics), refused, paid, first) =
             crate::bounded_output::with_limit_usage_refusal(0, || {
                 if poisoned {
@@ -303,12 +325,13 @@ fn public_error_receipts_and_complete_drop_keep_zero_and_sticky_unpaid_boundary_
                     drop(current);
                 })
             });
-        assert_eq!(refused, poisoned);
+        assert_eq!((refused, paid, first), (old_refused, old_paid, old_first));
         assert_eq!(paid, 0);
-        assert_eq!(
-            first.map(|receipt| receipt.requested),
-            poisoned.then_some(1)
-        );
+        if poisoned {
+            assert!(refused);
+            assert_eq!(first.unwrap().requested, 1);
+        }
+        eprintln!("public-template-budget poisoned={poisoned} old_refused={old_refused} current_refused={refused} old_paid={old_paid} current_paid={paid} old_first={old_first:?} current_first={first:?}");
         assert!(!metrics.invalid);
         assert!(
             metrics.allocated > 0,

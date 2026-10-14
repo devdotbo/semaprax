@@ -1,0 +1,30 @@
+{
+  "qualification": "source-only correction/instrumentation; no runtime re-execution",
+  "actual_prior_failures": [
+    {
+      "path": "/Volumes/Semaprax/lane-prompts/combined-799-829-826-16046-20261015/owning-selected-05.log",
+      "sha256": "5ce9972966f630c2223b7916782837737d0473e18ce74e9dd272bd410601eb07",
+      "actual_exit": 101
+    },
+    {
+      "path": "/Volumes/Semaprax/lane-prompts/combined-799-829-826-16046-20261015/owning-selected-16.log",
+      "sha256": "d8a85a1a56236a9b0c70c955e20c6c9ce09c315bded12a98ddd61e8b28238ec2",
+      "actual_exit": 101
+    }
+  ],
+  "old_owner_archives": [
+    {
+      "path": "docs/evidence/public-template-recovery-799/public-zero-budget-owner.before.txt",
+      "sha256": "18436118a22630079637b92d7f2b07cfebeac36ab2723d6c3d9b8b59189ed9cd"
+    },
+    {
+      "path": "docs/evidence/canonical-preparation-stage-829/actual-retry-owner.before.txt",
+      "sha256": "570169dd6e957033921ac52ba62347f02fb627c111acc81ea1cea88d2f40800d"
+    }
+  ],
+  "preserved_nested_lower_bound": "nested_debit >= original.0",
+  "preserved_actual_unscoped_attempts": 2,
+  "owner6_expected_contract": "complete prior public receiver actual same0/sticky Budget, full first receipt and complete observed Drop; current primary T220/independentT202 unchanged",
+  "unresolved_first_payer": "exact prior/public first refusal to be printed by next owning execution; not identified from old raw failure log",
+  "runtime_remaining": "all owners require root execution"
+}
