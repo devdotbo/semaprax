@@ -870,6 +870,10 @@ mod oracle_source_inventory;
                 include_str!("../src/hir/resolve_box_call/list/identity_tests.rs"),
                 include_str!("../src/hir/resolve_box_call/iterator/identity_tests.rs"),
 "###, "");
+        undo(&mut current, r###"        include_str!("../src/cleanup_plan/replay/factored/canonical_shared.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_before.rs"),
+"###, "");
         undo(&mut current, r###"        include_str!("../src/cleanup_plan/replay/factored/oracle_hook/closure_controls.rs"),
 "###, "");
         undo(

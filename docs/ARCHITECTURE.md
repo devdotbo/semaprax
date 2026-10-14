@@ -131,6 +131,15 @@ has no authority. Expression-scoped Copy discovery closes before caller-prefix
 sequencing. The held automata, weighted proof and selected physical backing share
 one cumulative ledger; the selected provider/type profile remains separate.
 
+`factored/canonical_shared.rs` owns ordinary immutable weighted payload sharing
+for both ordinary and selected lexical canonicalization. Moved vectors retain
+full backing reservations; Rc headers, frame slots and map nodes acquire their
+actual layouts before construction. Sharing keeps the original len-plus-one
+copy work and zero-byte sticky payer authentication. The complete original
+receiver remains in test-only `factored/canonical_before.rs`; source-custody
+inverses join its full interior and the HIR authority scan includes both owners
+and their receiving controls. Qualification and application fit remain pending.
+
 `hir/resolve_program/initial_loan_plans.rs` owns the initial authored and
 instantiated loan-plan attachment. Active construction captures one existing
 CFG reservation and funds complete planner scratch. One caller-held staging

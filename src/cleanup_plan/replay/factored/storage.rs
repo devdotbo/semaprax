@@ -90,6 +90,7 @@ pub(super) fn reserve_transition_observation(
     Ok(())
 }
 
+#[cfg(test)]
 pub(super) fn clone_weighted(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,

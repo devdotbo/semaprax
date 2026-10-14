@@ -322,7 +322,7 @@ pub(in crate::cleanup_plan::replay) fn validate_authenticated(
                 hir_root,
                 plan_root,
             } = &candidate.built;
-            let mut canonical = Canonicalizer::new(automaton, *sink);
+            let mut canonical = canonical_shared::Canonicalizer::new(automaton, *sink);
             budget.reserve_array::<(usize, u64)>(function, 1, "lexical HIR weighted root")?;
             let hir = canonical.id(function, vec![(*hir_root, 1)], budget);
             #[cfg(test)]

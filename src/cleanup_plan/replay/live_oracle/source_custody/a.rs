@@ -238,6 +238,53 @@ pub(in crate::cleanup_plan::replay) use metered::raw as raw_error_metered;
     }
     {
         let mut current = include_str!("../../factored.rs").to_owned();
+        // Join the complete relocated old receiver before the existing inverse.
+        let before = include_str!("../../factored/canonical_before.rs");
+        let original = before
+            .strip_prefix(
+                r###"//! Complete pre-sharing receiver; its interior is retained verbatim.
+use super::*;
+
+"###,
+            )
+            .unwrap()
+            .strip_suffix(
+                r###"// The wrapper exposes the unchanged receiver to sibling controls.
+pub(super) struct Receiver<'a>(Canonicalizer<'a>);
+impl<'a> Receiver<'a> {
+    pub(super) fn new(automaton: &'a Automaton, sink: usize) -> Self {
+        Self(Canonicalizer::new(automaton, sink))
+    }
+    pub(super) fn id(
+        &mut self,
+        function: &ResolvedFunction,
+        root: Weighted,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<usize>, Diagnostic> {
+        self.0.id(function, root, budget)
+    }
+    pub(super) fn states(&self) -> &BTreeMap<Weighted, usize> {
+        &self.0.states
+    }
+    pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {
+        &self.0.ids
+    }
+}
+"###,
+            )
+            .unwrap();
+        undo(&mut current, "#[cfg(test)]\nmod canonical_before;\nmod canonical_shared;\n", "");
+        undo(&mut current, "#[cfg(test)]\nuse canonical_before::Receiver as Canonicalizer;\n", "");
+        undo(
+            &mut current,
+            "    let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);",
+            "    let mut canonical = Canonicalizer::new(&automaton, sink);",
+        );
+        let marker = "/// Test builds compare the factored verdict";
+        assert_eq!(current.matches(marker).count(), 1);
+        assert_eq!(original.matches("#[rustfmt::skip]\n").count(), 1);
+        let original = original.replacen("#[rustfmt::skip]\n", "", 1);
+        current = current.replacen(marker, &format!("{original}{marker}"), 1);
         undo(
             &mut current,
             r#"        assert_eq!(short.allocated, short.freed);

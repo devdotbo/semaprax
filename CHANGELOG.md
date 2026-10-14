@@ -3,6 +3,11 @@
 - Avoid constructing an unused validator result scope for functions without
   postconditions, while retaining all result/body checks and sticky funding
   authentication. Complete original and receiving controls await qualification.
+- Author paid immutable weighted payload sharing at the ordinary and selected
+  lexical factored canonical receivers. Preserve complete original algebra,
+  work debits and full source-custody controls; add physical backing, refusal
+  and destruction controls. Runtime qualification and application fit remain
+  pending; no ceiling changes.
 
 - Author additive paid streaming constructor preflight and shared exact-program
   function-directory custody (#824), preserving complete independent originals,
