@@ -1,0 +1,64 @@
+{
+  "base": "b44c3722fef595382157945b6dc2f4daf9522b0a",
+  "status": "source-only; unexecuted",
+  "diagnostic_fields": [
+    "code",
+    "severity",
+    "message",
+    "path",
+    "span",
+    "help"
+  ],
+  "span_fields": [
+    "start",
+    "end",
+    "line",
+    "column"
+  ],
+  "nonexistent_fields": "Actual Diagnostic has no labels or notes; exhaustive destructuring makes any future field addition a compile-time requirement.",
+  "comparison": "Borrowed field comparisons and scalar span tuples only; no clone, Debug-only comparison, JSON/serde or heap allocation on success.",
+  "public_api_changes": false,
+  "selectors_changed": false,
+  "source_inverses": [
+    {
+      "source": "tests/workspace/semantic_change/reporting.rs",
+      "original_sha256": "adc5d1679f911c5f41198ff8a8af52f585a176cc1cc30f4dbadf79b76c1fd020",
+      "current_sha256": "5ef9fbfd2836ff7a12feea43de5be573020be68fee9f61608321cf8f4423ac81",
+      "named_inverse": "restore_original_slice_equality_assertion_remove_complete_field_comparator",
+      "assertion_before": "    assert_eq!(current.reported().unwrap(), old.as_slice());",
+      "assertion_after": "    assert_complete_report_equality(current.reported().unwrap(), old.as_slice());",
+      "additive_helper": "// Complete semantic equality without the library's cfg(test)-only PartialEq.\nfn assert_complete_report_equality(\n    actual: &[semaprax::diagnostic::Diagnostic],\n    expected: &[semaprax::diagnostic::Diagnostic],\n) {\n    use semaprax::{ast::Span, diagnostic::Diagnostic};\n    assert_eq!(actual.len(), expected.len());\n    for (actual, expected) in actual.iter().zip(expected) {\n        // Exhaustive patterns ensure a future field cannot be silently omitted.\n        let Diagnostic {\n            code,\n            severity,\n            message,\n            path,\n            span,\n            help,\n        } = actual;\n        let Diagnostic {\n            code: expected_code,\n            severity: expected_severity,\n            message: expected_message,\n            path: expected_path,\n            span: expected_span,\n            help: expected_help,\n        } = expected;\n        assert_eq!(code, expected_code);\n        assert_eq!(severity, expected_severity);\n        assert_eq!(message.as_ref(), expected_message.as_ref());\n        assert_eq!(path.as_deref(), expected_path.as_deref());\n        assert_eq!(\n            span.map(\n                |Span {\n                     start,\n                     end,\n                     line,\n                     column,\n                 }| (start, end, line, column)\n            ),\n            expected_span.map(\n                |Span {\n                     start,\n                     end,\n                     line,\n                     column,\n                 }| (start, end, line, column)\n            ),\n        );\n        assert_eq!(help.as_deref(), expected_help.as_deref());\n    }\n}\n",
+      "complete_original_projection": "verified byte-exact",
+      "lines": 98
+    },
+    {
+      "source": "tests/workspace/semantic_operations/reporting.rs",
+      "original_sha256": "b126b8b32930415dff18e5694a428a2bfb283232a979253da3619de122903861",
+      "current_sha256": "4a9da0af75dd27877bd98be3e78489f4d7acd1d550be981712ee182fd96ce971",
+      "named_inverse": "restore_original_slice_equality_assertion_remove_complete_field_comparator",
+      "assertion_before": "    assert_eq!(current.reported().unwrap(), old.as_slice());",
+      "assertion_after": "    assert_complete_report_equality(current.reported().unwrap(), old.as_slice());",
+      "additive_helper": "// Complete semantic equality without the library's cfg(test)-only PartialEq.\nfn assert_complete_report_equality(\n    actual: &[semaprax::diagnostic::Diagnostic],\n    expected: &[semaprax::diagnostic::Diagnostic],\n) {\n    use semaprax::{ast::Span, diagnostic::Diagnostic};\n    assert_eq!(actual.len(), expected.len());\n    for (actual, expected) in actual.iter().zip(expected) {\n        // Exhaustive patterns ensure a future field cannot be silently omitted.\n        let Diagnostic {\n            code,\n            severity,\n            message,\n            path,\n            span,\n            help,\n        } = actual;\n        let Diagnostic {\n            code: expected_code,\n            severity: expected_severity,\n            message: expected_message,\n            path: expected_path,\n            span: expected_span,\n            help: expected_help,\n        } = expected;\n        assert_eq!(code, expected_code);\n        assert_eq!(severity, expected_severity);\n        assert_eq!(message.as_ref(), expected_message.as_ref());\n        assert_eq!(path.as_deref(), expected_path.as_deref());\n        assert_eq!(\n            span.map(\n                |Span {\n                     start,\n                     end,\n                     line,\n                     column,\n                 }| (start, end, line, column)\n            ),\n            expected_span.map(\n                |Span {\n                     start,\n                     end,\n                     line,\n                     column,\n                 }| (start, end, line, column)\n            ),\n        );\n        assert_eq!(help.as_deref(), expected_help.as_deref());\n    }\n}\n",
+      "complete_original_projection": "verified byte-exact",
+      "lines": 113
+    },
+    {
+      "source": "tests/workspace/semantic_structural_change/reporting.rs",
+      "original_sha256": "8c3273644d83ed4a4204a946798e0160f41b21f520dcdbfa88dcb4c17f1272d4",
+      "current_sha256": "a6fac9046e742ee9cf1c8c8123c45e096b5afed5011f3d691c24da68576181c3",
+      "named_inverse": "restore_original_slice_equality_assertion_remove_complete_field_comparator",
+      "assertion_before": "    assert_eq!(current.reported().unwrap(), old.as_slice());",
+      "assertion_after": "    assert_complete_report_equality(current.reported().unwrap(), old.as_slice());",
+      "additive_helper": "// Complete semantic equality without the library's cfg(test)-only PartialEq.\nfn assert_complete_report_equality(\n    actual: &[semaprax::diagnostic::Diagnostic],\n    expected: &[semaprax::diagnostic::Diagnostic],\n) {\n    use semaprax::{ast::Span, diagnostic::Diagnostic};\n    assert_eq!(actual.len(), expected.len());\n    for (actual, expected) in actual.iter().zip(expected) {\n        // Exhaustive patterns ensure a future field cannot be silently omitted.\n        let Diagnostic {\n            code,\n            severity,\n            message,\n            path,\n            span,\n            help,\n        } = actual;\n        let Diagnostic {\n            code: expected_code,\n            severity: expected_severity,\n            message: expected_message,\n            path: expected_path,\n            span: expected_span,\n            help: expected_help,\n        } = expected;\n        assert_eq!(code, expected_code);\n        assert_eq!(severity, expected_severity);\n        assert_eq!(message.as_ref(), expected_message.as_ref());\n        assert_eq!(path.as_deref(), expected_path.as_deref());\n        assert_eq!(\n            span.map(\n                |Span {\n                     start,\n                     end,\n                     line,\n                     column,\n                 }| (start, end, line, column)\n            ),\n            expected_span.map(\n                |Span {\n                     start,\n                     end,\n                     line,\n                     column,\n                 }| (start, end, line, column)\n            ),\n        );\n        assert_eq!(help.as_deref(), expected_help.as_deref());\n    }\n}\n",
+      "complete_original_projection": "verified byte-exact",
+      "lines": 113
+    }
+  ],
+  "verification": [
+    "leaf rustfmt",
+    "diff check",
+    "complete original test-source named inverses",
+    "all6 original report archive hashes"
+  ],
+  "executed_test_bodies": 0
+}

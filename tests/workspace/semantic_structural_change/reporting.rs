@@ -58,5 +58,56 @@ fn typed_public_evidence_refusal_keeps_complete_original_diagnostics() {
         &evidence,
     )
     .unwrap_err();
-    assert_eq!(current.reported().unwrap(), old.as_slice());
+    assert_complete_report_equality(current.reported().unwrap(), old.as_slice());
+}
+
+// Complete semantic equality without the library's cfg(test)-only PartialEq.
+fn assert_complete_report_equality(
+    actual: &[semaprax::diagnostic::Diagnostic],
+    expected: &[semaprax::diagnostic::Diagnostic],
+) {
+    use semaprax::{ast::Span, diagnostic::Diagnostic};
+    assert_eq!(actual.len(), expected.len());
+    for (actual, expected) in actual.iter().zip(expected) {
+        // Exhaustive patterns ensure a future field cannot be silently omitted.
+        let Diagnostic {
+            code,
+            severity,
+            message,
+            path,
+            span,
+            help,
+        } = actual;
+        let Diagnostic {
+            code: expected_code,
+            severity: expected_severity,
+            message: expected_message,
+            path: expected_path,
+            span: expected_span,
+            help: expected_help,
+        } = expected;
+        assert_eq!(code, expected_code);
+        assert_eq!(severity, expected_severity);
+        assert_eq!(message.as_ref(), expected_message.as_ref());
+        assert_eq!(path.as_deref(), expected_path.as_deref());
+        assert_eq!(
+            span.map(
+                |Span {
+                     start,
+                     end,
+                     line,
+                     column,
+                 }| (start, end, line, column)
+            ),
+            expected_span.map(
+                |Span {
+                     start,
+                     end,
+                     line,
+                     column,
+                 }| (start, end, line, column)
+            ),
+        );
+        assert_eq!(help.as_deref(), expected_help.as_deref());
+    }
 }

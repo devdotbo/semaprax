@@ -48,12 +48,12 @@
     "src/workspace_report/tests.rs": "c453565bdada04c82302d55c226324e334e325fc29ecb489855531d8a00cd652",
     "src/workspace_report/tests/caller.rs": "00296eeb8a8844ad5468e26c0f610da4e3a2e6774a5ecf28a02cedf4cf826d36",
     "tests/workspace/semantic_change.rs": "d161ed6fadf92b518e48ace904e701bfa5b2644859340fafd37010816227c04f",
-    "tests/workspace/semantic_change/reporting.rs": "adc5d1679f911c5f41198ff8a8af52f585a176cc1cc30f4dbadf79b76c1fd020",
+    "tests/workspace/semantic_change/reporting.rs": "5ef9fbfd2836ff7a12feea43de5be573020be68fee9f61608321cf8f4423ac81",
     "tests/workspace/semantic_graph/source_inventory.rs": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
     "tests/workspace/semantic_operations.rs": "c97dbf2bb3def9e569ca4563f3c92de6ea248e96e9a77fa3c3a68642eac74a34",
-    "tests/workspace/semantic_operations/reporting.rs": "b126b8b32930415dff18e5694a428a2bfb283232a979253da3619de122903861",
+    "tests/workspace/semantic_operations/reporting.rs": "4a9da0af75dd27877bd98be3e78489f4d7acd1d550be981712ee182fd96ce971",
     "tests/workspace/semantic_structural_change.rs": "ec963928ca32fc47883e7c23d65fc6f805883f09e1e5f3c6a4818e4f5d443826",
-    "tests/workspace/semantic_structural_change/reporting.rs": "8c3273644d83ed4a4204a946798e0160f41b21f520dcdbfa88dcb4c17f1272d4"
+    "tests/workspace/semantic_structural_change/reporting.rs": "a6fac9046e742ee9cf1c8c8123c45e096b5afed5011f3d691c24da68576181c3"
   },
   "new_routes": [
     "semantic_workspace_change::reporting::{generate,preview,evidence,verify,apply}",
