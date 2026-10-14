@@ -31,7 +31,7 @@
     "src/source_verify/recovery/callee_components.rs": "6eb0c43abdabfeede3d19ce4a4506b587d80a222d5715ea4e7a595fca83a8841",
     "src/source_verify/recovery_tests.rs": "0988b565dcd20c25eb52cd4c59d49b4fb98f14edd89e588d87545ef08543f32b",
     "src/source_verify/recovery_tests/callee_components.rs": "56ad006466bb79bc37d073c4d92cc2dca3d085cba123f77c38213613b50c0b68",
-    "src/source_verify/recovery_tests/extended_components.rs": "4e8a08985bc0cf9f3d73e0d215dc0415cd059f55c31cd71d2e42f6600897113b",
+    "src/source_verify/recovery_tests/extended_components.rs": "b5dfa7ee66dd7d775b334184a0c6a570679641301d8687fbb2c1970d8c065c0a",
     "src/source_verify/recovery_tests/flow_799.rs": "b8315dc50e67465152682ab9f04de3dcef40a484cd26690604ca0cac346fbaa8",
     "src/source_verify/recovery/callee_components/callee_components_before_actual.rs": "e5261a226e560e12c664a44f43f4d295416f4d403172d363fc179a663821ceea",
     "src/source_verify/recovery/before_parameter_signature.rs": "fb5edd2186145e6e20ab16193ad69c889dbc3ab28ea154cf7aa7d8d04e7e8837"

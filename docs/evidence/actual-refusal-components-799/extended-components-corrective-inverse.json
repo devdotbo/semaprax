@@ -1,0 +1,22 @@
+[
+  [
+    "    source: &str,\n    before: bool,\n    name: &str,\n) -> (Option<crate::ast::Type>, Vec<Diagnostic>) {\n    let program = crate::parse(source, Path::new(\"extended-components.spx\")).unwrap();\n    let types = TypeTable::new(&program);\n",
+    "    source: &str,\n    before: bool,\n    name: &str,\n) -> (Option<crate::ast::Type>, Vec<Diagnostic>) {\n    receive_function_route(source, before, name, false)\n}\nfn receive_function_route(\n    source: &str,\n    before: bool,\n    name: &str,\n    previous_parameter: bool,\n) -> (Option<crate::ast::Type>, Vec<Diagnostic>) {\n    let program = crate::parse(source, Path::new(\"extended-components.spx\")).unwrap();\n    let types = TypeTable::new(&program);\n"
+  ],
+  [
+    "            )\n        })\n        .collect();\n    let mut verifier = IterativeVerifier::new(\n        &program,\n        main,\n",
+    "            )\n        })\n        .collect();\n    let previous_recovery = previous_parameter.then(|| {\n        crate::source_verify::recovery::Recovery::before_parameter_signature(\n            &program,\n            main,\n            &variables,\n            &types,\n            &diagnostics,\n        )\n    });\n    let mut verifier = IterativeVerifier::new(\n        &program,\n        main,\n"
+  ],
+  [
+    "        &mut diagnostics,\n    );\n    verifier.extended_before_799 = before;\n    let value = verifier.run(&main.body).unwrap().map(|value| value.ty);\n    drop(verifier);\n    (value, diagnostics)\n",
+    "        &mut diagnostics,\n    );\n    verifier.extended_before_799 = before;\n    if let Some(previous_recovery) = previous_recovery {\n        // Complete archived parameter, component and operator receivers are\n        // required: changing only the component route retains today's signature.\n        verifier.recovery = previous_recovery;\n        verifier.extended_before_799 = true;\n        verifier.operators_before_799 = true;\n    }\n    let value = verifier.run(&main.body).unwrap().map(|value| value.ty);\n    drop(verifier);\n    (value, diagnostics)\n"
+  ],
+  [
+    "        &HashSet::from([\"T\"]),\n        &mut receipt,\n    );\n    assert_eq!(codes(&receipt), [\"SPX-T221\"]);\n    let recovery = crate::source_verify::recovery::Recovery::signature(\n        &program,\n        &program.functions[1],\n",
+    "        &HashSet::from([\"T\"]),\n        &mut receipt,\n    );\n    assert_eq!(\n        receipt,\n        vec![\n            Diagnostic::error(\n                \"SPX-T221\",\n                \"type `Known` expects 0 type arguments, received 1\",\n                function.params[0].span,\n            )\n            .at_path(\"extended-components.spx\"),\n            Diagnostic::error(\n                \"SPX-T223\",\n                \"generic copy type `Known` accepts only direct `i64` or `bool` arguments\",\n                function.params[0].span,\n            )\n            .at_path(\"extended-components.spx\"),\n        ]\n    );\n    let recovery = crate::source_verify::recovery::Recovery::signature(\n        &program,\n        &program.functions[1],\n"
+  ],
+  [
+    "        );\n        assert!(!current.reads_known_refused(0, \"b\"));\n    }\n    let old = receive_function(&source, true, \"f\");\n    let current = receive_function(&source, false, \"f\");\n    assert_eq!(codes(&old.1), [\"SPX-T220\", \"SPX-T202\", \"SPX-T208\"]);\n    assert_eq!(current.1, vec![old.1[0].clone(), old.1[1].clone()]);\n    assert_eq!(current.0, None);\n",
+    "        );\n        assert!(!current.reads_known_refused(0, \"b\"));\n    }\n    // The component-only old route already carries current signature/operator\n    // recovery, so it cannot witness the dependent operator diagnostic.\n    let component_old = receive_function(&source, true, \"f\");\n    let old = receive_function_route(&source, true, \"f\", true);\n    let current = receive_function(&source, false, \"f\");\n    assert_eq!(component_old, current);\n    assert_eq!(codes(&old.1), [\"SPX-T220\", \"SPX-T202\", \"SPX-T208\"]);\n    assert_eq!(current.1, vec![old.1[0].clone(), old.1[1].clone()]);\n    assert_eq!(current.0, None);\n"
+  ]
+]

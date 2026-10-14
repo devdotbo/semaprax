@@ -872,6 +872,29 @@ fn declared_nominal_arity_refusal_keeps_complete_original_receipt_without_unknow
 
 #[test]
 fn actual_failure_repair_keeps_complete_previous_component_receiver_and_projection() {
+    // Begin corrective source inverse guard.
+    let current = include_str!("extended_components.rs");
+    let begin = "    // Begin corrective source inverse guard.\n";
+    let end = "    // End corrective source inverse guard.\n";
+    assert_eq!(current.matches(begin).count(), 1);
+    assert_eq!(current.matches(end).count(), 1);
+    let (prefix, guarded) = current.split_once(begin).unwrap();
+    let (_, suffix) = guarded.split_once(end).unwrap();
+    let mut restored = format!("{prefix}{suffix}");
+    let inverse: Vec<[String; 2]> = serde_json::from_str(include_str!(
+        "../../../docs/evidence/actual-refusal-components-799/extended-components-corrective-inverse.json"
+    ))
+    .unwrap();
+    assert_eq!(inverse.len(), 5);
+    for [before, after] in inverse {
+        assert_eq!(restored.matches(after.as_str()).count(), 1);
+        restored = restored.replacen(&after, &before, 1);
+    }
+    assert_eq!(
+        restored,
+        include_str!("../../../docs/evidence/actual-refusal-components-799/src__source_verify__recovery_tests__extended_components.rs.corrective-before")
+    );
+    // End corrective source inverse guard.
     let saved = include_str!("../recovery/callee_components/callee_components_before_actual.rs")
         .replace("use super::super::Recovery;", "use super::Recovery;")
         .replace("before_actual_", "");
