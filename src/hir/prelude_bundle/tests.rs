@@ -169,6 +169,19 @@ fn two_borrowed_module_overlays_and_explicit_lease_share_actual_payload_addresse
     drop(bundle);
     assert_eq!(lease.types().len(), 2);
     drop(lease);
+    // Observe the last retained owner, not only the original bundle's Drop.
+    let mut retained_account = Account::unlimited();
+    let (_, retained_drop) = measure(|| {
+        let original = BasePreludeBundle::acquire(&mut retained_account).unwrap();
+        let retained = original.retain(&mut retained_account).unwrap();
+        drop(original);
+        assert_eq!(retained.types_slice().len(), 2);
+        drop(retained);
+    });
+    assert!(!retained_drop.invalid);
+    assert_eq!(retained_drop.live, 0);
+    assert_eq!(retained_drop.allocated, retained_drop.freed);
+    assert!(retained_drop.highwater <= retained_account.bytes);
 }
 
 #[test]
@@ -179,6 +192,7 @@ fn whole_owner_exact_one_short_zero_work_and_each_acquisition_refusal_drop_every
     assert_eq!(observed.live, 0);
     assert_eq!(observed.allocated, observed.freed);
     assert!(observed.allocated <= baseline.bytes);
+    assert!(observed.highwater <= baseline.bytes);
     for (bytes, work, succeeds) in [
         (baseline.bytes, baseline.work, true),
         (baseline.bytes - 1, baseline.work, false),
@@ -301,4 +315,80 @@ fn unused_and_parser_only_overlapping_names_keep_unconditional_base_selection() 
             old.declarations().collect::<Vec<_>>()
         );
     }
+}
+
+#[test]
+fn initializer_and_receiving_carriers_are_paid_before_any_producer_work() {
+    // These are separately live values, in addition to the final Arc backing.
+    let required = std::mem::size_of::<super::Contents>()
+        + std::mem::size_of::<BasePreludeBundle>()
+        + std::mem::size_of::<Result<BasePreludeBundle, Failure<Denied>>>();
+    for limit in [0, required - 1] {
+        let mut account = Account::unlimited();
+        account.byte_limit = limit;
+        let (result, physical) = measure(|| BasePreludeBundle::acquire(&mut account));
+        assert!(matches!(result, Err(Failure::Payer(Denied::Bytes))));
+        assert_eq!(account.bytes, 0);
+        assert_eq!(account.work, 0);
+        assert_eq!(account.sites, 1);
+        assert_eq!(physical.allocated, 0);
+        assert_eq!(physical.live, 0);
+        assert!(!physical.invalid);
+    }
+    let mut account = Account::unlimited();
+    account.byte_limit = required;
+    let (result, physical) = measure(|| BasePreludeBundle::acquire(&mut account));
+    // The exact carrier request succeeds; the following vector request refuses.
+    assert!(matches!(result, Err(Failure::Payer(Denied::Bytes))));
+    assert_eq!(account.bytes, required);
+    assert_eq!(account.work, 1);
+    assert_eq!(account.sites, 2);
+    assert_eq!(physical.allocated, 0);
+    assert_eq!(physical.live, 0);
+    assert!(!physical.invalid);
+}
+
+#[test]
+fn fixed_base_unmetered_index_views_borrow_complete_old_facts_without_allocation() {
+    let program = program();
+    let original = [super::original::option(), super::original::result()];
+    let old = DeclarationIndex::nominal_original_with_prelude(&program, &original).unwrap();
+    let mut account = Account::unlimited();
+    let bundle = BasePreludeBundle::acquire(&mut account).unwrap();
+    let (_, physical) = measure(|| {
+        assert_eq!(bundle.declarations_slice().len(), 9);
+        assert_eq!(bundle.types_slice().len(), 2);
+        for entry in bundle.declarations_slice() {
+            assert_eq!(
+                bundle.declaration_by_text(entry.id.as_str()),
+                old.declaration(&entry.id)
+            );
+            assert_eq!(
+                bundle.type_parameters(&entry.id),
+                old.type_parameters(&entry.id)
+            );
+        }
+        for ty in bundle.types_slice() {
+            assert_eq!(bundle.type_id(&ty.name), old.type_id(&ty.name));
+            assert_eq!(bundle.variant_cases(&ty.id), old.variant_cases(&ty.id));
+            for case in bundle.variant_cases(&ty.id).unwrap() {
+                assert_eq!(
+                    bundle.case_id(&ty.id, &case.name),
+                    old.case_id(&ty.id, &case.name)
+                );
+                assert_eq!(bundle.case_fields(&case.id), old.case_fields(&case.id));
+                for field in &case.fields {
+                    assert_eq!(
+                        bundle.field_id(&case.id, &field.name),
+                        old.field_id(&case.id, &field.name)
+                    );
+                }
+            }
+        }
+        assert!(bundle.declaration_by_text("foreign.base").is_none());
+        assert!(bundle.type_id("Foreign").is_none());
+    });
+    assert_eq!(physical.allocated, 0);
+    assert_eq!(physical.live, 0);
+    assert!(!physical.invalid);
 }

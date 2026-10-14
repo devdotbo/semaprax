@@ -7,8 +7,10 @@
     "hir::prelude_bundle::tests::two_borrowed_module_overlays_and_explicit_lease_share_actual_payload_addresses",
     "hir::prelude_bundle::tests::whole_owner_exact_one_short_zero_work_and_each_acquisition_refusal_drop_every_owner",
     "hir::prelude_bundle::tests::lookup_iteration_and_lease_work_keep_the_same_sticky_invocation_account",
-    "hir::prelude_bundle::tests::unused_and_parser_only_overlapping_names_keep_unconditional_base_selection"
+    "hir::prelude_bundle::tests::unused_and_parser_only_overlapping_names_keep_unconditional_base_selection",
+    "hir::prelude_bundle::tests::initializer_and_receiving_carriers_are_paid_before_any_producer_work",
+    "hir::prelude_bundle::tests::fixed_base_unmetered_index_views_borrow_complete_old_facts_without_allocation"
   ],
-  "count": 5,
+  "count": 7,
   "broader_qualification": "Complete old/current HIR/diagnostic/graph/cache/backend/application controls required separately before replacement or forecast change."
 }

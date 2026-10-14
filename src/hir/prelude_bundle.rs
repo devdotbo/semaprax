@@ -10,6 +10,7 @@ use crate::hir::{
 use crate::prelude::base_schema::{Variant, BASE};
 use std::sync::Arc;
 
+mod borrowed;
 mod overlay;
 mod paid;
 mod producer;
@@ -46,6 +47,13 @@ pub(crate) struct BasePreludeBundle {
 }
 impl BasePreludeBundle {
     pub(crate) fn acquire<P: Payer>(payer: &mut P) -> Result<Self, Failure<P::Error>> {
+        // The initializer and receiving carriers coexist with the paid shared
+        // owner. Acquire these actual layouts before constructing either.
+        let carriers = std::mem::size_of::<Contents>()
+            .checked_add(std::mem::size_of::<Self>())
+            .and_then(|n| n.checked_add(std::mem::size_of::<Result<Self, Failure<P::Error>>>()))
+            .ok_or(Failure::Layout)?;
+        payer.bytes(carriers).map_err(Failure::Payer)?;
         let contents = producer::contents(payer)?;
         payer
             .bytes(paid::shared_bytes::<Contents>())
