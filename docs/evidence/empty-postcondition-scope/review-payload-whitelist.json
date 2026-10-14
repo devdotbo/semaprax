@@ -1,0 +1,15 @@
+{
+  "commit": "85862869ae6a0998d934b03e5b0a2a5c3fa4a923",
+  "files": [
+    "src/hir/validation/function_scope.rs",
+    "src/hir/validation/function_scope/empty_ensures/before.rs",
+    "src/hir/validation/function_scope/empty_ensures/tests.rs",
+    "src/hir/validation/contract_owners.rs",
+    "src/hir/validation/scope_checkpoint.rs",
+    "src/hir/validation/scope_checkpoint/charge.rs"
+  ],
+  "payload_bytes": 47936,
+  "payload_sha256": "b4a91f5535e640785fbd419eae040b1a1784b770bf261f3683ac37077a45e57b",
+  "no_secrets": true,
+  "tools": false
+}
