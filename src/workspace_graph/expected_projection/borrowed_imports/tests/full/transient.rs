@@ -76,7 +76,9 @@ fn actual_transient_import_constructor_removes_only_authored_cache_spare_and_pay
                     && used <= limit
                     && !actual.invalid
                     && actual.live == 0
-                    && actual.allocated == actual.freed
+                    && actual.allocated == actual.freed,
+                "module={} limit={limit} paid={paid} used={used} ok={ok} refused={refused} first={first} actual={actual:?}",
+                programs[0].module
             );
         }
     }
