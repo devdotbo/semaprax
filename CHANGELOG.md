@@ -1,5 +1,11 @@
 # Changelog
 
+- Carry the exact borrowed generic-template origin into public signature
+  recovery (#799), preserving independent profile diagnostics and complete
+  six-field refusal authentication. Add an enclosing canonical-loan preparation
+  stage label (#829) without changing reservation layouts or quotas. Both source
+  changes await the next combined focused qualification.
+
 - Author a paid 16-entry borrowed lifecycle active path with the unchanged
   paid tree spill. Keep complete prior collectors and authored cycle/effect
   order; add differential, physical refusal/Drop and source-custody controls.
