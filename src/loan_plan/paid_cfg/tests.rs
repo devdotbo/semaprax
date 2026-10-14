@@ -68,7 +68,7 @@ fn same_saved_cfg(current: &Cfg<'_>, old: &saved_planner::Cfg<'_>) {
     }
 }
 
-fn fixture(width: usize, depth: usize) -> ResolvedProgram {
+fn fixture_source(width: usize, depth: usize) -> String {
     let mut source = String::from("module cfg.scratch; @id(\"cfg.main\") fn main()->i64 {");
     for index in 0..width {
         source.push_str(&format!("let value{index} = 1;"));
@@ -79,7 +79,56 @@ fn fixture(width: usize, depth: usize) -> ResolvedProgram {
         source.push_str("+1");
     }
     source.push('}');
-    crate::hir::resolve(&crate::check(&source, "cfg-scratch.spx").unwrap()).unwrap()
+    source
+}
+
+fn fixture(width: usize, depth: usize) -> ResolvedProgram {
+    let source = fixture_source(width, depth);
+    if depth != 128 {
+        return crate::hir::resolve(&crate::check(&source, "cfg-scratch.spx").unwrap()).unwrap();
+    }
+    // Preserve the complete prior deep source as an admitted-parser refusal.
+    // This CFG owner exercises HIR, so create its deep positive input from
+    // separately resolved shallow binary expressions instead of widening P207.
+    let diagnostics = crate::check(&source, "cfg-scratch.spx").unwrap_err();
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].code, "SPX-P207");
+    let mut shallow = String::from("module cfg.scratch; @id(\"cfg.main\") fn main()->i64 {");
+    for index in 0..width {
+        shallow.push_str(&format!("let value{index} = 1;"));
+    }
+    for index in 0..depth {
+        shallow.push_str(&format!("let scratch{index} = 1+1;"));
+    }
+    shallow.push_str("1}");
+    let mut program =
+        crate::hir::resolve(&crate::check(&shallow, "cfg-scratch.spx").unwrap()).unwrap();
+    let ResolvedExprKind::Block { statements, tail } = &mut program.functions[0].body.kind else {
+        panic!("resolved fixture remains a block");
+    };
+    // Move existing resolved nodes, retaining every binary/right-leaf identity
+    // and the seed identity. No cloned/forged identities or extra CFG statements.
+    for statement in statements.split_off(width) {
+        let ResolvedStatement::Let { value, .. } = statement else {
+            panic!("resolved shallow fixture declaration");
+        };
+        let previous = std::mem::replace(tail, Box::new(value));
+        let ResolvedExprKind::Binary { left, .. } = &mut tail.kind else {
+            panic!("resolved shallow fixture binary");
+        };
+        *left = previous;
+    }
+    assert_eq!(statements.len(), width);
+    let mut cursor = tail.as_ref();
+    for _ in 0..depth {
+        let ResolvedExprKind::Binary { left, right, .. } = &cursor.kind else {
+            panic!("deep CFG fixture retains every binary frontier");
+        };
+        assert!(matches!(right.kind, ResolvedExprKind::Int(1)));
+        cursor = left;
+    }
+    assert!(matches!(cursor.kind, ResolvedExprKind::Int(1)));
+    program
 }
 
 fn observe(

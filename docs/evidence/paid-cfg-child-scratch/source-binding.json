@@ -28,8 +28,8 @@
       "bytes": 15678
     },
     "src/loan_plan/paid_cfg/tests.rs": {
-      "sha256": "03ab7851f94fda9b07816454e004c42bf413b91027e0a180557ed256fd7e5bb2",
-      "bytes": 16478
+      "sha256": "c4e0f468fdc040fbeff7b64341decd8a01d6b18e8103781e502b33f7ee241595",
+      "bytes": 18640
     }
   },
   "unchanged_complete_originals_and_common_helpers": {
