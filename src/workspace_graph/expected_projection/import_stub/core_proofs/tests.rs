@@ -300,10 +300,32 @@ fn complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_c
                         (Some(&registry), &mut core),
                     )
                     .unwrap();
+                    // The complete saved constructor still owns the historical
+                    // six-field receipt. The explicit prelude-accounting v1
+                    // correction supersedes only its missing retained term.
+                    let historical = fields(&old_cost);
+                    let maximum_identity = authored
+                        .keys()
+                        .map(|id| id.len())
+                        .chain(crate::prelude::all_ids().into_iter().map(str::len))
+                        .max()
+                        .unwrap_or(0);
+                    let prelude = crate::workspace_graph::expected_projection::prelude_forecast::retained_upper(
+                        &crate::prelude::base_schema::BASE,
+                        maximum_identity,
+                    ).unwrap();
+                    let corrected = [
+                        historical[0].checked_add(prelude).unwrap(),
+                        historical[1].checked_add(prelude).unwrap(),
+                        historical[2],
+                        historical[3],
+                        historical[4].checked_add(prelude).unwrap(),
+                        historical[5],
+                    ];
                     assert_eq!(
                         fields(&current_cost),
-                        fields(&old_cost),
-                        "every original forecast field remains unchanged"
+                        corrected,
+                        "all six historical fields retain only the independently derived missing prelude correction"
                     );
                     let old = borrowed_imports_original::construct(
                         &programs[0],

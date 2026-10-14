@@ -1,0 +1,17 @@
+
+running 1 test
+test workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core ... 
+thread 'workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core' (1437875) panicked at src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs:303:21:
+assertion `left == right` failed: every original forecast field remains unchanged
+  left: [134388, 133307, 1081, 224, 131304, 2227]
+ right: [61908, 60827, 1081, 224, 58824, 2227]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8696 filtered out; finished in 0.05s
+

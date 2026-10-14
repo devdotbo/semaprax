@@ -1,0 +1,17 @@
+[
+  {
+    "path": "src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs",
+    "archive": "tests.rs.before.txt",
+    "sha256": "1391ce79bafca9a8832bf3776a7299013c4c23969ac91eb88b6680d6bdb8abcb",
+    "edits": [
+      {
+        "before": "                    .unwrap();\n                    assert_eq!(\n",
+        "after": "                    .unwrap();\n                    // The complete saved constructor still owns the historical\n                    // six-field receipt. The explicit prelude-accounting v1\n                    // correction supersedes only its missing retained term.\n                    let historical = fields(&old_cost);\n                    let maximum_identity = authored\n                        .keys()\n                        .map(|id| id.len())\n                        .chain(crate::prelude::all_ids().into_iter().map(str::len))\n                        .max()\n                        .unwrap_or(0);\n                    let prelude = crate::workspace_graph::expected_projection::prelude_forecast::retained_upper(\n                        &crate::prelude::base_schema::BASE,\n                        maximum_identity,\n                    ).unwrap();\n                    let corrected = [\n                        historical[0].checked_add(prelude).unwrap(),\n                        historical[1].checked_add(prelude).unwrap(),\n                        historical[2],\n                        historical[3],\n                        historical[4].checked_add(prelude).unwrap(),\n                        historical[5],\n                    ];\n                    assert_eq!(\n"
+      },
+      {
+        "before": "                        fields(&old_cost),\n                        \"every original forecast field remains unchanged\"\n",
+        "after": "                        corrected,\n                        \"all six historical fields retain only the independently derived missing prelude correction\"\n"
+      }
+    ]
+  }
+]

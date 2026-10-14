@@ -48,3 +48,6 @@ docs/evidence/prelude-forecast-actual-pins-a184d-20261015/actual-capture/*.log -
 
 # Preserve the actual failed source-guard receipt byte-for-byte.
 docs/evidence/prelude-fixture-source-guard-4ec/historical-owning-selected-90.log -text -whitespace
+
+# Preserve the actual old/current forecast comparison failure receipt.
+docs/evidence/core-proof-prelude-forecast-correction-4ec/historical-owning-selected-167.log -text -whitespace
