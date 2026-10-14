@@ -57,4 +57,5 @@ fn complete_saved_lookup_and_argument_receivers_and_shared_type_prefix_remain_by
     );
     assert_eq!(include_str!("../type_profiles.rs"), include_str!("../../../../docs/evidence/held-generic-call-profiles-812/src__hir__validation__type_profiles.rs.before.txt"));
     assert_eq!(include_str!("../../byte_capacity.rs"), include_str!("../../../../docs/evidence/held-generic-call-profiles-812/src__hir__byte_capacity.rs.before.txt"));
+    assert_eq!(include_str!("../type_requirement.rs"), include_str!("../../../../docs/evidence/held-generic-call-profiles-812/src__hir__validation__type_requirement.rs.before.txt"));
 }
