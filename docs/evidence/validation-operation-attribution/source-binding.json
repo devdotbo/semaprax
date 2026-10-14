@@ -27,8 +27,8 @@
     },
     {
       "path": "src/hir/canonical_loan_storage/caller.rs",
-      "sha256": "0b318a2caf95d16f10843da5e33434ae25f56aca42becd475e44893ec6079af4",
-      "lines": 406
+      "sha256": "bc304cfbb469891c8eb8cdc150a395affba58dadd3ae3b9a136c6c7f40076056",
+      "lines": 426
     },
     {
       "path": "src/hir/function_directory/caller.rs",
