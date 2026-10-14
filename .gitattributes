@@ -45,3 +45,6 @@ docs/evidence/prelude-forecast-286/historical-owning-selected-286.log -text -whi
 
 # Frozen actual prelude pin producer logs retain original diagnostic whitespace.
 docs/evidence/prelude-forecast-actual-pins-a184d-20261015/actual-capture/*.log -text -whitespace
+
+# Preserve the actual failed source-guard receipt byte-for-byte.
+docs/evidence/prelude-fixture-source-guard-4ec/historical-owning-selected-90.log -text -whitespace

@@ -510,7 +510,26 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     let absence_fixture =
         include_str!("../../src/workspace_graph/expected_projection/uncached_absence_tests.rs");
     assert_eq!(projection.matches(absence_fixture).count(), 1);
+    // Keep every byte of the new forecast fixture under the authority audit.
+    // Only these six exact test-budget TLS references receive an inert name
+    // for the forbidden-word scan; filesystem/process/other ACTIVE text stays.
+    let prelude_cost_root =
+        include_str!("../../src/workspace_graph/expected_projection/prelude_forecast.rs");
+    assert!(prelude_cost_root
+        .contains("#[cfg(test)]\n#[path = \"prelude_forecast_tests.rs\"]\nmod tests;"));
+    assert_eq!(prelude_cost_root.matches("mod tests;").count(), 1);
+    let prelude_fixture =
+        include_str!("../../src/workspace_graph/expected_projection/prelude_forecast_tests.rs");
+    assert_eq!(projection.matches(prelude_fixture).count(), 1);
+    let budget_tls = "crate::workspace_graph::ACTIVE_BUILDER_LIMIT";
+    assert_eq!(prelude_fixture.matches(budget_tls).count(), 6);
+    assert_eq!(prelude_fixture.matches("ACTIVE").count(), 6);
+    for (offset, _) in prelude_fixture.match_indices(budget_tls) {
+        assert!(prelude_fixture[offset + budget_tls.len()..].starts_with(".with("));
+    }
+    let prelude_authority_fixture = prelude_fixture.replace(budget_tls, "test_only_builder_limit");
     let authority_projection = projection
+        .replacen(prelude_fixture, &prelude_authority_fixture, 1)
         .replace(runtime_fixture, "")
         .replace(absence_fixture, "");
     for forbidden in [
