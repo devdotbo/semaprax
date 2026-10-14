@@ -1,5 +1,12 @@
 # Changelog
 
+- Author immutable paid nominal payloads and one invocation-owned base-prelude
+  bundle through workspace fresh, borrowed and selective resolution (#827,
+  #828). Preserve complete declaration maps, wire projections and old receivers;
+  add explicit work/refusal custody, rollback, Drop and hostile-mutation controls.
+  Focused executable qualification is pending; public/final-linker/cache paths
+  and application fit remain open, with unchanged caps and forecast correction.
+
 - Carry the exact borrowed generic-template origin into public signature
   recovery (#799), preserving independent profile diagnostics and complete
   six-field refusal authentication. Add an enclosing canonical-loan preparation
