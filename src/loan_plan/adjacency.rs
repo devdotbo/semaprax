@@ -20,6 +20,12 @@ pub(super) struct Adjacency {
 
 impl Adjacency {
     #[cfg(test)]
+    pub(super) fn complete_storage_matches_for_test(&self, other: &Self) -> bool {
+        self.successor_offsets == other.successor_offsets
+            && self.predecessor_offsets == other.predecessor_offsets
+            && self.predecessors == other.predecessors
+    }
+    #[cfg(test)]
     pub(super) fn build(points: usize, edges: &[(u16, u16)]) -> Result<Self, Diagnostic> {
         Self::build_with_storage(points, edges, None)
     }

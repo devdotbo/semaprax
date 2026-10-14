@@ -1,5 +1,6 @@
 //! Complete unchanged loan ordering with private caller-paid inventories.
 use super::*;
+use super::paid_cfg::build_original as build_cfg;
 
 pub(super) fn build(
     program: &ResolvedProgram,

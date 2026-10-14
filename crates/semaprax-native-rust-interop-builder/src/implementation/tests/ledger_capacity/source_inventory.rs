@@ -98,6 +98,8 @@ macro_rules! loan_cfg_source_inventory {
             include_str!("../../../../../src/loan_plan/paid_cursor/tests.rs"),
             include_str!("../../../../../src/loan_plan/paid_cursor/funded_before.rs"),
             include_str!("../../../../../src/loan_plan/paid_cfg.rs"),
+            include_str!("../../../../../src/loan_plan/paid_cfg/original.rs"),
+            include_str!("../../../../../src/loan_plan/paid_cfg/tests.rs"),
             include_str!("../../../../../src/loan_plan/paid_children.rs"),
             include_str!("../../../../../src/loan_plan/paid_patterns.rs"),
             include_str!("../../../../../src/loan_plan/paid_plan.rs"),

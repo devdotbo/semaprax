@@ -117,6 +117,13 @@ pub(super) enum Nodes {
     Funded(Map<LoanProgramPoint, u16>),
 }
 impl Nodes {
+    #[cfg(test)]
+    pub(super) fn complete_len_for_test(&self) -> usize {
+        match self {
+            Self::Legacy(values) => values.len(),
+            Self::Funded(values) => values.len,
+        }
+    }
     pub(super) fn get(&self, key: &LoanProgramPoint) -> Option<&u16> {
         match self {
             Self::Legacy(values) => values.get(key),

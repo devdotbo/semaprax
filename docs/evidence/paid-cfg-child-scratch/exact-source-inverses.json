@@ -1,0 +1,65 @@
+[
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "archive": "docs/evidence/paid-cfg-child-scratch/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
+    "before_sha256": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7",
+    "edits": [
+      {
+        "before": "            include_str!(\"../../../../../src/loan_plan/paid_cursor/funded_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_children.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_patterns.rs\"),\n",
+        "after": "            include_str!(\"../../../../../src/loan_plan/paid_cursor/funded_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg/original.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_children.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_patterns.rs\"),\n"
+      }
+    ]
+  },
+  {
+    "source": "src/loan_plan/adjacency.rs",
+    "archive": "docs/evidence/paid-cfg-child-scratch/src__loan_plan__adjacency.rs.before.txt",
+    "before_sha256": "8b852e280e23793cdcaf5e43a19ea7a06e1ae2ba29aedd23d6e01e4326d471ca",
+    "edits": [
+      {
+        "before": "\nimpl Adjacency {\n    #[cfg(test)]\n    pub(super) fn build(points: usize, edges: &[(u16, u16)]) -> Result<Self, Diagnostic> {\n",
+        "after": "\nimpl Adjacency {\n    #[cfg(test)]\n    pub(super) fn complete_storage_matches_for_test(&self, other: &Self) -> bool {\n        self.successor_offsets == other.successor_offsets\n            && self.predecessor_offsets == other.predecessor_offsets\n            && self.predecessors == other.predecessors\n    }\n    #[cfg(test)]\n    pub(super) fn build(points: usize, edges: &[(u16, u16)]) -> Result<Self, Diagnostic> {\n"
+      }
+    ]
+  },
+  {
+    "source": "src/loan_plan/cfg_directory.rs",
+    "archive": "docs/evidence/paid-cfg-child-scratch/src__loan_plan__cfg_directory.rs.before.txt",
+    "before_sha256": "61865270ed45b2c58501e962ad2fffc01dddfd77063f8dc9195193b85223f007",
+    "edits": [
+      {
+        "before": "}\nimpl Nodes {\n    pub(super) fn get(&self, key: &LoanProgramPoint) -> Option<&u16> {\n        match self {\n",
+        "after": "}\nimpl Nodes {\n    #[cfg(test)]\n    pub(super) fn complete_len_for_test(&self) -> usize {\n        match self {\n            Self::Legacy(values) => values.len(),\n            Self::Funded(values) => values.len,\n        }\n    }\n    pub(super) fn get(&self, key: &LoanProgramPoint) -> Option<&u16> {\n        match self {\n"
+      }
+    ]
+  },
+  {
+    "source": "src/loan_plan/paid_cfg.rs",
+    "archive": "docs/evidence/paid-cfg-child-scratch/src__loan_plan__paid_cfg.rs.before.txt",
+    "before_sha256": "5a1995e3ae65126afa9a1f78b2c901d3f921b17a2d567055baf7a4a2995d0dea",
+    "edits": [
+      {
+        "before": "        work.allocation,\n    )?;\n    while let Some((expression, root)) = pending.pop() {\n        charge(work)?;\n",
+        "after": "        work.allocation,\n    )?;\n    let mut child_scratch: Option<Vec<&'a ResolvedExpr>> = None;\n    while let Some((expression, root)) = pending.pop() {\n        charge(work)?;\n"
+      },
+      {
+        "before": "        )?;\n        storage::push(&mut expressions, expression, work.allocation)?;\n        let mut children = cfg_directory::fresh(payer)?;\n        paid_children::push_children(expression, &mut children, work.allocation)?;\n        storage::extend(\n            &mut pending,\n            children.into_iter().map(|child| (child, root)),\n            work.allocation,\n        )?;\n    }\n    let node_count = expressions\n        .len()\n",
+        "after": "        )?;\n        storage::push(&mut expressions, expression, work.allocation)?;\n        // Acquire at the original child frontier, after work/identity checks.\n        // Only borrowed references enter this one invocation-owned scratch.\n        if child_scratch.is_none() {\n            child_scratch = Some(cfg_directory::fresh(payer)?);\n        } else {\n            payer.reserve(0).map_err(|_| storage::marker())?;\n        }\n        let children = child_scratch.as_mut().expect(\"child scratch acquired\");\n        children.clear();\n        paid_children::push_children(expression, children, work.allocation)?;\n        storage::extend(\n            &mut pending,\n            children.iter().copied().map(|child| (child, root)),\n            work.allocation,\n        )?;\n        children.clear();\n    }\n    // No scratch backing is retained in the returned CFG or point phase.\n    drop(child_scratch);\n    let node_count = expressions\n        .len()\n"
+      },
+      {
+        "before": "    })\n}\n",
+        "after": "    })\n}\n\n// Option uses Vec's non-null niche; the single inline carrier stays identical.\nconst _: () = assert!(\n    std::mem::size_of::<Option<Vec<&ResolvedExpr>>>()\n        == std::mem::size_of::<Vec<&ResolvedExpr>>()\n);\n\n#[cfg(test)]\n#[path = \"paid_cfg/original.rs\"]\nmod original;\n#[cfg(test)]\n#[path = \"paid_cfg/tests.rs\"]\nmod tests;\n\n// The complete old paid planner uses its old CFG receiver, not this optimization.\n#[cfg(test)]\npub(super) fn build_original<'a>(\n    function: &'a ResolvedFunction,\n    work: &mut WorkCounter,\n) -> Result<Cfg<'a>, Diagnostic> {\n    if work.allocation.is_some() {\n        original::build(function, work)\n    } else {\n        super::build_cfg(function, work)\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "source": "src/loan_plan/paid_plan_legacy.rs",
+    "archive": "docs/evidence/paid-cfg-child-scratch/src__loan_plan__paid_plan_legacy.rs.before.txt",
+    "before_sha256": "ca48cef5e409813261a9ab1eb9174cb953033ad9b34f741ca7fdefdeb41d1f1e",
+    "edits": [
+      {
+        "before": "//! Complete unchanged loan ordering with private caller-paid inventories.\nuse super::*;\n\npub(super) fn build(\n",
+        "after": "//! Complete unchanged loan ordering with private caller-paid inventories.\nuse super::*;\nuse super::paid_cfg::build_original as build_cfg;\n\npub(super) fn build(\n"
+      }
+    ]
+  }
+]

@@ -25,6 +25,7 @@ pub(super) fn build<'a>(
         roots.iter().rev().map(|root| (*root, *root)),
         work.allocation,
     )?;
+    let mut child_scratch: Option<Vec<&'a ResolvedExpr>> = None;
     while let Some((expression, root)) = pending.pop() {
         charge(work)?;
         if !cfg_directory::set_insert(&mut seen, expression.id.clone(), work.allocation)? {
@@ -37,14 +38,25 @@ pub(super) fn build<'a>(
             work.allocation,
         )?;
         storage::push(&mut expressions, expression, work.allocation)?;
-        let mut children = cfg_directory::fresh(payer)?;
-        paid_children::push_children(expression, &mut children, work.allocation)?;
+        // Acquire at the original child frontier, after work/identity checks.
+        // Only borrowed references enter this one invocation-owned scratch.
+        if child_scratch.is_none() {
+            child_scratch = Some(cfg_directory::fresh(payer)?);
+        } else {
+            payer.reserve(0).map_err(|_| storage::marker())?;
+        }
+        let children = child_scratch.as_mut().expect("child scratch acquired");
+        children.clear();
+        paid_children::push_children(expression, children, work.allocation)?;
         storage::extend(
             &mut pending,
-            children.into_iter().map(|child| (child, root)),
+            children.iter().copied().map(|child| (child, root)),
             work.allocation,
         )?;
+        children.clear();
     }
+    // No scratch backing is retained in the returned CFG or point phase.
+    drop(child_scratch);
     let node_count = expressions
         .len()
         .checked_mul(2)
@@ -370,4 +382,30 @@ pub(super) fn build<'a>(
         edges,
         adjacency,
     })
+}
+
+// Option uses Vec's non-null niche; the single inline carrier stays identical.
+const _: () = assert!(
+    std::mem::size_of::<Option<Vec<&ResolvedExpr>>>()
+        == std::mem::size_of::<Vec<&ResolvedExpr>>()
+);
+
+#[cfg(test)]
+#[path = "paid_cfg/original.rs"]
+mod original;
+#[cfg(test)]
+#[path = "paid_cfg/tests.rs"]
+mod tests;
+
+// The complete old paid planner uses its old CFG receiver, not this optimization.
+#[cfg(test)]
+pub(super) fn build_original<'a>(
+    function: &'a ResolvedFunction,
+    work: &mut WorkCounter,
+) -> Result<Cfg<'a>, Diagnostic> {
+    if work.allocation.is_some() {
+        original::build(function, work)
+    } else {
+        super::build_cfg(function, work)
+    }
 }
