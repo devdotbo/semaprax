@@ -1,0 +1,36 @@
+{
+  "reviewed_commit": "211619bfd",
+  "execution": "none: no campaigns, plans, tests or builds executed",
+  "unchanged_adapters": [
+    {
+      "path": "benchmarks/webapp-tokens-v2/codex_campaign.py",
+      "sha256": "66d9a7cf5e0b3cb574c17fadc1169f206d7e2c4b92279bd46456dec115d6f2b6",
+      "prompt_archive": "docs/evidence/matched-benchmark-readiness-20261014/benchmarks__webapp-tokens-v2__codex_campaign.py.prompt-original.txt",
+      "prompt_definition_sha256": "8eff812eb85b5bd3a975a39d277485848b5026ec6b6c7fd900adbb87ab1a51d5"
+    },
+    {
+      "path": "benchmarks/cli-tokens-v1/codex_campaign.py",
+      "sha256": "04a4c54c5213f4631798016f3fc00636f3e644a1e673d7a00fcee8ac319633c3"
+    },
+    {
+      "path": "benchmarks/cli-tokens-v1/live_campaign.py",
+      "sha256": "d0210bb074777782f9dcc958ec7b9ab1ef7464bb7f499bc37921b3960d4c2210",
+      "prompt_archive": "docs/evidence/matched-benchmark-readiness-20261014/benchmarks__cli-tokens-v1__live_campaign.py.prompt-original.txt",
+      "prompt_definition_sha256": "be17b259076e6d6d33c43abd49935e0e391f60b59af8e1bb031855eda74aaf06"
+    },
+    {
+      "path": "benchmarks/event-sim-tokens-v1/codex_campaign.py",
+      "sha256": "d2c465f2e178799f5b0b59ead639e6774415561f524d7fe74bcf95ff7f64204a"
+    },
+    {
+      "path": "benchmarks/event-sim-tokens-v1/campaign.py",
+      "sha256": "430a9b8491155b7eadbf5147bc2a33cde4c230aaa6f445cabccb3a478bd95fe2",
+      "prompt_archive": "docs/evidence/matched-benchmark-readiness-20261014/benchmarks__event-sim-tokens-v1__campaign.py.prompt-original.txt",
+      "prompt_definition_sha256": "e13170d8bcee6bf3bf957701e50f8b8b402addd8c02b5bd238836f3e837f8ec9"
+    },
+    {
+      "path": "benchmarks/cli-tokens-v1/selected_file_setup.py",
+      "sha256": "48d2dd1908631be85643ec4c1956763db58baef0c710c9a9fa54adcbd6334380"
+    }
+  ]
+}
