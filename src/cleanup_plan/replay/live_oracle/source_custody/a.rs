@@ -847,6 +847,14 @@ fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
     }
     {
         let mut current = include_str!("../../paid_type_facts/inventory_tests.rs").to_owned();
+        // Undo only the unique visibility hook before the complete old receiver.
+        undo(&mut current, r###"    assert_eq!(current.matches("pub(super) struct Payer<'a> {").count(), 1);
+    let current = current.replacen(
+        "pub(super) struct Payer<'a> {",
+        "struct Payer<'a> {",
+        1,
+    );
+"###, "");
         undo(
             &mut current,
             r###"#[test]
