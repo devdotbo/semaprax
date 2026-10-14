@@ -1,0 +1,21 @@
+{
+  "new_rust_children": [
+    "src/list_ops/original_constructor.rs",
+    "src/iterator_ops/original_constructor.rs",
+    "src/hir/validation/constructor_seed/original_intrinsics.rs",
+    "src/hir/validation/constructor_seed/intrinsic_tests.rs"
+  ],
+  "modified_current_roots": [
+    "src/list_ops.rs",
+    "src/iterator_ops.rs",
+    "src/hir/validation/constructor_seed.rs",
+    "src/hir/validation/constructor_seed/original.rs",
+    "src/hir/validation/function_lookup/paid_custody.rs"
+  ],
+  "root_owns_union": [
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "tests/hir_module_boundaries.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs"
+  ],
+  "original_archives_changed": false
+}

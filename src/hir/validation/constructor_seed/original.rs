@@ -1,5 +1,6 @@
 //! Exact current constructor subject, authenticated in the original order.
 use super::super::function_lookup::original as function_lookup;
+use super::original_intrinsics as box_intrinsic;
 use super::*;
 
 pub(in crate::hir) struct ConstructorSeed<'a> {

@@ -404,18 +404,29 @@ pub(crate) fn step_shape(index: &crate::hir::DeclarationIndex, ty: &ResolvedType
     {
         return false;
     }
+    canonical_step_shape(index)
+}
+
+fn canonical_step_shape(index: &crate::hir::DeclarationIndex) -> bool {
     let owner = DeclarationId::compiler(CompilerDeclaration::IterStep);
     let Some(cases) = index.variant_cases(&owner) else {
         return false;
     };
-    let parameter = ResolvedType::TypeParameter {
-        owner: owner.clone(),
-        index: 0,
-    };
     matches!(cases,[done,yielded] if done.id.as_str()==DONE_ID&&done.name=="Done"&&done.index==0&&done.fields.is_empty()
  &&yielded.id.as_str()==YIELD_ID&&yielded.name=="Yield"&&yielded.index==1
- &&matches!(yielded.fields.as_slice(),[item,rest] if item.id.as_str()==ITEM_ID&&item.name=="item"&&item.index==0&&item.ty==parameter
- &&rest.id.as_str()==REST_ID&&rest.name=="rest"&&rest.index==1&&rest.ty==resolved_iter(parameter)))
+ &&matches!(yielded.fields.as_slice(),[item,rest] if item.id.as_str()==ITEM_ID&&item.name=="item"&&item.index==0&&is_step_parameter(&item.ty)
+ &&rest.id.as_str()==REST_ID&&rest.name=="rest"&&rest.index==1&&is_iter_of_step_parameter(&rest.ty)))
+}
+
+fn is_step_parameter(ty: &ResolvedType) -> bool {
+    matches!(ty, ResolvedType::TypeParameter { owner, index: 0 }
+        if owner.as_str() == STEP_ID)
+}
+
+fn is_iter_of_step_parameter(ty: &ResolvedType) -> bool {
+    matches!(ty, ResolvedType::Nominal { declaration, arguments }
+        if declaration.as_str() == ITER_ID
+        && matches!(arguments.as_slice(), [argument] if is_step_parameter(argument)))
 }
 pub(crate) fn validate_declarations(
     program: &crate::hir::ResolvedProgram,
@@ -440,10 +451,8 @@ pub(crate) fn validate_declarations(
             } else {
                 declaration.kind == DeclarationKind::Variant
                     && declaration.name == "IterStep"
-                    && step_shape(
-                        &program.declarations,
-                        &resolved_iter_step(ResolvedType::I64),
-                    )
+                    && resolved_element_is_admitted_in(&program.declarations, &ResolvedType::I64)
+                    && canonical_step_shape(&program.declarations)
             };
         if !valid {
             return Err(crate::diagnostic::Diagnostic::io(
@@ -524,3 +533,6 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+pub(crate) mod original_constructor;

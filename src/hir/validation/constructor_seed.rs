@@ -87,3 +87,8 @@ impl<'a> ConstructorSeed<'a> {
 
 #[cfg(test)]
 pub(super) mod original;
+
+#[cfg(test)]
+mod intrinsic_tests;
+#[cfg(test)]
+mod original_intrinsics;

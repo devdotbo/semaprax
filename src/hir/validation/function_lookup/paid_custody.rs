@@ -178,6 +178,9 @@ fn complete_independently_compiled_seed_and_legacy_lookup_are_exact_original_rec
     let current = include_str!("../constructor_seed/original.rs");
     let alias = "use super::super::function_lookup::original as function_lookup;\n";
     assert_eq!(current.matches(alias).count(), 1);
+    let saved_intrinsics = "use super::original_intrinsics as box_intrinsic;\n";
+    assert_eq!(current.matches(saved_intrinsics).count(), 1);
+    let current = current.replacen(saved_intrinsics, "", 1);
     let current = current.replacen(alias, "", 1).replacen(
         "Option<&'a crate::hir::function_directory::Directory<'a>>",
         "Option<&'a super::super::function_directory::Directory<'a>>",
