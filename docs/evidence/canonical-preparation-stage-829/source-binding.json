@@ -1,0 +1,64 @@
+{
+  "source_base": "4ec48420b6e78b1035a66cc406893c46c3028464",
+  "qualification": "source-only; no Cargo/build/runtime/test execution",
+  "current_sources": [
+    {
+      "path": "src/bounded_output.rs",
+      "sha256": "809fd5a6bafc4c5b5150017b049d7e10c14dc3a60e81b0c8c60a5831ca044803"
+    },
+    {
+      "path": "src/bounded_output/canonical_stage_tests.rs",
+      "sha256": "72a10f8320f21718cc149790c80a488296fa908588dd40be75037db601e65a63"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller.rs",
+      "sha256": "fc81b10797c6cba14ddaf2a375cadf1c2dc34a3af936e0738b321d45d39858c0"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller/stage_tests.rs",
+      "sha256": "637a3a01bbf3495f55bf53ed998f40114d64c275ee0a4754294a408194c675b0"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "sha256": "885d9992c4e560f98914acd1bc438cf1b41295c8b1306b87146327f82eccb16d"
+    },
+    {
+      "path": "src/workspace_graph/diagnostics/refusal_tests.rs",
+      "sha256": "b37be444f630670c19ccff335f22903630362901e1f27e5c6e25ff0abf1baa47"
+    },
+    {
+      "path": "docs/WORKSPACE-SEMANTIC-GRAPH-V1.md",
+      "sha256": "9458bcb704d17c7ddeea350fbe2963008a48c023276c90193bcf894a9249cf18"
+    }
+  ],
+  "unchanged_production_and_complete_old_sources": [
+    {
+      "path": "src/bounded_output/cfg_reservation.rs",
+      "sha256": "ecf425709b8c13b438cabeda37b2c7e11683ba0c17521b0ffcea2ee33aaff3f1"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller/owned_before.rs",
+      "sha256": "f119db223c35acd6e975e2825f5a6e4806508a49698989d94500ba8601fb456f"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller_before.rs",
+      "sha256": "44874e9c35637d2c926287d92385cb85bcd565eb51dae789d2692adf49464b71"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller/shared.rs",
+      "sha256": "ca16eccd943f2ae14971c372f66a2a27d907c2a6605348cd52d48252b1e762b3"
+    },
+    {
+      "path": "src/workspace_graph/diagnostics.rs",
+      "sha256": "fc3c1ccaccd725e8440883ab47e9eda3c0618983a5d40a28ef213f6a56e6b083"
+    },
+    {
+      "path": "src/workspace_graph.rs",
+      "sha256": "fe644b87c264e23b9afa0660d4bcd8149583f19438146734d258025c27087771"
+    }
+  ],
+  "literal_whole_current_caller_inverse_to_base": true,
+  "complete_original_caller_inverse_including_named_shared_adapter": true,
+  "production_delta": "one fixed enum variant/static label and existing stage guard before acquisition; no new fields, Rc backing, quota or work",
+  "runtime_status": "authored controls unexecuted; unchanged normalizer owner and complete gates pending next combined batch"
+}

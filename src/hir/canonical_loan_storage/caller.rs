@@ -175,6 +175,9 @@ fn prepare_sealed<'a, T>(
     program: &'a ResolvedProgram,
     seal: impl FnOnce(Storage<'a>, Payer<'_>) -> Result<T, Diagnostic>,
 ) -> Result<(T, Deferred<'a>), Diagnostic> {
+    let _stage = crate::bounded_output::reservation_stage_guard(
+        crate::bounded_output::ReservationStage::CanonicalLoanStorage,
+    );
     #[cfg(test)]
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::CanonicalLoanStorage,
@@ -424,3 +427,6 @@ pub(super) fn append_for_receiving(
 ) -> Result<(), Diagnostic> {
     append(storage, plan, Payer::current())
 }
+
+#[cfg(test)]
+mod stage_tests;

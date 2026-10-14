@@ -209,6 +209,13 @@ validation inventory, uncached synthetic AST peak reservations, authored module
 signature validation, frontend lookup/resolution/retention and imported Vec
 instance inventory have narrower operation labels. These labels neither alter
 the cumulative ledger nor attribute a prior unlabelled refusal retrospectively.
+Canonical shared-loan storage preparation installs its enclosing production
+stage before capturing the existing CFG reservation owner. This fixed label
+covers the preparation scope, including owner acquisition, plan rebuilding,
+append and sealing; it does not identify a particular inner request. The same
+budget, numeric first-sticky receipt, quota/work, restoration and paid help
+omission rules remain authoritative. Test-only operation traces are not
+production attribution, and the exact inner operation remains unknown.
 These quantities describe the cumulative reservation ledger, not a retained
 peak forecast, allocator measurement, or process RSS. The SPX-G171 code,
 message, source immutability, and ceiling are unchanged. Missing evidence is

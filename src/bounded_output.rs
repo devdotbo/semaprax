@@ -49,6 +49,7 @@ pub(crate) enum ReservationStage {
     HirCleanupPlans,
     HirYieldProfiles,
     HirValidation,
+    CanonicalLoanStorage,
 
     RetainedModule,
     LoanIdentityInventory,
@@ -86,6 +87,7 @@ impl ReservationStage {
             Self::HirCleanupPlans => "HIR canonical cleanup plans",
             Self::HirYieldProfiles => "HIR yield profile validation",
             Self::HirValidation => "HIR final validation",
+            Self::CanonicalLoanStorage => "canonical shared-loan storage preparation",
 
             Self::RetainedModule => "resolved module retention",
             Self::LoanIdentityInventory => "loan identity inventory",
@@ -1227,3 +1229,6 @@ mod resolution_stage_tests;
 
 mod source_owner_scope;
 pub(crate) use source_owner_scope::source_owner_scope;
+
+#[cfg(test)]
+mod canonical_stage_tests;

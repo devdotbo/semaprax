@@ -272,6 +272,24 @@ fn complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are
     );
     let hooks: serde_json::Value = serde_json::from_str(hooks).unwrap();
     let mut projected = include_str!("../caller.rs").to_owned();
+    // Exact additive production stage and test registration only; preserve
+    // every byte of the complete original preparation receiver below.
+    for addition in [
+        "    let _stage = crate::bounded_output::reservation_stage_guard(\n        crate::bounded_output::ReservationStage::CanonicalLoanStorage,\n    );\n",
+        "\n#[cfg(test)]\nmod stage_tests;\n",
+    ] {
+        assert_eq!(projected.matches(addition).count(), 1);
+        projected = projected.replacen(addition, "", 1);
+    }
+    // The prior shared publication factored this exact complete body into
+    // prepare_sealed. Undo only that named namespace/result adapter as well.
+    for (current, original) in [
+        ("fn prepare_with_comparison<'a>(\n    seed: &ConstructorSeed<'_>,\n    program: &'a ResolvedProgram,\n) -> Result<(Storage<'a>, Deferred<'a>), Diagnostic> {\n    prepare_sealed(seed, program, |storage, _| Ok(storage))\n}\n\npub(in crate::hir) fn prepare_shared<'a>(\n    seed: &ConstructorSeed<'a>,\n) -> Result<std::rc::Rc<Storage<'a>>, Diagnostic> {\n    // Compatibility construction never finishes Deferred: attached plan\n    // mismatch remains selected by the complete ordinary validator afterward.\n    prepare_sealed(seed, seed.program(), shared::seal).map(|(storage, _)| storage)\n}\n\n#[cfg(test)]\nmod owned_before;\nmod shared;\n\nfn prepare_sealed<'a, T>(\n    seed: &ConstructorSeed<'_>,\n    program: &'a ResolvedProgram,\n    seal: impl FnOnce(Storage<'a>, Payer<'_>) -> Result<T, Diagnostic>,\n) -> Result<(T, Deferred<'a>), Diagnostic> {\n", "fn prepare_with_comparison<'a>(\n    seed: &ConstructorSeed<'_>,\n    program: &'a ResolvedProgram,\n) -> Result<(Storage<'a>, Deferred<'a>), Diagnostic> {\n"),
+        ("        Ok((seal(storage, payer)?, deferred))", "        Ok((storage, deferred))"),
+    ] {
+        assert_eq!(projected.matches(current).count(), 1);
+        projected = projected.replacen(current, original, 1);
+    }
     for hook in hooks["hooks"].as_array().unwrap() {
         let current = hook["current"].as_str().unwrap();
         assert_eq!(projected.matches(current).count(), 1, "{}", hook["name"]);

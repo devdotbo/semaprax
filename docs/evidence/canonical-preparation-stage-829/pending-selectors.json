@@ -1,0 +1,44 @@
+{
+  "qualification": "authored; unexecuted",
+  "new_owners": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "bounded_output::canonical_stage_tests::canonical_stage_preserves_actual_budget_receipt_guard_and_paid_carrier_layouts"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "bounded_output::canonical_stage_tests::canonical_stage_entry_exit_has_no_allocation_or_debit_and_keeps_outer_identity"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "bounded_output::canonical_stage_tests::canonical_stage_nested_foreign_detached_unwind_floor_and_sticky_receipts_stay_local"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::canonical_loan_storage::caller::stage_tests::actual_prepare_stage_keeps_full_old_storage_diagnostics_numeric_receipts_and_drop"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::diagnostics::refusal_tests::canonical_prepare_help_changes_only_stage_keeps_inner_unknown_and_paid_omission"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::diagnostics::refusal_tests::final_attempt_help_never_imports_canonical_label_from_an_earlier_refused_attempt"
+    }
+  ],
+  "required_existing": [
+    "hir::canonical_loan_storage::tests::reuse::complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are_bound",
+    "hir::canonical_loan_storage::tests::reuse::full_current_and_complete_saved_prepare_pay_every_actual_acquisition_through_drop",
+    "hir::canonical_loan_storage::caller::shared::tests::exact_rc_carrier_prepaid_before_acquisition_zero_short_sticky_and_weak_receiving_drop",
+    "hir::canonical_loan_storage::caller::shared::tests::complete_original_preparation_and_sealed_identity_route_keep_full_storage_and_diagnostics",
+    "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+    "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap"
+  ],
+  "requires_existing_cfg_and_refusal_controls": true
+}

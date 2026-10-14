@@ -1,0 +1,13 @@
+{
+  "new_source_children": [
+    "src/bounded_output/canonical_stage_tests.rs",
+    "src/hir/canonical_loan_storage/caller/stage_tests.rs"
+  ],
+  "existing_source_roots_must_remain": [
+    "src/bounded_output.rs",
+    "src/hir/canonical_loan_storage/caller.rs",
+    "src/hir/canonical_loan_storage/tests/reuse.rs",
+    "src/workspace_graph/diagnostics/refusal_tests.rs"
+  ],
+  "root_owns_combined_source_join_integration": true
+}
