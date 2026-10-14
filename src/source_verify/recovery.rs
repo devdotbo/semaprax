@@ -71,7 +71,8 @@ impl<'p> Recovery<'p> {
                     binding.ty != parameter.ty || binding.mode != parameter.mode
                 })
                 || !diagnostics.iter().any(|diagnostic| {
-                    diagnostic.code == "SPX-T001" && diagnostic.span == Some(parameter.span)
+                    callee_components::unknown_component_receipt(diagnostic)
+                        && diagnostic.span == Some(parameter.span)
                 })
             {
                 continue;
@@ -94,7 +95,7 @@ impl<'p> Recovery<'p> {
             );
             if let Some(origin) = scratch
                 .iter()
-                .filter(|refusal| refusal.code == "SPX-T001")
+                .filter(|refusal| callee_components::unknown_component_receipt(refusal))
                 .find_map(|refusal| {
                     diagnostics.iter().position(|original| {
                         original.code == refusal.code
@@ -309,3 +310,6 @@ impl<'p> Recovery<'p> {
 }
 
 mod callee_components;
+
+#[cfg(test)]
+mod before_parameter_signature;

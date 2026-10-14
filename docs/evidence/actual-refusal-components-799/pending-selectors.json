@@ -102,5 +102,21 @@
     "source": "src/source_verify/recovery_tests.rs",
     "source_definition_confirmed_only": true,
     "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::generic_current_parameter_refusal_authenticates_exact_receipt_and_keeps_real_sibling",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::complete_previous_current_parameter_signature_receiver_has_only_named_namespace_adapter",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
   }
 ]

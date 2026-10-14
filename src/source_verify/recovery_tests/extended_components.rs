@@ -14,6 +14,13 @@ fn codes(diagnostics: &[Diagnostic]) -> Vec<&str> {
     diagnostics.iter().map(|d| d.code).collect()
 }
 fn receive(source: &str, before: bool) -> (Option<crate::ast::Type>, Vec<Diagnostic>) {
+    receive_function(source, before, "main")
+}
+fn receive_function(
+    source: &str,
+    before: bool,
+    name: &str,
+) -> (Option<crate::ast::Type>, Vec<Diagnostic>) {
     let program = crate::parse(source, Path::new("extended-components.spx")).unwrap();
     let types = TypeTable::new(&program);
     let functions = program
@@ -21,7 +28,7 @@ fn receive(source: &str, before: bool) -> (Option<crate::ast::Type>, Vec<Diagnos
         .iter()
         .map(|function| (function.name.as_str(), function))
         .collect::<HashMap<_, _>>();
-    let main = functions["main"];
+    let main = functions[name];
     let mut diagnostics = Vec::new();
     // Real signature checker creates the original receipts before body checking.
     for function in program.functions() {
@@ -835,6 +842,12 @@ fn actual_failure_repair_keeps_complete_previous_component_receiver_and_projecti
     assert_eq!(calls.matches(boundary).count(), 1);
     assert_eq!(calls.split_once(boundary).unwrap().0, include_str!("../../../docs/evidence/actual-refusal-components-799/src__source_verify__iterative__calls.rs.before"));
     let recovery = include_str!("../recovery.rs").replace(
+        "callee_components::unknown_component_receipt(diagnostic)\n                        && diagnostic.span == Some(parameter.span)",
+        "diagnostic.code == \"SPX-T001\" && diagnostic.span == Some(parameter.span)",
+    ).replace(
+        ".filter(|refusal| callee_components::unknown_component_receipt(refusal))",
+        ".filter(|refusal| refusal.code == \"SPX-T001\")",
+    ).replace("\n#[cfg(test)]\nmod before_parameter_signature;\n", "").replace(
         ".any(callee_components::unknown_component_receipt)",
         ".any(|diagnostic| diagnostic.code == \"SPX-T001\")",
     );
@@ -844,4 +857,113 @@ fn actual_failure_repair_keeps_complete_previous_component_receiver_and_projecti
         "                    self.values.push(Some(CheckedValue {\n                        ty: place.ty,\n                        mode: place.mode,\n                        native_unit: false,\n                    }));",
     );
     assert_eq!(entry, include_str!("../../../docs/evidence/actual-refusal-components-799/src__source_verify__iterative__enter.rs.before"));
+}
+
+#[test]
+fn generic_current_parameter_refusal_authenticates_exact_receipt_and_keeps_real_sibling() {
+    let source = self::source(
+        "@id(\"t.f\") fn f<T>(b:Missing,c:bool)->i64{b+missing_sibling}",
+        "0",
+    );
+    let program = crate::parse(&source, Path::new("extended-components.spx")).unwrap();
+    let function = &program.functions[0];
+    let types = TypeTable::new(&program);
+    let mut receipt = Vec::new();
+    check_declared_type(
+        &program,
+        &function.params[0].ty,
+        function.params[0].span,
+        &types,
+        &HashSet::from(["T"]),
+        &mut receipt,
+    );
+    assert_eq!(codes(&receipt), ["SPX-T220"]);
+    let variables = function
+        .params
+        .iter()
+        .map(|parameter| {
+            (
+                parameter.name.clone(),
+                crate::source_verify::binding::Binding {
+                    contract_local: false,
+                    traversal_row: None,
+                    ty: parameter.ty.clone(),
+                    mode: parameter.mode,
+                    availability: crate::source_verify::binding::Availability::Available,
+                    moved_places: HashMap::new(),
+                    definitely_partial: HashSet::new(),
+                    native_unit_discard: false,
+                    mutable: false,
+                    active_loans: std::collections::BTreeSet::new(),
+                    borrow_origin: None,
+                },
+            )
+        })
+        .collect();
+    let mut old = crate::source_verify::recovery::Recovery::before_parameter_signature(
+        &program, function, &variables, &types, &receipt,
+    );
+    let mut current = crate::source_verify::recovery::Recovery::signature(
+        &program, function, &variables, &types, &receipt,
+    );
+    assert!(!old.reads_known_refused(0, "b"));
+    assert!(current.reads_known_refused(0, "b"));
+    assert!(!current.reads_known_refused(0, "c"));
+    for field in 0..6 {
+        let mut forged = receipt.clone();
+        match field {
+            0 => forged[0].code = "SPX-T001",
+            1 => forged[0].severity = crate::diagnostic::Severity::Warning,
+            2 => forged[0].message = "forged".into(),
+            3 => forged[0].path = Some("forged.spx".to_owned()),
+            4 => forged[0].span = None,
+            5 => forged[0].help = Some("forged".to_owned()),
+            _ => unreachable!(),
+        }
+        let mut current = crate::source_verify::recovery::Recovery::signature(
+            &program, function, &variables, &types, &forged,
+        );
+        assert!(!current.reads_known_refused(0, "b"));
+    }
+    let old = receive_function(&source, true, "f");
+    let current = receive_function(&source, false, "f");
+    assert_eq!(codes(&old.1), ["SPX-T220", "SPX-T202", "SPX-T208"]);
+    assert_eq!(current.1, vec![old.1[0].clone(), old.1[1].clone()]);
+    assert_eq!(current.0, None);
+    let public = crate::source_verify::verify(&program)
+        .into_iter()
+        .filter(|diagnostic| diagnostic.severity.is_error())
+        .collect::<Vec<_>>();
+    assert_eq!(public, current.1);
+}
+
+#[test]
+fn complete_previous_current_parameter_signature_receiver_has_only_named_namespace_adapter() {
+    let saved = include_str!("../recovery/before_parameter_signature.rs");
+    let prefix = "//! Complete previous current-parameter receiver, with namespace adapter only.\nuse super::{Diagnostic, Function, Recovery};\nimpl<'p> Recovery<'p> {\n";
+    assert!(saved.starts_with(prefix) && saved.ends_with("\n}\n"));
+    let saved = saved
+        .strip_prefix(prefix)
+        .unwrap()
+        .strip_suffix("\n}\n")
+        .unwrap()
+        .replace("before_parameter_signature(", "signature(")
+        .replace(
+            "pub(in crate::source_verify) fn signature(",
+            "pub(super) fn signature(",
+        )
+        .replace("crate::source_verify::binding::", "super::binding::")
+        .replace("crate::source_verify::type_table::", "super::type_table::")
+        .replace(
+            "crate::source_verify::declared_type::",
+            "super::declared_type::",
+        )
+        .replace(
+            "super::callee_components::unknown_component_receipt",
+            "callee_components::unknown_component_receipt",
+        );
+    let original = include_str!("../../../docs/evidence/actual-refusal-components-799/src__source_verify__recovery.rs.parameter-before");
+    let start = original.find("    pub(super) fn signature(").unwrap();
+    let end = original.find("\n    pub(super) fn clear(").unwrap();
+    assert_eq!(saved, &original[start..end]);
 }
