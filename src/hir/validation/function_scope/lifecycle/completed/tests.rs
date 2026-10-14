@@ -380,7 +380,10 @@ fn actual_repeated_call_receiver_is_paid_through_drop_with_exact_short_and_stick
     assert!(ok && old_ok && !refused && !old_refused && first.is_none() && old_first.is_none());
     assert!(!actual.invalid && !old.invalid && actual.live == 0 && old.live == 0);
     assert!(actual.allocated == actual.freed && old.allocated == old.freed);
-    assert!(actual.allocated <= paid && actual.highwater <= paid);
+    assert!(
+        actual.allocated <= paid && actual.highwater <= paid,
+        "complete receiver actual={actual:?} paid={paid} old={old:?} old_paid={old_paid}"
+    );
     assert!(old.allocated <= old_paid && old.highwater <= old_paid);
     assert!(paid < old_paid && actual.allocated < old.allocated);
     let ((ok, exact), refused, used, first) = observe(paid, true);
