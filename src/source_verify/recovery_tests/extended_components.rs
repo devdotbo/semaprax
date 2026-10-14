@@ -149,14 +149,55 @@ fn specialized_raw_parameter_refusal_keeps_known_argument_and_result_diagnostics
     let current = receive(&source, false);
     assert_eq!(
         codes(&old.1),
-        ["SPX-T001", "SPX-T205", "SPX-T205", "SPX-T210"]
+        ["SPX-T220", "SPX-T205", "SPX-T205", "SPX-T210"]
     );
-    assert_eq!(codes(&current.1), ["SPX-T001", "SPX-T205", "SPX-T210"]);
+    assert_eq!(codes(&current.1), ["SPX-T220", "SPX-T205", "SPX-T210"]);
     assert_eq!(
         current.1,
         vec![old.1[0].clone(), old.1[2].clone(), old.1[3].clone()]
     );
     assert_eq!(current.0, old.0);
+    let program = crate::parse(&source, Path::new("extended-components.spx")).unwrap();
+    let types = TypeTable::new(&program);
+    let function = &program.functions[0];
+    let receipt = vec![old.1[0].clone()];
+    let recovery = crate::source_verify::recovery::Recovery::signature(
+        &program,
+        &program.functions[1],
+        &HashMap::new(),
+        &types,
+        &receipt,
+    );
+    assert_eq!(
+        recovery.before_actual_callee_component_refusal(
+            function,
+            Some(1),
+            &program,
+            &types,
+            &receipt
+        ),
+        None
+    );
+    assert_eq!(
+        recovery.callee_component_refusal(function, Some(1), &program, &types, &receipt),
+        Some(0)
+    );
+    for field in 0..6 {
+        let mut forged = receipt.clone();
+        match field {
+            0 => forged[0].code = "SPX-T001",
+            1 => forged[0].severity = crate::diagnostic::Severity::Warning,
+            2 => forged[0].message = "forged".into(),
+            3 => forged[0].path = Some("forged.spx".to_owned()),
+            4 => forged[0].span = None,
+            5 => forged[0].help = Some("forged".to_owned()),
+            _ => unreachable!(),
+        }
+        assert_eq!(
+            recovery.callee_component_refusal(function, Some(1), &program, &types, &forged),
+            None
+        );
+    }
 }
 
 #[test]
@@ -167,7 +208,7 @@ fn specialized_unknown_return_withdraws_alias_without_erasing_sibling_refusal() 
     );
     let old = receive(&source, true);
     let current = receive(&source, false);
-    assert_eq!(codes(&current.1), ["SPX-T001", "SPX-T202"]);
+    assert_eq!(codes(&current.1), ["SPX-T220", "SPX-T202"]);
     assert_eq!(current.1[0], old.1[0]);
     assert_eq!(
         current.1[1],
@@ -229,7 +270,23 @@ fn method_unknown_return_withdraws_zero_and_nonzero_argument_aliases() {
 fn record_component_refusal_keeps_nominal_value_and_known_field_mismatch() {
     let declarations =
         "@id(\"t.r\") record R{@id(\"t.bad\") bad:Missing,@id(\"t.known\") known:bool,}";
-    let source = self::source(declarations, "if R{bad:1,known:2}{1}else{0}");
+    let original = self::source(declarations, "if R{bad:1,known:2}{1}else{0}");
+    let refused = crate::parse(&original, Path::new("extended-components.spx")).unwrap_err();
+    assert_eq!(
+        refused,
+        Diagnostic::error(
+            "SPX-P106",
+            "expected `}` after block",
+            crate::ast::Span {
+                start: 120,
+                end: 121,
+                line: 1,
+                column: 121
+            }
+        )
+        .at_path("extended-components.spx")
+    );
+    let source = self::source(declarations, "if (R{bad:1,known:2}){1}else{0}");
     let old = receive(&source, true);
     let current = receive(&source, false);
     assert_eq!(
@@ -288,6 +345,11 @@ fn field_receipt_requires_exact_six_fields_and_in_scope_generic_parameters() {
         &HashMap::new(),
         &types,
         &receipt,
+    );
+    assert_eq!(codes(&receipt), ["SPX-T220"]);
+    assert_eq!(
+        recovery.before_actual_declared_field_refusal("R", &fields[0], &program, &types, &receipt),
+        None
     );
     assert_eq!(
         recovery.declared_field_refusal("R", &fields[0], &program, &types, &receipt),
@@ -668,4 +730,118 @@ pub(super) struct VariantMatchState<'a> {
     assert_eq!(projected.matches(original_state).count(), 1);
     projected = projected.replacen(original_state, packed_state, 1);
     assert_eq!(projected, include_str!("../scope.rs"));
+}
+
+#[test]
+fn applied_parameter_refusal_is_not_a_missing_declaration_component() {
+    let source = self::source("@id(\"t.f\") fn f<T>(a:T<i64>)->i64{0}", "0");
+    let program = crate::parse(&source, Path::new("extended-components.spx")).unwrap();
+    let types = TypeTable::new(&program);
+    let function = &program.functions[0];
+    let parameter = &function.params[0];
+    let mut receipt = Vec::new();
+    check_declared_type(
+        &program,
+        &parameter.ty,
+        parameter.span,
+        &types,
+        &HashSet::from(["T"]),
+        &mut receipt,
+    );
+    assert_eq!(
+        receipt,
+        vec![Diagnostic::error(
+            "SPX-T220",
+            "type parameter `T` cannot take type arguments",
+            parameter.span
+        )
+        .at_path("extended-components.spx")]
+    );
+    let recovery = crate::source_verify::recovery::Recovery::signature(
+        &program,
+        &program.functions[1],
+        &HashMap::new(),
+        &types,
+        &receipt,
+    );
+    assert_eq!(
+        recovery.callee_component_refusal(function, Some(0), &program, &types, &receipt),
+        None
+    );
+    assert_eq!(
+        recovery.before_actual_callee_component_refusal(
+            function,
+            Some(0),
+            &program,
+            &types,
+            &receipt
+        ),
+        None
+    );
+}
+
+#[test]
+fn declared_nominal_arity_refusal_keeps_complete_original_receipt_without_unknown_origin() {
+    let source = self::source(
+        "@id(\"t.r\") record Known{@id(\"t.x\") x:i64,} @id(\"t.f\") fn f<T>(a:Known<T>)->i64{0}",
+        "0",
+    );
+    let program = crate::parse(&source, Path::new("extended-components.spx")).unwrap();
+    let types = TypeTable::new(&program);
+    let function = &program.functions[0];
+    let mut receipt = Vec::new();
+    check_declared_type(
+        &program,
+        &function.params[0].ty,
+        function.params[0].span,
+        &types,
+        &HashSet::from(["T"]),
+        &mut receipt,
+    );
+    assert_eq!(codes(&receipt), ["SPX-T221"]);
+    let recovery = crate::source_verify::recovery::Recovery::signature(
+        &program,
+        &program.functions[1],
+        &HashMap::new(),
+        &types,
+        &receipt,
+    );
+    assert_eq!(
+        recovery.callee_component_refusal(function, Some(0), &program, &types, &receipt),
+        None
+    );
+    assert_eq!(
+        recovery.before_actual_callee_component_refusal(
+            function,
+            Some(0),
+            &program,
+            &types,
+            &receipt
+        ),
+        None
+    );
+    assert_eq!(receive(&source, false), receive(&source, true));
+}
+
+#[test]
+fn actual_failure_repair_keeps_complete_previous_component_receiver_and_projection() {
+    let saved = include_str!("../recovery/callee_components/callee_components_before_actual.rs")
+        .replace("use super::super::Recovery;", "use super::Recovery;")
+        .replace("before_actual_", "");
+    assert_eq!(saved, include_str!("../../../docs/evidence/actual-refusal-components-799/src__source_verify__recovery__callee_components.rs.before"));
+    let calls = include_str!("../iterative/calls.rs");
+    let boundary =
+        "\nimpl IterativeVerifier<'_, '_> {\n    // Availability and partial-move diagnostics";
+    assert_eq!(calls.matches(boundary).count(), 1);
+    assert_eq!(calls.split_once(boundary).unwrap().0, include_str!("../../../docs/evidence/actual-refusal-components-799/src__source_verify__iterative__calls.rs.before"));
+    let recovery = include_str!("../recovery.rs").replace(
+        ".any(callee_components::unknown_component_receipt)",
+        ".any(|diagnostic| diagnostic.code == \"SPX-T001\")",
+    );
+    assert_eq!(recovery, include_str!("../../../docs/evidence/actual-refusal-components-799/src__source_verify__recovery.rs.before"));
+    let entry = include_str!("../iterative/enter.rs").replace(
+        "                    self.publish_source_place(place, scope);",
+        "                    self.values.push(Some(CheckedValue {\n                        ty: place.ty,\n                        mode: place.mode,\n                        native_unit: false,\n                    }));",
+    );
+    assert_eq!(entry, include_str!("../../../docs/evidence/actual-refusal-components-799/src__source_verify__iterative__enter.rs.before"));
 }

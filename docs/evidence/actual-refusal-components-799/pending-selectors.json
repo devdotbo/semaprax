@@ -1,0 +1,106 @@
+[
+  {
+    "selector": "source_verify::recovery_tests::flow_799::unknown_match_keeps_independent_aggregate_body_refusal_without_scalar_unreachability",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/flow_799.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::callee_components::refused_parameter_keeps_known_sibling_owned_transfer_and_later_move_refusal",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/callee_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::specialized_raw_parameter_refusal_keeps_known_argument_and_result_diagnostics",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::specialized_unknown_return_withdraws_alias_without_erasing_sibling_refusal",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::record_component_refusal_keeps_nominal_value_and_known_field_mismatch",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::record_projection_refusal_withdraws_only_unknown_component_and_keeps_sibling",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::field_receipt_requires_exact_six_fields_and_in_scope_generic_parameters",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::applied_parameter_refusal_is_not_a_missing_declaration_component",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::declared_nominal_arity_refusal_keeps_complete_original_receipt_without_unknown_origin",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::actual_failure_repair_keeps_complete_previous_component_receiver_and_projection",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::admitted_specialized_and_method_successes_keep_complete_old_values_and_receipts",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::extended_components::inherited_raw_field_authentication_rejects_detached_or_changed_components",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests/extended_components.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  },
+  {
+    "selector": "source_verify::recovery_tests::existing_bindings_function_values_moves_and_match_coverage_keep_complete_old_verdicts",
+    "package": "semaprax",
+    "harness": "lib",
+    "source": "src/source_verify/recovery_tests.rs",
+    "source_definition_confirmed_only": true,
+    "executed_by_this_lane": false
+  }
+]

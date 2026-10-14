@@ -1274,11 +1274,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         expression.span,
                         self.diagnostics,
                     );
-                    self.values.push(Some(CheckedValue {
-                        ty: place.ty,
-                        mode: place.mode,
-                        native_unit: false,
-                    }));
+                    self.publish_source_place(place, scope);
                 } else {
                     self.frames.push(VerifierFrame::ResumeProject {
                         expression,

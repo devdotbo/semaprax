@@ -58,7 +58,7 @@ impl<'p> Recovery<'p> {
         let mut recovery = Self::default();
         if !diagnostics
             .iter()
-            .any(|diagnostic| diagnostic.code == "SPX-T001")
+            .any(callee_components::unknown_component_receipt)
         {
             return recovery;
         }

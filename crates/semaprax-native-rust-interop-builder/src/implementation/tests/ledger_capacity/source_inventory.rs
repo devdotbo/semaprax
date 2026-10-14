@@ -932,6 +932,7 @@ macro_rules! verifier_source_inventory {
                 include_str!("../../../../../src/source_verify/iterative/enter.rs"),
                 include_str!("../../../../../src/source_verify/iterative/enter/enter_before_components.rs"),
                 include_str!("../../../../../src/source_verify/recovery/callee_components.rs"),
+                include_str!("../../../../../src/source_verify/recovery/callee_components/callee_components_before_actual.rs"),
                 include_str!("../../../../../src/source_verify/recovery_tests/callee_components.rs"),
                 include_str!("../../../../../src/source_verify/recovery_tests/extended_components.rs"),
                 include_str!("../../../../../src/source_verify/iterative/enter/enter_before_extended.rs"),

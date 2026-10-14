@@ -925,3 +925,30 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         }
     }
 }
+
+impl IterativeVerifier<'_, '_> {
+    // Availability and partial-move diagnostics have already run on the exact
+    // complete place. Never bypass them when withdrawing a raw field type.
+    pub(super) fn publish_source_place(
+        &mut self,
+        place: crate::source_verify::place::SourcePlace,
+        scope: usize,
+    ) {
+        if let Some(origin) = self.recovery.source_place_refusal(
+            &place,
+            &self.scopes[scope].bindings,
+            self.program,
+            self.types,
+            self.diagnostics,
+        ) {
+            self.recovery.read_callee_refusal(origin);
+            self.values.push(None);
+        } else {
+            self.values.push(Some(CheckedValue {
+                ty: place.ty,
+                mode: place.mode,
+                native_unit: false,
+            }));
+        }
+    }
+}

@@ -1,0 +1,47 @@
+{
+  "kind": "source-only-static",
+  "base": "4d5d4209d3dd0f4fbc61e1063495ec128dbf5ffb",
+  "checks": {
+    "full_saved_helper": true,
+    "full_recovery_gate_inverse": true,
+    "full_entry_inverse": true,
+    "full_call_owner_prefix_inverse": true
+  },
+  "selectors_count": 13,
+  "rust_lines": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": 1250,
+    "src/source_verify/iterative/calls.rs": 954,
+    "src/source_verify/iterative/enter.rs": 1484,
+    "src/source_verify/recovery.rs": 311,
+    "src/source_verify/recovery/callee_components.rs": 189,
+    "src/source_verify/recovery_tests.rs": 350,
+    "src/source_verify/recovery_tests/callee_components.rs": 373,
+    "src/source_verify/recovery_tests/extended_components.rs": 847,
+    "src/source_verify/recovery_tests/flow_799.rs": 224,
+    "src/source_verify/recovery/callee_components/callee_components_before_actual.rs": 146
+  },
+  "current_source_hashes": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "c517e5e43608964b73dbd292e908a6e4c67ed8c1eb81b0d9b69b7e31c4295b58",
+    "src/source_verify/iterative/calls.rs": "e6fb511a3f1d294a6ae8dfe4fd024c9233cdb7ad73197c1d0331b5c5435f9430",
+    "src/source_verify/iterative/enter.rs": "7566025fca09d0cec7839f7754a0d54ebbb3313b902617cc3a1d9d22b7516227",
+    "src/source_verify/recovery.rs": "eb7967f9c9e319033b5fbac13f9fac9afbe63fb52f848a6cc103ce40d5122ac9",
+    "src/source_verify/recovery/callee_components.rs": "6eb0c43abdabfeede3d19ce4a4506b587d80a222d5715ea4e7a595fca83a8841",
+    "src/source_verify/recovery_tests.rs": "0988b565dcd20c25eb52cd4c59d49b4fb98f14edd89e588d87545ef08543f32b",
+    "src/source_verify/recovery_tests/callee_components.rs": "56ad006466bb79bc37d073c4d92cc2dca3d085cba123f77c38213613b50c0b68",
+    "src/source_verify/recovery_tests/extended_components.rs": "25e9830b64a24d41a2a7360ca8616d264a62a34c12cde9804ef09e19e6a0dda2",
+    "src/source_verify/recovery_tests/flow_799.rs": "b8315dc50e67465152682ab9f04de3dcef40a484cd26690604ca0cac346fbaa8",
+    "src/source_verify/recovery/callee_components/callee_components_before_actual.rs": "e5261a226e560e12c664a44f43f4d295416f4d403172d363fc179a663821ceea"
+  },
+  "original_sources": {
+    "docs/evidence/actual-refusal-components-799/src__source_verify__iterative__calls.rs.before": "291a96a8250be42cbbd817660ba8c70e9a7d1d6b5b1e2dcf78157a40828227df",
+    "docs/evidence/actual-refusal-components-799/src__source_verify__iterative__enter.rs.before": "a70c388c53646820a86e45f10031017ffd24523c3bb6f575119ee6b5401dbfb5",
+    "docs/evidence/actual-refusal-components-799/src__source_verify__recovery.rs.before": "f495c1148b3d69fe353e88cf057b9c0e10e350605cb38c6d77dcb1c43d186b93",
+    "docs/evidence/actual-refusal-components-799/src__source_verify__recovery__callee_components.rs.before": "d388750a6e15cd25914cfa7f9393ef4abdd4775b7dacea27f067327ba9986551",
+    "docs/evidence/actual-refusal-components-799/src__source_verify__recovery_tests.rs.before": "ed763eb3a77915ae6cd57688d780bc9fd20931d865059ff10e3c6a9e0830197d",
+    "docs/evidence/actual-refusal-components-799/src__source_verify__recovery_tests__callee_components.rs.before": "c1b5ad16742567e2611e64e620016f3ebe30c2e16754e8dfdebf3f55855e6149",
+    "docs/evidence/actual-refusal-components-799/src__source_verify__recovery_tests__extended_components.rs.before": "ff32ab924dffedc1e6971619c559d2f4a3994e31137f7288e49b58ab8edf15c1",
+    "docs/evidence/actual-refusal-components-799/src__source_verify__recovery_tests__flow_799.rs.before": "7830ab79a8ca7c1c41f2cac41b8a9a631cf4f02882d539f3b3680b5959ada6cd"
+  },
+  "rust_tests_executed": 0,
+  "compiler_executed": false
+}

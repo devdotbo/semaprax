@@ -200,7 +200,37 @@ fn existing_bindings_function_values_moves_and_match_coverage_keep_complete_old_
         let source = source(body);
         let old = receive(&source, true);
         let current = receive(&source, false);
-        assert_eq!(current, old, "{source}");
+        if body == "let bad = missing; let bad = 1; bad" {
+            assert_eq!(
+                old.0,
+                Some((Type::I64, crate::ast::ParamMode::Value, false))
+            );
+            assert_eq!(codes(&old.1), ["SPX-T202"]);
+            assert_eq!(current.0, None);
+            let program = crate::parse(&source, Path::new("scoped-recovery.spx")).unwrap();
+            let crate::ast::ExprKind::Block { statements, .. } = &program.functions[0].body.kind
+            else {
+                panic!("block");
+            };
+            let crate::ast::Statement::Let { name_span, .. } = &statements[1] else {
+                panic!("let");
+            };
+            assert_eq!(
+                current.1,
+                vec![
+                    old.1[0].clone(),
+                    Diagnostic::error(
+                        "SPX-T209",
+                        "local binding `bad` shadows an existing value",
+                        *name_span
+                    )
+                    .at_path("scoped-recovery.spx")
+                    .with_help(crate::source_verify::hints::SHADOW_HELP)
+                ]
+            );
+        } else {
+            assert_eq!(current, old, "{source}");
+        }
     }
     let source = "module test.coverage; @id(\"choice\") variant Choice { @id(\"choice.one\") One { @id(\"choice.one.n\") n: i64, }, @id(\"choice.two\") Two, } @id(\"app.main\") fn main(value: Choice) -> i64 { match value { Other::One { n } => n, } }";
     let old = receive(source, true);

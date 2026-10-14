@@ -12,6 +12,13 @@ fn source(helper: &str, body: &str) -> String {
 }
 
 fn receive(source: &str, before: bool) -> (Option<crate::ast::Type>, Vec<Diagnostic>) {
+    receive_function(source, before, "main")
+}
+fn receive_function(
+    source: &str,
+    before: bool,
+    name: &str,
+) -> (Option<crate::ast::Type>, Vec<Diagnostic>) {
     let program = crate::parse(source, Path::new("callee-components.spx")).unwrap();
     let types = TypeTable::new(&program);
     let functions = program
@@ -19,7 +26,7 @@ fn receive(source: &str, before: bool) -> (Option<crate::ast::Type>, Vec<Diagnos
         .iter()
         .map(|function| (function.name.as_str(), function))
         .collect::<HashMap<_, _>>();
-    let main = functions["main"];
+    let main = functions[name];
     let mut diagnostics = Vec::new();
     // Real signature checker creates the original receipts before body checking.
     for function in program.functions() {
@@ -283,7 +290,20 @@ fn refused_parameter_keeps_known_sibling_owned_transfer_and_later_move_refusal()
         .1
         .iter()
         .any(|diagnostic| diagnostic.code == "SPX-O101"));
-    assert_eq!(full_errors(source), current.1);
+    let program = crate::parse(source, Path::new("callee-components.spx")).unwrap();
+    let mut public = current.1.clone();
+    public.push(Diagnostic::error("SPX-T104", "entry function must be monomorphic with signature `fn main() -> i64`", program.functions.last().unwrap().span)
+        .at_path("callee-components.spx").with_help("`main` takes no parameters; read command-line arguments with `args_len()` and `arg_utf8(index)`"));
+    assert_eq!(full_errors(source), public);
+    let source = source.replace("fn main(buffer:own Buffer)", "fn probe(buffer:own Buffer)")
+        + " @id(\"t.entry\") fn main()->i64{0}";
+    let old = receive_function(&source, true, "probe");
+    let current = receive_function(&source, false, "probe");
+    let mut expected = old.1.clone();
+    assert_eq!(expected.remove(1).code, "SPX-T205");
+    assert_eq!(current.1, expected);
+    assert_eq!(codes(&current.1), ["SPX-T001", "SPX-O101"]);
+    assert_eq!(full_errors(&source), current.1);
 }
 
 #[test]

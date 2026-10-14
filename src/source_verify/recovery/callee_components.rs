@@ -27,10 +27,9 @@ impl<'p> Recovery<'p> {
             }
             None => (&function.return_type, function.span),
         };
-        if !diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "SPX-T001" && diagnostic.span == Some(span))
-        {
+        if !diagnostics.iter().any(|diagnostic| {
+            unknown_component_receipt(diagnostic) && diagnostic.span == Some(span)
+        }) {
             return None;
         }
         let parameters = function
@@ -42,7 +41,7 @@ impl<'p> Recovery<'p> {
         check_declared_type(program, ty, span, types, &parameters, &mut scratch);
         scratch
             .iter()
-            .filter(|refusal| refusal.code == "SPX-T001")
+            .filter(|refusal| unknown_component_receipt(refusal))
             .find_map(|refusal| {
                 diagnostics.iter().position(|original| {
                     original.code == refusal.code
@@ -109,10 +108,9 @@ impl<'p> Recovery<'p> {
             declaration = parent;
         }
         let declaration = owner?;
-        if !diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "SPX-T001" && diagnostic.span == Some(field.span))
-        {
+        if !diagnostics.iter().any(|diagnostic| {
+            unknown_component_receipt(diagnostic) && diagnostic.span == Some(field.span)
+        }) {
             return None;
         }
         let parameters = declaration
@@ -131,7 +129,7 @@ impl<'p> Recovery<'p> {
         );
         scratch
             .iter()
-            .filter(|refusal| refusal.code == "SPX-T001")
+            .filter(|refusal| unknown_component_receipt(refusal))
             .find_map(|refusal| {
                 diagnostics.iter().position(|original| {
                     original.code == refusal.code
@@ -144,3 +142,48 @@ impl<'p> Recovery<'p> {
             })
     }
 }
+
+// T220 also covers arguments applied to a real parameter. Only its distinct
+// missing-name diagnostic is a refusal of declaration-component identity.
+pub(super) fn unknown_component_receipt(diagnostic: &Diagnostic) -> bool {
+    diagnostic.code == "SPX-T001"
+        || diagnostic.code == "SPX-T220"
+            && diagnostic
+                .message
+                .ends_with("` is not an in-scope type parameter")
+}
+
+impl Recovery<'_> {
+    pub(in crate::source_verify) fn source_place_refusal(
+        &self,
+        place: &crate::source_verify::place::SourcePlace,
+        variables: &std::collections::HashMap<String, crate::source_verify::binding::Binding>,
+        program: &dyn ProgramSource,
+        types: &TypeTable<'_>,
+        diagnostics: &[Diagnostic],
+    ) -> Option<usize> {
+        if !self.unknown_declarations {
+            return None;
+        }
+        let mut ty = std::borrow::Cow::Borrowed(&variables.get(&place.root)?.ty);
+        for projection in &place.projections {
+            let Type::Named { name, .. } = ty.as_ref() else {
+                return None;
+            };
+            let field = types
+                .record_fields(&ty)?
+                .iter()
+                .find(|field| field.name == *projection)?;
+            if let Some(origin) =
+                self.declared_field_refusal(name, field, program, types, diagnostics)
+            {
+                return Some(origin);
+            }
+            ty = std::borrow::Cow::Owned(types.record_field_type(&ty, field)?);
+        }
+        None
+    }
+}
+
+#[cfg(test)]
+mod callee_components_before_actual;

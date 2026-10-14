@@ -159,7 +159,32 @@ fn unknown_match_keeps_independent_aggregate_body_refusal_without_scalar_unreach
     let current = receive_route(&source, 0);
     assert!(current.0.is_none());
     assert_eq!(current.1[0], old.1[0]);
-    assert_eq!(current.1[1], *old.1.last().unwrap());
+    // String is an admitted arm result. The old scalar-domain refusal is saved,
+    // but cannot manufacture an independent aggregate-result diagnostic.
+    assert_eq!(current.1, vec![old.1[0].clone()]);
+    let source = with_choice("match missing { _ => bytes_zeroed(1usize), }");
+    let old = receive_route(&source, 3);
+    let current = receive_route(&source, 0);
+    assert!(current.0.is_none());
+    assert_eq!(current.1[0], old.1[0]);
+    assert_eq!(codes(&current.1), ["SPX-T202", "SPX-T258"]);
+    let program = crate::parse(&source, std::path::Path::new("scoped-recovery.spx")).unwrap();
+    let crate::ast::ExprKind::Block { tail, .. } = &program.functions[0].body.kind else {
+        panic!("block");
+    };
+    let crate::ast::ExprKind::Match { arms, .. } = &tail.kind else {
+        panic!("match");
+    };
+    assert_eq!(
+        current.1[1],
+        crate::diagnostic::Diagnostic::error(
+            "SPX-T258",
+            "aggregate-valued match arms are outside the executable match profile",
+            arms[0].value.span
+        )
+        .at_path("scoped-recovery.spx")
+        .with_help("build the aggregate with `if`, or make the match arms extract scalar values")
+    );
     assert_eq!(current.1.len(), 2);
     let source = with_choice("match missing { 1 => 0, 1 => 0, _ => 0, _ => 0, }");
     let current = receive_route(&source, 0);
