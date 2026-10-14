@@ -7277,4 +7277,4 @@ pub(super) mod phase_measurement;
 #[cfg(test)]
 mod live_oracle;
 #[cfg(test)]
-pub(super) use live_oracle::with_financed_test_oracles;
+pub(crate) use live_oracle::with_financed_test_oracles;

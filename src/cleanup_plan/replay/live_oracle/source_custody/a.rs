@@ -76,6 +76,7 @@ pub(crate) use replay::replay_btree_node_upper as compiler_btree_node_upper;
     }
     {
         let mut current = include_str!("../../../replay.rs").to_owned();
+        undo(&mut current, "pub(crate) use live_oracle::with_financed_test_oracles;", "pub(super) use live_oracle::with_financed_test_oracles;");
         undo(
             &mut current,
             r#"

@@ -1,7 +1,8 @@
 //! Representation accounting differs; complete semantic authority does not.
 use super::*;
 use crate::cleanup_plan::replay::expression_facts::Lookup;
-use crate::digest_hex::{LowerHex, Sha256};
+use crate::digest_hex::LowerHex;
+use sha2::{Digest, Sha256};
 
 #[test]
 fn complete_arena_ordinary_receiver_keeps_exact_same_representation_work_and_paid_fact_payloads() {

@@ -3,7 +3,7 @@
 //! receiving body and Drop run inside this finite affine account.
 use super::allocation::{OracleScope, opt_in};
 
-pub(super) fn with_financed_test_oracles(body: impl FnOnce()) {
+pub(crate) fn with_financed_test_oracles(body: impl FnOnce()) {
     // The already exercised prototype allowance is declared once up front;
     // it is not a refill, production cap or cumulative-receipt adjustment.
     let scope =

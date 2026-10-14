@@ -270,4 +270,5 @@ tests = ["cold.tests"]
     same(&changed_warm, &old_changed);
 }
 
+#[path = "cold_source_tests/oracle_owner_before.rs"]
 mod oracle_owner_before;

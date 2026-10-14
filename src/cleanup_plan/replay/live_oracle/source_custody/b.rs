@@ -289,6 +289,7 @@ pub(crate) mod work;
     {
         let mut current =
             include_str!("../../../../project/incremental/cold_source_tests.rs").to_owned();
+        undo(&mut current, "#[path = \"cold_source_tests/oracle_owner_before.rs\"]\n", "");
         undo(
             &mut current,
             r#"    );

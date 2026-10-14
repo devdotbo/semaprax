@@ -2,6 +2,7 @@
 //! predicates. Runtime shape order, depth/leaf/field caps and first semantic
 //! diagnostics remain. The complete ordinary body stays in the parent module.
 use super::*;
+use crate::cleanup_plan::replay::paid_type_facts;
 
 pub(super) fn derive_reusing(
     program: &dyn crate::cleanup::ReplayContext,
