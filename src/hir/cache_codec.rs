@@ -148,22 +148,49 @@ codec_struct!(ResolvedAgentDeclaration {
 
 // Every lookup map is part of the complete HIR value, including native import,
 // inheritance, generic identity, and byte-slice provenance sidecars.
-codec_struct!(DeclarationIndex {
-    declarations,
-    types_by_name,
-    functions_by_name,
-    fields_by_owner_name,
-    record_fields,
-    cases_by_owner_name,
-    variant_cases,
-    case_fields,
-    type_parameters,
-    imports_by_key,
-    native_rust_imports_by_name,
-    type_facts_by_id,
-    class_parents,
-    byte_slice_roots
-});
+impl Codec for DeclarationIndex {
+    fn encode(&self, encoder: &mut Encoder) -> crate::cache_codec::Result<()> {
+        encoder.nested(|encoder| {
+            self.declarations.encode(encoder)?;
+            self.types_by_name.encode(encoder)?;
+            self.functions_by_name.encode(encoder)?;
+            self.fields_by_owner_name.encode(encoder)?;
+            self.record_fields.encode(encoder)?;
+            self.cases_by_owner_name.encode(encoder)?;
+            self.variant_cases.encode(encoder)?;
+            self.case_fields.encode(encoder)?;
+            self.type_parameters.encode(encoder)?;
+            self.imports_by_key.encode(encoder)?;
+            self.native_rust_imports_by_name.encode(encoder)?;
+            self.type_facts_by_id.encode(encoder)?;
+            self.class_parents.encode(encoder)?;
+            self.byte_slice_roots.encode(encoder)?;
+            Ok(())
+        })
+    }
+    fn decode(decoder: &mut Decoder<'_>) -> crate::cache_codec::Result<Self> {
+        decoder.nested(|decoder| {
+            Ok(Self {
+                nominal_drop_workspace: Default::default(),
+                declarations: Codec::decode(decoder)?,
+                types_by_name: Codec::decode(decoder)?,
+                functions_by_name: Codec::decode(decoder)?,
+                fields_by_owner_name: Codec::decode(decoder)?,
+                record_fields: Codec::decode(decoder)?,
+                cases_by_owner_name: Codec::decode(decoder)?,
+                variant_cases: Codec::decode(decoder)?,
+                case_fields: Codec::decode(decoder)?,
+                type_parameters: Codec::decode(decoder)?,
+                imports_by_key: Codec::decode(decoder)?,
+                native_rust_imports_by_name: Codec::decode(decoder)?,
+                type_facts_by_id: Codec::decode(decoder)?,
+                class_parents: Codec::decode(decoder)?,
+                byte_slice_roots: Codec::decode(decoder)?,
+            })
+        })
+    }
+}
+
 codec_struct!(ResolvedProgram {
     module,
     permits,

@@ -291,7 +291,7 @@ impl<'a> Input<'a> {
         hir::identity_resolution::Failure<Refused>,
     > {
         match self {
-            Self::Owned(program) => hir::identity_resolution::resolve_checked(
+            Self::Owned(program) => hir::identity_resolution::resolve_checked_nominal(
                 program,
                 None,
                 None,
@@ -300,7 +300,7 @@ impl<'a> Input<'a> {
                 |bytes| owner.reserve(bytes),
             ),
             Self::Borrowed(program) => {
-                hir::identity_resolution::resolve_source(program, private, |bytes| {
+                hir::identity_resolution::resolve_source_nominal(program, private, |bytes| {
                     owner.reserve(bytes)
                 })
             }

@@ -402,7 +402,7 @@ fn resource(id: &str, name: &str, finalizer: &ResolvedImport) -> ResolvedTypeDec
     ResolvedTypeDeclaration {
         id: DeclarationId::new(id),
         name: name.to_owned(),
-        type_parameters: Vec::new(),
+        type_parameters: Vec::new().into(),
         kind: ResolvedTypeDeclarationKind::Resource {
             drop: ResolvedResourceDrop {
                 id: DeclarationId::new(format!("{id}.drop")),

@@ -277,7 +277,7 @@ impl Resolver<'_> {
                     TypeDeclarationKind::Record { .. } => {
                         let fields = self
                             .declarations
-                            .record_fields(&id)
+                            .record_payload(&id)
                             .ok_or_else(|| {
                                 self.error(
                                     "SPX-H006",
@@ -285,13 +285,13 @@ impl Resolver<'_> {
                                     declaration.span,
                                 )
                             })?
-                            .to_vec();
+                            .clone();
                         ResolvedTypeDeclarationKind::Record { fields }
                     }
                     TypeDeclarationKind::Class { methods, .. } => {
                         let fields = self
                             .declarations
-                            .record_fields(&id)
+                            .record_payload(&id)
                             .ok_or_else(|| {
                                 self.error(
                                     "SPX-H006",
@@ -299,7 +299,7 @@ impl Resolver<'_> {
                                     declaration.span,
                                 )
                             })?
-                            .to_vec();
+                            .clone();
                         let methods = methods
                             .iter()
                             .map(|method| self.declarations.held_identity(&method.stable_id))
@@ -309,7 +309,7 @@ impl Resolver<'_> {
                     TypeDeclarationKind::Variant { .. } => {
                         let cases = self
                             .declarations
-                            .variant_cases(&id)
+                            .case_payload(&id)
                             .ok_or_else(|| {
                                 self.error(
                                     "SPX-H006",
@@ -317,14 +317,14 @@ impl Resolver<'_> {
                                     declaration.span,
                                 )
                             })?
-                            .to_vec();
+                            .clone();
                         ResolvedTypeDeclarationKind::Variant { cases }
                     }
                 };
                 Ok(ResolvedTypeDeclaration {
                     type_parameters: self
                         .declarations
-                        .type_parameters(&id)
+                        .parameter_payload(&id)
                         .ok_or_else(|| {
                             self.error(
                                 "SPX-H006",
@@ -332,7 +332,7 @@ impl Resolver<'_> {
                                 declaration.span,
                             )
                         })?
-                        .to_vec(),
+                        .clone(),
                     id,
                     name: declaration.name.clone(),
                     kind,

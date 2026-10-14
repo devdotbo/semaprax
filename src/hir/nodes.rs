@@ -616,7 +616,7 @@ pub struct ResolvedHostCommandCall {
 pub struct ResolvedTypeDeclaration {
     pub id: DeclarationId,
     pub name: String,
-    pub type_parameters: Vec<ResolvedTypeParameterDeclaration>,
+    pub type_parameters: super::NominalPayload<ResolvedTypeParameterDeclaration>,
     pub kind: ResolvedTypeDeclarationKind,
     pub span: Span,
 }
@@ -634,14 +634,14 @@ pub enum ResolvedTypeDeclarationKind {
         drop: ResolvedResourceDrop,
     },
     Record {
-        fields: Vec<ResolvedFieldDeclaration>,
+        fields: super::NominalPayload<ResolvedFieldDeclaration>,
     },
     Class {
-        fields: Vec<ResolvedFieldDeclaration>,
+        fields: super::NominalPayload<ResolvedFieldDeclaration>,
         methods: Vec<DeclarationId>,
     },
     Variant {
-        cases: Vec<ResolvedVariantCaseDeclaration>,
+        cases: super::NominalPayload<ResolvedVariantCaseDeclaration>,
     },
 }
 

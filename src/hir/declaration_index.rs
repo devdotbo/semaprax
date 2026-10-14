@@ -1,7 +1,12 @@
 //! Deterministic declaration lookup, type facts, and inheritance materialization.
 use super::*;
+use super::nominal_payload::map::{CaseFields, IndexMap};
 
 mod flags;
+mod nominal;
+mod nominal_rollback;
+#[cfg(test)]
+pub(crate) mod nominal_original;
 pub(crate) use flags::{inventory_identity, inventory_substitute, InventoryPayer};
 pub(crate) use flags::{TypeFactsPayer, TypeFlags};
 pub(super) mod identity_payer;
@@ -19,15 +24,16 @@ use owned_builtin::owned_builtin_facts;
 /// declarations can coexist with functions without ambiguous lookup.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct DeclarationIndex {
+    pub(super) nominal_drop_workspace: nominal_rollback::Workspace,
     pub(super) declarations: BTreeMap<DeclarationId, Declaration>,
     pub(super) types_by_name: BTreeMap<String, DeclarationId>,
     pub(super) functions_by_name: BTreeMap<String, DeclarationId>,
     pub(super) fields_by_owner_name: BTreeMap<(DeclarationId, String), DeclarationId>,
-    pub(super) record_fields: BTreeMap<DeclarationId, Vec<ResolvedFieldDeclaration>>,
+    pub(super) record_fields: IndexMap<NominalPayload<ResolvedFieldDeclaration>>,
     pub(super) cases_by_owner_name: BTreeMap<(DeclarationId, String), DeclarationId>,
-    pub(super) variant_cases: BTreeMap<DeclarationId, Vec<ResolvedVariantCaseDeclaration>>,
-    pub(super) case_fields: BTreeMap<DeclarationId, Vec<ResolvedFieldDeclaration>>,
-    pub(super) type_parameters: BTreeMap<DeclarationId, Vec<ResolvedTypeParameterDeclaration>>,
+    pub(super) variant_cases: IndexMap<NominalPayload<ResolvedVariantCaseDeclaration>>,
+    pub(super) case_fields: IndexMap<CaseFields>,
+    pub(super) type_parameters: IndexMap<NominalPayload<ResolvedTypeParameterDeclaration>>,
     pub(super) imports_by_key: BTreeMap<String, DeclarationId>,
     pub(super) native_rust_imports_by_name: BTreeMap<String, DeclarationId>,
     pub(super) type_facts_by_id: BTreeMap<String, TypeFacts>,
@@ -48,22 +54,16 @@ impl DeclarationIndex {
         &mut self,
         mut dispose: impl FnMut(ResolvedType),
     ) {
+        // Release case views before asking whether the outer case owner is
+        // unique. Legacy full field inventories retain their original roots.
+        for (_, fields) in std::mem::take(&mut self.case_fields) {
+            fields.drain(&mut dispose);
+        }
         for (_, fields) in std::mem::take(&mut self.record_fields) {
-            for field in fields {
-                dispose(field.ty);
-            }
+            fields.drain_recursive_types(&mut dispose);
         }
         for (_, cases) in std::mem::take(&mut self.variant_cases) {
-            for case in cases {
-                for field in case.fields {
-                    dispose(field.ty);
-                }
-            }
-        }
-        for (_, fields) in std::mem::take(&mut self.case_fields) {
-            for field in fields {
-                dispose(field.ty);
-            }
+            cases.drain_recursive_types(&mut dispose);
         }
     }
     pub fn byte_slice_provenance(&self, value: &ValueId) -> Option<&ByteSliceProvenance> {
@@ -122,8 +122,8 @@ impl DeclarationIndex {
             .sum::<usize>();
         let field_bytes = self
             .record_fields
-            .values()
-            .chain(self.case_fields.values())
+            .values().map(|values|values.as_slice())
+            .chain(self.case_fields.values().map(|values|values.as_slice()))
             .flatten()
             .map(field_capacity)
             .sum::<usize>();
@@ -147,12 +147,12 @@ impl DeclarationIndex {
             self.declarations.len() * std::mem::size_of::<(DeclarationId, Declaration)>();
         let record_field_maps = self
             .record_fields
-            .iter()
-            .chain(self.case_fields.iter())
-            .map(|(owner, fields)| {
-                std::mem::size_of::<(DeclarationId, Vec<ResolvedFieldDeclaration>)>()
+            .iter().map(|(owner,fields)|(owner,fields.capacity()))
+            .chain(self.case_fields.iter().map(|(owner,fields)|(owner,fields.capacity())))
+            .map(|(owner, capacity)| {
+                std::mem::size_of::<(DeclarationId, NominalPayload<ResolvedFieldDeclaration>)>()
                     + owner.as_str().len()
-                    + fields.capacity() * std::mem::size_of::<ResolvedFieldDeclaration>()
+                    + capacity * std::mem::size_of::<ResolvedFieldDeclaration>()
             })
             .sum::<usize>();
         let variant_case_map = self
@@ -245,7 +245,7 @@ impl DeclarationIndex {
     }
 
     pub fn record_fields(&self, owner: &DeclarationId) -> Option<&[ResolvedFieldDeclaration]> {
-        self.record_fields.get(owner).map(Vec::as_slice)
+        self.record_fields.get(owner).map(|values| values.as_slice())
     }
 
     /// Class Inheritance v1: the declared parent of `class`, if any.
@@ -284,18 +284,27 @@ impl DeclarationIndex {
         &self,
         owner: &DeclarationId,
     ) -> Option<&[ResolvedVariantCaseDeclaration]> {
-        self.variant_cases.get(owner).map(Vec::as_slice)
+        self.variant_cases.get(owner).map(|values| values.as_slice())
     }
 
     pub fn case_fields(&self, case: &DeclarationId) -> Option<&[ResolvedFieldDeclaration]> {
-        self.case_fields.get(case).map(Vec::as_slice)
+        if let Some(fields) = self.case_fields.get(case) {
+            return Some(fields.as_slice());
+        }
+        if !self.nominal_drop_workspace.building { return None; }
+        // During canonical construction the same complete semantic metadata
+        // is available before any shared allocation is attempted.
+        let declaration = self.declarations.get(case)?;
+        if declaration.kind != DeclarationKind::VariantCase { return None; }
+        let owner = declaration.owner.as_ref()?;
+        self.variant_cases.get(owner)?.iter().find(|row| row.id == *case).map(|row| row.fields.as_slice())
     }
 
     pub fn type_parameters(
         &self,
         declaration: &DeclarationId,
     ) -> Option<&[ResolvedTypeParameterDeclaration]> {
-        self.type_parameters.get(declaration).map(Vec::as_slice)
+        self.type_parameters.get(declaration).map(|values| values.as_slice())
     }
 
     pub fn import_id(&self, key: &str) -> Option<&DeclarationId> {
@@ -1148,10 +1157,14 @@ pub fn dispose_declaration_index_for_private_contract(
 
 impl Drop for DeclarationIndex {
     fn drop(&mut self) {
+        if let Some(mut scratch) = self.nominal_drop_workspace.scratch.take() {
+            self.drain_recursive_types_for_private_contract(|ty| nominal_payload::dispose(ty, &mut scratch));
+            return;
+        }
         let mut pending = Vec::new();
         // Leaf fields have no recursive payload to queue. Move only nominal
         // children into the iterative fallback, preserving bounded stack use.
-        self.drain_recursive_types_for_private_contract(|ty| {
+        self.drain_legacy_type_roots(|ty| {
             if let ResolvedType::Nominal { arguments, .. } = ty {
                 pending.extend(arguments);
             }

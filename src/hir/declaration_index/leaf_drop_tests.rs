@@ -25,7 +25,7 @@ fn old_drop(mut index: DeclarationIndex) {
 fn sixteen_actual_leaf_fields_remove_only_the_original_literal_drop_queue() {
     let current = fixture(16);
     let old = current.clone();
-    let roots: usize = current.record_fields.values().map(Vec::len).sum();
+    let roots: usize = current.record_fields.values().map(|fields| fields.len()).sum();
     assert_eq!(roots, 16);
     assert!(current.variant_cases.is_empty() && current.case_fields.is_empty());
     let ((), old_metrics) = measure(|| old_drop(old));

@@ -325,15 +325,15 @@ fn workspace_compiler_prelude_selected(
             let kind = match &declaration.kind {
                 TypeDeclarationKind::Variant { .. } => ResolvedTypeDeclarationKind::Variant {
                     cases: declarations
-                        .variant_cases(&id)
+                        .case_payload(&id)
                         .ok_or_else(|| link_error("workspace prelude variant cases are absent"))?
-                        .to_vec(),
+                        .clone(),
                 },
                 TypeDeclarationKind::Record { .. } => ResolvedTypeDeclarationKind::Record {
                     fields: declarations
-                        .record_fields(&id)
+                        .record_payload(&id)
                         .ok_or_else(|| link_error("workspace prelude record fields are absent"))?
-                        .to_vec(),
+                        .clone(),
                 },
                 _ => {
                     return Err(link_error(
@@ -343,9 +343,9 @@ fn workspace_compiler_prelude_selected(
             };
             Ok(ResolvedTypeDeclaration {
                 type_parameters: declarations
-                    .type_parameters(&id)
+                    .parameter_payload(&id)
                     .ok_or_else(|| link_error("workspace prelude type parameters are absent"))?
-                    .to_vec(),
+                    .clone(),
                 kind,
                 id,
                 name: declaration.name.clone(),

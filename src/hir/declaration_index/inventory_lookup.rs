@@ -224,14 +224,14 @@ impl Index for Probes<'_> {
         key: &DeclarationId,
         work: &mut Work<'_>,
     ) -> Result<Option<&Vec<ResolvedTypeParameterDeclaration>>, ()> {
-        get(&self.0.type_parameters, key, &[], work)
+        get(&self.0.type_parameters, key, &[], work).map(|found| found.map(|values| &**values))
     }
     fn fields(
         &self,
         key: &DeclarationId,
         work: &mut Work<'_>,
     ) -> Result<Option<&Vec<ResolvedFieldDeclaration>>, ()> {
-        get(&self.0.record_fields, key, &[], work)
+        get(&self.0.record_fields, key, &[], work).map(|found| found.map(|values| &**values))
     }
 }
 impl<'a> Probes<'a> {
@@ -254,7 +254,7 @@ impl<'a> Probes<'a> {
         key: &DeclarationId,
         work: &mut Work<'_>,
     ) -> Result<Option<&'a Vec<ResolvedFieldDeclaration>>, ()> {
-        get(&self.0.case_fields, key, &[], work)
+        get(&self.0.case_fields, key, &[], work).map(|found| found.map(|fields| &**fields))
     }
 
     pub(crate) fn declared(
@@ -269,21 +269,21 @@ impl<'a> Probes<'a> {
         key: &DeclarationId,
         work: &mut Work<'_>,
     ) -> Result<Option<&'a Vec<ResolvedTypeParameterDeclaration>>, ()> {
-        get(&self.0.type_parameters, key, &[], work)
+        get(&self.0.type_parameters, key, &[], work).map(|found| found.map(|values| &**values))
     }
     pub(crate) fn field_rows(
         &self,
         key: &DeclarationId,
         work: &mut Work<'_>,
     ) -> Result<Option<&'a Vec<ResolvedFieldDeclaration>>, ()> {
-        get(&self.0.record_fields, key, &[], work)
+        get(&self.0.record_fields, key, &[], work).map(|found| found.map(|values| &**values))
     }
     pub(crate) fn cases(
         &self,
         key: &DeclarationId,
         work: &mut Work<'_>,
     ) -> Result<Option<&'a [ResolvedVariantCaseDeclaration]>, ()> {
-        Ok(get(&self.0.variant_cases, key, &[], work)?.map(Vec::as_slice))
+        Ok(get(&self.0.variant_cases, key, &[], work)?.map(|values| values.as_slice()))
     }
     pub(crate) fn has_invariant(
         &self,

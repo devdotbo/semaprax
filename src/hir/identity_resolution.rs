@@ -261,3 +261,6 @@ mod agent_tests;
 
 mod previous_source;
 pub(crate) use previous_source::resolve_source_checked_previous;
+
+mod nominal;
+pub(crate) use nominal::{resolve_checked_nominal,resolve_source_nominal,resolve_source_checked_previous_nominal};

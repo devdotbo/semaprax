@@ -14,6 +14,8 @@
 //! derivations layered over resolved HIR.
 
 pub(crate) mod items;
+mod nominal_payload;
+pub use nominal_payload::NominalPayload;
 use crate::ast::program_source::ProgramSource;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;

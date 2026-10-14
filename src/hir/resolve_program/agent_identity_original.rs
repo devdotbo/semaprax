@@ -85,7 +85,7 @@ impl Resolver<'_> {
                                     declaration.span,
                                 )
                             })?
-                            .to_vec();
+                            .to_vec().into();
                         ResolvedTypeDeclarationKind::Record { fields }
                     }
                     TypeDeclarationKind::Class { methods, .. } => {
@@ -99,7 +99,7 @@ impl Resolver<'_> {
                                     declaration.span,
                                 )
                             })?
-                            .to_vec();
+                            .to_vec().into();
                         let methods = methods
                             .iter()
                             .map(|method| self.declarations.held_identity(&method.stable_id))
@@ -117,7 +117,7 @@ impl Resolver<'_> {
                                     declaration.span,
                                 )
                             })?
-                            .to_vec();
+                            .to_vec().into();
                         ResolvedTypeDeclarationKind::Variant { cases }
                     }
                 };
@@ -132,7 +132,7 @@ impl Resolver<'_> {
                                 declaration.span,
                             )
                         })?
-                        .to_vec(),
+                        .to_vec().into(),
                     id,
                     name: declaration.name.clone(),
                     kind,

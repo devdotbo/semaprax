@@ -256,8 +256,10 @@ fn vector(
         Ok(hir::ResolvedTypeDeclaration {
             id,
             name: "Vec".into(),
-            type_parameters,
-            kind: hir::ResolvedTypeDeclarationKind::Record { fields: Vec::new() },
+            type_parameters: type_parameters.into(),
+            kind: hir::ResolvedTypeDeclarationKind::Record {
+                fields: Vec::new().into(),
+            },
             span: crate::ast::Span::default(),
         })
     })

@@ -61,7 +61,7 @@ impl FrontendPass {
             .get(path)
             .and_then(|entry| entry.synthetic.ready());
         Some(
-            crate::hir::identity_resolution::resolve_source_checked_previous(
+            crate::hir::identity_resolution::resolve_source_checked_previous_nominal(
                 synthetic,
                 previous
                     .as_ref()
@@ -94,7 +94,7 @@ impl FrontendPass {
         let entry = self.checked.get(path);
         let previous = entry.and_then(|entry| entry.synthetic.ready());
         Some(
-            crate::hir::identity_resolution::resolve_source_checked_previous(
+            crate::hir::identity_resolution::resolve_source_checked_previous_nominal(
                 synthetic,
                 previous
                     .as_ref()

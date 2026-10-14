@@ -36,6 +36,28 @@ impl DeclarationIndex {
         })
     }
 
+    /// Same explicit owner, now also acquiring the canonical nominal owners.
+    pub(in crate::hir) fn from_verified_with_nominal_reservation<E>(
+        program: &dyn ProgramSource,
+        prelude: &[crate::ast::TypeDeclaration],
+        mut reserve: impl FnMut(usize) -> Result<(), E>,
+    ) -> Result<Self, IdentityIndexError<E>> {
+        let workspace = super::nominal_rollback::Workspace::acquire(program, prelude, &mut reserve)
+            .map_err(IdentityIndexError::Identity)?;
+        let mut index = Self::build_nominal_index(
+            program,
+            prelude,
+            &mut |text| DeclarationId::paid_borrowed(text, &mut reserve),
+            true,
+            workspace,
+        )?;
+        index
+            .share_nominal_payloads(&mut reserve)
+            .map_err(IdentityIndexError::Identity)?;
+        index.nominal_drop_workspace.building = false;
+        Ok(index)
+    }
+
     // Borrow the callback on the stack so this complete constructor specializes
     // by its refusal carrier, rather than every caller closure type. No callback
     // escapes and reservation order and owned identity construction stay exact.
@@ -44,7 +66,24 @@ impl DeclarationIndex {
         prelude: &[crate::ast::TypeDeclaration],
         identity: &mut dyn FnMut(&str) -> Result<DeclarationId, E>,
     ) -> Result<Self, IdentityIndexError<E>> {
+        Self::build_nominal_index(
+            program,
+            prelude,
+            identity,
+            false,
+            super::nominal_rollback::Workspace::default(),
+        )
+    }
+
+    fn build_nominal_index<E>(
+        program: &dyn ProgramSource,
+        prelude: &[crate::ast::TypeDeclaration],
+        identity: &mut dyn FnMut(&str) -> Result<DeclarationId, E>,
+        canonical_nominals: bool,
+        workspace: super::nominal_rollback::Workspace,
+    ) -> Result<Self, IdentityIndexError<E>> {
         let mut index = Self::default();
+        index.nominal_drop_workspace = workspace;
         for declaration in program.types().iter().chain(prelude) {
             let kind = match declaration.kind {
                 TypeDeclarationKind::Resource { .. } => DeclarationKind::Resource,
@@ -388,9 +427,11 @@ impl DeclarationIndex {
                     );
                     resolved_fields.push(resolved);
                 }
-                index
-                    .case_fields
-                    .insert(case_id.clone(), resolved_fields.clone());
+                if !canonical_nominals {
+                    index
+                        .case_fields
+                        .insert(case_id.clone(), resolved_fields.clone());
+                }
                 resolved_cases.push(ResolvedVariantCaseDeclaration {
                     id: case_id,
                     name: case.name.clone(),

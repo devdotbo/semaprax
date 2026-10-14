@@ -113,18 +113,16 @@ impl Drop for ResolvedProgramOwner {
                 crate::hir::ResolvedTypeDeclarationKind::Resource { .. } => {}
                 crate::hir::ResolvedTypeDeclarationKind::Record { fields }
                 | crate::hir::ResolvedTypeDeclarationKind::Class { fields, .. } => {
-                    for field in fields {
-                        disposal_push(&mut self.frames, ResolvedDisposeFrame::Type(field.ty));
+                    fields.drain_recursive_types(|ty| {
+                        disposal_push(&mut self.frames, ResolvedDisposeFrame::Type(ty));
                         drain_disposal_frames(&mut self.frames, None);
-                    }
+                    });
                 }
                 crate::hir::ResolvedTypeDeclarationKind::Variant { cases } => {
-                    for case in cases {
-                        for field in case.fields {
-                            disposal_push(&mut self.frames, ResolvedDisposeFrame::Type(field.ty));
-                            drain_disposal_frames(&mut self.frames, None);
-                        }
-                    }
+                    cases.drain_recursive_types(|ty| {
+                        disposal_push(&mut self.frames, ResolvedDisposeFrame::Type(ty));
+                        drain_disposal_frames(&mut self.frames, None);
+                    });
                 }
             }
         }

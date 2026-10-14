@@ -143,9 +143,11 @@ fn record_class_variant_and_partial_first_diagnostics_keep_full_original_order()
             ];
             let ordered = fields(&program, &targets);
             let kind = match shape {
-                0 => ResolvedTypeDeclarationKind::Record { fields: ordered },
+                0 => ResolvedTypeDeclarationKind::Record {
+                    fields: ordered.into(),
+                },
                 1 => ResolvedTypeDeclarationKind::Class {
-                    fields: ordered,
+                    fields: ordered.into(),
                     methods: Vec::new(),
                 },
                 _ => ResolvedTypeDeclarationKind::Variant {
@@ -155,7 +157,8 @@ fn record_class_variant_and_partial_first_diagnostics_keep_full_original_order()
                         index: 0,
                         fields: ordered,
                         span: Span::default(),
-                    }],
+                    }]
+                    .into(),
                 },
             };
             install(&mut program, kind);
