@@ -1,0 +1,16 @@
+{
+  "basis": "ca469cf88",
+  "actual_log": "/Volumes/Semaprax/lane-prompts/sharing-focused-c7a3-20261015/clippy-production.log",
+  "actual_log_sha256": "210e67dd5ca1fd2ba9b3435fd013b0e22bb8e2e439804c8883694d368ff0abc7",
+  "diagnostics": 18,
+  "post_repair_rust_execution": false,
+  "whole_source_count": 65,
+  "changed_sources": [
+    "src/hir/declaration_index/identity_payer.rs",
+    "src/hir/declaration_index/nominal_rollback.rs",
+    "src/hir/identity_resolution.rs",
+    "src/hir/nominal_payload/elements.rs",
+    "src/hir/prelude_bundle.rs",
+    "src/hir/prelude_bundle/borrowed.rs"
+  ]
+}

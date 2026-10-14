@@ -16,10 +16,13 @@ mod borrowed;
 mod fixed_work;
 #[path = "prelude_bundle/invocation.rs"]
 mod invocation;
+#[cfg(test)]
 #[path = "prelude_bundle/materialize.rs"]
 mod materialize;
+#[cfg(test)]
 #[path = "prelude_bundle/merge.rs"]
 mod merge;
+#[cfg(test)]
 #[path = "prelude_bundle/overlay.rs"]
 mod overlay;
 #[path = "prelude_bundle/paid.rs"]
@@ -32,7 +35,9 @@ pub(crate) use fixed_work::{FixedFailure, FixedSchemaPayer, WorkReceipt, WorkRef
 #[cfg(test)]
 pub(crate) use invocation::ProducerFailure;
 pub(crate) use invocation::{Invocation, InvocationFailure};
+#[cfg(test)]
 pub(crate) use merge::merge_by_key;
+#[cfg(test)]
 pub(crate) use overlay::Overlay;
 
 /// The existing invocation supplies both accounts and retains its first sticky
@@ -95,6 +100,7 @@ impl BasePreludeBundle {
         })
     }
 
+    #[cfg(test)]
     pub(crate) fn retain<P: Payer>(&self, payer: &mut P) -> Result<Self, Failure<P::Error>> {
         // No new heap/control block: the original paid owner remains alive.
         payer.bytes(0).map_err(Failure::Payer)?;
@@ -112,10 +118,12 @@ impl BasePreludeBundle {
         &self.held.declarations
     }
 
+    #[cfg(test)]
     pub(crate) fn overlay<'a>(&'a self, local: &'a crate::hir::DeclarationIndex) -> Overlay<'a> {
         Overlay::new(self, local)
     }
 
+    #[cfg(test)]
     pub(super) fn declaration<P: Payer>(
         &self,
         text: &str,

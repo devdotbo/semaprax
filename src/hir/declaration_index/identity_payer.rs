@@ -37,6 +37,7 @@ impl DeclarationIndex {
     }
 
     /// Same explicit owner, now also acquiring the canonical nominal owners.
+    #[cfg(test)]
     pub(in crate::hir) fn from_verified_with_nominal_reservation<E>(
         program: &dyn ProgramSource,
         prelude: &[crate::ast::TypeDeclaration],

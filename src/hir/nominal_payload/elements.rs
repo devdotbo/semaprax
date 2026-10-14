@@ -18,7 +18,7 @@ fn capacity<E>(
             )?;
             let mut next = Vec::with_capacity(capacity);
             assert_eq!(next.capacity(), capacity);
-            next.extend(stack.drain(..));
+            next.append(stack);
             *stack = next;
         }
         stack.push(ty);

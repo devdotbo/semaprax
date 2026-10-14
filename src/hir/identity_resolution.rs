@@ -54,6 +54,7 @@ pub(crate) fn resolve<E>(
 
 /// Paid sibling of `resolve_with_function_reuse`: identical environment
 /// equality and reuse selection, identical verification-before-index order.
+#[cfg(test)]
 pub(crate) fn resolve_checked<'p, E>(
     program: &'p Program,
     previous_program: Option<&Program>,
@@ -84,6 +85,7 @@ pub(crate) fn resolve_checked<'p, E>(
     resolve_verified_paid(program, reuse, &mut reserve)
 }
 
+#[cfg(test)]
 pub(crate) fn resolve_source<'p, E>(
     program: &'p dyn ProgramSource,
     private: Option<source_verify::private_names::PrivateNames<'p>>,
@@ -94,6 +96,7 @@ pub(crate) fn resolve_source<'p, E>(
 
 /// Paid sibling of `resolve_source`: full verification and its explicit
 /// invariant inventory/desugaring preserve ordinary identity request order.
+#[cfg(test)]
 pub(crate) fn resolve_source_checked<'p, E>(
     program: &'p dyn ProgramSource,
     previous_program: Option<&Program>,
@@ -138,6 +141,7 @@ pub(crate) fn resolve_source_checked<'p, E>(
     pass(&desugared, None, &mut reserve)
 }
 
+#[cfg(test)]
 fn source_pass<E>(
     program: &dyn ProgramSource,
     reuse: Option<FunctionReuse<'_>>,
@@ -259,16 +263,20 @@ mod tests;
 #[cfg(test)]
 mod agent_tests;
 
+#[cfg(test)]
 mod previous_source;
+#[cfg(test)]
 pub(crate) use previous_source::resolve_source_checked_previous;
 
 mod nominal;
-pub(crate) use nominal::{resolve_checked_nominal,resolve_source_nominal,resolve_source_checked_previous_nominal};
+pub(crate) use nominal::{
+    resolve_checked_nominal, resolve_source_checked_previous_nominal, resolve_source_nominal,
+};
 
 #[cfg(test)]
 mod nominal_tests;
 
-pub(crate) use nominal::{resolve_source_checked_previous_with_base,NominalReceiverFailure};
+pub(crate) use nominal::{resolve_source_checked_previous_with_base, NominalReceiverFailure};
 
 #[cfg(test)]
 pub(crate) mod nominal_original;

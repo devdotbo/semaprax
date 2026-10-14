@@ -43,7 +43,7 @@ fn frontier<E>(root: &Type, reserve: &mut impl FnMut(usize) -> Result<(), E>) ->
             )?;
             let mut next = Vec::with_capacity(cap);
             assert_eq!(next.capacity(), cap);
-            next.extend(stack.drain(..));
+            next.append(stack);
             *stack = next;
         }
         stack.push(ty);
