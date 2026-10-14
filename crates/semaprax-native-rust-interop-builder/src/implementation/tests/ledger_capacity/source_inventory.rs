@@ -510,7 +510,17 @@ macro_rules! hir_resolver_source_inventory {
                 "\n",
                 include_str!("../../../../../src/hir/ids/metered_owner.rs")
             ),
-            include_str!("../../../../../src/hir/inspection.rs"),
+            concat!(
+                include_str!("../../../../../src/hir/inspection.rs"),
+                "\n",
+                include_str!("../../../../../src/hir/inspection/paid_nul.rs"),
+                "\n",
+                include_str!("../../../../../src/hir/inspection/paid_nul/pending.rs"),
+                "\n",
+                include_str!("../../../../../src/hir/inspection/paid_nul/text.rs"),
+                "\n",
+                include_str!("../../../../../src/hir/inspection/paid_nul/tests.rs")
+            ),
             include_str!("../../../../../src/hir/inspection/audit_pending.rs"),
             include_str!("../../../../../src/hir/inspection/calls.rs"),
             substitution_leaf_source_inventory!(),

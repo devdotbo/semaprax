@@ -37,8 +37,8 @@
     },
     {
       "path": "src/hir/inspection.rs",
-      "sha256": "6af9ee1f630c86ce48a7e8f8020883f82780be36edfe2c14cbadb3ced3fc5870",
-      "lines": 1260
+      "sha256": "5c80d0017ee96a092a80b7fe9c5b2ed263d0a91fe13cfca9a56f9674f27a1252",
+      "lines": 1281
     },
     {
       "path": "src/hir/owned_text_record/paid.rs",

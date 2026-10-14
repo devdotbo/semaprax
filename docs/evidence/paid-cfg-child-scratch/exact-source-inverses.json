@@ -55,6 +55,10 @@
       {
         "before": "                include_str!(\"../../../../../src/source_verify/iterative/calls.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/enter.rs\"),\n                \"\\n\",\n",
         "after": "                include_str!(\"../../../../../src/source_verify/iterative/calls.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/calls/calls_before_components.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/enter.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/enter/enter_before_components.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery/callee_components.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery_tests/callee_components.rs\"),\n                \"\\n\",\n"
+      },
+      {
+        "before": "            ),\n            include_str!(\"../../../../../src/hir/inspection.rs\"),\n            include_str!(\"../../../../../src/hir/inspection/audit_pending.rs\"),\n",
+        "after": "            ),\n            concat!(\n                include_str!(\"../../../../../src/hir/inspection.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/hir/inspection/paid_nul.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/hir/inspection/paid_nul/pending.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/hir/inspection/paid_nul/text.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/hir/inspection/paid_nul/tests.rs\")\n            ),\n            include_str!(\"../../../../../src/hir/inspection/audit_pending.rs\"),\n"
       }
     ]
   },
