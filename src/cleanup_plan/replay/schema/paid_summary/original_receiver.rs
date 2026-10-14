@@ -23,7 +23,7 @@ pub(super) fn validate_original<'hir>(
     // branches; neither its attached v20 string nor an ordinary context selects it.
     let ordinary_schema = schema::selected_schema_with_index(program, function, helpers)?;
     let expected_schema = if allocation_paths::current(program, function).is_some() {
-        super::CLEANUP_PLAN_SCHEMA_V20
+        crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20
     } else {
         ordinary_schema
     };

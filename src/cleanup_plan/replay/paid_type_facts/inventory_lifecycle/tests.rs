@@ -134,7 +134,7 @@ fn complete_native_resource_result_receiver_and_exact_borrowed_type_equality_kee
         }
         for a in &roots {
             assert_eq!(
-                paid(&program, |payer| native::result(&program, a, payer)),
+                paid(&program, |payer| super::native::result(&program, a, payer)),
                 crate::hir::admitted_ri06_regex_result(&program, a)
             );
             for b in &roots {

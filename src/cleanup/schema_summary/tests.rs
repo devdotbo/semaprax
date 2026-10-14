@@ -65,13 +65,23 @@ fn late_missing_type_preserves_full_first_diagnostic_after_earlier_owners() {
 }
 #[test]
 fn discovery_indices_survive_discarded_directories_and_empty_flags() {
+    // A real checked result identity; no private unscoped identity constructor.
+    let checked = program();
+    let function = checked
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "summary.main")
+        .unwrap();
+    let result = ValueId::result(&crate::hir::FunctionExecutionId::Monomorphic(
+        function.id.clone(),
+    ));
     let mut slots = Slots::default();
     for n in 0..17 {
         slots.push(CleanupStorageSlot {
             id: CleanupStorageId(n),
             discovery_index: n,
             origin: CleanupStorageOrigin::ProvisionalResult {
-                value: ValueId::new("r".to_owned()),
+                value: result.clone(),
             },
             ty: ResolvedType::Unit,
             shape: FieldLivenessShape::NoDrop,

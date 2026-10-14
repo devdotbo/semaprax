@@ -18,6 +18,10 @@ fn complete_schema_original_and_receiving_body_remain_byte_exact() {
     assert_eq!(current.replace(new_call, "let ordinary_schema = schema::selected_schema_with_index(program, function, helpers)?;"),
         include_str!("../../../../../docs/evidence/schema-summary/validation-receiver.rs.before"));
     let old=include_str!("original_receiver.rs").strip_prefix("//! Complete pre-adoption receiving function, independently compiled for controls.\nuse super::*;\n").unwrap();
+    // Relocation changes only the exact namespace of the same V20 constant.
+    let qualified = "crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20";
+    assert_eq!(old.matches(qualified).count(), 1);
+    let old = old.replacen(qualified, "super::CLEANUP_PLAN_SCHEMA_V20", 1);
     assert_eq!(
         old.replacen(
             "pub(super) fn validate_original<'hir>(",
