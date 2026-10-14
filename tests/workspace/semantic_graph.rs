@@ -413,6 +413,10 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         // Complete cfg(test) prelude initialization receiver stays in this
         // joined inventory; it grants no production facade or ambient authority.
         "pub(super) fn complete_original_receiver_before_measurement(programs: &[Program]) {",
+        // These two constructors are private to ast::program_source; the joined
+        // source keeps their exact facades without granting workspace authority.
+        "pub(super) fn append(authored: &'a [T], generated: &'a [T]) -> Option<Self> {",
+        "pub(super) fn selected(",
         "pub(super) fn collect_edges(",
         "pub(super) fn verify(",
         "pub(super) fn verify(",
