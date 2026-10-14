@@ -14,6 +14,7 @@ mod checked_value_retention;
 #[path = "workspace_graph/import_validation.rs"]
 mod import_validation;
 use checked_value_retention::retained_signature_type_facts;
+mod constructor_failure;
 mod dependency_pruning;
 pub(crate) mod diagnostics;
 mod expected_projection;
@@ -4403,13 +4404,14 @@ fn build_resolved_core_current(
         }
         let synthetic = staged!(
             SyntheticModule,
-            expected_projection::borrowed_leaf::Input::construct_transient_core(
+            constructor_failure::construct_transient_core(
                 program,
                 authored,
                 programs,
                 layouts,
                 &mut core_proofs,
             )
+            .map_err(constructor_failure::Failure::into_legacy_unfunded)
         )?;
         // Exact stubs/spans and the unconditional prebound govern hits.
         let cached = staged!(

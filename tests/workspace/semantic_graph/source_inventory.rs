@@ -52,7 +52,13 @@ macro_rules! semantic_graph_root_source_inventory {
             concat!(
                 concat!(
                     concat!(
-                    concat!(concat!(include_str!("../../src/workspace_graph.rs"), include_str!("../../src/hir/validation/generic_template/call_graph.rs"), include_str!("../../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../../src/hir/validation/generic_template/call_graph/tests.rs")), include_str!("../../src/list_ops/original_constructor.rs"), include_str!("../../src/iterator_ops/original_constructor.rs"), include_str!("../../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../../src/hir/validation/constructor_seed/intrinsic_tests.rs")),
+                    concat!(concat!(concat!(include_str!("../../src/workspace_graph.rs"),
+include_str!("../../src/workspace_graph/constructor_failure.rs"),
+include_str!("../../src/workspace_graph/expected_projection/defaults/inline.rs"),
+include_str!("../../src/workspace_graph/expected_projection/defaults/inline_fields.rs"),
+include_str!("../../src/workspace_graph/expected_projection/defaults/inline_tests.rs"),
+include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/inline.rs"),
+), include_str!("../../src/hir/validation/generic_template/call_graph.rs"), include_str!("../../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../../src/hir/validation/generic_template/call_graph/tests.rs")), include_str!("../../src/list_ops/original_constructor.rs"), include_str!("../../src/iterator_ops/original_constructor.rs"), include_str!("../../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../../src/hir/validation/constructor_seed/intrinsic_tests.rs")),
                     include_str!("../../src/cleanup_plan/build/capacity_observation/actual_attribution.rs"),
                     include_str!("../../src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs"),
                     include_str!("../../src/cleanup_plan/build/helper_index/original_plans.rs"),
@@ -393,9 +399,15 @@ macro_rules! semantic_graph_projection_child_source_inventory {
     (defaults) => {
         concat!(
             include_str!("../../src/workspace_graph/expected_projection/defaults.rs"),
-            include_str!("../../src/workspace_graph/expected_projection/defaults/field_directory.rs"),
-            include_str!("../../src/workspace_graph/expected_projection/defaults/field_directory/tests.rs"),
-            include_str!("../../src/workspace_graph/expected_projection/defaults/error_custody_tests.rs"),
+            include_str!(
+                "../../src/workspace_graph/expected_projection/defaults/field_directory.rs"
+            ),
+            include_str!(
+                "../../src/workspace_graph/expected_projection/defaults/field_directory/tests.rs"
+            ),
+            include_str!(
+                "../../src/workspace_graph/expected_projection/defaults/error_custody_tests.rs"
+            ),
             include_str!("../../src/workspace_graph/expected_projection/defaults/original.rs"),
         )
     };
@@ -405,9 +417,15 @@ macro_rules! semantic_graph_projection_child_source_inventory {
             include_str!(
                 "../../src/workspace_graph/expected_projection/import_stub/byte_helper.rs"
             ),
-            include_str!("../../src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs"),
-            include_str!("../../src/workspace_graph/expected_projection/import_stub/core_proofs.rs"),
-            include_str!("../../src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs"),
+            include_str!(
+                "../../src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs"
+            ),
+            include_str!(
+                "../../src/workspace_graph/expected_projection/import_stub/core_proofs.rs"
+            ),
+            include_str!(
+                "../../src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs"
+            ),
             include_str!("../../src/workspace_graph/expected_projection/import_stub_original.rs"),
         )
     };

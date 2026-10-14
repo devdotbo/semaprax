@@ -199,6 +199,38 @@ pub(super) fn default_expr(
     super::defaults::default_expr(&function.return_type, declarations, allow_owned)
 }
 
+pub(super) fn default_expr_inline(
+    function: &Function,
+    declarations: &[(&str, &crate::ast::TypeDeclaration)],
+    allow_owned: bool,
+    allow_byte_forward: bool,
+) -> Result<Expr, crate::workspace_graph::constructor_failure::Failure> {
+    crate::workspace_graph::constructor_failure::reserve(std::mem::size_of::<
+        Result<Expr, crate::workspace_graph::constructor_failure::Failure>,
+    >())?;
+    let byte_owner = function.params.iter().find(|parameter| {
+        allow_byte_forward && parameter.mode == ParamMode::Own && parameter.ty == Type::Bytes
+    });
+    if let Some(parameter) = byte_owner.or_else(|| {
+        forward_parameter(function, allow_owned, |ty| {
+            let Type::Named { name, arguments } = ty else {
+                return false;
+            };
+            arguments.is_empty()
+                && declarations
+                    .iter()
+                    .any(|(candidate, declaration)| *candidate == name && record_shape(declaration))
+        })
+    }) {
+        crate::workspace_graph::constructor_failure::reserve(std::mem::size_of::<Expr>())?;
+        return Ok(Expr {
+            kind: ExprKind::Var(crate::bounded_output::budgeted_clone(&parameter.name)),
+            span: crate::ast::Span::default(),
+        });
+    }
+    super::defaults::inline::default_expr(&function.return_type, declarations, allow_owned)
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(super) fn default_expr_expanded_cost(
     function: &Function,

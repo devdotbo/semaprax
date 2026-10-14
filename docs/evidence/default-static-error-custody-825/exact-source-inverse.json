@@ -60,7 +60,7 @@
     {
       "name": "explicit-default-module-path-3",
       "before": "mod error_custody_tests;",
-      "after": "#[path = \"defaults/error_custody_tests.rs\"]\nmod error_custody_tests;"
+      "after": "#[path = \"defaults/error_custody_tests.rs\"]\nmod error_custody_tests;\n\n#[path = \"defaults/inline.rs\"]\npub(in crate::workspace_graph) mod inline;\n#[path = \"defaults/inline_fields.rs\"]\nmod inline_fields;\n\n#[cfg(test)]\n#[path = \"defaults/inline_tests.rs\"]\nmod inline_tests;"
     }
   ]
 }
