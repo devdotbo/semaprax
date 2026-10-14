@@ -21,8 +21,10 @@ use crate::source_verify::diagnostics::{
     error, invalid_stable_id, reject_native_unit_value, reject_reserved_host_id, require_bool,
     source_identifier,
 };
-use crate::source_verify::iterative::check_expr_with_helpers_view;
+use crate::source_verify::iterative::check_expr_with_signature_view;
+mod signature_refusal;
 use crate::source_verify::type_table::TypeTable;
+pub(in crate::source_verify) use signature_refusal::SignatureOrigin;
 use std::collections::{BTreeSet, HashMap, HashSet};
 pub(super) fn check_function_declarations<'p>(
     program: &'p dyn ProgramSource,
@@ -355,6 +357,13 @@ pub(super) fn check_function_declarations<'p>(
                                     function, &param.ty,
                                 ))
                             || (owned_result && generic_result::slot(function, &param.ty)))))
+                    && !signature_refusal::unknown_component(
+                        program,
+                        &param.ty,
+                        param.span,
+                        types,
+                        &parameter_names,
+                    )
                 {
                     diagnostics.push(error(
                         program,
@@ -1180,7 +1189,7 @@ pub(super) fn check_function_bodies<'p>(
                 );
             }
 
-            let (body_value, refusal_view) = check_expr_with_helpers_view(
+            let (body_value, refusal_view) = check_expr_with_signature_view(
                 program,
                 function,
                 &function.body,
@@ -1192,6 +1201,7 @@ pub(super) fn check_function_bodies<'p>(
                 diagnostics,
                 Some(&byte_helpers),
                 fused_producer,
+                signature_refusal::origin(program, template, function),
             );
             if let Some(actual) = body_value {
                 if actual.native_unit {
@@ -1408,3 +1418,7 @@ pub(super) fn check_generic_function_cycles<'p>(
         diagnostics,
     );
 }
+
+#[cfg(test)]
+#[rustfmt::skip]
+pub(in crate::source_verify) mod public_signature_before;

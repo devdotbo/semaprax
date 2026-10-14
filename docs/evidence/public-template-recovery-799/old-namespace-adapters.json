@@ -1,0 +1,72 @@
+{
+  "source_base": "4ec48420b6e78b1035a66cc406893c46c3028464",
+  "edits": [
+    {
+      "source": "src/source_verify/declaration/functions.rs",
+      "before": "\n#[cfg(test)]\nmod generic_inference_tests;\n\n#[cfg(test)]\n#[rustfmt::skip]\npub(super) mod old;\n\n#[cfg(test)]\npub(super) fn check_generic_function_cycles<'p>(\n    program: &'p dyn ProgramSource,\n    call_graph: &HashMap<String, Vec<String>>,\n    generic_functions: &HashSet<&'p str>,\n    diagnostics: &mut Vec<Diagnostic>,\n) {\n    check_generic_function_cycles_with_types(\n        program,\n        call_graph,\n        generic_functions,\n        &TypeTable::new(program),\n        diagnostics,\n    );\n}\n",
+      "after": "\n",
+      "count": 1
+    },
+    {
+      "source": "src/source_verify/declaration/functions.rs",
+      "before": "super::super::",
+      "after": "crate::source_verify::",
+      "count": 2
+    },
+    {
+      "source": "src/source_verify/declaration/functions.rs",
+      "before": "pub(super) fn ",
+      "after": "pub(in crate::source_verify) fn ",
+      "count": 3
+    },
+    {
+      "source": "src/source_verify/declaration/functions.rs",
+      "before": "mod traversal_scope;",
+      "after": "#[path = \"traversal_scope.rs\"]\nmod traversal_scope;",
+      "count": 1
+    },
+    {
+      "source": "src/source_verify/declaration.rs",
+      "before": "\n#[cfg(test)]\n#[rustfmt::skip]\npub(super) mod old;\n",
+      "after": "\n",
+      "count": 1
+    },
+    {
+      "source": "src/source_verify/declaration.rs",
+      "before": "mod classes;\nmod declarations;\nmod functions;\npub(super) mod fusion;\nmod identity;\n",
+      "after": "",
+      "count": 1
+    },
+    {
+      "source": "src/source_verify/declaration.rs",
+      "before": "super::",
+      "after": "crate::source_verify::",
+      "count": 7
+    },
+    {
+      "source": "src/source_verify/declaration.rs",
+      "before": "use self::classes::",
+      "after": "use super::classes::",
+      "count": 1
+    },
+    {
+      "source": "src/source_verify/declaration.rs",
+      "before": "use self::declarations::",
+      "after": "use super::declarations::",
+      "count": 1
+    },
+    {
+      "source": "src/source_verify/declaration.rs",
+      "before": "use self::functions::",
+      "after": "use super::functions::public_signature_before::",
+      "count": 1
+    },
+    {
+      "source": "src/source_verify/declaration.rs",
+      "before": "use self::identity::",
+      "after": "use super::identity::",
+      "count": 1
+    }
+  ],
+  "note": "Exact namespace/visibility/registration adapters only; complete production bodies retained. Prior test-only wrapper/registrations omitted to avoid duplicate nested harness registration."
+}

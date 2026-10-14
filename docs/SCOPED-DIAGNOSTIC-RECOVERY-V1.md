@@ -138,3 +138,16 @@ public-support or production-support claim is made.
 
 Annotation refusal views are limited to immutable bindings. Mutable assignment
 flow keeps its full original diagnostics until a dependency join model exists.
+
+The ordinary public generic-body producer retains its exact authored template
+while checking each validation-only scalar specialization. A private borrowed
+origin binds that ProgramSource subject, template pointer and specialized-body
+pointer. Receipt recovery rechecks a missing parameter in the template's real
+generic environment while retaining the actual specialized binding metadata;
+foreign subjects, stale bodies and all six-field receipt mismatches fail closed.
+The origin adds no function clone, owned backing or admission authority.
+A generic parameter profile does not issue a dependent shape refusal when the
+ordinary declared-type checker identifies a missing component. Known sibling
+profile errors remain independent. Declaration-recheck scratch, diagnostics and
+recovery directory storage remain ordinary unpaid verifier acquisitions; this
+change does not create physical funding or alter sticky budget receipts.

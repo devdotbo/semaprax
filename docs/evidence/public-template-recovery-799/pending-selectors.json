@@ -1,0 +1,37 @@
+{
+  "qualification": "authored; unexecuted",
+  "new_owners": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::complete_prior_public_four_diagnostics_become_exact_unknown_and_independent_sibling"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::known_sibling_generic_profile_refusal_and_all_admitted_validation_stay_independent"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::borrowed_producer_origin_rejects_foreign_stale_and_malformed_templates_without_allocation"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::specialized_public_receiver_keeps_exact_six_field_authentication"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::full_production_sources_and_complete_public_predecessors_keep_exact_inverses"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::public_error_receipts_and_complete_drop_keep_zero_and_sticky_unpaid_boundary_explicit"
+    }
+  ],
+  "existing_failed_owner": "source_verify::recovery_tests::extended_components::generic_current_parameter_refusal_authenticates_exact_receipt_and_keeps_real_sibling",
+  "requires_all_existing_799_and_recovery_owners": true
+}

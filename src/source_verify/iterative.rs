@@ -4,12 +4,12 @@
 //! frame layout. The frame loop lives in [`run`] and the `while` admission
 //! rules in [`while_rules`].
 
-use super::IterativeVerifier;
 use super::binding::{Binding, CheckedValue};
 use super::diagnostics::{error, source_identifier};
 use super::hints;
 use super::scope::VerifierFrame;
 use super::type_table::TypeTable;
+use super::IterativeVerifier;
 use crate::ast::program_source::ProgramSource;
 use crate::ast::{Expr, Function, Statement, Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
@@ -347,6 +347,40 @@ pub(super) fn check_expr_with_helpers_view<'a, 'p>(
     Option<CheckedValue>,
     Option<super::recovery::RefusalView<'p>>,
 ) {
+    check_expr_with_signature_view(
+        program,
+        current,
+        expr,
+        variables,
+        functions,
+        types,
+        result_type,
+        allow_moves,
+        diagnostics,
+        helpers,
+        fused_producer,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn check_expr_with_signature_view<'a, 'p>(
+    program: &'p dyn ProgramSource,
+    current: &'p Function,
+    expr: &'p Expr,
+    variables: &mut HashMap<String, Binding>,
+    functions: &'p HashMap<&'p str, &'p Function>,
+    types: &'p TypeTable<'p>,
+    result_type: Option<&'p Type>,
+    allow_moves: bool,
+    diagnostics: &'a mut Vec<Diagnostic>,
+    helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,
+    fused_producer: Option<&'p Expr>,
+    signature: Option<super::declaration::SignatureOrigin<'p>>,
+) -> (
+    Option<CheckedValue>,
+    Option<super::recovery::RefusalView<'p>>,
+) {
     let initial = std::mem::take(variables);
     let mut verifier = IterativeVerifier::new(
         program,
@@ -358,6 +392,22 @@ pub(super) fn check_expr_with_helpers_view<'a, 'p>(
         allow_moves,
         diagnostics,
     );
+    // The public body producer holds the exact authored template before its
+    // validation-only scalar substitutions clear the type-parameter names.
+    // Authenticate the original receipt against that environment and the real
+    // specialized bindings; no source lookup or span-only inference is used.
+    if let Some(signature) = signature
+        .as_ref()
+        .and_then(|origin| origin.template_for(program, current))
+    {
+        verifier.recovery = super::recovery::Recovery::signature(
+            program,
+            signature,
+            &verifier.scopes[0].bindings,
+            types,
+            verifier.diagnostics,
+        );
+    }
     verifier.byte_helpers = helpers;
     verifier.fused_producer = fused_producer;
     let result = verifier.run(expr);

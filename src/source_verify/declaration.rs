@@ -8,6 +8,7 @@ use self::declarations::{
     check_byte_data_declarations, check_declared_fields, check_native_rust_imports,
     check_record_layouts, check_resource_lifecycles,
 };
+pub(super) use self::functions::SignatureOrigin;
 use self::functions::{
     check_function_bodies, check_function_declarations, check_generic_function_cycles_with_types,
 };
@@ -306,3 +307,7 @@ fn verify_profile<'p>(
 #[cfg(test)]
 #[rustfmt::skip]
 pub(super) mod old;
+
+#[cfg(test)]
+#[rustfmt::skip]
+pub(super) mod public_signature_before;
