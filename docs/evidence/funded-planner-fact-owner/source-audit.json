@@ -1,0 +1,111 @@
+{
+  "base_commit": "d94653b600584058245b9e92764d1f1c09cd3c3e",
+  "status": "source-only; compilation and exact-body runtime qualification pending",
+  "complete_inverse_checks": true,
+  "old_and_current_allocation_floor_unchanged": 8,
+  "old_original_work_equality_unchanged_in_independent_receiver": true,
+  "old_ordinary_receiver_scope": "complete ordinary nonlexical branch; original shared lexical delegation unchanged; not old lexical evidence",
+  "files": {
+    "src/loan_plan/funded_flat/tests.rs": {
+      "sha256": "e50d3f5d90ba9c650eb8f1d5a7ecc0d385beff021f18f22d04628738ed44100f",
+      "bytes": 17060,
+      "lines": 423
+    },
+    "src/loan_plan/funded_flat/tests_before.rs": {
+      "sha256": "3df0efd03e2a08467722689870682ed3fe33de13289d5ceee1a407187ebc5366",
+      "bytes": 16819,
+      "lines": 416
+    },
+    "src/loan_plan/funded_flat/fixture_before.rs": {
+      "sha256": "91435dda2a19ff54cb13fddcbd670d796bbd69badb470a3479a41ae370748057",
+      "bytes": 2986,
+      "lines": 81
+    },
+    "src/loan_plan/funded_flat/fixture_receiving.rs": {
+      "sha256": "db6cac907a9203d6c1c7b421bd32b50d9bfdfc4a3117553a92fdeddb4338f05d",
+      "bytes": 5106,
+      "lines": 123
+    },
+    "src/loan_plan/paid_cursor/funded_before.rs": {
+      "sha256": "1b7f24cd45c5d34691de1f686fbec730988896c62a2db3872669d11302e7de7c",
+      "bytes": 2946,
+      "lines": 78
+    },
+    "src/loan_plan/paid_candidate_before.rs": {
+      "sha256": "2171767962fc58bd699165f3023910712146871fadc6b2bc6077a02d7374bbbe",
+      "bytes": 8433,
+      "lines": 224
+    },
+    "src/loan_plan/paid_cursor.rs": {
+      "sha256": "98b959f27238e7dd340cac7761a3c91d3fd9a5326e82439aacbeafb99ac8e513",
+      "bytes": 7428,
+      "lines": 222
+    },
+    "src/cleanup_plan/replay/allocation/tests.rs": {
+      "sha256": "4b8b6a29c8381d1256324ebaa11b37296cf0a0327347565b28096372ef58daa0",
+      "bytes": 11354,
+      "lines": 244
+    },
+    "src/cleanup_plan/replay/allocation/tests/ordinary_before.rs": {
+      "sha256": "59087369541313feff8f58645c58d72da864444e43d90619255587a46f904123",
+      "bytes": 3706,
+      "lines": 73
+    },
+    "src/cleanup_plan/replay/allocation/tests/accounting_scope.rs": {
+      "sha256": "fa2d552a710d3066e9c64f5085f17fe084ac66d2824ddf49418e71e57cb16f39",
+      "bytes": 6209,
+      "lines": 143
+    },
+    "src/cleanup_plan/replay/expression_facts.rs": {
+      "sha256": "82c15975078a1e841c342440723a2e75ec2a0bfee01366ea8f43c49af0b6dec1",
+      "bytes": 23681,
+      "lines": 624
+    },
+    "src/cleanup_plan/replay/expression_facts/ordinary_before.rs": {
+      "sha256": "052cf62cbb2bc3c46b86816e34faa381c095c2ff3e50ddaa93da8e5e59f9b250",
+      "bytes": 4736,
+      "lines": 125
+    },
+    "src/cleanup_plan/replay/expression_facts/saved.rs": {
+      "sha256": "0aef16929be73f5fe43438565c98a17f00cf52cd4169a4bc33cc99e6f184650a",
+      "bytes": 1516,
+      "lines": 34
+    },
+    "tests/hir_module_boundaries.rs": {
+      "sha256": "e3d3fd88b8308e296b9df383f0819df0473db3bd82c0157d36ef52d413eceff2",
+      "bytes": 29409,
+      "lines": 458
+    },
+    "docs/evidence/funded-planner-fact-owner/original-ordinary-owner.txt": {
+      "sha256": "cc6db84645eb0bef1e598ad2aa373a6d9bb683d20308cb320b7665ed4ddfba3e",
+      "bytes": 3348,
+      "lines": 67
+    },
+    "docs/evidence/funded-planner-fact-owner/original-allocation-tests.txt": {
+      "sha256": "76ea844f2beb62c4af7007a0de95bb282d8c8a9e6fba18c0cfa6b09b105aeeb1",
+      "bytes": 11039,
+      "lines": 237
+    },
+    "docs/evidence/funded-planner-fact-owner/original-funded-flat-tests.txt": {
+      "sha256": "3df0efd03e2a08467722689870682ed3fe33de13289d5ceee1a407187ebc5366",
+      "bytes": 16819,
+      "lines": 416
+    },
+    "docs/evidence/funded-planner-fact-owner/original-ordinary-receiver.txt": {
+      "sha256": "e5b9b5ea3e0288f035697ef4701380e66cb18af18c25b5645aa777bf3f3d9149",
+      "bytes": 3751,
+      "lines": 98
+    },
+    "docs/evidence/funded-planner-fact-owner/original-expression-facts-module.txt": {
+      "sha256": "4a376604a03dbe2d90db4cc322092b25ec926f4ee716dba3c3c1f8676ad1a038",
+      "bytes": 23572,
+      "lines": 619
+    },
+    "docs/evidence/funded-planner-fact-owner/original-funded-before.txt": {
+      "sha256": "1b7f24cd45c5d34691de1f686fbec730988896c62a2db3872669d11302e7de7c",
+      "bytes": 2946,
+      "lines": 78
+    }
+  },
+  "map_to_tree_adapter_moves_original_whole_map_without_allocation": true
+}

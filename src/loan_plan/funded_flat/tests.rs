@@ -240,7 +240,8 @@ fn complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop() {
         (STRINGS, "collection.inspect", false),
         (LEXICAL, "app.main", true),
     ] {
-        let ast = crate::check(source, "paid-planner.spx").unwrap();
+        let source = fixture_receiving::wide_source(source, name);
+        let ast = crate::check(&source, "paid-planner.spx").unwrap();
         let program = crate::hir::resolve(&ast).unwrap();
         let function = program
             .functions
@@ -300,6 +301,7 @@ fn complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop() {
             // the funded planner must agree (checked by `assert_paid_owner_through_drop`).
             assert!(old.loans.is_empty());
         }
+        fixture_receiving::assert_real_discovery_spill(function);
         assert_paid_owner_through_drop(&program, function, &old);
     }
 }
@@ -414,3 +416,8 @@ fn assert_paid_owner_through_drop(
     assert_eq!(short.live, 0);
     assert!(!short.invalid);
 }
+
+#[path = "fixture_before.rs"]
+mod fixture_before;
+#[path = "fixture_receiving.rs"]
+mod fixture_receiving;
