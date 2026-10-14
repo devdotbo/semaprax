@@ -90,9 +90,7 @@ impl<'a> Graph<'a> {
             edges.push(Outgoing::new());
         }
         let mut indegree = with_capacity::<usize>(unique)?;
-        for _ in 0..unique {
-            indegree.push(0);
-        }
+        indegree.resize(unique, 0);
         let queue = with_capacity::<usize>(unique)?;
         Ok(Self {
             program,
