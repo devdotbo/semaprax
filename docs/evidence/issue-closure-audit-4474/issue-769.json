@@ -1,0 +1,24 @@
+{
+  "url": "https://github.com/wavect/semaprax/issues/769",
+  "title": "(OPT) Construct normalized arithmetic failure statuses only on failure",
+  "issue_number": 769,
+  "body": "The focused frozen-source `654846173` qualification found avoidable allocations in successful arithmetic. `interpreter::combine` eagerly evaluates `outcome.map_or(Some(Err(normalize_arithmetic(case))), ...)`; constructing the discarded normalized failure allocates its String domain even when checked arithmetic succeeds.\n\nAstra source review traced selected execution to this same ordinary interpreter helper. The original 4,096-row allocation observer recorded 20,490 allocations; four successful adds per row account for the 16,384 unnecessary status constructions above the 4,096 title strings and fixed overhead. This is runtime allocation evidence and source attribution, not an agent-token or billed-cost result.\n\nConstruct the normalized error lazily, preserving left-to-right evaluation, exact overflow/division status, sticky failure selection and all ordinary behavior. Do not increase accounts to pay for discarded success-path errors. Preserve the original unchanged 33/4,096-row physical allocation and whole-chain settlement controls, plus independent ordinary arithmetic error regressions.\n\nImplement in the larger batch on `wavect/v0-10-0` / PR #761. Run only affected arithmetic and allocation/account owners after consolidation; no full quality gates. Keep open until the change is qualified and pushed to that branch. This is a separate broadly applicable interpreter optimization alongside #747/#768 receiving repairs.\n",
+  "state": "open",
+  "user": {
+    "login": "wsdt",
+    "name": "wsdt",
+    "email": null,
+    "avatar_url": "https://avatars.githubusercontent.com/u/28724551?v=4",
+    "id": 28724551
+  },
+  "assignees": null,
+  "labels": null,
+  "milestone": null,
+  "state_reason": null,
+  "comments": 0,
+  "created_at": "2026-10-11T15:45:15Z",
+  "updated_at": "2026-10-11T15:45:15Z",
+  "closed_at": null,
+  "display_url": "https://github.com/wavect/semaprax/issues/769",
+  "display_title": "(OPT) Construct normalized arithmetic failure statuses only on failure"
+}
