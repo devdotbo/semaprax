@@ -154,7 +154,7 @@ fn semantic_profile_limit_stays_inline_until_the_complete_final_boundary() {
 #[test]
 fn complete_original_cleanup_root_remains_byte_exact_with_paid_profile_separate() {
     let source = include_str!("../../../../cleanup.rs");
-    let registration = "pub(crate) mod schema_summary;\n";
+    let registration = "#[cfg(test)]\npub(crate) mod schema_summary;\n";
     assert_eq!(source.matches(registration).count(), 1);
     let projected = source.replacen(registration, "", 1);
     assert_eq!(

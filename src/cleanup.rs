@@ -21,6 +21,7 @@ mod generic_record;
 #[cfg(test)]
 pub(crate) use inventory_builder::build_borrowed_helper_inventory_with_budget;
 mod inventory_builder;
+#[cfg(test)]
 pub(crate) mod schema_summary;
 use inventory_builder::InventoryBuilder;
 pub(crate) use inventory_builder::{
