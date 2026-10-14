@@ -21,6 +21,14 @@ fn receive_function(
     before: bool,
     name: &str,
 ) -> (Option<crate::ast::Type>, Vec<Diagnostic>) {
+    receive_function_route(source, before, name, false)
+}
+fn receive_function_route(
+    source: &str,
+    before: bool,
+    name: &str,
+    previous_parameter: bool,
+) -> (Option<crate::ast::Type>, Vec<Diagnostic>) {
     let program = crate::parse(source, Path::new("extended-components.spx")).unwrap();
     let types = TypeTable::new(&program);
     let functions = program
@@ -130,6 +138,15 @@ fn receive_function(
             )
         })
         .collect();
+    let previous_recovery = previous_parameter.then(|| {
+        crate::source_verify::recovery::Recovery::before_parameter_signature(
+            &program,
+            main,
+            &variables,
+            &types,
+            &diagnostics,
+        )
+    });
     let mut verifier = IterativeVerifier::new(
         &program,
         main,
@@ -141,6 +158,13 @@ fn receive_function(
         &mut diagnostics,
     );
     verifier.extended_before_799 = before;
+    if let Some(previous_recovery) = previous_recovery {
+        // Complete archived parameter, component and operator receivers are
+        // required: changing only the component route retains today's signature.
+        verifier.recovery = previous_recovery;
+        verifier.extended_before_799 = true;
+        verifier.operators_before_799 = true;
+    }
     let value = verifier.run(&main.body).unwrap().map(|value| value.ty);
     drop(verifier);
     (value, diagnostics)
@@ -805,7 +829,23 @@ fn declared_nominal_arity_refusal_keeps_complete_original_receipt_without_unknow
         &HashSet::from(["T"]),
         &mut receipt,
     );
-    assert_eq!(codes(&receipt), ["SPX-T221"]);
+    assert_eq!(
+        receipt,
+        vec![
+            Diagnostic::error(
+                "SPX-T221",
+                "type `Known` expects 0 type arguments, received 1",
+                function.params[0].span,
+            )
+            .at_path("extended-components.spx"),
+            Diagnostic::error(
+                "SPX-T223",
+                "generic copy type `Known` accepts only direct `i64` or `bool` arguments",
+                function.params[0].span,
+            )
+            .at_path("extended-components.spx"),
+        ]
+    );
     let recovery = crate::source_verify::recovery::Recovery::signature(
         &program,
         &program.functions[1],
@@ -925,8 +965,12 @@ fn generic_current_parameter_refusal_authenticates_exact_receipt_and_keeps_real_
         );
         assert!(!current.reads_known_refused(0, "b"));
     }
-    let old = receive_function(&source, true, "f");
+    // The component-only old route already carries current signature/operator
+    // recovery, so it cannot witness the dependent operator diagnostic.
+    let component_old = receive_function(&source, true, "f");
+    let old = receive_function_route(&source, true, "f", true);
     let current = receive_function(&source, false, "f");
+    assert_eq!(component_old, current);
     assert_eq!(codes(&old.1), ["SPX-T220", "SPX-T202", "SPX-T208"]);
     assert_eq!(current.1, vec![old.1[0].clone(), old.1[1].clone()]);
     assert_eq!(current.0, None);
