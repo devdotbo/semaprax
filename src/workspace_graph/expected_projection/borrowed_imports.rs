@@ -192,6 +192,7 @@ pub(in crate::workspace_graph) fn construct<'a>(
         types.push(alias_clone::type_payload(declaration));
         let copy = types.last_mut().expect("inserted type");
         copy.name = crate::bounded_output::budgeted_clone(&import.alias);
+        reserve_builder_structure(0)?;
         super::super::generic_type_import::rewrite_declaration_with_layout(
             copy,
             target.module,
@@ -211,6 +212,7 @@ pub(in crate::workspace_graph) fn construct<'a>(
         types.push(alias_clone::type_payload(entry.declaration));
         let copy = types.last_mut().expect("inserted private type");
         copy.name = crate::bounded_output::budgeted_clone(&entry.alias);
+        reserve_builder_structure(0)?;
         super::super::generic_type_import::rewrite_declaration_with_layout(
             copy,
             entry.module,
@@ -292,6 +294,7 @@ pub(in crate::workspace_graph) fn construct<'a>(
             alias_clone::signature_function(original, &import.alias)
         };
         functions.push(function);
+        reserve_builder_structure(0)?;
         if retain_body {
             continue;
         }
@@ -346,8 +349,12 @@ pub(in crate::workspace_graph) fn construct<'a>(
             },
             span: crate::ast::Span::default(),
         });
+        reserve_builder_structure(0)?;
     }
     drop(type_index);
+    // Infallible bounded string helpers record refusal and return empty text.
+    // A generated view must never publish that partial construction as success.
+    reserve_builder_structure(0)?;
     SyntheticProgramView::with_generated_owner(program, roots).ok_or_else(refusal)
 }
 

@@ -1,0 +1,30 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "source_base": "960d417bc16277c3628d3a5c249c99cec80e548e",
+  "scope": "Only sticky-refusal checkpoints; no changed application fixtures, cap, clone price or success payload.",
+  "original_constructor_sha256": "051b0ab47e03d9e0fac140f6199e87b1375510f16327f148387fe6414e7c6d10",
+  "original_lines": 206,
+  "full_original_compiled_receiver": "src/workspace_graph/expected_projection/borrowed_imports/tests/full/original_construct.rs",
+  "namespace_adapters_only": 3,
+  "current_source_sha256": {
+    "src/workspace_graph/expected_projection/borrowed_imports.rs": "54599fda2371ac9e76b897812e8d717828d542db25dceffa2d1161b403a2bc38",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/full.rs": "f7ada2db950526d26e0c8e91ef90548c3a5154216b42d61e8c30a89beb978ef2",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs": "f6a706c366ef49018561f1dd33f22699c68e57710c343bddb5203c29c4e37abb",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/full/original_construct.rs": "addbd5fc75f95d405bcb82b7efa519b75a1a2eba9e93d1fd609ee3ab8f19947b"
+  },
+  "static_complete_inverse_checks": true,
+  "claude_source_review": {
+    "session_id": "1bbe511f-1119-4b4c-a1df-0e902066e9ff",
+    "exit_code": 0,
+    "wall_seconds": 79.78138408299856,
+    "peak_group_rss_bytes": 345423872,
+    "tool_use": false,
+    "provider_list_cost_usd": 0.2583035,
+    "actual_billing": null
+  },
+  "limits": [
+    "No executable check yet.",
+    "The prior conjunction failure has no per-field values, so this is not proven sole attribution.",
+    "No application fit or agent token/cost saving claimed."
+  ]
+}
