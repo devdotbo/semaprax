@@ -8,16 +8,16 @@
     "bytes": 8134
   },
   "src/workspace_graph/generic_type_import/borrowed_tests.rs": {
-    "sha256": "17c5e5794256f1792f2956b9055023c1bbb6202ac6ec8c4d271e02f48b58d126",
-    "bytes": 20884
+    "sha256": "d331c855c41b28628584bd2576c93c0f72226ed07beb1cfe25272e178a0a9b31",
+    "bytes": 21897
   },
   "src/workspace_graph/expected_projection/cost.rs": {
     "sha256": "dc82998ecf0fc9660069c46c67de574ced77a7c33a2a1013aaaa70f15a0f4dc5",
     "bytes": 40093
   },
   "src/workspace_graph/expected_projection/cost/generic_rewrite_test_bridge.rs": {
-    "sha256": "24a4e82d60552aa00c5798801beb0596b2fe8ac827499678ddf0f802484b13d1",
-    "bytes": 1364
+    "sha256": "31391c27adf5fa9a0d174721309f33b3a7c453729890c828f33aed3720694903",
+    "bytes": 1381
   },
   "tests/workspace/semantic_graph/source_inventory.rs": {
     "sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
@@ -28,7 +28,7 @@
     "bytes": 3635
   },
   "src/workspace_graph/generic_type_import/parameter_names/tests.rs": {
-    "sha256": "a16366f53e3613db90accba0df8fff733f4f6ed9f9fe075099cef54fb9a2581c",
-    "bytes": 8674
+    "sha256": "ef445329240ecd04add5142d9440efd64b1ec568a4df3a53a91acf84172591f0",
+    "bytes": 9544
   }
 }

@@ -16,9 +16,16 @@ fn program(source: &str) -> Program {
     crate::parse(source, "fixture.spx").unwrap()
 }
 pub(super) fn record() -> TypeDeclaration {
-    program(r#"module fixture.provider; @id("row") record Row<T> { @id("row.x") x:T, }"#)
-        .types
-        .remove(0)
+    let original = r#"module fixture.provider; @id("row") record Row<T> { @id("row.x") x:T, }"#;
+    assert_eq!(
+        crate::parse(original, "fixture.spx").unwrap_err().code,
+        "SPX-P101"
+    );
+    program(&format!(
+        "{original} @id(\"fixture.noop\") fn fixture_noop()->i64 {{0}}"
+    ))
+    .types
+    .remove(0)
 }
 fn fixture(kind: usize, count: usize, ty: Type) -> TypeDeclaration {
     let mut declaration = record();
@@ -60,11 +67,16 @@ fn fixture(kind: usize, count: usize, ty: Type) -> TypeDeclaration {
     declaration
 }
 pub(super) fn contexts() -> (Program, Vec<Program>) {
-    let provider = program(
-        r#"module fixture.provider;
+    let original = r#"module fixture.provider;
 @id("target") record Target { @id("target.value") value:i64, }
-@id("other") record Other { @id("other.value") value:bool, }"#,
+@id("other") record Other { @id("other.value") value:bool, }"#;
+    assert_eq!(
+        crate::parse(original, "fixture.spx").unwrap_err().code,
+        "SPX-P101"
     );
+    let provider = program(&format!(
+        "{original} @id(\"fixture.provider.noop\") fn fixture_noop()->i64 {{0}}"
+    ));
     let caller = program(
         r#"module fixture.caller;
 use type @id("target") from fixture.provider as Imported;
@@ -285,8 +297,8 @@ fn full_cost_fields_alias_order_and_first_errors_match_old_with_layout_receivers
                 };
                 assert_eq!(before, after);
                 assert_eq!(
-                    cost_bridge::snapshot(&old_cost),
-                    cost_bridge::snapshot(&current_cost)
+                    cost_bridge::capture_projection(&old_cost),
+                    cost_bridge::capture_projection(&current_cost)
                 );
             }
         }
@@ -324,7 +336,7 @@ fn unpriced_membership_and_traversal_backing_disappears_without_ledger_changes()
                                     )
                                 };
                                 assert!(result.is_ok());
-                                assert_eq!(cost_bridge::snapshot(&cost).2[0], 0);
+                                assert_eq!(cost_bridge::capture_projection(&cost).2[0], 0);
                             } else {
                                 let result = if old {
                                     original::rewrite_declaration(
@@ -461,7 +473,20 @@ use function @id("identity") from fixture.provider as identity;
         .collect();
     let run = || {
         let build = crate::workspace_graph::build_owned(sources.clone()).unwrap();
-        let program = build.linked_scalar_program("fixture.caller").unwrap();
+        // Preserve the complete scalar-linker refusal for the original use-type
+        // fixture; the positive path is the actual admitted typed/owned route.
+        let scalar_errors = build.linked_scalar_program("fixture.caller").unwrap_err();
+        assert_eq!(
+            scalar_errors,
+            vec![crate::diagnostic::Diagnostic::io(
+                "SPX-G172",
+                "workspace scalar linker does not admit `use type` imports",
+            )]
+        );
+        let program = build
+            .linked_owned_data_program_for_test("fixture.caller")
+            .unwrap();
+        crate::hir::validate(&program).unwrap();
         (
             format!("{program:?}"),
             crate::graph::to_hir_json(&program, "same-revision").unwrap(),

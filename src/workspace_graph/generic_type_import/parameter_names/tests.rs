@@ -185,8 +185,17 @@ fn complete_large_declared_generic_source_and_original_caller_keep_paid_g171_ord
         original::template_is_admitted(&missing)
     );
     assert!(!template_is_admitted(&missing).unwrap());
+    assert_eq!(
+        crate::parse(
+            "module parameter.provider; @id(\"row\") record Row<T> { @id(\"row.x\") x:T, }",
+            "provider.spx",
+        )
+        .unwrap_err()
+        .code,
+        "SPX-P101"
+    );
     let provider = crate::parse(
-        "module parameter.provider; @id(\"row\") record Row<T> { @id(\"row.x\") x:T, }",
+        "module parameter.provider; @id(\"row\") record Row<T> { @id(\"row.x\") x:T, } @id(\"parameter.noop\") fn parameter_noop()->i64 {0}",
         "provider.spx",
     )
     .unwrap();

@@ -3,7 +3,9 @@ use super::StructuralCost;
 pub(in crate::workspace_graph) fn new() -> StructuralCost {
     StructuralCost::new()
 }
-pub(in crate::workspace_graph) fn snapshot(cost: &StructuralCost) -> (bool, bool, [usize; 15]) {
+pub(in crate::workspace_graph) fn capture_projection(
+    cost: &StructuralCost,
+) -> (bool, bool, [usize; 15]) {
     let StructuralCost {
         total,
         string_bytes,
