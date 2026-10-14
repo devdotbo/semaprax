@@ -9,7 +9,7 @@
     "src/cleanup_plan/replay/skeleton_work/dag_storage.rs": "500a40cbfbbef50ff44a26f237f2b93cea7358a64ccb1105293ade4fa078f6bb",
     "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs": "6f3aeb448ee3b4bb202d027c93eebbcec8a5c0854496792d53a66206525871f8",
     "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs": "7ee5d27f2ae13fa859875cfdc9715b88ad6137996a1362840254a667b3d34f68",
-    "src/cleanup_plan/replay/skeleton_work/oracle_entry.rs": "75d42153c3897309db6865b2cd5a840d9d4a351aabd2a7a77b08674a0add485d",
+    "src/cleanup_plan/replay/skeleton_work/oracle_entry.rs": "9ccc81b3f79c93b7330f3cbe8013c05424e95b2808b51dc06bbb18f9bfa6f7b7",
     "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs": "3d1a9ab1fd584910af3044e44a19e4c429263778cc611fa44c4a3df6250e2ab5",
     "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs": "d8564be6acde2c6def66fc5ec06b3890545609f198f34e225773f78cfc42ae0c",
     "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8",
@@ -17,7 +17,7 @@
     "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs": "d17dae8c6c00c034c06092531c4a45c97347c88fdd351fb7d7e11c6be09bb2ab",
     "src/test_allocation_observer.rs": "f3ab093d0bec8e84d98baedfb88e26ec97c1a66022638bd1bf5301ff25844fac",
     "src/test_allocation_observer/free_order.rs": "f3b372a2eedde6d0e238580a57e5fbcb1ca14144a479e052a0f37be009e6fc48",
-    "tests/hir_module_boundaries.rs": "57e51d8db9f6f4648bc553e106b4b7aacf556e9e63305a9210adf6e409c1134c",
+    "tests/hir_module_boundaries.rs": "820663f9b7b7c288a5df7edab2db3b2b9fdb0d58ca7011fabdf9e69586e7b9ea",
     "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs": "cd6cbb50e3d362456d3f032e0bbdb3887c8ef388e3bc08a15a43b185fa5d9d6f"
   },
   "original_snapshot_hashes": {
