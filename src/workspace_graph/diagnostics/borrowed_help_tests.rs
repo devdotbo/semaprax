@@ -125,29 +125,71 @@ fn every_help_branch_keeps_full_original_diagnostic_and_actual_complete_drop() {
     use crate::test_allocation_observer::measure;
     let _restore = Restore::capture();
     for case in 0..8 {
-        fixture(case);
-        let (old, refused, _, first) =
-            with_limit_usage_refusal(1024 * 1024, || original_limit_error(65536));
-        assert!(!refused && first.is_none());
-        let (((), actual), refused, _, first) = with_limit_usage_refusal(1024 * 1024, || {
-            measure(|| {
-                let current = limit_error("builder_bytes", 65536);
-                assert_eq!(current, old);
-                drop(current);
-            })
-        });
-        assert!(!refused && first.is_none());
-        assert!(!actual.invalid && actual.live == 0 && actual.allocated == actual.freed);
-        let ((), old_actual) = measure(|| {
-            let old_again = original_limit_error(65536);
-            assert_eq!(old_again, old);
-            drop(old_again);
-        });
-        assert!(
-            !old_actual.invalid && old_actual.live == 0 && old_actual.allocated == old_actual.freed
-        );
-        if case > 1 {
-            assert!(actual.allocated < old_actual.allocated);
+        for empty_paths in [false, true] {
+            fixture(case);
+            if empty_paths {
+                PRECHARGE_DOMINANT.with(|v| {
+                    if let Some((path, _)) = v.borrow_mut().as_mut() {
+                        path.clear();
+                    }
+                });
+                PRECHARGE_PENDING.with(|v| {
+                    if let Some(path) = v.borrow_mut().as_mut() {
+                        path.clear();
+                    }
+                });
+                PRECHARGE_SEQUENTIAL.with(|v| {
+                    if let Some(step) = v.borrow_mut().as_mut() {
+                        step.path.clear();
+                    }
+                });
+            }
+            // The original clones dominant and pending before its pending return.
+            // It clones sequential only when that early return is not selected.
+            let pending_returns = BUILDER_PHASE.with(Cell::get) == BuilderPhase::Precharge
+                && PRECHARGE_PENDING.with(|v| v.borrow().is_some());
+            let original_cloned_path_bytes = PRECHARGE_DOMINANT
+                .with(|v| v.borrow().as_ref().map_or(0, |(path, _)| path.len()))
+                + PRECHARGE_PENDING.with(|v| v.borrow().as_ref().map_or(0, String::len))
+                + if pending_returns {
+                    0
+                } else {
+                    PRECHARGE_SEQUENTIAL
+                        .with(|v| v.borrow().as_ref().map_or(0, |step| step.path.len()))
+                };
+            let (old, refused, _, first) =
+                with_limit_usage_refusal(1024 * 1024, || original_limit_error(65536));
+            assert!(!refused && first.is_none());
+            let (((), actual), refused, _, first) = with_limit_usage_refusal(1024 * 1024, || {
+                measure(|| {
+                    let current = limit_error("builder_bytes", 65536);
+                    assert_eq!(current, old);
+                    drop(current);
+                })
+            });
+            assert!(!refused && first.is_none());
+            assert!(!actual.invalid && actual.live == 0 && actual.allocated == actual.freed);
+            let ((), old_actual) = measure(|| {
+                let old_again = original_limit_error(65536);
+                assert_eq!(old_again, old);
+                drop(old_again);
+            });
+            assert!(
+                !old_actual.invalid
+                    && old_actual.live == 0
+                    && old_actual.allocated == old_actual.freed
+            );
+            if original_cloned_path_bytes > 0 {
+                assert!(
+                    actual.allocated < old_actual.allocated,
+                    "case {case}, empty_paths {empty_paths}: original cloned nonempty paths"
+                );
+            } else {
+                assert_eq!(
+                    actual.allocated, old_actual.allocated,
+                    "case {case}, empty_paths {empty_paths}: original cloned no path backing"
+                );
+            }
         }
     }
 }
