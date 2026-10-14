@@ -1,0 +1,67 @@
+[
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/cleanup_plan/replay.rs",
+    "sha256": "078098941d77d4fab0f6c7b2bb4e5cba46b14dfdfa8476db3ac2602250afdaaa"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/borrowed.rs",
+    "sha256": "e3faa8ec1bc577f4658bc3f877bdc3b200e2fd6241c921802c3ecf86cd8c08da"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/borrowed.rs",
+    "sha256": "e3faa8ec1bc577f4658bc3f877bdc3b200e2fd6241c921802c3ecf86cd8c08da"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/fixed_work.rs",
+    "sha256": "f0797f594a25861ab1a06587c91353c2ce107a82b81fb7e9eb781bf87d322479"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/invocation.rs",
+    "sha256": "1ae20415df171bfa7d1c0972d5277b40777f267173b63ef53d9909143ed8d893"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/materialize.rs",
+    "sha256": "7e71297024437846389c1ff15dc0c4bc748ee3a44b942adb18758b8c1b8fa3fe"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/merge.rs",
+    "sha256": "fedb98a91503e3ac90b21e86ce224605cfd872893f9bcb151a60f9f552b5f168"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/overlay.rs",
+    "sha256": "0776de47611bf6f525c1dd5b33c390ed2237354c8d481a05aab58be1b5f45dbe"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/paid.rs",
+    "sha256": "2b9ecba27d52c0e27cedda155ec9860729189b3d1dfaffddf07f274f63443ead"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/producer.rs",
+    "sha256": "78aebc622f9ddb1702568304f718f8ff246688d83ed68cd8d80b1adab1b925a4"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/work_model.rs",
+    "sha256": "4348b9d89ac44d894e43bad225ba9a093122cc59ff3a4d6fdba602c1870ed18a"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/original.rs",
+    "sha256": "db49e39035c07f3a13ce06f9fb97ed49cb26eafe50b08db3e5139d1440e65e67"
+  },
+  {
+    "ref": "33801deb384e912b059409b0ca408f41a54b3664",
+    "path": "src/hir/prelude_bundle/tests.rs",
+    "sha256": "d24eca10afc77eea0babc6fd7cba633eb6b3613a5857fc4d8f7e86f250cc48f5"
+  }
+]
