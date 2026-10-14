@@ -71,6 +71,11 @@
           "name": "independent-full-original-generic-graph-dispatch",
           "before": "use super::super::function_lookup::original as function_lookup;\n",
           "after": "use super::super::function_lookup::original as function_lookup;\nuse super::super::generic_template::original_call_graph as generic_template;\n"
+        },
+        {
+          "name": "complete-independent-old-nul-receiver-dispatch",
+          "before": "use super::*;\n",
+          "after": "use crate::hir::inspection::validate_nul_free_identities_original as validate_nul_free_identities;\nuse super::*;\n"
         }
       ]
     },
@@ -93,6 +98,11 @@
           "name": "independent-full-original-generic-graph-dispatch",
           "before": "    let saved_intrinsics = \"use super::original_intrinsics as box_intrinsic;\\n\";\n",
           "after": "    let saved_generic_graph = \"use super::super::generic_template::original_call_graph as generic_template;\\n\";\n    assert_eq!(current.matches(saved_generic_graph).count(), 1);\n    let current = current.replacen(saved_generic_graph, \"\", 1);\n    let saved_intrinsics = \"use super::original_intrinsics as box_intrinsic;\\n\";\n"
+        },
+        {
+          "name": "complete-independent-old-nul-receiver-dispatch",
+          "before": "    let saved_generic_graph = \"use super::super::generic_template::original_call_graph as generic_template;\\n\";\n",
+          "after": "    let saved_nul = \"use crate::hir::inspection::validate_nul_free_identities_original as validate_nul_free_identities;\\n\";\n    assert_eq!(current.matches(saved_nul).count(), 1);\n    let current = current.replacen(saved_nul, \"\", 1);\n    let saved_generic_graph = \"use super::super::generic_template::original_call_graph as generic_template;\\n\";\n"
         }
       ]
     }

@@ -183,6 +183,9 @@ fn complete_independently_compiled_seed_and_legacy_lookup_are_exact_original_rec
     let current = include_str!("../constructor_seed/original.rs");
     let alias = "use super::super::function_lookup::original as function_lookup;\n";
     assert_eq!(current.matches(alias).count(), 1);
+    let saved_nul = "use crate::hir::inspection::validate_nul_free_identities_original as validate_nul_free_identities;\n";
+    assert_eq!(current.matches(saved_nul).count(), 1);
+    let current = current.replacen(saved_nul, "", 1);
     let saved_generic_graph = "use super::super::generic_template::original_call_graph as generic_template;\n";
     assert_eq!(current.matches(saved_generic_graph).count(), 1);
     let current = current.replacen(saved_generic_graph, "", 1);

@@ -1,0 +1,29 @@
+{
+  "base": "3ecf64d250746ac496932e05259740ae9528eea3",
+  "qualification": "source-only; no Rust execution",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selectors": [
+        "hir::inspection::paid_nul::tests::every_closed_subject_keeps_full_original_diagnostic_without_acquisition",
+        "hir::inspection::paid_nul::tests::unknown_utf8_subject_fallback_prepays_full_retained_diagnostic_at_exact_short_and_zero",
+        "hir::inspection::paid_nul::tests::complete_type_expression_and_shape_walks_preserve_old_priority_and_deep_spill",
+        "hir::inspection::paid_nul::tests::pending_spill_refill_preserves_lifo_and_sticky_original_refusal_through_drop",
+        "hir::inspection::paid_nul::tests::complete_program_and_attached_receivers_keep_original_first_errors_and_drop",
+        "hir::inspection::paid_nul::tests::borrowed_execution_text_has_exact_serialized_nul_verdict_without_key_acquisition",
+        "hir::inspection::paid_nul::tests::complete_nul_receiving_and_saved_constructor_sources_preserve_every_original_byte",
+        "hir::inspection::tests::inline_worklists::compound_types_keep_full_old_diagnostics_and_unbounded_spill",
+        "hir::inspection::tests::inline_worklists::shape_terminals_compounds_and_malformed_indices_keep_the_full_old_verdict",
+        "hir::inspection::tests::inline_worklists::expression_roots_and_complete_public_audit_receivers_keep_old_results",
+        "hir::inspection::tests::inline_worklists::inline_stack_keeps_new_children_ahead_of_older_spill_and_refills",
+        "hir::inspection::tests::inline_worklists::complete_saved_receivers_are_bound_to_the_frozen_archive",
+        "hir::inspection::tests::inline_worklists::complete_walk_bodies_keep_frozen_child_checks_and_push_order",
+        "hir::validation::function_lookup::paid_custody::full_original_constructor_seed_and_paid_seed_preserve_all_ordered_semantic_errors",
+        "hir::validation::function_lookup::paid_custody::complete_constructor_preflight_and_lookup_sources_preserve_full_original_bytes",
+        "hir::validation::function_lookup::paid_custody::complete_independently_compiled_seed_and_legacy_lookup_are_exact_original_receivers",
+        "hir::validation::function_lookup::paid_custody::actual_compatibility_constructor_is_paid_through_drop_at_exact_short_and_zero"
+      ]
+    }
+  ]
+}

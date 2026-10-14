@@ -1,0 +1,15 @@
+{
+  "new_rust_children": [
+    "src/hir/inspection/paid_nul.rs",
+    "src/hir/inspection/paid_nul/pending.rs",
+    "src/hir/inspection/paid_nul/text.rs",
+    "src/hir/inspection/paid_nul/tests.rs"
+  ],
+  "root_owns_final_union": true,
+  "originals_unchanged": [
+    "src/hir/inspection/audit_pending.rs",
+    "src/hir/inspection/tests/inline_worklists.rs",
+    "src/hir/inspection/tests/inline_worklists/old.rs",
+    "src/hir/inspection/tests/inline_worklists/frozen_walkers.txt"
+  ]
+}

@@ -4,6 +4,7 @@ use super::*;
 mod audit_pending;
 pub(super) mod calls;
 use audit_pending::Pending;
+mod paid_nul;
 
 #[cfg(test)]
 pub(super) fn validate_with_static_text(
@@ -64,6 +65,16 @@ pub(crate) fn validate_core_with_storage(program: &ResolvedProgram) -> Result<()
 }
 
 pub(super) fn validate_nul_free_identities(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    if crate::bounded_output::active_remaining().is_some() {
+        paid_nul::validate_nul_free_identities(program)
+    } else {
+        validate_nul_free_identities_original(program)
+    }
+}
+
+pub(super) fn validate_nul_free_identities_original(
+    program: &ResolvedProgram,
+) -> Result<(), Diagnostic> {
     reject_nul_identity("resolved entry point", program.entrypoint.as_str())?;
 
     for (key, declaration) in &program.declarations.declarations {
@@ -190,6 +201,16 @@ pub(super) fn validate_nul_free_identities(program: &ResolvedProgram) -> Result<
 /// This is intentionally narrower than semantic inventory/plan validation so
 /// independent replayers can call it without trusting either canonical builder.
 pub(crate) fn validate_attached_identity_references(
+    program: &ResolvedProgram,
+) -> Result<(), Diagnostic> {
+    if crate::bounded_output::active_remaining().is_some() {
+        paid_nul::validate_attached_identity_references(program)
+    } else {
+        validate_attached_identity_references_original(program)
+    }
+}
+
+pub(crate) fn validate_attached_identity_references_original(
     program: &ResolvedProgram,
 ) -> Result<(), Diagnostic> {
     for function in &program.functions {
