@@ -688,10 +688,18 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
         include_str!("../src/hir/function_value/funded.rs"),
 "#,
         );
-        undo(&mut current, r#"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape_original.rs"),
-"#, "");
-        undo(&mut current, r#"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/frontier_tests.rs"),
-"#, "");
+        undo(
+            &mut current,
+            r#"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape_original.rs"),
+"#,
+            "",
+        );
+        undo(
+            &mut current,
+            r#"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/frontier_tests.rs"),
+"#,
+            "",
+        );
         assert_eq!(
             current,
             include_str!(
