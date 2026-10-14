@@ -72,7 +72,7 @@ impl<'a> Collector<'a> {
         {
             self.traversals += 1;
         }
-        extend_funded(self.program, ty, &mut self.effects)?;
+        inline_path::extend(self.program, ty, &mut self.effects)?;
         if let Some(key) = key {
             if let Some(slot) = self.completed.iter_mut().find(|slot| slot.is_none()) {
                 *slot = Some(key);
@@ -106,3 +106,7 @@ impl<'a> Collector<'a> {
 
 #[cfg(test)]
 mod tests;
+
+mod inline_path;
+#[cfg(test)]
+mod before_inline;

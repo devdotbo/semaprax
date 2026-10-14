@@ -1245,6 +1245,9 @@ macro_rules! hir_final_validation_source_inventory {
             include_str!("../../../../../src/hir/validation/function_scope/tests.rs"),
             include_str!("../../../../../src/hir/validation/function_scope/lifecycle.rs"),
             include_str!("../../../../../src/hir/validation/function_scope/lifecycle/completed.rs"),
+                include_str!("../../../../../src/hir/validation/function_scope/lifecycle/completed/inline_path.rs"),
+                include_str!("../../../../../src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs"),
+                include_str!("../../../../../src/hir/validation/function_scope/lifecycle/completed/before_inline.rs"),
             include_str!(
                 "../../../../../src/hir/validation/function_scope/lifecycle/completed/tests.rs"
             ),

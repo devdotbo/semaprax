@@ -1,5 +1,10 @@
 # Changelog
 
+- Author a paid 16-entry borrowed lifecycle active path with the unchanged
+  paid tree spill. Keep complete prior collectors and authored cycle/effect
+  order; add differential, physical refusal/Drop and source-custody controls.
+  Runtime qualification and application fit remain pending.
+
 - Avoid constructing an unused validator result scope for functions without
   postconditions, while retaining all result/body checks and sticky funding
   authentication. Complete original and receiving controls await qualification.

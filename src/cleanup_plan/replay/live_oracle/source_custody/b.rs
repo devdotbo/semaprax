@@ -795,6 +795,10 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        undo(&mut current, r###"                include_str!("../src/hir/validation/function_scope/lifecycle/completed/inline_path.rs"),
+                include_str!("../src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs"),
+                include_str!("../src/hir/validation/function_scope/lifecycle/completed/before_inline.rs"),
+"###, "");
         // Undo only the two additive complete checkpoint merge receiver joins.
         undo(&mut current, r###"                include_str!("../src/hir/validation/scope_checkpoint/merge.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/merge/saved.rs"),

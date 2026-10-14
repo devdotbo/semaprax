@@ -4639,7 +4639,13 @@ The pure HIR lifecycle preflight streams the exact borrowed call preorder via
 `hir/inspection/calls.rs`. It lends current target result types, retains the
 owned generic-proof substitution boundary, and appends lifecycle effects to
 the existing ordered union. It does not retain a cloned call staging vector or
-create a separate effect-set result for each call. Compiler forecasts and caller
+create a separate effect-set result for each call.
+`function_scope/lifecycle/completed/inline_path.rs` owns one traversal's paid
+16-entry borrowed active-identity carrier and its unchanged paid BTree spill.
+The exact-root completion cache remains the enclosing collector's separate
+owner. Full old collector and recursive lifecycle bodies remain independent
+controls; byte equality and sticky payer authentication grant no admission.
+Compiler forecasts and caller
 prepayment remain conservative; this storage change supplies no validation or
 execution authority and makes no application-fit claim.
 

@@ -1,0 +1,39 @@
+[
+  {
+    "source": "src/hir/validation/function_scope/lifecycle/completed.rs",
+    "archive": "completed.rs.before.txt",
+    "original_sha256": "15895b83280daba02f9c04fcc0613cfeebd35d35c76fa46dbf76001ef71c9733",
+    "edits": [
+      {
+        "before": "",
+        "after": "\nmod inline_path;\n#[cfg(test)]\nmod before_inline;\n"
+      },
+      {
+        "before": "extend_funded(self.program, ty, &mut self.effects)?;",
+        "after": "inline_path::extend(self.program, ty, &mut self.effects)?;"
+      }
+    ]
+  },
+  {
+    "source": "tests/hir_module_boundaries.rs",
+    "archive": "hir_module_boundaries.rs.before.txt",
+    "original_sha256": "1efc02b5a6d87c7bf56e17bcd40b3bd00adb70be3e8a3c50b0a844f5ba7dd903",
+    "edits": [
+      {
+        "before": "",
+        "after": "                include_str!(\"../src/hir/validation/function_scope/lifecycle/completed/inline_path.rs\"),\n                include_str!(\"../src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs\"),\n                include_str!(\"../src/hir/validation/function_scope/lifecycle/completed/before_inline.rs\"),\n"
+      }
+    ]
+  },
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "archive": "interop_source_inventory.rs.before.txt",
+    "original_sha256": "49c78bc2b79880849076544e19874e744374f238ee0c0f49e38a7d5c3bb47316",
+    "edits": [
+      {
+        "before": "",
+        "after": "                include_str!(\"../../../../../src/hir/validation/function_scope/lifecycle/completed/inline_path.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs\"),\n                include_str!(\"../../../../../src/hir/validation/function_scope/lifecycle/completed/before_inline.rs\"),\n"
+      }
+    ]
+  }
+]
