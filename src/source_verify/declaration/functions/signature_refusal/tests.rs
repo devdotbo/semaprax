@@ -240,12 +240,18 @@ fn full_production_sources_and_complete_public_predecessors_keep_exact_inverses(
         (include_str!("../../functions.rs"), Some(include_str!("../public_signature_before.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/public-template-recovery-799/src__source_verify__declaration__functions.rs.before.txt"))),
         (include_str!("../../../iterative.rs"), None, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/public-template-recovery-799/src__source_verify__iterative.rs.before.txt"))),
         (include_str!("../../../diagnostics.rs"), None, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/public-template-recovery-799/src__source_verify__diagnostics.rs.before.txt"))),
+        (include_str!("../../../recovery.rs"), None, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/public-template-recovery-799/src__source_verify__recovery.rs.before.txt"))),
+        (include_str!("../../../iterative/enter.rs"), None, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/public-template-recovery-799/src__source_verify__iterative__enter.rs.before.txt"))),
+        (include_str!("../../../recovery_tests/extended_components.rs"), None, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/public-template-recovery-799/src__source_verify__recovery_tests__extended_components.rs.before.txt"))),
     ];
     let fixed_original_sha256 = [
         "5c4987a9e83eb0f80c7c3d6211910e3c1f62cb91e60b9cc3b9d8f87c8000351f",
         "f8de677d0ee06872c4ddae8415eb84ca145c8ecda961a5379714451f55e3e5f2",
         "8bc16b846d6ce4b01d9bdbe73c15efca61b3d8c9b1ed13afc233f50ca748c241",
         "8fccfc4e16d3296712735a71ea5811a0d555e542fbd8719c208a24222b8c240e",
+        "0e31278d627351d403bd616a2592572f4fc8c27bb38fcf799a09163adc172c14",
+        "7566025fca09d0cec7839f7754a0d54ebbb3313b902617cc3a1d9d22b7516227",
+        "b5dfa7ee66dd7d775b334184a0c6a570679641301d8687fbb2c1970d8c065c0a",
     ];
     for (index, (current, compiled_old, original)) in sources.into_iter().enumerate() {
         assert_eq!(
@@ -465,5 +471,157 @@ fn actual_contract_receiver_rejects_six_field_forgeries_and_foreign_body_origins
         assert!(diagnostics
             .iter()
             .any(|diagnostic| diagnostic.code == "SPX-C101"));
+    }
+}
+
+#[test]
+fn actual_public_missing_generic_argument_keeps_all_primary_and_independent_contract_roots() {
+    let program = crate::parse(
+        &source("@id(\"t.f\") fn f<T>(b:Missing<T>)->i64 requires b requires missing_req ensures b ensures missing_post {b+missing_body}"),
+        Path::new("public-template-recovery.spx"),
+    ).unwrap();
+    let old = crate::source_verify::declaration::public_signature_before::verify(&program);
+    assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-T224"));
+    assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-T208"));
+    assert_eq!(
+        old.iter()
+            .filter(|diagnostic| diagnostic.code == "SPX-C101")
+            .count(),
+        2
+    );
+    let expected = old
+        .iter()
+        .filter(|diagnostic| matches!(diagnostic.code, "SPX-T220" | "SPX-T202"))
+        .cloned()
+        .collect::<Vec<_>>();
+    assert_eq!(
+        expected
+            .iter()
+            .filter(|diagnostic| diagnostic.code == "SPX-T220")
+            .count(),
+        1
+    );
+    assert_eq!(
+        expected
+            .iter()
+            .filter(|diagnostic| diagnostic.code == "SPX-T202")
+            .count(),
+        3
+    );
+    assert_eq!(crate::source_verify::verify(&program), expected);
+}
+
+#[test]
+fn actual_public_generic_return_origin_removes_only_dependent_profile_body_and_result_failures() {
+    for result in ["Missing", "Missing<T>"] {
+        let program = crate::parse(
+            &source(&format!("@id(\"t.f\") fn f<T>()->{result} ensures result ensures 1 ensures missing_post {{1}}")),
+            Path::new("public-template-recovery.spx"),
+        ).unwrap();
+        let raw = &program.functions[0];
+        let old = crate::source_verify::declaration::public_signature_before::verify(&program);
+        assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-T224"));
+        assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-T103"));
+        assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-C101"
+            && diagnostic.span == Some(raw.ensures[0].span)));
+        let expected = old
+            .iter()
+            .filter(|diagnostic| {
+                diagnostic.code != "SPX-T224"
+                    && diagnostic.code != "SPX-T103"
+                    && !(diagnostic.code == "SPX-C101"
+                        && diagnostic.span == Some(raw.ensures[0].span))
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        assert_eq!(codes(&expected), ["SPX-T220", "SPX-C101", "SPX-T202"]);
+        assert_eq!(crate::source_verify::verify(&program), expected);
+    }
+    let program = crate::parse(
+        &source("@id(\"t.pair\") record Pair<A>{@id(\"t.pair.value\") value:A,} @id(\"t.f\") fn f<T>()->Pair<Missing> ensures result {1}"),
+        Path::new("public-template-recovery.spx"),
+    ).unwrap();
+    let old = crate::source_verify::declaration::public_signature_before::verify(&program);
+    assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-T224"));
+    assert_eq!(crate::source_verify::verify(&program), old);
+}
+
+#[test]
+fn paired_origin_requires_actual_binding_and_exact_return_receipt_including_foreign_and_stale_cases(
+) {
+    let program = crate::parse(
+        &source("@id(\"t.f\") fn f<T>(b:Missing<T>)->Missing<T> ensures result {b}"),
+        Path::new("public-template-recovery.spx"),
+    )
+    .unwrap();
+    let raw = &program.functions[0];
+    let current =
+        crate::source_verify::declared_type::validation_specialize_function(raw, &[Type::I64])
+            .unwrap();
+    let types = TypeTable::new(&program);
+    let mut receipt = Vec::new();
+    crate::source_verify::declared_type::check_declared_type(
+        &program,
+        &raw.return_type,
+        raw.span,
+        &types,
+        &HashSet::from(["T"]),
+        &mut receipt,
+    );
+    assert_eq!(codes(&receipt), ["SPX-T220"]);
+    for field in 0..7 {
+        let mut forged = receipt.clone();
+        match field {
+            0 => forged[0].code = "SPX-T001",
+            1 => forged[0].severity = crate::diagnostic::Severity::Warning,
+            2 => forged[0].message = "forged".into(),
+            3 => forged[0].path = Some("foreign.spx".to_owned()),
+            4 => forged[0].span = None,
+            5 => forged[0].help = Some("forged".to_owned()),
+            6 => {}
+            _ => unreachable!(),
+        }
+        assert_eq!(
+            origin(&program, raw, &current)
+                .unwrap()
+                .return_refusal(&program, &current, &types, &forged)
+                .is_some(),
+            field == 6
+        );
+    }
+    let foreign = program.clone();
+    let stale = current.clone();
+    let held = origin(&program, raw, &current).unwrap();
+    assert!(held
+        .return_refusal(&foreign, &current, &types, &receipt)
+        .is_none());
+    assert!(held
+        .return_refusal(&program, &stale, &types, &receipt)
+        .is_none());
+    let mut parameter_receipt = Vec::new();
+    crate::source_verify::declared_type::check_declared_type(
+        &program,
+        &raw.params[0].ty,
+        raw.params[0].span,
+        &types,
+        &HashSet::from(["T"]),
+        &mut parameter_receipt,
+    );
+    for altered in [false, true] {
+        let mut bindings = variables(&current);
+        if altered {
+            bindings.get_mut("b").unwrap().ty = Type::I64;
+        }
+        let mut recovery = crate::source_verify::recovery::Recovery::signature_origin(
+            &program,
+            &current,
+            &bindings,
+            &types,
+            &parameter_receipt,
+            &held,
+            None,
+        )
+        .unwrap();
+        assert_eq!(recovery.reads_known_refused(0, "b"), !altered);
     }
 }

@@ -94,6 +94,55 @@ pub(super) fn origin<'p>(
 }
 
 impl<'p> SignatureOrigin<'p> {
+    pub(in crate::source_verify) fn return_refusal(
+        &self,
+        program: &dyn ProgramSource,
+        current: &crate::ast::Function,
+        types: &TypeTable<'_>,
+        diagnostics: &[crate::diagnostic::Diagnostic],
+    ) -> Option<usize> {
+        let template = self.template_for(program, current)?;
+        let Type::Named { name, .. } = &template.return_type else {
+            return None;
+        };
+        if template
+            .type_parameters
+            .iter()
+            .any(|parameter| parameter.name == *name)
+            || types.declaration(name).is_some()
+            || !diagnostics.iter().any(|diagnostic| {
+                diagnostic.span == Some(template.span)
+                    && matches!(diagnostic.code, "SPX-T001" | "SPX-T220")
+            })
+        {
+            return None;
+        }
+        let parameters = template
+            .type_parameters
+            .iter()
+            .map(|parameter| parameter.name.as_str())
+            .collect();
+        let mut scratch = Vec::new();
+        crate::source_verify::declared_type::check_declared_type(
+            program,
+            &template.return_type,
+            template.span,
+            types,
+            &parameters,
+            &mut scratch,
+        );
+        scratch
+            .iter()
+            .filter(|refusal| {
+                refusal.code == "SPX-T001"
+                    || refusal.code == "SPX-T220"
+                        && refusal
+                            .message
+                            .ends_with("` is not an in-scope type parameter")
+            })
+            .find_map(|refusal| diagnostics.iter().position(|original| original == refusal))
+    }
+
     pub(in crate::source_verify) fn template_for(
         &self,
         program: &dyn ProgramSource,

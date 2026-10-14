@@ -3,13 +3,16 @@
   "qualification": "source-only; unexecuted controls",
   "current_source_sha256": {
     "src/source_verify/declaration.rs": "11b26f1bc56c129657268cf90436753cfaf037fa7c37ec49596284fd5d1bdcd8",
-    "src/source_verify/declaration/functions.rs": "f35f83bf50de28c427b0c3a36a46219d45f18b8438dcdf5a58955a8e2e328898",
-    "src/source_verify/iterative.rs": "63b2ba9fa75b9a8c5ff94630dfac3a680b2738f24fa10ffb13dac2070900bafc",
-    "src/source_verify/declaration/functions/signature_refusal.rs": "b2dcf6f67e822d737c606bad10096f5c9b478a850d06197df9e707333971845c",
-    "src/source_verify/declaration/functions/signature_refusal/tests.rs": "d9e5ff27dbf7e368973eba6eb65cceddf9fdc482ccdae83bfdedc7c5315689d7",
+    "src/source_verify/declaration/functions.rs": "66c5704c3d423fb73c790c34bf273b30ed21e835790e6034b42e299f0a71a474",
+    "src/source_verify/iterative.rs": "ab396db1af79d103ff988289513111d8ee8c902378320bcde9c04bce98b7e3c8",
+    "src/source_verify/declaration/functions/signature_refusal.rs": "0388955e5a2175e99a9094196bf9cc06b90e48a6647cd52e137b2821699aa57b",
+    "src/source_verify/declaration/functions/signature_refusal/tests.rs": "8f3d2b544de29be9989aadf9cbe686b75e7ad49ba4512357d73155d8614d3065",
     "src/source_verify/declaration/functions/public_signature_before.rs": "21cf514809f4f9d271d5497744d948203ecca1afbd924c4a22061884117bf129",
     "src/source_verify/declaration/public_signature_before.rs": "7c385c983031164a5f1e292256c7ec0b4a387439ff7ab414050aab89f9a1fab3",
-    "src/source_verify/diagnostics.rs": "95bd8721029021074f39f5c76e4e0183771831112f591143e4a42bd90ce670d9"
+    "src/source_verify/diagnostics.rs": "95bd8721029021074f39f5c76e4e0183771831112f591143e4a42bd90ce670d9",
+    "src/source_verify/recovery.rs": "262bb0030111b4f31e939117f6c7144feabaa922c28b20ef94bbfa4d97f5d5e8",
+    "src/source_verify/iterative/enter.rs": "3a03b4c4773e2d72e87077031cf1b68fd19f678a24ae7cab33934ad7403a0405",
+    "src/source_verify/recovery_tests/extended_components.rs": "83ec2cd7f9d701a42e3cfd01c756344798d2d274edb24ec43eba6d5b8261646c"
   },
   "actual_prior_failure": {
     "path": "/Volumes/Semaprax/lane-prompts/large-next-consolidated-4ec48-nine-20261015/owning-selected-214.log",
@@ -19,5 +22,5 @@
   },
   "no_authentication_regeneration": true,
   "no_paid_verifier_claim": true,
-  "new_owner_count": 9
+  "new_owner_count": 12
 }

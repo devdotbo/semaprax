@@ -153,3 +153,13 @@ outer type with a missing nested component retains its independent profile
 refusal; known sibling profile errors remain independent. Declaration-recheck scratch, diagnostics and
 recovery directory storage remain ordinary unpaid verifier acquisitions; this
 change does not create physical funding or alter sticky budget receipts.
+
+The specialized signature receiver pairs each authored parameter with the exact
+current parameter held by the producer origin. Binding equality uses the current
+type and mode; receipt rechecking uses the authored type and generic environment.
+This includes unresolved roots whose arguments contain substituted parameters.
+The same origin authenticates an unresolved root return through full diagnostic
+equality. Only the actual postcondition return carrier exposes that dependency
+through `result`; preconditions and bodies gain no result binding. Known outer
+return carriers retain independent profile failures. These paths add ordinary
+unpaid error scratch and directory storage, with no funding or layout claim.

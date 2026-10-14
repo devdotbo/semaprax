@@ -45,6 +45,21 @@
       "package": "semaprax",
       "harness": "lib",
       "selector": "source_verify::declaration::functions::signature_refusal::tests::actual_contract_receiver_rejects_six_field_forgeries_and_foreign_body_origins"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::actual_public_missing_generic_argument_keeps_all_primary_and_independent_contract_roots"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::actual_public_generic_return_origin_removes_only_dependent_profile_body_and_result_failures"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::paired_origin_requires_actual_binding_and_exact_return_receipt_including_foreign_and_stale_cases"
     }
   ],
   "existing_failed_owner": "source_verify::recovery_tests::extended_components::generic_current_parameter_refusal_authenticates_exact_receipt_and_keeps_real_sibling",

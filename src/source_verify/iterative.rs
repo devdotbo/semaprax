@@ -396,17 +396,18 @@ pub(super) fn check_expr_with_signature_view<'a, 'p>(
     // validation-only scalar substitutions clear the type-parameter names.
     // Authenticate the original receipt against that environment and the real
     // specialized bindings; no source lookup or span-only inference is used.
-    if let Some(signature) = signature
-        .as_ref()
-        .and_then(|origin| origin.template_for(program, current))
-    {
-        verifier.recovery = super::recovery::Recovery::signature(
+    if let Some(recovery) = signature.as_ref().and_then(|origin| {
+        super::recovery::Recovery::signature_origin(
             program,
-            signature,
+            current,
             &verifier.scopes[0].bindings,
             types,
             verifier.diagnostics,
-        );
+            origin,
+            result_type,
+        )
+    }) {
+        verifier.recovery = recovery;
     }
     verifier.byte_helpers = helpers;
     verifier.fused_producer = fused_producer;

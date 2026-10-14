@@ -8,7 +8,11 @@
   "existing_roots_must_remain": [
     "src/source_verify/declaration.rs",
     "src/source_verify/declaration/functions.rs",
-    "src/source_verify/iterative.rs"
+    "src/source_verify/iterative.rs",
+    "src/source_verify/diagnostics.rs",
+    "src/source_verify/recovery.rs",
+    "src/source_verify/iterative/enter.rs",
+    "src/source_verify/recovery_tests/extended_components.rs"
   ],
   "root_owns_combined_source_join_integration": true
 }

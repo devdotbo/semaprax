@@ -885,7 +885,7 @@ fn actual_failure_repair_keeps_complete_previous_component_receiver_and_projecti
         "../../../docs/evidence/actual-refusal-components-799/extended-components-corrective-inverse.json"
     ))
     .unwrap();
-    assert_eq!(inverse.len(), 5);
+    assert_eq!(inverse.len(), 7);
     for [before, after] in inverse {
         assert_eq!(restored.matches(after.as_str()).count(), 1);
         restored = restored.replacen(&after, &before, 1);
@@ -904,7 +904,14 @@ fn actual_failure_repair_keeps_complete_previous_component_receiver_and_projecti
         "\nimpl IterativeVerifier<'_, '_> {\n    // Availability and partial-move diagnostics";
     assert_eq!(calls.matches(boundary).count(), 1);
     assert_eq!(calls.split_once(boundary).unwrap().0, include_str!("../../../docs/evidence/actual-refusal-components-799/src__source_verify__iterative__calls.rs.before"));
-    let recovery = include_str!("../recovery.rs").replace(
+    let recovery = include_str!("../recovery.rs");
+    let begin = "\n    // Begin exact producer-origin parameter receiver.\n";
+    let end = "    // End exact producer-origin parameter receiver.\n";
+    assert_eq!(recovery.matches(begin).count(), 1);
+    assert_eq!(recovery.matches(end).count(), 1);
+    let (prefix, added) = recovery.split_once(begin).unwrap();
+    let (_, suffix) = added.split_once(end).unwrap();
+    let recovery = format!("{prefix}{suffix}").replace(
         "callee_components::unknown_component_receipt(diagnostic)\n                        && diagnostic.span == Some(parameter.span)",
         "diagnostic.code == \"SPX-T001\" && diagnostic.span == Some(parameter.span)",
     ).replace(
@@ -916,6 +923,9 @@ fn actual_failure_repair_keeps_complete_previous_component_receiver_and_projecti
     );
     assert_eq!(recovery, include_str!("../../../docs/evidence/actual-refusal-components-799/src__source_verify__recovery.rs.before"));
     let entry = include_str!("../iterative/enter.rs").replace(
+        "                if self.result_type.is_some() && self.recovery.reads_value(scope, name, expression)\n                {\n                    self.values.push(None);\n                    return Ok(());\n                }\n",
+        "",
+    ).replace(
         "                    self.publish_source_place(place, scope);",
         "                    self.values.push(Some(CheckedValue {\n                        ty: place.ty,\n                        mode: place.mode,\n                        native_unit: false,\n                    }));",
     );

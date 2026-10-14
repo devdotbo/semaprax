@@ -381,6 +381,13 @@ pub(super) fn check_function_declarations<'p>(
                 && !collection
                 && !generic_function_signature_slot(&function.return_type, &parameter_names)
                 && !generic_function_owned_record_slot(function, &function.return_type, types)
+                && !signature_refusal::unknown_component(
+                    program,
+                    &function.return_type,
+                    function.span,
+                    types,
+                    &parameter_names,
+                )
             {
                 diagnostics.push(error(
                     program,
@@ -1076,6 +1083,10 @@ pub(super) fn check_function_bodies<'p>(
         };
         let mut specialized_diagnostics = HashSet::new();
         for function in specializations.iter() {
+            let return_unknown = return_unknown
+                || signature_refusal::origin(program, template, function)
+                    .and_then(|origin| origin.return_refusal(program, function, types, diagnostics))
+                    .is_some();
             let specialized_diagnostic_start = diagnostics.len();
             let mut variables = HashMap::new();
             if function.return_type == Type::Str {

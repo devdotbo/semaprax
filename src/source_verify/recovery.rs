@@ -116,6 +116,90 @@ impl<'p> Recovery<'p> {
         recovery
     }
 
+    // Begin exact producer-origin parameter receiver.
+    pub(super) fn signature_origin(
+        program: &'p dyn crate::ast::program_source::ProgramSource,
+        current: &'p Function,
+        variables: &std::collections::HashMap<String, super::binding::Binding>,
+        types: &super::type_table::TypeTable<'_>,
+        diagnostics: &[Diagnostic],
+        origin: &super::declaration::SignatureOrigin<'p>,
+        result_type: Option<&Type>,
+    ) -> Option<Self> {
+        let template = origin.template_for(program, current)?;
+        let mut recovery = Self::default();
+        if !diagnostics
+            .iter()
+            .any(callee_components::unknown_component_receipt)
+        {
+            return Some(recovery);
+        }
+        recovery.unknown_declarations = true;
+        let mut parameters = None;
+        let mut scratch = Vec::new();
+        for (parameter, actual) in template.params.iter().zip(&current.params) {
+            if types.needs_drop(&actual.ty)
+                || variables
+                    .get(&parameter.name)
+                    .is_none_or(|binding| binding.ty != actual.ty || binding.mode != actual.mode)
+                || !diagnostics.iter().any(|diagnostic| {
+                    callee_components::unknown_component_receipt(diagnostic)
+                        && diagnostic.span == Some(parameter.span)
+                })
+            {
+                continue;
+            }
+            let parameters = parameters.get_or_insert_with(|| {
+                template
+                    .type_parameters
+                    .iter()
+                    .map(|parameter| parameter.name.as_str())
+                    .collect()
+            });
+            scratch.clear();
+            super::declared_type::check_declared_type(
+                program,
+                &parameter.ty,
+                parameter.span,
+                types,
+                parameters,
+                &mut scratch,
+            );
+            if let Some(origin) = scratch
+                .iter()
+                .filter(|refusal| callee_components::unknown_component_receipt(refusal))
+                .find_map(|refusal| {
+                    diagnostics.iter().position(|original| {
+                        original.code == refusal.code
+                            && original.severity == refusal.severity
+                            && original.message == refusal.message
+                            && original.path == refusal.path
+                            && original.span == refusal.span
+                            && original.help == refusal.help
+                    })
+                })
+            {
+                recovery.ensure(0);
+                recovery.scopes[0]
+                    .names
+                    .insert(parameter.name.as_str(), (origin, true, None));
+            }
+        }
+        // The reserved result name has its own actual postcondition carrier;
+        // it never becomes available in a requires clause or ordinary body.
+        if let Some(index) = result_type
+            .filter(|ty| std::ptr::eq(*ty, &current.return_type))
+            .and_then(|_| origin.return_refusal(program, current, types, diagnostics))
+        {
+            recovery.ensure(0);
+            recovery.scopes[0]
+                .names
+                .insert("result", (index, true, None));
+        }
+        Some(recovery)
+    }
+    // End exact producer-origin parameter receiver.
+
     pub(super) fn clear(&mut self, scope: usize, name: &str) {
         if let Some(row) = self.scopes.get_mut(scope) {
             row.names.remove(name);

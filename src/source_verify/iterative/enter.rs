@@ -132,6 +132,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     )?))
             }
             ExprKind::Var(name) if name == "result" => {
+                if self.result_type.is_some() && self.recovery.reads_value(scope, name, expression)
+                {
+                    self.values.push(None);
+                    return Ok(());
+                }
                 let value = self
                     .result_type
                     .map(|ty| CheckedValue::returned(ty.clone(), self.types.needs_drop(ty)));
