@@ -5,9 +5,9 @@
   "status": "static only; original bodies byte-exact and registered; no compiler/runtime qualification",
   "source_hashes": {
     "CHANGELOG.md": "805601a33f2f6e41e0f61f82f1d9bb5d79ec99658e084ee4e426629a2f322d15",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "4190a70e055d2ed97cd11e9170363094fbeaeed84b2ae5d6b56d54f82ceecae0",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "ed096ba582c35ea308abf8c49d6196d01963dc720fcb7d76886d13c6f723397a",
     "docs/ARCHITECTURE.md": "2d1f1c53b8cd325add15110689a02cc737e1c9b0ed664a7c59c916aa7d53d1d7",
-    "src/hir.rs": "f08f8053f3dbc7f631ca125526aa3d2bbfab1e0a626b573d9418a32e8cd369c0",
+    "src/hir.rs": "b01d0b5d825befcbd8b0d613a6c0b6a089b8e0f57b4b2ce33c78292ed2e15ef4",
     "src/hir/iterator_loop.rs": "3295874fa719aa58acf8f31ee73956aed757ac7ad25fa7fad39f599c830fe9aa",
     "src/hir/iterator_loop/paid.rs": "6baee339c5d405624fffced4257c9c13ed3933e01a076464c63ea683ca23a48b",
     "src/hir/iterator_loop/renewal.rs": "8951fdff100645816c03094331768562e847d74bf3b275b321a09a0cea2fa167",
@@ -20,7 +20,7 @@
     "src/hir/validation/unsafe_scan.rs": "2309786e3789e9a0983d1e846f5c19eb71422bae727b2c73db49c0a814be089d",
     "src/hir/validation/unsafe_scan/paid.rs": "98019a0d1a3c5cf8c3f1a3901f3c7c4f56948695e49c40d3e7558f2bbb2376e3",
     "src/hir/validation/unsafe_scan/paid/tests.rs": "d91113e77145ef672b4ef02e47fee6b53e1e455217c62eb76d980ae6bb27654d",
-    "tests/hir_module_boundaries.rs": "84894b71789e07bb8b7bbe25478d04743c7810c8157b201f213214cdaab1312e",
+    "tests/hir_module_boundaries.rs": "9712bee50420446edecf3e489f7be076f9f48c150615af5c9947184e6ca31ac7",
     "docs/evidence/ordinary-hir-scans/pending-selectors.json": "810df9ee12898aa3dca1ddb2c1cbde7ce68a1af12b437339b4df62f49381a529",
     "docs/evidence/ordinary-hir-scans/README.md": "efdc3b583cd6bc790276fa986639f27e12a83d02294b85603c15080002af5143",
     "docs/evidence/ordinary-hir-scans/original-scans.txt": "2025f1da39517120b17790f3f20f17b02b67fd6cda3e21e7fb87af5d3bbd7102"

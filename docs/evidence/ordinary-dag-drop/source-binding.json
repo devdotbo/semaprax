@@ -4,7 +4,7 @@
   "base_head": "9df9a15c53d87ed8f2e56eb522a128c26cde44be",
   "state": "source-only-unexecuted",
   "source_hashes": {
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "4190a70e055d2ed97cd11e9170363094fbeaeed84b2ae5d6b56d54f82ceecae0",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "ed096ba582c35ea308abf8c49d6196d01963dc720fcb7d76886d13c6f723397a",
     "src/cleanup_plan/replay/skeleton_work.rs": "f6163b3cc48322bf40549c18cccf8ea412a52a450daadd82d7f93e5daa6b8716",
     "src/cleanup_plan/replay/skeleton_work/dag_storage.rs": "500a40cbfbbef50ff44a26f237f2b93cea7358a64ccb1105293ade4fa078f6bb",
     "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs": "6f3aeb448ee3b4bb202d027c93eebbcec8a5c0854496792d53a66206525871f8",
@@ -17,7 +17,7 @@
     "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs": "d17dae8c6c00c034c06092531c4a45c97347c88fdd351fb7d7e11c6be09bb2ab",
     "src/test_allocation_observer.rs": "f3ab093d0bec8e84d98baedfb88e26ec97c1a66022638bd1bf5301ff25844fac",
     "src/test_allocation_observer/free_order.rs": "f3b372a2eedde6d0e238580a57e5fbcb1ca14144a479e052a0f37be009e6fc48",
-    "tests/hir_module_boundaries.rs": "84894b71789e07bb8b7bbe25478d04743c7810c8157b201f213214cdaab1312e",
+    "tests/hir_module_boundaries.rs": "9712bee50420446edecf3e489f7be076f9f48c150615af5c9947184e6ca31ac7",
     "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs": "cd6cbb50e3d362456d3f032e0bbdb3887c8ef388e3bc08a15a43b185fa5d9d6f"
   },
   "original_snapshot_hashes": {

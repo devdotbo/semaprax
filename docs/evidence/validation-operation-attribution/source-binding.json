@@ -12,8 +12,8 @@
   "source_files": [
     {
       "path": "src/bounded_output.rs",
-      "sha256": "7e50a92f182bcd9502c10cc6b23cf598178e30037b38edf5468525463689a85f",
-      "lines": 1225
+      "sha256": "aa0f0ebaafab779509d90414d1d64b831e33d4af2864c4fd814f5643c29eeac0",
+      "lines": 1229
     },
     {
       "path": "src/bounded_output/stage_debits.rs",
