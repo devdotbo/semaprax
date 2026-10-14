@@ -133,12 +133,18 @@ pub fn derive(
     derive_with_hook(root, proposal_path, |_| {})
 }
 
-pub(crate) fn derived_change_proposal(&self) -> &str {
-    self.derived_change.source()
+/// Returns the exact derived Change proposal through the typed caller route.
+pub fn derived_change_proposal(
+    root: &Path,
+    proposal_path: &Path,
+) -> Result<String, WorkspaceReportFailure> {
+    derive(root, proposal_path)
+        .map(SemanticWorkspaceOperationsDerivation::into_derived_change_proposal)
 }
 
-pub fn derivation(&self) -> &str {
-    &self.derivation
+/// Returns the canonical derivation through the typed caller route.
+pub fn derivation(root: &Path, proposal_path: &Path) -> Result<String, WorkspaceReportFailure> {
+    derive(root, proposal_path).map(SemanticWorkspaceOperationsDerivation::into_derivation)
 }
 
 pub(crate) fn derive_with_hook(

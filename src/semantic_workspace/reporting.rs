@@ -244,7 +244,7 @@ pub(crate) fn authenticated_operations_preflight(
             source_graph_schema: source.source_graph_schema,
             source_revision: source.source_revision,
             source_digest: source.source_digest,
-            source: source.source,
+            source: source.source.into(),
         })
         .collect::<Vec<_>>();
     files.sort_by(|left, right| left.path.cmp(&right.path));
