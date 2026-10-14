@@ -1,0 +1,21 @@
+{
+  "source_subject": "5816a091a4a9ce574aed7483425664ad77bfc7d8",
+  "scope": "Combined799829826 focused qualification attempt; no full suite or full gate",
+  "build": {
+    "exit": 101,
+    "production_lib": "passed",
+    "test_compile_error": "E0433 fusion namespace adapter absent at src/source_verify/declaration/public_signature_before.rs:274",
+    "receipt_sha256": "78704fd76e5e4668235fc581801896d54a04661beee7ddcc2fa6231f19579cc1"
+  },
+  "production_lib_cli_clippy": {
+    "exit": 0,
+    "warnings_denied": true,
+    "receipt_sha256": "cc65f5b9b409762238c352837b81f9a613991c025fb754d87297f7b80a75f1f9",
+    "wall_seconds": 55.839836999999534,
+    "maximum_positive_swap_used_delta_bytes": 0
+  },
+  "runtime_test_bodies": 0,
+  "new_issue_closures": [],
+  "new_benchmark": false,
+  "next_action": "Batch exact oracle namespace adapter with two source-reviewed generic recovery edge-case corrections and actual shared-seal stage control, then focused recheck."
+}
