@@ -341,6 +341,23 @@ fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
 "#
             ),
         );
+        // Exact composed receiving hooks; reconstruct every original byte below.
+        undo(&mut current, r###"        let mut owner =
+            crate::bounded_output::identity_reservation::IdentityReservation::acquire().unwrap();
+        let before = crate::bounded_output::active_remaining();
+        assert!(pass
+            .resolve_borrowed_cold_source_paid(&program.path, &changed_view, None, &mut owner)
+            .is_none());
+        assert_eq!(before, crate::bounded_output::active_remaining());
+        pass.resolve_borrowed_source_paid(&program.path, &changed_view, None, &mut owner)
+            .unwrap()
+            .unwrap()
+"###, r###"        let mut owner =
+            crate::bounded_output::identity_reservation::IdentityReservation::acquire().unwrap();
+        pass.resolve_borrowed_cold_source_paid(&program.path, &changed_view, None, &mut owner)
+            .unwrap()
+            .unwrap()
+"###);
         assert_eq!(
             current,
             include_str!(
