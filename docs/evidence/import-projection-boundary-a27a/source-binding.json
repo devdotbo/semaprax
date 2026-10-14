@@ -72,7 +72,7 @@
     "src/workspace_graph/expected_projection/uncached_absence_tests.rs": "5bf7f1b3590b48cdf481bc4a486d4689ed659b0740016d8a92ca9b334aa022de",
     "src/workspace_graph/expected_projection/uncached_peak.rs": "2156e41020aeb1cbf47b0fdaf29788ce90dbdb431109b63957f3b727d244bbf4",
     "src/workspace_graph/expected_projection/vec_constructor.rs": "4831e29cce4d39b5c263ffd3743d3cb2227ffc9c57f94e28763994cd78721e10",
-    "tests/workspace/semantic_graph/source_inventory.rs": "42e3770bf56afc50f4a831e7b448df5a238d0be844d571d6b01a9defe399bcb5"
+    "tests/workspace/semantic_graph/source_inventory.rs": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122"
   },
   "unchanged_full_source_inventory_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
   "whole_inverse_hooks": [
@@ -182,6 +182,12 @@
     "prior_full_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829"
   },
   "source_inventory_additive_join_inverses": [
+    {
+      "before": "            include_str!(\"../../src/workspace_graph/generic_type_import/borrowed_tests.rs\"),\n",
+      "after": "            include_str!(\"../../src/workspace_graph/generic_type_import/borrowed_tests.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/parameter_names.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/parameter_names/tests.rs\"),\n",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "reason": "Complete paid generic membership children remain in source union"
+    },
     {
       "after": "concat!(include_str!(\"../../src/workspace_graph.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/ordered.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/original.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/tests.rs\"))",
       "before": "include_str!(\"../../src/workspace_graph.rs\")"
