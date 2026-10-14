@@ -2,8 +2,9 @@
 
 Audience: compiler contributors and reviewers.
 
-Status: source-authored additive Rust facade API; executable qualification pending.
-This is a bounded OPT781 tranche, not completion of report or application funding.
+Status: source-authored additive v0.10 typed Rust facade API; executable
+qualification pending. Dynamic legacy diagnostics and application funding remain
+separate from the selected replay report protocol.
 
 ## Same-invocation ownership
 
@@ -41,8 +42,9 @@ Both full schema-receiving passes propagate the affine selected-replay failure.
 The original complete Vec preflight and independent replay remain an oracle.
 Canonical ordering, all original source/storage limits and diagnostic priority
 are unchanged. This source-only API grants no filesystem, lock, transaction,
-staging, evidence, managed generation or ACTIVE authority. The initializer,
-CLI and filesystem change/operation routes keep their original behavior.
+staging, evidence, managed generation or ACTIVE authority. The original initializer, CLI and Vec-returning filesystem APIs
+retain their compatibility behavior; the additive typed filesystem routes below
+preserve their original authority and execution order.
 
 ## Explicit residual frontiers
 
@@ -54,14 +56,12 @@ pending/resolving/retained attribution; no max-only substitute or post-refusal
 clone claims funding. Migrating that seam needs a separately acquired attribution
 owner that preserves nested/repeated invocation behavior.
 
-The actual filesystem change, structural-change and operation view wrappers
-still call `into_report(form)` and explicitly materialize `SelectedReplayUnpaid`.
-They can release the failed owner at that legacy edge. The next concrete caller
-migration is the change/structural `into_change_view_reporting` and operations
-`into_operation_view_reporting` error return, followed through its authority-held
-preparer to the public typed outcome without moving replay after staging. The
-full original lock, evidence replay, source binding and ACTIVE order must remain.
-This additive preflight does not satisfy that remaining OPT781 acceptance.
+The original Vec-returning filesystem view wrappers retain their allocating
+compatibility boundary. The v0.10 `into_change_view_reporting` and
+`into_operation_view_reporting` routes instead move the selected failure through
+the authority-held preparer to the public typed outcome. They preserve the full
+original lock, evidence replay, source binding and ACTIVE order; replay remains
+before staging. Their owning controls await the consolidated qualification.
 
 ## Source-authored owners
 
