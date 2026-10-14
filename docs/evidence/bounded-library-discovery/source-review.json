@@ -16,7 +16,7 @@
   "matched_prompt_bytes_each_arm": 2793,
   "measurement": "Retained output bytes; not net input tokens, retransmission, cost, or demonstrated improvement",
   "current_source_sha256": {
-    "docs/AGENT-QUICK-REFERENCE.md": "2dfab659f6399f528d262346bdbb11c67c1b0c67bbbee2df98b74c000d814955",
+    "docs/AGENT-QUICK-REFERENCE.md": "1ef9de8f9a84be66aefc7776d747abe7999200a0512069aee151fe595aef9f09",
     "src/cli/help.rs": "3aa5e3bdaedea4f21a19d127146e73bc7b15bbd9faa070c85ceee78ea85350df",
     "src/cli/help/library.rs": "08a88d3e4f53167549be0c1cf82b186b733703995f16307b5dd711e6dd094ae2"
   },

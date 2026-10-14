@@ -8,12 +8,17 @@
       "archive": "0.before.txt",
       "original_sha256": "41e9508add8734601c97b7f0379cbd5c04ee19c27894b43fc0f67dc70c506cac",
       "original_bytes": 8568,
-      "current_sha256": "327f222c35dd67747c1c0559815e942e1cf715f9627de608af6e07f32539d8f1",
+      "current_sha256": "96c5c2aea8bcb9926250f5d16589ec972cd2458b5eb601ec6b4ed76a496594b3",
       "inverse": [
         {
           "hook": "explicit-provider-backing-edit-1",
           "current": "// PROVIDER_BACKING_BEGIN\n/// Physical storage only. No semantic verdict or work allowance crosses a phase.\npub(crate) struct SourceBacking<'a> {\n    entries: Vec<Entry<'a>>,\n    cursor: Option<Box<source::Cursor<'a>>>,\n    failed: bool,\n}\nimpl SourceBacking<'_> {\n    pub(crate) fn empty() -> Self {\n        Self {\n            entries: Vec::new(),\n            cursor: None,\n            failed: false,\n        }\n    }\n}\nimpl<'a> SourceProofs<'a> {\n    pub(crate) fn from_backing(backing: SourceBacking<'a>) -> Result<Self, Diagnostic> {\n        let SourceBacking {\n            mut entries,\n            mut cursor,\n            failed,\n        } = backing;\n        // The owning core checks its captured payer/source before handing\n        // storage over. This primitive independently preserves sticky refusal\n        // before clearing any borrowed row or cursor frame.\n        if failed\n            || crate::bounded_output::active_remaining().is_none()\n            || !crate::bounded_output::reserve_active_required(0)\n        {\n            return Err(error());\n        }\n        entries.clear();\n        if let Some(cursor) = cursor.as_deref_mut() {\n            // Cursor owns only its fixed inline array of borrowed frames.\n            *cursor = source::Cursor::default();\n        }\n        Ok(Self {\n            entries,\n            cursor,\n            work: WORK,\n            failed: false,\n        })\n    }\n    pub(crate) fn into_backing(self) -> (SourceBacking<'a>, bool) {\n        let Self {\n            mut entries,\n            cursor,\n            work: _,\n            failed,\n        } = self;\n        entries.clear();\n        (\n            SourceBacking {\n                entries,\n                cursor,\n                failed,\n            },\n            failed,\n        )\n    }\n    #[cfg(test)]\n    pub(crate) fn scope_observation(&self) -> (usize, usize, usize, usize) {\n        (\n            self.entries.len(),\n            self.work,\n            self.entries.as_ptr() as usize,\n            self.cursor.as_deref().map_or(0, |c| c as *const _ as usize),\n        )\n    }\n}\n// PROVIDER_BACKING_END\n",
           "before": ""
+        },
+        {
+          "hook": "composed-current-source-join-1",
+          "current": "}\n#[cfg(test)]\n#[path = \"source_index/tests.rs\"]\nmod tests;\n\n",
+          "before": "}\n#[cfg(test)]\nmod tests;\n\n"
         }
       ]
     },
@@ -228,7 +233,7 @@
       "archive": "10.before.txt",
       "original_sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
       "original_bytes": 25059,
-      "current_sha256": "cbf9a4aa0433df0fb229968126069951210c1678bc1c9f902e59024810ce8c0e",
+      "current_sha256": "6ef5c9eb9182d70aa6906dc884da701c445739c64d1935bea1ecab86bc289fb7",
       "inverse": [
         {
           "hook": "explicit-provider-backing-edit-3",
@@ -244,6 +249,16 @@
           "hook": "explicit-provider-backing-edit-1",
           "current": "            include_str!(\"../../src/workspace_graph/expected_projection/held_projection_original.rs\"),\n",
           "before": ""
+        },
+        {
+          "hook": "composed-current-source-join-1",
+          "current": "        include_str!(\"../../src/workspace_graph/checked_value_retention.rs\"),\n        include_str!(\"../../src/workspace_graph/diagnostics.rs\"),\n        include_str!(\"../../src/workspace_graph/diagnostics/borrowed_help_tests.rs\"),\n        include_str!(\"../../src/workspace_graph/diagnostics/invocation.rs\"),\n        include_str!(\"../../src/workspace_graph/diagnostics/invocation/tests.rs\"),\n",
+          "before": "        include_str!(\"../../src/workspace_graph/checked_value_retention.rs\"),\n        include_str!(\"../../src/workspace_graph/diagnostics.rs\"),\n        include_str!(\"../../src/workspace_graph/diagnostics/invocation.rs\"),\n        include_str!(\"../../src/workspace_graph/diagnostics/invocation/tests.rs\"),\n"
+        },
+        {
+          "hook": "composed-current-source-join-2",
+          "current": "    };\n    (defaults) => {\n        concat!(\n            include_str!(\"../../src/workspace_graph/expected_projection/defaults.rs\"),\n            include_str!(\"../../src/workspace_graph/expected_projection/defaults/field_directory.rs\"),\n            include_str!(\"../../src/workspace_graph/expected_projection/defaults/field_directory/tests.rs\"),\n            include_str!(\"../../src/workspace_graph/expected_projection/defaults/error_custody_tests.rs\"),\n            include_str!(\"../../src/workspace_graph/expected_projection/defaults/original.rs\"),\n        )\n    };\n    (import_stub) => {\n",
+          "before": "    };\n    (defaults) => {\n        include_str!(\"../../src/workspace_graph/expected_projection/defaults.rs\")\n    };\n    (import_stub) => {\n"
         }
       ]
     },
@@ -252,7 +267,7 @@
       "archive": "11.before.txt",
       "original_sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
       "original_bytes": 85667,
-      "current_sha256": "512be8a4081f35b2717cdd7dd63958d2260ed566dbbcff131a15c9e95d3c23b5",
+      "current_sha256": "daf6c198625949e542904e15e578cbd7c4f494769a5b0ed37ed021cc0a77b49a",
       "inverse": [
         {
           "hook": "explicit-provider-backing-edit-2",
@@ -263,6 +278,16 @@
           "hook": "explicit-provider-backing-edit-1",
           "current": "macro_rules! byte_writer_source_inventory {\n    () => {\n        concat!(\n            include_str!(\"../../../../../src/loop_calls/byte_writer.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source_index.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source_index_original.rs\"),\n",
           "before": "macro_rules! byte_writer_source_inventory {\n    () => {\n        concat!(\n            include_str!(\"../../../../../src/loop_calls/byte_writer.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source_index.rs\"),\n"
+        },
+        {
+          "hook": "composed-current-source-join-1",
+          "current": "            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/views.rs\"),\n            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/merge.rs\"),\n            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/merge/saved.rs\"),\n            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/merge/tests.rs\"),\n            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/marks.rs\"),\n            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/storage.rs\"),\n",
+          "before": "            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/views.rs\"),\n            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/merge.rs\"),\n            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/marks.rs\"),\n            include_str!(\"../../../../../src/hir/validation/scope_checkpoint/storage.rs\"),\n"
+        },
+        {
+          "hook": "composed-current-source-join-2",
+          "current": "                include_str!(\"../../../../../src/source_verify/iterative/enter/enter_before_components.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery/callee_components.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery/callee_components/callee_components_before_actual.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery/before_parameter_signature.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery_tests/callee_components.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery_tests/extended_components.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/enter/enter_before_extended.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/calls/calls_before_extended.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/records/records_before_extended.rs\"),\n                include_str!(\"../../../../../src/source_verify/scope/layout_original.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/match_arms.rs\"),\n",
+          "before": "                include_str!(\"../../../../../src/source_verify/iterative/enter/enter_before_components.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery/callee_components.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery_tests/callee_components.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/match_arms.rs\"),\n"
         }
       ]
     },
@@ -271,12 +296,17 @@
       "archive": "0.before.txt",
       "original_sha256": "41e9508add8734601c97b7f0379cbd5c04ee19c27894b43fc0f67dc70c506cac",
       "original_bytes": 8568,
-      "current_sha256": "f7e6db54537f2b50a7332e7e13644d5ac90d99a6b436d95e912d9281cd4b7d4a",
+      "current_sha256": "ada0bc8eb040891346371f0435aedd5a557670e25c366e342a02c49193fa347e",
       "inverse": [
         {
           "hook": "explicit-provider-backing-edit-1",
           "current": "\n// ORIGINAL_OBSERVATION_BEGIN\n#[cfg(test)]\nimpl SourceProofs<'_> {\n    pub(crate) fn scope_observation(&self) -> (usize, usize) {\n        (self.entries.len(), self.work)\n    }\n}\n// ORIGINAL_OBSERVATION_END\n",
           "before": ""
+        },
+        {
+          "hook": "composed-current-source-join-1",
+          "current": "}\n#[cfg(test)]\n#[path = \"source_index/tests.rs\"]\nmod tests;\n\n",
+          "before": "}\n#[cfg(test)]\nmod tests;\n\n"
         }
       ]
     },

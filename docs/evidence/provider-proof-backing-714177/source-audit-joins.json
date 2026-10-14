@@ -20,7 +20,7 @@
     "src/workspace_graph/expected_projection/borrowed_imports_original.rs"
   ],
   "current_child_bindings": {
-    "src/loop_calls/byte_writer/source_index_original.rs": "f7e6db54537f2b50a7332e7e13644d5ac90d99a6b436d95e912d9281cd4b7d4a",
+    "src/loop_calls/byte_writer/source_index_original.rs": "ada0bc8eb040891346371f0435aedd5a557670e25c366e342a02c49193fa347e",
     "src/workspace_graph/expected_projection/import_stub/core_proofs.rs": "48ba6849940e7ecf3b1e69ba6d5f785b041d9f6bf53509c53726415fe99ab04f",
     "src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs": "073aef3cdc15df8c87ca1c9dcdf6f74694b39ccb98b715278025ee6ef4c17219",
     "src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs": "13d5ab2918fa7fb97619e985d781d3e60fc06278a73e0d4a27791c4a4fe65206",
