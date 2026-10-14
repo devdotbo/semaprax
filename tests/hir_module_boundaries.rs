@@ -4,6 +4,17 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         concat!(
             concat!(
                 include_str!("../src/hir/validation.rs"),
+                include_str!("../src/hir/validation/held_profiles.rs"),
+                include_str!("../src/hir/validation/held_profiles/tests.rs"),
+                include_str!("../src/hir/validation/held_profiles/source_audit.rs"),
+                include_str!("../src/hir/validation/executable_profiles/held.rs"),
+                include_str!("../src/hir/validation/executable_profiles/before_812.rs"),
+                include_str!("../src/hir/validation/call_parameters/before_812.rs"),
+                include_str!("../src/hir/validation/call_parameters/held_tests.rs"),
+                include_str!("../src/hir/ids/fixed_operation_tests.rs"),
+                include_str!("../src/hir/resolve_box_call/map/identity_tests.rs"),
+                include_str!("../src/hir/resolve_box_call/list/identity_tests.rs"),
+                include_str!("../src/hir/resolve_box_call/iterator/identity_tests.rs"),
                 include_str!("../src/hir/validation/executable_profiles.rs"),
                 include_str!("../src/hir/validation/executable_profiles/tests.rs"),
                 include_str!("../src/hir/owned_text_record/paid.rs"),

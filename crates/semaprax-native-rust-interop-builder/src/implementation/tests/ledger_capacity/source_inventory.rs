@@ -1,3 +1,30 @@
+// Complete additive source union; original receivers included without slicing.
+macro_rules! held_call_profile_source_inventory {
+    () => {
+        concat!(
+            include_str!("../../../../../src/hir/validation/held_profiles.rs"),
+            include_str!("../../../../../src/hir/validation/held_profiles/tests.rs"),
+            include_str!("../../../../../src/hir/validation/held_profiles/source_audit.rs"),
+            include_str!("../../../../../src/hir/validation/executable_profiles/held.rs"),
+            include_str!("../../../../../src/hir/validation/executable_profiles/before_812.rs"),
+            include_str!("../../../../../src/hir/validation/call_parameters/before_812.rs"),
+            include_str!("../../../../../src/hir/validation/call_parameters/held_tests.rs"),
+        )
+    };
+}
+
+// Complete additive source union; original receivers included without slicing.
+macro_rules! fixed_operation_identity_source_inventory {
+    () => {
+        concat!(
+            include_str!("../../../../../src/hir/ids/fixed_operation_tests.rs"),
+            include_str!("../../../../../src/hir/resolve_box_call/map/identity_tests.rs"),
+            include_str!("../../../../../src/hir/resolve_box_call/list/identity_tests.rs"),
+            include_str!("../../../../../src/hir/resolve_box_call/iterator/identity_tests.rs"),
+        )
+    };
+}
+
 // Shared complete byte-writer/frontier source join for both owning audits.
 // No test bodies, assertions or literal contents are relocated here.
 macro_rules! byte_writer_source_inventory {
@@ -468,6 +495,7 @@ macro_rules! hir_resolver_source_inventory {
             include_str!("../../../../../src/hir/expr_nodes.rs"),
             concat!(
                 include_str!("../../../../../src/hir/ids.rs"),
+                fixed_operation_identity_source_inventory!(),
                 include_str!("../../../../../src/hir/ids/compiler.rs"),
                 "\n",
                 include_str!("../../../../../src/hir/ids/streamed.rs"),
@@ -602,6 +630,7 @@ macro_rules! hir_validator_source_inventory {
                 concat!(
                     concat!(
                         include_str!("../../../../../src/hir/validation.rs"),
+                        held_call_profile_source_inventory!(),
                         include_str!("../../../../../src/hir/validation/function_scope.rs"),
                         include_str!("../../../../../src/hir/ordinary_scan.rs"),
                         include_str!("../../../../../src/hir/ordinary_scan/tests.rs"),
@@ -1126,6 +1155,7 @@ macro_rules! hir_final_validation_source_inventory {
     () => {
         concat!(
             include_str!("../../../../../src/hir/validation/call_parameters.rs"),
+            held_call_profile_source_inventory!(),
             include_str!("../../../../../src/hir/validation/nominal_facts.rs"),
             include_str!("../../../../../src/hir/validation/ownership_flags.rs"),
             include_str!("../../../../../src/hir/validation/ownership_flags/before.rs"),

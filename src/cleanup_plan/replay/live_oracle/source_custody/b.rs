@@ -654,6 +654,18 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        undo(&mut current, r###"                include_str!("../src/hir/validation/held_profiles.rs"),
+                include_str!("../src/hir/validation/held_profiles/tests.rs"),
+                include_str!("../src/hir/validation/held_profiles/source_audit.rs"),
+                include_str!("../src/hir/validation/executable_profiles/held.rs"),
+                include_str!("../src/hir/validation/executable_profiles/before_812.rs"),
+                include_str!("../src/hir/validation/call_parameters/before_812.rs"),
+                include_str!("../src/hir/validation/call_parameters/held_tests.rs"),
+                include_str!("../src/hir/ids/fixed_operation_tests.rs"),
+                include_str!("../src/hir/resolve_box_call/map/identity_tests.rs"),
+                include_str!("../src/hir/resolve_box_call/list/identity_tests.rs"),
+                include_str!("../src/hir/resolve_box_call/iterator/identity_tests.rs"),
+"###, "");
         undo(&mut current, r###"        include_str!("../src/cleanup_plan/replay/factored/oracle_hook/closure_controls.rs"),
 "###, "");
         undo(

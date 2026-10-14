@@ -6,8 +6,14 @@
     "src/hir/resolve_box_call/iterator/identity_tests.rs"
   ],
   "root_owned_union_files": [
-    "crates/semaprax-native-rust-interop-builder/src/implementation/source_inventory.rs",
-    "tests/hir_module_boundaries.rs"
+    "tests/hir_module_boundaries.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs"
   ],
-  "status": "Root must join all four descendants to source-reading owners."
+  "status": "Source unions authored, actual qualification pending; no Cargo or execution.",
+  "actual_root_owned_union_files": [
+    "tests/hir_module_boundaries.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs"
+  ]
 }

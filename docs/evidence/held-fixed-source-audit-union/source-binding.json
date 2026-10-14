@@ -1,0 +1,88 @@
+{
+  "status": "SOURCE_ONLY_PENDING_ACTUAL_QUALIFICATION",
+  "base": "74169c6b5e27177dc780d2dff0769c38b01a41ed",
+  "held_children": [
+    "src/hir/validation/held_profiles.rs",
+    "src/hir/validation/held_profiles/tests.rs",
+    "src/hir/validation/held_profiles/source_audit.rs",
+    "src/hir/validation/executable_profiles/held.rs",
+    "src/hir/validation/executable_profiles/before_812.rs",
+    "src/hir/validation/call_parameters/before_812.rs",
+    "src/hir/validation/call_parameters/held_tests.rs"
+  ],
+  "fixed_children": [
+    "src/hir/ids/fixed_operation_tests.rs",
+    "src/hir/resolve_box_call/map/identity_tests.rs",
+    "src/hir/resolve_box_call/list/identity_tests.rs",
+    "src/hir/resolve_box_call/iterator/identity_tests.rs"
+  ],
+  "source_readers": {
+    "tests/hir_module_boundaries.rs": {
+      "whole_original_archive": "docs/evidence/held-fixed-source-audit-union/tests__hir_module_boundaries.rs.before.txt",
+      "original_sha256": "dc4ebfe57ea401e3503d3e829c6eb0c21fff42b7aca2c4d4b666c6264e9962e4",
+      "receiving_sha256": "0bc5bb07d41a24a4bfeceebfdcd204c749e0709b3bb7b8176999af555f6f36d7",
+      "whole_inverse_edits": [
+        {
+          "original": "        concat!(\n            concat!(\n                include_str!(\"../src/hir/validation.rs\"),\n                include_str!(\"../src/hir/validation/executable_profiles.rs\"),\n                include_str!(\"../src/hir/validation/executable_profiles/tests.rs\"),\n                include_str!(\"../src/hir/owned_text_record/paid.rs\"),\n",
+          "receiving": "        concat!(\n            concat!(\n                include_str!(\"../src/hir/validation.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n                include_str!(\"../src/hir/validation/executable_profiles/held.rs\"),\n                include_str!(\"../src/hir/validation/executable_profiles/before_812.rs\"),\n                include_str!(\"../src/hir/validation/call_parameters/before_812.rs\"),\n                include_str!(\"../src/hir/validation/call_parameters/held_tests.rs\"),\n                include_str!(\"../src/hir/ids/fixed_operation_tests.rs\"),\n                include_str!(\"../src/hir/resolve_box_call/map/identity_tests.rs\"),\n                include_str!(\"../src/hir/resolve_box_call/list/identity_tests.rs\"),\n                include_str!(\"../src/hir/resolve_box_call/iterator/identity_tests.rs\"),\n                include_str!(\"../src/hir/validation/executable_profiles.rs\"),\n                include_str!(\"../src/hir/validation/executable_profiles/tests.rs\"),\n                include_str!(\"../src/hir/owned_text_record/paid.rs\"),\n"
+        }
+      ]
+    },
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
+      "whole_original_archive": "docs/evidence/held-fixed-source-audit-union/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
+      "original_sha256": "3033977fea7706bd8f95b0016769f17ee206d81399e6f645697dc4a6e1ecb383",
+      "receiving_sha256": "db55943fce14599fef4a3a8c4f13b78fe90fdac33487aa42edac41e6fc7940d4",
+      "whole_inverse_edits": [
+        {
+          "original": "    () => {\n        concat!(\n            include_str!(\"../../../../../src/hir/validation/call_parameters.rs\"),\n            include_str!(\"../../../../../src/hir/validation/nominal_facts.rs\"),\n            include_str!(\"../../../../../src/hir/validation/ownership_flags.rs\"),\n            include_str!(\"../../../../../src/hir/validation/ownership_flags/before.rs\"),\n",
+          "receiving": "    () => {\n        concat!(\n            include_str!(\"../../../../../src/hir/validation/call_parameters.rs\"),\n            held_call_profile_source_inventory!(),\n            include_str!(\"../../../../../src/hir/validation/nominal_facts.rs\"),\n            include_str!(\"../../../../../src/hir/validation/ownership_flags.rs\"),\n            include_str!(\"../../../../../src/hir/validation/ownership_flags/before.rs\"),\n"
+        },
+        {
+          "original": "                concat!(\n                    concat!(\n                        include_str!(\"../../../../../src/hir/validation.rs\"),\n                        include_str!(\"../../../../../src/hir/validation/function_scope.rs\"),\n                        include_str!(\"../../../../../src/hir/ordinary_scan.rs\"),\n                        include_str!(\"../../../../../src/hir/ordinary_scan/tests.rs\"),\n",
+          "receiving": "                concat!(\n                    concat!(\n                        include_str!(\"../../../../../src/hir/validation.rs\"),\n                        held_call_profile_source_inventory!(),\n                        include_str!(\"../../../../../src/hir/validation/function_scope.rs\"),\n                        include_str!(\"../../../../../src/hir/ordinary_scan.rs\"),\n                        include_str!(\"../../../../../src/hir/ordinary_scan/tests.rs\"),\n"
+        },
+        {
+          "original": "            include_str!(\"../../../../../src/hir/expr_nodes.rs\"),\n            concat!(\n                include_str!(\"../../../../../src/hir/ids.rs\"),\n                include_str!(\"../../../../../src/hir/ids/compiler.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/hir/ids/streamed.rs\"),\n",
+          "receiving": "            include_str!(\"../../../../../src/hir/expr_nodes.rs\"),\n            concat!(\n                include_str!(\"../../../../../src/hir/ids.rs\"),\n                fixed_operation_identity_source_inventory!(),\n                include_str!(\"../../../../../src/hir/ids/compiler.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/hir/ids/streamed.rs\"),\n"
+        },
+        {
+          "original": "// Shared complete byte-writer/frontier source join for both owning audits.\n// No test bodies, assertions or literal contents are relocated here.\nmacro_rules! byte_writer_source_inventory {\n",
+          "receiving": "// Complete additive source union; original receivers included without slicing.\nmacro_rules! held_call_profile_source_inventory {\n    () => {\n        concat!(\n            include_str!(\"../../../../../src/hir/validation/held_profiles.rs\"),\n            include_str!(\"../../../../../src/hir/validation/held_profiles/tests.rs\"),\n            include_str!(\"../../../../../src/hir/validation/held_profiles/source_audit.rs\"),\n            include_str!(\"../../../../../src/hir/validation/executable_profiles/held.rs\"),\n            include_str!(\"../../../../../src/hir/validation/executable_profiles/before_812.rs\"),\n            include_str!(\"../../../../../src/hir/validation/call_parameters/before_812.rs\"),\n            include_str!(\"../../../../../src/hir/validation/call_parameters/held_tests.rs\"),\n        )\n    };\n}\n\n// Complete additive source union; original receivers included without slicing.\nmacro_rules! fixed_operation_identity_source_inventory {\n    () => {\n        concat!(\n            include_str!(\"../../../../../src/hir/ids/fixed_operation_tests.rs\"),\n            include_str!(\"../../../../../src/hir/resolve_box_call/map/identity_tests.rs\"),\n            include_str!(\"../../../../../src/hir/resolve_box_call/list/identity_tests.rs\"),\n            include_str!(\"../../../../../src/hir/resolve_box_call/iterator/identity_tests.rs\"),\n        )\n    };\n}\n\n// Shared complete byte-writer/frontier source join for both owning audits.\n// No test bodies, assertions or literal contents are relocated here.\nmacro_rules! byte_writer_source_inventory {\n"
+        }
+      ]
+    },
+    "tests/workspace/semantic_graph/source_inventory.rs": {
+      "whole_original_archive": "docs/evidence/held-fixed-source-audit-union/tests__workspace__semantic_graph__source_inventory.rs.before.txt",
+      "original_sha256": "363c4508d303319fb25406ced6ae02d2c686e39420e80400179ddd39d0851ddc",
+      "receiving_sha256": "0e2d39bddcd5a007ef3464adf5ca63f9092ba0175b7300bd020272c44673ac41",
+      "whole_inverse_edits": [
+        {
+          "original": "                concat!(\n                    concat!(\n                    include_str!(\"../../src/workspace_graph.rs\"),\n                    include_str!(\"../../src/workspace_graph/cache_key_original.rs\"),\n                    include_str!(\"../../src/workspace_graph/current_source.rs\"),\n                    include_str!(\"../../src/workspace_graph/current_source/source_bytes.rs\"),\n",
+          "receiving": "                concat!(\n                    concat!(\n                    include_str!(\"../../src/workspace_graph.rs\"),\n                    include_str!(\"../../src/hir/validation/held_profiles.rs\"),\n                    include_str!(\"../../src/hir/validation/held_profiles/tests.rs\"),\n                    include_str!(\"../../src/hir/validation/held_profiles/source_audit.rs\"),\n                    include_str!(\"../../src/hir/validation/executable_profiles/held.rs\"),\n                    include_str!(\"../../src/hir/validation/executable_profiles/before_812.rs\"),\n                    include_str!(\"../../src/hir/validation/call_parameters/before_812.rs\"),\n                    include_str!(\"../../src/hir/validation/call_parameters/held_tests.rs\"),\n                    include_str!(\"../../src/hir/ids/fixed_operation_tests.rs\"),\n                    include_str!(\"../../src/hir/resolve_box_call/map/identity_tests.rs\"),\n                    include_str!(\"../../src/hir/resolve_box_call/list/identity_tests.rs\"),\n                    include_str!(\"../../src/hir/resolve_box_call/iterator/identity_tests.rs\"),\n                    include_str!(\"../../src/workspace_graph/cache_key_original.rs\"),\n                    include_str!(\"../../src/workspace_graph/current_source.rs\"),\n                    include_str!(\"../../src/workspace_graph/current_source/source_bytes.rs\"),\n"
+        }
+      ]
+    },
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": {
+      "whole_original_archive": "docs/evidence/held-fixed-source-audit-union/src__cleanup_plan__replay__live_oracle__source_custody__b.rs.before.txt",
+      "original_sha256": "06ca566f42507aea8c93b453b996deb0436a157673ae1a44bc3b57b8d97d42d0",
+      "receiving_sha256": "fedbaee1e18471d394cb46f8542948cf4d522cf45223bbd4d97528956198f33c",
+      "whole_inverse_edits": [
+        {
+          "original": "    }\n    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, r###\"        include_str!(\"../src/cleanup_plan/replay/factored/oracle_hook/closure_controls.rs\"),\n\"###, \"\");\n        undo(\n",
+          "receiving": "    }\n    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, r###\"                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n                include_str!(\"../src/hir/validation/executable_profiles/held.rs\"),\n                include_str!(\"../src/hir/validation/executable_profiles/before_812.rs\"),\n                include_str!(\"../src/hir/validation/call_parameters/before_812.rs\"),\n                include_str!(\"../src/hir/validation/call_parameters/held_tests.rs\"),\n                include_str!(\"../src/hir/ids/fixed_operation_tests.rs\"),\n                include_str!(\"../src/hir/resolve_box_call/map/identity_tests.rs\"),\n                include_str!(\"../src/hir/resolve_box_call/list/identity_tests.rs\"),\n                include_str!(\"../src/hir/resolve_box_call/iterator/identity_tests.rs\"),\n\"###, \"\");\n        undo(&mut current, r###\"        include_str!(\"../src/cleanup_plan/replay/factored/oracle_hook/closure_controls.rs\"),\n\"###, \"\");\n        undo(\n"
+        }
+      ]
+    }
+  },
+  "interop_macro_joins": {
+    "hir_resolver_source_inventory": "fixed_operation_identity_source_inventory: 4",
+    "hir_validator_source_inventory": "held_call_profile_source_inventory: 7",
+    "hir_final_validation_source_inventory": "held_call_profile_source_inventory: 7"
+  },
+  "binding_refresh_required": [
+    "Current3 owning inventory source hashes and aggregate source unions",
+    "OPT810 whole-source inverse child b receiving SHA",
+    "812 and785 source packet hashes and source-registration inputs"
+  ],
+  "no_numeric_pin_guessing": true
+}
