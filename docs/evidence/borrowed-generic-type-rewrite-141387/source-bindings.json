@@ -20,7 +20,7 @@
     "bytes": 1364
   },
   "tests/workspace/semantic_graph/source_inventory.rs": {
-    "sha256": "dfa299a93ebbcdbf3bfe7a4ca30746ca547e71319665e39ad88b98cb77926717",
-    "bytes": 24541
+    "sha256": "42e3770bf56afc50f4a831e7b448df5a238d0be844d571d6b01a9defe399bcb5",
+    "bytes": 24865
   }
 }

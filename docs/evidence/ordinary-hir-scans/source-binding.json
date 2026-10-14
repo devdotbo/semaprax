@@ -5,7 +5,7 @@
   "status": "static only; original bodies byte-exact and registered; no compiler/runtime qualification",
   "source_hashes": {
     "CHANGELOG.md": "37455a9a4d77ebf7343f7c477e4087055bd8d8535716344b3e0f669eb2767c79",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "f94b73730996312b4a8fdfb8a47146ee1e370390ab63ebe7131ba93d3048faad",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "2d6dff38006340f9eba7ef3fce552f2902219712b2145810f28949842dd9be2f",
     "docs/ARCHITECTURE.md": "48d41e8039699c49eef5d2f91b0ae880870adb352e6d43c3e841b931a6800409",
     "src/hir.rs": "a5efa3f9d058c37538b9f08a17f3286fad4b2342b54943d64f3a4ca69e6459e0",
     "src/hir/iterator_loop.rs": "3295874fa719aa58acf8f31ee73956aed757ac7ad25fa7fad39f599c830fe9aa",
@@ -20,7 +20,7 @@
     "src/hir/validation/unsafe_scan.rs": "2309786e3789e9a0983d1e846f5c19eb71422bae727b2c73db49c0a814be089d",
     "src/hir/validation/unsafe_scan/paid.rs": "98019a0d1a3c5cf8c3f1a3901f3c7c4f56948695e49c40d3e7558f2bbb2376e3",
     "src/hir/validation/unsafe_scan/paid/tests.rs": "d91113e77145ef672b4ef02e47fee6b53e1e455217c62eb76d980ae6bb27654d",
-    "tests/hir_module_boundaries.rs": "15a8d40bede511c7f00f207a8c42cd2e07638687311b20c479791bfcbcb1264f",
+    "tests/hir_module_boundaries.rs": "3638d5d196c394a6b7e47e69403bb058164b8ad0870fdaf721b336ba8b0a2b22",
     "docs/evidence/ordinary-hir-scans/pending-selectors.json": "810df9ee12898aa3dca1ddb2c1cbde7ce68a1af12b437339b4df62f49381a529",
     "docs/evidence/ordinary-hir-scans/README.md": "efdc3b583cd6bc790276fa986639f27e12a83d02294b85603c15080002af5143",
     "docs/evidence/ordinary-hir-scans/original-scans.txt": "2025f1da39517120b17790f3f20f17b02b67fd6cda3e21e7fb87af5d3bbd7102"
