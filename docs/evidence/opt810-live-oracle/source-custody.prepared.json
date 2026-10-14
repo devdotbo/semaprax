@@ -678,8 +678,8 @@
       "sha256": "eaf4913b015cc2aaf3ed0048601f3d0d6c57e7a1be53ceb96140e4370a9d4571"
     },
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": {
-      "bytes": 24058,
-      "sha256": "eca52cbc830d98ee95ed7ed17d72a437b1d31fe64ea6f655cd9997a226820f70"
+      "bytes": 25455,
+      "sha256": "3ba193587522d28351ab96daa509cea22ccbd16a758ad2f46158391e640b7d86"
     },
     "src/cleanup_plan/replay/nested_shape/paid/oracle.rs": {
       "bytes": 20170,
