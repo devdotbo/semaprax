@@ -13,7 +13,7 @@
     "src/source_verify/iterative/calls/calls_before_extended.rs": "940b6120358c99e90101196d06e96aec5a884ff4f6600f77fa8e36149d76643b",
     "src/source_verify/iterative/records/records_before_extended.rs": "01e067513231693880a91fac84413ce2d2d1cfd2c8693c69f571c3ae639c50b0",
     "src/source_verify/constructor_tests.rs": "bf76532dc6818d1adab70f92157798957b0b78d6fb0d96ebf7110dec36f84718",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "b0197e5b19ad54942a8422ab8c5936f6777721ffebbfe6c84f7f309bee182d24"
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "7270092608a52e5228f47a5b3a9b6655e110e1271a1a7cde13acb7d230596c8f"
   },
   "original_archive_hashes": {
     "iterative__records.rs.before": "00e92f426a91970f6b5fd618d1042a49f0fc02dd4e81b0a7dd51a7cbd4bac421",

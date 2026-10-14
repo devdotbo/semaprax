@@ -79,6 +79,11 @@
     "before_sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
     "hooks": [
       {
+        "before": "                include_str!(\"../../../../../src/source_verify/recovery_tests/callee_components.rs\"),\n                \"\\n\",\n",
+        "after": "                include_str!(\"../../../../../src/source_verify/recovery_tests/callee_components.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery_tests/extended_components.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/enter/enter_before_extended.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/calls/calls_before_extended.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/records/records_before_extended.rs\"),\n                \"\\n\",\n",
+        "count": 1
+      },
+      {
         "before": "include_str!(\"../../../../../src/hir/validation/generic_template.rs\")",
         "after": "concat!(include_str!(\"../../../../../src/hir/validation/generic_template.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph/ordered.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph/original.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph/tests.rs\"))",
         "count": 1
