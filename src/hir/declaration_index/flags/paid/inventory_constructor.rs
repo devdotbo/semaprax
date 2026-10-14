@@ -186,6 +186,10 @@ pub(crate) fn identity<P: InventoryPayer>(
     payer.bytes(std::mem::size_of::<Storage<P>>())?;
     let mut storage = Storage { payer, first: None };
     let value = key::identity(ty, &mut storage);
+    // A logical sink can select the existing sticky refusal without returning
+    // a physical error. Authenticate before publishing only a successful value;
+    // Storage::work leaves an already selected first error untouched.
+    let _ = storage.work(0, "inventory identity receiving authority");
     match storage.first {
         Some(error) => Err(error),
         None => Ok(value),

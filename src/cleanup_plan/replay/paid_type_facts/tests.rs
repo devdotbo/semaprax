@@ -556,3 +556,29 @@ fn paid_flag_miss_keeps_complete_original_constructor_exact_short_and_drop() {
     assert_eq!(actual.live, 0);
     assert_eq!(actual.allocated, actual.freed);
 }
+
+/// The complete prior paid bool receiver, before the ordinary inventory fold.
+/// It authenticates the same live account and only its original zero-work
+/// fast paths can succeed on the literal zero-byte/zero-work owner.
+pub(in crate::cleanup_plan::replay) fn original_fast_probe(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    ty: &ResolvedType,
+) -> Result<bool, Diagnostic> {
+    let lease = allocation::authority(program, function)
+        .map_err(|_| Diagnostic::io_static("SPX-H006", "old probe invocation refused"))?
+        .ok_or_else(|| Diagnostic::io_static("SPX-H006", "old probe requires its live account"))?;
+    let mut budget = ReplayBudget::with_skeleton_limit_oracle(MAX_REPLAY_WORK_UNITS, lease);
+    let mut payer = Payer {
+        function,
+        budget: &mut budget,
+        ledger: ClassifierLedger::oracle_marker(),
+    };
+    match droppability::needs_drop_paid(program, ty, &mut payer) {
+        Ok(value) => Ok(value),
+        Err(droppability::Failure::Physical(error)) => Err(error),
+        Err(droppability::Failure::Semantic(message)) => Err(droppability::replay_diagnostic(
+            function, &message, &mut payer,
+        )?),
+    }
+}

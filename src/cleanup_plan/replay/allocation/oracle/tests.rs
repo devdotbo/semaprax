@@ -774,6 +774,7 @@ fn finite_account_work_refusal_census_carrier_is_observed_through_drop() {
 
 #[test]
 fn account_type_probe_fast_receivers_match_original_without_production_ledger_touch() {
+    use original_fast_type_probe as nested_shape;
     let program = program();
     let function = &program.functions[0];
     let types = [
@@ -809,4 +810,95 @@ fn account_type_probe_fast_receivers_match_original_without_production_ledger_to
     assert_eq!(scope.receipt().charged, 0);
     assert!(scope.receipt().first_refusal.is_none());
     assert!(scope.receipt().physical_failure.is_none());
+}
+
+mod original_fast_type_probe {
+    use super::*;
+    pub(super) fn type_needs_drop(
+        program: &dyn crate::cleanup::ReplayContext,
+        function: &ResolvedFunction,
+        ty: &crate::hir::ResolvedType,
+    ) -> Result<bool, crate::diagnostic::Diagnostic> {
+        crate::cleanup_plan::replay::paid_type_facts::tests::original_fast_probe(
+            program, function, ty,
+        )
+    }
+}
+
+#[test]
+fn funded_type_probe_receivers_keep_exact_work_bytes_zero_short_sticky_and_complete_drop() {
+    let program = program();
+    let function = &program.functions[0];
+    let types = [
+        crate::hir::ResolvedType::Never,
+        crate::hir::ResolvedType::I64,
+        crate::hir::ResolvedType::Bytes,
+        crate::hir::ResolvedType::String,
+    ];
+    let original: Vec<_> = types
+        .iter()
+        .map(|ty| crate::cleanup::type_needs_resource_cleanup(&program, ty).unwrap())
+        .collect();
+    let run = |bytes, work| {
+        let scope = OracleScope::open_with_work(bytes, work).unwrap();
+        let lease = scope.lease();
+        let ((failed, metrics), refused, active) =
+            crate::bounded_output::with_limit_usage(0, || {
+                crate::test_allocation_observer::measure(|| {
+                    let invocation = super::enter(&program, function, lease).unwrap();
+                    let result = (|| {
+                        for (ty, expected) in types.iter().zip(&original) {
+                            let found = crate::cleanup_plan::replay::nested_shape::type_needs_drop(
+                                &program, function, ty,
+                            )?;
+                            assert_eq!(found, *expected);
+                        }
+                        Ok::<(), crate::diagnostic::Diagnostic>(())
+                    })();
+                    let failed = result.is_err();
+                    if failed {
+                        let first = scope.receipt();
+                        let before = crate::test_allocation_observer::current_metrics();
+                        let retry = crate::cleanup_plan::replay::nested_shape::type_needs_drop(
+                            &program, function, &types[0],
+                        );
+                        assert!(retry.is_err());
+                        drop(retry);
+                        assert_eq!(
+                            before.allocated,
+                            crate::test_allocation_observer::current_metrics().allocated
+                        );
+                        let after = scope.receipt();
+                        assert_eq!(after.first_refusal, first.first_refusal);
+                        assert_eq!(after.first_work_refusal, first.first_work_refusal);
+                        assert_eq!(after.physical_failure, first.physical_failure);
+                        assert_eq!(lease.charge(0), Err(OracleRefusal::Sticky));
+                        assert_eq!(lease.charge_work(0), Err(OracleRefusal::Sticky));
+                    }
+                    drop(result);
+                    assert_eq!(invocation.exit(), Ok(()));
+                    failed
+                })
+            });
+        let receipt = scope.finish();
+        assert!(!refused && active == 0 && !metrics.invalid);
+        assert!(metrics.allocated <= receipt.charged);
+        assert_eq!((metrics.live, metrics.allocated), (0, metrics.freed));
+        (failed, receipt)
+    };
+    let (failed, ample) = run(1 << 20, crate::cleanup_plan::replay::MAX_REPLAY_WORK_UNITS);
+    assert!(!failed && ample.charged > 0 && ample.work > 0);
+    let (failed, exact) = run(ample.charged, ample.work);
+    assert!(!failed);
+    assert_eq!((exact.charged, exact.work), (ample.charged, ample.work));
+    for (bytes, work) in [
+        (0, ample.work),
+        (ample.charged - 1, ample.work),
+        (ample.charged, 0),
+        (ample.charged, ample.work - 1),
+    ] {
+        let (failed, receipt) = run(bytes, work);
+        assert!(failed);
+        assert!(receipt.first_refusal.is_some() || receipt.first_work_refusal.is_some());
+    }
 }

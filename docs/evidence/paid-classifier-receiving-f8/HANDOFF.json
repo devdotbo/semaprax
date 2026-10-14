@@ -1,0 +1,51 @@
+{
+  "base": "f8d39034fbe2145590160442ae17c4d69145134d",
+  "observed_failure_indexes": [
+    17,
+    58,
+    238
+  ],
+  "defects_and_repairs": {
+    "17": "Strict logical sink can set existing sticky overflow and yield empty successful identity. Authenticate zero units only before successful publication; Storage::work preserves selected first error. Original formatter unchanged.",
+    "58": "ReplayBudget::new was outside live bounded scope, permanently selecting LegacyUnobserved. Move construction inside same existing scope and prepare actual builder; full prior body compiled separately through original pure bool adapter, no funded legacy claim.",
+    "238": "Original scope grants byte0/work0. Preserve its complete literal owner through the unmodified prior paid droppability bool receiver, authenticating the same live account. The pure cleanup reference is measured only before the observer, never substituted into the zero-allocation receiver. Separate complete current finite/exact/short/zero control uses one cumulative account and receiving Drop."
+  },
+  "current_bindings": {
+    "src/hir/declaration_index/flags/paid/inventory_constructor.rs": {
+      "sha256": "aaeebfae5a87f7fba402c9cb1d42ca924d6fa8d9747579755b428351e0d47379",
+      "lines": 212
+    },
+    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": {
+      "sha256": "6e63ab3c7926f713123d4ae3cf2ce45d457cbff471cfc0fbc273276e92d2abf3",
+      "lines": 227
+    },
+    "src/cleanup_plan/replay/allocation/oracle/tests.rs": {
+      "sha256": "ab3af20c463ecd93ac8cc508b35e3cb75895b15edebf39378d172e9271beb4fc",
+      "lines": 904
+    },
+    "src/cleanup_plan/replay/paid_type_facts/tests.rs": {
+      "sha256": "365372032ee47eb37f766e111c2b13cb61ebc6b6be9cd786ba0947b179f91b6c",
+      "lines": 584
+    }
+  },
+  "new_originals": {
+    "docs/evidence/paid-classifier-receiving-f8/oracle-fast-owner.before.txt": {
+      "sha256": "3e5e5daaf0fe29d40598a5ebc8a3043248d8380209f7baf8ce7f64f4eab277ab",
+      "bytes": 1498
+    },
+    "docs/evidence/paid-classifier-receiving-f8/inventory-constructor.before.txt": {
+      "sha256": "f9e792451adc1733aca85a5c9070e90e65b52b5d755b61672b70769c27009d4c",
+      "bytes": 7983
+    },
+    "docs/evidence/paid-classifier-receiving-f8/raw-inventory-owner.before.txt": {
+      "sha256": "f511b714a70f3a0efca98a7574058781bada8abef358d8e48d2e5ec893fb51c8",
+      "bytes": 1333
+    }
+  },
+  "schema_original_archives_unchanged": 21,
+  "existing_source_custody_index19": "Separate root glue owner: full inventory_tests inverse requires setup move + appended original_raw_owner/source guard; full paid_type_facts/tests inverse needs remove appended original_fast_probe. No original snapshot/projection altered.",
+  "public_caps_and_work_authority": "unchanged; no credit/refund/new production allowance, no byte-as-work",
+  "semantic_first_error": "preserved; final auth skips if Storage.first already selected",
+  "source_only": "leaf rustfmt + diffcheck + complete static inverses; no Cargo/build/tests/Clippy",
+  "applications": "no cause or fit claim"
+}
