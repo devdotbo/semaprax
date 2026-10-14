@@ -111,3 +111,64 @@ fn actual_counter_setup_byte_refusal_stays_primary_without_work_or_publication()
         assert!(!physical.invalid);
     }
 }
+
+#[test]
+fn foreign_then_restored_byte_owner_keeps_exact_first_inline_error_without_requery() {
+    let required = IdentityReservation::setup_bytes().unwrap() + counter_carriers();
+    let ((work_first, callback_after, observed), failed, used, first) =
+        with_limit_usage_refusal(required, || {
+            let mut owner = IdentityReservation::acquire().unwrap();
+            let (work_first, observed) = {
+                let mut reserve = |n| owner.reserve(n);
+                let mut fixed = FixedSchemaPayer::acquire(&mut reserve).unwrap();
+                let ((first, observed), nested_failed, nested_used, nested_first) =
+                    with_limit_usage_refusal(0, || {
+                        measure(|| {
+                            assert_eq!(fixed.work(1), Err(FixedFailure::Bytes(Refused::Detached)));
+                            assert_eq!(fixed.bytes(0), Err(FixedFailure::Bytes(Refused::Detached)));
+                            assert_eq!(
+                                fixed.work(usize::MAX),
+                                Err(FixedFailure::Bytes(Refused::Detached))
+                            );
+                            assert_eq!(
+                                fixed.first_failure(),
+                                Some(FixedFailure::Bytes(Refused::Detached))
+                            );
+                            fixed.first_failure().unwrap()
+                        })
+                    });
+                assert!(!nested_failed);
+                assert_eq!(nested_used, 0);
+                assert_eq!(nested_first, None);
+                // The original byte scope is restored. Callback requery would
+                // now say Budget, but this counter preserves the earlier Detached.
+                assert_eq!(fixed.work(0), Err(FixedFailure::Bytes(Refused::Detached)));
+                assert_eq!(fixed.bytes(1), Err(FixedFailure::Bytes(Refused::Detached)));
+                assert_eq!(
+                    fixed.first_failure(),
+                    Some(FixedFailure::Bytes(Refused::Detached))
+                );
+                assert_eq!(fixed.receipt().used, 0);
+                assert_eq!(fixed.receipt().first, None);
+                (first, observed)
+            };
+            let callback_after = owner.reserve(0).unwrap_err();
+            drop(owner);
+            (work_first, callback_after, observed)
+        });
+    let receipt = ReservationRefusal {
+        requested: 0,
+        remaining: 0,
+        floor: 0,
+        stage: None,
+    };
+    assert_eq!(work_first, FixedFailure::Bytes(Refused::Detached));
+    assert_eq!(callback_after, Refused::Budget(receipt));
+    assert!(failed);
+    assert_eq!(used, required);
+    assert_eq!(first, Some(receipt));
+    assert_eq!(observed.allocations, 0);
+    assert_eq!(observed.reallocations, 0);
+    assert_eq!(observed.live, 0);
+    assert!(!observed.invalid);
+}

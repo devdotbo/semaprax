@@ -14,9 +14,10 @@
     "hir::prelude_bundle::tests::fixed_schema_work_payer_covers_actual_producer_exactly_and_plus_one_is_sticky",
     "hir::prelude_bundle::tests::fixed_schema_counter_setup_and_byte_refusal_keep_exact_existing_owner_error",
     "bounded_output::identity_reservation::base_prelude::tests::actual_typed_work_refusal_moves_original_paid_buffers_and_all_six_fields_through_drop",
-    "bounded_output::identity_reservation::base_prelude::tests::actual_counter_setup_byte_refusal_stays_primary_without_work_or_publication"
+    "bounded_output::identity_reservation::base_prelude::tests::actual_counter_setup_byte_refusal_stays_primary_without_work_or_publication",
+    "bounded_output::identity_reservation::base_prelude::tests::foreign_then_restored_byte_owner_keeps_exact_first_inline_error_without_requery"
   ],
-  "count": 13,
+  "count": 14,
   "broader_qualification": "Complete old/current HIR/diagnostic/graph/cache/backend/application controls required separately before replacement or forecast change.",
   "source_files": [
     "src/hir/prelude_bundle/tests.rs",
