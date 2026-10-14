@@ -126,8 +126,9 @@ fn complete_type_expression_and_shape_walks_preserve_old_priority_and_deep_spill
     );
     compare(old, || audit_resolved_type(&ty));
     let mut expr = expression(65);
+    let owner = FunctionExecutionId::Monomorphic(program().functions[0].id.clone());
     if let ResolvedExprKind::Invoke { args, .. } = &mut expr.kind {
-        args[0].id = ExpressionId::new("first\0bad");
+        args[0].id = ExpressionId::new(&owner, "first\0bad");
         args[64].kind = ResolvedExprKind::FunctionReference {
             target: DeclarationId::new("last\0bad"),
         };
@@ -210,10 +211,11 @@ fn complete_program_and_attached_receivers_keep_original_first_errors_and_drop()
     let base = program();
     for case in 0..4 {
         let mut program = base.clone();
+        let owner = FunctionExecutionId::Monomorphic(program.functions[0].id.clone());
         match case {
             1 => program.entrypoint = DeclarationId::new("entry\0bad"),
-            2 => program.functions[0].body.id = ExpressionId::new("body\0bad"),
-            3 => program.functions[0].result_id = ValueId::new("result\0bad"),
+            2 => program.functions[0].body.id = ExpressionId::new(&owner, "body\0bad"),
+            3 => program.functions[0].result_id = ValueId::new("result\0bad".to_owned()),
             _ => {}
         }
         compare(
@@ -224,11 +226,7 @@ fn complete_program_and_attached_receivers_keep_original_first_errors_and_drop()
             crate::hir::inspection::validate_attached_identity_references_original(&program),
             || validate_attached_identity_references(&program),
         );
-        let old =
-            crate::hir::validation::constructor_seed::original::ConstructorSeed::authenticate(
-                &program, None,
-            )
-            .err();
+        let old = crate::hir::validation::constructor_seed::original_authentication_error(&program);
         let (((), actual), refused, _, first) = with_limit_usage_refusal(LIMIT, || {
             measure(|| {
                 let current =
@@ -258,7 +256,7 @@ fn borrowed_execution_text_has_exact_serialized_nul_verdict_without_key_acquisit
             ControlTarget::Function(owner.clone()),
             ControlTarget::Loop {
                 owner: owner.clone(),
-                site: ExpressionId::new("loop\0bad"),
+                site: ExpressionId::new(&owner, "loop\0bad"),
             },
         ] {
             let old = crate::hir::inspection::audit_control_target(&target);

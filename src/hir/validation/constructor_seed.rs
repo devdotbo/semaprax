@@ -92,3 +92,9 @@ pub(super) mod original;
 mod intrinsic_tests;
 #[cfg(test)]
 mod original_intrinsics;
+
+/// Test bridge to the complete independently compiled original constructor.
+#[cfg(test)]
+pub(in crate::hir) fn original_authentication_error(program: &ResolvedProgram) -> Option<Diagnostic> {
+    original::ConstructorSeed::authenticate(program, None).err()
+}
