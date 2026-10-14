@@ -202,10 +202,14 @@ fn complete_original_logical_frontier_suppression_strict_and_raw_modes_stay_equa
 }
 #[test]
 fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
+    let current = include_str!("../../../../bounded_output/classifier_string.rs")
+        .strip_suffix("\n#[cfg(test)]\nmod oracle_work;\n")
+        .unwrap();
+    let marker = "    /// A test-account caller authenticates its own invocation separately. This\n    /// detached marker contains no ACTIVE handle and grants no ordinary payer.\n    #[cfg(test)]\n    pub(crate) fn oracle_marker() -> Self {\n        Self(None)\n    }\n\n";
+    assert_eq!(current.matches(marker).count(), 1);
+    let current = current.replace(marker, "");
     assert_eq!(
-        include_str!("../../../../bounded_output/classifier_string.rs")
-            .strip_suffix("\nmod inventory_work;\n")
-            .unwrap(),
+        current.strip_suffix("\nmod inventory_work;\n").unwrap(),
         include_str!("../../../../../docs/evidence/schema-summary/classifier_string.rs.before")
     );
 }

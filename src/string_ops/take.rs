@@ -45,3 +45,42 @@ pub(crate) fn operand(expression: &ResolvedExpr) -> Option<&ResolvedExpr> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+pub(crate) fn operand_with_work<'a, E>(
+    expression: &'a ResolvedExpr,
+    work: crate::hir::funded::work::Work<'_, E>,
+) -> Result<Option<&'a ResolvedExpr>, crate::hir::funded::FundedError<E>> {
+    use crate::hir::funded::work as paid;
+    paid::tick(work, 1)?;
+    let ResolvedExprKind::Call {
+        callee,
+        instance,
+        type_arguments,
+        args,
+    } = &expression.kind
+    else {
+        return Ok(None);
+    };
+    paid::tick(work, paid::str_units(callee.as_str(), ID))?;
+    if callee.as_str() != ID {
+        return Ok(None);
+    }
+    // The complete original predicate inspects only these bounded scalar
+    // discriminants/lengths. It performs no hidden lookup or tree walk.
+    paid::tick(work, 10)?;
+    if instance.is_some()
+        || !type_arguments.is_empty()
+        || expression.ty != ResolvedType::String
+        || expression.ownership != OwnershipMode::Own
+    {
+        return Ok(None);
+    }
+    let [argument] = args.as_slice() else {
+        return Ok(None);
+    };
+    Ok((argument.ty == ResolvedType::String
+        && argument.ownership == OwnershipMode::Own
+        && matches!(&argument.kind,ResolvedExprKind::Place(place) if place.projections.is_empty()))
+    .then_some(argument))
+}

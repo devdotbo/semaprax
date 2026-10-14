@@ -192,3 +192,6 @@ mod tests {
         }
     }
 }
+
+mod oracle;
+pub(crate) use oracle::matches as general_matches;

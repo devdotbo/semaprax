@@ -16,6 +16,10 @@ fn pay(bytes: usize, payer: &mut Payer<'_>) -> Result<(), Diagnostic> {
 pub(super) fn acquire(
     payer: &mut Payer<'_>,
 ) -> Result<ClassifierString, GrowthFailure<Diagnostic>> {
+    #[cfg(test)]
+    if payer.budget.oracle_lease().is_some() {
+        return ClassifierString::acquire_oracle_work(payer, &mut pay, &mut work);
+    }
     ClassifierString::acquire_with_work(payer, &mut pay, &mut work)
 }
 pub(super) fn capped(
@@ -23,6 +27,17 @@ pub(super) fn capped(
     arguments: fmt::Arguments<'_>,
     payer: &mut Payer<'_>,
 ) -> Result<(), GrowthFailure<Diagnostic>> {
+    #[cfg(test)]
+    if payer.budget.oracle_lease().is_some() {
+        return output.write_oracle_work(
+            arguments,
+            payer,
+            &mut pay,
+            &mut |bytes, payer: &mut Payer<'_>| payer.classifier_reserve_sink(bytes),
+            &mut work,
+            false,
+        );
+    }
     output.capped_with_work(arguments, payer, &mut pay, &mut work)
 }
 pub(super) fn strict(
@@ -30,6 +45,17 @@ pub(super) fn strict(
     arguments: fmt::Arguments<'_>,
     payer: &mut Payer<'_>,
 ) -> Result<(), GrowthFailure<Diagnostic>> {
+    #[cfg(test)]
+    if payer.budget.oracle_lease().is_some() {
+        return output.write_oracle_work(
+            arguments,
+            payer,
+            &mut pay,
+            &mut |bytes, payer: &mut Payer<'_>| payer.classifier_reserve_sink(bytes),
+            &mut work,
+            true,
+        );
+    }
     output.strict_with_work(arguments, payer, &mut pay, &mut work)
 }
 pub(super) fn raw(
@@ -37,6 +63,20 @@ pub(super) fn raw(
     arguments: fmt::Arguments<'_>,
     payer: &mut Payer<'_>,
 ) -> Result<(), GrowthFailure<Diagnostic>> {
+    #[cfg(test)]
+    if payer.budget.oracle_lease().is_some() {
+        return output.write_oracle_work(
+            arguments,
+            payer,
+            &mut pay,
+            &mut |_, payer: &mut Payer<'_>| {
+                inventory_text::current(payer)?;
+                Ok(true)
+            },
+            &mut work,
+            false,
+        );
+    }
     output.raw_with_work(arguments, payer, &mut pay, &mut work)
 }
 

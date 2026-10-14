@@ -178,3 +178,6 @@ pub(crate) fn returns_only(expr: &super::ResolvedExpr) -> bool {
     }
     visit(expr, None, 0) == RETURN
 }
+
+#[cfg(test)]
+pub(crate) use owner_funded::{owner_funded_with_work, requires_funded_with_work};

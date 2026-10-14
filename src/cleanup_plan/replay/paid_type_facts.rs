@@ -176,6 +176,10 @@ pub(super) fn flags(
         }
         return Ok(index.type_flags(ty));
     }
+    #[cfg(test)]
+    if budget.oracle_lease().is_some() {
+        return oracle_inventory::flags(index, function, ty, budget);
+    }
     index.type_flags_paid(
         ty,
         Payer {
@@ -204,6 +208,10 @@ pub(super) fn needs_drop(
         }
         return crate::cleanup::type_needs_resource_cleanup(program, ty)
             .map_err(|message| replay_error(function, message));
+    }
+    #[cfg(test)]
+    if budget.oracle_lease().is_some() {
+        return oracle_inventory::needs_drop(program, function, ty, budget);
     }
     let mut payer = Payer {
         function,
@@ -363,3 +371,6 @@ mod inventory_drop;
 mod inventory_lifecycle;
 
 pub(super) mod inventory_summary;
+
+#[cfg(test)]
+pub(super) mod oracle_inventory;

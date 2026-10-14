@@ -1225,3 +1225,64 @@ pub(crate) fn program_uses_operation(
     }
     false
 }
+
+#[cfg(test)]
+pub(crate) use concat_funded::work::{
+    is_same_owner_concat_hir_funded_with_work, same_owner_concat_appends_funded_with_work,
+    same_owner_concat_operands_funded_with_work,
+};
+
+#[cfg(test)]
+pub(crate) fn by_id_with_work<E>(
+    id: &str,
+    work: crate::hir::funded::work::Work<'_, E>,
+) -> Result<Option<StringOp>, crate::hir::funded::FundedError<E>> {
+    use crate::hir::funded::work as paid;
+    const KEYS: &[(&str, StringOp)] = &[
+        (take::ID, StringOp::Take),
+        (LEN_ID, StringOp::Len),
+        (CONCAT_ID, StringOp::Concat),
+        (IS_EMPTY_ID, StringOp::IsEmpty),
+        (STARTS_WITH_ID, StringOp::StartsWith),
+        (CONTAINS_ID, StringOp::Contains),
+        (LEN_CHARS_ID, StringOp::LenChars),
+        (FROM_CHAR_ID, StringOp::FromChar),
+        (FROM_I64_ID, StringOp::FromI64),
+        (FROM_USIZE_ID, StringOp::FromUsize),
+        (SLICE_ID, StringOp::Slice),
+        (FIND_ID, StringOp::Find),
+        (TO_I64_ID, StringOp::ToI64),
+        (TRIM_ID, StringOp::Trim),
+        (BYTE_AT_ID, StringOp::ByteAt),
+        (FILE_READ_TEXT_ID, StringOp::FileReadText),
+        (COMPARE_ID, StringOp::Compare),
+        (MAP_NEW_ID, StringOp::MapNew),
+        (MAP_ADD_ID, StringOp::MapAdd),
+        (MAP_SET_ID, StringOp::MapSet),
+        (MAP_GET_OR_ID, StringOp::MapGetOr),
+        (MAP_HAS_ID, StringOp::MapHas),
+        (MAP_LEN_ID, StringOp::MapLen),
+        (MAP_KEY_AT_ID, StringOp::MapKeyAt),
+        (MAP_VALUE_AT_ID, StringOp::MapValueAt),
+        (MAP_REMOVE_ID, StringOp::MapRemove),
+        (FROM_STR_ID, StringOp::FromStr),
+        (FROM_UTF8_ID, StringOp::FromUtf8),
+        (F64_FROM_I64_ID, StringOp::F64FromI64),
+        (I64_FROM_F64_ID, StringOp::I64FromF64),
+        (USIZE_FROM_I64_ID, StringOp::UsizeFromI64),
+        (I64_FROM_U8_ID, StringOp::I64FromU8),
+        (I64_FROM_I32_ID, StringOp::I64FromI32),
+        (USIZE_FROM_U8_ID, StringOp::UsizeFromU8),
+        (U8_FROM_I64_ID, StringOp::U8FromI64),
+        (CHAR_FROM_U8_ID, StringOp::CharFromU8),
+        (CHAR_FROM_I64_ID, StringOp::CharFromI64),
+        (I64_FROM_USIZE_ID, StringOp::I64FromUsize),
+    ];
+    for (key, op) in KEYS {
+        paid::tick(work, paid::str_units(key, id))?;
+        if *key == id {
+            return Ok(Some(*op));
+        }
+    }
+    Ok(None)
+}

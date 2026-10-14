@@ -39,6 +39,12 @@ pub(super) fn derive_reusing(
     physical: &mut ReplayBudget,
     scratch: &mut Scratch,
 ) -> Result<FieldLivenessShape, Diagnostic> {
+    #[cfg(test)]
+    if physical.oracle_lease().is_some() {
+        return oracle::derive_reusing(
+            program, function, root, next_flag, bounds, physical, scratch,
+        );
+    }
     let (depth, budget) = bounds;
     physical.reserve_clone(function, root, "independent shape root type")?;
     let mut lease = scratch.lease();
@@ -441,3 +447,6 @@ pub(super) fn derive_reusing(
     }
     Ok(shape)
 }
+
+#[cfg(test)]
+mod oracle;

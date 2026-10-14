@@ -20,8 +20,9 @@ pub(super) enum AllocationPayer {
 mod oracle;
 #[cfg(test)]
 pub(super) use oracle::{
-    authority, authority_for_function, enter, opt_in, opted, raw_error_funded, replay_error_funded,
     InvocationRefusal, OracleLease, OracleReceipt, OracleRefusal, OracleScope, ReplayFailure,
+    authority, authority_for_function, enter, opt_in, opted, raw_error_funded, raw_error_metered,
+    replay_error_funded,
 };
 pub(super) fn set_key<K: Ord + ClonePayload>(
     function: &ResolvedFunction,

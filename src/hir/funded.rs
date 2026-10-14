@@ -604,3 +604,6 @@ mod tests {
         assert!(fresh.is_empty(), "a refused charge publishes nothing");
     }
 }
+
+#[cfg(test)]
+pub(crate) mod work;

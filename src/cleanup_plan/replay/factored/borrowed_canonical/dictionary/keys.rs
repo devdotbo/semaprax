@@ -88,6 +88,12 @@ impl Key for Label {
         function: &ResolvedFunction,
         budget: &mut ReplayBudget,
     ) -> Result<Ordering, Diagnostic> {
+        #[cfg(test)]
+        if budget.oracle_lease().is_some() {
+            return crate::cleanup_plan::replay::factored::oracle_order::label(
+                self, other, function, budget,
+            );
+        }
         budget.charge(function, 1, "borrowed label actual kind")?;
         let (a, b) = match (self, other) {
             (Label::End(a), Label::End(b)) => return Ok(a.cmp(b)),

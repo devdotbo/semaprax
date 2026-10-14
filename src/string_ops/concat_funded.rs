@@ -632,3 +632,6 @@ mod tests {
         assert!(value && calls > 1 && charged > 0);
     }
 }
+
+#[cfg(test)]
+pub(crate) mod work;

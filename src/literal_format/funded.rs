@@ -89,3 +89,6 @@ mod tests {
         assert_eq!(active, 0);
     }
 }
+
+#[cfg(test)]
+pub(crate) mod work;

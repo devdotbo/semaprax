@@ -116,7 +116,7 @@ pub(super) fn validate_with_index_storage<'hir>(
         &mut ReplayBudget::new(),
     )? {
         #[cfg(test)]
-        cross_check(program, function);
+        oracle_hook::cross_check(program, function);
         return Ok(false);
     }
     match compare_with_index_storage(program, function, budget, helpers, continuations) {
@@ -174,6 +174,23 @@ fn compare_with_index_storage<'hir>(
         hir_root,
         plan_root,
     } = build_comparison(program, function, budget, helpers, continuations)?;
+
+    #[cfg(test)]
+    if budget.oracle_lease().is_some() {
+        // The exact reconstructed automaton is unchanged. An Oracle account
+        // pays the full general label order; it grants no borrowed-helper lease.
+        let mut canonical =
+            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?;
+        budget.reserve_array::<(usize, u64)>(function, 1, "oracle HIR weighted root")?;
+        let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
+            return Ok(None);
+        };
+        budget.reserve_array::<(usize, u64)>(function, 1, "oracle plan weighted root")?;
+        let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
+            return Ok(None);
+        };
+        return Ok(Some(hir == plan));
+    }
 
     #[cfg(test)]
     if let Some(lease) = program.borrowed_helper_lease(function) {
@@ -1202,3 +1219,6 @@ mod continuation_tests {
         assert_eq!(short.allocated, short.freed);
     }
 }
+
+#[cfg(test)]
+mod oracle_order;

@@ -59,25 +59,32 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
                 Err(error) => return Err(refused(budget, function, error)),
             }
         };
-        let string_owner_moves = match crate::literal_format::checked_moving_string_operands_funded(
-            function, &mut pay,
-        ) {
-            Ok(moves) => moves,
-            Err(error) => return Err(refused(budget, function, error)),
-        };
+        let string_owner_moves =
+            match crate::literal_format::checked_moving_string_operands_funded_with_work(
+                function, &mut units, &mut pay,
+            ) {
+                Ok(moves) => moves,
+                Err(error) => return Err(refused(budget, function, error)),
+            };
         let string_condition_reads =
-            match crate::string_ops::conditions::function_reads_funded(function, &mut pay) {
+            match crate::string_ops::conditions::function_reads_funded_with_work(
+                function, &mut units, &mut pay,
+            ) {
                 Ok(reads) => reads,
                 Err(error) => return Err(refused(budget, function, error)),
             };
-        let requires = match crate::hir::lexical_exit::requires_funded(function, &mut pay) {
+        let requires = match crate::hir::lexical_exit::requires_funded_with_work(
+            function, &mut pay, &mut units,
+        ) {
             Ok(requires) => requires,
             Err(error) => return Err(refused(budget, function, error)),
         };
         // A semantic missing or ambiguous owner is the original absence; a
         // payer refusal never is.
         let owner = if requires {
-            match crate::hir::lexical_exit::owner_funded(program, function, &mut pay) {
+            match crate::hir::lexical_exit::owner_funded_with_work(
+                program, function, &mut pay, &mut units,
+            ) {
                 Ok(Ok(owner)) => Some(owner),
                 Ok(Err(_)) => None,
                 Err(error) => return Err(refused(budget, function, error)),

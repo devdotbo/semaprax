@@ -113,3 +113,6 @@ mod tests {
         );
     }
 }
+
+mod work;
+pub(crate) use work::{owner_funded_with_work, requires_funded_with_work};

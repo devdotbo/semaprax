@@ -22,7 +22,12 @@ fn hir_error(
                 "oracle invocation authority refused a raw diagnostic",
             );
         }
-        return match allocation::raw_error_funded(lease, message) {
+        let result = if matches!(allocation::opted(), Ok(Some(current)) if current == lease) {
+            allocation::raw_error_metered(lease, function, message)
+        } else {
+            allocation::raw_error_funded(lease, message)
+        };
+        return match result {
             Ok(error) => error,
             Err(refusal) => refusal.into_diagnostic(),
         };
@@ -208,9 +213,13 @@ pub(in crate::cleanup_plan::replay) fn substitute_type(
                     index,
                 } => {
                     if parameter_owner != owner {
-                        return Err(hir_error(function, budget, format_args!(
-                            "type template for `{owner}` contains foreign parameter owner `{parameter_owner}`"
-                        )));
+                        return Err(hir_error(
+                            function,
+                            budget,
+                            format_args!(
+                                "type template for `{owner}` contains foreign parameter owner `{parameter_owner}`"
+                            ),
+                        ));
                     }
                     if let Some(argument) = usize::try_from(*index)
                         .ok()

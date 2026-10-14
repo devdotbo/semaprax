@@ -162,3 +162,6 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+pub(crate) mod work;

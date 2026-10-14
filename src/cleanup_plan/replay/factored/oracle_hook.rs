@@ -1,12 +1,14 @@
-//! Pending test-only funded comparison receiver. Live `factored::cross_check`
-//! retains its complete original body: neither actual owner control opts in.
-//! Explicit private tests exercise this receiver while the documented transitive
-//! acquisition audit remains open. It is not a fully funded live-hook claim.
+//! Explicitly financed test comparison hook. Ordinary unopted callers retain
+//! the complete original enumerating/factored receiver. Owning tests opt into
+//! one independent finite account without consuming their live builder ledger.
 use super::*;
 use crate::cleanup_plan::replay::allocation::{enter, OracleLease};
 
 /// Explicit private-test dispatcher. No compiler or resolver call chooses it.
-fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedFunction) {
+pub(super) fn cross_check(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+) {
     match super::super::allocation::opted() {
         Ok(None) => super::cross_check(program, function),
         Ok(Some(lease)) => cross_check_oracle(program, function, lease),
@@ -101,24 +103,30 @@ fn receiver<T>(
 /// Stable sort scratch is at most one element slot per path; pay that upper
 /// bound on the account before the sort can allocate it.
 fn paid_sort(
-    lease: OracleLease,
+    _lease: OracleLease,
     budget: &mut ReplayBudget,
     function: &ResolvedFunction,
     paths: &mut [SkeletonPath],
 ) -> Result<(), Diagnostic> {
-    let bytes = paths.len().checked_mul(std::mem::size_of::<SkeletonPath>());
-    if bytes.is_none() {
-        lease.fail_physical("skeleton sort scratch size overflowed");
+    super::oracle_order::sort(paths, function, budget)
+}
+fn same_paths(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    a: &[SkeletonPath],
+    b: &[SkeletonPath],
+) -> Result<bool, Diagnostic> {
+    budget.charge(function, 1, "oracle path vector length")?;
+    if a.len() != b.len() {
+        return Ok(false);
     }
-    match bytes.map(|bytes| lease.charge(bytes)) {
-        Some(Ok(())) => {
-            paths.sort();
-            Ok(())
-        }
-        _ => {
-            Err(budget.budget_refusal(function, "oracle account refused skeleton sort scratch", ""))
+    for (x, y) in a.iter().zip(b) {
+        budget.charge(function, 1, "oracle path vector member")?;
+        if super::oracle_order::path(x, y, function, budget)? != std::cmp::Ordering::Equal {
+            return Ok(false);
         }
     }
+    Ok(true)
 }
 
 pub(super) fn cross_check_oracle(
@@ -134,7 +142,7 @@ pub(super) fn cross_check_oracle(
             let mut plan = plan_skeleton_paths(function, &mut enumerating)?;
             paid_sort(lease, &mut enumerating, function, &mut hir)?;
             paid_sort(lease, &mut enumerating, function, &mut plan)?;
-            Ok(hir == plan)
+            same_paths(function, &mut enumerating, &hir, &plan)
         })
     });
     // A fresh factored receiver runs regardless of the enumeration verdict.

@@ -117,3 +117,51 @@ pub(crate) fn needs_cleanup(condition: &ResolvedExpr) -> bool {
     }
     false
 }
+
+#[cfg(test)]
+pub(crate) use funded::work::{
+    condition_reads_funded_with_work, function_reads_funded_with_work,
+    needs_cleanup_funded_with_work,
+};
+
+#[cfg(test)]
+pub(crate) fn resolved_operands_with_work<'a, E>(
+    expression: &'a ResolvedExpr,
+    work: crate::hir::funded::work::Work<'_, E>,
+) -> Result<Option<&'a [ResolvedExpr]>, crate::hir::funded::FundedError<E>> {
+    use crate::hir::funded::work as paid;
+    paid::tick(work, 1)?;
+    let ResolvedExprKind::Call {
+        callee,
+        type_arguments,
+        instance,
+        args,
+    } = &expression.kind
+    else {
+        return Ok(None);
+    };
+    let Some(op) = super::by_id_with_work(callee.as_str(), work)? else {
+        return Ok(None);
+    };
+    paid::tick(work, 7)?;
+    if !is_condition_read(op)
+        || !type_arguments.is_empty()
+        || instance.is_some()
+        || expression.ty != op.return_type()
+        || expression.ownership != OwnershipMode::Value
+        || args.len() != op.arity()
+    {
+        return Ok(None);
+    }
+    for (index, argument) in args.iter().enumerate() {
+        paid::tick(work, 5)?;
+        if op.param_ownership(index) != OwnershipMode::Borrow
+            || argument.ty != ResolvedType::String
+            || argument.ownership != OwnershipMode::Own
+            || !matches!(&argument.kind,ResolvedExprKind::Place(place) if place.projections.is_empty())
+        {
+            return Ok(None);
+        }
+    }
+    Ok(Some(args))
+}

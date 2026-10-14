@@ -191,6 +191,13 @@ impl ClassifierString {
 /// cached admission or source authority. Its caller pays its containing control.
 pub(crate) struct ClassifierLedger(Option<Rc<Budget>>);
 impl ClassifierLedger {
+    /// A test-account caller authenticates its own invocation separately. This
+    /// detached marker contains no ACTIVE handle and grants no ordinary payer.
+    #[cfg(test)]
+    pub(crate) fn oracle_marker() -> Self {
+        Self(None)
+    }
+
     pub(crate) fn capture() -> Self {
         Self(active())
     }
@@ -218,3 +225,6 @@ mod tests;
 mod explicit;
 
 mod inventory_work;
+
+#[cfg(test)]
+mod oracle_work;

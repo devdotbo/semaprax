@@ -398,3 +398,6 @@ pub(crate) fn cleanup_call(
     };
     Ok((&INVOKE_ID, args, invocation_params(expression)?))
 }
+
+#[cfg(test)]
+pub(crate) use funded::work::{walk_funded_paying_with_work, walk_funded_with_work};

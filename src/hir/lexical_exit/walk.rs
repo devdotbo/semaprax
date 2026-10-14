@@ -296,3 +296,77 @@ pub(crate) fn contains(root: &ResolvedExpr) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+impl<'a> ChildCursor<'a> {
+    #[cfg(test)]
+    pub(crate) fn next_with_work<E>(
+        &mut self,
+        work: &mut impl FnMut(usize) -> Result<(), E>,
+    ) -> Result<Option<&'a ResolvedExpr>, E> {
+        work(1)?;
+        let first = !self.started;
+        self.started = true;
+        Ok(match (&self.expression.kind, &mut self.position) {
+            (
+                K::Block { statements, tail }
+                | K::VecConstructor {
+                    statements, tail, ..
+                },
+                Position::Block {
+                    statement,
+                    child: index,
+                },
+            ) => {
+                loop {
+                    work(1)?;
+                    let Some(item) = statements.get(*statement) else {
+                        break;
+                    };
+                    if *index < item.child_count() {
+                        let result = item.child(*index);
+                        *index += 1;
+                        return Ok(result);
+                    }
+                    *statement += 1;
+                    *index = 0;
+                }
+                if *index == 0 {
+                    *index = 1;
+                    Some(tail)
+                } else {
+                    None
+                }
+            }
+            (
+                K::Match {
+                    scrutinee, arms, ..
+                },
+                Position::Match { arm, guard },
+            ) => {
+                if first {
+                    return Ok(Some(scrutinee));
+                }
+                if let Some(item) = arms.get(*arm) {
+                    if *guard {
+                        *guard = false;
+                        if let Some(value) = &item.guard {
+                            return Ok(Some(value));
+                        }
+                    }
+                    *arm += 1;
+                    *guard = true;
+                    return Ok(Some(&item.value));
+                }
+                None
+            }
+            (_, Position::Indexed(index)) => {
+                let result = child(self.expression, *index);
+                if result.is_some() {
+                    *index += 1;
+                }
+                result
+            }
+            _ => unreachable!("child cursor position matches its immutable expression"),
+        })
+    }
+}

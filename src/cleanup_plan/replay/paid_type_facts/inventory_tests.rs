@@ -58,6 +58,17 @@ fn raw_missing_cleanup_facts_refusal_keeps_message_without_replay_prefix() {
 #[test]
 fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter() {
     let current = include_str!("../paid_type_facts.rs");
+    let current = current
+        .strip_suffix("\n#[cfg(test)]\npub(super) mod oracle_inventory;\n")
+        .unwrap();
+    let current = current.replace(
+        "    #[cfg(test)]\n    if budget.oracle_lease().is_some() {\n        return oracle_inventory::flags(index, function, ty, budget);\n    }\n",
+        "",
+    );
+    let current = current.replace(
+        "    #[cfg(test)]\n    if budget.oracle_lease().is_some() {\n        return oracle_inventory::needs_drop(program, function, ty, budget);\n    }\n",
+        "",
+    );
     let (head, rest) = current
         .split_once("/// Raw ordinary inventory diagnostic adapter.")
         .unwrap();

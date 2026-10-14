@@ -55,6 +55,16 @@ pub(in crate::cleanup_plan::replay) fn replay_error_funded(
     function: &ResolvedFunction,
     message: fmt::Arguments<'_>,
 ) -> Result<Diagnostic, ReplayFailure> {
+    match super::super::opted() {
+        Ok(None) => {}
+        Ok(Some(current)) if current == lease => return metered::replay(lease, function, message),
+        Ok(Some(_)) | Err(_) => {
+            return Err(physical(
+                lease,
+                "opted oracle diagnostic lease is unavailable or differs",
+            ));
+        }
+    }
     let mut count = Count(0);
     if write!(
         count,
@@ -99,6 +109,12 @@ pub(in crate::cleanup_plan::replay) fn raw_error_funded(
     lease: OracleLease,
     message: fmt::Arguments<'_>,
 ) -> Result<Diagnostic, ReplayFailure> {
+    if !matches!(super::super::opted(), Ok(None)) {
+        return Err(physical(
+            lease,
+            "opted oracle raw diagnostic requires its metered receiver",
+        ));
+    }
     let mut count = Count(0);
     if write!(count, "{message}").is_err() {
         return Err(physical(lease, "raw diagnostic length overflowed"));
@@ -122,3 +138,6 @@ pub(in crate::cleanup_plan::replay) fn raw_error_funded(
     }
     Ok(Diagnostic::io("SPX-H006", text))
 }
+
+mod metered;
+pub(in crate::cleanup_plan::replay) use metered::raw as raw_error_metered;
