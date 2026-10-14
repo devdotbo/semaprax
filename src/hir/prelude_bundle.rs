@@ -11,9 +11,12 @@ use crate::prelude::base_schema::{Variant, BASE};
 use std::sync::Arc;
 
 mod borrowed;
+mod materialize;
+mod merge;
 mod overlay;
 mod paid;
 mod producer;
+pub(crate) use merge::merge_by_key;
 pub(crate) use overlay::Overlay;
 
 /// The existing invocation supplies both accounts and retains its first sticky

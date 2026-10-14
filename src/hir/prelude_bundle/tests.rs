@@ -408,3 +408,139 @@ fn fixed_base_unmetered_index_views_borrow_complete_old_facts_without_allocation
     assert_eq!(physical.live, 0);
     assert!(!physical.invalid);
 }
+
+#[test]
+fn returned_type_materialization_shares_nominals_pays_only_new_name_and_receivers() {
+    let source = program();
+    let old = crate::hir::resolve(&source).unwrap();
+    let mut acquisition = Account::unlimited();
+    let bundle = BasePreludeBundle::acquire(&mut acquisition).unwrap();
+    for expected in &old.types {
+        let required = expected.name.len()
+            + std::mem::size_of::<String>()
+            + std::mem::size_of::<crate::hir::ResolvedTypeDeclaration>()
+            + std::mem::size_of::<Option<crate::hir::ResolvedTypeDeclaration>>()
+            + std::mem::size_of::<Result<Option<crate::hir::ResolvedTypeDeclaration>, Denied>>();
+        for limit in [required, required - 1, 0] {
+            let mut account = Account::unlimited();
+            account.byte_limit = limit;
+            let (_, physical) = measure(|| {
+                let result = bundle.materialize_type(&expected.id, |n| account.bytes(n));
+                if limit == required {
+                    let actual = result.unwrap().unwrap();
+                    assert_eq!(&actual, expected);
+                    let base = bundle
+                        .types_slice()
+                        .iter()
+                        .find(|ty| ty.id == expected.id)
+                        .unwrap();
+                    assert_eq!(
+                        actual.type_parameters.as_slice().as_ptr(),
+                        base.type_parameters.as_slice().as_ptr()
+                    );
+                    let crate::hir::ResolvedTypeDeclarationKind::Variant {
+                        cases: actual_cases,
+                    } = &actual.kind
+                    else {
+                        panic!("base variant");
+                    };
+                    let crate::hir::ResolvedTypeDeclarationKind::Variant { cases: base_cases } =
+                        &base.kind
+                    else {
+                        panic!("base variant");
+                    };
+                    assert_eq!(
+                        actual_cases.as_slice().as_ptr(),
+                        base_cases.as_slice().as_ptr()
+                    );
+                    drop(actual);
+                } else {
+                    assert_eq!(result, Err(Denied::Bytes));
+                    assert_eq!(
+                        bundle.materialize_type(&expected.id, |n| account.bytes(n)),
+                        Err(Denied::Bytes)
+                    );
+                }
+            });
+            assert!(!physical.invalid);
+            assert_eq!(physical.live, 0);
+            assert_eq!(physical.allocated, physical.freed);
+            assert_eq!(
+                physical.allocated,
+                if limit == required {
+                    expected.name.len()
+                } else {
+                    0
+                }
+            );
+            assert_eq!(account.bytes, if limit == required { required } else { 0 });
+        }
+    }
+    let absent = DeclarationId::new("foreign.materialize");
+    assert!(bundle
+        .materialize_type(&absent, |_| -> Result<(), Denied> {
+            panic!("absent ID must not acquire a base owner")
+        })
+        .unwrap()
+        .is_none());
+    let option = DeclarationId::new(crate::prelude::OPTION_ID);
+    let mut account = Account::unlimited();
+    let (_, physical) = measure(|| {
+        let original = BasePreludeBundle::acquire(&mut account).unwrap();
+        let retained_type = original
+            .materialize_type(&option, |n| account.bytes(n))
+            .unwrap()
+            .unwrap();
+        drop(original);
+        let crate::hir::ResolvedTypeDeclarationKind::Variant { cases } = &retained_type.kind else {
+            panic!("base variant");
+        };
+        assert_eq!(cases.len(), 2);
+        assert_eq!(
+            cases[1].fields[0].id.as_str(),
+            crate::prelude::OPTION_SOME_VALUE_ID
+        );
+        drop(retained_type);
+    });
+    assert!(!physical.invalid);
+    assert_eq!(physical.live, 0);
+    assert_eq!(physical.allocated, physical.freed);
+    assert!(physical.allocated <= account.bytes);
+}
+
+#[test]
+fn logical_declaration_export_has_exact_remaining_length_and_generic_merge_keeps_base_values() {
+    let source = program();
+    let original = [super::original::option(), super::original::result()];
+    let old = DeclarationIndex::nominal_original_with_prelude(&source, &original).unwrap();
+    let local = DeclarationIndex::from_verified_with_prelude(&source, &[]).unwrap();
+    let mut payer = Account::unlimited();
+    let bundle = BasePreludeBundle::acquire(&mut payer).unwrap();
+    let (_, physical) = measure(|| {
+        let mut merged = bundle.declaration_iteration(&local);
+        let mut remaining = old.declarations().len();
+        assert_eq!(merged.len(), remaining);
+        for expected in old.declarations() {
+            assert_eq!(merged.next(), Some(expected));
+            remaining -= 1;
+            assert_eq!(merged.len(), remaining);
+            assert_eq!(merged.size_hint(), (remaining, Some(remaining)));
+        }
+        assert!(merged.next().is_none());
+        assert_eq!(merged.len(), 0);
+        let base = [("a", 1usize), ("c", 3), ("e", 5)];
+        let local = [("b", 2usize), ("c", 999), ("d", 4)];
+        let mut values = super::merge_by_key(
+            base.iter().map(|(k, v)| (*k, v)),
+            local.iter().map(|(k, v)| (*k, v)),
+        );
+        for expected in [("a", 1), ("b", 2), ("c", 3), ("d", 4), ("e", 5)] {
+            let (key, value) = values.next().unwrap();
+            assert_eq!((key, *value), expected);
+        }
+        assert!(values.next().is_none());
+    });
+    assert_eq!(physical.allocated, 0);
+    assert_eq!(physical.live, 0);
+    assert!(!physical.invalid);
+}
