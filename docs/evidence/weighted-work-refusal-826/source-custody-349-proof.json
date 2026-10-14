@@ -1,0 +1,10 @@
+{
+  "schema": "semaprax.source-custody-349-correction.v1",
+  "source": "src/cleanup_plan/replay/factored.rs",
+  "full_original_equal": true,
+  "compiled_complete_old_receiver_equal": true,
+  "archive": "docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__factored.rs.before",
+  "archive_sha256": "34af23f292ac061e443a12ed1452a7cdf90fb428de994071c225d99a1500c0e2",
+  "correction": "Preserve complete old join as equality witness after the preexisting full restoration; restore original exactly once.",
+  "execution": "Static byte reconstruction only; no Rust test/compiler execution"
+}

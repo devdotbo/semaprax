@@ -29,3 +29,12 @@ The original full runtime log is
 This source correction does not establish runtime qualification or OPT826
 closure; the complete current round and subsequent owning execution remain
 required.
+
+Actual selector348 additionally exposed a composition overlap: the weighted
+sharing inverse grafted the complete old canonical receiver, then the existing
+older inverse grafted that same complete receiver a second time. The correction
+keeps every older inverse and original archive. It uses the older restoration
+once, then checks that its complete restored receiver equals the independently
+compiled full old receiver, before the unchanged whole-source archive equality.
+Static byte reconstruction confirms both full equalities. The old receiver is
+neither excluded nor replaced by a smaller signature-only control.

@@ -316,7 +316,9 @@ impl<'a> Receiver<'a> {
         assert_eq!(current.matches(marker).count(), 1);
         assert_eq!(original.matches("#[rustfmt::skip]\n").count(), 1);
         let original = original.replacen("#[rustfmt::skip]\n", "", 1);
-        current = current.replacen(marker, &format!("{original}{marker}"), 1);
+        // The complete preexisting inverse below already restores this same
+        // old receiver. Compose that restoration once, then authenticate its
+        // entire body against the independent compiled receiver below.
         undo(
             &mut current,
             r#"        assert_eq!(short.allocated, short.freed);
@@ -664,6 +666,9 @@ impl<'a> Canonicalizer<'a> {
 /// Test builds compare the factored verdict with the enumerating one on every
 "####,
         );
+        let joined = format!("{original}{marker}");
+        assert_eq!(current.matches(&joined).count(), 1,
+            "complete compiled old canonical receiver remains byte-exact");
         assert_eq!(
             current,
             include_str!(
