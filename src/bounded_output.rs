@@ -1,6 +1,7 @@
-pub(crate) mod key_directory;
 pub(crate) mod cfg_reservation;
 pub(crate) mod identity_reservation;
+pub(crate) mod key_directory;
+pub(crate) mod prepaid;
 #[cfg(test)]
 pub(crate) mod stage_debits;
 use std::cell::{Cell, RefCell};
@@ -1223,3 +1224,6 @@ mod refusal_tests;
 
 #[cfg(test)]
 mod resolution_stage_tests;
+
+mod source_owner_scope;
+pub(crate) use source_owner_scope::source_owner_scope;

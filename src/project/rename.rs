@@ -218,7 +218,7 @@ pub(super) fn prepare(
     );
     let target_path = diagnostic_path(snapshot, &selected.path);
     let derivation = ProjectRenameDerivation {
-        source: base_source.source.clone(),
+        source: base_source.source.clone().into(),
         patch_bytes: patch_bytes.clone(),
         diagnostic_path: target_path.clone(),
     };
@@ -249,7 +249,7 @@ pub(super) fn prepare(
             source: if source.path == selected.path {
                 candidate_text.clone()
             } else {
-                source.source.clone()
+                source.source.clone().into()
             },
         })
         .collect();

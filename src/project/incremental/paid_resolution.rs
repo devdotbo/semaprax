@@ -43,10 +43,16 @@ impl FrontendPass {
                 "checked function inventory exceeds its bound",
             ))));
         }
+        let previous = self
+            .checked
+            .get(path)
+            .and_then(|entry| entry.synthetic.ready());
         Some(
-            crate::hir::identity_resolution::resolve_source_checked(
+            crate::hir::identity_resolution::resolve_source_checked_previous(
                 synthetic,
-                self.checked.get(path).map(|entry| &entry.synthetic),
+                previous
+                    .as_ref()
+                    .map(|source| source as &dyn crate::ast::program_source::ProgramSource),
                 self.checked.get(path).map(|entry| &entry.resolved),
                 self.checked.get(path).map(|entry| &entry.function_costs),
                 private,
@@ -73,10 +79,13 @@ impl FrontendPass {
             ))));
         }
         let entry = self.checked.get(path);
+        let previous = entry.and_then(|entry| entry.synthetic.ready());
         Some(
-            crate::hir::identity_resolution::resolve_checked(
+            crate::hir::identity_resolution::resolve_source_checked_previous(
                 synthetic,
-                entry.map(|entry| &entry.synthetic),
+                previous
+                    .as_ref()
+                    .map(|source| source as &dyn crate::ast::program_source::ProgramSource),
                 entry.map(|entry| &entry.resolved),
                 entry.map(|entry| &entry.function_costs),
                 private,
@@ -100,7 +109,7 @@ impl FrontendPass {
         let checked = std::collections::BTreeMap::from([(
             synthetic.path.clone(),
             std::sync::Arc::new(super::CheckedModule {
-                synthetic,
+                synthetic: crate::ast::program_source::checked_key::CheckedSource::Owned(synthetic),
                 resolved,
                 function_costs,
                 resolver_bytes: 0,
@@ -109,7 +118,7 @@ impl FrontendPass {
         )]);
         Self {
             indexed_imports: Vec::new(),
-            entries: std::collections::BTreeMap::new(),
+            entries: super::source_directory::SourceDirectory::default(),
             parsed: 0,
             reused: 0,
             canonicalizations: 0,

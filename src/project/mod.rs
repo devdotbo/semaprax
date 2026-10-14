@@ -685,7 +685,7 @@ pub struct ProjectSource {
     source_graph_schema: String,
     source_revision: String,
     source_digest: String,
-    source: String,
+    source: crate::workspace_graph::current_source::SourceBytes,
 }
 
 impl ProjectSource {

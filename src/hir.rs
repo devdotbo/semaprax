@@ -88,8 +88,8 @@ mod agent_nodes;
 mod agent_validation;
 pub(crate) mod borrowed_scalar;
 mod byte_capacity;
-mod ordinary_scan;
 mod byte_slice_provenance;
+mod ordinary_scan;
 pub(crate) mod static_text;
 pub use static_text::StaticUtf8;
 #[cfg(test)]
@@ -285,16 +285,15 @@ pub(crate) use inspection::validate_core_with_storage as validate_core;
 #[cfg(test)]
 pub(crate) use type_reachability::owned_oracle::owned_reachable_types as owned_reachable_types_oracle;
 pub(crate) use type_reachability::{
-    BorrowedTypeInventory, authored_nominal_declarations, is_admitted_nested_owned_byte_record,
-    is_flat_owned_byte_record, reachable_authored_types, reachable_authored_types_with_roots,
-    reachable_scalar_authored_types,
+    authored_nominal_declarations, is_admitted_nested_owned_byte_record, is_flat_owned_byte_record,
+    reachable_authored_types, reachable_authored_types_with_roots, reachable_scalar_authored_types,
+    BorrowedTypeInventory,
 };
+pub(crate) use validation::resolved_type_contains_owned_bytes;
 #[cfg(test)]
 use validation::HirValidator;
-pub(crate) use validation::resolved_type_contains_owned_bytes;
 pub(crate) use workspace_link::{
-    COPY_SCALAR_NAMES, LinkedScalarProjectParts, PACKAGE_SCALAR_NAME, copy_scalar_type,
-    link_https_command_io_workspace, link_https_entry_workspace,
+    copy_scalar_type, link_https_command_io_workspace, link_https_entry_workspace,
     link_language_command_io_workspace, link_line_command_io_workspace,
     link_network_command_io_workspace, link_network_entry_workspace, link_owned_data_api_workspace,
     link_package_scalar_workspace, link_scalar_project_exports, link_scalar_project_workspace,
@@ -310,7 +309,8 @@ pub(crate) use workspace_link::{
     useful_data_workspace_parameter_admitted, useful_data_workspace_return_admitted,
     validate_stream_collection_record_program, validate_stream_data_program,
     validate_stream_nested_outcome_program, validate_stream_owned_program,
-    validate_stream_record_program, validate_stream_text_program,
+    validate_stream_record_program, validate_stream_text_program, LinkedScalarProjectParts,
+    COPY_SCALAR_NAMES, PACKAGE_SCALAR_NAME,
 };
 
 #[allow(dead_code, reason = "private Workspace Semantic Graph Phase-A seam")]
@@ -367,7 +367,7 @@ use monomorphize::{
     materialize_function_template, resolved_owned_record_substitutions,
     resolved_scalar_substitutions, same_function_meaning,
 };
-pub use row_loan::{ROW_LOAN_V1, RowLoan, RowLoanVersion};
+pub use row_loan::{RowLoan, RowLoanVersion, ROW_LOAN_V1};
 pub(crate) use validation::byte_traversal::{
     function_uses as byte_traversal_function_uses, partial_receiver as is_partial_byte_receiver,
     program_uses as byte_traversal_program_uses, region as byte_traversal_region,
@@ -427,6 +427,10 @@ pub(crate) fn bounded_owned_record_template_for_function<'a>(
     }
     matched
 }
+pub(crate) use nodes::{
+    admitted_owned_byte_prelude_instance, is_refutable_match_scalar, is_scalar_resolved_type,
+    LinkedDeclarationFact, LinkedOwnedDataParts, LinkedScalarFunction,
+};
 pub use nodes::{
     ByteSliceExtent, ByteSliceProvenance, ByteSliceRangeStep, ByteSliceRootKind, Declaration,
     DeclarationKind, IdentityOrigin, OwnershipMode, ResolvedBinding, ResolvedFieldDeclaration,
@@ -437,10 +441,6 @@ pub use nodes::{
     ResolvedResourceDropKind, ResolvedType, ResolvedTypeDeclaration, ResolvedTypeDeclarationKind,
     ResolvedTypeParameterDeclaration, ResolvedVariantCaseDeclaration, ResolvedYieldsClause,
     TypeFacts, VectorFieldProvenance,
-};
-pub(crate) use nodes::{
-    LinkedDeclarationFact, LinkedOwnedDataParts, LinkedScalarFunction,
-    admitted_owned_byte_prelude_instance, is_refutable_match_scalar, is_scalar_resolved_type,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -777,7 +777,7 @@ fn hir_error_static(message: &'static str) -> Diagnostic {
 struct FunctionReuse<'a> {
     // The environment proof belongs to this exact current source receiver.
     current: &'a dyn ProgramSource,
-    program: &'a Program,
+    program: &'a dyn ProgramSource,
     resolved: &'a ResolvedProgram,
     costs: &'a BTreeMap<String, usize>,
 }
@@ -1172,11 +1172,9 @@ mod generic_environment_reuse_tests {
         assert!(!refused);
         let invalid_oracle = full_verdict(&allocating, None);
         assert_eq!(invalid_oracle.as_ref().unwrap_err()[0].code, "SPX-T252");
-        assert!(
-            invalid_oracle.as_ref().unwrap_err()[0]
-                .message
-                .contains("call `leaf` is not admitted in loop bodies")
-        );
+        assert!(invalid_oracle.as_ref().unwrap_err()[0]
+            .message
+            .contains("call `leaf` is not admitted in loop bodies"));
         assert_eq!(
             full_verdict(&allocating, Some((&previous, &old, &costs)))
                 .as_ref()
@@ -1449,3 +1447,5 @@ pub const SOURCE_VERIFIER_FRAME_BYTES: usize = crate::source_verify::VERIFIER_FR
 #[cfg(test)]
 #[path = "hir/provisional_result_borrow_tests.rs"]
 mod provisional_result_borrow_tests;
+
+mod function_reuse_source;

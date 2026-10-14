@@ -16,11 +16,9 @@ pub(crate) fn cold_source(source: &str) -> (FrontendPass, Program, CheckedModule
         indexed_imports: Vec::new(),
         entries: BTreeMap::from([(
             "local.spx".to_owned(),
-            Arc::new(CachedModule {
-                source: source.to_owned(),
-                program: Arc::new(synthetic.clone()),
-            }),
-        )]),
+            fixture_current_owner(source.to_owned(), synthetic.clone()),
+        )])
+        .into(),
         parsed: 0,
         reused: 0,
         canonicalizations: 0,

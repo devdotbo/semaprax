@@ -200,6 +200,29 @@ impl<'a> Input<'a> {
         }
     }
 
+    pub(in crate::workspace_graph) fn into_split_key(
+        self,
+        source_slot: usize,
+    ) -> Result<crate::ast::program_source::checked_key::CheckedSource, Vec<Diagnostic>> {
+        reserve_builder_structure(0)?;
+        match self {
+            Self::Owned(program) => {
+                Ok(crate::ast::program_source::checked_key::CheckedSource::Owned(program))
+            }
+            Self::Borrowed(view) => {
+                let (program, generated) = view.into_overlay_owner();
+                Ok(
+                    crate::ast::program_source::checked_key::CheckedSource::deferred(
+                        program,
+                        generated,
+                        source_slot,
+                    ),
+                )
+            }
+        }
+    }
+
+    #[cfg(test)]
     pub(in crate::workspace_graph) fn into_receiving_key(self) -> Result<Program, Vec<Diagnostic>> {
         match self {
             Self::Owned(program) => Ok(program),
@@ -265,3 +288,9 @@ mod tests;
 
 #[path = "borrowed_leaf/checked_key.rs"]
 mod checked_key;
+
+pub(in crate::workspace_graph) fn checked_key_owned(
+    view: SyntheticProgramView<'_>,
+) -> Result<Program, Vec<Diagnostic>> {
+    checked_key::materialize(view)
+}

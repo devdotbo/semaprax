@@ -206,6 +206,7 @@ pub(crate) struct WorkspaceSource {
     pub(crate) source: String,
 }
 pub(crate) struct WorkspaceGraphBuild {
+    current_sources: Option<current_source::ParsedSources>,
     hir: ValidatedWorkspaceHir,
     edges: Vec<WorkspaceEdge>,
     usage: WorkspaceGraphWorkUsage,
@@ -1039,6 +1040,9 @@ pub(crate) use package::{
     build_package_scalar_sources, PackageWorkspaceImport, PackageWorkspaceModule,
 };
 impl WorkspaceGraphBuild {
+    pub(crate) fn take_current_sources(&mut self) -> Option<current_source::ParsedSources> {
+        self.current_sources.take()
+    }
     pub(crate) fn contains_module(&self, module: &str) -> bool {
         self.hir.module_paths.contains_key(module)
     }
@@ -3804,13 +3808,13 @@ fn build_owned_with_builder_limit(
 }
 pub(crate) fn build_owned_retaining_sources(
     sources: Vec<WorkspaceSource>,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     build_owned_retaining_sources_with_builder_limit(sources, MAX_BUILDER_BYTES, None, false)
 }
 pub(crate) fn build_owned_retaining_sources_for_change(
     sources: Vec<WorkspaceSource>,
     change_builder_limit: usize,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     assert!(change_builder_limit <= MAX_CHANGE_BUILDER_BYTES);
     build_owned_retaining_sources_with_builder_limit(
         sources,
@@ -3823,7 +3827,7 @@ pub(crate) fn build_owned_retaining_sources_for_operations(
     sources: Vec<WorkspaceSource>,
     graph_builder_limit: usize,
     operations_builder_limit: usize,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     assert!(
         operations_builder_limit <= 67_108_864,
         "private Semantic Workspace Operations builder limit cannot exceed the production maximum"
@@ -3840,7 +3844,7 @@ fn build_owned_retaining_sources_with_builder_limit(
     builder_limit: usize,
     change_builder_limit: Option<usize>,
     retain_operation_programs: bool,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     build_owned_retaining_sources_with_frontend_limit(
         sources,
         builder_limit,
@@ -3852,7 +3856,7 @@ fn build_owned_retaining_sources_with_builder_limit(
 pub(crate) fn build_owned_retaining_sources_with_frontend(
     sources: Vec<WorkspaceSource>,
     frontend: &mut crate::project::incremental::FrontendPass,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     build_owned_retaining_sources_with_frontend_limit(
         sources,
         MAX_BUILDER_BYTES,
@@ -3868,7 +3872,7 @@ fn build_owned_retaining_sources_with_frontend_limit(
     change_builder_limit: Option<usize>,
     retain_operation_programs: bool,
     frontend: Option<&mut crate::project::incremental::FrontendPass>,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     assert!(
         builder_limit <= MAX_BUILDER_BYTES,
         "private Workspace Semantic Graph builder limit cannot exceed the production maximum"
@@ -3900,7 +3904,7 @@ fn build_owned_inner(
     change_builder_limit: Option<usize>,
     retain_operation_programs: bool,
     mut frontend: Option<&mut crate::project::incremental::FrontendPass>,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     let _diagnostics = diagnostics::invocation_scope();
     if sources.len() < 2 {
         return Err(vec![graph_error(
@@ -4116,9 +4120,20 @@ fn build_owned_inner(
                 );
                 reserve_builder_structure(layouts.receipt())?;
                 staged!(CorePrebound, charge_builder_prebound(resolve_builder_bytes))?;
-                staged!(
+                let custody =
+                    custody::SourceCustody::plan(&sources, &programs, &pruned_dependency_functions)
+                        .map_err(|error| match error {
+                            custody::CustodyError::Prepaid(_) => {
+                                vec![limit_error("builder_bytes", active_builder_limit())]
+                            }
+                            _ => vec![graph_error(
+                                "SPX-G173",
+                                "current parsed source custody is inconsistent",
+                            )],
+                        })?;
+                let core = staged!(
                     ResolvedCore,
-                    build_resolved_core(
+                    build_resolved_core_current(
                         &programs,
                         &module_paths,
                         &dependency_depths,
@@ -4130,7 +4145,8 @@ fn build_owned_inner(
                             .as_ref()
                             .map(|layout| &layout.order[..programs.len()]),
                     )
-                )
+                )?;
+                Ok((core, custody))
             });
         core_builder_bytes = core_builder_bytes.max(consumed);
         if !overflowed {
@@ -4197,7 +4213,8 @@ fn build_owned_inner(
         resolve_builder_bytes = tighter;
     };
     drop(layouts);
-    let (mut modules, module_paths, dependency_depths, declaration_facts, expected_edges) = core?;
+    let (core, custody) = core?;
+    let (mut modules, module_paths, dependency_depths, declaration_facts, expected_edges) = core;
     for module in &mut modules {
         module.native_law = native_law_paths.contains(&module.path);
     }
@@ -4242,7 +4259,8 @@ fn build_owned_inner(
             (None, None, 0, 0)
         };
     let shared_prelude_ids = prelude_binding::ids_from_facts(&programs, &declaration_facts);
-    let build = WorkspaceGraphBuild {
+    let mut build = WorkspaceGraphBuild {
+        current_sources: None,
         hir: ValidatedWorkspaceHir {
             modules,
             module_paths,
@@ -4267,13 +4285,21 @@ fn build_owned_inner(
         operation_sidecar,
         operation_builder_bytes,
     };
+    // Restore before any owning cache publication, exactly as the original
+    // provider/pruning receiver. Both ordinary and checked Project linking use
+    // these actual parsed owners instead of reparsing an equal source later.
+    pruned_dependency_functions.restore(&mut programs);
+    let custody = custody.complete(sources, programs).map_err(|_| {
+        vec![graph_error(
+            "SPX-G173",
+            "current parsed source custody is inconsistent",
+        )]
+    })?;
     if let Some(frontend) = frontend {
-        // The frontend cache keys a parsed program on that one file's bytes,
-        // but the retained set is a whole-workspace property, so the cache
-        // must only ever see the complete program.
-        pruned_dependency_functions.restore(&mut programs);
-        frontend.retain(&sources, programs, resolve_builder_bytes)?;
+        frontend.retain_current(&custody, resolve_builder_bytes)?;
     }
+    let (sources, owners) = custody.into_parts();
+    build.current_sources = Some(owners);
     Ok((build, sources))
 }
 
@@ -4305,7 +4331,7 @@ const GRAPH_ACCOUNTED_RESOLVED_FUNCTION_INSTANCE_BYTES: usize =
 
 // Keep the source-authority inputs explicit at this audited construction boundary.
 #[allow(clippy::too_many_arguments)]
-fn build_resolved_core(
+fn build_resolved_core_current(
     programs: &[Program],
     module_paths: &BTreeMap<&str, &str>,
     dependency_depths: &BTreeMap<&str, usize>,
@@ -4374,21 +4400,9 @@ fn build_resolved_core(
         }
         let synthetic = staged!(
             SyntheticModule,
-            if frontend.is_none() {
-                expected_projection::borrowed_leaf::Input::construct_transient(
-                    program, authored, programs, layouts,
-                )
-            } else {
-                expected_projection::borrowed_leaf::Input::construct_receiving(
-                    program,
-                    authored,
-                    programs,
-                    layouts,
-                    frontend
-                        .as_deref()
-                        .is_none_or(|cache| cache.permits_borrowed_cold_source(&program.path)),
-                )
-            }
+            expected_projection::borrowed_leaf::Input::construct_transient(
+                program, authored, programs, layouts,
+            )
         )?;
         // Exact stubs/spans and the unconditional prebound govern hits.
         let cached = staged!(
@@ -4463,9 +4477,9 @@ fn build_resolved_core(
             let resolved = if let Some(cache) = frontend.as_deref_mut() {
                 staged!(FrontendRetention, {
                     let loan_bytes = resolved_loan_bytes(&resolved)?;
-                    cache.resolved_module_receiving(
+                    cache.resolved_module_split(
                         &program.path,
-                        || synthetic.into_receiving_key(),
+                        || synthetic.into_split_key(index),
                         resolved,
                         resolver_bytes,
                         loan_bytes,
@@ -5938,3 +5952,11 @@ mod type_proof_tests;
 mod test_replay_context;
 #[cfg(test)]
 pub(crate) use test_replay_context::SourceRecordReplayFixture;
+
+#[cfg(test)]
+mod cache_key_original;
+#[cfg(test)]
+use cache_key_original::build_resolved_core;
+
+pub(crate) mod current_source;
+pub(crate) mod custody;

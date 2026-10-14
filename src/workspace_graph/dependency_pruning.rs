@@ -51,6 +51,41 @@ pub(super) struct PrunedDependencyFunctions {
 }
 
 impl PrunedDependencyFunctions {
+    /// Translate the still-pruned authored order to exact restored positions.
+    /// The caller reserves precisely retained_len ordinals before this walk.
+    pub(super) fn retained_positions(
+        &self,
+        module: usize,
+        retained_len: usize,
+        out: &mut Vec<usize>,
+    ) {
+        let removed = self
+            .entries
+            .iter()
+            .find(|(index, _)| *index == module)
+            .map(|(_, entries)| entries.as_slice())
+            .unwrap_or(&[]);
+        let mut removed_index = 0;
+        let mut original = 0;
+        for _ in 0..retained_len {
+            while removed
+                .get(removed_index)
+                .is_some_and(|(position, _)| *position == original)
+            {
+                removed_index += 1;
+                original += 1;
+            }
+            out.push(original);
+            original += 1;
+        }
+    }
+    pub(super) fn removed_len(&self, module: usize) -> usize {
+        self.entries
+            .iter()
+            .find(|(index, _)| *index == module)
+            .map_or(0, |(_, removed)| removed.len())
+    }
+
     /// Total number of functions withheld from HIR construction.
     #[cfg_attr(not(test), allow(dead_code))]
     pub(super) fn count(&self) -> usize {

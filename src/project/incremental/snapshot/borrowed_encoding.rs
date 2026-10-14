@@ -19,7 +19,7 @@ impl Codec for SnapshotView<'_> {
                     let checked = &self.cache.checked[path];
                     out.nested(|out| {
                         path.encode(out)?;
-                        entry.source.encode(out)?;
+                        entry.input().source.encode(out)?;
                         checked.synthetic.encode(out)?;
                         checked.resolved.encode(out)?;
                         checked.resolver_bytes.encode(out)?;
@@ -77,8 +77,8 @@ mod tests {
                     let checked = &cache.checked[path];
                     Entry {
                         path: path.clone(),
-                        source: entry.source.clone(),
-                        synthetic: checked.synthetic.clone(),
+                        source: entry.input().source.clone(),
+                        synthetic: checked.synthetic.materialize(),
                         resolved: checked.resolved.clone(),
                         resolver_bytes: checked.resolver_bytes,
                         retained_loan_bytes: checked.retained_loan_bytes,

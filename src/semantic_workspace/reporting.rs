@@ -82,7 +82,7 @@ fn preflight_typed(
         .into_iter()
         .map(|source| workspace_graph::WorkspaceSource {
             path: source.path,
-            source: source.source,
+            source: source.source.into(),
         })
         .collect();
     let (graph, recovered_sources) = if let Some(change_builder_limit) = change_builder_limit {
@@ -117,12 +117,12 @@ fn preflight_typed(
             frontend.as_deref(),
         )?;
         files.push(SemanticWorkspaceFileFact {
-            path: source.path,
+            path: source.path.clone(),
             source_graph_schema: schema.to_owned(),
             source_revision,
             source_digest: review::source_digest(source.source.as_bytes()),
             bytes: source.source.len(),
-            source: source.source,
+            source: workspace_graph::current_source::SourceBytes::current(source),
         });
     }
     if !schemas.is_empty() {

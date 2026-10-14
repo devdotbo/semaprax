@@ -5,105 +5,10 @@ use super::{
     ProtocolDeclaration, ProtocolImplementation, SessionProtocolDeclaration, Type, TypeDeclaration,
 };
 
-/// Two contiguous declaration collections; no flattened reference directory.
-/// Construction checks their combined length before an iterator is lent.
-#[derive(Clone, Copy)]
-pub(crate) struct DeclSlices<'a, T> {
-    authored: &'a [T],
-    generated: &'a [T],
-    length: usize,
-}
-impl<'a, T> DeclSlices<'a, T> {
-    pub(crate) fn one(authored: &'a [T]) -> Self {
-        Self {
-            authored,
-            generated: &[],
-            length: authored.len(),
-        }
-    }
-    fn append(authored: &'a [T], generated: &'a [T]) -> Option<Self> {
-        Some(Self {
-            authored,
-            generated,
-            length: authored.len().checked_add(generated.len())?,
-        })
-    }
-    pub(crate) fn len(&self) -> usize {
-        self.length
-    }
-    pub(crate) fn first(&self) -> Option<&'a T> {
-        self.get(0)
-    }
-    pub(crate) fn get(&self, index: usize) -> Option<&'a T> {
-        if index < self.authored.len() {
-            self.authored.get(index)
-        } else {
-            self.generated.get(index.checked_sub(self.authored.len())?)
-        }
-    }
-    pub(crate) fn suffix(&self, start: usize) -> Option<Self> {
-        if start > self.length {
-            return None;
-        }
-        if start < self.authored.len() {
-            Self::append(&self.authored[start..], self.generated)
-        } else {
-            Some(Self::one(&self.generated[start - self.authored.len()..]))
-        }
-    }
-    pub(crate) fn iter(&self) -> DeclIter<'a, T> {
-        DeclIter {
-            authored: self.authored.iter(),
-            generated: self.generated.iter(),
-            remaining: self.length,
-        }
-    }
-}
-impl<T> std::ops::Index<usize> for DeclSlices<'_, T> {
-    type Output = T;
-    fn index(&self, index: usize) -> &Self::Output {
-        self.get(index).expect("declaration index in bounds")
-    }
-}
-pub(crate) struct DeclIter<'a, T> {
-    authored: std::slice::Iter<'a, T>,
-    generated: std::slice::Iter<'a, T>,
-    remaining: usize,
-}
-impl<'a, T> Iterator for DeclIter<'a, T> {
-    type Item = &'a T;
-    fn next(&mut self) -> Option<Self::Item> {
-        let next = self.authored.next().or_else(|| self.generated.next());
-        if next.is_some() {
-            self.remaining -= 1;
-        }
-        next
-    }
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.remaining, Some(self.remaining))
-    }
-}
-impl<T> DoubleEndedIterator for DeclIter<'_, T> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        let next = self
-            .generated
-            .next_back()
-            .or_else(|| self.authored.next_back());
-        if next.is_some() {
-            self.remaining -= 1;
-        }
-        next
-    }
-}
-impl<T> ExactSizeIterator for DeclIter<'_, T> {}
-impl<T> std::iter::FusedIterator for DeclIter<'_, T> {}
-impl<'a, T> IntoIterator for DeclSlices<'a, T> {
-    type Item = &'a T;
-    type IntoIter = DeclIter<'a, T>;
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
-    }
-}
+mod decl_slices;
+pub(crate) use decl_slices::DeclSlices;
+#[cfg(test)]
+mod decl_slices_original;
 
 /// A concrete address distinguishes different presentations of the same AST.
 /// The byte prevents distinct empty overlays from sharing a ZST identity.
@@ -128,6 +33,7 @@ mod sealed {
     pub trait Sealed {}
     impl Sealed for super::Program {}
     impl Sealed for super::SyntheticProgramView<'_> {}
+    impl Sealed for super::checked_key::ReadySource<'_> {}
 }
 /// Only the owned AST and compiler-owned presentation implement this input.
 /// A view carries no verdict; every source pass and resolver still runs.
@@ -310,3 +216,6 @@ impl ProgramSource for SyntheticProgramView<'_> {
             .expect("constructor checked declaration count")
     }
 }
+
+/// Immutable owning cache source; wire encoding remains the historical Program.
+pub(crate) mod checked_key;

@@ -619,7 +619,7 @@ impl Resolver<'_> {
         }) {
             let previous = reuse
                 .program
-                .functions
+                .functions()
                 .iter()
                 .find(|previous| previous.stable_id == function.stable_id);
             let resolved = reuse

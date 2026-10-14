@@ -98,7 +98,7 @@ fn partition_law_sources(
                 source_graph_schema: "semaprax.native-law.v1".to_owned(),
                 source_revision,
                 source_digest,
-                source: source.source,
+                source: source.source.into(),
             });
             laws.push(module.law_module());
         } else {
@@ -123,7 +123,7 @@ fn finish_build(
 ) -> Result<BuiltProject, Vec<Diagnostic>> {
     #[cfg(feature = "unstable-workflow-profiling")]
     let _workflow_span = crate::workflow_profile::span(crate::workflow_profile::Stage::ProjectLink);
-    let (files, ordinary_workspace_manifest, ordinary_workspace_revision, graph) =
+    let (files, ordinary_workspace_manifest, ordinary_workspace_revision, mut graph) =
         preflight.into_snapshot_parts();
     let (workspace_manifest, workspace_revision) = if law_source_facts.is_empty() {
         (ordinary_workspace_manifest, ordinary_workspace_revision)
@@ -154,9 +154,12 @@ fn finish_build(
         let revision = semantic_workspace::semantic_workspace_revision(&manifest);
         (manifest, revision)
     };
-    // The frontend pass already owns exact, authenticated source ASTs. Reuse
-    // those for Agent extraction instead of reparsing outside its work counters.
-    let programs = if frontend.is_none() {
+    // These are the actual source-local-checked parsed owners from this
+    // invocation, restored after the unchanged provider/pruning passes. File
+    // facts retain metadata only. Explicit cache keys may retain their exact
+    // parsed owner; unrelated file facts never retain an AST generation.
+    let current_sources = graph.take_current_sources();
+    let programs = if current_sources.is_none() && frontend.is_none() {
         files
             .iter()
             .map(|file| crate::parse(file.source(), file.path()).map_err(|error| vec![error]))
@@ -164,7 +167,22 @@ fn finish_build(
     } else {
         Vec::new()
     };
-    let program_refs = if let Some(frontend) = frontend {
+    let program_refs = if let Some(current) = current_sources.as_ref() {
+        if current.len() != files.len()
+            || current.iter().zip(&files).any(|(owner, file)| {
+                owner.input().path != file.path() || owner.input().source != file.source()
+            })
+        {
+            return Err(vec![Diagnostic::io(
+                "SPX-G173",
+                "current parsed source custody disagrees with Project file facts",
+            )]);
+        }
+        current
+            .iter()
+            .map(|owner| owner.program())
+            .collect::<Vec<_>>()
+    } else if let Some(frontend) = frontend {
         files
             .iter()
             .map(|file| frontend.retained_source_program(file.path(), file.source()))

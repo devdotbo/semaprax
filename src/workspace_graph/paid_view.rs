@@ -259,3 +259,13 @@ impl WorkspaceGraphBuild {
         Ok(schemas)
     }
 }
+
+impl ReceivingSources for Vec<std::sync::Arc<super::current_source::SourceMetadata>> {
+    fn source_count(&self) -> usize {
+        self.len()
+    }
+    fn source_at(&self, index: usize) -> Option<(&str, &str)> {
+        self.get(index)
+            .map(|source| (source.input().path.as_str(), source.input().source.as_str()))
+    }
+}

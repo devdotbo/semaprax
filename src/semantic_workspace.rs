@@ -78,7 +78,7 @@ pub(crate) struct SemanticWorkspaceFileFact {
     source_revision: String,
     source_digest: String,
     bytes: usize,
-    source: String,
+    source: workspace_graph::current_source::SourceBytes,
 }
 
 // The preflight's own held normalized sources, for exact schema reception.
@@ -127,10 +127,18 @@ impl SemanticWorkspaceFileFact {
 
     #[cfg(test)]
     pub(crate) fn source_mut(&mut self) -> &mut String {
-        &mut self.source
+        self.source.make_mut()
     }
 
-    pub(crate) fn into_parts(self) -> (String, String, String, String, String) {
+    pub(crate) fn into_parts(
+        self,
+    ) -> (
+        String,
+        String,
+        String,
+        String,
+        workspace_graph::current_source::SourceBytes,
+    ) {
         (
             self.path,
             self.source_graph_schema,
@@ -288,7 +296,7 @@ fn preflight_owned_inner_mode(
         .into_iter()
         .map(|source| workspace_graph::WorkspaceSource {
             path: source.path,
-            source: source.source,
+            source: source.source.into(),
         })
         .collect();
     let (graph, recovered_sources) = if let Some(change_builder_limit) = change_builder_limit {
@@ -323,12 +331,12 @@ fn preflight_owned_inner_mode(
             frontend.as_deref(),
         )?;
         files.push(SemanticWorkspaceFileFact {
-            path: source.path,
+            path: source.path.clone(),
             source_graph_schema: schema.to_owned(),
             source_revision,
             source_digest: review::source_digest(source.source.as_bytes()),
             bytes: source.source.len(),
-            source: source.source,
+            source: workspace_graph::current_source::SourceBytes::current(source),
         });
     }
     if !schemas.is_empty() {
@@ -416,7 +424,7 @@ pub(crate) fn authenticated_operations_preflight(
             source_graph_schema: source.source_graph_schema,
             source_revision: source.source_revision,
             source_digest: source.source_digest,
-            source: source.source,
+            source: source.source.into(),
         })
         .collect::<Vec<_>>();
     files.sort_by(|left, right| left.path.cmp(&right.path));
@@ -638,7 +646,7 @@ fn parse_manifest_inner(source: &str) -> Result<Vec<SemanticWorkspaceFileFact>, 
             source_revision: digest_text(object, "source_revision")?.to_owned(),
             source_digest: digest_text(object, "source_digest")?.to_owned(),
             bytes,
-            source: String::new(),
+            source: String::new().into(),
         });
     }
     if files.windows(2).any(|pair| pair[0].path >= pair[1].path) {

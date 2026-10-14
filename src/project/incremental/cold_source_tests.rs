@@ -6,11 +6,9 @@ fn pass(source: &str, program: &Program) -> FrontendPass {
         indexed_imports: Vec::new(),
         entries: BTreeMap::from([(
             program.path.clone(),
-            Arc::new(CachedModule {
-                source: source.to_owned(),
-                program: Arc::new(program.clone()),
-            }),
-        )]),
+            fixture_current_owner(source.to_owned(), program.clone()),
+        )])
+        .into(),
         parsed: 0,
         reused: 0,
         canonicalizations: 0,

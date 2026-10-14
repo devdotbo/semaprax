@@ -258,3 +258,6 @@ mod tests;
 
 #[cfg(test)]
 mod agent_tests;
+
+mod previous_source;
+pub(crate) use previous_source::resolve_source_checked_previous;

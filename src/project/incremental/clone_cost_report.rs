@@ -140,7 +140,10 @@ fn classify_next_build(
         .map(|(path, entry)| {
             (
                 path.clone(),
-                (program_ast_node_count(&entry.program), entry.source.len()),
+                (
+                    program_ast_node_count(entry.program()),
+                    entry.input().source.len(),
+                ),
             )
         })
         .collect();
