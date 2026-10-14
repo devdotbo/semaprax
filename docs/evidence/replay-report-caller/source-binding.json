@@ -1,0 +1,69 @@
+{
+  "issue": 781,
+  "base": "960d417bc",
+  "status": "complete private typed caller source batch; compiler/runtime qualification unexecuted",
+  "original_sources": {
+    "src/workspace_report.rs": {
+      "archive": "docs/evidence/replay-report-caller/src__workspace_report.rs.before",
+      "sha256": "64f0c2cb8126d6f9652e1693e1be253d61b1d6b23a5a50c58764249dba1f9ad7"
+    },
+    "src/workspace/semantic_read.rs": {
+      "archive": "docs/evidence/replay-report-caller/src__workspace__semantic_read.rs.before",
+      "sha256": "7f73a8ab7f57164e04854e3dad12e72ac04bc09976a054cc9ee563a9efc2a372"
+    },
+    "src/workspace_graph/paid_view.rs": {
+      "archive": "docs/evidence/replay-report-caller/src__workspace_graph__paid_view.rs.before",
+      "sha256": "c93ca2a1c50724dc3d718cde274feea37c59c4125f8dcc8277639e3b71abc905"
+    },
+    "src/semantic_workspace_change.rs": {
+      "archive": "docs/evidence/replay-report-caller/src__semantic_workspace_change.rs.before",
+      "sha256": "7096fb1ad67e62b41b5c88dab4a686c72c3b47c3ba5a7090e672799d4c191251"
+    },
+    "src/semantic_workspace_structural_change.rs": {
+      "archive": "docs/evidence/replay-report-caller/src__semantic_workspace_structural_change.rs.before",
+      "sha256": "7e9788a49d76f17313bcf6154fe54f66a91ce73a451454aa053c65b96b934479"
+    },
+    "src/semantic_workspace_operations.rs": {
+      "archive": "docs/evidence/replay-report-caller/src__semantic_workspace_operations.rs.before",
+      "sha256": "f0fe337f22455790b99e55242a4acdaab734ccc41f686fafd03dad6d1e288ef3"
+    }
+  },
+  "source_hashes": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "797dcc5b10e1e466dc56c27f5da68a8edb23be577b4d5f8190b29846edc1d0ec",
+    "src/semantic_workspace/reporting.rs": "c9f679518fd86114aede3a59d29d84c2ee84de52cb3266da109c3ff47db9f1a7",
+    "src/semantic_workspace_change.rs": "e234b66dd9373362ccb9f0da4a11406c288b9e83db19fbe49f49f0c5d5574ab6",
+    "src/semantic_workspace_change/reporting.rs": "bb4e4f611b44edb3254785307c3de1c6b650280d619b92951ed22d7932c410a7",
+    "src/semantic_workspace_change/reporting/prepare.rs": "09dc45ac81a5716fd27c271547680e37c17c299511e4ffbfa115c59d257b59af",
+    "src/semantic_workspace_operations.rs": "2ab0abfeade18ff756ddec9b1f63c186b70a513b7dbdf736d8d8fe3acf5e56c1",
+    "src/semantic_workspace_operations/reporting.rs": "9b2d84fc1aac7d9163b08a15c85282635c86866a021fa82dcc7abdac14de59c4",
+    "src/semantic_workspace_operations/reporting/prepare.rs": "240643a234b7c70f12cb7ad0adc94b9d84cc2e53ae4d8ecafe0765c126608f27",
+    "src/semantic_workspace_structural_change.rs": "178a0782e66f5ff32e91f2b9e96d73b391109f61c900646970f7d67fa9902734",
+    "src/semantic_workspace_structural_change/reporting.rs": "94b5894580ed52017b5718c6184c082db01fccade0e1c9ec25dc10634142e488",
+    "src/semantic_workspace_structural_change/reporting/prepare.rs": "fd016c1365373fb935a974c1c44f93b87e0e4da2d9e308c39cab558fd89e3cb8",
+    "src/workspace/semantic_read.rs": "17ff388fa360bda567ef6ca6d16b192bb83688fdf2ba01c7e850ce5734cb86dd",
+    "src/workspace/semantic_read/tests.rs": "f3206eac7aa1dfbd0c80c5c89ef6d346b5395b257a414ab00e91975463fc799a",
+    "src/workspace_graph/paid_view.rs": "fab8caddecd508660219da4a7e4db877ec4ed47e1e1ef3d83799a7c69624d2e5",
+    "src/workspace_report.rs": "30c028325579c97df48d978d51dcab67f5331e91c53968fa4628178254ddfc76",
+    "src/workspace_report/original.rs": "14d67340a4fdbb31429a1b9216eed82b9ee0cf6de8805583f04740f5cdfb6990",
+    "src/workspace_report/tests.rs": "d2003ec930cc4f15f076e74d546ff866aaad83a472b24d2bac25e301ca0a7091",
+    "src/workspace_report/tests/caller.rs": "00296eeb8a8844ad5468e26c0f610da4e3a2e6774a5ecf28a02cedf4cf826d36",
+    "tests/workspace/semantic_change.rs": "d161ed6fadf92b518e48ace904e701bfa5b2644859340fafd37010816227c04f",
+    "tests/workspace/semantic_change/reporting.rs": "adc5d1679f911c5f41198ff8a8af52f585a176cc1cc30f4dbadf79b76c1fd020",
+    "tests/workspace/semantic_graph/source_inventory.rs": "d9788dc52bdee6522e25657bf7085aa1f3937b6db7fab7cfab2d286ed2ece836",
+    "tests/workspace/semantic_operations.rs": "c97dbf2bb3def9e569ca4563f3c92de6ea248e96e9a77fa3c3a68642eac74a34",
+    "tests/workspace/semantic_operations/reporting.rs": "b126b8b32930415dff18e5694a428a2bfb283232a979253da3619de122903861",
+    "tests/workspace/semantic_structural_change.rs": "ec963928ca32fc47883e7c23d65fc6f805883f09e1e5f3c6a4818e4f5d443826",
+    "tests/workspace/semantic_structural_change/reporting.rs": "8c3273644d83ed4a4204a946798e0160f41b21f520dcdbfa88dcb4c17f1272d4"
+  },
+  "new_routes": [
+    "semantic_workspace_change::reporting::{generate,preview,evidence,verify,apply}",
+    "semantic_workspace_structural_change::reporting::{generate,preview,evidence,verify,apply}",
+    "semantic_workspace_operations::reporting::{derive,derived_change_proposal,derivation,generate_evidence,evidence,verify,apply}"
+  ],
+  "residual_boundaries": [
+    "Original Vec APIs and CLI consumers remain explicit compatibility routes.",
+    "Dynamic proposal/filesystem/authentication/rendering/commit diagnostics are legacy reports.",
+    "Unlock I210 retains original outward precedence; its existing legacy Vec is not selected-funded.",
+    "No source profile, cap, quota, application-fit or runtime saving claim."
+  ]
+}

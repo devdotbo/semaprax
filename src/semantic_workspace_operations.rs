@@ -2582,3 +2582,5 @@ fn operations_evidence_replay() -> Vec<Diagnostic> {
 #[cfg(test)]
 #[path = "semantic_workspace_operations/tests.rs"]
 mod tests;
+
+pub mod reporting;

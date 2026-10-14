@@ -196,3 +196,77 @@ fn replay_typed(
 
 #[cfg(test)]
 mod tests;
+
+pub(crate) fn preflight_owned_for_change(
+    path_set_source: &str,
+    sources: Vec<SemanticWorkspaceSource>,
+    change_builder_limit: usize,
+) -> Result<SemanticWorkspacePreflight, WorkspaceReportFailure> {
+    preflight_typed(
+        path_set_source,
+        sources,
+        Some(change_builder_limit),
+        false,
+        None,
+        None,
+    )
+}
+pub(crate) fn preflight_owned_for_operations(
+    path_set_source: &str,
+    sources: Vec<SemanticWorkspaceSource>,
+    graph_builder_limit: usize,
+    operations_builder_limit: usize,
+) -> Result<SemanticWorkspacePreflight, WorkspaceReportFailure> {
+    assert!(
+        operations_builder_limit <= 67_108_864,
+        "private Semantic Workspace Operations builder limit cannot exceed the production maximum"
+    );
+    preflight_typed(
+        path_set_source,
+        sources,
+        Some(operations_builder_limit),
+        true,
+        Some(graph_builder_limit),
+        None,
+    )
+}
+
+pub(crate) fn authenticated_operations_preflight(
+    authenticated_revision: &str,
+    sources: Vec<workspace::WorkspaceSemanticSource>,
+    graph: workspace_graph::WorkspaceGraphBuild,
+) -> Result<SemanticWorkspacePreflight, WorkspaceReportFailure> {
+    let mut files = sources
+        .into_iter()
+        .map(|source| SemanticWorkspaceFileFact {
+            bytes: source.source.len(),
+            path: source.path,
+            source_graph_schema: source.source_graph_schema,
+            source_revision: source.source_revision,
+            source_digest: source.source_digest,
+            source: source.source,
+        })
+        .collect::<Vec<_>>();
+    files.sort_by(|left, right| left.path.cmp(&right.path));
+    let path_set = files
+        .iter()
+        .map(|file| file.path.clone())
+        .collect::<Vec<_>>();
+    let manifest = render_manifest(&files)?;
+    let workspace_revision = semantic_workspace_revision(&manifest);
+    if workspace_revision != authenticated_revision {
+        return Err((invariant(
+            "Semantic Workspace Operations authenticated manifest replay changed revision",
+        ))
+        .into());
+    }
+    let preflight = SemanticWorkspacePreflight {
+        path_set,
+        files,
+        manifest,
+        workspace_revision,
+        graph,
+    };
+    replay_typed(&preflight, None)?;
+    Ok(preflight)
+}

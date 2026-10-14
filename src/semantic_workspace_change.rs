@@ -3021,3 +3021,5 @@ fn limit(field: &'static str, maximum: usize) -> Vec<Diagnostic> {
 #[cfg(test)]
 #[path = "semantic_workspace_change/tests.rs"]
 mod tests;
+
+pub mod reporting;

@@ -97,6 +97,34 @@ impl WorkspaceGraphBuild {
         self.source_graph_schemas_receiving_paid(source_schema::REPORT, Some(sources))
             .map_err(ViewRefusal::into_typed)
     }
+    /// Typed real view boundary: selected setup/auth/session failures keep
+    /// their original affine owner. Existing non-replay diagnostics remain
+    /// explicit legacy reports and retain their complete text/attribution.
+    pub(crate) fn into_change_view_typed(
+        self,
+        form: SelectedReplayReportForm,
+    ) -> Result<WorkspaceGraphChangeView, crate::workspace_report::WorkspaceReportFailure> {
+        self.into_change_view_paid(form)
+            .map_err(|failure| match failure {
+                ViewRefusal::Legacy(diagnostics) => diagnostics.into(),
+                ViewRefusal::Replay(failure) => {
+                    crate::workspace_report::WorkspaceReportFailure::selected(failure, Some(form))
+                }
+            })
+    }
+    pub(crate) fn into_operation_view_typed(
+        self,
+        form: SelectedReplayReportForm,
+    ) -> Result<WorkspaceGraphOperationView, crate::workspace_report::WorkspaceReportFailure> {
+        self.into_operation_view_paid(form)
+            .map_err(|failure| match failure {
+                ViewRefusal::Legacy(diagnostics) => diagnostics.into(),
+                ViewRefusal::Replay(failure) => {
+                    crate::workspace_report::WorkspaceReportFailure::selected(failure, Some(form))
+                }
+            })
+    }
+
     /// Change view for a caller that publishes one fixed `form` on refusal.
     /// The unpaid case is the explicit, allocating legacy edge.
     pub(crate) fn into_change_view_reporting(

@@ -377,3 +377,6 @@ fn prepaid_first_budget_receipt_moves_with_affine_typed_owner_without_reformatti
     assert_eq!(cost.live, 0);
     assert_eq!(cost.freed, cost.allocated);
 }
+
+#[path = "tests/caller.rs"]
+mod caller;

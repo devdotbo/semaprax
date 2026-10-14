@@ -4768,3 +4768,10 @@ in `src/workspace_graph/record_traversal/field_origin.rs`; the outer Graph v85
 layer lives in `src/graph/vec_field_origin.rs`. The source-only contract is
 [Scoped Vec Field Source Forms v1](SCOPED-VEC-FIELD-SOURCE-FORMS-V1.md); this
 metadata grants no authority and leaves backend operations unchanged.
+
+
+The semantic workspace change, structural change and operations `reporting`
+children own the affine typed caller forks. They reuse the authenticated read
+and commit authorities; `workspace_report` retains the selected primary owner
+when the original unlock diagnostic overrides its outward report. The original
+Vec APIs remain independent compatibility receivers.

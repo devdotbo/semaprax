@@ -21,21 +21,29 @@ enum Owner {
 /// `reported()` borrows already-owned diagnostics. When no report was paid,
 /// `reported()` returns None; it never allocates a vector or dynamic text.
 /// Explicit `into_legacy_unfunded()` is the allocating compatibility boundary.
-pub struct WorkspaceReportFailure(Owner);
+pub struct WorkspaceReportFailure(Owner, Option<Vec<Diagnostic>>);
 impl WorkspaceReportFailure {
     pub(crate) fn existing(diagnostics: Vec<Diagnostic>) -> Self {
-        Self(Owner::Existing(diagnostics))
+        Self(Owner::Existing(diagnostics), None)
     }
     pub(crate) fn selected(
         failure: SelectedReplayRefusal,
         expected: Option<SelectedReplayReportForm>,
     ) -> Self {
         let form = expected.unwrap_or_else(|| failure.form());
-        Self(Owner::Selected { failure, form })
+        Self(Owner::Selected { failure, form }, None)
     }
     /// Only existing backing is borrowed. Some does not by itself establish
     /// funding: ordinary legacy reports remain ordinary legacy reports.
     pub fn reported(&self) -> Option<&[Diagnostic]> {
+        if let Some(report) = &self.1 {
+            return Some(report);
+        }
+        self.retained_report()
+    }
+    /// The original primary backing is retained even when unlock selected
+    /// an existing legacy outward report. This borrow grants no authority.
+    pub fn retained_report(&self) -> Option<&[Diagnostic]> {
         match &self.0 {
             Owner::Existing(diagnostics) => Some(diagnostics),
             Owner::Selected { failure, form } => failure.published_for(*form),
@@ -43,6 +51,9 @@ impl WorkspaceReportFailure {
     }
     /// Whether this carrier contains an exact selected-replay paid report.
     pub fn has_paid_report(&self) -> bool {
+        if self.1.is_some() {
+            return false;
+        }
         match &self.0 {
             Owner::Selected { failure, form } => failure.published_for(*form).is_some(),
             _ => false,
@@ -51,17 +62,23 @@ impl WorkspaceReportFailure {
     /// Transfer an exact paid Vec/String without rebuilding it. Refusal
     /// returns this same affine failure, including its first receipt/ledger.
     pub fn into_paid_report(self) -> Result<Vec<Diagnostic>, Self> {
+        if self.1.is_some() {
+            return Err(self);
+        }
         match self.0 {
             Owner::Selected { failure, form } => failure
                 .into_report_retaining(form)
-                .map_err(|failure| Self(Owner::Selected { failure, form })),
-            owner => Err(Self(owner)),
+                .map_err(|failure| Self(Owner::Selected { failure, form }, None)),
+            owner => Err(Self(owner, None)),
         }
     }
     /// Explicit legacy materialization. Initial/unmatched/unfunded forms may
     /// allocate, outside the paid protocol; existing reports move unchanged.
     /// Calling this does not grant funding, admission or publication authority.
     pub fn into_legacy_unfunded(self) -> Vec<Diagnostic> {
+        if let Some(report) = self.1 {
+            return report;
+        }
         match self.0 {
             Owner::Existing(diagnostics) => diagnostics,
             Owner::Selected { failure, form } => failure
@@ -114,3 +131,32 @@ impl std::error::Error for WorkspaceReportFailure {}
 
 #[cfg(test)]
 mod tests;
+
+impl WorkspaceReportFailure {
+    /// Same legacy unlock precedence, WITHOUT releasing or reformatting the
+    /// original primary owner. The existing unlock Vec moves unchanged.
+    pub(crate) fn with_unlock_override(mut self, diagnostics: Vec<Diagnostic>) -> Self {
+        self.1 = Some(diagnostics);
+        self
+    }
+}
+#[cfg(test)]
+mod original;
+
+impl WorkspaceReportFailure {
+    pub(crate) fn map_legacy(
+        self,
+        mapper: impl FnOnce(Vec<Diagnostic>) -> Vec<Diagnostic>,
+    ) -> Self {
+        match self {
+            Self(Owner::Existing(report), None) => Self::existing(mapper(report)),
+            owner => owner,
+        }
+    }
+}
+
+impl WorkspaceReportFailure {
+    pub(crate) fn is_selected_refusal(&self) -> bool {
+        matches!(self.0, Owner::Selected { .. })
+    }
+}

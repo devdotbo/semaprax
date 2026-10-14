@@ -185,3 +185,74 @@ fn a_double_extraction_failure_unlocks_and_leaves_the_workspace_unchanged() {
     fixture.assert_lock_released();
     assert_eq!(fixture.active(), active);
 }
+
+#[test]
+fn typed_finish_unlocks_once_and_moves_original_failure_without_publication() {
+    let fixture = Fixture::new("typed-failure");
+    let before = fixture.active();
+    let authority = acquire_semantic_read(&fixture.root).unwrap();
+    let diagnostics = vec![crate::diagnostic::Diagnostic::io_static(
+        "SPX-G153",
+        "semantic workspace graph already consumed",
+    )];
+    let pointer = diagnostics.as_ptr();
+    let text = diagnostics[0].message.as_ptr();
+    let failure = authority
+        .finish_reporting::<()>(Err(diagnostics.into()))
+        .unwrap_err();
+    assert_eq!(failure.reported().unwrap().as_ptr(), pointer);
+    assert_eq!(failure.reported().unwrap()[0].message.as_ptr(), text);
+    assert_eq!(fixture.active(), before);
+    fixture.assert_sources_unchanged();
+    fixture.assert_lock_released();
+}
+
+#[test]
+fn actual_authority_finish_moves_exact_paid_setup_refusal_through_unlock_and_drop() {
+    use crate::cleanup_plan::{
+        ReplayPhysicalReservation as Physical, SelectedReplayReport as Acquired,
+        SelectedReplayReportForm as Form,
+    };
+    let fixture = Fixture::new("typed-paid-failure");
+    let authority = acquire_semantic_read(&fixture.root).unwrap();
+    let program = crate::hir::resolve(
+        &crate::check(
+            "module finish.paid; @id(\"main\") fn main()->i64{0}",
+            "finish.spx",
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let functions = program.functions();
+    let function = functions.get(0).unwrap();
+    let form = Form::new("SPX-T781", "retained authority setup failure");
+    let bytes = std::mem::size_of::<crate::diagnostic::Diagnostic>() + form.message().len();
+    let ((), cost) = crate::test_allocation_observer::measure(|| {
+        let acquired = Acquired::try_acquire(Physical::new(bytes), form)
+            .unwrap_or_else(|_| panic!("exact report"));
+        let pointers = acquired.backing();
+        let refusal = acquired.prepare(function).err().unwrap();
+        let failure =
+            crate::workspace_report::WorkspaceReportFailure::selected(refusal, Some(form));
+        let mut failure = authority.finish_reporting::<()>(Err(failure)).unwrap_err();
+        assert_eq!(failure.reported().unwrap().as_ptr(), pointers.0);
+        assert_eq!(failure.reported().unwrap()[0].message.as_ptr(), pointers.1);
+        let ledger = failure.selected_owner_mut().unwrap().ledger_mut().unwrap();
+        let first = ledger.reserve(0).unwrap_err();
+        assert_eq!(ledger.reserve(1).unwrap_err(), first);
+        drop(failure);
+    });
+    assert!(!cost.invalid);
+    assert_eq!(
+        (
+            cost.allocations,
+            cost.reallocations,
+            cost.allocated,
+            cost.live,
+            cost.freed
+        ),
+        (2, 0, bytes, 0, bytes)
+    );
+    fixture.assert_sources_unchanged();
+    fixture.assert_lock_released();
+}

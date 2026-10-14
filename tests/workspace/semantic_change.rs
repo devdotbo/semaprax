@@ -800,3 +800,6 @@ fn second_application_is_stale_and_preserves_the_committed_generation() {
     lock.try_lock_exclusive().unwrap();
     FileExt::unlock(&lock).unwrap();
 }
+
+#[path = "semantic_change/reporting.rs"]
+mod reporting;

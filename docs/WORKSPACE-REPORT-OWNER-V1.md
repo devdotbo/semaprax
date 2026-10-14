@@ -84,3 +84,29 @@ zero, exact and one-short acquisition; original report pointer/capacity and
 sticky first ledger refusal; full old literal, schema corpus and hostile error
 parity. They are authored only. No compile, runtime, efficiency, end-to-end
 funding or issue-closure result is claimed.
+
+
+## Affine filesystem caller routes (OPT781)
+
+`semantic_workspace_change::reporting`,
+`semantic_workspace_structural_change::reporting`, and
+`semantic_workspace_operations::reporting` expose authority-held typed generation,
+verification and application. Operations also exposes typed derivation. They
+retain the original locks, source acquisition, complete preparation, exact replay,
+and commit order. Candidate preflight and graph-view setup pass the same selected
+report owner through `WorkspaceReportFailure`, without converting an inline
+refusal into a new diagnostic vector. Initial report acquisition remains before
+selected replay preparation, under the existing invocation ledger.
+
+`finish_reporting` moves an initial failure through the original unlock call.
+If unlock fails, the original legacy SPX-I210 report has the same outward priority
+as `finish`; the primary report and first receipt remain privately retained until
+Drop. Unlock reports are ordinary existing diagnostics, not selected-funded
+reports. No error mapper may consume a selected owner to rebuild an ordinary
+report. Legacy graph-view failures preserve their complete existing diagnostics
+on the typed route instead of relabeling them with the selected fixed form.
+
+The original Vec-returning APIs and CLI callers remain explicit compatibility
+routes. Dynamic proposal, filesystem, authentication, rendering and commit errors
+remain ordinary legacy reports. This addition does not establish funding for
+those errors, activate new source profiles, or establish complete OPT781 closure.

@@ -793,3 +793,6 @@ fn public_second_application_is_stale_and_preserves_the_committed_generation() {
     );
     fixture.assert_exclusive_reacquire();
 }
+
+#[path = "semantic_structural_change/reporting.rs"]
+mod reporting;

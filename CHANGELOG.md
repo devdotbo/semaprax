@@ -7073,3 +7073,7 @@ lookup or row-derived form so checked previous-row lookups compose with a
 whole-root record traversal freeze. Row indices and source replay remain
 strict; Graph v85/current checked cache v11 and focused hostile/backend owners
 are authored. Qualification is pending; Catalog corpus and limits are unchanged.
+
+- Add affine typed filesystem change/structural/operations reporting routes,
+  retaining selected replay report ownership through preparation and unlock;
+  preserve complete original Vec routes and unlock diagnostic precedence.
