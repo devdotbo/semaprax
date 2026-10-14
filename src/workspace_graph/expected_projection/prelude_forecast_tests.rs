@@ -1,5 +1,5 @@
 use super::super::{cached_exact, dependency_identity_max};
-use super::*;
+use super::{input_cost, limit_error, retained_upper, StructuralCost};
 use crate::prelude::base_schema::{BASE, OPTION, RESULT};
 
 struct RestoreLimit(usize);

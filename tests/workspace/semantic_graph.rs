@@ -400,6 +400,8 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         // Exact child-module facades include the field-uniqueness receiver.
         // The complete source union above keeps every child inside this audit.
         "pub(super) fn verify(",
+        // The borrowed base-prelude forecast is private to expected_projection.
+        "pub(super) fn retained_upper(",
         // These exact child-only helpers grant no workspace_graph facade:
         // checked_key::materialize is callable only by borrowed_leaf, and
         // old::construct is a cfg(test) oracle shared only by its test siblings.
