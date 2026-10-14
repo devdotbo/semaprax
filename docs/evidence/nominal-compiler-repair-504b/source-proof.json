@@ -1,0 +1,390 @@
+{
+  "schema": "semaprax.compiler-repair-source-proof.v1",
+  "basis": "504b8381e",
+  "build_log": "/Volumes/Semaprax/lane-prompts/sharing-focused-504b-20261015/owning-build.jsonl",
+  "build_log_sha256": "b28ccac58724abc6d9d1bb3ceaae7f5a1b310521949e5b09e6cfe5cf152f1908",
+  "actual_failed_build_exit": 101,
+  "actual_production_errors": 16,
+  "rust_execution_after_repair": false,
+  "full_source_inverse_count": 63,
+  "rows": [
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/disposal.rs",
+      "current_sha256": "d32d415437e3521fcd918b2022546c52646759cd88819ff2010ced9357b532a4",
+      "original_sha256": "1f4964fe254338c2e4e0b8cad7fc9ea633da9fd7416332a49a4d3b72556e9d2a",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/bounded_output/identity_reservation.rs",
+      "current_sha256": "64da492f79082786a70e53115848dc51c0cf878af25e03bed29680cd8aa12ce1",
+      "original_sha256": "37d360ec3376b46f86dface335f1bda49c88eb7ad1f65fa61272db33660d4672",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/bounded_output/identity_reservation/base_prelude.rs",
+      "current_sha256": "911cc958acd7ac48e25444c7d43454420ce5eb695769e054527c039e83d5b417",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/bounded_output/identity_reservation/base_prelude/tests.rs",
+      "current_sha256": "01b083d723f458cba2c9853ff5a7e22916f2fbab61b7df132e583ddd0f150344",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/bounded_output/identity_reservation/producer_failure.rs",
+      "current_sha256": "19837bd39430ad7935cc07451ecbaf5e3546d0c7a8b98fee26fdc725976e9828",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/paid_type_facts/droppability/tests.rs",
+      "current_sha256": "30788ba361d318bb4006248019f8cb66f6ebc5aa0c9dc16b0b9b3f6ef4e8319d",
+      "original_sha256": "e751c59f743cb3263a5a6409db17c9b6a321625524056852c7e362caed6cec00",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/tests/native.rs",
+      "current_sha256": "75bbf0311c224b1a9dd6998d496698719fcdd55f151f0b1e698c5ba5b8dbb82c",
+      "original_sha256": "2f4fe70f7d814c4ff0892e52e879b858765bdfb83fa5d9f46df866d939fe04ad",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir.rs",
+      "current_sha256": "4c61c4805aedc57061406e3a46cb5a2c3a407d9efbe52fe8ed86b5335ce34ed7",
+      "original_sha256": "a5efa3f9d058c37538b9f08a17f3286fad4b2342b54943d64f3a4ca69e6459e0",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/cache_codec.rs",
+      "current_sha256": "94b6c209bd11e5c6912c1b6da5f90c606b6d3d771c849c6813e3c96c81e65d7c",
+      "original_sha256": "4fcead7c2ea48eb73ae2d55d62343e277afb4acc233b059c945c3cfadb73bf1e",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index.rs",
+      "current_sha256": "c040b48b1f6977a186db0a23dbe24e03cb9d8ce426c37c656a066ec12e4f837f",
+      "original_sha256": "586684b48f58eea49ca017a4f1b8ab54fee3a874366d9ef0e10c2e31b8cd46c3",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index/identity_payer.rs",
+      "current_sha256": "0bce106ddcd77073cdb7bbe4d3c14d2884ed89e9305738a10bb945282c09ff7a",
+      "original_sha256": "a385fe6aa95cf870d35f92b12bd9a07eeeff103a60a22903d8d61c952c52915d",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index/inventory_lookup.rs",
+      "current_sha256": "88092c0f54c9ef13001aa33cc7464361b568b205008d5413c5c956f9784a331e",
+      "original_sha256": "718c7c9ca23f86dc08b0b61d265db12abc78ce17fc80f209d7508c5586b2b911",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index/leaf_drop_tests.rs",
+      "current_sha256": "3ee21dff87932511910fb328367e4cb6d09c6ca2bc5400cda0668c46c71dbf42",
+      "original_sha256": "abd2cc7eb9eb8bf41a7dfcfbf969e5f2e1e0e12faa29b5af474c37ae4a3c74ec",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index/nominal.rs",
+      "current_sha256": "c859b20ce83e1b526fdbc8afb2f3e27f1983f618814247db085efe143e2c0c82",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index/nominal_base.rs",
+      "current_sha256": "ff72459b8c2a83260abd3fc03d5fe8293ec8dbb7eac52fcd7e6359e1ca2c3d09",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index/nominal_original.rs",
+      "current_sha256": "b32d6859aed3aff02acdb87a4b5a969cf1c6ae73d388fba9c823711776c70f69",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index/nominal_rollback.rs",
+      "current_sha256": "b107953ef5b3aecf87e30473b8548b74ca7ca534429671f419a39f7bd62fa61e",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index/primitive_replay/flat_record.rs",
+      "current_sha256": "8458229c7825e61eb4259026e622d1766c6f51a287aa09a486392469d65bf466",
+      "original_sha256": "8e51e05ffa45b1d53d1a7a528fa62c28b86c0846d1858a0d38e0a279b5a824fc",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index/primitive_replay/option_u8.rs",
+      "current_sha256": "245d129a858fb1741ee4c7035f1dbae7d9ed0b483d5dd2148fff2351ac2e0250",
+      "original_sha256": "5fa2c46a3a8cafa4463586ce3ee10a35697e4136e517bd04f2be6b451476cea9",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index/primitive_replay/option_u8/tests.rs",
+      "current_sha256": "97740a2f90453edc2d3f3f20a412dbcd95f631ad798f52f23c762f1d42db3386",
+      "original_sha256": "8f6ae9d1a5f2b75bf90d66dd661d4af1c4eceb696189ae4723c35572020c64b6",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/declaration_index/primitive_replay/vector.rs",
+      "current_sha256": "e698d7c23a48756f893265781e6b94a67b9d4626d12785edd704a73d9cacdb0f",
+      "original_sha256": "412b7b44114393ab0c34a89d90d68654438ce81f487ef9962323a18697487551",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/identity_resolution.rs",
+      "current_sha256": "3077bbb39fcc03cffa14db4048915bd04f4adcb462a8006f122ec6b37db24fad",
+      "original_sha256": "dd295809fbc859040caafd6bf5f4bb3863c64392747b539717547c0cad3c1700",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/identity_resolution/nominal.rs",
+      "current_sha256": "e6deb2b59f1a20868770a1f4ad79b66799d346ebe25f56de3233dc150b69e715",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/identity_resolution/nominal_original.rs",
+      "current_sha256": "5900fd7a0af2c484c46e2f7fea1c0ff2e368f043cb7d800d59120d7897558534",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/identity_resolution/nominal_tests.rs",
+      "current_sha256": "015ab8eef22ab3002c7851c329e9f91a576afe49bcd8f01fd9721ae1cda6dfdb",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/nodes.rs",
+      "current_sha256": "1a01f59f27eb760c8b2d84da47ed9f09130d0e7f02dab42943e49488d2a0ee18",
+      "original_sha256": "f2495bc08a6ef60986eee5cc2ee290922c26744edcd18ace299241b78924bf1d",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/nominal_payload.rs",
+      "current_sha256": "9491c5c980b095dc89f5fd51c7fa6a1891613a813f29877ad3b91aae3368440e",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/nominal_payload/codec.rs",
+      "current_sha256": "e18a9605347e9b162d74017073549b2a5ccb0abc7fa14f1d791fbf85d3a0cdea",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/nominal_payload/elements.rs",
+      "current_sha256": "610743e4deb48cee36f6259061848dfa4558ad88ead5aaa532c91d7b603d6f3a",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/nominal_payload/map.rs",
+      "current_sha256": "93f20b1d6425c99d81d3dd0c50853f7f21a2b1119fd3d389825c10a6cf511746",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/nominal_payload/tests.rs",
+      "current_sha256": "9d906a4ae6cdfa27218fc2f34ff0f0d570e0052eaebde4bee6ca49e93e4f9533",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle.rs",
+      "current_sha256": "469be8efd478ef4971070b550d9a44e7808f13dc1dea70cfb882af7e11d4aece",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/borrowed.rs",
+      "current_sha256": "e3faa8ec1bc577f4658bc3f877bdc3b200e2fd6241c921802c3ecf86cd8c08da",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/fixed_work.rs",
+      "current_sha256": "f0797f594a25861ab1a06587c91353c2ce107a82b81fb7e9eb781bf87d322479",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/invocation.rs",
+      "current_sha256": "1ae20415df171bfa7d1c0972d5277b40777f267173b63ef53d9909143ed8d893",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/materialize.rs",
+      "current_sha256": "7e71297024437846389c1ff15dc0c4bc748ee3a44b942adb18758b8c1b8fa3fe",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/merge.rs",
+      "current_sha256": "fedb98a91503e3ac90b21e86ce224605cfd872893f9bcb151a60f9f552b5f168",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/original.rs",
+      "current_sha256": "db49e39035c07f3a13ce06f9fb97ed49cb26eafe50b08db3e5139d1440e65e67",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/overlay.rs",
+      "current_sha256": "0776de47611bf6f525c1dd5b33c390ed2237354c8d481a05aab58be1b5f45dbe",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/paid.rs",
+      "current_sha256": "2b9ecba27d52c0e27cedda155ec9860729189b3d1dfaffddf07f274f63443ead",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/producer.rs",
+      "current_sha256": "78aebc622f9ddb1702568304f718f8ff246688d83ed68cd8d80b1adab1b925a4",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "current_sha256": "d24eca10afc77eea0babc6fd7cba633eb6b3613a5857fc4d8f7e86f250cc48f5",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/prelude_bundle/work_model.rs",
+      "current_sha256": "4348b9d89ac44d894e43bad225ba9a093122cc59ff3a4d6fdba602c1870ed18a",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/renewal_probes/phase.rs",
+      "current_sha256": "e1b6675abf66cda82ac801b2b49018d53c1f4a93cf14ad2be60dc9b420ae7a01",
+      "original_sha256": "1771b126289c2f9c51472ba78c10d9c149baa69e1f3c3cc17a4f66a5b86b53c7",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/resolve_program.rs",
+      "current_sha256": "227090a0a9b557473a8a92822a165c65813b3c5a575ac7aa2ba7fc76c7b2f8bb",
+      "original_sha256": "607c703f5e9215b5fc78e24e247dfb190f26ab35ba6053ea24526d342e1a100f",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/resolve_program/agent_identity_original.rs",
+      "current_sha256": "e12b9f4d7a7a115cfd6537ebca61610736a6f63971ea6ab2dd294261ec631108",
+      "original_sha256": "9a6abc2e657ab88eb7536a0bd60717fa0c8b49486d30253cd08675cd5e1f941c",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/type_reachability/owned_oracle.rs",
+      "current_sha256": "a3d5f7b0d9fac0087eebd7812c44a258a1044232d6d6e89629f75a774f1d5a50",
+      "original_sha256": "0c6a8d39c46df931f2e83f446e62df73f17919a416f807b0bc16542827eb2729",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs",
+      "current_sha256": "b9012f7d816ec1c50ec5e62a9e718ac574ed3b02ce2aff2599a584da5b2ec8c5",
+      "original_sha256": "46762047636feb00bd85bf0da82a4fca991662879e600488dd94aaa339d22cd7",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/validation/type_profiles/owned_bytes_tests.rs",
+      "current_sha256": "f5a1853abf287cf11d4f307405f44be8e07654b38569da4fd8cd21ca2e37e10d",
+      "original_sha256": "829479656bf7ccfc311d1864035a20d8a6005b55c8333b848c7f3ffa24b93b87",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/workspace_link/compiler_prelude.rs",
+      "current_sha256": "7c90d1c3946e898e059327affe656ac179b7a746bee6a775cf0f886e0fab6509",
+      "original_sha256": "e55b2eacd7b8398d648d8ac4c291104c20d88c176b7465631ad5386f4e60ddfa",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/project/incremental/paid_resolution.rs",
+      "current_sha256": "d66db1cfb9d595ab8597214554e9bb741b85613d03d3944348aca64220a468ac",
+      "original_sha256": "8272123050c3e6c46630bd5be9375bf1965f095486935b590d6ba310d5ca1d8f",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/project/incremental/paid_resolution/base.rs",
+      "current_sha256": "89828ffa1ecd28cdd7d998f6e4cb56ca187b3865a94b68d02f552e6f7e1201fe",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/public_generic_abi/classifier/tests.rs",
+      "current_sha256": "ce622eedec060b3ad8559efada4625ad8a649d16a772f8c105c211fea5acf955",
+      "original_sha256": "ceab4d1af9c63596e50e4362352f09f08d04ef12caa963e31bdb317d7a0af7b1",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/workspace_graph.rs",
+      "current_sha256": "c82d3bb6176c847fd9ff171f02d9c5aedd113e72b1eb9b1739ffee062319c11b",
+      "original_sha256": "fe644b87c264e23b9afa0660d4bcd8149583f19438146734d258025c27087771",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/borrowed_leaf.rs",
+      "current_sha256": "ddcde091b09c67ba3cbdd12b14644ca0bdd53c90c435cd1b8bdac249d390aa5c",
+      "original_sha256": "635a606f173659862c09c8d0d44b2e20e25b3278b7b3a44802e9eea9d565fa7e",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/import_stub/core_proofs.rs",
+      "current_sha256": "add8404195a03e8398ec850877af14d0c16122175b76f7ca1f594805dc03889f",
+      "original_sha256": "48ba6849940e7ecf3b1e69ba6d5f785b041d9f6bf53509c53726415fe99ab04f",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution.rs",
+      "current_sha256": "4fe969e5a01cd8d031051e3c75ec2e4aaa0634750b94b48c5d4ce002c41ed3f3",
+      "original_sha256": "0a73266278e11e38de53f5ca3bcf39612815f14136cb90b65183acb4752e933f",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution/base.rs",
+      "current_sha256": "eb63af58c0bb94d4f9711394521525cdb269420f34b53f04753b2dddcd52f78c",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution/base/tests.rs",
+      "current_sha256": "ffd2b78f4522f5801de60279768af8a8ee4c95d9a546e0bdac11aeec65a4d09a",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/workspace_graph/source_schema/static_text/primitive/records/prepared.rs",
+      "current_sha256": "d71ee4470089896eb3090b7b78a2b0676dd88e5ee696ed483c3fd8c67e06ba18",
+      "original_sha256": "7fd1f333ee0eb36b28498a378e1b477d406ed49287e77ac3198c1b57233c2d78",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/workspace_graph/validation.rs",
+      "current_sha256": "efd9facda18231f7e396d7be0791716852c48a1781b6cfcbf1aba478706f6364",
+      "original_sha256": "75780a690aece81f454f60abc3869d953f4c873f720ebf6cf637c5e751e96e17",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution/base/affinity_tests.rs",
+      "current_sha256": "7c70fa9692277205a024df004129bb6cf50297c040fd58d855bb705442b40c33",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "inverse_equal": true
+    },
+    {
+      "source": "src/hir/renewal_probes.rs",
+      "current_sha256": "f69dc49f55ef2093d6596c89e902b9242aff20d5b26e5adc578cf33b52834085",
+      "original_sha256": "7c1dcab1a20e7ce7f02c070738143812ccac3f93c5036e0097a65d5d6c8467d5",
+      "inverse_equal": true
+    }
+  ]
+}

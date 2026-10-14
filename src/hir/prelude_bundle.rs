@@ -10,17 +10,26 @@ use crate::hir::{
 use crate::prelude::base_schema::{Variant, BASE};
 use std::sync::Arc;
 
+#[path = "prelude_bundle/borrowed.rs"]
 mod borrowed;
+#[path = "prelude_bundle/fixed_work.rs"]
 mod fixed_work;
+#[path = "prelude_bundle/invocation.rs"]
 mod invocation;
+#[path = "prelude_bundle/materialize.rs"]
 mod materialize;
+#[path = "prelude_bundle/merge.rs"]
 mod merge;
+#[path = "prelude_bundle/overlay.rs"]
 mod overlay;
+#[path = "prelude_bundle/paid.rs"]
 mod paid;
+#[path = "prelude_bundle/producer.rs"]
 mod producer;
+#[path = "prelude_bundle/work_model.rs"]
 mod work_model;
-pub(crate) use invocation::{Invocation, InvocationFailure};
 pub(crate) use fixed_work::{FixedFailure, FixedSchemaPayer, WorkReceipt, WorkRefusal};
+pub(crate) use invocation::{Invocation, InvocationFailure};
 pub(crate) use merge::merge_by_key;
 pub(crate) use overlay::Overlay;
 
@@ -143,6 +152,8 @@ impl Drop for Contents {
 }
 
 #[cfg(test)]
+#[path = "prelude_bundle/original.rs"]
 mod original;
 #[cfg(test)]
+#[path = "prelude_bundle/tests.rs"]
 mod tests;

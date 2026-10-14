@@ -1,6 +1,6 @@
 //! Complete recursive-type census before shared acquisition.
 use super::*;
-use crate::cleanup_plan::replay::physical_clone::ClonePayload;
+use crate::cleanup_plan::ReplayClonePayload;
 fn capacity<E>(
     root: &ResolvedType,
     reserve: &mut impl FnMut(usize) -> Result<(), E>,

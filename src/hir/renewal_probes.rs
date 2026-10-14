@@ -60,14 +60,14 @@ impl Index for super::DeclarationIndex {
         key: &DeclarationId,
         work: &mut Work<'_>,
     ) -> Result<Option<&Vec<super::ResolvedTypeParameterDeclaration>>, ()> {
-        lookup(&self.type_parameters, key, work)
+        lookup(&self.type_parameters, key, work).map(|rows| rows.map(|values| &**values))
     }
     fn fields(
         &self,
         key: &DeclarationId,
         work: &mut Work<'_>,
     ) -> Result<Option<&Vec<super::ResolvedFieldDeclaration>>, ()> {
-        lookup(&self.record_fields, key, work)
+        lookup(&self.record_fields, key, work).map(|rows| rows.map(|values| &**values))
     }
 }
 
