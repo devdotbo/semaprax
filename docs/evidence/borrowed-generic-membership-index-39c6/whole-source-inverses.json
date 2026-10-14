@@ -1,0 +1,108 @@
+[
+  {
+    "source": "src/workspace_graph/generic_type_import.rs",
+    "archive": "docs/evidence/borrowed-generic-membership-index-39c6/generic_type_import.rs.before.txt",
+    "original_sha256": "1065b6f0dc8e285d62fa0b6503a5f044ba7445565b75b9b4b79737ec4e260c00",
+    "current_sha256": "e77b8101263cd06efff59b0144c4aedaf9fa7edcc691b56d38b21b91df3c564d",
+    "hooks": [
+      {
+        "name": "exact-ordinal-registration-and-imports",
+        "before": "//! Narrow Project linking support for flat generic owned-record templates.\n\nuse crate::ast::{Program, Type, TypeDeclaration, TypeDeclarationKind, TypeParameterDeclaration};\nuse crate::diagnostic::Diagnostic;\n\nuse super::expected_projection::cost::StructuralCost;\n\n",
+        "after": "//! Narrow Project linking support for flat generic owned-record templates.\n\nuse crate::ast::{Program, Type, TypeDeclaration, TypeDeclarationKind};\nuse crate::diagnostic::Diagnostic;\n\nuse super::expected_projection::cost::StructuralCost;\n#[path = \"generic_type_import/parameter_names.rs\"]\nmod parameter_names;\nuse parameter_names::BorrowedNames;\n\n"
+      },
+      {
+        "name": "complete-template_is_admitted",
+        "before": "pub(super) fn template_is_admitted(declaration: &TypeDeclaration) -> bool {\n    #[cfg(test)]\n    if use_original_receiver(0) {\n        return original::template_is_admitted(declaration);\n    }\n    let parameters = &declaration.type_parameters;\n    let TypeDeclarationKind::Record { fields } = &declaration.kind else {\n        return false;\n    };\n    !parameters.is_empty()\n        && !fields.is_empty()\n        && fields.iter().all(|field| match &field.ty {\n            Type::Never => false,\n            Type::I64\n            | Type::I32\n            | Type::Char\n            | Type::U8\n            | Type::Usize\n            | Type::F32\n            | Type::F64\n            | Type::Bool\n            | Type::Bytes => true,\n            Type::Named { name, arguments } => {\n                arguments.is_empty() && parameter_name_is_present(parameters, name)\n            }\n            Type::String\n            | Type::Str\n            | Type::SliceU8\n            | Type::StringMap\n            | Type::ArrayU8(_)\n            | Type::OnceFunction\n            | Type::OnceFunctionI64\n            | Type::OnceFunctionI64Pair\n            | Type::MutFunctionI64\n            | Type::Function { .. } => false,\n        })\n}\n\n",
+        "after": "pub(super) fn template_is_admitted(declaration: &TypeDeclaration) -> Result<bool, Vec<Diagnostic>> {\n    #[cfg(test)]\n    if use_original_receiver(0) {\n        return Ok(original::template_is_admitted(declaration));\n    }\n    let TypeDeclarationKind::Record { fields } = &declaration.kind else {\n        return Ok(false);\n    };\n    if declaration.type_parameters.is_empty() || fields.is_empty() {\n        return Ok(false);\n    }\n    let parameters = BorrowedNames::new(&declaration.type_parameters)?;\n    Ok(fields.iter().all(|field| match &field.ty {\n        Type::Never => false,\n        Type::I64\n        | Type::I32\n        | Type::Char\n        | Type::U8\n        | Type::Usize\n        | Type::F32\n        | Type::F64\n        | Type::Bool\n        | Type::Bytes => true,\n        Type::Named { name, arguments } => arguments.is_empty() && parameters.contains(name),\n        Type::String\n        | Type::Str\n        | Type::SliceU8\n        | Type::StringMap\n        | Type::ArrayU8(_)\n        | Type::OnceFunction\n        | Type::OnceFunctionI64\n        | Type::OnceFunctionI64Pair\n        | Type::MutFunctionI64\n        | Type::Function { .. } => false,\n    }))\n}\n\n"
+      },
+      {
+        "name": "complete-rewrite_declaration_runtime_cost",
+        "before": "pub(super) fn rewrite_declaration_runtime_cost(\n    declaration: &TypeDeclaration,\n    target_module: &str,\n    caller: &Program,\n    programs: &[Program],\n    cost: &mut StructuralCost,\n) -> Result<(), Vec<Diagnostic>> {\n    #[cfg(test)]\n    if use_original_receiver(1) {\n        return original::rewrite_declaration_runtime_cost(\n            declaration,\n            target_module,\n            caller,\n            programs,\n            cost,\n        );\n    }\n    let parameters = &declaration.type_parameters;\n    visit_types(&declaration.kind, &mut |ty| {\n        if !is_parameter(ty, parameters) {\n            super::expected_projection::rewrite_type_runtime_cost(\n                ty,\n                target_module,\n                caller,\n                programs,\n                cost,\n            )?;\n        }\n        Ok(())\n    })?;\n    Ok(())\n}\n\n",
+        "after": "pub(super) fn rewrite_declaration_runtime_cost(\n    declaration: &TypeDeclaration,\n    target_module: &str,\n    caller: &Program,\n    programs: &[Program],\n    cost: &mut StructuralCost,\n) -> Result<(), Vec<Diagnostic>> {\n    #[cfg(test)]\n    if use_original_receiver(1) {\n        return original::rewrite_declaration_runtime_cost(\n            declaration,\n            target_module,\n            caller,\n            programs,\n            cost,\n        );\n    }\n    let parameters = BorrowedNames::new(&declaration.type_parameters)?;\n    visit_types(&declaration.kind, &mut |ty| {\n        if !is_parameter(ty, &parameters) {\n            super::expected_projection::rewrite_type_runtime_cost(\n                ty,\n                target_module,\n                caller,\n                programs,\n                cost,\n            )?;\n        }\n        Ok(())\n    })?;\n    Ok(())\n}\n\n"
+      },
+      {
+        "name": "complete-rewrite_declaration_runtime_cost_with_layout",
+        "before": "pub(super) fn rewrite_declaration_runtime_cost_with_layout(\n    declaration: &TypeDeclaration,\n    target_module: &str,\n    caller: &Program,\n    programs: &[Program],\n    cost: &mut StructuralCost,\n    layout: Option<&super::expected_projection::private_layout::LayoutClosure<'_>>,\n) -> Result<(), Vec<Diagnostic>> {\n    #[cfg(test)]\n    if use_original_receiver(2) {\n        return original::rewrite_declaration_runtime_cost_with_layout(\n            declaration,\n            target_module,\n            caller,\n            programs,\n            cost,\n            layout,\n        );\n    }\n    if layout.is_none_or(|l| l.is_empty()) {\n        return rewrite_declaration_runtime_cost(\n            declaration,\n            target_module,\n            caller,\n            programs,\n            cost,\n        );\n    }\n    if !declaration.type_parameters.is_empty()\n        || matches!(\n            declaration.kind,\n            TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. }\n        )\n    {\n        return rewrite_declaration_runtime_cost(\n            declaration,\n            target_module,\n            caller,\n            programs,\n            cost,\n        );\n    }\n    let mut rewrite = |ty: &Type| {\n        super::expected_projection::type_rewrite::runtime_cost_with_layout(\n            ty,\n            target_module,\n            caller,\n            programs,\n            cost,\n            layout,\n        )\n    };\n    match &declaration.kind {\n        TypeDeclarationKind::Record { fields } => {\n            for field in fields {\n                rewrite(&field.ty)?;\n            }\n        }\n        TypeDeclarationKind::Variant { cases } => {\n            for case in cases {\n                for field in &case.fields {\n                    rewrite(&field.ty)?;\n                }\n            }\n        }\n        TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. } => {\n            return Err(vec![super::graph_error(\n                \"SPX-G172\",\n                \"private layout rewriting requires a monomorphic record or result variant\",\n            )]);\n        }\n    }\n    Ok(())\n}\n\n",
+        "after": "pub(super) fn rewrite_declaration_runtime_cost_with_layout(\n    declaration: &TypeDeclaration,\n    target_module: &str,\n    caller: &Program,\n    programs: &[Program],\n    cost: &mut StructuralCost,\n    layout: Option<&super::expected_projection::private_layout::LayoutClosure<'_>>,\n) -> Result<(), Vec<Diagnostic>> {\n    #[cfg(test)]\n    if use_original_receiver(2) {\n        return original::rewrite_declaration_runtime_cost_with_layout(\n            declaration,\n            target_module,\n            caller,\n            programs,\n            cost,\n            layout,\n        );\n    }\n    if layout.is_none_or(|l| l.is_empty()) {\n        return rewrite_declaration_runtime_cost(\n            declaration,\n            target_module,\n            caller,\n            programs,\n            cost,\n        );\n    }\n    if !declaration.type_parameters.is_empty()\n        || matches!(\n            declaration.kind,\n            TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. }\n        )\n    {\n        return rewrite_declaration_runtime_cost(\n            declaration,\n            target_module,\n            caller,\n            programs,\n            cost,\n        );\n    }\n    let mut rewrite = |ty: &Type| {\n        super::expected_projection::type_rewrite::runtime_cost_with_layout(\n            ty,\n            target_module,\n            caller,\n            programs,\n            cost,\n            layout,\n        )\n    };\n    match &declaration.kind {\n        TypeDeclarationKind::Record { fields } => {\n            for field in fields {\n                rewrite(&field.ty)?;\n            }\n        }\n        TypeDeclarationKind::Variant { cases } => {\n            for case in cases {\n                for field in &case.fields {\n                    rewrite(&field.ty)?;\n                }\n            }\n        }\n        TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. } => {\n            return Err(vec![super::graph_error(\n                \"SPX-G172\",\n                \"private layout rewriting requires a monomorphic record or result variant\",\n            )]);\n        }\n    }\n    Ok(())\n}\n\n"
+      },
+      {
+        "name": "complete-rewrite_declaration",
+        "before": "pub(super) fn rewrite_declaration(\n    declaration: &mut TypeDeclaration,\n    target_module: &str,\n    caller: &Program,\n    programs: &[Program],\n) -> Result<(), Vec<Diagnostic>> {\n    #[cfg(test)]\n    if use_original_receiver(3) {\n        return original::rewrite_declaration(declaration, target_module, caller, programs);\n    }\n    let parameters = &declaration.type_parameters;\n    visit_types_mut(&mut declaration.kind, &mut |ty| {\n        if !is_parameter(ty, parameters) {\n            super::expected_projection::rewrite_type(ty, target_module, caller, programs)?;\n        }\n        Ok(())\n    })?;\n    Ok(())\n}\n\n",
+        "after": "pub(super) fn rewrite_declaration(\n    declaration: &mut TypeDeclaration,\n    target_module: &str,\n    caller: &Program,\n    programs: &[Program],\n) -> Result<(), Vec<Diagnostic>> {\n    #[cfg(test)]\n    if use_original_receiver(3) {\n        return original::rewrite_declaration(declaration, target_module, caller, programs);\n    }\n    let parameters = BorrowedNames::new(&declaration.type_parameters)?;\n    visit_types_mut(&mut declaration.kind, &mut |ty| {\n        if !is_parameter(ty, &parameters) {\n            super::expected_projection::rewrite_type(ty, target_module, caller, programs)?;\n        }\n        Ok(())\n    })?;\n    Ok(())\n}\n\n"
+      },
+      {
+        "name": "complete-rewrite_declaration_with_layout",
+        "before": "pub(super) fn rewrite_declaration_with_layout(\n    declaration: &mut TypeDeclaration,\n    target_module: &str,\n    caller: &Program,\n    programs: &[Program],\n    layout: Option<&super::expected_projection::private_layout::LayoutClosure<'_>>,\n) -> Result<(), Vec<Diagnostic>> {\n    #[cfg(test)]\n    if use_original_receiver(4) {\n        return original::rewrite_declaration_with_layout(\n            declaration,\n            target_module,\n            caller,\n            programs,\n            layout,\n        );\n    }\n    if layout.is_none_or(|l| l.is_empty()) {\n        return rewrite_declaration(declaration, target_module, caller, programs);\n    }\n    if !declaration.type_parameters.is_empty()\n        || matches!(\n            declaration.kind,\n            TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. }\n        )\n    {\n        return rewrite_declaration(declaration, target_module, caller, programs);\n    }\n    let rewrite = |ty: &mut Type| {\n        super::expected_projection::type_rewrite::rewrite_with_layout(\n            ty,\n            target_module,\n            caller,\n            programs,\n            layout,\n        )\n    };\n    match &mut declaration.kind {\n        TypeDeclarationKind::Record { fields } => {\n            for field in fields {\n                rewrite(&mut field.ty)?;\n            }\n        }\n        TypeDeclarationKind::Variant { cases } => {\n            for case in cases {\n                for field in &mut case.fields {\n                    rewrite(&mut field.ty)?;\n                }\n            }\n        }\n        TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. } => {\n            return Err(vec![super::graph_error(\n                \"SPX-G172\",\n                \"private layout rewriting requires a monomorphic record or result variant\",\n            )]);\n        }\n    }\n    Ok(())\n}\n\n",
+        "after": "pub(super) fn rewrite_declaration_with_layout(\n    declaration: &mut TypeDeclaration,\n    target_module: &str,\n    caller: &Program,\n    programs: &[Program],\n    layout: Option<&super::expected_projection::private_layout::LayoutClosure<'_>>,\n) -> Result<(), Vec<Diagnostic>> {\n    #[cfg(test)]\n    if use_original_receiver(4) {\n        return original::rewrite_declaration_with_layout(\n            declaration,\n            target_module,\n            caller,\n            programs,\n            layout,\n        );\n    }\n    if layout.is_none_or(|l| l.is_empty()) {\n        return rewrite_declaration(declaration, target_module, caller, programs);\n    }\n    if !declaration.type_parameters.is_empty()\n        || matches!(\n            declaration.kind,\n            TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. }\n        )\n    {\n        return rewrite_declaration(declaration, target_module, caller, programs);\n    }\n    let rewrite = |ty: &mut Type| {\n        super::expected_projection::type_rewrite::rewrite_with_layout(\n            ty,\n            target_module,\n            caller,\n            programs,\n            layout,\n        )\n    };\n    match &mut declaration.kind {\n        TypeDeclarationKind::Record { fields } => {\n            for field in fields {\n                rewrite(&mut field.ty)?;\n            }\n        }\n        TypeDeclarationKind::Variant { cases } => {\n            for case in cases {\n                for field in &mut case.fields {\n                    rewrite(&mut field.ty)?;\n                }\n            }\n        }\n        TypeDeclarationKind::Class { .. } | TypeDeclarationKind::Resource { .. } => {\n            return Err(vec![super::graph_error(\n                \"SPX-G172\",\n                \"private layout rewriting requires a monomorphic record or result variant\",\n            )]);\n        }\n    }\n    Ok(())\n}\n\n"
+      },
+      {
+        "name": "membership-definition",
+        "before": "fn parameter_name_is_present(parameters: &[TypeParameterDeclaration], name: &str) -> bool {\n    // Exactly BTreeSet<String>::contains(&str): UTF-8 text equality, including\n    // duplicate and empty names. No parameter or alias payload is cloned.\n    parameters.iter().any(|parameter| parameter.name == name)\n}\n\nfn is_parameter(ty: &Type, parameters: &[TypeParameterDeclaration]) -> bool {\n    matches!(ty, Type::Named { name, arguments }\n        if arguments.is_empty() && parameter_name_is_present(parameters, name))\n}\n\n",
+        "after": "fn is_parameter(ty: &Type, parameters: &BorrowedNames<'_>) -> bool {\n    matches!(ty, Type::Named { name, arguments }\n        if arguments.is_empty() && parameters.contains(name))\n}\n\n"
+      }
+    ],
+    "whole_inverse": "PASS-source-only"
+  },
+  {
+    "source": "src/workspace_graph.rs",
+    "archive": "docs/evidence/borrowed-generic-membership-index-39c6/workspace_graph.rs.before.txt",
+    "original_sha256": "843b8b9f12ddade199ba559957a0f565083a73f848e3e2fc04648f3f5853244b",
+    "current_sha256": "6c0497495c52ad6d7b6a8262a0e3ec788a54b46036ddf7cbcdc6c2bca3d4a835",
+    "hooks": [
+      {
+        "name": "sole-imported-type-checked-admission-caller",
+        "before": "if !generic_type_import::template_is_admitted(ty)",
+        "after": "if !generic_type_import::template_is_admitted(ty)?"
+      }
+    ],
+    "whole_inverse": "PASS-source-only"
+  },
+  {
+    "source": "src/workspace_graph/generic_type_import/borrowed_tests.rs",
+    "archive": "docs/evidence/borrowed-generic-membership-index-39c6/borrowed_tests.rs.before.txt",
+    "original_sha256": "a20a8d5a0c5e2e2986d795c45b038a2402427184131837d0f10251e90b9ccdfb",
+    "current_sha256": "17c5e5794256f1792f2956b9055023c1bbb6202ac6ec8c4d271e02f48b58d126",
+    "hooks": [
+      {
+        "name": "record-test-fixture-lexical-visibility",
+        "before": "fn record() ->",
+        "after": "pub(super) fn record() ->"
+      },
+      {
+        "name": "contexts-test-fixture-lexical-visibility",
+        "before": "fn contexts() ->",
+        "after": "pub(super) fn contexts() ->"
+      },
+      {
+        "name": "successful-template-result-adapter",
+        "before": "measure(|| template_is_admitted(&declaration))",
+        "after": "measure(|| template_is_admitted(&declaration).unwrap())"
+      },
+      {
+        "name": "nonrecord-template-result-adapter",
+        "before": "template_is_admitted(&declaration),\n            original::",
+        "after": "template_is_admitted(&declaration).unwrap(),\n            original::"
+      },
+      {
+        "name": "nonrecord-negative-result-adapter",
+        "before": "!template_is_admitted(&declaration)",
+        "after": "!template_is_admitted(&declaration).unwrap()"
+      }
+    ],
+    "whole_inverse": "PASS-source-only"
+  },
+  {
+    "source": "tests/workspace/semantic_graph/source_inventory.rs",
+    "archive": "docs/evidence/borrowed-generic-membership-index-39c6/source_inventory.rs.before.txt",
+    "original_sha256": "42e3770bf56afc50f4a831e7b448df5a238d0be844d571d6b01a9defe399bcb5",
+    "current_sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
+    "hooks": [
+      {
+        "name": "complete-ordinal-index-and-controls-union",
+        "before": "        concat!(\n            include_str!(\"../../src/workspace_graph/generic_type_import.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/original.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/borrowed_tests.rs\"),\n        ),\n",
+        "after": "        concat!(\n            include_str!(\"../../src/workspace_graph/generic_type_import.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/original.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/borrowed_tests.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/parameter_names.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/parameter_names/tests.rs\"),\n        ),\n"
+      }
+    ],
+    "whole_inverse": "PASS-source-only"
+  }
+]

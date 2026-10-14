@@ -5391,7 +5391,7 @@ fn validate_imported_type(
     if owned_function_import::text_record_import(caller, target, authored, programs) {
         return Ok(());
     }
-    if !generic_type_import::template_is_admitted(ty)
+    if !generic_type_import::template_is_admitted(ty)?
         && (!ty.type_parameters.is_empty()
             || !type_is_admitted(target.module, ty, authored, programs, &mut BTreeSet::new())
             || !exposed_types_are_directly_imported(

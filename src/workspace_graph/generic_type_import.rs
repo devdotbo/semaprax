@@ -1,46 +1,48 @@
 //! Narrow Project linking support for flat generic owned-record templates.
 
-use crate::ast::{Program, Type, TypeDeclaration, TypeDeclarationKind, TypeParameterDeclaration};
+use crate::ast::{Program, Type, TypeDeclaration, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
 
 use super::expected_projection::cost::StructuralCost;
+#[path = "generic_type_import/parameter_names.rs"]
+mod parameter_names;
+use parameter_names::BorrowedNames;
 
-pub(super) fn template_is_admitted(declaration: &TypeDeclaration) -> bool {
+pub(super) fn template_is_admitted(declaration: &TypeDeclaration) -> Result<bool, Vec<Diagnostic>> {
     #[cfg(test)]
     if use_original_receiver(0) {
-        return original::template_is_admitted(declaration);
+        return Ok(original::template_is_admitted(declaration));
     }
-    let parameters = &declaration.type_parameters;
     let TypeDeclarationKind::Record { fields } = &declaration.kind else {
-        return false;
+        return Ok(false);
     };
-    !parameters.is_empty()
-        && !fields.is_empty()
-        && fields.iter().all(|field| match &field.ty {
-            Type::Never => false,
-            Type::I64
-            | Type::I32
-            | Type::Char
-            | Type::U8
-            | Type::Usize
-            | Type::F32
-            | Type::F64
-            | Type::Bool
-            | Type::Bytes => true,
-            Type::Named { name, arguments } => {
-                arguments.is_empty() && parameter_name_is_present(parameters, name)
-            }
-            Type::String
-            | Type::Str
-            | Type::SliceU8
-            | Type::StringMap
-            | Type::ArrayU8(_)
-            | Type::OnceFunction
-            | Type::OnceFunctionI64
-            | Type::OnceFunctionI64Pair
-            | Type::MutFunctionI64
-            | Type::Function { .. } => false,
-        })
+    if declaration.type_parameters.is_empty() || fields.is_empty() {
+        return Ok(false);
+    }
+    let parameters = BorrowedNames::new(&declaration.type_parameters)?;
+    Ok(fields.iter().all(|field| match &field.ty {
+        Type::Never => false,
+        Type::I64
+        | Type::I32
+        | Type::Char
+        | Type::U8
+        | Type::Usize
+        | Type::F32
+        | Type::F64
+        | Type::Bool
+        | Type::Bytes => true,
+        Type::Named { name, arguments } => arguments.is_empty() && parameters.contains(name),
+        Type::String
+        | Type::Str
+        | Type::SliceU8
+        | Type::StringMap
+        | Type::ArrayU8(_)
+        | Type::OnceFunction
+        | Type::OnceFunctionI64
+        | Type::OnceFunctionI64Pair
+        | Type::MutFunctionI64
+        | Type::Function { .. } => false,
+    }))
 }
 
 pub(super) fn rewrite_declaration_runtime_cost(
@@ -60,9 +62,9 @@ pub(super) fn rewrite_declaration_runtime_cost(
             cost,
         );
     }
-    let parameters = &declaration.type_parameters;
+    let parameters = BorrowedNames::new(&declaration.type_parameters)?;
     visit_types(&declaration.kind, &mut |ty| {
-        if !is_parameter(ty, parameters) {
+        if !is_parameter(ty, &parameters) {
             super::expected_projection::rewrite_type_runtime_cost(
                 ty,
                 target_module,
@@ -161,9 +163,9 @@ pub(super) fn rewrite_declaration(
     if use_original_receiver(3) {
         return original::rewrite_declaration(declaration, target_module, caller, programs);
     }
-    let parameters = &declaration.type_parameters;
+    let parameters = BorrowedNames::new(&declaration.type_parameters)?;
     visit_types_mut(&mut declaration.kind, &mut |ty| {
-        if !is_parameter(ty, parameters) {
+        if !is_parameter(ty, &parameters) {
             super::expected_projection::rewrite_type(ty, target_module, caller, programs)?;
         }
         Ok(())
@@ -231,15 +233,9 @@ pub(super) fn rewrite_declaration_with_layout(
     Ok(())
 }
 
-fn parameter_name_is_present(parameters: &[TypeParameterDeclaration], name: &str) -> bool {
-    // Exactly BTreeSet<String>::contains(&str): UTF-8 text equality, including
-    // duplicate and empty names. No parameter or alias payload is cloned.
-    parameters.iter().any(|parameter| parameter.name == name)
-}
-
-fn is_parameter(ty: &Type, parameters: &[TypeParameterDeclaration]) -> bool {
+fn is_parameter(ty: &Type, parameters: &BorrowedNames<'_>) -> bool {
     matches!(ty, Type::Named { name, arguments }
-        if arguments.is_empty() && parameter_name_is_present(parameters, name))
+        if arguments.is_empty() && parameters.contains(name))
 }
 
 fn visit_types(

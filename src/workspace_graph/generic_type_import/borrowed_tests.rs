@@ -15,7 +15,7 @@ use crate::workspace_graph::expected_projection::cost::generic_rewrite_test_brid
 fn program(source: &str) -> Program {
     crate::parse(source, "fixture.spx").unwrap()
 }
-fn record() -> TypeDeclaration {
+pub(super) fn record() -> TypeDeclaration {
     program(r#"module fixture.provider; @id("row") record Row<T> { @id("row.x") x:T, }"#)
         .types
         .remove(0)
@@ -59,7 +59,7 @@ fn fixture(kind: usize, count: usize, ty: Type) -> TypeDeclaration {
     };
     declaration
 }
-fn contexts() -> (Program, Vec<Program>) {
+pub(super) fn contexts() -> (Program, Vec<Program>) {
     let provider = program(
         r#"module fixture.provider;
 @id("target") record Target { @id("target.value") value:i64, }
@@ -109,7 +109,7 @@ fn complete_old_template_membership_preserves_duplicates_empty_unicode_and_argum
                     })
                     .collect();
                 let (before, old) = measure(|| original::template_is_admitted(&declaration));
-                let (after, current) = measure(|| template_is_admitted(&declaration));
+                let (after, current) = measure(|| template_is_admitted(&declaration).unwrap());
                 assert_eq!(after, before);
                 assert!(!old.invalid && !current.invalid);
                 assert_eq!(old.live, 0);
@@ -124,10 +124,10 @@ fn complete_old_template_membership_preserves_duplicates_empty_unicode_and_argum
     for kind in [1, 2] {
         let declaration = fixture(kind, 1, named("T"));
         assert_eq!(
-            template_is_admitted(&declaration),
+            template_is_admitted(&declaration).unwrap(),
             original::template_is_admitted(&declaration)
         );
-        assert!(!template_is_admitted(&declaration));
+        assert!(!template_is_admitted(&declaration).unwrap());
     }
 }
 

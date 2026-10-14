@@ -244,6 +244,8 @@ macro_rules! semantic_graph_root_source_inventory {
             include_str!("../../src/workspace_graph/generic_type_import.rs"),
             include_str!("../../src/workspace_graph/generic_type_import/original.rs"),
             include_str!("../../src/workspace_graph/generic_type_import/borrowed_tests.rs"),
+            include_str!("../../src/workspace_graph/generic_type_import/parameter_names.rs"),
+            include_str!("../../src/workspace_graph/generic_type_import/parameter_names/tests.rs"),
         ),
         concat!(
             include_str!("../../src/workspace_graph/owned_generics.rs"),
