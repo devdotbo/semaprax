@@ -118,5 +118,7 @@ fn complete_original_operator_source_is_preserved_by_exact_named_inverse() {
     ] {
         original = original.replace(&format!("fn before_799_{name}("), &format!("fn {name}("));
     }
+    original = original.replace("fn before_799_finish_if_values(", "fn finish_if_values(")
+        .replace("self.before_799_finish_if_values(", "self.finish_if_values(");
     assert_eq!(original, include_str!("../../../docs/evidence/operator-refusal-799/src__source_verify__iterative__operators.rs.before"));
 }
