@@ -29,7 +29,7 @@
     }
   },
   "source_hashes": {
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "3033977fea7706bd8f95b0016769f17ee206d81399e6f645697dc4a6e1ecb383",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "db55943fce14599fef4a3a8c4f13b78fe90fdac33487aa42edac41e6fc7940d4",
     "src/semantic_workspace/reporting.rs": "a3f8f8ab6a4414da7721cdf46457124c60f6a397a40e27b4af2bca18c8ee47b0",
     "src/semantic_workspace_change.rs": "e234b66dd9373362ccb9f0da4a11406c288b9e83db19fbe49f49f0c5d5574ab6",
     "src/semantic_workspace_change/reporting.rs": "bb4e4f611b44edb3254785307c3de1c6b650280d619b92951ed22d7932c410a7",
@@ -45,11 +45,11 @@
     "src/workspace_graph/paid_view.rs": "a6f774b3ae0a31ebe02d8db7f66f204267477fe40d26f55f10d8a0a170b1c39d",
     "src/workspace_report.rs": "30c028325579c97df48d978d51dcab67f5331e91c53968fa4628178254ddfc76",
     "src/workspace_report/original.rs": "14d67340a4fdbb31429a1b9216eed82b9ee0cf6de8805583f04740f5cdfb6990",
-    "src/workspace_report/tests.rs": "d2003ec930cc4f15f076e74d546ff866aaad83a472b24d2bac25e301ca0a7091",
+    "src/workspace_report/tests.rs": "c453565bdada04c82302d55c226324e334e325fc29ecb489855531d8a00cd652",
     "src/workspace_report/tests/caller.rs": "00296eeb8a8844ad5468e26c0f610da4e3a2e6774a5ecf28a02cedf4cf826d36",
     "tests/workspace/semantic_change.rs": "d161ed6fadf92b518e48ace904e701bfa5b2644859340fafd37010816227c04f",
     "tests/workspace/semantic_change/reporting.rs": "adc5d1679f911c5f41198ff8a8af52f585a176cc1cc30f4dbadf79b76c1fd020",
-    "tests/workspace/semantic_graph/source_inventory.rs": "363c4508d303319fb25406ced6ae02d2c686e39420e80400179ddd39d0851ddc",
+    "tests/workspace/semantic_graph/source_inventory.rs": "0e2d39bddcd5a007ef3464adf5ca63f9092ba0175b7300bd020272c44673ac41",
     "tests/workspace/semantic_operations.rs": "c97dbf2bb3def9e569ca4563f3c92de6ea248e96e9a77fa3c3a68642eac74a34",
     "tests/workspace/semantic_operations/reporting.rs": "b126b8b32930415dff18e5694a428a2bfb283232a979253da3619de122903861",
     "tests/workspace/semantic_structural_change.rs": "ec963928ca32fc47883e7c23d65fc6f805883f09e1e5f3c6a4818e4f5d443826",
