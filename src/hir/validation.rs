@@ -117,8 +117,8 @@ impl<'a> HirValidator<'a> {
         directory: Option<&'a super::function_directory::Directory<'a>>,
     ) -> Result<Self, Diagnostic> {
         let seed = constructor_seed::ConstructorSeed::authenticate(program, directory)?;
-        let canonical_loans = canonical_loans::Inventory::rebuild(program)?;
-        Self::from_constructor(seed, canonical_loans::Lookup::Legacy(canonical_loans), None)
+        let canonical_loans = canonical_loans::Lookup::current(&seed)?;
+        Self::from_constructor(seed, canonical_loans, None)
     }
     pub(in crate::hir) fn with_storage(
         seed: constructor_seed::ConstructorSeed<'a>,
@@ -136,7 +136,7 @@ impl<'a> HirValidator<'a> {
     fn with_profiles(
         program: &'a ResolvedProgram,
         directory: Option<&'a super::function_directory::Directory<'a>>,
-        storage: Option<&'a super::canonical_loan_storage::Storage<'a>>,
+        storage: Option<canonical_loans::Lookup<'a>>,
         profiles: executable_profiles::Lookup<'a>,
     ) -> Result<Self, Diagnostic> {
         let seed = constructor_seed::ConstructorSeed::authenticate(program, directory)?;
@@ -146,9 +146,9 @@ impl<'a> HirValidator<'a> {
                     "canonical shared-loan storage does not belong to the current program",
                 ));
             }
-            canonical_loans::Lookup::Borrowed(storage)
+            storage
         } else {
-            canonical_loans::Lookup::Legacy(canonical_loans::Inventory::rebuild(program)?)
+            canonical_loans::Lookup::current(&seed)?
         };
         Self::from_constructor(seed, canonical_loans, Some(profiles))
     }

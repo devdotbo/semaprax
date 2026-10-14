@@ -566,7 +566,7 @@ macro_rules! hir_validator_source_inventory {
             include_str!(
                 "../../../../../src/hir/canonical_loan_storage/deferred/tests/selected.rs"
             ),
-            concat!(include_str!("../../../../../src/hir/canonical_loan_storage/caller.rs"), include_str!("../../../../../src/hir/canonical_loan_storage/caller_before.rs"), include_str!("../../../../../src/hir/canonical_loan_storage/scratch.rs"), include_str!("../../../../../src/hir/canonical_loan_storage/tests/reuse.rs")),
+            concat!(concat!(include_str!("../../../../../src/hir/canonical_loan_storage/caller.rs"), include_str!("../../../../../src/hir/canonical_loan_storage/caller/shared.rs"), include_str!("../../../../../src/hir/canonical_loan_storage/caller/shared/tests.rs"), include_str!("../../../../../src/hir/canonical_loan_storage/caller/owned_before.rs")), include_str!("../../../../../src/hir/canonical_loan_storage/caller_before.rs"), include_str!("../../../../../src/hir/canonical_loan_storage/scratch.rs"), include_str!("../../../../../src/hir/canonical_loan_storage/tests/reuse.rs")),
             include_str!("../../../../../src/hir/canonical_loan_storage/tests.rs"),
             include_str!("../../../../../src/hir/canonical_loan_storage/tests/old.rs"),
             include_str!("../../../../../src/hir.rs"),
@@ -608,7 +608,7 @@ macro_rules! hir_validator_source_inventory {
                         include_str!("../../../../../src/hir/validation/contract_owners.rs"),
                         include_str!("../../../../../src/hir/validation/contract_owners/tests.rs"),
                         include_str!("../../../../../src/hir/validation/contract_owners/tests/old.rs"),
-                        include_str!("../../../../../src/hir/validation/canonical_loans.rs"),
+                        concat!(include_str!("../../../../../src/hir/validation/canonical_loans.rs"), include_str!("../../../../../src/hir/validation/canonical_loans/constructors_before.rs"), include_str!("../../../../../src/hir/validation/canonical_loans/ownership_tests.rs")),
                         include_str!("../../../../../src/hir/validation/aggregate_metadata.rs"),
                         include_str!("../../../../../src/hir/validation/continuation_path.rs"),
                         include_str!(

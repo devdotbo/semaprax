@@ -79,13 +79,26 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                     include_str!("../src/hir/function_directory/caller.rs")
                 ),
                 include_str!("../src/hir/validation/type_requirement.rs"),
-                include_str!("../src/hir/validation/canonical_loans.rs"),
+                concat!(
+                    include_str!("../src/hir/validation/canonical_loans.rs"),
+                    include_str!("../src/hir/validation/canonical_loans/constructors_before.rs"),
+                    include_str!("../src/hir/validation/canonical_loans/ownership_tests.rs")
+                ),
                 include_str!("../src/hir/validation/constructor_seed.rs"),
                 concat!(
                     include_str!("../src/hir/canonical_loan_storage.rs"),
                     "\n",
                     concat!(
-                        include_str!("../src/hir/canonical_loan_storage/caller.rs"),
+                        concat!(
+                            include_str!("../src/hir/canonical_loan_storage/caller.rs"),
+                            include_str!("../src/hir/canonical_loan_storage/caller/shared.rs"),
+                            include_str!(
+                                "../src/hir/canonical_loan_storage/caller/shared/tests.rs"
+                            ),
+                            include_str!(
+                                "../src/hir/canonical_loan_storage/caller/owned_before.rs"
+                            )
+                        ),
                         include_str!("../src/hir/canonical_loan_storage/caller_before.rs"),
                         include_str!("../src/hir/canonical_loan_storage/scratch.rs"),
                         include_str!("../src/hir/canonical_loan_storage/tests/reuse.rs")

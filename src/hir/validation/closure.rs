@@ -65,7 +65,7 @@ impl HirValidator<'_> {
         let mut checked = HirValidator::with_profiles(
             self.program,
             self.functions.directory(),
-            self.canonical_loans.shared(),
+            self.canonical_loans.share(),
             self.executable_profiles.clone(),
         )?;
         checked.validate_function(&body, &execution)?;

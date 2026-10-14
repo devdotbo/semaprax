@@ -94,32 +94,90 @@ mod tests;
 // boxing it would add an unpriced allocation to old constructors.
 #[allow(clippy::large_enum_variant)]
 pub(super) enum Lookup<'a> {
+    #[cfg(test)]
     Legacy(Inventory),
+    Owned(std::rc::Rc<super::super::canonical_loan_storage::Storage<'a>>),
+    UnfundedShared(&'a ResolvedProgram, std::rc::Rc<Inventory>),
     Borrowed(&'a super::super::canonical_loan_storage::Storage<'a>),
 }
 impl<'a> Lookup<'a> {
     pub(super) fn id(&self, key: &(ExpressionId, LoanCause)) -> Option<&LoanId> {
         match self {
+            #[cfg(test)]
             Self::Legacy(i) => i.ids.get(key),
+            Self::Owned(i) => i.id(key),
+            Self::UnfundedShared(_, i) => i.ids.get(key),
             Self::Borrowed(i) => i.id(key),
         }
     }
     pub(super) fn live(&self, key: &(ExpressionId, LoanPointPhase, LoanId)) -> Option<&usize> {
         match self {
+            #[cfg(test)]
             Self::Legacy(i) => i.liveness.get(key),
+            Self::Owned(i) => i.live(key),
+            Self::UnfundedShared(_, i) => i.liveness.get(key),
             Self::Borrowed(i) => i.live(key),
         }
     }
     pub(super) fn origin(&self, index: usize) -> Option<&Place> {
         match self {
+            #[cfg(test)]
             Self::Legacy(i) => i.origins.get(index),
+            Self::Owned(i) => i.origin(index),
+            Self::UnfundedShared(_, i) => i.origins.get(index),
             Self::Borrowed(i) => i.origin(index),
         }
     }
     pub(super) fn shared(&self) -> Option<&'a super::super::canonical_loan_storage::Storage<'a>> {
         match self {
+            #[cfg(test)]
             Self::Legacy(_) => None,
+            Self::Owned(_) | Self::UnfundedShared(..) => None,
             Self::Borrowed(i) => Some(*i),
         }
     }
 }
+
+impl<'a> Lookup<'a> {
+    pub(super) fn current(
+        seed: &constructor_seed::ConstructorSeed<'a>,
+    ) -> Result<Self, Diagnostic> {
+        if crate::bounded_output::active_remaining().is_some() {
+            return super::super::canonical_loan_storage::caller::prepare_shared(seed)
+                .map(Self::Owned);
+        }
+        // Honest ordinary unobserved compatibility. No ledger/authority is
+        // invented; later clones share existing backing rather than acquire it.
+        let inventory = Inventory::rebuild(seed.program())?;
+        Ok(Self::UnfundedShared(
+            seed.program(),
+            std::rc::Rc::new(inventory),
+        ))
+    }
+    pub(super) fn is_current(&self, program: &ResolvedProgram) -> bool {
+        match self {
+            #[cfg(test)]
+            Self::Legacy(_) => false,
+            Self::Borrowed(storage) => storage.is_current(program),
+            Self::Owned(storage) => storage.is_current(program),
+            Self::UnfundedShared(subject, _) => std::ptr::eq(*subject, program),
+        }
+    }
+    pub(super) fn share(&self) -> Option<Self> {
+        match self {
+            #[cfg(test)]
+            Self::Legacy(_) => None,
+            Self::Borrowed(_) => self.shared().map(Self::Borrowed),
+            Self::Owned(storage) => Some(Self::Owned(std::rc::Rc::clone(storage))),
+            Self::UnfundedShared(program, inventory) => {
+                Some(Self::UnfundedShared(program, std::rc::Rc::clone(inventory)))
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod constructors_before;
+
+#[cfg(test)]
+mod ownership_tests;

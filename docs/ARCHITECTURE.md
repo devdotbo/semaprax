@@ -98,6 +98,10 @@ shape and expression children preserve complete validation before publication;
 `schema/paid_summary` selects it only with the existing builder-like ReplayBudget.
 Complete original inventory/schema receivers remain independent compatibility
 and parity controls. Other schema probes retain their existing owners.
+`hir/canonical_loan_storage/caller/shared` owns immutable lookup publication
+inside the existing captured preparation owner. Active compatibility validators
+and nested closures share exact-program storage; unobserved compatibility owns
+explicit unobserved inventory custody. Original receivers remain independent.
 `byte_data_capacity/witnesses.rs` owns optional bounded transcript-refusal help
 reconstructed from the same checked flow after the primary refusal is selected.
 It pays cursor, spill, visits and output through the existing invocation ledger;

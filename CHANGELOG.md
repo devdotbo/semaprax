@@ -5,6 +5,9 @@
   compatibility admission; prepay backing and cumulative work from the existing
   budget. Sixty exact source-bound controls await consolidated qualification;
   no application fit or aggregate schema funding is claimed.
+- Author paid compatibility canonical-loan preparation and shared custody
+  (#824), keeping complete original receivers and the unchanged whole observer.
+  Carrier backing uses the same captured owner; qualification is pending.
 
 - Remove the standalone validator's unpriced per-function permit-set collection
   through borrowed exact membership. Keep the complete original receiver and

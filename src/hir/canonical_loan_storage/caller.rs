@@ -155,6 +155,26 @@ fn prepare_with_comparison<'a>(
     seed: &ConstructorSeed<'_>,
     program: &'a ResolvedProgram,
 ) -> Result<(Storage<'a>, Deferred<'a>), Diagnostic> {
+    prepare_sealed(seed, program, |storage, _| Ok(storage))
+}
+
+pub(in crate::hir) fn prepare_shared<'a>(
+    seed: &ConstructorSeed<'a>,
+) -> Result<std::rc::Rc<Storage<'a>>, Diagnostic> {
+    // Compatibility construction never finishes Deferred: attached plan
+    // mismatch remains selected by the complete ordinary validator afterward.
+    prepare_sealed(seed, seed.program(), shared::seal).map(|(storage, _)| storage)
+}
+
+#[cfg(test)]
+mod owned_before;
+mod shared;
+
+fn prepare_sealed<'a, T>(
+    seed: &ConstructorSeed<'_>,
+    program: &'a ResolvedProgram,
+    seal: impl FnOnce(Storage<'a>, Payer<'_>) -> Result<T, Diagnostic>,
+) -> Result<(T, Deferred<'a>), Diagnostic> {
     #[cfg(test)]
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::CanonicalLoanStorage,
@@ -209,7 +229,7 @@ fn prepare_with_comparison<'a>(
             deferred.compare(function, &plan);
             append(&mut storage, plan, payer)?;
         }
-        Ok((storage, deferred))
+        Ok((seal(storage, payer)?, deferred))
     })();
     // Only this exact affine owner can mark physical failure. Never infer
     // payment from H006 text, and never reserve/render after semantic error.
