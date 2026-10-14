@@ -17,7 +17,7 @@
     "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs": "d17dae8c6c00c034c06092531c4a45c97347c88fdd351fb7d7e11c6be09bb2ab",
     "src/test_allocation_observer.rs": "f3ab093d0bec8e84d98baedfb88e26ec97c1a66022638bd1bf5301ff25844fac",
     "src/test_allocation_observer/free_order.rs": "f3b372a2eedde6d0e238580a57e5fbcb1ca14144a479e052a0f37be009e6fc48",
-    "tests/hir_module_boundaries.rs": "cc552067f207272cc50093f618cc510c403e5618499a52064e6550fc364314f5",
+    "tests/hir_module_boundaries.rs": "7a6a0ac3bd814b14f941964cb83b6e2dc8630c09e5b1d2e5de7210eb6f41efff",
     "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs": "cd6cbb50e3d362456d3f032e0bbdb3887c8ef388e3bc08a15a43b185fa5d9d6f"
   },
   "original_snapshot_hashes": {

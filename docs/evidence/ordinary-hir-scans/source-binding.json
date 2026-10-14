@@ -20,7 +20,7 @@
     "src/hir/validation/unsafe_scan.rs": "2309786e3789e9a0983d1e846f5c19eb71422bae727b2c73db49c0a814be089d",
     "src/hir/validation/unsafe_scan/paid.rs": "98019a0d1a3c5cf8c3f1a3901f3c7c4f56948695e49c40d3e7558f2bbb2376e3",
     "src/hir/validation/unsafe_scan/paid/tests.rs": "d91113e77145ef672b4ef02e47fee6b53e1e455217c62eb76d980ae6bb27654d",
-    "tests/hir_module_boundaries.rs": "cc552067f207272cc50093f618cc510c403e5618499a52064e6550fc364314f5",
+    "tests/hir_module_boundaries.rs": "7a6a0ac3bd814b14f941964cb83b6e2dc8630c09e5b1d2e5de7210eb6f41efff",
     "docs/evidence/ordinary-hir-scans/pending-selectors.json": "810df9ee12898aa3dca1ddb2c1cbde7ce68a1af12b437339b4df62f49381a529",
     "docs/evidence/ordinary-hir-scans/README.md": "efdc3b583cd6bc790276fa986639f27e12a83d02294b85603c15080002af5143",
     "docs/evidence/ordinary-hir-scans/original-scans.txt": "2025f1da39517120b17790f3f20f17b02b67fd6cda3e21e7fb87af5d3bbd7102"
