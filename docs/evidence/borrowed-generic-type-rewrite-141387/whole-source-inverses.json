@@ -71,6 +71,11 @@
     "archive": "docs/evidence/borrowed-generic-type-rewrite-141387/source_inventory.rs.before.txt",
     "hooks": [
       {
+        "before": "include_str!(\"../../src/workspace_graph.rs\")",
+        "after": "concat!(include_str!(\"../../src/workspace_graph.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/ordered.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/original.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/tests.rs\"))",
+        "count": 1
+      },
+      {
         "name": "complete-generic-rewrite-union",
         "before": "        include_str!(\"../../src/workspace_graph/generic_type_import.rs\"),",
         "after": "        concat!(\n            include_str!(\"../../src/workspace_graph/generic_type_import.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/original.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/borrowed_tests.rs\"),\n        ),"

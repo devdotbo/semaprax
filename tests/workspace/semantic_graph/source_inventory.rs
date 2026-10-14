@@ -52,7 +52,7 @@ macro_rules! semantic_graph_root_source_inventory {
             concat!(
                 concat!(
                     concat!(
-                    concat!(include_str!("../../src/workspace_graph.rs"), include_str!("../../src/list_ops/original_constructor.rs"), include_str!("../../src/iterator_ops/original_constructor.rs"), include_str!("../../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../../src/hir/validation/constructor_seed/intrinsic_tests.rs")),
+                    concat!(concat!(include_str!("../../src/workspace_graph.rs"), include_str!("../../src/hir/validation/generic_template/call_graph.rs"), include_str!("../../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../../src/hir/validation/generic_template/call_graph/tests.rs")), include_str!("../../src/list_ops/original_constructor.rs"), include_str!("../../src/iterator_ops/original_constructor.rs"), include_str!("../../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../../src/hir/validation/constructor_seed/intrinsic_tests.rs")),
                     include_str!("../../src/cleanup_plan/build/capacity_observation/actual_attribution.rs"),
                     include_str!("../../src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs"),
                     include_str!("../../src/cleanup_plan/build/helper_index/original_plans.rs"),

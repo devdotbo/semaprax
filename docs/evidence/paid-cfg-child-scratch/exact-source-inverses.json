@@ -5,6 +5,10 @@
     "before_sha256": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7",
     "edits": [
       {
+        "before": "include_str!(\"../../../../../src/hir/validation/generic_template.rs\")",
+        "after": "concat!(include_str!(\"../../../../../src/hir/validation/generic_template.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph/ordered.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph/original.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph/tests.rs\"))"
+      },
+      {
         "before": "include_str!(\"../../../../../src/hir/validation/constructor_seed/original.rs\")",
         "after": "concat!(include_str!(\"../../../../../src/hir/validation/constructor_seed/original.rs\"), include_str!(\"../../../../../src/list_ops/original_constructor.rs\"), include_str!(\"../../../../../src/iterator_ops/original_constructor.rs\"), include_str!(\"../../../../../src/hir/validation/constructor_seed/original_intrinsics.rs\"), include_str!(\"../../../../../src/hir/validation/constructor_seed/intrinsic_tests.rs\"))"
       },
@@ -43,6 +47,10 @@
       {
         "before": "            include_str!(\"../../../../../src/hir/validation/box_intrinsic.rs\"),\n            include_str!(\"../../../../../src/hir/validation/stdin_stream.rs\"),\n            include_str!(\"../../../../../src/hir/validation/branch_merge.rs\"),\n",
         "after": "            include_str!(\"../../../../../src/hir/validation/box_intrinsic.rs\"),\n            concat!(include_str!(\"../../../../../src/hir/validation/stdin_stream.rs\"), include_str!(\"../../../../../src/hir/validation/stdin_stream/paid.rs\"), include_str!(\"../../../../../src/hir/validation/stdin_stream/paid/analysis.rs\"), include_str!(\"../../../../../src/hir/validation/stdin_stream/paid/tests.rs\")),\n            include_str!(\"../../../../../src/hir/validation/branch_merge.rs\"),\n"
+      },
+      {
+        "before": "                include_str!(\"../../../../../src/source_verify/iterative/match_arms.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/matching.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/operators.rs\"),\n                \"\\n\",\n",
+        "after": "                include_str!(\"../../../../../src/source_verify/iterative/match_arms.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/match_arms/arms_before_799.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/match_arms/refused_patterns.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/matching.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/matching/matching_before_799.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery_tests/flow_799.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/operators.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/operators/before_799.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery_tests/operators_799.rs\"),\n                \"\\n\",\n"
       }
     ]
   },

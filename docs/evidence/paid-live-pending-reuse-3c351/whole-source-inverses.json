@@ -79,6 +79,11 @@
     "before_sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
     "hooks": [
       {
+        "before": "include_str!(\"../../../../../src/hir/validation/generic_template.rs\")",
+        "after": "concat!(include_str!(\"../../../../../src/hir/validation/generic_template.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph/ordered.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph/original.rs\"), include_str!(\"../../../../../src/hir/validation/generic_template/call_graph/tests.rs\"))",
+        "count": 1
+      },
+      {
         "before": "include_str!(\"../../../../../src/hir/validation/constructor_seed/original.rs\")",
         "after": "concat!(include_str!(\"../../../../../src/hir/validation/constructor_seed/original.rs\"), include_str!(\"../../../../../src/list_ops/original_constructor.rs\"), include_str!(\"../../../../../src/iterator_ops/original_constructor.rs\"), include_str!(\"../../../../../src/hir/validation/constructor_seed/original_intrinsics.rs\"), include_str!(\"../../../../../src/hir/validation/constructor_seed/intrinsic_tests.rs\"))",
         "count": 1
@@ -101,6 +106,11 @@
       {
         "after": "            include_str!(\"../../../../../src/loan_plan/paid_live/funded_before.rs\"),\n",
         "before": "",
+        "count": 1
+      },
+      {
+        "before": "                include_str!(\"../../../../../src/source_verify/iterative/match_arms.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/matching.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/operators.rs\"),\n                \"\\n\",\n",
+        "after": "                include_str!(\"../../../../../src/source_verify/iterative/match_arms.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/match_arms/arms_before_799.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/match_arms/refused_patterns.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/matching.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/matching/matching_before_799.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery_tests/flow_799.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/source_verify/iterative/operators.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/operators/before_799.rs\"),\n                include_str!(\"../../../../../src/source_verify/recovery_tests/operators_799.rs\"),\n                \"\\n\",\n",
         "count": 1
       }
     ]

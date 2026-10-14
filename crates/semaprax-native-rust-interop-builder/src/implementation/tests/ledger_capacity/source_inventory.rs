@@ -750,7 +750,7 @@ macro_rules! hir_validator_source_inventory {
             include_str!("../../../../../src/hir/validation/branch_merge.rs"),
             include_str!("../../../../../src/hir/validation/vec_intrinsic.rs"),
             include_str!("../../../../../src/hir/validation/borrowed_str.rs"),
-            include_str!("../../../../../src/hir/validation/generic_template.rs"),
+            concat!(include_str!("../../../../../src/hir/validation/generic_template.rs"), include_str!("../../../../../src/hir/validation/generic_template/call_graph.rs"), include_str!("../../../../../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../../../../../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../../../../../src/hir/validation/generic_template/call_graph/tests.rs")),
             include_str!("../../../../../src/hir/validation/generic_template/reachability.rs"),
             generic_values_source_inventory!(),
             diagnostic_source_inventory!(),

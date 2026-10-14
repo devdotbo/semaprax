@@ -333,7 +333,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/box_intrinsic.rs"),
         include_str!("../src/hir/validation/branch_merge.rs"),
         include_str!("../src/hir/validation/borrowed_str.rs"),
-        include_str!("../src/hir/validation/generic_template.rs"),
+        concat!(include_str!("../src/hir/validation/generic_template.rs"), include_str!("../src/hir/validation/generic_template/call_graph.rs"), include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../src/hir/validation/generic_template/call_graph/tests.rs")),
         include_str!("../src/hir/validation/generic_template/reachability.rs"),
         include_str!("../src/hir/validation/generic_template/reachability/tests.rs"),
         include_str!("../src/hir/validation/generic_template/reachability/tests/old.rs"),
