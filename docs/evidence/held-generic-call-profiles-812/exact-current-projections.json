@@ -1,0 +1,104 @@
+[
+  {
+    "source": "src/hir/validation.rs",
+    "archive": "src__hir__validation.rs.before.txt",
+    "edits": [
+      {
+        "before": "mod executable_profiles;\nmod generic_record_composition;\nmod generic_template;\nmod host_command;\nmod lexical_exit;\nmod native_borrow;\nmod nominal_facts;\nmod ownership_flags;\nmod owned_buffer;\nmod owned_result_try;\npub(super) mod owner_renewal;\nmod proof_return;\nmod record_pattern;\nmod record_traversal;\n",
+        "after": "mod executable_profiles;\nmod generic_record_composition;\nmod generic_template;\nmod held_profiles;\nmod host_command;\nmod lexical_exit;\nmod native_borrow;\nmod nominal_facts;\nmod owned_buffer;\nmod owned_result_try;\npub(super) mod owner_renewal;\nmod ownership_flags;\nmod proof_return;\nmod record_pattern;\nmod record_traversal;\n"
+      },
+      {
+        "before": "                Some(_) => return Err(hir_error_static(\n                    \"executable profile observations do not belong to the current declaration index\",\n                )),\n                None => executable_profiles::Lookup::new(&seed.program.declarations)?,\n            },\n            functions: seed.functions,\n            expression_ids: identity_directory::Set::new(),\n",
+        "after": "                Some(_) => return Err(hir_error_static(\n                    \"executable profile observations do not belong to the current declaration index\",\n                )),\n                None => executable_profiles::Lookup::for_program(seed.program)?,\n            },\n            functions: seed.functions,\n            expression_ids: identity_directory::Set::new(),\n"
+      },
+      {
+        "before": "                            }\n                            let mut intrinsic_parameters = None;\n                            let mut borrowed_parameters = None;\n                            let retained_program = self.program;\n                            let (params, return_type) = if let Some(signature) =\n                                self.intrinsic_signature(callee, type_arguments, instance, args)?\n",
+        "after": "                            }\n                            let mut intrinsic_parameters = None;\n                            let mut borrowed_parameters = None;\n                            let mut held_parameters = None;\n                            let retained_program = self.program;\n                            let (params, return_type) = if let Some(signature) =\n                                self.intrinsic_signature(callee, type_arguments, instance, args)?\n"
+      },
+      {
+        "before": "                                    call_signature::ResultType::Owned(op.return_type()),\n                                )\n                            } else {\n                                let (params, return_type, target_effects) = if let Some(target) =\n                                    retained_program.resolve_call_target(callee, instance.as_ref())\n                                {\n                                    borrowed_parameters = Some(target.params.as_slice());\n                                    (\n",
+        "after": "                                    call_signature::ResultType::Owned(op.return_type()),\n                                )\n                            } else {\n                                let retained_target = if self.executable_profiles.is_bound() {\n                                    held_parameters =\n                                        self.executable_profiles.call(callee, instance.as_ref());\n                                    held_parameters.map(|call| call.function())\n                                } else {\n                                    retained_program.resolve_call_target(callee, instance.as_ref())\n                                };\n                                let (params, return_type, target_effects) = if let Some(target) =\n                                    retained_target\n                                {\n                                    borrowed_parameters = Some(target.params.as_slice());\n                                    (\n"
+      },
+      {
+        "before": "                                (params, return_type)\n                            };\n                            let params = if let Some(parameters) = borrowed_parameters {\n                                CallParameters::Borrowed(parameters)\n                            } else {\n                                intrinsic_parameters.unwrap_or(CallParameters::Owned(params))\n                            };\n",
+        "after": "                                (params, return_type)\n                            };\n                            let params = if let Some(parameters) = borrowed_parameters {\n                                held_parameters.map_or(\n                                    CallParameters::Borrowed(parameters),\n                                    CallParameters::Held,\n                                )\n                            } else {\n                                intrinsic_parameters.unwrap_or(CallParameters::Owned(params))\n                            };\n"
+      }
+    ]
+  },
+  {
+    "source": "src/hir/validation/call_parameters.rs",
+    "archive": "src__hir__validation__call_parameters.rs.before.txt",
+    "edits": [
+      {
+        "before": "    VecField(&'a [ResolvedExpr]),\n    Owned(Vec<ResolvedParam>),\n    Borrowed(&'a [ResolvedParam]),\n    Byte(ByteOp),\n    String(crate::string_ops::StringOp),\n    Str(crate::str_ops::StrOp),\n",
+        "after": "    VecField(&'a [ResolvedExpr]),\n    Owned(Vec<ResolvedParam>),\n    Borrowed(&'a [ResolvedParam]),\n    Held(held_profiles::Call<'a>),\n    Byte(ByteOp),\n    String(crate::string_ops::StringOp),\n    Str(crate::str_ops::StrOp),\n"
+      },
+      {
+        "before": "    pub(super) ty: &'a ResolvedType,\n    pub(super) ownership: OwnershipMode,\n    identity: ParameterIdentity<'a>,\n}\n\nenum ParameterIdentity<'a> {\n",
+        "after": "    pub(super) ty: &'a ResolvedType,\n    pub(super) ownership: OwnershipMode,\n    identity: ParameterIdentity<'a>,\n    held: Option<held_profiles::Parameter<'a>>,\n}\n\nenum ParameterIdentity<'a> {\n"
+      },
+      {
+        "before": "}\n\nimpl<'a> ParameterView<'a> {\n    fn owned(parameter: &'a ResolvedParam) -> Self {\n        Self {\n            ty: &parameter.ty,\n            ownership: parameter.ownership,\n            identity: ParameterIdentity::Owned(&parameter.id),\n        }\n    }\n}\n",
+        "after": "}\n\nimpl<'a> ParameterView<'a> {\n    pub(in crate::hir::validation) fn held_view(carrier: held_profiles::Parameter<'a>) -> Self {\n        let parameter = carrier.param();\n        Self {\n            ty: &parameter.ty,\n            ownership: parameter.ownership,\n            identity: ParameterIdentity::Owned(&parameter.id),\n            held: Some(carrier),\n        }\n    }\n    pub(super) fn held(&self) -> Option<held_profiles::Parameter<'a>> {\n        self.held\n    }\n    fn owned(parameter: &'a ResolvedParam) -> Self {\n        Self {\n            ty: &parameter.ty,\n            ownership: parameter.ownership,\n            identity: ParameterIdentity::Owned(&parameter.id),\n            held: None,\n        }\n    }\n}\n"
+      },
+      {
+        "before": "                    OwnershipMode::Value\n                },\n                identity: ParameterIdentity::VecField(index),\n            },\n            Self::LiteralFormat(args) => ParameterView {\n                ty: &args[index].ty,\n",
+        "after": "                    OwnershipMode::Value\n                },\n                identity: ParameterIdentity::VecField(index),\n                held: None,\n            },\n            Self::LiteralFormat(args) => ParameterView {\n                ty: &args[index].ty,\n"
+      },
+      {
+        "before": "                    OwnershipMode::Value\n                },\n                identity: ParameterIdentity::LiteralFormat(index),\n            },\n            Self::Owned(parameters) => ParameterView::owned(&parameters[index]),\n            Self::Borrowed(parameters) => ParameterView::owned(&parameters[index]),\n            Self::Byte(operation) => ParameterView {\n                ty: &operation.param_types()[index],\n                ownership: operation.param_ownership(index),\n                identity: ParameterIdentity::Byte(*operation, index),\n            },\n            Self::String(operation) => ParameterView {\n                ty: &operation.param_types()[index],\n                ownership: operation.param_ownership(index),\n                identity: ParameterIdentity::String(*operation, index),\n            },\n            Self::Str(operation) => {\n                let ty = &operation.param_types()[index];\n",
+        "after": "                    OwnershipMode::Value\n                },\n                identity: ParameterIdentity::LiteralFormat(index),\n                held: None,\n            },\n            Self::Owned(parameters) => ParameterView::owned(&parameters[index]),\n            Self::Borrowed(parameters) => ParameterView::owned(&parameters[index]),\n            Self::Held(call) => ParameterView::held_view(call.parameter(index)),\n            Self::Byte(operation) => ParameterView {\n                ty: &operation.param_types()[index],\n                ownership: operation.param_ownership(index),\n                identity: ParameterIdentity::Byte(*operation, index),\n                held: None,\n            },\n            Self::String(operation) => ParameterView {\n                ty: &operation.param_types()[index],\n                ownership: operation.param_ownership(index),\n                identity: ParameterIdentity::String(*operation, index),\n                held: None,\n            },\n            Self::Str(operation) => {\n                let ty = &operation.param_types()[index];\n"
+      },
+      {
+        "before": "                        OwnershipMode::Value\n                    },\n                    identity: ParameterIdentity::Str(*operation, index),\n                }\n            }\n        }\n",
+        "after": "                        OwnershipMode::Value\n                    },\n                    identity: ParameterIdentity::Str(*operation, index),\n                    held: None,\n                }\n            }\n        }\n"
+      },
+      {
+        "before": "            | Self::VecField(_) => 0,\n            // Program retention already owns and accounts for this immutable\n            // signature. The call frame adds only its inline slice descriptor.\n            Self::Borrowed(_) => 0,\n        }\n    }\n}\n",
+        "after": "            | Self::VecField(_) => 0,\n            // Program retention already owns and accounts for this immutable\n            // signature. The call frame adds only its inline slice descriptor.\n            Self::Borrowed(_) | Self::Held(_) => 0,\n        }\n    }\n}\n"
+      },
+      {
+        "before": "            return self.validate_argument_ownership_view_before(argument, param);\n        }\n        let actual = argument.ownership;\n        let facts = self.borrowed_ownership_copy(param.ty)?.ok_or_else(|| {\n            hir_error_at_span(\n                argument.span,\n                format!(\"type `{}` has no semantic facts\", param.ty.identity_key()),\n            )\n        })?;\n        let valid = if facts {\n            actual == OwnershipMode::Value && param.ownership == OwnershipMode::Value\n        } else {\n",
+        "after": "            return self.validate_argument_ownership_view_before(argument, param);\n        }\n        let actual = argument.ownership;\n        let facts = self\n            .executable_profiles\n            .copy_for_param(&param, |ty| self.borrowed_ownership_copy(ty))?\n            .ok_or_else(|| {\n                hir_error_at_span(\n                    argument.span,\n                    format!(\"type `{}` has no semantic facts\", param.ty.identity_key()),\n                )\n            })?;\n        let valid = if facts {\n            actual == OwnershipMode::Value && param.ownership == OwnershipMode::Value\n        } else {\n"
+      },
+      {
+        "before": "                                &self.program.declarations,\n                                param.ty,\n                            )\n                            || self.executable_profiles.runtime_admitted(param.ty)?\n                            || resolved_type_is_direct_owned_variant(self.program, param.ty)\n                            || resolved_type_is_flat_owned_byte_variant(self.program, param.ty))\n                            && matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)\n",
+        "after": "                                &self.program.declarations,\n                                param.ty,\n                            )\n                            || self.executable_profiles.runtime_admitted_param(&param)?\n                            || resolved_type_is_direct_owned_variant(self.program, param.ty)\n                            || resolved_type_is_flat_owned_byte_variant(self.program, param.ty))\n                            && matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)\n"
+      },
+      {
+        "before": "                                &argument.kind,\n                                ResolvedExprKind::Place(place) if place.projections.is_empty()\n                            )\n                    } else if self.executable_profiles.runtime_admitted(param.ty)?\n                        || resolved_type_is_direct_owned_variant(self.program, param.ty)\n                    {\n                        matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)\n",
+        "after": "                                &argument.kind,\n                                ResolvedExprKind::Place(place) if place.projections.is_empty()\n                            )\n                    } else if self.executable_profiles.runtime_admitted_param(&param)?\n                        || resolved_type_is_direct_owned_variant(self.program, param.ty)\n                    {\n                        matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)\n"
+      },
+      {
+        "before": "mod copy_before;\n#[cfg(test)]\nmod copy_flags_tests;\n",
+        "after": "mod copy_before;\n#[cfg(test)]\nmod copy_flags_tests;\n\n#[cfg(test)]\nmod before_812;\n\n#[cfg(test)]\nmod held_tests;\n"
+      }
+    ]
+  },
+  {
+    "source": "src/hir/validation/executable_profiles.rs",
+    "archive": "src__hir__validation__executable_profiles.rs.before.txt",
+    "edits": [
+      {
+        "before": "//! Validator-local memo of pure executable owned-text profile observations.\n//!\n//! Only exact zero-argument nominal records with empty declaration parameters\n//! are memoized, keyed by the retained index's own declaration identity and\n//! bound to that exact immutable `DeclarationIndex` reference. Generic,\n//! callable, unknown and mismatched types take the complete uncached paid route.\n//! Every request and every hit authenticates the ledger with a zero-byte\n//! reservation, so a hit can never outlive a refusal.\nuse super::*;\n",
+        "after": "//! Validator-local memo of pure executable owned-text profile observations.\n//!\n//! Arbitrary types retain the exact zero-argument record memo, keyed by the\n//! retained index's declaration identity. The additive held-parameter route\n//! binds generic observations to a genuine immutable program/ordinal lookup;\n//! arbitrary, generated, unknown and mismatched inputs keep the full paid route.\n//! Every request and every hit authenticates the ledger with a zero-byte\n//! reservation, so a hit can never outlive a refusal.\nuse super::*;\n"
+      },
+      {
+        "before": "// Sorted by identity; each growth is paid at its full new capacity.\nstruct State<'a> {\n    entries: Vec<Entry<'a>>,\n}\n\n#[derive(Clone)]\n",
+        "after": "// Sorted by identity; each growth is paid at its full new capacity.\nstruct State<'a> {\n    entries: Vec<Entry<'a>>,\n    bound: Option<held_profiles::Bound<'a>>,\n}\n\n#[derive(Clone)]\n"
+      },
+      {
+        "before": "            index,\n            state: Rc::new(RefCell::new(State {\n                entries: Vec::new(),\n            })),\n        })\n    }\n",
+        "after": "            index,\n            state: Rc::new(RefCell::new(State {\n                entries: Vec::new(),\n                bound: None,\n            })),\n        })\n    }\n"
+      },
+      {
+        "before": "        state.entries[at].get(which)\n    }\n\n    // Only successful pure results arrive here. A concurrent clone may have\n    // inserted the same identity meanwhile; results are equal, so it is reused.\n    fn remember(\n        &self,\n",
+        "after": "        state.entries[at].get(which)\n    }\n\n    // Only successful pure results arrive here. Another validator clone may have\n    // inserted the same identity meanwhile; results are equal, so it is reused.\n    fn remember(\n        &self,\n"
+      },
+      {
+        "before": "    pub(super) fn owned_capacity(&self) -> usize {\n        Self::control_bytes()\n            + self.state.borrow().entries.capacity() * std::mem::size_of::<Entry<'a>>()\n    }\n}\n",
+        "after": "    pub(super) fn owned_capacity(&self) -> usize {\n        Self::control_bytes()\n            + self.state.borrow().entries.capacity() * std::mem::size_of::<Entry<'a>>()\n            + self\n                .state\n                .borrow()\n                .bound\n                .as_ref()\n                .map_or(0, |bound| bound.owned_capacity())\n    }\n}\n\n#[cfg(test)]\nmod before_812;\nmod held;\n\n#[cfg(test)]\npub(in crate::hir::validation) fn saved_observations_812(\n    index: &DeclarationIndex,\n    ty: &ResolvedType,\n) -> (Result<bool, Diagnostic>, Result<(), Diagnostic>) {\n    let lookup = before_812::Lookup::new(index).unwrap();\n    assert!(lookup.is_current(index));\n    assert!(lookup.owned_capacity() > 0);\n    (lookup.runtime_admitted(ty), lookup.validate_use(ty))\n}\n"
+      }
+    ]
+  }
+]

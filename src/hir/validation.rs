@@ -36,14 +36,15 @@ mod effect_keys;
 mod executable_profiles;
 mod generic_record_composition;
 mod generic_template;
+mod held_profiles;
 mod host_command;
 mod lexical_exit;
 mod native_borrow;
 mod nominal_facts;
-mod ownership_flags;
 mod owned_buffer;
 mod owned_result_try;
 pub(super) mod owner_renewal;
+mod ownership_flags;
 mod proof_return;
 mod record_pattern;
 mod record_traversal;
@@ -169,7 +170,7 @@ impl<'a> HirValidator<'a> {
                 Some(_) => return Err(hir_error_static(
                     "executable profile observations do not belong to the current declaration index",
                 )),
-                None => executable_profiles::Lookup::new(&seed.program.declarations)?,
+                None => executable_profiles::Lookup::for_program(seed.program)?,
             },
             functions: seed.functions,
             expression_ids: identity_directory::Set::new(),
@@ -2594,6 +2595,7 @@ impl<'a> HirValidator<'a> {
                             }
                             let mut intrinsic_parameters = None;
                             let mut borrowed_parameters = None;
+                            let mut held_parameters = None;
                             let retained_program = self.program;
                             let (params, return_type) = if let Some(signature) =
                                 self.intrinsic_signature(callee, type_arguments, instance, args)?
@@ -2697,8 +2699,15 @@ impl<'a> HirValidator<'a> {
                                     call_signature::ResultType::Owned(op.return_type()),
                                 )
                             } else {
-                                let (params, return_type, target_effects) = if let Some(target) =
+                                let retained_target = if self.executable_profiles.is_bound() {
+                                    held_parameters =
+                                        self.executable_profiles.call(callee, instance.as_ref());
+                                    held_parameters.map(|call| call.function())
+                                } else {
                                     retained_program.resolve_call_target(callee, instance.as_ref())
+                                };
+                                let (params, return_type, target_effects) = if let Some(target) =
+                                    retained_target
                                 {
                                     borrowed_parameters = Some(target.params.as_slice());
                                     (
@@ -2755,7 +2764,10 @@ impl<'a> HirValidator<'a> {
                                 (params, return_type)
                             };
                             let params = if let Some(parameters) = borrowed_parameters {
-                                CallParameters::Borrowed(parameters)
+                                held_parameters.map_or(
+                                    CallParameters::Borrowed(parameters),
+                                    CallParameters::Held,
+                                )
                             } else {
                                 intrinsic_parameters.unwrap_or(CallParameters::Owned(params))
                             };

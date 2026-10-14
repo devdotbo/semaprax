@@ -13,6 +13,7 @@ pub(super) enum CallParameters<'a> {
     VecField(&'a [ResolvedExpr]),
     Owned(Vec<ResolvedParam>),
     Borrowed(&'a [ResolvedParam]),
+    Held(held_profiles::Call<'a>),
     Byte(ByteOp),
     String(crate::string_ops::StringOp),
     Str(crate::str_ops::StrOp),
@@ -22,6 +23,7 @@ pub(super) struct ParameterView<'a> {
     pub(super) ty: &'a ResolvedType,
     pub(super) ownership: OwnershipMode,
     identity: ParameterIdentity<'a>,
+    held: Option<held_profiles::Parameter<'a>>,
 }
 
 enum ParameterIdentity<'a> {
@@ -49,11 +51,24 @@ impl fmt::Display for ParameterIdentity<'_> {
 }
 
 impl<'a> ParameterView<'a> {
+    pub(in crate::hir::validation) fn held_view(carrier: held_profiles::Parameter<'a>) -> Self {
+        let parameter = carrier.param();
+        Self {
+            ty: &parameter.ty,
+            ownership: parameter.ownership,
+            identity: ParameterIdentity::Owned(&parameter.id),
+            held: Some(carrier),
+        }
+    }
+    pub(super) fn held(&self) -> Option<held_profiles::Parameter<'a>> {
+        self.held
+    }
     fn owned(parameter: &'a ResolvedParam) -> Self {
         Self {
             ty: &parameter.ty,
             ownership: parameter.ownership,
             identity: ParameterIdentity::Owned(&parameter.id),
+            held: None,
         }
     }
 }
@@ -69,6 +84,7 @@ impl CallParameters<'_> {
                     OwnershipMode::Value
                 },
                 identity: ParameterIdentity::VecField(index),
+                held: None,
             },
             Self::LiteralFormat(args) => ParameterView {
                 ty: &args[index].ty,
@@ -78,18 +94,22 @@ impl CallParameters<'_> {
                     OwnershipMode::Value
                 },
                 identity: ParameterIdentity::LiteralFormat(index),
+                held: None,
             },
             Self::Owned(parameters) => ParameterView::owned(&parameters[index]),
             Self::Borrowed(parameters) => ParameterView::owned(&parameters[index]),
+            Self::Held(call) => ParameterView::held_view(call.parameter(index)),
             Self::Byte(operation) => ParameterView {
                 ty: &operation.param_types()[index],
                 ownership: operation.param_ownership(index),
                 identity: ParameterIdentity::Byte(*operation, index),
+                held: None,
             },
             Self::String(operation) => ParameterView {
                 ty: &operation.param_types()[index],
                 ownership: operation.param_ownership(index),
                 identity: ParameterIdentity::String(*operation, index),
+                held: None,
             },
             Self::Str(operation) => {
                 let ty = &operation.param_types()[index];
@@ -101,6 +121,7 @@ impl CallParameters<'_> {
                         OwnershipMode::Value
                     },
                     identity: ParameterIdentity::Str(*operation, index),
+                    held: None,
                 }
             }
         }
@@ -130,7 +151,7 @@ impl CallParameters<'_> {
             | Self::VecField(_) => 0,
             // Program retention already owns and accounts for this immutable
             // signature. The call frame adds only its inline slice descriptor.
-            Self::Borrowed(_) => 0,
+            Self::Borrowed(_) | Self::Held(_) => 0,
         }
     }
 }
@@ -155,12 +176,15 @@ impl HirValidator<'_> {
             return self.validate_argument_ownership_view_before(argument, param);
         }
         let actual = argument.ownership;
-        let facts = self.borrowed_ownership_copy(param.ty)?.ok_or_else(|| {
-            hir_error_at_span(
-                argument.span,
-                format!("type `{}` has no semantic facts", param.ty.identity_key()),
-            )
-        })?;
+        let facts = self
+            .executable_profiles
+            .copy_for_param(&param, |ty| self.borrowed_ownership_copy(ty))?
+            .ok_or_else(|| {
+                hir_error_at_span(
+                    argument.span,
+                    format!("type `{}` has no semantic facts", param.ty.identity_key()),
+                )
+            })?;
         let valid = if facts {
             actual == OwnershipMode::Value && param.ownership == OwnershipMode::Value
         } else {
@@ -193,7 +217,7 @@ impl HirValidator<'_> {
                                 &self.program.declarations,
                                 param.ty,
                             )
-                            || self.executable_profiles.runtime_admitted(param.ty)?
+                            || self.executable_profiles.runtime_admitted_param(&param)?
                             || resolved_type_is_direct_owned_variant(self.program, param.ty)
                             || resolved_type_is_flat_owned_byte_variant(self.program, param.ty))
                             && matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)
@@ -201,7 +225,7 @@ impl HirValidator<'_> {
                                 &argument.kind,
                                 ResolvedExprKind::Place(place) if place.projections.is_empty()
                             )
-                    } else if self.executable_profiles.runtime_admitted(param.ty)?
+                    } else if self.executable_profiles.runtime_admitted_param(&param)?
                         || resolved_type_is_direct_owned_variant(self.program, param.ty)
                     {
                         matches!(actual, OwnershipMode::Own | OwnershipMode::Borrow)
@@ -238,3 +262,9 @@ mod tests;
 mod copy_before;
 #[cfg(test)]
 mod copy_flags_tests;
+
+#[cfg(test)]
+mod before_812;
+
+#[cfg(test)]
+mod held_tests;

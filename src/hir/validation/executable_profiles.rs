@@ -1,9 +1,9 @@
 //! Validator-local memo of pure executable owned-text profile observations.
 //!
-//! Only exact zero-argument nominal records with empty declaration parameters
-//! are memoized, keyed by the retained index's own declaration identity and
-//! bound to that exact immutable `DeclarationIndex` reference. Generic,
-//! callable, unknown and mismatched types take the complete uncached paid route.
+//! Arbitrary types retain the exact zero-argument record memo, keyed by the
+//! retained index's declaration identity. The additive held-parameter route
+//! binds generic observations to a genuine immutable program/ordinal lookup;
+//! arbitrary, generated, unknown and mismatched inputs keep the full paid route.
 //! Every request and every hit authenticates the ledger with a zero-byte
 //! reservation, so a hit can never outlive a refusal.
 use super::*;
@@ -46,6 +46,7 @@ impl Entry<'_> {
 // Sorted by identity; each growth is paid at its full new capacity.
 struct State<'a> {
     entries: Vec<Entry<'a>>,
+    bound: Option<held_profiles::Bound<'a>>,
 }
 
 #[derive(Clone)]
@@ -62,6 +63,7 @@ impl<'a> Lookup<'a> {
             index,
             state: Rc::new(RefCell::new(State {
                 entries: Vec::new(),
+                bound: None,
             })),
         })
     }
@@ -120,7 +122,7 @@ impl<'a> Lookup<'a> {
         state.entries[at].get(which)
     }
 
-    // Only successful pure results arrive here. A concurrent clone may have
+    // Only successful pure results arrive here. Another validator clone may have
     // inserted the same identity meanwhile; results are equal, so it is reused.
     fn remember(
         &self,
@@ -179,5 +181,26 @@ impl<'a> Lookup<'a> {
     pub(super) fn owned_capacity(&self) -> usize {
         Self::control_bytes()
             + self.state.borrow().entries.capacity() * std::mem::size_of::<Entry<'a>>()
+            + self
+                .state
+                .borrow()
+                .bound
+                .as_ref()
+                .map_or(0, |bound| bound.owned_capacity())
     }
+}
+
+#[cfg(test)]
+mod before_812;
+mod held;
+
+#[cfg(test)]
+pub(in crate::hir::validation) fn saved_observations_812(
+    index: &DeclarationIndex,
+    ty: &ResolvedType,
+) -> (Result<bool, Diagnostic>, Result<(), Diagnostic>) {
+    let lookup = before_812::Lookup::new(index).unwrap();
+    assert!(lookup.is_current(index));
+    assert!(lookup.owned_capacity() > 0);
+    (lookup.runtime_admitted(ty), lookup.validate_use(ty))
 }

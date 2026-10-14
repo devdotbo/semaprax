@@ -1,0 +1,16 @@
+{
+  "new_children": [
+    "src/hir/validation/held_profiles.rs",
+    "src/hir/validation/held_profiles/tests.rs",
+    "src/hir/validation/held_profiles/source_audit.rs",
+    "src/hir/validation/executable_profiles/held.rs",
+    "src/hir/validation/executable_profiles/before_812.rs",
+    "src/hir/validation/call_parameters/before_812.rs",
+    "src/hir/validation/call_parameters/held_tests.rs"
+  ],
+  "changed_owners": [
+    "src/hir/validation.rs",
+    "src/hir/validation/executable_profiles.rs",
+    "src/hir/validation/call_parameters.rs"
+  ]
+}
