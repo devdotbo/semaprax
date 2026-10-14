@@ -51,7 +51,18 @@ macro_rules! semantic_graph_root_source_inventory {
         concat!(
             concat!(
                 concat!(
+                    concat!(
                     include_str!("../../src/workspace_graph.rs"),
+                    include_str!("../../src/workspace_graph/cache_key_original.rs"),
+                    include_str!("../../src/workspace_graph/current_source.rs"),
+                    include_str!("../../src/workspace_graph/current_source/source_bytes.rs"),
+                    include_str!("../../src/workspace_graph/custody.rs"),
+                    include_str!("../../src/workspace_graph/custody/tests.rs"),
+                    include_str!("../../src/bounded_output/prepaid.rs"),
+                    include_str!("../../src/bounded_output/source_owner_scope.rs"),
+                    include_str!("../../src/project/incremental/source_directory.rs"),
+                    include_str!("../../src/project/incremental/source_receiver_original.rs")
+                ),
                     "\n",
                     include_str!("../../src/workspace_graph/test_replay_context.rs")
                 ),
@@ -284,12 +295,22 @@ macro_rules! semantic_graph_projection_root_source_inventory {
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/initialization.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/receiving.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full/receiving.rs"),
-                include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full/transient.rs"),
+                concat!(
+                    include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full/transient.rs"),
+                    include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs"),
+                    include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full/original_construct.rs")
+                ),
                 include_str!("../../src/bounded_output/key_directory.rs"),
                 include_str!("../../src/bounded_output/key_directory/tests.rs"),
                 include_str!("../../src/ast/program_source/receiving_roots.rs"),
                 include_str!("../../src/ast/program_source/generated_roots.rs"),
-                include_str!("../../src/ast/program_source.rs")
+                concat!(
+                    include_str!("../../src/ast/program_source.rs"),
+                    include_str!("../../src/ast/program_source/checked_key.rs"),
+                    include_str!("../../src/ast/program_source/checked_key/encode.rs"),
+                    include_str!("../../src/ast/program_source/decl_slices.rs"),
+                    include_str!("../../src/ast/program_source/decl_slices_original.rs")
+                )
             ),
             "\n",
             include_str!("../../src/workspace_graph/expected_projection/record_traversal.rs")

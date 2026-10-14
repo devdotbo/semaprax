@@ -515,7 +515,11 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         );
     }
 
-    let root = include_str!("../src/hir.rs");
+    let root = concat!(
+        include_str!("../src/hir.rs"),
+        include_str!("../src/hir/function_reuse_source.rs"),
+        include_str!("../src/hir/identity_resolution/previous_source.rs")
+    );
     assert!(root.contains("mod validation;"));
     assert!(
         root.contains("pub(crate) use inspection::validate_core_with_storage as validate_core;")

@@ -491,7 +491,11 @@ macro_rules! hir_resolver_source_inventory {
             ),
             include_str!("../../../../../src/hir/declaration_index/source.rs"),
             include_str!("../../../../../src/hir/declaration_index/identity_payer.rs"),
-            include_str!("../../../../../src/hir/identity_resolution.rs"),
+            concat!(
+                    include_str!("../../../../../src/hir/identity_resolution.rs"),
+                    include_str!("../../../../../src/hir/identity_resolution/previous_source.rs"),
+                    include_str!("../../../../../src/hir/function_reuse_source.rs")
+                ),
             include_str!("../../../../../src/hir/identity_resolution/tests.rs"),
                 include_str!("../../../../../src/hir/identity_resolution/agent_tests.rs"),
             loan_cfg_source_inventory!(),
