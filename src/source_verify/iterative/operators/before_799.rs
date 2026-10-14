@@ -386,6 +386,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             (literal_tail(then_branch), literal_tail(else_branch))
         {
             self.frames.push(VerifierFrame::ResumeLiteralIf {
+                condition_admitted: true,
                 expression,
                 then_branch,
                 else_branch,
@@ -412,6 +413,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             local_borrow_count: self.scopes[scope].local_borrow_count,
         });
         self.frames.push(VerifierFrame::ResumeIfThen {
+            condition_admitted: true,
             expression,
             else_branch,
             scope,
@@ -456,6 +458,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             _ => unreachable!(),
         };
         self.frames.push(VerifierFrame::ResumeIfElse {
+            condition_admitted: true,
             expression,
             then_branch,
             else_branch,

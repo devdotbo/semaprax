@@ -1,0 +1,16 @@
+{
+  "status": "source-only; no bodies executed",
+  "package": "semaprax",
+  "harness": "lib",
+  "selectors": [
+    "source_verify::recovery_tests::flow_799::refused_conditions_and_incompatible_branches_never_publish_checked_results",
+    "source_verify::recovery_tests::flow_799::nested_conditional_refusal_preserves_both_branch_errors_and_outer_sibling",
+    "source_verify::recovery_tests::flow_799::unknown_match_scrutinee_supplies_no_pattern_type_and_keeps_independent_body_error",
+    "source_verify::recovery_tests::flow_799::unknown_match_keeps_independent_guard_errors_and_refused_names_stay_arm_local",
+    "source_verify::recovery_tests::flow_799::unknown_match_keeps_real_duplicate_fields_bindings_and_outer_shadowing",
+    "source_verify::recovery_tests::flow_799::known_match_missing_case_and_admitted_conditional_receivers_remain_exact",
+    "source_verify::recovery_tests::flow_799::complete_matching_and_arm_receivers_have_exact_full_source_inverses",
+    "source_verify::recovery_tests::flow_799::read_only_scrutinee_origin_is_frozen_before_later_pattern_and_body_errors",
+    "source_verify::recovery_tests::flow_799::unknown_match_keeps_independent_aggregate_body_refusal_without_scalar_unreachability"
+  ]
+}

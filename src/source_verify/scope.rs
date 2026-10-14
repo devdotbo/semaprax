@@ -59,6 +59,7 @@ pub(super) enum VerifierFrame<'a> {
         scope: usize,
     },
     ResumeIfThen {
+        condition_admitted: bool,
         expression: &'a Expr,
         else_branch: &'a Expr,
         scope: usize,
@@ -66,11 +67,13 @@ pub(super) enum VerifierFrame<'a> {
         baseline_names: Vec<String>,
     },
     ResumeLiteralIf {
+        condition_admitted: bool,
         expression: &'a Expr,
         then_branch: &'a Expr,
         else_branch: &'a Expr,
     },
     ResumeIfElse {
+        condition_admitted: bool,
         expression: &'a Expr,
         then_branch: &'a Expr,
         else_branch: &'a Expr,
@@ -245,6 +248,7 @@ pub(super) enum VerifierFrame<'a> {
         supplied: HashSet<&'a str>,
     },
     ResumeMatchScrutinee {
+        checkpoint: super::recovery::Checkpoint,
         expression: &'a Expr,
         scrutinee: &'a Expr,
         arms: &'a [crate::ast::MatchArm],
@@ -301,6 +305,7 @@ pub(super) fn pattern_literal_type(value: crate::ast::PatternLiteral) -> Type {
 }
 
 pub(super) struct VariantMatchState<'a> {
+    pub(super) refused_input: Option<usize>,
     pub(super) expression: &'a Expr,
     pub(super) arms: &'a [crate::ast::MatchArm],
     pub(super) parent_scope: usize,

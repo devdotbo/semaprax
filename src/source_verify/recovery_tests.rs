@@ -18,6 +18,8 @@ mod proposal_corpus;
 mod refusal_dependency;
 #[path = "recovery_tests/operators_799.rs"]
 mod operators_799;
+#[path = "recovery_tests/flow_799.rs"]
+mod flow_799;
 use crate::ast::{ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
 use crate::test_allocation_observer::measure;

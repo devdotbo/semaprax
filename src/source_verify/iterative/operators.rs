@@ -388,7 +388,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         scope: usize,
     ) -> Result<(), Diagnostic> {
         #[cfg(test)]
-        if self.operators_before_799 {
+        if self.operators_before_799 || self.recovery_legacy {
             return self.before_799_frame_resume_if_condition(
                 expression,
                 then_branch,
@@ -397,6 +397,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             );
         }
         let condition_value = self.values.pop().unwrap_or(None);
+        let condition_known = condition_value.is_some();
+        let condition_diagnostics = self.diagnostics.len();
         let condition = match &expression.kind {
             ExprKind::If { condition, .. } => condition.as_ref(),
             _ => unreachable!(),
@@ -413,6 +415,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 ));
             }
         }
+        let condition_admitted = condition_known && self.diagnostics.len() == condition_diagnostics;
         // Empty blocks containing only a scalar literal cannot inspect or
         // mutate any binding. Check both literal values normally, but avoid
         // copying and joining the complete environment for this identity case.
@@ -429,6 +432,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             (literal_tail(then_branch), literal_tail(else_branch))
         {
             self.frames.push(VerifierFrame::ResumeLiteralIf {
+                condition_admitted,
                 expression,
                 then_branch,
                 else_branch,
@@ -455,6 +459,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             local_borrow_count: self.scopes[scope].local_borrow_count,
         });
         self.frames.push(VerifierFrame::ResumeIfThen {
+            condition_admitted,
             expression,
             else_branch,
             scope,
@@ -470,6 +475,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
 
     pub(super) fn frame_resume_if_then(
         &mut self,
+        condition_admitted: bool,
         expression: &'p Expr,
         else_branch: &'p Expr,
         scope: usize,
@@ -477,7 +483,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         baseline_names: Vec<String>,
     ) -> Result<(), Diagnostic> {
         #[cfg(test)]
-        if self.operators_before_799 {
+        if self.operators_before_799 || self.recovery_legacy {
             return self.before_799_frame_resume_if_then(
                 expression,
                 else_branch,
@@ -509,6 +515,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             _ => unreachable!(),
         };
         self.frames.push(VerifierFrame::ResumeIfElse {
+            condition_admitted,
             expression,
             then_branch,
             else_branch,
@@ -528,6 +535,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn frame_resume_if_else(
         &mut self,
+        condition_admitted: bool,
         expression: &'p Expr,
         then_branch: &'p Expr,
         else_branch: &'p Expr,
@@ -538,7 +546,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         then_bindings: HashMap<String, Binding>,
     ) -> Result<(), Diagnostic> {
         #[cfg(test)]
-        if self.operators_before_799 {
+        if self.operators_before_799 || self.recovery_legacy {
             return self.before_799_frame_resume_if_else(
                 expression,
                 then_branch,
@@ -605,6 +613,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }
         }
         self.finish_if_values(expression, then_branch, else_branch, then_value, else_value);
+        if !condition_admitted {
+            *self.values.last_mut().expect("if result was published") = None;
+        }
         Ok(())
     }
 
@@ -616,6 +627,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         then_value: Option<CheckedValue>,
         else_value: Option<CheckedValue>,
     ) {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            self.before_799_finish_if_values(
+                expression,
+                then_branch,
+                else_branch,
+                then_value,
+                else_value,
+            );
+            return;
+        }
+        let branch_diagnostics = self.diagnostics.len();
         let output = match (then_value, else_value) {
             (Some(then_value), Some(else_value)) if then_value.ty == Type::Never => {
                 Some(else_value)
@@ -661,6 +684,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }
             _ => None,
         };
-        self.values.push(output);
+        self.values.push(
+            (self.diagnostics.len() == branch_diagnostics)
+                .then_some(output)
+                .flatten(),
+        );
     }
 }

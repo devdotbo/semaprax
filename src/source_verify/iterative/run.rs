@@ -98,6 +98,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     scope,
                 } => self.frame_resume_if_condition(expression, then_branch, else_branch, scope)?,
                 VerifierFrame::ResumeLiteralIf {
+                    condition_admitted,
                     expression,
                     then_branch,
                     else_branch,
@@ -111,14 +112,22 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         then_value,
                         else_value,
                     );
+                    if !condition_admitted {
+                        *self
+                            .values
+                            .last_mut()
+                            .expect("literal if result was published") = None;
+                    }
                 }
                 VerifierFrame::ResumeIfThen {
+                    condition_admitted,
                     expression,
                     else_branch,
                     scope,
                     then_scope,
                     baseline_names,
                 } => self.frame_resume_if_then(
+                    condition_admitted,
                     expression,
                     else_branch,
                     scope,
@@ -126,6 +135,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     baseline_names,
                 )?,
                 VerifierFrame::ResumeIfElse {
+                    condition_admitted,
                     expression,
                     then_branch,
                     else_branch,
@@ -135,6 +145,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     then_value,
                     then_bindings,
                 } => self.frame_resume_if_else(
+                    condition_admitted,
                     expression,
                     then_branch,
                     else_branch,
@@ -421,11 +432,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     supplied,
                 )?,
                 VerifierFrame::ResumeMatchScrutinee {
+                    checkpoint,
                     expression,
                     scrutinee,
                     arms,
                     scope,
-                } => self.frame_resume_match_scrutinee(expression, scrutinee, arms, scope)?,
+                } => self
+                    .frame_resume_match_scrutinee(checkpoint, expression, scrutinee, arms, scope)?,
                 VerifierFrame::ResumeRecordMatchArm {
                     owns_record_input,
                     arm,

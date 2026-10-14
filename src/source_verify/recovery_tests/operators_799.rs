@@ -107,7 +107,8 @@ fn admitted_operator_results_and_lazy_owned_call_joins_match_full_saved_receiver
 #[test]
 fn complete_original_operator_source_is_preserved_by_exact_named_inverse() {
     let mut original = include_str!("../iterative/operators/before_799.rs").to_owned();
-    original = original.replace("            condition_admitted: true,\n", "");
+    original = original.replace("                condition_admitted: true,\n", "")
+        .replace("            condition_admitted: true,\n", "");
     for name in [
         "frame_resume_unary",
         "frame_resume_binary_left",

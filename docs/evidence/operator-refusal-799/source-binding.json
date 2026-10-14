@@ -12,12 +12,12 @@
       "lines": 323
     },
     "src/source_verify/iterative/operators.rs": {
-      "sha256": "947c722aba4dbbb069309395af6bfa24dea63c536a7032dd195047ba1bb4341f",
-      "lines": 666
+      "sha256": "e1a53409191261e40e13c144ebca52b5e8fa887921e40246e697e91b9df256fc",
+      "lines": 693
     },
     "src/source_verify/iterative/operators/before_799.rs": {
-      "sha256": "0616fcb1a536bc6e9d4f2900969bc372dbc94520cf7df86c6bfb8f7b696710e5",
-      "lines": 600
+      "sha256": "171a831d8f4b0b1c9e2ad8598a98ceff43e21947a9183b26549314842945bddd",
+      "lines": 603
     },
     "src/source_verify/iterative/blocks.rs": {
       "sha256": "d1d3e19a3b9f4d11c3a833b4f0aa396d8b415fafbf1c633c76883ce9e9a095ca",
@@ -28,20 +28,20 @@
       "lines": 998
     },
     "src/source_verify/recovery_tests.rs": {
-      "sha256": "f60de8f2e4ef604e5a575a8c5fd6d13f512ca039ea0321f59f6c92628805c739",
-      "lines": 314
+      "sha256": "c6b286d457700dd81a0e1811db23c38cedbff92fafdb75b087704adbbb448451",
+      "lines": 316
     },
     "src/source_verify/recovery_tests/operators_799.rs": {
-      "sha256": "81b3bbff3f7b19ba61589f6ef10004a67498581226683c4a46e599e51a612204",
-      "lines": 121
+      "sha256": "6cba006a2731ebd4a1c90a5d89c1b4d02e020007470ad71968eacdf15c0b079b",
+      "lines": 125
     },
     "src/source_verify/constructor_tests.rs": {
-      "sha256": "6ad3923f23833bc58d2ccaa707bed100a7402b52a60e0959d7a7e86bd9eb450b",
-      "lines": 407
+      "sha256": "6c621c13a4490aee1f11150c027c7bc82ce77a8cd56bba0b9a863c65ebd4f19c",
+      "lines": 411
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
-      "sha256": "c358b05fc13a51f22bdf435e95302ffa62fe591500bccba25d7cb2d9f9740f8e",
-      "lines": 1222
+      "sha256": "b1a66d42201d13e3b316b74ab66e96dd90f8b47ec4315a5f2c427c2d7a61164d",
+      "lines": 1226
     }
   },
   "execution": "none; root qualification pending"
