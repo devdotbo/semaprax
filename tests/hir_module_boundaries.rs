@@ -82,7 +82,11 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 include_str!("../src/hir/inspection/tests/inline_worklists.rs"),
                 include_str!("../src/hir/inspection/tests/inline_worklists/old.rs"),
                 include_str!("../src/hir/inspection/tests/inline_worklists/frozen_walkers.txt"),
-                include_str!("../src/hir/validation/function_lookup.rs"),
+                concat!(
+                    include_str!("../src/hir/validation/function_lookup.rs"),
+                    include_str!("../src/hir/validation/function_lookup/original.rs"),
+                    include_str!("../src/hir/validation/function_lookup/paid_custody.rs")
+                ),
                 include_str!("../src/hir/validation/function_lookup/permits.rs"),
                 concat!(
                     include_str!("../src/hir/function_directory.rs"),
@@ -95,7 +99,10 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                     include_str!("../src/hir/validation/canonical_loans/constructors_before.rs"),
                     include_str!("../src/hir/validation/canonical_loans/ownership_tests.rs")
                 ),
-                include_str!("../src/hir/validation/constructor_seed.rs"),
+                concat!(
+                    include_str!("../src/hir/validation/constructor_seed.rs"),
+                    include_str!("../src/hir/validation/constructor_seed/original.rs")
+                ),
                 concat!(
                     include_str!("../src/hir/canonical_loan_storage.rs"),
                     "\n",
@@ -189,7 +196,12 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/collection_outcome/stream_input.rs"),
         include_str!("../src/hir/collection_outcome/nested.rs"),
         include_str!("../src/hir/collection_outcome/nested/profile.rs"),
-        include_str!("../src/hir/validation/stdin_stream.rs"),
+        concat!(
+            include_str!("../src/hir/validation/stdin_stream.rs"),
+            include_str!("../src/hir/validation/stdin_stream/paid.rs"),
+            include_str!("../src/hir/validation/stdin_stream/paid/analysis.rs"),
+            include_str!("../src/hir/validation/stdin_stream/paid/tests.rs")
+        ),
         include_str!("../src/stdin_stream_ops/analysis.rs"),
         include_str!("../src/hir/validation/borrowed_bytes_call_tests.rs"),
         concat!(
@@ -235,7 +247,6 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/string_ops/concat_funded/work.rs"),
         include_str!("../src/string_ops/conditions/funded/work.rs"),
         include_str!("../src/workspace_graph/identity_resolution/tests/oracle_owner_before.rs"),
-
         include_str!("../src/hir/ordinary_scan.rs"),
         include_str!("../src/hir/ordinary_scan/tests.rs"),
         include_str!("../src/hir/function_value/funded.rs"),
@@ -287,8 +298,12 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/profile.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape.rs"),
-        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape_original.rs"),
-        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/frontier_tests.rs"),
+        include_str!(
+            "../src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape_original.rs"
+        ),
+        include_str!(
+            "../src/cleanup_plan/replay/paid_type_facts/inventory_summary/frontier_tests.rs"
+        ),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/generic.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"),
         include_str!("../src/cleanup_plan/replay/schema/paid_summary.rs"),

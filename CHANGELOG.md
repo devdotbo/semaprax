@@ -1,5 +1,10 @@
 # Changelog
 
+- Author additive paid streaming constructor preflight and shared exact-program
+  function-directory custody (#824), preserving complete independent originals,
+  diagnostic ordering and unchanged whole receiver controls. Qualification is
+  pending; other constructor owners and application fit remain unproved.
+
 - Keep small Program teardown frontiers inline without changing original AST
   destruction order or source/custody identities. Preserve the complete original
   destructor/deep owner and add receiving/free-order controls; wider ordinary

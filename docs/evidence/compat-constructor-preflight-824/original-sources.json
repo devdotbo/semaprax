@@ -1,0 +1,52 @@
+[
+  {
+    "source": "src/hir/validation/constructor_seed.rs",
+    "archive": "src__hir__validation__constructor_seed.rs.before.txt",
+    "sha256": "182ef3a6b409c8bd4789cfe7379ccd79f9ff25cc0388d15aac040dfcc882861d"
+  },
+  {
+    "source": "src/hir/validation/stdin_stream.rs",
+    "archive": "src__hir__validation__stdin_stream.rs.before.txt",
+    "sha256": "958f841ed508dbefb3b0b15b8fedf1bd353a1148dde7966cc2c9748afe62c3a6"
+  },
+  {
+    "source": "src/stdin_stream_ops.rs",
+    "archive": "src__stdin_stream_ops.rs.before.txt",
+    "sha256": "bc1e107b8756db7b323000b0d282b731db08b06b29b21ca9a3e86bb6366bef97"
+  },
+  {
+    "source": "src/stdin_stream_ops/analysis.rs",
+    "archive": "src__stdin_stream_ops__analysis.rs.before.txt",
+    "sha256": "3374700fdc2b71f3bd7343b2ed0ca42ead337d4d6ff1615412a87a2127a07893"
+  },
+  {
+    "source": "src/hir/validation/function_lookup.rs",
+    "archive": "src__hir__validation__function_lookup.rs.before.txt",
+    "sha256": "c04171d4e17bd5b93f67927fff05afae4f9d9da880a632cdea54f3770e7f97a9"
+  },
+  {
+    "source": "src/hir/function_directory/caller.rs",
+    "archive": "src__hir__function_directory__caller.rs.before.txt",
+    "sha256": "39b539622ed91dd9bee4fcd43fbd08f8b1ed702cadbf2870d53826d3d076bf05"
+  },
+  {
+    "source": "src/hir/validation.rs",
+    "archive": "src__hir__validation.rs.before.txt",
+    "sha256": "df2442a9f040d8950374ee135128a10ae43fe7ddbcf73a9cea6b7d941fa4068e"
+  },
+  {
+    "source": "src/hir/validation/closure.rs",
+    "archive": "src__hir__validation__closure.rs.before.txt",
+    "sha256": "2043890e102162ad69d3a5126a8557c47a73c41ae05436f9a843b044437b5be9"
+  },
+  {
+    "source": "src/hir/validation/function_lookup/permits/source_tests.rs",
+    "archive": "src__hir__validation__function_lookup__permits__source_tests.rs.before.txt",
+    "sha256": "bc7261174c93e00dfca418b4e1f1f77954022c151394d9ba1cbac0b8b423fb7c"
+  },
+  {
+    "source": "src/hir/validation/canonical_loans/ownership_tests.rs",
+    "archive": "src__hir__validation__canonical_loans__ownership_tests.rs.before.txt",
+    "sha256": "444fd7965708c59acb8f0f47bd284c15fe34291e0758c4a475bb29937b2599a1"
+  }
+]

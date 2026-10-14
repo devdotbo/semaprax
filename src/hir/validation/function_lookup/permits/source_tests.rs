@@ -107,7 +107,8 @@ fn current_source_permits_preserve_full_saved_function_diagnostics_and_effect_or
 
 #[test]
 fn complete_lookup_and_permit_sources_have_only_named_borrowed_membership_hooks() {
-    let current = include_str!("../../function_lookup.rs");
+    let projected = super::super::paid_custody::project_current("src/hir/validation/function_lookup.rs", include_str!("../../function_lookup.rs"));
+    let current = projected.as_str();
     let addition = "    pub(super) fn permits_borrowed(&self, program: &'a ResolvedProgram) -> Permits<'a> {\n        match self {\n            Self::Borrowed { directory, .. } => Permits::Borrowed((*directory).permits()),\n            Self::Legacy(_) => Permits::Source(&program.permits),\n        }\n    }\n    // Complete original BTree receiver for independently compiled saved validators.\n    #[cfg(test)]\n";
     assert_eq!(current.matches(addition).count(), 1);
     assert_eq!(current.replacen(addition, "", 1), include_str!("../../../../../docs/evidence/function-scope-backing-isolation/function_lookup.rs.before.txt"));

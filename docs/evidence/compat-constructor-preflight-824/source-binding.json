@@ -1,0 +1,74 @@
+{
+  "base": "8ce5c0fb7d65d1a13e150bf2044c8aed011f57bf",
+  "qualification": "source-only; no Cargo/build/tests/Clippy executed",
+  "current_sources": {
+    "src/hir/validation/constructor_seed.rs": {
+      "sha256": "52c886c27a00527cca2468b308102608224fe80aa2a3e36ea5e20470b7ccf855",
+      "lines": 89
+    },
+    "src/hir/validation/stdin_stream.rs": {
+      "sha256": "c3dcc721ac231d127802a48c342ec1566964302d8f25f546144517e9c6280ab2",
+      "lines": 190
+    },
+    "src/hir/validation/function_lookup.rs": {
+      "sha256": "2549c0d9ce467ec7d30a5201840c962fa7dc4187f50c698c47648a417f806e1e",
+      "lines": 284
+    },
+    "src/hir/function_directory/caller.rs": {
+      "sha256": "217896ad2e11c8bcbdfde236ec29a9cc1c00da142c9c18968a6015b79451127a",
+      "lines": 120
+    },
+    "src/hir/validation.rs": {
+      "sha256": "a1658fbfbf655245620b361b0c61b9f6d5afd40813641467cbdc081a320e8226",
+      "lines": 8304
+    },
+    "src/hir/validation/closure.rs": {
+      "sha256": "1e327d09c2e401870db973e048de6249118b8753914167efc612e6ab72da9b51",
+      "lines": 183
+    },
+    "src/hir/validation/function_lookup/permits/source_tests.rs": {
+      "sha256": "c3bc3f34bc12a853277307fc796ead0ede206aa6bf68daf95229bc4659246c2f",
+      "lines": 133
+    },
+    "src/hir/validation/canonical_loans/ownership_tests.rs": {
+      "sha256": "12371250f3590b1ce8d99f6ee8e529fc72545702a43e937355974bbd4e9af22c",
+      "lines": 368
+    },
+    "src/hir/validation/stdin_stream/paid.rs": {
+      "sha256": "f7b565f4bcb32ae1e56eedd921df7811587656719c4d1b2f5d7172a8fb0d7a44",
+      "lines": 263
+    },
+    "src/hir/validation/stdin_stream/paid/analysis.rs": {
+      "sha256": "ef439b31aa0c8e2e70642db3871b37c32ec7da49e6bfc0dba2a5243a966a946d",
+      "lines": 375
+    },
+    "src/hir/validation/stdin_stream/paid/tests.rs": {
+      "sha256": "1b252010d3222e6e9cc5c136408e743f6bf6f2bf398496f260425091d377f97f",
+      "lines": 127
+    },
+    "src/hir/validation/function_lookup/original.rs": {
+      "sha256": "ff9e0353efefce269a7879819733bfd7918fcf091f3bc638fc94b74914341573",
+      "lines": 164
+    },
+    "src/hir/validation/function_lookup/paid_custody.rs": {
+      "sha256": "815fb8254c64f3dc68161b56be163d9fdeb6c2503d69da11b8c237a78eb8cdf9",
+      "lines": 211
+    },
+    "src/hir/validation/constructor_seed/original.rs": {
+      "sha256": "e38ef154a4b8a0e2fb00d2256f8fced29d75e6c8a847984f8387caa1019a5b1f",
+      "lines": 46
+    }
+  },
+  "new_paths": [
+    "src/hir/validation/stdin_stream/paid.rs",
+    "src/hir/validation/stdin_stream/paid/analysis.rs",
+    "src/hir/validation/stdin_stream/paid/tests.rs",
+    "src/hir/validation/function_lookup/original.rs",
+    "src/hir/validation/function_lookup/paid_custody.rs",
+    "src/hir/validation/constructor_seed/original.rs"
+  ],
+  "joined_readers": [
+    "tests/hir_module_boundaries.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"
+  ]
+}

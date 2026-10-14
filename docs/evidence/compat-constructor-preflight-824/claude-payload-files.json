@@ -1,0 +1,12 @@
+[
+  "src/hir/validation/constructor_seed.rs",
+  "src/hir/validation/stdin_stream.rs",
+  "src/hir/validation/stdin_stream/paid.rs",
+  "src/hir/validation/stdin_stream/paid/analysis.rs",
+  "src/stdin_stream_ops/analysis.rs",
+  "src/hir/validation/function_lookup.rs",
+  "src/hir/function_directory.rs",
+  "src/hir/function_directory/caller.rs",
+  "src/hir/ordinary_scan.rs",
+  "src/hir/validation/function_lookup/permits.rs"
+]

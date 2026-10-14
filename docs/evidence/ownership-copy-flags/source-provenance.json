@@ -34,6 +34,11 @@
   "full_current_projection": {
     "src/hir/validation.rs": [
       {
+        "name": "824-owned-function-custody",
+        "from": "        Self::from_constructor(seed, canonical_loans, Some(profiles))\n    }\n    fn with_shared_profiles(\n        program: &'a ResolvedProgram,\n        functions: std::rc::Rc<super::function_directory::Directory<'a>>,\n        storage: Option<canonical_loans::Lookup<'a>>,\n        profiles: executable_profiles::Lookup<'a>,\n    ) -> Result<Self, Diagnostic> {\n        let seed = constructor_seed::ConstructorSeed::authenticate_shared(program, functions)?;\n        let canonical_loans = if let Some(storage) = storage {\n            if !storage.is_current(seed.program) {\n                return Err(hir_error(\"canonical shared-loan storage does not belong to the current program\"));\n            }\n            storage\n        } else { canonical_loans::Lookup::current(&seed)? };\n        Self::from_constructor(seed, canonical_loans, Some(profiles))\n    }\n    fn from_constructor(\n        seed: constructor_seed::ConstructorSeed<'a>,\n",
+        "to": "        Self::from_constructor(seed, canonical_loans, Some(profiles))\n    }\n    fn from_constructor(\n        seed: constructor_seed::ConstructorSeed<'a>,\n"
+      },
+      {
         "name": "src/hir/validation.rs: exact full-current ownership hook 1",
         "from": "mod native_borrow;\nmod nominal_facts;\nmod ownership_flags;\nmod owned_buffer;\nmod owned_result_try;\n",
         "to": "mod native_borrow;\nmod nominal_facts;\nmod owned_buffer;\nmod owned_result_try;\n",

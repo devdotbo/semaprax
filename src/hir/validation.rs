@@ -153,6 +153,21 @@ impl<'a> HirValidator<'a> {
         };
         Self::from_constructor(seed, canonical_loans, Some(profiles))
     }
+    fn with_shared_profiles(
+        program: &'a ResolvedProgram,
+        functions: std::rc::Rc<super::function_directory::Directory<'a>>,
+        storage: Option<canonical_loans::Lookup<'a>>,
+        profiles: executable_profiles::Lookup<'a>,
+    ) -> Result<Self, Diagnostic> {
+        let seed = constructor_seed::ConstructorSeed::authenticate_shared(program, functions)?;
+        let canonical_loans = if let Some(storage) = storage {
+            if !storage.is_current(seed.program) {
+                return Err(hir_error("canonical shared-loan storage does not belong to the current program"));
+            }
+            storage
+        } else { canonical_loans::Lookup::current(&seed)? };
+        Self::from_constructor(seed, canonical_loans, Some(profiles))
+    }
     fn from_constructor(
         seed: constructor_seed::ConstructorSeed<'a>,
         canonical_loans: canonical_loans::Lookup<'a>,

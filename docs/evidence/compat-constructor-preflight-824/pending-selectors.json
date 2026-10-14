@@ -1,0 +1,106 @@
+[
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::stdin_stream::paid::tests::paid_type_and_expression_predicates_keep_complete_original_truth_and_sticky_refusal"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::stdin_stream::paid::tests::full_paid_streaming_derivation_matches_original_facts_through_drop_exact_short_and_zero"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::stdin_stream::paid::tests::full_sealed_preflight_keeps_original_selected_diagnostic_and_all_fields"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_lookup::paid_custody::owned_function_directory_shares_exact_program_and_keeps_full_original_lookup_order"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_lookup::paid_custody::owned_directory_complete_receiving_drop_keeps_exact_short_zero_and_sticky_first"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_lookup::paid_custody::full_original_constructor_seed_and_paid_seed_preserve_all_ordered_semantic_errors"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_lookup::paid_custody::actual_compatibility_constructor_is_paid_through_drop_at_exact_short_and_zero"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_lookup::paid_custody::complete_constructor_preflight_and_lookup_sources_preserve_full_original_bytes"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_lookup::paid_custody::complete_independently_compiled_seed_and_legacy_lookup_are_exact_original_receivers"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_lookup::tests::borrowed_lookup_matches_owned_order_duplicates_and_exact_program_members"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_lookup::tests::caller_function_directory_has_literal_exact_short_sticky_payment_and_full_drop"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_lookup::permits::source_tests::source_permits_match_complete_old_membership_without_backing_in_both_lookup_modes"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_lookup::permits::source_tests::current_source_permits_preserve_full_saved_function_diagnostics_and_effect_order"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_lookup::permits::source_tests::complete_lookup_and_permit_sources_have_only_named_borrowed_membership_hooks"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::canonical_loans::ownership_tests::current_shared_owned_and_unobserved_custody_keep_complete_original_ids_liveness_origins"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::canonical_loans::ownership_tests::complete_active_compatibility_constructor_is_paid_through_drop_exact_short_zero_and_sticky"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::canonical_loans::ownership_tests::original_compatibility_constructor_and_current_seed_order_keep_full_diagnostics_and_transplant_refusal"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::canonical_loans::ownership_tests::attached_loan_drift_is_not_new_constructor_authority_and_whole_saved_receiver_remains_complete"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::canonical_loans::ownership_tests::complete_old_constructor_inventory_caller_and_closure_source_projections_remain_exact"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::canonical_loans::ownership_tests::complete_public_boundary_composition_preserves_original_owner_and_kat_source_bytes"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_scope::lifecycle::completed::tests::actual_repeated_call_receiver_is_paid_through_drop_with_exact_short_and_sticky_refusal"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::held_profiles::source_audit::complete_current_call_owners_are_exact_original_with_only_declared_held_profile_hooks"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::ownership_flags::tests::full_original_ownership_methods_and_all_hooked_sources_are_exactly_bound"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "stdin_stream_ops::tests::source_hir_graph_and_renewal_keep_exact_streaming_facts"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "stdin_stream_ops::tests::signatures_preserve_unique_reader_and_fixed_capacity"
+  },
+  {
+    "harness": "semaprax::hir_module_boundaries",
+    "selector": "core_validation_has_no_resolution_cleanup_build_or_physical_authority"
+  }
+]

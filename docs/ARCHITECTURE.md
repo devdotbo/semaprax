@@ -102,6 +102,12 @@ and parity controls. Other schema probes retain their existing owners.
 inside the existing captured preparation owner. Active compatibility validators
 and nested closures share exact-program storage; unobserved compatibility owns
 explicit unobserved inventory custody. Original receivers remain independent.
+`hir/validation/stdin_stream/paid` owns the active constructor's borrowed streaming
+preflight and complete paid derivation. The original receiver remains separate.
+`hir/function_directory/caller::prepare_shared` prepays immutable compatibility
+lookup custody; nested validators retain the same exact-program directory and
+repeat the original checks. Inline scratch is not a language limit, and other
+constructor preflight allocations remain separate unproved owners.
 `byte_data_capacity/witnesses.rs` owns optional bounded transcript-refusal help
 reconstructed from the same checked flow after the primary refusal is selected.
 It pays cursor, spill, visits and output through the existing invocation ledger;

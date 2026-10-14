@@ -100,3 +100,21 @@ fn capacity_refusal(requested: usize, excess: usize) -> Refused {
 pub(in crate::hir) fn exercise_capacity_refusal(requested: usize, excess: usize) -> Refused {
     capacity_refusal(requested, excess)
 }
+
+/// Compatibility custody owns only immutable metadata bound to the borrowed program.
+pub(in crate::hir) fn prepare_shared(
+    program: &ResolvedProgram,
+) -> Result<std::rc::Rc<Directory<'_>>, Refused> {
+    let directory = prepare(program)?;
+    let bytes = std::alloc::Layout::new::<[usize; 2]>()
+        .extend(std::alloc::Layout::new::<Directory<'_>>())
+        .map(|(layout, _)| layout.pad_to_align().size())
+        .map_err(|_| {
+            crate::bounded_output::refuse_active_required(usize::MAX);
+            Refused::Overflow
+        })?;
+    if !crate::bounded_output::reserve_active_required(bytes) {
+        return Err(Refused::Budget);
+    }
+    Ok(std::rc::Rc::new(directory))
+}

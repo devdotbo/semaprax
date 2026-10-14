@@ -1,0 +1,17 @@
+{
+  "issue": 824,
+  "base": "8ce5c0fb7d65d1a13e150bf2044c8aed011f57bf",
+  "production": "ConstructorSeed active callers use additive paid streaming preflight; original declaration/field/function/error order retained. Bool predicates propagate Err. Inline slots are not an admission cap. Every actual spill/replacement and retained derived-map/Vec slot is prepaid from the same invocation. Existing analysis MAX_WORK and logical charge positions unchanged.",
+  "custody": "Active compatibility function lookup retains an Rc of existing paid exact-program Directory, with header paid before Rc acquisition. No deep Legacy map clone. Nested current closures hold the same Rc and repeat full ConstructorSeed checks, canonical-loan/current-profile checks and function/body validation. Borrowed production directory route and unobserved Legacy route retained.",
+  "originals": "Ten complete original owners are archived with unchanged SHA; full original streaming rejection/bool predicates/analysis remain compiled unchanged. Complete old ConstructorSeed and legacy lookup compile independently via exact named lexical/typepath/visibility/test-registration adapters. Existing whole-source guards retain all original assertions and digests.",
+  "status": "Source-only, no runtime/compiler/Clippy qualification or actual constructor/app savings claim. Existing owner82 unchanged, still required.",
+  "known_existing_source_blocker": {
+    "path": "docs/evidence/ownership-copy-flags/source-provenance.json",
+    "owner": "hir::validation::ownership_flags::tests::full_original_ownership_methods_and_all_hooked_sources_are_exactly_bound",
+    "detail": "Its first original full_current_projection src/hir/validation.rs hook has count0 already on untouched 8ce5 base. New owned-directory method inverse restores exact 8ce5 source; old operations/digests preserved. No passing proof claimed."
+  },
+  "residual": "Other original ConstructorSeed helpers (e.g. generic call graph, intrinsic shape construction and malformed identity diagnostic rendering) remain separate physical/work owners; this batch does not assert all hostile constructors are funded. Existing whole receiver strict allocation assertions/caps remain. Additional BTree comparisons in new streaming derived maps are ordinary comparisons; logical streaming MAX_WORK locations preserved, no new comparison allowance or universal funding claim.",
+  "claude": "Actual bounded Sonnet review exit0,104.72s,321634304B,$0.2728515 provider list basis; invoice unknown. Concrete visibility and paid fixed-message issues repaired locally. No tool execution.",
+  "pending_selectors_count": 26,
+  "pins": "No public code, diagnostic help text, profile, cap, forecast, schema or generated pin changed. Owning producers remain root-controlled."
+}

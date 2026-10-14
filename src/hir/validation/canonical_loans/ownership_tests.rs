@@ -176,7 +176,7 @@ fn complete_old_constructor_inventory_caller_and_closure_source_projections_rema
         current.split_once(marker).unwrap().0,
         original.split_once(marker).unwrap().0
     );
-    let mut current = include_str!("../../validation.rs").to_owned();
+    let mut current = super::super::function_lookup::paid_custody::project_current("src/hir/validation.rs", include_str!("../../validation.rs"));
     // The later held-call receipt is inverted before the complete saved custody comparison.
     fn undo(source: &mut String, new: &str, old: &str) {
         assert_eq!(source.matches(new).count(), 1, "exact unique held-call edit");
@@ -292,7 +292,7 @@ mod record_traversal;
             "../../../../docs/evidence/compatibility-loan-custody/src__hir__validation.rs.before"
         )
     );
-    assert_eq!(include_str!("../closure.rs").replacen("self.canonical_loans.share()", "self.canonical_loans.shared()",1),
+    assert_eq!(super::super::function_lookup::paid_custody::project_current("src/hir/validation/closure.rs", include_str!("../closure.rs")).replacen("self.canonical_loans.share()", "self.canonical_loans.shared()",1),
         include_str!("../../../../docs/evidence/compatibility-loan-custody/src__hir__validation__closure.rs.before"));
     let old = include_str!("constructors_before.rs");
     let directory = old
@@ -346,11 +346,10 @@ fn complete_public_boundary_composition_preserves_original_owner_and_kat_source_
     ];
     assert_eq!(records.as_array().unwrap().len(), sources.len());
     for (ordinal, (current, original)) in sources.into_iter().enumerate() {
+        let projected;
         let current = if ordinal == 0 {
-            current
-                .split_once("\n// PUBLIC_BOUNDARY_SOURCE_INVERSE_GUARD\n")
-                .unwrap()
-                .0
+            projected = super::super::function_lookup::paid_custody::project_current("src/hir/validation/canonical_loans/ownership_tests.rs", current);
+            projected.split_once("\n// PUBLIC_BOUNDARY_SOURCE_INVERSE_GUARD\n").unwrap().0
         } else {
             current
         };

@@ -186,3 +186,5 @@ pub(super) fn reopen_reader(scope: &mut dyn ScopeWrite, owner: &ValueId) -> Resu
     binding.availability = Availability::Available;
     Ok(())
 }
+
+pub(super) mod paid;
