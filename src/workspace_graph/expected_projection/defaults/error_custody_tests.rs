@@ -1,5 +1,5 @@
 //! Fixed-message custody only; the compatibility error Vec remains observed.
-use super::*;
+use super::{default_expr, original, Type, TypeDeclaration, TypeDeclarationKind};
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::measure;
 const LIMIT: usize = 8 * 1024 * 1024;
@@ -151,7 +151,10 @@ fn complete_static_error_source_and_independent_old_dispatch_preserve_all_origin
         "/docs/evidence/default-static-error-custody-825/defaults.before.txt"
     ));
     assert_eq!(
-        format!("{:x}", Sha256::digest(original.as_bytes())),
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+        ),
         record["before_sha256"].as_str().unwrap()
     );
     let mut current = include_str!("../defaults.rs").to_owned();
@@ -162,8 +165,25 @@ fn complete_static_error_source_and_independent_old_dispatch_preserve_all_origin
         current = current.replacen(after, edit["before"].as_str().unwrap(), 1);
     }
     assert_eq!(current, original);
+    // Exact lexical import adapter only; compare the complete original file,
+    // including its original trailing newline, rather than slicing any body.
+    let saved = include_str!("original.rs");
+    let adapter: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/composed-next-source-unions-a1edab/default-original-import-inverse.json"
+    )))
+    .unwrap();
+    let mut restored = saved.to_owned();
+    for hook in adapter["inverse"].as_array().unwrap() {
+        let current = hook["current"].as_str().unwrap();
+        assert_eq!(restored.matches(current).count(), 1);
+        restored = restored.replacen(current, hook["before"].as_str().unwrap(), 1);
+    }
     assert_eq!(
-        format!("{:x}", Sha256::digest(include_bytes!("original.rs"))),
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(restored.as_bytes()))
+        ),
         "0b1c97abf52ee327690f629fdbf406cd34ab9e5f21a8d07f1c457e5fe85db07e"
     );
 }

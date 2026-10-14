@@ -1,0 +1,17 @@
+{
+  "source_only": true,
+  "source": "src/workspace_graph/expected_projection/defaults/original.rs",
+  "original_sha256": "0b1c97abf52ee327690f629fdbf406cd34ab9e5f21a8d07f1c457e5fe85db07e",
+  "inverse": [
+    {
+      "hook": "explicit-import-adapter",
+      "current": "//! Complete original recursive default receiver, independently compiled.\nuse super::{\n    collection_constructor, graph_error, reserve_builder_structure, Diagnostic, Expr, ExprKind,\n    FieldInitializer, Span, Type, TypeDeclaration, TypeDeclarationKind,\n};\n\n",
+      "before": "//! Complete original recursive default receiver, independently compiled.\nuse super::*;\n\n"
+    },
+    {
+      "hook": "original-final-newline",
+      "current": "    Ok(Expr { kind, span })\n}\n",
+      "before": "    Ok(Expr { kind, span })\n}\n\n"
+    }
+  ]
+}

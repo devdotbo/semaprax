@@ -395,6 +395,7 @@ macro_rules! semantic_graph_projection_child_source_inventory {
             include_str!("../../src/workspace_graph/expected_projection/defaults.rs"),
             include_str!("../../src/workspace_graph/expected_projection/defaults/field_directory.rs"),
             include_str!("../../src/workspace_graph/expected_projection/defaults/field_directory/tests.rs"),
+            include_str!("../../src/workspace_graph/expected_projection/defaults/error_custody_tests.rs"),
             include_str!("../../src/workspace_graph/expected_projection/defaults/original.rs"),
         )
     };
