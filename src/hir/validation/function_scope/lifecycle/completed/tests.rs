@@ -341,8 +341,23 @@ fn complete_frozen_function_receiver_is_exact_named_projection_with_original_dig
         projected.trim_end_matches('\n').to_owned() + "\n"
     );
     let archived_lifecycle = include_str!("../../../../../../evidence/final-validation-lifecycle-completed/src__hir__validation__function_scope__lifecycle.rs.txt");
+    let mut legacy = include_str!("../../lifecycle.rs").to_owned();
+    for (current, original) in [
+        (
+            "#[cfg(test)]\npub(super) fn extend_funded(",
+            "pub(super) fn extend_funded(",
+        ),
+        ("#[cfg(test)]\nfn collect<'a>(", "fn collect<'a>("),
+    ] {
+        assert_eq!(legacy.matches(current).count(), 1);
+        legacy = legacy.replacen(current, original, 1);
+    }
+    // The complete archive predates this exact test-only observation adapter.
+    let operation_adapter = "    #[cfg(test)]\n    let _operation = crate::bounded_output::stage_debits::operation_guard(\n        crate::bounded_output::stage_debits::Operation::Lifecycle,\n    );\n";
+    assert_eq!(legacy.matches(operation_adapter).count(), 1);
+    legacy = legacy.replacen(operation_adapter, "", 1);
     assert_eq!(
-        include_str!("../../lifecycle.rs"),
+        legacy,
         archived_lifecycle.to_owned() + "\npub(super) mod completed;\n"
     );
 }
@@ -410,8 +425,10 @@ fn actual_repeated_call_receiver_is_paid_through_drop_with_exact_short_and_stick
         actual.allocated <= paid && actual.highwater <= paid,
         "complete receiver actual={actual:?} paid={paid} old={old:?} old_paid={old_paid}; boundaries [before constructor, constructed, validated before validator Drop, validator dropped, result dropped]: current={boundaries:?} old={old_boundaries:?}"
     );
-    assert!(old.allocated <= old_paid && old.highwater <= old_paid,
-        "complete saved receiver old={old:?} old_paid={old_paid}; boundaries={old_boundaries:?}");
+    assert!(
+        old.allocated <= old_paid && old.highwater <= old_paid,
+        "complete saved receiver old={old:?} old_paid={old_paid}; boundaries={old_boundaries:?}"
+    );
     assert!(paid < old_paid && actual.allocated < old.allocated);
     let (((ok, _), exact), refused, used, first) = observe(paid, true);
     assert!(ok && !refused && used == paid && first.is_none() && !exact.invalid && exact.live == 0);

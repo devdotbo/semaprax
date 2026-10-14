@@ -64,7 +64,7 @@ fn collect<'a>(
     let Some(id) = ty.nominal_id() else {
         return Ok(());
     };
-    if visiting.contains(&id) {
+    if visiting.contains(id) {
         return Ok(());
     }
     visiting.insert(id)?;
@@ -109,7 +109,7 @@ fn collect<'a>(
             }
         }
     }
-    visiting.remove(&id);
+    visiting.remove(id);
     Ok(())
 }
 

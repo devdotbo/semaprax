@@ -35,6 +35,7 @@ pub(super) fn declared_effects(effects: &[String]) -> Result<BTreeSet<&str>, Dia
     }
     Ok(keys)
 }
+#[cfg(test)]
 pub(super) fn extend_funded(
     program: &ResolvedProgram,
     ty: &ResolvedType,
@@ -43,6 +44,7 @@ pub(super) fn extend_funded(
     fund(Some(0))?;
     collect(program, ty, &mut BTreeSet::new(), effects)
 }
+#[cfg(test)]
 fn collect<'a>(
     program: &'a ResolvedProgram,
     ty: &'a ResolvedType,

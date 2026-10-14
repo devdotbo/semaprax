@@ -1,0 +1,34 @@
+{
+  "base": "a184d4406f241aa11df5c297102609b4c35ec1b3",
+  "verification": "SOURCE_ONLY_NO_CARGO_OR_TESTS",
+  "legacy_cfg_inverse": [
+    {
+      "current": "#[cfg(test)]\npub(super) fn extend_funded(",
+      "original": "pub(super) fn extend_funded("
+    },
+    {
+      "current": "#[cfg(test)]\nfn collect<'a>(",
+      "original": "fn collect<'a>("
+    }
+  ],
+  "older_archive_observation_inverse": {
+    "current": "    #[cfg(test)]\n    let _operation = crate::bounded_output::stage_debits::operation_guard(\n        crate::bounded_output::stage_debits::Operation::Lifecycle,\n    );\n",
+    "original": ""
+  },
+  "full_lifecycle_original_sha256": "5fd13ff6c69920abbbfca62effa9b44be55a1ecbe8651cf163f5ad5ad561ad5b",
+  "complete_legacy_body_bytes_unchanged_after_exact_inverse": true,
+  "production_inline_delta": "visiting.contains(&id) -> visiting.contains(id); visiting.remove(&id) -> visiting.remove(id), nothing else",
+  "current_child_hashes": {
+    "src/hir/validation/function_scope/lifecycle/completed/inline_path.rs": "dc6bb809e4ebdaab62e2429dae7ac8fcca3472ee874a4dd6e8f12388334bd620",
+    "src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs": "46762047636feb00bd85bf0da82a4fca991662879e600488dd94aaa339d22cd7",
+    "src/hir/validation/function_scope/lifecycle/completed/before_inline.rs": "fa7274c186e19c25d09bbf869d76ba487459e077568fbd5c89fd108a6aad01b5"
+  },
+  "callers_cfg_test": [
+    "function_scope.rs cfg(test) collection_tests -> funded_early.rs",
+    "function_scope.rs cfg(test) lifecycle_receiver_saved.rs",
+    "lifecycle/completed.rs cfg(test) tests.rs",
+    "lifecycle/completed.rs cfg(test) before_inline.rs"
+  ],
+  "original_hash_or_archive_changes": false,
+  "new_allow_dead_code_or_removed_body": false
+}

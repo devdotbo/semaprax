@@ -367,7 +367,18 @@ fn complete_original_and_all_source_audit_receivers_are_byte_exact() {
         include_str!("../before_inline.rs").to_owned() + "\n#[cfg(test)]\nmod tests;\n",
         originals[0]
     );
-    let legacy = include_str!("../../../lifecycle.rs");
+    let mut legacy = include_str!("../../../lifecycle.rs").to_owned();
+    for (current, original) in [
+        (
+            "#[cfg(test)]\npub(super) fn extend_funded(",
+            "pub(super) fn extend_funded(",
+        ),
+        ("#[cfg(test)]\nfn collect<'a>(", "fn collect<'a>("),
+    ] {
+        assert_eq!(legacy.matches(current).count(), 1);
+        legacy = legacy.replacen(current, original, 1);
+    }
+
     let binding: serde_json::Value = serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/docs/evidence/lifecycle-inline-active-path/source-binding.json"
