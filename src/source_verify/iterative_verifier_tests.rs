@@ -231,6 +231,7 @@ fn compare_scalar_receivers(source: &str, intentional: bool) {
         );
     }
     let iterative_scope = oracle_scope.clone();
+    let live_entry_scope = iterative_scope.clone();
     let mut oracle_diagnostics = Vec::new();
     let oracle = check_expr(
         &program,
@@ -254,6 +255,7 @@ fn compare_scalar_receivers(source: &str, intentional: bool) {
         true,
         &mut iterative_diagnostics,
     );
+    iterative.operators_before_799 = true;
     let actual = iterative.run(expression).unwrap();
     assert_eq!(
         oracle
@@ -273,7 +275,33 @@ fn compare_scalar_receivers(source: &str, intentional: bool) {
         assert_eq!(expected.definitely_partial, actual.definitely_partial);
         assert_eq!(expected.native_unit_discard, actual.native_unit_discard);
     }
+    let saved_bindings = iterative.scopes[0].bindings.clone();
     drop(iterative);
+    let mut live_diagnostics = Vec::new();
+    let mut live = IterativeVerifier::new(
+        &program, current, live_entry_scope, &functions, &types,
+        None, true, &mut live_diagnostics,
+    );
+    let live_value = live.run(expression).unwrap();
+    // Success keeps the complete original value; error-only type withdrawal
+    // is separately pinned against the complete saved receiver in operators_799.
+    if iterative_diagnostics.is_empty() {
+        assert_eq!(actual.as_ref().map(|value| (&value.ty, value.mode, value.native_unit)),
+                   live_value.as_ref().map(|value| (&value.ty, value.mode, value.native_unit)));
+        assert_eq!(saved_bindings.len(), live.scopes[0].bindings.len());
+        for (name, expected) in &saved_bindings {
+            let actual = &live.scopes[0].bindings[name];
+            assert_eq!(expected.ty, actual.ty);
+            assert_eq!(expected.mode, actual.mode);
+            assert_eq!(expected.availability, actual.availability);
+            assert_eq!(expected.moved_places, actual.moved_places);
+            assert_eq!(expected.definitely_partial, actual.definitely_partial);
+            assert_eq!(expected.native_unit_discard, actual.native_unit_discard);
+        }
+    }
+    drop(live);
+    assert_eq!(live_diagnostics, iterative_diagnostics);
+
     if intentional {
         // Only the exact pinned wrong-field fixture reaches this branch; it
         // asserts full old/current diagnostics instead of equality.

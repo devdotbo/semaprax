@@ -921,6 +921,8 @@ macro_rules! verifier_source_inventory {
                 include_str!("../../../../../src/source_verify/iterative/matching.rs"),
                 "\n",
                 include_str!("../../../../../src/source_verify/iterative/operators.rs"),
+                include_str!("../../../../../src/source_verify/iterative/operators/before_799.rs"),
+                include_str!("../../../../../src/source_verify/recovery_tests/operators_799.rs"),
                 "\n",
                 include_str!("../../../../../src/source_verify/iterative/records.rs"),
                 "\n",

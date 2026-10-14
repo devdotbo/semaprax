@@ -16,6 +16,8 @@ pub(super) mod intentional_wrong_field;
 mod proposal_corpus;
 #[path = "recovery_tests/refusal_dependency.rs"]
 mod refusal_dependency;
+#[path = "recovery_tests/operators_799.rs"]
+mod operators_799;
 use crate::ast::{ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
 use crate::test_allocation_observer::measure;
@@ -77,6 +79,12 @@ fn receive_route(source: &str, receiver: u8) -> (Option<(Type, ParamMode, bool)>
             true,
             &mut diagnostics,
         )
+    } else if receiver == 3 {
+        let mut verifier = super::IterativeVerifier::new(
+            &program, current, variables, &functions, &types, None, true, &mut diagnostics,
+        );
+        verifier.operators_before_799 = true;
+        verifier.run(&current.body).unwrap()
     } else if receiver == 1 {
         super::recovery_legacy::check_expr_iterative_legacy(
             &program,

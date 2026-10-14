@@ -1,0 +1,48 @@
+{
+  "base": "f1f48d5a74e80037b805deff0db5cb69f45697c7",
+  "original_sources": {
+    "src/source_verify.rs": "910729a79aa1d5d6e37e0dd8cbf8ec0656fdc6ce6a109390fe874e774e6d5aea",
+    "src/source_verify/iterative/operators.rs": "ec4715b548d41361e7798adfa3c5fd64cb8a105fe4a963422852cc1547a86174",
+    "src/source_verify/iterative/blocks.rs": "4957376058ccc29bd74df746f7b9f97ffaf5bfd74992b541c7e10b64d56341f9",
+    "src/source_verify/iterative_verifier_tests.rs": "22785ad0b954a4c9e66835ee636d0648334ee7a272e14b8d3258434a24f4ad66"
+  },
+  "current_sources": {
+    "src/source_verify.rs": {
+      "sha256": "798cb0e71839340e169df62f9a397683de5197475b27cb9398dfa1d0ab249b66",
+      "lines": 323
+    },
+    "src/source_verify/iterative/operators.rs": {
+      "sha256": "947c722aba4dbbb069309395af6bfa24dea63c536a7032dd195047ba1bb4341f",
+      "lines": 666
+    },
+    "src/source_verify/iterative/operators/before_799.rs": {
+      "sha256": "0616fcb1a536bc6e9d4f2900969bc372dbc94520cf7df86c6bfb8f7b696710e5",
+      "lines": 600
+    },
+    "src/source_verify/iterative/blocks.rs": {
+      "sha256": "d1d3e19a3b9f4d11c3a833b4f0aa396d8b415fafbf1c633c76883ce9e9a095ca",
+      "lines": 1161
+    },
+    "src/source_verify/iterative_verifier_tests.rs": {
+      "sha256": "440964db34c01c13db5cba33230082dab167be2e69a78383ef7c81251f64604a",
+      "lines": 998
+    },
+    "src/source_verify/recovery_tests.rs": {
+      "sha256": "f60de8f2e4ef604e5a575a8c5fd6d13f512ca039ea0321f59f6c92628805c739",
+      "lines": 314
+    },
+    "src/source_verify/recovery_tests/operators_799.rs": {
+      "sha256": "81b3bbff3f7b19ba61589f6ef10004a67498581226683c4a46e599e51a612204",
+      "lines": 121
+    },
+    "src/source_verify/constructor_tests.rs": {
+      "sha256": "6ad3923f23833bc58d2ccaa707bed100a7402b52a60e0959d7a7e86bd9eb450b",
+      "lines": 407
+    },
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
+      "sha256": "c358b05fc13a51f22bdf435e95302ffa62fe591500bccba25d7cb2d9f9740f8e",
+      "lines": 1222
+    }
+  },
+  "execution": "none; root qualification pending"
+}

@@ -3,13 +3,13 @@
 
 use crate::ast::{Expr, ParamMode, Span, Statement, Type};
 use crate::diagnostic::Diagnostic;
-use crate::source_verify::IterativeVerifier;
 use crate::source_verify::binding::{Availability, Binding};
 use crate::source_verify::diagnostics::{error, is_scalar_source_type, reject_native_unit_value};
 use crate::source_verify::loans::{
     activate_local_loan, has_active_overlapping_loan, local_borrow_origin,
     mark_value_sources_moved, merge_moved, release_dead_local_loans,
 };
+use crate::source_verify::IterativeVerifier;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
@@ -72,7 +72,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 value,
                 ..
             } => {
-                if self.scopes[block_scope].bindings.contains_key(name) {
+                #[cfg(test)]
+                let check_refused_name = !self.operators_before_799;
+                #[cfg(not(test))]
+                let check_refused_name = true;
+                let refused_name =
+                    check_refused_name && self.recovery.reads_refused(block_scope, name);
+                if self.scopes[block_scope].bindings.contains_key(name) || refused_name {
                     self.diagnostics.push(
                         error(
                             self.program,
