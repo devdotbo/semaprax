@@ -296,7 +296,7 @@ fn preflight_owned_inner_mode(
         .into_iter()
         .map(|source| workspace_graph::WorkspaceSource {
             path: source.path,
-            source: source.source.into(),
+            source: source.source,
         })
         .collect();
     let (graph, recovered_sources) = if let Some(change_builder_limit) = change_builder_limit {

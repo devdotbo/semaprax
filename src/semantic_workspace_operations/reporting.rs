@@ -287,7 +287,7 @@ pub(crate) fn apply_with_hook(
     })();
     let (prepared, receipt, replay_token) = match prepublication {
         Ok(value) => value,
-        Err(diagnostics) => return authority.finish_reporting(Err((diagnostics).into())),
+        Err(diagnostics) => return authority.finish_reporting(Err(diagnostics)),
     };
     let (candidate_files, candidate_manifest, candidate_revision) =
         prepared.change.into_operations_commit_parts();

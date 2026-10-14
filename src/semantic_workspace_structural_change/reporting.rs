@@ -116,8 +116,8 @@ fn prepare_authenticated_structural_authority(
     })();
     match result {
         Ok(prepared) => Ok((authority, prepared)),
-        Err(diagnostics) => match authority.finish_reporting::<()>(Err((diagnostics).into())) {
-            Err(diagnostics) => Err((diagnostics).into()),
+        Err(diagnostics) => match authority.finish_reporting::<()>(Err(diagnostics)) {
+            Err(diagnostics) => Err(diagnostics),
             Ok(()) => Err((replay()).into()),
         },
     }
@@ -202,7 +202,7 @@ pub(crate) fn apply_authenticated_with_hook(
     })();
     let receipt = match prepublication {
         Ok(receipt) => receipt,
-        Err(diagnostics) => return authority.finish_reporting(Err((diagnostics).into())),
+        Err(diagnostics) => return authority.finish_reporting(Err(diagnostics)),
     };
     let (candidate_files, candidate_manifest, candidate_revision) =
         prepared.into_candidate_generation_parts();
