@@ -9,7 +9,7 @@
       },
       {
         "before": "",
-        "after": "\n#[cfg(test)]\nmod original_intrinsics;\n#[cfg(test)]\nmod intrinsic_tests;\n"
+        "after": "\n#[cfg(test)]\nmod intrinsic_tests;\n#[cfg(test)]\nmod original_intrinsics;\n"
       }
     ]
   },

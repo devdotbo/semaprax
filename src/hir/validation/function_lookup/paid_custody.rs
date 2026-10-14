@@ -95,10 +95,15 @@ fn full_original_constructor_seed_and_paid_seed_preserve_all_ordered_semantic_er
             _ => {}
         }
         let old = constructor_seed::original::ConstructorSeed::authenticate(&program, None).err();
-        let ((current, actual), refused, paid, first) = with_limit_usage_refusal(LIMIT, || {
-            measure(|| constructor_seed::ConstructorSeed::authenticate(&program, None).err())
+        let (((), actual), refused, paid, first) = with_limit_usage_refusal(LIMIT, || {
+            measure(|| {
+                let current = constructor_seed::ConstructorSeed::authenticate(&program, None).err();
+                // Compare every diagnostic field before dropping the complete receiving result.
+                // Returning an owned error would keep its backing outside this Drop observation.
+                assert_eq!(current, old);
+                drop(current);
+            })
         });
-        assert_eq!(current, old);
         assert!(!refused && first.is_none() && !actual.invalid && actual.live == 0);
         // These are complete setup observations, not substituted smaller validators.
         // Other unchanged preflight helpers remain separate unproved owners.

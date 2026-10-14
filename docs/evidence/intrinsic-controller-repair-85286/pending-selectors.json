@@ -1,0 +1,21 @@
+{
+  "base": "85286b98d32b6b88ca87495801e31e958e22b917",
+  "qualification": "source-only; no Rust execution",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selectors": [
+        "hir::validation::constructor_seed::intrinsic_tests::original_intrinsic_parameter_mode_fixture_keeps_complete_parser_diagnostic",
+        "hir::validation::constructor_seed::intrinsic_tests::corrective_controllers_reconstruct_complete_original_sources",
+        "hir::validation::constructor_seed::intrinsic_tests::exact_intrinsic_nominal_predicates_match_complete_owned_receivers_without_acquisition",
+        "hir::validation::constructor_seed::intrinsic_tests::complete_intrinsic_case_fields_and_constructor_dispatch_keep_full_original_diagnostics",
+        "hir::validation::constructor_seed::intrinsic_tests::complete_intrinsic_declaration_receivers_have_zero_backing_through_drop_and_keep_sticky_caller",
+        "hir::validation::constructor_seed::intrinsic_tests::complete_intrinsic_sources_and_saved_constructor_dispatch_reconstruct_every_original_byte",
+        "hir::validation::function_lookup::paid_custody::full_original_constructor_seed_and_paid_seed_preserve_all_ordered_semantic_errors",
+        "hir::validation::function_lookup::paid_custody::complete_constructor_preflight_and_lookup_sources_preserve_full_original_bytes",
+        "hir::validation::function_lookup::paid_custody::actual_compatibility_constructor_is_paid_through_drop_at_exact_short_and_zero"
+      ]
+    }
+  ]
+}

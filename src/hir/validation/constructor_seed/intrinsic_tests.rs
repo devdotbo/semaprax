@@ -4,7 +4,7 @@ use crate::test_allocation_observer::measure;
 
 fn program() -> ResolvedProgram {
     crate::hir::resolve(&crate::check(
-        r#"module test.constructor.intrinsics; fn list_identity(value:List<i64>)->List<i64>{value} fn iter_identity(own value:Iter<i64>)->Iter<i64>{value} @id("app.main") fn main()->i64{0}"#,
+        r#"module test.constructor.intrinsics; fn list_identity(value:List<i64>)->List<i64>{value} fn iter_identity(value: own Iter<i64>)->Iter<i64>{value} @id("app.main") fn main()->i64{0}"#,
         "constructor-intrinsics.spx",
     ).unwrap()).unwrap()
 }
@@ -358,6 +358,84 @@ fn complete_intrinsic_sources_and_saved_constructor_dispatch_reconstruct_every_o
                 crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
             ),
             record["sha256"].as_str().unwrap()
+        );
+        let mut restored = current.to_owned();
+        for edit in record["edits"].as_array().unwrap().iter().rev() {
+            let after = edit["after"].as_str().unwrap();
+            assert_eq!(restored.matches(after).count(), 1);
+            restored = restored.replacen(after, edit["before"].as_str().unwrap(), 1);
+        }
+        assert_eq!(restored, original);
+    }
+}
+
+#[test]
+fn original_intrinsic_parameter_mode_fixture_keeps_complete_parser_diagnostic() {
+    let original = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/intrinsic-controller-repair-85286/src__hir__validation__constructor_seed__intrinsic_tests.rs.before.txt"
+    ));
+    let source = original
+        .split_once("r#\"")
+        .unwrap()
+        .1
+        .split_once("\"#")
+        .unwrap()
+        .0;
+    let diagnostics = crate::check(source, "constructor-intrinsics.spx").unwrap_err();
+    assert_eq!(
+        diagnostics,
+        vec![crate::diagnostic::Diagnostic {
+            code: "SPX-P106",
+            severity: crate::diagnostic::Severity::Error,
+            message: "expected `:` after parameter name".into(),
+            path: Some("constructor-intrinsics.spx".to_owned()),
+            span: Some(crate::ast::Span {
+                start: 109,
+                end: 114,
+                line: 1,
+                column: 110
+            }),
+            help: None,
+        }]
+    );
+}
+
+#[test]
+fn corrective_controllers_reconstruct_complete_original_sources() {
+    use sha2::{Digest, Sha256};
+    let records: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/intrinsic-controller-repair-85286/exact-source-inverses.json"
+    )))
+    .unwrap();
+    let currents = [
+        include_str!("intrinsic_tests.rs"),
+        include_str!("../function_lookup/paid_custody.rs"),
+    ];
+    let originals = [
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/intrinsic-controller-repair-85286/src__hir__validation__constructor_seed__intrinsic_tests.rs.before.txt")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/intrinsic-controller-repair-85286/src__hir__validation__function_lookup__paid_custody.rs.before.txt")),
+    ];
+    let hashes = [
+        "d42039a03f7191b9c89d879f942b0cc005b51e080d36020c5b79849c2fd042a3",
+        "0b61582a54b3cfa01889e9e8965e3b1fceef8340489332f02ee9cb1c059db7cb",
+    ];
+    assert_eq!(records.as_array().unwrap().len(), currents.len());
+    for (((record, current), original), digest) in records
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(currents)
+        .zip(originals)
+        .zip(hashes)
+    {
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+            ),
+            digest
         );
         let mut restored = current.to_owned();
         for edit in record["edits"].as_array().unwrap().iter().rev() {

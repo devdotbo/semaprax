@@ -78,6 +78,11 @@
           "name": "exact-saved-intrinsics-dispatch-guard",
           "before": "    let current = current.replacen(alias, \"\", 1).replacen(",
           "after": "    let saved_intrinsics = \"use super::original_intrinsics as box_intrinsic;\\n\";\n    assert_eq!(current.matches(saved_intrinsics).count(), 1);\n    let current = current.replacen(saved_intrinsics, \"\", 1);\n    let current = current.replacen(alias, \"\", 1).replacen("
+        },
+        {
+          "name": "complete-semantic-error-receiving-drop-window",
+          "before": "        let ((current, actual), refused, paid, first) = with_limit_usage_refusal(LIMIT, || {\n            measure(|| constructor_seed::ConstructorSeed::authenticate(&program, None).err())\n        });\n        assert_eq!(current, old);",
+          "after": "        let (((), actual), refused, paid, first) = with_limit_usage_refusal(LIMIT, || {\n            measure(|| {\n                let current = constructor_seed::ConstructorSeed::authenticate(&program, None).err();\n                // Compare every diagnostic field before dropping the complete receiving result.\n                // Returning an owned error would keep its backing outside this Drop observation.\n                assert_eq!(current, old);\n                drop(current);\n            })\n        });"
         }
       ]
     }
