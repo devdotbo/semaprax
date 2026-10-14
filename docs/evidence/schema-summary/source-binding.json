@@ -114,7 +114,7 @@
     "src/cleanup/schema_summary/generic_record.rs": "a46d2b2b6b83918f72eab634ced94c6982b4e25f92b3b585afd4b40f84328c1a",
     "src/cleanup/schema_summary/support.rs": "eb9a6cd7961d586370fce7b30552ef0e5ccd4c5d23032a9717447fe32efbe6f2",
     "src/cleanup/schema_summary/tests.rs": "2235bc65b6560297422217de815d43923ed76db6dc142ffa781d9814dc485d81",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "b67dc34c71cf9d86aa6ff7c70699df8613b405f823fb748065904cf0d57e4ced",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "77e43899a9b5d210083146666f284c00b1ebbadda4043a3dd9d71c9f18b1fa28",
     "src/cleanup_plan/replay/paid_type_facts.rs": "e508f5533dc1c8913e309d87a80dee963f92edffccb3f24ced35eae49ad904bf",
     "src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs": "cd6eddfa98cf8b0ad1eb9c5c1a43fe64d73724b15eb448b26dec9666779b9796",
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs": "fb5e511e1a4908860a55e74a9e862a847440d90d70f5647d618748ea63f4b07a",
