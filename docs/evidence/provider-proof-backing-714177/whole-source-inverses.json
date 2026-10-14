@@ -1,0 +1,375 @@
+{
+  "source_only": true,
+  "runtime_qualification": "pending",
+  "base": "71417722e",
+  "whole_sources": [
+    {
+      "file": "src/loop_calls/byte_writer/source_index.rs",
+      "archive": "0.before.txt",
+      "original_sha256": "41e9508add8734601c97b7f0379cbd5c04ee19c27894b43fc0f67dc70c506cac",
+      "original_bytes": 8568,
+      "current_sha256": "327f222c35dd67747c1c0559815e942e1cf715f9627de608af6e07f32539d8f1",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "// PROVIDER_BACKING_BEGIN\n/// Physical storage only. No semantic verdict or work allowance crosses a phase.\npub(crate) struct SourceBacking<'a> {\n    entries: Vec<Entry<'a>>,\n    cursor: Option<Box<source::Cursor<'a>>>,\n    failed: bool,\n}\nimpl SourceBacking<'_> {\n    pub(crate) fn empty() -> Self {\n        Self {\n            entries: Vec::new(),\n            cursor: None,\n            failed: false,\n        }\n    }\n}\nimpl<'a> SourceProofs<'a> {\n    pub(crate) fn from_backing(backing: SourceBacking<'a>) -> Result<Self, Diagnostic> {\n        let SourceBacking {\n            mut entries,\n            mut cursor,\n            failed,\n        } = backing;\n        // The owning core checks its captured payer/source before handing\n        // storage over. This primitive independently preserves sticky refusal\n        // before clearing any borrowed row or cursor frame.\n        if failed\n            || crate::bounded_output::active_remaining().is_none()\n            || !crate::bounded_output::reserve_active_required(0)\n        {\n            return Err(error());\n        }\n        entries.clear();\n        if let Some(cursor) = cursor.as_deref_mut() {\n            // Cursor owns only its fixed inline array of borrowed frames.\n            *cursor = source::Cursor::default();\n        }\n        Ok(Self {\n            entries,\n            cursor,\n            work: WORK,\n            failed: false,\n        })\n    }\n    pub(crate) fn into_backing(self) -> (SourceBacking<'a>, bool) {\n        let Self {\n            mut entries,\n            cursor,\n            work: _,\n            failed,\n        } = self;\n        entries.clear();\n        (\n            SourceBacking {\n                entries,\n                cursor,\n                failed,\n            },\n            failed,\n        )\n    }\n    #[cfg(test)]\n    pub(crate) fn scope_observation(&self) -> (usize, usize, usize, usize) {\n        (\n            self.entries.len(),\n            self.work,\n            self.entries.as_ptr() as usize,\n            self.cursor.as_deref().map_or(0, |c| c as *const _ as usize),\n        )\n    }\n}\n// PROVIDER_BACKING_END\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "src/loop_calls/byte_writer.rs",
+      "archive": "1.before.txt",
+      "original_sha256": "c0f1121d1d72b5b33bb68f3d62830253136d5da17e71ad3e4137cf45a293446c",
+      "original_bytes": 7739,
+      "current_sha256": "d502d7866f094fd83942598b1949791160c4fad1218d7bc79ffb5e678880fb0b",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-2",
+          "current": "pub(crate) use source_index::{SourceBacking, SourceHelpers, SourceIndex, SourceProofs};\n",
+          "before": "pub(crate) use source_index::{SourceHelpers, SourceIndex, SourceProofs};\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "pub(crate) mod source_index_original;\n#[cfg(test)]\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph/expected_projection/import_stub/byte_helper.rs",
+      "archive": "2.before.txt",
+      "original_sha256": "c7a61f589cbb7da23a25516d1063fe04a3458189ea9071655fd1558181a2b2a9",
+      "original_bytes": 9388,
+      "current_sha256": "f99352d60b71ace1baf2ebb39559a6ac7a1be9033420c3983db5aeea37f4fd78",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "// PROVIDER_PARTS_BEGIN\nimpl<'a> ProviderProofs<'a> {\n    pub(super) fn from_backing(\n        authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,\n        programs: &'a [Program],\n        backing: crate::loop_calls::byte_writer::SourceBacking<'a>,\n        carrier_charged: bool,\n    ) -> Result<Self, crate::diagnostic::Diagnostic> {\n        Ok(Self {\n            authored,\n            programs,\n            proofs: crate::loop_calls::byte_writer::SourceProofs::from_backing(backing)?,\n            carrier_charged,\n        })\n    }\n    pub(super) fn into_parts(\n        self,\n    ) -> (\n        crate::loop_calls::byte_writer::SourceBacking<'a>,\n        bool,\n        bool,\n    ) {\n        let Self {\n            authored: _,\n            programs: _,\n            proofs,\n            carrier_charged,\n        } = self;\n        let (backing, failed) = proofs.into_backing();\n        (backing, carrier_charged, failed)\n    }\n    #[cfg(test)]\n    pub(super) fn observation(&self) -> (usize, usize, usize, usize) {\n        self.proofs.scope_observation()\n    }\n}\n// PROVIDER_PARTS_END\n\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph/expected_projection/import_stub.rs",
+      "archive": "3.before.txt",
+      "original_sha256": "5c8e8a2c6662eb0017553a4d378a4877afd68986214102a3ce3d0a8cf3af190d",
+      "original_bytes": 11248,
+      "current_sha256": "935a023143d421321ad24a90372bb899d7b014fea0dd95672000e90ccd901713",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-2",
+          "current": "\n#[cfg(test)]\npub(super) fn default_expr_original(\n    function: &Function,\n    declarations: &[(&str, &crate::ast::TypeDeclaration)],\n    allow_owned: bool,\n    allow_byte_forward: bool,\n) -> Result<Expr, Vec<crate::diagnostic::Diagnostic>> {\n    let byte_owner = function.params.iter().find(|parameter| {\n        allow_byte_forward && parameter.mode == ParamMode::Own && parameter.ty == Type::Bytes\n    });\n    if let Some(parameter) = byte_owner.or_else(|| {\n        forward_parameter(function, allow_owned, |ty| {\n            let Type::Named { name, arguments } = ty else {\n                return false;\n            };\n            arguments.is_empty()\n                && declarations\n                    .iter()\n                    .any(|(candidate, declaration)| *candidate == name && record_shape(declaration))\n        })\n    }) {\n        super::reserve_builder_structure(std::mem::size_of::<Expr>())?;\n        return Ok(Expr {\n            kind: ExprKind::Var(crate::bounded_output::budgeted_clone(&parameter.name)),\n            span: crate::ast::Span::default(),\n        });\n    }\n    super::defaults::original::default_expr(&function.return_type, declarations, allow_owned)\n}\n",
+          "before": ""
+        },
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "// CORE_PROOF_REGISTRATION_BEGIN\n#[path = \"import_stub/core_proofs.rs\"]\npub(super) mod core_proofs;\n// CORE_PROOF_REGISTRATION_END\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph/expected_projection/held_projection.rs",
+      "archive": "4.before.txt",
+      "original_sha256": "64b694567f2881244476cfe66f7088d01061f7ee8b07f86a7f4756a831fc2f7d",
+      "original_bytes": 18151,
+      "current_sha256": "c355323caf04e14b685317689fedecb51c7a76f609569a7ef2a263614b992e72",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-9",
+          "current": "    }\n    byte_proofs.complete().map_err(|error| vec![error])?;\n",
+          "before": "    }\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-8",
+          "current": "            import_stub::byte_helper_authorized(\n                target_function,\n                target.module,\n                byte_proofs.get().map_err(|error| vec![error])?,\n            )?,\n",
+          "before": "            import_stub::byte_helper_authorized(target_function, target.module, &mut byte_proofs)?,\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-7",
+          "current": "    };\n    let mut byte_proofs = import_stub::core_proofs::Phase::new(authored, programs, core)\n        .map_err(|error| vec![error])?;\n",
+          "before": "    };\n    let mut byte_proofs = import_stub::ByteHelperProofs::new(authored, programs);\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-6",
+          "current": ") -> Result<Program, Vec<Diagnostic>> {\n    synthetic_program_with_registry_using(program, authored, programs, registry, None)\n}\n\npub(in crate::workspace_graph) fn synthetic_program_core<'a>(\n    program: &Program,\n    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,\n    programs: &'a [Program],\n    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,\n    core: &mut import_stub::core_proofs::CoreProviderProofs<'a>,\n) -> Result<Program, Vec<Diagnostic>> {\n    synthetic_program_with_registry_using(program, authored, programs, registry, Some(core))\n}\n\npub(in crate::workspace_graph) fn synthetic_program_with_registry_using<'a>(\n    program: &Program,\n    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,\n    programs: &'a [Program],\n    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,\n    core: Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,\n",
+          "before": ""
+        },
+        {
+          "hook": "explicit-provider-backing-edit-5",
+          "current": "    };\n    byte_proofs.complete().map_err(|error| vec![error])?;\n    Ok(result)\n",
+          "before": "    })\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-4",
+          "current": "    let result = SyntheticBuilderCosts {\n",
+          "before": "    Ok(SyntheticBuilderCosts {\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-3",
+          "current": "                import_stub::byte_helper_authorized(\n                    function,\n                    target.module,\n                    byte_proofs.get().map_err(|error| vec![error])?,\n                )?,\n",
+          "before": "                import_stub::byte_helper_authorized(function, target.module, &mut byte_proofs)?,\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-2",
+          "current": "    let mut default_memo = [BTreeMap::new(), BTreeMap::new()];\n    let mut byte_proofs = import_stub::core_proofs::Phase::new(authored, programs, core)\n        .map_err(|error| vec![error])?;\n",
+          "before": "    let mut default_memo = [BTreeMap::new(), BTreeMap::new()];\n    let mut byte_proofs = import_stub::ByteHelperProofs::new(authored, programs);\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "    synthetic_builder_bytes_scoped_with_retention_with_registry_using(\n        program,\n        authored,\n        programs,\n        maximum_identity,\n        include_imports,\n        profile,\n        registry,\n        None,\n    )\n}\n\n#[allow(clippy::too_many_arguments)]\npub(in crate::workspace_graph) fn synthetic_builder_bytes_core<'a>(\n    program: &Program,\n    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,\n    programs: &'a [Program],\n    maximum_identity: Option<usize>,\n    include_imports: bool,\n    profile: (u8, cached_exact::Retention),\n    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,\n    core: &mut import_stub::core_proofs::CoreProviderProofs<'a>,\n) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {\n    synthetic_builder_bytes_scoped_with_retention_with_registry_using(\n        program,\n        authored,\n        programs,\n        maximum_identity,\n        include_imports,\n        profile,\n        registry,\n        Some(core),\n    )\n}\n\npub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_with_registry_using<\n    'a,\n>(\n    program: &Program,\n    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,\n    programs: &'a [Program],\n    maximum_identity: Option<usize>,\n    include_imports: bool,\n    profile: (u8, cached_exact::Retention),\n    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,\n    core: Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,\n) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph/expected_projection/borrowed_imports.rs",
+      "archive": "5.before.txt",
+      "original_sha256": "54599fda2371ac9e76b897812e8d717828d542db25dceffa2d1161b403a2bc38",
+      "original_bytes": 14329,
+      "current_sha256": "f0c6dc18bbc58c8792a7ee466a6ae93c4d051f19ed7f963a10f99024230052ae",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-4",
+          "current": "    let result = SyntheticProgramView::with_generated_owner(program, roots).ok_or_else(refusal)?;\n    byte_proofs.complete().map_err(|error| vec![error])?;\n    Ok(result)\n",
+          "before": "    SyntheticProgramView::with_generated_owner(program, roots).ok_or_else(refusal)\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-3",
+          "current": "            import_stub::byte_helper_authorized(\n                original,\n                target.module,\n                byte_proofs.get().map_err(|error| vec![error])?,\n            )?,\n",
+          "before": "            import_stub::byte_helper_authorized(original, target.module, &mut byte_proofs)?,\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-2",
+          "current": "    let mut byte_proofs = import_stub::core_proofs::Phase::new(authored, programs, core)\n        .map_err(|error| vec![error])?;\n",
+          "before": "    let mut byte_proofs = import_stub::ByteHelperProofs::new(authored, programs);\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "    construct_using(program, authored, programs, registry, None)\n}\n\npub(in crate::workspace_graph) fn construct_core<'a>(\n    program: &'a Program,\n    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,\n    programs: &'a [Program],\n    registry: &LayoutRegistry<'_>,\n    core: &mut import_stub::core_proofs::CoreProviderProofs<'a>,\n) -> Result<SyntheticProgramView<'a>, Vec<Diagnostic>> {\n    construct_using(program, authored, programs, registry, Some(core))\n}\n\npub(in crate::workspace_graph) fn construct_using<'p, 'a>(\n    program: &'p Program,\n    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,\n    programs: &'a [Program],\n    registry: &LayoutRegistry<'_>,\n    core: Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,\n) -> Result<SyntheticProgramView<'p>, Vec<Diagnostic>> {\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph/expected_projection/borrowed_leaf.rs",
+      "archive": "6.before.txt",
+      "original_sha256": "84207cdd985a765401872579baf89bec60471e8c877cdcfb825952adb812fb9a",
+      "original_bytes": 11276,
+      "current_sha256": "635a606f173659862c09c8d0d44b2e20e25b3278b7b3a44802e9eea9d565fa7e",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "    // CORE_TRANSIENT_BEGIN\n    pub(in crate::workspace_graph) fn construct_transient_core(\n        program: &'a Program,\n        authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,\n        programs: &'a [Program],\n        registry: &private_layout::registry::LayoutRegistry<'_>,\n        core: &mut super::CoreProviderProofs<'a>,\n    ) -> Result<Self, Vec<Diagnostic>> {\n        if eligible(program) {\n            construct(program).map(Self::Borrowed)\n        } else if super::borrowed_imports::eligible(program, authored, programs) {\n            super::borrowed_imports::construct_core(program, authored, programs, registry, core)\n                .map(Self::Borrowed)\n        } else {\n            super::held_projection::synthetic_program_core(\n                program,\n                authored,\n                programs,\n                Some(registry),\n                core,\n            )\n            .map(Self::Owned)\n        }\n    }\n    // CORE_TRANSIENT_END\n\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph/expected_projection/uncached_peak.rs",
+      "archive": "7.before.txt",
+      "original_sha256": "2156e41020aeb1cbf47b0fdaf29788ce90dbdb431109b63957f3b727d244bbf4",
+      "original_bytes": 12889,
+      "current_sha256": "bd2a7c0e83ee239e14574cd5348cc4595ecfc59f71b9fe1d580d94a309fcb71d",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "\n// CORE_PEAK_BEGIN\npub(in crate::workspace_graph) fn charge_uncached_synthetic_ast_core<'a>(\n    program: &Program,\n    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,\n    programs: &'a [Program],\n    retained_peak: &mut usize,\n    registry: Option<&LayoutRegistry<'_>>,\n    core: &mut super::CoreProviderProofs<'a>,\n) -> Result<(), Vec<Diagnostic>> {\n    let bytes = if super::borrowed_leaf::eligible(program) {\n        super::borrowed_leaf::ast_peak(program)?\n    } else {\n        checked_usage(\n            super::held_projection::synthetic_builder_bytes_core(\n                program,\n                authored,\n                programs,\n                None,\n                true,\n                (4, super::cached_exact::Retention::Parsed),\n                registry,\n                core,\n            )?\n            .synthetic_ast,\n            super::borrowed_leaf::input_carrier_delta()?,\n            \"builder_bytes\",\n            active_builder_limit(),\n        )?\n    };\n    // The uncached path drops this AST before constructing the next one.\n    // Preserve a monotonic peak reservation; never refund earlier charges.\n    if bytes > *retained_peak {\n        super::reserve_builder_structure(bytes - *retained_peak)?;\n        *retained_peak = bytes;\n    }\n    Ok(())\n}\n// CORE_PEAK_END\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph/expected_projection.rs",
+      "archive": "8.before.txt",
+      "original_sha256": "61e43e67ae8308f04e745bda1db8cddcd90e1dba2f865f8f1cd9a24bf630fb71",
+      "original_bytes": 58695,
+      "current_sha256": "65533cf9ba31f97cbc6618222b5a99bbb6b89dda14c34b686e541a8b77ce3a4c",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "// CORE_PROOF_RECEIVERS_BEGIN\n#[cfg(test)]\n#[path = \"expected_projection/borrowed_imports_original.rs\"]\nmod borrowed_imports_original;\n#[cfg(test)]\n#[path = \"expected_projection/held_projection_original.rs\"]\nmod held_projection_original;\n#[cfg(test)]\n#[path = \"expected_projection/import_stub_original.rs\"]\nmod import_stub_original;\npub(in crate::workspace_graph) use import_stub::core_proofs::CoreProviderProofs;\n// CORE_PROOF_RECEIVERS_END\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph.rs",
+      "archive": "9.before.txt",
+      "original_sha256": "6c0497495c52ad6d7b6a8262a0e3ec788a54b46036ddf7cbcdc6c2bca3d4a835",
+      "original_bytes": 230263,
+      "current_sha256": "e317564f022117d91c7ca4d9df93caaa51171ee6a0a1ad2da837551ec1a31a37",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-4",
+          "current": "            expected_projection::borrowed_leaf::Input::construct_transient_core(\n                program,\n                authored,\n                programs,\n                layouts,\n                &mut core_proofs,\n",
+          "before": "            expected_projection::borrowed_leaf::Input::construct_transient(\n                program, authored, programs, layouts,\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-3",
+          "current": "                    &mut core_proofs,\n",
+          "before": ""
+        },
+        {
+          "hook": "explicit-provider-backing-edit-2",
+          "current": "                expected_projection::uncached_peak::charge_uncached_synthetic_ast_core(\n",
+          "before": "                expected_projection::uncached_peak::charge_uncached_synthetic_ast_with_registry(\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "    let mut core_proofs = expected_projection::CoreProviderProofs::new(authored, programs)\n        .map_err(|error| vec![error])?;\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "tests/workspace/semantic_graph/source_inventory.rs",
+      "archive": "10.before.txt",
+      "original_sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
+      "original_bytes": 25059,
+      "current_sha256": "cbf9a4aa0433df0fb229968126069951210c1678bc1c9f902e59024810ce8c0e",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-3",
+          "current": "            include_str!(\"../../src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs\"),\n            include_str!(\"../../src/workspace_graph/expected_projection/import_stub/core_proofs.rs\"),\n            include_str!(\"../../src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs\"),\n            include_str!(\"../../src/workspace_graph/expected_projection/import_stub_original.rs\"),\n",
+          "before": ""
+        },
+        {
+          "hook": "explicit-provider-backing-edit-2",
+          "current": "            include_str!(\"../../src/workspace_graph/expected_projection/borrowed_imports_original.rs\"),\n",
+          "before": ""
+        },
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "            include_str!(\"../../src/workspace_graph/expected_projection/held_projection_original.rs\"),\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "archive": "11.before.txt",
+      "original_sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
+      "original_bytes": 85667,
+      "current_sha256": "512be8a4081f35b2717cdd7dd63958d2260ed566dbbcff131a15c9e95d3c23b5",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-2",
+          "current": "macro_rules! verifier_source_inventory {\n    () => {\n        concat!(\n            include_str!(\"../../../../../src/loop_calls/byte_writer.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source_index.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source_index_original.rs\"),\n",
+          "before": "macro_rules! verifier_source_inventory {\n    () => {\n        concat!(\n            include_str!(\"../../../../../src/loop_calls/byte_writer.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source_index.rs\"),\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "macro_rules! byte_writer_source_inventory {\n    () => {\n        concat!(\n            include_str!(\"../../../../../src/loop_calls/byte_writer.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source_index.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source_index_original.rs\"),\n",
+          "before": "macro_rules! byte_writer_source_inventory {\n    () => {\n        concat!(\n            include_str!(\"../../../../../src/loop_calls/byte_writer.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source.rs\"),\n            include_str!(\"../../../../../src/loop_calls/byte_writer/source_index.rs\"),\n"
+        }
+      ]
+    },
+    {
+      "file": "src/loop_calls/byte_writer/source_index_original.rs",
+      "archive": "0.before.txt",
+      "original_sha256": "41e9508add8734601c97b7f0379cbd5c04ee19c27894b43fc0f67dc70c506cac",
+      "original_bytes": 8568,
+      "current_sha256": "f7e6db54537f2b50a7332e7e13644d5ac90d99a6b436d95e912d9281cd4b7d4a",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "\n// ORIGINAL_OBSERVATION_BEGIN\n#[cfg(test)]\nimpl SourceProofs<'_> {\n    pub(crate) fn scope_observation(&self) -> (usize, usize) {\n        (self.entries.len(), self.work)\n    }\n}\n// ORIGINAL_OBSERVATION_END\n",
+          "before": ""
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs",
+      "archive": "2.before.txt",
+      "original_sha256": "c7a61f589cbb7da23a25516d1063fe04a3458189ea9071655fd1558181a2b2a9",
+      "original_bytes": 9388,
+      "current_sha256": "13d5ab2918fa7fb97619e985d781d3e60fc06278a73e0d4a27791c4a4fe65206",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-3",
+          "current": "\n// ORIGINAL_PROVIDER_OBSERVATION_BEGIN\n#[cfg(test)]\nimpl ProviderProofs<'_> {\n    pub(super) fn scope_observation(&self) -> (usize, usize) {\n        self.proofs.scope_observation()\n    }\n}\n// ORIGINAL_PROVIDER_OBSERVATION_END\n",
+          "before": ""
+        },
+        {
+          "hook": "explicit-provider-backing-edit-2",
+          "current": "                    - std::mem::size_of::<\n                        crate::loop_calls::byte_writer::source_index_original::SourceProofs<'a>,\n                    >(),\n",
+          "before": "                    - std::mem::size_of::<crate::loop_calls::byte_writer::SourceProofs<'a>>(),\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "    proofs: crate::loop_calls::byte_writer::source_index_original::SourceProofs<'a>,\n",
+          "before": "    proofs: crate::loop_calls::byte_writer::SourceProofs<'a>,\n"
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph/expected_projection/import_stub_original.rs",
+      "archive": "3.before.txt",
+      "original_sha256": "5c8e8a2c6662eb0017553a4d378a4877afd68986214102a3ce3d0a8cf3af190d",
+      "original_bytes": 11248,
+      "current_sha256": "f620a3891ac4707e9b0c827a9b8c9e2ff480659bbc1a52f8bef88e5dc96cab71",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-3",
+          "current": "\n// ORIGINAL_FACADE_OBSERVATION_BEGIN\n#[cfg(test)]\npub(super) fn proof_observation(proofs: &ByteHelperProofs<'_>) -> (usize, usize) {\n    proofs.scope_observation()\n}\n// ORIGINAL_FACADE_OBSERVATION_END\n",
+          "before": ""
+        },
+        {
+          "hook": "explicit-provider-backing-edit-2",
+          "current": "    super::defaults::original::default_expr(&function.return_type, declarations, allow_owned)\n",
+          "before": "    super::defaults::default_expr(&function.return_type, declarations, allow_owned)\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "#[path = \"import_stub/byte_helper_original.rs\"]\n",
+          "before": "#[path = \"import_stub/byte_helper.rs\"]\n"
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph/expected_projection/held_projection_original.rs",
+      "archive": "4.before.txt",
+      "original_sha256": "64b694567f2881244476cfe66f7088d01061f7ee8b07f86a7f4756a831fc2f7d",
+      "original_bytes": 18151,
+      "current_sha256": "b976530c05c01bb64e685f1ed12b36d1305032cda8560778ce0f832bcc88e6f6",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-3",
+          "current": "                crate::vec_ops::source_wrapper_original(provider, target_function).is_some()\n                    || crate::box_ops::source_wrapper_original(provider, target_function).is_some()\n",
+          "before": "                crate::vec_ops::source_wrapper(provider, target_function).is_some()\n                    || crate::box_ops::source_wrapper(provider, target_function).is_some()\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-2",
+          "current": "                    crate::vec_ops::source_wrapper_original(provider, function).is_some()\n                        || crate::box_ops::source_wrapper_original(provider, function).is_some()\n",
+          "before": "                    crate::vec_ops::source_wrapper(provider, function).is_some()\n                        || crate::box_ops::source_wrapper(provider, function).is_some()\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "    generic_instance_source_cost, graph_error, import_stub_original as import_stub,\n    import_stub_original::default_expr, limit_error, private_layout, reserve_builder_structure,\n    synthetic_main_runtime_cost, type_rewrite, AuthoredDeclaration, StructuralCost,\n    SyntheticBuilderCosts, HIR_IDENTITY_COPY_FACTOR, HIR_STRING_COPY_FACTOR,\n    HIR_STRUCTURE_EXPANSION_FACTOR,\n",
+          "before": "    default_expr, generic_instance_source_cost, graph_error, import_stub, limit_error,\n    private_layout, reserve_builder_structure, synthetic_main_runtime_cost, type_rewrite,\n    AuthoredDeclaration, StructuralCost, SyntheticBuilderCosts, HIR_IDENTITY_COPY_FACTOR,\n    HIR_STRING_COPY_FACTOR, HIR_STRUCTURE_EXPANSION_FACTOR,\n"
+        }
+      ]
+    },
+    {
+      "file": "src/workspace_graph/expected_projection/borrowed_imports_original.rs",
+      "archive": "5.before.txt",
+      "original_sha256": "54599fda2371ac9e76b897812e8d717828d542db25dceffa2d1161b403a2bc38",
+      "original_bytes": 14329,
+      "current_sha256": "0c4c18c12a4c617ed90103a3107e38a93e9590c27eb0514d9c6d81c21a92a9c7",
+      "inverse": [
+        {
+          "hook": "explicit-provider-backing-edit-2",
+          "current": "                crate::vec_ops::source_wrapper_original(provider, original).is_some()\n                    || crate::box_ops::source_wrapper_original(provider, original).is_some()\n",
+          "before": "                crate::vec_ops::source_wrapper(provider, original).is_some()\n                    || crate::box_ops::source_wrapper(provider, original).is_some()\n"
+        },
+        {
+          "hook": "explicit-provider-backing-edit-1",
+          "current": "    ast_type_declaration_cost, budgeted_format, graph_error, import_stub_original as import_stub,\n    import_stub_original::default_expr, limit_error, reserve_builder_structure, type_rewrite,\n    AuthoredDeclaration, LayoutRegistry, StructuralCost,\n",
+          "before": "    ast_type_declaration_cost, budgeted_format, default_expr, graph_error, import_stub,\n    limit_error, reserve_builder_structure, type_rewrite, AuthoredDeclaration, LayoutRegistry,\n    StructuralCost,\n"
+        }
+      ]
+    }
+  ]
+}

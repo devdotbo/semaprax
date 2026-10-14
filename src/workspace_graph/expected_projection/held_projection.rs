@@ -23,6 +23,53 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
     profile: (u8, cached_exact::Retention),
     registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
 ) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
+    synthetic_builder_bytes_scoped_with_retention_with_registry_using(
+        program,
+        authored,
+        programs,
+        maximum_identity,
+        include_imports,
+        profile,
+        registry,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(in crate::workspace_graph) fn synthetic_builder_bytes_core<'a>(
+    program: &Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    maximum_identity: Option<usize>,
+    include_imports: bool,
+    profile: (u8, cached_exact::Retention),
+    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
+    core: &mut import_stub::core_proofs::CoreProviderProofs<'a>,
+) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
+    synthetic_builder_bytes_scoped_with_retention_with_registry_using(
+        program,
+        authored,
+        programs,
+        maximum_identity,
+        include_imports,
+        profile,
+        registry,
+        Some(core),
+    )
+}
+
+pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_with_registry_using<
+    'a,
+>(
+    program: &Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    maximum_identity: Option<usize>,
+    include_imports: bool,
+    profile: (u8, cached_exact::Retention),
+    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
+    core: Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,
+) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
     let (layout_mode, retention) = profile;
     let mut raw = StructuralCost::raw_ast(layout_mode >= 1).with_inline_values(layout_mode >= 2);
     ast_program_cost(program, &mut raw, include_imports)?;
@@ -38,7 +85,8 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
     let mut identity_slots = ast_program_identity_slots(program)?;
     let mut runtime = StructuralCost::new();
     let mut default_memo = [BTreeMap::new(), BTreeMap::new()];
-    let mut byte_proofs = import_stub::ByteHelperProofs::new(authored, programs);
+    let mut byte_proofs = import_stub::core_proofs::Phase::new(authored, programs, core)
+        .map_err(|error| vec![error])?;
     let mut transient_import_clone = 0usize;
     layout.add_costs(
         program,
@@ -117,7 +165,11 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
                 super::super::owned_function_import::admitted_with_layout(
                     program, target, authored, programs, layout,
                 ),
-                import_stub::byte_helper_authorized(function, target.module, &mut byte_proofs)?,
+                import_stub::byte_helper_authorized(
+                    function,
+                    target.module,
+                    byte_proofs.get().map_err(|error| vec![error])?,
+                )?,
                 Some(layout),
             )?;
             runtime.add_split(cost.bytes, cost.string_bytes)?;
@@ -272,7 +324,7 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
             original_mode7_fixed_upper,
         ],
     );
-    Ok(SyntheticBuilderCosts {
+    let result = SyntheticBuilderCosts {
         raw_clone_and_hir: checked_usage(
             retained_clone_and_hir,
             transient_import_clone,
@@ -289,7 +341,9 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
             "builder_bytes",
             active_builder_limit(),
         )?,
-    })
+    };
+    byte_proofs.complete().map_err(|error| vec![error])?;
+    Ok(result)
 }
 
 pub(in crate::workspace_graph) fn synthetic_program_with_registry(
@@ -297,6 +351,26 @@ pub(in crate::workspace_graph) fn synthetic_program_with_registry(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     programs: &[Program],
     registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
+) -> Result<Program, Vec<Diagnostic>> {
+    synthetic_program_with_registry_using(program, authored, programs, registry, None)
+}
+
+pub(in crate::workspace_graph) fn synthetic_program_core<'a>(
+    program: &Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
+    core: &mut import_stub::core_proofs::CoreProviderProofs<'a>,
+) -> Result<Program, Vec<Diagnostic>> {
+    synthetic_program_with_registry_using(program, authored, programs, registry, Some(core))
+}
+
+pub(in crate::workspace_graph) fn synthetic_program_with_registry_using<'a>(
+    program: &Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
+    core: Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,
 ) -> Result<Program, Vec<Diagnostic>> {
     let fresh;
     let held;
@@ -307,7 +381,8 @@ pub(in crate::workspace_graph) fn synthetic_program_with_registry(
         fresh = private_layout::LayoutClosure::derive(program, authored, programs)?;
         &fresh
     };
-    let mut byte_proofs = import_stub::ByteHelperProofs::new(authored, programs);
+    let mut byte_proofs = import_stub::core_proofs::Phase::new(authored, programs, core)
+        .map_err(|error| vec![error])?;
     let mut synthetic = program.clone();
     synthetic.module_uses.clear();
     // Project validation already authenticated static implementation sidecars.
@@ -402,7 +477,11 @@ pub(in crate::workspace_graph) fn synthetic_program_with_registry(
             super::super::owned_function_import::admitted_with_layout(
                 program, target, authored, programs, layout,
             ),
-            import_stub::byte_helper_authorized(target_function, target.module, &mut byte_proofs)?,
+            import_stub::byte_helper_authorized(
+                target_function,
+                target.module,
+                byte_proofs.get().map_err(|error| vec![error])?,
+            )?,
         )?;
         synthetic.functions.push(function);
     }
@@ -436,5 +515,6 @@ pub(in crate::workspace_graph) fn synthetic_program_with_registry(
             span: Span::default(),
         });
     }
+    byte_proofs.complete().map_err(|error| vec![error])?;
     Ok(synthetic)
 }

@@ -168,6 +168,32 @@ impl<'a> Input<'a> {
         }
     }
 
+    // CORE_TRANSIENT_BEGIN
+    pub(in crate::workspace_graph) fn construct_transient_core(
+        program: &'a Program,
+        authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+        programs: &'a [Program],
+        registry: &private_layout::registry::LayoutRegistry<'_>,
+        core: &mut super::CoreProviderProofs<'a>,
+    ) -> Result<Self, Vec<Diagnostic>> {
+        if eligible(program) {
+            construct(program).map(Self::Borrowed)
+        } else if super::borrowed_imports::eligible(program, authored, programs) {
+            super::borrowed_imports::construct_core(program, authored, programs, registry, core)
+                .map(Self::Borrowed)
+        } else {
+            super::held_projection::synthetic_program_core(
+                program,
+                authored,
+                programs,
+                Some(registry),
+                core,
+            )
+            .map(Self::Owned)
+        }
+    }
+    // CORE_TRANSIENT_END
+
     pub(in crate::workspace_graph) fn construct_receiving(
         program: &'a Program,
         authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,

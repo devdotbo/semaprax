@@ -150,6 +150,26 @@ pub(in crate::workspace_graph) fn construct<'a>(
     programs: &[Program],
     registry: &LayoutRegistry<'_>,
 ) -> Result<SyntheticProgramView<'a>, Vec<Diagnostic>> {
+    construct_using(program, authored, programs, registry, None)
+}
+
+pub(in crate::workspace_graph) fn construct_core<'a>(
+    program: &'a Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    registry: &LayoutRegistry<'_>,
+    core: &mut import_stub::core_proofs::CoreProviderProofs<'a>,
+) -> Result<SyntheticProgramView<'a>, Vec<Diagnostic>> {
+    construct_using(program, authored, programs, registry, Some(core))
+}
+
+pub(in crate::workspace_graph) fn construct_using<'p, 'a>(
+    program: &'p Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    registry: &LayoutRegistry<'_>,
+    core: Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,
+) -> Result<SyntheticProgramView<'p>, Vec<Diagnostic>> {
     reserve_builder_structure(0)?;
     if !eligible(program, authored, programs) {
         return Err(vec![graph_error(
@@ -260,7 +280,8 @@ pub(in crate::workspace_graph) fn construct<'a>(
             .ok_or_else(refusal)?,
     )?;
     let functions = &mut roots.functions;
-    let mut byte_proofs = import_stub::ByteHelperProofs::new(authored, programs);
+    let mut byte_proofs = import_stub::core_proofs::Phase::new(authored, programs, core)
+        .map_err(|error| vec![error])?;
     for import in program
         .module_uses
         .iter()
@@ -324,7 +345,11 @@ pub(in crate::workspace_graph) fn construct<'a>(
             super::super::owned_function_import::admitted_with_layout(
                 program, target, authored, programs, &layout,
             ),
-            import_stub::byte_helper_authorized(original, target.module, &mut byte_proofs)?,
+            import_stub::byte_helper_authorized(
+                original,
+                target.module,
+                byte_proofs.get().map_err(|error| vec![error])?,
+            )?,
         )?;
     }
     // Same old rule also recognizes an imported alias named main.
@@ -355,7 +380,9 @@ pub(in crate::workspace_graph) fn construct<'a>(
     // Infallible bounded string helpers record refusal and return empty text.
     // A generated view must never publish that partial construction as success.
     reserve_builder_structure(0)?;
-    SyntheticProgramView::with_generated_owner(program, roots).ok_or_else(refusal)
+    let result = SyntheticProgramView::with_generated_owner(program, roots).ok_or_else(refusal)?;
+    byte_proofs.complete().map_err(|error| vec![error])?;
+    Ok(result)
 }
 
 #[cfg(test)]

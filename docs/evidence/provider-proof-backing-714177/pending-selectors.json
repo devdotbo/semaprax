@@ -1,0 +1,48 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "harness": "semaprax::lib",
+  "new_exact_owners": [
+    "workspace_graph::expected_projection::import_stub::core_proofs::tests::fresh_logical_phases_reuse_only_backing_and_match_complete_original_work_and_verdicts",
+    "workspace_graph::expected_projection::import_stub::core_proofs::tests::core_exact_short_zero_sticky_source_payer_and_incomplete_drop_refuse_without_repair",
+    "workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core",
+    "workspace_graph::expected_projection::import_stub::core_proofs::tests::repeated_body_checks_have_no_second_backing_acquisition_and_complete_drop_is_observed",
+    "workspace_graph::expected_projection::import_stub::core_proofs::tests::cleared_source_rows_rerun_actual_transitive_callbacks_with_complete_original_work",
+    "workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_receivers_and_all_literal_source_inverses_remain_byte_exact"
+  ],
+  "independent_original_exact_owners": [
+    "loop_calls::byte_writer::source_index_original::tests::source_phase_reuses_proof_cursor_and_duplicate_target_without_new_backing",
+    "loop_calls::byte_writer::source_index_original::tests::source_index_exact_and_one_short_reservations_keep_failure_sticky",
+    "loop_calls::byte_writer::source_index_original::tests::source_phase_keeps_irrelevant_modules_allocation_free_and_reproves_changed_bodies",
+    "workspace_graph::expected_projection::import_stub_original::byte_helper::tests::provider_phase_reuses_actual_transitive_proof_and_rechecks_origin_before_lookup",
+    "workspace_graph::expected_projection::import_stub_original::byte_helper::tests::provider_phase_exact_and_one_short_reservations_refuse_without_fallback",
+    "workspace_graph::expected_projection::import_stub_original::byte_helper::tests::imported_alias_vector_uses_current_declared_layout_and_actual_provider_body",
+    "workspace_graph::expected_projection::import_stub_original::byte_helper::tests::imported_vector_refuses_forged_identity_layout_mode_and_builtin_shadow",
+    "workspace_graph::expected_projection::import_stub_original::byte_helper::tests::imported_vector_positive_proof_retains_exact_and_one_short_reservation",
+    "workspace_graph::expected_projection::import_stub_original::byte_helper::tests::imported_record_lookup_key_cannot_relabel_a_different_current_nominal",
+    "workspace_graph::expected_projection::borrowed_imports_original::tests::imports_aliases_private_layouts_defaults_and_cache_publication_keep_full_old_projection",
+    "workspace_graph::expected_projection::borrowed_imports_original::tests::duplicate_aliases_identities_and_late_wrong_types_preserve_old_diagnostics",
+    "workspace_graph::expected_projection::borrowed_imports_original::tests::complete_active_payer_resolution_and_drop_keep_exact_short_and_sticky_refusal"
+  ],
+  "retained_current_exact_owners": [
+    "loop_calls::byte_writer::source_index::tests::source_phase_reuses_proof_cursor_and_duplicate_target_without_new_backing",
+    "loop_calls::byte_writer::source_index::tests::source_index_exact_and_one_short_reservations_keep_failure_sticky",
+    "loop_calls::byte_writer::source_index::tests::source_phase_keeps_irrelevant_modules_allocation_free_and_reproves_changed_bodies",
+    "workspace_graph::expected_projection::import_stub::byte_helper::tests::provider_phase_reuses_actual_transitive_proof_and_rechecks_origin_before_lookup",
+    "workspace_graph::expected_projection::import_stub::byte_helper::tests::provider_phase_exact_and_one_short_reservations_refuse_without_fallback",
+    "workspace_graph::expected_projection::import_stub::byte_helper::tests::imported_alias_vector_uses_current_declared_layout_and_actual_provider_body",
+    "workspace_graph::expected_projection::import_stub::byte_helper::tests::imported_vector_refuses_forged_identity_layout_mode_and_builtin_shadow",
+    "workspace_graph::expected_projection::import_stub::byte_helper::tests::imported_vector_positive_proof_retains_exact_and_one_short_reservation",
+    "workspace_graph::expected_projection::import_stub::byte_helper::tests::imported_record_lookup_key_cannot_relabel_a_different_current_nominal"
+  ],
+  "source_boundary_owner": {
+    "harness": "semaprax::language_tests",
+    "selector": "workspace::semantic_graph::expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root"
+  },
+  "counts": {
+    "new": 6,
+    "independent_original": 12,
+    "retained_current": 9
+  },
+  "dependency_source_packet": "6e2659d53 (cleanup old default and wrapper helper routes; locally cherry-picked as 2ea958adc)",
+  "application_owners": "retain actual existing Catalog/service failures; this packet makes no app-fit claim"
+}

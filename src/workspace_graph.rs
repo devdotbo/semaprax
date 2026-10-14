@@ -4382,6 +4382,8 @@ fn build_resolved_core_current(
     if !retained_output_only {
         reserve_builder_structure(expected_projection::borrowed_leaf::input_carrier_delta()?)?;
     }
+    let mut core_proofs = expected_projection::CoreProviderProofs::new(authored, programs)
+        .map_err(|error| vec![error])?;
     let mut synthetic_ast_peak = 0usize;
     let mut selected_static_modules = static_text::SelectedModules::default();
     for index in 0..programs.len() {
@@ -4389,19 +4391,24 @@ fn build_resolved_core_current(
         if retained_output_only {
             staged!(
                 UncachedSyntheticPeak,
-                expected_projection::uncached_peak::charge_uncached_synthetic_ast_with_registry(
+                expected_projection::uncached_peak::charge_uncached_synthetic_ast_core(
                     program,
                     authored,
                     programs,
                     &mut synthetic_ast_peak,
                     Some(layouts),
+                    &mut core_proofs,
                 )
             )?;
         }
         let synthetic = staged!(
             SyntheticModule,
-            expected_projection::borrowed_leaf::Input::construct_transient(
-                program, authored, programs, layouts,
+            expected_projection::borrowed_leaf::Input::construct_transient_core(
+                program,
+                authored,
+                programs,
+                layouts,
+                &mut core_proofs,
             )
         )?;
         // Exact stubs/spans and the unconditional prebound govern hits.

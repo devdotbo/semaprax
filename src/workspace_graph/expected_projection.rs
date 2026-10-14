@@ -42,6 +42,18 @@ mod held_projection;
 mod identity_slots;
 #[path = "expected_projection/import_stub.rs"]
 mod import_stub;
+// CORE_PROOF_RECEIVERS_BEGIN
+#[cfg(test)]
+#[path = "expected_projection/borrowed_imports_original.rs"]
+mod borrowed_imports_original;
+#[cfg(test)]
+#[path = "expected_projection/held_projection_original.rs"]
+mod held_projection_original;
+#[cfg(test)]
+#[path = "expected_projection/import_stub_original.rs"]
+mod import_stub_original;
+pub(in crate::workspace_graph) use import_stub::core_proofs::CoreProviderProofs;
+// CORE_PROOF_RECEIVERS_END
 #[path = "expected_projection/local_identity.rs"]
 mod local_identity;
 #[path = "expected_projection/private_layout.rs"]

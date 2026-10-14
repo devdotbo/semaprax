@@ -140,6 +140,78 @@ impl<'a> SourceProofs<'a> {
                 .map_or(0, |_| std::mem::size_of::<source::Cursor<'a>>())
     }
 }
+// PROVIDER_BACKING_BEGIN
+/// Physical storage only. No semantic verdict or work allowance crosses a phase.
+pub(crate) struct SourceBacking<'a> {
+    entries: Vec<Entry<'a>>,
+    cursor: Option<Box<source::Cursor<'a>>>,
+    failed: bool,
+}
+impl SourceBacking<'_> {
+    pub(crate) fn empty() -> Self {
+        Self {
+            entries: Vec::new(),
+            cursor: None,
+            failed: false,
+        }
+    }
+}
+impl<'a> SourceProofs<'a> {
+    pub(crate) fn from_backing(backing: SourceBacking<'a>) -> Result<Self, Diagnostic> {
+        let SourceBacking {
+            mut entries,
+            mut cursor,
+            failed,
+        } = backing;
+        // The owning core checks its captured payer/source before handing
+        // storage over. This primitive independently preserves sticky refusal
+        // before clearing any borrowed row or cursor frame.
+        if failed
+            || crate::bounded_output::active_remaining().is_none()
+            || !crate::bounded_output::reserve_active_required(0)
+        {
+            return Err(error());
+        }
+        entries.clear();
+        if let Some(cursor) = cursor.as_deref_mut() {
+            // Cursor owns only its fixed inline array of borrowed frames.
+            *cursor = source::Cursor::default();
+        }
+        Ok(Self {
+            entries,
+            cursor,
+            work: WORK,
+            failed: false,
+        })
+    }
+    pub(crate) fn into_backing(self) -> (SourceBacking<'a>, bool) {
+        let Self {
+            mut entries,
+            cursor,
+            work: _,
+            failed,
+        } = self;
+        entries.clear();
+        (
+            SourceBacking {
+                entries,
+                cursor,
+                failed,
+            },
+            failed,
+        )
+    }
+    #[cfg(test)]
+    pub(crate) fn scope_observation(&self) -> (usize, usize, usize, usize) {
+        (
+            self.entries.len(),
+            self.work,
+            self.entries.as_ptr() as usize,
+            self.cursor.as_deref().map_or(0, |c| c as *const _ as usize),
+        )
+    }
+}
+// PROVIDER_BACKING_END
 pub(crate) struct SourceIndex<'a> {
     program: &'a dyn ProgramSource,
     proofs: RefCell<SourceProofs<'a>>,

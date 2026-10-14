@@ -14,6 +14,8 @@ pub(crate) use module_index::ModuleIndex;
 mod source;
 mod source_index;
 #[cfg(test)]
+pub(crate) mod source_index_original;
+#[cfg(test)]
 pub(crate) use resolved::checked_absent_with_work_reservation;
 pub(crate) use resolved::{
     bindings, checked_bindings, checked_bindings_with_reservation_and_work,
@@ -23,7 +25,7 @@ pub(crate) use resolved::{
 #[cfg(test)]
 pub(crate) use resolved::{checked_bindings_funded, checked_bindings_funded_with_work};
 pub(crate) use source::nonallocating as source_nonallocating;
-pub(crate) use source_index::{SourceHelpers, SourceIndex, SourceProofs};
+pub(crate) use source_index::{SourceBacking, SourceHelpers, SourceIndex, SourceProofs};
 const DEPTH: usize = crate::cache_codec::MAX_DEPTH;
 const WORK: usize = crate::cache_codec::MAX_NODES;
 

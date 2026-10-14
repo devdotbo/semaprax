@@ -33,6 +33,7 @@ macro_rules! byte_writer_source_inventory {
             include_str!("../../../../../src/loop_calls/byte_writer.rs"),
             include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
             include_str!("../../../../../src/loop_calls/byte_writer/source_index.rs"),
+            include_str!("../../../../../src/loop_calls/byte_writer/source_index_original.rs"),
             include_str!("../../../../../src/loop_calls/byte_writer/resolved.rs"),
             include_str!("../../../../../src/loop_calls/byte_writer/resolved/funded.rs"),
             include_str!("../../../../../src/loop_calls/byte_writer/resolved/selected.rs"),
@@ -802,6 +803,7 @@ macro_rules! verifier_source_inventory {
             include_str!("../../../../../src/loop_calls/byte_writer.rs"),
             include_str!("../../../../../src/loop_calls/byte_writer/source.rs"),
             include_str!("../../../../../src/loop_calls/byte_writer/source_index.rs"),
+            include_str!("../../../../../src/loop_calls/byte_writer/source_index_original.rs"),
             concat!(
                 include_str!("../../../../../src/source_verify.rs"),
                 include_str!("../../../../../src/source_verify/field_unique.rs"),

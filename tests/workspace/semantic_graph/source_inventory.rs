@@ -317,6 +317,7 @@ macro_rules! semantic_graph_projection_root_source_inventory {
                 include_str!("../../src/workspace_graph/expected_projection.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/vec_constructor.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/held_projection.rs"),
+            include_str!("../../src/workspace_graph/expected_projection/held_projection_original.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_leaf.rs"),
                 include_str!(
                     "../../src/workspace_graph/expected_projection/borrowed_leaf/tests.rs"
@@ -324,6 +325,7 @@ macro_rules! semantic_graph_projection_root_source_inventory {
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_leaf/checked_key.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_leaf/checked_key/tests.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports.rs"),
+            include_str!("../../src/workspace_graph/expected_projection/borrowed_imports_original.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/alias_clone.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests.rs"),
                 include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/alias_helpers.rs"),
@@ -396,6 +398,10 @@ macro_rules! semantic_graph_projection_child_source_inventory {
             include_str!(
                 "../../src/workspace_graph/expected_projection/import_stub/byte_helper.rs"
             ),
+            include_str!("../../src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs"),
+            include_str!("../../src/workspace_graph/expected_projection/import_stub/core_proofs.rs"),
+            include_str!("../../src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs"),
+            include_str!("../../src/workspace_graph/expected_projection/import_stub_original.rs"),
         )
     };
     (uncached_peak) => {

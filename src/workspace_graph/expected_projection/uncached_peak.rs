@@ -146,6 +146,45 @@ pub(in crate::workspace_graph) fn charge_uncached_synthetic_ast_with_registry(
     Ok(())
 }
 
+// CORE_PEAK_BEGIN
+pub(in crate::workspace_graph) fn charge_uncached_synthetic_ast_core<'a>(
+    program: &Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    retained_peak: &mut usize,
+    registry: Option<&LayoutRegistry<'_>>,
+    core: &mut super::CoreProviderProofs<'a>,
+) -> Result<(), Vec<Diagnostic>> {
+    let bytes = if super::borrowed_leaf::eligible(program) {
+        super::borrowed_leaf::ast_peak(program)?
+    } else {
+        checked_usage(
+            super::held_projection::synthetic_builder_bytes_core(
+                program,
+                authored,
+                programs,
+                None,
+                true,
+                (4, super::cached_exact::Retention::Parsed),
+                registry,
+                core,
+            )?
+            .synthetic_ast,
+            super::borrowed_leaf::input_carrier_delta()?,
+            "builder_bytes",
+            active_builder_limit(),
+        )?
+    };
+    // The uncached path drops this AST before constructing the next one.
+    // Preserve a monotonic peak reservation; never refund earlier charges.
+    if bytes > *retained_peak {
+        super::reserve_builder_structure(bytes - *retained_peak)?;
+        *retained_peak = bytes;
+    }
+    Ok(())
+}
+// CORE_PEAK_END
+
 /// Mode six retains a filtered module and compact cross-module proof after
 /// each resolution.  Its peak is the already-retained output/proof plus one
 /// complete synthetic AST/HIR, never every complete resolved program.

@@ -360,6 +360,20 @@ costs separately, without subtracting the ordinary/warm spare storage. These
 controls require executable qualification; semantic diagnostic materialization
 and whole application funding remain separate residuals.
 
+One actual resolved-core invocation may retain byte-helper proof Vec/cursor
+backing across its sequential forecast and constructor phases. Reuse is bound
+to the exact immutable program slice, authored map and captured live budget Rc,
+with sticky required-zero checks before clearing or lending storage. Each new
+logical phase clears all memo verdicts and cursor frames and repeats the full
+original source/provider/body proof and original per-phase work allowance.
+Failed or incomplete scopes poison the owner; ordinary Drop returns storage
+without restoring allowance or replacing the first refusal. Additional owner
+and simultaneous phase controls are prepaid, and growth still pays the full
+original replacement acquisition. Pre-core/standalone proofs and every new
+resolved-core attempt stay independent. Original forecasts, HIR bounds and
+caps remain unchanged. The complete old receivers and focused physical/Drop
+controls require executable qualification; this is no application-fit claim.
+
 Record invariants run ordinary source verification first, then the same clause
 inventory and desugaring passes. Writable AST is copied at those genuine
 transformation boundaries; lookup no longer needs an owning synthesis copy.

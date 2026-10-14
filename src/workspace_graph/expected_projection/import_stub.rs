@@ -4,6 +4,10 @@ use crate::ast::{
 };
 #[path = "import_stub/byte_helper.rs"]
 mod byte_helper;
+// CORE_PROOF_REGISTRATION_BEGIN
+#[path = "import_stub/core_proofs.rs"]
+pub(super) mod core_proofs;
+// CORE_PROOF_REGISTRATION_END
 pub(super) use byte_helper::ProviderProofs as ByteHelperProofs;
 pub(super) fn byte_helper_authorized<'a>(
     function: &'a Function,

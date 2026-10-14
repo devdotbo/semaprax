@@ -286,6 +286,44 @@ impl<'a> ProviderProofs<'a> {
     }
 }
 
+// PROVIDER_PARTS_BEGIN
+impl<'a> ProviderProofs<'a> {
+    pub(super) fn from_backing(
+        authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+        programs: &'a [Program],
+        backing: crate::loop_calls::byte_writer::SourceBacking<'a>,
+        carrier_charged: bool,
+    ) -> Result<Self, crate::diagnostic::Diagnostic> {
+        Ok(Self {
+            authored,
+            programs,
+            proofs: crate::loop_calls::byte_writer::SourceProofs::from_backing(backing)?,
+            carrier_charged,
+        })
+    }
+    pub(super) fn into_parts(
+        self,
+    ) -> (
+        crate::loop_calls::byte_writer::SourceBacking<'a>,
+        bool,
+        bool,
+    ) {
+        let Self {
+            authored: _,
+            programs: _,
+            proofs,
+            carrier_charged,
+        } = self;
+        let (backing, failed) = proofs.into_backing();
+        (backing, carrier_charged, failed)
+    }
+    #[cfg(test)]
+    pub(super) fn observation(&self) -> (usize, usize, usize, usize) {
+        self.proofs.scope_observation()
+    }
+}
+// PROVIDER_PARTS_END
+
 #[cfg(test)]
 #[path = "byte_helper/tests.rs"]
 mod tests;

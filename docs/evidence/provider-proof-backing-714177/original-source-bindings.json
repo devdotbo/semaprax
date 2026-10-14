@@ -1,0 +1,62 @@
+{
+  "src/loop_calls/byte_writer/source_index.rs": {
+    "archive": "0.before.txt",
+    "sha256": "41e9508add8734601c97b7f0379cbd5c04ee19c27894b43fc0f67dc70c506cac",
+    "bytes": 8568
+  },
+  "src/loop_calls/byte_writer.rs": {
+    "archive": "1.before.txt",
+    "sha256": "c0f1121d1d72b5b33bb68f3d62830253136d5da17e71ad3e4137cf45a293446c",
+    "bytes": 7739
+  },
+  "src/workspace_graph/expected_projection/import_stub/byte_helper.rs": {
+    "archive": "2.before.txt",
+    "sha256": "c7a61f589cbb7da23a25516d1063fe04a3458189ea9071655fd1558181a2b2a9",
+    "bytes": 9388
+  },
+  "src/workspace_graph/expected_projection/import_stub.rs": {
+    "archive": "3.before.txt",
+    "sha256": "5c8e8a2c6662eb0017553a4d378a4877afd68986214102a3ce3d0a8cf3af190d",
+    "bytes": 11248
+  },
+  "src/workspace_graph/expected_projection/held_projection.rs": {
+    "archive": "4.before.txt",
+    "sha256": "64b694567f2881244476cfe66f7088d01061f7ee8b07f86a7f4756a831fc2f7d",
+    "bytes": 18151
+  },
+  "src/workspace_graph/expected_projection/borrowed_imports.rs": {
+    "archive": "5.before.txt",
+    "sha256": "54599fda2371ac9e76b897812e8d717828d542db25dceffa2d1161b403a2bc38",
+    "bytes": 14329
+  },
+  "src/workspace_graph/expected_projection/borrowed_leaf.rs": {
+    "archive": "6.before.txt",
+    "sha256": "84207cdd985a765401872579baf89bec60471e8c877cdcfb825952adb812fb9a",
+    "bytes": 11276
+  },
+  "src/workspace_graph/expected_projection/uncached_peak.rs": {
+    "archive": "7.before.txt",
+    "sha256": "2156e41020aeb1cbf47b0fdaf29788ce90dbdb431109b63957f3b727d244bbf4",
+    "bytes": 12889
+  },
+  "src/workspace_graph/expected_projection.rs": {
+    "archive": "8.before.txt",
+    "sha256": "61e43e67ae8308f04e745bda1db8cddcd90e1dba2f865f8f1cd9a24bf630fb71",
+    "bytes": 58695
+  },
+  "src/workspace_graph.rs": {
+    "archive": "9.before.txt",
+    "sha256": "6c0497495c52ad6d7b6a8262a0e3ec788a54b46036ddf7cbcdc6c2bca3d4a835",
+    "bytes": 230263
+  },
+  "tests/workspace/semantic_graph/source_inventory.rs": {
+    "archive": "10.before.txt",
+    "sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
+    "bytes": 25059
+  },
+  "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
+    "archive": "11.before.txt",
+    "sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
+    "bytes": 85667
+  }
+}
