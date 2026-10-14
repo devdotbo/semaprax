@@ -126,3 +126,35 @@ removed. Whole-document pin SHAs independently hash the complete captured wire
 bytes. An independent source review identified and corrected an earlier private
 updater draft that incorrectly used raw SHA256(payload) for graph binding; that
 draft never ran against actual captures and changed no pin literal.
+
+Independent review additionally tightened the private updater before use. Its
+required trust arguments now include the existing ROOT round directory, exact
+40-character approved capture head, and externally ROOT-approved raw SHA-256
+values of `owning-build-result.json` and `prelude-pin-producers-result.json`:
+
+```sh
+python3 scripts/update-prelude-forecast-pins.py /absolute/root-capture \
+  --repo /absolute/private-pin-update-worktree \
+  --round /absolute/root-round \
+  --expected-capture-head FULL_40_HEX_ROOT_HEAD \
+  --expected-build-receipt-sha256 ROOT_APPROVED_BUILD_RECEIPT_SHA256 \
+  --expected-producer-receipt-sha256 ROOT_APPROVED_PRODUCER_RECEIPT_SHA256
+```
+
+It consumes that wrapper's successful frozen build/capture binding and exact
+lib/workspace executable roles/hashes, and checks ROOT's current full head and
+clean status including untracked files. The wrapper already verifies this
+binding before, during and after its actual execution; no capture protocol or
+frozen ROOT source is changed. Target pin-owner files must equal the trusted
+frozen commit byte-for-byte. An owner exit 101 now requires exactly one panic
+at the actual expected stale-pin assertion line, with the exact old right value
+and captured actual left value (budget, document SHA or complete eight-SHA
+array). Non-pin getter, CLI, locking, wire or other assertion failure blocks an
+update even when all wire files were captured.
+
+Source reads, hashes, archives and writes use raw bytes; unexpected CRLF/CR is
+rejected rather than normalized. Every source file is preflighted again before
+any source write. Apply evidence must be fresh and outside both capture and the
+target repository, preventing recursive evidence copying. Later import of that
+external reviewed evidence into the private pin commit is a separate explicit
+source/evidence step. These checks change no pin values or test assertions.

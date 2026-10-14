@@ -7,6 +7,8 @@ Default is read-only. --apply requires a fresh evidence directory.
 import argparse
 import hashlib
 import json
+import re
+import subprocess
 from pathlib import Path
 import shutil
 
@@ -44,6 +46,10 @@ def main():
     parser.add_argument("capture", type=Path)
     parser.add_argument("--repo", required=True, type=Path)
     parser.add_argument("--expected-capture-head", required=True)
+    parser.add_argument("--expected-build-receipt-sha256", required=True)
+    parser.add_argument("--expected-producer-receipt-sha256", required=True)
+    parser.add_argument("--round", required=True, type=Path,
+                        help="trusted ROOT round holding existing build and producer receipts")
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--evidence-dir", type=Path)
     args = parser.parse_args()
@@ -53,13 +59,52 @@ def main():
     require(manifest["schema"] == "semaprax.prelude-forecast-pin-candidates.v1", "wrong capture schema")
     require(not manifest["missing"], "incomplete capture; do not update pins")
     head = (capture / "source-head.txt").read_text().strip()
-    require(len(args.expected_capture_head) >= 7 and head.startswith(args.expected_capture_head), "capture head differs from ROOT-approved build")
+    require(re.fullmatch(r"[0-9a-f]{40}", args.expected_capture_head) is not None
+            and head == args.expected_capture_head, "capture head differs from full ROOT-approved build")
     require(head == manifest["source_head"], "capture head manifest mismatch")
     source_patch = (capture / "source-local.patch").read_bytes()
     require(not source_patch, "capture includes source drift; ROOT must audit and recapture frozen source")
     require(hashlib.sha256(source_patch).hexdigest() == manifest["source_patch_sha256"], "capture patch manifest mismatch")
     binaries = json.loads((capture / "binaries.json").read_text())
-    require(len(binaries) >= 2, "missing built-binary provenance")
+    # Consume ROOT's existing frozen-build wrapper proof; do not infer build
+    # provenance merely from the standalone capture's self-reported manifest.
+    trusted_round = args.round.resolve()
+    build_bytes = (trusted_round / "owning-build-result.json").read_bytes()
+    build = json.loads(build_bytes)
+    producer_bytes = (trusted_round / "prelude-pin-producers-result.json").read_bytes()
+    for data, approved in [(build_bytes, args.expected_build_receipt_sha256),
+                           (producer_bytes, args.expected_producer_receipt_sha256)]:
+        require(re.fullmatch(r"[0-9a-f]{64}", approved) is not None
+                and hashlib.sha256(data).hexdigest() == approved,
+                "external ROOT-approved receipt hash mismatch")
+    producer = json.loads(producer_bytes)
+    expected = json.loads((trusted_round / "expected-counts.json").read_bytes())
+    require(build["exit_code"] == producer["exit_code"] == 0
+            and not producer["resource_refusal"], "trusted ROOT build/producer failed")
+    require(build["source_subject"] == producer["source_subject"]
+            == expected["source_subject"] == head, "trusted ROOT frozen source mismatch")
+    require(producer["build_receipt_sha256"] == hashlib.sha256(build_bytes).hexdigest(),
+            "trusted build receipt hash mismatch")
+    trusted_root = Path(expected["draft_repository"]).resolve()
+    command = producer["command"]
+    require(len(command) == 5 and command[0] == "/bin/sh"
+            and Path(command[1]).resolve() == trusted_root / "scripts/capture-prelude-forecast-pins.sh"
+            and Path(command[4]).resolve() == capture
+            and Path(producer["capture_out"]).resolve() == capture,
+            "trusted wrapper command/capture binding mismatch")
+    built = {str(Path(row["executable"]).resolve()): row for row in build["artifacts"]}
+    require(len(binaries) == 2, "expected exactly ROOT lib/workspace binary roles")
+    for record, role, executable in zip(binaries, ["semaprax", "workspace"], command[2:4]):
+        key = str(Path(executable).resolve())
+        require(str(Path(record["path"]).resolve()) == key and key in built,
+                "trusted binary role path mismatch")
+        require(built[key]["target"]["name"] == role
+                and record["sha256"] == built[key]["executable_sha256"],
+                "trusted binary role SHA mismatch")
+    require(subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=trusted_root).strip().decode() == head,
+            "ROOT head drift since capture")
+    require(not subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=all"], cwd=trusted_root).strip(),
+            "ROOT source drift including untracked since trusted capture")
     statuses = {}
     for line in (capture / "status.tsv").read_text().splitlines():
         label, code, selector = line.split("\t")
@@ -70,6 +115,8 @@ def main():
         require(statuses[label][0] in (0, 101), "non-test producer failure: " + label)
         log = (capture / (label + ".log")).read_text()
         require(selector in log and "running 1 test" in log, "not one exact owning test: " + label)
+        if statuses[label][0] == 0:
+            require("test result: ok. 1 passed; 0 failed" in log, "missing actual owner success: " + label)
     require(statuses["projection-wire"][0] == 0, "ignored wire producer failed")
     names = ["public-graph"] + [name for name, _ in ANALYSIS] + ["projection-wire"]
     index = {record["name"]: record for record in manifest["candidates"]}
@@ -113,30 +160,68 @@ def main():
     before_sources = {}
     after_sources = {}
     for path in sorted({record["path"] for record in edits}):
-        before_sources[path] = (repo / path).read_text()
+        before_sources[path] = (repo / path).read_bytes()
+        require(b"\r" not in before_sources[path], "unexpected CRLF/CR source; do not normalize: " + path)
+        before_sources[path].decode("utf-8")
+        frozen_bytes = subprocess.check_output(["git", "show", head + ":" + path], cwd=trusted_root)
+        require(before_sources[path] == frozen_bytes, "pin owner differs from trusted frozen source: " + path)
         after_sources[path] = before_sources[path]
     for record in edits:
         path = record["path"]
-        require(after_sources[path].count(record["before"]) == 1, "old pin not unique/current: " + path)
-        after_sources[path] = after_sources[path].replace(record["before"], record["after"], 1)
+        before, after = record["before"].encode(), record["after"].encode()
+        require(after_sources[path].count(before) == 1, "old pin not unique/current: " + path)
+        after_sources[path] = after_sources[path].replace(before, after, 1)
+    # Exit 101 authorizes only the exact old-pin assertion, with both actual
+    # left and frozen historical right values. A complete capture alone grants
+    # no permission to ignore any other getter/locking/CLI assertion failure.
+    owner_source = before_sources[owner].decode("utf-8")
+    for label in ["public-graph", "analysis"]:
+        if statuses[label][0] != 101:
+            continue
+        log = (capture / (label + ".log")).read_text()
+        require(log.count("panicked at ") == 1, "unexpected/multiple panic: " + label)
+        match = re.search(r"panicked at ([^\n]+):(\d+):\d+:\nassertion `left == right` failed\n\s*left: ([^\n]+)\n\s*right: ([^\n]+)", log)
+        require(match is not None and match[1].endswith("tests/workspace/semantic_graph.rs"),
+                "not an exact owning stale-pin assertion: " + label)
+        left, right = json.loads(match[3]), json.loads(match[4])
+        permitted = [(edits[0]["before"], amount, 334016),
+                     (edits[1]["before"], sha(wires["public-graph"]), edits[1]["before"])]
+        if label == "analysis":
+            permitted = [("sha256:" + ANALYSIS[0][1],
+                          [sha(wires[name]) for name, _ in ANALYSIS],
+                          ["sha256:" + old for _, old in ANALYSIS])]
+        authorized = False
+        for needle, actual, historical in permitted:
+            offset = owner_source.index(needle)
+            assertion = owner_source.rfind("assert_eq!(", 0, offset + len(needle))
+            line = owner_source.count("\n", 0, assertion) + 1
+            authorized |= int(match[2]) == line and left == actual and right == historical
+        require(authorized, "non-pin assertion or mismatched actual/old failure: " + label)
     report = dict(schema="semaprax.prelude-forecast-reviewed-pin-plan.v1", capture_head=head,
                   status="actual-candidate-plan-requires-wire-review", edits=edits,
-                  source_sha256={path: sha(text.encode()) for path, text in before_sources.items()})
+                  source_sha256={path: sha(data) for path, data in before_sources.items()},
+                  after_sha256={path: sha(data) for path, data in after_sources.items()},
+                  trusted_build_receipt_sha256=sha(build_bytes),
+                  trusted_producer_receipt_sha256=sha(producer_bytes))
     print(json.dumps(report, indent=2))
     if not args.apply:
         return
     require(args.evidence_dir is not None, "--apply requires --evidence-dir")
     evidence = args.evidence_dir.resolve()
     require(not evidence.exists(), "evidence directory must be fresh")
+    require(not evidence.is_relative_to(capture) and not evidence.is_relative_to(repo),
+            "evidence must be outside capture and target repository")
     # All inputs, pins and replacements validate before creating any candidate.
     evidence.mkdir(parents=True)
     shutil.copytree(capture, evidence / "actual-capture")
-    for path, text in before_sources.items():
-        (evidence / (path.replace("/", "__") + ".before.txt")).write_text(text)
+    for path, data in before_sources.items():
+        (evidence / (path.replace("/", "__") + ".before.txt")).write_bytes(data)
     (evidence / "reviewed-pin-plan.json").write_text(json.dumps(report, indent=2) + "\n")
-    for path, text in after_sources.items():
-        require((repo / path).read_text() == before_sources[path], "source drift before pin update")
-        (repo / path).write_text(text)
+    # Preflight every owner before any source write; preserve raw LF bytes.
+    for path, data in before_sources.items():
+        require((repo / path).read_bytes() == data, "source drift before pin update")
+    for path, data in after_sources.items():
+        (repo / path).write_bytes(data)
 
 if __name__ == "__main__":
     main()
