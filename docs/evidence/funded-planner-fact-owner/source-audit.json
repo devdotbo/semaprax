@@ -72,9 +72,9 @@
       "lines": 34
     },
     "tests/hir_module_boundaries.rs": {
-      "sha256": "7a6a0ac3bd814b14f941964cb83b6e2dc8630c09e5b1d2e5de7210eb6f41efff",
-      "bytes": 29941,
-      "lines": 466
+      "sha256": "579f979b24bb33b3d7682cf959613cc20244e0714212055d9860fe52610ee6e0",
+      "bytes": 34745,
+      "lines": 523
     },
     "docs/evidence/funded-planner-fact-owner/original-ordinary-owner.txt": {
       "sha256": "cc6db84645eb0bef1e598ad2aa373a6d9bb683d20308cb320b7665ed4ddfba3e",
@@ -108,5 +108,5 @@
     }
   },
   "map_to_tree_adapter_moves_original_whole_map_without_allocation": true,
-  "integration_note": "Current HIR source inventory binding reflects the merged scalar Tree and planner children; base source archives and execution claims remain unchanged."
+  "integration_note": "Current HIR source inventory binding includes the merged scalar Tree, planner and complete schema-summary children. Original archives and execution claims remain unchanged."
 }
