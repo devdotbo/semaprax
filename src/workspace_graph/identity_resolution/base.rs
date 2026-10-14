@@ -102,3 +102,6 @@ pub(in crate::workspace_graph) fn resolve_module_with_base<'s>(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod affinity_tests;

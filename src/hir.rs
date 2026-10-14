@@ -15,7 +15,7 @@
 
 pub(crate) mod items;
 mod nominal_payload;
-#[path="hir/prelude_bundle.rs"]
+#[path = "hir/prelude_bundle.rs"]
 pub(crate) mod prelude_bundle;
 pub use nominal_payload::{NominalPayload, NominalMutationError};
 use crate::ast::program_source::ProgramSource;

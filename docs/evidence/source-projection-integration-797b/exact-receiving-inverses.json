@@ -43,6 +43,18 @@
       {
         "after": "#[path = \"hir/provisional_result_borrow_tests.rs\"]\nmod provisional_result_borrow_tests;\n\nmod function_reuse_source;\n",
         "before": "#[path = \"hir/provisional_result_borrow_tests.rs\"]\nmod provisional_result_borrow_tests;\n"
+      },
+      {
+        "before": "pub(crate) mod items;\nuse crate::ast::program_source::ProgramSource;\n",
+        "after": "pub(crate) mod items;\nmod nominal_payload;\n#[path = \"hir/prelude_bundle.rs\"]\npub(crate) mod prelude_bundle;\npub use nominal_payload::{NominalPayload, NominalMutationError};\nuse crate::ast::program_source::ProgramSource;\n"
+      },
+      {
+        "before": "pub use declaration_index::{DeclarationIndex, dispose_declaration_index_for_private_contract};\npub(crate) use declaration_index::{TypeFactsPayer, TypeFlags};\n",
+        "after": "pub use declaration_index::{DeclarationIndex, dispose_declaration_index_for_private_contract};\npub(crate) use declaration_index::{inventory_identity, inventory_substitute, InventoryPayer};\npub(crate) use declaration_index::{TypeFactsPayer, TypeFlags};\n"
+      },
+      {
+        "before": "};\nuse byte_slice_provenance::derive_byte_slice_provenance;\n",
+        "after": "};\n#[cfg(test)]\npub(crate) use byte_capacity::byte_data_capacity_inputs;\nuse byte_slice_provenance::derive_byte_slice_provenance;\n"
       }
     ]
   },

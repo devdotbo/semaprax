@@ -1,0 +1,141 @@
+{
+  "selectors": [
+    {
+      "source": "src/bounded_output/identity_reservation/base_prelude/tests.rs",
+      "name": "actual_typed_work_refusal_moves_original_paid_buffers_and_all_six_fields_through_drop",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/bounded_output/identity_reservation/base_prelude/tests.rs",
+      "name": "actual_counter_setup_byte_refusal_stays_primary_without_work_or_publication",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/bounded_output/identity_reservation/base_prelude/tests.rs",
+      "name": "foreign_then_restored_byte_owner_keeps_exact_first_inline_error_without_requery",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/identity_resolution/nominal_tests.rs",
+      "name": "nominal_actual_paid_receiver_preserves_complete_old_hir_wire_and_shares_all_nominal_views",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/identity_resolution/nominal_tests.rs",
+      "name": "nominal_full_constructor_refuses_at_every_actual_acquisition_and_releases_all_partial_owners",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/identity_resolution/nominal_tests.rs",
+      "name": "nominal_full_constructor_keeps_complete_old_semantic_diagnostic_order",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/identity_resolution/nominal_tests.rs",
+      "name": "nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/nominal_payload/tests.rs",
+      "name": "actual_nominal_owner_moves_complete_vec_and_shares_without_backing_clone",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/nominal_payload/tests.rs",
+      "name": "zero_one_short_exact_and_sticky_refusal_preserve_complete_input_before_allocation",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/nominal_payload/tests.rs",
+      "name": "shared_mutation_refuses_without_touching_either_full_owner",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/nominal_payload/tests.rs",
+      "name": "nested_512_last_owner_drop_uses_only_its_preacquired_disposal_backing",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "name": "complete_original_base_types_and_every_lookup_keep_exact_order_ids_and_payloads",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "name": "two_borrowed_module_overlays_and_explicit_lease_share_actual_payload_addresses",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "name": "whole_owner_exact_one_short_zero_work_and_each_acquisition_refusal_drop_every_owner",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "name": "lookup_iteration_and_lease_work_keep_the_same_sticky_invocation_account",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "name": "unused_and_parser_only_overlapping_names_keep_unconditional_base_selection",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "name": "initializer_and_receiving_carriers_are_paid_before_any_producer_work",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "name": "fixed_base_unmetered_index_views_borrow_complete_old_facts_without_allocation",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "name": "returned_type_materialization_shares_nominals_pays_only_new_name_and_receivers",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "name": "logical_declaration_export_has_exact_remaining_length_and_generic_merge_keeps_base_values",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "name": "fixed_schema_work_payer_covers_actual_producer_exactly_and_plus_one_is_sticky",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/hir/prelude_bundle/tests.rs",
+      "name": "fixed_schema_counter_setup_and_byte_refusal_keep_exact_existing_owner_error",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution/base/tests.rs",
+      "name": "actual_base_receiver_retains_one_payload_across_fresh_borrowed_and_selective_full_old_controls",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution/base/tests.rs",
+      "name": "actual_base_work_failure_moves_original_prepaid_report_and_retains_exact_typed_first_error",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution/base/tests.rs",
+      "name": "actual_source_diagnostic_precedes_any_base_producer_activation",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution/base/affinity_tests.rs",
+      "name": "actual_base_foreign_then_restored_owner_cannot_construct_or_reset_first_detachment",
+      "status": "authored-not-executed"
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution/base/affinity_tests.rs",
+      "name": "actual_base_foreign_then_restored_owner_cannot_reuse_cached_payload_or_reset_detachment",
+      "status": "authored-not-executed"
+    }
+  ],
+  "pin_requirement": "Run the actual current generated pin producer after integration; preserve unchanged P/cap and all existing fixtures. No invented expected pins.",
+  "source_execution": false
+}

@@ -1,0 +1,40 @@
+{
+  "rust_execution": false,
+  "whole_nominal_source_inverses": 62,
+  "unchanged_archives": true,
+  "provider_rows": 17,
+  "provider_full_archives_equal": true,
+  "source_only_existing_owner_proofs": 36,
+  "original_hook_subsequence_checks": [
+    {
+      "packet": "docs/evidence/borrowed-generic-membership-index-39c6/whole-source-inverses.json",
+      "all_original_hooks_retained_in_order": true,
+      "archive_paths_unchanged": true
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-type-rewrite-141387/whole-source-inverses.json",
+      "all_original_hooks_retained_in_order": true,
+      "archive_paths_unchanged": true
+    },
+    {
+      "packet": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "all_original_hooks_retained_in_order": true,
+      "archive_paths_unchanged": true
+    },
+    {
+      "packet": "docs/evidence/paid-cfg-child-scratch/exact-source-inverses.json",
+      "all_original_hooks_retained_in_order": true,
+      "archive_paths_unchanged": true
+    },
+    {
+      "packet": "docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "all_original_hooks_retained_in_order": true,
+      "archive_paths_unchanged": true
+    },
+    {
+      "packet": "docs/evidence/source-projection-integration-797b/exact-receiving-inverses.json",
+      "all_original_hooks_retained_in_order": true,
+      "archive_paths_unchanged": true
+    }
+  ]
+}
