@@ -1,0 +1,39 @@
+{
+  "source_base": "4ec48420b6e78b1035a66cc406893c46c3028464",
+  "qualification": "source-only correction; no Cargo/tests/build/Clippy executed",
+  "current_test_source": {
+    "path": "src/workspace_graph/diagnostics/borrowed_help_tests.rs",
+    "sha256": "8718a1ef25bea79d74620ebb9b0d8dbe2039b1a32984dd6ffcd4d3508d1ec3e3"
+  },
+  "observed_prior_failure": {
+    "path": "/Volumes/Semaprax/lane-prompts/large-next-consolidated-4ec48-nine-20261015/owning-selected-192.log",
+    "sha256": "12d6b8c3055a51621be5c4581ecee7ab2171b15bb404729e40cf1e622cea5624",
+    "current_actual_allocated": 407,
+    "handwritten_old_wrapper_allocated": 372,
+    "case": 0,
+    "empty_paths": false,
+    "interpretation": "left is current, right is old; not evidence of a path clone"
+  },
+  "source_proof": {
+    "complete_original_help_matches_frozen_formatter": true,
+    "complete_original_primary_wrapper_matches_frozen_diagnostics_except_two_function_names": true,
+    "complete_current_diagnostics_inverse_matches_original": true,
+    "production_diagnostics_unchanged": true,
+    "clone_order": "dominant and pending cloned before pending early return; sequential cloned only if that return is not taken",
+    "strict_savings_when": "sum of lengths of those actually cloned Strings is nonzero",
+    "exact_allocation_equality_when": "all actually cloned String lengths are zero",
+    "case_zero": "fixture resets every path to None and selects Live, so no path backing is cloned",
+    "baseline_defect": "handwritten old primary format literal hardcoded builder_bytes instead of retaining actual dynamic field placeholder, changing append/growth topology despite identical output bytes"
+  },
+  "preserved": [
+    "all eight branch cases",
+    "empty and nonempty paths",
+    "all six Diagnostic fields",
+    "strict savings for actual nonempty clones",
+    "exact equality otherwise",
+    "complete Drop observations",
+    "zero/sticky first receipts",
+    "original archive bytes and hashes"
+  ],
+  "next_required": "root combined qualification of all three existing borrowed_help_tests owners"
+}

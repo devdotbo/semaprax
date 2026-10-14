@@ -105,20 +105,23 @@ fn fixture(case: usize) {
         });
     }
 }
-fn original_limit_error(maximum: usize) -> Diagnostic {
+fn original_limit_error(field: &'static str, maximum: usize) -> Diagnostic {
     let error = graph_error(
         "SPX-G171",
         crate::bounded_output::budgeted_format(format_args!(
-            "Workspace Semantic Graph `builder_bytes` exceeds {maximum}"
+            "Workspace Semantic Graph `{field}` exceeds {maximum}"
         )),
     );
+    if field != "builder_bytes" {
+        return error;
+    }
     let help = original_help(maximum);
     if help.is_empty() {
-        error
-    } else {
-        error.with_help(help)
+        return error;
     }
+    error.with_help(help)
 }
+
 #[test]
 fn every_help_branch_keeps_full_original_diagnostic_and_actual_complete_drop() {
     use crate::bounded_output::with_limit_usage_refusal;
@@ -157,8 +160,9 @@ fn every_help_branch_keeps_full_original_diagnostic_and_actual_complete_drop() {
                     PRECHARGE_SEQUENTIAL
                         .with(|v| v.borrow().as_ref().map_or(0, |step| step.path.len()))
                 };
-            let (old, refused, _, first) =
-                with_limit_usage_refusal(1024 * 1024, || original_limit_error(65536));
+            let (old, refused, _, first) = with_limit_usage_refusal(1024 * 1024, || {
+                original_limit_error("builder_bytes", 65536)
+            });
             assert!(!refused && first.is_none());
             let (((), actual), refused, _, first) = with_limit_usage_refusal(1024 * 1024, || {
                 measure(|| {
@@ -170,7 +174,7 @@ fn every_help_branch_keeps_full_original_diagnostic_and_actual_complete_drop() {
             assert!(!refused && first.is_none());
             assert!(!actual.invalid && actual.live == 0 && actual.allocated == actual.freed);
             let ((), old_actual) = measure(|| {
-                let old_again = original_limit_error(65536);
+                let old_again = original_limit_error("builder_bytes", 65536);
                 assert_eq!(old_again, old);
                 drop(old_again);
             });
@@ -202,7 +206,7 @@ fn zero_and_sticky_help_do_not_clone_paths_or_replace_first_refusal() {
         fixture(case);
         let (old, old_refused, old_paid, old_first) = with_limit_usage_refusal(0, || {
             assert!(!reserve_active_required(1));
-            original_limit_error(65536)
+            original_limit_error("builder_bytes", 65536)
         });
         let (((), actual), refused, paid, first) = with_limit_usage_refusal(0, || {
             measure(|| {
@@ -251,6 +255,27 @@ fn complete_borrowed_help_source_restores_full_original_without_normalization() 
         ))
     );
     let saved = include_str!("borrowed_help_tests.rs");
+    // The primary formatter's placeholder boundaries are allocation behavior.
+    // Bind the complete saved wrapper, not a byte-equivalent hardcoded variant.
+    let wrapper_start = saved.find("fn original_limit_error(").unwrap();
+    let wrapper_end = saved[wrapper_start..].find("\n#[test]").unwrap() + wrapper_start;
+    let archive = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/borrowed-refusal-help-824/diagnostics.before.txt"
+    ));
+    let original_start = archive.find("pub(super) fn limit_error(").unwrap();
+    let original_end = archive[original_start..].find("/// Which of").unwrap() + original_start;
+    assert_eq!(
+        saved[wrapper_start..wrapper_end]
+            .trim_end()
+            .replacen("fn original_limit_error(", "pub(super) fn limit_error(", 1)
+            .replacen(
+                "let help = original_help(maximum);",
+                "let help = builder_bytes_help(maximum);",
+                1
+            ),
+        archive[original_start..original_end].trim_end()
+    );
     let start = saved
         .find("fn original_help(maximum: usize) -> String {")
         .unwrap();
