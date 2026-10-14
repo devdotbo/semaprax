@@ -173,7 +173,11 @@ fn valid_signature_argument_failures_do_not_erase_independently_known_results() 
 #[test]
 fn complete_pre_component_entry_and_call_sources_remain_exact() {
     let entry = include_str!("../iterative/enter/enter_before_components.rs")
-        .replace("before_components_", "");
+        .replace("before_components_", "")
+        .replace(
+            "crate::source_verify::vec_field::signature(",
+            "super::super::vec_field::signature(",
+        );
     let calls = include_str!("../iterative/calls/calls_before_components.rs")
         .replace("before_components_", "");
     assert_eq!(

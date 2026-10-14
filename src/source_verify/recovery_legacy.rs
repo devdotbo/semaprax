@@ -203,6 +203,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }],
             recovery: super::recovery::Recovery::default(),
             recovery_legacy: true,
+            operators_before_799: false,
+            extended_before_799: false,
             frames: Vec::new(),
             values: Vec::new(),
             buffer_reopen_sites: std::collections::BTreeSet::new(),

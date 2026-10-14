@@ -175,3 +175,25 @@ fn packed_name_adapter_keeps_complete_saved_legacy_arm_body() {
     );
     assert_eq!(current,include_str!("../../../docs/evidence/packed-match-provenance-799/recovery_legacy__match_arms.rs.before"));
 }
+
+#[test]
+fn complete_legacy_constructor_and_match_checkpoint_adapters_preserve_saved_bodies() {
+    let legacy = include_str!("../recovery_legacy.rs");
+    let flags =
+        "            operators_before_799: false,\n            extended_before_799: false,\n";
+    assert_eq!(legacy.matches(flags).count(), 1);
+    assert_eq!(
+        legacy.replace(flags, ""),
+        include_str!("../../../docs/evidence/packed-test-adapters-799/recovery_legacy.rs.before")
+    );
+    let enter = include_str!("../recovery_legacy/enter.rs");
+    let checkpoint =
+        "                    checkpoint: self.recovery.checkpoint(self.diagnostics),\n";
+    assert_eq!(enter.matches(checkpoint).count(), 1);
+    assert_eq!(
+        enter.replace(checkpoint, ""),
+        include_str!(
+            "../../../docs/evidence/packed-test-adapters-799/recovery_legacy__enter.rs.before"
+        )
+    );
+}

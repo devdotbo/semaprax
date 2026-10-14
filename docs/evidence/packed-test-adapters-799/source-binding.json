@@ -1,0 +1,20 @@
+{
+  "base_head": "81e5faf9979ad4e5e7b28c3d2c8f652eacc05353",
+  "scope": "six actual81e5 lib-test compiler hazards; zero semantic/model changes",
+  "current_source_hashes": {
+    "src/source_verify/iterative/enter/enter_before_components.rs": "ce0c043f94beba2e658e35931ad2fda7c07c4b5daa5a5712dd2fac2bce7a165f",
+    "src/source_verify/iterative/enter/enter_before_extended.rs": "c02a2e949346f78c89cf94f707cfbab369367c38a3b4c7490e608417876395ba",
+    "src/source_verify/recovery_legacy.rs": "68e95e9723de78f8829a5a2c2db4960fde8ca285c924ecaa88adae66a7e01b51",
+    "src/source_verify/recovery_legacy/enter.rs": "6ba3691f769083e3da929796cf7d1fd439f59ec1dc061bdc238c96e27cdb9baf",
+    "src/source_verify/recovery_tests/callee_components.rs": "c1b5ad16742567e2611e64e620016f3ebe30c2e16754e8dfdebf3f55855e6149",
+    "src/source_verify/recovery_tests/extended_components.rs": "ff32ab924dffedc1e6971619c559d2f4a3994e31137f7288e49b58ab8edf15c1",
+    "src/source_verify/recovery_tests/flow_799.rs": "7830ab79a8ca7c1c41f2cac41b8a9a631cf4f02882d539f3b3680b5959ada6cd",
+    "src/source_verify/scope/layout_original.rs": "704f399fedd3f267b5a93040fd91c628d1bab6a9f3522ada41eded76033e09e4"
+  },
+  "original_archive_hashes": {
+    "recovery_legacy.rs.before": "c35a0515135481cecf071f650c4d0bfe79fa12294cf2b4ddda5aa26060c4ff40",
+    "recovery_legacy__enter.rs.before": "097cd8de63fb4798d4ba64a166d74a6f8c8762d0e897285edf5cb4f4359a2ad6"
+  },
+  "whole_original_inverses_checked": 5,
+  "test_execution": false
+}

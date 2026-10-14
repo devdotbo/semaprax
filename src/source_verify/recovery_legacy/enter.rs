@@ -1438,6 +1438,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 scrutinee, arms, ..
             } => {
                 self.frames.push(VerifierFrame::ResumeMatchScrutinee {
+                    checkpoint: self.recovery.checkpoint(self.diagnostics),
                     expression,
                     scrutinee,
                     arms,

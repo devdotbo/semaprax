@@ -343,7 +343,10 @@ fn complete_pre_extension_entry_call_and_record_receivers_are_byte_exact() {
             None,
         ),
     ] {
-        let mut restored = saved.replace("before_extended_", "");
+        let mut restored = saved.replace("before_extended_", "").replace(
+            "crate::source_verify::vec_field::signature(",
+            "super::super::vec_field::signature(",
+        );
         if let Some(registration) = registration {
             assert_eq!(
                 restored

@@ -1,0 +1,13 @@
+{
+  "package": "semaprax",
+  "harness": "lib",
+  "status": "source-only; no bodies executed",
+  "selectors": [
+    "source_verify::recovery_tests::flow_799::complete_legacy_constructor_and_match_checkpoint_adapters_preserve_saved_bodies",
+    "source_verify::recovery_tests::callee_components::complete_pre_component_entry_and_call_sources_remain_exact",
+    "source_verify::recovery_tests::extended_components::complete_pre_extension_entry_call_and_record_receivers_are_byte_exact",
+    "source_verify::scope::layout_original::complete_original_frame_and_state_declarations_remain_byte_exact",
+    "source_verify::scope::layout_original::original_and_packed_carriers_keep_exact_existing_physical_models"
+  ],
+  "new_authored_definition_count": 1
+}

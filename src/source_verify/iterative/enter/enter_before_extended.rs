@@ -427,7 +427,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         implicit_unique_ownership: false,
                     }))
                 } else if name == crate::vec_field::NAME {
-                    let Some((params, return_type)) = super::super::vec_field::signature(
+                    let Some((params, return_type)) = crate::source_verify::vec_field::signature(
                         self.types,
                         type_arguments,
                         args,

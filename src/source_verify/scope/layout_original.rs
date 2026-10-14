@@ -4,7 +4,7 @@
     reason = "complete old carrier variants retain layout provenance"
 )]
 use super::{
-    BinaryOp, Binding, CheckedValue, Expr, FieldDeclaration, HashMap, HashSet, MatchMode,
+    BinaryOp, Binding, CheckedValue, Expr, FieldDeclaration, Function, HashMap, HashSet, MatchMode,
     ScalarMatchState, SourceLoanId, Span, Statement, Type, TypeDeclaration, UnaryOp,
     VariantCaseDeclaration, VerifierCallTarget,
 };
@@ -79,7 +79,7 @@ pub(super) enum OriginalVerifierFrame<'a> {
         block_scope: usize,
         index: usize,
         outer_names: Vec<String>,
-        recovery_checkpoint: super::recovery::Checkpoint,
+        recovery_checkpoint: crate::source_verify::recovery::Checkpoint,
     },
     ResumeWhileCondition {
         condition: &'a Expr,
@@ -343,7 +343,8 @@ fn complete_original_frame_and_state_declarations_remain_byte_exact() {
         .unwrap()
         .0
         .replace("OriginalVerifierFrame", "VerifierFrame")
-        .replace("OriginalVariantMatchState", "VariantMatchState");
+        .replace("OriginalVariantMatchState", "VariantMatchState")
+        .replace("crate::source_verify::recovery::Checkpoint", "super::recovery::Checkpoint");
     let original = include_str!("../../../docs/evidence/conditional-refusal-799/scope.rs.before");
     let frame = &original[original.find("pub(super) enum VerifierFrame").unwrap()
         ..original
