@@ -465,6 +465,7 @@ pub(crate) fn resolved_vec(element: ResolvedType) -> ResolvedType {
         arguments: vec![element],
     }
 }
+#[cfg(test)]
 pub(crate) fn ast_params(op: VecOp, element: &Type) -> Vec<Param> {
     ast_params_with_owned_element(op, element, matches!(element, Type::Bytes | Type::String))
 }
