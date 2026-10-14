@@ -13,6 +13,11 @@
   "full_current_projection": {
     "src/cleanup_plan/replay/expression_facts/receiving.rs": [
       {
+        "name": "region-entry-receiving-registration",
+        "from": "mod regions_entry;\nmod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use regions_entry::{validate_entry, validate_regions};\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n",
+        "to": "mod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n"
+      },
+      {
         "name": "complete-paid-exit-receiving-registration",
         "from": "mod directory;\nmod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n",
         "to": "mod directory;\nuse directory::Directory;\n"

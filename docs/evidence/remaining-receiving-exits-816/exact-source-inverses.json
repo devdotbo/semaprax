@@ -8,6 +8,16 @@
         "name": "ordinary-exit-receiving-caller",
         "before": "    validate_exits(program, function, &storage, &leaves, &BTreeSet::new())?;",
         "after": "    expression_facts::receiving::validate_exits(\n        program,\n        function,\n        &storage,\n        &leaves,\n        &BTreeSet::new(),\n        budget,\n    )?;"
+      },
+      {
+        "name": "ordinary-0",
+        "before": "    validate_regions(function, &storage)?;",
+        "after": "    expression_facts::receiving::validate_regions(function, &storage, budget)?;"
+      },
+      {
+        "name": "ordinary-1",
+        "before": "    validate_entry(function, &storage, &leaves)?;",
+        "after": "    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;"
       }
     ]
   },
@@ -20,6 +30,11 @@
         "name": "paid-exit-receiving-registration",
         "before": "mod directory;\nuse directory::Directory;\n",
         "after": "mod directory;\nmod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n"
+      },
+      {
+        "name": "region-entry-receiving-registration",
+        "before": "mod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n",
+        "after": "mod regions_entry;\nmod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use regions_entry::{validate_entry, validate_regions};\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n"
       }
     ]
   },
@@ -32,6 +47,16 @@
         "name": "lexical-unselected-exit-receiving-caller",
         "before": "        validate_exits(program, function, &storage, &leaves, &operands)?;",
         "after": "        expression_facts::receiving::validate_exits(\n            program, function, &storage, &leaves, &operands, budget,\n        )?;"
+      },
+      {
+        "name": "lexical-0",
+        "before": "        validate_regions(function, &storage)?;",
+        "after": "        expression_facts::receiving::validate_regions(function, &storage, budget)?;"
+      },
+      {
+        "name": "lexical-1",
+        "before": "        validate_entry(function, &storage, &leaves)?;",
+        "after": "        expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;"
       }
     ]
   }

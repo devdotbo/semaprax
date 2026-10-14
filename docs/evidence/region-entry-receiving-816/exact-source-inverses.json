@@ -1,0 +1,60 @@
+[
+  {
+    "source": "src/cleanup_plan/replay.rs",
+    "archive": "src__cleanup_plan__replay.rs.before.txt",
+    "sha256": "c8d431255448d27c65ea17d8e76bde7a9e18e75ad733acd7512a778f6cb1125e",
+    "edits": [
+      {
+        "name": "ordinary-0",
+        "before": "    validate_regions(function, &storage)?;",
+        "after": "    expression_facts::receiving::validate_regions(function, &storage, budget)?;"
+      },
+      {
+        "name": "ordinary-1",
+        "before": "    validate_entry(function, &storage, &leaves)?;",
+        "after": "    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/lexical_replay.rs",
+    "archive": "src__cleanup_plan__replay__lexical_replay.rs.before.txt",
+    "sha256": "322c6b1a60d53abb09d0a148bcc67271989567b07c965db09591d615d782ed96",
+    "edits": [
+      {
+        "name": "lexical-0",
+        "before": "        validate_regions(function, &storage)?;",
+        "after": "        expression_facts::receiving::validate_regions(function, &storage, budget)?;"
+      },
+      {
+        "name": "lexical-1",
+        "before": "        validate_entry(function, &storage, &leaves)?;",
+        "after": "        expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+    "archive": "src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt",
+    "sha256": "0f2576a1e32af73ddb3bae7c7db7bede6a28eab41f781b2ff06e98a369c6370c",
+    "edits": [
+      {
+        "name": "region-entry-receiving-registration",
+        "before": "mod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n",
+        "after": "mod regions_entry;\nmod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use regions_entry::{validate_entry, validate_regions};\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+    "archive": "src__cleanup_plan__replay__expression_facts__receiving__directory.rs.before.txt",
+    "sha256": "520431488c88d2ae1018245426677b0ab5ba13d7378509f23c1b4725c1e8b0d7",
+    "edits": [
+      {
+        "name": "complete-storage-key-work",
+        "before": "",
+        "after": "impl KeyWork for StorageId {\n    fn comparison_units(&self, other: &Self) -> Option<usize> {\n        let payload = match (self, other) {\n            (Self::Value(left), Self::Value(right)) => left\n                .as_str()\n                .len()\n                .min(right.as_str().len())\n                .checked_add(1)?,\n            (Self::Temporary(left), Self::Temporary(right)) => left.comparison_units(right)?,\n            (\n                Self::CallArgument {\n                    call: left_call,\n                    parameter_index: _,\n                    value_expression: left_value,\n                },\n                Self::CallArgument {\n                    call: right_call,\n                    parameter_index: _,\n                    value_expression: right_value,\n                },\n            ) => left_call\n                .comparison_units(right_call)?\n                .checked_add(1)?\n                .checked_add(left_value.comparison_units(right_value)?)?,\n            _ => 0,\n        };\n        // One variant discriminator; full Ord remains the actual comparator.\n        payload.checked_add(1)\n    }\n}\n\n"
+      }
+    ]
+  }
+]

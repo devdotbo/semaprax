@@ -1,0 +1,68 @@
+fn validate_regions(
+    function: &ResolvedFunction,
+    storage: &BTreeSet<StorageId>,
+) -> Result<(), Diagnostic> {
+    let plan = &function.cleanup_plan;
+    if plan.regions.is_empty() {
+        return Err(replay_error(function, "cleanup plan has no root region"));
+    }
+    let mut assigned = BTreeSet::new();
+    for (index, region) in plan.regions.iter().enumerate() {
+        let expected = u32_index(function, index, "cleanup region")?;
+        if region.id.0 != expected {
+            return Err(replay_error(
+                function,
+                "cleanup region IDs are not contiguous",
+            ));
+        }
+        match (index, region.parent) {
+            (0, None) => {}
+            (0, Some(_)) | (_, None) => {
+                return Err(replay_error(
+                    function,
+                    "cleanup region tree has an invalid root",
+                ));
+            }
+            (_, Some(parent)) if usize::try_from(parent.0).ok().is_some_and(|p| p < index) => {}
+            _ => {
+                return Err(replay_error(
+                    function,
+                    "cleanup region parent must precede its child",
+                ));
+            }
+        }
+        for item in &region.slots {
+            if !storage.contains(item) {
+                return Err(replay_error(
+                    function,
+                    "cleanup region references unknown storage",
+                ));
+            }
+            if !assigned.insert(item.clone()) {
+                return Err(replay_error(
+                    function,
+                    "cleanup storage is assigned to more than one region",
+                ));
+            }
+        }
+        let unresolved =
+            plan.lexical_control.is_some() && region.normal_scope_end == UNRESOLVED_NORMAL_END;
+        if !unresolved
+            && usize::try_from(region.normal_scope_end.0)
+                .ok()
+                .is_none_or(|exit| exit >= plan.exits.len())
+        {
+            return Err(replay_error(
+                function,
+                "cleanup region references an unknown normal-scope exit",
+            ));
+        }
+    }
+    if &assigned != storage {
+        return Err(replay_error(
+            function,
+            "cleanup plan has storage not assigned to exactly one region",
+        ));
+    }
+    Ok(())
+}

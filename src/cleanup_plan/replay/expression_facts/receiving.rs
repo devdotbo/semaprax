@@ -1,8 +1,10 @@
 //! Complete ordinary receiving dispatch; old tree branches remain compiled independently.
 use super::*;
 mod directory;
+mod regions_entry;
 mod remaining;
 use directory::Directory;
+pub(in crate::cleanup_plan::replay) use regions_entry::{validate_entry, validate_regions};
 pub(in crate::cleanup_plan::replay) use remaining::validate_exits;
 
 pub(in crate::cleanup_plan::replay) fn validate_status_sources(

@@ -1,0 +1,18 @@
+{
+  "status": "source-only; not executed",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selectors": [
+        "cleanup_plan::replay::expression_facts::receiving::regions_entry::tests::complete_regions_keep_membership_uniqueness_equal_count_and_original_error_priority",
+        "cleanup_plan::replay::expression_facts::receiving::regions_entry::tests::complete_entry_keeps_first_unknown_overlap_and_all_diagnostic_fields",
+        "cleanup_plan::replay::expression_facts::receiving::regions_entry::tests::all_storage_variants_keep_full_original_order_duplicates_and_exact_field_differences",
+        "cleanup_plan::replay::expression_facts::receiving::regions_entry::tests::both_receiving_directory_allocations_exact_short_zero_sticky_settle_complete_drop",
+        "cleanup_plan::replay::expression_facts::receiving::regions_entry::tests::complete_regions_and_entry_work_exact_short_sticky_keep_the_same_payer",
+        "cleanup_plan::replay::expression_facts::receiving::regions_entry::tests::complete_region_entry_and_four_variant_source_projections_restore_full_originals"
+      ]
+    }
+  ],
+  "required_predecessor_packet": "docs/evidence/remaining-receiving-exits-816/pending-selectors.json"
+}

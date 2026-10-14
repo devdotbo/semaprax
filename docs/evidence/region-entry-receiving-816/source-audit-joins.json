@@ -1,0 +1,6 @@
+{
+  "children": [
+    "src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/regions_entry/tests.rs"
+  ]
+}

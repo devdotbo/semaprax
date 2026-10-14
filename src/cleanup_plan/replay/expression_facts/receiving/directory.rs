@@ -29,6 +29,37 @@ impl KeyWork for ExpressionId {
     }
 }
 
+impl KeyWork for StorageId {
+    fn comparison_units(&self, other: &Self) -> Option<usize> {
+        let payload = match (self, other) {
+            (Self::Value(left), Self::Value(right)) => left
+                .as_str()
+                .len()
+                .min(right.as_str().len())
+                .checked_add(1)?,
+            (Self::Temporary(left), Self::Temporary(right)) => left.comparison_units(right)?,
+            (
+                Self::CallArgument {
+                    call: left_call,
+                    parameter_index: _,
+                    value_expression: left_value,
+                },
+                Self::CallArgument {
+                    call: right_call,
+                    parameter_index: _,
+                    value_expression: right_value,
+                },
+            ) => left_call
+                .comparison_units(right_call)?
+                .checked_add(1)?
+                .checked_add(left_value.comparison_units(right_value)?)?,
+            _ => 0,
+        };
+        // One variant discriminator; full Ord remains the actual comparator.
+        payload.checked_add(1)
+    }
+}
+
 impl KeyWork for StatusSourceId {
     fn comparison_units(&self, other: &Self) -> Option<usize> {
         // The lane is one structural numeric field.

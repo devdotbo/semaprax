@@ -101,8 +101,8 @@ fn validate_core<'hir, E: semantic_refusal::Error>(
             &expression_facts,
             budget,
         )?;
-        validate_regions(function, &storage)?;
-        validate_entry(function, &storage, &leaves)?;
+        expression_facts::receiving::validate_regions(function, &storage, budget)?;
+        expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;
         expression_facts::receiving::validate_blocks_and_edges(
             program,
             function,
