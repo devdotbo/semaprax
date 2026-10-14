@@ -1,7 +1,10 @@
 //! Validation-only rules for bounded generic templates.
 
 use super::*;
+mod call_graph;
 mod reachability;
+#[cfg(test)]
+pub(super) use call_graph::original as original_call_graph;
 pub(super) mod values;
 pub(super) use reachability::{reachable_instances, Reachable};
 
@@ -501,6 +504,14 @@ pub(super) fn is_forwarded_call(
 }
 
 pub(super) fn validate_call_graph(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    if crate::bounded_output::active_remaining().is_some() {
+        call_graph::validate_call_graph_paid(program)
+    } else {
+        validate_call_graph_original(program)
+    }
+}
+
+pub(super) fn validate_call_graph_original(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     let ids = program
         .function_templates
         .iter()

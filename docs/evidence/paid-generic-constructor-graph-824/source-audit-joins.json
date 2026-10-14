@@ -1,0 +1,9 @@
+{
+  "new_rust_children": [
+    "src/hir/validation/generic_template/call_graph.rs",
+    "src/hir/validation/generic_template/call_graph/ordered.rs",
+    "src/hir/validation/generic_template/call_graph/original.rs",
+    "src/hir/validation/generic_template/call_graph/tests.rs"
+  ],
+  "root_owns_final_union": true
+}

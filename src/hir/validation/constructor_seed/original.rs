@@ -1,5 +1,6 @@
 //! Exact current constructor subject, authenticated in the original order.
 use super::super::function_lookup::original as function_lookup;
+use super::super::generic_template::original_call_graph as generic_template;
 use super::original_intrinsics as box_intrinsic;
 use super::*;
 

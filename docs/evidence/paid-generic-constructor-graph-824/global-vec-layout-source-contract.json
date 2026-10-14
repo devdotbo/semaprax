@@ -1,0 +1,30 @@
+{
+  "qualification": "local installed rust-src inspection only; root must confirm qualification toolchain and actual allocator receipts",
+  "requested_layout_not_rss": true,
+  "refs": [
+    {
+      "toolchain_source": "nightly-2026-10-02-aarch64-apple-darwin",
+      "file": "library/alloc/src/alloc.rs",
+      "whole_source_sha256": "c47061f8f1db5e2d17dc8a65548e3d0d298ab3945112b8ee618a557faad5cc91",
+      "ranges": [
+        {
+          "start": 330,
+          "end": 354,
+          "text": "    fn alloc_impl_runtime(layout: Layout, zeroed: bool) -> Result<NonNull<[u8]>, AllocError> {\n        match layout.size() {\n            0 => Ok(layout.dangling_ptr().cast_slice(0)),\n            // SAFETY: `layout` is non-zero in size,\n            size => unsafe {\n                let raw_ptr = if zeroed { alloc_zeroed(layout) } else { alloc(layout) };\n                let ptr = NonNull::new(raw_ptr).ok_or(AllocError)?;\n                Ok(ptr.cast_slice(size))\n            },\n        }\n    }\n\n    #[inline]\n    #[cfg_attr(miri, track_caller)] // even without panics, this helps for Miri backtraces\n    fn deallocate_impl_runtime(ptr: NonNull<u8>, layout: Layout) {\n        if layout.size() != 0 {\n            // SAFETY:\n            // * We have checked that `layout` is non-zero in size.\n            // * The caller is obligated to provide a layout that \"fits\", and in this case,\n            //   \"fit\" always means a layout that is equal to the original, because our\n            //   `allocate()`, `grow()`, and `shrink()` implementations never returns a larger\n            //   allocation than requested.\n            // * Other conditions must be upheld by the caller, as per `Allocator::deallocate()`'s\n            //   safety documentation.\n            unsafe { dealloc_nonnull(ptr, layout) }\n"
+        }
+      ]
+    },
+    {
+      "toolchain_source": "nightly-2026-10-02-aarch64-apple-darwin",
+      "file": "library/alloc/src/raw_vec/mod.rs",
+      "whole_source_sha256": "72c063a8cb07a455dd31c840d33e5b130f2c807e5dabac398a245edef42d8359",
+      "ranges": [
+        {
+          "start": 800,
+          "end": 833,
+          "text": "    const unsafe fn set_ptr_and_cap(&mut self, ptr: NonNull<[u8]>, cap: usize) {\n        // Allocators currently return a `NonNull<[u8]>` whose length matches\n        // the size requested. If that ever changes, the capacity here should\n        // change to `ptr.len() / size_of::<T>()`.\n        self.ptr = ptr.cast();\n        // SAFETY: Upheld by caller.\n        self.cap = unsafe { Cap::new_unchecked(cap) };\n    }\n\n    /// # Safety\n    /// - `elem_layout` must be valid for `self`, i.e. it must be the same `elem_layout` used to\n    ///   initially construct `self`\n    /// - `elem_layout`'s size must be a multiple of its alignment\n    /// - The sum of `len` and `additional` must be greater than the current capacity\n    unsafe fn grow_exact(\n        &mut self,\n        len: usize,\n        additional: usize,\n        elem_layout: Layout,\n    ) -> Result<(), TryReserveError> {\n        if elem_layout.size() == 0 {\n            // Since we return a capacity of `usize::MAX` when the type size is\n            // 0, getting to here necessarily means the `RawVec` is overfull.\n            return Err(CapacityOverflow.into());\n        }\n\n        let cap = len.checked_add(additional).ok_or(CapacityOverflow)?;\n\n        // SAFETY: preconditions passed to caller\n        let ptr = unsafe { self.finish_grow(cap, elem_layout)? };\n\n        // SAFETY: `finish_grow` would have failed if `cap > isize::MAX`\n        unsafe { self.set_ptr_and_cap(ptr, cap) };\n        Ok(())\n"
+        }
+      ]
+    }
+  ]
+}

@@ -66,6 +66,11 @@
           "name": "exact-current-hook-1",
           "before": "//! Exact current constructor subject, authenticated in the original order.\nuse super::super::function_lookup::original as function_lookup;\nuse super::*;\n\npub(in crate::hir) struct ConstructorSeed<'a> {\n",
           "after": "//! Exact current constructor subject, authenticated in the original order.\nuse super::super::function_lookup::original as function_lookup;\nuse super::original_intrinsics as box_intrinsic;\nuse super::*;\n\npub(in crate::hir) struct ConstructorSeed<'a> {\n"
+        },
+        {
+          "name": "independent-full-original-generic-graph-dispatch",
+          "before": "use super::super::function_lookup::original as function_lookup;\n",
+          "after": "use super::super::function_lookup::original as function_lookup;\nuse super::super::generic_template::original_call_graph as generic_template;\n"
         }
       ]
     },
@@ -83,6 +88,11 @@
           "name": "complete-semantic-error-receiving-drop-window",
           "before": "        let ((current, actual), refused, paid, first) = with_limit_usage_refusal(LIMIT, || {\n            measure(|| constructor_seed::ConstructorSeed::authenticate(&program, None).err())\n        });\n        assert_eq!(current, old);",
           "after": "        let (((), actual), refused, paid, first) = with_limit_usage_refusal(LIMIT, || {\n            measure(|| {\n                let current = constructor_seed::ConstructorSeed::authenticate(&program, None).err();\n                // Compare every diagnostic field before dropping the complete receiving result.\n                // Returning an owned error would keep its backing outside this Drop observation.\n                assert_eq!(current, old);\n                drop(current);\n            })\n        });"
+        },
+        {
+          "name": "independent-full-original-generic-graph-dispatch",
+          "before": "    let saved_intrinsics = \"use super::original_intrinsics as box_intrinsic;\\n\";\n",
+          "after": "    let saved_generic_graph = \"use super::super::generic_template::original_call_graph as generic_template;\\n\";\n    assert_eq!(current.matches(saved_generic_graph).count(), 1);\n    let current = current.replacen(saved_generic_graph, \"\", 1);\n    let saved_intrinsics = \"use super::original_intrinsics as box_intrinsic;\\n\";\n"
         }
       ]
     }

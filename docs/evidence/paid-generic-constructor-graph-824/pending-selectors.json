@@ -1,0 +1,29 @@
+{
+  "base": "d8ea9b8dcc54abbb1e8f28c1a6511b1334264d91",
+  "qualification": "source-only; no Rust execution",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selectors": [
+        "hir::validation::generic_template::call_graph::tests::borrowed_graph_preserves_complete_original_outcomes_and_lexicographic_fifo_order",
+        "hir::validation::generic_template::call_graph::tests::every_contract_and_nested_call_is_visited_before_graph_verdict",
+        "hir::validation::generic_template::call_graph::tests::complete_graph_backing_is_paid_through_drop_at_exact_short_zero_and_sticky_limits",
+        "hir::validation::generic_template::call_graph::tests::ordered_ordinal_sets_keep_rotations_duplicates_and_all_actual_acquisitions",
+        "hir::validation::generic_template::call_graph::tests::checked_generic_constructor_uses_independent_old_dispatch_and_complete_error_order",
+        "hir::validation::generic_template::call_graph::tests::full_generic_graph_sources_and_independent_constructor_dispatch_preserve_original_bytes",
+        "hir::validation::generic_template::call_graph::tests::empty_compatibility_and_paid_routes_keep_zero_sticky_and_missing_owner_boundaries",
+        "hir::validation::generic_template::call_graph::tests::warmed_outgoing_hit_and_visit_authenticate_the_original_sticky_refusal_before_activity",
+        "hir::validation::constructor_seed::intrinsic_tests::original_intrinsic_parameter_mode_fixture_keeps_complete_parser_diagnostic",
+        "hir::validation::constructor_seed::intrinsic_tests::corrective_controllers_reconstruct_complete_original_sources",
+        "hir::validation::constructor_seed::intrinsic_tests::exact_intrinsic_nominal_predicates_match_complete_owned_receivers_without_acquisition",
+        "hir::validation::constructor_seed::intrinsic_tests::complete_intrinsic_case_fields_and_constructor_dispatch_keep_full_original_diagnostics",
+        "hir::validation::constructor_seed::intrinsic_tests::complete_intrinsic_declaration_receivers_have_zero_backing_through_drop_and_keep_sticky_caller",
+        "hir::validation::constructor_seed::intrinsic_tests::complete_intrinsic_sources_and_saved_constructor_dispatch_reconstruct_every_original_byte",
+        "hir::validation::function_lookup::paid_custody::full_original_constructor_seed_and_paid_seed_preserve_all_ordered_semantic_errors",
+        "hir::validation::function_lookup::paid_custody::complete_constructor_preflight_and_lookup_sources_preserve_full_original_bytes",
+        "hir::validation::function_lookup::paid_custody::actual_compatibility_constructor_is_paid_through_drop_at_exact_short_and_zero"
+      ]
+    }
+  ]
+}
