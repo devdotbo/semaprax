@@ -269,6 +269,7 @@ pub(in crate::cleanup_plan::replay) use metered::raw as raw_error_metered;
     }
     {
         let mut current = include_str!("../../factored.rs").to_owned();
+        undo(&mut current, "#[cfg(test)]\nenum CanonicalFrame {\n    Enter(Weighted),\n    Exit(Weighted, u64, Vec<(Label, Weighted)>),\n}\n\n", "");
         // Join the complete relocated old receiver before the existing inverse.
         let before = include_str!("../../factored/canonical_before.rs");
         let original = before

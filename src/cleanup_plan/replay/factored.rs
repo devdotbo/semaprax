@@ -802,6 +802,12 @@ fn edge_observation(
 /// automaton paths that reach it on one observation sequence.
 type Weighted = Vec<(usize, u64)>;
 
+#[cfg(test)]
+enum CanonicalFrame {
+    Enter(Weighted),
+    Exit(Weighted, u64, Vec<(Label, Weighted)>),
+}
+
 /// Test builds compare the factored verdict with the enumerating one on every
 /// function small enough to enumerate.
 #[cfg(test)]

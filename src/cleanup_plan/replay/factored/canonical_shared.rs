@@ -27,6 +27,23 @@ fn own_weighted(
     Ok(Rc::new(state))
 }
 
+// Vec's FromIterator growth policy may round 1..3 items up to four slots.
+// Build this producer through its exact precharged capacity instead.
+fn weighted_successor(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    targets: BTreeMap<usize, u64>,
+) -> Result<SharedWeighted, Diagnostic> {
+    budget.reserve_array::<(usize, u64)>(
+        function,
+        targets.len(),
+        "factored weighted successor vector",
+    )?;
+    let mut state = Vec::with_capacity(targets.len());
+    state.extend(targets);
+    own_weighted(function, budget, state)
+}
+
 fn share_weighted(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
@@ -200,13 +217,7 @@ impl<'a> Canonicalizer<'a> {
         )?;
         let mut result = Vec::with_capacity(successors.len());
         for (label, targets) in successors {
-            budget.reserve_array::<(usize, u64)>(
-                function,
-                targets.len(),
-                "factored weighted successor vector",
-            )?;
-            let state = targets.into_iter().collect();
-            result.push((label, own_weighted(function, budget, state)?));
+            result.push((label, weighted_successor(function, budget, targets)?));
         }
         Ok(Some((accepted, result)))
     }

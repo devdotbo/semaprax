@@ -235,3 +235,130 @@ fn overflow_returns_no_proof_and_drops_all_paid_backing() {
     assert_eq!(observed.live, 0);
     assert_eq!(observed.allocated, observed.freed);
 }
+
+#[test]
+fn exact_small_weighted_successor_capacity_and_requested_backing_are_paid_before_allocation() {
+    let function = fixture();
+    let admission = ReplayBudget::with_physical(&function, 1 << 20)
+        .unwrap()
+        .physical
+        .as_ref()
+        .unwrap()
+        .charged();
+    for width in 0..=4 {
+        let vector = width * std::mem::size_of::<(usize, u64)>();
+        let header = physical_clone::rc_backing_bytes::<Weighted>();
+        let expected = vector + header;
+        let make_targets = || {
+            (0..width)
+                .map(|n| (n, n as u64 + 1))
+                .collect::<BTreeMap<_, _>>()
+        };
+        let mut budget = ReplayBudget::with_physical(&function, admission + expected).unwrap();
+        let targets = make_targets();
+        let ((capacity, length, work), observed) = crate::test_allocation_observer::measure(|| {
+            let work = budget.remaining;
+            let state = weighted_successor(&function, &mut budget, targets).unwrap();
+            let capacity = state.capacity();
+            let length = state.len();
+            for (n, entry) in state.iter().enumerate() {
+                assert_eq!(*entry, (n, n as u64 + 1));
+            }
+            drop(state);
+            (capacity, length, work)
+        });
+        assert_eq!((capacity, length), (width, width));
+        assert_eq!(
+            budget.remaining, work,
+            "producer adds no copy-work discount or debit"
+        );
+        assert_eq!(
+            budget.physical.as_ref().unwrap().charged(),
+            admission + expected
+        );
+        assert!(!observed.invalid);
+        assert_eq!(
+            observed.allocated, expected,
+            "actual Vec and Rc requested Layouts"
+        );
+        assert_eq!(observed.highwater, expected);
+        assert_eq!(observed.live, 0);
+        assert_eq!(observed.allocated, observed.freed);
+        assert_eq!(observed.reallocations, 0);
+
+        // Refusal at the vector acquisition must precede both vector and Rc.
+        // Width zero has no vector backing, so its first allocation is Rc.
+        let short = if width == 0 { header - 1 } else { vector - 1 };
+        for available in [0, short] {
+            let mut budget = ReplayBudget::with_physical(&function, admission + available).unwrap();
+            let targets = make_targets();
+            let ((), observed) = crate::test_allocation_observer::measure(|| {
+                let error = weighted_successor(&function, &mut budget, targets).unwrap_err();
+                assert_eq!(error.code, "SPX-H006");
+                drop(error);
+                // Even an empty successor cannot clear the selected refusal.
+                let error =
+                    weighted_successor(&function, &mut budget, BTreeMap::new()).unwrap_err();
+                assert_eq!(error.code, "SPX-H006");
+                drop(error);
+            });
+            assert!(!observed.invalid);
+            assert_eq!(observed.allocated, 0, "refused backing was never acquired");
+            assert_eq!(observed.live, 0);
+            assert_eq!(budget.physical.as_ref().unwrap().charged(), admission);
+        }
+
+        // A one-byte-short Rc acquisition may retain only the already funded
+        // exact vector until error Drop; the refused Rc must not allocate.
+        let mut budget = ReplayBudget::with_physical(&function, admission + expected - 1).unwrap();
+        let targets = make_targets();
+        let ((), observed) = crate::test_allocation_observer::measure(|| {
+            drop(weighted_successor(&function, &mut budget, targets).unwrap_err());
+        });
+        assert!(!observed.invalid && observed.live == 0);
+        assert_eq!(observed.allocated, vector);
+        assert_eq!(observed.freed, vector);
+        assert_eq!(
+            budget.physical.as_ref().unwrap().charged(),
+            admission + vector
+        );
+    }
+}
+
+#[test]
+fn exact_small_successor_producer_keeps_complete_old_weighted_algebra_and_work() {
+    let function = fixture();
+    for width in 0..=4 {
+        let mut builder = ReplayBudget::new();
+        let mut automaton = Automaton::default();
+        let sink = automaton.node(&function, &mut builder).unwrap();
+        let root = automaton.node(&function, &mut builder).unwrap();
+        for _ in 0..width {
+            let target = automaton
+                .end(&function, &mut builder, sink, SkeletonTerminal::Failure)
+                .unwrap();
+            automaton
+                .movement(
+                    &function,
+                    &mut builder,
+                    root,
+                    Label::End(SkeletonTerminal::Success),
+                    target,
+                )
+                .unwrap();
+        }
+        let mut current = Canonicalizer::new(&automaton, sink);
+        let mut old = canonical_before::Receiver::new(&automaton, sink);
+        let mut budget = ReplayBudget::new();
+        let mut old_budget = ReplayBudget::new();
+        for weight in [1, 2, u64::MAX] {
+            assert_eq!(
+                current.id(&function, vec![(root, weight)], &mut budget),
+                old.id(&function, vec![(root, weight)], &mut old_budget)
+            );
+            assert_eq!(budget.remaining, old_budget.remaining);
+            assert_eq!(budget.skeleton_remaining, old_budget.skeleton_remaining);
+            assert_eq!(&current.ids, old.signatures());
+        }
+    }
+}
