@@ -1,0 +1,79 @@
+{
+  "source_subject": "4ec48420b6e78b1035a66cc406893c46c3028464",
+  "qualification_scope": "350 exact selected bodies; no full suite or full quality gate",
+  "runtime": {
+    "selected": 350,
+    "passed": 292,
+    "failed": 58,
+    "receipt_sha256": "5b50dc615493ea733384ee5be2062a3d80e81e6d7720f6861710cd799ef1e784"
+  },
+  "build": {
+    "receipt_sha256": "9195eaeb392a1e19870124c752cf520c7d3ebdd9f4ddf9cfd399d5b8046faa0a"
+  },
+  "clippy": {
+    "scope": "production lib and CLI only",
+    "receipt_sha256": "c2ef5fe9dcdd745ae967277bf4de4a29908109091818e51801b348a708ac9c91"
+  },
+  "diagnostic_help_pin_producer": {
+    "receipt_sha256": "aa336d807cc25de3237d05f5893991aca4394f104596d608b73c816b94bef1b0"
+  },
+  "closed_issues": [
+    755,
+    762,
+    763,
+    766,
+    769,
+    776,
+    823
+  ],
+  "remaining_failures": "All 50 application checks still fail; eight additional control failures. Corrective work remains separate and unqualified at this publication.",
+  "new_live_benchmark": false,
+  "token_advantage_claim": false,
+  "publication": {
+    "remote_verified": "4ec48420b6e78b1035a66cc406893c46c3028464",
+    "results": [
+      {
+        "issue": 755,
+        "exit": 0,
+        "stdout": "",
+        "stderr": "\u2713 Closed issue wavect/semaprax#755 ((OPT) Admit discarded scalar expression statements without synthetic source names)\n"
+      },
+      {
+        "issue": 762,
+        "exit": 0,
+        "stdout": "",
+        "stderr": "\u2713 Closed issue wavect/semaprax#762 ((OPT) Capture authenticated helper inventories with one borrowed indexed pass)\n"
+      },
+      {
+        "issue": 763,
+        "exit": 0,
+        "stdout": "",
+        "stderr": "\u2713 Closed issue wavect/semaprax#763 ((OPT) Discover authenticated helper call graphs once with indexed adjacency)\n"
+      },
+      {
+        "issue": 766,
+        "exit": 0,
+        "stdout": "",
+        "stderr": "\u2713 Closed issue wavect/semaprax#766 ((OPT) Admit terminating semicolons on authenticated conditional statement routes)\n"
+      },
+      {
+        "issue": 769,
+        "exit": 0,
+        "stdout": "",
+        "stderr": "\u2713 Closed issue wavect/semaprax#769 ((OPT) Construct normalized arithmetic failure statuses only on failure)\n"
+      },
+      {
+        "issue": 776,
+        "exit": 0,
+        "stdout": "",
+        "stderr": "\u2713 Closed issue wavect/semaprax#776 ((OPT) Borrow exact authored AST collections in synthetic projection resolution)\n"
+      },
+      {
+        "issue": 823,
+        "exit": 0,
+        "stdout": "",
+        "stderr": "\u2713 Closed issue wavect/semaprax#823 ((OPT) Prefer bounded library discovery over truncated full-catalog retrieval)\n"
+      }
+    ]
+  }
+}
