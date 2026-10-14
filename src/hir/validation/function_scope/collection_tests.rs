@@ -22,17 +22,36 @@ fn collection_program() -> ResolvedProgram {
 }
 // This additive application has one real declaration parameter. Unlike the
 // original monomorphic carrier, it has no executable collection-record profile.
-fn generic_collection_program() -> ResolvedProgram {
-    let source = format!(
+fn original_generic_collection_source() -> String {
+    format!(
         "{}\n{}",
         crate::hir::iterative_validator_tests::SOURCE,
         r#"@id("collection.seed") fn collection_seed(value: borrow Vec<i64>) -> i64 { 0 }
 @id("collection.text") record CollectionText { @id("collection.text.value") value: string, }
 @id("collection.generic") record CollectionGeneric<T> { @id("collection.generic.rows") rows: Vec<T>, @id("collection.generic.tag") tag: T, }
 "#,
-    );
+    )
+}
+fn generic_collection_program() -> ResolvedProgram {
+    // Authenticate the actual declaration and Vec provider through admitted
+    // source. The hostile generic instance is inspected, never executed.
+    let source = original_generic_collection_source()
+        .replace("borrow Vec<i64>", "borrow Vec<string>")
+        .replace("rows: Vec<T>", "rows: T");
     crate::hir::resolve(&crate::check(&source, "collection-generic.spx").unwrap()).unwrap()
 }
+#[test]
+fn original_nested_generic_collection_field_keeps_exact_source_refusal() {
+    let errors = crate::check(
+        &original_generic_collection_source(),
+        "collection-generic.spx",
+    )
+    .unwrap_err();
+    assert_eq!(errors.len(), 1);
+    assert_eq!(errors[0].code, "SPX-T223");
+    assert!(errors[0].message.contains("CollectionGeneric.rows"));
+}
+
 fn function<'a>(program: &'a ResolvedProgram, id: &str) -> &'a ResolvedFunction {
     program
         .functions
@@ -258,7 +277,7 @@ fn funded_scan_keeps_positive_transitive_refusal_and_full_diagnostic_bytes() {
     let program = generic_collection_program();
     let token = ResolvedType::Nominal {
         declaration: DeclarationId::new("collection.generic"),
-        arguments: vec![function(&program, "collection.seed").return_type.clone()],
+        arguments: vec![function(&program, "collection.seed").params[0].ty.clone()],
     };
     let declaration = token.nominal_id().unwrap();
     assert_eq!(
@@ -309,7 +328,7 @@ fn generic_collection_positive_keeps_exact_short_sticky_and_whole_drop() {
     let program = generic_collection_program();
     let token = ResolvedType::Nominal {
         declaration: DeclarationId::new("collection.generic"),
-        arguments: vec![function(&program, "collection.seed").return_type.clone()],
+        arguments: vec![function(&program, "collection.seed").params[0].ty.clone()],
     };
     let (old, old_metrics) =
         measure(|| crate::hir::declared_collection::contains(&program.declarations, &token));
