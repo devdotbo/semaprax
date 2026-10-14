@@ -1,0 +1,172 @@
+{
+  "source_subject": "504b8381e28a1c4aab80d4d66c18e776dfe58def",
+  "scope": "First focused shared nominal compile; no test execution",
+  "exit_code": 101,
+  "errors": [
+    {
+      "code": "E0583",
+      "message": "file not found for module `borrowed`",
+      "spans": [
+        {
+          "file": "src/hir/prelude_bundle.rs",
+          "line": 13
+        }
+      ]
+    },
+    {
+      "code": "E0583",
+      "message": "file not found for module `fixed_work`",
+      "spans": [
+        {
+          "file": "src/hir/prelude_bundle.rs",
+          "line": 14
+        }
+      ]
+    },
+    {
+      "code": "E0583",
+      "message": "file not found for module `invocation`",
+      "spans": [
+        {
+          "file": "src/hir/prelude_bundle.rs",
+          "line": 15
+        }
+      ]
+    },
+    {
+      "code": "E0583",
+      "message": "file not found for module `materialize`",
+      "spans": [
+        {
+          "file": "src/hir/prelude_bundle.rs",
+          "line": 16
+        }
+      ]
+    },
+    {
+      "code": "E0583",
+      "message": "file not found for module `merge`",
+      "spans": [
+        {
+          "file": "src/hir/prelude_bundle.rs",
+          "line": 17
+        }
+      ]
+    },
+    {
+      "code": "E0583",
+      "message": "file not found for module `overlay`",
+      "spans": [
+        {
+          "file": "src/hir/prelude_bundle.rs",
+          "line": 18
+        }
+      ]
+    },
+    {
+      "code": "E0583",
+      "message": "file not found for module `paid`",
+      "spans": [
+        {
+          "file": "src/hir/prelude_bundle.rs",
+          "line": 19
+        }
+      ]
+    },
+    {
+      "code": "E0583",
+      "message": "file not found for module `producer`",
+      "spans": [
+        {
+          "file": "src/hir/prelude_bundle.rs",
+          "line": 20
+        }
+      ]
+    },
+    {
+      "code": "E0583",
+      "message": "file not found for module `work_model`",
+      "spans": [
+        {
+          "file": "src/hir/prelude_bundle.rs",
+          "line": 21
+        }
+      ]
+    },
+    {
+      "code": "E0603",
+      "message": "module `replay` is private",
+      "spans": [
+        {
+          "file": "src/hir/nominal_payload/elements.rs",
+          "line": 3
+        }
+      ]
+    },
+    {
+      "code": "E0599",
+      "message": "no method named `clone_payload_bytes` found for enum `nodes::ResolvedType` in the current scope",
+      "spans": [
+        {
+          "file": "src/hir/nominal_payload/elements.rs",
+          "line": 66
+        }
+      ]
+    },
+    {
+      "code": "E0599",
+      "message": "no method named `types_slice` found for reference `&BasePreludeBundle` in the current scope",
+      "spans": [
+        {
+          "file": "src/hir/declaration_index/nominal_base.rs",
+          "line": 21
+        }
+      ]
+    },
+    {
+      "code": "E0599",
+      "message": "no method named `declarations_slice` found for reference `&BasePreludeBundle` in the current scope",
+      "spans": [
+        {
+          "file": "src/hir/declaration_index/nominal_base.rs",
+          "line": 33
+        }
+      ]
+    },
+    {
+      "code": "E0599",
+      "message": "no method named `types_slice` found for reference `&BasePreludeBundle` in the current scope",
+      "spans": [
+        {
+          "file": "src/hir/declaration_index/nominal_base.rs",
+          "line": 44
+        }
+      ]
+    },
+    {
+      "code": "E0308",
+      "message": "mismatched types",
+      "spans": [
+        {
+          "file": "src/hir/renewal_probes.rs",
+          "line": 63
+        }
+      ]
+    },
+    {
+      "code": "E0308",
+      "message": "mismatched types",
+      "spans": [
+        {
+          "file": "src/hir/renewal_probes.rs",
+          "line": 70
+        }
+      ]
+    }
+  ],
+  "build_receipt_sha256": "bfe20cd2995ce40d50c42c3822f1dff5b48e1294ad668009965eec9ca8984302",
+  "runtime_bodies": 0,
+  "new_issue_closures": [],
+  "next_action": "One batched production module-path/privacy/borrowed-map repair; preserve full originals and actual path registration.",
+  "registration_limitation": "The source-registration parser used a prelude_bundle child-directory override. Actual Rust compilation refused those child paths. This registration proves source selection only, not executable availability; next registration uses explicit Rust paths and original parser behavior."
+}
