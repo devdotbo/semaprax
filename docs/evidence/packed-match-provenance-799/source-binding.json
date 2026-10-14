@@ -20,10 +20,10 @@
     "src/source_verify/iterative/matching.rs": "1d1f534e9e536b658bd72cd4027eb72344bf6490000d55efbf354fec871439fd",
     "src/source_verify/iterative/matching/matching_before_799.rs": "71b92d75a4126e289167418b110d03ad74729525aedac9c999f404a6f5054669",
     "src/source_verify/recovery_legacy/match_arms.rs": "111693274eb072e3dc9d33d44b25db0de90780e1993a9a1d256b45e68e3a0203",
-    "src/source_verify/recovery_tests/extended_components.rs": "082330502db4b0c38e9c13cbd09831f75b06283b697683c65a5f47cae836a9d6",
-    "src/source_verify/recovery_tests/flow_799.rs": "a6752b707dbd65f3dccbb3d0b401c042c2e4b0f793fcf9d44d7d40f85caba538",
+    "src/source_verify/recovery_tests/extended_components.rs": "ff32ab924dffedc1e6971619c559d2f4a3994e31137f7288e49b58ab8edf15c1",
+    "src/source_verify/recovery_tests/flow_799.rs": "7830ab79a8ca7c1c41f2cac41b8a9a631cf4f02882d539f3b3680b5959ada6cd",
     "src/source_verify/scope.rs": "ea01202a694f030acc597163cb157513cdda4cf39ca29abc6e7fab82f28878ef",
-    "src/source_verify/scope/layout_original.rs": "4f0416f8ed872d2991b7014f13fa3fa5d87fdb0003690f40c8a08fee620ce949"
+    "src/source_verify/scope/layout_original.rs": "704f399fedd3f267b5a93040fd91c628d1bab6a9f3522ada41eded76033e09e4"
   },
   "source_only_checks": [
     "three whole saved receiver adapter inverses",
