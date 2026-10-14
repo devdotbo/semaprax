@@ -674,12 +674,12 @@
       "integrated_sha256": "691711d598899d5d5c84b0aea28203e2dd7071f5c111998b00ab51e82ed84777"
     },
     "src/cleanup_plan/replay/live_oracle/source_custody/a.rs": {
-      "bytes": 33865,
-      "sha256": "db86817686d1efccb0f2a30d7e6620c662caf95104ffe963ae2022a0969d7ce0"
+      "bytes": 39684,
+      "sha256": "3d3c26a1a4dcef548c7eee1605215e890145013068662e8d7b2932b1af01bdb4"
     },
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": {
-      "bytes": 23133,
-      "sha256": "4032be4362bd5eb929c22b45171785f18f446124efb6f072e6b998071caa5341"
+      "bytes": 24058,
+      "sha256": "eca52cbc830d98ee95ed7ed17d72a437b1d31fe64ea6f655cd9997a226820f70"
     },
     "src/cleanup_plan/replay/nested_shape/paid/oracle.rs": {
       "bytes": 20170,

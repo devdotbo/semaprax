@@ -5,7 +5,7 @@
   "status": "static only; original bodies byte-exact and registered; no compiler/runtime qualification",
   "source_hashes": {
     "CHANGELOG.md": "a356a6b865f48c41cac3e75c01d85a8a852f69a52661f443f2cf459324224723",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "0ccb1d8d559d6556078f7b2d9dee0c06dc678511984b8f1a719e84254d9c19dd",
     "docs/ARCHITECTURE.md": "40a888d87d71f8f3a1a7539bd9cea80d717c9545f8020e7537274e7f4a26d8fa",
     "src/hir.rs": "a5efa3f9d058c37538b9f08a17f3286fad4b2342b54943d64f3a4ca69e6459e0",
     "src/hir/iterator_loop.rs": "3295874fa719aa58acf8f31ee73956aed757ac7ad25fa7fad39f599c830fe9aa",
