@@ -35,7 +35,7 @@ fn oracle_titles(values: borrow Vec<Row>) -> bool
 }
 "#;
 
-const MAIN: &str = r#"@id("app.main") fn main()->i64 {
+const ORIGINAL_MAIN: &str = r#"@id("app.main") fn main()->i64 {
  let empty=vec_with_capacity<Row>(0usize);
  let empty_ok=vec_unique_by<Row>(empty,"title") && vec_unique_by<Row>(empty,"priority") && oracle_titles(empty);
  let single0=vec_with_capacity<Row>(1usize);
@@ -74,6 +74,39 @@ const MAIN: &str = r#"@id("app.main") fn main()->i64 {
  if empty_ok && single_ok && distinct && duplicate && order && renewed && full && last {42}else{0}
 }
 "#;
+
+// The large corpus retains two owned leaves and one i64 field (capacity 4096).
+// Its unselected empty payload uses String: ordinary Bytes construction is
+// closed in loops and counts against the unchanged 32-allocation envelope.
+// Small Row cases retain their Bytes payloads, including nonempty values.
+const LARGE_ROW: &str = r#"@id("app.large.row") record LargeRow {
+ @id("app.large.row.priority") priority:i64,
+ @id("app.large.row.title") title:string,
+ @id("app.large.row.payload") payload:string,
+}
+"#;
+
+fn admitted_source() -> String {
+    let large_oracle = CLONE_SORT_ORACLE
+        .replace("app.oracle.titles", "app.oracle.large_titles")
+        .replace("oracle_titles", "oracle_large_titles")
+        .replace("Vec<Row>", "Vec<LargeRow>")
+        .replace("<Row>", "<LargeRow>");
+    let (small, large) = ORIGINAL_MAIN.split_once(" let mut wide=").unwrap();
+    let large = large
+        .replace("<Row>", "<LargeRow>")
+        .replace("Row{", "LargeRow{")
+        .replace("payload:bytes_zeroed(0usize)", "payload:\"\"")
+        .replace(
+            "vec_len<LargeRow>(wide)==vec_capacity<LargeRow>(wide)",
+            r#"vec_len<LargeRow>(wide)==vec_capacity<LargeRow>(wide) && oracle_large_titles(wide) && vec_field<LargeRow>(wide,0usize,"priority")==0 && vec_field<LargeRow>(wide,4095usize,"priority")==4095 && vec_field<LargeRow>(wide,0usize,"payload")==str"""#,
+        )
+        .replace(
+            r#"!vec_unique_by<LargeRow>(late,"priority")"#,
+            r#"!vec_unique_by<LargeRow>(late,"priority") && !oracle_large_titles(late) && vec_len<LargeRow>(late)==4096usize && vec_capacity<LargeRow>(late)==4096usize && vec_field<LargeRow>(late,0usize,"priority")==0 && vec_field<LargeRow>(late,4095usize,"priority")==0 && vec_field<LargeRow>(late,4095usize,"title")==str"T0" && vec_field<LargeRow>(late,4095usize,"payload")==str"""#,
+        );
+    format!("{DECLARATION}{LARGE_ROW}{CLONE_SORT_ORACLE}{large_oracle}{small} let mut wide={large}")
+}
 
 const COPY_MAIN: &str = r#"@id("app.copy.row") record CopyRow {
  @id("app.copy.row.rank") rank:i32, @id("app.copy.row.small") small:u8,
@@ -264,8 +297,21 @@ int main(void){{
 }
 
 #[test]
+fn original_full_bytes_loop_fixture_retains_complete_stable_diagnostics() {
+    // Keep the exact formerly positive source: moving these allocations into
+    // helpers or changing requirements must never grant loop admission.
+    let source = format!("{DECLARATION}{CLONE_SORT_ORACLE}{ORIGINAL_MAIN}");
+    let diagnostics = semaprax::check(&source, "field-unique.spx")
+        .expect_err("ordinary Bytes allocation in while stays closed");
+    assert_eq!(
+        format!("{diagnostics:?}"),
+        r#"[Diagnostic { code: "SPX-T252", severity: Error, message: "byte operation `bytes_zeroed` is not admitted in while bodies; only exact byte_len, byte_get and byte_range reads and the loop-carried bytes_set/bytes_set5/bytes_set1_or5_from_slice/bytes_set1_or6_or48_from_slice fills qualify", path: Some("field-unique.spx"), span: Some(Span { start: 2832, end: 2852, line: 54, column: 103 }), help: None }, Diagnostic { code: "SPX-T252", severity: Error, message: "byte operation `bytes_zeroed` is not admitted in while bodies; only exact byte_len, byte_get and byte_range reads and the loop-carried bytes_set/bytes_set5/bytes_set1_or5_from_slice/bytes_set1_or6_or48_from_slice fills qualify", path: Some("field-unique.spx"), span: Some(Span { start: 3269, end: 3289, line: 63, column: 94 }), help: None }, Diagnostic { code: "SPX-T267", severity: Error, message: "bytes_copy is reachable from a while condition or body", path: Some("field-unique.spx"), span: Some(Span { start: 1013, end: 3507, line: 32, column: 17 }), help: None }]"#,
+    );
+}
+
+#[test]
 fn same_source_uniqueness_matches_clone_sort_oracle_and_preserves_owner_on_every_engine() {
-    let source = format!("{DECLARATION}{CLONE_SORT_ORACLE}{MAIN}");
+    let source = admitted_source();
     let ast = semaprax::check(&source, "field-unique.spx").expect("checked uniqueness source");
     let root = root();
     interpret(&root, &source);
