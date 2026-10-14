@@ -24,8 +24,8 @@
     },
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": {
       "base_sha256": "709779263849c7373863cd1d04d4a215ab13fa7110e1b50b93038f64cd53c3fb",
-      "receiving_sha256": "4032be4362bd5eb929c22b45171785f18f446124efb6f072e6b998071caa5341",
-      "receiving_bytes": 23133
+      "receiving_sha256": "5d9f73909157c01555aa75250248227cb10aef0bb8fd647eecc7982778c06d9b",
+      "receiving_bytes": 34744
     },
     "src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests/constructors.rs": {
       "base_sha256": "be7304c60d1f5987b24c5bcab89fb23cabbe42808c9c052bbe1141c5ee9e6bb5",
