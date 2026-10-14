@@ -1,0 +1,32 @@
+{
+  "source_commit": "71e704b80881a1947903223affd7b95f0ddebedf",
+  "files": [
+    {
+      "path": "src/source_verify/declaration/functions/signature_refusal.rs",
+      "sha256": "974a29e3bfaf09d1a3e49b394f46a13516349b3f00891202070cbfbb58970697",
+      "scope": "full file"
+    },
+    {
+      "path": "src/source_verify/declaration/functions/signature_refusal/tests.rs",
+      "sha256": "7bef1f74b02bd27056eec0a2f77fd555c54e55b7c6bd335aa6ec13eb8a0969fb",
+      "scope": "full file"
+    },
+    {
+      "path": "src/source_verify/declaration/functions/public_signature_before.rs",
+      "sha256": "21cf514809f4f9d271d5497744d948203ecca1afbd924c4a22061884117bf129",
+      "scope": "full file"
+    },
+    {
+      "path": "src/source_verify/declaration/public_signature_before.rs",
+      "sha256": "32917afc0761c0d21c7b50990b828c18ffe386026b45fef6231225079eb3dfc3",
+      "scope": "full file"
+    },
+    {
+      "path": "docs/evidence/public-template-recovery-799/HANDOFF.md",
+      "sha256": "f6625c74cee5e4826b55f44a1720364b5a3ffe5452e310cd0c6c1ebecba21bd9",
+      "scope": "full file"
+    }
+  ],
+  "payload_bytes": 107034,
+  "note": "other exact line scopes and production diff embedded in payload"
+}
