@@ -39,11 +39,11 @@
       "lines": 318
     },
     "src/source_verify/constructor_tests.rs": {
-      "sha256": "bf76532dc6818d1adab70f92157798957b0b78d6fb0d96ebf7110dec36f84718",
+      "sha256": "a47d52960691d9ca39896dc938a4c8ad320eddaf37d406da7e67eddaeeac2cc0",
       "lines": 415
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
-      "sha256": "7270092608a52e5228f47a5b3a9b6655e110e1271a1a7cde13acb7d230596c8f",
+      "sha256": "2268e27d102a048eadbec6b4478ddddf3c4cacfa46c3478676cd394995cc77d3",
       "lines": 1234
     }
   },

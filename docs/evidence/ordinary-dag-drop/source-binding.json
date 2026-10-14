@@ -4,7 +4,7 @@
   "base_head": "9df9a15c53d87ed8f2e56eb522a128c26cde44be",
   "state": "source-only-unexecuted",
   "source_hashes": {
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "7270092608a52e5228f47a5b3a9b6655e110e1271a1a7cde13acb7d230596c8f",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "2268e27d102a048eadbec6b4478ddddf3c4cacfa46c3478676cd394995cc77d3",
     "src/cleanup_plan/replay/skeleton_work.rs": "f6163b3cc48322bf40549c18cccf8ea412a52a450daadd82d7f93e5daa6b8716",
     "src/cleanup_plan/replay/skeleton_work/dag_storage.rs": "500a40cbfbbef50ff44a26f237f2b93cea7358a64ccb1105293ade4fa078f6bb",
     "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs": "6f3aeb448ee3b4bb202d027c93eebbcec8a5c0854496792d53a66206525871f8",
