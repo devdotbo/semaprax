@@ -118,3 +118,11 @@ the updater leaves existing history prose intact. Run the same three normal
 pin owners and existing qualification controls after cherry-picking the reviewed
 source change. No full gate, compiler invocation or producer execution is added
 by this updater.
+
+The graph-binding validator uses the owning v1 formula exactly:
+`SHA256(b"semaprax.workspace-semantic-graph.artifact-digest.v1\0" ||
+u64_le(payload byte length) || payload)`, with only the one graph-digest field
+removed. Whole-document pin SHAs independently hash the complete captured wire
+bytes. An independent source review identified and corrected an earlier private
+updater draft that incorrectly used raw SHA256(payload) for graph binding; that
+draft never ran against actual captures and changed no pin literal.
