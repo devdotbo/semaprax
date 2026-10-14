@@ -61,6 +61,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 include_str!("../src/hir/validation/scope_checkpoint/transaction_tests.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/views.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/merge.rs"),
+                include_str!("../src/hir/validation/scope_checkpoint/merge/saved.rs"),
+                include_str!("../src/hir/validation/scope_checkpoint/merge/tests.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/marks.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/storage.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/paths.rs"),
@@ -101,7 +103,15 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 ),
                 concat!(
                     include_str!("../src/hir/validation/constructor_seed.rs"),
-                    concat!(include_str!("../src/hir/validation/constructor_seed/original.rs"), include_str!("../src/list_ops/original_constructor.rs"), include_str!("../src/iterator_ops/original_constructor.rs"), include_str!("../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs"))
+                    concat!(
+                        include_str!("../src/hir/validation/constructor_seed/original.rs"),
+                        include_str!("../src/list_ops/original_constructor.rs"),
+                        include_str!("../src/iterator_ops/original_constructor.rs"),
+                        include_str!(
+                            "../src/hir/validation/constructor_seed/original_intrinsics.rs"
+                        ),
+                        include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs")
+                    )
                 ),
                 concat!(
                     include_str!("../src/hir/canonical_loan_storage.rs"),
@@ -333,7 +343,13 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/box_intrinsic.rs"),
         include_str!("../src/hir/validation/branch_merge.rs"),
         include_str!("../src/hir/validation/borrowed_str.rs"),
-        concat!(include_str!("../src/hir/validation/generic_template.rs"), include_str!("../src/hir/validation/generic_template/call_graph.rs"), include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../src/hir/validation/generic_template/call_graph/tests.rs")),
+        concat!(
+            include_str!("../src/hir/validation/generic_template.rs"),
+            include_str!("../src/hir/validation/generic_template/call_graph.rs"),
+            include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"),
+            include_str!("../src/hir/validation/generic_template/call_graph/original.rs"),
+            include_str!("../src/hir/validation/generic_template/call_graph/tests.rs")
+        ),
         include_str!("../src/hir/validation/generic_template/reachability.rs"),
         include_str!("../src/hir/validation/generic_template/reachability/tests.rs"),
         include_str!("../src/hir/validation/generic_template/reachability/tests/old.rs"),

@@ -181,6 +181,8 @@ macro_rules! diagnostic_source_inventory {
             include_str!("../../../../../src/hir/validation/scope_checkpoint/tree.rs"),
             include_str!("../../../../../src/hir/validation/scope_checkpoint/views.rs"),
             include_str!("../../../../../src/hir/validation/scope_checkpoint/merge.rs"),
+            include_str!("../../../../../src/hir/validation/scope_checkpoint/merge/saved.rs"),
+            include_str!("../../../../../src/hir/validation/scope_checkpoint/merge/tests.rs"),
             include_str!("../../../../../src/hir/validation/scope_checkpoint/marks.rs"),
             include_str!("../../../../../src/hir/validation/scope_checkpoint/storage.rs"),
             include_str!("../../../../../src/hir/validation/scope_checkpoint/paths.rs"),

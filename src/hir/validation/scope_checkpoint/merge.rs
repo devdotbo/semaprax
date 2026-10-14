@@ -135,6 +135,16 @@ pub(in crate::hir::validation) fn conditional(
         let moved_places = HirValidator::join_moved_places(before, after);
         let definitely_partial = HirValidator::join_definitely_partial(before, after);
         let availability = before.availability.join(after.availability);
+        // Full canonical builders already ran. Only the fields this join
+        // writes authorize a no-op; immutable type/flags need not be cloned.
+        if before.availability == availability
+            && before.moved_places == moved_places
+            && before.definitely_partial == definitely_partial
+            && after.active_loans.is_subset(&before.active_loans)
+        {
+            charge::reserve(Some(0))?;
+            continue;
+        }
         let target = target.get_mut(id)?.unwrap();
         target.availability = availability;
         target
@@ -172,6 +182,14 @@ pub(in crate::hir::validation) fn branches(
             .collect();
         let moved_places = HirValidator::join_moved_places(left, right);
         let definitely_partial = HirValidator::join_definitely_partial(left, right);
+        if before.availability == availability
+            && before.active_loans == active_loans
+            && before.moved_places == moved_places
+            && before.definitely_partial == definitely_partial
+        {
+            charge::reserve(Some(0))?;
+            continue;
+        }
         let target = target.get_mut(id)?.unwrap();
         target.availability = availability;
         target.active_loans = active_loans;
@@ -180,3 +198,8 @@ pub(in crate::hir::validation) fn branches(
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod saved;
+#[cfg(test)]
+mod tests;
