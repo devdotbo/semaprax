@@ -90,6 +90,11 @@
       "archive": "docs/evidence/schema-summary/flags-paid-builtin.rs.before",
       "sha256": "d36a1bd7e376c1f0fd3b2251039f95172e2869d6ed10b2e6f78305f3275a0539",
       "note": "Complete independently compiled original body remains unchanged; archive is source provenance only."
+    },
+    "src/cleanup_plan/replay/paid_type_facts/droppability/paid.rs": {
+      "archive": "docs/evidence/schema-summary/droppability-paid.rs.before",
+      "sha256": "401589d0ca2cfb8b31b133e763bbc5211bbde12666a3c1b75580d0e326c1cbfb",
+      "note": "Complete independently compiled original receiver remains unchanged; archive is provenance only."
     }
   },
   "current_sources": {
@@ -97,14 +102,14 @@
     "src/cleanup/schema_summary/generic_record.rs": "a46d2b2b6b83918f72eab634ced94c6982b4e25f92b3b585afd4b40f84328c1a",
     "src/cleanup/schema_summary/support.rs": "eb9a6cd7961d586370fce7b30552ef0e5ccd4c5d23032a9717447fe32efbe6f2",
     "src/cleanup/schema_summary/tests.rs": "56c3e5775113bb14b6f772d46aec97a6e33550c69ccf9430d550141c7fa4b585",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "edfc2bf2e3c4efeca6af0e7bbca4f461bf38e0fb8a3717ed2880c076a3ef500e",
-    "src/cleanup_plan/replay/paid_type_facts.rs": "6e8c1554c56e7a05669aef09bbe72ab4dade064ec78afe4a3cd4a5f920980a5e",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs": "342591d4741ff0f5142b24e5196ad470ba28cd734e53362417539263654d0f14",
+    "src/cleanup_plan/replay/paid_type_facts.rs": "a692fbb0017814725360efb8fb635b5dbdb16aaf6262aba339605bbd2796df44",
     "src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs": "211e19f9df39443f84d5f582b6c149f87d91e43161ea81fbe1a6899040310019",
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs": "9edcfe04ec45408193fe8d7969b2cd2bf756498df9d5b43e4c2d6fcb569644e2",
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs": "a22ad9d3b05506fcb2c1e4ccbb9a175486305fd792de5bfb4fcab031aa5bdf52",
     "src/cleanup_plan/replay/paid_type_facts/droppability.rs": "50553857f7a33d60b245f66bdc3c380f65b8ba5ae5fa53e776fd2b419da80e76",
-    "tests/hir_module_boundaries.rs": "5d78f64cf682e53b1dae2fcb68f76b6cd76701dd670f6f7c55b0c2d96f34534f",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "5fbb34ee50871cb25bf2339487f801c98553f403301dc6378ea5f7611d5e1dcc",
+    "tests/hir_module_boundaries.rs": "0d302d802a581e880069ce51407a72d9c1552531757d41c431ccfc7a5bea5fcb",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "9bda71b25bcc5dfecc862b9de87b3d918c522c30b1b83685b956892a0fd9b2f1",
     "src/cleanup_plan/replay/paid_type_facts/inventory_text.rs": "34c5813dc5dff46bd9dd9eee480fea834c2e4d82f8eb22e7a1abfc81288493fa",
     "src/cleanup.rs": "e2a653179270f02ca7d56cfffc11e503043fd00068aac09152a89a493660159f",
     "src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs": "1b3dff363b517686e0624dd29a8c703e9b5b09928d29f1da11345510f1695869",
@@ -136,9 +141,13 @@
     "src/cleanup_plan/replay/paid_type_facts/inventory_ordered/tests.rs": "b6d09e7fcda025ba9b7140f0ad88e2d25190b35e8b5d9b0fd9b80aa40973ea7c",
     "src/hir/declaration_index/inventory_lookup/compound.rs": "5e6cadee2de8116015fbe0d753a9d1f2d991be8e2b41e9b988b07801c61c6d5b",
     "src/hir/declaration_index/inventory_lookup/compound/tests.rs": "78403bb30782b80c9b68681f4739e183b080f99deace4866a53169f817901b23",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_flags.rs": "08b445adf6ca5e73ba91135f2488b71ed08aa720db3c25ba270c6bfaeb72074d",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_flags/families.rs": "86728bdc3a0bb2c2eff94ddc8cd47a8fc8c31ec2ae3a2ccc33432f15300b30fc",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_flags/tests.rs": "14cf9394c4ed38362d381bf3d6e21f3d4942cd25f654970ad29d17021c0acd2e"
+    "src/cleanup_plan/replay/paid_type_facts/inventory_flags.rs": "51d8f213d641c3980a57a64ba3d5153f21c7941bd0f378401f253978845f44b4",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_flags/families.rs": "4f4980700ffda213afb9db84c1d4248994a53d57930d4a131cd218edff4c6b69",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_flags/tests.rs": "14cf9394c4ed38362d381bf3d6e21f3d4942cd25f654970ad29d17021c0acd2e",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_raw_key.rs": "a9d4e7322c4b66f1da3878fc087ce4fc2c0bda3c771795fd2fe66c75e5cec2f2",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_raw_key/tests.rs": "40216c06bb78296a1b44df610f7f26015bd04691e132f755fa67c0a8ab17fe86",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_drop.rs": "097fc0734ceaa466e070e077478d3e52ed3785dcd3144256612da192feadfb4f",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_drop/tests.rs": "09854dc4be3e28c8f8c32be0c939d5eba830970c4d03f0d59c96d864eb6c63d0"
   },
   "pending_selectors": [
     "cleanup::schema_summary::tests::complete_ordinary_summary_matches_full_receiver_and_receiving_drop",
@@ -184,7 +193,11 @@
     "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_flag_only_fold_matches_independent_owned_facts_all_fields_cases_and_receiving_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_generic_zero_one_seventeen_arguments_functions_and_forged_cache_precedence_keep_old_flags",
     "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_cycle_forgery_and_missing_metadata_keep_original_none_and_success_priority",
-    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_original_owned_facts_compute_and_builtin_bodies_remain_independent_byte_exact"
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_original_owned_facts_compute_and_builtin_bodies_remain_independent_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_raw_key::tests::full_raw_structural_identity_keeps_nested_arguments_utf8_null_and_no_capped_membership_collision",
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::complete_outer_bool_receiver_keeps_original_fields_cases_substitution_priority_and_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::full_outer_unknown_copy_forged_cache_diagnostics_and_generic_zero_one_seventeen_keep_old_receiver",
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::original_outer_paid_receiver_remains_complete_independent_and_byte_exact"
   ],
   "review": {
     "receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-constructor-review-814-f9aad-20261013/process-receipt.json",
@@ -305,7 +318,11 @@
     "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_flag_only_fold_matches_independent_owned_facts_all_fields_cases_and_receiving_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_generic_zero_one_seventeen_arguments_functions_and_forged_cache_precedence_keep_old_flags",
     "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_cycle_forgery_and_missing_metadata_keep_original_none_and_success_priority",
-    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_original_owned_facts_compute_and_builtin_bodies_remain_independent_byte_exact"
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_original_owned_facts_compute_and_builtin_bodies_remain_independent_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_raw_key::tests::full_raw_structural_identity_keeps_nested_arguments_utf8_null_and_no_capped_membership_collision",
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::complete_outer_bool_receiver_keeps_original_fields_cases_substitution_priority_and_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::full_outer_unknown_copy_forged_cache_diagnostics_and_generic_zero_one_seventeen_keep_old_receiver",
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::original_outer_paid_receiver_remains_complete_independent_and_byte_exact"
   ],
   "mandatory_constructor_work": {
     "status": "private additive source; full classifier state and production inventory collector still pending",
@@ -410,5 +427,13 @@
       "with_work explicitly adapts Result<T,()> to first typed Diagnostic, not reviewer speculative signature assumptions.",
       "Probes is one borrowed DeclarationIndex reference, no directory construction; scalar callees match fixed variant tags and never recurse."
     ]
+  },
+  "outer_inventory_receiver": {
+    "status": "private complete component, unexecuted; summary shape/expression collector and production adoption still pending",
+    "identity": "Raw untruncated full canonical structural type encoding only for visited membership; never classifier sink text, hash or root ID alone.",
+    "authority": "Existing held ReplayBudget and allocation payer, no production remaining reset/new quota/credit/refund.",
+    "order": "Original fast root bool paths, map-before-reader short-circuit, iterator/box/vector admission and reversed record/case/field scheduling; program type lookup visits exact original order/full identity equality.",
+    "diagnostics": "Original raw H006 complete fields, full type identity, substitution-failure message; physical callback failure retains first Diagnostic and performs no further paid work.",
+    "controls": "48 exact authored selectors; original ordinary cleanup function and complete old paid receiver are actual independent receiving oracles; all new controls unexecuted."
   }
 }

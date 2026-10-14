@@ -243,3 +243,37 @@ pub(super) fn builtin(
     metadata::step(payer, 1)?;
     Ok(crate::box_ops::resolved_box_element_is_admitted(element))
 }
+
+pub(super) fn iterator_element(
+    index: &DeclarationIndex,
+    element: &ResolvedType,
+    payer: &mut Payer<'_>,
+) -> Result<bool, Diagnostic> {
+    metadata::step(payer, 1)?;
+    if crate::iterator_ops::resolved_element_is_admitted(element) {
+        return Ok(true);
+    }
+    let probes = index.inventory_probes();
+    metadata::with_work(payer, |work| {
+        crate::hir::owned_leaf_collection::runtime_with_work(&probes, element, work)
+    })
+}
+pub(super) fn vector_element(
+    index: &DeclarationIndex,
+    element: &ResolvedType,
+    payer: &mut Payer<'_>,
+) -> Result<bool, Diagnostic> {
+    metadata::step(payer, 1)?;
+    if crate::vec_ops::resolved_vec_element_is_admitted(element) {
+        return Ok(true);
+    }
+    let probes = index.inventory_probes();
+    // Original outer cleanup order: copy-record, owned-leaf, owned-record.
+    if metadata::with_work(payer, |work| {
+        Ok(crate::hir::copy_record_collection::fields_with_work(&probes, element, work)?.is_some())
+    })? || leaf(index, element, payer)?
+    {
+        return Ok(true);
+    }
+    owned_record(index, element, payer)
+}

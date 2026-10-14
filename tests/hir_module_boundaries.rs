@@ -229,6 +229,10 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_flags.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_flags/families.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_flags/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_raw_key.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_raw_key/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_drop.rs"),
+        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_drop/tests.rs"),
         include_str!(
             "../src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests/constructors.rs"
         ),

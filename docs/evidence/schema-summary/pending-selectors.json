@@ -46,6 +46,10 @@
     "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_flag_only_fold_matches_independent_owned_facts_all_fields_cases_and_receiving_drop",
     "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_generic_zero_one_seventeen_arguments_functions_and_forged_cache_precedence_keep_old_flags",
     "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::full_cycle_forgery_and_missing_metadata_keep_original_none_and_success_priority",
-    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_original_owned_facts_compute_and_builtin_bodies_remain_independent_byte_exact"
+    "cleanup_plan::replay::paid_type_facts::inventory_flags::tests::complete_original_owned_facts_compute_and_builtin_bodies_remain_independent_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_raw_key::tests::full_raw_structural_identity_keeps_nested_arguments_utf8_null_and_no_capped_membership_collision",
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::complete_outer_bool_receiver_keeps_original_fields_cases_substitution_priority_and_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::full_outer_unknown_copy_forged_cache_diagnostics_and_generic_zero_one_seventeen_keep_old_receiver",
+    "cleanup_plan::replay::paid_type_facts::inventory_drop::tests::original_outer_paid_receiver_remains_complete_independent_and_byte_exact"
   ]
 }

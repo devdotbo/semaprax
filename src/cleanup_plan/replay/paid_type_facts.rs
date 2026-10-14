@@ -355,3 +355,7 @@ mod inventory_encoded;
 mod inventory_ordered;
 
 mod inventory_flags;
+
+mod inventory_raw_key;
+
+mod inventory_drop;

@@ -6,7 +6,7 @@ use super::inventory_metadata as metadata;
 use super::*;
 use crate::hir::{DeclarationKind, TypeFlags};
 use std::borrow::Cow;
-mod families;
+pub(super) mod families;
 
 const OWNED: TypeFlags = TypeFlags {
     copy: false,
@@ -65,12 +65,16 @@ fn scalar(ty: &ResolvedType) -> Option<(&'static str, Option<TypeFlags>)> {
 }
 // Scratch acquisition and replacement backing use the same physical/work
 // authority. Release visits are prepaid before each newly published slot.
-fn vector<T>(payer: &mut Payer<'_>) -> Result<Vec<T>, Diagnostic> {
+pub(super) fn vector<T>(payer: &mut Payer<'_>) -> Result<Vec<T>, Diagnostic> {
     metadata::step(payer, 2)?; // header acquisition and eventual buffer release
     payer.bytes(std::mem::size_of::<Vec<T>>())?;
     Ok(Vec::new())
 }
-fn grow<T>(items: &mut Vec<T>, additional: usize, payer: &mut Payer<'_>) -> Result<(), Diagnostic> {
+pub(super) fn grow<T>(
+    items: &mut Vec<T>,
+    additional: usize,
+    payer: &mut Payer<'_>,
+) -> Result<(), Diagnostic> {
     inventory_text::current(payer)?;
     let required = items
         .len()
@@ -85,7 +89,11 @@ fn grow<T>(items: &mut Vec<T>, additional: usize, payer: &mut Payer<'_>) -> Resu
     }
     Ok(())
 }
-fn push<T>(items: &mut Vec<T>, value: T, payer: &mut Payer<'_>) -> Result<(), Diagnostic> {
+pub(super) fn push<T>(
+    items: &mut Vec<T>,
+    value: T,
+    payer: &mut Payer<'_>,
+) -> Result<(), Diagnostic> {
     metadata::step(payer, 2)?; // publication and eventual slot release
     grow(items, 1, payer)?;
     items.push(value);
