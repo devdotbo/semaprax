@@ -1,0 +1,230 @@
+{
+  "scope": "four named packets only, plus exact owning receiving source-provenance reference read to distinguish archive fields; no broad audit/source or metadata edits/compilation",
+  "root": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+  "source_head": "a184d4406f241aa11df5c297102609b4c35ec1b3",
+  "source_status_at_start": "clean frozen a184d",
+  "current_fields_checked": 7,
+  "actual_mismatches": [],
+  "current_fields": [
+    {
+      "metadata": "docs/evidence/weighted-exact-successor-capacity-826/source-binding.json",
+      "field": "$.sources[0].current_sha256",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+      "recorded": "e0a17f1a06e63216b33a214ee1168aa4c3abc3cd08acee88607fda5dd10caa69",
+      "actual": "e0a17f1a06e63216b33a214ee1168aa4c3abc3cd08acee88607fda5dd10caa69",
+      "matches": true
+    },
+    {
+      "metadata": "docs/evidence/weighted-exact-successor-capacity-826/source-binding.json",
+      "field": "$.sources[1].current_sha256",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/tests.rs",
+      "recorded": "f8bdbea27b005d69992824c42be4563475cb6934de36549acc2358c08de85f64",
+      "actual": "f8bdbea27b005d69992824c42be4563475cb6934de36549acc2358c08de85f64",
+      "matches": true
+    },
+    {
+      "metadata": "docs/evidence/weighted-exact-successor-capacity-826/source-binding.json",
+      "field": "$.sources[2].current_sha256",
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "recorded": "08849c68eff2049859be4b9cb1679f37f7c73b8b5007e10bf126779ebbd1861d",
+      "actual": "08849c68eff2049859be4b9cb1679f37f7c73b8b5007e10bf126779ebbd1861d",
+      "matches": true
+    },
+    {
+      "metadata": "docs/evidence/weighted-exact-successor-capacity-826/source-binding.json",
+      "field": "$.sources[3].current_sha256",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+      "recorded": "4cd4eedce32545620eb6fe7518af939dceddf3f1b063e3219e7713f3757a6cb6",
+      "actual": "4cd4eedce32545620eb6fe7518af939dceddf3f1b063e3219e7713f3757a6cb6",
+      "matches": true
+    },
+    {
+      "metadata": "docs/evidence/lifecycle-inline-active-path/source-binding.json",
+      "field": "$.new_child_sha256[src/hir/validation/function_scope/lifecycle/completed/inline_path.rs]",
+      "source": "src/hir/validation/function_scope/lifecycle/completed/inline_path.rs",
+      "recorded": "c0220d705235ca4c35877e1b3e94f7540a74de38222835b6c6e746fb84d408b1",
+      "actual": "c0220d705235ca4c35877e1b3e94f7540a74de38222835b6c6e746fb84d408b1",
+      "matches": true
+    },
+    {
+      "metadata": "docs/evidence/lifecycle-inline-active-path/source-binding.json",
+      "field": "$.new_child_sha256[src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs]",
+      "source": "src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs",
+      "recorded": "c54f72a5a7c7c44ef067a14dd708cace5e255a1a9c2d749f6fb977cc1f84431d",
+      "actual": "c54f72a5a7c7c44ef067a14dd708cace5e255a1a9c2d749f6fb977cc1f84431d",
+      "matches": true
+    },
+    {
+      "metadata": "docs/evidence/lifecycle-inline-active-path/source-binding.json",
+      "field": "$.new_child_sha256[src/hir/validation/function_scope/lifecycle/completed/before_inline.rs]",
+      "source": "src/hir/validation/function_scope/lifecycle/completed/before_inline.rs",
+      "recorded": "fa7274c186e19c25d09bbf869d76ba487459e077568fbd5c89fd108a6aad01b5",
+      "actual": "fa7274c186e19c25d09bbf869d76ba487459e077568fbd5c89fd108a6aad01b5",
+      "matches": true
+    }
+  ],
+  "receiving_children_without_current_sha_fields": [
+    {
+      "packet": "remaining-receiving-exits-816",
+      "metadata_current_sha_fields": 0,
+      "children": [
+        {
+          "source": "src/cleanup_plan/replay/expression_facts/receiving/remaining.rs",
+          "actual_sha256": "ba562e69301e6283bff9bec4517444ccea0fc2094f56959214cbbf78e3915b1b",
+          "binding": "source path only; no current SHA field in this packet"
+        },
+        {
+          "source": "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs",
+          "actual_sha256": "ac2685e11c2cd09f9caee373b6b5744b5544b5680032cc07fbead0650ceef474",
+          "binding": "source path only; no current SHA field in this packet"
+        }
+      ]
+    },
+    {
+      "packet": "region-entry-receiving-816",
+      "metadata_current_sha_fields": 0,
+      "children": [
+        {
+          "source": "src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs",
+          "actual_sha256": "327237ebc01755438f25ff967fc327a3ffb4f9d6be2a2a54bad6a36803b7095b",
+          "binding": "source path only; no current SHA field in this packet"
+        },
+        {
+          "source": "src/cleanup_plan/replay/expression_facts/receiving/regions_entry/tests.rs",
+          "actual_sha256": "1963df56dbaf4caef258c0cfc721374f1e6c831c86149c57df5ffd96576936f9",
+          "binding": "source path only; no current SHA field in this packet"
+        }
+      ]
+    }
+  ],
+  "protected_archive_checks": [
+    {
+      "metadata": "docs/evidence/weighted-exact-successor-capacity-826/source-binding.json",
+      "field": "$.sources[0].original_sha256",
+      "archive": "docs/evidence/weighted-exact-successor-capacity-826/canonical_shared.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/weighted-exact-successor-capacity-826/source-binding.json",
+      "field": "$.sources[1].original_sha256",
+      "archive": "docs/evidence/weighted-exact-successor-capacity-826/canonical_shared__tests.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/weighted-exact-successor-capacity-826/source-binding.json",
+      "field": "$.sources[2].original_sha256",
+      "archive": "docs/evidence/weighted-exact-successor-capacity-826/src__cleanup_plan__replay__factored.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/weighted-exact-successor-capacity-826/source-binding.json",
+      "field": "$.sources[3].original_sha256",
+      "archive": "docs/evidence/weighted-exact-successor-capacity-826/src__cleanup_plan__replay__live_oracle__source_custody__a.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/remaining-receiving-exits-816/exact-source-inverses.json",
+      "field": "$[0].sha256",
+      "archive": "docs/evidence/remaining-receiving-exits-816/src__cleanup_plan__replay.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/remaining-receiving-exits-816/exact-source-inverses.json",
+      "field": "$[1].sha256",
+      "archive": "docs/evidence/remaining-receiving-exits-816/src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/remaining-receiving-exits-816/exact-source-inverses.json",
+      "field": "$[2].sha256",
+      "archive": "docs/evidence/remaining-receiving-exits-816/src__cleanup_plan__replay__lexical_replay.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/remaining-receiving-exits-816/receiver-projections.json",
+      "field": "$[0].sha256",
+      "binds": "immutable original before-body",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/remaining-receiving-exits-816/receiver-projections.json",
+      "field": "$[1].sha256",
+      "binds": "immutable original before-body",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/region-entry-receiving-816/exact-source-inverses.json",
+      "field": "$[0].sha256",
+      "archive": "docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/region-entry-receiving-816/exact-source-inverses.json",
+      "field": "$[1].sha256",
+      "archive": "docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay__lexical_replay.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/region-entry-receiving-816/exact-source-inverses.json",
+      "field": "$[2].sha256",
+      "archive": "docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/region-entry-receiving-816/exact-source-inverses.json",
+      "field": "$[3].sha256",
+      "archive": "docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay__expression_facts__receiving__directory.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/region-entry-receiving-816/receiver-projections.json",
+      "field": "$[0].sha256",
+      "binds": "immutable original before-body",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/region-entry-receiving-816/receiver-projections.json",
+      "field": "$[1].sha256",
+      "binds": "immutable original before-body",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "field": "$[0].original_sha256",
+      "archive": "docs/evidence/lifecycle-inline-active-path/completed.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "field": "$[1].original_sha256",
+      "archive": "docs/evidence/lifecycle-inline-active-path/hir_module_boundaries.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    },
+    {
+      "metadata": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "field": "$[2].original_sha256",
+      "archive": "docs/evidence/lifecycle-inline-active-path/interop_source_inventory.rs.before.txt",
+      "matches": true,
+      "never_refresh_as_current": true
+    }
+  ],
+  "protected_metadata_mutated": false,
+  "known_excluded": "provider full native inventory collector join already assigned to canonical/root lane; not audited or patched here"
+}
