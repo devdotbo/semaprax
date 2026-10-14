@@ -283,96 +283,107 @@ fn complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_c
             Some(&registry),
         )
         .unwrap();
-        let (_, overflowed, _) = with_limit_usage(
+        let (outcome, overflowed, consumed, first_refusal) = with_limit_usage_refusal(
             crate::workspace_graph::MAX_BUILDER_BYTES,
             || {
-                let mut core = CoreProviderProofs::new(&authored, &programs).unwrap();
-                for _ in 0..2 {
-                    let old_cost = held_projection_original::synthetic_builder_bytes_scoped_with_retention_with_registry(
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    let mut core = CoreProviderProofs::new(&authored, &programs).unwrap();
+                    for _ in 0..2 {
+                        let old_cost = held_projection_original::synthetic_builder_bytes_scoped_with_retention_with_registry(
                     &programs[0], &authored, &programs, None, true, (4, cached_exact::Retention::Parsed), Some(&registry)).unwrap();
-                    let current_cost = held_projection::synthetic_builder_bytes_core(
-                        &programs[0],
-                        &authored,
-                        &programs,
-                        None,
-                        true,
-                        (4, cached_exact::Retention::Parsed),
-                        (Some(&registry), &mut core),
-                    )
-                    .unwrap();
-                    // The complete saved constructor still owns the historical
-                    // six-field receipt. The explicit prelude-accounting v1
-                    // correction supersedes only its missing retained term.
-                    let historical = fields(&old_cost);
-                    let maximum_identity = authored
-                        .keys()
-                        .map(|id| id.len())
-                        .chain(crate::prelude::all_ids().into_iter().map(str::len))
-                        .max()
-                        .unwrap_or(0);
-                    let prelude = crate::workspace_graph::expected_projection::prelude_forecast::retained_upper(
+                        let current_cost = held_projection::synthetic_builder_bytes_core(
+                            &programs[0],
+                            &authored,
+                            &programs,
+                            None,
+                            true,
+                            (4, cached_exact::Retention::Parsed),
+                            (Some(&registry), &mut core),
+                        )
+                        .unwrap();
+                        // The complete saved constructor still owns the historical
+                        // six-field receipt. The explicit prelude-accounting v1
+                        // correction supersedes only its missing retained term.
+                        let historical = fields(&old_cost);
+                        let maximum_identity = authored
+                            .keys()
+                            .map(|id| id.len())
+                            .chain(crate::prelude::all_ids().into_iter().map(str::len))
+                            .max()
+                            .unwrap_or(0);
+                        let prelude = crate::workspace_graph::expected_projection::prelude_forecast::retained_upper(
                         &crate::prelude::base_schema::BASE,
                         maximum_identity,
                     ).unwrap();
-                    let corrected = [
-                        historical[0].checked_add(prelude).unwrap(),
-                        historical[1].checked_add(prelude).unwrap(),
-                        historical[2],
-                        historical[3],
-                        historical[4].checked_add(prelude).unwrap(),
-                        historical[5],
-                    ];
-                    assert_eq!(
+                        let corrected = [
+                            historical[0].checked_add(prelude).unwrap(),
+                            historical[1].checked_add(prelude).unwrap(),
+                            historical[2],
+                            historical[3],
+                            historical[4].checked_add(prelude).unwrap(),
+                            historical[5],
+                        ];
+                        assert_eq!(
                         fields(&current_cost),
                         corrected,
                         "all six historical fields retain only the independently derived missing prelude correction"
                     );
-                    let old = borrowed_imports_original::construct(
-                        &programs[0],
-                        &authored,
-                        &programs,
-                        &registry,
-                    )
-                    .unwrap();
-                    let current = borrowed_imports::construct_core(
-                        &programs[0],
-                        &authored,
-                        &programs,
-                        &registry,
-                        &mut core,
-                    )
-                    .unwrap();
-                    use crate::ast::program_source::ProgramSource;
-                    assert_eq!(
-                        old.functions().iter().collect::<Vec<_>>(),
-                        current.functions().iter().collect::<Vec<_>>()
-                    );
-                    assert_eq!(
-                        old.types().iter().collect::<Vec<_>>(),
-                        current.types().iter().collect::<Vec<_>>()
-                    );
-                    let layout = registry.get(&programs[0], &authored, &programs).unwrap();
-                    let old_hir = crate::hir::resolve_source(
-                        &old,
-                        layout.presentation(&programs[0], &old).unwrap(),
-                    )
-                    .unwrap()
-                    .0;
-                    let new_hir = crate::hir::resolve_source(
-                        &current,
-                        layout.presentation(&programs[0], &current).unwrap(),
-                    )
-                    .unwrap()
-                    .0;
-                    assert_eq!(old_hir, new_hir);
-                    crate::hir::validate(&old_hir).unwrap();
-                    crate::hir::validate(&new_hir).unwrap();
-                    drop((old_hir, new_hir, old, current));
-                }
-                assert!(!core.poisoned);
-                drop(core);
+                        let old = borrowed_imports_original::construct(
+                            &programs[0],
+                            &authored,
+                            &programs,
+                            &registry,
+                        )
+                        .unwrap();
+                        let current = borrowed_imports::construct_core(
+                            &programs[0],
+                            &authored,
+                            &programs,
+                            &registry,
+                            &mut core,
+                        )
+                        .unwrap();
+                        use crate::ast::program_source::ProgramSource;
+                        assert_eq!(
+                            old.functions().iter().collect::<Vec<_>>(),
+                            current.functions().iter().collect::<Vec<_>>()
+                        );
+                        assert_eq!(
+                            old.types().iter().collect::<Vec<_>>(),
+                            current.types().iter().collect::<Vec<_>>()
+                        );
+                        let layout = registry.get(&programs[0], &authored, &programs).unwrap();
+                        let old_hir = crate::hir::resolve_source(
+                            &old,
+                            layout.presentation(&programs[0], &old).unwrap(),
+                        )
+                        .unwrap()
+                        .0;
+                        let new_hir = crate::hir::resolve_source(
+                            &current,
+                            layout.presentation(&programs[0], &current).unwrap(),
+                        )
+                        .unwrap()
+                        .0;
+                        assert_eq!(old_hir, new_hir);
+                        crate::hir::validate(&old_hir).unwrap();
+                        crate::hir::validate(&new_hir).unwrap();
+                        drop((old_hir, new_hir, old, current));
+                    }
+                    assert!(!core.poisoned);
+                    drop(core);
+                }))
             },
         );
+        if let Err(payload) = outcome {
+            // Outside the restored ledger: report its complete authoritative
+            // first receipt, then resume the exact original panic. No oracle
+            // is skipped and the same cumulative owner/bound remain in force.
+            eprintln!(
+                "core-proof-active-receipt width={width} depth={depth} consumed={consumed} refused={overflowed} first={first_refusal:?}"
+            );
+            std::panic::resume_unwind(payload);
+        }
         assert!(!overflowed);
     }
 }
