@@ -170,7 +170,113 @@ fn complete_old_constructor_inventory_caller_and_closure_source_projections_rema
         current.split_once(marker).unwrap().0,
         original.split_once(marker).unwrap().0
     );
-    let current = include_str!("../../validation.rs");
+    let mut current = include_str!("../../validation.rs").to_owned();
+    // The later held-call receipt is inverted before the complete saved custody comparison.
+    fn undo(source: &mut String, new: &str, old: &str) {
+        assert_eq!(source.matches(new).count(), 1, "exact unique held-call edit");
+        *source = source.replacen(new, old, 1);
+    }
+    undo(&mut current, r###"                                (params, return_type)
+                            };
+                            let params = if let Some(parameters) = borrowed_parameters {
+                                held_parameters.map_or(
+                                    CallParameters::Borrowed(parameters),
+                                    CallParameters::Held,
+                                )
+                            } else {
+                                intrinsic_parameters.unwrap_or(CallParameters::Owned(params))
+                            };
+"###, r###"                                (params, return_type)
+                            };
+                            let params = if let Some(parameters) = borrowed_parameters {
+                                CallParameters::Borrowed(parameters)
+                            } else {
+                                intrinsic_parameters.unwrap_or(CallParameters::Owned(params))
+                            };
+"###);
+    undo(&mut current, r###"                                    call_signature::ResultType::Owned(op.return_type()),
+                                )
+                            } else {
+                                let retained_target = if self.executable_profiles.is_bound() {
+                                    held_parameters =
+                                        self.executable_profiles.call(callee, instance.as_ref());
+                                    held_parameters.map(|call| call.function())
+                                } else {
+                                    retained_program.resolve_call_target(callee, instance.as_ref())
+                                };
+                                let (params, return_type, target_effects) = if let Some(target) =
+                                    retained_target
+                                {
+                                    borrowed_parameters = Some(target.params.as_slice());
+                                    (
+"###, r###"                                    call_signature::ResultType::Owned(op.return_type()),
+                                )
+                            } else {
+                                let (params, return_type, target_effects) = if let Some(target) =
+                                    retained_program.resolve_call_target(callee, instance.as_ref())
+                                {
+                                    borrowed_parameters = Some(target.params.as_slice());
+                                    (
+"###);
+    undo(&mut current, r###"                            }
+                            let mut intrinsic_parameters = None;
+                            let mut borrowed_parameters = None;
+                            let mut held_parameters = None;
+                            let retained_program = self.program;
+                            let (params, return_type) = if let Some(signature) =
+                                self.intrinsic_signature(callee, type_arguments, instance, args)?
+"###, r###"                            }
+                            let mut intrinsic_parameters = None;
+                            let mut borrowed_parameters = None;
+                            let retained_program = self.program;
+                            let (params, return_type) = if let Some(signature) =
+                                self.intrinsic_signature(callee, type_arguments, instance, args)?
+"###);
+    undo(&mut current, r###"                Some(_) => return Err(hir_error_static(
+                    "executable profile observations do not belong to the current declaration index",
+                )),
+                None => executable_profiles::Lookup::for_program(seed.program)?,
+            },
+            functions: seed.functions,
+            expression_ids: identity_directory::Set::new(),
+"###, r###"                Some(_) => return Err(hir_error_static(
+                    "executable profile observations do not belong to the current declaration index",
+                )),
+                None => executable_profiles::Lookup::new(&seed.program.declarations)?,
+            },
+            functions: seed.functions,
+            expression_ids: identity_directory::Set::new(),
+"###);
+    undo(&mut current, r###"mod executable_profiles;
+mod generic_record_composition;
+mod generic_template;
+mod held_profiles;
+mod host_command;
+mod lexical_exit;
+mod native_borrow;
+mod nominal_facts;
+mod owned_buffer;
+mod owned_result_try;
+pub(super) mod owner_renewal;
+mod ownership_flags;
+mod proof_return;
+mod record_pattern;
+mod record_traversal;
+"###, r###"mod executable_profiles;
+mod generic_record_composition;
+mod generic_template;
+mod host_command;
+mod lexical_exit;
+mod native_borrow;
+mod nominal_facts;
+mod ownership_flags;
+mod owned_buffer;
+mod owned_result_try;
+pub(super) mod owner_renewal;
+mod proof_return;
+mod record_pattern;
+mod record_traversal;
+"###);
     let projected=current.replacen("let canonical_loans = canonical_loans::Lookup::current(&seed)?;\n        Self::from_constructor(seed, canonical_loans, None)","let canonical_loans = canonical_loans::Inventory::rebuild(program)?;\n        Self::from_constructor(seed, canonical_loans::Lookup::Legacy(canonical_loans), None)",1)
         .replacen("storage: Option<canonical_loans::Lookup<'a>>", "storage: Option<&'a super::canonical_loan_storage::Storage<'a>>",1)
         .replacen("            storage\n        } else {\n            canonical_loans::Lookup::current(&seed)?", "            canonical_loans::Lookup::Borrowed(storage)\n        } else {\n            canonical_loans::Lookup::Legacy(canonical_loans::Inventory::rebuild(program)?)",1);

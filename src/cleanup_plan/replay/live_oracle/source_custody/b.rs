@@ -65,6 +65,15 @@ pub(crate) use metered_owner::general_matches as oracle_owner_matches_with_work;
 pub(crate) use metered_owner::matches as monomorphic_owner_matches_with_work;
 "#,
         );
+        // Exact receiving edits; the complete original source remains the final oracle.
+        undo(&mut current, r###"#[cfg(test)]
+pub(crate) use metered_owner::matches as monomorphic_owner_matches_with_work;
+
+#[cfg(test)]
+pub(in crate::hir) mod fixed_operation_tests;
+"###, r###"#[cfg(test)]
+pub(crate) use metered_owner::matches as monomorphic_owner_matches_with_work;
+"###);
         assert_eq!(
             current,
             include_str!("../../../../../docs/evidence/opt810-live-oracle/src__hir__ids.rs.before"),

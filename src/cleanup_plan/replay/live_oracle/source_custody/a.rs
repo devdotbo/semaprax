@@ -649,6 +649,18 @@ pub(super) mod inventory_summary;
         Payer {
 "#,
         );
+        // Exact receiving edits; the complete original source remains the final oracle.
+        undo(&mut current, r###"use crate::hir::{DeclarationIndex, TypeFactsPayer};
+
+pub(super) struct Payer<'a> {
+    function: &'a ResolvedFunction,
+    budget: &'a mut ReplayBudget,
+"###, r###"use crate::hir::{DeclarationIndex, TypeFactsPayer};
+
+struct Payer<'a> {
+    function: &'a ResolvedFunction,
+    budget: &'a mut ReplayBudget,
+"###);
         assert_eq!(
             current,
             include_str!(
@@ -780,10 +792,10 @@ pub(super) fn capped(
             include_str!("../../paid_type_facts/inventory_encoded/tests.rs").to_owned();
         undo(
             &mut current,
-            r#"}
+            r###"}
 #[test]
 fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
-    let current = include_str!("../../../../../bounded_output/classifier_string.rs")
+    let current = include_str!("../../../../bounded_output/classifier_string.rs")
         .strip_suffix("\n#[cfg(test)]\nmod oracle_work;\n")
         .unwrap();
     let marker = "    /// A test-account caller authenticates its own invocation separately. This\n    /// detached marker contains no ACTIVE handle and grants no ordinary payer.\n    #[cfg(test)]\n    pub(crate) fn oracle_marker() -> Self {\n        Self(None)\n    }\n\n";
@@ -791,10 +803,10 @@ fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
     let current = current.replace(marker, "");
     assert_eq!(
         current.strip_suffix("\nmod inventory_work;\n").unwrap(),
-        include_str!("../../../../../../docs/evidence/schema-summary/classifier_string.rs.before")
+        include_str!("../../../../../docs/evidence/schema-summary/classifier_string.rs.before")
     );
 }
-"#,
+"###,
             r#"}
 #[test]
 fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
@@ -807,6 +819,24 @@ fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
 }
 "#,
         );
+        // Exact receiving edits; the complete original source remains the final oracle.
+        undo(&mut current, r###"fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
+    assert_eq!(
+        include_str!("../../../../../bounded_output/classifier_string.rs")
+            .strip_suffix("\nmod inventory_work;\n")
+            .unwrap(),
+        include_str!("../../../../../../docs/evidence/schema-summary/classifier_string.rs.before")
+    );
+}
+"###, r###"fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
+    assert_eq!(
+        include_str!("../../../../bounded_output/classifier_string.rs")
+            .strip_suffix("\nmod inventory_work;\n")
+            .unwrap(),
+        include_str!("../../../../../docs/evidence/schema-summary/classifier_string.rs.before")
+    );
+}
+"###);
         assert_eq!(
             current,
             include_str!(
@@ -819,9 +849,9 @@ fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
         let mut current = include_str!("../../paid_type_facts/inventory_tests.rs").to_owned();
         undo(
             &mut current,
-            r#"#[test]
+            r###"#[test]
 fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter() {
-    let current = include_str!("../../paid_type_facts.rs");
+    let current = include_str!("../paid_type_facts.rs");
     let current = current
         .strip_suffix("\n#[cfg(test)]\npub(super) mod oracle_inventory;\n")
         .unwrap();
@@ -836,7 +866,7 @@ fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapte
     let (head, rest) = current
         .split_once("/// Raw ordinary inventory diagnostic adapter.")
         .unwrap();
-"#,
+"###,
             r#"#[test]
 fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter() {
     let current = include_str!("../../paid_type_facts.rs");
@@ -845,6 +875,18 @@ fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapte
         .unwrap();
 "#,
         );
+        // Exact receiving edits; the complete original source remains the final oracle.
+        undo(&mut current, r###"#[test]
+fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter() {
+    let current = include_str!("../../paid_type_facts.rs");
+    let (head, rest) = current
+        .split_once("/// Raw ordinary inventory diagnostic adapter.")
+"###, r###"#[test]
+fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter() {
+    let current = include_str!("../paid_type_facts.rs");
+    let (head, rest) = current
+        .split_once("/// Raw ordinary inventory diagnostic adapter.")
+"###);
         assert_eq!(
             current,
             include_str!(

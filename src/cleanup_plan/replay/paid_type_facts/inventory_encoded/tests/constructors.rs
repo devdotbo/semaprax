@@ -169,10 +169,152 @@ fn complete_inline_semantic_substitution_refusal_and_nested_argument_clone_keep_
 }
 #[test]
 fn complete_prior_key_substitution_and_storage_receivers_remain_independent_byte_exact() {
-    assert_eq!(include_str!("../../../../../hir.rs")
-        .replacen("pub(crate) use declaration_index::{inventory_identity, inventory_substitute, InventoryPayer};\n", "", 1)
-        .replacen("#[cfg(test)]\npub(crate) use byte_capacity::byte_data_capacity_inputs;\n", "", 1),
-        include_str!("../../../../../../docs/evidence/schema-summary/hir.rs.before"));
+    fn undo(source: &mut String, new: &str, old: &str) {
+        assert_eq!(source.matches(new).count(), 1, "exact unique receiving edit");
+        *source = source.replacen(new, old, 1);
+    }
+    let mut current = include_str!("../../../../../hir.rs").to_owned();
+    undo(&mut current, "pub(crate) use declaration_index::{inventory_identity, inventory_substitute, InventoryPayer};\n", "");
+    undo(&mut current, "#[cfg(test)]\npub(crate) use byte_capacity::byte_data_capacity_inputs;\n", "");
+    // Reconstruct the complete saved root; no original interior is excluded.
+    undo(&mut current, r###"pub(crate) mod borrowed_scalar;
+mod byte_capacity;
+mod byte_slice_provenance;
+mod ordinary_scan;
+pub(crate) mod static_text;
+pub use static_text::StaticUtf8;
+"###, r###"pub(crate) mod borrowed_scalar;
+mod byte_capacity;
+mod ordinary_scan;
+mod byte_slice_provenance;
+pub(crate) mod static_text;
+pub use static_text::StaticUtf8;
+"###);
+    undo(&mut current, r###"    is_admitted_concrete_owned_byte_variant, is_admitted_owned_string_variant,
+};
+pub(crate) fn nested_record_copy_scalar_is_admitted(ty: &ResolvedType) -> bool {
+    type_reachability::nested_record_copy_scalar_is_admitted(ty)
+}
+mod validation;
+mod variant_equality;
+"###, r###"    is_admitted_concrete_owned_byte_variant, is_admitted_owned_string_variant,
+};
+mod validation;
+mod variant_equality;
+"###);
+    undo(&mut current, r###"pub(crate) use type_reachability::owned_oracle::owned_reachable_types as owned_reachable_types_oracle;
+pub(crate) use type_reachability::{
+    authored_nominal_declarations, is_admitted_nested_owned_byte_record, is_flat_owned_byte_record,
+    reachable_authored_types, reachable_authored_types_with_roots, reachable_scalar_authored_types,
+    BorrowedTypeInventory,
+};
+pub(crate) use validation::resolved_type_contains_owned_bytes;
+#[cfg(test)]
+use validation::HirValidator;
+pub(crate) use workspace_link::{
+    copy_scalar_type, link_https_command_io_workspace, link_https_entry_workspace,
+    link_language_command_io_workspace, link_line_command_io_workspace,
+    link_network_command_io_workspace, link_network_entry_workspace, link_owned_data_api_workspace,
+"###, r###"pub(crate) use type_reachability::owned_oracle::owned_reachable_types as owned_reachable_types_oracle;
+pub(crate) use type_reachability::{
+    BorrowedTypeInventory, authored_nominal_declarations, is_admitted_nested_owned_byte_record,
+    is_flat_owned_byte_record, reachable_authored_types, reachable_authored_types_with_roots,
+    reachable_scalar_authored_types,
+};
+#[cfg(test)]
+use validation::HirValidator;
+pub(crate) use validation::resolved_type_contains_owned_bytes;
+pub(crate) use workspace_link::{
+    COPY_SCALAR_NAMES, LinkedScalarProjectParts, PACKAGE_SCALAR_NAME, copy_scalar_type,
+    link_https_command_io_workspace, link_https_entry_workspace,
+    link_language_command_io_workspace, link_line_command_io_workspace,
+    link_network_command_io_workspace, link_network_entry_workspace, link_owned_data_api_workspace,
+"###);
+    undo(&mut current, r###"    validate_stream_collection_record_program, validate_stream_data_program,
+    validate_stream_nested_outcome_program, validate_stream_owned_program,
+    validate_stream_record_program, validate_stream_text_program, LinkedScalarProjectParts,
+    COPY_SCALAR_NAMES, PACKAGE_SCALAR_NAME,
+};
+
+"###, r###"    validate_stream_collection_record_program, validate_stream_data_program,
+    validate_stream_nested_outcome_program, validate_stream_owned_program,
+    validate_stream_record_program, validate_stream_text_program,
+};
+
+"###);
+    undo(&mut current, r###"    resolved_scalar_substitutions, same_function_meaning,
+};
+pub use row_loan::{RowLoan, RowLoanVersion, ROW_LOAN_V1};
+pub(crate) use validation::byte_traversal::{
+    function_uses as byte_traversal_function_uses, partial_receiver as is_partial_byte_receiver,
+"###, r###"    resolved_scalar_substitutions, same_function_meaning,
+};
+pub use row_loan::{ROW_LOAN_V1, RowLoan, RowLoanVersion};
+pub(crate) use validation::byte_traversal::{
+    function_uses as byte_traversal_function_uses, partial_receiver as is_partial_byte_receiver,
+"###);
+    undo(&mut current, r###"    matched
+}
+pub(crate) use nodes::{
+    admitted_owned_byte_prelude_instance, is_refutable_match_scalar, is_scalar_resolved_type,
+    LinkedDeclarationFact, LinkedOwnedDataParts, LinkedScalarFunction,
+};
+pub use nodes::{
+    ByteSliceExtent, ByteSliceProvenance, ByteSliceRangeStep, ByteSliceRootKind, Declaration,
+"###, r###"    matched
+}
+pub use nodes::{
+    ByteSliceExtent, ByteSliceProvenance, ByteSliceRangeStep, ByteSliceRootKind, Declaration,
+"###);
+    undo(&mut current, r###"    ResolvedTypeParameterDeclaration, ResolvedVariantCaseDeclaration, ResolvedYieldsClause,
+    TypeFacts, VectorFieldProvenance,
+};
+
+"###, r###"    ResolvedTypeParameterDeclaration, ResolvedVariantCaseDeclaration, ResolvedYieldsClause,
+    TypeFacts, VectorFieldProvenance,
+};
+pub(crate) use nodes::{
+    LinkedDeclarationFact, LinkedOwnedDataParts, LinkedScalarFunction,
+    admitted_owned_byte_prelude_instance, is_refutable_match_scalar, is_scalar_resolved_type,
+};
+
+"###);
+    undo(&mut current, r###"    // The environment proof belongs to this exact current source receiver.
+    current: &'a dyn ProgramSource,
+    program: &'a dyn ProgramSource,
+    resolved: &'a ResolvedProgram,
+    costs: &'a BTreeMap<String, usize>,
+"###, r###"    // The environment proof belongs to this exact current source receiver.
+    current: &'a dyn ProgramSource,
+    program: &'a Program,
+    resolved: &'a ResolvedProgram,
+    costs: &'a BTreeMap<String, usize>,
+"###);
+    undo(&mut current, r###"        let invalid_oracle = full_verdict(&allocating, None);
+        assert_eq!(invalid_oracle.as_ref().unwrap_err()[0].code, "SPX-T252");
+        assert!(invalid_oracle.as_ref().unwrap_err()[0]
+            .message
+            .contains("call `leaf` is not admitted in loop bodies"));
+        assert_eq!(
+            full_verdict(&allocating, Some((&previous, &old, &costs)))
+"###, r###"        let invalid_oracle = full_verdict(&allocating, None);
+        assert_eq!(invalid_oracle.as_ref().unwrap_err()[0].code, "SPX-T252");
+        assert!(
+            invalid_oracle.as_ref().unwrap_err()[0]
+                .message
+                .contains("call `leaf` is not admitted in loop bodies")
+        );
+        assert_eq!(
+            full_verdict(&allocating, Some((&previous, &old, &costs)))
+"###);
+    undo(&mut current, r###"#[path = "hir/provisional_result_borrow_tests.rs"]
+mod provisional_result_borrow_tests;
+
+mod function_reuse_source;
+"###, r###"#[path = "hir/provisional_result_borrow_tests.rs"]
+mod provisional_result_borrow_tests;
+"###);
+    assert_eq!(current, include_str!("../../../../../../docs/evidence/schema-summary/hir.rs.before"));
     assert_eq!(include_str!("../../../../../hir/declaration_index/flags/paid.rs")
         .strip_suffix("\nmod inventory_constructor;\npub(crate) use inventory_constructor::{\n    identity as inventory_identity, substitute as inventory_substitute, InventoryPayer,\n};\n").unwrap(),
         include_str!("../../../../../../docs/evidence/schema-summary/flags-paid.rs.before"));
