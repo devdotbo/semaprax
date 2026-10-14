@@ -1,5 +1,5 @@
 {
-  "status": "future unregistered source-only; requires827+828 integration and compile",
+  "status": "future unregistered source-only; fixed-work proposal requires ROOT contract review; requires827+828 integration and compile",
   "test_binary": "semaprax library test harness",
   "source": "src/hir/prelude_bundle/tests.rs",
   "selectors": [
@@ -11,8 +11,10 @@
     "hir::prelude_bundle::tests::initializer_and_receiving_carriers_are_paid_before_any_producer_work",
     "hir::prelude_bundle::tests::fixed_base_unmetered_index_views_borrow_complete_old_facts_without_allocation",
     "hir::prelude_bundle::tests::returned_type_materialization_shares_nominals_pays_only_new_name_and_receivers",
-    "hir::prelude_bundle::tests::logical_declaration_export_has_exact_remaining_length_and_generic_merge_keeps_base_values"
+    "hir::prelude_bundle::tests::logical_declaration_export_has_exact_remaining_length_and_generic_merge_keeps_base_values",
+    "hir::prelude_bundle::tests::fixed_schema_work_payer_covers_actual_producer_exactly_and_plus_one_is_sticky",
+    "hir::prelude_bundle::tests::fixed_schema_counter_setup_and_byte_refusal_keep_exact_existing_owner_error"
   ],
-  "count": 9,
+  "count": 11,
   "broader_qualification": "Complete old/current HIR/diagnostic/graph/cache/backend/application controls required separately before replacement or forecast change."
 }

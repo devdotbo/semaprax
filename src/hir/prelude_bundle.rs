@@ -11,11 +11,14 @@ use crate::prelude::base_schema::{Variant, BASE};
 use std::sync::Arc;
 
 mod borrowed;
+mod fixed_work;
 mod materialize;
 mod merge;
 mod overlay;
 mod paid;
 mod producer;
+mod work_model;
+pub(crate) use fixed_work::{FixedFailure, FixedSchemaPayer, WorkReceipt, WorkRefusal};
 pub(crate) use merge::merge_by_key;
 pub(crate) use overlay::Overlay;
 

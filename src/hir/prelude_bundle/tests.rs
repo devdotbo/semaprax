@@ -544,3 +544,112 @@ fn logical_declaration_export_has_exact_remaining_length_and_generic_merge_keeps
     assert_eq!(physical.live, 0);
     assert!(!physical.invalid);
 }
+
+#[test]
+fn fixed_schema_work_payer_covers_actual_producer_exactly_and_plus_one_is_sticky() {
+    use super::{FixedFailure, FixedSchemaPayer, WorkRefusal};
+    let mut owner = Account::unlimited();
+    let (receipt, physical) = measure(|| {
+        let mut reserve = |n| owner.bytes(n);
+        let mut fixed = FixedSchemaPayer::acquire(&mut reserve).unwrap();
+        let bundle = BasePreludeBundle::acquire(&mut fixed).unwrap();
+        let exact = fixed.receipt();
+        assert_eq!(exact.limit, super::work_model::REQUIRED);
+        assert_eq!(exact.used, exact.limit);
+        assert_eq!(exact.remaining, 0);
+        assert_eq!(exact.first, None);
+        let selected = WorkRefusal {
+            requested: 1,
+            remaining: 0,
+        };
+        assert_eq!(fixed.work(1), Err(FixedFailure::Work(selected)));
+        assert_eq!(fixed.work(0), Err(FixedFailure::Work(selected)));
+        assert_eq!(fixed.bytes(0), Err(FixedFailure::Work(selected)));
+        assert_eq!(fixed.bytes(usize::MAX), Err(FixedFailure::Work(selected)));
+        assert!(
+            matches!(BasePreludeBundle::acquire(&mut fixed), Err(Failure::Payer(FixedFailure::Work(first))) if first == selected)
+        );
+        assert_eq!(fixed.receipt().first, Some(selected));
+        assert_eq!(fixed.receipt().used, exact.used);
+        drop(bundle);
+        fixed.receipt()
+    });
+    assert!(receipt.first.is_some());
+    assert_eq!(
+        owner.work, 0,
+        "no credit was borrowed from a generic work account"
+    );
+    assert_eq!(
+        owner.first, None,
+        "the fixed work owner records its own refusal"
+    );
+    assert!(!physical.invalid);
+    assert_eq!(physical.live, 0);
+    assert_eq!(physical.allocated, physical.freed);
+    assert!(physical.allocated <= owner.bytes);
+    assert!(physical.highwater <= owner.bytes);
+    for limit in [super::work_model::REQUIRED - 1, 0] {
+        let mut owner = Account::unlimited();
+        let (_, physical) = measure(|| {
+            let mut reserve = |n| owner.bytes(n);
+            let mut fixed = FixedSchemaPayer::acquire(&mut reserve).unwrap();
+            fixed.restrict_for_test(limit);
+            assert!(matches!(
+                BasePreludeBundle::acquire(&mut fixed),
+                Err(Failure::Payer(FixedFailure::Work(_)))
+            ));
+            let first = fixed.receipt().first.unwrap();
+            assert!(first.requested > first.remaining);
+            assert_eq!(fixed.work(0), Err(FixedFailure::Work(first)));
+            assert_eq!(fixed.bytes(0), Err(FixedFailure::Work(first)));
+            assert_eq!(fixed.bytes(usize::MAX), Err(FixedFailure::Work(first)));
+            assert!(
+                matches!(BasePreludeBundle::acquire(&mut fixed), Err(Failure::Payer(FixedFailure::Work(retry))) if retry == first)
+            );
+            assert_eq!(fixed.receipt().first, Some(first));
+        });
+        assert!(!physical.invalid);
+        assert_eq!(physical.live, 0);
+        assert_eq!(physical.allocated, physical.freed);
+        assert!(physical.allocated <= owner.bytes);
+    }
+}
+
+#[test]
+fn fixed_schema_counter_setup_and_byte_refusal_keep_exact_existing_owner_error() {
+    use super::{FixedFailure, FixedSchemaPayer, WorkReceipt};
+    let carriers = std::mem::size_of::<FixedSchemaPayer<'_, Denied>>()
+        + std::mem::size_of::<Result<FixedSchemaPayer<'_, Denied>, Denied>>()
+        + std::mem::size_of::<WorkReceipt>();
+    for limit in [0, carriers - 1, carriers] {
+        let mut owner = Account::unlimited();
+        owner.byte_limit = limit;
+        let (_, physical) = measure(|| {
+            let mut reserve = |n| owner.bytes(n);
+            let setup = FixedSchemaPayer::acquire(&mut reserve);
+            if limit < carriers {
+                assert!(matches!(setup, Err(Denied::Bytes)));
+            } else {
+                let mut fixed = setup.unwrap();
+                assert_eq!(fixed.receipt().used, 0);
+                assert!(matches!(
+                    BasePreludeBundle::acquire(&mut fixed),
+                    Err(Failure::Payer(FixedFailure::Bytes(Denied::Bytes)))
+                ));
+                // Byte failure wins even a request that would exhaust work.
+                assert_eq!(
+                    fixed.work(usize::MAX),
+                    Err(FixedFailure::Bytes(Denied::Bytes))
+                );
+                assert_eq!(fixed.bytes(0), Err(FixedFailure::Bytes(Denied::Bytes)));
+                assert_eq!(fixed.receipt().first, None);
+                assert_eq!(fixed.receipt().used, 0);
+            }
+        });
+        assert_eq!(owner.first, Some(Denied::Bytes));
+        assert_eq!(owner.bytes, if limit == carriers { carriers } else { 0 });
+        assert_eq!(physical.allocated, 0);
+        assert_eq!(physical.live, 0);
+        assert!(!physical.invalid);
+    }
+}
