@@ -1,0 +1,5 @@
+{
+  "new_source_children": [
+    "src/workspace_graph/diagnostics/borrowed_help_tests.rs"
+  ]
+}

@@ -213,15 +213,18 @@ fn builder_bytes_help(maximum: usize) -> String {
     let precharge = BUILDER_PHASE.with(Cell::get) == BuilderPhase::Precharge;
     let modules = PRECHARGE_MODULES.with(Cell::get);
     let forecast = PRECHARGE_BYTES.with(Cell::get);
-    let dominant = PRECHARGE_DOMINANT.with(|dominant| dominant.borrow().clone());
-    let pending = PRECHARGE_PENDING.with(|pending| pending.borrow().clone());
-    if let (true, Some(path)) = (precharge, pending) {
+    PRECHARGE_DOMINANT.with(|dominant| {
+        let dominant = dominant.borrow();
+        PRECHARGE_PENDING.with(|pending| {
+            let pending = pending.borrow();
+    if let (true, Some(path)) = (precharge, pending.as_ref()) {
         return crate::bounded_output::budgeted_format(format_args!(
             "the static admission pre-charge refused before the graph builder ran, while forecasting module `{path}` on its own: that one module does not fit the {maximum}-byte budget, which already carries {forecast} bytes for {modules} earlier module(s). Splitting `{path}` into several modules cannot reduce the forecast, because the pre-charge sums every reachable module; reducing its admitted source can."
         ));
     }
-    let sequential = PRECHARGE_SEQUENTIAL.with(|sequential| sequential.borrow().clone());
-    if let (true, Some(step)) = (precharge, sequential) {
+    PRECHARGE_SEQUENTIAL.with(|sequential| {
+        let sequential = sequential.borrow();
+    if let (true, Some(step)) = (precharge, sequential.as_ref()) {
         let SequentialRefusal {
             path,
             earlier,
@@ -229,7 +232,7 @@ fn builder_bytes_help(maximum: usize) -> String {
             additional,
             resolving,
         } = step;
-        return if resolving {
+        return if *resolving {
             crate::bounded_output::budgeted_format(format_args!(
                 "the static admission pre-charge refused before the graph builder ran, in its final sequential uncached forecast: {earlier} earlier module(s) retain {retained} bytes of filtered output, and resolving `{path}` adds its complete {additional}-byte forecast, which exceeds the {maximum}-byte budget. Each complete module forecast is charged only while that module resolves; reducing the admitted source of `{path}` or the output retained by earlier modules can reduce this peak."
             ))
@@ -239,7 +242,7 @@ fn builder_bytes_help(maximum: usize) -> String {
             ))
         };
     }
-    match (precharge, dominant) {
+    match (precharge, dominant.as_ref()) {
         (true, Some((path, bytes))) => crate::bounded_output::budgeted_format(format_args!(
             "the static admission pre-charge refused before the graph builder ran: forecasting {modules} reachable module(s) already reaches {forecast} bytes of the {maximum}-byte budget, and `{path}` alone forecasts {bytes} bytes of retained resolver state. The pre-charge sums every reachable module, so splitting one module into several cannot reduce it; removing a dependency or reducing total reachable source can."
         )),
@@ -253,8 +256,10 @@ fn builder_bytes_help(maximum: usize) -> String {
             "live graph construction, not the static admission pre-charge, exceeded the {maximum}-byte budget while allocating workspace graph structure."
         )),
     }
+    })
+        })
+    })
 }
-
 /// Evidence belongs to the final resolved-core attempt, captured before its
 /// budget is restored. Neither earlier retries nor diagnostic rendering replace it.
 pub(super) fn live_builder_refusal(
@@ -290,3 +295,6 @@ mod refusal_tests;
 
 mod invocation;
 pub(super) use invocation::enter as invocation_scope;
+
+#[cfg(test)]
+mod borrowed_help_tests;

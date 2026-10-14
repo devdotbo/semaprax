@@ -1,0 +1,14 @@
+{
+  "status": "source-only; no tests executed",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selectors": [
+        "workspace_graph::diagnostics::borrowed_help_tests::every_help_branch_keeps_full_original_diagnostic_and_actual_complete_drop",
+        "workspace_graph::diagnostics::borrowed_help_tests::zero_and_sticky_help_do_not_clone_paths_or_replace_first_refusal",
+        "workspace_graph::diagnostics::borrowed_help_tests::complete_borrowed_help_source_restores_full_original_without_normalization"
+      ]
+    }
+  ]
+}

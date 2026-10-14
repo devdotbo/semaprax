@@ -1,0 +1,14 @@
+{
+  "head": "6e2659d53d27ccf14c8b5154979c5c48e416aa65",
+  "source_sha256": {
+    "src/workspace_graph.rs": "6c0497495c52ad6d7b6a8262a0e3ec788a54b46036ddf7cbcdc6c2bca3d4a835",
+    "src/workspace_graph/diagnostics.rs": "c480b975897767ea2516b73112dd1547ea107841cbbe0537ed09b1de87b4b8bc",
+    "src/workspace_graph/expected_projection/borrowed_imports/receiving.rs": "175a32cb294f72f01fd465d21bd18b43ad93a06cbe209b51283f4ff6ca33c09b",
+    "src/workspace_graph/expected_projection/borrowed_leaf.rs": "84207cdd985a765401872579baf89bec60471e8c877cdcfb825952adb812fb9a",
+    "src/workspace_graph/expected_projection/import_stub.rs": "a7d2eb473151e0497d2c2f9e40717994602e8836f8a90d2a42cbea2cd70986c4",
+    "src/workspace_graph/expected_projection/defaults.rs": "e3d79ed92419bd5f9969a72c8985a34bf0ae7b8c1a2f5e4f1daec380f119bc93",
+    "src/diagnostic.rs": "fd72d33136eb30278b0263b8a97027584b96cc0564cdb810b604f16551aa7374",
+    "src/bounded_output.rs": "aa0f0ebaafab779509d90414d1d64b831e33d4af2864c4fd814f5643c29eeac0"
+  },
+  "status": "source-only; no execution"
+}
