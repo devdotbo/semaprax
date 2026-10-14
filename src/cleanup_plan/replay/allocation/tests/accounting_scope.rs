@@ -115,7 +115,15 @@ pub(in crate::cleanup_plan::replay) fn tree_facts_for_test<'hir>(
         include_str!("../../expression_facts/ordinary_before.rs"),
         format!("{preamble}{receiver}{suffix}")
     );
-    assert!(include_str!("../../../replay.rs").contains(receiver));
+    // Invert exactly the paid-summary hook; compare the complete old receiver.
+    let current_replay = include_str!("../../../replay.rs");
+    let paid_schema_hook = "    let ordinary_schema =\n        schema::paid_summary::selected_with_budget(program, function, helpers, budget)?;";
+    let original_schema_hook =
+        "    let ordinary_schema = schema::selected_schema_with_index(program, function, helpers)?;";
+    assert_eq!(current_replay.matches(paid_schema_hook).count(), 1);
+    let original_receiver_projection =
+        current_replay.replacen(paid_schema_hook, original_schema_hook, 1);
+    assert!(original_receiver_projection.contains(receiver));
     let old = "        assert_eq!(active.remaining, legacy.remaining);";
     let new = r#"        // The current Arena prepays search/rotation/receiving visits that the
         // independent Tree route does not charge. Exact original Tree parity

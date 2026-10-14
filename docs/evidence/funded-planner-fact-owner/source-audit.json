@@ -52,9 +52,9 @@
       "lines": 73
     },
     "src/cleanup_plan/replay/allocation/tests/accounting_scope.rs": {
-      "sha256": "fa2d552a710d3066e9c64f5085f17fe084ac66d2824ddf49418e71e57cb16f39",
-      "bytes": 6209,
-      "lines": 143
+      "sha256": "d64f05b3f1e99ed0538198771cfd20a1fdaa3c4a6593bdd9daa712f14135736f",
+      "bytes": 6825,
+      "lines": 152
     },
     "src/cleanup_plan/replay/expression_facts.rs": {
       "sha256": "82c15975078a1e841c342440723a2e75ec2a0bfee01366ea8f43c49af0b6dec1",
