@@ -29,7 +29,7 @@
     }
   },
   "source_hashes": {
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "bf581f57067a64d8ab0e07be85e92d17db59980bc0563aa55143d587341c043f",
     "src/semantic_workspace/reporting.rs": "6a1ee6dbaf59fd894b91feb841d54ad09f019add0b2d27aa22fe2c4ea5ea11ac",
     "src/semantic_workspace_change.rs": "e234b66dd9373362ccb9f0da4a11406c288b9e83db19fbe49f49f0c5d5574ab6",
     "src/semantic_workspace_change/reporting.rs": "b6181795b3face5d4ac706fb60019470432e11723b76b6427b00291985c72e45",

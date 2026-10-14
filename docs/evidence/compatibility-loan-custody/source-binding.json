@@ -31,7 +31,7 @@
     "src/hir/canonical_loan_storage/caller/shared/tests.rs": "d2077ddc3cacca4232a8a08055e12095cada7f7fbca8b6521967ce55194519df",
     "src/hir/canonical_loan_storage/caller/owned_before.rs": "f119db223c35acd6e975e2825f5a6e4806508a49698989d94500ba8601fb456f",
     "tests/hir_module_boundaries.rs": "3c2d29942d1cb42fba4bb7b23cb49feff3cd457a876042bdc79f266db6f4c2e4",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6"
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "bf581f57067a64d8ab0e07be85e92d17db59980bc0563aa55143d587341c043f"
   },
   "unchanged_full_observer": {
     "selector": "hir::validation::function_scope::lifecycle::completed::tests::actual_repeated_call_receiver_is_paid_through_drop_with_exact_short_and_sticky_refusal",
