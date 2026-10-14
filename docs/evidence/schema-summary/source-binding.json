@@ -120,7 +120,7 @@
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs": "fb5e511e1a4908860a55e74a9e862a847440d90d70f5647d618748ea63f4b07a",
     "src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs": "a22ad9d3b05506fcb2c1e4ccbb9a175486305fd792de5bfb4fcab031aa5bdf52",
     "src/cleanup_plan/replay/paid_type_facts/droppability.rs": "50553857f7a33d60b245f66bdc3c380f65b8ba5ae5fa53e776fd2b419da80e76",
-    "tests/hir_module_boundaries.rs": "ce3dd588745915d204c8e33630e7b4a01d81c718773d488d9cb2cff085aac7c1",
+    "tests/hir_module_boundaries.rs": "579f979b24bb33b3d7682cf959613cc20244e0714212055d9860fe52610ee6e0",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "af1324aeb6db9aa99372ce014070129a7be26d123acd45916dd884d23a2d13cb",
     "src/cleanup_plan/replay/paid_type_facts/inventory_text.rs": "f0f3f5266fea382fab01c783c419f08afffa03da451b50952605cacc2ed12057",
     "src/cleanup.rs": "e2a653179270f02ca7d56cfffc11e503043fd00068aac09152a89a493660159f",
@@ -139,9 +139,9 @@
     "src/cleanup_plan/replay/paid_type_facts/inventory_metadata/admission.rs": "c17958ad2ef1802343d0e9345c495220257de5ff3854a808ccfffce3bc9a430c",
     "src/hir/declaration_index/flags/paid/substitute.rs": "80f6b353b1a73a3c7dff8635dd36760510ff7e5daf1f1d4f03853e7f7302a77a",
     "src/hir/declaration_index/flags/paid/storage.rs": "34e921b863df7ca15514408fab51936e2ffed0a60c116393e679f3013328abf3",
-    "src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests/constructors.rs": "122a10f8f2bdc0dbf5676f6633275bcb3deca165888be0890a4c079914d94e27",
+    "src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests/constructors.rs": "9ab2c7b7f1fdc6cefb3b8c59e35bce4b0a06115f7f5a7bd836158391593d203e",
     "src/hir/declaration_index/flags/paid/admission.rs": "bc301f5a2539ab4d3148d19c33ac895d318bffd043e038d80613af6f6ab29276",
-    "src/hir.rs": "1a49ae38963bd14dbcf013746aa1ec3d9593b44caba58379ab445601b47d69bc",
+    "src/hir.rs": "f08f8053f3dbc7f631ca125526aa3d2bbfab1e0a626b573d9418a32e8cd369c0",
     "src/hir/declaration_index/flags/paid.rs": "d7f2c5199f1a93c77e76c5e2654a342b1e24240c28f73b22c3f695c9bbdc94ec",
     "src/hir/declaration_index/flags/paid/inventory_constructor/substitute.rs": "7b06a22542084a7041f4f22f7cea19404d48bb41bbe5c51e97419f637f33479a",
     "src/hir/declaration_index/flags.rs": "ddc57a8c4859406fac09740cf6b807473be9f1ea39bc9d2ed8e855202691f05e",
@@ -174,11 +174,11 @@
     "src/cleanup_plan/replay/paid_type_facts/inventory_summary/profile.rs": "5a3692dcf5afc13ce5a332cbca273905c14e939076df9d968e34c77a56f8be1d",
     "src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs": "e12b10a618a188ab50e94eb2861801a8846e4b3d92ac923dd051116620b97761",
     "src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape.rs": "992f7bf7190a9e2e8a094e8b0a40bbfa3303d123546d091b1cfa6da6dfd361fa",
-    "src/cleanup_plan/replay/schema/paid_summary/tests.rs": "2300de22d799d5060467af0804dd86e09392c14253a6478b59847f2638c05b79",
+    "src/cleanup_plan/replay/schema/paid_summary/tests.rs": "9a5bd282808efc1bfd4e8b4f755867ea1892e3e3997266a1571d5f075381b816",
     "src/cleanup_plan/replay/schema/paid_summary/original_receiver.rs": "34282d571ae1799853a80f4e757f18f1b94bc9f443064c95a4160e7f2b5fcbd8",
     "src/cleanup_plan/replay/schema/paid_summary.rs": "dcdc3881d12701c95ce3fc353b4a063d12fcec3de665c16014a2890585c66440",
     "src/cleanup_plan/replay/schema.rs": "457de8afc4d39928fb22f4a78fbcedc386aece8c86a45110e18c6b7aed4837c4",
-    "src/cleanup_plan/replay.rs": "f796f7a15c9a331651da34eaa531a2afbd00e7a54da3c1b3b3d56aa67aa9127e",
+    "src/cleanup_plan/replay.rs": "4b7913d9222452a9b202c8619a476df2dcce7049da8cde74c28d15feb2ab0b25",
     "src/cleanup_plan/replay/paid_type_facts/tests.rs": "35caab993a7007fb6699441903f8dc33bdf4e73382f0d1b4338fa1e92531fca4"
   },
   "pending_selectors": [
@@ -381,7 +381,7 @@
     "cleanup_plan::replay::schema::paid_summary::tests::full_unfunded_compatibility_and_selected_reservation_receiver_stay_original"
   ],
   "mandatory_constructor_work": {
-    "status": "private additive source; full classifier state and production inventory collector still pending",
+    "status": "Component now adopted by private complete inventory summary; authored unexecuted.",
     "review_receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-constructor-key-review-814-20261014/process-receipt.json",
     "wall_seconds": 151.76735737499985,
     "peak_process_group_rss_bytes": 422035456,
@@ -411,10 +411,11 @@
       "Original key/substitution/storage complete bytes remain unchanged; current key/substitution controls invoke their real old paid receiving methods.",
       "Literal copying has a separate complete paid implementation, avoids old cfg(test)-only work hook.",
       "New work must come from caller ReplayBudget; no default, private allowance or detached paid fallback."
-    ]
+    ],
+    "historical_stage_status": "private additive source; full classifier state and production inventory collector still pending"
   },
   "ordered_carrier": {
-    "status": "private complete component; whole production classifier/collector pending, unexecuted",
+    "status": "Component now adopted by private complete inventory summary; authored unexecuted.",
     "author_receipt": "/Volumes/Semaprax/lane-prompts/claude-schema-summary-ordered-author-814-20261014/process-receipt.json",
     "wall_seconds": 146.391063625,
     "peak_process_group_rss_bytes": 345063424,
@@ -425,7 +426,8 @@
       "Initialized copy, old-buffer release, traversal and fixed-size rotation/link actions use existing replay work; byte counts are not work.",
       "Keys and values remain caller-owned paid payloads; no duplicate diagnostic clone or paid fallback.",
       "Complete independent BTreeMap trace plus allocation-through-Drop, zero/exact/short/sticky and deletion-slot reuse controls authored, not executed."
-    ]
+    ],
+    "historical_stage_status": "private complete component; whole production classifier/collector pending, unexecuted"
   },
   "compound_work_review": {
     "status": "180-second timeout, no valid provider output or approval; local source review continues",
@@ -438,7 +440,7 @@
     "actual_billing": "unknown"
   },
   "flag_only_receiver": {
-    "status": "complete private classifier component authored; outer needs_drop/streaming shape/collector and production adoption pending; no execution",
+    "status": "Component now adopted by private complete inventory summary; authored unexecuted.",
     "preserves": [
       "Complete original owned TypeFacts/key/compute/builtin receivers independently compiled, unchanged byte exact.",
       "Full canonical argument/Function key and current cache precedence, including forged cached facts.",
@@ -446,7 +448,8 @@
       "Existing cumulative ReplayBudget callbacks before dynamic key comparisons/census/decimal/cursor and actual fallible backing."
     ],
     "omits": "Only discarded layout serialization/cloning; immutable root borrowed; invocation-local visiting/memo retains exact full owned keys.",
-    "controls": "44 authored exact selectors, unexecuted; no application fit, causal gain, whole route funding or issue closure claim."
+    "controls": "44 authored exact selectors, unexecuted; no application fit, causal gain, whole route funding or issue closure claim.",
+    "historical_stage_status": "complete private classifier component authored; outer needs_drop/streaming shape/collector and production adoption pending; no execution"
   },
   "flags_families_review": {
     "exit_code": 0,
@@ -485,12 +488,13 @@
     ]
   },
   "outer_inventory_receiver": {
-    "status": "private complete component, unexecuted; summary shape/expression collector and production adoption still pending",
+    "status": "Component now adopted by private complete inventory summary; authored unexecuted.",
     "identity": "Raw untruncated full canonical structural type encoding only for visited membership; never classifier sink text, hash or root ID alone.",
     "authority": "Existing held ReplayBudget and allocation payer, no production remaining reset/new quota/credit/refund.",
     "order": "Original fast root bool paths, map-before-reader short-circuit, iterator/box/vector admission and reversed record/case/field scheduling; program type lookup visits exact original order/full identity equality.",
     "diagnostics": "Original raw H006 complete fields, full type identity, substitution-failure message; physical callback failure retains first Diagnostic and performs no further paid work.",
-    "controls": "48 exact authored selectors; original ordinary cleanup function and complete old paid receiver are actual independent receiving oracles; all new controls unexecuted."
+    "controls": "48 exact authored selectors; original ordinary cleanup function and complete old paid receiver are actual independent receiving oracles; all new controls unexecuted.",
+    "historical_stage_status": "private complete component, unexecuted; summary shape/expression collector and production adoption still pending"
   },
   "production_adoption": {
     "status": "authored complete private source; unexecuted",
@@ -562,5 +566,16 @@
       "actual_billing": "unknown"
     },
     "qualification": "Source-only supplied-span review; later local corrections and complete runtime qualification remain unexecuted."
+  },
+  "integration_base": "b6559dd7b",
+  "post_merge_projection": {
+    "src/hir.rs": "Remove precisely one additive InventoryPayer export and one root cfg(test) byte_data_capacity_inputs export; compare entire remaining file to unchanged 6aa archive.",
+    "src/cleanup_plan/replay.rs": "Current entire validate_structure_with_budget_storage equals complete unchanged 9d archive after exactly one documented paid schema-call substitution. Root scalar tree child registration outside that body retained.",
+    "root_fixture_repairs": "b655 ancestry includes 8fe25c245 generic/source-provider controls and all Catalog origin/cache changes; none reverted."
+  },
+  "authored_registration_check": {
+    "status": "60 unique exact test declarations with real module registration chains; static only, no --list discovery",
+    "count": 60,
+    "package_manifest_sha256": "b4924e34aa6c476391f989f15e03d3baa327df77846127ab32f67dac4ecf430f"
   }
 }

@@ -7,6 +7,16 @@ fn complete_schema_original_and_receiving_body_remain_byte_exact() {
             .unwrap(),
         include_str!("../../../../../docs/evidence/schema-summary/schema.rs.before")
     );
+    let current = include_str!("../../../replay.rs");
+    let start = current
+        .find("fn validate_structure_with_budget_storage<'hir>(")
+        .unwrap();
+    let end = current[start..].find("\nstruct CfgReplayBounds {").unwrap() + start;
+    let current = &current[start..end];
+    let new_call = "let ordinary_schema =\n        schema::paid_summary::selected_with_budget(program, function, helpers, budget)?;";
+    assert_eq!(current.matches(new_call).count(), 1);
+    assert_eq!(current.replace(new_call, "let ordinary_schema = schema::selected_schema_with_index(program, function, helpers)?;"),
+        include_str!("../../../../../docs/evidence/schema-summary/validation-receiver.rs.before"));
     let old=include_str!("original_receiver.rs").strip_prefix("//! Complete pre-adoption receiving function, independently compiled for controls.\nuse super::*;\n").unwrap();
     assert_eq!(
         old.replacen(

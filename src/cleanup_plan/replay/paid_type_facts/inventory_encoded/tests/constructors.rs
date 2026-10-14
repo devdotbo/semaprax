@@ -170,7 +170,8 @@ fn complete_inline_semantic_substitution_refusal_and_nested_argument_clone_keep_
 #[test]
 fn complete_prior_key_substitution_and_storage_receivers_remain_independent_byte_exact() {
     assert_eq!(include_str!("../../../../../hir.rs")
-        .replacen("pub(crate) use declaration_index::{inventory_identity, inventory_substitute, InventoryPayer};\n", "", 1),
+        .replacen("pub(crate) use declaration_index::{inventory_identity, inventory_substitute, InventoryPayer};\n", "", 1)
+        .replacen("#[cfg(test)]\npub(crate) use byte_capacity::byte_data_capacity_inputs;\n", "", 1),
         include_str!("../../../../../../docs/evidence/schema-summary/hir.rs.before"));
     assert_eq!(include_str!("../../../../../hir/declaration_index/flags/paid.rs")
         .strip_suffix("\nmod inventory_constructor;\npub(crate) use inventory_constructor::{\n    identity as inventory_identity, substitute as inventory_substitute, InventoryPayer,\n};\n").unwrap(),
