@@ -22,7 +22,7 @@ Existing infallible Index queries require a separate fixed-base borrowed seam: `
 
 ## Lifetime and disposal
 
-The final invocation owner outlives all borrowed overlays. An explicit paid retain may extend the same owner without allocating another control block. The last owner drops descriptor/type vectors iteratively; #827's final nominal owner uses its preacquired iterative disposal scratch. Base field types are scalar type-parameter references. No fresh queue, recursive nominal traversal, source read, physical finalizer or report allocation is permitted during disposal. Partial-construction refusal follows the same owned cleanup path and preserves first failure.
+The final invocation owner outlives all borrowed overlays. An explicit paid retain may extend the same owner without allocating another control block. Pure compatibility `Clone` also shares already-owned immutable backing for existing infallible Index clones, matching DeclarationId and NominalPayload cloning. It neither authenticates sticky state nor pays a new receiving Index/HIR carrier; qualified acquisition routes retain their existing whole-receiver reservations and use paid retain/zero-request checks for a new invocation view. Pure query/Clone behavior cannot grant source or budget authority. The last owner drops descriptor/type vectors iteratively; #827's final nominal owner uses its preacquired iterative disposal scratch. Base field types are scalar type-parameter references. No fresh queue, recursive nominal traversal, source read, physical finalizer or report allocation is permitted during disposal. Partial-construction refusal follows the same owned cleanup path and preserves first failure.
 
 ## Qualification boundary
 

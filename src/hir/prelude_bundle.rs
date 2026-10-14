@@ -33,6 +33,7 @@ pub(crate) enum Failure<E> {
     Schema,
 }
 
+#[derive(Debug, Eq, PartialEq)]
 struct Contents {
     // Unique sorted IDs. All names/IDs and every payload remain actually owned.
     declarations: Vec<Declaration>,
@@ -42,8 +43,20 @@ struct Contents {
 
 /// A real owner, never a process cache. Modules may borrow a view or retain one
 /// explicit lease. Only the producer can create the contents.
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct BasePreludeBundle {
     held: Arc<Contents>,
+}
+// Pure compatibility Clone for already-owned immutable index facts, matching
+// DeclarationId/NominalPayload Clone: no new backing, ambient ledger or source
+// authority. This does not pay a receiving Index carrier or authenticate a
+// sticky account. Qualified acquisition paths use retain with their payer.
+impl Clone for BasePreludeBundle {
+    fn clone(&self) -> Self {
+        Self {
+            held: Arc::clone(&self.held),
+        }
+    }
 }
 impl BasePreludeBundle {
     pub(crate) fn acquire<P: Payer>(payer: &mut P) -> Result<Self, Failure<P::Error>> {

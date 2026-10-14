@@ -174,9 +174,15 @@ fn two_borrowed_module_overlays_and_explicit_lease_share_actual_payload_addresse
     let (_, retained_drop) = measure(|| {
         let original = BasePreludeBundle::acquire(&mut retained_account).unwrap();
         let retained = original.retain(&mut retained_account).unwrap();
+        let compatibility = retained.clone();
+        assert_eq!(
+            compatibility.types_slice().as_ptr(),
+            retained.types_slice().as_ptr()
+        );
         drop(original);
-        assert_eq!(retained.types_slice().len(), 2);
         drop(retained);
+        assert_eq!(compatibility.types_slice().len(), 2);
+        drop(compatibility);
     });
     assert!(!retained_drop.invalid);
     assert_eq!(retained_drop.live, 0);
@@ -355,7 +361,15 @@ fn fixed_base_unmetered_index_views_borrow_complete_old_facts_without_allocation
     let old = DeclarationIndex::nominal_original_with_prelude(&program, &original).unwrap();
     let mut account = Account::unlimited();
     let bundle = BasePreludeBundle::acquire(&mut account).unwrap();
+    let paid_before = (account.bytes, account.work);
+    account.first = Some(Denied::Work);
     let (_, physical) = measure(|| {
+        let compatibility = bundle.clone();
+        assert_eq!(
+            bundle.types_slice().as_ptr(),
+            compatibility.types_slice().as_ptr()
+        );
+        drop(compatibility);
         assert_eq!(bundle.declarations_slice().len(), 9);
         assert_eq!(bundle.types_slice().len(), 2);
         for entry in bundle.declarations_slice() {
@@ -388,6 +402,8 @@ fn fixed_base_unmetered_index_views_borrow_complete_old_facts_without_allocation
         assert!(bundle.declaration_by_text("foreign.base").is_none());
         assert!(bundle.type_id("Foreign").is_none());
     });
+    assert_eq!((account.bytes, account.work), paid_before);
+    assert_eq!(account.first, Some(Denied::Work));
     assert_eq!(physical.allocated, 0);
     assert_eq!(physical.live, 0);
     assert!(!physical.invalid);
