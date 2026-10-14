@@ -6,7 +6,7 @@ The new route uses the existing builder-like ReplayBudget for comparison/travers
 
 Sixty exact controls are authored and source-registered, with complete original/current diagnostic parity, full allocation through receiving Drop, backing/work zero/exact/one-short and sticky refusal. No Cargo/build/tests/Clippy ran in this lane. No application fit, causal byte saving or OPT814 closure is claimed. The independently observed compatibility loan-constructor deficit is a separate owner (#824).
 
-The two new complete schema/receiving archives were captured at private 9d5023c16; all prior twenty original archive digests remain unchanged. Bounded tool-free Claude source reviews and actual usage receipts are retained in source-binding.json; they are not runtime qualification.
+The two new complete schema/receiving archives were captured at private 9d5023c16; all prior nineteen original archive digests remain unchanged. Bounded tool-free Claude source reviews and actual usage receipts are retained in source-binding.json; they are not runtime qualification.
 
 ## Earlier private stages (historical, superseded by current adoption above)
 
