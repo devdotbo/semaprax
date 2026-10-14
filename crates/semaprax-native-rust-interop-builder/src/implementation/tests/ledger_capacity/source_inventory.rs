@@ -1005,6 +1005,8 @@ macro_rules! lower_source_inventory {
         include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_summary.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_summary/profile.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape_original.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_summary/frontier_tests.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_summary/generic.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs"),
