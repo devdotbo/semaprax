@@ -369,6 +369,8 @@ fn complete_old_commented_formatter_preflight_sources_and_all_current_children_r
             .iter()
             .find(|r| r["source"] == source)
             .unwrap();
+        let projected = crate::source_reflows_merge::consumer_child("cold835", source, bytes);
+        let bytes = projected.as_str();
         assert_eq!(
             format!(
                 "{:x}",

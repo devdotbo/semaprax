@@ -398,6 +398,8 @@ fn complete_old_registry_census_derivation_and_current_scratch_sources_remain_bo
             .iter()
             .find(|row| row["source"] == path)
             .unwrap();
+        let projected = crate::source_reflows_merge::consumer_child("registry833", path, bytes);
+        let bytes = projected.as_str();
         assert_eq!(
             format!(
                 "{:x}",

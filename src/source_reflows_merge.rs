@@ -153,9 +153,13 @@ pub(crate) fn scalar_policy_input(source: &str, current: &str) -> String {
 
 // The consumer correction has one strict current→frozen3d4b predecessor.
 fn consumer_previous(source: &str, current: &str) -> String {
+    let predecessor = corrected_consumers_previous(source, current);
+    let current = predecessor.as_str();
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/source-consumer-closure-fixes-20261015/current-to-3d4b.json")), source, current)
 }
 pub(crate) fn consumer_input(domain: &str, source: &str, current: &str) -> String {
+    let predecessor = corrected_consumers_previous(source, current);
+    let current = predecessor.as_str();
     let data = match domain {
         "decl825" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/source-consumer-closure-fixes-20261015/decl825.json")),
         "cost825" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/source-consumer-closure-fixes-20261015/cost825.json")),
@@ -168,4 +172,17 @@ pub(crate) fn consumer_input(domain: &str, source: &str, current: &str) -> Strin
         _ => panic!("unknown complete source consumer domain"),
     };
     project(data, source, current)
+}
+
+fn corrected_consumers_previous(source: &str, current: &str) -> String {
+    project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/ae91-source-consumer-corrections-20261015/current-to-ae91.json")), source, current)
+}
+pub(crate) fn consumer_child(domain: &str, source: &str, current: &str) -> String {
+    let rows = match domain {
+        "registry833" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/ae91-source-consumer-corrections-20261015/registry833-children.json")),
+        "cold835" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/ae91-source-consumer-corrections-20261015/cold835-children.json")),
+        "ordered838" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/ae91-source-consumer-corrections-20261015/ordered838-observer.json")),
+        _ => panic!("unknown source child domain"),
+    };
+    project(rows, source, current)
 }
