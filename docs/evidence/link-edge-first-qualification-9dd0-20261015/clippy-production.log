@@ -1,0 +1,17 @@
+   Compiling semaprax v0.9.0 (/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang)
+error: methods `insert_field` and `insert_case_field` are never used
+    --> src/hir/declaration_index.rs:1021:8
+     |
+  49 | impl DeclarationIndex {
+     | --------------------- methods in this implementation
+...
+1021 |     fn insert_field(
+     |        ^^^^^^^^^^^^
+...
+1062 |     fn insert_case_field(
+     |        ^^^^^^^^^^^^^^^^^
+     |
+     = note: `-D dead-code` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[expect(dead_code)]` or `#[allow(dead_code)]`
+
+error: could not compile `semaprax` (lib) due to 1 previous error
