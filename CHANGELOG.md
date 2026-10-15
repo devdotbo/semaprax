@@ -1,5 +1,7 @@
 # Changelog
 
+- Bind browser graph pins to the hosted paid-cursor result: both complete graphs retain every prior byte after only the declared 458,408-byte bill reduction and self-digest restoration. Preserve all historical cursor controls.
+
 - Grow the paid expression-fact Arena cursor at actual traversal depth, reserving complete replacement backing and copy work while retaining the original factory, type cursor, depth ceiling, producer controls and preclone payload charges.
 
 - Refresh both browser graph pins from authenticated hosted compiler records, retaining full current/prior graph wires, exact historical bill reconstruction, and the unchanged original cursor-control helper and hashes. Use the direct error assertion for the unit-valued hidden-law check result to satisfy the pinned Clippy gate.
