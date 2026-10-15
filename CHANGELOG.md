@@ -1,5 +1,7 @@
 # Changelog
 
+- Grow the actual supplemental receiving cursor from two frames under its unchanged 1,028-frame bound, paying complete overlapping replacements and live-frame moves. Retain the full original receiver and shallow reuse gate; expose callers through remaining array and path-join reservation wrappers.
+
 - Cover admitted internal owning-record imports together with exact public-v8 owning-parameter refusal, retaining the original type-import and unsupported-variant cases and no-write checks.
 
 - Refuse an authored owning row-helper parameter with T284 before retained-HIR projection, preserving cold/warm diagnostic parity and G173 for all existing descriptor forgeries.
