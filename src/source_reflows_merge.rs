@@ -698,11 +698,31 @@ fn before_direct_carriers831(source: &str, current: &str) -> String {
 
 // Test-only observation successor; exact prior runtime tables remain immutable.
 fn before_cached_acquisition_observer(source: &str, current: &str) -> String {
+    let staged = before_sourceguard_inputs(source, current);
+    let current = staged.as_str();
     project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/docs/evidence/cached-prelude-acquisition-observer-7a87/current-to-7a87.json"
         )),
+        source,
+        current,
+    )
+}
+
+// Preserve complete physical7a87 inputs before the cached observer's older view.
+fn before_sourceguard_inputs(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/sourceguard-input-domains-7a87/current-to-d20.json")),
+        source,
+        current,
+    )
+}
+pub(crate) fn source36_classifier_input(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/sourceguard-input-domains-7a87/classifier-input.json")),
         source,
         current,
     )
