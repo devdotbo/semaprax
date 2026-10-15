@@ -48,41 +48,66 @@ fn current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnos
     // Both complete algorithms still run, including their unwind and last Drop.
     let mut malformed = program();
     malformed.functions[0].cleanup_plan.blocks.clear();
-    let (((), allocation), refused, _, first) = with_limit_usage_refusal(usize::MAX, || {
-        measure(|| {
-            let function = &malformed.functions[0];
-            let mut old_budget = ReplayBudget::with_skeleton_limit(0);
-            let mut budget = ReplayBudget::with_skeleton_limit(0);
-            let mut storage =
-                continuation_storage::Storage::for_program(&malformed, &mut budget).unwrap();
-            let old = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                build_comparison(&malformed, function, &mut old_budget, None, None)
-            }))
-            .err()
-            .expect("complete old receiver retains its malformed-block panic");
-            let current = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                build_comparison(&malformed, function, &mut budget, None, Some(&mut storage))
-            }))
-            .err()
-            .expect("current receiver retains the same malformed-block panic");
-            fn message(payload: &(dyn std::any::Any + Send)) -> Option<&str> {
-                payload
-                    .downcast_ref::<String>()
-                    .map(String::as_str)
-                    .or_else(|| payload.downcast_ref::<&'static str>().copied())
-            }
-            assert_eq!(
-                message(&*old),
-                Some("index out of bounds: the len is 0 but the index is 0")
-            );
-            assert_eq!(message(&*current), message(&*old));
-            drop(old);
-            drop(current);
-            drop(storage);
-            drop(old_budget);
-            drop(budget);
+    // The default harness hook may initialize retained output/backtrace caches.
+    // Replace only that test instrumentation outside the complete compiler
+    // observation. Both actual panic payloads, unwinds and final Drop stay in it.
+    struct RestoreHook<F: FnOnce()>(Option<F>);
+    impl<F: FnOnce()> Drop for RestoreHook<F> {
+        fn drop(&mut self) {
+            self.0.take().expect("one hook restoration")();
+        }
+    }
+    let previous_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(|_| {}));
+    let restore_hook = RestoreHook(Some(|| std::panic::set_hook(previous_hook)));
+    // Catch the entire observation too: restoring a hook during active unwind
+    // would panic. Restore normally first, then resume any assertion failure.
+    let measured = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        with_limit_usage_refusal(usize::MAX, || {
+            measure(|| {
+                let function = &malformed.functions[0];
+                let mut old_budget = ReplayBudget::with_skeleton_limit(0);
+                let mut budget = ReplayBudget::with_skeleton_limit(0);
+                let mut storage =
+                    continuation_storage::Storage::for_program(&malformed, &mut budget).unwrap();
+                let old = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    build_comparison(&malformed, function, &mut old_budget, None, None)
+                }))
+                .err()
+                .expect("complete old receiver retains its malformed-block panic");
+                let current = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    build_comparison(&malformed, function, &mut budget, None, Some(&mut storage))
+                }))
+                .err()
+                .expect("current receiver retains the same malformed-block panic");
+                fn message(payload: &(dyn std::any::Any + Send)) -> Option<&str> {
+                    payload
+                        .downcast_ref::<String>()
+                        .map(String::as_str)
+                        .or_else(|| payload.downcast_ref::<&'static str>().copied())
+                }
+                assert_eq!(
+                    message(&*old),
+                    Some("index out of bounds: the len is 0 but the index is 0")
+                );
+                assert_eq!(message(&*current), message(&*old));
+                drop(old);
+                drop(current);
+                drop(storage);
+                drop(old_budget);
+                drop(budget);
+            })
         })
-    });
+    }));
+    drop(restore_hook);
+    let (((), allocation), refused, _, first) = match measured {
+        Ok(result) => result,
+        Err(payload) => std::panic::resume_unwind(payload),
+    };
+    eprintln!(
+        "malformed old/current compiler panic observation: {allocation:?}; invalid_reason={:?}",
+        crate::test_allocation_observer::invalid_reason()
+    );
     assert!(!refused && first.is_none());
     assert!(!allocation.invalid && allocation.live == 0);
     assert_eq!(allocation.allocated, allocation.freed);
