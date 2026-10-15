@@ -192,18 +192,28 @@ fn latest_previous(source: &str, current: &str) -> String {
     )
 }
 pub(crate) fn main(source: &str, current: &str) -> String {
-    // Authenticate the complete inherited f813 route in its named older view.
-    // The live CI consumer keeps the newer87-record main tuple below.
+    if source == "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs" {
+        return main_f045_input(source, current);
+    }
+    let branch = final_main_input(source, current);
+    let physical = before_f045(source, &branch);
     let _prior = prior_main(source, current);
     let corrected = corrected_previous(source, current);
-    let current = corrected.as_str();
-    project(
+    let _historical_main7f = project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/docs/evidence/main7f-source-successor-20261015/current-to-main7f.json"
         )),
         source,
-        current,
+        &corrected,
+    );
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/mainff869-source-successor-20261015/current-to-mainff.json"
+        )),
+        source,
+        &physical,
     )
 }
 
@@ -286,16 +296,35 @@ pub(crate) fn consumer_input(domain: &str, source: &str, current: &str) -> Strin
 }
 
 fn corrected_consumers_previous(source: &str, current: &str) -> String {
-    project(
+    let fixes = final_fix_input(source, current);
+    let fixes = project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/docs/evidence/ae91-source-consumer-corrections-20261015/current-to-ae91.json"
         )),
         source,
-        current,
-    )
+        &fixes,
+    );
+    let fixes = project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/final-ae91-mainf045-assembly-20261015/fixes-ae91-reconcile.json"
+        )),
+        source,
+        &fixes,
+    );
+    let main = final_main_input(source, current);
+    let main = ff_previous(source, &main);
+    assert_eq!(
+        fixes, main,
+        "independent final branches must reach the same complete ae91 input"
+    );
+    fixes
 }
+
 pub(crate) fn consumer_child(domain: &str, source: &str, current: &str) -> String {
+    let branch = final_fix_input(source, current);
+    let current = branch.as_str();
     let rows = match domain {
         "registry833" => include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -312,4 +341,66 @@ pub(crate) fn consumer_child(domain: &str, source: &str, current: &str) -> Strin
         _ => panic!("unknown source child domain"),
     };
     project(rows, source, current)
+}
+
+fn final_fix_input(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/final-ae91-mainf045-assembly-20261015/view-fixes.json"
+        )),
+        source,
+        current,
+    )
+}
+fn final_main_input(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/final-ae91-mainf045-assembly-20261015/view-main.json"
+        )),
+        source,
+        current,
+    )
+}
+fn ff_previous(source: &str, current: &str) -> String {
+    let predecessor = before_f045(source, current);
+    let previous = project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/mainff869-source-successor-20261015/current-to-ae91.json"
+        )),
+        source,
+        &predecessor,
+    );
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/final-ae91-mainf045-assembly-20261015/main-ae91-reconcile.json"
+        )),
+        source,
+        &previous,
+    )
+}
+// MAIN's exact guards retain their complete immutable f045 physical domain.
+pub(crate) fn main_f045_input(source: &str, current: &str) -> String {
+    let branch = final_main_input(source, current);
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/mainf045-source-successor-20261015/current-to-f045.json"
+        )),
+        source,
+        &branch,
+    )
+}
+fn before_f045(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/mainf045-source-successor-20261015/current-to-0bf.json"
+        )),
+        source,
+        current,
+    )
 }
