@@ -230,43 +230,79 @@ fn linked_nominal_views_remove_actual_discarded_backing_and_retain_owner_until_d
 
 #[test]
 fn linked_shared_case_views_last_owner_drop_uses_prepaid_iterative_frontier() {
-    let ((), complete) = measure(|| {
-        let (mut types, facts) = fixture(false);
-        let cases = types
-            .iter_mut()
-            .find_map(|ty| match &mut ty.kind {
-                ResolvedTypeDeclarationKind::Variant { cases } => Some(cases),
-                _ => None,
-            })
-            .unwrap();
-        // Synthetic hostile depth tests disposal storage only, not admission.
-        let mut ty = ResolvedType::I64;
-        for _ in 0..512 {
-            ty = ResolvedType::Nominal {
-                declaration: DeclarationId::new("synthetic.depth"),
-                arguments: vec![ty],
-            };
+    let mut global_owner_deltas = [0usize; 2];
+    for attempt in 0..2 {
+        let ((), complete) = measure(|| {
+            // Keep potential cold global initialization INSIDE this same observer.
+            // Only this exact OnceLock call can contribute the classified delta;
+            // every fixture/index/payload allocation remains independently owed.
+            let before_global = crate::test_allocation_observer::current_metrics();
+            let global = crate::prelude::declarations();
+            let after_global = crate::test_allocation_observer::current_metrics();
+            let global_delta = after_global.live.checked_sub(before_global.live).unwrap();
+            global_owner_deltas[attempt] = global_delta;
+            assert_eq!(global.as_ptr(), crate::prelude::declarations().as_ptr());
+            let owned = crate::prelude::owned_declarations_for_tests();
+            let original = crate::prelude::original_initializer_reference();
+            assert_eq!(global, owned.as_slice());
+            assert_eq!(global, original.as_slice());
+            drop(owned);
+            drop(original);
+            assert_eq!(
+                crate::test_allocation_observer::current_metrics().live,
+                after_global.live,
+                "independent complete owned initializers must free every allocation"
+            );
+            let (mut types, facts) = fixture(false);
+            let cases = types
+                .iter_mut()
+                .find_map(|ty| match &mut ty.kind {
+                    ResolvedTypeDeclarationKind::Variant { cases } => Some(cases),
+                    _ => None,
+                })
+                .unwrap();
+            // Synthetic hostile depth tests disposal storage only, not admission.
+            let mut ty = ResolvedType::I64;
+            for _ in 0..512 {
+                ty = ResolvedType::Nominal {
+                    declaration: DeclarationId::new("synthetic.depth"),
+                    arguments: vec![ty],
+                };
+            }
+            cases[0].fields[0].ty = ty;
+            let owner = NominalPayload::from_funded_vec(&mut **cases, |_| Ok::<_, ()>(())).unwrap();
+            *cases = owner;
+            let (index, result) = extend(&types, &facts, false, false);
+            assert!(result.is_ok());
+            drop(types);
+            let field = &index
+                .case_fields(&DeclarationId::new("choice.left"))
+                .unwrap()[0];
+            let mut depth = 0;
+            let mut cursor = &field.ty;
+            while let ResolvedType::Nominal { arguments, .. } = cursor {
+                depth += 1;
+                cursor = &arguments[0];
+            }
+            assert_eq!(depth, 512);
+            drop(index);
+            drop(facts);
+        });
+        assert!(!complete.invalid);
+        // This is intentional process ownership classification, not a production
+        // Drop fix or an allowance for any unclassified retained allocation.
+        assert_eq!(complete.live, global_owner_deltas[attempt]);
+        assert_eq!(
+            complete.allocated,
+            complete.freed + global_owner_deltas[attempt]
+        );
+        if attempt == 1 {
+            // Preserve the original complete zero-live regression on the genuinely
+            // warm pass, with all construction and final Drop still in this scope.
+            assert_eq!(global_owner_deltas[attempt], 0);
+            assert_eq!(complete.live, 0);
+            assert_eq!(complete.allocated, complete.freed);
         }
-        cases[0].fields[0].ty = ty;
-        let owner = NominalPayload::from_funded_vec(&mut **cases, |_| Ok::<_, ()>(())).unwrap();
-        *cases = owner;
-        let (index, result) = extend(&types, &facts, false, false);
-        assert!(result.is_ok());
-        drop(types);
-        let field = &index
-            .case_fields(&DeclarationId::new("choice.left"))
-            .unwrap()[0];
-        let mut depth = 0;
-        let mut cursor = &field.ty;
-        while let ResolvedType::Nominal { arguments, .. } = cursor {
-            depth += 1;
-            cursor = &arguments[0];
-        }
-        assert_eq!(depth, 512);
-        drop(index);
-        drop(facts);
-    });
-    assert!(!complete.invalid);
-    assert_eq!(complete.live, 0);
-    assert_eq!(complete.allocated, complete.freed);
+    }
+    eprintln!("linked-last-owner-process-prelude-first-touch-deltas={global_owner_deltas:?}");
 }
