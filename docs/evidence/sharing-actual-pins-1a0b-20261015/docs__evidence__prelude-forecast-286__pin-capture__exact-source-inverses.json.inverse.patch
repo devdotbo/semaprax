@@ -1,0 +1,49 @@
+--- a/docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json
++++ b/docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json
+@@ -63,46 +63,6 @@
+       {
+         "before": "    let authority_projection = projection\n        .replace(runtime_fixture, \"\")\n",
+         "after": "    let authority_projection = projection\n        .replacen(prelude_fixture, &prelude_authority_fixture, 1)\n        .replace(runtime_fixture, \"\")\n"
+-      },
+-      {
+-        "before": "assert_eq!(graph.budget().used_builder_bytes(), 1_282_992);",
+-        "after": "assert_eq!(graph.budget().used_builder_bytes(), 1_349_027);"
+-      },
+-      {
+-        "before": "sha256:8361b311df74602ac6ab9280c0743cdc7ff6b658eee2baacc6eb25510f9d8cc5",
+-        "after": "sha256:96e2900713fe94cddb8d681367c4235fe73c228c64b611ccb124b874745f2287"
+-      },
+-      {
+-        "before": "sha256:d109817f230f7fe3ce9e96ae96cdc6f0197d9115bad094f9146dfca318446933",
+-        "after": "sha256:38e9ab3f7ed3dbe91f7c20ff25ebe718a520fa03945283e49e41e6d3f77c1bdc"
+-      },
+-      {
+-        "before": "sha256:7eb0b223cf811867f3e558491f1b04da30c78672662706bb7216c443547259af",
+-        "after": "sha256:20e909986079c6e4a219cd9201076a97133485169fbc4a5f29b0350acc2ccdb6"
+-      },
+-      {
+-        "before": "sha256:eb9b08280546f8972e87b36f2faa36244f92a3abdca08051aaa548cad46ed127",
+-        "after": "sha256:d8e96cb3b056bd8c8ebe42735b349557cf17f4223d5c7ef772a2c708dd7b6106"
+-      },
+-      {
+-        "before": "sha256:c46b9f0cba293ba6e8e67b6757b255ade800978f6b87a9a88a7f940d82ab7e4b",
+-        "after": "sha256:40b9f534b693e3ae820e6d7e6c9198094db97abb42cc678b59666a5603a1082f"
+-      },
+-      {
+-        "before": "sha256:df474cb2064edbf584e9dc9c9a128ea1a7bd08bb7d438dd9cc67c829fe24f2a4",
+-        "after": "sha256:795bce9af1bc63803ccedeb18290b744f1d52b1f83ee34228e3599445ce4e974"
+-      },
+-      {
+-        "before": "sha256:50491debeb5cbd5b5217246e7a16bbeb9f49b1e72f2048da3a1cb9aefebee530",
+-        "after": "sha256:26b9168a953554441e5cd7a441a66c688dac9a2f93bfed380aa146fcb67ed0ae"
+-      },
+-      {
+-        "before": "sha256:37bc734f05e39fcf42215847887e71e6f96234d66d644f0e9bb95c8796cb9c8c",
+-        "after": "sha256:e911c00697098d60bff5ed2f13ee79c0b5a48928b8e90f58e9ae211b4801c036"
+-      },
+-      {
+-        "before": "sha256:065698f98a60a7a2d70955aa9c783e341627d44e179b6f8140e4293aa48a643c",
+-        "after": "sha256:c0f1f17f3ab3cf539596a14109e85dc08d6a152dbd8ade2382a8e9e7c867d212"
+       }
+     ]
+   },

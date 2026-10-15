@@ -1,0 +1,25 @@
+{
+  "qualification": "actual1a0b producer validated; later private source update uncompiled and consumers unexecuted",
+  "owners": [
+    {
+      "package": "semaprax",
+      "harness": "workspace",
+      "selector": "semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact"
+    },
+    {
+      "package": "semaprax",
+      "harness": "workspace",
+      "selector": "semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::type_proof_tests::projection_tests::rendered_document_has_literal_sha_exact_wire_order_and_digest_binding"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::expected_projection::prelude_forecast::tests::complete_receiving_sources_reconstruct_pinned_originals"
+    }
+  ]
+}

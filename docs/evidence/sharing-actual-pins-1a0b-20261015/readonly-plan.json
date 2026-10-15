@@ -1,0 +1,83 @@
+{
+  "schema": "semaprax.prelude-forecast-reviewed-pin-plan.v1",
+  "capture_head": "1a0b9d9bc5ce2b36133d61ea4636dc9614f2f41e",
+  "status": "actual-candidate-plan-requires-wire-review",
+  "edits": [
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "assert_eq!(graph.budget().used_builder_bytes(), 1_282_992);",
+      "after": "assert_eq!(graph.budget().used_builder_bytes(), 1_349_027);",
+      "actual_wire": "public-graph"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:8361b311df74602ac6ab9280c0743cdc7ff6b658eee2baacc6eb25510f9d8cc5",
+      "after": "sha256:96e2900713fe94cddb8d681367c4235fe73c228c64b611ccb124b874745f2287",
+      "actual_wire": "public-graph"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:d109817f230f7fe3ce9e96ae96cdc6f0197d9115bad094f9146dfca318446933",
+      "after": "sha256:38e9ab3f7ed3dbe91f7c20ff25ebe718a520fa03945283e49e41e6d3f77c1bdc",
+      "actual_wire": "context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:7eb0b223cf811867f3e558491f1b04da30c78672662706bb7216c443547259af",
+      "after": "sha256:20e909986079c6e4a219cd9201076a97133485169fbc4a5f29b0350acc2ccdb6",
+      "actual_wire": "forward"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:eb9b08280546f8972e87b36f2faa36244f92a3abdca08051aaa548cad46ed127",
+      "after": "sha256:d8e96cb3b056bd8c8ebe42735b349557cf17f4223d5c7ef772a2c708dd7b6106",
+      "actual_wire": "capability-context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:c46b9f0cba293ba6e8e67b6757b255ade800978f6b87a9a88a7f940d82ab7e4b",
+      "after": "sha256:40b9f534b693e3ae820e6d7e6c9198094db97abb42cc678b59666a5603a1082f",
+      "actual_wire": "type-context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:df474cb2064edbf584e9dc9c9a128ea1a7bd08bb7d438dd9cc67c829fe24f2a4",
+      "after": "sha256:795bce9af1bc63803ccedeb18290b744f1d52b1f83ee34228e3599445ce4e974",
+      "actual_wire": "impact"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:50491debeb5cbd5b5217246e7a16bbeb9f49b1e72f2048da3a1cb9aefebee530",
+      "after": "sha256:26b9168a953554441e5cd7a441a66c688dac9a2f93bfed380aa146fcb67ed0ae",
+      "actual_wire": "custom-impact"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:37bc734f05e39fcf42215847887e71e6f96234d66d644f0e9bb95c8796cb9c8c",
+      "after": "sha256:e911c00697098d60bff5ed2f13ee79c0b5a48928b8e90f58e9ae211b4801c036",
+      "actual_wire": "review"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:065698f98a60a7a2d70955aa9c783e341627d44e179b6f8140e4293aa48a643c",
+      "after": "sha256:c0f1f17f3ab3cf539596a14109e85dc08d6a152dbd8ade2382a8e9e7c867d212",
+      "actual_wire": "capability-review"
+    },
+    {
+      "path": "src/workspace_graph/type_proof_tests.rs",
+      "before": "sha256:6a37e415054fff636f9d65b44a7a0b8546006ccb5c41af388223103aa35996aa",
+      "after": "sha256:fd31c37ebd208cdf1c76576717d1b23d7a099127af109c6c82cc8c1d9861f761",
+      "actual_wire": "projection-wire"
+    }
+  ],
+  "source_sha256": {
+    "src/workspace_graph/type_proof_tests.rs": "sha256:f82fd7172232bbf13820b63200042bc82dbd57c8eb2204a81ebb4e96e2f0fa90",
+    "tests/workspace/semantic_graph.rs": "sha256:d3ef9e42cf7e95f87b70b6f1d69b6c8f328943d0962a5487df2c4ea655a9837d"
+  },
+  "after_sha256": {
+    "src/workspace_graph/type_proof_tests.rs": "sha256:1095f188f0b3da85a832f826efc38e3b6932f72b4db7a47fb7962962522a15b1",
+    "tests/workspace/semantic_graph.rs": "sha256:1efb7f50c84ec3ecec1f74dc27fc465866caf1e199e88427ac2d6f1c91b24246"
+  },
+  "trusted_build_receipt_sha256": "sha256:8b20fc0eae9bf233bcd2bbf051d0c2ab33b45714f5fa9298c1730b86b3e012a0",
+  "trusted_producer_receipt_sha256": "sha256:363305bcd34fb7d7f9e05c96f5569842ee6f7c239f444b8a7239eac6e17e9102"
+}

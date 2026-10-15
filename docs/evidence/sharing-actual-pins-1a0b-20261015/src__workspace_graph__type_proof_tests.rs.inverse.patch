@@ -1,0 +1,11 @@
+--- a/src/workspace_graph/type_proof_tests.rs
++++ b/src/workspace_graph/type_proof_tests.rs
+@@ -895,7 +895,7 @@
+         // digest over it move.
+         assert_eq!(
+             document_sha,
+-            "sha256:fd31c37ebd208cdf1c76576717d1b23d7a099127af109c6c82cc8c1d9861f761"
++            "sha256:6a37e415054fff636f9d65b44a7a0b8546006ccb5c41af388223103aa35996aa"
+         );
+         assert!(json.starts_with(
+                 "{\"schema\":\"semaprax.workspace-semantic-graph.v1\",\"workspace_manifest_schema\":\"semaprax.workspace-semantic-manifest.v1\",\"workspace_revision\":\"sha256:workspace\",\"graph_digest\":\"sha256:"

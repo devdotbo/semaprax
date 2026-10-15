@@ -1,0 +1,42 @@
+{
+  "status": "PRIVATE_PIN_ONLY_APPLICATION_OF_ALREADY_VALIDATED_HISTORICAL_PLAN",
+  "capture_source_head": "1a0b9d9bc5ce2b36133d61ea4636dc9614f2f41e",
+  "private_application_basis": "1a0b9d9bc5ce2b36133d61ea4636dc9614f2f41e",
+  "observed_later_root_head": "4e36f3a031ca168b1d9189654aee30e99037ae09",
+  "root_pin_and_inverse_owner_bytes_identical_to_capture_basis": true,
+  "strict_readonly_plan_preceded_root_advance": true,
+  "strict_readonly_plan_sha256": "86933e7b24882873e46f4737c000e25bfacdbafea4c1c7611edcb200d8e189bd",
+  "trusted_build_receipt_sha256": "8b20fc0eae9bf233bcd2bbf051d0c2ab33b45714f5fa9298c1730b86b3e012a0",
+  "trusted_producer_receipt_sha256": "363305bcd34fb7d7f9e05c96f5569842ee6f7c239f444b8a7239eac6e17e9102",
+  "edit_count": 11,
+  "root_mutated": false,
+  "producer_rerun": false,
+  "qualification": "Pin owners must compile and pass all remaining original assertions unchanged after integration. Current later ROOT output has not been captured or claimed.",
+  "source_inverses": [
+    {
+      "path": "src/workspace_graph/type_proof_tests.rs",
+      "current_sha256": "1095f188f0b3da85a832f826efc38e3b6932f72b4db7a47fb7962962522a15b1",
+      "original_sha256": "f82fd7172232bbf13820b63200042bc82dbd57c8eb2204a81ebb4e96e2f0fa90",
+      "archive": "docs/evidence/sharing-actual-pins-1a0b-20261015/original/src/workspace_graph/type_proof_tests.rs",
+      "inverse_patch": "docs/evidence/sharing-actual-pins-1a0b-20261015/src__workspace_graph__type_proof_tests.rs.inverse.patch",
+      "inverse_patch_sha256": "8320ed49a7aa31e44d065647be214ed1142b3ef8248ed78345a731ce6ed1d04b"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "current_sha256": "1efb7f50c84ec3ecec1f74dc27fc465866caf1e199e88427ac2d6f1c91b24246",
+      "original_sha256": "d3ef9e42cf7e95f87b70b6f1d69b6c8f328943d0962a5487df2c4ea655a9837d",
+      "archive": "docs/evidence/sharing-actual-pins-1a0b-20261015/original/tests/workspace/semantic_graph.rs",
+      "inverse_patch": "docs/evidence/sharing-actual-pins-1a0b-20261015/tests__workspace__semantic_graph.rs.inverse.patch",
+      "inverse_patch_sha256": "274532d23a0ddd249fe559bdc33c6e7ca132f95929526432a57e73a043a5efa7"
+    },
+    {
+      "path": "docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json",
+      "current_sha256": "6de9651c74d451f6caeeab09378e4179648b881da93ae9ad866ebe9cbda65591",
+      "original_sha256": "da6821b5ae27c6bc803b096d0e7f6b3661712404b310665735ca2559654087cb",
+      "archive": "docs/evidence/sharing-actual-pins-1a0b-20261015/original/docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json",
+      "inverse_patch": "docs/evidence/sharing-actual-pins-1a0b-20261015/docs__evidence__prelude-forecast-286__pin-capture__exact-source-inverses.json.inverse.patch",
+      "inverse_patch_sha256": "23ac2b7744111895df799fda4bc72f8337aeef6363a5d5c6974ec775329da620"
+    }
+  ],
+  "complete_original_pin_capture_inverse_reconstructs_archive": true
+}
