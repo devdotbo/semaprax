@@ -217,7 +217,7 @@ fn missing_duplicated_reordered_and_wrong_kind_roles_stay_rejected() {
     let reject = |mutated: String| {
         let error = compile_agent_definition(&mutated).err().unwrap();
         assert_eq!(error.len(), 1);
-        (error[0].code, error[0].message.clone())
+        (error[0].code, error[0].message.clone().into_owned())
     };
     let invariant = |field: &str| {
         (

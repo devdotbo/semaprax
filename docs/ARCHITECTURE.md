@@ -92,11 +92,261 @@ canonical .spx source or held Project inputs
 Every backend passes source verification and validated HIR. Cleanup-plan vectors
 are canonical runtime order; projections and backends must never sort or repair them.
 
+`cleanup_plan/replay/paid_type_facts/inventory_summary` owns the ordinary schema
+caller's streaming inventory validation and retained summary. Its lifecycle,
+shape and expression children preserve complete validation before publication;
+`schema/paid_summary` selects it only with the existing builder-like ReplayBudget.
+Complete original inventory/schema receivers remain independent compatibility
+and parity controls. Other schema probes retain their existing owners.
+`hir/canonical_loan_storage/caller/shared` owns immutable lookup publication
+inside the existing captured preparation owner. Active compatibility validators
+and nested closures share exact-program storage; unobserved compatibility owns
+explicit unobserved inventory custody. Original receivers remain independent.
+`hir/validation/stdin_stream/paid` owns the active constructor's borrowed streaming
+preflight and complete paid derivation. The original receiver remains separate.
+`hir/function_directory/caller::prepare_shared` prepays immutable compatibility
+lookup custody; nested validators retain the same exact-program directory and
+repeat the original checks. Inline scratch is not a language limit, and other
+constructor preflight allocations remain separate unproved owners.
+`byte_data_capacity/witnesses.rs` owns optional bounded transcript-refusal help
+reconstructed from the same checked flow after the primary refusal is selected.
+It pays cursor, spill, visits and output through the existing invocation ledger;
+insufficient optional capacity omits help without replacing a sticky refusal.
+The hidden `reserve_transcript_witness_preserving` library facade exposes only
+that reservation operation to the independently compiled model harness. It
+creates no ledger, quota, credit or authority. Compiler-only witness controls
+are registered in the library harness; the original standalone model controls
+continue to compile against their complete receiver and the real payer bridge.
+
+`cleanup_plan/renewal_history.rs` owns private path-local staged-epoch tracking
+for authenticated owned-element Vec renewal. Builder and replay derive their
+own transfer mappings and exact atomic call commits; staging never debits the
+reserved history. This tracking retains no declaration index and changes no
+serialized proof authority or physical cleanup operation.
+
+`cleanup_plan/replay/factored/strategy.rs` owns deferred lexical resource selection
+and post-authentication Enumerated/LexicalFactored dispatch. Exact certificate and
+ownership replay precede observation-automaton construction; terminal census alone
+has no authority. Expression-scoped Copy discovery closes before caller-prefix
+sequencing. The held automata, weighted proof and selected physical backing share
+one cumulative ledger; the selected provider/type profile remains separate.
+
+`factored/canonical_shared.rs` owns ordinary immutable weighted payload sharing
+for both ordinary and selected lexical canonicalization. Moved vectors retain
+full backing reservations; Rc headers, frame slots and map nodes acquire their
+actual layouts before construction. Sharing keeps the original len-plus-one
+copy work and zero-byte sticky payer authentication. The complete original
+receiver remains in test-only `factored/canonical_before.rs`; source-custody
+inverses join its full interior and the HIR authority scan includes both owners
+and their receiving controls. `canonical_shared/epsilon_alias.rs` owns the exact
+non-sink/no-moves/single-epsilon immutable closure receiver; it retains every
+original route/skeleton work request and authenticates the same held memo owner.
+The complete a33 receiver remains in test-only `canonical_shared/before_alias.rs`.
+Qualification and application fit remain pending.
+
+`hir/resolve_program/initial_loan_plans.rs` owns the initial authored and
+instantiated loan-plan attachment. Active construction captures one existing
+CFG reservation and funds complete planner scratch. One caller-held staging
+directory stores groups of at most 32 plans inline (roughly 20 KiB of bounded
+stack storage); larger groups acquire an exact paid heap directory after the
+first complete plan. The same directory is cleared between authored and
+instantiated groups.
+Each group installs only after its complete collection succeeds, with authored
+attachment preceding instance planning. The later canonical caller still
+rebuilds and compares every full plan independently; initial attachments grant
+no admission or sizing authority. Unobserved construction keeps the legacy
+planner. Linked-workspace metadata rebuilding uses the same current-member
+attachment boundary. Linked byte-slice provenance borrows authored functions then
+instances through the unchanged full derivation instead of cloning their HIR.
+Declaration-index disposal sends only nominal children to its existing iterative
+frontier, so scalar leaves and empty nominal arguments need no queue.
+`loan_plan/funded_flat.rs` owns the exact-current-member paid planner,
+while `bounded_output/cfg_reservation.rs` owns its affine ledger and prepaid
+physical-refusal carrier. `loan_plan/cfg_directory.rs` owns private mutable AVL
+scratch for paid CFG identity, root, point and edge directories and endpoint
+live sets. Private candidate/planner alias, binding, ownership, parent and
+nonconsuming inventories use the same paid directories; `directory_access.rs`
+keeps borrowed receiver dispatch separate from the saved BTree policy, and
+`origin/funded.rs` retains the original projection constructor with a paid
+borrowed-reference cycle set. `paid_live.rs` owns private seed/live/edge receivers;
+the paid draft parameter leaves the public BTree draft unchanged. Predicate and
+traversal active/allowed sets share those nodes. Borrowed cursors prepay two
+references and use O(n log n) successor traversal; consuming drain remains linear.
+Sticky removal moves existing nodes without allocation or refund. Missing nodes are prepaid before mutation; unique rotations and
+ordered extraction allocate no additional nodes. The public BTree planner and
+complete saved planner retain their independent storage policies.
+
+`hir/validation/identity_directory.rs` owns the validator's private ordered
+expression/value identity sets. Its sealed keys share immutable backing.
+`transaction.rs` borrows the current root while paying and constructing a
+shared or weak suffix, then mutates the unique prefix and rotates without
+further fallible work. Each actual new Rc node acquires its owning carrier and
+literal initializer before construction. Snapshots share a root; duplicate
+priority precedes acquisition. `iter.rs` provides allocation-free ordered
+cursors with an address-space bound derived from private AVL construction.
+`identity_insert.rs` preserves caller order. The complete saved function,
+iterative, recursive and closure receivers use independent original BTree
+storage through test-only entry adapters; the original conservative BTree
+receiver and full controls remain in `identity_insert/coarse.rs`. Whole-chain
+and directory controls retain exact/short sticky refusals, complete identity
+state and actual allocation through Drop. Requested allocation and cumulative
+acquisition remain separate: shared path copies may allocate more than an
+amortized BTree insertion. Qualification and application recovery are pending.
+
+`hir/closure/paid.rs` and `paid/copy.rs` own the private validation product's
+canonical identity/result backing and literal parameter/body constructors.
+`hir/validation/closure.rs` routes all four direct identity insertion sites
+through the existing constructor payer, retaining capture and merge diagnostic
+priority. The copied root is a direct `ResolvedExpr`; child boxes retain their
+actual constructors. Shared declaration/value/expression identities clone without
+new backing. Complete shape validation and the three ordinary canonical plan
+builders retain their order and work, and remain residual funding domains.
+Recursive scalar and fixed affine/mutable/borrowed admission defines the copied
+variant/statement inventory; a complete legacy fallback preserves future profile
+behavior while explicitly remaining unpaid. Metadata types beyond the existing
+bounded replay clone census likewise retain a complete unpaid clone rather than
+introducing a shape refusal. The original public product and full
+saved receiver/corpus stay independent; source-only controls make no allocation
+or application recovery claim.
+
+`hir/validation/scope_checkpoint.rs` owns private persistent ordered ownership
+scopes. `hir/validation/function_scope.rs` seeds parameter bindings directly
+into that paid scope, validates the body through the existing checkpoint-target
+publication guard, inserts the full provisional result, and lends persistent
+inputs to independent contract baselines. Parameter/result type payload clones
+and tree insertion backing are prepaid before construction. A sealed paid owner
+holds the mutable scope borrow through the one consuming insertion; dropping it
+before insertion preserves the prior root. The complete prior
+map function is retained in `function_scope/old.rs` beside the saved expression
+and contract drivers; all children are joined into the validator source audit.
+`hir/ordinary_scan.rs` owns private inline preflight scratch and paid spill backing.
+`iterator_loop/paid.rs`, `iterator_loop/renewal/paid_scan.rs` and
+`validation/unsafe_scan/paid.rs` retain distinct traversal and error order;
+renewal streams borrowed children without a per-node temporary vector. The
+function scope adopts these variants at the existing preflight positions and
+propagates boolean scan refusals as errors. Full original scan bodies and the
+original renewal owner remain compiled test receivers. Physical qualification
+and application acceptance are pending; no quota or budget cap changes.
+`hir/declared_collection/paid.rs` owns the current function's borrowed collection
+preflight, and its `early.rs` child owns the unchanged early profile traversal.
+Typed pending and ordered-set backing is paid before construction; an existing
+borrowed invariant lookup replaces discarded formatted identities. The complete
+original collection receivers remain in `declared_collection.rs`.
+`function_scope/lifecycle/completed.rs` owns one function's monotone required-effect
+set and completed exact zero-argument lifecycle roots. Successful roots borrow
+identities from the immutable program; generic instances retain the complete
+funded collection route. Inline keys select storage only, with prepaid spill
+backing and sticky authentication on every hit. The complete prior function
+receiver remains compiled in `function_scope/lifecycle_receiver_saved.rs`.
+`function_scope/lifecycle.rs` owns borrowed declared-effect keys, borrowed active
+lifecycle identities and prepaid distinct imported effect payloads. The complete
+original lifecycle collector remains in `inspection.rs`; the complete prior
+paid function receiver also remains in `function_scope/backing_saved.rs`. These private owners
+preserve the original structural bounds, traversal and diagnostic order; combined
+focused physical qualification remains pending.
+
+`hir/owned_text_record/paid.rs` owns funded executable text containment and
+text-record admission, with the existing paid collection shape receiver retaining
+the complete fallback. Owned substitutions retain their independent semantic
+route and pay each actual backing constructor. The complete prior executable
+receivers remain in the owning `saved.rs` children.
+`hir/validation/executable_profiles.rs` owns one exact immutable-index observation
+directory shared by primary validator clones and nested closure validators.
+Only known zero-argument non-generic record observations are memoized; every
+request authenticates sticky refusal, and per-expression validation remains
+independent. The reference-counted carrier and directory backing are prepaid.
+Physical qualification and complete validator funding remain separate.
+
+The map-entry adapter retains map publication and its charges. Persistent inputs
+have no physical publication map; their guard returns the selected root on Drop.
+`scope_checkpoint/transaction.rs` pays each actual node carrier and owning Node
+initializer while staging an immutable shared suffix. A scalar depth identifies
+the unique prefix; the sealed scope borrow pins it until infallible publication
+and rotations by unique Rc access. Binding carriers precede owned payload clones;
+copy insertion shares existing binding and identity handles. Sticky zero-byte
+checks also cover allocation-free replacement. The full former `3 * height + 8`
+receiver and tree insertion remain independent controls in `coarse.rs`/`tree.rs`.
+No allocation or application-fit improvement is claimed before qualification.
+Branch, loop, match and source-move checkpoints share immutable roots;
+mutation pays for copied paths and full binding payloads before copying. Output
+publication moves the last complete state into prepaid map slots after child
+checkpoints drop. Nested guard publication restores a private scope directly. Contract validation
+uses `scope_checkpoint/fresh.rs` to inspect every current flag and share clear
+bindings/subtrees, paying complete true-flag payload clones and changed node
+constructors before returning a staged baseline. Empty/clear baselines retain
+sticky refusal. Its immutable root is shared across independent clause mutation
+and publication domains; the full-copy baseline/tree builder remain test oracles.
+`hir/validation/record_pattern.rs` retains complete record-pattern admission
+against the same ordered read/write interface. Neither owner accepts attached
+proof authority or changes the validation traversal or admitted language profile.
+`hir/validation/generic_template/values.rs` owns the separately paid persistent
+ordered symbolic directory: keys retain existing identity handles and types
+borrow the exact immutable current HIR. Wholly unique insertion paths prepay
+the leaf before mutation; shared paths publish only a complete paid replacement.
+Contract, block, branch, match, loop and closure environments preserve their old
+isolation boundaries. Complete old borrowed-map and owned-map test receivers
+remain independent. [Validator Scope Checkpoints v1](VALIDATOR-SCOPE-CHECKPOINTS-V1.md)
+owns private storage/payment invariants and remaining qualification obligations.
+
+`hir/validation/byte_range.rs` re-derives named-slice and exact inline
+owned-Bytes range origins from live scope. Source loan origin bookkeeping
+independently retains the same owner for immutable composed-range locals;
+call admission and both HIR walkers consume that borrowed authority without a
+new retained declaration index or carrier schema.
+
 `hir/validation/call_parameters.rs` owns validation-only byte-operation
 signature views and argument ownership checks. Byte views borrow the immutable
 operation table and format synthetic parameter identities only for diagnostics;
 other signatures retain their owned metadata and full frame capacity census.
 The test-only recursive validator retains the allocating signature reference.
+
+`string_ops/take.rs` owns the exact named-String transfer shape. Source and
+independent HIR admission retain availability/loan authority; cleanup producer
+and replay derive operand moves separately. Engines forward the same canonical
+argument/result carrier, with no new runtime identity or public ABI.
+
+`literal_format.rs` owns the closed decoded-template scanner and reserved
+operation identity. Source verification and HIR validation independently
+admit its dedicated `ResolvedExprKind::LiteralFormat`; the cleanup planner
+stages dynamic owned arguments in ordinary CallArgument epochs. The native
+and Wasm emitters use private rendering workers, while Project snapshot replay
+re-resolves format-bearing synthetic source before accepting retained HIR.
+
+The private retained record carrier is produced by
+`workspace_graph/static_text/record_closure.rs` before defining HIR is filtered.
+`source_schema/static_text/primitive/helpers/types.rs` authenticates demanded
+flat declarations against that source revision and namespace, then exposes the
+actual borrowed type members through `ReplayContext::type_count/type_at`.
+`primitive/records/prepared.rs` compares layouts and constructs the minimal index
+on the same preparation ledger; imported type names and layout facts alone grant
+no helper-body or owned-construction permission. The borrowed-record scalar
+producer and independent replay receiver restrict reads to current borrowed
+parameter roots and exact declared scalar fields.
+
+The additive retained scalar import route captures defining-source facts in
+`workspace_graph/static_text/scalar_helpers.rs` before HIR filtering. Its
+`scalar_helpers/capture_directory.rs` child precharges borrowed lookup and
+authored-order selection storage, classifying each eligible body once; source,
+signature and digest authentication still precede inventory publication.
+`source_schema/static_text/primitive/helpers.rs` authenticates the demanded acyclic
+closure and exposes exact borrowed function members across modules; imported names
+never enter the consumer's local declaration-name index. Its `helpers/graph.rs`
+child walks each selected body once against a balanced borrowed directory holding
+only the caller's functions and already selected external members in publication
+order. Charged comparisons, growth and rotations preserve that order; reached
+members reserve storage on demand. The closure retains the directory for later
+lookup, records contiguous outgoing-edge ranges, and visits each edge once in
+Kahn order; a directory hit carries no authority, so first discovery still
+runs unchanged target authentication and its provider receipt. The private
+`cleanup_plan/replay/selected_entry.rs` preparation transfers its single work and
+backing ledger into the existing session, while `scalar_replay.rs` independently
+replays each nonlexical scalar helper. `hir/borrowed_scalar.rs` checks exact Borrow
+Str/Slice parameter roots and supported scalar read/conversion call shapes;
+its Option-u8 child holds independent canonical metadata predicates, with
+production Option receiving admission kept closed pending cumulative lookup and
+schema metering. The unchanged lexical driver replays the
+consumer. Broader imported nominal/loan/intrinsic profiles remain closed and #745
+remains open; authored execution and allocator controls await qualification.
 
 Project execution selects interpreter closure admission from the retained manifest
 profile in `interpreter/resolved_case.rs`. Project v25 stream-text and its v27
@@ -106,6 +356,27 @@ checked parameter/result shapes. V27 additionally admits shared
 Entry, ordinary/named tests, cancellable execution and prepared-origin closure
 maps use that same selector. Legacy interpreter and Project profiles retain
 their existing closed maps; this selection grants no host effects or authority.
+
+`hir/copy_record_collection.rs` and the independent source classifier own the
+bounded flat Copy-record Vec element shape. `hir/collection_outcome.rs` and
+`source_verify/declared_type/collection_outcome.rs` independently classify direct
+two-case results with one or two of these owned vectors; ordinary variant
+layout and conditional cleanup own transport, without new graph authority.
+The independent `collection_outcome/stream_input` classifiers compose exact
+normalization owners with these existing results; [the join contract](INPUT-COLLECTION-OUTCOME-JOIN-V1.md) preserves ordinary carriers and settlement.
+Native lowering lives under
+`native_emit/expression/vec_ops/copy_record.rs`; Core Wasm lowers the same
+checked field words in `wasm/aggregate/vec_copy_record.rs`. Both retain one
+canonical Vec owner and the existing scalar storage ceiling. Project/profile
+admission remains an independent boundary. The explicitly selected Project v29
+stream-data successor uses `hir/workspace_link/stream_record.rs` to authenticate
+its retained nominal closure and exact codec outcome shapes after the existing
+owned-data linker reconstructs source-owned declarations. Native and prepared
+interpreter routes recheck that selected profile; v27 remains frozen.
+`hir/declared_collection.rs` and its source twin separately own logical text
+collection declarations with no runtime carrier authority. Both reject every
+transitive executable use, including uncalled functions; [Declared Text
+Collections v1](DECLARED-TEXT-COLLECTIONS-V1.md) owns that explicit boundary.
 
 `ast/type_properties.rs` owns primitive type formatting and classification.
 The reserved mutable callable type has independent source and retained-HIR
@@ -181,6 +452,12 @@ The registry compiler and unpublished toolchain share one compiler library and
 bounded source, Project, and prepared Rust API context routes;
 `options.rs` parses bounded command options, `report_options.rs` parses report/analysis options, and
 `source_execution.rs` owns single-file build, run, and diagnostics.
+`help_dispatch.rs` prints the global and scoped `cli::help` surfaces.
+The `source_execution.rs` module’s `fused_profile` child dispatches the explicit source-only profile before
+ordinary checking. Public `fused_source` parses once and lends a private full
+selected owner to each target; it accepts no caller HIR or grant.
+[Fused source profile v1](FUSED-SOURCE-PROFILE-V1.md) owns the finite caller
+account policy and pending executable admission qualification.
 `cli_driver/native_test.rs` owns explicit bounded execution of Project v26/v28
 native test artifacts; `project/native_test.rs` selects only authenticated test
 roots and reuses the existing native source-command emitters and publication
@@ -693,6 +970,35 @@ contract](DOCTOR-PROBE-V1.md).
 ### Canonical source
 
 `src/lexer.rs`, `src/parser.rs`, and `src/ast.rs` parse human-readable source.
+`ast/drop_frontier.rs` owns the four inline Program-teardown frontiers, preserving
+all original child scheduling and field destruction. Wider frontiers retain
+ordinary Vec spill, and the existing method-function accumulator remains an
+unpriced compatibility boundary. Drop never refuses destruction or grants a
+budget. `ast/drop_original.rs` compiles the complete prior destructor and its
+original deep-root owner independently; whole-source and actual free-order
+controls accompany the unchanged custody receiving observer.
+`ast/program_source` owns a sealed two-slice compiler input and a concrete
+presentation identity. `workspace_graph/expected_projection/borrowed_leaf`
+lends authored AST collections for admitted import-free synthetic inputs and
+owns only their optional scalar main. Imported views own generated aliases and
+checking bodies while lending immutable authored slices. The source verifier,
+prelude/declaration index and resolver consume that exact input; invariant
+transformations and semantic cache publication keep genuine owning boundaries.
+`expected_projection/borrowed_imports/receiving.rs` owns the actual core import
+walk, retaining the full standalone producer as an independent receiver. Its
+`bounded_output/key_directory.rs` affine owner allocates and pays real spare
+Vec backing on the current ledger; `ast/program_source/receiving_roots.rs`
+retains inseparable directory owners through recursive teardown and transfers
+them once to the unchanged `generated_roots.rs` iterative destructor. The consuming
+`borrowed_leaf/checked_key.rs` receiver validates payer/source/backing, transfers
+those same directories once and restores authored-before-generated order.
+`project/incremental.rs::resolved_module_receiving` executes cache-key construction
+only for semantic publication. Ordinary/warm spare backing is an explicit tradeoff,
+not forecast credit, source authority or a qualified memory reduction. The
+standalone key receiver and all prior full graph/authority controls remain;
+`key_directory/tests.rs` and `borrowed_imports/tests/full/receiving.rs` own the
+additional physical backing and complete constructor-through-Drop controls.
+
 The parser separates recursive prefix atoms from postfix construction so
 inactive postfix temporaries do not accumulate during nested atom parsing.
 Token order, contextual grammar, spans and diagnostics are unchanged.
@@ -715,6 +1021,33 @@ statement spelling through the shared iterative formatter, including exact
 measurement of omitted normalization nodes. No alternate semantic tree is kept;
 [Statement If Canonical Source v1](STATEMENT-IF-CANONICAL-V1.md) owns the projection.
 
+`src/prelude/base_schema.rs` owns borrowed Option/Result construction metadata
+shared by the ordinary prelude producer and workspace forecasting.
+`expected_projection/prelude_forecast.rs` charges this unconditional retained
+prefix separately from synthetic AST and authored expression discounts, without
+initializing or duplicating the process prelude table. Complete original
+constructors and forecast receivers remain test-only controls; physical and
+forecast qualification is pending.
+
+`src/parser/vec_constructor.rs` forecasts and expands typed `vec_of<T>` source
+into separate ordinary capacity/push commits. `src/ast/vec_constructor.rs` and
+whole-function projection hygiene retain its syntax provenance;
+`src/hir/vec_constructor.rs` independently authenticates the single Block-like
+execution node and original-item capture boundary.
+`src/graph/vec_constructor.rs` owns selective Graph v81, while
+`src/workspace_graph/expected_projection/vec_constructor.rs` replays exact
+current source sites. [Typed Vec Constructors v1](TYPED-VEC-CONSTRUCTORS-V1.md)
+owns the authored profile and its pending executable qualification.
+
+`src/parser/return_flow.rs` owns additive acyclic function guard-return
+normalization. Returning arms become ordinary value blocks and a missing-else
+suffix moves once into the alternative. Conditions are parsed once through
+the shared statement-if entry. Canonical output uses existing value-if syntax;
+there is no retained exit marker, HIR authority or backend jump. Existing
+source, HIR, cleanup, loan and source-byte capsule checks remain independent.
+[Acyclic guard returns v1](ACYCLIC-GUARD-RETURNS-V1.md) owns its bounded admission
+and pending focused evidence; general loop exits remain separate work.
+
 Source is the canonical Git representation. A managed workspace publishes an
 immutable generated source set for cooperating readers; it does not rewrite the
 original files or grant atomic visibility to Git, editors, or arbitrary raw
@@ -722,13 +1055,85 @@ path readers.
 
 ### Validated HIR
 
+`hir/declaration_index/owner_name.rs` owns borrowed logarithmic field/case
+lookup on the existing `(DeclarationId, String)` BTree keys. A private trait
+object compares the exact `DeclarationId::Ord` followed by name byte order;
+stack queries borrow their owner/name and return the map's original value
+reference. Stored keys, cache encoding, duplicate insertion, namespace rules
+and caller verification remain under their existing owners.
+
+`project/json_codec/suitability.rs` owns the read-only exact-type explanation
+and bounded whole-row continuation. Its `inspection` child retains compact facts
+for the complete ordered profile inventory; `paging` renders and moves only
+queried rows into the envelope. Full fragment checks precede paging. It shares
+the existing profile fragment
+predicate dispatch and codec selector descriptor, binding checked source and
+Project/workspace revisions while keeping candidate and backend admission
+unperformed. `cli/json_codec/suitability.rs` accepts strict optional policy and
+uses the ordinary authenticated held-input route; it has no output/publication
+boundary. Existing codec derivation remains the only source candidate consumer.
+
+`src/project/json_codec` owns checked-source application codec derivation and
+exact regeneration replay. Its `plan` child derives a bounded set against one
+immutable retained revision and admits the complete combined candidate through
+ordinary Project construction. It retains authored sources separately from the
+complete candidate and exact per-entry evidence; no new semantic index, hidden
+helper admission or managed publication authority is introduced.
+It emits ordinary source and rebuilds the original
+Project/profile; generated names have no HIR authority. Its `template` module
+expands compiler-owned markers once, keeping authored names and identities opaque
+through UTF-8 text helpers and streaming normalizers. Its `emit` module
+composes existing scanner/token operations. `views` owns checked identifier
+spans, array/request carriers and the ordinary incremental `stream.spx` template;
+stream errors use raw offsets while downstream schema errors use their supplied
+normalized input. Every emitted carrier is independently checked by ordinary
+source/HIR/profile rules. `json_codec/owned` layers actual String/record
+materialization and checked encoding over the same identifier request policy;
+the application no longer retains input spans. The opt-in `json_codec/utf8`
+successor emits a replay-bound per-value byte policy, separate escape/raw scalar
+validation and canonical escaping for ordinary owned Strings; it does not inherit
+identifier uniqueness or schema authority. Its owning outcomes are classified
+independently by the source and HIR `collection_outcome/owned` modules. The
+original Copy-only outcome remains separate, and v30 alone adds the new private
+command closure. Ordinary variant layout, cleanup, native/Wasm runtime selection
+and interpreter validation replay the owning fields. `src/cli/json_codec.rs` owns the
+explicit exclusive-create artifact route and the unchanged Doc dispatch bridge;
+`project::standard_library::application_json` owns its backend gates.
+The [application JSON contract](APPLICATION-JSON-CODECS-V1.md) keeps the explicit
+identifier-only owned successor, unsupported general nested/Unicode shapes and
+remaining executable/application acceptance gates distinct.
+
 `src/verify.rs`, `src/source_verify.rs`, and `src/hir.rs` own checked meaning.
 The `src/hir/` modules own validation, inspection indexes, declaration lookup,
 and bounded Project linking.
+Source declaration verification lends its exact immutable `TypeTable` to generic
+profile and cycle checks rather than rebuilding its directories. Requires clauses
+borrow the original parameter state before the body; `require_bool` retains its
+independent full clause copy and freshness reset. `source_verify/type_table.rs`
+keeps the existing namespace HashMap, prelude precedence and class inheritance
+storage; declared record/class fields use reverse borrowed lookup to preserve
+the former secondary HashMap's last duplicate winner. Complete former program,
+function and table-construction/lookup receivers live in `declaration/old.rs`,
+`declaration/functions/old.rs` and `type_table/old.rs`. Constructor owners retain
+the full original source corpus and public/private ordered diagnostic JSON.
+Source-only; no observed allocation, ledger, application-fit or work gain is
+claimed before consolidated execution.
 
 HIR carries resolved identities and typed operations. A backend or report may
 apply a stricter admission profile, but it may not reinterpret unresolved AST
 or silently widen the verified program.
+
+`hir/resolve_expr/path_arena.rs` owns the iterative resolver's private
+expression-path coordinates: four-byte frame handles, parent/edge nodes with one
+closed segment table, frame-height release and the borrowed `ExprPath` view that
+shared lowering helpers accept from either resolver. `hir/ids/streamed.rs` owns
+exact streamed scoped-identity emission beside the unchanged `scoped_identity`
+encoder, which stays the independent oracle and the reference resolver's route.
+`hir/resolve_expr/super_method.rs` holds the relocated `super.method` continuation
+with its original evaluation order. Coordinates confer no authority; identity
+bytes, validation and caches are unchanged. The
+[workspace graph contract](WORKSPACE-SEMANTIC-GRAPH-V1.md#resolver-path-arena-opt778-representation-tranche)
+owns the accounting.
 
 `src/hir/owned_text_record.rs` owns the additive internal monomorphic
 String/Bytes-record classifier. It is independent of the frozen public Bytes
@@ -737,12 +1142,74 @@ signatures carry typed aliases to canonical owned leaves, and Wasm retains the
 existing owned-byte arena carrier. [Owned String Records v1](OWNED-STRING-RECORDS-V1.md)
 owns the proposed executable profile and its focused gates.
 
+`hir/owned_leaf_collection.rs` owns the target-neutral descriptor for the
+additive flat owned-leaf collection slice. It derives ordered field identities,
+typed String/Bytes positions and independent scalar/carrier charges from
+authenticated declaration facts. `source_verify/declared_type/owned_leaf_collection.rs`
+reconstructs source admission independently; neither classifier changes the
+frozen two-Bytes-plus-scalar predicate. `vec_ops.rs` owns the distinct clone,
+replace, reserve and order operations. Ordinary source/HIR loan and cleanup
+replay still owns their call-local borrows, grouped transfer and result leaves.
+`interpreter/owned_vec/owned_leaf.rs` owns deep cloning with fresh Bytes identities
+and stable whole-carrier ordering; source and HIR capacity walks charge each
+Bytes clone without weakening the existing allocation/loop limits.
+[Owned Leaf Collections v1](OWNED-LEAF-COLLECTIONS-V1.md) defines this source
+batch's boundary. Its executable and application gates remain pending.
+
+`vec_ops/sort_keys.rs` independently derives/replays finite explicit field-key
+identities from complete admitted record layouts. `source_verify/sort_keys.rs`
+and `workspace_graph/expected_projection/sort_keys.rs` derive source authority;
+`hir/resolve_expr/sort_keys.rs` lowers the literal metadata into an ordinary
+consuming Call. Native `native_vec/{sort_keys,owned_sort_keys}.c`, interpreter
+`owned_vec/owned_leaf/sort_keys.rs`, and Wasm
+`aggregate/vec_owned_leaf/sort_keys.rs` own stable in-place execution. Selective
+prelude v15 binds only this additive operation. The literal is not a runtime
+String and the synthetic callee is not a declaration/import target. The owning
+contract is [Explicit Record Sort Keys v1](EXPLICIT-RECORD-SORT-KEYS-V1.md).
+
+`vec_ops/field_unique.rs` owns the distinct borrowed `core.vec.unique-by.v1`
+descriptor, reusing only the sort-key layout derivation. Source admission is
+`source_verify/field_unique.rs`; the resolver shares the literal-metadata route
+in `hir/resolve_expr/sort_keys.rs`; HIR validation replays it in
+`hir/validation/vec_intrinsic.rs`, the whole-root call loan is the
+`field_unique` receiver in `loan_plan/call_arguments.rs`, and workspace source
+replay is `workspace_graph/expected_projection/field_unique.rs`. Runtime owners
+are interpreter `owned_vec/field_unique.rs`, native
+`native_emit/expression/vec_ops/field_unique.rs` with
+`native_vec/{field_unique,copy_field_unique,owned_field_unique}.c`, and Wasm
+`aggregate/vec_owned_leaf/field_unique.rs` (private
+`env.spx_vec_unique_by_v1`). Selective prelude v18 binds it. Contract:
+[Borrowed Record-Field Uniqueness v1](BORROWED-RECORD-FIELD-UNIQUENESS-V1.md).
+
+`src/hir/vec_field.rs` authenticates the additive `vec_field<Row>(items, index, "field")`
+descriptor and its literal field selection; `src/hir/byte_slice_provenance/vec_field.rs`
+retains the complete named-vector origin. Native `field_read.rs` reads the
+selected field directly from the authenticated row layout, borrowing String or
+Bytes and copying scalar fields. `graph/scoped_vec_field.rs` selects Graph v75
+only when this expression occurs and records field provenance as non-authority
+metadata. `src/patch/source_index.rs` and `src/repair/scoped_vec_field.rs`
+retain the authored selector span. The owning cross-backend, graph, cache, loan,
+source-index, and repair qualification remains pending.
+
 ### Cleanup meaning
 
 `src/cleanup.rs` inventories structurally owned leaves.
 `src/cleanup_plan.rs` and `src/cleanup_plan/` own the target-neutral cleanup
 control-flow schema, builder, validation, execution model, and independent
-replay.
+replay. `cleanup_plan/build/helper_index.rs` owns immutable module construction
+helper-site authority and reserved all-function plan staging. Construction drops
+its borrowed index before attaching plans; validation and replay independently
+reconstruct current HIR authority.
+`loop_calls/byte_writer/validation_frontier.rs` owns the separate ordered
+cleanup-validation demand phase. Sealed current-member receivers lend stable
+lazy helper/family cells to `cleanup_plan/build/helper_index/validation.rs`;
+future bodies remain unforced until earlier canonical comparisons pass. The
+complete original validator remains under `cleanup_plan/validate/owned.rs` for
+tests. One inline current-member cell is released by consuming completion and
+mutable advancement after the canonical comparison; shared proof/census state
+and cumulative debits remain owned by the phase. Validation drops that phase
+before independent final replay.
+
 
 Current graph versions select the minimum schema needed by the admitted
 feature, from legacy scalar/Result meaning through Option, aggregates,
@@ -784,7 +1251,20 @@ including conditional bounded-loop updates with other live owners. Allocation
 in loops, growth, general owned-loop state, wider elements, Project/public
 layouts, and public byte adapters remain outside this boundary.
 
+`literal_format::moving_string_operands` derives the existing direct String
+argument transfer exception from the dedicated checked operation. Cleanup
+construction and independent replay, native and Wasm use the same typed-HIR
+classification; only actual concat renewal operands reserve initialization
+history. Formatter moves do not create a clone or a renewal. Standalone format
+host status handling is bound by the already authenticated selected closure.
+
 `src/loan_plan.rs` owns the additive plan schema, builder, and replay;
+endpoint and edge loan-ID lists use immutable boxed slices in their original
+canonical order. `loan_plan/compact_ids.rs` reserves possible vector-to-slice
+copy overlap before conversion; the cache slice codec preserves the original
+vector wire and charges the same decoded conversion overlap.
+`loan_plan/origin.rs` reconstructs alias prefixes through borrowed discovery and
+one prepaid materialization, preserving canonical projection order.
 `loan_plan/owned_capacity.rs` accounts retained carriers and distinct immutable
 expression-identity backing allocations. Its pointer inventory is temporary,
 charged before allocation, and grants no semantic identity or graph authority;
@@ -794,7 +1274,12 @@ backing already covered by its prebound. It charges the HIR inventory and any
 unmatched proof inventory before allocation; fully covered proof identities need
 no second inventory. It keeps unknown backing and all vector/place storage, and falls back to the full
 proof census when a bounded inventory cannot prove sharing. The independent
-cache census and canonical proof bytes are unchanged. The full pattern package
+cache census and canonical proof bytes are unchanged. The final uncached core
+moves a completely selected exact-capacity HIR carrier into its retained module
+without a duplicate allocation, and reuses one explicitly owned key-inventory
+scratch across retained functions;
+each new backing allocation keeps its full cumulative charge and each census
+clears earlier keys before proving sharing. The full pattern package
 budget gate exercises the unchanged production builder cap.
 `src/graph_loan.rs` owns its Graph projection. The
 [Shared Loan Plan v1](SHARED-LOAN-PLAN-V1.md) is a bounded, target-neutral proof
@@ -884,6 +1369,13 @@ transition; Graph v28/v29 distinguish destructuring without and with an
 authenticated nested projected loan. The interpreter, native C11 and Core Wasm
 remain fieldwise, while variants, mutation and every public ABI stay closed.
 
+The additive internal [whole-subtree binding v2](NESTED-OWNED-RECORD-DESTRUCTURING-V2.md)
+uses `hir/owned_record_subtree.rs` and the independent source-type receiver to
+validate the complete monomorphic root, including hidden child descendants.
+Cleanup construction and replay map the existing exact field-prefix transfer
+onto a complete child binding inventory; native/Wasm retain fieldwise moves.
+Frozen public profiles explicitly reject these bindings. Qualification is pending.
+
 The successor [Acyclic Nested Owned-Record Immutable Update
 v1](NESTED-OWNED-RECORD-UPDATE-V1.md) admits only top-level immutable
 reconstruction of that same closed record tree. CleanupPlan v9 authenticates
@@ -892,6 +1384,76 @@ completion and one result commit; Graph v30/v31 distinguish reconstruction
 without and with universally authenticated nested loans. Interpreter, native
 C11 and Core Wasm remain fieldwise. Dotted mutation, resources, variants,
 generics and public ABI surfaces remain closed.
+
+The source-authored [nested collection-record slice](NESTED-OWNED-COLLECTION-RECORDS-V1.md)
+is classified independently by `source_verify/declared_type/collection_record.rs`
+and `hir/owned_collection_record.rs`. Existing Vec element profiles remain
+atomic owning leaves within bounded record trees. Aggregate layout represents
+the full 40-byte native Vec carrier and the 8-byte Wasm token; nested-record
+backend children and interpreter `nested_owned` move those leaves through the
+canonical cleanup plan. Projected reads use authenticated field paths and
+call-local loans, never the cleared native record shell. The negative all-module
+profile scan grants no authority; `hir/workspace_link/stream_collection_record.rs`
+independently validates the v31 closure, while the v30 validator rejects the new
+carrier even in unused helpers. `interpreter/resolved_case` selects the matching
+private helper map. Owning source/backend regression execution is pending.
+
+The source-authored [owning nested-outcome slice](OWNED-NESTED-OUTCOMES-V1.md)
+adds a proper error-or-record carrier. Independent source and HIR
+`collection_outcome/nested` classifiers authenticate the entire explicit shape;
+`cleanup/iterator` binds its exact case/payload field before recursively deriving
+full record-leaf paths. VariantLayout delegates the payload to AggregateLayout.
+Native construction moves the inert scalar shell separately from canonical
+owner slots; Wasm active-case moves and borrowed payload aliases retain those
+same ownership boundaries. `hir/workspace_link/stream_nested_outcome` owns the
+v32 positive gate; older validators reject the carrier even behind scalar
+signatures. `graph/owned_nested_outcome` owns the non-authoritative Graph v74
+projection. Same-source success, no-allocation error, hostile replay and physical
+failure-settlement gates are authored but execution remains pending.
+
+The finite nested request generator in `project/json_codec/nested_request`
+separates source-derived path/bound descriptors, allocation-free recursive
+validation, and post-validation materialization. Its wrapper returns the ordinary
+#729 tagged outcome; helpers and the original schema pass the same Project
+rebuild as authored source. UTF-8 scalar pulls share a separately named checked
+template, with no identifier policy, new runtime intrinsic or authority bypass.
+The additive `nested_request/stream` adapter authenticates a worst fully escaped
+valid-spelling envelope against the unchanged normalizer buffer, then holds that
+normalized input only until the owned decoder returns. Original schema permits
+and ordinary Project capability checks remain authoritative. Both selectors and
+their independent owning Project corpora are source-only pending qualification.
+
+`project/json_codec/nested_response` owns the finite borrowed response selector;
+it reuses the checked nested descriptor with its separate response policy.
+Its `emit` module computes exact escaped lengths and punctuation before rendering,
+checks the complete output against the ordinary String bound and caller limit,
+and emits ordinary source for the same Project rebuild. Copy-record vector reads
+use `vec_get`; owning-record reads use scoped `vec_field` borrows. Nested helpers
+keep the admitted root borrow and exact field paths rather than staging a
+projected nominal record argument. Generated helper names grant no HIR authority.
+
+`collection_response/writer` owns shared ordinary source helpers for both finite
+response selectors. They write literals, decimal integers and escaped UTF-8 into
+one exactly sized bounded Bytes owner, then perform the ordinary final UTF-8
+String copy. The compiler admits helper renewal from a bounded transitive
+source/HIR closure proof in `src/loop_calls/byte_writer`, independently of codec
+names. Its immutable phase-owned ModuleIndex retains original census and proof
+order, with separately precharged borrowed numeric directories for functions,
+positive targets and exact expression-ID fields. Numeric keys only discover a
+candidate; receiving checks still require current pointer identity and original
+binding equality. Unseen/negative targets retain independent proof fallback.
+Numeric directory radix passes have fixed work independent of allocator address
+order, with exact scratch and histogram reservation. Constructor-only function
+ID discovery uses a stable original-ordinal directory, actual byte comparison
+debits and merge relocation debits on the same existing work ledger. The first
+duplicate ID remains the old linear winner; discovery supplies no target proof.
+Query
+lookup allocates nothing and never clones IDs or grants equal-text authority. `graph/byte_helper_renewal` projects distinct Graph v76 authority;
+`workspace_graph/source_schema/byte_helper` replays retained declaration and
+callee bodies without cloning an entire program. Cleanup v19 composes helper
+renewal with optional lexical certificates; `cache_codec/lexical_cleanup`
+retains all earlier byte encodings and appends that optional control only for
+v19. The grouped executable gates remain pending.
 
 ### Semantic graph
 
@@ -907,6 +1469,12 @@ replay must agree before any execution. The canonical workspace's
 in SemanticProgram v2, which the existing ProgramRoot segment authenticates. `src/call_index.rs`, `src/impact.rs`, `src/review.rs`,
 `src/properties.rs`, and `src/hygienic.rs` build bounded read-only views over
 verified representations.
+
+Scoped Vec field reads add a feature-conditional Graph v75 projection in
+`src/graph/scoped_vec_field.rs`; it preserves prior graph bytes when the feature
+is absent. The selector is projected as authenticated field metadata rather
+than a dynamic expression. Graph replay and feature-free byte preservation are
+authored gates, not yet qualified execution evidence.
 
 `src/source_verify/function_value_inventory.rs` owns lexical bare-reference
 inventory and conservative callback dependency candidates for Function Values
@@ -931,10 +1499,29 @@ lowering consume that checked representation; the profile has no public ABI.
 a borrowed Done/Yield condition, and an owning Step replacement. The independent
 `src/hir/iterator_loop.rs` recognizer authenticates the mutable seed and complete
 loop protocol; `src/hir/validation/iterator_loops.rs` preserves the ordinary
-body admission and exact ownership boundary. Cleanup build and replay select
+body admission and exact ownership boundary; its `iterator_loops/field_scope.rs`
+child confines owned Bytes pattern leaves to their authenticated current arm.
+Cleanup build and replay select
 v11, and graph selection independently binds it through v39. Wasm borrowed
 remainder bindings alias the active payload; consuming moves may clear only a
 distinct source slot. Native conditional owners stay in canonical plan storage.
+
+`src/hir/resolve_for/bytes.rs` lowers immutable `Slice<u8>` traversal onto the
+shared `for` paths (`resolve_for::lower_profile`) with one single-arm
+`byte_get` receiver, after debiting its exact backing on the builder ledger.
+The independent `src/hir/validation/byte_traversal.rs` replays the region,
+`BorrowBytes` latch and body freeze. Its census confines the only partial match
+HIR admits to that receiver and freezes the view's authenticated provenance
+root. `src/loan_plan/traversal.rs` adds the region-spanning `TraversalFreeze`
+loan on the resolved owner. `src/source_verify/byte_traversal.rs` freezes the
+same root at source. `src/graph/byte_traversal.rs` selects Graph v83 over the row-loan v82 layer.
+The private `validation/byte_traversal/nested` census lends exact immutable
+function/context/region references to the actual loan-plan and lexical contour
+receivers. Its paid borrowed node/definition indexes and ancestor freeze intervals
+are structural proof; late replay independently adds freshly authenticated
+provenance roots. No nested authority persists in HIR/cache markers, and the
+complete contextless v1 receiver remains strict. The additive v2 source profile
+and all cross-engine/refusal controls await executable qualification.
 
 `src/hir/iterator_loop/renewal.rs` recognizes only compiler-owned same-owner
 Vec intrinsic assignments in `If` branches of an authenticated `for own` body.
@@ -977,6 +1564,13 @@ only the target's availability after RHS ownership checking.
 `src/graph/string_replacement.rs` composes Graph v68 without dropping preceding
 facts. [Whole String Replacement v1](STRING-REPLACEMENT-V1.md) owns the contract.
 
+`src/source_verify/diagnostics.rs` reserves the exact String/conversion intrinsic
+identities against authored declarations. The independent
+`src/hir/validation/string_intrinsic.rs` guard checks declaration-index IDs and
+function names, executable headers, generic templates and attached instances.
+Retained origin labels do not authorize an intrinsic or exempt an alias from
+this check; cache decoding must repeat ordinary HIR validation before dispatch.
+
 `src/byte_ops.rs` independently derives the four authenticated same-owner byte
 updates. `src/cleanup_plan/renewal_profile.rs` supplies those exact sites to the
 builder and replay; CleanupPlan v17 restores the binding's reserved history
@@ -984,9 +1578,33 @@ without changing v15 or v16 meaning. `src/graph/byte_buffer_renewal.rs` composes
 Graph v70 and projects the exact function, expression, and binding identities.
 [Same-Owner Byte-Buffer Renewal v1](BYTE-BUFFER-RENEWAL-V1.md) owns the boundary.
 
+The separate `bytes_zeroed_bounded` operation keeps its literal upper bound in
+source/HIR capacity authority and checks the computed requested length before
+allocation. Native and Core-Wasm lowering reuse the existing zeroed allocator
+only after the normalized bounds failure gate. Physical allocator exhaustion
+remains fail-stop on the production String/Bytes routes. The explicit-context
+C kernel under `native_emit/checked_string_allocation` is a private precursor:
+its registered native probe and [allocation contract](CHECKED-STRING-ALLOCATION-V1.md)
+do not confer production cleanup, status-token or application-outcome authority.
+
 `src/graph/owned_string_byte_view.rs` selects additive Graph v71 only when
 validated byte-slice provenance has the exact fused owned-String root kind;
 otherwise it preserves the selected prior schema and payload.
+
+`src/graph/owned_collection_records.rs` selects Graph v72 for authenticated
+nested collection-record uses and binds ordinary layout/cleanup/loan facts.
+Its descriptive marker carries no authority; legacy projections fail closed.
+`graph/operator_text.rs` owns the unchanged small operator/match text helpers.
+
+`hir/projected_string_view.rs` and the independent source
+`arguments/projected_string_view.rs` authenticate rooted record-field String
+views. They retain the complete field path in BorrowPlace and ordinary loan
+replay. `interpreter/projected_string_view.rs` reads the leaf without semantic
+String copying; native canonical leaf aliases and Wasm borrowed carriers keep
+ownership unchanged. `graph/projected_string_view.rs` owns Graph v73 selection
+and its non-authoritative marker; `graph/evidence_schema.rs` owns the unchanged
+frozen-evidence refusals plus the new schema refusal. The staged contract and
+required gates live in [Rooted String Views v1](PROJECTED-STRING-VIEWS-V1.md).
 
 The additive owned-payload iterator is split across
 `src/interpreter/iterator.rs`, which validates the initialized suffix and uses a
@@ -1054,7 +1672,15 @@ publication authority. See [Target Evidence v1](SEMANTIC-TARGET-EVIDENCE-V1.md).
 
 `src/interpreter.rs` evaluates admitted verified HIR with bounded fuel and
 normalized statuses. `src/hosted_interpreter.rs` adds Project-facing execution.
+`src/interpreter/lexical_temporary.rs` retains actual completed String operands
+in precharged frame slots until their exact canonical region or exit finalizers;
+inactive flags distinguish skipped lazy operands from unknown carriers.
 This is a development/conformance lane, not a target backend or proof engine.
+
+`src/interpreter/construction_fusion.rs` holds the private invocation range
+registry; its `carriers` child keeps internal owner/view receipts distinct from
+ordinary Arc backing. The receiver remains closed pending selected validation
+and complete original container allocation accounting.
 
 `src/interpreter/variant_admission.rs` shares the concrete Copy-scalar payload
 classifier with `src/loop_calls.rs`; constructor and pattern replay still
@@ -1094,6 +1720,14 @@ target runtime. See [Internal String Interpreter v1](INTERPRETER-INTERNAL-STRING
 `src/interpreter/prepared.rs` owns cached closure/index state, cooperative
 cancellation, prepared evaluation, and trace traversal. The root interpreter
 keeps the shared evaluator and only minimal Project-lane reexports.
+
+`interpreter/evaluate_control.rs` owns the borrowed Binary/If/Call/Block
+expression bodies; `evaluate_remaining.rs` retains the other original arms.
+The root evaluator charges expression entry once before dispatch, keeping
+unrelated arm temporaries out of recursively retained control-family frames.
+This is a mechanical frame separation, not another execution strategy or an
+increase to the fixed worker stack, call depth, step budget or semantic fuel.
+Owning terminal-order parity and exact depth qualification remain mandatory.
 
 `src/interpreter/retained_call/execution.rs` shares retained-call staging,
 evaluation and harvesting between the existing worker API and the sealed
@@ -1291,6 +1925,21 @@ This adds no Agent operation binding or scheduler.
 
 ### Native bootstrap backend
 
+The owned-leaf source batch is isolated in `codegen/native_vec/owned_leaf.rs`
+and `.c`, `native_emit/expression/vec_ops/owned_leaf.rs`, and
+`native_iter/owned_leaf.c`. Compiler-emitted immutable descriptors bind the
+nominal/ordered-field identity, field kinds, offsets and capacity. The private
+native runtime uses vector tag 12 and iterator tag 13; legacy record vector tag
+10 and iterator tag 11 keep their existing meaning. A descriptor pointer stored
+with the allocation is checked together with the invocation's vector authority
+entry and generation. These tags and offsets are internal carriers, not a
+public ABI. Push/replacement preflight retains the canonical staged owners;
+the successful group commit transfers all leaves together. Clone results use
+ordinary aggregate temporaries and projected cleanup-plan initialization.
+Partial-clone allocation failure selects Vec/3 before settling the completed
+prefix. `cleanup_backends::owned_leaf_collections` owns the authored C11 O0/O2
+pointer-inventory, failure-injection and replay regressions; execution is pending.
+
 `src/https_client.rs` owns a separate explicit native-host HTTP service. Its
 reusable Reqwest client disables ambient proxy discovery, applies bounded
 redirect/body/pool policy, and reports HTTP/1.1 or HTTP/2 through a typed
@@ -1383,6 +2032,17 @@ path uses active-case field moves and hard traps for malformed carriers; legacy
 Copy-variant status behavior remains unchanged. The default product
 is not a general WebAssembly Component Model runtime.
 
+`wasm/aggregate/vec_owned_leaf.rs` owns the additive owned-leaf lowering,
+private imports, declaration/ordered-field descriptor encoding and typed
+reconstruction of the existing `Step<T>` result. `wasm/vec_ops.rs` owns runtime
+selection. The
+authoritative owning test host in `tests/owned_data/owned_leaf_vec/host.js`
+authenticates descriptor, shape, handle and generation together; its private
+vector tag 11 is independent of native tags. It is an explicit host boundary,
+not a Wasm integer becoming an owning source value or ambient host authority.
+Canonical cleanup order and grouped transfer stay compiler-owned. The authored
+strict Core-Wasm, hostile-host and settlement gates are not execution evidence.
+
 The separately selected `wasm::internal_strings` API authors a standalone
 String-settling profile. `internal_strings/admission.rs` owns selection and
 static work limits; `aggregate/internal_strings.rs` owns the new ten-import
@@ -1399,6 +2059,9 @@ reference evaluator. The existing aggregate entry points explicitly leave
 that mode off. Generated modules pass structural validation before return.
 `internal_strings/runtime/` separates exact input/artifact admission, bounded
 UTF-8 arena ownership, and a scalar-only poisoned-on-uncertainty facade.
+Its additive runtime renderer borrows only the authenticated selected functions
+through the shared text/collection import selectors. It does not clone the full
+HIR or let unrelated declarations and instances contribute imports.
 The shared `aggregate/expressions.rs` keeps recursive scalar dispatch and block
 statement lowering separate from inactive aggregate-arm temporaries. The
 `aggregate.rs` expression wrapper still applies canonical post-transitions and
@@ -1466,6 +2129,49 @@ own replacements-only evidence and publication. Operations and structural
 change are separate, bounded derivation layers in
 `src/semantic_workspace_operations.rs` and
 `src/semantic_workspace_structural_change.rs`.
+`workspace_graph/source_schema.rs` owns retained module schema selection. It
+borrows existing authored type declarations and exact origin/owner facts,
+replays field layouts against independently retained checked type facts, and
+passes renewal authority explicitly through the Graph classifiers for that
+invocation. It retains no additional declaration index. Cleanup selector
+equivalences are checked before higher Graph selectors can mask a mismatch;
+frozen from-parts routes without declaration provenance retain their refusal.
+`workspace_report.rs` retains one affine selected-replay failure, its exact
+ledger and any paid diagnostic backing; explicit legacy materialization stays
+an allocating boundary. `semantic_workspace/reporting.rs` owns the additive
+source-only checked preflight and its independent receiving replay. Its checked
+manifest/revision view grants no filesystem lock or publication authority.
+Filesystem preparers and dynamic directory/TLS attribution remain legacy;
+this source-only route does not qualify those reports as funded. See
+[Workspace Report Owner v1](WORKSPACE-REPORT-OWNER-V1.md).
+`workspace_graph/paid_view.rs` owns the typed change, operation and schema
+view refusal (`ViewRefusal`). The actual selected lexical replay caller in
+`source_schema/static_text/primitive.rs` acquires the caller's outward report
+carrier (`cleanup_plan/replay/selected_entry/paid.rs`) on its module ledger
+before preparation. Acquisition, preparation and Session retain the report and
+its ledger as one affine stage; refusal and finish accept no foreign carrier.
+The closed local guard family in
+`cleanup_plan/replay/selected_context/paid.rs` acquires its refusal controls
+before constructing a static `semantic_refusal::Receipt`.
+`selected_owner/paid.rs` and `selected_profile/paid.rs` retain the original
+member and profile checks; the retained first receipt selects the outward
+stage. Arbitrary child Diagnostics retain their explicit Owned boundary.
+Every later refusal transfers that carrier, together with
+the exact failed ledger owner. The authenticators and selected declaration
+constructors on that route refuse with the Copy `SelectedReplayRefused`. A
+budget's prepaid text or a Session's own Diagnostic stays in the failed
+preparation as its first receipt. Remapping Change, Structural Change and
+Operations callers pass the literal they publish. A missing or mismatched form
+fails closed to `SelectedReplayUnpaid`. The remaining allocating boundaries
+are listed in
+[the selected replay protocol](SELECTED-REPLAY-RECOVERING-CONSTRUCTOR-V1.md).
+`workspace_graph/static_text/scalar_lexical.rs` captures a separate closed
+scalar lexical inventory in both retention routes; it retains no revision,
+plan or schema. `source_schema/scalar_lexical.rs` receives it only with the
+Semantic Workspace preflight's own held sources, recomputes the source
+revision, replays every member on one paid Session, and yields a private
+consumed receipt that alone selects the module's family through the shared
+`graph/base_lattice.rs` mapping.
 `src/workspace_graph/session_protocol_decl.rs` owns issue #297's follow-on
 (R21) projection of declared `.spx` `session protocol`s into the Workspace
 Semantic Graph: `semaprax.workspace-semantic-graph.v2`, selected only for a
@@ -2029,6 +2735,22 @@ is included in the v0.4.0 hosted-green regression corpus; no complete-workflow o
 
 ### Project profile and daemon
 
+The additive Project v30 `language-command-io.owned-data.v1` route is owned by
+the ordinary manifest/admission, workspace graph, retained validation and
+Project revision paths. `hir/workspace_link/stream_owned.rs` independently
+replays its exact private helper/carrier closure; command roots remain
+`fn () -> i64` and use the existing explicit process grants and provider caps.
+`workspace_graph/retained_validation/stream_admission.rs` checks every selected
+source module for new owned-collection use before old-profile reachability
+cropping. Its nested-outcome guard receives the actual selected export roots:
+only v8 with an empty selection keeps the existing pure internal-library route,
+without a public descriptor or weaker source/HIR checks. HIR and native entry replay also reject body-only new carriers under
+frozen stream profiles. Neither an unused logical schema, a cached descriptor,
+generated codec name nor successful private lowering grants public runtime
+authority. `project::tests::stdin_stream_command::owned_data` owns the authored
+manifest, retained/prepared, native-command and hostile-profile gates; v30
+remains unqualified until those gates and full application acceptance execute.
+
 `project/incremental.rs` owns an opt-in, invocation-local cache of exact-source
 canonical ASTs. It can avoid parsing/canonicalization for eligible retained
 modules while the ordinary graph, linking and profile gates still revalidate
@@ -2044,6 +2766,21 @@ restore serialized HIR into this cache. `candidate/draft.rs` now carries
 disjoint expression holes as well as whole-body holes; completed fills pass
 ordinary candidate admission and reauthenticate surviving selections against
 the resulting canonical source. Neither cache nor draft owns source authority.
+
+`workspace_graph/custody.rs` transfers the restored current invocation's
+parsed programs and source metadata into separate immutable owners. Its actual
+new directories, headers and authored-selection ordinals use the original core
+payer before acquisition. `current_source.rs` separates metadata-only file
+facts from parsed generations; metadata does not retain an AST. Project linking
+and `project/incremental/source_directory.rs` borrow the current parsed owners
+for source lookup and Agent/law extraction.
+
+`ast/program_source/checked_key.rs` owns deferred checked-key association. Full
+directory and exact key/path validation precede binding and cache publication;
+unbound keys cannot expose or encode a program. Unsupported source profiles
+retain the complete owning route. Source custody changes neither ordinary
+semantic revalidation nor source authority. Complete original source receivers
+and cold/warm controls remain independent; this source batch awaits execution.
 
 `project/image_reference.rs` exports exact image-bound stable function/facet
 selectors and resolves them only through ordinary admitted image provenance.
@@ -2713,6 +3450,12 @@ not authenticate provider semantics; root HIR/codegen replay alone owns that
 proof. No route exposes a target aggregate layout. See [Public Flat Owned
 Record API v1](PUBLIC-FLAT-OWNED-RECORD-API-V1.md).
 
+The selective `src/project/npm/semantic_recipe_lexical_v1.rs` wraps the frozen
+recipe renderer for authenticated condition-latched lexical control. It validates
+linked and replayed HIR, preserves exact canonical source and inventory replay,
+and leaves headerless v8 admission unchanged. It grants no publication authority.
+See [lexical npm recipe v1](OWNED-NPM-LEXICAL-RECIPE-V1.md).
+
 The compiler-private `src/project/npm/semantic_recipe_v8.rs` is shared by
 owned-data npm and Project Rust replay. Its collision-only type-name projection
 retains original presentation facts, then reconstructs the resolved declaration
@@ -3259,7 +4002,36 @@ These areas are deliberately outside the public compiler contract:
   follows that exact exit on refusal.
 - `src/cleanup_plan/native_rust.rs` selects ownership-bearing native imports
   for canonical argument epochs and atomic call settlement; scalar native
-  imports retain their existing plan projection. `replay/supplemental.rs`
+  imports retain their existing plan projection. Ordinary independent inventory
+  comparison lives in `replay/ordinary_inventory.rs`: a paid sorted borrowed
+  ordinal directory preserves last duplicate storage selection, while entry and
+  supplemental comparisons select mismatches only after the complete original
+  fallible collection frontier. Its `owned.rs` retains the full old receiver;
+  `storage.rs` and `substitute.rs` acquire direct actual backing. Paid direct
+  shape reconstruction lives in `replay/nested_shape/paid.rs`, retaining the
+  complete original shape derivation. `replay/supplemental/receiving.rs` owns one
+  paid fixed 1028-frame cursor reused between source expressions; parameter
+  providers retain their original semantics and explicitly unpaid residual
+  storage. `replay/paid_type_facts.rs` binds the actual ordinary nested-shape
+  and Result/Option fact probes to their existing invocation payer.
+  `hir/declaration_index/flags/paid/{compute,key,substitute,storage,builtin,admission}.rs`
+  owns the corresponding paid classifier, exact key and inline semantic
+  substitution receivers; the complete original classifier/key/substitution
+  bodies remain independent. `bounded_output/classifier_string.rs` owns physical
+  string growth while preserving original logical floor/partial-output rules.
+  `paid_type_facts/droppability.rs` retains the complete ordinary cleanup walk
+  with a paid fact callback as an independent test oracle. Its
+  `droppability/{paid,key,text}.rs` children acquire borrowed-root/owned-child
+  pending and visited backing, complete substitution and raw semantic/final
+  replay diagnostic strings through that same invocation payer. The paid root
+  classifier runs once before outer carriers: terminal and leaf decisions retain
+  exact cache/diagnostic precedence, while nominal traversal carries its first
+  paid facts into the complete original walk. `droppability/saved_paid.rs`
+  preserves the entire prior paid receiver independently for tests; the original
+  ordinary callback and cleanup receiver remain intact. The separate
+  key retains raw outer formatting and the original capped nominal-child
+  frontier; absent visited keys acquire conservative BTree node upper bounds. These internal owners grant no replay admission
+  and make no all-profile funding claim. `replay/supplemental.rs`
   independently reconstructs their argument slots.
 - `src/hir/workspace_link/native_owner.rs` admits only the destructor of a
   resource tied to an indexed constructor/consuming-method pair in one Rust
@@ -3342,7 +4114,9 @@ These areas are deliberately outside the public compiler contract:
   boundary, and canonical document framing (one JSON parse per document).
   Runtime v1 internals live under `src/agent_runtime/private/`, each owner
   private to the runtime: `private.rs` holds run state and the `Agent`
-  constructor/run entry; `admission.rs` owns profile/task/action admission and
+  constructor/run entry. The public `Agent<H>` retains its concrete host;
+  private execution, routing and deadline helpers borrow `dyn AgentHost`
+  without allocating a new host carrier. `admission.rs` owns profile/task/action admission and
   the host-free profile admission that AgentDefinition compilation reuses;
   `request.rs` owns routing, tool authorization and provider request
   construction; `execution.rs` owns the run state machine, provider turns, tool
@@ -3380,7 +4154,27 @@ a supported language, CLI, ABI, or runtime surface.
 ### Internal owned-data libraries
 
 `workspace_graph/owned_function_import.rs` authenticates explicit nongeneric
-record signatures over Bytes and Copy scalars. `expected_projection/defaults.rs`
+record signatures over Bytes and Copy scalars. Its `text_collections` helper
+replays finite String/vector result variants and explicit root imports.
+`expected_projection/private_layout.rs` independently reconstructs their private
+record descendants from held provider declarations. Its `registry` and `ledger`
+children hold lazy caller directories, one sticky work remainder and a monotonic
+preparation receipt across forecasts, synthetic construction and core retries;
+`sorting` owns fallible allocation-free ordering. `held_projection` and
+`workspace_graph/import_validation` retain the ordinary projection/import checks.
+Its `names` child reserves
+fresh synthetic names against every identifier in the bounded plain-module
+caller. Its `authority` child reconstructs borrowed private type/provider roots
+and both signature validators compare exact current provider layouts. Its `view`
+child reuses the caller-held authored index only after proving exact old
+top-level membership. Slices holding class methods keep the old owned map. Copied declarations and prototypes use those names without adding source
+imports or graph edges. `expected_projection/type_rewrite.rs` rewrites exact
+compiler-owned Vec elements through the current imported/private alias closure,
+with matching clone, identity and default-cost replay. See
+[Private Nominal Layout Closure v1](PRIVATE-NOMINAL-LAYOUT-CLOSURE-V1.md); owning
+executable qualification is pending.
+Selected Project profiles still independently admit the linked HIR closure.
+`expected_projection/defaults.rs`
 precharges checking-only empty leaves; execution retains provider body and
 ordinary HIR/cleanup replay. Record-match results use the same transfer before
 settlement across verifier, HIR, interpreter, C11, and Wasm. No target repairs
@@ -3408,7 +4202,10 @@ is unchanged. This index supplies no new type, source, or cache authority.
 | --- | --- |
 | Source projection | `src/ast.rs`, `src/lexer.rs`, `src/parser.rs`, `src/format.rs` |
 | Verification | `src/verify.rs`, `src/source_verify.rs`, `src/source_verify/` — `declaration/` owns the per-pass declaration checks, `iterative/` the frame machine, `oracle/` the test-only recursive cross-check, `function_value_inventory.rs` the lexical function-value reference/candidate inventory, `hints.rs` the shared fix hints both verifiers attach to unknown-function, generic-argument, literal-suffix, and borrowed-view diagnostics, and `loans.rs`/`place.rs` the loan lifecycle |
-| HIR | `src/hir.rs`, `src/hir/` — `ids.rs`, `nodes.rs`, and `expr_nodes.rs` own the data model; `resolve_*.rs` own AST lowering; `function_value.rs` owns independent callable target/signature validation; `validation.rs` owns core validation |
+| HIR | `src/hir.rs`, `src/hir/` — `ids.rs`, `nodes.rs`, and `expr_nodes.rs` own the data model; `resolve_*.rs` own AST lowering; `resolver_scope.rs` owns call-local borrowed-root Cow binding scopes and their complete-map mutation boundary; `borrowed_root_oracle/` retains the fixed test-only nonrecursive prior receiver and helper/frame bodies; `function_value.rs` owns independent callable target/signature validation; `validation.rs` owns core validation; `validation/canonical_loans.rs` independently rebuilds loan proof and retains each exact origin once behind private endpoint ordinals |
+| Primitive String Vec slot views | `src/vec_ops/string_slot.rs`, `src/source_verify/string_slot.rs`, `src/loan_plan/call_arguments.rs`, `src/graph/string_slots.rs` and `src/workspace_graph/expected_projection/string_slots.rs`; [Primitive String Vec Views v1](PRIMITIVE-STRING-VEC-VIEWS-V1.md) owns exact whole-root views, fixed builtin identity and Prelude v17 / Graph v80 replay. Backend execution qualification remains pending. |
+| Scoped record row loans | `src/hir/row_loan.rs` (descriptor, resolution seam, lent-parameter derivation) and `src/hir/row_loan/validate.rs` (independent call-slot, traversal and helper-body proof); `src/source_verify/record_traversal/row_loan.rs`; `src/hir/validation/row_loan.rs`; `src/interpreter/row_loan.rs`; `src/codegen/native_emit/expression/row_loan.rs`; `src/wasm/aggregate/row_loan.rs`; `src/cleanup_plan/row_loan.rs`; `src/graph/row_loan.rs`; `src/workspace_graph/record_traversal/row_loan.rs`; [Scoped Record Row Loan v1](SCOPED-RECORD-ROW-LOAN-V1.md) owns the call-only contract; executable qualification is pending |
+| Scoped Vec field reads | `src/vec_field.rs`, `src/hir/vec_field.rs`, `src/hir/byte_slice_provenance/vec_field.rs`, `src/codegen/native_emit/expression/vec_ops/field_read.rs`, `src/graph/scoped_vec_field.rs`, `src/patch/source_index.rs`, and `src/repair/scoped_vec_field.rs`; [Scoped Vec Field Reads v1](SCOPED-VEC-FIELD-READS-V1.md) owns the bounded contract; executable qualification is pending |
 | Cleanup and layouts | `src/cleanup.rs`, `src/cleanup_plan.rs`, `src/cleanup_plan/`, `src/aggregate_layout.rs`, `src/variant_layout.rs` |
 | Graph and read-only analysis | `src/graph.rs`, `src/graph_cleanup.rs`, `src/call_index.rs`, `src/impact.rs`, `src/review.rs`, `src/doc.rs`, `src/query.rs`; `src/graph/function_facts.rs` owns per-function agent-context fact rendering (split out of `src/graph.rs` to stay under its module-size budget); `src/graph/session_protocol_facet.rs` owns issue #206's `session_protocol_kernel` projection -- this compiler's built-in `src/session_protocol/` reference-kernel catalog surfaced as declaration-independent reference data, behind `AgentContextFilter::SessionProtocol` in `context` (CLI-reachable via `--filters session_protocol`) and as the standalone `graph::session_protocol_kernel_json()` Rust API with no CLI verb of its own -- explicitly not a fact about any `.spx` declaration and deliberately not merged into `graph`'s own per-program `to_json` output (see that function's doc comment for the byte-budget regressions that ruled the merge out); `src/graph/session_protocol_decl.rs` owns issue #297's projection of declared `.spx` `session protocol`s (graph v48, selected only for a declaring program, and `context`'s `session_protocol_kernel.declared`), with lowering, `SPX-K1xx` checks, HIR `via` binding and the shared declaration fact in `src/session_protocol/source.rs`, the bounded affine Bytes endpoint flow checker in `src/session_protocol/typestate/endpoint.rs` (source identity/move/close checking, reusing ordinary HIR ownership and backend byte cleanup), the `protocol_realizers_bound` claim in `src/architecture_claims/session_protocol.rs`, and `session_protocol` obligations in `src/assurance_manifest/session_protocol.rs`; `tests/projections/shapes_catalog.rs` generates the Markdown and JSON language-shape catalogs, `tests/documentation.rs::agent_quick_reference` generates the indexed diagnostic-help companion from the compiler-checked language card, and `src/cli/help.rs` selects bounded exact or smallest-exemplar shape, diagnostic, and language-section results from those static projections; `src/cli/help/diagnostic_index.rs` renders exact diagnostic advice and the bounded common-code shortlist, with navigation to the complete table |
 | Semantic retention metadata | `src/semantic_retention.rs`, `src/semantic_retention/`, receipt adapter in `src/candidate_archive_store.rs` |
@@ -3429,7 +4226,7 @@ is unchanged. This index supplies no new type, source, or cache authority.
 | Immutable Project revision inputs | `src/project_revision_store.rs`, `src/project_revision_store/unix.rs` |
 | Generated Rust package authority | `src/project/native_sdk.rs`, `crates/semaprax-native-rust-owned-data-package/`, `crates/semaprax-native-rust-interop-builder/`; exact Project crate inputs originate in `src/project/manifest/tables.rs` |
 | Signed doctor generation store | `crates/semaprax-doctor-release/src/install.rs`, `crates/semaprax-doctor-release/src/install/` |
-| Interpreter | `src/interpreter.rs`, `src/interpreter/variant_admission.rs`, `src/interpreter/string_conditions.rs`, `src/string_ops/conditions.rs`, `src/interpreter/prepared.rs`, `src/hosted_interpreter.rs`, `src/project/prepared_interpreter/`, `src/project/prepared_interpreter/trace/` |
+| Interpreter | `src/interpreter.rs`, `src/interpreter/variant_admission.rs`, `src/interpreter/string_conditions.rs`, `src/interpreter/lexical_temporary.rs`, `src/string_ops/conditions.rs`, `src/interpreter/prepared.rs`, `src/hosted_interpreter.rs`, `src/project/prepared_interpreter/`, `src/project/prepared_interpreter/trace/` |
 | Explicit Rust HTTP/TLS host runtime | `src/https_client.rs`, `src/network_provider.rs`, `src/network_provider/tcp.rs` |
 | Filesystem I/O | `src/filesystem_ops.rs` owns the closed compiler operations and bounds; `src/filesystem_provider.rs` and `src/filesystem_provider/` own explicit fixture, denied, and Unix scoped providers; `src/interpreter/filesystem/` and `src/project/filesystem.rs` bind injected providers to checked execution; `src/codegen/native_emit/filesystem_io.rs` and `src/codegen/native_emit/filesystem_io_v2.rs`, and `src/codegen/native_emit/filesystem_io_v3.rs` own the native callback ABIs; `src/wasm/filesystem_ops.rs`, `src/wasm/filesystem_v2.rs`, `src/wasm/aggregate/filesystem_ops.rs`, and `src/wasm/aggregate/filesystem_v2.rs` own the injected Core-Wasm imports and v2 lowering; `src/wasm/filesystem_v3.rs` and `src/wasm/aggregate/filesystem_checked.rs` own checked outcome lowering; `src/graph/filesystem.rs` owns filesystem facts and the final `src/graph/filesystem_outcome.rs` wrapper selects Graph v46 without replacing environment/process/iterator facts; `src/project/manifest/` owns Project v14 and private Project v15/v19 profile admission; `std/fs/` owns the source-authored `std.fs` composition. [Filesystem I/O v1](FILESYSTEM-IO-V1.md) and [Filesystem I/O v2](FILESYSTEM-IO-V2.md) and [Host Operation Outcome v1](HOST-OPERATION-OUTCOME-V1.md) own the frozen and additive contracts and authority boundary. |
 | Environment I/O | `src/environment_ops.rs` and `src/environment_snapshot.rs` own the closed operation vocabulary, status domain, immutable snapshot bounds, and canonicalization; `src/interpreter/environment.rs` and `src/project/environment.rs` bind the caller-supplied snapshot; `src/codegen/native_emit/environment_io.rs` and `src/codegen/native_emit/environment_runtime.c` own the native callback ABI; `src/wasm/environment_io.rs` and `src/wasm/aggregate/host_command.rs` own the private Core-Wasm imports and lowering; `src/graph/environment.rs` owns Graph environment facts; `src/project/manifest/` owns private `environment-io.v1` admission; `std/env/` owns the source-authored `std.env` composition. [Bounded Environment I/O v1](BOUNDED-ENVIRONMENT-IO-V1.md) owns the additive snapshot contract and authority boundary. |
@@ -3448,12 +4245,12 @@ is unchanged. This index supplies no new type, source, or cache authority.
 | Project dependency admission | `src/project/external_dependencies.rs` for exact ordinary Subject-v3 closure replay, including cross-package evidence for the provenance-independent ScalarV1 internal generic-owned body profile behind scalar calls/exports, and `src/project/standard_dependencies.rs` for compiler-bundled packages |
 | Effect-free package build and fixed-inventory publication | `src/package_build.rs`, `src/package_build/`, `src/package_build_v2.rs`, `src/package_build_v2/`, `crates/semaprax-offline-wasm-package/` |
 | Private host/runtime evidence | `crates/semaprax-native-*`, `platform-tests/` |
-| Standard library | `std/<package>/` Project packages, `src/project/standard_dependencies.rs` for closed bundled dependency expansion, `std/packages.json` tier and target metadata, generated `std/catalog.json`; `src/cli/help.rs` embeds the generated Markdown catalog unchanged and derives exact module/name/stable-ID lookups from the JSON catalog; gate `tests/project/standard_library.rs` |
+| Standard library | `std/<package>/` Project packages, `src/project/standard_dependencies.rs` for closed bundled dependency expansion, `std/packages.json` tier and target metadata, generated `std/catalog.json`; `src/cli/help.rs` embeds the generated Markdown catalog unchanged and derives exact module/name/stable-ID lookups from the JSON catalog; gate `tests/project/standard_library.rs`. `std/data-ndjson/` owns ordinary LF framing/Copy faults and the Catalog Normalizer receiver composition under [Bounded NDJSON framing v1](BOUNDED-NDJSON-FRAMING-V1.md); numeric cuts carry no span authority |
 | Owned bounded Vec | `src/vec_ops.rs` owns exact compiler intrinsic identities/signatures and bounds; `src/prelude.rs` owns `core.vec`, preserves frozen five-operation `semaprax.prelude.v2`, and selects additive v3 only for reserve/set/clear use; v6 binds the additive owned Bytes profile through graph and semantic workspace revisions. `src/codegen/native_vec/owned_payload.rs`, native expression `vec_ops/owned_payload.rs` and Wasm `aggregate/vec_owned_payload.rs` implement recursive initialized-payload settlement and versioned host imports. Source/HIR authenticate explicit scalar and admitted owned Bytes instances and same-owner rebind; cleanup and backends consume those identities. The bounded source `for item in values { body }` profile is resolver-owned sugar over one frozen simple immutable `Vec<T>` binding: it snapshots len once and lowers to existing len/get/while HIR, adding no HIR node, stable ID, graph/cleanup schema, prelude, backend operation, package declaration, or public ABI. Gates live in the existing language and owned-data harnesses; [Owned Bounded Vec v1](OWNED-BOUNDED-VEC-V1.md), [Owned Bounded Vec v2](OWNED-BOUNDED-VEC-V2.md) and [Owned Bounded Vec For Traversal v1](OWNED-BOUNDED-VEC-FOR-TRAVERSAL-V1.md) own the exact profiles. |
 | Owned bounded Box | `src/box_ops.rs` owns exact compiler identities and scalar/Bytes operation admission; `src/prelude.rs` preserves v1-v4 and adds v5 for owned Bytes payloads. `src/cleanup_plan/deferred_commit.rs` classifies allocation-before-transfer; `replay/resolved_call.rs` independently checks that ordering. `src/codegen/native_box/owned_payload.rs` and native/Wasm `box_ops/owned_payload.rs` consume the checked plan and implement recursive Bytes settlement through explicit v2 host imports. `src/project/std_mem.rs` still authenticates the frozen scalar no-export wrappers. [Box v1](OWNED-BOUNDED-BOX-V1.md) and [Box v2](OWNED-BOUNDED-BOX-V2.md) own their contracts; authored records named Box, broader aggregates, regions/arenas and public ABI remain separate. |
 | Streaming stdin | `src/stdin_stream_ops.rs` owns the sealed Reader and four operation identities; its `analysis` child independently derives bounded singleton-Open and exact carrier-forwarding facts. `src/source_verify/stdin_stream.rs` owns source refusal shapes; `src/hir/resolve_stdin_stream.rs` and `src/hir/validation/stdin_stream.rs` resolve and independently authenticate named-reader inspection and escape restrictions. Existing SliceView loans and ordinary cleanup transfer/replay own refill lifetime and settlement. `src/hir/workspace_link/stdin_stream.rs` owns the explicit additive command closure for the Bool v1, i64 exit-status v2, private text v25 and private data v27 selections; `src/codegen/native_stdin_stream/exit_status.rs` and its `process_adapter` child own the separate v2 result carrier, range-before-publication checks and process status; `src/graph/stdin_stream.rs` owns Graph v65 facts and Prelude v10 selection. [Bounded Standard Input Streaming v1](BOUNDED-STDIN-STREAM-V1.md), [Stream Text Command v1](STREAM-TEXT-COMMAND-V1.md), and [Stream Data Command v1](STREAM-DATA-COMMAND-V1.md) own the profiles and executable gates. |
 | Owning iterators | `src/iterator_ops.rs` owns the two compiler operation identities and scalar admission; `src/prelude.rs` owns `core.iter` and `core.iter-step` and selects additive v7. `src/cleanup/iterator.rs`, `src/cleanup_plan/build/iterator.rs`, and replay retain `core.iter.drop` plus the conditional `Yield/rest` owner path in CleanupPlan v10. `src/hir/iterator_loop/renewal.rs`, `src/cleanup_plan/build/renewal.rs`, and `src/cleanup_plan/replay/renewal.rs` own the narrowly authenticated conditional same-owner Vec renewal proof; `src/wasm/aggregate/post_transitions.rs` consumes replayed transitions as a lowering child. Graph/prelude bindings, canonical workspace revision, ProgramRoot, and cache codec preserve the selected facts, including the bounded one- or two-type-parameter carrier grammar. Native/Wasm lowering remains private; [Owning Iterators v1](OWNING-ITERATORS-V1.md) and [Owning Iterator Renewal v1](OWNING-ITERATOR-RENEWAL-V1.md) own the profiles and their pending executable evidence. |
-| Development harness provider host | `crates/semaprax-harness/` is a host-only crate that reuses the compiler crate’s canonical Project manifest and source parsers for protected-test inventory and repair contract authentication: `contract/` (typed `semaprax.harness-provider.v1` descriptors, per-capability payloads, envelopes, negotiation), `profile/` (`semaprax.harness.toml`, frozen lock, machine-local installations and trust grants), `host/` (stdio JSON-RPC adapter lifecycle, process-group settlement, macOS `sandbox-exec` restriction, loopback HTTP), `workflow/` (compiler-as-a-service development pipeline), `context/`, `command_view/`, `decision/`, `endpoint/`, `skills/`, `bridge/`, `observe/`, `conformance/` and `bench/`. Adapters are separate processes under `packages/semaprax-harness-adapters/`. `crates/semaprax-toolchain/src/harness_cli.rs` exposes the private `semaprax-full harness` entry point and `src/harness_bridge/` adapts frozen routing plans to `ProviderPolicy` and loopback endpoints to the existing `OpenAiResponsesAdapter`. Ordinary compile/check paths never load it. [Harness Provider Host v1](HARNESS-PROVIDER-V1.md) owns the contract. |
+| Development harness provider host | `crates/semaprax-harness/` is a host-only crate that reuses the compiler crate’s canonical Project manifest and source parsers for protected-test inventory and repair contract authentication: `contract/` (typed `semaprax.harness-provider.v1` descriptors, per-capability payloads, envelopes, negotiation), `profile/` (`semaprax.harness.toml`, frozen lock, machine-local installations and trust grants), `host/` (stdio JSON-RPC adapter lifecycle, process-group settlement, macOS `sandbox-exec` restriction, loopback HTTP), `workflow/` (compiler-as-a-service development pipeline), `context/`, `command_view/`, `decision/`, `endpoint/`, `skills/`, `bridge/`, `observe/`, `conformance/` and `bench/`. Adapters are separate processes under `packages/semaprax-harness-adapters/`. `crates/semaprax-toolchain/src/harness_cli.rs` exposes the private `semaprax-full harness` entry point and `crates/semaprax-toolchain/src/harness_bridge/` adapts frozen routing plans to `ProviderPolicy` and loopback endpoints to the existing `OpenAiResponsesAdapter`. Ordinary compile/check paths never load it. [Harness Provider Host v1](HARNESS-PROVIDER-V1.md) owns the contract. |
 | Executable evidence | `tests/`, crate-local tests, `platform-tests/`, `.github/workflows/` |
 
 This table is the single module-level map. Other contributor documents should
@@ -3478,7 +4275,10 @@ Two files exceed the budget because each is a single function whose locals are
 shared across every branch — `src/hir/resolve_expr.rs` and
 `src/economic_agent/agent_execute.rs`. Cutting those requires extract-method with
 new signatures, which is a behavioural change and needs its own review; it is not
-a relocation.
+a relocation. The fixed test-only `src/hir/borrowed_root_oracle/resolve_expr.rs`
+retains the complete frozen eb02 iterative receiver as an independent oracle.
+Its recorded size is fixed; splitting its dispatch would change the reference
+being compared, and it grants no additional production size allowance.
 
 ### Integration test harnesses
 
@@ -3587,6 +4387,9 @@ are specified by [Owned String Variants v1](OWNED-STRING-VARIANTS-V1.md).
 Inventory and cleanup replay own the lifecycle; native and Wasm finalizers
 consume its canonical actions. String clone initialization helpers live in
 `cleanup_plan/build/strings` and independent replay in `cleanup_plan/replay/strings`.
+Native ordinary terminal-exit order selection lives in
+`codegen/native_bytes/terminal_exits`; its narrow exact nonlexical route
+authentication lives in `codegen/native_bytes/terminal_exits/nonlexical`.
 Native scalar-match scope lookup lives in `codegen/native_bytes/scalar_match_scope`;
 Wasm lookup and action emission live in `wasm/aggregate/cleanup`.
 `wasm/aggregate/string_runtime` owns optional aggregate String intrinsic imports;
@@ -3718,6 +4521,13 @@ The native emitter `native_emit/indexed_reads.rs` and aggregate Wasm
 Both consume only previously authenticated arguments and preserve canonical
 Option layouts and existing cleanup ordering.
 
+Borrowed Str Eq/Ne is received by native `expression/str_equality.rs`,
+aggregate Wasm `aggregate/str_equality.rs`, and scalar text Wasm
+`borrowed_equality.rs`. The aggregate receiver preserves tagged owner handles;
+the public wrapper retains its existing root validation and cumulative bound.
+[Borrowed Str Equality v1](BORROWED-STR-EQUALITY-V1.md) owns exact-byte semantics
+and pending backend qualification.
+
 The additive [Project v26 source command](PROJECT-MANIFEST-V26.md) is owned
 by `project/source_command.rs`, closed manifest/profile admission and the
 existing owned representation workspace linker. The linked SourceCommand HIR
@@ -3726,6 +4536,25 @@ emitter replays HIR and exact four-effect authority before reusing
 rechecks and fresh output ownership. This native-only profile acquires runtime
 argv/file authority only in its invocation adapter; representation linking and
 Project graph/lock facts carry no host authority.
+
+The additive [invocation-selected file input v1](INVOCATION-SELECTED-FILE-INPUT-V1.md)
+selects Project v33 and a distinct native64 Unix adapter in
+`codegen/native_selected_file_command.rs` and its `runtime.c`/`launcher.c`
+children. Its optional host prefix binds one application argv index; checked
+source reaches the read boundary before lazy acquisition. The invocation holds
+and settles one regular-file descriptor before staged output publication.
+Selected-path follow authority never enters the relative-root provider,
+Project graphs, semantic evidence or retained linker metadata. Qualification
+is pending; the owning `project::source_command::selected_file` tests define
+O0/O2 usage, authority, descriptor substitution, drift and settlement gates.
+
+The additive [selected-file resource profile](INVOCATION-SELECTED-FILE-RESOURCE-V1.md)
+selects v34, a separate 256-argv carrier and selected-file resource launcher.
+The exact native resource classifier covers v28/v34 String-derived views and
+checked output helpers; v33's provider, launcher and bounds remain frozen.
+The new LogLens reference owns source-level usage and delegates only explicit
+file selection to the host. Capability-authenticated future prompt setup adds
+no oracle or historical acceptance authority. Executable qualification is pending.
 
 The additive [Project v28 resource-output source command](PROJECT-MANIFEST-V28.md)
 reuses that exact argv/file provider and native publication boundary. Its
@@ -3770,3 +4599,232 @@ admission. Typed collection evaluation stays in `interpreter/map_collections.rs`
 Retained workspace declaration and owner identity checks live in
 `workspace_graph/shape_identity.rs`; the workspace source-boundary audit joins
 that child with its parent so relocation preserves the checked contract.
+
+
+### Scoped owned-vector field read boundary
+
+`vec_field` and `hir/vec_field` own the reserved operation identity and the
+independently declaration-authenticated field descriptor. Source verification
+and both resolver paths omit the literal selector from runtime children;
+`hir/validation/vec_field` independently checks live carrier paths, child order,
+field identity, ownership and result mode. The source/HIR loan planners protect
+the full Vec generation during index evaluation and through a view's last use.
+`hir/byte_slice_provenance/vec_field` derives exact element/field/index metadata,
+including named Str aliases and ordinary ranges. This metadata is boxed only
+for scoped fields and charged by the declaration-index capacity census.
+
+The cleanup builder and independent replay retain an ordinary zero-owned
+CallCommit followed by the checked Vec/2 operation-failure edge. Extracted
+`cleanup_plan/replay/expression_facts` owns the same operation/child inventory;
+its private paid arena keeps full exact expression keys and call payloads in an
+indexed AVL tree. Online duplicate selection follows the complete preorder
+dispatch. Full replacement backing and caller work are paid before acquisition
+or comparisons; successor indices preserve ordered receiving iteration. The
+complete BTree producer and receiving controls remain independently executable
+for source-bound parity. This carrier change grants no replay admission.
+`hir/validation/upcast` and `hir/resolve_expr/finish` preserve existing class and
+resolver stack checks while keeping module ceilings fixed.
+`workspace_graph/callee_inventory` and the retained validation `scalar_link`
+child retain their existing authority checks after extraction; textual owning
+audits include every moved body.
+
+`interpreter/string_slot` retains the same primitive String-slot backing and
+releases dead references at independently validated caller transfer endpoints.
+`native_emit/expression/vec_ops/string_slot` and `wasm/aggregate/string_slot`
+use the existing authenticated leaf-read boundary without cloning an owner;
+standalone/public borrowed export permissions remain unchanged.
+
+`interpreter/vec_field` reads the staged carrier without semantic owner creation
+or UTF-8 materialization. Native and Wasm lowering use their authenticated
+existing layouts and borrowed leaf carriers. Checked semantic-cache v7 invokes
+`project/incremental/snapshot/vec_field` to compare the fresh source-resolved
+operation tree, including same-type selector substitutions; independent HIR,
+loan, cleanup and graph validation remain separate obligations. Graph v75 is
+selected only for this operation. Old public adapters and command profiles keep
+their closed admission. [Scoped Vec Field Reads v1](SCOPED-VEC-FIELD-READS-V1.md)
+owns the exact contract and pending executable gates.
+
+
+The private fused interpreter receiver lives in
+`interpreter/construction_fusion/selected.rs` and its execution child. It takes
+only the sealed full-validation owner, funds flat invocation-local storage from
+the active physical account, and publishes after canonical settlement. This
+conformance receiver is separate from ordinary and retained Project selection;
+its authored controls await consolidated qualification.
+
+The pure HIR lifecycle preflight streams the exact borrowed call preorder via
+`hir/inspection/calls.rs`. It lends current target result types, retains the
+owned generic-proof substitution boundary, and appends lifecycle effects to
+the existing ordered union. It does not retain a cloned call staging vector or
+create a separate effect-set result for each call.
+`function_scope/lifecycle/completed/inline_path.rs` owns one traversal's paid
+16-entry borrowed active-identity carrier and its unchanged paid BTree spill.
+The exact-root completion cache remains the enclosing collector's separate
+owner. Full old collector and recursive lifecycle bodies remain independent
+controls; byte equality and sticky payer authentication grant no admission.
+Compiler forecasts and caller
+prepayment remain conservative; this storage change supplies no validation or
+execution authority and makes no application-fit claim.
+
+Ordinary HIR call frames lend immutable current callee result/effect metadata,
+and native Rust argument frames lend the exact import parameter slice. The
+private `hir/validation/call_signature.rs` result view retains owned intrinsic
+and generic-proof types. Frame payload observations count only owned variants;
+retained declarations remain owned and charged by their existing caller. The
+saved recursive validator and diagnostics are unchanged, as are the conservative
+compiler forecast, inline frame-size assertion, and pure-validator boundary.
+
+Function-local HIR effect membership borrows current declaration strings in an
+ordered set. The private `validation/effect_keys.rs` adapter preserves exact
+membership and diagnostics while the saved recursive oracle retains owned keys.
+Set nodes still allocate; this change removes key text clones only and does not
+change caller payment, forecasts, or the pure-validator authority boundary.
+
+The private `hir/validation/path_label.rs` owns streamed expected child labels:
+authenticated parent text, a static suffix and at most two decimal indices. Enter
+frames and local binding probes compare exact bytes and checked lengths without
+owned path buffers; call continuations borrow their authenticated parent. Full
+header validation still precedes borrowing from the current expression identity.
+Record-pattern nested traversal streams the root and exact ancestor indices
+from its existing DFS continuation directory, with no second path directory. Saved full
+owned iterative/recursive oracles and the exact frame-size assertion remain;
+source-authored controls are pending execution as recorded in
+[Borrowed continuation paths](HIR-BORROWED-CONTINUATION-PATH-V1.md).
+
+`hir/validation/record_pattern/binding_path.rs` owns exact nested binding path
+spelling over the current Fields continuations. The saved complete receiver in
+`record_pattern/owned.rs` remains the record-admission owner for both saved full
+main walkers. Production removes owned root, intermediate-field and nested-record
+labels while retaining all field/type/fact/ownership checks, scope mutations and
+original traversal bounds. Full source-audit joins and unexecuted parity/drop
+controls live under the borrowed continuation-path contract.
+
+The Rust facade v3 diagnostic representation owns dynamic messages with
+`Cow::Owned` and privately borrows fixed compiler refusal literals. Public
+constructors retain `Into<String>` semantics and owned capacity; explicit
+`message_owned_capacity()` retains physical accounting in out-of-crate
+receivers. Diagnostic encoding is independent of facade major negotiation.
+[Embedding API v3](EMBEDDING-API-V3.md) owns this source-incompatible migration;
+report vectors and dynamic output storage retain their existing owners.
+
+
+Private source diagnostic recovery lives in `source_verify/recovery.rs`: borrowed
+authored names are keyed by actual lexical scope ordinals and published only
+after initializer completion. Existing checked binding/ownership checks and
+valid function values retain precedence; detached closure scopes and per-arm
+pattern markers preserve independent errors and exhaustiveness. Known annotation
+refusals carry a separate expected-type view while all actual checked values
+remain available to call ownership and loan checks. Complete independent receiving bodies live
+in the test-only `recovery_legacy` tree; source-text audits join every child.
+The ordinary directory has no replay-constructor payer and retains unpaid
+storage; no verifier bound or phase allowance is changed.
+[Scoped diagnostic recovery v1](SCOPED-DIAGNOSTIC-RECOVERY-V1.md) owns the exact
+source-authored boundary and pending qualification.
+
+Annotation recovery keeps `CheckedValue` and `Binding` as the real checked
+carriers. A separate invocation-local borrowed refusal view explains selected
+expected-type failures; it never becomes an inferred binding type, ownership
+mode, place or loan. Annotation facts use exact borrowed AST identity and clear
+on re-entry; lookup through blocks follows only the evaluated tail. Fixed call
+and constructor results reset the view. Ownership and native capability checks
+remain independent. The exact verifier frame layouts and source bounds are
+unchanged; the extra directory nodes remain unpaid ordinary storage.
+
+Annotation refusal views are limited to immutable bindings. Mutable assignment
+flow keeps its full original diagnostics until a dependency join model exists.
+
+HIR final-validation comparison/scratch ownership: `hir/nodes/import_result_type.rs`
+borrows exact current native result type identities; `validation/callable_types/inline_frames.rs`
+owns inline frames with unchanged Vec fallback. Nominal fact preparation now
+borrows cache-key bytes; Array/scalar Function flag misses project full original
+facts. Paid flag Storage initializes in a separate non-inlined miss constructor;
+known leaves and exact cache hits retain the existing payer's sticky zero-byte
+check. Complete original receivers and the fixed builder cap remain. The bounded
+contract and pending qualification are in [HIR final-validation scratch v1](HIR-FINAL-VALIDATION-SCRATCH-V1.md).
+
+Late Agent identity construction lives in `hir/resolve_program/agent_identity`.
+Both the explicit and ordinary analyzed resolver thread their existing identity
+owner through this helper after the original function lowering and metadata
+validation. Its payment authority covers only shared identity backing; Agent
+metadata and other resolution storage keep their existing owners. The complete
+frozen receiver remains a compiled independent test control. ARC and scoped-task
+queries reuse held keys, with complete frozen model controls under their owning
+unit harnesses.
+
+Test-only cleanup construction telemetry lives in
+`cleanup_plan/build/capacity_observation`. Standalone builder maxima and the
+persistent construction overlap census are separate; each construction uses
+a fresh local builder maximum and restores its enclosing observation scope
+on success or refusal. The overlap sums local builder, full staged-plan and
+attached-plan terms without feeding an earlier aggregate back into the model.
+The complete original census and feedback expression remain compiled controls.
+This is a component-model upper, not allocator high-water, RSS or budget proof;
+legacy text-length and collection allowances remain explicit audit gaps.
+
+Uncached resolved-core calls use `borrowed_leaf::Input::construct_transient`
+for imported overlays. This owns only generated declaration backing and borrows
+authored declarations through resolution and Drop. Cache-enabled calls retain
+the affine receiving directories and their original terminal publication path.
+The complete old imported constructor and full funding controls remain independent;
+this storage distinction supplies no forecast discount or graph budget increase.
+
+`hir/validation/variant_or/covered.rs` owns sorted borrowed variant-case coverage
+for the iterative validator. Its carrier fits the original BTreeSet frame slot
+and reuses prepaid continuation Storage for growth and speculative checkpoints.
+Or-pattern checks retain lexical condition/alternative order; guarded candidates
+are discarded and failed checkpoints preserve the prior root. The complete old
+BTreeSet helper and old dispatch remain independent compiled controls.
+
+
+`cleanup_plan/replay/shape_cursor.rs` owns the ordinary leaf collector's borrowed
+Shape/Push/Pop event storage. Thirty-two events are inline; larger authored event
+groups acquire ordinary paid fallible spill backing before construction and
+reuse it across slots. Every group retains sticky zero-byte authentication.
+The complete ordered shape dispatcher, projection clones, leaf indexes, work
+limits and diagnostic checks remain in `replay.rs`. The complete previous paid
+collector remains compiled in `allocation/tests/shape_before.rs`, beside the
+older independent receiver. Exact full-body source projection, literal spill,
+whole collector Drop and pending qualification controls are recorded in
+`docs/evidence/cleanup-shape-cursor/HANDOFF.md`.
+
+
+`loan_plan/paid_cursor.rs` owns borrowed preorder discovery for the funded
+candidate receiver. One pure full discovery preflight precedes the complete
+alias/ownership pass and candidate inspection; its inline references and
+prepaid spill remain held and reused through receiver Drop. Each actual cursor
+visit consumes the same existing `WorkCounter` later used by plan construction.
+No independent allowance, new depth cap or expression vector is introduced.
+The full previous paid candidate and funded receiver remain independently
+compiled for exact plan, work, priority and backing comparisons in
+`paid_candidate_before.rs` and `paid_cursor/funded_before.rs`. Source-only
+qualification restrictions and exact pending owners are recorded under
+`docs/evidence/paid-loan-cursors/`.
+
+Ordinary cleanup replay DAG constructors in
+`cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs` retain an immutable
+checked pending bound per node and prepay a reusable Work-owned destruction
+frontier before publication. The existing destructor and tail order remain the
+owner of release behavior. Bound-fold, future edge-pop and node-release work use
+the existing replay budget; ordinary low-work admission therefore changes.
+Selected nodes retain their existing session policy and expose a conservative
+immutable registered-edge bound to ordinary parents, whose actual excess
+frontier capacity is paid in full. Legacy nodes and incoming legacy kinds after
+constructor refusal retain their original allocating destructor. The independent
+old node/kind/destructor and ordinary constructors remain compiled in the owning
+test module; [the source packet](evidence/ordinary-dag-drop/README.md) records
+the physical boundary and pending controls.
+
+Scoped field-read source forms are retained by `src/hir/vec_field_origin.rs`,
+resolved at ordinary calls and row projections, and independently reconstructed
+by the traversal receiver and row census. The workspace source-site join lives
+in `src/workspace_graph/record_traversal/field_origin.rs`; the outer Graph v85
+layer lives in `src/graph/vec_field_origin.rs`. The source-only contract is
+[Scoped Vec Field Source Forms v1](SCOPED-VEC-FIELD-SOURCE-FORMS-V1.md); this
+metadata grants no authority and leaves backend operations unchanged.
+
+
+The semantic workspace change, structural change and operations `reporting`
+children own the affine typed caller forks. They reuse the authenticated read
+and commit authorities; `workspace_report` retains the selected primary owner
+when the original unlock diagnostic overrides its outward report. The original
+Vec APIs remain independent compatibility receivers.

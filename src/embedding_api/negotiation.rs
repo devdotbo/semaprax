@@ -92,19 +92,23 @@ mod tests {
 
     #[test]
     fn feature_negotiation_refuses_unknown_profiles_and_newer_versions() {
-        let selected = negotiate_features(2, 0, SUPPORTED_FEATURES).unwrap();
+        assert_eq!(
+            negotiate_features(2, 0, &[]).unwrap_err().code,
+            super::super::VERSION_MISMATCH_DIAGNOSTIC_CODE
+        );
+        let selected = negotiate_features(3, 0, SUPPORTED_FEATURES).unwrap();
         assert_eq!(selected.version(), EMBEDDING_API_VERSION);
         assert!(selected.supports("project-candidate-v2"));
         assert!(selected.supports("bounded-analysis-request-v1"));
         assert!(!selected.supports("ambient-network-v1"));
         for required in [&["project-candidate-v3"][..], &["context-v2"; 33][..]] {
             assert_eq!(
-                negotiate_features(2, 0, required).unwrap_err().code,
+                negotiate_features(3, 0, required).unwrap_err().code,
                 UNSUPPORTED_FEATURE_DIAGNOSTIC_CODE
             );
         }
         assert_eq!(
-            negotiate_features(2, u16::MAX, &[]).unwrap_err().code,
+            negotiate_features(3, u16::MAX, &[]).unwrap_err().code,
             super::super::VERSION_MISMATCH_DIAGNOSTIC_CODE
         );
         assert_eq!(

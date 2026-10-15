@@ -50,6 +50,13 @@ fn retained_identity_checks_need_no_temporary_string_budget() {
         let mut corrupt_fingerprint = local.clone();
         corrupt_fingerprint.1 ^= 1;
         assert!(!corrupt_fingerprint.matches_local(&owner, path));
+        assert!(!corrupt_fingerprint.matches_local_display(
+            &owner,
+            path.len(),
+            format_args!("{path}")
+        ));
+        assert!(local.matches_local_display(&owner, path.len(), format_args!("{path}")));
+        assert!(!local.matches_local_display(&owner, path.len() + 1, format_args!("{path}")));
         for index in [0, 9, 10, 99, 100, usize::MAX] {
             let parameter = ValueId::parameter(&owner, index);
             let (matched, overflowed, used) = crate::bounded_output::with_limit_usage(0, || {
@@ -105,9 +112,18 @@ fn identity_validation_preserves_frozen_graph_bytes_and_rejects_forged_hir() {
         }
         let error = crate::hir::validate(&forged).unwrap_err();
         assert_eq!(error.code, "SPX-H006");
+        let expected_identity_error = match role {
+            "expression" | "result" => {
+                // The independently checked execution owner now rejects the
+                // forged root/result before the ordinary identity walker.
+                "lexical function owner differs from canonical result/body identities"
+            }
+            "parameter" => "non-canonical identity",
+            _ => unreachable!(),
+        };
         assert!(
-            error.message.contains("non-canonical identity")
-                || error.message.contains("non-canonical result identity")
+            error.message.contains(expected_identity_error),
+            "{role}: {error:?}"
         );
         assert_eq!(
             crate::graph::to_hir_json(&forged, &revision)

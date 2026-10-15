@@ -1,0 +1,148 @@
+//! Flag-only receiver; the owned layout/fact API remains the independent oracle.
+use super::{DeclarationIndex, ResolvedType, TypeFacts};
+mod nominal_key;
+mod paid;
+pub(crate) use paid::TypeFactsPayer;
+pub(crate) use paid::{inventory_identity, inventory_substitute, InventoryPayer};
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct TypeFlags {
+    pub(crate) copy: bool,
+    pub(crate) contains_resource: bool,
+    pub(crate) sized: bool,
+    pub(crate) needs_drop: bool,
+}
+impl From<&TypeFacts> for TypeFlags {
+    fn from(facts: &TypeFacts) -> Self {
+        Self {
+            copy: facts.copy,
+            contains_resource: facts.contains_resource,
+            sized: facts.sized,
+            needs_drop: facts.needs_drop,
+        }
+    }
+}
+impl DeclarationIndex {
+    pub(crate) fn cached_zero_argument_facts(
+        &self,
+        declaration: &super::DeclarationId,
+    ) -> Option<&TypeFacts> {
+        nominal_key::get(&self.type_facts_by_id, declaration)
+    }
+    fn recompute_flags(&self, ty: &ResolvedType) -> Option<TypeFlags> {
+        if matches!(ty, ResolvedType::ArrayU8(_)) || matches!(ty, ResolvedType::Function { .. }) {
+            if matches!(ty, ResolvedType::Function { .. })
+                && !crate::hir::function_value::is_signature(ty)
+            {
+                return None;
+            }
+            return Some(TypeFlags {
+                copy: true,
+                contains_resource: false,
+                sized: true,
+                needs_drop: false,
+            });
+        }
+        self.recompute_type_facts(ty).as_ref().map(TypeFlags::from)
+    }
+    /// Preserve current-index cache precedence, including hostile cached facts.
+    /// Dynamic identities retain the old key traversal and miss computation.
+    /// A cache hit borrows the facts instead of cloning their layout payload.
+    pub(crate) fn type_flags(&self, ty: &ResolvedType) -> Option<TypeFlags> {
+        let key = match ty {
+            ResolvedType::Never => "never:lexical-exit:v1",
+            ResolvedType::Unit => "unit",
+            ResolvedType::I64 => "i64",
+            ResolvedType::I32 => "i32",
+            ResolvedType::Char => "char",
+            ResolvedType::U8 => "u8",
+            ResolvedType::Usize => "usize",
+            ResolvedType::F32 => "f32",
+            ResolvedType::F64 => "f64",
+            ResolvedType::Bool => "bool",
+            ResolvedType::String => "string",
+            ResolvedType::Bytes => "bytes",
+            ResolvedType::Str => "str",
+            ResolvedType::SliceU8 => "slice-u8",
+            ResolvedType::StringMap => "map:string:i64:v1",
+            ResolvedType::OnceFunction => "fn-once:bytes:i64:v1",
+            ResolvedType::OnceFunctionI64 => "fn-once:bytes+i64:i64:v2",
+            ResolvedType::OnceFunctionI64Pair => "fn-once:bytes+i64+i64:i64:v3",
+            ResolvedType::MutFunctionI64 => "fn-mut:i64+i64:i64:v1",
+            ResolvedType::Nominal {
+                declaration,
+                arguments,
+            } if arguments.is_empty() => {
+                return nominal_key::get(&self.type_facts_by_id, declaration)
+                    .map(TypeFlags::from)
+                    .or_else(|| self.recompute_flags(ty));
+            }
+            _ => {
+                if let Some(facts) = nominal_key::compound_get(&self.type_facts_by_id, ty) {
+                    return facts
+                        .map(TypeFlags::from)
+                        .or_else(|| self.recompute_flags(ty));
+                }
+                let key = ty.identity_key();
+                return self
+                    .type_facts_by_id
+                    .get(&key)
+                    .map(TypeFlags::from)
+                    .or_else(|| self.recompute_flags(ty));
+            }
+        };
+        if let Some(facts) = self.type_facts_by_id.get(key) {
+            return Some(TypeFlags::from(facts));
+        }
+        // These are exactly compute_type_facts' leaf branches after cache miss.
+        let (copy, needs_drop) = match ty {
+            ResolvedType::Never => return None,
+            ResolvedType::Unit
+            | ResolvedType::I64
+            | ResolvedType::I32
+            | ResolvedType::Char
+            | ResolvedType::U8
+            | ResolvedType::Usize
+            | ResolvedType::F32
+            | ResolvedType::F64
+            | ResolvedType::Bool => (true, false),
+            ResolvedType::String
+            | ResolvedType::Bytes
+            | ResolvedType::StringMap
+            | ResolvedType::OnceFunction
+            | ResolvedType::OnceFunctionI64
+            | ResolvedType::OnceFunctionI64Pair => (false, true),
+            ResolvedType::Str | ResolvedType::SliceU8 | ResolvedType::MutFunctionI64 => {
+                (false, false)
+            }
+            _ => unreachable!("only static leaf identities reach leaf facts"),
+        };
+        Some(TypeFlags {
+            copy,
+            contains_resource: false,
+            sized: true,
+            needs_drop,
+        })
+    }
+}
+#[cfg(test)]
+mod tests;
+
+/// None means the bounded key census declined; Some(None) is a genuine exact
+/// cache miss. Neither route changes the original semantic miss computation.
+pub(super) fn cached_facts<'a>(
+    index: &'a DeclarationIndex,
+    ty: &ResolvedType,
+) -> Option<Option<&'a TypeFacts>> {
+    match ty {
+        ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } if arguments.is_empty() => Some(nominal_key::get(&index.type_facts_by_id, declaration)),
+        _ => nominal_key::compound_get(&index.type_facts_by_id, ty),
+    }
+}
+#[cfg(test)]
+mod owned_key_oracle;
+#[cfg(test)]
+pub(super) use owned_key_oracle::enabled as old_key_enabled;

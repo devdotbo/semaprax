@@ -3,6 +3,16 @@
 use super::*;
 use crate::hir::{ResolvedProgram, ResolvedType};
 
+pub(super) fn needs_string_runtime(program: &ResolvedProgram, include_instances: bool) -> bool {
+    super::program_uses_strings(program, include_instances)
+        || crate::codegen::native_vec::program_uses_owned_leaf(program)
+}
+
+pub(super) fn uses_bytes(program: &ResolvedProgram) -> bool {
+    super::program_uses_byte_data(program)
+        || crate::codegen::native_vec::program_uses_owned_leaf(program)
+}
+
 /// The compiler-owned bounded `Vec<T>` carriers the native lane lowers.
 ///
 /// `crate::cleanup::is_owned_bounded_vec_type` answers the target-neutral
@@ -17,6 +27,8 @@ pub(in crate::codegen) fn is_native_owned_vec_type(
     ty: &ResolvedType,
 ) -> bool {
     crate::cleanup::is_owned_bounded_vec_type(ty)
+        || crate::hir::owned_leaf_collection::is_vec(&program.declarations, ty)
+        || crate::hir::copy_record_collection::is_vec(&program.declarations, ty)
         || crate::hir::owned_record_collection::is_owned_record_vec_type(&program.declarations, ty)
 }
 
@@ -43,6 +55,11 @@ pub(super) fn c_value_type(
     resource_abi: &native_resource::NativeResourceAbi,
     ty: &ResolvedType,
 ) -> Result<String, Diagnostic> {
+    if *ty == ResolvedType::Never {
+        return Err(backend_error(
+            "Never has no native value or ABI representation",
+        ));
+    }
     if crate::map_ops::is_typed_collection(ty) {
         Ok("spx_map_v2 *".to_owned())
     } else if crate::stdin_stream_ops::is_reader(ty) {

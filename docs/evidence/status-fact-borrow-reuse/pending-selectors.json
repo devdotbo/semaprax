@@ -1,0 +1,10 @@
+{
+  "harness": "semaprax --lib",
+  "selectors": [
+    "cleanup_plan::replay::expression_facts::receiving::retained::status_tests::complete_status_receivers_preserve_call_payload_six_fields_priority_and_drop",
+    "cleanup_plan::replay::expression_facts::receiving::retained::status_tests::actual_status_borrow_receivers_keep_own_exact_short_zero_work_and_bytes",
+    "cleanup_plan::replay::expression_facts::receiving::retained::status_tests::complete_before_status_fact_receiver_and_full_source_remain_exact"
+  ],
+  "old_exact_control": "cleanup_plan::replay::expression_facts::receiving::retained::tests::retained_status_control_funding_exact_short_zero_and_foreign_active_are_sticky",
+  "execution": "pending"
+}

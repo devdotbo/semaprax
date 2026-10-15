@@ -31,6 +31,52 @@ pub(crate) fn substitute_type(
     owner: &DeclarationId,
     arguments: &[ResolvedType],
 ) -> Result<ResolvedType, Diagnostic> {
+    match template {
+        ResolvedType::TypeParameter {
+            owner: parameter_owner,
+            index,
+        } => {
+            if parameter_owner != owner {
+                return Err(hir_error(format!(
+                    "type template for `{owner}` contains foreign parameter owner `{parameter_owner}`"
+                )));
+            }
+            return arguments
+                .get(usize::try_from(*index).map_err(|_| {
+                    hir_error(format!("type parameter index {index} does not fit usize"))
+                })?)
+                .cloned()
+                .ok_or_else(|| {
+                    hir_error(format!(
+                        "type template for `{owner}` references missing parameter {index}"
+                    ))
+                });
+        }
+        ResolvedType::Nominal { arguments, .. } if arguments.is_empty() => {
+            return Ok(template.clone())
+        }
+        ResolvedType::Never
+        | ResolvedType::Unit
+        | ResolvedType::I64
+        | ResolvedType::I32
+        | ResolvedType::Char
+        | ResolvedType::U8
+        | ResolvedType::Usize
+        | ResolvedType::ArrayU8(_)
+        | ResolvedType::F32
+        | ResolvedType::F64
+        | ResolvedType::Bool
+        | ResolvedType::String
+        | ResolvedType::OnceFunction
+        | ResolvedType::OnceFunctionI64
+        | ResolvedType::OnceFunctionI64Pair
+        | ResolvedType::MutFunctionI64
+        | ResolvedType::Bytes
+        | ResolvedType::Str
+        | ResolvedType::SliceU8
+        | ResolvedType::StringMap => return Ok(template.clone()),
+        ResolvedType::Nominal { .. } | ResolvedType::Function { .. } => {}
+    }
     enum Frame<'a> {
         Enter(&'a ResolvedType),
         Finish(&'a DeclarationId, usize),
@@ -46,6 +92,7 @@ pub(crate) fn substitute_type(
                     frames.push(Frame::Enter(result));
                     frames.extend(parameters.iter().rev().map(Frame::Enter));
                 }
+                ResolvedType::Never => resolved.push(ResolvedType::Never),
                 ResolvedType::Unit => resolved.push(ResolvedType::Unit),
                 ResolvedType::I64 => resolved.push(ResolvedType::I64),
                 ResolvedType::I32 => resolved.push(ResolvedType::I32),
@@ -137,6 +184,43 @@ pub(super) fn substitute_source_function_type(
     arguments: &[Type],
     template: &Type,
 ) -> Option<Type> {
+    match template {
+        Type::Named {
+            name,
+            arguments: nested,
+        } if nested.is_empty() => {
+            // A generic parameter name takes precedence over a nominal name,
+            // including missing actual arguments and duplicate parameter names.
+            if let Some(index) = function
+                .type_parameters
+                .iter()
+                .position(|parameter| parameter.name == *name)
+            {
+                return arguments.get(index).cloned();
+            }
+            return Some(template.clone());
+        }
+        Type::Never
+        | Type::I64
+        | Type::I32
+        | Type::Char
+        | Type::U8
+        | Type::Usize
+        | Type::ArrayU8(_)
+        | Type::F32
+        | Type::F64
+        | Type::Bool
+        | Type::String
+        | Type::OnceFunction
+        | Type::OnceFunctionI64
+        | Type::OnceFunctionI64Pair
+        | Type::MutFunctionI64
+        | Type::Bytes
+        | Type::Str
+        | Type::SliceU8
+        | Type::StringMap => return Some(template.clone()),
+        Type::Named { .. } | Type::Function { .. } => {}
+    }
     enum Frame<'a> {
         Enter(&'a Type),
         Finish(&'a str, usize),
@@ -152,6 +236,7 @@ pub(super) fn substitute_source_function_type(
                     frames.push(Frame::Enter(result));
                     frames.extend(parameters.iter().rev().map(Frame::Enter));
                 }
+                Type::Never => resolved.push(Type::Never),
                 Type::I64 => resolved.push(Type::I64),
                 Type::I32 => resolved.push(Type::I32),
                 Type::Char => resolved.push(Type::Char),
@@ -366,6 +451,32 @@ pub(super) fn materialize_template_expr(
     path: &str,
 ) -> Result<ResolvedExpr, Diagnostic> {
     let kind = match &expression.kind {
+        ResolvedExprKind::LexicalExit {
+            kind,
+            target,
+            value,
+        } => ResolvedExprKind::LexicalExit {
+            kind: *kind,
+            target: super::lexical_exit::rekey::target(
+                target,
+                &FunctionExecutionId::Monomorphic(template.id.clone()),
+                execution,
+            )?,
+            value: value
+                .as_ref()
+                .map(|operand| {
+                    materialize_template_expr(
+                        template,
+                        arguments,
+                        execution,
+                        operand,
+                        values,
+                        &format!("{path}.value"),
+                    )
+                    .map(Box::new)
+                })
+                .transpose()?,
+        },
         ResolvedExprKind::Closure { .. } => {
             super::closure::materialize(template, arguments, execution, expression, values, path)?
         }
@@ -437,6 +548,16 @@ pub(super) fn materialize_template_expr(
         ResolvedExprKind::Float64(bits) => ResolvedExprKind::Float64(*bits),
         ResolvedExprKind::Bool(value) => ResolvedExprKind::Bool(*value),
         ResolvedExprKind::String(value) => ResolvedExprKind::String(value.clone()),
+        ResolvedExprKind::BorrowedUtf8Literal(value) => {
+            ResolvedExprKind::BorrowedUtf8Literal(value.clone())
+        }
+        ResolvedExprKind::LiteralFormat { .. }
+        | ResolvedExprKind::VecFieldRead { .. }
+        | ResolvedExprKind::RowLoan { .. } => {
+            return Err(hir_error(
+                "generic templates cannot construct literal formats",
+            ))
+        }
         ResolvedExprKind::Place(place) => ResolvedExprKind::Place(Place {
             root: values
                 .get(&place.root)
@@ -555,12 +676,26 @@ pub(super) fn materialize_template_expr(
                 &format!("{path}.right"),
             )?),
         },
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut block_values = values.clone();
             let mut materialized = Vec::with_capacity(statements.len());
             for (index, statement) in statements.iter().enumerate() {
                 let statement_path = format!("{path}.s{index}");
                 match statement {
+                    ResolvedStatement::CopyDiscard { value, span } => {
+                        let value = materialize_template_expr(
+                            template,
+                            arguments,
+                            execution,
+                            value,
+                            &block_values,
+                            &format!("{statement_path}.value"),
+                        )?;
+                        materialized.push(ResolvedStatement::CopyDiscard { value, span: *span });
+                    }
                     ResolvedStatement::Let {
                         binding,
                         mutable,
@@ -627,30 +762,52 @@ pub(super) fn materialize_template_expr(
                         condition,
                         body,
                         span,
+                    }
+                    | ResolvedStatement::LexicalWhile {
+                        condition,
+                        body,
+                        span,
+                        ..
                     } => {
                         if !super::generic_collection::profile(template) {
                             return Err(hir_error(
                                 "generic loops require the bounded collection profile",
                             ));
                         }
-                        materialized.push(ResolvedStatement::While {
-                            condition: Box::new(materialize_template_expr(
-                                template,
-                                arguments,
-                                execution,
+                        let condition = Box::new(materialize_template_expr(
+                            template,
+                            arguments,
+                            execution,
+                            condition,
+                            &block_values,
+                            &format!("{statement_path}.condition"),
+                        )?);
+                        let body = Box::new(materialize_template_expr(
+                            template,
+                            arguments,
+                            execution,
+                            body,
+                            &block_values,
+                            &format!("{statement_path}.body"),
+                        )?);
+                        materialized.push(match statement {
+                            ResolvedStatement::LexicalWhile { latch, .. } => {
+                                ResolvedStatement::LexicalWhile {
+                                    condition,
+                                    body,
+                                    latch: super::lexical_exit::rekey::latch(
+                                        latch,
+                                        &FunctionExecutionId::Monomorphic(template.id.clone()),
+                                        execution,
+                                    )?,
+                                    span: *span,
+                                }
+                            }
+                            _ => ResolvedStatement::While {
                                 condition,
-                                &block_values,
-                                &format!("{statement_path}.condition"),
-                            )?),
-                            body: Box::new(materialize_template_expr(
-                                template,
-                                arguments,
-                                execution,
                                 body,
-                                &block_values,
-                                &format!("{statement_path}.body"),
-                            )?),
-                            span: *span,
+                                span: *span,
+                            },
                         });
                     }
                     ResolvedStatement::Unsafe { audit, body, span } => {
@@ -670,16 +827,26 @@ pub(super) fn materialize_template_expr(
                     }
                 }
             }
-            ResolvedExprKind::Block {
-                statements: materialized,
-                tail: Box::new(materialize_template_expr(
-                    template,
-                    arguments,
-                    execution,
+            let tail = Box::new(materialize_template_expr(
+                template,
+                arguments,
+                execution,
+                tail,
+                &block_values,
+                &format!("{path}.tail"),
+            )?);
+            if let ResolvedExprKind::VecConstructor { element, count, .. } = &expression.kind {
+                ResolvedExprKind::VecConstructor {
+                    element: substitute_type(element, &template.id, arguments)?,
+                    count: *count,
+                    statements: materialized,
                     tail,
-                    &block_values,
-                    &format!("{path}.tail"),
-                )?),
+                }
+            } else {
+                ResolvedExprKind::Block {
+                    statements: materialized,
+                    tail,
+                }
             }
         }
         ResolvedExprKind::If {
@@ -1017,3 +1184,8 @@ fn materialize_record_pattern_fields(
         })
         .collect()
 }
+
+#[cfg(test)]
+mod substitution_leaf_tests;
+#[cfg(test)]
+pub(super) mod substitution_saved;

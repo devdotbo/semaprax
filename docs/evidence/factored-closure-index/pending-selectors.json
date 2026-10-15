@@ -1,0 +1,58 @@
+{
+  "status": "SOURCE_ONLY_NOT_COMPILED_OR_EXECUTED",
+  "basis": "5647a8fd49a1fc9cc8a2b13cee847bf569b38693",
+  "new": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::memo::tests::numeric_memo_sparse_overwrite_and_full_old_map_values_keep_exact_work",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::memo::tests::numeric_memo_actual_exact_short_zero_and_partial_drop_remain_paid",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::memo::tests::numeric_memo_foreign_then_restored_budget_never_reacquires",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::memo::tests::chunked_complete_canonical_receiver_preserves_old_work_ids_and_last_drop",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::memo::tests::numeric_memo_foreign_function_budget_and_stale_ledger_fail_before_cached_reuse",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::memo::tests::numeric_memo_legacy_unobserved_payer_has_no_active_debit_or_refusal_bootstrap",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::memo::tests::chunked_complete_cached_id_authenticates_before_any_new_backing",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs"
+    }
+  ],
+  "required_existing": [
+    "cleanup_plan::replay::factored::canonical_shared::tests::full_old_receiver_preserves_ids_signatures_work_duplicates_overflow_and_cycle",
+    "cleanup_plan::replay::factored::canonical_shared::tests::shared_full_backing_exact_short_refusal_and_error_drop_are_physical",
+    "cleanup_plan::replay::factored::canonical_shared::tests::immutable_shares_preserve_copy_work_and_zero_requests_cannot_clear_refusal",
+    "cleanup_plan::replay::factored::canonical_shared::tests::exact_short_and_zero_work_match_the_complete_old_receiver",
+    "cleanup_plan::replay::factored::canonical_shared::tests::overflow_returns_no_proof_and_drops_all_paid_backing",
+    "cleanup_plan::replay::factored::canonical_shared::tests::exact_small_weighted_successor_capacity_and_requested_backing_are_paid_before_allocation",
+    "cleanup_plan::replay::factored::canonical_shared::tests::exact_small_successor_producer_keeps_complete_old_weighted_algebra_and_work"
+  ],
+  "retained_batch_obligation": "Unchanged full core old/current receiver, normalizer and application owners stay selected by ROOT; source authorship makes no runtime fit claim."
+}

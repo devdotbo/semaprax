@@ -1,6 +1,8 @@
 //! Single-file source checking, build, execution, and diagnostic publication.
 
 use super::*;
+#[path = "source_execution/fused_profile.rs"]
+mod fused_profile;
 
 pub(super) fn checked(path: &Path) -> Result<semaprax::ast::Program, u8> {
     checked_for_output(path, false)
@@ -34,6 +36,9 @@ pub(super) fn required_path(args: &[String], index: usize) -> Result<PathBuf, u8
 }
 
 pub(super) fn build_source(options: &cli::build::BuildOptions, input: &Path) -> Result<(), u8> {
+    if options.fused_account.is_some() {
+        return fused_profile::build(options, input);
+    }
     if matches!(
         options.profile.as_deref(),
         Some("internal-strings-v1" | "text-toolkit-v1")
@@ -798,6 +803,7 @@ fn status_meaning(domain: &str, code: u64) -> &'static str {
         ("semaprax.text.v1", 3) => " (file text is not valid UTF-8)",
         ("semaprax.convert.v1", 1) => " (conversion out of range)",
         ("semaprax.convert.v1", 2) => " (conversion of NaN)",
+        ("semaprax.string-format.v1", 1) => " (checked literal formatting failed)",
         ("semaprax.filesystem.v1", 1) => " (invalid relative file path)",
         ("semaprax.filesystem.v1", 2) => " (file not found)",
         ("semaprax.filesystem.v1", 4) => " (file exceeds the 65536-byte limit)",
@@ -861,4 +867,12 @@ pub(super) fn webapp_command(args: &[String]) -> Result<(), u8> {
         output.join("server.mjs").display()
     );
     Ok(())
+}
+
+/// Already parsed options; route selection precedes ordinary checking/loading.
+pub(super) fn run_fused_source(
+    path: &Path,
+    options: &cli::execution::ExecutionOptions,
+) -> Result<(), u8> {
+    fused_profile::run(path, options)
 }

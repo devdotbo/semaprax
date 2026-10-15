@@ -1,0 +1,107 @@
+{
+  "qualification": "source-only; no tests/builds/producer execution",
+  "new_selectors": [
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::actual_attribution::tests::complete_hostile_input_attached_replacement_and_publication_lifetimes_keep_original_receiver",
+      "source_path": "src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs",
+      "status": "source-authored, unexecuted",
+      "group": "new"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::actual_attribution::tests::shared_borrowed_identity_aliases_and_actual_tree_drop_are_distinct_from_legacy_lengths",
+      "source_path": "src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs",
+      "status": "source-authored, unexecuted",
+      "group": "new"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::actual_attribution::tests::attribution_scope_restores_on_unwind_and_disabled_hooks_allocate_nothing",
+      "source_path": "src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs",
+      "status": "source-authored, unexecuted",
+      "group": "new"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::actual_attribution::tests::whole_original_sources_and_named_observer_projection_preserve_every_old_control",
+      "source_path": "src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs",
+      "status": "source-authored, unexecuted",
+      "group": "new"
+    }
+  ],
+  "required_retained_selectors": [
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::repeated_construction_does_not_feed_previous_aggregate_back_into_builder",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::large_then_small_retains_persistent_max_but_reports_local_components",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::scope_restores_on_success_refusal_and_nested_construction_without_prior_input",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::ownership_census_adds_missing_ordinary_conditional_and_string_move_terms",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::helper_empty_builder_counts_held_ordinary_directory_and_receiving_drop",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::checked_owned_variant_builder_attributes_real_conditional_state_through_drop",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::standalone_builder_and_invocation_overlap_remain_distinct_after_reconstruction",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::staged_component_keeps_earlier_retained_maximum_and_nested_builder_is_standalone",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::phase_overlap_pairs_current_staging_and_full_held_index_without_previous_builder",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::capacity_observation::tests::full_original_capacity_receiver_and_controls_remain_exact_with_only_index_hook",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::helper_index::tests::construction_index_reuses_exact_sites_and_preserves_independent_plan_bytes",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::helper_index::tests::construction_exact_one_short_and_zero_budget_leave_attached_plans_unchanged",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::build::iterative_lowering_tests::inventory_and_cleanup_capacity_cover_owned_hostile_families",
+      "group": "retained"
+    },
+    {
+      "harness": "semaprax-native-rust-interop::lib",
+      "selector": "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions",
+      "group": "retained"
+    }
+  ],
+  "pin_producer": "cleanup_plan::build::iterative_lowering_tests::inventory_and_cleanup_capacity_cover_owned_hostile_families",
+  "pin_policy": "Original corpus, canonical digest, semantic assertions, numerical pin and upper budgets unchanged; owning producer alone cannot establish complete attribution. Select the four new raw receiving owners too."
+}

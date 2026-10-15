@@ -9,13 +9,19 @@ pub(super) fn find_expression_by<'a>(
         return Some(expression);
     }
     match &expression.kind {
+        hir::ResolvedExprKind::LexicalExit { value, .. } => value
+            .as_deref()
+            .and_then(|operand| find_expression_by(operand, predicate)),
         hir::ResolvedExprKind::Closure { captures, .. } => captures
             .iter()
             .find_map(|capture| find_expression_by(&capture.value, predicate)),
         hir::ResolvedExprKind::FunctionReference { .. } => None,
         hir::ResolvedExprKind::Invoke { callable, args } => find_expression_by(callable, predicate)
             .or_else(|| args.iter().find_map(|a| find_expression_by(a, predicate))),
-        hir::ResolvedExprKind::Call { args, .. } => args
+        hir::ResolvedExprKind::Call { args, .. }
+        | hir::ResolvedExprKind::LiteralFormat { args, .. }
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args
             .iter()
             .find_map(|argument| find_expression_by(argument, predicate)),
         hir::ResolvedExprKind::NativeRustImportCall(call) => call
@@ -40,7 +46,10 @@ pub(super) fn find_expression_by<'a>(
         hir::ResolvedExprKind::Binary { left, right, .. } => {
             find_expression_by(left, predicate).or_else(|| find_expression_by(right, predicate))
         }
-        hir::ResolvedExprKind::Block { statements, tail } => statements
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => statements
             .iter()
             .find_map(|statement| {
                 (0..statement.child_count()).find_map(|index| {
@@ -85,6 +94,7 @@ pub(super) fn find_expression_by<'a>(
         | hir::ResolvedExprKind::Float64(_)
         | hir::ResolvedExprKind::Bool(_)
         | hir::ResolvedExprKind::String(_)
+        | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
         | hir::ResolvedExprKind::Place(_)
         | hir::ResolvedExprKind::BorrowPlace { .. } => None,
     }

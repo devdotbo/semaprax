@@ -22,7 +22,7 @@ pub(super) fn weak_leaves(root: &Value) -> Vec<std::sync::Weak<[u8]>> {
         .fields
         .values()
         .filter_map(|value| match value {
-            Value::Bytes(bytes) => Some(Arc::downgrade(&bytes.bytes)),
+            Value::Bytes(bytes) => Some(Arc::downgrade(bytes.bytes.ordinary())),
             _ => None,
         })
         .collect()

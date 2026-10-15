@@ -1,0 +1,240 @@
+{
+  "issue": 790,
+  "source_subject_at_runtime": "a41774c0b3522ea7e13798f1a337b0aa5f35714e",
+  "pinned_correction_source": "27ae259515501fc23085d519ff56d0c8328cf6cd",
+  "owning15": [
+    {
+      "selector": "string_ops::take::tests::exact_named_transfer_has_one_commit_no_clone_or_failure_and_keeps_default_reads",
+      "harness": "semaprax::lib",
+      "source_path": "src/string_ops/take/tests.rs",
+      "source_sha256_at_execution_and_now": "ddfe9ffa0ddfe9a5e0013adfb5bfe655dca545b3c35ee5536a1e0270ef6b1cd0",
+      "log": "owning-selected-61.log",
+      "log_sha256": "b0cea575ced8070ddcd1b53fce780c9e88cd5bcc6ae23a0d3db47627f7975ecc",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "string_ops::take::tests::named_only_source_refuses_contracts_computed_borrowed_and_live_loan_transfers",
+      "harness": "semaprax::lib",
+      "source_path": "src/string_ops/take/tests.rs",
+      "source_sha256_at_execution_and_now": "ddfe9ffa0ddfe9a5e0013adfb5bfe655dca545b3c35ee5536a1e0270ef6b1cd0",
+      "log": "owning-selected-62.log",
+      "log_sha256": "c38ceb5dcb8c0b27f04a8bc5616e2016439323e339bffa75e81cbbf2ad3006ee",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "string_ops::take::tests::added_transfer_inventory_pays_its_node_exact_short_sticky_and_drop",
+      "harness": "semaprax::lib",
+      "source_path": "src/string_ops/take/tests.rs",
+      "source_sha256_at_execution_and_now": "ddfe9ffa0ddfe9a5e0013adfb5bfe655dca545b3c35ee5536a1e0270ef6b1cd0",
+      "log": "owning-selected-63.log",
+      "log_sha256": "b2bd7d6fdc0027c9f7c70261042751a16c42a43aa476ee5d55f82ac15dcc5371",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "string_ops::take::tests::transfer_commit_epochs_and_total_status_are_independently_revalidated",
+      "harness": "semaprax::lib",
+      "source_path": "src/string_ops/take/tests.rs",
+      "source_sha256_at_execution_and_now": "ddfe9ffa0ddfe9a5e0013adfb5bfe655dca545b3c35ee5536a1e0270ef6b1cd0",
+      "log": "owning-selected-64.log",
+      "log_sha256": "23552fab7ffaccc1adb09389ccbca8e68eb73c1c64406a6cf5a8257f6fd55d95",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "string_ops::take::tests::last_view_use_allows_transfer_but_current_loan_mutations_remain_refused",
+      "harness": "semaprax::lib",
+      "source_path": "src/string_ops/take/tests.rs",
+      "source_sha256_at_execution_and_now": "ddfe9ffa0ddfe9a5e0013adfb5bfe655dca545b3c35ee5536a1e0270ef6b1cd0",
+      "log": "owning-selected-65.log",
+      "log_sha256": "bd7c7c7029321054f3ca21b51bbbb68f701a72e8b6416684ee384ee60682da87",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "interpreter::string_operations::take_tests::named_take_operation_and_operand_fuel_boundaries_preserve_owner_and_drop_without_copy",
+      "harness": "semaprax::lib",
+      "source_path": "src/interpreter/string_operations/take_tests.rs",
+      "source_sha256_at_execution_and_now": "c53769a94cd59d9998e3e5c2752351e1c6c304d681bbd13a5ef77c69d8a74bb3",
+      "log": "owning-selected-66.log",
+      "log_sha256": "c0181c31e6ed4a14255741b52477e0d736012bbfc27708b9942f08233b3cdc2f",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "owned_string_transfer::explicit_transfer_preserves_native_carriers_clone_baseline_and_failure_settlement",
+      "harness": "semaprax::language",
+      "source_path": "tests/language/owned_string_transfer.rs",
+      "source_sha256_at_execution_and_now": "72d92c0911413ff86e1d32900a49ee405a74053c1698c73be66c19b8486db607",
+      "log": "owning-selected-67.log",
+      "log_sha256": "b7a56ca2327ea959da223c993bf1411eb781ca898c1110bfd0646ed025f9e19e",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "owned_string_transfer::explicit_transfer_interpreter_and_private_wasm_reentry_keep_selected_status",
+      "harness": "semaprax::language",
+      "source_path": "tests/language/owned_string_transfer.rs",
+      "source_sha256_at_execution_and_now": "72d92c0911413ff86e1d32900a49ee405a74053c1698c73be66c19b8486db607",
+      "log": "owning-selected-68.log",
+      "log_sha256": "348bd434501c1d31007523010e9a816c16ba234aa70dc4b0513e4bc447587689",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "owned_string_transfer::named_destructured_string_leaf_keeps_clone_reference_and_all_engine_settlement",
+      "harness": "semaprax::language",
+      "source_path": "tests/language/owned_string_transfer.rs",
+      "source_sha256_at_execution_and_now": "72d92c0911413ff86e1d32900a49ee405a74053c1698c73be66c19b8486db607",
+      "log": "owning-selected-69.log",
+      "log_sha256": "1acb2830a5b60181604721587324c0615b0057e70f6f7c57b7e3d51e82aa16cf",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "owned_string_transfer::explicit_transfer_fuel_sweep_never_refuels_or_publishes_a_partial_owner",
+      "harness": "semaprax::language",
+      "source_path": "tests/language/owned_string_transfer.rs",
+      "source_sha256_at_execution_and_now": "72d92c0911413ff86e1d32900a49ee405a74053c1698c73be66c19b8486db607",
+      "log": "owning-selected-70.log",
+      "log_sha256": "b68bbccba27caa012afbe5606b53c57f6a3691970869221b42bb5684ea3978f9",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "nested_collection_record::subtree::string_transfer::recursive_explicit_string_transfer_matches_original_and_subtree_full_populations",
+      "harness": "semaprax::owned_data",
+      "source_path": "tests/owned_data/nested_collection_record/subtree/string_transfer.rs",
+      "source_sha256_at_execution_and_now": "6a9e09f18d9562ac054849808deda6d4666d1a66f458d46b596f449789b2256d",
+      "log": "owning-selected-71.log",
+      "log_sha256": "01f8c453014ebd49f8a2536d3f77075dbd5b6ac7c63cc38e97d3e031b87c4b9e",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "nested_collection_record::subtree::string_transfer::explicit_recursive_transfer_retains_pointer_without_allocating_copying_or_resizing",
+      "harness": "semaprax::owned_data",
+      "source_path": "tests/owned_data/nested_collection_record/subtree/string_transfer.rs",
+      "source_sha256_at_execution_and_now": "6a9e09f18d9562ac054849808deda6d4666d1a66f458d46b596f449789b2256d",
+      "log": "owning-selected-72.log",
+      "log_sha256": "666e39724a96136859836662e4a17d058d0bc21b199fc8251172697487a6a8b2",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "nested_collection_record::subtree::string_transfer::explicit_recursive_transfer_keeps_pre_post_and_late_field_failure_status",
+      "harness": "semaprax::owned_data",
+      "source_path": "tests/owned_data/nested_collection_record/subtree/string_transfer.rs",
+      "source_sha256_at_execution_and_now": "6a9e09f18d9562ac054849808deda6d4666d1a66f458d46b596f449789b2256d",
+      "log": "owning-selected-73.log",
+      "log_sha256": "1529a89f97b1efe222b89252479dce0639b9a96f49f3c5da36e15200ba2cb7f6",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "semantic_cache::string_transfer::named_string_transfer_checked_cache_keeps_cold_warm_provider_drift_and_recovery",
+      "harness": "semaprax::project",
+      "source_path": "tests/project/semantic_cache/string_transfer.rs",
+      "source_sha256_at_execution_and_now": "46a1f2c69d92da1ad994e976fcaff000fd64b6e942f7a99277710231abdce8da",
+      "log": "owning-selected-74.log",
+      "log_sha256": "987cac8f49808729a74a02403d05359d8e322cc4bb4ac9ee1229dda66ee75f9e",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "selector": "cleanup_plan::replay::selected_profile::receiving_tests::named_string_transfer_retained_replay_matches_ordinary_exact_and_short",
+      "harness": "semaprax::lib",
+      "source_path": "src/cleanup_plan/replay/selected_profile/receiving_tests.rs",
+      "source_sha256_at_execution_and_now": "119cdd4e7f2b18322947ed1a2b64a940753b8e54677202b348b8c5d5468fcd84",
+      "log": "owning-selected-75.log",
+      "log_sha256": "d12794c6829cd573b44737f131c7aaeba6c7e56cdec116521d593353eca39bbf",
+      "actual_exit_code": 0,
+      "actual_summary": [
+        "ok",
+        "1",
+        "0",
+        "0"
+      ]
+    }
+  ],
+  "all_15_passed": true,
+  "source_files_unchanged_after_test_only_pin_update": true,
+  "independent_acceptance_inventory_sha256": "4e148187249b73a4ab000d304fc36c4ad8cd92c150c4d55c52acf64973776b32",
+  "actual_runtime_receipt_sha256": "3e5b219c7076133895eaee7e8752f577056d82c36a49a5aea7d55538f3ae70f9",
+  "production_clippy_exit_code": 0,
+  "actual_pin5_exit_code": 0,
+  "unrelated_failures_disclosed": 25,
+  "no_live_benchmark_or_public_profile_expansion_claim": true
+}

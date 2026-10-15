@@ -48,6 +48,7 @@ pub(crate) enum VariantFieldValueKind {
     OwnedString,
     OwnedIterator,
     OwnedRecord,
+    OwnedVec,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -391,6 +392,41 @@ fn layout_case(
         } else if concrete_ty == ResolvedType::Bytes {
             let (size, align) = owned_bytes_size_align(target);
             (size, align, VariantFieldValueKind::OwnedBytes)
+        } else if crate::hir::collection_outcome::runtime_admitted(
+            &program.declarations,
+            &ResolvedType::Nominal {
+                declaration: variant.clone(),
+                arguments: arguments.to_vec(),
+            },
+        ) && crate::hir::collection_outcome::field_admitted(
+            &program.declarations,
+            &concrete_ty,
+        ) {
+            (
+                if target == VariantTarget::Native64 {
+                    40
+                } else {
+                    8
+                },
+                8,
+                VariantFieldValueKind::OwnedVec,
+            )
+        } else if crate::hir::collection_outcome::nested::record_field(
+            &program.declarations,
+            &ResolvedType::Nominal {
+                declaration: variant.clone(),
+                arguments: arguments.to_vec(),
+            },
+            &case.id,
+            &field.id,
+            &concrete_ty,
+        ) {
+            let nested = AggregateLayout::for_type(program, target, &concrete_ty)?;
+            (
+                nested.size,
+                nested.align,
+                VariantFieldValueKind::OwnedRecord,
+            )
         } else if concrete_ty == ResolvedType::String {
             (8, 8, VariantFieldValueKind::OwnedString)
         } else if crate::iterator_ops::is_iter(&concrete_ty) {
@@ -409,7 +445,7 @@ fn layout_case(
             // every admitted scalar, independent of the scalar's load width.
             (8, 8, VariantFieldValueKind::Copy)
         } else if compiler_iterator_item
-            && crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
+            && crate::hir::owned_leaf_collection::runtime_element(
                 &program.declarations,
                 &concrete_ty,
             )
@@ -621,7 +657,10 @@ fn collect_expr_variant_types(
                 pending.extend(args.iter().rev().map(Work::Expression));
                 pending.push(Work::Expression(callable));
             }
-            ResolvedExprKind::Call { args, .. } => {
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
                 pending.extend(args.iter().rev().map(Work::Expression));
             }
             ResolvedExprKind::NativeRustImportCall(call) => {
@@ -636,6 +675,9 @@ fn collect_expr_variant_types(
                 pending.push(Work::Expression(end));
                 pending.push(Work::Expression(start));
                 pending.push(Work::Expression(source));
+            }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                pending.extend(value.as_deref().map(Work::Expression))
             }
             ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Project { base: value, .. }
@@ -660,7 +702,10 @@ fn collect_expr_variant_types(
                 pending.push(Work::Expression(right));
                 pending.push(Work::Expression(left));
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(Work::Expression(tail));
                 for statement in statements.iter().rev() {
                     for index in (0..statement.child_count()).rev() {
@@ -728,6 +773,7 @@ fn collect_expr_variant_types(
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::BorrowPlace { .. }

@@ -394,7 +394,8 @@ fn normalize(law: &mut LawDefinition) -> Result<()> {
                             "relational proposition references an undeclared binder",
                         ));
                     }
-                    crate::ast::ExprKind::Unary { value, .. } => pending.push(value),
+                    crate::ast::ExprKind::VecConstructor { value, .. }
+                    | crate::ast::ExprKind::Unary { value, .. } => pending.push(value),
                     crate::ast::ExprKind::Binary { left, right, .. } => {
                         pending.push(left);
                         pending.push(right);
@@ -549,7 +550,8 @@ fn scalar_selector(expression: &crate::ast::Expr) -> Result<()> {
             ExprKind::Int(_) | ExprKind::Int32(_) | ExprKind::Uint8(_) |
             ExprKind::Usize(_) | ExprKind::Char(_) | ExprKind::Float32(_) |
             ExprKind::Float64(_) | ExprKind::Bool(_) | ExprKind::Var(_) => {},
-            ExprKind::Unary { value, .. } => pending.push(value),
+            ExprKind::VecConstructor { value, .. }
+            | crate::ast::ExprKind::Unary { value, .. } => pending.push(value),
             ExprKind::Binary { left, right, .. } => { pending.push(left); pending.push(right); },
             _ => return Err(invalid("unsupported scalar contract selector; calls and aliases require a future resolved selector profile")),
         }

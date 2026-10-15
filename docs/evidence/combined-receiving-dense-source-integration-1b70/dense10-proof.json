@@ -1,0 +1,97 @@
+{
+  "source_head": "8abe7eeb4a8df55e2ce4a7527eaf2820a5e69dfb",
+  "prior_metadata_sha256": "75e4e81c9ea255e32d0c00576d893520032c6d52a0a76aa60e58061383dce2aa",
+  "current_metadata_sha256": "81caea7c194d7066196bde467ac52414b96170c40a070e4264c4c09518f1116e",
+  "originals_and_all_old_edits_preserved": true,
+  "appended_whole_current_inverses": [
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "tests/hir_module_boundaries.rs"
+  ],
+  "rows": [
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "counts": [
+        1,
+        1
+      ],
+      "complete_original_reconstructed": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "59aa90d35fd5fb6f19d1ce8399be670c1b5291d126488b7bedb9713cf61945f7",
+      "counts": [
+        1,
+        1
+      ],
+      "complete_original_reconstructed": true
+    },
+    {
+      "source": "src/loan_plan/paid_live.rs",
+      "current_sha256": "5247ed741e5aee10ae7085d3b171bbca4533ea81f1527ef69db039f2e9903227",
+      "counts": [
+        1
+      ],
+      "complete_original_reconstructed": true
+    },
+    {
+      "source": "src/loan_plan/paid_plan.rs",
+      "current_sha256": "e285e44475cad6e0d430768d1bc13e630baeea6b2df1afead6337e3112c46830",
+      "counts": [
+        1
+      ],
+      "complete_original_reconstructed": true
+    },
+    {
+      "source": "src/loan_plan/paid_plan/retained.rs",
+      "current_sha256": "dacfa5ffd43fdc3478a69c7370da11e4616f5034d554352bdd5a8198262dd3ab",
+      "counts": [
+        1
+      ],
+      "complete_original_reconstructed": true
+    },
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "counts": [
+        1,
+        1
+      ],
+      "complete_original_reconstructed": true
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "current_sha256": "d4158fd988538e77c0f39a2f05cfc50aab15679744bba14ae1f005fc32c805fb",
+      "counts": [
+        1
+      ],
+      "complete_original_reconstructed": true
+    },
+    {
+      "source": "src/loan_plan/paid_live/dense.rs",
+      "current_sha256": "8c943af3cd6a3f64260659aa1e37bbc4a09cad254ed9c1414845c2e9cdead389",
+      "counts": [
+        1
+      ],
+      "complete_original_reconstructed": true
+    },
+    {
+      "source": "src/loan_plan/paid_live/dense/tests.rs",
+      "current_sha256": "c7a917f9b77b543cdf2d6972bbca5817785b25590009f5a7a6930ccfab967678",
+      "counts": [
+        1
+      ],
+      "complete_original_reconstructed": true
+    },
+    {
+      "source": "docs/SHARED-LOAN-PLAN-V1.md",
+      "current_sha256": "9356839a211c0de166cc499cb2882832959435efebda77329fc8c57380593994",
+      "counts": [
+        1
+      ],
+      "complete_original_reconstructed": true
+    }
+  ],
+  "qualification": "source only; no Rust compile/execution"
+}

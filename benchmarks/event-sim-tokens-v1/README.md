@@ -71,6 +71,34 @@ The explicit arm selects the route: only the SEMAPRAX arm may contain the v27
 manifest or use the harness native binary. The TypeScript arm keeps the frozen
 candidate `run.sh` interface and is refused if it contains `semaprax.toml`.
 
+Round 4 explicitly selects `--round 4 --authoring-profile
+semaprax-project-v30-owned-data-v1`. It uses Project v30's
+`language-command-io.owned-data.v1` private owned-data helpers while retaining
+the exact four grants, stdin route, and external `fn() -> i64` command ABI.
+Rounds 1–3 and their qualification envelopes remain reproducible. Round 4
+requires a fresh `semaprax.event-sim-qualification-evidence.v4` receipt;
+historical v2/v3 receipts cannot admit it. Prepare that receipt with:
+
+```sh
+python3 benchmarks/event-sim-tokens-v1/campaign.py qualify-v4 \
+  --compiler-source-ref <verified-source-commit> --semaprax-bin <verified-compiler> \
+  --candidate <reviewed-v30-candidate> --output <new-external-qualification-directory>
+```
+
+The qualifier checks and builds the exact closed candidate with the pinned
+compiler and accepts its harness-produced native binary against all 15 original
+cases. Before worktree creation and immediately before each paid dispatch,
+round 4 rechecks the compiler bytes and complete qualification binding. Failed
+qualification leaves retained artifacts and grants no paid dispatch eligibility.
+No reference solution or generated codec body is supplied in the authoring seed.
+The TypeScript prompt is byte-identical to round 3 for the same paths/compiler;
+the strong Node bootstrap is unchanged. Only the SEMAPRAX profile/help setup
+changes. The plan discloses that context difference, and each arm retains its
+full prompt bytes/hash separately from authored/generated source. Context-token
+and actual billing fields stay null until independently measured; there is no
+tokenizer subtraction, upper-bound claim, or live savings evidence in this
+source-only configuration change.
+
 The corpus is invoked through a command adapter that reads one request from
 stdin and writes one report to stdout. Example after an arm has been authored:
 
@@ -121,3 +149,55 @@ not verified authored tokens or cumulative edits.
 Future matched runs can opt into the pinned dependency-only TypeScript setup
 with `--typescript-bootstrap-receipt`. See [LIVE-CAMPAIGN.md](LIVE-CAMPAIGN.md)
 for setup instructions and the unknown-context reporting limit.
+
+Round 5 is the independent nested-outcome successor: explicitly select
+`--round 5 --authoring-profile semaprax-project-v32-nested-outcome-v1`. It
+uses Project v32 `language-command-io.nested-outcome.v1`, qualification schema
+`semaprax.event-sim-qualification-evidence.v5` and Codex campaign schema
+`semaprax.event-sim-codex-campaign.v4`. Produce its fresh evidence with
+`campaign.py qualify-v5` against a reviewed closed application and the exact
+verified compiler. Earlier round/profile evidence cannot authorize it.
+All original 15 acceptance obligations and compact/escaped maximum-cardinality
+requests remain required, with unchanged SPEC/corpus/oracle hashes, scheduler
+ties, diagnostics, publication and limits. Only the historical Project setup
+clause is superseded. The TypeScript prompt stays byte-identical to round 3
+and requires its pinned dependency-only bootstrap receipt. Both arms retain
+the matched model/settings and at least five attempts, including failures;
+fixed prompt context is reported separately and provider billing stays null
+without actual receipts. The compiler, application and live run qualification
+for this new cohort is pending; the harness does not establish a saving.
+
+Round 6 is a separate typed-collection-record authoring cohort. Select it only
+with `--round 6 --authoring-profile
+semaprax-project-v31-collection-record-v1`. The route is Project v31,
+`language-command-io.collection-record.v1`; its fresh evidence uses
+`semaprax.event-sim-qualification-evidence.v6`, campaign schema v5, and Codex
+campaign schema v5. Prepare a new all-15 native qualification with:
+
+```sh
+python3 benchmarks/event-sim-tokens-v1/campaign.py qualify-v6 \
+  --compiler-source-ref <verified-source-commit> --semaprax-bin <verified-compiler> \
+  --candidate <reviewed-v31-candidate> --output <new-external-qualification-directory>
+```
+
+The harness binds the exact compiler source and binary, closed authored source
+inventory, manifest, generated native subject, and every original acceptance
+case. Round-5/v32, round-4/v30, and older receipts cannot qualify this cohort.
+The frozen SPEC, corpus, oracle, 15 behaviors, diagnostics, publication
+requirements, and limits remain the governing application contract; only the
+historical Project setup clause is replaced by the selected v31 route. The
+TypeScript prompt and strong pinned setup remain byte-identical to the prior
+matched cohort. Both arms still require at least five trials, including
+failures, and the same requested model and effort. Evidence is replayed before
+any worktree or paid endpoint. The typed application and its fresh v31
+qualification are source-only and execution-pending; this cohort makes no
+performance or token-savings claim.
+
+Future Codex attempt receipts retain full monotonic acceptance harness duration
+as `acceptance_elapsed_seconds`, including an acceptance exception before a
+normal report exists. This wall measurement is distinct from agent session time
+and build/test/check subprocess subtotals. Missing historical wall observations
+remain unavailable; no subprocess sum or missing timing is substituted as wall
+or zero. Any per-accepted wall report must include rejected attempts and retain
+null for incomplete observations or zero accepted tasks. This accounting change
+does not revise historical campaign artifacts or establish an efficiency gain.

@@ -10,13 +10,15 @@ use super::hints;
 use super::scope::VerifierFrame;
 use super::type_table::TypeTable;
 use super::IterativeVerifier;
-use crate::ast::{Expr, Function, Program, Statement, Type, TypeDeclarationKind};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, Function, Statement, Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
 use std::collections::HashMap;
 
 mod blocks;
 mod calls;
 mod enter;
+mod lexical_exit;
 mod match_arms;
 mod matching;
 mod operators;
@@ -124,6 +126,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             body,
             ..
         }
+        | Statement::ForBorrow {
+            item,
+            item_span,
+            values,
+            body,
+            ..
+        }
         | Statement::ForOwn {
             item,
             item_span,
@@ -157,6 +166,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             block_scope,
             index: next,
             outer_names,
+            recovery_checkpoint: self.recovery.checkpoint(self.diagnostics),
         });
         self.frames.push(VerifierFrame::Enter {
             expression: next_statement.value(),
@@ -262,9 +272,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
     }
 }
 
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_expr_iterative(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,
@@ -274,6 +285,102 @@ pub(super) fn check_expr_iterative(
     allow_moves: bool,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<CheckedValue> {
+    check_expr_with_helpers(
+        program,
+        current,
+        expr,
+        variables,
+        functions,
+        types,
+        result_type,
+        allow_moves,
+        diagnostics,
+        None,
+        None,
+    )
+}
+#[cfg(test)]
+#[allow(clippy::too_many_arguments)]
+pub(super) fn check_expr_with_helpers<'a, 'p>(
+    program: &'p dyn ProgramSource,
+    current: &'p Function,
+    expr: &'p Expr,
+    variables: &mut HashMap<String, Binding>,
+    functions: &'p HashMap<&'p str, &'p Function>,
+    types: &'p TypeTable<'p>,
+    result_type: Option<&'p Type>,
+    allow_moves: bool,
+    diagnostics: &'a mut Vec<Diagnostic>,
+    helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,
+    fused_producer: Option<&'p Expr>,
+) -> Option<CheckedValue> {
+    check_expr_with_helpers_view(
+        program,
+        current,
+        expr,
+        variables,
+        functions,
+        types,
+        result_type,
+        allow_moves,
+        diagnostics,
+        helpers,
+        fused_producer,
+    )
+    .0
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn check_expr_with_helpers_view<'a, 'p>(
+    program: &'p dyn ProgramSource,
+    current: &'p Function,
+    expr: &'p Expr,
+    variables: &mut HashMap<String, Binding>,
+    functions: &'p HashMap<&'p str, &'p Function>,
+    types: &'p TypeTable<'p>,
+    result_type: Option<&'p Type>,
+    allow_moves: bool,
+    diagnostics: &'a mut Vec<Diagnostic>,
+    helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,
+    fused_producer: Option<&'p Expr>,
+) -> (
+    Option<CheckedValue>,
+    Option<super::recovery::RefusalView<'p>>,
+) {
+    check_expr_with_signature_view(
+        program,
+        current,
+        expr,
+        variables,
+        functions,
+        types,
+        result_type,
+        allow_moves,
+        diagnostics,
+        helpers,
+        fused_producer,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn check_expr_with_signature_view<'a, 'p>(
+    program: &'p dyn ProgramSource,
+    current: &'p Function,
+    expr: &'p Expr,
+    variables: &mut HashMap<String, Binding>,
+    functions: &'p HashMap<&'p str, &'p Function>,
+    types: &'p TypeTable<'p>,
+    result_type: Option<&'p Type>,
+    allow_moves: bool,
+    diagnostics: &'a mut Vec<Diagnostic>,
+    helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,
+    fused_producer: Option<&'p Expr>,
+    signature: Option<super::declaration::SignatureOrigin<'p>>,
+) -> (
+    Option<CheckedValue>,
+    Option<super::recovery::RefusalView<'p>>,
+) {
     let initial = std::mem::take(variables);
     let mut verifier = IterativeVerifier::new(
         program,
@@ -285,7 +392,27 @@ pub(super) fn check_expr_iterative(
         allow_moves,
         diagnostics,
     );
+    // The public body producer holds the exact authored template before its
+    // validation-only scalar substitutions clear the type-parameter names.
+    // Authenticate the original receipt against that environment and the real
+    // specialized bindings; no source lookup or span-only inference is used.
+    if let Some(recovery) = signature.as_ref().and_then(|origin| {
+        super::recovery::Recovery::signature_origin(
+            program,
+            current,
+            &verifier.scopes[0].bindings,
+            types,
+            verifier.diagnostics,
+            origin,
+            result_type,
+        )
+    }) {
+        verifier.recovery = recovery;
+    }
+    verifier.byte_helpers = helpers;
+    verifier.fused_producer = fused_producer;
     let result = verifier.run(expr);
+    let refusal = verifier.recovery.view(expr);
     *variables = verifier
         .scopes
         .first_mut()
@@ -293,10 +420,29 @@ pub(super) fn check_expr_iterative(
         .unwrap_or_default();
     drop(verifier);
     match result {
-        Ok(value) => value,
+        Ok(value) => (value, refusal),
         Err(diagnostic) => {
-            diagnostics.push(diagnostic.at_path(&program.path));
-            None
+            diagnostics.push(diagnostic.at_path(program.path()));
+            (None, None)
         }
+    }
+}
+
+impl<'a, 'p> IterativeVerifier<'a, 'p> {
+    fn byte_helper_target(&self, target: &Function) -> bool {
+        self.byte_helpers.map_or_else(
+            || crate::loop_calls::byte_writer::source_target(self.program, target),
+            |index| index.target(target),
+        )
+    }
+    pub(in crate::source_verify) fn byte_helper_assignment(
+        &self,
+        name: &str,
+        value: &Expr,
+    ) -> bool {
+        self.byte_helpers.map_or_else(
+            || crate::loop_calls::byte_writer::source_assignment(self.program, name, value),
+            |index| index.assignment(name, value),
+        )
     }
 }

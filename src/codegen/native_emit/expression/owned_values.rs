@@ -1,3 +1,4 @@
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{self, ExpressionId, ResolvedExpr, ResolvedExprKind};
 

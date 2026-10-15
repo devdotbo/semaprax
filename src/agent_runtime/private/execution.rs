@@ -10,9 +10,9 @@ use super::evidence::{preflight_current_terminal, preflight_external_capacity, E
 use super::request::{authorize_tool, render_tool_result, route};
 use super::*;
 
-pub(super) fn run_bounded<H: AgentHost>(
+pub(super) fn run_bounded(
     profile: &Profile,
-    host: &mut H,
+    host: &mut dyn AgentHost,
     cancellation: &AgentCancellation,
     policy_epoch: u64,
     task: Task,
@@ -87,9 +87,9 @@ pub(super) fn run_bounded<H: AgentHost>(
     Ok(state)
 }
 
-fn drive<H: AgentHost>(
+fn drive(
     profile: &Profile,
-    host: &mut H,
+    host: &mut dyn AgentHost,
     cancellation: &AgentCancellation,
     policy_epoch: u64,
     task: &Task,
@@ -216,9 +216,9 @@ fn drive<H: AgentHost>(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn provider_turn<H: AgentHost>(
+fn provider_turn(
     profile: &Profile,
-    host: &mut H,
+    host: &mut dyn AgentHost,
     cancellation: &AgentCancellation,
     policy_epoch: u64,
     state: &mut RunState,
@@ -658,9 +658,9 @@ fn provider_turn<H: AgentHost>(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn execute_tool<H: AgentHost>(
+fn execute_tool(
     profile: &Profile,
-    host: &mut H,
+    host: &mut dyn AgentHost,
     cancellation: &AgentCancellation,
     policy_epoch: u64,
     task: &Task,
@@ -1215,6 +1215,6 @@ pub(super) fn termination_from_diagnostic(diagnostic: Diagnostic) -> Termination
     Termination {
         status,
         code: Some(diagnostic.code),
-        message: Some(diagnostic.message),
+        message: Some(diagnostic.message.into_owned()),
     }
 }

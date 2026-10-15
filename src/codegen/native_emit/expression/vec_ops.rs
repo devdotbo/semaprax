@@ -1,8 +1,16 @@
 //! Native expression lowering for compiler-owned bounded Vec operations.
 
+mod copy_record;
+mod field_read;
+mod field_unique;
+mod owned_leaf;
 mod owned_payload;
+mod plan_infallible;
 mod record_payload;
+mod sort_keys;
+mod string_slot;
 
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedExpr, ResolvedType};
 
@@ -18,11 +26,38 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         type_arguments: &[ResolvedType],
         args: &[ResolvedExpr],
     ) -> Result<CValue, Diagnostic> {
+        if op == crate::vec_ops::VecOp::StrAt {
+            return self.emit_string_slot(expr);
+        }
+        if op == crate::vec_ops::VecOp::UniqueBy {
+            return self.emit_field_unique(expr);
+        }
         let [element] = type_arguments else {
             return Err(backend_error(
                 "bounded Vec operation has incorrect type arity",
             ));
         };
+        if crate::hir::copy_record_collection::admitted(&self.program.declarations, element) {
+            return self.emit_copy_record_vec(expr, op, element, args);
+        }
+        if crate::hir::owned_leaf_collection::admits_operation(
+            &self.program.declarations,
+            op,
+            element,
+        ) && (!crate::hir::owned_record_collection::admits_vec_operation_element(
+            &self.program.declarations,
+            op,
+            element,
+        ) || matches!(
+            op,
+            crate::vec_ops::VecOp::CloneAt
+                | crate::vec_ops::VecOp::Replace
+                | crate::vec_ops::VecOp::ReserveOwned
+                | crate::vec_ops::VecOp::SortOwned
+                | crate::vec_ops::VecOp::SortBy
+        )) {
+            return self.emit_owned_leaf_vec(expr, op, element, args);
+        }
         let admitted_record = crate::hir::owned_record_collection::admits_vec_operation_element(
             &self.program.declarations,
             op,
@@ -60,6 +95,15 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         self.require_type(&expr.ty, &return_type, "bounded Vec operation result")?;
         let plan = self.bytes_plan;
         match op {
+            crate::vec_ops::VecOp::StrAt
+            | crate::vec_ops::VecOp::CloneAt
+            | crate::vec_ops::VecOp::Replace
+            | crate::vec_ops::VecOp::ReserveOwned
+            | crate::vec_ops::VecOp::SortOwned
+            | crate::vec_ops::VecOp::SortBy
+            | crate::vec_ops::VecOp::UniqueBy => {
+                Err(backend_error("owned operation reached scalar Vec lowering"))
+            }
             crate::vec_ops::VecOp::WithCapacity => {
                 self.require_type(&values[0].ty, &ResolvedType::Usize, "Vec capacity")?;
                 let plan =
@@ -71,7 +115,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "spx_status = spx_vec_with_capacity(spx_ctx, UINT32_C({tag}), {}, &{destination});",
                     values[0].code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
                 }
@@ -98,7 +142,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "spx_status = spx_vec_push(spx_ctx, UINT32_C({tag}), &{source}, {bits}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
@@ -130,7 +174,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "spx_status = spx_vec_reserve_exact(spx_ctx, UINT32_C({tag}), &{source}, {}, &{destination});",
                     values[1].code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
@@ -160,7 +204,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "spx_status = spx_vec_set(spx_ctx, UINT32_C({tag}), &{source}, {}, {bits}, &{destination});",
                     values[1].code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
@@ -188,8 +232,10 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 } else {
                     "spx_vec_clear"
                 };
-                self.line(&format!("spx_status = {operation}(spx_ctx, UINT32_C({tag}), &{source}, &{destination});"));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.line(&format!(
+                    "spx_status = {operation}(spx_ctx, UINT32_C({tag}), &{source}, &{destination});"
+                ));
+                self.emit_plan_infallible_vec_status(expr, op)?;
                 self.line(&format!("{source_flag} = false;"));
                 for line in plan.apply_at(&expr.id)?.lines() {
                     self.line(line);
@@ -200,6 +246,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 })
             }
             crate::vec_ops::VecOp::Len | crate::vec_ops::VecOp::Capacity => {
+                self.validate_plan_infallible_vec_operation(expr, op)?;
                 self.require_type(
                     &values[0].ty,
                     &crate::vec_ops::resolved_vec(element.clone()),
@@ -232,7 +279,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "spx_status = spx_vec_get(spx_ctx, &({}), UINT32_C({tag}), {}, &{bits});",
                     values[0].code, values[1].code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 Ok(CValue {
                     code: vec_bits_to_scalar(&bits, element)?,
                     ty: element.clone(),
@@ -264,7 +311,7 @@ fn vec_element_tag(ty: &ResolvedType) -> Result<i32, Diagnostic> {
         _ => {
             return Err(backend_error(
                 "bounded Vec operation reached an element type this backend does not execute",
-            ))
+            ));
         }
     })
 }
@@ -277,7 +324,7 @@ fn vec_scalar_to_bits(value: &CValue) -> String {
     }
 }
 
-fn vec_bits_to_scalar(bits: &str, ty: &ResolvedType) -> Result<String, Diagnostic> {
+pub(super) fn vec_bits_to_scalar(bits: &str, ty: &ResolvedType) -> Result<String, Diagnostic> {
     Ok(match ty {
         ResolvedType::I64 => format!("((int64_t){bits})"),
         ResolvedType::I32 => format!("((int32_t){bits})"),
@@ -292,7 +339,7 @@ fn vec_bits_to_scalar(bits: &str, ty: &ResolvedType) -> Result<String, Diagnosti
         _ => {
             return Err(backend_error(
                 "bounded Vec operation reached an element type this backend does not execute",
-            ))
+            ));
         }
     })
 }

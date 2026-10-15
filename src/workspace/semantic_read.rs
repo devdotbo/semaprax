@@ -84,3 +84,23 @@ impl WorkspaceSemanticReadAuthority {
 
 #[cfg(test)]
 mod tests;
+
+impl WorkspaceSemanticReadAuthority {
+    pub(crate) fn finish_reporting<T>(
+        self,
+        result: Result<T, crate::workspace_report::WorkspaceReportFailure>,
+    ) -> Result<T, crate::workspace_report::WorkspaceReportFailure> {
+        let value = match result {
+            Ok(value) => value,
+            Err(failure) => {
+                return match unlock_file(&self.guard.lock) {
+                    Ok(()) => Err(failure),
+                    Err(diagnostics) => Err(failure.with_unlock_override(diagnostics)),
+                };
+            }
+        };
+        // The success-tail still uses the COMPLETE old guard/recheck/unlock
+        // path. Only an initial affine failure needs a distinct ownership handoff.
+        self.finish(Ok(value)).map_err(Into::into)
+    }
+}

@@ -13,6 +13,7 @@ pub(super) struct Leaves {
 }
 
 impl Leaves {
+    #[cfg(test)]
     pub(super) fn new(by_flag: BTreeMap<LivenessFlagId, Leaf>) -> Self {
         let mut by_storage = BTreeMap::<StorageId, Vec<LivenessFlagId>>::new();
         for (flag, leaf) in &by_flag {
@@ -25,6 +26,33 @@ impl Leaves {
             by_flag,
             by_storage,
         }
+    }
+
+    pub(super) fn new_with_budget(
+        function: &ResolvedFunction,
+        by_flag: BTreeMap<LivenessFlagId, Leaf>,
+        budget: &mut ReplayBudget,
+    ) -> Result<Self, Diagnostic> {
+        let mut by_storage = BTreeMap::<StorageId, Vec<LivenessFlagId>>::new();
+        for (flag, leaf) in &by_flag {
+            if !by_storage.contains_key(&leaf.place.storage) {
+                budget.reserve_btree_node::<StorageId, Vec<LivenessFlagId>>(
+                    function,
+                    "leaf storage index",
+                )?;
+                budget.reserve_clone(function, &leaf.place.storage, "leaf storage key")?;
+                by_storage.insert(leaf.place.storage.clone(), Vec::new());
+            }
+            let flags = by_storage
+                .get_mut(&leaf.place.storage)
+                .expect("storage key inserted");
+            budget.reserve_vec(function, flags, 1, "leaf storage flag vector")?;
+            flags.push(*flag);
+        }
+        Ok(Self {
+            by_flag,
+            by_storage,
+        })
     }
 
     /// The leaves at or below `place`, in liveness-flag order.
@@ -51,3 +79,5 @@ impl std::ops::Deref for Leaves {
         &self.by_flag
     }
 }
+
+mod paid;

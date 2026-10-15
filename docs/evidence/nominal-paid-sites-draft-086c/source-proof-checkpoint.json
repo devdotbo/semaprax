@@ -1,0 +1,16 @@
+{
+  "source_only": true,
+  "whole_source_rows": 69,
+  "all_original_archives_unchanged": true,
+  "static36_pass": true,
+  "provider17_complete_originals_equal": true,
+  "affected_active_list_inverse_rows_equal": true,
+  "production_facts_child_pending": true,
+  "rust_execution": false,
+  "new_sources": [
+    "src/hir/declaration_index/nominal_construction.rs",
+    "src/hir/declaration_index/nominal_construction/types.rs",
+    "src/hir/declaration_index/nominal_paid_values.rs",
+    "src/hir/declaration_index/nominal_paid_inheritance.rs"
+  ]
+}

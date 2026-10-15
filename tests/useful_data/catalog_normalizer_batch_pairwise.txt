@@ -1,0 +1,354 @@
+module catalog_normalizer.batch;
+use type @id("std.data.ndjson.fault") from std.data.ndjson as FramingFault;
+use function @id("std.data.ndjson.line-start") from std.data.ndjson as framed_line_start;
+use function @id("std.data.ndjson.line-end") from std.data.ndjson as framed_line_end;
+use function @id("std.data.ndjson.basic-line-fault") from std.data.ndjson as framing_fault;
+use function @id("std.data.json.dec.at_in") from std.data.json.dec as byte_in;
+use function @id("catalog_normalizer.record.id-value") from catalog_normalizer.record as record_id_value;
+use function @id("catalog_normalizer.record.same-id") from catalog_normalizer.record as same_decoded_id;
+use function @id("catalog_normalizer.record.quantity-value") from catalog_normalizer.record as record_quantity_value;
+use function @id("catalog_normalizer.record.quantity-or") from catalog_normalizer.record as quantity_or;
+use function @id("catalog_normalizer.record.record-problem") from catalog_normalizer.record as record_problem;
+use function @id("catalog_normalizer.record.problem-category") from catalog_normalizer.record as record_problem_category;
+use function @id("catalog_normalizer.record.problem-offset") from catalog_normalizer.record as record_problem_offset;
+use function @id("catalog_normalizer.enrichment.outcome") from catalog_normalizer.enrichment as enrichment_outcome;
+use function @id("catalog_normalizer.enrichment.is-terminal") from catalog_normalizer.enrichment as enrichment_terminal;
+use function @id("catalog_normalizer.enrichment.failure-category") from catalog_normalizer.enrichment as enrichment_failure_category;
+
+// A terminal LF closes the last record; it never creates an additional one.
+// The one-byte LF body therefore contains zero records.
+@id("catalog_normalizer.batch.record-count")
+fn record_count(body: borrow Slice<u8>) -> usize
+{
+    let length = byte_len(body);
+    let mut index = 0usize;
+    let mut count = 0usize;
+    let mut at_start = true;
+    while index < length {
+        let byte = match byte_get(body, index) { Option::Some { value: matched_value } => matched_value, Option::None {} => 0u8, };
+        count = if at_start { count + 1usize } else { count };
+        at_start = byte == 10u8;
+        index = index + 1usize;
+        index < length
+    }
+    let only_line = length == 1usize && match byte_get(body, 0usize) { Option::Some { value } => value == 10u8, Option::None {} => false, };
+    if only_line { 0usize } else { count }
+}
+
+@id("catalog_normalizer.batch.line-start")
+fn line_start(body: borrow Slice<u8>, record: usize) -> usize
+{
+    framed_line_start(body, record)
+}
+
+@id("catalog_normalizer.batch.line-end")
+fn line_end(body: borrow Slice<u8>, start: usize) -> usize
+{
+    if start > byte_len(body) { start } else { framed_line_end(body, start) }
+}
+
+@id("catalog_normalizer.batch.body-too-long")
+fn body_too_long(body: borrow Slice<u8>) -> bool
+{
+    byte_len(body) > 65536usize
+}
+
+@id("catalog_normalizer.batch.too-many-records")
+fn too_many_records(body: borrow Slice<u8>) -> bool
+{
+    record_count(body) > 256usize
+}
+
+@id("catalog_normalizer.batch.line-too-long")
+fn line_too_long(body: borrow Slice<u8>, record: usize) -> bool
+{
+    let start = line_start(body, record);
+    line_end(body, start) - start > 512usize
+}
+
+@id("catalog_normalizer.batch.line-empty")
+fn line_empty(body: borrow Slice<u8>, record: usize) -> bool
+{
+    let start = line_start(body, record);
+    line_end(body, start) == start
+}
+
+// CNORM-005: scan the complete record range as UTF-8 before any JSON token
+// parser sees it. The returned sentinel is exactly `line_length + 1 + fault`,
+// matching the existing JSON decoder's bounded failure convention.
+@id("catalog_normalizer.batch.continuations")
+fn continuations(line: borrow Slice<u8>, start: usize, count: usize) -> bool
+{
+    let mut offset = 0usize;
+    let mut valid = true;
+    let mut scanning = offset < count;
+    while scanning {
+        valid = byte_in(line, start + offset, 128u8, 191u8);
+        offset = if valid { offset + 1usize } else { offset };
+        scanning = valid && offset < count;
+        scanning
+    }
+    valid
+}
+
+@id("catalog_normalizer.batch.line-utf8-end-range")
+fn line_utf8_end_range(body: borrow Slice<u8>, start: usize, stop: usize) -> usize
+{
+    let line = byte_range(body, start, stop);
+    let length = byte_len(line);
+    let mut index = 0usize;
+    let mut valid = true;
+    let mut scanning = index < length;
+    while scanning {
+        let width = if byte_in(line, index, 0u8, 127u8) { 1usize } else { if byte_in(line, index, 194u8, 223u8) { if continuations(line, index + 1usize, 1usize) { 2usize } else { 0usize } } else { if byte_in(line, index, 224u8, 224u8) { if byte_in(line, index + 1usize, 160u8, 191u8) && continuations(line, index + 2usize, 1usize) { 3usize } else { 0usize } } else { if byte_in(line, index, 225u8, 236u8) { if continuations(line, index + 1usize, 2usize) { 3usize } else { 0usize } } else { if byte_in(line, index, 237u8, 237u8) { if byte_in(line, index + 1usize, 128u8, 159u8) && continuations(line, index + 2usize, 1usize) { 3usize } else { 0usize } } else { if byte_in(line, index, 238u8, 239u8) { if continuations(line, index + 1usize, 2usize) { 3usize } else { 0usize } } else { if byte_in(line, index, 240u8, 240u8) { if byte_in(line, index + 1usize, 144u8, 191u8) && continuations(line, index + 2usize, 2usize) { 4usize } else { 0usize } } else { if byte_in(line, index, 241u8, 243u8) { if continuations(line, index + 1usize, 3usize) { 4usize } else { 0usize } } else { if byte_in(line, index, 244u8, 244u8) { if byte_in(line, index + 1usize, 128u8, 143u8) && continuations(line, index + 2usize, 2usize) { 4usize } else { 0usize } } else { 0usize } } } } } } } } };
+        valid = width > 0usize;
+        index = if valid { index + width } else { index };
+        scanning = valid && index < length;
+        scanning
+    }
+    if valid { index } else { length + 1usize + index }
+}
+
+@id("catalog_normalizer.batch.line-utf8-end")
+fn line_utf8_end(body: borrow Slice<u8>, record: usize) -> usize
+{
+    let start = line_start(body, record);
+    line_utf8_end_range(body, start, line_end(body, start))
+}
+
+@id("catalog_normalizer.batch.line-utf8-valid")
+fn line_utf8_valid(body: borrow Slice<u8>, record: usize) -> bool
+{
+    let start = line_start(body, record);
+    let end = line_end(body, start);
+    line_utf8_end_range(body, start, end) == end - start
+}
+
+// CNORM-020/CNORM-005: valid lines map to zero; callers report this value
+// only after `line_utf8_valid` fails, so a real offset zero remains unambiguous.
+@id("catalog_normalizer.batch.line-utf8-fault")
+fn line_utf8_fault(body: borrow Slice<u8>, record: usize) -> usize
+{
+    let start = line_start(body, record);
+    let end = line_end(body, start);
+    let length = end - start;
+    let marker = line_utf8_end_range(body, start, end);
+    if marker > length { marker - length - 1usize } else { 0usize }
+}
+
+// CNORM-015: quantities are schema-validated nonnegative i64 values before
+// reaching this helper. Test before adding, so no wraparound, saturation, or
+// wider intermediate can choose the response category.
+@id("catalog_normalizer.batch.total-would-overflow")
+fn total_would_overflow(total: i64, quantity: i64) -> bool
+{
+    if total < 0 || quantity < 0 { true } else { total > 9223372036854775807 - quantity }
+}
+
+@id("catalog_normalizer.batch.total-after")
+fn total_after(total: i64, quantity: i64) -> i64
+{
+    if total_would_overflow(total, quantity) { total } else { total + quantity }
+}
+
+// CNORM-014 is intentionally a bounded quadratic scan: no owned id map is
+// needed for a maximum of 256 records, and decoded_token_eq keeps escaped
+// equivalents equal without materializing either id.  The batch coordinator
+// calls this only after every record has passed `record_problem`.
+@id("catalog_normalizer.batch.first-duplicate-record")
+fn first_duplicate_record(body: borrow Slice<u8>) -> usize
+{
+    let count = record_count(body);
+    let mut record = 1usize;
+    let mut start = if record < count { line_end(body, 0usize) + 1usize } else { 0usize };
+    let mut duplicate = count;
+    let mut scanning = record < count;
+    while scanning {
+        let end = line_end(body, start);
+        let same = record_is_duplicate(body, record, start, end);
+        duplicate = if same { record } else { duplicate };
+        record = if same { count } else { record + 1usize };
+        start = end + 1usize;
+        scanning = record < count;
+        scanning
+    }
+    duplicate
+}
+
+// One scalar carries the exact CNORM-020 envelope inputs without publishing
+// bytes while validation is still in progress.  The scales exceed every
+// admitted byte offset and record index: category, (record + 1), offset.
+// 33,554,944 is exactly 512 * 65,537, so every field has a disjoint range.
+@id("catalog_normalizer.batch.pack-failure")
+fn pack_failure(category: usize, record_plus_one: usize, offset: usize) -> usize
+{
+    category * 33554944usize + record_plus_one * 65537usize + offset
+}
+
+@id("catalog_normalizer.batch.failure-category")
+fn failure_category(failure: usize) -> usize
+{
+    failure / 33554944usize
+}
+
+@id("catalog_normalizer.batch.failure-record-plus-one")
+fn failure_record_plus_one(failure: usize) -> usize
+{
+    failure % 33554944usize / 65537usize
+}
+
+@id("catalog_normalizer.batch.failure-offset")
+fn failure_offset(failure: usize) -> usize
+{
+    failure % 65537usize
+}
+
+// Accepted records contribute their absolute id opening position to one
+// bounded Copy-scalar vector. Every duplicate probe reads a populated prior
+// slot; a Vec get outside its initialized length fails closed in the
+// compiler-owned vec status domain. The owner never becomes output.
+// CNORM-001..016 first-error coordinator. Its callers carry each current
+// record range forward, and duplicate scans read prior accepted id positions
+// from a private bounded index; the intentional O(n^2) id comparisons do not
+// rescan prior record bodies. It validates one line completely, checks that
+// line's decoded id against prior accepted lines, then checks total addition.
+// A nonzero result is the only information the writer receives, so a valid
+// prefix can never be rendered as output.
+@id("catalog_normalizer.batch.record-basic-failure")
+fn record_basic_failure(body: borrow Slice<u8>, record: usize, start: usize, end: usize) -> usize
+{
+    if record < 256usize { let line = byte_range(body, start, end); let fault = framing_fault(line, record); let parsed = if fault.category == 0 { record_problem(line) } else { 0usize }; if fault.category != 0 { pack_failure(usize_from_i64(fault.category), record + 1usize, fault.byte_offset) } else { if parsed != 0usize { pack_failure(record_problem_category(parsed), record + 1usize, record_problem_offset(parsed)) } else { 0usize } } } else { let line = byte_range(body, start, end); let too_long = end - start > 512usize; let utf8_marker = if too_long { end - start } else { line_utf8_end_range(body, start, end) }; let utf8 = utf8_marker == end - start; let empty = end == start; let parsed = if !too_long && utf8 && !empty { record_problem(line) } else { 0usize }; let utf8_fault = if utf8_marker > end - start { utf8_marker - (end - start) - 1usize } else { 0usize }; if too_long { pack_failure(1usize, record + 1usize, 512usize) } else { if !utf8 { pack_failure(2usize, record + 1usize, utf8_fault) } else { if empty { pack_failure(3usize, record + 1usize, 0usize) } else { if parsed != 0usize { pack_failure(record_problem_category(parsed), record + 1usize, record_problem_offset(parsed)) } else { 0usize } } } } }
+}
+
+@id("catalog_normalizer.batch.record-is-duplicate")
+fn record_is_duplicate(body: borrow Slice<u8>, record: usize, start: usize, end: usize) -> bool
+{
+    let line = byte_range(body, start, end);
+    let id = record_id_value(line);
+    let mut prior = 0usize;
+    let mut prior_start = 0usize;
+    let mut duplicate = false;
+    let mut comparing = prior < record;
+    while comparing {
+        let prior_end = line_end(body, prior_start);
+        let prior_line = byte_range(body, prior_start, prior_end);
+        duplicate = same_decoded_id(body, prior_start + record_id_value(prior_line), start + id);
+        prior = prior + 1usize;
+        prior_start = prior_end + 1usize;
+        comparing = !duplicate && prior < record;
+        comparing
+    }
+    duplicate
+}
+
+@id("catalog_normalizer.batch.record-failure")
+fn record_failure(body: borrow Slice<u8>, record: usize, start: usize, end: usize, total: i64) -> usize
+{
+    let basic = record_basic_failure(body, record, start, end);
+    if basic != 0usize { basic } else { let duplicate = record_is_duplicate(body, record, start, end); let line = byte_range(body, start, end); let id = record_id_value(line); indexed_record_failure(body, record, start, end, total, basic, id, duplicate) }
+}
+
+@id("catalog_normalizer.batch.indexed-record-failure")
+fn indexed_record_failure(body: borrow Slice<u8>, record: usize, start: usize, end: usize, total: i64, basic: usize, id: usize, duplicate: bool) -> usize
+{
+    if basic != 0usize { basic } else { if duplicate { pack_failure(5usize, record + 1usize, id) } else { let quantity = valid_record_quantity(body, start, end); if total_would_overflow(total, quantity) { pack_failure(6usize, record + 1usize, id) } else { 0usize } } }
+}
+
+@id("catalog_normalizer.batch.valid-record-quantity")
+fn valid_record_quantity(body: borrow Slice<u8>, start: usize, end: usize) -> i64
+{
+    let line = byte_range(body, start, end);
+    // This caller has a fully accepted record. Its final bare nonnegative
+    // integer is quantity; only the compact suffix avoids another label walk.
+    let length = byte_len(line);
+    let tail = if length > 0usize { length - 1usize } else { 0usize };
+    let closed = length > 0usize && byte_in(line, tail, 125u8, 125u8);
+    let mut position = tail;
+    let mut digits = 0usize;
+    let mut scanning = closed && position > 0usize && byte_in(line, position - 1usize, 48u8, 57u8);
+    while scanning {
+        position = position - 1usize;
+        digits = digits + 1usize;
+        scanning = position > 0usize && digits < 19usize && byte_in(line, position - 1usize, 48u8, 57u8);
+        scanning
+    }
+    let compact = digits > 0usize && position > 0usize && byte_in(line, position - 1usize, 58u8, 58u8);
+    let value = if compact { position } else { record_quantity_value(line) };
+    quantity_or(line, value, -1)
+}
+
+// Provider selection follows the regular structural, duplicate, and total
+// checks. A terminal outcome is sticky before the next record is examined.
+@id("catalog_normalizer.batch.provider-failure-if")
+fn provider_failure_if(line: borrow Slice<u8>, enriched: bool, regular: usize, record: usize, id: usize) -> usize
+{
+    if regular != 0usize { regular } else { if enriched { let provider = enrichment_outcome(line, id); if enrichment_terminal(provider) { pack_failure(enrichment_failure_category(provider), record + 1usize, id) } else { 0usize } } else { 0usize } }
+}
+
+@id("catalog_normalizer.batch.scan-first-failure")
+fn scan_first_failure(body: borrow Slice<u8>, enriched: bool) -> usize
+{
+    let count = record_count(body);
+    let whole = body_too_long(body);
+    let many = !whole && count > 256usize;
+    let mut record = 0usize;
+    let mut start = 0usize;
+    let mut total = 0;
+    let mut index = vec_with_capacity<usize>(256usize);
+    let mut failure = if whole { pack_failure(1usize, 0usize, 65536usize) } else { if many { pack_failure(1usize, 257usize, 0usize) } else { 0usize } };
+    let mut scanning = failure == 0usize && record < count;
+    while scanning {
+        let end = line_end(body, start);
+        let basic = record_basic_failure(body, record, start, end);
+        let line = byte_range(body, start, end);
+        let id = if basic == 0usize { record_id_value(line) } else { 0usize };
+        let tail = if basic == 0usize { plain_item_tail(body, start + id) } else { 0usize };
+        let mut prior = 0usize;
+        let mut duplicate = false;
+        let mut comparing = basic == 0usize && prior < record;
+        while comparing {
+            let entry = vec_get<usize>(index, prior);
+            duplicate = indexed_id_match(body, entry, start + id, tail);
+            prior = prior + 1usize;
+            comparing = !duplicate && prior < record;
+            comparing
+        }
+        let regular = indexed_record_failure(body, record, start, end, total, basic, id, duplicate);
+        failure = provider_failure_if(line, enriched, regular, record, id);
+        let _ = if failure == 0usize { index = vec_push<usize>(index, (start + id) * 16usize + tail); 0usize } else { 0usize };
+        total = if failure == 0usize { total_after(total, valid_record_quantity(body, start, end)) } else { total };
+        record = if failure == 0usize { record + 1usize } else { count };
+        start = end + 1usize;
+        scanning = failure == 0usize && record < count;
+        scanning
+    }
+    failure
+}
+
+@id("catalog_normalizer.batch.indexed-id-match")
+fn indexed_id_match(body: borrow Slice<u8>, entry: usize, current: usize, tail: usize) -> bool
+{
+    let prior_tail = entry % 16usize;
+    if tail != 0usize && prior_tail != 0usize && tail != prior_tail { false } else { same_decoded_id(body, entry / 16usize, current) }
+}
+
+// A fixed plain `item-###` ID has no escape ambiguity. All other IDs retain
+// the exact decoded comparison. The request bound keeps packed offsets safe.
+@id("catalog_normalizer.batch.plain-item-tail")
+fn plain_item_tail(body: borrow Slice<u8>, opening: usize) -> usize
+{
+    let plain = byte_in(body, opening + 1usize, 105u8, 105u8) && byte_in(body, opening + 2usize, 116u8, 116u8) && byte_in(body, opening + 3usize, 101u8, 101u8) && byte_in(body, opening + 4usize, 109u8, 109u8) && byte_in(body, opening + 5usize, 45u8, 45u8) && byte_in(body, opening + 6usize, 48u8, 57u8) && byte_in(body, opening + 7usize, 48u8, 57u8) && byte_in(body, opening + 9usize, 34u8, 34u8);
+    if plain { match byte_get(body, opening + 8usize) { Option::Some { value } => match value { 48u8 => 1usize, 49u8 => 2usize, 50u8 => 3usize, 51u8 => 4usize, 52u8 => 5usize, 53u8 => 6usize, 54u8 => 7usize, 55u8 => 8usize, 56u8 => 9usize, 57u8 => 10usize, _ => 0usize, }, Option::None {} => 0usize, } } else { 0usize }
+}
+
+@id("catalog_normalizer.batch.first-failure")
+fn first_failure(body: borrow Slice<u8>) -> usize
+{
+    scan_first_failure(body, false)
+}
+
+@id("catalog_normalizer.batch.first-enriched-failure")
+fn first_enriched_failure(body: borrow Slice<u8>) -> usize
+{
+    scan_first_failure(body, true)
+}

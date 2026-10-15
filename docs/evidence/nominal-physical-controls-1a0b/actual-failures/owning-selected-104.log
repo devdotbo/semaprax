@@ -1,0 +1,15 @@
+
+running 1 test
+test hir::nominal_payload::tests::nested_512_last_owner_drop_uses_only_its_preacquired_disposal_backing ... 
+thread 'hir::nominal_payload::tests::nested_512_last_owner_drop_uses_only_its_preacquired_disposal_backing' (2383965) panicked at src/hir/nominal_payload/tests.rs:145:5:
+assertion failed: last.freed > 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    hir::nominal_payload::tests::nested_512_last_owner_drop_uses_only_its_preacquired_disposal_backing
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8744 filtered out; finished in 0.07s
+

@@ -81,6 +81,11 @@ def summarize(data: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str, Any
             ),
             "actual_billed_usd": None,
             "actual_billed_usd_per_accepted_task": None,
+            "wall_seconds_per_accepted_task_including_failures": {
+                key: sum(values[key]) / accepted
+                if accepted and values[key] and all(_duration(value) for value in values[key]) else None
+                for key in ("agent_wall_seconds", "acceptance_wall_seconds")
+            },
             "metrics_all_recorded_attempts": {key: _metric(value) for key, value in values.items()},
             "metrics_per_attempt": values,
             "model_request_turns_per_attempt": values["model_request_turns"],
@@ -111,6 +116,7 @@ def summarize(data: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str, Any
             "complete; all arms have five recorded trials"
             if comparison_ready else "incomplete or resource assessment missing/contaminated; no comparative headline is supported"
         ),
+        "acceptance_wall_note": "Actual full harness monotonic receipt only; historical subprocess sums remain separate and do not establish wall time.",
         "winner": None,
         "arms": arms,
         "planned_attempts": len(order),
@@ -124,22 +130,30 @@ def _path(value: Any) -> Path | None:
     return Path(value) if isinstance(value, str) and value else None
 
 
+def _duration(value: Any) -> bool:
+    return _number(value) and value >= 0
+
+
 def _acceptance_seconds(original: dict[str, Any]) -> float | None:
+    # A subprocess subtotal is never a substitute for actual harness wall.
     value = original.get("acceptance_elapsed_seconds")
-    if _number(value):
-        return value
+    return value if _duration(value) else None
+
+
+def _acceptance_subprocess_seconds(original: dict[str, Any]) -> float | None:
     acceptance = original.get("acceptance")
     if not isinstance(acceptance, dict):
         return None
-    pieces = [acceptance.get(key, {}).get("seconds") for key in ("build", "candidate_tests")
-              if isinstance(acceptance.get(key), dict)]
+    phases = [acceptance.get(key) for key in ("build", "candidate_tests")]
     checks = acceptance.get("checks", [])
-    if isinstance(checks, list):
-        pieces.extend(check.get("seconds") for check in checks if isinstance(check, dict))
-    return sum(pieces) if pieces and all(_number(value) for value in pieces) else None
+    if not isinstance(checks, list):
+        return None
+    phases.extend(checks)
+    pieces = [phase.get("seconds") if isinstance(phase, dict) else None for phase in phases]
+    return sum(pieces) if pieces and all(_duration(value) for value in pieces) else None
 
 
-def _recount_trial(original: dict[str, Any]) -> dict[str, Any]:
+def _recount_trial(original: dict[str, Any], price_book: dict[str, Any] | None = None) -> dict[str, Any]:
     label = f"{original.get('arm')}-{original.get('number', 0):02d}"
     stream, trace = _path(original.get("transcript")), _path(original.get("rollout_trace"))
     evidence: dict[str, str] = {}
@@ -160,7 +174,7 @@ def _recount_trial(original: dict[str, Any]) -> dict[str, Any]:
     if stream is not None and trace is not None and stream.is_file() and trace.is_file():
         observed = campaign.codex.trace_usage(campaign.codex.parse_exec_jsonl(stream), trace)
         if observed.get("reconciled"):
-            price = campaign.codex.list_price_estimate(observed.get("model_requests", []))
+            price = campaign.codex.list_price_estimate(observed.get("model_requests", []), price_book)
         else:
             price["reason"] = "unreconciled task-owned rollout usage"
     usage = observed.get("request_usage_sum", {}) if observed.get("reconciled") else {}
@@ -189,6 +203,7 @@ def _recount_trial(original: dict[str, Any]) -> dict[str, Any]:
         "final_authored_tokens_proxy": authored,
         "agent_wall_seconds": elapsed,
         "acceptance_wall_seconds": acceptance,
+        "acceptance_subprocess_seconds": _acceptance_subprocess_seconds(original),
         "conditional_api_equivalent_usd": price.get("standard_short_context_api_equivalent_usd"),
         "actual_billed_usd": None,
         "evidence_sha256": evidence,
@@ -200,7 +215,7 @@ def recount(path: Path) -> dict[str, Any]:
     require(isinstance(data.get("trials"), list), "results file has no trials array")
     require(all(isinstance(row, dict) for row in data["trials"]),
             "results file contains a malformed trial")
-    rows = [_recount_trial(row) for row in data["trials"]]
+    rows = [_recount_trial(row, data.get("campaign", {}).get("price_book", {})) for row in data["trials"]]
     result = summarize(data, rows)
     campaign_data = data.get("campaign", {})
     calibration = data.get("calibration")

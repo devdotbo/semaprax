@@ -32,7 +32,7 @@ fn desugared_statement_identity_upper(
         .enumerate()
         .try_fold(0usize, |bytes, (index, statement)| {
             let (count, suffix) = match statement {
-                crate::ast::Statement::For { .. } => (
+                crate::ast::Statement::For { .. } | crate::ast::Statement::ForBorrow { .. } => (
                     FOR_GENERATED_EXPRESSION_COUNT,
                     ".value.s2.body.s0.value.arg.1",
                 ),
@@ -675,6 +675,9 @@ fn cleanup_binding_flow<'a>(
                     child_index == 0 || (!is_guard && consume)
                 }
                 crate::ast::ExprKind::Try { .. } => true,
+                crate::ast::ExprKind::LexicalExit { kind, .. } => {
+                    *kind == crate::ast::LexicalExitKind::Return
+                }
                 // A closure body is structurally retained, but construction
                 // only snapshots its captures; the body has no creation-time
                 // ownership or failure effect.
@@ -683,6 +686,7 @@ fn cleanup_binding_flow<'a>(
                 // admitted Copy scalar, transparent in exactly the same way
                 // an upcast is -- it does not consume the binding.
                 crate::ast::ExprKind::Project { .. }
+                | crate::ast::ExprKind::VecConstructor { .. }
                 | crate::ast::ExprKind::Unary { .. }
                 | crate::ast::ExprKind::Yield { .. }
                 | crate::ast::ExprKind::Binary { .. } => false,
@@ -698,6 +702,7 @@ fn cleanup_binding_flow<'a>(
                 | crate::ast::ExprKind::Float64(_)
                 | crate::ast::ExprKind::Bool(_)
                 | crate::ast::ExprKind::String(_)
+                | crate::ast::ExprKind::BorrowedUtf8Literal(_)
                 | crate::ast::ExprKind::Var(_) => false,
             };
             traversal[frame_index] = Some((expression, child_cursor, 0));

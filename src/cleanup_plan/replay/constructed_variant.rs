@@ -1,7 +1,7 @@
 use super::*;
 
 pub(super) fn materialize_constructed_variant(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     state: &mut PathState,
     source: &CleanupPlace,
@@ -34,7 +34,7 @@ pub(super) fn materialize_constructed_variant(
     };
     if constructed_variant != variant
         || program
-            .declarations
+            .declarations()
             .variant_cases(variant)
             .is_none_or(|cases| !cases.iter().any(|candidate| candidate.id == *case))
     {
@@ -74,7 +74,7 @@ pub(super) fn materialize_constructed_variant(
         // authenticated constructor. Match edges derive their own exact
         // payload inventories after tag authentication.
         cases: program
-            .declarations
+            .declarations()
             .variant_cases(variant)
             .ok_or_else(|| replay_error(function, "constructed owning variant has no case domain"))?
             .iter()

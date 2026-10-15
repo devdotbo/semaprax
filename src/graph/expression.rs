@@ -12,6 +12,7 @@ pub(super) fn expr_json(
         quote_json(ownership_text(expression.ownership))
     );
     let output = match &expression.kind {
+        ResolvedExprKind::LexicalExit { kind, target, value } => lexical_exit::expression_json(program, &header, kind, target, value.as_deref())?,
         ResolvedExprKind::Closure {..} | ResolvedExprKind::FunctionReference {..} | ResolvedExprKind::Invoke {..} => function_values::expression_json(program,expression,&header)?,
         ResolvedExprKind::Int(value) => {
             format!(
@@ -52,6 +53,10 @@ pub(super) fn expr_json(
         ResolvedExprKind::Bool(value) => {
             format!("{{{header},\"kind\":\"bool\",\"value\":{value}}}")
         }
+        ResolvedExprKind::BorrowedUtf8Literal(value) => format!(
+            "{{{header},\"kind\":\"borrowed_utf8_literal\",\"root_kind\":\"source_expr_static\",\"byte_length\":{},\"value\":{},\"display\":{}}}",
+            value.len(), quote_json(value), quote_json(&crate::format::canonical_borrowed_utf8_literal(value))
+        ),
         ResolvedExprKind::String(value) => format!(
             "{{{header},\"kind\":\"string\",\"value\":{},\"display\":{}}}",
             quote_json(value),
@@ -74,6 +79,15 @@ pub(super) fn expr_json(
             crate::byte_ops::RANGE_START_AFTER_END_CODE,
             crate::byte_ops::RANGE_END_OUT_OF_BOUNDS_CODE,
         ),
+        ResolvedExprKind::RowLoan { loan, args } => {
+            super::row_loan::expression_json(program, &header, loan, args)?
+        }
+        ResolvedExprKind::VecFieldRead { origin, element, field, bytes, args } => {
+            let arguments = args.iter().map(|arg| expr_json(program, arg))
+                .collect::<Result<Vec<_>, _>>()?.budgeted_join(",");
+            format!("{{{header},\"kind\":\"vec_field_read\",\"element_type\":{},\"field\":{},\"bytes\":{bytes},\"source_form\":{},\"args\":[{arguments}]}}",
+                type_json(element), quote_json(field.as_str()), quote_json(origin.as_str()))
+        }
         ResolvedExprKind::Call {
             callee,
             type_arguments,
@@ -100,6 +114,14 @@ pub(super) fn expr_json(
                     args
                 )
             }
+        }
+        ResolvedExprKind::LiteralFormat { template, args } => {
+            let args = args.iter().map(|argument| expr_json(program, argument))
+                .collect::<Result<Vec<_>, _>>()?.budgeted_join(",");
+            format!(
+                "{{{header},\"kind\":\"literal_format\",\"template\":{},\"args\":[{}]}}",
+                quote_json(template), args
+            )
         }
         ResolvedExprKind::NativeRustImportCall(call) => {
             let args = call
@@ -140,6 +162,11 @@ pub(super) fn expr_json(
             expr_json(program, left)?,
             expr_json(program, right)?
         ),
+        ResolvedExprKind::VecConstructor { element, count, statements, tail } => {
+            crate::hir::vec_constructor::authenticate(expression)?;
+            format!("{{{header},\"kind\":\"vec_constructor\",\"element\":{},\"count\":{count},\"statements\":[{}],\"tail\":{}}}",
+                type_json(element), statements.iter().map(|statement| statement_json(program, statement)).collect::<Result<Vec<_>, _>>()?.budgeted_join(","), expr_json(program, tail)?)
+        }
         ResolvedExprKind::Block { statements, tail } => format!(
             "{{{header},\"kind\":\"block\",\"statements\":[{}],\"tail\":{}}}",
             statements
@@ -210,8 +237,10 @@ pub(super) fn expr_json(
             // Refutable Match v1: matches carrying guards or literal/or
             // patterns project `"exhaustive":false` plus additive per-arm
             // guard nodes; every pre-feature match keeps the exact
-            // `"exhaustive":true` bytes.
-            let exhaustive = !arms.iter().any(|arm| {
+            // `"exhaustive":true` bytes. A borrowed byte traversal receiver
+            // selects only `Some`; its `None` is the backend invariant refusal.
+            let exhaustive = !crate::hir::is_partial_byte_receiver(expression)
+                && !arms.iter().any(|arm| {
                 arm.guard.is_some()
                     || matches!(
                         &arm.pattern,
@@ -340,6 +369,10 @@ fn statement_json(
     statement: &ResolvedStatement,
 ) -> Result<String, Diagnostic> {
     match statement {
+        ResolvedStatement::CopyDiscard { value, .. } => Ok(format!(
+            "{{\"kind\":\"copy_discard\",\"value\":{}}}",
+            expr_json(program, value)?
+        )),
         ResolvedStatement::Let {
             binding,
             mutable,
@@ -386,6 +419,12 @@ fn statement_json(
             quote_json(audit),
             expr_json(program, body)?
         )),
+        ResolvedStatement::LexicalWhile {
+            condition,
+            body,
+            latch,
+            ..
+        } => lexical_exit::statement_json(program, condition, body, latch),
         ResolvedStatement::While {
             condition, body, ..
         } => Ok(format!(

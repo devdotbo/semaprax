@@ -13,10 +13,9 @@ impl PlanBuilder<'_> {
         self.reserve_string_append(&at, &source, state)?;
         let renewal = state.renewals.get(&at).cloned().filter(|_| {
             matches!(&destination.storage, StorageId::Value(_))
-                && crate::cleanup_plan::renewal_binding(self.program, self.function, &at)
-                    .is_some_and(|binding| {
-                        destination == CleanupPlace::whole(StorageId::Value(binding.id.clone()))
-                    })
+                && self.renewal_binding(&at).is_some_and(|binding| {
+                    destination == CleanupPlace::whole(StorageId::Value(binding.id.clone()))
+                })
         });
         let source_flags = self.flags_under(&source);
         let destination_flags = self.flags_under(&destination);
@@ -127,6 +126,25 @@ impl PlanBuilder<'_> {
             }
             mapped
         };
+        for history in state.renewals.values_mut() {
+            history.stage(|flag| {
+                if !source_set.contains(&flag) {
+                    return None;
+                }
+                let source_leaf = &self.leaves[&flag].place;
+                let relative = &source_leaf.projections[source.projections.len()..];
+                destination_order
+                    .iter()
+                    .find(|candidate| {
+                        self.leaves[candidate]
+                            .place
+                            .projections
+                            .iter()
+                            .eq(destination.projections.iter().chain(relative))
+                    })
+                    .copied()
+            });
+        }
         state.append_distinct(destination_order);
         self.publish_string_append(&at, &destination, state)?;
         if let Some(history) = renewal {

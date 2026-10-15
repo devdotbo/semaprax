@@ -52,14 +52,14 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "spx_status = spx_rt_neg_i32(spx_ctx, {}, &{temporary});",
                     value.code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check_at(&expr.id)?;
             }
             UnaryOp::Neg => {
                 self.line(&format!(
                     "spx_status = spx_rt_neg(spx_ctx, {}, &{temporary});",
                     value.code
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check_at(&expr.id)?;
             }
             UnaryOp::Not => self.line(&format!("{temporary} = (!{});", value.code)),
         }

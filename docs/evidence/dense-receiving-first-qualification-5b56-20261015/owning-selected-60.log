@@ -1,0 +1,6 @@
+
+running 1 test
+test workspace_graph::source_schema::consuming_tests::higher_consuming_schema_cannot_mask_forged_record_origin_layout_or_cleanup ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 1.21s
+

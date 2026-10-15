@@ -1,0 +1,106 @@
+use super::*;
+const SOURCE: &str = r#"module scoped.graph;
+@id("row") record Row {@id("row.title") title:string,@id("row.marker") marker:i64,}
+@id("inspect") fn inspect(values:borrow Vec<Row>,index:usize)->i64 {
+ let view=str_as_bytes(vec_field<Row>(values,index,"title"));
+ let marker=vec_field<Row>(values,index,"marker");
+ marker+i64_from_usize(byte_len(view))
+}
+@id("app.main") fn main()->i64 {0}
+"#;
+
+#[test]
+fn graph_binds_stable_field_and_dynamic_vector_view_without_selector_expression() {
+    let parsed = crate::check(SOURCE, "scoped-graph.spx").unwrap();
+    let graph = crate::graph::to_json(&parsed).unwrap();
+    let document: serde_json::Value = serde_json::from_str(&graph).unwrap();
+    assert_eq!(document["schema"], SCHEMA);
+    assert_eq!(document["scoped_vec_field_reads"]["authority"], false);
+    assert!(graph.contains("\"kind\":\"vec_field_read\""));
+    assert!(graph.contains("\"field\":\"row.title\",\"bytes\":true"));
+    assert!(graph.contains("\"root_kind\":\"owned_vector_field\""));
+    assert!(graph.contains("\"vector_field\":{\"element_type\":"));
+    assert!(!graph.contains("\"kind\":\"string\",\"value\":\"title\""));
+    let resolved = hir::resolve(&parsed).unwrap();
+    assert_eq!(graph_schema(&resolved).unwrap(), SCHEMA);
+    assert!(legacy_graph_schema(&resolved).is_err());
+    assert!(crate::graph::reject_evidence_schema(SCHEMA).is_err());
+    assert_eq!(crate::graph::to_json(&parsed).unwrap(), graph);
+    crate::graph::verify_json(&parsed, &graph).unwrap();
+    assert!(crate::graph::to_legacy_json(&parsed).is_err());
+    let stale = graph.replace("\"field\":\"row.title\"", "\"field\":\"row.marker\"");
+    assert_ne!(stale, graph);
+    assert!(crate::graph::verify_json(&parsed, &stale).is_err());
+}
+
+#[test]
+fn feature_free_program_keeps_its_existing_graph_schema_and_wire() {
+    let parsed =
+        crate::check("module old;@id(\"app.main\") fn main()->i64 {0}", "old.spx").unwrap();
+    let resolved = hir::resolve(&parsed).unwrap();
+    assert!(!requires(&resolved));
+    assert_eq!(
+        graph_schema(&resolved).unwrap(),
+        super::super::owned_nested_outcome::graph_schema(&resolved).unwrap()
+    );
+    let selected_functions = resolved.functions.iter().map(|f| f.id.clone()).collect();
+    let selected_types = resolved.types.iter().map(|t| t.id.clone()).collect();
+    let revision = crate::graph::revision(&parsed);
+    let before = super::super::owned_nested_outcome::graph_json(
+        &resolved,
+        &revision,
+        &selected_functions,
+        &selected_types,
+        &GraphView::Module { static_text: false },
+    )
+    .unwrap();
+    assert_eq!(
+        graph_json(
+            &resolved,
+            &revision,
+            &selected_functions,
+            &selected_types,
+            &GraphView::Module { static_text: false }
+        )
+        .unwrap(),
+        before
+    );
+}
+
+#[test]
+fn feature_discovery_includes_deferred_bodies_without_admitting_forged_closures() {
+    let parsed = crate::check(
+        "module scoped.deferred;@id(\"app.main\") fn main()->i64 {let reader=fn(offset:i64)->i64 {offset};reader(0)}",
+        "scoped-deferred.spx",
+    ).unwrap();
+    let mut resolved = hir::resolve(&parsed).unwrap();
+    assert!(!requires(&resolved));
+    let field_program = hir::resolve(&crate::check(SOURCE, "field-source.spx").unwrap()).unwrap();
+    let replacement = field_program
+        .functions
+        .iter()
+        .find(|function| function.id.as_str() == "inspect")
+        .unwrap()
+        .body
+        .clone();
+    let main = resolved
+        .functions
+        .iter_mut()
+        .find(|function| function.id.as_str() == "app.main")
+        .unwrap();
+    let ResolvedExprKind::Block { statements, .. } = &mut main.body.kind else {
+        panic!("main block")
+    };
+    let ResolvedStatement::Let { value, .. } = &mut statements[0] else {
+        panic!("closure binding")
+    };
+    let ResolvedExprKind::Closure { body, .. } = &mut value.kind else {
+        panic!("scalar closure")
+    };
+    // Discovery must see deferred syntax, but cannot authorize a foreign body
+    // or enlarge the existing scalar-local closure profile.
+    *body = Box::new(replacement);
+    assert!(function_requires(main));
+    assert!(requires(&resolved));
+    assert!(graph_schema(&resolved).is_err());
+}

@@ -12,9 +12,8 @@ use super::expr_nodes::{
 use super::ids::{DeclarationId, FunctionExecutionId, ValueId};
 use super::monomorphize::substitute_type;
 use super::nodes::{
-    resolver_admits_flat_owned_byte_variant, resolver_admits_flat_owned_string_variant,
-    DeclarationKind, OwnershipMode, ResolvedBinding, ResolvedFieldDeclaration, ResolvedMatchMode,
-    ResolvedType,
+    resolver_admits_direct_owned_variant, resolver_admits_flat_owned_byte_variant, DeclarationKind,
+    OwnershipMode, ResolvedBinding, ResolvedFieldDeclaration, ResolvedMatchMode, ResolvedType,
 };
 use super::{Binding, Resolver};
 
@@ -28,14 +27,14 @@ impl Resolver<'_> {
         span: Span,
     ) -> Result<(), Diagnostic> {
         let template_owned = matches!(function, FunctionExecutionId::Monomorphic(owner)
-            if self.program.functions.iter().any(|candidate|
+            if self.program.functions().iter().any(|candidate|
                 candidate.stable_id == owner.as_str() && !candidate.type_parameters.is_empty())
             && super::type_reachability::is_nested_owned_byte_record_template(
                 &self.declarations, &scrutinee.ty, owner,
-                self.program.functions.iter().find(|candidate| candidate.stable_id == owner.as_str())
+                self.program.functions().iter().find(|candidate| candidate.stable_id == owner.as_str())
                     .map_or(0, |candidate| candidate.type_parameters.len())));
-        let template_variant = matches!(function,FunctionExecutionId::Monomorphic(owner) if self.program.functions.iter().find(|candidate|candidate.stable_id==owner.as_str()).is_some_and(|candidate|super::generic_variant::slot(&self.declarations,&scrutinee.ty,owner,candidate.type_parameters.len())));
-        let facts = self.declarations.type_facts(&scrutinee.ty);
+        let template_variant = matches!(function,FunctionExecutionId::Monomorphic(owner) if self.program.functions().iter().find(|candidate|candidate.stable_id==owner.as_str()).is_some_and(|candidate|super::generic_variant::slot(&self.declarations,&scrutinee.ty,owner,candidate.type_parameters.len())));
+        let facts = self.declarations.type_flags(&scrutinee.ty);
         let copy = facts.as_ref().is_some_and(|facts| facts.copy);
         let owned = template_owned
             || template_variant
@@ -49,14 +48,14 @@ impl Resolver<'_> {
             (DeclarationKind::Variant, ResolvedMatchMode::Own) => {
                 (template_variant
                     || resolver_admits_flat_owned_byte_variant(&self.declarations, &scrutinee.ty)
-                    || resolver_admits_flat_owned_string_variant(&self.declarations, &scrutinee.ty))
+                    || resolver_admits_direct_owned_variant(&self.declarations, &scrutinee.ty))
                     && owned
                     && scrutinee.ownership == OwnershipMode::Own
             }
             (DeclarationKind::Variant, ResolvedMatchMode::Borrow) => {
                 (template_variant
                     || resolver_admits_flat_owned_byte_variant(&self.declarations, &scrutinee.ty)
-                    || resolver_admits_flat_owned_string_variant(&self.declarations, &scrutinee.ty)
+                    || resolver_admits_direct_owned_variant(&self.declarations, &scrutinee.ty)
                     || super::workspace_link::native_owner::resolver_ri06_regex_result(
                         self.program,
                         &scrutinee.ty,
@@ -112,6 +111,7 @@ impl Resolver<'_> {
         span: Span,
         mode: ResolvedMatchMode,
     ) -> Result<ResolvedMatchPattern, Diagnostic> {
+        let expected_root = expected;
         let exact_recursive = mode != ResolvedMatchMode::Value
             && super::type_reachability::is_nested_nonflat_owned_byte_record(
                 &self.declarations,
@@ -250,6 +250,12 @@ impl Resolver<'_> {
                     match &field.pattern {
                         crate::ast::RecordMatchFieldPattern::Binding { name, span } => {
                             if exact_recursive
+                                && !(mode == ResolvedMatchMode::Own
+                                    && super::owned_record_subtree::admitted(
+                                        &self.declarations,
+                                        expected_root,
+                                        &field_ty,
+                                    ))
                                 && !crate::map_ops::is_collection(&field_ty)
                                 && matches!(
                                     &field_ty,
@@ -286,6 +292,7 @@ impl Resolver<'_> {
                             bindings.insert(
                                 name.clone(),
                                 Binding {
+                                    traversal_row: None,
                                     id: binding.id.clone(),
                                     ty: field_ty,
                                     ownership,
@@ -311,7 +318,7 @@ impl Resolver<'_> {
                             if exact_recursive
                                 && self
                                     .declarations
-                                    .type_facts(&field_ty)
+                                    .type_flags(&field_ty)
                                     .is_some_and(|facts| facts.needs_drop)
                             {
                                 return Err(self.error(

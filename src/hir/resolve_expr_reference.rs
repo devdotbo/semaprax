@@ -1,11 +1,9 @@
-//! Test-only recursive expression resolver.
-//!
-//! Differential reference for the iterative resolver; never used in production.
-
+//! Test-only differential recursive resolver; never used in production.
 use super::expr_nodes::{
     PatternValue, ResolvedExpr, ResolvedExprKind, ResolvedFieldInitializer, ResolvedMatchArm,
     ResolvedMatchPattern, ResolvedMatchPatternField, ResolvedStatement,
 };
+use super::ids::CompilerDeclaration as CId;
 use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId, ValueId};
 use super::monomorphize::substitute_type;
 use super::nodes::{
@@ -18,17 +16,24 @@ use super::{Binding, Place, PlaceProjection, Resolver};
 use crate::ast::{BinaryOp, Expr, ExprKind, MatchPattern, Statement, TypeDeclarationKind, UnaryOp};
 use crate::diagnostic::Diagnostic;
 use std::collections::BTreeMap;
+mod block;
+mod control;
+mod literal_format;
+mod projection;
+mod static_text;
 
 impl Resolver<'_> {
-    #[cfg(test)]
-    #[allow(dead_code)]
-    pub(super) fn resolve_expr_recursive_reference(
+    pub(super) fn resolve_expr_recursive_reference_inner(
         &self,
         function: &FunctionExecutionId,
         expr: &Expr,
         bindings: &BTreeMap<String, Binding>,
         path: &str,
+        nearest: Option<&super::ControlTarget>,
     ) -> Result<ResolvedExpr, Diagnostic> {
+        if let ExprKind::VecConstructor { .. } = &expr.kind {
+            return self.resolve_constructor_reference(function, expr, bindings, path, nearest);
+        }
         if let Some(inspect) = self.resolve_stdin_inspection(function, expr, bindings, path)? {
             return Ok(inspect);
         }
@@ -56,11 +61,12 @@ impl Resolver<'_> {
                     .iter()
                     .enumerate()
                     .map(|(i, arg)| {
-                        self.resolve_expr_recursive_reference(
+                        self.resolve_expr_recursive_reference_inner(
                             function,
                             arg,
                             bindings,
                             &format!("{path}.arg.{i}"),
+                            nearest,
                         )
                     })
                     .collect::<Result<_, _>>()?;
@@ -76,6 +82,11 @@ impl Resolver<'_> {
         }
         let id = ExpressionId::new(function, path);
         let (kind, ty, ownership) = match &expr.kind {
+            ExprKind::LexicalExit { .. } => {
+                control::exit(self, function, expr, bindings, path, nearest)?
+            }
+
+            ExprKind::VecConstructor { .. } => unreachable!("handled above"),
             ExprKind::Closure { .. } => unreachable!("handled above"),
             ExprKind::Int(value) => (
                 ResolvedExprKind::Int(*value),
@@ -130,12 +141,16 @@ impl Resolver<'_> {
                 ResolvedType::Bool,
                 OwnershipMode::Value,
             ),
-            ExprKind::String(value) => (
-                ResolvedExprKind::String(value.clone()),
-                ResolvedType::String,
-                OwnershipMode::Own,
+            ExprKind::String(value) => static_text::owned_string(value),
+            ExprKind::BorrowedUtf8Literal(value) => (
+                ResolvedExprKind::BorrowedUtf8Literal(super::StaticUtf8::from_text(value)),
+                ResolvedType::Str,
+                OwnershipMode::Borrow,
             ),
             ExprKind::Var(name) => {
+                if let Some(loan) = self.row_argument(function, expr, bindings, path.into()) {
+                    return loan;
+                }
                 let binding = bindings.get(name).ok_or_else(|| {
                     self.error("SPX-H002", format!("unresolved value `{name}`"), expr.span)
                 })?;
@@ -156,7 +171,7 @@ impl Resolver<'_> {
                 if let Some(import_id) = self.declarations.native_rust_import_id(name).cloned() {
                     let import = self
                         .program
-                        .interfaces
+                        .interfaces()
                         .iter()
                         .flat_map(|interface| &interface.imports)
                         .find(|import| import.stable_id == import_id.as_str())
@@ -172,11 +187,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.native-rust-arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -206,6 +222,55 @@ impl Resolver<'_> {
                         span: expr.span,
                     });
                 }
+                if crate::vec_ops::field_unique::literal_call(name) {
+                    let (element, callee) =
+                        self.prepare_sort_by(function, expr, type_arguments, args)?;
+                    let value = self.resolve_expr_recursive_reference_inner(
+                        function,
+                        &args[0],
+                        bindings,
+                        &format!("{path}.arg.0"),
+                        nearest,
+                    )?;
+                    return self.finish_sort_by(
+                        function,
+                        expr.span,
+                        path,
+                        element,
+                        callee,
+                        vec![value],
+                    );
+                }
+                if name == crate::vec_field::NAME {
+                    let (element, field) =
+                        self.prepare_vec_field(function, expr, type_arguments, args)?;
+                    let values = args[..2]
+                        .iter()
+                        .enumerate()
+                        .map(|(index, arg)| {
+                            self.resolve_expr_recursive_reference_inner(
+                                function,
+                                arg,
+                                bindings,
+                                &format!("{path}.arg.{index}"),
+                                nearest,
+                            )
+                        })
+                        .collect::<Result<Vec<_>, _>>()?;
+                    return self
+                        .finish_vec_field(function, expr.span, path, element, field, values);
+                }
+                if name == crate::literal_format::NAME {
+                    return self.resolve_literal_format_reference(
+                        function,
+                        expr,
+                        bindings,
+                        path,
+                        type_arguments,
+                        args,
+                        id,
+                    );
+                }
                 if let Some(op) = crate::string_ops::by_name(name)
                     .filter(|_| crate::map_ops::by_generic_name(name, type_arguments).is_none())
                 {
@@ -232,11 +297,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -264,7 +330,7 @@ impl Resolver<'_> {
                         ty,
                         ownership,
                         kind: ResolvedExprKind::Call {
-                            callee: DeclarationId::new(op.id()),
+                            callee: op.resolved_id(),
                             type_arguments: Vec::new(),
                             instance: None,
                             args,
@@ -295,11 +361,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -346,7 +413,7 @@ impl Resolver<'_> {
                     );
                     return site.resolve_reference(self, function, call);
                 }
-                if let Some(op) = crate::byte_ops::by_name(name) {
+                if let Some(op) = self.byte_operation(name)? {
                     if !type_arguments.is_empty() || args.len() != op.arity() {
                         return Err(self.error(
                             "SPX-H006",
@@ -354,15 +421,16 @@ impl Resolver<'_> {
                             expr.span,
                         ));
                     }
-                    let args = args
+                    let mut args = args
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -385,11 +453,10 @@ impl Resolver<'_> {
                     if op == crate::byte_ops::ByteOp::Range {
                         let mut args = args.into_iter();
                         let source = args.next().expect("range has a source");
-                        if !matches!(source.kind, ResolvedExprKind::Place(ref place) if place.projections.is_empty())
-                        {
+                        if !self.byte_range_source_shape(&source) {
                             return Err(self.error(
                                 "SPX-T266",
-                                "byte_range requires an exact named Slice<u8> source",
+                                "byte_range requires a named Slice<u8> or exact bytes_as_slice(named_owner) source",
                                 source.span,
                             ));
                         }
@@ -409,22 +476,38 @@ impl Resolver<'_> {
                             span: expr.span,
                         });
                     }
+                    if let Some(fused) =
+                        crate::vec_ops::string_slot::fuse(function, path, expr.span, op, &mut args)
+                    {
+                        return Ok(fused);
+                    }
+                    if let Some(fused) =
+                        self.fuse_vec_field_bytes(function, expr.span, path, op, &args)
+                    {
+                        return Ok(fused);
+                    }
                     if op.is_view() {
                         let place = match &args[0].kind {
                             ResolvedExprKind::Place(place) => place,
                             ResolvedExprKind::BorrowPlace { operation, place }
                                 if op == crate::byte_ops::ByteOp::StrAsBytes
-                                    && operation.as_str() == crate::byte_ops::STRING_AS_STR_ID
-                                    && place.projections.is_empty() =>
+                                    && operation.as_str() == crate::byte_ops::STRING_AS_STR_ID =>
                             {
                                 place
                             }
                             _ => {
+                                let requirement = match op {
+                                    crate::byte_ops::ByteOp::StringAsStr => {
+                                        "a named String owner or an authenticated named-record path to a String field"
+                                    }
+                                    crate::byte_ops::ByteOp::StrAsBytes => {
+                                        "a named `str` view or a view derived from a named String field path"
+                                    }
+                                    _ => "an exact named storage root",
+                                };
                                 return Err(self.error(
                                     "SPX-T266",
-                                    format!(
-                                        "borrowed view `{name}` requires an exact named storage root"
-                                    ),
+                                    format!("borrowed view `{name}` requires {requirement}"),
                                     args[0].span,
                                 ));
                             }
@@ -465,11 +548,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -512,11 +596,12 @@ impl Resolver<'_> {
                         .iter()
                         .enumerate()
                         .map(|(index, argument)| {
-                            self.resolve_expr_recursive_reference(
+                            self.resolve_expr_recursive_reference_inner(
                                 function,
                                 argument,
                                 bindings,
                                 &format!("{path}.arg.{index}"),
+                                nearest,
                             )
                         })
                         .collect::<Result<Vec<_>, _>>()?;
@@ -535,7 +620,7 @@ impl Resolver<'_> {
                     })?;
                 let target = self
                     .program
-                    .functions
+                    .functions()
                     .iter()
                     .find(|function| function.stable_id == template.as_str())
                     .ok_or_else(|| {
@@ -558,14 +643,16 @@ impl Resolver<'_> {
                     .iter()
                     .enumerate()
                     .map(|(index, argument)| {
-                        self.resolve_expr_recursive_reference(
+                        self.resolve_expr_recursive_reference_inner(
                             function,
                             argument,
                             bindings,
                             &format!("{path}.arg.{index}"),
+                            nearest,
                         )
                     })
                     .collect::<Result<_, _>>()?;
+                let args = self.bind_row_loans(&template, &instance, &resolved_arguments, args)?;
                 let ty =
                     self.resolve_call_type_argument(function, &return_source_type, target.span)?;
                 let ownership = self.function_expression_ownership(
@@ -599,11 +686,12 @@ impl Resolver<'_> {
                         expr.span,
                     ));
                 }
-                let receiver = self.resolve_expr_recursive_reference(
+                let receiver = self.resolve_expr_recursive_reference_inner(
                     function,
                     receiver,
                     bindings,
                     &format!("{path}.arg.0"),
+                    nearest,
                 )?;
                 let ResolvedType::Nominal {
                     declaration: class_id,
@@ -644,7 +732,7 @@ impl Resolver<'_> {
                     })?;
                 let class_ast = self
                     .program
-                    .types
+                    .types()
                     .iter()
                     .find(|t| t.stable_id == class_id.as_str())
                     .ok_or_else(|| {
@@ -707,11 +795,12 @@ impl Resolver<'_> {
                     .zip(method_ast.params.iter().skip(1))
                     .enumerate()
                 {
-                    let resolved = self.resolve_expr_recursive_reference(
+                    let resolved = self.resolve_expr_recursive_reference_inner(
                         function,
                         argument,
                         bindings,
                         &format!("{path}.arg.{}", index + 1),
+                        nearest,
                     )?;
                     let param_ty = self.resolve_type(&param.ty, param.span)?;
                     if resolved.ty != param_ty {
@@ -749,8 +838,9 @@ impl Resolver<'_> {
                     leaf = value;
                     leaf_path.push_str(".value");
                 }
-                let mut resolved =
-                    self.resolve_expr_recursive_reference(function, leaf, bindings, &leaf_path)?;
+                let mut resolved = self.resolve_expr_recursive_reference_inner(
+                    function, leaf, bindings, &leaf_path, nearest,
+                )?;
                 for (op, span, unary_path) in unary.into_iter().rev() {
                     let ty = match (&op, &resolved.ty) {
                         (UnaryOp::Neg, ResolvedType::F32) => ResolvedType::F32,
@@ -773,17 +863,19 @@ impl Resolver<'_> {
                 return Ok(resolved);
             }
             ExprKind::Binary { op, left, right } => {
-                let left = self.resolve_expr_recursive_reference(
+                let left = self.resolve_expr_recursive_reference_inner(
                     function,
                     left,
                     bindings,
                     &format!("{path}.left"),
+                    nearest,
                 )?;
-                let right = self.resolve_expr_recursive_reference(
+                let right = self.resolve_expr_recursive_reference_inner(
                     function,
                     right,
                     bindings,
                     &format!("{path}.right"),
+                    nearest,
                 )?;
                 let ty = match op {
                     BinaryOp::Add
@@ -811,224 +903,10 @@ impl Resolver<'_> {
                 )
             }
             ExprKind::Block { statements, tail } => {
-                let mut scope = bindings.clone();
-                let mut resolved_statements = Vec::with_capacity(statements.len());
-                for (index, statement) in statements.iter().enumerate() {
-                    let statement_path = format!("{path}.s{index}");
-                    match statement {
-                        Statement::Let {
-                            name,
-                            name_span,
-                            mutable,
-                            declared: _,
-                            syntax: _,
-                            value,
-                            span,
-                        } => {
-                            let value = self.resolve_expr_recursive_reference(
-                                function,
-                                value,
-                                &scope,
-                                &format!("{statement_path}.value"),
-                            )?;
-                            let binding = ResolvedBinding {
-                                id: ValueId::local(function, &statement_path),
-                                name: name.clone(),
-                                ownership: value.ownership,
-                                ty: value.ty.clone(),
-                                span: *name_span,
-                            };
-                            scope.insert(
-                                name.clone(),
-                                Binding {
-                                    id: binding.id.clone(),
-                                    ty: binding.ty.clone(),
-                                    ownership: binding.ownership,
-                                    mutable: *mutable,
-                                },
-                            );
-                            resolved_statements.push(ResolvedStatement::Let {
-                                binding,
-                                mutable: *mutable,
-                                value,
-                                span: *span,
-                            });
-                        }
-                        Statement::Assign {
-                            name,
-                            name_span,
-                            field,
-                            value,
-                            span,
-                        } => {
-                            let immutable_code = if field.is_some() {
-                                "SPX-U107"
-                            } else {
-                                "SPX-U101"
-                            };
-                            let target = self.resolve_assign_target(
-                                name,
-                                *name_span,
-                                &scope,
-                                immutable_code,
-                            )?;
-                            let target_field = match field {
-                                Some(field) => {
-                                    Some(self.resolve_assign_field_target(&target, field)?)
-                                }
-                                None => None,
-                            };
-                            let value = self.resolve_expr_recursive_reference(
-                                function,
-                                value,
-                                &scope,
-                                &format!("{statement_path}.value"),
-                            )?;
-                            match &target_field {
-                                Some((_, field_ty)) => {
-                                    if value.ty != *field_ty {
-                                        return Err(self.error(
-                                            "SPX-U110",
-                                            format!(
-                                                "assigned value type `{}` does not exactly match field type `{}`",
-                                                value.ty.identity_key(),
-                                                field_ty.identity_key()
-                                            ),
-                                            value.span,
-                                        ));
-                                    }
-                                }
-                                None => {
-                                    super::resolve_vec_call::validate_whole_assignment(
-                                        self, function, &target, &value,
-                                    )?;
-                                }
-                            }
-                            resolved_statements.push(ResolvedStatement::Assign {
-                                binding: target,
-                                field: target_field.map(|(field_id, _)| field_id),
-                                value,
-                                span: *span,
-                            });
-                        }
-                        Statement::Unsafe {
-                            audit, body, span, ..
-                        } => {
-                            let body = self.resolve_expr_recursive_reference(
-                                function,
-                                body,
-                                &scope,
-                                &format!("{statement_path}.body"),
-                            )?;
-                            if body.ownership != OwnershipMode::Value
-                                || !is_scalar_resolved_type(&body.ty)
-                            {
-                                return Err(self.error(
-                                    "SPX-N104",
-                                    "unsafe boundary bodies must produce a scalar Copy value",
-                                    body.span,
-                                ));
-                            }
-                            resolved_statements.push(ResolvedStatement::Unsafe {
-                                audit: audit.clone(),
-                                body: Box::new(body),
-                                span: *span,
-                            });
-                        }
-                        Statement::While {
-                            condition,
-                            body,
-                            span,
-                            ..
-                        } => {
-                            self.reject_while_disallowed_scoped(condition, Some(function))?;
-                            self.reject_while_disallowed_scoped(body, Some(function))?;
-                            let resolved_condition = self.resolve_expr_recursive_reference(
-                                function,
-                                condition,
-                                &scope,
-                                &format!("{statement_path}.condition"),
-                            )?;
-                            if resolved_condition.ty != ResolvedType::Bool {
-                                return Err(self.error(
-                                    "SPX-T251",
-                                    "`while` condition must be bool",
-                                    condition.span,
-                                ));
-                            }
-                            let resolved_body = self.resolve_expr_recursive_reference(
-                                function,
-                                body,
-                                &scope,
-                                &format!("{statement_path}.body"),
-                            )?;
-                            resolved_statements.push(ResolvedStatement::While {
-                                condition: Box::new(resolved_condition),
-                                body: Box::new(resolved_body),
-                                span: condition.span.merge(*span),
-                            });
-                        }
-                        Statement::ForOwn { .. } | Statement::For { .. } => resolved_statements
-                            .push(super::resolve_for_own::resolve_statement_reference(
-                                self,
-                                function,
-                                &scope,
-                                &statement_path,
-                                statement,
-                            )?),
-                    }
-                }
-                let tail = self.resolve_expr_recursive_reference(
-                    function,
-                    tail,
-                    &scope,
-                    &format!("{path}.tail"),
-                )?;
-                let ty = tail.ty.clone();
-                let ownership = tail.ownership;
-                (
-                    ResolvedExprKind::Block {
-                        statements: resolved_statements,
-                        tail: Box::new(tail),
-                    },
-                    ty,
-                    ownership,
-                )
+                self.resolve_block_reference(function, statements, tail, bindings, path, nearest)?
             }
-            ExprKind::If {
-                condition,
-                then_branch,
-                else_branch,
-            } => {
-                let condition = self.resolve_expr_recursive_reference(
-                    function,
-                    condition,
-                    bindings,
-                    &format!("{path}.condition"),
-                )?;
-                let then_branch = self.resolve_expr_recursive_reference(
-                    function,
-                    then_branch,
-                    bindings,
-                    &format!("{path}.then"),
-                )?;
-                let else_branch = self.resolve_expr_recursive_reference(
-                    function,
-                    else_branch,
-                    bindings,
-                    &format!("{path}.else"),
-                )?;
-                let ty = then_branch.ty.clone();
-                let ownership = then_branch.ownership;
-                (
-                    ResolvedExprKind::If {
-                        condition: Box::new(condition),
-                        then_branch: Box::new(then_branch),
-                        else_branch: Box::new(else_branch),
-                    },
-                    ty,
-                    ownership,
-                )
+            ExprKind::If { .. } => {
+                control::if_expression(self, function, expr, bindings, path, nearest)?
             }
             ExprKind::ConstructRecord {
                 type_name,
@@ -1089,11 +967,12 @@ impl Resolver<'_> {
                                 initializer.name_span,
                             )
                         })?;
-                    let value = self.resolve_expr_recursive_reference(
+                    let value = self.resolve_expr_recursive_reference_inner(
                         function,
                         &initializer.value,
                         bindings,
                         &format!("{path}.field.{index}.value"),
+                        nearest,
                     )?;
                     resolved_fields.push(ResolvedFieldInitializer { field, value });
                 }
@@ -1167,11 +1046,12 @@ impl Resolver<'_> {
                                 initializer.name_span,
                             )
                         })?;
-                    let value = self.resolve_expr_recursive_reference(
+                    let value = self.resolve_expr_recursive_reference_inner(
                         function,
                         &initializer.value,
                         bindings,
                         &format!("{path}.field.{index}.value"),
+                        nearest,
                     )?;
                     resolved_fields.push(ResolvedFieldInitializer { field, value });
                 }
@@ -1206,11 +1086,12 @@ impl Resolver<'_> {
                 arms,
             } => {
                 let mode = ResolvedMatchMode::from(*mode);
-                let scrutinee = self.resolve_expr_recursive_reference(
+                let scrutinee = self.resolve_expr_recursive_reference_inner(
                     function,
                     scrutinee,
                     bindings,
                     &format!("{path}.scrutinee"),
+                    nearest,
                 )?;
                 if matches!(
                     scrutinee.ty,
@@ -1255,6 +1136,7 @@ impl Resolver<'_> {
                                 arm_bindings.insert(
                                     name.clone(),
                                     Binding {
+                                        traversal_row: None,
                                         id: binding.id.clone(),
                                         ty: binding.ty.clone(),
                                         ownership: OwnershipMode::Value,
@@ -1289,11 +1171,12 @@ impl Resolver<'_> {
                         };
                         let guard = match &arm.guard {
                             Some(guard) => {
-                                let resolved_guard = self.resolve_expr_recursive_reference(
+                                let resolved_guard = self.resolve_expr_recursive_reference_inner(
                                     function,
                                     guard.as_ref(),
                                     &arm_bindings,
                                     &format!("{path}.arm.{arm_index}.guard"),
+                                    nearest,
                                 )?;
                                 if resolved_guard.ty != ResolvedType::Bool {
                                     return Err(self.error(
@@ -1309,15 +1192,17 @@ impl Resolver<'_> {
                             }
                             None => None,
                         };
-                        let value = self.resolve_expr_recursive_reference(
+                        let value = self.resolve_expr_recursive_reference_inner(
                             function,
                             &arm.value,
                             &arm_bindings,
                             &format!("{path}.arm.{arm_index}.value"),
+                            nearest,
                         )?;
-                        if let Some(first) = resolved_arms.first() {
-                            if first.value.ty != value.ty
-                                || first.value.ownership != value.ownership
+                        if let Some(first) = super::lexical_exit::reachable_arm(&resolved_arms) {
+                            if value.ty != ResolvedType::Never
+                                && (first.value.ty != value.ty
+                                    || first.value.ownership != value.ownership)
                             {
                                 return Err(self.error(
                                     "SPX-T259",
@@ -1336,10 +1221,12 @@ impl Resolver<'_> {
                             span: arm.span,
                         });
                     }
+                    let normal =
+                        super::lexical_exit::normal_arm(&resolved_arms).expect("match has arms");
                     return Ok(ResolvedExpr {
                         id: ExpressionId::new(function, path),
-                        ty: resolved_arms[0].value.ty.clone(),
-                        ownership: resolved_arms[0].value.ownership,
+                        ty: normal.value.ty.clone(),
+                        ownership: normal.value.ownership,
                         kind: ResolvedExprKind::Match {
                             mode,
                             scrutinee: Box::new(scrutinee),
@@ -1541,6 +1428,7 @@ impl Resolver<'_> {
                                 arm_bindings.insert(
                                     field.binding.clone(),
                                     Binding {
+                                        traversal_row: None,
                                         id: binding.id.clone(),
                                         ty: field_ty,
                                         ownership,
@@ -1608,11 +1496,12 @@ impl Resolver<'_> {
                         &arm_bindings,
                         &format!("{path}.arm.{arm_index}.guard"),
                     )?;
-                    let value = self.resolve_expr_recursive_reference(
+                    let value = self.resolve_expr_recursive_reference_inner(
                         function,
                         &arm.value,
                         &arm_bindings,
                         &format!("{path}.arm.{arm_index}.value"),
+                        nearest,
                     )?;
                     resolved_arms.push(ResolvedMatchArm {
                         pattern,
@@ -1621,7 +1510,7 @@ impl Resolver<'_> {
                         span: arm.span,
                     });
                 }
-                let first = resolved_arms.first().ok_or_else(|| {
+                let first = super::lexical_exit::normal_arm(&resolved_arms).ok_or_else(|| {
                     self.error("SPX-H006", "resolved match has no arms", expr.span)
                 })?;
                 let ty = first.value.ty.clone();
@@ -1637,11 +1526,12 @@ impl Resolver<'_> {
                 )
             }
             ExprKind::Try { operand } => {
-                let operand = self.resolve_expr_recursive_reference(
+                let operand = self.resolve_expr_recursive_reference_inner(
                     function,
                     operand,
                     bindings,
                     &format!("{path}.operand"),
+                    nearest,
                 )?;
                 let operand_type = operand.ty.clone();
                 let ResolvedType::Nominal {
@@ -1666,7 +1556,7 @@ impl Resolver<'_> {
                             option: DeclarationId::new(crate::prelude::OPTION_ID),
                             some_case: DeclarationId::new(crate::prelude::OPTION_SOME_ID),
                             some_field: DeclarationId::new(crate::prelude::OPTION_SOME_VALUE_ID),
-                            none_case: DeclarationId::new(crate::prelude::OPTION_NONE_ID),
+                            none_case: DeclarationId::compiler(CId::OptionNone),
                             residual_type,
                         },
                         some_type.clone(),
@@ -1685,11 +1575,12 @@ impl Resolver<'_> {
             // response type read from its AST `yields` clause (request type if none resolves), and `hir::resolve_yield` still checks and retags every site
             // once resolution finishes.
             ExprKind::Yield { request } => {
-                let request = self.resolve_expr_recursive_reference(
+                let request = self.resolve_expr_recursive_reference_inner(
                     function,
                     request,
                     bindings,
                     &format!("{path}.request"),
+                    nearest,
                 )?;
                 let ty = self.yield_answer_type(function, &request.ty);
                 (
@@ -1701,11 +1592,12 @@ impl Resolver<'_> {
                 )
             }
             ExprKind::UpdateRecord { base, fields } => {
-                let base = self.resolve_expr_recursive_reference(
+                let base = self.resolve_expr_recursive_reference_inner(
                     function,
                     base,
                     bindings,
                     &format!("{path}.base"),
+                    nearest,
                 )?;
                 let ResolvedType::Nominal {
                     declaration: record,
@@ -1746,11 +1638,12 @@ impl Resolver<'_> {
                                 initializer.name_span,
                             )
                         })?;
-                    let value = self.resolve_expr_recursive_reference(
+                    let value = self.resolve_expr_recursive_reference_inner(
                         function,
                         &initializer.value,
                         bindings,
                         &format!("{path}.field.{index}.value"),
+                        nearest,
                     )?;
                     resolved_fields.push(ResolvedFieldInitializer { field, value });
                 }
@@ -1775,74 +1668,12 @@ impl Resolver<'_> {
                 ));
             }
             ExprKind::Project { base, field, .. } => {
-                let base = self.resolve_expr_recursive_reference(
-                    function,
-                    base,
-                    bindings,
-                    &format!("{path}.base"),
-                )?;
-                let ResolvedType::Nominal {
-                    declaration: record,
-                    arguments,
-                } = &base.ty
-                else {
-                    return Err(self.error(
-                        "SPX-H001",
-                        format!("cannot resolve field `{field}` on a non-record value"),
-                        expr.span,
-                    ));
-                };
-                if self
-                    .declarations
-                    .declaration(record)
-                    .is_none_or(|item| item.kind != DeclarationKind::Record)
+                if let Some(value) =
+                    super::resolve_for::record::project(self, function, expr, bindings, path)?
                 {
-                    return Err(self.error(
-                        "SPX-H001",
-                        format!("cannot resolve field `{field}` on a non-record value"),
-                        expr.span,
-                    ));
+                    return Ok(value);
                 }
-                let instance_arguments = arguments.clone();
-                let field_id = self
-                    .declarations
-                    .field_id(record, field)
-                    .cloned()
-                    .ok_or_else(|| {
-                        self.error(
-                            "SPX-H001",
-                            format!("unresolved field `{field}` on record `{record}`"),
-                            expr.span,
-                        )
-                    })?;
-                let field_ty = self
-                    .declarations
-                    .record_fields(record)
-                    .and_then(|fields| fields.iter().find(|item| item.id == field_id))
-                    .map(|field| field.ty.clone())
-                    .ok_or_else(|| {
-                        self.error(
-                            "SPX-H001",
-                            format!("field `{field_id}` has no resolved type"),
-                            expr.span,
-                        )
-                    })?;
-                let field_ty = substitute_type(&field_ty, record, &instance_arguments)?;
-                let ownership = self.expression_ownership(&field_ty, base.ownership, expr.span)?;
-                let kind = match &base.kind {
-                    ResolvedExprKind::Place(place) => {
-                        let mut place = place.clone();
-                        place
-                            .projections
-                            .push(PlaceProjection::Field(field_id.clone()));
-                        ResolvedExprKind::Place(place)
-                    }
-                    _ => ResolvedExprKind::Project {
-                        base: Box::new(base),
-                        field: field_id,
-                    },
-                };
-                (kind, field_ty, ownership)
+                self.resolve_projection_reference(function, expr, base, field, bindings, path)?
             }
         };
         Ok(ResolvedExpr {

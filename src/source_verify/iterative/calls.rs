@@ -11,9 +11,15 @@ use crate::source_verify::declared_type::{ordinary_option_argument, ordinary_res
 use crate::source_verify::diagnostics::{error, reject_native_unit_value};
 use crate::source_verify::hints;
 use crate::source_verify::loans::mark_value_sources_moved;
+use crate::source_verify::private_names::type_name;
 use crate::source_verify::scope::{VerifierCallTarget, VerifierFrame, VerifierFunctionSignature};
 use crate::source_verify::type_table::{effective_record_fields, resolve_class_method};
 use crate::source_verify::IterativeVerifier;
+
+#[cfg(test)]
+mod calls_before_components;
+#[cfg(test)]
+mod calls_before_extended;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     #[allow(clippy::too_many_arguments)]
@@ -27,9 +33,73 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         target: VerifierCallTarget<'p>,
         borrowed_bytes_loans: Vec<(String, SourceLoanId)>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_call_argument(
+                expression,
+                name,
+                args,
+                scope,
+                index,
+                target,
+                borrowed_bytes_loans,
+            );
+        }
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_call_argument(
+                expression,
+                name,
+                args,
+                scope,
+                index,
+                target,
+                borrowed_bytes_loans,
+            );
+        }
         let actual = self.values.pop().unwrap_or(None);
         let argument = &args[index];
         match &target {
+            VerifierCallTarget::LiteralFormat => {
+                if index > 0 {
+                    if let Some(actual) = &actual {
+                        reject_native_unit_value(self.program, argument, actual, self.diagnostics);
+                        if !actual.native_unit
+                            && !crate::literal_format::accepts_ast_type(&actual.ty)
+                            && !self.recovery.explains_acceptance(
+                                argument,
+                                crate::literal_format::accepts_ast_type,
+                            )
+                        {
+                            self.diagnostics.push(error(self.program, "SPX-T205", format!("string_format value {} must be i64, u8, usize, bool, or own string", index - 1), argument.span));
+                        }
+                        let parameter = crate::ast::Param {
+                            name: format!("value{}", index - 1),
+                            mode: if actual.ty == Type::String {
+                                ParamMode::Own
+                            } else {
+                                ParamMode::Value
+                            },
+                            ty: actual.ty.clone(),
+                            span: argument.span,
+                        };
+                        check_argument_ownership(
+                            self.program,
+                            self.current,
+                            name,
+                            argument,
+                            &parameter,
+                            Some(actual),
+                            &mut self.scopes[scope].bindings,
+                            self.types,
+                            self.allow_moves,
+                            false,
+                            false,
+                            self.diagnostics,
+                        );
+                    }
+                }
+            }
             VerifierCallTarget::Native(import) => {
                 if let (Some(actual), Some(parameter)) = (actual.as_ref(), import.params.get(index))
                 {
@@ -65,6 +135,20 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 }
             }
             VerifierCallTarget::Ordinary(specialized) => {
+                let refused_parameter = specialized
+                    .as_ref()
+                    .and_then(VerifierFunctionSignature::source_function)
+                    .is_some_and(|function| {
+                        self.recovery
+                            .callee_component_refusal(
+                                function,
+                                Some(index),
+                                self.program,
+                                self.types,
+                                self.diagnostics,
+                            )
+                            .is_some()
+                    });
                 if let Some(param) = specialized
                     .as_ref()
                     .and_then(|target| target.params().get(index))
@@ -72,17 +156,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     if let Some(actual) = &actual {
                         reject_native_unit_value(self.program, argument, actual, self.diagnostics);
                     }
-                    if let Some(actual) = actual
-                        .as_ref()
-                        .filter(|actual| !actual.native_unit && actual.ty != param.ty)
-                    {
+                    if let Some(actual) = actual.as_ref().filter(|actual| {
+                        !refused_parameter
+                            && !actual.native_unit
+                            && actual.ty != param.ty
+                            && !self.recovery.explains(argument, &param.ty)
+                    }) {
                         self.diagnostics.push(hints::with_optional_help(
                             error(
                                 self.program,
                                 "SPX-T205",
                                 format!(
                                     "argument `{}` to `{name}` expects {}, received {}",
-                                    param.name, param.ty, actual.ty
+                                    param.name,
+                                    type_name(self.program, self.types, &param.ty),
+                                    type_name(self.program, self.types, &actual.ty)
                                 ),
                                 argument.span,
                             ),
@@ -114,7 +202,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             VerifierCallTarget::Byte(op) => {
                 if let Some(actual) = &actual {
                     reject_native_unit_value(self.program, argument, actual, self.diagnostics);
-                    if !actual.native_unit && !op.accepts_ast(index, &actual.ty) {
+                    if !actual.native_unit
+                        && !op.accepts_ast(index, &actual.ty)
+                        && !self.recovery.explains_acceptance(argument, |declared| {
+                            op.accepts_ast(index, declared)
+                        })
+                    {
                         self.diagnostics.push(hints::with_optional_help(
                             error(
                                 self.program,
@@ -132,7 +225,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             VerifierCallTarget::HostIo(op) => {
                 if let Some(actual) = &actual {
                     reject_native_unit_value(self.program, argument, actual, self.diagnostics);
-                    if !actual.native_unit && !op.accepts_ast(index, &actual.ty) {
+                    if !actual.native_unit
+                        && !op.accepts_ast(index, &actual.ty)
+                        && !self.recovery.explains_acceptance(argument, |declared| {
+                            op.accepts_ast(index, declared)
+                        })
+                    {
                         self.diagnostics.push(hints::with_optional_help(
                             error(
                                 self.program,
@@ -170,11 +268,16 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     reject_native_unit_value(self.program, argument, actual, self.diagnostics);
                     if !actual.native_unit
                         && !crate::command_io_ops::accepts_ast(*op, index, &actual.ty)
+                        && !self.recovery.explains_acceptance(argument, |declared| {
+                            crate::command_io_ops::accepts_ast(*op, index, declared)
+                        })
                     {
                         self.diagnostics.push(error(
                             self.program,
                             "SPX-T270",
-                            format!("command I/O operation `{name}` argument {index} has the wrong type"),
+                            format!(
+                                "command I/O operation `{name}` argument {index} has the wrong type"
+                            ),
                             argument.span,
                         ));
                     }
@@ -201,7 +304,24 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 &mut self.scopes[scope].bindings,
                 &borrowed_bytes_loans,
             );
+            let refused_return = match &target {
+                VerifierCallTarget::Ordinary(Some(signature)) => {
+                    signature.source_function().and_then(|function| {
+                        self.recovery.callee_component_refusal(
+                            function,
+                            None,
+                            self.program,
+                            self.types,
+                            self.diagnostics,
+                        )
+                    })
+                }
+                _ => None,
+            };
             let output = match target {
+                VerifierCallTarget::LiteralFormat => {
+                    Some(CheckedValue::returned(Type::String, true))
+                }
                 VerifierCallTarget::Native(import) => {
                     let mut value = CheckedValue::returned(
                         import.result.value_type(),
@@ -214,7 +334,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     Some(value)
                 }
                 VerifierCallTarget::Byte(op) => {
-                    Some(CheckedValue::returned(op.ast_return_type(), false))
+                    // A private partition returns a nominal owned Vec;
+                    // scalar/view byte results remain non-owning.
+                    let ty = op.ast_return_type();
+                    let owns = self.types.needs_drop(&ty);
+                    Some(CheckedValue::returned(ty, owns))
                 }
                 VerifierCallTarget::HostIo(op) => {
                     Some(CheckedValue::returned(op.ast_return_type(), false))
@@ -244,7 +368,20 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 )),
                 VerifierCallTarget::Ordinary(None) => None,
             };
-            self.values.push(output);
+            let output = output.map(|mut value| {
+                if (name == crate::vec_field::NAME || name == crate::vec_ops::string_slot::NAME)
+                    && matches!(value.ty, Type::Str | Type::SliceU8)
+                {
+                    value.mode = ParamMode::Borrow;
+                }
+                value
+            });
+            if let Some(origin) = refused_return {
+                self.recovery.read_callee_refusal(origin);
+                self.values.push(None);
+            } else {
+                self.values.push(output);
+            }
         }
         Ok(())
     }
@@ -257,6 +394,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         args: &'p [Expr],
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_method_receiver(
+                expression, receiver, method, args, scope,
+            );
+        }
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_method_receiver(
+                expression, receiver, method, args, scope,
+            );
+        }
         let actual = self.values.pop().unwrap_or(None);
         let Some(receiver_value) = actual else {
             self.values.push(None);
@@ -371,6 +520,17 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             self.diagnostics,
         );
         if args.is_empty() {
+            if let Some(origin) = self.recovery.callee_component_refusal(
+                method_fn,
+                None,
+                self.program,
+                self.types,
+                self.diagnostics,
+            ) {
+                self.recovery.read_callee_refusal(origin);
+                self.values.push(None);
+                return Ok(());
+            }
             self.values.push(Some(CheckedValue::returned(
                 method_fn.return_type.clone(),
                 self.types.needs_drop(&method_fn.return_type),
@@ -399,16 +559,40 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         scope: usize,
         index: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_method_argument(
+                expression, method, args, scope, index,
+            );
+        }
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_method_argument(
+                expression, method, args, scope, index,
+            );
+        }
         let actual = self.values.pop().unwrap_or(None);
         let argument = &args[index];
         if let Some(param) = method.params.get(index + 1) {
+            let refused_parameter = self
+                .recovery
+                .callee_component_refusal(
+                    method,
+                    Some(index + 1),
+                    self.program,
+                    self.types,
+                    self.diagnostics,
+                )
+                .is_some();
             if let Some(actual) = &actual {
                 reject_native_unit_value(self.program, argument, actual, self.diagnostics);
             }
-            if actual
-                .as_ref()
-                .is_some_and(|actual| !actual.native_unit && actual.ty != param.ty)
-            {
+            if actual.as_ref().is_some_and(|actual| {
+                !refused_parameter
+                    && !actual.native_unit
+                    && actual.ty != param.ty
+                    && !self.recovery.explains(argument, &param.ty)
+            }) {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T205",
@@ -450,6 +634,15 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 expression: argument,
                 scope,
             });
+        } else if let Some(origin) = self.recovery.callee_component_refusal(
+            method,
+            None,
+            self.program,
+            self.types,
+            self.diagnostics,
+        ) {
+            self.recovery.read_callee_refusal(origin);
+            self.values.push(None);
         } else {
             self.values.push(Some(CheckedValue::returned(
                 method.return_type.clone(),
@@ -465,6 +658,14 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         operand: &'p Expr,
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_try(expression, operand, scope);
+        }
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_try(expression, operand, scope);
+        }
         let Some(operand_value) = self.values.pop().flatten() else {
             self.values.push(None);
             return Ok(());
@@ -568,7 +769,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             "SPX-T218",
             format!(
                 "`?` operand must be an ordinary compiler-owned Result or Option, received {}",
-                operand_value.ty
+                type_name(self.program, self.types, &operand_value.ty)
             ),
             expression.span,
         ));
@@ -589,6 +790,14 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         _expression: &'p Expr,
         _request: &'p Expr,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_yield(_expression, _request);
+        }
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_yield(_expression, _request);
+        }
         self.values.pop();
         let value = self
             .current
@@ -605,11 +814,36 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         base: &'p Expr,
         field: &'p str,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_resume_project(expression, base, field);
+        }
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_components_frame_resume_project(expression, base, field);
+        }
         let Some(base_value) = self.values.pop().flatten() else {
             self.values.push(None);
             return Ok(());
         };
         reject_native_unit_value(self.program, base, &base_value, self.diagnostics);
+        if self.loop_depth != 0
+            && !crate::source_verify::declared_type::owned_leaf_collection::copy_or_leaf_admitted(
+                self.types,
+                &base_value.ty,
+            )
+            && !crate::source_verify::declared_type::collection_record::admitted(
+                &base_value.ty,
+                self.types,
+            )
+        {
+            self.diagnostics.push(error(
+                self.program,
+                "SPX-T252",
+                "record field projection is not yet admitted in while bodies",
+                expression.span,
+            ));
+        }
         let Some(fields) = effective_record_fields(self.types, &base_value.ty) else {
             self.diagnostics.push(error(
                 self.program,
@@ -630,6 +864,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             self.values.push(None);
             return Ok(());
         };
+        let field_refusal = match &base_value.ty {
+            Type::Named { name, .. } => self.recovery.declared_field_refusal(
+                name,
+                declared,
+                self.program,
+                self.types,
+                self.diagnostics,
+            ),
+            _ => None,
+        };
+        if let Some(origin) = field_refusal {
+            self.recovery.read_callee_refusal(origin);
+            self.values.push(None);
+            return Ok(());
+        }
         let projected = self
             .types
             .record_field_type(&base_value.ty, declared)
@@ -645,5 +894,61 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             native_unit: false,
         }));
         Ok(())
+    }
+}
+
+impl<'a, 'p> IterativeVerifier<'a, 'p> {
+    pub(super) fn refused_callee_return(&mut self, target: &VerifierCallTarget<'p>) -> bool {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_refused_callee_return(target);
+        }
+        let origin = match target {
+            VerifierCallTarget::Ordinary(Some(signature)) => {
+                signature.source_function().and_then(|function| {
+                    self.recovery.callee_component_refusal(
+                        function,
+                        None,
+                        self.program,
+                        self.types,
+                        self.diagnostics,
+                    )
+                })
+            }
+            _ => None,
+        };
+        if let Some(origin) = origin {
+            self.recovery.read_callee_refusal(origin);
+            true
+        } else {
+            false
+        }
+    }
+}
+
+impl IterativeVerifier<'_, '_> {
+    // Availability and partial-move diagnostics have already run on the exact
+    // complete place. Never bypass them when withdrawing a raw field type.
+    pub(super) fn publish_source_place(
+        &mut self,
+        place: crate::source_verify::place::SourcePlace,
+        scope: usize,
+    ) {
+        if let Some(origin) = self.recovery.source_place_refusal(
+            &place,
+            &self.scopes[scope].bindings,
+            self.program,
+            self.types,
+            self.diagnostics,
+        ) {
+            self.recovery.read_callee_refusal(origin);
+            self.values.push(None);
+        } else {
+            self.values.push(Some(CheckedValue {
+                ty: place.ty,
+                mode: place.mode,
+                native_unit: false,
+            }));
+        }
     }
 }

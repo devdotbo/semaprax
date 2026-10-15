@@ -209,3 +209,18 @@ HIR identities, exact type and reserved-name diagnostics, interpreter results,
 native execution, Wasm validation and Node execution, maximum `usize`, negative
 `i64`, and helper/import gating. This is focused local evidence; it does not
 promote the broader cross-backend or standard-library completion rows.
+
+## Proposed checked allocation successor
+
+[Checked String Allocation v1](CHECKED-STRING-ALLOCATION-V1.md) specifies an
+explicit successor profile and a private native allocator-kernel precursor.
+Its direct-constructor physical-failure gate is authored but unexecuted;
+production source/HIR/cleanup/emitter and interpreter/Wasm integration remain
+pending. Ordinary allocation exhaustion and #724's complete typed codec failure
+obligation are not satisfied by that precursor. Existing profiles retain their
+current bytes and allocation policy.
+
+The additive [Owned String Transfer v1](OWNED-STRING-TRANSFER-V1.md) defines
+explicit named-owner `string_take` separately. Its source implementation and
+owning gates await qualification; it preserves this document's default clone
+behavior and does not imply general projected moves or public ABI promotion.

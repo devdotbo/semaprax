@@ -1,0 +1,76 @@
+[
+  {
+    "source": "src/workspace_graph/generic_type_import/borrowed_tests.rs",
+    "archive": "docs/evidence/borrowed-rewrite-fixture-repair-4d5d/borrowed_tests.rs.before.txt",
+    "original_sha256": "17c5e5794256f1792f2956b9055023c1bbb6202ac6ec8c4d271e02f48b58d126",
+    "current_sha256": "d331c855c41b28628584bd2576c93c0f72226ed07beb1cfe25272e178a0a9b31",
+    "hooks": [
+      {
+        "name": "exact-fixture-admission-or-test-helper-rename-7",
+        "after": "        // Preserve the complete scalar-linker refusal for the original use-type\n        // fixture; the positive path is the actual admitted typed/owned route.\n        let scalar_errors = build.linked_scalar_program(\"fixture.caller\").unwrap_err();\n        assert_eq!(\n            scalar_errors,\n            vec![crate::diagnostic::Diagnostic::io(\n                \"SPX-G172\",\n                \"workspace scalar linker does not admit `use type` imports\",\n            )]\n        );\n        let program = build\n            .linked_owned_data_program_for_test(\"fixture.caller\")\n            .unwrap();\n        crate::hir::validate(&program).unwrap();\n",
+        "before": "        let program = build.linked_scalar_program(\"fixture.caller\").unwrap();\n"
+      },
+      {
+        "name": "exact-fixture-admission-or-test-helper-rename-6",
+        "after": "                                assert_eq!(cost_bridge::capture_projection(&cost).2[0], 0);\n",
+        "before": "                                assert_eq!(cost_bridge::snapshot(&cost).2[0], 0);\n"
+      },
+      {
+        "name": "exact-fixture-admission-or-test-helper-rename-5",
+        "after": "                    cost_bridge::capture_projection(&old_cost),\n                    cost_bridge::capture_projection(&current_cost)\n",
+        "before": "                    cost_bridge::snapshot(&old_cost),\n                    cost_bridge::snapshot(&current_cost)\n"
+      },
+      {
+        "name": "exact-fixture-admission-or-test-helper-rename-4",
+        "after": "    let provider = program(&format!(\n        \"{original} @id(\\\"fixture.provider.noop\\\") fn fixture_noop()->i64 {{0}}\"\n    ));\n",
+        "before": ""
+      },
+      {
+        "name": "exact-fixture-admission-or-test-helper-rename-3",
+        "after": "@id(\"other\") record Other { @id(\"other.value\") value:bool, }\"#;\n    assert_eq!(\n        crate::parse(original, \"fixture.spx\").unwrap_err().code,\n        \"SPX-P101\"\n",
+        "before": "@id(\"other\") record Other { @id(\"other.value\") value:bool, }\"#,\n"
+      },
+      {
+        "name": "exact-fixture-admission-or-test-helper-rename-2",
+        "after": "    let original = r#\"module fixture.provider;\n",
+        "before": "    let provider = program(\n        r#\"module fixture.provider;\n"
+      },
+      {
+        "name": "exact-fixture-admission-or-test-helper-rename-1",
+        "after": "    let original = r#\"module fixture.provider; @id(\"row\") record Row<T> { @id(\"row.x\") x:T, }\"#;\n    assert_eq!(\n        crate::parse(original, \"fixture.spx\").unwrap_err().code,\n        \"SPX-P101\"\n    );\n    program(&format!(\n        \"{original} @id(\\\"fixture.noop\\\") fn fixture_noop()->i64 {{0}}\"\n    ))\n    .types\n    .remove(0)\n",
+        "before": "    program(r#\"module fixture.provider; @id(\"row\") record Row<T> { @id(\"row.x\") x:T, }\"#)\n        .types\n        .remove(0)\n"
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/generic_type_import/parameter_names/tests.rs",
+    "archive": "docs/evidence/borrowed-rewrite-fixture-repair-4d5d/tests.rs.before.txt",
+    "original_sha256": "d9a96ff8e0883cffa13a1425313197c7fcf77ccdd723957c49ca382df187845f",
+    "current_sha256": "ef445329240ecd04add5142d9440efd64b1ec568a4df3a53a91acf84172591f0",
+    "hooks": [
+      {
+        "name": "exact-fixture-admission-or-test-helper-rename-2",
+        "after": "        \"module parameter.provider; @id(\\\"row\\\") record Row<T> { @id(\\\"row.x\\\") x:T, } @id(\\\"parameter.noop\\\") fn parameter_noop()->i64 {0}\",\n",
+        "before": "        \"module parameter.provider; @id(\\\"row\\\") record Row<T> { @id(\\\"row.x\\\") x:T, }\",\n"
+      },
+      {
+        "name": "exact-fixture-admission-or-test-helper-rename-1",
+        "after": "    assert_eq!(\n        crate::parse(\n            \"module parameter.provider; @id(\\\"row\\\") record Row<T> { @id(\\\"row.x\\\") x:T, }\",\n            \"provider.spx\",\n        )\n        .unwrap_err()\n        .code,\n        \"SPX-P101\"\n    );\n",
+        "before": ""
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/expected_projection/cost/generic_rewrite_test_bridge.rs",
+    "archive": "docs/evidence/borrowed-rewrite-fixture-repair-4d5d/generic_rewrite_test_bridge.rs.before.txt",
+    "original_sha256": "24a4e82d60552aa00c5798801beb0596b2fe8ac827499678ddf0f802484b13d1",
+    "current_sha256": "31391c27adf5fa9a0d174721309f33b3a7c453729890c828f33aed3720694903",
+    "hooks": [
+      {
+        "name": "exact-fixture-admission-or-test-helper-rename-1",
+        "after": "pub(in crate::workspace_graph) fn capture_projection(\n    cost: &StructuralCost,\n) -> (bool, bool, [usize; 15]) {\n",
+        "before": "pub(in crate::workspace_graph) fn snapshot(cost: &StructuralCost) -> (bool, bool, [usize; 15]) {\n"
+      }
+    ]
+  }
+]

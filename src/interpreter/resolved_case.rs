@@ -28,9 +28,25 @@ pub(crate) enum ResolvedFunctionProfile {
     Legacy,
     OwnedData,
     StreamText,
+    StreamRecords,
+    StreamOwned,
+    StreamCollectionRecords,
+    StreamNestedOutcomes,
 }
 impl ResolvedFunctionProfile {
     pub(crate) fn for_project(profile: crate::project::ProjectProfile) -> Self {
+        if profile == crate::project::ProjectProfile::StdinStreamNestedOutcomeCommandIoV1 {
+            return Self::StreamNestedOutcomes;
+        }
+        if profile == crate::project::ProjectProfile::StdinStreamCollectionRecordCommandIoV1 {
+            return Self::StreamCollectionRecords;
+        }
+        if profile == crate::project::ProjectProfile::StdinStreamOwnedDataCommandIoV1 {
+            return Self::StreamOwned;
+        }
+        if profile == crate::project::ProjectProfile::StdinStreamDataCommandIoV2 {
+            return Self::StreamRecords;
+        }
         if matches!(
             profile,
             crate::project::ProjectProfile::StdinStreamTextCommandIoV1
@@ -70,6 +86,39 @@ impl ResolvedFunctionProfile {
                                 ))
                     })
                     .map(|function| (function.id.as_str(), function)),
+            );
+        }
+        if matches!(
+            self,
+            Self::StreamRecords
+                | Self::StreamOwned
+                | Self::StreamCollectionRecords
+                | Self::StreamNestedOutcomes
+        ) {
+            admitted.extend(
+                program
+                    .functions
+                    .iter()
+                    .filter(|f| {
+                        f.effects.is_empty()
+                            && match self {
+                                Self::StreamNestedOutcomes => {
+                                    hir::stream_nested_outcome_signature_admitted(program, f)
+                                }
+                                Self::StreamCollectionRecords => {
+                                    hir::stream_collection_record_signature_admitted(program, f)
+                                }
+                                Self::StreamOwned => {
+                                    hir::stream_owned_signature_admitted(program, f)
+                                }
+                                _ => hir::stream_record_signature_admitted(program, f),
+                            }
+                            && program
+                                .declarations
+                                .declaration(&f.id)
+                                .is_some_and(|d| d.identity_origin == hir::IdentityOrigin::Explicit)
+                    })
+                    .map(|f| (f.id.as_str(), f)),
             );
         }
         if matches!(self, Self::StreamText) {
@@ -285,9 +334,11 @@ pub(crate) fn evaluate_resolved_i64_function_with_profile(
                     Err(Flow::Guard(detail)) => {
                         PreparedResolvedEvaluationOutcome::GuardError(detail.to_owned())
                     }
-                    Err(Flow::Residual(_)) => PreparedResolvedEvaluationOutcome::GuardError(
-                        "owned postfix `?` residual escaped its function frame".to_owned(),
-                    ),
+                    Err(Flow::Residual(_) | Flow::Lexical(_)) => {
+                        PreparedResolvedEvaluationOutcome::GuardError(
+                            "owned postfix `?` residual escaped its function frame".to_owned(),
+                        )
+                    }
                 };
                 PreparedResolvedEvaluation {
                     outcome,

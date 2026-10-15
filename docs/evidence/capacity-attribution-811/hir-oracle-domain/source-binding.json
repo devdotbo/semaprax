@@ -1,0 +1,63 @@
+{
+  "status": "SOURCE_ONLY_ORIGINAL_MIXED_GUARD_WAS_FAILING",
+  "base": "4f003f5f496a03ac5fa0065d5e1325af0af03d7e",
+  "files": {
+    "tests/hir_module_boundaries.rs": {
+      "whole_before_archive": "docs/evidence/capacity-attribution-811/hir-oracle-domain/tests__hir_module_boundaries.rs.before.txt",
+      "original_sha256": "0bc5bb07d41a24a4bfeceebfdcd204c749e0709b3bb7b8176999af555f6f36d7",
+      "receiving_sha256": "328ec856a7c00f6ae3e0cc01811242505155cad169835881ddada6683f5ba2f1",
+      "whole_inverse_edits": [
+        {
+          "original": "        );\n    }\n}\n",
+          "receiving": "        );\n    }\n}\n\n#[cfg(test)]\n#[path = \"hir_module_boundaries/oracle_source_inventory.rs\"]\nmod oracle_source_inventory;\n"
+        },
+        {
+          "original": "        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_summary/frontier_tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_summary/generic.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/schema/paid_summary.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/schema/paid_summary/original_receiver.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/schema/paid_summary/tests.rs\"),\n",
+          "receiving": "        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_summary/frontier_tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_summary/generic.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/schema/paid_summary.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/schema/paid_summary/original_receiver.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/schema/paid_summary/tests.rs\"),\n"
+        },
+        {
+          "original": "        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_text.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_metadata.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_metadata/admission.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_nested.rs\"),\n",
+          "receiving": "        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_substitute_tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_text.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_metadata.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_metadata/admission.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_nested.rs\"),\n"
+        }
+      ]
+    },
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": {
+      "whole_before_archive": "docs/evidence/capacity-attribution-811/hir-oracle-domain/src__cleanup_plan__replay__live_oracle__source_custody__b.rs.before.txt",
+      "original_sha256": "fedbaee1e18471d394cb46f8542948cf4d522cf45223bbd4d97528956198f33c",
+      "receiving_sha256": "709779263849c7373863cd1d04d4a215ab13fa7110e1b50b93038f64cd53c3fb",
+      "whole_inverse_edits": [
+        {
+          "original": "    }\n    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, r###\"                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n",
+          "receiving": "    }\n    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, r###\"\n#[cfg(test)]\n#[path = \"hir_module_boundaries/oracle_source_inventory.rs\"]\nmod oracle_source_inventory;\n\"###, \"\");\n        undo(&mut current, r###\"        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs\"),\n\"###, r###\"        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs\"),\n\"###);\n        undo(&mut current, r###\"        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs\"),\n\"###, r###\"        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs\"),\n\"###);\n        undo(&mut current, r###\"                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n"
+        }
+      ]
+    }
+  },
+  "new_source_inventory": {
+    "path": "tests/hir_module_boundaries/oracle_source_inventory.rs",
+    "sha256": "2e42bd6bab367993c04f9d54c974a7d5e9ab601017fa2959e77aaa3dff1a333b"
+  },
+  "moved_full_cfg_test_oracles": {
+    "src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs": {
+      "sha256": "5ea294d9cb5d671633376da6d2e9e4709cdd9445bc37e3261550167e05426d70",
+      "bytes": 8703,
+      "test_only_parent": "src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs"
+    },
+    "src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs": {
+      "sha256": "e12b10a618a188ab50e94eb2861801a8846e4b3d92ac923dd051116620b97761",
+      "bytes": 10511,
+      "test_only_parent": "src/cleanup_plan/replay/paid_type_facts/inventory_summary.rs"
+    }
+  },
+  "unchanged_source_readers": {
+    "tests/workspace/semantic_graph/source_inventory.rs": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7"
+  },
+  "protected_oldest_hir_whole_inverse": "All8 named exact undo edits statically applied and entire docs/evidence/opt810-live-oracle/tests__hir_module_boundaries.rs.before restored; no header slicing or excluded interior.",
+  "new_focused_owner": {
+    "harness": "semaprax::language_tests",
+    "selector": "hir_module_boundaries::oracle_source_inventory::complete_independent_cleanup_oracles_remain_registered_and_source_bound"
+  },
+  "retained_core_owner": "hir_module_boundaries::core_validation_has_no_resolution_cleanup_build_or_physical_authority",
+  "qualification": "No Cargo/build/compiler/test execution. Source expansion is not an executable gate pass."
+}

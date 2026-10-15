@@ -24,6 +24,10 @@ mod filesystem_ops;
 mod filesystem_v2;
 mod filesystem_v3;
 mod function_value;
+#[cfg(test)]
+mod fused_row_host;
+/// Versioned `fused-construction-v1` source-only Core-Wasm package adapter.
+mod fused_source_package;
 #[cfg(any(test, feature = "unstable-wit-component-harness"))]
 mod generic_function_component_v9;
 #[cfg(any(test, feature = "unstable-wit-component-harness"))]
@@ -50,8 +54,18 @@ mod result_component_v3;
 #[cfg(any(test, feature = "unstable-wit-component-harness"))]
 mod scalar_algebra_component_v5;
 mod scalar_exports;
+/// Selected `FusedConstructionV1` executor; default admission stays closed.
+mod selected_fused;
+/// Ordinary shared-owner Bytes consumer closure; producer admission closed.
+mod shared_owner;
+#[allow(
+    unused_imports,
+    reason = "consumed by the crate-private fused_source facade"
+)]
+pub(crate) use fused_source_package::{emit_fused_source_package, publish_fused_source_package};
 mod string_ops_v2_use;
 use string_ops_v2_use::{program_uses_numeric_text, program_uses_string_ops_v2};
+mod borrowed_equality;
 /// Call-depth admission for the legacy scalar-core emitter (#293 P2-2).
 mod scalar_call_admission;
 #[cfg(any(test, feature = "unstable-wit-component-harness"))]
@@ -212,10 +226,14 @@ fn functions_use_strings<'a>(
             return true;
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Closure { captures, .. } => {
                 pending.extend(captures.iter().map(|capture| &capture.value))
             }
-            ResolvedExprKind::Call { args, .. } => pending.extend(args.iter()),
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter()),
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push(callable);
                 pending.extend(args.iter());
@@ -235,7 +253,10 @@ fn functions_use_strings<'a>(
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -284,6 +305,7 @@ fn functions_use_strings<'a>(
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::FunctionReference { .. } => {}
@@ -320,7 +342,8 @@ fn program_uses_byte_data(program: &ResolvedProgram) -> bool {
             ResolvedType::SliceU8 | ResolvedType::Bytes | ResolvedType::ArrayU8(_)
         ) || matches!(
             expression.kind,
-            ResolvedExprKind::ArrayU8(_)
+            ResolvedExprKind::BorrowedUtf8Literal(_)
+                | ResolvedExprKind::ArrayU8(_)
                 | ResolvedExprKind::RepeatArrayU8 { .. }
                 | ResolvedExprKind::BorrowPlace { .. }
         ) || crate::hir::yield_aggregate::has_bytes_leaf(&program.declarations, &expression.ty)
@@ -335,10 +358,14 @@ fn program_uses_byte_data(program: &ResolvedProgram) -> bool {
             }
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Closure { captures, .. } => {
                 pending.extend(captures.iter().map(|capture| &capture.value))
             }
-            ResolvedExprKind::Call { args, .. } => pending.extend(args),
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args),
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push(callable);
                 pending.extend(args);
@@ -358,7 +385,10 @@ fn program_uses_byte_data(program: &ResolvedProgram) -> bool {
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -407,6 +437,7 @@ fn program_uses_byte_data(program: &ResolvedProgram) -> bool {
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::FunctionReference { .. } => {}
@@ -432,10 +463,14 @@ fn program_uses_string_ops(program: &ResolvedProgram) -> bool {
             }
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Closure { captures, .. } => {
                 pending.extend(captures.iter().map(|capture| &capture.value))
             }
-            ResolvedExprKind::Call { args, .. } => pending.extend(args.iter()),
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter()),
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push(callable);
                 pending.extend(args.iter());
@@ -455,7 +490,10 @@ fn program_uses_string_ops(program: &ResolvedProgram) -> bool {
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -504,6 +542,7 @@ fn program_uses_string_ops(program: &ResolvedProgram) -> bool {
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::FunctionReference { .. } => {}
@@ -527,6 +566,7 @@ fn collect_string_data(program: &ResolvedProgram) -> StringData {
         // Reuse the same traversal shape as `program_uses_strings`, pushing
         // children in reverse so pre-order stays deterministic.
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Closure { captures, .. } => {
                 for capture in captures.iter().rev() {
                     pending.push(&capture.value);
@@ -538,7 +578,10 @@ fn collect_string_data(program: &ResolvedProgram) -> StringData {
                 }
                 pending.push(callable);
             }
-            ResolvedExprKind::Call { args, .. } => {
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
                 for arg in args.iter().rev() {
                     pending.push(arg);
                 }
@@ -570,7 +613,10 @@ fn collect_string_data(program: &ResolvedProgram) -> StringData {
                 pending.push(right);
                 pending.push(left);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(tail);
                 for statement in statements.iter().rev() {
                     for index in (0..statement.child_count()).rev() {
@@ -623,6 +669,7 @@ fn collect_string_data(program: &ResolvedProgram) -> StringData {
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::FunctionReference { .. } => {}
@@ -673,6 +720,7 @@ struct LocalLayout<'a> {
 struct TextIntrinsicIndexes {
     starts_with: u32,
     contains: u32,
+    equality: Option<u32>,
 }
 
 trait ByteOutput: std::ops::Deref<Target = [u8]> {
@@ -811,6 +859,12 @@ pub fn emit_resolved_module_with_scalar_exports(
     program: &ResolvedProgram,
     export_ids: &[String],
 ) -> Result<Vec<u8>, Diagnostic> {
+    if hir::validate_with_static_text(program)? {
+        return Err(Diagnostic::io(
+            "SPX-W119",
+            "static borrowed UTF-8 does not widen public export profiles",
+        ));
+    }
     aggregate::map_collections::validate_scalar_route(program)?;
     let plans = scalar_exports::prepare(program, export_ids)?;
     emit_resolved_module_internal(program, &plans, &[])
@@ -847,6 +901,12 @@ pub fn emit_resolved_module_with_text_exports(
     program: &ResolvedProgram,
     export_ids: &[String],
 ) -> Result<Vec<u8>, Diagnostic> {
+    if hir::validate_with_static_text(program)? {
+        return Err(Diagnostic::io(
+            "SPX-W119",
+            "static borrowed UTF-8 does not widen public export profiles",
+        ));
+    }
     crate::string_ops::refuse_collections_for_wasm(program)?;
     let plans = text_exports::prepare(program, export_ids)?;
     emit_resolved_module_internal(program, &[], &plans)
@@ -952,7 +1012,13 @@ fn emit_resolved_module_internal(
     aggregate::string_runtime::refuse_unimplemented_collections(program)?;
     let has_public_profile = !scalar_exports.is_empty() || !text_exports.is_empty();
     if aggregate::map_collections::uses(program) {
-        hir::validate(program)?;
+        let static_utf8 = hir::validate_with_static_text(program)?;
+        if static_utf8 && has_public_profile {
+            return Err(Diagnostic::io(
+                "SPX-W119",
+                "static borrowed UTF-8 does not widen public export profiles",
+            ));
+        }
         aggregate::conversions::validate_public_profile(program, has_public_profile)?;
         if program
             .interfaces
@@ -972,9 +1038,9 @@ fn emit_resolved_module_internal(
             ));
         }
         return if scalar_exports.is_empty() {
-            aggregate::emit(program)
+            aggregate::emit_with_static_text(program, static_utf8)
         } else {
-            aggregate::emit_scalar_exports(program, scalar_exports)
+            aggregate::emit_scalar_exports_with_static_text(program, scalar_exports, static_utf8)
         };
     }
     aggregate::conversions::validate_public_profile(program, has_public_profile)?;
@@ -998,7 +1064,13 @@ fn emit_resolved_module_internal(
             "Native Rust imports are unavailable for WebAssembly targets",
         ));
     }
-    hir::validate(program)?;
+    let static_utf8 = hir::validate_with_static_text(program)?;
+    if static_utf8 && has_public_profile {
+        return Err(Diagnostic::io(
+            "SPX-W119",
+            "static borrowed UTF-8 does not widen public export profiles",
+        ));
+    }
     if hir::closure::requires_runtime_closures(program) {
         if !text_exports.is_empty() {
             return Err(Diagnostic::io(
@@ -1007,9 +1079,9 @@ fn emit_resolved_module_internal(
             ));
         }
         return if scalar_exports.is_empty() {
-            aggregate::emit(program)
+            aggregate::emit_with_static_text(program, static_utf8)
         } else {
-            aggregate::emit_scalar_exports(program, scalar_exports)
+            aggregate::emit_scalar_exports_with_static_text(program, scalar_exports, static_utf8)
         };
     }
     let concrete_variants = VariantLayoutCache::build(program, VariantTarget::Wasm32)?;
@@ -1024,7 +1096,8 @@ fn emit_resolved_module_internal(
             .declaration(&declaration.id)
             .is_some_and(|item| item.identity_origin == IdentityOrigin::CompilerOwned)
     });
-    if has_authored_aggregate
+    if static_utf8
+        || has_authored_aggregate
         || !concrete_variants.is_empty()
         || program_uses_byte_data(program)
         || program_uses_vec(program)
@@ -1038,14 +1111,18 @@ fn emit_resolved_module_internal(
                 && has_authored_aggregate
                 && concrete_variants.is_empty()
             {
-                return aggregate::emit_scalar_exports(program, scalar_exports);
+                return aggregate::emit_scalar_exports_with_static_text(
+                    program,
+                    scalar_exports,
+                    static_utf8,
+                );
             }
             return Err(Diagnostic::io(
                 "SPX-W115",
                 "Public Scalar Export Profile v1 does not admit aggregate or variant lowering",
             ));
         }
-        return aggregate::emit(program);
+        return aggregate::emit_with_static_text(program, static_utf8);
     }
     let owned_plans = owned::plan(program)?;
     if has_public_profile && !owned_plans.is_empty() {
@@ -1508,9 +1585,16 @@ fn emit_resolved_module_internal(
         + executable_functions.len() as u32
         + owned_plans.len() as u32
         + scalar_exports.len() as u32;
+    let text_equality = !text_exports.is_empty() && borrowed_equality::uses(program)?;
+    let text_helper_count = if text_exports.is_empty() {
+        0
+    } else {
+        3 + usize::from(text_equality)
+    };
     let text_intrinsics = (!text_exports.is_empty()).then_some(TextIntrinsicIndexes {
         starts_with: text_helper_base + 1,
         contains: text_helper_base + 2,
+        equality: text_equality.then_some(text_helper_base + 3),
     });
 
     let mut module = crate::bounded_output::CappedVec::from_slice(b"\0asm\x01\0\0\0");
@@ -1563,7 +1647,7 @@ fn emit_resolved_module_internal(
         (function_types.len()
             + owned_function_types.len()
             + scalar_export_types.len()
-            + usize::from(text_validator_type.is_some()) * 3
+            + text_helper_count
             + text_export_types.len()
             + usize::from(main_index.is_some())) as u32,
     );
@@ -1580,6 +1664,9 @@ fn emit_resolved_module_internal(
         write_u32(&mut functions, validator);
         write_u32(&mut functions, binary);
         write_u32(&mut functions, binary);
+        if text_equality {
+            write_u32(&mut functions, binary);
+        }
     }
     for type_index in text_export_types {
         write_u32(&mut functions, type_index);
@@ -1686,7 +1773,7 @@ fn emit_resolved_module_internal(
             exports.push(kind);
             write_u32(&mut exports, index);
         }
-        let text_export_base = text_helper_base + 3;
+        let text_export_base = text_helper_base + text_helper_count as u32;
         for (ordinal, plan) in text_exports.iter().enumerate() {
             write_name(&mut exports, &plan.wasm_export);
             exports.push(0x00);
@@ -1701,7 +1788,7 @@ fn emit_resolved_module_internal(
         (executable_functions.len()
             + owned_plans.len()
             + scalar_exports.len()
-            + if text_exports.is_empty() { 0 } else { 3 }
+            + text_helper_count
             + text_exports.len()
             + usize::from(main_index.is_some())) as u32,
     );
@@ -1791,16 +1878,14 @@ fn emit_resolved_module_internal(
             )?;
             emit_contract_guard(&mut body, Some(1));
         }
-        emit_expr(
+        scalar_control::emit_body(
             &mut body,
-            &function.body,
+            function,
             &value_indexes,
             &function_indexes,
             &layout,
-            None,
+            result_local,
         )?;
-        body.push(0x21);
-        write_u32(&mut body, result_local);
         for contract in &function.ensures {
             emit_expr(
                 &mut body,
@@ -1840,6 +1925,12 @@ fn emit_resolved_module_internal(
         ] {
             let mut body = crate::bounded_output::CappedVec::new();
             emitter(&mut body);
+            write_u32(&mut code, body.len() as u32);
+            code.extend_from_slice(&body);
+        }
+        if text_equality {
+            let mut body = crate::bounded_output::CappedVec::new();
+            borrowed_equality::emit_body(&mut body, text_helper_base + 1);
             write_u32(&mut code, body.len() as u32);
             code.extend_from_slice(&body);
         }
@@ -3403,1101 +3494,11 @@ fn reject_native_rust_imports(program: &Program) -> Result<(), Diagnostic> {
 }
 
 use function_value::collect_locals;
-fn emit_expr(
-    output: &mut impl ByteOutput,
-    expr: &ResolvedExpr,
-    value_indexes: &HashMap<ValueId, u32>,
-    function_indexes: &HashMap<FunctionExecutionId, u32>,
-    layout: &LocalLayout,
-    result: Option<(u32, &str)>,
-) -> Result<(), Diagnostic> {
-    match &expr.kind {
-        ResolvedExprKind::Int(value) => {
-            output.push(0x42);
-            write_i64(output, *value);
-        }
-        ResolvedExprKind::Int32(value) => {
-            output.push(0x41);
-            write_i64(output, i64::from(*value));
-        }
-        ResolvedExprKind::Char(value) => {
-            // Chars ride the i32 valtype; scalar values are below 2^31 so the
-            // signed LEB128 encoding is exact.
-            output.push(0x41);
-            write_i64(output, i64::from(*value));
-        }
-        ResolvedExprKind::Uint8(value) => {
-            // u8 values ride the i32 valtype with the same exact encoding.
-            output.push(0x41);
-            write_i64(output, i64::from(*value));
-        }
-        ResolvedExprKind::Usize(value) => {
-            output.push(0x42);
-            write_i64(output, *value as i64);
-        }
-        ResolvedExprKind::Float32(bits) => {
-            output.push(0x43);
-            output.extend_bytes(&bits.to_le_bytes());
-        }
-        ResolvedExprKind::Float64(bits) => {
-            output.push(0x44);
-            output.extend_bytes(&bits.to_le_bytes());
-        }
-        ResolvedExprKind::Bool(value) => {
-            output.push(0x41);
-            write_i64(output, i64::from(*value));
-        }
-        ResolvedExprKind::String(value) => {
-            // A string value is an abstract host handle riding the i64 lane;
-            // the handle is freshly allocated for this evaluation.
-            let Some(table) = layout.string_data else {
-                return Err(Diagnostic::io(
-                    "SPX-W116",
-                    "string literal reached lowering without string admission",
-                ));
-            };
-            let Some(&offset) = table.offsets.get(value) else {
-                return Err(Diagnostic::io(
-                    "SPX-W116",
-                    "string literal has no data-segment offset",
-                ));
-            };
-            output.push(0x41); // i32.const offset
-            write_u32(output, offset);
-            output.push(0x41); // i32.const len
-            write_i64(output, value.len() as i64);
-            call_import(output, STRING_IMPORT_BASE_NEW);
-        }
-        ResolvedExprKind::Place(place) => {
-            if !place.projections.is_empty() {
-                return Err(Diagnostic::io(
-                    "SPX-W110",
-                    "aggregate place projections are not supported by the Wasm core backend",
-                ));
-            }
-            let index = value_indexes.get(&place.root).copied().or_else(|| {
-                result.and_then(|(index, result_id)| {
-                    (place.root.as_str() == result_id).then_some(index)
-                })
-            });
-            let index = index.ok_or_else(|| {
-                Diagnostic::io(
-                    "SPX-W103",
-                    format!("unknown value identity `{}`", place.root),
-                )
-            })?;
-            output.push(0x20);
-            write_u32(output, index);
-            // Every read of an owned string place clones the handle so the
-            // source place keeps its unique owner.
-            if matches!(expr.ty, ResolvedType::String) {
-                call_import(output, STRING_IMPORT_BASE_CLONE);
-            }
-        }
-        ResolvedExprKind::Closure { .. } => {
-            return Err(Diagnostic::io(
-                "SPX-W104",
-                "capturing closure requires the Wasm closure profile",
-            ))
-        }
-        ResolvedExprKind::FunctionReference { target } => {
-            output.push(0x41);
-            write_i32(
-                output,
-                i32::try_from(*layout.function_tables.get(target).ok_or_else(|| {
-                    Diagnostic::io(
-                        "SPX-W104",
-                        "function reference has no WebAssembly table slot",
-                    )
-                })?)
-                .map_err(|_| {
-                    Diagnostic::io("SPX-W104", "function table index exceeds signed i32")
-                })?,
-            );
-        }
-        ResolvedExprKind::Invoke { callable, args } => {
-            hir::function_value::validate_invocation(expr)?;
-            let scratch = *layout
-                .function_scratch
-                .get(expr.id.as_str())
-                .ok_or_else(|| {
-                    Diagnostic::io(
-                        "SPX-W108",
-                        "function invocation has no WebAssembly scratch local",
-                    )
-                })?;
-            emit_expr(
-                output,
-                callable,
-                value_indexes,
-                function_indexes,
-                layout,
-                result,
-            )?;
-            local_set(output, scratch);
-            for arg in args {
-                emit_expr(output, arg, value_indexes, function_indexes, layout, result)?;
-            }
-            local_get(output, scratch);
-            output.push(0x11);
-            write_u32(
-                output,
-                *layout
-                    .function_types
-                    .get(&callable.ty.identity_key())
-                    .ok_or_else(|| {
-                        Diagnostic::io(
-                            "SPX-W104",
-                            "function invocation has no WebAssembly signature type",
-                        )
-                    })?,
-            );
-            output.push(0x00);
-        }
-        ResolvedExprKind::Call {
-            callee,
-            instance,
-            args,
-            ..
-        } => {
-            if instance.is_none() {
-                if let Some(op) = crate::str_ops::by_id(callee.as_str()) {
-                    let helpers = layout.text_intrinsics.ok_or_else(|| {
-                        Diagnostic::io(
-                            "SPX-W119",
-                            "borrowed `str` operation reached a non-text Wasm profile",
-                        )
-                    })?;
-                    for arg in args {
-                        emit_expr(output, arg, value_indexes, function_indexes, layout, result)?;
-                    }
-                    match op {
-                        crate::str_ops::StrOp::ByteAt => {
-                            return Err(Diagnostic::io(
-                                "SPX-W119",
-                                "borrowed byte indexing requires the aggregate Wasm lane",
-                            ))
-                        }
-                        crate::str_ops::StrOp::LenBytes => {
-                            output.push(0x42); // i64.const 32
-                            write_i64(output, 32);
-                            output.push(0x88); // i64.shr_u
-                        }
-                        crate::str_ops::StrOp::IsEmpty => {
-                            output.push(0x42);
-                            write_i64(output, 32);
-                            output.push(0x88); // i64.shr_u
-                            output.push(0x50); // i64.eqz
-                        }
-                        crate::str_ops::StrOp::StartsWith => {
-                            output.push(0x10);
-                            write_u32(output, helpers.starts_with);
-                        }
-                        crate::str_ops::StrOp::Contains => {
-                            output.push(0x10);
-                            write_u32(output, helpers.contains);
-                        }
-                    }
-                    return Ok(());
-                }
-                if let Some(op) = crate::string_ops::by_id(callee.as_str()) {
-                    if op.is_integer_conversion() {
-                        emit_expr(
-                            output,
-                            &args[0],
-                            value_indexes,
-                            function_indexes,
-                            layout,
-                            result,
-                        )?;
-                        return numeric_conversions::emit_scalar(output, op, layout);
-                    }
-                    if op.is_wasm_refused() {
-                        return Err(crate::string_ops::text_toolkit_wasm_refusal(op));
-                    }
-                    // Compiler-owned string operations lower through their
-                    // dedicated host imports; borrowed reads leave the input
-                    // handle owned by the caller and concatenation hands both
-                    // input handles to the host shim.
-                    for arg in args {
-                        emit_expr(output, arg, value_indexes, function_indexes, layout, result)?;
-                    }
-                    match op {
-                        crate::string_ops::StringOp::I64FromU8 => output.push(0xad), // i64.extend_i32_u
-                        crate::string_ops::StringOp::Len => {
-                            call_import(output, STRING_OPS_IMPORT_BASE_LEN);
-                        }
-                        crate::string_ops::StringOp::IsEmpty => {
-                            call_import(output, STRING_OPS_IMPORT_BASE_LEN);
-                            output.push(0x50); // i64.eqz keeps bool results exact
-                        }
-                        crate::string_ops::StringOp::Concat => {
-                            call_import(output, STRING_OPS_IMPORT_BASE_CONCAT);
-                        }
-                        crate::string_ops::StringOp::StartsWith => {
-                            call_import(output, layout.string_ops_v2_base);
-                        }
-                        crate::string_ops::StringOp::Contains => {
-                            call_import(output, layout.string_ops_v2_base + 1);
-                        }
-                        crate::string_ops::StringOp::LenChars => {
-                            call_import(output, layout.string_ops_v2_base + 2);
-                        }
-                        crate::string_ops::StringOp::FromChar => {
-                            call_import(output, layout.string_ops_v2_base + 3);
-                        }
-                        crate::string_ops::StringOp::FromI64 => {
-                            call_import(output, layout.string_numeric_text_base);
-                        }
-                        crate::string_ops::StringOp::FromUsize => {
-                            call_import(output, layout.string_numeric_text_base + 1);
-                        }
-                        _ => unreachable!("Text Toolkit v1 was refused above"),
-                    }
-                    return Ok(());
-                }
-            }
-            for arg in args {
-                emit_expr(output, arg, value_indexes, function_indexes, layout, result)?;
-            }
-            output.push(0x10);
-            let execution = instance.as_ref().map_or_else(
-                || FunctionExecutionId::Monomorphic(callee.clone()),
-                |instance| FunctionExecutionId::Generic(instance.clone()),
-            );
-            write_u32(
-                output,
-                *function_indexes.get(&execution).ok_or_else(|| {
-                    Diagnostic::io("SPX-W104", format!("unknown function identity `{callee}`"))
-                })?,
-            );
-        }
-        ResolvedExprKind::NativeRustImportCall(_) => {
-            return Err(Diagnostic::io(
-                "SPX-W114",
-                "Native Rust imports are unavailable for WebAssembly targets",
-            ));
-        }
-        ResolvedExprKind::HostCommandCall(_) => {
-            return Err(Diagnostic::io(
-                "SPX-W114",
-                "command I/O operations require the Language Command I/O v1 WebAssembly lane",
-            ));
-        }
-        ResolvedExprKind::Unary { op, value } => match op {
-            UnaryOp::Neg => {
-                if value.ty == ResolvedType::I32 {
-                    emit_expr(
-                        output,
-                        value,
-                        value_indexes,
-                        function_indexes,
-                        layout,
-                        result,
-                    )?;
-                    let [wide, _] = layout.wide_scratch;
-                    output.push(0xac);
-                    local_set(output, wide);
-                    local_get(output, wide);
-                    output.push(0xa7);
-                    output.push(0x41);
-                    write_i64(output, i32::MIN as i64);
-                    output.push(0x46);
-                    emit_arithmetic_failure_if(output, aggregate::STATUS_NEG_OVERFLOW);
-                    output.push(0x42);
-                    write_i64(output, 0);
-                    local_get(output, wide);
-                    output.push(0x7d);
-                    output.push(0xa7);
-                    return Ok(());
-                }
-                emit_expr(
-                    output,
-                    value,
-                    value_indexes,
-                    function_indexes,
-                    layout,
-                    result,
-                )?;
-                if matches!(value.ty, ResolvedType::F32 | ResolvedType::F64) {
-                    // IEEE-754 negation is total; no failure import is used.
-                    output.push(match value.ty {
-                        ResolvedType::F32 => 0x8c,
-                        _ => 0x9a,
-                    });
-                } else {
-                    output.push(0x10);
-                    write_u32(output, 5);
-                }
-            }
-            UnaryOp::Not => {
-                emit_expr(
-                    output,
-                    value,
-                    value_indexes,
-                    function_indexes,
-                    layout,
-                    result,
-                )?;
-                output.push(0x45);
-            }
-        },
-        ResolvedExprKind::Binary { op, left, right } => {
-            if matches!(left.ty, ResolvedType::String) {
-                // Owned strings compare by UTF-8 contents through the host
-                // shim; every other operator over strings is ill-typed.
-                if !matches!(op, BinaryOp::Eq | BinaryOp::Ne) {
-                    return Err(Diagnostic::io(
-                        "SPX-W116",
-                        "string operands only support equality comparison",
-                    ));
-                }
-                emit_expr(
-                    output,
-                    left,
-                    value_indexes,
-                    function_indexes,
-                    layout,
-                    result,
-                )?;
-                emit_expr(
-                    output,
-                    right,
-                    value_indexes,
-                    function_indexes,
-                    layout,
-                    result,
-                )?;
-                call_import(output, STRING_IMPORT_BASE_EQ);
-                if *op == BinaryOp::Ne {
-                    output.push(0x45); // i32.eqz keeps bool results exact
-                }
-                return Ok(());
-            }
-            if matches!(
-                op,
-                BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem
-            ) && left.ty == ResolvedType::I32
-            {
-                emit_i32_checked_binary(
-                    output,
-                    *op,
-                    left,
-                    right,
-                    value_indexes,
-                    function_indexes,
-                    layout,
-                    result,
-                )?;
-                return Ok(());
-            }
-            emit_expr(
-                output,
-                left,
-                value_indexes,
-                function_indexes,
-                layout,
-                result,
-            )?;
-            if matches!(op, BinaryOp::And | BinaryOp::Or) {
-                emit_short_circuit(
-                    output,
-                    *op,
-                    right,
-                    value_indexes,
-                    function_indexes,
-                    layout,
-                    result,
-                )?;
-                return Ok(());
-            }
-            emit_expr(
-                output,
-                right,
-                value_indexes,
-                function_indexes,
-                layout,
-                result,
-            )?;
-            if matches!(left.ty, ResolvedType::F32 | ResolvedType::F64) {
-                // IEEE-754 arithmetic is total and never selects a failure
-                // status, so floats use native opcodes instead of the checked
-                // scalar imports.
-                let wide = matches!(left.ty, ResolvedType::F64);
-                output.push(match (op, wide) {
-                    (BinaryOp::Add, true) => 0xa0,
-                    (BinaryOp::Sub, true) => 0xa1,
-                    (BinaryOp::Mul, true) => 0xa2,
-                    (BinaryOp::Div, true) => 0xa3,
-                    (BinaryOp::Add, false) => 0x92,
-                    (BinaryOp::Sub, false) => 0x93,
-                    (BinaryOp::Mul, false) => 0x94,
-                    (BinaryOp::Div, false) => 0x95,
-                    (BinaryOp::Eq, true) => 0x61,
-                    (BinaryOp::Ne, true) => 0x62,
-                    (BinaryOp::Lt, true) => 0x63,
-                    (BinaryOp::Gt, true) => 0x64,
-                    (BinaryOp::Le, true) => 0x65,
-                    (BinaryOp::Ge, true) => 0x66,
-                    (BinaryOp::Eq, false) => 0x5b,
-                    (BinaryOp::Ne, false) => 0x5c,
-                    (BinaryOp::Lt, false) => 0x5d,
-                    (BinaryOp::Gt, false) => 0x5e,
-                    (BinaryOp::Le, false) => 0x5f,
-                    (BinaryOp::Ge, false) => 0x60,
-                    (BinaryOp::Rem, _) => {
-                        return Err(Diagnostic::io(
-                            "SPX-W102",
-                            "floating-point remainder has no admitted Wasm lowering",
-                        ));
-                    }
-                    _ => unreachable!("float arithmetic operation was matched above"),
-                });
-                return Ok(());
-            }
-            if matches!(left.ty, ResolvedType::U8)
-                && matches!(
-                    op,
-                    BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem
-                )
-            {
-                // Checked u8 arithmetic without new host imports: bounded
-                // operands make the unsigned i32 opcodes exact, and one
-                // unsigned range check traps on any out-of-range result. The
-                // scratch locals keep live values off the stack while the
-                // polymorphic trap block executes.
-                let Some((left_scratch, right_scratch)) = layout.u8_scratch else {
-                    return Err(Diagnostic::io(
-                        "SPX-W108",
-                        "missing WebAssembly local layout for checked u8 arithmetic",
-                    ));
-                };
-                // The stack holds [left, right]; pop them in reverse so each
-                // scratch local keeps its operand.
-                output.push(0x21);
-                write_u32(output, right_scratch);
-                output.push(0x21);
-                write_u32(output, left_scratch);
-                if matches!(op, BinaryOp::Div | BinaryOp::Rem) {
-                    output.push(0x20);
-                    write_u32(output, right_scratch);
-                    output.push(0x45);
-                    emit_arithmetic_failure_if(
-                        output,
-                        if *op == BinaryOp::Rem {
-                            aggregate::STATUS_REM_ZERO
-                        } else {
-                            aggregate::STATUS_DIV_ZERO
-                        },
-                    );
-                    output.push(0x20);
-                    write_u32(output, left_scratch);
-                    output.push(0x20);
-                    write_u32(output, right_scratch);
-                    output.push(if *op == BinaryOp::Div { 0x6e } else { 0x70 });
-                    return Ok(());
-                }
-                output.push(0x20);
-                write_u32(output, left_scratch);
-                output.push(0x20);
-                write_u32(output, right_scratch);
-                output.push(match op {
-                    BinaryOp::Add => 0x6a,
-                    BinaryOp::Sub => 0x6b,
-                    _ => 0x6c,
-                });
-                output.push(0x21);
-                write_u32(output, left_scratch);
-                output.push(0x20);
-                write_u32(output, left_scratch);
-                output.push(0x41);
-                write_i64(output, 255);
-                output.push(0x4b);
-                emit_arithmetic_failure_if(
-                    output,
-                    match op {
-                        BinaryOp::Add => aggregate::STATUS_ADD_OVERFLOW,
-                        BinaryOp::Sub => aggregate::STATUS_SUB_OVERFLOW,
-                        BinaryOp::Mul => aggregate::STATUS_MUL_OVERFLOW,
-                        _ => unreachable!("u8 arithmetic operation was matched above"),
-                    },
-                );
-                output.push(0x20);
-                write_u32(output, left_scratch);
-                return Ok(());
-            }
-            if matches!(left.ty, ResolvedType::Usize)
-                && matches!(
-                    op,
-                    BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem
-                )
-            {
-                let Some((left_scratch, right_scratch)) = layout.usize_scratch else {
-                    return Err(Diagnostic::io(
-                        "SPX-W108",
-                        "missing WebAssembly local layout for checked usize arithmetic",
-                    ));
-                };
-                output.push(0x21);
-                write_u32(output, right_scratch);
-                output.push(0x21);
-                write_u32(output, left_scratch);
-                match op {
-                    BinaryOp::Add => {
-                        output.push(0x20);
-                        write_u32(output, left_scratch);
-                        output.push(0x20);
-                        write_u32(output, right_scratch);
-                        output.push(0x7c);
-                        output.push(0x22);
-                        write_u32(output, right_scratch);
-                        output.push(0x20);
-                        write_u32(output, left_scratch);
-                        output.push(0x54); // i64.lt_u(result, left)
-                        emit_arithmetic_failure_if(output, aggregate::STATUS_ADD_OVERFLOW);
-                        output.push(0x20);
-                        write_u32(output, right_scratch);
-                    }
-                    BinaryOp::Sub => {
-                        output.push(0x20);
-                        write_u32(output, left_scratch);
-                        output.push(0x20);
-                        write_u32(output, right_scratch);
-                        output.push(0x54); // i64.lt_u(left, right)
-                        emit_arithmetic_failure_if(output, aggregate::STATUS_SUB_OVERFLOW);
-                        output.push(0x20);
-                        write_u32(output, left_scratch);
-                        output.push(0x20);
-                        write_u32(output, right_scratch);
-                        output.push(0x7d);
-                    }
-                    BinaryOp::Mul => {
-                        output.push(0x20);
-                        write_u32(output, right_scratch);
-                        output.push(0x50); // i64.eqz
-                        output.push(0x45); // i32.eqz => right != 0
-                        output.extend_bytes(&[0x04, 0x40]); // if right != 0
-                        output.push(0x20);
-                        write_u32(output, left_scratch);
-                        output.push(0x42);
-                        write_i64(output, -1); // UINT64_MAX bit pattern
-                        output.push(0x20);
-                        write_u32(output, right_scratch);
-                        output.push(0x80); // i64.div_u
-                        output.push(0x56); // i64.gt_u
-                        emit_arithmetic_failure_if(output, aggregate::STATUS_MUL_OVERFLOW);
-                        output.push(0x0b); // end overflow check
-                        output.push(0x20);
-                        write_u32(output, left_scratch);
-                        output.push(0x20);
-                        write_u32(output, right_scratch);
-                        output.push(0x7e);
-                    }
-                    BinaryOp::Div | BinaryOp::Rem => {
-                        output.push(0x20);
-                        write_u32(output, right_scratch);
-                        output.push(0x50);
-                        emit_arithmetic_failure_if(
-                            output,
-                            if *op == BinaryOp::Div {
-                                aggregate::STATUS_DIV_ZERO
-                            } else {
-                                aggregate::STATUS_REM_ZERO
-                            },
-                        );
-                        output.push(0x20);
-                        write_u32(output, left_scratch);
-                        output.push(0x20);
-                        write_u32(output, right_scratch);
-                        output.push(if *op == BinaryOp::Div { 0x80 } else { 0x82 });
-                    }
-                    _ => unreachable!("usize arithmetic operation was matched above"),
-                }
-                return Ok(());
-            }
-            if matches!(left.ty, ResolvedType::Char)
-                && matches!(
-                    op,
-                    BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem
-                )
-            {
-                return Err(Diagnostic::io(
-                    "SPX-W102",
-                    "char arithmetic has no admitted Wasm lowering",
-                ));
-            }
-            match op {
-                BinaryOp::Add => call_import(output, 0),
-                BinaryOp::Sub => call_import(output, 1),
-                BinaryOp::Mul => call_import(output, 2),
-                BinaryOp::Div => call_import(output, 3),
-                BinaryOp::Rem => call_import(output, 4),
-                BinaryOp::Eq | BinaryOp::Ne => {
-                    output.push(match (&left.ty, op) {
-                        (ResolvedType::I64 | ResolvedType::Usize, BinaryOp::Eq) => 0x51,
-                        (ResolvedType::I64 | ResolvedType::Usize, BinaryOp::Ne) => 0x52,
-                        (_, BinaryOp::Eq) => 0x46,
-                        (_, BinaryOp::Ne) => 0x47,
-                        _ => unreachable!(),
-                    });
-                }
-                BinaryOp::Lt | BinaryOp::Gt | BinaryOp::Le | BinaryOp::Ge => {
-                    // Ordered comparison compares scalar values; chars ride
-                    // the unsigned i32 opcodes while i64 keeps its lane.
-                    output.push(match (&left.ty, op) {
-                        (ResolvedType::I32, BinaryOp::Lt) => 0x48,
-                        (ResolvedType::I32, BinaryOp::Gt) => 0x4a,
-                        (ResolvedType::I32, BinaryOp::Le) => 0x4c,
-                        (ResolvedType::I32, BinaryOp::Ge) => 0x4e,
-                        (ResolvedType::Char, BinaryOp::Lt) => 0x49,
-                        (ResolvedType::Char, BinaryOp::Gt) => 0x4b,
-                        (ResolvedType::Char, BinaryOp::Le) => 0x4d,
-                        (ResolvedType::Char, BinaryOp::Ge) => 0x4f,
-                        (ResolvedType::U8, BinaryOp::Lt) => 0x49,
-                        (ResolvedType::U8, BinaryOp::Gt) => 0x4b,
-                        (ResolvedType::U8, BinaryOp::Le) => 0x4d,
-                        (ResolvedType::U8, BinaryOp::Ge) => 0x4f,
-                        (ResolvedType::Usize, BinaryOp::Lt) => 0x54,
-                        (ResolvedType::Usize, BinaryOp::Gt) => 0x56,
-                        (ResolvedType::Usize, BinaryOp::Le) => 0x58,
-                        (ResolvedType::Usize, BinaryOp::Ge) => 0x5a,
-                        (_, BinaryOp::Lt) => 0x53,
-                        (_, BinaryOp::Gt) => 0x55,
-                        (_, BinaryOp::Le) => 0x57,
-                        (_, BinaryOp::Ge) => 0x59,
-                        _ => unreachable!("ordered comparison was matched above"),
-                    });
-                }
-                BinaryOp::And | BinaryOp::Or => unreachable!(),
-            }
-        }
-        ResolvedExprKind::Block { statements, tail } => {
-            for statement in statements {
-                match statement {
-                    ResolvedStatement::Let { binding, value, .. } => {
-                        emit_expr(
-                            output,
-                            value,
-                            value_indexes,
-                            function_indexes,
-                            layout,
-                            result,
-                        )?;
-                        let index = layout.lets.get(&binding.id).ok_or_else(|| {
-                            Diagnostic::io(
-                                "SPX-W108",
-                                format!("missing WebAssembly local layout for `{}`", binding.id),
-                            )
-                        })?;
-                        output.push(0x21);
-                        write_u32(output, *index);
-                    }
-                    // The assigned value is emitted fully, then stored into
-                    // the target's local with `local.set`.
-                    ResolvedStatement::Assign {
-                        binding,
-                        value: assigned,
-                        ..
-                    } => {
-                        emit_expr(
-                            output,
-                            assigned,
-                            value_indexes,
-                            function_indexes,
-                            layout,
-                            result,
-                        )?;
-                        let index = layout.lets.get(&binding.id).ok_or_else(|| {
-                            Diagnostic::io(
-                                "SPX-W108",
-                                format!(
-                                    "missing WebAssembly local layout for assignment target `{}`",
-                                    binding.id
-                                ),
-                            )
-                        })?;
-                        output.push(0x21);
-                        write_u32(output, *index);
-                    }
-                    // Unsafe boundaries are transparent: the ordinary body is
-                    // emitted exactly as-is and its scalar Copy result drops.
-                    ResolvedStatement::Unsafe { body, .. } => {
-                        emit_expr(
-                            output,
-                            body,
-                            value_indexes,
-                            function_indexes,
-                            layout,
-                            result,
-                        )?;
-                        output.push(0x1A);
-                    }
-                    // Bounded While-Loops v1 lowers to a core `block`/`loop`
-                    // pair: the condition re-evaluates at the top, a false
-                    // condition branches out of the enclosing block, and the
-                    // discarded body value falls through to the back-edge
-                    // branch. Checked-arithmetic failures inside the loop use
-                    // the same host imports/traps as straight-line code.
-                    ResolvedStatement::While {
-                        condition, body, ..
-                    } => {
-                        debug_assert!(matches!(condition.ty, ResolvedType::Bool));
-                        output.extend_bytes(&[0x02, 0x40]); // block (empty)
-                        output.extend_bytes(&[0x03, 0x40]); // loop (empty) $top
-                        emit_expr(
-                            output,
-                            condition,
-                            value_indexes,
-                            function_indexes,
-                            layout,
-                            result,
-                        )?;
-                        output.push(0x45); // i32.eqz
-                        output.extend_bytes(&[0x0d, 0x01]); // br_if 1 -> $exit on false
-                        emit_expr(
-                            output,
-                            body,
-                            value_indexes,
-                            function_indexes,
-                            layout,
-                            result,
-                        )?;
-                        output.push(0x1A); // drop body value
-                        output.extend_bytes(&[0x0c, 0x00]); // br 0 -> $top
-                        output.push(0x0b); // end loop
-                        output.push(0x0b); // end block
-                    }
-                }
-            }
-            emit_expr(
-                output,
-                tail,
-                value_indexes,
-                function_indexes,
-                layout,
-                result,
-            )?;
-        }
-        ResolvedExprKind::If {
-            condition,
-            then_branch,
-            else_branch,
-        } => {
-            emit_expr(
-                output,
-                condition,
-                value_indexes,
-                function_indexes,
-                layout,
-                result,
-            )?;
-            output.push(0x04);
-            output.push(wasm_type(&then_branch.ty)?);
-            emit_expr(
-                output,
-                then_branch,
-                value_indexes,
-                function_indexes,
-                layout,
-                result,
-            )?;
-            output.push(0x05);
-            emit_expr(
-                output,
-                else_branch,
-                value_indexes,
-                function_indexes,
-                layout,
-                result,
-            )?;
-            output.push(0x0b);
-        }
-        ResolvedExprKind::Match {
-            scrutinee, arms, ..
-        } => {
-            // Refutable Match v1: Copy-scalar scrutinees lower to the
-            // literal/guard decision chain on the core lane; aggregates keep
-            // the aggregate-lane rejection below.
-            if crate::hir::is_refutable_match_scalar(&scrutinee.ty) {
-                return emit_scalar_refutable_match(
-                    output,
-                    expr,
-                    scrutinee,
-                    arms,
-                    value_indexes,
-                    function_indexes,
-                    layout,
-                    result,
-                );
-            }
-            return Err(Diagnostic::io(
-                "SPX-W110",
-                "aggregate expressions require WebAssembly aggregate lowering",
-            ));
-        }
-        ResolvedExprKind::ConstructRecord { .. }
-        | ResolvedExprKind::ArrayU8(_)
-        | ResolvedExprKind::RepeatArrayU8 { .. }
-        | ResolvedExprKind::BorrowPlace { .. }
-        | ResolvedExprKind::ByteRange { .. }
-        | ResolvedExprKind::ConstructVariant { .. }
-        | ResolvedExprKind::Try { .. }
-        | ResolvedExprKind::TryOption { .. }
-        | ResolvedExprKind::Project { .. }
-        | ResolvedExprKind::Upcast { .. }
-        | ResolvedExprKind::UpdateRecord { .. } => {
-            return Err(Diagnostic::io(
-                "SPX-W110",
-                "aggregate expressions require WebAssembly aggregate lowering",
-            ));
-        }
-        // Resumable Effects v1 (issue #204): explicit, tested refusal. A
-        // `yield` suspends the whole function and hands control back to a
-        // caller outside the module; the Core Wasm scalar/aggregate lanes
-        // have no such control-transfer mechanism, so a `yields`-declaring
-        // function is not admitted for this target at all -- see
-        // `docs/RESUMABLE-EFFECTS-V1.md`.
-        ResolvedExprKind::Yield { .. } => {
-            return Err(Diagnostic::io(
-                "SPX-W126",
-                "`yield` is not yet lowered by the WebAssembly backend; a `yields`-declaring \
-                 function is not admitted for this target",
-            ));
-        }
-    }
-    Ok(())
-}
-
-/// Refutable Match v1 core-lane lowering. The scrutinee evaluates once into
-/// its dedicated staging local; every non-final arm nests one reject block
-/// whose `br_if 0` falls through to the following arms, and a selected arm's
-/// value branches out of the result-carrying `$done` block. A guard is an
-/// ordinary emitted bool expression short-circuited after the pattern test,
-/// so it evaluates exactly once per reached matching arm.
-#[allow(clippy::too_many_arguments)]
-fn emit_scalar_refutable_match(
-    output: &mut impl ByteOutput,
-    expr: &ResolvedExpr,
-    scrutinee: &ResolvedExpr,
-    arms: &[crate::hir::ResolvedMatchArm],
-    value_indexes: &HashMap<ValueId, u32>,
-    function_indexes: &HashMap<FunctionExecutionId, u32>,
-    layout: &LocalLayout<'_>,
-    result: Option<(u32, &str)>,
-) -> Result<(), Diagnostic> {
-    let scratch = layout
-        .match_scratch
-        .get(expr.id.as_str())
-        .copied()
-        .ok_or_else(|| {
-            Diagnostic::io(
-                "SPX-W108",
-                format!("missing WebAssembly local layout for match `{}`", expr.id),
-            )
-        })?;
-    // One evaluation: emit the scrutinee, then store it in the staging local.
-    emit_expr(
-        output,
-        scrutinee,
-        value_indexes,
-        function_indexes,
-        layout,
-        result,
-    )?;
-    output.push(0x21);
-    write_u32(output, scratch);
-
-    let result_type = wasm_type(&expr.ty)?;
-    // block $done (result T)
-    output.push(0x02);
-    output.push(result_type);
-    for (index, arm) in arms.iter().enumerate() {
-        let final_arm = index + 1 == arms.len();
-        if !final_arm {
-            // block $reject (void)
-            output.extend_bytes(&[0x02, 0x40]);
-            emit_pattern_test(output, scratch, &scrutinee.ty, &arm.pattern)?;
-            output.push(0x45); // i32.eqz
-            output.extend_bytes(&[0x0d, 0x00]); // br_if 0 -> next arm
-        }
-        if let Some(guard) = &arm.guard {
-            debug_assert!(matches!(guard.ty, ResolvedType::Bool));
-            emit_expr(
-                output,
-                guard.as_ref(),
-                value_indexes,
-                function_indexes,
-                layout,
-                result,
-            )?;
-            output.push(0x45); // i32.eqz: false guard falls through
-            output.extend_bytes(&[0x0d, 0x00]); // br_if 0 -> next arm
-        }
-        emit_expr(
-            output,
-            &arm.value,
-            value_indexes,
-            function_indexes,
-            layout,
-            result,
-        )?;
-        if !final_arm {
-            // Selected: exit $done carrying the arm value. Labels from here
-            // are [reject_i(0), $done(1)] because earlier reject blocks were
-            // closed; the trailing catch-all falls out of $done naturally.
-            output.extend_bytes(&[0x0c, 0x01]); // br 1
-            output.push(0x0b); // end reject block
-        }
-    }
-    output.push(0x0b); // end $done
-    Ok(())
-}
-
-/// Pushes an i32 truth value for one scalar pattern: `local.get` then an
-/// equality chain over the literal alternatives joined with `i32.or`.
-fn emit_pattern_test(
-    output: &mut impl ByteOutput,
-    scratch: u32,
-    scrutinee_ty: &ResolvedType,
-    pattern: &crate::hir::ResolvedMatchPattern,
-) -> Result<(), Diagnostic> {
-    let alternatives: &[crate::hir::PatternValue] = match pattern {
-        crate::hir::ResolvedMatchPattern::Literal(value) => std::slice::from_ref(value),
-        crate::hir::ResolvedMatchPattern::Or(alternatives) => {
-            let mut flattened = Vec::with_capacity(alternatives.len());
-            for alternative in alternatives {
-                match alternative {
-                    crate::hir::ResolvedMatchPattern::Literal(value) => {
-                        flattened.push(*value);
-                    }
-                    _ => {
-                        return Err(Diagnostic::io(
-                            "SPX-M105",
-                            "or-pattern alternatives must be literals",
-                        ))
-                    }
-                }
-            }
-            return emit_alternative_tests(output, scratch, scrutinee_ty, &flattened);
-        }
-        // Refutable Match v1: an irrefutable pattern with a guard tests as
-        // constant true; the guard decides. Unguarded irrefutable arms only
-        // occur as the trailing catch-all, which emits no test.
-        crate::hir::ResolvedMatchPattern::Wildcard
-        | crate::hir::ResolvedMatchPattern::Binding(_) => {
-            output.extend_bytes(&[0x41, 0x01]); // i32.const 1
-            return Ok(());
-        }
-        crate::hir::ResolvedMatchPattern::Variant { .. }
-        | crate::hir::ResolvedMatchPattern::Record { .. } => {
-            return Err(Diagnostic::io(
-                "SPX-W110",
-                "aggregate arm reached scalar match lowering",
-            ))
-        }
-    };
-    emit_alternative_tests(output, scratch, scrutinee_ty, alternatives)
-}
-
-fn emit_alternative_tests(
-    output: &mut impl ByteOutput,
-    scratch: u32,
-    scrutinee_ty: &ResolvedType,
-    alternatives: &[crate::hir::PatternValue],
-) -> Result<(), Diagnostic> {
-    for (position, value) in alternatives.iter().enumerate() {
-        output.push(0x20); // local.get scratch
-        write_u32(output, scratch);
-        match (scrutinee_ty, value) {
-            (ResolvedType::I64, crate::hir::PatternValue::Int(inner)) => {
-                output.push(0x42); // i64.const
-                write_i64(output, *inner);
-                output.push(0x51); // i64.eq -> i32
-            }
-            (ResolvedType::I32, crate::hir::PatternValue::Int32(inner)) => {
-                output.push(0x41); // i32.const
-                write_i64(output, i64::from(*inner));
-                output.push(0x46); // i32.eq
-            }
-            (ResolvedType::U8, crate::hir::PatternValue::Uint8(inner)) => {
-                output.push(0x41);
-                write_i64(output, i64::from(*inner));
-                output.push(0x46);
-            }
-            (ResolvedType::Usize, crate::hir::PatternValue::Usize(inner)) => {
-                // `usize` rides the i64 valtype, matching the literal
-                // expression encoding and the aggregate lane's own test.
-                output.push(0x42); // i64.const
-                write_i64(output, *inner as i64);
-                output.push(0x51); // i64.eq -> i32
-            }
-            (ResolvedType::Char, crate::hir::PatternValue::Char(inner)) => {
-                output.push(0x41);
-                write_i64(output, i64::from(*inner));
-                output.push(0x46);
-            }
-            (ResolvedType::Bool, crate::hir::PatternValue::Bool(inner)) => {
-                output.push(0x41);
-                write_i64(output, i64::from(*inner));
-                output.push(0x46);
-            }
-            _ => {
-                return Err(Diagnostic::io(
-                    "SPX-T255",
-                    format!(
-                        "literal pattern disagrees with its `{}` scrutinee",
-                        scrutinee_ty.identity_key()
-                    ),
-                ));
-            }
-        }
-        // Both equality flags are now stacked; join them for alternatives
-        // after the first.
-        if position != 0 {
-            output.push(0x72); // i32.or
-        }
-    }
-    Ok(())
-}
-
-fn emit_short_circuit(
-    output: &mut impl ByteOutput,
-    op: BinaryOp,
-    right: &ResolvedExpr,
-    value_indexes: &HashMap<ValueId, u32>,
-    function_indexes: &HashMap<FunctionExecutionId, u32>,
-    layout: &LocalLayout,
-    result: Option<(u32, &str)>,
-) -> Result<(), Diagnostic> {
-    output.push(0x04);
-    output.push(I32);
-    if op == BinaryOp::And {
-        emit_expr(
-            output,
-            right,
-            value_indexes,
-            function_indexes,
-            layout,
-            result,
-        )?;
-        output.push(0x05);
-        output.extend_bytes(&[0x41, 0x00]);
-    } else {
-        output.extend_bytes(&[0x41, 0x01]);
-        output.push(0x05);
-        emit_expr(
-            output,
-            right,
-            value_indexes,
-            function_indexes,
-            layout,
-            result,
-        )?;
-    }
-    output.push(0x0b);
-    Ok(())
-}
-
+mod lexical_lookup;
+mod scalar_control;
+mod scalar_emit;
+mod scalar_emit_match;
+use scalar_emit::emit_expr;
 fn emit_contract_guard(output: &mut impl ByteOutput, failure_code: Option<i64>) {
     output.push(0x45);
     output.extend_bytes(&[0x04, 0x40]);

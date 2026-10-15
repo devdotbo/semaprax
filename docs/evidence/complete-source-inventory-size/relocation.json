@@ -1,0 +1,16 @@
+{
+  "base": "d106547c6",
+  "qualification": "Static exact source-inventory relocation only; no Cargo/build/tests.",
+  "original_statement": "    let projection_private_layout = concat!(\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout.rs\"),\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout/registry.rs\"),\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout/sorting.rs\"),\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout/ledger.rs\"),\n        include_str!(\n            \"../../src/workspace_graph/expected_projection/private_layout/registry/tests.rs\"\n        ),\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout/names.rs\"),\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout/shape.rs\"),\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout/roots.rs\"),\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout/owner_index.rs\"),\n        include_str!(\n            \"../../src/workspace_graph/expected_projection/private_layout/owner_index/tests.rs\"\n        ),\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout/authority.rs\"),\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout/authority_invocation.rs\"),\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout/authority_invocation/tests.rs\"),\n        include_str!(\n            \"../../src/workspace_graph/expected_projection/private_layout/authority_tests.rs\"\n        ),\n        include_str!(\n            \"../../src/workspace_graph/expected_projection/private_layout/authority_view.rs\"\n        ),\n        include_str!(\n            \"../../src/workspace_graph/expected_projection/private_layout/authority_oracle.rs\"\n        ),\n        include_str!(\n            \"../../src/workspace_graph/expected_projection/private_layout/authority_view_tests.rs\"\n        ),\n        include_str!(\"../../src/workspace_graph/expected_projection/private_layout/tests.rs\"),\n        include_str!(\n            \"../../src/workspace_graph/expected_projection/private_layout/function_tests.rs\"\n        ),\n        include_str!(\n            \"../../src/workspace_graph/expected_projection/private_layout/function_runtime.rs\"\n        ),\n    );",
+  "original_statement_sha256": "7d46afa2ec48763b9b5d79f417ad9bc214d6af57beda4b749f0c256868a6378b",
+  "original_module_sha256": "1cb18ded59b9915c01c49d6567f1f5570ba8aeedb29053b5896289c4e6489b28",
+  "helper": "tests/workspace/semantic_graph/source_inventory.rs",
+  "full_includes_retained": true,
+  "current_module_lines": 1465,
+  "helper_lines": 44,
+  "current_module_sha256": "1188a241f94a6ae50cc1e9b6918a2b9499057151ae40963d2e8d9f6239c818d5",
+  "helper_sha256": "9f33357035740cb40fe0677d9478169722be2ea48c29b95014dc94e0507c8ed2",
+  "complete_module_tokens_preserved_after_exact_unroll": true,
+  "original_include_count": 20,
+  "helper_joins_itself": true
+}

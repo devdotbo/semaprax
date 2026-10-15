@@ -9,13 +9,14 @@
 //! verifier and the test-only recursive oracle call the same helpers so their
 //! diagnostics stay byte-identical.
 
+use crate::ast::program_source::ProgramSource;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use super::diagnostics::error;
 use super::type_table::TypeTable;
 use crate::ast::{
-    Expr, ExprKind, Function, Program, Span, Type, TypeDeclarationKind, VariantCaseDeclaration,
+    Expr, ExprKind, Function, Span, Type, TypeDeclarationKind, VariantCaseDeclaration,
 };
 use crate::diagnostic::Diagnostic;
 
@@ -82,6 +83,10 @@ fn standard_library_function(name: &str) -> Option<&'static StandardFunction> {
                     .to_owned();
                 let entry = StandardFunction {
                     dependency: dependency.to_owned(),
+                    profile: module["required_profile"]
+                        .as_str()
+                        .expect("a standard-library module has a profile")
+                        .to_owned(),
                     provider: provider.to_owned(),
                     id: declaration["id"].as_str().unwrap_or_default().to_owned(),
                     signature: declaration["head"][0]
@@ -102,6 +107,7 @@ fn standard_library_function(name: &str) -> Option<&'static StandardFunction> {
 
 struct StandardFunction {
     dependency: String,
+    profile: String,
     provider: String,
     id: String,
     signature: String,
@@ -126,7 +132,7 @@ fn foreign_function_help(name: &str) -> Option<&'static str> {
 /// `unknown function` with the nearest declared or compiler-owned name when one
 /// is unambiguous and close, or the output hint for print-family names.
 pub(super) fn unknown_function(
-    program: &Program,
+    program: &dyn ProgramSource,
     name: &str,
     functions: &HashMap<&str, &Function>,
     span: Span,
@@ -148,13 +154,14 @@ pub(super) fn unknown_function(
     if let Some(function) = standard_library_function(name) {
         let StandardFunction {
             dependency,
+            profile,
             provider,
             id,
             signature,
         } = function;
         return diagnostic.with_help(format!(
             "`{signature}` is in `{provider}`: add `[dependencies] {dependency} = \"^0.1.0\"` to \
-             `semaprax.toml` and import it directly after the `module` line: `use function \
+             `semaprax.toml`, select the required `[package] profile = \"{profile}\"`, and import it directly after the `module` line: `use function \
              @id(\"{id}\") from {provider} as {name};`"
         ));
     }
@@ -188,6 +195,7 @@ fn nearest_function_name(name: &str, functions: &HashMap<&str, &Function>) -> Op
             crate::string_ops::I64_FROM_U8_NAME,
             crate::string_ops::U8_FROM_I64_NAME,
             crate::string_ops::CHAR_FROM_U8_NAME,
+            crate::string_ops::CHAR_FROM_I64_NAME,
             crate::str_ops::LEN_BYTES_NAME,
             crate::str_ops::IS_EMPTY_NAME,
             crate::str_ops::STARTS_WITH_NAME,
@@ -201,6 +209,20 @@ fn nearest_function_name(name: &str, functions: &HashMap<&str, &Function>) -> Op
         ]
         .iter()
         .map(|candidate| (*candidate).to_owned()),
+    );
+    // Enumerate the same compiler-owned operation identities used for admission.
+    candidates.extend(crate::vec_ops::ALL.iter().map(|op| op.name().to_owned()));
+    candidates.extend(crate::list_ops::ALL.iter().map(|op| op.name().to_owned()));
+    candidates.extend(
+        crate::map_ops::MapOp::ALL
+            .iter()
+            .map(|op| op.name().to_owned()),
+    );
+    candidates.extend(crate::box_ops::ALL.iter().map(|op| op.name().to_owned()));
+    candidates.extend(
+        crate::iterator_ops::ALL
+            .iter()
+            .map(|op| op.name().to_owned()),
     );
     candidates.sort();
     candidates.dedup();
@@ -506,6 +528,24 @@ pub(super) fn unknown_type_help(name: &str) -> Option<&'static str> {
     }
 }
 
+/// `Option<usize>`: a generic Copy type instantiated with an integer that only
+/// `i64` can carry. Names the two conversions that round-trip it.
+pub(super) fn generic_scalar_argument_help(name: &str, arguments: &[Type]) -> Option<String> {
+    let (scalar, widen, narrow) = arguments.iter().find_map(|argument| match argument {
+        Type::Usize => Some(("usize", "i64_from_usize", "usize_from_i64")),
+        Type::U8 => Some(("u8", "i64_from_u8", "u8_from_i64")),
+        _ => None,
+    })?;
+    let range = if scalar == "usize" {
+        "; this round trip requires a value at most 9223372036854775807 (i64::MAX), otherwise the conversion fails"
+    } else {
+        ""
+    };
+    Some(format!(
+        "carry the `{scalar}` as `i64`: instantiate `{name}` with `i64`, store `{widen}(value)`, and read it back with `{narrow}(value)`{range}"
+    ))
+}
+
 /// A borrowed-view operation applied to something other than a plain binding.
 pub(super) fn view_place_help(operation: &str, argument: &Expr) -> String {
     let (source, binding) = match (operation, &argument.kind) {
@@ -546,7 +586,11 @@ pub(super) const STRING_OPERATOR_HELP: &str =
 pub(super) const RESULT_NAME_HELP: &str = "`result` names the function's return value only in \
     `ensures`; rename a local binding to `outcome` and update its uses";
 
-pub(super) fn reserved_local_binding(program: &Program, name: &str, span: Span) -> Diagnostic {
+pub(super) fn reserved_local_binding(
+    program: &dyn ProgramSource,
+    name: &str,
+    span: Span,
+) -> Diagnostic {
     let diagnostic = error(
         program,
         "SPX-S109",
@@ -605,7 +649,7 @@ pub(super) const IMMUTABLE_TRAVERSAL_HELP: &str = "move the finished vector into
 
 /// A function declares an effect its module does not permit.
 pub(super) fn unpermitted_effect(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     effect: &str,
 ) -> Diagnostic {
@@ -614,7 +658,8 @@ pub(super) fn unpermitted_effect(
         "SPX-E101",
         format!(
             "function `{}` uses `{effect}` but module `{}` does not permit it",
-            function.name, program.module
+            function.name,
+            program.module()
         ),
         function.span,
     )
@@ -626,14 +671,14 @@ pub(super) fn unpermitted_effect(
 /// A call needs an effect its caller does not declare. Name both edits, so
 /// fixing `uses` does not surface the module `permit` as a second round trip.
 pub(super) fn missing_effect(
-    program: &Program,
+    program: &dyn ProgramSource,
     callee: &str,
     effect: &str,
     caller: &Function,
     span: Span,
 ) -> Diagnostic {
     let uses = format!("add `uses {{ {effect} }}` on its own line between the signature and `{{`");
-    let help = if program.permits.iter().any(|permit| permit == effect) {
+    let help = if program.permits().iter().any(|permit| permit == effect) {
         uses
     } else {
         format!("{uses}, and `permit {{ {effect} }}` at module level, below the `module` line")
@@ -686,5 +731,125 @@ pub(super) fn moved_resource_help(ty: &Type, name: &str) -> String {
                 .to_owned()
         }
         _ => "borrow the resource if the callee does not need ownership".to_owned(),
+    }
+}
+
+/// Presentation-only guidance for exact compiler-authored refusal families.
+/// These strings explain admitted syntax; they do not fabricate a fresh name,
+/// a flow witness, source-edit authority, or a larger execution profile.
+fn authoring_repair_help(code: &str, message: &str) -> Option<&'static str> {
+    match code {
+        "SPX-M104" if message.starts_with("invalid or duplicate pattern binding `") => Some(
+            "use a valid alias unique in this scope; `result` is reserved. For a payload, keep the field name and write `field: fresh_alias`, then use that alias in the arm; `fresh_alias` is an example, so check it is unused",
+        ),
+        "SPX-T269" if message.starts_with("stdout_write path reaches ")
+            || message.starts_with("stderr_write path reaches ") => Some(
+            "construct bounded output first, then publish once per stream on each path with stdout_write or stderr_write; keep the selected profile's byte limits",
+        ),
+        "SPX-T269" if message == "transcript output is reachable from a while condition" => Some(
+            "keep transcript publication out of the while condition; compute the condition without output and publish bounded output once after the loop",
+        ),
+        "SPX-T269" if message == "a while body may contain only direct runtime-bounded append output" => Some(
+            "build output within the selected profile's bounds and publish once after the loop; direct runtime-bounded append is a separate admitted shape, and an indirect writer is not that shape",
+        ),
+        "SPX-T269" if message == "transcript-write executable closure is cyclic" => Some(
+            "keep transcript writers out of cyclic call closures; construct output within the selected profile's bounds and publish once from an acyclic caller",
+        ),
+        _ => None,
+    }
+}
+
+pub(super) fn with_authoring_repair_help(mut diagnostic: Diagnostic) -> Diagnostic {
+    if diagnostic.help.is_some() {
+        return diagnostic;
+    }
+    let Some(text) = authoring_repair_help(diagnostic.code, &diagnostic.message) else {
+        return diagnostic;
+    };
+    // Optional presentation must never select a new refusal or consume the
+    // authoritative diagnostic floor. Sticky refusal rejects even fitting help.
+    // Admitted help consumes real bytes; later required-work boundaries can move.
+    if !crate::bounded_output::reserve_active_preserving(text.len(), 0) {
+        return diagnostic;
+    }
+    let mut help = String::new();
+    if help.try_reserve_exact(text.len()).is_err() || help.capacity() != text.len() {
+        return diagnostic;
+    }
+    help.push_str(text);
+    diagnostic.help = Some(help);
+    diagnostic
+}
+
+#[cfg(test)]
+mod authoring_repair_tests {
+    use super::*;
+    fn primary() -> Diagnostic {
+        Diagnostic::io_static("SPX-M104", "invalid or duplicate pattern binding `value`")
+    }
+    #[test]
+    fn optional_help_pays_exact_backing_and_preserves_primary() {
+        let original = primary();
+        let length = authoring_repair_help(original.code, &original.message)
+            .unwrap()
+            .len();
+        let (found, overflow, used) = crate::bounded_output::with_limit_usage(length, || {
+            with_authoring_repair_help(original.clone())
+        });
+        assert!(!overflow);
+        assert_eq!(used, length);
+        assert_eq!(found.help.as_ref().unwrap().capacity(), length);
+        let mut stripped = found;
+        stripped.help = None;
+        assert_eq!(stripped, original);
+    }
+    #[test]
+    fn short_zero_and_reserved_floor_keep_the_primary_without_refusal() {
+        let length = authoring_repair_help(primary().code, &primary().message)
+            .unwrap()
+            .len();
+        for limit in [0, length - 1, length] {
+            let (found, overflow, used, refusal) =
+                crate::bounded_output::with_limit_usage_refusal(limit, || {
+                    if limit == length {
+                        assert!(crate::bounded_output::set_active_floor(1));
+                    }
+                    with_authoring_repair_help(primary())
+                });
+            assert_eq!(found, primary());
+            assert!(!overflow);
+            assert_eq!(used, 0);
+            assert_eq!(refusal, None);
+        }
+    }
+    #[test]
+    fn sticky_refusal_and_existing_help_remain_authoritative() {
+        let (found, overflow, used, refusal) =
+            crate::bounded_output::with_limit_usage_refusal(4096, || {
+                assert!(!crate::bounded_output::reserve_active_required(4097));
+                with_authoring_repair_help(primary())
+            });
+        assert_eq!(found, primary());
+        assert!(overflow);
+        assert_eq!(used, 0);
+        assert_eq!(refusal.unwrap().requested, 4097);
+        let original = primary().with_help("existing authoritative help");
+        assert_eq!(with_authoring_repair_help(original.clone()), original);
+    }
+    #[test]
+    fn reasons_do_not_decorate_unrelated_fields_or_transcript_errors() {
+        assert!(
+            authoring_repair_help("SPX-M104", "unknown or duplicate pattern field `x`").is_none()
+        );
+        assert!(authoring_repair_help("SPX-T269", "stdout_write expects Slice<u8>").is_none());
+        for message in [
+            "stdout_write path reaches 2 sites; limit is 1",
+            "stderr_write path reaches 2 sites; limit is 1",
+            "transcript output is reachable from a while condition",
+            "a while body may contain only direct runtime-bounded append output",
+            "transcript-write executable closure is cyclic",
+        ] {
+            assert!(authoring_repair_help("SPX-T269", message).is_some());
+        }
     }
 }

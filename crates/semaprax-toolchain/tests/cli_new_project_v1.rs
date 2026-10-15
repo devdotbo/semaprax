@@ -138,7 +138,7 @@ fn calculator_template_has_exact_deterministic_bytes() {
     let scaffold = semaprax::project::derive_project_scaffold_v1_with_layout(
         "demo-project",
         "calculator",
-        semaprax::project::ScaffoldLayout::Tables,
+        semaprax::project::ScaffoldLayout::Current,
     )
     .unwrap();
     assert_eq!(
@@ -177,7 +177,7 @@ fn library_template_has_exact_bytes_and_passes_the_developer_loop() {
     let scaffold = semaprax::project::derive_project_scaffold_v1_with_layout(
         "demo-lib",
         "library",
-        semaprax::project::ScaffoldLayout::Tables,
+        semaprax::project::ScaffoldLayout::Current,
     )
     .unwrap();
     assert_eq!(
@@ -229,7 +229,7 @@ fn service_template_has_exact_bytes_and_passes_the_developer_loop() {
     let scaffold = semaprax::project::derive_project_scaffold_v1_with_layout(
         "demo-svc",
         "service",
-        semaprax::project::ScaffoldLayout::Tables,
+        semaprax::project::ScaffoldLayout::Current,
     )
     .unwrap();
     assert_eq!(
@@ -282,7 +282,7 @@ fn source_command_file_text_template_has_exact_bytes_and_passes_check() {
     let scaffold = semaprax::project::derive_project_scaffold_v1_with_layout(
         "decimal-command",
         "source-command-file-text",
-        semaprax::project::ScaffoldLayout::Tables,
+        semaprax::project::ScaffoldLayout::Current,
     )
     .unwrap();
     assert_eq!(
@@ -300,11 +300,73 @@ fn source_command_file_text_template_has_exact_bytes_and_passes_check() {
 }
 
 #[test]
+fn stdin_stream_collection_record_template_has_exact_bytes_and_passes_check() {
+    let fixture = Fixture::new("stdin-stream-collection-record");
+    let created = cli(
+        &fixture.root,
+        &[
+            "new",
+            "collection-command",
+            "--template",
+            "stdin-stream-collection-record",
+        ],
+    );
+    assert_success(&created);
+    assert_eq!(
+        String::from_utf8(created.stdout).unwrap(),
+        "created stdin-stream-collection-record project collection-command\n"
+    );
+
+    let files = read_tree(&fixture.root.join("collection-command"));
+    assert_eq!(
+        files.keys().map(String::as_str).collect::<Vec<_>>(),
+        [
+            "AGENTS.md",
+            "README.md",
+            "semaprax.toml",
+            "src/app.spx",
+            "src/core.spx",
+            "src/tests.spx",
+        ]
+    );
+    let scaffold = semaprax::project::derive_project_scaffold_v1_with_layout(
+        "collection-command",
+        "stdin-stream-collection-record",
+        semaprax::project::ScaffoldLayout::Current,
+    )
+    .unwrap();
+    assert_eq!(
+        scaffold
+            .files()
+            .iter()
+            .map(|file| (file.path().to_owned(), file.bytes().to_vec()))
+            .collect::<BTreeMap<_, _>>(),
+        files
+    );
+    let manifest = String::from_utf8(files["semaprax.toml"].clone()).unwrap();
+    assert!(manifest.contains("profile = \"language-command-io.collection-record.v1\""));
+    assert!(manifest.contains("matrix = [\"native64\"]"));
+    let readme = String::from_utf8(files["README.md"].clone()).unwrap();
+    assert!(readme.contains("printf 'sample\\n' | ./app"));
+    let tests = String::from_utf8(files["src/tests.spx"].clone()).unwrap();
+    assert!(tests.contains("fn test_report() -> i64"));
+    assert_success(&cli(
+        &fixture.root,
+        &["check", "collection-command/semaprax.toml"],
+    ));
+}
+
+#[test]
 fn generated_project_validation_never_reopens_the_ambient_staging_tree() {
     let implementation = include_str!("../src/new_project.rs");
     let scaffold = concat!(
-        include_str!("../../../src/project/scaffold.rs"),
+        concat!(
+            include_str!("../../../src/project/scaffold.rs"),
+            "\n",
+            include_str!("../../../src/project/scaffold/authoring.rs")
+        ),
         include_str!("../../../src/project/scaffold/service_config.rs"),
+        include_str!("../../../src/project/scaffold/collection_records.rs"),
     );
     assert!(scaffold.contains("validate_owned_project_test"));
     assert!(!implementation.contains("project::with_authenticated_project"));

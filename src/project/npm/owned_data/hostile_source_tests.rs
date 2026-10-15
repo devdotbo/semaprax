@@ -160,3 +160,43 @@ fn every_owned_facade_rejects_non_scalar_strings_and_wide_i64_before_effects() {
         assert!(snapshot < source.find("arena.begin()").unwrap());
     }
 }
+
+#[test]
+fn emitted_fixed_memory_extent_does_not_grant_public_utf8_results() {
+    for pages in [2u8, 4] {
+        let bytes = [0, 97, 115, 109, 1, 0, 0, 0, 5, 4, 1, 1, pages, pages];
+        wasmparser::Validator::new().validate_all(&bytes).unwrap();
+        let extent = fixed_runtime_memory_bytes(&bytes).unwrap();
+        assert_eq!(extent, u32::from(pages) * 65536);
+        let facade =
+            render_runtime_with_memory("digest", &[], PUBLIC_OWNED_DATA_PROJECT_SCHEMA, 16, extent);
+        assert!(facade.contains(&format!("createOwnedInvocation(linked,FACTS,{extent})")));
+        let legacy = render_runtime("digest", &[], PUBLIC_OWNED_DATA_PROJECT_SCHEMA, 16);
+        assert_eq!(
+            facade,
+            legacy.replace(
+                "createOwnedInvocation(linked,FACTS,131072)",
+                &format!("createOwnedInvocation(linked,FACTS,{extent})"),
+            )
+        );
+        assert!(facade.contains("const FACTS=new Map([])"));
+    }
+}
+#[test]
+fn runtime_memory_inventory_refuses_imported_shared_variable_and_foreign_extents() {
+    let header = [0, 97, 115, 109, 1, 0, 0, 0];
+    for section in [
+        vec![5, 4, 1, 1, 1, 1],          // arbitrary page count
+        vec![5, 4, 1, 1, 2, 4],          // growth allowed
+        vec![5, 3, 1, 0, 2],             // no maximum
+        vec![5, 4, 1, 3, 2, 2],          // shared
+        vec![5, 4, 1, 5, 2, 2],          // memory64
+        vec![5, 7, 2, 1, 2, 2, 1, 2, 2], // two memories
+        vec![2, 7, 1, 0, 0, 2, 1, 2, 2], // imported memory, empty module/name
+        vec![],                          // absent memory
+    ] {
+        let mut bytes = header.to_vec();
+        bytes.extend(section);
+        assert!(fixed_runtime_memory_bytes(&bytes).is_err());
+    }
+}

@@ -5,17 +5,24 @@
 //! cleanup consumers never receive a declaration set inferred from signatures
 //! alone.
 
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeSet, VecDeque};
 
 use super::*;
 
+#[cfg(test)]
+mod classifier_tests;
+mod inventory;
 mod nested_generic_function;
+#[cfg(test)]
+pub(crate) mod owned_oracle;
+
+pub(crate) use inventory::BorrowedTypeInventory;
 
 pub(crate) fn reachable_authored_types(
     functions: &[LinkedScalarFunction],
     instances: &[ResolvedFunctionInstance],
     interfaces: &[ResolvedInterface],
-    available: &BTreeMap<DeclarationId, ResolvedTypeDeclaration>,
+    available: &BorrowedTypeInventory<'_>,
 ) -> Result<Vec<ResolvedTypeDeclaration>, Diagnostic> {
     reachable_authored_types_with_roots(functions, instances, interfaces, available, &[])
 }
@@ -24,33 +31,44 @@ pub(crate) fn reachable_authored_types_with_roots(
     functions: &[LinkedScalarFunction],
     instances: &[ResolvedFunctionInstance],
     interfaces: &[ResolvedInterface],
-    available: &BTreeMap<DeclarationId, ResolvedTypeDeclaration>,
+    available: &BorrowedTypeInventory<'_>,
     roots: &[DeclarationId],
 ) -> Result<Vec<ResolvedTypeDeclaration>, Diagnostic> {
-    reachable_types(functions, instances, interfaces, available, roots, &[])
+    reachable_types(
+        functions,
+        instances,
+        interfaces,
+        available,
+        roots,
+        std::iter::empty::<&ResolvedInterface>(),
+    )
 }
 
 /// Scalar Project roots may retain a checked selected-native owner internally.
 /// The supporting interfaces authorize that resource but do not seed extra
 /// types into the exact function-reachable inventory. Owned-data and Wasm
-/// callers continue using the record/variant-only wrappers above.
-pub(crate) fn reachable_scalar_authored_types(
+/// callers continue using the record/variant-only wrappers above. The owner
+/// interfaces are borrowed in caller flattening order and never copied.
+pub(crate) fn reachable_scalar_authored_types<'a>(
     functions: &[LinkedScalarFunction],
     instances: &[ResolvedFunctionInstance],
-    available: &BTreeMap<DeclarationId, ResolvedTypeDeclaration>,
-    owner_interfaces: &[ResolvedInterface],
+    available: &BorrowedTypeInventory<'_>,
+    owner_interfaces: impl Iterator<Item = &'a ResolvedInterface> + Clone,
 ) -> Result<Vec<ResolvedTypeDeclaration>, Diagnostic> {
     reachable_types(functions, instances, &[], available, &[], owner_interfaces)
 }
 
-fn reachable_types(
+fn reachable_types<'a>(
     functions: &[LinkedScalarFunction],
     instances: &[ResolvedFunctionInstance],
     interfaces: &[ResolvedInterface],
-    available: &BTreeMap<DeclarationId, ResolvedTypeDeclaration>,
+    available: &BorrowedTypeInventory<'_>,
     roots: &[DeclarationId],
-    owner_interfaces: &[ResolvedInterface],
+    owner_interfaces: impl Iterator<Item = &'a ResolvedInterface> + Clone,
 ) -> Result<Vec<ResolvedTypeDeclaration>, Diagnostic> {
+    // An absent owner inventory falls back to the seeding interfaces for RI-06
+    // admission, exactly as the former empty owned vector did.
+    let owner_interfaces_empty = owner_interfaces.clone().next().is_none();
     let mut selected = roots.iter().cloned().collect::<BTreeSet<_>>();
     for linked in functions {
         collect_function(&linked.function, &mut selected);
@@ -77,25 +95,31 @@ fn reachable_types(
                 format!("owned-data closure references unknown type `{id}`"),
             )
         })?;
-        let fields = match &declaration.kind {
-            ResolvedTypeDeclarationKind::Record { fields } => fields.iter().collect::<Vec<_>>(),
-            ResolvedTypeDeclarationKind::Variant { cases } => {
-                cases.iter().flat_map(|case| &case.fields).collect()
-            }
+        // Borrowed field slices replace the former per-declaration pointer
+        // vector; record fields, then each case's fields, in declared order.
+        let (record_fields, cases): (
+            &[ResolvedFieldDeclaration],
+            &[ResolvedVariantCaseDeclaration],
+        ) = match &declaration.kind {
+            ResolvedTypeDeclarationKind::Record { fields } => (fields.as_slice(), &[]),
+            ResolvedTypeDeclarationKind::Variant { cases } => (&[], cases.as_slice()),
             ResolvedTypeDeclarationKind::Resource { .. }
-                if workspace_link::native_owner::admitted_resource(
+                if workspace_link::native_owner::admitted_resource_in(
                     declaration,
-                    owner_interfaces,
-                ) || workspace_link::native_owner::admitted_ri06_regex_resource(
-                    declaration,
-                    if owner_interfaces.is_empty() {
-                        interfaces
-                    } else {
-                        owner_interfaces
-                    },
-                ) =>
+                    owner_interfaces.clone(),
+                ) || if owner_interfaces_empty {
+                    workspace_link::native_owner::admitted_ri06_regex_resource_in(
+                        declaration,
+                        interfaces.iter(),
+                    )
+                } else {
+                    workspace_link::native_owner::admitted_ri06_regex_resource_in(
+                        declaration,
+                        owner_interfaces.clone(),
+                    )
+                } =>
             {
-                Vec::new()
+                (&[], &[])
             }
             ResolvedTypeDeclarationKind::Class { .. }
             | ResolvedTypeDeclarationKind::Resource { .. } => {
@@ -107,7 +131,10 @@ fn reachable_types(
                 ));
             }
         };
-        for field in fields {
+        for field in record_fields
+            .iter()
+            .chain(cases.iter().flat_map(|case| &case.fields))
+        {
             let mut referenced = BTreeSet::new();
             collect_type(&field.ty, &mut referenced);
             for referenced_id in referenced {
@@ -121,6 +148,8 @@ fn reachable_types(
     selected
         .into_iter()
         .filter(|id| !crate::prelude::is_compiler_owned_id(id.as_str()))
+        // The owned publication boundary: each selected declaration is
+        // cloned here exactly once from the borrowed inventory.
         .map(|id| {
             available.get(&id).cloned().ok_or_else(|| {
                 Diagnostic::io(
@@ -198,6 +227,18 @@ fn collect_expression(expression: &ResolvedExpr, declarations: &mut BTreeSet<Dec
                 collect_expression(argument, declarations);
             }
         }
+        ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
+            for argument in args {
+                collect_expression(argument, declarations);
+            }
+        }
+        ResolvedExprKind::RowLoan { loan, args } => {
+            collect_type(&loan.element, declarations);
+            for argument in args {
+                collect_expression(argument, declarations);
+            }
+        }
         ResolvedExprKind::NativeRustImportCall(call) => {
             for argument in &call.args {
                 collect_expression(argument, declarations);
@@ -206,6 +247,11 @@ fn collect_expression(expression: &ResolvedExpr, declarations: &mut BTreeSet<Dec
         ResolvedExprKind::HostCommandCall(call) => {
             for argument in &call.args {
                 collect_expression(argument, declarations);
+            }
+        }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_expression(value, declarations);
             }
         }
         ResolvedExprKind::Unary { value, .. }
@@ -217,7 +263,10 @@ fn collect_expression(expression: &ResolvedExpr, declarations: &mut BTreeSet<Dec
             collect_expression(left, declarations);
             collect_expression(right, declarations);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, .. }
                 | ResolvedStatement::Assign { binding, .. } = statement
@@ -303,6 +352,7 @@ fn collect_expression(expression: &ResolvedExpr, declarations: &mut BTreeSet<Dec
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
     }
@@ -378,9 +428,9 @@ const MAX_NESTED_OWNED_BYTE_LEAVES: usize = 256;
 const MAX_NESTED_OWNED_RECORD_FIELDS: usize = 4_096;
 
 struct NestedOwnedRecordFacts {
-    /// Declaration-stable paths to every owned byte leaf, in declaration
-    /// order. HIR admission therefore never depends on display names.
-    byte_paths: Vec<Vec<PlaceProjection>>,
+    /// Admission needs the count, not ownership paths. Cleanup derives its
+    /// complete stable paths independently.
+    byte_leaves: usize,
     visited_fields: usize,
 }
 
@@ -583,7 +633,7 @@ pub(crate) fn is_admitted_copy_aggregate_variant_field(
     {
         return false;
     }
-    declarations.type_facts(ty).is_some_and(|facts| {
+    declarations.type_flags(ty).is_some_and(|facts| {
         facts.copy && facts.sized && !facts.contains_resource && !facts.needs_drop
     })
 }
@@ -594,23 +644,70 @@ fn classify_nested_owned_byte_record(
     declarations: &DeclarationIndex,
     root: &ResolvedType,
 ) -> NestedOwnedRecordAdmission {
-    enum Frame<'a> {
-        Type(ResolvedType, usize),
-        Fields(
-            DeclarationId,
-            &'a [ResolvedFieldDeclaration],
-            Vec<ResolvedType>,
-            usize,
-            usize,
-        ),
-        LeaveRecord(String),
-        LeaveField,
+    // These root branches need neither an owned clone nor a traversal cursor.
+    // Preserve the exact profile result; nominal roots retain the complete walk.
+    match root {
+        ResolvedType::Bytes => NestedOwnedRecordAdmission::Admitted(NestedOwnedRecordFacts {
+            byte_leaves: 1,
+            visited_fields: 0,
+        }),
+        ResolvedType::I64
+        | ResolvedType::I32
+        | ResolvedType::Char
+        | ResolvedType::U8
+        | ResolvedType::Usize
+        | ResolvedType::F32
+        | ResolvedType::F64
+        | ResolvedType::Bool => NestedOwnedRecordAdmission::NoOwnedBytes,
+        ResolvedType::Never
+        | ResolvedType::Unit
+        | ResolvedType::ArrayU8(_)
+        | ResolvedType::String
+        | ResolvedType::Str
+        | ResolvedType::SliceU8
+        | ResolvedType::StringMap
+        | ResolvedType::TypeParameter { .. }
+        | ResolvedType::OnceFunction
+        | ResolvedType::OnceFunctionI64
+        | ResolvedType::OnceFunctionI64Pair
+        | ResolvedType::MutFunctionI64
+        | ResolvedType::Function { .. } => NestedOwnedRecordAdmission::OutsideProfile,
+        ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } => classify_nested_owned_byte_record_head(declarations, declaration, arguments),
+    }
+}
+
+fn classify_nested_owned_byte_record_head<'a>(
+    declarations: &'a DeclarationIndex,
+    declaration: &'a DeclarationId,
+    arguments: &'a [ResolvedType],
+) -> NestedOwnedRecordAdmission {
+    use std::borrow::Cow;
+
+    #[derive(PartialEq)]
+    struct Head<'a> {
+        declaration: Cow<'a, DeclarationId>,
+        arguments: Cow<'a, [ResolvedType]>,
     }
 
-    let mut frames = vec![Frame::Type(root.clone(), 1)];
-    let mut active = BTreeSet::new();
-    let mut path = Vec::new();
-    let mut byte_paths = Vec::new();
+    enum Frame<'a> {
+        Type(ResolvedType, usize),
+        Nominal(Head<'a>, usize),
+        Fields(&'a [ResolvedFieldDeclaration], usize, usize),
+        LeaveRecord,
+    }
+
+    let mut frames = vec![Frame::Nominal(
+        Head {
+            declaration: Cow::Borrowed(declaration),
+            arguments: Cow::Borrowed(arguments),
+        },
+        1,
+    )];
+    let mut active = Vec::new();
+    let mut byte_leaves = 0usize;
     let mut visited_fields = 0usize;
     let mut saw_generic_instance = false;
 
@@ -625,8 +722,8 @@ fn classify_nested_owned_byte_record(
                 _,
             ) => return NestedOwnedRecordAdmission::OutsideProfile,
             Frame::Type(ResolvedType::Bytes, _) => {
-                byte_paths.push(path.clone());
-                if byte_paths.len() > MAX_NESTED_OWNED_BYTE_LEAVES {
+                byte_leaves += 1;
+                if byte_leaves > MAX_NESTED_OWNED_BYTE_LEAVES {
                     return NestedOwnedRecordAdmission::LimitExceeded;
                 }
             }
@@ -638,12 +735,23 @@ fn classify_nested_owned_byte_record(
                 },
                 depth,
             ) => {
+                frames.push(Frame::Nominal(
+                    Head {
+                        declaration: Cow::Owned(declaration),
+                        arguments: Cow::Owned(arguments),
+                    },
+                    depth,
+                ));
+            }
+            Frame::Nominal(head, depth) => {
+                let declaration = head.declaration.as_ref();
+                let arguments = head.arguments.as_ref();
                 if depth > MAX_NESTED_OWNED_RECORD_DEPTH {
                     return NestedOwnedRecordAdmission::LimitExceeded;
                 }
                 saw_generic_instance |= !arguments.is_empty();
                 if declarations
-                    .type_parameters(&declaration)
+                    .type_parameters(declaration)
                     .is_none_or(|parameters| parameters.len() != arguments.len())
                     || arguments.iter().any(|argument| {
                         *argument != ResolvedType::Bytes
@@ -651,27 +759,26 @@ fn classify_nested_owned_byte_record(
                             && !matches!(argument, ResolvedType::Nominal { .. })
                     })
                     || declarations
-                        .declaration(&declaration)
+                        .declaration(declaration)
                         .is_none_or(|item| item.kind != DeclarationKind::Record)
                 {
                     return NestedOwnedRecordAdmission::OutsideProfile;
                 }
-                let Some(fields) = declarations.record_fields(&declaration) else {
+                let Some(fields) = declarations.record_fields(declaration) else {
                     return NestedOwnedRecordAdmission::OutsideProfile;
                 };
-                let identity = ResolvedType::Nominal {
-                    declaration: declaration.clone(),
-                    arguments: arguments.clone(),
-                }
-                .identity_key();
-                if !active.insert(identity.clone()) {
+                // Complete structural nominal equality includes every argument tree.
+                // Retain the environment once until its LeaveRecord continuation.
+                if active.contains(&head) {
                     return NestedOwnedRecordAdmission::Recursive;
                 }
-                frames.push(Frame::LeaveRecord(identity));
-                frames.push(Frame::Fields(declaration, fields, arguments, 0, depth));
+                active.push(head);
+                frames.push(Frame::LeaveRecord);
+                frames.push(Frame::Fields(fields, 0, depth));
             }
             Frame::Type(
-                ResolvedType::Unit
+                ResolvedType::Never
+                | ResolvedType::Unit
                 | ResolvedType::ArrayU8(_)
                 | ResolvedType::String
                 | ResolvedType::Str
@@ -691,7 +798,7 @@ fn classify_nested_owned_byte_record(
                 | ResolvedType::Bool,
                 _,
             ) => unreachable!("admitted scalar handled above"),
-            Frame::Fields(declaration, fields, arguments, index, depth) => {
+            Frame::Fields(fields, index, depth) => {
                 let Some(field) = fields.get(index) else {
                     continue;
                 };
@@ -699,36 +806,32 @@ fn classify_nested_owned_byte_record(
                 if visited_fields > MAX_NESTED_OWNED_RECORD_FIELDS {
                     return NestedOwnedRecordAdmission::LimitExceeded;
                 }
-                frames.push(Frame::Fields(
-                    declaration.clone(),
-                    fields,
-                    arguments.clone(),
-                    index + 1,
-                    depth,
-                ));
-                path.push(PlaceProjection::Field(field.id.clone()));
-                frames.push(Frame::LeaveField);
-                let Ok(field_ty) = substitute_type(&field.ty, &declaration, &arguments) else {
+                let head = active
+                    .last()
+                    .expect("field continuation has an active record");
+                let Ok(field_ty) = substitute_type(
+                    &field.ty,
+                    head.declaration.as_ref(),
+                    head.arguments.as_ref(),
+                ) else {
                     return NestedOwnedRecordAdmission::OutsideProfile;
                 };
+                frames.push(Frame::Fields(fields, index + 1, depth));
                 frames.push(Frame::Type(field_ty, depth + 1));
             }
-            Frame::LeaveRecord(identity) => {
-                active.remove(&identity);
-            }
-            Frame::LeaveField => {
-                path.pop();
+            Frame::LeaveRecord => {
+                active.pop();
             }
         }
     }
 
-    if byte_paths.is_empty() && saw_generic_instance {
+    if byte_leaves == 0 && saw_generic_instance {
         NestedOwnedRecordAdmission::OutsideProfile
-    } else if byte_paths.is_empty() {
+    } else if byte_leaves == 0 {
         NestedOwnedRecordAdmission::NoOwnedBytes
     } else {
         NestedOwnedRecordAdmission::Admitted(NestedOwnedRecordFacts {
-            byte_paths,
+            byte_leaves,
             visited_fields,
         })
     }
@@ -740,7 +843,7 @@ pub(crate) fn is_admitted_nested_owned_byte_record(
 ) -> bool {
     match classify_nested_owned_byte_record(declarations, ty) {
         NestedOwnedRecordAdmission::Admitted(facts) => {
-            !facts.byte_paths.is_empty() && facts.visited_fields <= MAX_NESTED_OWNED_RECORD_FIELDS
+            facts.byte_leaves != 0 && facts.visited_fields <= MAX_NESTED_OWNED_RECORD_FIELDS
         }
         NestedOwnedRecordAdmission::NoOwnedBytes
         | NestedOwnedRecordAdmission::OutsideProfile
@@ -779,20 +882,21 @@ pub(crate) fn is_flat_owned_byte_record(
     {
         return false;
     }
-    declarations
-        .record_fields(declaration)
-        .and_then(|fields| {
-            fields
-                .iter()
-                .map(|field| substitute_type(&field.ty, declaration, arguments).ok())
-                .collect::<Option<Vec<_>>>()
-        })
-        .is_some_and(|fields| {
-            fields.contains(&ResolvedType::Bytes)
-                && fields.iter().all(|field| {
-                    *field == ResolvedType::Bytes || nested_record_copy_scalar_is_admitted(field)
-                })
-        })
+    let Some(fields) = declarations.record_fields(declaration) else {
+        return false;
+    };
+    let mut saw_bytes = false;
+    let mut all_admitted = true;
+    for field in fields {
+        let Ok(ty) = substitute_type(&field.ty, declaration, arguments) else {
+            return false;
+        };
+        saw_bytes |= ty == ResolvedType::Bytes;
+        // Still substitute later fields after a non-admitted field, matching
+        // the old collect-until-error order.
+        all_admitted &= ty == ResolvedType::Bytes || nested_record_copy_scalar_is_admitted(&ty);
+    }
+    saw_bytes && all_admitted
 }
 
 pub(super) fn is_flat_owned_byte_record_template(
@@ -862,12 +966,10 @@ pub(super) fn record_args_ok(
     arguments
         .iter()
         .all(|argument| matches!(argument, ResolvedType::I64 | ResolvedType::Bool))
-        || is_admitted_nested_owned_byte_record(
-            declarations,
-            &ResolvedType::Nominal {
-                declaration: declaration.clone(),
-                arguments: arguments.to_vec(),
-            },
+        || matches!(
+            classify_nested_owned_byte_record_head(declarations, declaration, arguments),
+            NestedOwnedRecordAdmission::Admitted(facts)
+                if facts.byte_leaves != 0 && facts.visited_fields <= MAX_NESTED_OWNED_RECORD_FIELDS
         )
 }
 
@@ -978,3 +1080,13 @@ mod tests {
         ));
     }
 }
+
+#[cfg(test)]
+mod leaf_saved;
+#[cfg(test)]
+mod leaf_tests;
+
+#[cfg(test)]
+mod nominal_saved;
+#[cfg(test)]
+mod nominal_tests;

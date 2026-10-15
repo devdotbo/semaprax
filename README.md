@@ -63,8 +63,9 @@ without an AI model or API key.
 ### Install a published release and run your first project
 
 Download the archive for your computer from the
-[latest release](https://github.com/wavect/semaprax/releases/latest) (the v0.8.0
-archives cover Apple Silicon macOS, x86-64 Linux, and x86-64 Windows), verify it
+[latest release](https://github.com/wavect/semaprax/releases/latest) (the v0.9.0
+archives cover Apple Silicon and Intel macOS, x86-64 and ARM64 GNU/Linux,
+and x86-64 Windows), verify it
 against `SHA256SUMS`, and put it on your `PATH`. The
 **[Install guide](handbook/getting-started/install.md)** has the exact download
 names, verification, and `PATH` steps for macOS, Linux, and Windows. No Git,

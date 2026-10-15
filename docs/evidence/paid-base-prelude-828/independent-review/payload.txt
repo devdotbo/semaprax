@@ -1,0 +1,1546 @@
+Review source-only #828 paid invocation base bundle producer and borrowed overlay, exact commit 5b2835300a2e35b7d158b528a372241f2d71f913. This module is intentionally UNREGISTERED pending #827 foundation/root integration. No Cargo or runtime has run. Review concrete Rust typing, full-carrier prepayment/rollback/Drop, deterministic lookup/merge compatibility, original oracle independence and test errors. No need to ask for broad integration or applications: contract explicitly requires those later and current P forecast remains unchanged. No tools/execution/delegation. #827 dependency snapshot is independently owned and UNCOMMITTED; its exact bytes follow, not assumed current public support. Distinguish hard blockers from missing qualification.
+
+
+FILE src/hir/prelude_bundle.rs
+1: //! One paid immutable base-prelude owner, awaiting ordinary resolver integration.
+2: //! Metadata is borrowed from the existing checked producer. This module grants
+3: //! no source admission, cache authority, or right to remove the current forecast.
+4: use crate::ast::Span;
+5: use crate::hir::{
+6:     Declaration, DeclarationId, DeclarationKind, IdentityOrigin, NominalPayload,
+7:     ResolvedFieldDeclaration, ResolvedType, ResolvedTypeDeclaration, ResolvedTypeDeclarationKind,
+8:     ResolvedTypeParameterDeclaration, ResolvedVariantCaseDeclaration,
+9: };
+10: use crate::prelude::base_schema::{Variant, BASE};
+11: use std::sync::Arc;
+12: 
+13: mod overlay;
+14: mod paid;
+15: mod producer;
+16: pub(crate) use overlay::Overlay;
+17: 
+18: /// The existing invocation supplies both accounts and retains its first sticky
+19: /// refusal. A zero-byte/work request must also observe an already failed account.
+20: pub(crate) trait Payer {
+21:     type Error;
+22:     fn bytes(&mut self, requested: usize) -> Result<(), Self::Error>;
+23:     fn work(&mut self, requested: usize) -> Result<(), Self::Error>;
+24: }
+25: 
+26: #[derive(Debug, Eq, PartialEq)]
+27: pub(crate) enum Failure<E> {
+28:     Payer(E),
+29:     Layout,
+30:     Allocation,
+31:     Capacity,
+32:     Schema,
+33: }
+34: 
+35: struct Contents {
+36:     // Unique sorted IDs. All names/IDs and every payload remain actually owned.
+37:     declarations: Vec<Declaration>,
+38:     // Producer order is Option, Result, independently of declaration lookup order.
+39:     types: Vec<ResolvedTypeDeclaration>,
+40: }
+41: 
+42: /// A real owner, never a process cache. Modules may borrow a view or retain one
+43: /// explicit lease. Only the producer can create the contents.
+44: pub(crate) struct BasePreludeBundle {
+45:     held: Arc<Contents>,
+46: }
+47: impl BasePreludeBundle {
+48:     pub(crate) fn acquire<P: Payer>(payer: &mut P) -> Result<Self, Failure<P::Error>> {
+49:         let contents = producer::contents(payer)?;
+50:         payer
+51:             .bytes(paid::shared_bytes::<Contents>())
+52:             .map_err(Failure::Payer)?;
+53:         Ok(Self {
+54:             held: Arc::new(contents),
+55:         })
+56:     }
+57: 
+58:     pub(crate) fn retain<P: Payer>(&self, payer: &mut P) -> Result<Self, Failure<P::Error>> {
+59:         // No new heap/control block: the original paid owner remains alive.
+60:         payer.bytes(0).map_err(Failure::Payer)?;
+61:         payer.work(1).map_err(Failure::Payer)?;
+62:         Ok(Self {
+63:             held: Arc::clone(&self.held),
+64:         })
+65:     }
+66: 
+67:     pub(crate) fn types(&self) -> &[ResolvedTypeDeclaration] {
+68:         &self.held.types
+69:     }
+70: 
+71:     pub(crate) fn declarations(&self) -> &[Declaration] {
+72:         &self.held.declarations
+73:     }
+74: 
+75:     pub(crate) fn overlay<'a>(&'a self, local: &'a crate::hir::DeclarationIndex) -> Overlay<'a> {
+76:         Overlay::new(self, local)
+77:     }
+78: 
+79:     pub(super) fn declaration<P: Payer>(
+80:         &self,
+81:         text: &str,
+82:         payer: &mut P,
+83:     ) -> Result<Option<&Declaration>, Failure<P::Error>> {
+84:         for declaration in &self.held.declarations {
+85:             payer
+86:                 .work(
+87:                     text.len()
+88:                         .checked_add(declaration.id.as_str().len())
+89:                         .ok_or(Failure::Layout)?,
+90:                 )
+91:                 .map_err(Failure::Payer)?;
+92:             match declaration.id.as_str().cmp(text) {
+93:                 std::cmp::Ordering::Equal => return Ok(Some(declaration)),
+94:                 std::cmp::Ordering::Greater => break,
+95:                 std::cmp::Ordering::Less => {}
+96:             }
+97:         }
+98:         Ok(None)
+99:     }
+100: }
+101: 
+102: impl Drop for Contents {
+103:     fn drop(&mut self) {
+104:         // The outer owner never recursively drops an unbounded declaration list.
+105:         // Last shared nominal-payload owners use #827's iterative disposer; base
+106:         // schema leaves are only TypeParameter, never a nested nominal graph.
+107:         while let Some(ty) = self.types.pop() {
+108:             drop(ty);
+109:         }
+110:         while let Some(declaration) = self.declarations.pop() {
+111:             drop(declaration);
+112:         }
+113:     }
+114: }
+115: 
+116: #[cfg(test)]
+117: mod original;
+118: #[cfg(test)]
+119: mod tests;
+
+FILE src/hir/prelude_bundle/original.rs
+1: //! Complete independent pre-schema base constructors and exact helper bodies.
+2: use crate::ast::{
+3:     FieldDeclaration, Span, Type, TypeDeclaration, TypeDeclarationKind, TypeParameterDeclaration,
+4:     VariantCaseDeclaration,
+5: };
+6: use crate::prelude::{
+7:     OPTION_ID, OPTION_NONE_ID, OPTION_SOME_ID, OPTION_SOME_VALUE_ID, RESULT_ERR_ERROR_ID,
+8:     RESULT_ERR_ID, RESULT_ID, RESULT_OK_ID, RESULT_OK_VALUE_ID,
+9: };
+10: fn parameter(name: &str) -> TypeParameterDeclaration {
+11:     TypeParameterDeclaration {
+12:         name: name.to_owned(),
+13:         span: Span::default(),
+14:     }
+15: }
+16: 
+17: fn parameter_type(name: &str) -> Type {
+18:     Type::Named {
+19:         name: name.to_owned(),
+20:         arguments: Vec::new(),
+21:     }
+22: }
+23: 
+24: fn field(id: &str, name: &str, ty: Type) -> FieldDeclaration {
+25:     FieldDeclaration {
+26:         stable_id: id.to_owned(),
+27:         explicit_id: true,
+28:         name: name.to_owned(),
+29:         name_span: Span::default(),
+30:         ty,
+31:         span: Span::default(),
+32:     }
+33: }
+34: 
+35: fn case(id: &str, name: &str, fields: Vec<FieldDeclaration>) -> VariantCaseDeclaration {
+36:     VariantCaseDeclaration {
+37:         stable_id: id.to_owned(),
+38:         explicit_id: true,
+39:         name: name.to_owned(),
+40:         name_span: Span::default(),
+41:         fields,
+42:         span: Span::default(),
+43:     }
+44: }
+45: 
+46: pub(super) fn option() -> TypeDeclaration {
+47:     TypeDeclaration {
+48:         stable_id: OPTION_ID.to_owned(),
+49:         explicit_id: true,
+50:         name: "Option".to_owned(),
+51:         name_span: Span::default(),
+52:         type_parameters: vec![parameter("T")],
+53:         kind: TypeDeclarationKind::Variant {
+54:             cases: vec![
+55:                 case(OPTION_NONE_ID, "None", Vec::new()),
+56:                 case(
+57:                     OPTION_SOME_ID,
+58:                     "Some",
+59:                     vec![field(OPTION_SOME_VALUE_ID, "value", parameter_type("T"))],
+60:                 ),
+61:             ],
+62:         },
+63:         extends: None,
+64:         invariants: None,
+65:         span: Span::default(),
+66:     }
+67: }
+68: 
+69: pub(super) fn result() -> TypeDeclaration {
+70:     TypeDeclaration {
+71:         stable_id: RESULT_ID.to_owned(),
+72:         explicit_id: true,
+73:         name: "Result".to_owned(),
+74:         name_span: Span::default(),
+75:         type_parameters: vec![parameter("T"), parameter("E")],
+76:         kind: TypeDeclarationKind::Variant {
+77:             cases: vec![
+78:                 case(
+79:                     RESULT_OK_ID,
+80:                     "Ok",
+81:                     vec![field(RESULT_OK_VALUE_ID, "value", parameter_type("T"))],
+82:                 ),
+83:                 case(
+84:                     RESULT_ERR_ID,
+85:                     "Err",
+86:                     vec![field(RESULT_ERR_ERROR_ID, "error", parameter_type("E"))],
+87:                 ),
+88:             ],
+89:         },
+90:         extends: None,
+91:         invariants: None,
+92:         span: Span::default(),
+93:     }
+94: }
+
+FILE src/hir/prelude_bundle/overlay.rs
+1: //! Borrowed lookup overlay; it creates no merged BTreeMap or hidden owned HIR.
+2: use super::*;
+3: use crate::hir::{DeclarationIndex, ResolvedVariantCaseDeclaration};
+4: use std::collections::btree_map::Values;
+5: use std::iter::Peekable;
+6: 
+7: pub(crate) struct Overlay<'a> {
+8:     base: &'a BasePreludeBundle,
+9:     local: &'a DeclarationIndex,
+10: }
+11: impl<'a> Overlay<'a> {
+12:     pub(super) fn new(base: &'a BasePreludeBundle, local: &'a DeclarationIndex) -> Self {
+13:         Self { base, local }
+14:     }
+15:     pub(crate) fn declaration<P: Payer>(
+16:         &self,
+17:         id: &DeclarationId,
+18:         payer: &mut P,
+19:     ) -> Result<Option<&'a Declaration>, Failure<P::Error>> {
+20:         if let Some(found) = self.base.declaration(id.as_str(), payer)? {
+21:             return Ok(Some(found));
+22:         }
+23:         for declaration in self.local.declarations.values() {
+24:             compare(declaration.id.as_str(), id.as_str(), payer)?;
+25:             if declaration.id == *id {
+26:                 return Ok(Some(declaration));
+27:             }
+28:         }
+29:         Ok(None)
+30:     }
+31:     pub(crate) fn type_id<P: Payer>(
+32:         &self,
+33:         name: &str,
+34:         payer: &mut P,
+35:     ) -> Result<Option<&'a DeclarationId>, Failure<P::Error>> {
+36:         for ty in self.base.types() {
+37:             compare(&ty.name, name, payer)?;
+38:             if ty.name == name {
+39:                 return Ok(Some(&ty.id));
+40:             }
+41:         }
+42:         for (candidate, id) in &self.local.types_by_name {
+43:             compare(candidate, name, payer)?;
+44:             if candidate == name {
+45:                 return Ok(Some(id));
+46:             }
+47:         }
+48:         Ok(None)
+49:     }
+50:     fn named<P: Payer>(
+51:         &self,
+52:         owner: &DeclarationId,
+53:         name: &str,
+54:         kind: DeclarationKind,
+55:         payer: &mut P,
+56:     ) -> Result<Option<&'a DeclarationId>, Failure<P::Error>> {
+57:         for declaration in self.base.declarations() {
+58:             payer.work(1).map_err(Failure::Payer)?;
+59:             if declaration.kind != kind {
+60:                 continue;
+61:             }
+62:             if let Some(candidate) = &declaration.owner {
+63:                 compare(candidate.as_str(), owner.as_str(), payer)?;
+64:                 compare(&declaration.name, name, payer)?;
+65:                 if candidate == owner && declaration.name == name {
+66:                     return Ok(Some(&declaration.id));
+67:                 }
+68:             }
+69:         }
+70:         let local = if kind == DeclarationKind::VariantCase {
+71:             &self.local.cases_by_owner_name
+72:         } else {
+73:             &self.local.fields_by_owner_name
+74:         };
+75:         for ((candidate, candidate_name), id) in local {
+76:             compare(candidate.as_str(), owner.as_str(), payer)?;
+77:             compare(candidate_name, name, payer)?;
+78:             if candidate == owner && candidate_name == name {
+79:                 return Ok(Some(id));
+80:             }
+81:         }
+82:         Ok(None)
+83:     }
+84:     pub(crate) fn case_id<P: Payer>(
+85:         &self,
+86:         owner: &DeclarationId,
+87:         name: &str,
+88:         payer: &mut P,
+89:     ) -> Result<Option<&'a DeclarationId>, Failure<P::Error>> {
+90:         self.named(owner, name, DeclarationKind::VariantCase, payer)
+91:     }
+92:     pub(crate) fn field_id<P: Payer>(
+93:         &self,
+94:         owner: &DeclarationId,
+95:         name: &str,
+96:         payer: &mut P,
+97:     ) -> Result<Option<&'a DeclarationId>, Failure<P::Error>> {
+98:         self.named(owner, name, DeclarationKind::CaseField, payer)
+99:     }
+100:     pub(crate) fn type_parameters<P: Payer>(
+101:         &self,
+102:         owner: &DeclarationId,
+103:         payer: &mut P,
+104:     ) -> Result<Option<&'a [ResolvedTypeParameterDeclaration]>, Failure<P::Error>> {
+105:         for ty in self.base.types() {
+106:             compare(ty.id.as_str(), owner.as_str(), payer)?;
+107:             if ty.id == *owner {
+108:                 return Ok(Some(ty.type_parameters.as_slice()));
+109:             }
+110:         }
+111:         for (id, parameters) in &self.local.type_parameters {
+112:             compare(id.as_str(), owner.as_str(), payer)?;
+113:             if id == owner {
+114:                 return Ok(Some(parameters.as_slice()));
+115:             }
+116:         }
+117:         Ok(None)
+118:     }
+119:     pub(crate) fn variant_cases<P: Payer>(
+120:         &self,
+121:         owner: &DeclarationId,
+122:         payer: &mut P,
+123:     ) -> Result<Option<&'a [ResolvedVariantCaseDeclaration]>, Failure<P::Error>> {
+124:         for ty in self.base.types() {
+125:             compare(ty.id.as_str(), owner.as_str(), payer)?;
+126:             if ty.id == *owner {
+127:                 let ResolvedTypeDeclarationKind::Variant { cases } = &ty.kind else {
+128:                     return Err(Failure::Schema);
+129:                 };
+130:                 return Ok(Some(cases.as_slice()));
+131:             }
+132:         }
+133:         for (id, cases) in &self.local.variant_cases {
+134:             compare(id.as_str(), owner.as_str(), payer)?;
+135:             if id == owner {
+136:                 return Ok(Some(cases.as_slice()));
+137:             }
+138:         }
+139:         Ok(None)
+140:     }
+141:     pub(crate) fn case_fields<P: Payer>(
+142:         &self,
+143:         owner: &DeclarationId,
+144:         payer: &mut P,
+145:     ) -> Result<Option<&'a [ResolvedFieldDeclaration]>, Failure<P::Error>> {
+146:         for ty in self.base.types() {
+147:             let ResolvedTypeDeclarationKind::Variant { cases } = &ty.kind else {
+148:                 return Err(Failure::Schema);
+149:             };
+150:             for case in cases.iter() {
+151:                 compare(case.id.as_str(), owner.as_str(), payer)?;
+152:                 if case.id == *owner {
+153:                     return Ok(Some(&case.fields));
+154:                 }
+155:             }
+156:         }
+157:         // The local index keeps its own canonical coordinate validation. Charge
+158:         // its complete key comparison bound before invoking that unchanged API.
+159:         for id in self.local.case_fields.keys() {
+160:             compare(id.as_str(), owner.as_str(), payer)?;
+161:         }
+162:         Ok(self.local.case_fields(owner))
+163:     }
+164:     pub(crate) fn declarations<'p, P: Payer>(&self, payer: &'p mut P) -> Declarations<'a, 'p, P> {
+165:         Declarations {
+166:             base: self.base.declarations(),
+167:             local: self.local.declarations.values().peekable(),
+168:             payer,
+169:             failed: false,
+170:         }
+171:     }
+172: }
+173: 
+174: fn compare<P: Payer>(left: &str, right: &str, payer: &mut P) -> Result<(), Failure<P::Error>> {
+175:     payer
+176:         .work(
+177:             left.len()
+178:                 .checked_add(right.len())
+179:                 .ok_or(Failure::Layout)?
+180:                 .checked_add(1)
+181:                 .ok_or(Failure::Layout)?,
+182:         )
+183:         .map_err(Failure::Payer)
+184: }
+185: 
+186: pub(crate) struct Declarations<'a, 'p, P: Payer> {
+187:     base: &'a [Declaration],
+188:     local: Peekable<Values<'a, DeclarationId, Declaration>>,
+189:     payer: &'p mut P,
+190:     failed: bool,
+191: }
+192: impl<'a, P: Payer> Iterator for Declarations<'a, '_, P> {
+193:     type Item = Result<&'a Declaration, Failure<P::Error>>;
+194:     fn next(&mut self) -> Option<Self::Item> {
+195:         if self.failed {
+196:             return None;
+197:         }
+198:         let base = self.base.first();
+199:         let local = self.local.peek().copied();
+200:         let result = match (base, local) {
+201:             (None, None) => return None,
+202:             (Some(base), Some(local)) => {
+203:                 if let Err(error) = compare(base.id.as_str(), local.id.as_str(), self.payer) {
+204:                     self.failed = true;
+205:                     return Some(Err(error));
+206:                 }
+207:                 match base.id.cmp(&local.id) {
+208:                     std::cmp::Ordering::Greater => self.local.next().unwrap(),
+209:                     std::cmp::Ordering::Equal => {
+210:                         self.local.next();
+211:                         self.base = &self.base[1..];
+212:                         base
+213:                     }
+214:                     std::cmp::Ordering::Less => {
+215:                         self.base = &self.base[1..];
+216:                         base
+217:                     }
+218:                 }
+219:             }
+220:             (Some(base), None) => {
+221:                 if let Err(error) = self.payer.work(1) {
+222:                     self.failed = true;
+223:                     return Some(Err(Failure::Payer(error)));
+224:                 }
+225:                 self.base = &self.base[1..];
+226:                 base
+227:             }
+228:             (None, Some(_)) => {
+229:                 if let Err(error) = self.payer.work(1) {
+230:                     self.failed = true;
+231:                     return Some(Err(Failure::Payer(error)));
+232:                 }
+233:                 self.local.next().unwrap()
+234:             }
+235:         };
+236:         Some(Ok(result))
+237:     }
+238: }
+
+FILE src/hir/prelude_bundle/paid.rs
+1: //! Explicit invocation acquisition. No ambient ledger or diagnostic construction.
+2: use super::{Failure, Payer};
+3: use crate::hir::DeclarationId;
+4: use std::alloc::Layout;
+5: 
+6: pub(super) fn vector<T, P: Payer>(
+7:     count: usize,
+8:     payer: &mut P,
+9: ) -> Result<Vec<T>, Failure<P::Error>> {
+10:     let layout = Layout::array::<T>(count).map_err(|_| Failure::Layout)?;
+11:     payer.bytes(layout.size()).map_err(Failure::Payer)?;
+12:     let mut values = Vec::new();
+13:     values
+14:         .try_reserve_exact(count)
+15:         .map_err(|_| Failure::Allocation)?;
+16:     // No downstream growth or allocator capacity repair may become unpaid.
+17:     if values.capacity() != count && std::mem::size_of::<T>() != 0 {
+18:         return Err(Failure::Capacity);
+19:     }
+20:     Ok(values)
+21: }
+22: 
+23: pub(super) fn string<P: Payer>(text: &str, payer: &mut P) -> Result<String, Failure<P::Error>> {
+24:     payer.work(text.len()).map_err(Failure::Payer)?;
+25:     let mut bytes = vector::<u8, _>(text.len(), payer)?;
+26:     bytes.extend_from_slice(text.as_bytes());
+27:     payer.work(text.len()).map_err(Failure::Payer)?;
+28:     String::from_utf8(bytes).map_err(|_| Failure::Schema)
+29: }
+30: 
+31: pub(super) fn identity<P: Payer>(
+32:     text: &str,
+33:     payer: &mut P,
+34: ) -> Result<DeclarationId, Failure<P::Error>> {
+35:     payer.work(text.len()).map_err(Failure::Payer)?;
+36:     DeclarationId::paid_borrowed(text, |bytes| payer.bytes(bytes)).map_err(Failure::Payer)
+37: }
+38: 
+39: pub(super) fn shared_bytes<T>() -> usize {
+40:     #[repr(C)]
+41:     struct Carrier<T> {
+42:         strong: usize,
+43:         weak: usize,
+44:         value: T,
+45:     }
+46:     Layout::new::<Carrier<T>>().size()
+47: }
+
+FILE src/hir/prelude_bundle/producer.rs
+1: //! Schema-driven base producer. Every Vec/String/identity/shared owner is paid
+2: //! before construction; partial refusal drops staged owners without publication.
+3: use super::*;
+4: 
+5: fn count() -> Option<usize> {
+6:     BASE.iter().try_fold(BASE.len(), |count, schema| {
+7:         schema.cases.iter().try_fold(count, |count, case| {
+8:             count.checked_add(1)?.checked_add(case.fields.len())
+9:         })
+10:     })
+11: }
+12: 
+13: fn descriptor<P: Payer>(
+14:     text: &str,
+15:     name: &str,
+16:     kind: DeclarationKind,
+17:     owner: Option<DeclarationId>,
+18:     payer: &mut P,
+19: ) -> Result<Declaration, Failure<P::Error>> {
+20:     Ok(Declaration {
+21:         id: paid::identity(text, payer)?,
+22:         name: paid::string(name, payer)?,
+23:         kind,
+24:         identity_origin: IdentityOrigin::CompilerOwned,
+25:         owner,
+26:     })
+27: }
+28: 
+29: fn find<P: Payer>(
+30:     declarations: &[Declaration],
+31:     text: &str,
+32:     payer: &mut P,
+33: ) -> Result<DeclarationId, Failure<P::Error>> {
+34:     for declaration in declarations {
+35:         payer
+36:             .work(
+37:                 declaration
+38:                     .id
+39:                     .as_str()
+40:                     .len()
+41:                     .checked_add(text.len())
+42:                     .ok_or(Failure::Layout)?,
+43:             )
+44:             .map_err(Failure::Payer)?;
+45:         if declaration.id.as_str() == text {
+46:             return Ok(declaration.id.clone());
+47:         }
+48:     }
+49:     Err(Failure::Schema)
+50: }
+51: 
+52: fn nominal<P: Payer>(
+53:     schema: &Variant,
+54:     declarations: &[Declaration],
+55:     payer: &mut P,
+56: ) -> Result<ResolvedTypeDeclaration, Failure<P::Error>> {
+57:     let owner = find(declarations, schema.id, payer)?;
+58:     let mut parameters = paid::vector(schema.parameters.len(), payer)?;
+59:     for (index, name) in schema.parameters.iter().enumerate() {
+60:         payer.work(1).map_err(Failure::Payer)?;
+61:         parameters.push(ResolvedTypeParameterDeclaration {
+62:             name: paid::string(name, payer)?,
+63:             index: u32::try_from(index).map_err(|_| Failure::Schema)?,
+64:             span: Span::default(),
+65:         });
+66:     }
+67:     let parameters = NominalPayload::from_funded_vec(&mut parameters, |n| payer.bytes(n))
+68:         .map_err(Failure::Payer)?;
+69:     let mut cases = paid::vector(schema.cases.len(), payer)?;
+70:     for (index, case) in schema.cases.iter().enumerate() {
+71:         let mut fields = paid::vector(case.fields.len(), payer)?;
+72:         for (index, field) in case.fields.iter().enumerate() {
+73:             let mut parameter = None;
+74:             for (ordinal, name) in schema.parameters.iter().enumerate() {
+75:                 payer
+76:                     .work(
+77:                         name.len()
+78:                             .checked_add(field.parameter.len())
+79:                             .ok_or(Failure::Layout)?,
+80:                     )
+81:                     .map_err(Failure::Payer)?;
+82:                 if *name == field.parameter {
+83:                     parameter = Some(u32::try_from(ordinal).map_err(|_| Failure::Schema)?);
+84:                     break;
+85:                 }
+86:             }
+87:             fields.push(ResolvedFieldDeclaration {
+88:                 id: find(declarations, field.id, payer)?,
+89:                 name: paid::string(field.name, payer)?,
+90:                 index: u32::try_from(index).map_err(|_| Failure::Schema)?,
+91:                 ty: ResolvedType::TypeParameter {
+92:                     owner: owner.clone(),
+93:                     index: parameter.ok_or(Failure::Schema)?,
+94:                 },
+95:                 span: Span::default(),
+96:             });
+97:         }
+98:         cases.push(ResolvedVariantCaseDeclaration {
+99:             id: find(declarations, case.id, payer)?,
+100:             name: paid::string(case.name, payer)?,
+101:             index: u32::try_from(index).map_err(|_| Failure::Schema)?,
+102:             fields,
+103:             span: Span::default(),
+104:         });
+105:     }
+106:     let cases =
+107:         NominalPayload::from_funded_vec(&mut cases, |n| payer.bytes(n)).map_err(Failure::Payer)?;
+108:     Ok(ResolvedTypeDeclaration {
+109:         id: owner,
+110:         name: paid::string(schema.name, payer)?,
+111:         type_parameters: parameters,
+112:         kind: ResolvedTypeDeclarationKind::Variant { cases },
+113:         span: Span::default(),
+114:     })
+115: }
+116: 
+117: pub(super) fn contents<P: Payer>(payer: &mut P) -> Result<Contents, Failure<P::Error>> {
+118:     payer.work(1).map_err(Failure::Payer)?;
+119:     let mut declarations = paid::vector(count().ok_or(Failure::Layout)?, payer)?;
+120:     for schema in BASE {
+121:         let top = descriptor(
+122:             schema.id,
+123:             schema.name,
+124:             DeclarationKind::Variant,
+125:             None,
+126:             payer,
+127:         )?;
+128:         let owner = top.id.clone();
+129:         declarations.push(top);
+130:         for case in schema.cases {
+131:             let child = descriptor(
+132:                 case.id,
+133:                 case.name,
+134:                 DeclarationKind::VariantCase,
+135:                 Some(owner.clone()),
+136:                 payer,
+137:             )?;
+138:             let case_owner = child.id.clone();
+139:             declarations.push(child);
+140:             for field in case.fields {
+141:                 declarations.push(descriptor(
+142:                     field.id,
+143:                     field.name,
+144:                     DeclarationKind::CaseField,
+145:                     Some(case_owner.clone()),
+146:                     payer,
+147:                 )?);
+148:             }
+149:         }
+150:     }
+151:     // Fallible insertion sort performs no hidden allocation and charges each
+152:     // actual key comparison before reading its bytes. IDs must remain unique.
+153:     for i in 1..declarations.len() {
+154:         let mut j = i;
+155:         while j > 0 {
+156:             payer
+157:                 .work(
+158:                     declarations[j - 1]
+159:                         .id
+160:                         .as_str()
+161:                         .len()
+162:                         .checked_add(declarations[j].id.as_str().len())
+163:                         .ok_or(Failure::Layout)?,
+164:                 )
+165:                 .map_err(Failure::Payer)?;
+166:             match declarations[j - 1].id.cmp(&declarations[j].id) {
+167:                 std::cmp::Ordering::Equal => return Err(Failure::Schema),
+168:                 std::cmp::Ordering::Less => break,
+169:                 std::cmp::Ordering::Greater => declarations.swap(j - 1, j),
+170:             }
+171:             j -= 1;
+172:         }
+173:     }
+174:     let mut types = paid::vector(BASE.len(), payer)?;
+175:     for schema in BASE {
+176:         types.push(nominal(schema, &declarations, payer)?);
+177:     }
+178:     Ok(Contents {
+179:         declarations,
+180:         types,
+181:     })
+182: }
+
+FILE src/hir/prelude_bundle/tests.rs
+1: use super::{BasePreludeBundle, Failure, Payer};
+2: use crate::hir::{DeclarationId, DeclarationIndex, ResolvedTypeDeclarationKind};
+3: use crate::test_allocation_observer::measure;
+4: 
+5: #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+6: enum Denied {
+7:     Bytes,
+8:     Work,
+9:     Site,
+10: }
+11: struct Account {
+12:     bytes: usize,
+13:     work: usize,
+14:     byte_limit: usize,
+15:     work_limit: usize,
+16:     sites: usize,
+17:     fail_site: Option<usize>,
+18:     first: Option<Denied>,
+19: }
+20: impl Account {
+21:     fn unlimited() -> Self {
+22:         Self {
+23:             bytes: 0,
+24:             work: 0,
+25:             byte_limit: usize::MAX,
+26:             work_limit: usize::MAX,
+27:             sites: 0,
+28:             fail_site: None,
+29:             first: None,
+30:         }
+31:     }
+32:     fn deny(&mut self, error: Denied) -> Result<(), Denied> {
+33:         Err(*self.first.get_or_insert(error))
+34:     }
+35: }
+36: impl Payer for Account {
+37:     type Error = Denied;
+38:     fn bytes(&mut self, requested: usize) -> Result<(), Denied> {
+39:         if let Some(first) = self.first {
+40:             return Err(first);
+41:         }
+42:         if requested > 0 {
+43:             self.sites += 1;
+44:             if self.fail_site == Some(self.sites) {
+45:                 return self.deny(Denied::Site);
+46:             }
+47:         }
+48:         if requested > self.byte_limit - self.bytes {
+49:             return self.deny(Denied::Bytes);
+50:         }
+51:         self.bytes += requested;
+52:         Ok(())
+53:     }
+54:     fn work(&mut self, requested: usize) -> Result<(), Denied> {
+55:         if let Some(first) = self.first {
+56:             return Err(first);
+57:         }
+58:         if requested > self.work_limit - self.work {
+59:             return self.deny(Denied::Work);
+60:         }
+61:         self.work += requested;
+62:         Ok(())
+63:     }
+64: }
+65: fn program() -> crate::ast::Program {
+66:     crate::parse(
+67:         "module prelude.bundle; @id(\"bundle.main\") fn main()->i64 {0}",
+68:         "bundle.spx",
+69:     )
+70:     .unwrap()
+71: }
+72: 
+73: #[test]
+74: fn complete_original_base_types_and_every_lookup_keep_exact_order_ids_and_payloads() {
+75:     let program = program();
+76:     let original = [super::original::option(), super::original::result()];
+77:     let original_index =
+78:         DeclarationIndex::nominal_original_with_prelude(&program, &original).unwrap();
+79:     let resolved = crate::hir::resolve(&program).unwrap();
+80:     let local = DeclarationIndex::from_verified_with_prelude(&program, &[]).unwrap();
+81:     let mut payer = Account::unlimited();
+82:     let bundle = BasePreludeBundle::acquire(&mut payer).unwrap();
+83:     assert_eq!(bundle.types(), resolved.types.as_slice());
+84:     assert_eq!(bundle.types()[0].id.as_str(), crate::prelude::OPTION_ID);
+85:     assert_eq!(bundle.types()[1].id.as_str(), crate::prelude::RESULT_ID);
+86:     let overlay = bundle.overlay(&local);
+87:     let all = overlay
+88:         .declarations(&mut payer)
+89:         .collect::<Result<Vec<_>, _>>()
+90:         .unwrap();
+91:     assert_eq!(all, original_index.declarations().collect::<Vec<_>>());
+92:     for declaration in original_index.declarations() {
+93:         assert_eq!(
+94:             overlay.declaration(&declaration.id, &mut payer).unwrap(),
+95:             Some(declaration)
+96:         );
+97:         assert_eq!(
+98:             overlay
+99:                 .type_parameters(&declaration.id, &mut payer)
+100:                 .unwrap(),
+101:             original_index.type_parameters(&declaration.id)
+102:         );
+103:     }
+104:     for ty in bundle.types() {
+105:         assert_eq!(
+106:             overlay.type_id(&ty.name, &mut payer).unwrap(),
+107:             original_index.type_id(&ty.name)
+108:         );
+109:         assert_eq!(
+110:             overlay.variant_cases(&ty.id, &mut payer).unwrap(),
+111:             original_index.variant_cases(&ty.id)
+112:         );
+113:         let ResolvedTypeDeclarationKind::Variant { cases } = &ty.kind else {
+114:             panic!("base variant");
+115:         };
+116:         for case in cases.iter() {
+117:             assert_eq!(
+118:                 overlay.case_id(&ty.id, &case.name, &mut payer).unwrap(),
+119:                 original_index.case_id(&ty.id, &case.name)
+120:             );
+121:             assert_eq!(
+122:                 overlay.case_fields(&case.id, &mut payer).unwrap(),
+123:                 original_index.case_fields(&case.id)
+124:             );
+125:             for field in &case.fields {
+126:                 assert_eq!(
+127:                     overlay.field_id(&case.id, &field.name, &mut payer).unwrap(),
+128:                     original_index.field_id(&case.id, &field.name)
+129:                 );
+130:             }
+131:         }
+132:     }
+133:     let foreign = DeclarationId::new("foreign.bundle");
+134:     assert!(overlay.declaration(&foreign, &mut payer).unwrap().is_none());
+135:     assert!(overlay.case_fields(&foreign, &mut payer).unwrap().is_none());
+136:     assert!(overlay
+137:         .variant_cases(&foreign, &mut payer)
+138:         .unwrap()
+139:         .is_none());
+140:     assert!(overlay.type_id("Foreign", &mut payer).unwrap().is_none());
+141: }
+142: 
+143: #[test]
+144: fn two_borrowed_module_overlays_and_explicit_lease_share_actual_payload_addresses() {
+145:     let local_a = DeclarationIndex::from_verified_with_prelude(&program(), &[]).unwrap();
+146:     let local_b = DeclarationIndex::from_verified_with_prelude(&program(), &[]).unwrap();
+147:     let id = DeclarationId::new(crate::prelude::OPTION_SOME_ID);
+148:     let mut payer = Account::unlimited();
+149:     let bundle = BasePreludeBundle::acquire(&mut payer).unwrap();
+150:     let before = payer.bytes;
+151:     let (lease, allocation) = measure(|| {
+152:         let lease = bundle.retain(&mut payer).unwrap();
+153:         let a = bundle.overlay(&local_a);
+154:         let b = lease.overlay(&local_b);
+155:         assert!(std::ptr::eq(
+156:             a.declaration(&id, &mut payer).unwrap().unwrap(),
+157:             b.declaration(&id, &mut payer).unwrap().unwrap()
+158:         ));
+159:         assert_eq!(
+160:             a.case_fields(&id, &mut payer).unwrap().unwrap().as_ptr(),
+161:             b.case_fields(&id, &mut payer).unwrap().unwrap().as_ptr()
+162:         );
+163:         lease
+164:     });
+165:     assert_eq!(payer.bytes, before);
+166:     assert!(!allocation.invalid);
+167:     assert_eq!(allocation.allocated, 0);
+168:     assert_eq!(bundle.types().as_ptr(), lease.types().as_ptr());
+169:     drop(bundle);
+170:     assert_eq!(lease.types().len(), 2);
+171:     drop(lease);
+172: }
+173: 
+174: #[test]
+175: fn whole_owner_exact_one_short_zero_work_and_each_acquisition_refusal_drop_every_owner() {
+176:     let mut baseline = Account::unlimited();
+177:     let (_, observed) = measure(|| drop(BasePreludeBundle::acquire(&mut baseline).unwrap()));
+178:     assert!(!observed.invalid);
+179:     assert_eq!(observed.live, 0);
+180:     assert_eq!(observed.allocated, observed.freed);
+181:     assert!(observed.allocated <= baseline.bytes);
+182:     for (bytes, work, succeeds) in [
+183:         (baseline.bytes, baseline.work, true),
+184:         (baseline.bytes - 1, baseline.work, false),
+185:         (0, baseline.work, false),
+186:         (baseline.bytes, baseline.work - 1, false),
+187:         (baseline.bytes, 0, false),
+188:     ] {
+189:         let mut account = Account::unlimited();
+190:         account.byte_limit = bytes;
+191:         account.work_limit = work;
+192:         let (_, allocation) = measure(|| {
+193:             let result = BasePreludeBundle::acquire(&mut account);
+194:             assert_eq!(result.is_ok(), succeeds);
+195:             drop(result);
+196:         });
+197:         assert!(!allocation.invalid);
+198:         assert_eq!(allocation.live, 0);
+199:         assert_eq!(allocation.allocated, allocation.freed);
+200:         assert!(allocation.allocated <= account.bytes);
+201:         if !succeeds {
+202:             let first = account.first.unwrap();
+203:             let (_, after) = measure(|| {
+204:                 assert_eq!(
+205:                     BasePreludeBundle::acquire(&mut account).err().unwrap(),
+206:                     Failure::Payer(first)
+207:                 );
+208:             });
+209:             assert_eq!(after.allocated, 0);
+210:             assert_eq!(account.first, Some(first));
+211:         }
+212:     }
+213:     for site in 1..=baseline.sites {
+214:         let mut account = Account::unlimited();
+215:         account.fail_site = Some(site);
+216:         let (_, allocation) = measure(|| {
+217:             assert!(BasePreludeBundle::acquire(&mut account).is_err());
+218:         });
+219:         assert!(!allocation.invalid);
+220:         assert_eq!(allocation.live, 0);
+221:         assert_eq!(allocation.allocated, allocation.freed);
+222:         assert_eq!(account.first, Some(Denied::Site));
+223:     }
+224: }
+225: 
+226: #[test]
+227: fn lookup_iteration_and_lease_work_keep_the_same_sticky_invocation_account() {
+228:     let local = DeclarationIndex::from_verified_with_prelude(&program(), &[]).unwrap();
+229:     let mut payer = Account::unlimited();
+230:     let bundle = BasePreludeBundle::acquire(&mut payer).unwrap();
+231:     let id = DeclarationId::new(crate::prelude::RESULT_ID);
+232:     let start = payer.work;
+233:     let result = bundle.overlay(&local).declaration(&id, &mut payer).unwrap();
+234:     assert!(result.is_some());
+235:     let cost = payer.work - start;
+236:     payer.work_limit = payer.work + cost;
+237:     assert!(bundle
+238:         .overlay(&local)
+239:         .declaration(&id, &mut payer)
+240:         .unwrap()
+241:         .is_some());
+242:     let (_, allocation) = measure(|| {
+243:         assert_eq!(
+244:             bundle
+245:                 .overlay(&local)
+246:                 .declaration(&id, &mut payer)
+247:                 .err()
+248:                 .unwrap(),
+249:             Failure::Payer(Denied::Work)
+250:         );
+251:         assert_eq!(
+252:             bundle.retain(&mut payer).err().unwrap(),
+253:             Failure::Payer(Denied::Work)
+254:         );
+255:         let overlay = bundle.overlay(&local);
+256:         let mut values = overlay.declarations(&mut payer);
+257:         assert_eq!(
+258:             values.next().unwrap().err().unwrap(),
+259:             Failure::Payer(Denied::Work)
+260:         );
+261:         assert!(values.next().is_none());
+262:     });
+263:     assert!(!allocation.invalid);
+264:     assert_eq!(allocation.allocated, 0);
+265: }
+266: 
+267: #[test]
+268: fn unused_and_parser_only_overlapping_names_keep_unconditional_base_selection() {
+269:     // These overlap inputs are parser/index controls only. They grant no
+270:     // resolution admission to source declarations shadowing compiler names.
+271:     for declaration in [
+272:         "",
+273:         "@id(\"authored.option\") record Option {}",
+274:         "@id(\"authored.result\") record Result {}",
+275:         "@id(\"authored.option\") record Option {} @id(\"authored.result\") record Result {}",
+276:     ] {
+277:         let source =
+278:             format!("module bundle.overlap; {declaration} @id(\"entry\") fn main()->i64 {{0}}");
+279:         let program = crate::parse(&source, "overlap.spx").unwrap();
+280:         let original = [super::original::option(), super::original::result()];
+281:         let old = DeclarationIndex::nominal_original_with_prelude(&program, &original).unwrap();
+282:         let local = DeclarationIndex::from_verified_with_prelude(&program, &[]).unwrap();
+283:         let mut payer = Account::unlimited();
+284:         let bundle = BasePreludeBundle::acquire(&mut payer).unwrap();
+285:         assert_eq!(bundle.types().len(), 2);
+286:         assert_eq!(bundle.declarations().len(), 9);
+287:         let overlay = bundle.overlay(&local);
+288:         assert_eq!(
+289:             overlay.type_id("Option", &mut payer).unwrap(),
+290:             old.type_id("Option")
+291:         );
+292:         assert_eq!(
+293:             overlay.type_id("Result", &mut payer).unwrap(),
+294:             old.type_id("Result")
+295:         );
+296:         assert_eq!(
+297:             overlay
+298:                 .declarations(&mut payer)
+299:                 .collect::<Result<Vec<_>, _>>()
+300:                 .unwrap(),
+301:             old.declarations().collect::<Vec<_>>()
+302:         );
+303:     }
+304: }
+
+FILE docs/PAID-INVOCATION-BASE-PRELUDE-V1.md
+1: # Paid Invocation Base Prelude v1
+2: 
+3: Status: source-only producer and borrowed overlay, pending ordinary resolver integration and executable qualification. Tracking: issue #828. Nominal payload ownership depends on #827. This contract does not supersede Workspace Graph Prelude Forecast Accounting v1 or change graph/cache schemas, public identities, byte/work limits, or supported execution profiles.
+4: 
+5: ## Ownership and construction
+6: 
+7: One successful live invocation may construct one immutable base Option/Result bundle and lend it to multiple module-local declaration indexes. No process-global cache, OnceLock, source-name/use filter, lazy unpaid materialization, or borrowed source-lifetime extension is admitted. The existing `prelude::base_schema::BASE` is the sole production schema; Option then Result order, all case/field/parameter ordinals, compiler identity origins, persistent IDs and default source spans remain exact. The producer creates all nine declaration descriptors and both complete resolved types unconditionally, including unused declarations. Extended/private/runtime prelude selection stays with its existing owner.
+8: 
+9: The invocation supplies an explicit `Payer` for cumulative requested bytes and work. Both methods retain the invocation's first sticky refusal, including subsequent zero requests. Failure returns a small typed value with no dynamic diagnostic text. A public report may render only at its established funded boundary. A successful bundle is published only after every input and the final shared owner have been paid and constructed; refusal drops the partial local owner and exposes no bundle.
+10: 
+11: For a vector of n elements T the request is exactly checked `Layout::array::<T>(n).size()` before `try_reserve_exact`; unexpected capacity is refused rather than silently grown/repaired. String backing uses the same paid u8 vector, copies UTF-8 and validates before conversion without another backing allocation. Each new persistent identity uses the existing paid identity producer and its real carrier/layout rule. Its funded identity references may then be cloned without duplicate backing. Each parameter sequence and complete outer variant-case sequence uses #827's borrowed-Vec funded acquisition; nested case fields remain the canonical Vec inside that case sequence. All nominal control blocks, simultaneous initializer and iterative disposal scratch remain #827's responsibility, explicitly paid before acquisition. No per-case Arc is introduced.
+12: 
+13: The invocation bundle's final Arc allocation is precharged as `Layout::new::<repr(C) { strong: usize, weak: usize, value: Contents }>().size()`, including both reference counters and actual Vec headers. Already paid Vec/string/identity/nominal backing is not charged again as newly constructed backing in that carrier. This is an actual requested-allocation model, not RSS or a retained-forecast discount. Physical measurements must separately confirm every requested allocation is covered.
+14: 
+15: ## Borrowed overlay and work
+16: 
+17: An overlay borrows the base owner and one existing local index. It never builds merged maps or clones nominal HIR. Base declaration/type/case/field/parameter lookups return original borrowed payloads; local misses consult the existing local owner's facts. Declaration traversal merges sorted persistent-ID orders deterministically, giving the base entry on a duplicate ID; this creates no source admission exception. The ordinary verifier continues to reject forged compiler identities. Base spelling precedence remains the existing prelude precedence; parser-only overlap controls do not admit shadow declarations.
+18: 
+19: Every actual string-key comparison receives a checked input-length work charge before comparison. Directory sorting is fallible insertion sorting over the already paid descriptor vector, without hidden sorting scratch. Local compatibility lookups conservatively charge their full key inventory before the existing coordinate validation. Explicit retain charges a zero-byte sticky check and one work unit before Arc clone. Borrowed queries and retained leases must have zero actual heap acquisition; repeated module use does not silently rebuild an index or type payload. Failure of an iterator produces one typed failure and then ends, preserving the invocation's first selected refusal.
+20: 
+21: ## Lifetime and disposal
+22: 
+23: The final invocation owner outlives all borrowed overlays. An explicit paid retain may extend the same owner without allocating another control block. The last owner drops descriptor/type vectors iteratively; #827's final nominal owner uses its preacquired iterative disposal scratch. Base field types are scalar type-parameter references. No fresh queue, recursive nominal traversal, source read, physical finalizer or report allocation is permitted during disposal. Partial-construction refusal follows the same owned cleanup path and preserves first failure.
+24: 
+25: ## Qualification boundary
+26: 
+27: The independent original AST constructors remain in a cfg(test) module with their old constructor bodies; the original index constructor remains a distinct legacy full-copy route under #827, with an independently retained pre-change entry point for full-oracle qualification. Controls compare complete type/declaration payloads, IDs, origins, order and every lookup, then address identity and real allocation/drop receipts across two module overlays and an explicit retained lease. Exact bytes/work, one short, zero, every acquisition-site refusal and sticky subsequent use must preserve no leaked owner. New modules are initially unregistered and must not be described as executable support until integrated, compiled and run by the owning qualification lane.
+28: 
+29: Before replacing ordinary constructors or reducing any forecast, the integrated route must qualify complete old/current HIR, diagnostics, graph JSON/digests, cache replay and native/Wasm behavior; unconditional unused/overlap selection; physical requested allocations, retained backing, highwater, final-owner iterative Drop, error paths and all relevant application controls. The current corrected prelude term P remains unchanged until that replacement is genuine and physically qualified. Repeated constructor savings are cumulative allocation/work evidence; they do not by themselves prove lower peak retention. No application gain or exclusive-cause claim follows from this source-only packet.
+
+FILE src/prelude/base_schema.rs
+1: //! Borrowed construction metadata for the two unconditional base declarations.
+2: //! Forecast consumers borrow this schema without initializing the process table.
+3: use super::*;
+4: 
+5: pub(crate) struct Variant {
+6:     pub(crate) id: &'static str,
+7:     pub(crate) name: &'static str,
+8:     pub(crate) parameters: &'static [&'static str],
+9:     pub(crate) cases: &'static [Case],
+10: }
+11: pub(crate) struct Case {
+12:     pub(crate) id: &'static str,
+13:     pub(crate) name: &'static str,
+14:     pub(crate) fields: &'static [Field],
+15: }
+16: pub(crate) struct Field {
+17:     pub(crate) id: &'static str,
+18:     pub(crate) name: &'static str,
+19:     pub(crate) parameter: &'static str,
+20: }
+21: pub(crate) const OPTION: Variant = Variant {
+22:     id: OPTION_ID,
+23:     name: "Option",
+24:     parameters: &["T"],
+25:     cases: &[
+26:         Case {
+27:             id: OPTION_NONE_ID,
+28:             name: "None",
+29:             fields: &[],
+30:         },
+31:         Case {
+32:             id: OPTION_SOME_ID,
+33:             name: "Some",
+34:             fields: &[Field {
+35:                 id: OPTION_SOME_VALUE_ID,
+36:                 name: "value",
+37:                 parameter: "T",
+38:             }],
+39:         },
+40:     ],
+41: };
+42: pub(crate) const RESULT: Variant = Variant {
+43:     id: RESULT_ID,
+44:     name: "Result",
+45:     parameters: &["T", "E"],
+46:     cases: &[
+47:         Case {
+48:             id: RESULT_OK_ID,
+49:             name: "Ok",
+50:             fields: &[Field {
+51:                 id: RESULT_OK_VALUE_ID,
+52:                 name: "value",
+53:                 parameter: "T",
+54:             }],
+55:         },
+56:         Case {
+57:             id: RESULT_ERR_ID,
+58:             name: "Err",
+59:             fields: &[Field {
+60:                 id: RESULT_ERR_ERROR_ID,
+61:                 name: "error",
+62:                 parameter: "E",
+63:             }],
+64:         },
+65:     ],
+66: };
+67: /// `declarations_for_program` always selects this ordered prefix, including
+68: /// when authored names overlap. Neither index nor resolver filters it by use.
+69: pub(crate) const BASE: [&Variant; 2] = [&OPTION, &RESULT];
+70: 
+71: pub(super) fn declaration(schema: &Variant) -> TypeDeclaration {
+72:     TypeDeclaration {
+73:         stable_id: schema.id.to_owned(),
+74:         explicit_id: true,
+75:         name: schema.name.to_owned(),
+76:         name_span: Span::default(),
+77:         type_parameters: schema
+78:             .parameters
+79:             .iter()
+80:             .map(|name| parameter(name))
+81:             .collect(),
+82:         kind: TypeDeclarationKind::Variant {
+83:             cases: schema
+84:                 .cases
+85:                 .iter()
+86:                 .map(|schema| {
+87:                     case(
+88:                         schema.id,
+89:                         schema.name,
+90:                         schema
+91:                             .fields
+92:                             .iter()
+93:                             .map(|schema| {
+94:                                 field(schema.id, schema.name, parameter_type(schema.parameter))
+95:                             })
+96:                             .collect(),
+97:                     )
+98:                 })
+99:                 .collect(),
+100:         },
+101:         extends: None,
+102:         invariants: None,
+103:         span: Span::default(),
+104:     }
+105: }
+106: 
+107: #[cfg(test)]
+108: mod tests {
+109:     use super::*;
+110:     #[test]
+111:     fn base_metadata_preserves_complete_original_constructors_and_physical_drop() {
+112:         for (schema, original) in [
+113:             (
+114:                 &OPTION,
+115:                 super::super::base_original::option as fn() -> TypeDeclaration,
+116:             ),
+117:             (
+118:                 &RESULT,
+119:                 super::super::base_original::result as fn() -> TypeDeclaration,
+120:             ),
+121:         ] {
+122:             assert_eq!(declaration(schema), original());
+123:             let (_, saved) = crate::test_allocation_observer::measure(|| drop(original()));
+124:             let (_, current) =
+125:                 crate::test_allocation_observer::measure(|| drop(declaration(schema)));
+126:             assert_eq!(current, saved);
+127:             assert!(!current.invalid);
+128:             assert_eq!(current.live, 0);
+129:             assert_eq!(current.allocated, current.freed);
+130:         }
+131:     }
+132: }
+
+DEPENDENCY SNAPSHOT src/hir/nominal_payload.rs
+1: //! Immutable nominal sequences. Backing reuse is storage, never type authority.
+2: use super::{
+3:     ResolvedFieldDeclaration, ResolvedType, ResolvedTypeParameterDeclaration,
+4:     ResolvedVariantCaseDeclaration,
+5: };
+6: use std::{
+7:     alloc::Layout,
+8:     fmt,
+9:     mem::size_of,
+10:     ops::{Deref, DerefMut},
+11:     sync::Arc,
+12: };
+13: mod codec;
+14: mod elements;
+15: pub(crate) mod map;
+16: 
+17: /// Declaration elements whose recursive types have an iterative disposer.
+18: #[doc(hidden)]
+19: pub trait NominalElement: Clone + fmt::Debug + Eq {
+20:     fn drop_capacity<E>(
+21:         &self,
+22:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+23:     ) -> Result<usize, E>;
+24:     fn drain_types(&mut self, dispose: &mut impl FnMut(ResolvedType));
+25:     fn clone_bytes(&self) -> Option<usize>;
+26: }
+27: struct Owner<T: NominalElement> {
+28:     values: Vec<T>,
+29:     scratch: Vec<ResolvedType>,
+30: }
+31: impl<T: NominalElement> Owner<T> {
+32:     fn drain(&mut self, dispose: &mut impl FnMut(ResolvedType)) {
+33:         for value in &mut self.values {
+34:             value.drain_types(dispose);
+35:         }
+36:     }
+37: }
+38: impl<T: NominalElement> Drop for Owner<T> {
+39:     fn drop(&mut self) {
+40:         let scratch = &mut self.scratch;
+41:         for value in &mut self.values {
+42:             value.drain_types(&mut |ty| dispose(ty, scratch));
+43:         }
+44:     }
+45: }
+46: /// An owning legacy Vec or one acquired immutable owner. Equality/Debug/wire
+47: /// inspect complete ordered values, never addresses or representation tags.
+48: /// `From<Vec<_>>` moves legacy storage without an Arc allocation or new payer.
+49: /// New admitted producers must instead use `from_funded_vec`.
+50: pub struct NominalPayload<T: NominalElement> {
+51:     storage: Storage<T>,
+52: }
+53: enum Storage<T: NominalElement> {
+54:     Owned(Vec<T>),
+55:     Shared(Arc<Owner<T>>),
+56: }
+57: impl<T: NominalElement> NominalPayload<T> {
+58:     pub fn as_slice(&self) -> &[T] {
+59:         self.deref().as_slice()
+60:     }
+61:     /// Vec backing/payload must already belong to the caller. Refusal leaves
+62:     /// that complete Vec untouched; only successful acquisition moves it. This acquires
+63:     /// census scratch, last-owner disposal scratch, Arc backing, initializer,
+64:     /// and the receiving carrier before each corresponding allocation.
+65:     pub fn from_funded_vec<E>(
+66:         values: &mut Vec<T>,
+67:         mut reserve: impl FnMut(usize) -> Result<(), E>,
+68:     ) -> Result<Self, E> {
+69:         let mut capacity = 0;
+70:         for value in values.iter() {
+71:             capacity = capacity.max(value.drop_capacity(&mut reserve)?);
+72:         }
+73:         #[repr(C)]
+74:         struct ArcCarrier<T> {
+75:             strong: usize,
+76:             weak: usize,
+77:             value: T,
+78:         }
+79:         let backing = Layout::new::<ArcCarrier<Owner<T>>>().size();
+80:         let bytes = backing
+81:             .saturating_add(size_of::<Owner<T>>())
+82:             .saturating_add(size_of::<Self>())
+83:             .saturating_add(size_of::<Result<Self, E>>())
+84:             .saturating_add(capacity.saturating_mul(size_of::<ResolvedType>()));
+85:         reserve(bytes)?;
+86:         let scratch = Vec::with_capacity(capacity);
+87:         assert_eq!(
+88:             scratch.capacity(),
+89:             capacity,
+90:             "nominal exact disposal backing"
+91:         );
+92:         Ok(Self {
+93:             storage: Storage::Shared(Arc::new(Owner {
+94:                 values: std::mem::take(values),
+95:                 scratch,
+96:             })),
+97:         })
+98:     }
+99:     /// Explicit paid copy before mutation. Refusal leaves both old owners and
+100:     /// their complete values unchanged; no implicit Cow/Arc::make_mut exists.
+101:     pub fn try_make_mut<E>(
+102:         &mut self,
+103:         mut reserve: impl FnMut(usize) -> Result<(), E>,
+104:     ) -> Result<&mut Vec<T>, E> {
+105:         if matches!(&self.storage, Storage::Shared(_)) {
+106:             let bytes = self.len().checked_mul(size_of::<T>()).and_then(|initial| {
+107:                 self.iter()
+108:                     .try_fold(initial, |n, v| n.checked_add(v.clone_bytes()?))
+109:             });
+110:             reserve(size_of::<Vec<T>>().saturating_add(bytes.unwrap_or(usize::MAX)))?;
+111:             let mut values = Vec::with_capacity(self.len());
+112:             assert_eq!(
+113:                 values.capacity(),
+114:                 self.len(),
+115:                 "nominal exact materialization backing"
+116:             );
+117:             values.extend(self.iter().cloned());
+118:             self.storage = Storage::Owned(values);
+119:         } else {
+120:             reserve(0)?;
+121:         }
+122:         Ok(self.deref_mut())
+123:     }
+124:     /// Moves recursive roots only from the last owner into an already-paid
+125:     /// external disposal machine. Other immutable owners keep the full value.
+126:     #[doc(hidden)]
+127:     pub fn drain_recursive_types(mut self, mut dispose: impl FnMut(ResolvedType)) {
+128:         match &mut self.storage {
+129:             Storage::Owned(values) => {
+130:                 for value in values {
+131:                     value.drain_types(&mut dispose);
+132:                 }
+133:             }
+134:             Storage::Shared(owner) => {
+135:                 if let Some(owner) = Arc::get_mut(owner) {
+136:                     owner.drain(&mut dispose);
+137:                 }
+138:             }
+139:         }
+140:     }
+141:     pub(crate) fn is_shared(&self) -> bool {
+142:         matches!(self.storage, Storage::Shared(_))
+143:     }
+144:     #[cfg(test)]
+145:     pub(crate) fn same_owner(&self, other: &Self) -> bool {
+146:         matches!((&self.storage, &other.storage), (Storage::Shared(a), Storage::Shared(b)) if Arc::ptr_eq(a,b))
+147:     }
+148: }
+149: impl<T: NominalElement> From<Vec<T>> for NominalPayload<T> {
+150:     fn from(values: Vec<T>) -> Self {
+151:         Self {
+152:             storage: Storage::Owned(values),
+153:         }
+154:     }
+155: }
+156: impl<T: NominalElement> Default for NominalPayload<T> {
+157:     fn default() -> Self {
+158:         Vec::new().into()
+159:     }
+160: }
+161: impl<T: NominalElement> Clone for NominalPayload<T> {
+162:     fn clone(&self) -> Self {
+163:         match &self.storage {
+164:             Storage::Owned(v) => v.clone().into(),
+165:             Storage::Shared(v) => Self {
+166:                 storage: Storage::Shared(v.clone()),
+167:             },
+168:         }
+169:     }
+170: }
+171: impl<T: NominalElement> Deref for NominalPayload<T> {
+172:     type Target = Vec<T>;
+173:     fn deref(&self) -> &Vec<T> {
+174:         match &self.storage {
+175:             Storage::Owned(v) => v,
+176:             Storage::Shared(v) => &v.values,
+177:         }
+178:     }
+179: }
+180: impl<T: NominalElement> DerefMut for NominalPayload<T> {
+181:     fn deref_mut(&mut self) -> &mut Vec<T> {
+182:         match &mut self.storage {
+183:             Storage::Owned(v) => v,
+184:             Storage::Shared(_) => panic!("shared nominal mutation requires try_make_mut"),
+185:         }
+186:     }
+187: }
+188: impl<T: NominalElement> fmt::Debug for NominalPayload<T> {
+189:     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+190:         self.deref().fmt(f)
+191:     }
+192: }
+193: impl<T: NominalElement> PartialEq for NominalPayload<T> {
+194:     fn eq(&self, other: &Self) -> bool {
+195:         self.as_slice() == other.as_slice()
+196:     }
+197: }
+198: impl<T: NominalElement> Eq for NominalPayload<T> {}
+199: impl<T: NominalElement> PartialEq<Vec<T>> for NominalPayload<T> {
+200:     fn eq(&self, other: &Vec<T>) -> bool {
+201:         self.as_slice() == other.as_slice()
+202:     }
+203: }
+204: impl<'a, T: NominalElement> IntoIterator for &'a NominalPayload<T> {
+205:     type Item = &'a T;
+206:     type IntoIter = std::slice::Iter<'a, T>;
+207:     fn into_iter(self) -> Self::IntoIter {
+208:         self.iter()
+209:     }
+210: }
+211: impl<'a, T: NominalElement> IntoIterator for &'a mut NominalPayload<T> {
+212:     type Item = &'a mut T;
+213:     type IntoIter = std::slice::IterMut<'a, T>;
+214:     fn into_iter(self) -> Self::IntoIter {
+215:         self.deref_mut().iter_mut()
+216:     }
+217: }
+218: 
+219: // This is the old public fallback disposal policy for legacy Vec storage.
+220: // Funded shared owners use their preacquired scratch and never grow on Drop.
+221: impl<T: NominalElement> Drop for NominalPayload<T> {
+222:     fn drop(&mut self) {
+223:         if let Storage::Owned(values) = &mut self.storage {
+224:             let mut pending = Vec::new();
+225:             for value in values {
+226:                 value.drain_types(&mut |ty| match ty {
+227:                     ResolvedType::Nominal { arguments, .. } => pending.extend(arguments),
+228:                     ResolvedType::Function { parameters, result } => {
+229:                         pending.extend(parameters);
+230:                         pending.push(*result);
+231:                     }
+232:                     _ => {}
+233:                 });
+234:             }
+235:             while let Some(ty) = pending.pop() {
+236:                 match ty {
+237:                     ResolvedType::Nominal { arguments, .. } => pending.extend(arguments),
+238:                     ResolvedType::Function { parameters, result } => {
+239:                         pending.extend(parameters);
+240:                         pending.push(*result);
+241:                     }
+242:                     _ => {}
+243:                 }
+244:             }
+245:         }
+246:     }
+247: }
+248: fn dispose(ty: ResolvedType, scratch: &mut Vec<ResolvedType>) {
+249:     fn children(ty: ResolvedType, scratch: &mut Vec<ResolvedType>) {
+250:         match ty {
+251:             ResolvedType::Nominal { arguments, .. } => {
+252:                 for ty in arguments {
+253:                     assert!(scratch.len() < scratch.capacity());
+254:                     scratch.push(ty);
+255:                 }
+256:             }
+257:             ResolvedType::Function { parameters, result } => {
+258:                 for ty in parameters {
+259:                     assert!(scratch.len() < scratch.capacity());
+260:                     scratch.push(ty);
+261:                 }
+262:                 assert!(scratch.len() < scratch.capacity());
+263:                 scratch.push(*result);
+264:             }
+265:             _ => {}
+266:         }
+267:     }
+268:     children(ty, scratch);
+269:     while let Some(ty) = scratch.pop() {
+270:         children(ty, scratch);
+271:     }
+272: }
+273: #[cfg(test)]
+274: mod tests;
+
+DEPENDENCY SNAPSHOT src/hir/nominal_payload/elements.rs
+1: //! Complete recursive-type census before shared acquisition.
+2: use super::*;
+3: use crate::cleanup_plan::replay::physical_clone::ClonePayload;
+4: fn capacity<E>(
+5:     root: &ResolvedType,
+6:     reserve: &mut impl FnMut(usize) -> Result<(), E>,
+7: ) -> Result<usize, E> {
+8:     fn push<'a, E>(
+9:         stack: &mut Vec<&'a ResolvedType>,
+10:         ty: &'a ResolvedType,
+11:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+12:     ) -> Result<(), E> {
+13:         if stack.len() == stack.capacity() {
+14:             let capacity = stack.capacity().saturating_mul(2).max(4);
+15:             reserve(
+16:                 size_of::<Vec<&ResolvedType>>()
+17:                     .saturating_add(capacity.saturating_mul(size_of::<&ResolvedType>())),
+18:             )?;
+19:             let mut next = Vec::with_capacity(capacity);
+20:             assert_eq!(next.capacity(), capacity);
+21:             next.extend(stack.drain(..));
+22:             *stack = next;
+23:         }
+24:         stack.push(ty);
+25:         Ok(())
+26:     }
+27:     // Leaves require neither a census heap nor last-owner Drop scratch.
+28:     if !matches!(root, ResolvedType::Nominal { arguments, .. } if !arguments.is_empty())
+29:         && !matches!(root, ResolvedType::Function { .. })
+30:     {
+31:         return Ok(0);
+32:     }
+33:     let mut stack = Vec::new();
+34:     push(&mut stack, root, reserve)?;
+35:     let mut highwater = 0;
+36:     while let Some(ty) = stack.pop() {
+37:         match ty {
+38:             ResolvedType::Nominal { arguments, .. } => {
+39:                 for child in arguments {
+40:                     push(&mut stack, child, reserve)?;
+41:                 }
+42:             }
+43:             ResolvedType::Function { parameters, result } => {
+44:                 for child in parameters {
+45:                     push(&mut stack, child, reserve)?;
+46:                 }
+47:                 push(&mut stack, result, reserve)?;
+48:             }
+49:             _ => {}
+50:         }
+51:         highwater = highwater.max(stack.len());
+52:     }
+53:     Ok(highwater)
+54: }
+55: impl NominalElement for ResolvedFieldDeclaration {
+56:     fn drop_capacity<E>(
+57:         &self,
+58:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+59:     ) -> Result<usize, E> {
+60:         capacity(&self.ty, reserve)
+61:     }
+62:     fn drain_types(&mut self, dispose: &mut impl FnMut(ResolvedType)) {
+63:         dispose(std::mem::replace(&mut self.ty, ResolvedType::Unit));
+64:     }
+65:     fn clone_bytes(&self) -> Option<usize> {
+66:         self.name.len().checked_add(self.ty.clone_payload_bytes()?)
+67:     }
+68: }
+69: impl NominalElement for ResolvedVariantCaseDeclaration {
+70:     fn drop_capacity<E>(
+71:         &self,
+72:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+73:     ) -> Result<usize, E> {
+74:         let mut n = 0;
+75:         for field in &self.fields {
+76:             n = n.max(field.drop_capacity(reserve)?);
+77:         }
+78:         Ok(n)
+79:     }
+80:     fn drain_types(&mut self, dispose: &mut impl FnMut(ResolvedType)) {
+81:         for field in &mut self.fields {
+82:             field.drain_types(dispose);
+83:         }
+84:     }
+85:     fn clone_bytes(&self) -> Option<usize> {
+86:         self.fields.iter().try_fold(
+87:             self.name.len().checked_add(
+88:                 self.fields
+89:                     .len()
+90:                     .checked_mul(size_of::<ResolvedFieldDeclaration>())?,
+91:             )?,
+92:             |n, f| n.checked_add(f.clone_bytes()?),
+93:         )
+94:     }
+95: }
+96: impl NominalElement for ResolvedTypeParameterDeclaration {
+97:     fn drop_capacity<E>(&self, _: &mut impl FnMut(usize) -> Result<(), E>) -> Result<usize, E> {
+98:         Ok(0)
+99:     }
+100:     fn drain_types(&mut self, _: &mut impl FnMut(ResolvedType)) {}
+101:     fn clone_bytes(&self) -> Option<usize> {
+102:         Some(self.name.len())
+103:     }
+104: }
+Independent old index wrapper agreed with canonicalagent: cfg(test) DeclarationIndex::nominal_original_with_prelude(program,prelude)->Result<DeclarationIndex,Diagnostic>, invoking full archived original constructor, to be supplied by827. New HIR type_parameters and variant cases become NominalPayload; nested case fields remain Vec. Root registration separately owned.

@@ -64,6 +64,12 @@ pub(crate) fn walk<'a>(function: &'a ResolvedFunction, mut visit: impl FnMut(&'a
         super::push_resolved_expression_children_in_authored_order(expr, &mut pending);
     }
 }
+mod paid_walk;
+pub(crate) use paid_walk::walk as try_walk;
+#[cfg(test)]
+mod funded;
+#[cfg(test)]
+pub(crate) use funded::{walk_funded, walk_funded_paying};
 pub fn target_universe(program: &ResolvedProgram) -> Vec<&ResolvedFunction> {
     let mut ids = BTreeSet::new();
     for f in program.functions.iter().chain(
@@ -188,8 +194,9 @@ pub(crate) fn error(message: &str) -> Diagnostic {
 
 pub(crate) mod resolve;
 
-pub(crate) static INVOKE_ID: std::sync::LazyLock<DeclarationId> =
-    std::sync::LazyLock::new(|| DeclarationId::new("core.function.invoke"));
+pub(crate) static INVOKE_ID: std::sync::LazyLock<DeclarationId> = std::sync::LazyLock::new(|| {
+    DeclarationId::compiler(crate::hir::CompilerDeclaration::FunctionInvoke)
+});
 pub(crate) fn invocation_params(
     expression: &ResolvedExpr,
 ) -> Result<Vec<super::ResolvedParam>, Diagnostic> {
@@ -218,7 +225,7 @@ pub(crate) fn invocation_params(
 pub(crate) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     super::closure::mutable::validate_uses(program)?;
     super::closure::borrowed::validate_uses(program)?;
-    if !requires_function_values(program) {
+    if !paid_walk::requires(program)? {
         return Ok(());
     }
     if target_universe(program).len() + super::closure::inventory(program).len() > 256 {
@@ -391,3 +398,6 @@ pub(crate) fn cleanup_call(
     };
     Ok((&INVOKE_ID, args, invocation_params(expression)?))
 }
+
+#[cfg(test)]
+pub(crate) use funded::work::{walk_funded_paying_with_work, walk_funded_with_work};

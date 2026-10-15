@@ -47,6 +47,10 @@ pub(super) enum PreparedProjectAdmission {
     StdinStreamCommandIoV2,
     StdinStreamTextCommandIoV1,
     StdinStreamDataCommandIoV1,
+    StdinStreamDataCommandIoV2,
+    StdinStreamOwnedDataCommandIoV1,
+    StdinStreamCollectionRecordCommandIoV1,
+    StdinStreamNestedOutcomeCommandIoV1,
     LineCommandIoV1,
     NetworkCommandIoV1,
     HttpsCommandIoV1,
@@ -56,6 +60,8 @@ pub(super) enum PreparedProjectAdmission {
     EnvironmentIoV1,
     ProcessIoV1,
     SourceCommandV1,
+    SourceCommandSelectedFileV1,
+    SourceCommandSelectedFileResourceV1,
     SourceCommandResourceOutputV1,
     /// An authenticated no-export alloc-tier standard package retains its
     /// internal owned closure without constructing a public descriptor.
@@ -85,12 +91,26 @@ impl PreparedProjectAdmission {
             Self::StdinStreamCommandIoV2 => ProjectProfile::StdinStreamCommandIoV2,
             Self::StdinStreamTextCommandIoV1 => ProjectProfile::StdinStreamTextCommandIoV1,
             Self::StdinStreamDataCommandIoV1 => ProjectProfile::StdinStreamDataCommandIoV1,
+            Self::StdinStreamDataCommandIoV2 => ProjectProfile::StdinStreamDataCommandIoV2,
+            Self::StdinStreamOwnedDataCommandIoV1 => {
+                ProjectProfile::StdinStreamOwnedDataCommandIoV1
+            }
+            Self::StdinStreamCollectionRecordCommandIoV1 => {
+                ProjectProfile::StdinStreamCollectionRecordCommandIoV1
+            }
+            Self::StdinStreamNestedOutcomeCommandIoV1 => {
+                ProjectProfile::StdinStreamNestedOutcomeCommandIoV1
+            }
             Self::LineCommandIoV1 => ProjectProfile::LineCommandIoV1,
             Self::NetworkCommandIoV1 => ProjectProfile::NetworkCommandIoV1,
             Self::FilesystemIoV1 => ProjectProfile::FilesystemIoV1,
             Self::EnvironmentIoV1 => ProjectProfile::EnvironmentIoV1,
             Self::ProcessIoV1 => ProjectProfile::ProcessIoV1,
             Self::SourceCommandV1 => ProjectProfile::SourceCommandV1,
+            Self::SourceCommandSelectedFileV1 => ProjectProfile::SourceCommandSelectedFileV1,
+            Self::SourceCommandSelectedFileResourceV1 => {
+                ProjectProfile::SourceCommandSelectedFileResourceV1
+            }
             Self::SourceCommandResourceOutputV1 => ProjectProfile::SourceCommandResourceOutputV1,
             Self::FilesystemIoV2 => ProjectProfile::FilesystemIoV2,
             Self::FilesystemIoV3 => ProjectProfile::FilesystemIoV3,
@@ -166,6 +186,14 @@ pub(super) fn prepare(
     subject: PublicApiSubject<'_>,
 ) -> Result<PreparedProjectAdmission, Diagnostic> {
     match manifest.project_profile() {
+        ProjectProfile::SourceCommandSelectedFileV1 => {
+            super::source_command::admit(program, manifest)?;
+            Ok(PreparedProjectAdmission::SourceCommandSelectedFileV1)
+        }
+        ProjectProfile::SourceCommandSelectedFileResourceV1 => {
+            super::source_command::admit(program, manifest)?;
+            Ok(PreparedProjectAdmission::SourceCommandSelectedFileResourceV1)
+        }
         ProjectProfile::SourceCommandV1 => {
             super::source_command::admit(program, manifest)?;
             Ok(PreparedProjectAdmission::SourceCommandV1)
@@ -243,6 +271,46 @@ pub(super) fn prepare(
         ProjectProfile::StdinStreamDataCommandIoV1 => {
             stdin_stream_command::admit(program, manifest.command().unwrap_or(""), true)?;
             Ok(PreparedProjectAdmission::StdinStreamDataCommandIoV1)
+        }
+        ProjectProfile::StdinStreamDataCommandIoV2 => {
+            crate::hir::validate_stream_record_program(
+                program,
+                Some(&crate::hir::DeclarationId::new(
+                    manifest.command().unwrap_or(""),
+                )),
+            )?;
+            stdin_stream_command::admit(program, manifest.command().unwrap_or(""), true)?;
+            Ok(PreparedProjectAdmission::StdinStreamDataCommandIoV2)
+        }
+        ProjectProfile::StdinStreamOwnedDataCommandIoV1 => {
+            crate::hir::validate_stream_owned_program(
+                program,
+                Some(&crate::hir::DeclarationId::new(
+                    manifest.command().unwrap_or(""),
+                )),
+            )?;
+            stdin_stream_command::admit(program, manifest.command().unwrap_or(""), true)?;
+            Ok(PreparedProjectAdmission::StdinStreamOwnedDataCommandIoV1)
+        }
+        ProjectProfile::StdinStreamCollectionRecordCommandIoV1 => {
+            crate::hir::validate_stream_collection_record_program(
+                program,
+                Some(&crate::hir::DeclarationId::new(
+                    manifest.command().unwrap_or(""),
+                )),
+            )?;
+            stdin_stream_command::admit(program, manifest.command().unwrap_or(""), true)?;
+            Ok(PreparedProjectAdmission::StdinStreamCollectionRecordCommandIoV1)
+        }
+        ProjectProfile::StdinStreamNestedOutcomeCommandIoV1 => {
+            crate::hir::validate_stream_nested_outcome_program(
+                program,
+                Some(&crate::hir::DeclarationId::new(
+                    manifest.command().unwrap_or(""),
+                )),
+            )?;
+            stdin_stream_command::admit(program, manifest.command().unwrap_or(""), true)?;
+            Ok(PreparedProjectAdmission::StdinStreamNestedOutcomeCommandIoV1)
         }
         ProjectProfile::LineCommandIoV1 => {
             legacy::line_command(program, manifest.command().unwrap_or(""))?;

@@ -1,0 +1,101 @@
+{
+  "schema": "semaprax.pending-owning-selectors.v1",
+  "status": "source-only; exact registrations inferred, no executable list or runtime qualification claim",
+  "package": "semaprax",
+  "count": 13,
+  "selectors": [
+    {
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::tests::complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "current wide complete fixture and real spill"
+    },
+    {
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::tests::fixture_before::tests::complete_projected_and_lexical_planner_uses_one_paid_owner_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "complete unchanged original 3-fixture driver and allocation floor"
+    },
+    {
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::tests::fixture_before::tests::owning_root_projected_vec_and_string_loans_use_one_paid_owner_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "complete unchanged original own-root fixture/helper"
+    },
+    {
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::tests::owning_root_projected_vec_and_string_loans_use_one_paid_owner_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "unchanged current owning-root fixture"
+    },
+    {
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::tests::fixture_receiving::complete_original_allocation_driver_and_receiver_stay_byte_exact",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "full compiled receiver/driver source custody"
+    },
+    {
+      "harness": "lib",
+      "selector": "loan_plan::paid_cursor::tests::cursor_spill_is_prepaid_exact_short_sticky_and_reused_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "unchanged exact short sticky no-post-refusal spill control"
+    },
+    {
+      "harness": "lib",
+      "selector": "loan_plan::paid_cursor::tests::complete_old_candidate_and_funded_receivers_are_exact_and_current_hooks_are_scoped",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "unchanged complete original candidate/dispatcher/source guard"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::ordinary_builder_payment_never_grants_selected_admission_and_covers_index_drop",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "current complete ordinary authority/accounting owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::ordinary_before::ordinary_builder_payment_never_grants_selected_admission_and_covers_index_drop",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "complete unchanged original owner and exact Tree work equality"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::accounting_scope::complete_arena_ordinary_receiver_keeps_exact_same_representation_work_and_paid_fact_payloads",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "full payload identity and exact same-representation byte rerun"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::allocation::tests::accounting_scope::complete_ordinary_tree_receiver_original_owner_and_current_accounting_scope_stay_source_bound",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "full receiver/producer/owner source binding"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::tests::arena::complete_original_producers_receivers_and_full_arena_dispatch_are_source_locked",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "unchanged complete old producer/capacity/all dispatch and receiver custody"
+    },
+    {
+      "harness": "hir_module_boundaries",
+      "selector": "core_validation_has_no_resolution_cleanup_build_or_physical_authority",
+      "expected": 1,
+      "ignored": 0,
+      "reason": "full compiled source inventory join"
+    }
+  ],
+  "omissions": "No full module/suite selection. Three other newly compiled verbatim old funded-driver bodies use unchanged unrelated helpers and have no changed runtime dependency in this bounded fixture/accounting repair. Existing complete operation payload and application gates remain required for issue closure; this packet does not replace them.",
+  "pin_producers": "None identified: production bodies, schema, wire, diagnostic text and generated artifacts unchanged. Root owns all subsequent qualification."
+}

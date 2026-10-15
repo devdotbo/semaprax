@@ -1,3 +1,7 @@
+/// Read-only constructor inventory; never selects an allocation or drop profile.
+pub mod checked_final_utf8_preflight;
+#[cfg(test)]
+mod checked_string_allocation;
 mod native_adapter_abi;
 #[cfg(test)]
 pub(crate) mod native_aggregate;
@@ -42,6 +46,7 @@ mod native_owned_data_provider;
 mod native_resource;
 mod native_runtime;
 mod native_scalar_runtime;
+mod native_selected_file_command;
 #[cfg(any(test, feature = "unstable-native-host-internal"))]
 mod native_settlement_derivation;
 mod native_source_command;
@@ -54,10 +59,24 @@ mod native_source_resource_command;
     )
 )]
 mod native_stdin_stream;
+/// Explicit native-only closed final-constructor/retained-release profile.
+pub mod selected_final_utf8;
+/// Private FusedConstructionV1 receiving entry; no default route selects it.
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "private fused-row receiving entry has no production caller"
+    )
+)]
+mod selected_fused_row;
 pub use native_stdin_stream::{
-    emit_hir_c_with_stdin_stream, emit_hir_c_with_stdin_stream_data,
-    emit_hir_c_with_stdin_stream_exit_status, emit_hir_c_with_stdin_stream_text,
+    emit_hir_c_with_stdin_stream, emit_hir_c_with_stdin_stream_collection_records,
+    emit_hir_c_with_stdin_stream_data, emit_hir_c_with_stdin_stream_exit_status,
+    emit_hir_c_with_stdin_stream_nested_outcomes, emit_hir_c_with_stdin_stream_owned_data,
+    emit_hir_c_with_stdin_stream_records, emit_hir_c_with_stdin_stream_text,
 };
+pub(crate) use selected_fused_row::emit_source_profile as emit_fused_source_profile;
 mod native_trace;
 mod native_trace_runtime;
 mod native_value;
@@ -200,6 +219,10 @@ pub fn emit_hir_c_with_source_command(program: &ResolvedProgram) -> Result<Strin
         None,
     )
 }
+
+pub use native_selected_file_command::{
+    emit_hir_c_with_selected_file_command, emit_hir_c_with_selected_file_resource_command,
+};
 
 /// Emit the additive Project-v28 source command with resource-sized Strings
 /// and a heap-backed staged output envelope.

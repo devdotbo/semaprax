@@ -1,0 +1,71 @@
+{
+  "status": "SOURCE_ONLY_NO_EXECUTION",
+  "base": "5527299c0d053e65c7df8e0f367e1f63432e3fb3",
+  "three_joined_children": [
+    "src/cleanup_plan/build/capacity_observation/actual_attribution.rs",
+    "src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs",
+    "src/cleanup_plan/build/helper_index/original_plans.rs"
+  ],
+  "retained_eleven_children": [
+    "src/hir/validation/held_profiles.rs",
+    "src/hir/validation/held_profiles/tests.rs",
+    "src/hir/validation/held_profiles/source_audit.rs",
+    "src/hir/validation/executable_profiles/held.rs",
+    "src/hir/validation/executable_profiles/before_812.rs",
+    "src/hir/validation/call_parameters/before_812.rs",
+    "src/hir/validation/call_parameters/held_tests.rs",
+    "src/hir/ids/fixed_operation_tests.rs",
+    "src/hir/resolve_box_call/map/identity_tests.rs",
+    "src/hir/resolve_box_call/list/identity_tests.rs",
+    "src/hir/resolve_box_call/iterator/identity_tests.rs"
+  ],
+  "files": {
+    "tests/hir_module_boundaries.rs": {
+      "whole_original_archive": "docs/evidence/capacity-attribution-811/source-union/tests__hir_module_boundaries.rs.before.txt",
+      "original_sha256": "0bc5bb07d41a24a4bfeceebfdcd204c749e0709b3bb7b8176999af555f6f36d7",
+      "receiving_sha256": "2dd739df78683738201afae62537dc9c296549e698a27fce28be1ad53af61241",
+      "whole_inverse_edits": [
+        {
+          "original": "        concat!(\n            concat!(\n                include_str!(\"../src/hir/validation.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n",
+          "receiving": "        concat!(\n            concat!(\n                include_str!(\"../src/hir/validation.rs\"),\n                include_str!(\"../src/cleanup_plan/build/capacity_observation/actual_attribution.rs\"),\n                include_str!(\"../src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs\"),\n                include_str!(\"../src/cleanup_plan/build/helper_index/original_plans.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n"
+        }
+      ]
+    },
+    "tests/workspace/semantic_graph/source_inventory.rs": {
+      "whole_original_archive": "docs/evidence/capacity-attribution-811/source-union/tests__workspace__semantic_graph__source_inventory.rs.before.txt",
+      "original_sha256": "0e2d39bddcd5a007ef3464adf5ca63f9092ba0175b7300bd020272c44673ac41",
+      "receiving_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
+      "whole_inverse_edits": [
+        {
+          "original": "                concat!(\n                    concat!(\n                    include_str!(\"../../src/workspace_graph.rs\"),\n                    include_str!(\"../../src/hir/validation/held_profiles.rs\"),\n                    include_str!(\"../../src/hir/validation/held_profiles/tests.rs\"),\n                    include_str!(\"../../src/hir/validation/held_profiles/source_audit.rs\"),\n",
+          "receiving": "                concat!(\n                    concat!(\n                    include_str!(\"../../src/workspace_graph.rs\"),\n                    include_str!(\"../../src/cleanup_plan/build/capacity_observation/actual_attribution.rs\"),\n                    include_str!(\"../../src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs\"),\n                    include_str!(\"../../src/cleanup_plan/build/helper_index/original_plans.rs\"),\n                    include_str!(\"../../src/hir/validation/held_profiles.rs\"),\n                    include_str!(\"../../src/hir/validation/held_profiles/tests.rs\"),\n                    include_str!(\"../../src/hir/validation/held_profiles/source_audit.rs\"),\n"
+        }
+      ]
+    },
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
+      "whole_original_archive": "docs/evidence/capacity-attribution-811/source-union/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
+      "original_sha256": "db55943fce14599fef4a3a8c4f13b78fe90fdac33487aa42edac41e6fc7940d4",
+      "receiving_sha256": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7",
+      "whole_inverse_edits": [
+        {
+          "original": "            include_str!(\"../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors/arena.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build/capacity_observation.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build/capacity_observation/legacy.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build/capacity_observation/tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build/checked_allocation.rs\"),\n",
+          "receiving": "            include_str!(\"../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors/arena.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build/capacity_observation.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build/capacity_observation/actual_attribution.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build/helper_index/original_plans.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build/capacity_observation/legacy.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build/capacity_observation/tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/build/checked_allocation.rs\"),\n"
+        }
+      ]
+    },
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": {
+      "whole_original_archive": "docs/evidence/capacity-attribution-811/source-union/src__cleanup_plan__replay__live_oracle__source_custody__b.rs.before.txt",
+      "original_sha256": "fedbaee1e18471d394cb46f8542948cf4d522cf45223bbd4d97528956198f33c",
+      "receiving_sha256": "fde14549c2858b8ab4112544d3f6ffe7c1aca50938dbeafe94295619faa38243",
+      "whole_inverse_edits": [
+        {
+          "original": "    }\n    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, r###\"                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n",
+          "receiving": "    }\n    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, r###\"                include_str!(\"../src/cleanup_plan/build/capacity_observation/actual_attribution.rs\"),\n                include_str!(\"../src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs\"),\n                include_str!(\"../src/cleanup_plan/build/helper_index/original_plans.rs\"),\n\"###, \"\");\n        undo(&mut current, r###\"                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n"
+        }
+      ]
+    }
+  },
+  "interop_actual_package": "semaprax-native-rust-interop",
+  "interop_group_selector": "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions",
+  "new_runtime_test_count": 0
+}

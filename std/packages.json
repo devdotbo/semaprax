@@ -17,6 +17,7 @@
     {"directory": "data-json-token", "module": "std.data.json.token", "tier": "portable", "targets": ["interpreter", "native-c11", "core-wasm"], "status": "partial"},
     {"directory": "data-json-utf8", "module": "std.data.json.utf8", "tier": "portable", "targets": ["interpreter", "native-c11", "core-wasm"], "status": "partial"},
     {"directory": "data-json-write", "module": "std.data.json.write", "tier": "portable", "targets": ["interpreter", "native-c11", "core-wasm"], "status": "partial"},
+    {"directory": "data-ndjson", "module": "std.data.ndjson", "tier": "portable", "targets": ["interpreter", "native-c11", "core-wasm"], "status": "partial"},
     {"directory": "data-toml", "module": "std.data.toml", "tier": "portable", "targets": ["interpreter", "native-c11", "core-wasm"], "status": "partial"},
     {"directory": "db", "module": "std.db", "tier": "portable", "targets": ["interpreter", "native-c11", "core-wasm"], "status": "partial"},
     {"directory": "email", "module": "std.email", "tier": "portable", "targets": ["interpreter", "native-c11", "core-wasm"], "status": "partial"},

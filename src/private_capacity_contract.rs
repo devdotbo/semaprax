@@ -5,6 +5,15 @@
 //! Shared expression backing is counted in full per retained occurrence;
 //! sharing may overcount, while missing backing always refuses the census.
 
+#[path = "private_capacity_contract/lexical.rs"]
+mod lexical;
+pub(crate) use lexical::control_target_owned_capacity;
+// The path-included private builder uses this export; the root crate does not.
+#[allow(unused_imports)]
+pub(crate) use lexical::latch_owned_capacity;
+#[cfg(test)]
+pub(crate) use lexical::plan_owned_capacity as lexical_plan_owned_capacity;
+
 pub(crate) const PRELUDE_CAPACITY_IDENTITIES: [&str; 10] = [
     "core.option",
     "core.option.none",
@@ -111,6 +120,7 @@ fn resolved_type_owned_capacity(ty: &crate::hir::ResolvedType) -> Option<usize> 
         | crate::hir::ResolvedType::OnceFunctionI64
         | crate::hir::ResolvedType::OnceFunctionI64Pair
         | crate::hir::ResolvedType::MutFunctionI64
+        | crate::hir::ResolvedType::Never
         | crate::hir::ResolvedType::Unit
         | crate::hir::ResolvedType::I64
         | crate::hir::ResolvedType::I32
@@ -167,6 +177,27 @@ fn shape_owned_capacity(shape: &crate::cleanup::FieldLivenessShape) -> Option<us
                 fields
                     .capacity()
                     .checked_mul(std::mem::size_of::<crate::cleanup::FieldLiveness>())?,
+            ),
+        crate::cleanup::FieldLivenessShape::Variant { declaration, cases } => cases
+            .iter()
+            .try_fold(declaration.as_str().len(), |bytes, case| {
+                bytes
+                    .checked_add(case.case.as_str().len())?
+                    .checked_add(
+                        case.fields
+                            .capacity()
+                            .checked_mul(std::mem::size_of::<crate::cleanup::FieldLiveness>())?,
+                    )?
+                    .checked_add(case.fields.iter().try_fold(0usize, |bytes, field| {
+                        bytes
+                            .checked_add(field.field.as_str().len())?
+                            .checked_add(shape_owned_capacity(&field.shape)?)
+                    })?)
+            })?
+            .checked_add(
+                cases
+                    .capacity()
+                    .checked_mul(std::mem::size_of::<crate::cleanup::VariantCaseLiveness>())?,
             ),
         _ => None,
     }
@@ -415,7 +446,9 @@ pub(crate) fn cleanup_plan_owned_capacity(
             } => normalized_cases
                 .capacity()
                 .checked_mul(std::mem::size_of::<crate::cleanup_plan::StatusCase>())?,
-            StatusProducer::ContractFalse { .. } => 0,
+            // The two allocation cases are inline; StatusSource backing above
+            // already includes their full layout, with no separate Vec payload.
+            StatusProducer::CheckedAllocation { .. } | StatusProducer::ContractFalse { .. } => 0,
         })?;
     }
     for block in &plan.blocks {
@@ -558,6 +591,19 @@ pub(crate) fn cleanup_plan_owned_capacity(
         )?)?;
         bytes = bytes.checked_add(match &exit.continuation {
             ExitContinuation::Continue(_) | ExitContinuation::ReturnUnit => 0,
+            ExitContinuation::LoopLatch { target } | ExitContinuation::LoopBreak { target, .. } => {
+                control_target_owned_capacity(target)?
+            }
+            ExitContinuation::FunctionReturn { target, source, .. } => {
+                control_target_owned_capacity(target)?.checked_add(match source {
+                    CleanupResultSource::Scalar { expression } => {
+                        expression.owned_allocation_bytes()?
+                    }
+                    CleanupResultSource::Owned { storage } => {
+                        cleanup_place_owned_capacity(storage)?
+                    }
+                })?
+            }
             ExitContinuation::CommitResult { source } => match source {
                 CleanupResultSource::Scalar { expression } => {
                     expression.owned_allocation_bytes()?
@@ -567,5 +613,7 @@ pub(crate) fn cleanup_plan_owned_capacity(
             ExitContinuation::ReturnFailure { source } => status_id(source)?,
         })?;
     }
-    Some(bytes)
+    bytes.checked_add(lexical::plan_owned_capacity(
+        plan.lexical_control.as_deref(),
+    )?)
 }

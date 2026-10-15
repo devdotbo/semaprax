@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "lexical.rs"]
+mod lexical;
+
 #[test]
 fn skeleton_replay_rejects_a_transition_location_substitution() {
     let program = program();

@@ -6,13 +6,15 @@ use super::diagnostics::error;
 use super::loans::{has_active_overlapping_loan, mark_value_sources_moved};
 use super::place::source_place;
 use super::type_table::TypeTable;
-use crate::ast::{Expr, ExprKind, Function, Param, ParamMode, Program, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, Param, ParamMode, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::HashMap;
+mod projected_string_view;
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_argument_ownership(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     callee: &str,
     arg: &Expr,
@@ -89,7 +91,7 @@ pub(super) fn check_argument_ownership(
                         actual.ty
                     )),
                 );
-            } else if allow_moves {
+            } else if allow_moves || super::contract_owners::local(arg, &actual.ty, variables) {
                 mark_value_sources_moved(program, arg, variables, types, diagnostics);
             } else {
                 diagnostics.push(error(
@@ -121,6 +123,19 @@ pub(super) fn check_argument_ownership(
             )
             .with_help("create or receive an explicitly shared resource before this call"),
         ),
+        ParamMode::Borrow
+            if super::declared_type::collection_record::vector(types, &param.ty)
+                || crate::map_ops::ast_collection(&param.ty) =>
+        {
+            if !matches!(actual.mode, ParamMode::Own | ParamMode::Borrow)
+                || source_place(arg, variables, types).is_none_or(|place| {
+                    !place.projections.is_empty()
+                        && !source_collection_field_is_admitted(arg, variables, types)
+                })
+            {
+                diagnostics.push(error(program, "SPX-O118", "borrowed Vec requires a named carrier or an authenticated collection-record field", arg.span));
+            }
+        }
         // A bare `Bytes` leaf classifies as an admitted owned-byte record, so
         // exclude it here; the `param.ty == Type::Bytes` arm below owns it and
         // admits exact Bytes field paths of an admitted owned record.
@@ -128,7 +143,8 @@ pub(super) fn check_argument_ownership(
             if param.ty != Type::Bytes
                 && (types.is_nested_owned_byte_record(&param.ty)
                     || types.is_flat_owned_byte_variant(&param.ty)
-                    || types.is_flat_owned_string_variant(&param.ty)) =>
+                    || types.is_direct_owned_variant(&param.ty)
+                    || super::declared_type::string_record::runtime_admitted(&param.ty, types)) =>
         {
             if !matches!(actual.mode, ParamMode::Own | ParamMode::Borrow)
                 || !source_place(arg, variables, types)
@@ -211,6 +227,7 @@ pub(super) fn source_borrowed_bytes_call_place_is_admitted(
 }
 
 pub(super) fn activate_borrowed_bytes_call_loans(
+    program: &dyn ProgramSource,
     arguments: &[Expr],
     parameters: &[Param],
     variables: &mut HashMap<String, Binding>,
@@ -220,8 +237,32 @@ pub(super) fn activate_borrowed_bytes_call_loans(
     for (index, (borrowed, parameter)) in arguments.iter().zip(parameters).enumerate() {
         let reader = crate::stdin_stream_ops::ast_is_reader(&parameter.ty)
             && matches!(&borrowed.kind, ExprKind::Var(name) if variables.get(name).is_some_and(|binding| crate::stdin_stream_ops::ast_is_reader(&binding.ty)));
+        let collection = (crate::map_ops::ast_collection(&parameter.ty)
+            || super::declared_type::collection_record::vector(types, &parameter.ty)
+            || super::declared_type::string_record::runtime_admitted(&parameter.ty, types)
+            || super::declared_type::collection_outcome::runtime_admitted(types, &parameter.ty))
+            && (source_collection_field_is_admitted(borrowed, variables, types)
+                || source_place(borrowed, variables, types).is_some_and(|p| {
+                    p.projections.is_empty()
+                        && p.ty == parameter.ty
+                        && matches!(p.mode, ParamMode::Own | ParamMode::Borrow)
+                }));
+        let text_view = matches!(parameter.ty, Type::Str | Type::SliceU8)
+            .then(|| {
+                super::loans::local_borrow_origin(
+                    program,
+                    borrowed,
+                    "call view",
+                    borrowed.span,
+                    variables,
+                    types,
+                )
+            })
+            .flatten();
         if parameter.mode != ParamMode::Borrow
             || (!reader
+                && text_view.is_none()
+                && !collection
                 && (parameter.ty != Type::Bytes
                     || !source_borrowed_bytes_call_place_is_admitted(
                         borrowed, variables, types, true,
@@ -229,7 +270,10 @@ pub(super) fn activate_borrowed_bytes_call_loans(
         {
             continue;
         }
-        let Some(origin) = source_place(borrowed, variables, types) else {
+        let origin = text_view
+            .map(|origin| (origin.root, origin.projections))
+            .or_else(|| source_place(borrowed, variables, types).map(|p| (p.root, p.projections)));
+        let Some((root, projections)) = origin else {
             continue;
         };
         let id = SourceLoanId {
@@ -237,12 +281,12 @@ pub(super) fn activate_borrowed_bytes_call_loans(
             start: borrowed.span.start,
             end: borrowed.span.end,
         };
-        if let Some(owner) = variables.get_mut(&origin.root) {
+        if let Some(owner) = variables.get_mut(&root) {
             owner.active_loans.insert(SourceLoan {
                 id: id.clone(),
-                projections: origin.projections,
+                projections,
             });
-            active.push((origin.root, id));
+            active.push((root, id));
         }
     }
     active
@@ -266,12 +310,28 @@ pub(super) fn source_byte_view_place_is_admitted(
     types: &TypeTable<'_>,
 ) -> bool {
     if operation == crate::byte_ops::ByteOp::StrAsBytes {
+        if super::record_traversal::project(expression, variables, types)
+            .is_some_and(|(_, value)| value.ty == Type::Str)
+        {
+            return true;
+        }
         if let ExprKind::Call {
             name,
             type_arguments,
             args,
         } = &expression.kind
         {
+            if name == crate::vec_ops::string_slot::NAME {
+                return super::string_slot::root(type_arguments, args, variables).is_some();
+            }
+            if name == crate::vec_field::NAME {
+                return super::vec_field::signature(types, type_arguments, args, expression.span)
+                    .is_some_and(|(_, result)| result == Type::Str)
+                    && args
+                        .first()
+                        .and_then(|arg| source_place(arg, variables, types))
+                        .is_some();
+            }
             if crate::byte_ops::by_name(name) == Some(crate::byte_ops::ByteOp::StringAsStr)
                 && type_arguments.is_empty()
             {
@@ -279,10 +339,11 @@ pub(super) fn source_byte_view_place_is_admitted(
                     return false;
                 };
                 return source_place(owner, variables, types).is_some_and(|place| {
-                    place.projections.is_empty()
+                    (place.projections.is_empty()
                         && place.ty == Type::String
                         && place.mode == ParamMode::Own
-                        && matches!(owner.kind, ExprKind::Var(_))
+                        && matches!(owner.kind, ExprKind::Var(_)))
+                        || projected_string_view::admitted(&place, variables, types)
                 });
             }
         }
@@ -293,10 +354,32 @@ pub(super) fn source_byte_view_place_is_admitted(
     if place.projections.is_empty() {
         return matches!(expression.kind, ExprKind::Var(_));
     }
+    if operation == crate::byte_ops::ByteOp::StringAsStr {
+        return projected_string_view::admitted(&place, variables, types);
+    }
     operation == crate::byte_ops::ByteOp::BytesAsSlice
         && !place.projections.is_empty()
         && place.ty == Type::Bytes
         && variables.get(&place.root).is_some_and(|binding| {
             binding.mode == ParamMode::Own && types.is_nested_owned_byte_record(&binding.ty)
+        })
+}
+
+fn source_collection_field_is_admitted(
+    expression: &Expr,
+    variables: &HashMap<String, Binding>,
+    types: &TypeTable<'_>,
+) -> bool {
+    let Some(place) = source_place(expression, variables, types) else {
+        return false;
+    };
+    !place.projections.is_empty()
+        && matches!(place.mode, ParamMode::Own | ParamMode::Borrow)
+        && (super::declared_type::collection_record::vector(types, &place.ty)
+            || crate::map_ops::ast_collection(&place.ty))
+        && variables.get(&place.root).is_some_and(|root| {
+            matches!(root.mode, ParamMode::Own | ParamMode::Borrow)
+                && (super::declared_type::collection_record::admitted(&root.ty, types)
+                    || super::declared_type::string_record::admitted(&root.ty, types))
         })
 }

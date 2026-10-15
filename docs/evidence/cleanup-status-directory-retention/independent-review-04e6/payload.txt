@@ -1,0 +1,1382 @@
+Bounded independent source review. No tools, execution, delegation or web. Review the NEW retained status-directory route and exact owning ordinary budget/work contract. Check full old semantic/error order, caller/function/budget identity, nested foreign/restored active ledger, sticky refusal and live Drop, actual added carrier funding, all work still paid, no quotas/caps/discounts. Distinguish concrete new blockers from inherited/unsupported possibilities. Parent constructor author is already addressing same-ReplayBudget nested ACTIVE identity gap and token carrier funding; independently assess, do not assume fix. Current production straight-line caller has no observed nested scope switch. Source-only, no approval/runtime claim. Focus findings under700words.
+
+===== src/cleanup_plan/replay/expression_facts/receiving/retained.rs:1-558 sha256 18d1c4fa1a9e82cd2a3997a199011cbac33b5a75f0d127ef103cb3f16f6d5075 =====
+1: //! One immutable, fully paid status directory reused by consecutive ordinary passes.
+2: //! Complete pre-retention receivers remain in the parent and execute independently.
+3: use super::*;
+4: 
+5: pub(in crate::cleanup_plan::replay) struct StatusSources<'hir> {
+6:     function: &'hir ResolvedFunction,
+7:     budget: *const ReplayBudget,
+8:     ids: Option<Directory<&'hir StatusSourceId>>,
+9: }
+10: 
+11: pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
+12:     function: &'hir ResolvedFunction,
+13:     facts: &Facts<'_>,
+14:     budget: &mut ReplayBudget,
+15: ) -> Result<StatusSources<'hir>, Diagnostic> {
+16:     if let Facts::Tree(tree) = facts {
+17:         super::super::super::validate_status_sources(function, tree)?;
+18:         return Ok(StatusSources { function, budget, ids: None });
+19:     }
+20:     let expressions: &dyn Lookup = facts;
+21:     let mut ids = Directory::new(function, budget, "cleanup status identity directory")?;
+22:     for source in &function.cleanup_plan.status_sources {
+23:         if !ids.insert(function, &source.id, budget)? {
+24:             return Err(<Diagnostic as semantic_refusal::Error>::structural(
+25:                 function,
+26:                 semantic_refusal::Atom::RepeatedStatus(source.id.expression.clone()),
+27:             ));
+28:         }
+29:         if expressions
+30:             .fact(function, &source.id.expression, budget)?
+31:             .is_none()
+32:         {
+33:             return Err(<Diagnostic as semantic_refusal::Error>::structural(
+34:                 function,
+35:                 semantic_refusal::Atom::UnknownStatus(source.id.expression.clone()),
+36:             ));
+37:         }
+38:         match (&source.id.lane, &source.producer) {
+39:             (
+40:                 StatusLane::OperationFailure | StatusLane::OwnerAdmission,
+41:                 StatusProducer::PropagatedCall { callee },
+42:             ) => {
+43:                 let Some(Some(call)) = expressions.fact(function, &source.id.expression, budget)?
+44:                 else {
+45:                     return Err(replay_error(
+46:                         function,
+47:                         "propagated-call status source does not name a call expression",
+48:                     )
+49:                     .into());
+50:                 };
+51:                 if call.callee.as_ref() != callee {
+52:                     return Err(replay_error(
+53:                         function,
+54:                         "propagated-call status source names the wrong callee",
+55:                     )
+56:                     .into());
+57:                 }
+58:             }
+59:             (
+60:                 StatusLane::OperationFailure,
+61:                 StatusProducer::CheckedArithmetic {
+62:                     normalized_cases, ..
+63:                 },
+64:             ) => {
+65:                 let mut cases = Directory::new(
+66:                     function,
+67:                     budget,
+68:                     "cleanup checked arithmetic case directory",
+69:                 )?;
+70:                 for case in normalized_cases {
+71:                     cases.insert(function, *case, budget)?;
+72:                 }
+73:                 if cases.is_empty() || cases.len() != normalized_cases.len() {
+74:                     return Err(replay_error(
+75:                         function,
+76:                         "checked-arithmetic status cases are empty or repeated",
+77:                     )
+78:                     .into());
+79:                 }
+80:             }
+81:             (
+82:                 StatusLane::AllocationFailure,
+83:                 StatusProducer::CheckedAllocation {
+84:                     normalized_cases, ..
+85:                 },
+86:             ) if function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20
+87:                 && *normalized_cases
+88:                     == [
+89:                         crate::cleanup_plan::AllocationCase::PayloadRefused,
+90:                         crate::cleanup_plan::AllocationCase::SizeOverflow,
+91:                     ] => {}
+92:             (StatusLane::ContractFalse, StatusProducer::ContractFalse { .. }) => {}
+93:             _ => {
+94:                 return Err(replay_error(
+95:                     function,
+96:                     "status source lane does not match its producer",
+97:                 )
+98:                 .into());
+99:             }
+100:         }
+101:     }
+102:     Ok(StatusSources { function, budget, ids: Some(ids) })
+103: }
+104: 
+105: pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
+106:     program: &dyn crate::cleanup::ReplayContext,
+107:     function: &ResolvedFunction,
+108:     facts: &Facts<'_>,
+109:     storage: &BTreeSet<StorageId>,
+110:     leaves: &Leaves,
+111:     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+112:     budget: &mut ReplayBudget,
+113:     validated: &StatusSources<'_>,
+114: ) -> Result<(), Diagnostic> {
+115:     if !std::ptr::eq(function, validated.function)
+116:         || !std::ptr::eq(budget, validated.budget)
+117:     {
+118:         return Err(replay_error(function, "status directory belongs to another function or budget"));
+119:     }
+120:     // Authenticate the unchanged payer even though retaining the directory allocates nothing.
+121:     budget.reserve_bytes(function, 0, "retained cleanup status directory")?;
+122:     budget.charge(function, 0, "retained cleanup status directory")?;
+123:     if let Facts::Tree(tree) = facts {
+124:         return super::super::super::validate_blocks_and_edges(
+125:             program, function, tree, storage, leaves, helpers, budget,
+126:         );
+127:     }
+128:     let expressions: &dyn Lookup = facts;
+129:     let plan = &function.cleanup_plan;
+130:     let statuses = validated.ids.as_ref().ok_or_else(|| {
+131:         replay_error(function, "retained status directory has no metered keys")
+132:     })?;
+133:     for (index, edge) in plan.edges.iter().enumerate() {
+134:         if edge.id.0 != u32_index(function, index, "cleanup edge")?
+135:             || !block_exists(function, edge.from)
+136:             || !block_exists(function, edge.to)
+137:         {
+138:             return Err(replay_error(
+139:                 function,
+140:                 "cleanup edge has a non-contiguous ID or unknown endpoint",
+141:             ));
+142:         }
+143:         validate_edge_condition(function, &edge.condition, expressions, statuses, budget)?;
+144:     }
+145: 
+146:     let mut referenced_edges =
+147:         Directory::new(function, budget, "cleanup referenced edge directory")?;
+148:     let mut referenced_exits =
+149:         Directory::new(function, budget, "cleanup referenced exit directory")?;
+150:     let mut committed_calls = Directory::new(function, budget, "cleanup committed call directory")?;
+151:     for (index, block) in plan.blocks.iter().enumerate() {
+152:         if block.id.0 != u32_index(function, index, "cleanup block")?
+153:             || usize::try_from(block.region.0)
+154:                 .ok()
+155:                 .is_none_or(|region| region >= plan.regions.len())
+156:         {
+157:             return Err(replay_error(
+158:                 function,
+159:                 "cleanup block has a non-contiguous ID or unknown region",
+160:             ));
+161:         }
+162:         let mut selected = None;
+163:         for transition in &block.transitions {
+164:             match transition {
+165:                 CleanupTransition::Initialize { at, destination } => {
+166:                     require_expression(function, expressions, at, budget)?;
+167:                     validate_place(function, destination, storage, leaves)?;
+168:                 }
+169:                 CleanupTransition::ReserveRenewal { at, binding } => {
+170:                     renewal::validate_binding(program, function, at, binding, helpers, budget)?;
+171:                     require_expression(function, expressions, at, budget)?;
+172:                     validate_place(function, binding, storage, leaves)?;
+173:                 }
+174:                 CleanupTransition::Renew {
+175:                     at,
+176:                     source,
+177:                     destination,
+178:                 } => {
+179:                     renewal::validate_binding(program, function, at, destination, helpers, budget)?;
+180:                     require_expression(function, expressions, at, budget)?;
+181:                     validate_place(function, source, storage, leaves)?;
+182:                     validate_place(function, destination, storage, leaves)?;
+183:                 }
+184:                 CleanupTransition::Transfer {
+185:                     at,
+186:                     source,
+187:                     destination,
+188:                 } => {
+189:                     require_expression(function, expressions, at, budget)?;
+190:                     let source_flags = validate_place(function, source, storage, leaves)?;
+191:                     let destination_flags = validate_place(function, destination, storage, leaves)?;
+192:                     let mut source_directory =
+193:                         Directory::new(function, budget, "cleanup transfer source flag directory")?;
+194:                     for flag in source_flags {
+195:                         source_directory.insert(function, flag, budget)?;
+196:                     }
+197:                     let mut destination_directory = Directory::new(
+198:                         function,
+199:                         budget,
+200:                         "cleanup transfer destination flag directory",
+201:                     )?;
+202:                     for flag in destination_flags {
+203:                         destination_directory.insert(function, flag, budget)?;
+204:                     }
+205:                     let source_flags = source_directory;
+206:                     let destination_flags = destination_directory;
+207:                     if source_flags.len() != destination_flags.len()
+208:                         || !source_flags.is_disjoint(&destination_flags, function, budget)?
+209:                     {
+210:                         return Err(replay_error(
+211:                             function,
+212:                             "cleanup transfer has incompatible structural places",
+213:                         ));
+214:                     }
+215:                 }
+216:                 CleanupTransition::AuthenticateVariantCase {
+217:                     at,
+218:                     source,
+219:                     variant,
+220:                     case,
+221:                 } => {
+222:                     require_expression(function, expressions, at, budget)?;
+223:                     validate_place(function, source, storage, leaves)?;
+224:                     let Some(cases) = program.declarations().variant_cases(variant) else {
+225:                         return Err(replay_error(
+226:                             function,
+227:                             "variant authentication references a non-variant declaration",
+228:                         ));
+229:                     };
+230:                     if !cases.iter().any(|candidate| candidate.id == *case) {
+231:                         return Err(replay_error(
+232:                             function,
+233:                             "variant authentication references a foreign case",
+234:                         ));
+235:                     }
+236:                     let slot = function
+237:                         .cleanup_plan
+238:                         .slots
+239:                         .iter()
+240:                         .find(|slot| slot.storage == source.storage)
+241:                         .ok_or_else(|| {
+242:                             replay_error(function, "variant authentication source has no slot")
+243:                         })?;
+244:                     if !matches!(
+245:                         &slot.ty,
+246:                         ResolvedType::Nominal { declaration, .. } if declaration == variant
+247:                     ) {
+248:                         return Err(replay_error(
+249:                             function,
+250:                             "variant authentication source type disagrees with its variant",
+251:                         ));
+252:                     }
+253:                 }
+254:                 CleanupTransition::TransferVariant {
+255:                     at,
+256:                     source,
+257:                     destination,
+258:                     variant,
+259:                 } => {
+260:                     require_expression(function, expressions, at, budget)?;
+261:                     let source_flags = validate_place(function, source, storage, leaves)?;
+262:                     let destination_flags = validate_place(function, destination, storage, leaves)?;
+263:                     if source_flags.len() != destination_flags.len()
+264:                         || function
+265:                             .cleanup_plan
+266:                             .slots
+267:                             .iter()
+268:                             .filter(|slot| {
+269:                                 slot.storage == source.storage
+270:                                     || slot.storage == destination.storage
+271:                             })
+272:                             .any(|slot| {
+273:                                 !matches!(
+274:                                     &slot.ty,
+275:                                     ResolvedType::Nominal { declaration, .. }
+276:                                         if declaration == variant
+277:                                 )
+278:                             })
+279:                     {
+280:                         return Err(replay_error(
+281:                             function,
+282:                             "variant transfer has incompatible conditional inventories",
+283:                         ));
+284:                     }
+285:                 }
+286:                 CleanupTransition::InitializeVariant {
+287:                     at,
+288:                     destination,
+289:                     variant,
+290:                 } => {
+291:                     require_expression(function, expressions, at, budget)?;
+292:                     validate_place(function, destination, storage, leaves)?;
+293:                     let slot = function
+294:                         .cleanup_plan
+295:                         .slots
+296:                         .iter()
+297:                         .find(|slot| slot.storage == destination.storage)
+298:                         .ok_or_else(|| {
+299:                             replay_error(function, "variant initialization has no destination slot")
+300:                         })?;
+301:                     if !destination.projections.is_empty()
+302:                         || !matches!(
+303:                             &slot.ty,
+304:                             ResolvedType::Nominal { declaration, .. }
+305:                                 if declaration == variant
+306:                         )
+307:                         || !matches!(
+308:                             &slot.field_liveness_shape,
+309:                             FieldLivenessShape::Variant { declaration, .. }
+310:                                 if declaration == variant
+311:                         )
+312:                     {
+313:                         return Err(replay_error(
+314:                             function,
+315:                             "variant initialization destination disagrees with its variant",
+316:                         ));
+317:                     }
+318:                 }
+319:                 CleanupTransition::CallCommit { call, arguments } => {
+320:                     let Some(Some(fact)) = expressions.fact(function, call, budget)? else {
+321:                         return Err(replay_error(
+322:                             function,
+323:                             "call commit does not name a call expression",
+324:                         ));
+325:                     };
+326:                     // Lexical return domains duplicate postcondition bodies, so one
+327:                     // call legitimately commits once per proof domain; the typed
+328:                     // skeleton comparison counts those per-domain commits exactly.
+329:                     if !committed_calls.insert(function, call, budget)?
+330:                         && plan.lexical_control.is_none()
+331:                     {
+332:                         return Err(replay_error(
+333:                             function,
+334:                             "call has more than one atomic commit",
+335:                         ));
+336:                     }
+337:                     let params = resolved_call::resolved_call_param_view(
+338:                         program,
+339:                         function,
+340:                         find_resolved_expression(function, call).ok_or_else(|| {
+341:                             replay_error(function, "call commit expression is absent")
+342:                         })?,
+343:                         &fact.callee,
+344:                         fact.instance,
+345:                         fact.type_arguments.as_slice(),
+346:                     )
+347:                     .map_err(|_| {
+348:                         replay_error(
+349:                             function,
+350:                             format_args!("call commit has unknown callee `{}`", fact.callee),
+351:                         )
+352:                     })?;
+353:                     if params.len() != fact.arguments.len() {
+354:                         return Err(replay_error(
+355:                             function,
+356:                             "call commit callee signature has inconsistent arity",
+357:                         ));
+358:                     }
+359:                     if !resolved_call::owned_parameter_indices_match(
+360:                         &params,
+361:                         arguments,
+362:                         function,
+363:                         |ty| type_needs_drop(program, function, ty),
+364:                     )? {
+365:                         return Err(replay_error(
+366:                             function,
+367:                             "call commit does not contain every and only owned droppable parameter",
+368:                         ));
+369:                     }
+370:                     let mut previous = None;
+371:                     let mut consumed =
+372:                         Directory::new(function, budget, "cleanup consumed flag directory")?;
+373:                     for argument in arguments {
+374:                         if previous.is_some_and(|value| value >= argument.parameter_index) {
+375:                             return Err(replay_error(
+376:                                 function,
+377:                                 "call-commit parameters are not in strict signature order",
+378:                             ));
+379:                         }
+380:                         previous = Some(argument.parameter_index);
+381:                         let index = usize::try_from(argument.parameter_index).map_err(|_| {
+382:                             replay_error(function, "call-commit parameter index does not fit usize")
+383:                         })?;
+384:                         let Some(expected_expression) = fact.arguments.get(index) else {
+385:                             return Err(replay_error(
+386:                                 function,
+387:                                 "call-commit parameter index exceeds call arity",
+388:                             ));
+389:                         };
+390:                         match &argument.source.storage {
+391:                             StorageId::CallArgument {
+392:                                 call: storage_call,
+393:                                 parameter_index,
+394:                                 value_expression,
+395:                             } if storage_call == call
+396:                                 && parameter_index == &argument.parameter_index
+397:                                 && value_expression == expected_expression
+398:                                 && argument.source.projections.is_empty() => {}
+399:                             _ => {
+400:                                 return Err(replay_error(
+401:                                     function,
+402:                                     "call commit does not consume its matching whole argument epoch",
+403:                                 ));
+404:                             }
+405:                         }
+406:                         for flag in validate_place(function, &argument.source, storage, leaves)? {
+407:                             if !consumed.insert(function, flag, budget)? {
+408:                                 return Err(replay_error(
+409:                                     function,
+410:                                     "atomic call commit consumes overlapping argument epochs",
+411:                                 ));
+412:                             }
+413:                         }
+414:                     }
+415:                 }
+416:                 CleanupTransition::SelectFailure { source } => {
+417:                     require_status_paid(function, statuses, source, budget)?;
+418:                     if selected.replace(source).is_some() {
+419:                         return Err(replay_error(
+420:                             function,
+421:                             "cleanup block selects more than one failure status",
+422:                         ));
+423:                     }
+424:                 }
+425:                 CleanupTransition::StageCopyResult { source } => {
+426:                     validate_staged_target(function, source)?;
+427:                     match source {
+428:                         StagedCopyResultSource::Body { expression, .. } => {
+429:                             if expression != &function.body.id {
+430:                                 return Err(replay_error(
+431:                                     function,
+432:                                     "body Copy-result stage names another expression",
+433:                                 ));
+434:                             }
+435:                         }
+436:                         StagedCopyResultSource::TryResidual {
+437:                             expression,
+438:                             operand,
+439:                             ..
+440:                         }
+441:                         | StagedCopyResultSource::TryOptionNone {
+442:                             expression,
+443:                             operand,
+444:                             ..
+445:                         } => {
+446:                             require_expression(function, expressions, expression, budget)?;
+447:                             require_expression(function, expressions, operand, budget)?;
+448:                         }
+449:                     }
+450:                 }
+451:             }
+452:         }
+453:         match &block.terminator {
+454:             CleanupTerminator::Goto(edge) => {
+455:                 validate_owned_edge_paid(function, block.id, *edge, &mut referenced_edges, budget)?;
+456:                 if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always)
+457:                     && !(matches!(
+458:                         function.cleanup_plan.schema,
+459:                         CLEANUP_PLAN_SCHEMA_V6
+460:                             | CLEANUP_PLAN_SCHEMA_V7
+461:                             | CLEANUP_PLAN_SCHEMA_V8
+462:                             | CLEANUP_PLAN_SCHEMA_V9
+463:                             | CLEANUP_PLAN_SCHEMA_V10
+464:                             | CLEANUP_PLAN_SCHEMA_V11
+465:                             | CLEANUP_PLAN_SCHEMA_V12
+466:                             | CLEANUP_PLAN_SCHEMA_V13
+467:                             | CLEANUP_PLAN_SCHEMA_V15
+468:                             | CLEANUP_PLAN_SCHEMA_V16
+469:                             | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17
+470:                             | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+471:                             | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
+472:                             | CLEANUP_PLAN_SCHEMA_V14
+473:                     ) && matches!(
+474:                         plan.edges[edge.0 as usize].condition,
+475:                         EdgeCondition::VariantCase { matches: true, .. }
+476:                     ))
+477:                 {
+478:                     return Err(replay_error(function, "goto edge is conditional"));
+479:                 }
+480:             }
+481:             CleanupTerminator::Branch(edges) => {
+482:                 if edges.len() != 2 || edges[0] == edges[1] {
+483:                     return Err(replay_error(
+484:                         function,
+485:                         "cleanup branch must own exactly two distinct edges",
+486:                     ));
+487:                 }
+488:                 for edge in edges {
+489:                     validate_owned_edge_paid(
+490:                         function,
+491:                         block.id,
+492:                         *edge,
+493:                         &mut referenced_edges,
+494:                         budget,
+495:                     )?;
+496:                 }
+497:                 validate_branch_pair(
+498:                     function,
+499:                     &plan.edges[edges[0].0 as usize].condition,
+500:                     &plan.edges[edges[1].0 as usize].condition,
+501:                 )?;
+502:             }
+503:             CleanupTerminator::Exit(exit) => {
+504:                 if usize::try_from(exit.0)
+505:                     .ok()
+506:                     .is_none_or(|value| value >= plan.exits.len())
+507:                     || !referenced_exits.insert(function, *exit, budget)?
+508:                 {
+509:                     return Err(replay_error(
+510:                         function,
+511:                         "cleanup block references an unknown or repeated exit",
+512:                     ));
+513:                 }
+514:                 if plan.exits[exit.0 as usize].from != block.id {
+515:                     return Err(replay_error(
+516:                         function,
+517:                         "cleanup exit is owned by the wrong block",
+518:                     ));
+519:                 }
+520:             }
+521:         }
+522:     }
+523:     let mut expected_calls = Directory::new(function, budget, "cleanup expected call directory")?;
+524:     for (expression, fact) in expressions.entries_paid(function, budget)? {
+525:         if fact.is_some() {
+526:             expected_calls.insert(function, expression, budget)?;
+527:         }
+528:     }
+529:     // Control-flow-dead calls after an abrupt exit are never lowered, so the
+530:     // lexical profile checks commit coverage in the typed skeleton instead.
+531:     if plan.lexical_control.is_none()
+532:         && !committed_calls.same_keys(&expected_calls, function, budget)?
+533:     {
+534:         return Err(replay_error(
+535:             function,
+536:             "cleanup plan does not contain exactly one atomic commit for every call",
+537:         ));
+538:     }
+539:     Ok(())
+540: }
+541: 
+542: #[cfg(test)]
+543: mod tests;
+544: 
+545: #[cfg(test)]
+546: pub(in crate::cleanup_plan::replay) fn before_status_retention(path: &str, source: &str) -> String {
+547:     let records: serde_json::Value = serde_json::from_str(include_str!(concat!(
+548:         env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json"
+549:     ))).unwrap();
+550:     let record = records.as_array().unwrap().iter().find(|entry| entry["source"] == path).unwrap();
+551:     let mut restored = source.to_owned();
+552:     for edit in record["edits"].as_array().unwrap().iter().rev() {
+553:         let after = edit["after"].as_str().unwrap();
+554:         assert_eq!(restored.matches(after).count(), 1, "{}", edit["name"]);
+555:         restored = restored.replacen(after, edit["before"].as_str().unwrap(), 1);
+556:     }
+557:     restored
+558: }
+
+===== src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs:1-141 sha256 0d545a36d25de4005e073c64db69016bdaf39b024beade10ccd97173bfa53499 =====
+1: use super::*;
+2: use crate::bounded_output::with_limit_usage_refusal;
+3: use crate::test_allocation_observer::measure;
+4: 
+5: fn program() -> ResolvedProgram {
+6:     let source = include_str!("../../../expression_facts.rs")
+7:         .split_once("r#\"module replay.fact_owner;").unwrap().1
+8:         .split_once("\"#,").unwrap().0;
+9:     let source = format!("module replay.fact_owner;{source}");
+10:     crate::hir::resolve(&crate::check(&source, "retained-status.spx").unwrap()).unwrap()
+11: }
+12: 
+13: // Inputs/facts are outside this phase observer. Both full receivers, their paid
+14: // directories, result diagnostics, budget and every retained allocation drop inside.
+15: fn run(program: &ResolvedProgram, function: &ResolvedFunction, retained: bool)
+16:     -> (Result<(), Diagnostic>, usize)
+17: {
+18:     let mut preparation = ReplayBudget::unobserved();
+19:     let facts = Facts::Arena(super::super::super::arena::build::<errors::Legacy>(
+20:         function, capacity::Payer::Selected(
+21:             &mut physical_storage::PhysicalReservation::new(usize::MAX)),
+22:         &mut preparation,
+23:     ).unwrap());
+24:     let storage = validate_slots(function).unwrap();
+25:     let leaves = collect_leaves(function).unwrap();
+26:     let mut reference_budget = ReplayBudget::unobserved();
+27:     let expected = super::super::validate_status_sources(function, &facts, &mut reference_budget)
+28:         .and_then(|()| super::super::validate_blocks_and_edges(program, function, &facts,
+29:             &storage, &leaves, None, &mut reference_budget));
+30:     let ((output, allocation), refused, _, _) = with_limit_usage_refusal(1 << 26, || measure(|| {
+31:         let mut budget = ReplayBudget::new();
+32:         let result = if retained {
+33:             validate_status_sources_retained(function, &facts, &mut budget).and_then(|statuses| {
+34:                 validate_blocks_and_edges_retained(program, function, &facts, &storage,
+35:                     &leaves, None, &mut budget, &statuses)
+36:             })
+37:         } else {
+38:             super::super::validate_status_sources(function, &facts, &mut budget).and_then(|()| {
+39:                 super::super::validate_blocks_and_edges(program, function, &facts, &storage,
+40:                     &leaves, None, &mut budget)
+41:             })
+42:         };
+43:         let work = MAX_REPLAY_WORK_UNITS - budget.remaining;
+44:         assert_eq!(result, expected);
+45:         drop(result);
+46:         drop(budget);
+47:         work
+48:     }));
+49:     assert!(!refused);
+50:     assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated == allocation.freed);
+51:     (expected, output)
+52: }
+53: 
+54: #[test]
+55: fn retained_statuses_preserve_complete_receivers_six_fields_first_error_and_drop() {
+56:     let program = program();
+57:     let mut saved = false;
+58:     for function in &program.functions {
+59:         let old = run(&program, function, false);
+60:         let new = run(&program, function, true);
+61:         assert_eq!(old.0, new.0);
+62:         if !function.cleanup_plan.status_sources.is_empty() && old.0.is_ok() {
+63:             assert!(new.1 < old.1);
+64:             saved = true;
+65:         }
+66:         let mut attacks = Vec::new();
+67:         if let Some(source) = function.cleanup_plan.status_sources.first() {
+68:             let mut duplicate = function.clone();
+69:             duplicate.cleanup_plan.status_sources.push(source.clone());
+70:             let mut later = source.clone();
+71:             later.id.expression = ExpressionId::from_owned("foreign.later.status".into());
+72:             duplicate.cleanup_plan.status_sources.push(later);
+73:             attacks.push(duplicate);
+74:             let mut unknown = function.clone();
+75:             unknown.cleanup_plan.status_sources[0].id.expression =
+76:                 ExpressionId::from_owned("foreign.first.status".into());
+77:             attacks.push(unknown);
+78:         }
+79:         if !function.cleanup_plan.edges.is_empty() {
+80:             let mut edge = function.clone();
+81:             edge.cleanup_plan.edges[0].id = EdgeId(u32::MAX);
+82:             attacks.push(edge);
+83:         }
+84:         for hostile in attacks {
+85:             let old = run(&program, &hostile, false);
+86:             let new = run(&program, &hostile, true);
+87:             assert!(old.0.is_err());
+88:             assert_eq!(old.0, new.0);
+89:         }
+90:     }
+91:     assert!(saved);
+92: }
+93: 
+94: #[test]
+95: fn retained_statuses_reject_foreign_function_budget_and_sticky_work_refusal() {
+96:     let program = program();
+97:     let function = &program.functions[0];
+98:     let foreign = function.clone();
+99:     let storage = validate_slots(function).unwrap();
+100:     let leaves = collect_leaves(function).unwrap();
+101:     let mut preparation = ReplayBudget::unobserved();
+102:     let facts = Facts::Arena(super::super::super::arena::build::<errors::Legacy>(
+103:         function, capacity::Payer::Selected(
+104:             &mut physical_storage::PhysicalReservation::new(usize::MAX)),
+105:         &mut preparation,
+106:     ).unwrap());
+107:     let mut budget = ReplayBudget::unobserved();
+108:     let statuses = validate_status_sources_retained(function, &facts, &mut budget).unwrap();
+109:     let mut other = ReplayBudget::unobserved();
+110:     for (subject, payer) in [(&foreign, &mut budget), (function, &mut other)] {
+111:         let actual = validate_blocks_and_edges_retained(&program, subject, &facts,
+112:             &storage, &leaves, None, payer, &statuses);
+113:         assert_eq!(actual, Err(replay_error(subject,
+114:             "status directory belongs to another function or budget")));
+115:     }
+116:     budget.remaining = 0;
+117:     let first = budget.charge(function, 1, "retained status refusal control").unwrap_err();
+118:     assert!(first.message.contains("work budget exhausted"));
+119:     let result = validate_blocks_and_edges_retained(&program, function, &facts,
+120:         &storage, &leaves, None, &mut budget, &statuses);
+121:     assert!(result.is_err());
+122:     assert_eq!(budget.remaining, 0);
+123: }
+124: 
+125: #[test]
+126: fn complete_pre_retention_sources_and_all_inverse_hooks_remain_exact() {
+127:     use sha2::{Digest, Sha256};
+128:     let records: serde_json::Value = serde_json::from_str(include_str!(concat!(
+129:         env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json"
+130:     ))).unwrap();
+131:     for record in records.as_array().unwrap() {
+132:         let path = record["source"].as_str().unwrap();
+133:         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+134:         let current = std::fs::read_to_string(root.join(path)).unwrap();
+135:         let archive = std::fs::read_to_string(root.join("docs/evidence/cleanup-status-directory-retention")
+136:             .join(record["archive"].as_str().unwrap())).unwrap();
+137:         assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(archive.as_bytes()))),
+138:             record["sha256"].as_str().unwrap());
+139:         assert_eq!(before_status_retention(path, &current), archive);
+140:     }
+141: }
+
+===== src/cleanup_plan/replay/expression_facts/receiving.rs:16-160 sha256 2e8e01a0d509c00cc39953fa8358d7533c862ea1367c9eba6fe7fcb8c0179762 =====
+16: pub(in crate::cleanup_plan::replay) fn validate_status_sources(
+17:     function: &ResolvedFunction,
+18:     facts: &Facts<'_>,
+19:     budget: &mut ReplayBudget,
+20: ) -> Result<(), Diagnostic> {
+21:     if let Facts::Tree(tree) = facts {
+22:         return super::super::validate_status_sources(function, tree);
+23:     }
+24:     validate_status_sources_core::<Diagnostic>(function, facts, budget)
+25: }
+26: 
+27: pub(in crate::cleanup_plan::replay) fn validate_status_sources_core<E: semantic_refusal::Error>(
+28:     function: &ResolvedFunction,
+29:     facts: &Facts<'_>,
+30:     budget: &mut ReplayBudget,
+31: ) -> Result<(), E> {
+32:     if let Facts::Tree(tree) = facts {
+33:         return super::super::validate_status_sources_core::<E>(function, tree);
+34:     }
+35:     let expressions: &dyn Lookup = facts;
+36:     let mut ids = Directory::new(function, budget, "cleanup status identity directory")?;
+37:     for source in &function.cleanup_plan.status_sources {
+38:         if !ids.insert(function, &source.id, budget)? {
+39:             return Err(E::structural(
+40:                 function,
+41:                 semantic_refusal::Atom::RepeatedStatus(source.id.expression.clone()),
+42:             ));
+43:         }
+44:         if expressions
+45:             .fact(function, &source.id.expression, budget)?
+46:             .is_none()
+47:         {
+48:             return Err(E::structural(
+49:                 function,
+50:                 semantic_refusal::Atom::UnknownStatus(source.id.expression.clone()),
+51:             ));
+52:         }
+53:         match (&source.id.lane, &source.producer) {
+54:             (
+55:                 StatusLane::OperationFailure | StatusLane::OwnerAdmission,
+56:                 StatusProducer::PropagatedCall { callee },
+57:             ) => {
+58:                 let Some(Some(call)) = expressions.fact(function, &source.id.expression, budget)?
+59:                 else {
+60:                     return Err(replay_error(
+61:                         function,
+62:                         "propagated-call status source does not name a call expression",
+63:                     )
+64:                     .into());
+65:                 };
+66:                 if call.callee.as_ref() != callee {
+67:                     return Err(replay_error(
+68:                         function,
+69:                         "propagated-call status source names the wrong callee",
+70:                     )
+71:                     .into());
+72:                 }
+73:             }
+74:             (
+75:                 StatusLane::OperationFailure,
+76:                 StatusProducer::CheckedArithmetic {
+77:                     normalized_cases, ..
+78:                 },
+79:             ) => {
+80:                 let mut cases = Directory::new(
+81:                     function,
+82:                     budget,
+83:                     "cleanup checked arithmetic case directory",
+84:                 )?;
+85:                 for case in normalized_cases {
+86:                     cases.insert(function, *case, budget)?;
+87:                 }
+88:                 if cases.is_empty() || cases.len() != normalized_cases.len() {
+89:                     return Err(replay_error(
+90:                         function,
+91:                         "checked-arithmetic status cases are empty or repeated",
+92:                     )
+93:                     .into());
+94:                 }
+95:             }
+96:             (
+97:                 StatusLane::AllocationFailure,
+98:                 StatusProducer::CheckedAllocation {
+99:                     normalized_cases, ..
+100:                 },
+101:             ) if function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20
+102:                 && *normalized_cases
+103:                     == [
+104:                         crate::cleanup_plan::AllocationCase::PayloadRefused,
+105:                         crate::cleanup_plan::AllocationCase::SizeOverflow,
+106:                     ] => {}
+107:             (StatusLane::ContractFalse, StatusProducer::ContractFalse { .. }) => {}
+108:             _ => {
+109:                 return Err(replay_error(
+110:                     function,
+111:                     "status source lane does not match its producer",
+112:                 )
+113:                 .into());
+114:             }
+115:         }
+116:     }
+117:     Ok(())
+118: }
+119: 
+120: pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
+121:     program: &dyn crate::cleanup::ReplayContext,
+122:     function: &ResolvedFunction,
+123:     facts: &Facts<'_>,
+124:     storage: &BTreeSet<StorageId>,
+125:     leaves: &Leaves,
+126:     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+127:     budget: &mut ReplayBudget,
+128: ) -> Result<(), Diagnostic> {
+129:     if let Facts::Tree(tree) = facts {
+130:         return super::super::validate_blocks_and_edges(
+131:             program, function, tree, storage, leaves, helpers, budget,
+132:         );
+133:     }
+134:     let expressions: &dyn Lookup = facts;
+135:     let plan = &function.cleanup_plan;
+136:     let mut statuses = Directory::new(function, budget, "cleanup status source directory")?;
+137:     for source in &plan.status_sources {
+138:         statuses.insert(function, &source.id, budget)?;
+139:     }
+140:     for (index, edge) in plan.edges.iter().enumerate() {
+141:         if edge.id.0 != u32_index(function, index, "cleanup edge")?
+142:             || !block_exists(function, edge.from)
+143:             || !block_exists(function, edge.to)
+144:         {
+145:             return Err(replay_error(
+146:                 function,
+147:                 "cleanup edge has a non-contiguous ID or unknown endpoint",
+148:             ));
+149:         }
+150:         validate_edge_condition(function, &edge.condition, expressions, &statuses, budget)?;
+151:     }
+152: 
+153:     let mut referenced_edges =
+154:         Directory::new(function, budget, "cleanup referenced edge directory")?;
+155:     let mut referenced_exits =
+156:         Directory::new(function, budget, "cleanup referenced exit directory")?;
+157:     let mut committed_calls = Directory::new(function, budget, "cleanup committed call directory")?;
+158:     for (index, block) in plan.blocks.iter().enumerate() {
+159:         if block.id.0 != u32_index(function, index, "cleanup block")?
+160:             || usize::try_from(block.region.0)
+
+===== src/cleanup_plan/replay.rs:170-225 sha256 2a4db37f10435075809a43d112073b686710d55f4f5f43e0f553686a63504796 =====
+170: const MAX_REPLAY_PATHS: usize = 65_536;
+171: const MAX_REPLAY_WORK_UNITS: usize = 32_000_000;
+172: 
+173: mod allocation;
+174: use allocation::{AdmissionMode, AllocationPayer};
+175: 
+176: struct ReplayBudget {
+177:     admission: AdmissionMode,
+178:     payer: AllocationPayer,
+179:     remaining: usize,
+180:     skeleton_remaining: usize,
+181:     /// Actual successful skeleton debits, including deferred lexical walks.
+182:     skeleton_spent: usize,
+183:     /// Ordinary constructors share the temporarily lent skeleton allowance.
+184:     lent_skeleton: bool,
+185:     /// Factored replay: merge equal-state skeleton paths (`skeleton_work`).
+186:     merge_paths: bool,
+187:     /// Present only for the selected retained lexical replay entry.
+188:     physical: Option<Box<physical_storage::PhysicalReservation>>,
+189:     /// Prepaid selected-budget refusal text; consumed without a fresh allocation.
+190:     refusal_text: Option<String>,
+191:     refusal_spent: bool,
+192:     /// One reusable fixed clone census cursor on the ordinary builder path.
+193:     builder_clone_cursor_paid: bool,
+194: }
+195: 
+196: impl ReplayBudget {
+197:     fn charge(
+198:         &mut self,
+199:         function: &ResolvedFunction,
+200:         units: usize,
+201:         phase: &str,
+202:     ) -> Result<(), Diagnostic> {
+203:         self.prepare_builder(function)?;
+204:         if self.refusal_spent {
+205:             return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+206:         }
+207:         if self.lent_skeleton {
+208:             return self.charge_skeleton(function, units, phase);
+209:         }
+210:         self.charge_oracle_work(function, units, phase)?;
+211:         self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
+212:             self.budget_refusal(
+213:                 function,
+214:                 "cleanup replay work budget exhausted during ",
+215:                 phase,
+216:             )
+217:         })?;
+218:         Ok(())
+219:     }
+220: 
+221:     fn reserve_skeleton(
+222:         &mut self,
+223:         function: &ResolvedFunction,
+224:         units: usize,
+225:     ) -> Result<(), Diagnostic> {
+
+===== src/cleanup_plan/replay.rs:612-650 sha256 2a4db37f10435075809a43d112073b686710d55f4f5f43e0f553686a63504796 =====
+612:         plan_structure_units(plan),
+613:         "structural validation",
+614:     )?;
+615: 
+616:     let expression_facts = expression_facts::with_budget(function, budget)?;
+617:     ordinary_inventory::validate_inventory_coverage(program, function, budget)?;
+618:     validate_required_status_sources(program, function)?;
+619:     let storage = validate_slots_paid(function, budget)?;
+620:     let leaves = collect_leaves_paid(function, budget)?;
+621:     let statuses = expression_facts::receiving::validate_status_sources_retained(
+622:         function, &expression_facts, budget,
+623:     )?;
+624:     expression_facts::receiving::validate_regions(function, &storage, budget)?;
+625:     expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;
+626:     expression_facts::receiving::validate_blocks_and_edges_retained(
+627:         program,
+628:         function,
+629:         &expression_facts,
+630:         &storage,
+631:         &leaves,
+632:         helpers,
+633:         budget,
+634:         &statuses,
+635:     )?;
+636:     expression_facts::receiving::validate_exits(
+637:         program,
+638:         function,
+639:         &storage,
+640:         &leaves,
+641:         &BTreeSet::new(),
+642:         budget,
+643:     )?;
+644:     structural_maps::validate_reference_coverage(function, budget)?;
+645:     structural_control::validate_ordinary_cfg(function, budget)?;
+646:     if !cleanup_inert_path_product_can_be_summarized(function)?
+647:         && !status_only_paths_can_be_summarized(function)
+648:         && !cleanup_inert_large_decisions_can_be_summarized(function)
+649:     {
+650:         validate_path_states::<Diagnostic>(
+
+===== src/cleanup_plan/replay/allocation.rs:75-103 sha256 acc9eb5a1f7698d9c58c86357541b4ffe79270debc834fbf935ebb814271b7ad =====
+75: }
+76: impl ReplayBudget {
+77:     #[cfg(test)]
+78:     pub(super) fn unobserved() -> Self {
+79:         Self {
+80:             payer: AllocationPayer::LegacyUnobserved,
+81:             ..Self::new()
+82:         }
+83:     }
+84: 
+85:     pub(super) fn new() -> Self {
+86:         Self {
+87:             admission: AdmissionMode::Ordinary,
+88:             payer: if crate::bounded_output::active_limit().is_some() {
+89:                 AllocationPayer::ActiveBuilder
+90:             } else {
+91:                 AllocationPayer::LegacyUnobserved
+92:             },
+93:             remaining: MAX_REPLAY_WORK_UNITS,
+94:             skeleton_remaining: 0,
+95:             skeleton_spent: 0,
+96:             lent_skeleton: false,
+97:             merge_paths: false,
+98:             physical: None,
+99:             refusal_text: None,
+100:             refusal_spent: false,
+101:             builder_clone_cursor_paid: false,
+102:         }
+103:     }
+
+===== src/cleanup_plan/replay/allocation.rs:130-175 sha256 acc9eb5a1f7698d9c58c86357541b4ffe79270debc834fbf935ebb814271b7ad =====
+130:             payer: AllocationPayer::Oracle(lease),
+131:             ..Self::with_skeleton_limit(limit)
+132:         }
+133:     }
+134: 
+135:     /// Cumulative oracle work debit, charged before the original per-receiver
+136:     /// ceiling is applied; that ceiling and its refusal text are unchanged. A
+137:     /// refused or sticky account is a refusal here, never a skipped debit.
+138:     pub(super) fn charge_oracle_work(
+139:         &mut self,
+140:         function: &ResolvedFunction,
+141:         units: usize,
+142:         phase: &str,
+143:     ) -> Result<(), Diagnostic> {
+144:         #[cfg(test)]
+145:         if let AllocationPayer::Oracle(lease) = self.payer {
+146:             if lease.charge_work(units).is_err() {
+147:                 return Err(self.budget_refusal(
+148:                     function,
+149:                     "oracle account work allowance refused during ",
+150:                     phase,
+151:                 ));
+152:             }
+153:         }
+154:         let _ = (function, units, phase);
+155:         Ok(())
+156:     }
+157: 
+158:     /// The explicitly opted account, if this budget pays it.
+159:     #[cfg(test)]
+160:     pub(super) fn oracle_lease(&self) -> Option<OracleLease> {
+161:         match self.payer {
+162:             AllocationPayer::Oracle(lease) => Some(lease),
+163:             _ => None,
+164:         }
+165:     }
+166: 
+167:     pub(super) fn selected(&self) -> bool {
+168:         self.admission == AdmissionMode::SelectedRetained
+169:     }
+170:     pub(super) fn pays_allocations(&self) -> bool {
+171:         self.payer != AllocationPayer::LegacyUnobserved
+172:     }
+173:     /// Payers whose refusal text and clone cursor are prepaid on a builder-like
+174:     /// ledger: the production ACTIVE builder, or the leased oracle account.
+175:     pub(super) fn pays_builder(&self) -> bool {
+
+===== src/cleanup_plan/replay/allocation.rs:210-270 sha256 acc9eb5a1f7698d9c58c86357541b4ffe79270debc834fbf935ebb814271b7ad =====
+210:             )?;
+211:             self.builder_clone_cursor_paid = true;
+212:         }
+213:         Ok(())
+214:     }
+215: 
+216:     /// Reserve the first refusal's backing on the existing builder before any
+217:     /// replay allocation. Initial refusal is inline, never an unfunded string.
+218:     pub(super) fn prepare_builder(
+219:         &mut self,
+220:         function: &ResolvedFunction,
+221:     ) -> Result<(), Diagnostic> {
+222:         if !self.pays_builder() {
+223:             return Ok(());
+224:         }
+225:         if self.refusal_spent || self.builder_refused() {
+226:             return Err(self.budget_refusal(function, "ordinary builder already failed", ""));
+227:         }
+228:         let Some(capacity) = function.id.as_str().len().checked_add(512) else {
+229:             return Err(self.budget_refusal(
+230:                 function,
+231:                 "ordinary replay refusal layout overflowed",
+232:                 "",
+233:             ));
+234:         };
+235:         if self
+236:             .refusal_text
+237:             .as_ref()
+238:             .is_some_and(|text| text.capacity() >= capacity)
+239:         {
+240:             return Ok(());
+241:         }
+242:         // A later function may have a longer current ID. Charge its new
+243:         // complete backing while the earlier buffer is still held.
+244:         if !self.reserve_builder(capacity) {
+245:             return Err(self.budget_refusal(
+246:                 function,
+247:                 "ordinary replay refusal reservation exhausted",
+248:                 "",
+249:             ));
+250:         }
+251:         let text = String::with_capacity(capacity);
+252:         if text.capacity() != capacity {
+253:             return Err(self.budget_refusal(
+254:                 function,
+255:                 "ordinary replay refusal capacity differs",
+256:                 "",
+257:             ));
+258:         }
+259:         self.refusal_text = Some(text);
+260:         Ok(())
+261:     }
+262: }
+263: 
+264: #[cfg(test)]
+265: mod tests;
+
+===== src/cleanup_plan/replay/physical_budget.rs:25-125 sha256 d38a39372c110f102af2d4d7c0b503112aa219bdc1f8616bfe636aeb2d8a011e =====
+25:     }
+26: 
+27:     pub(super) fn reserve_bytes(
+28:         &mut self,
+29:         function: &ResolvedFunction,
+30:         bytes: usize,
+31:         phase: &str,
+32:     ) -> Result<(), Diagnostic> {
+33:         if bytes == 0 {
+34:             // A zero request constructs nothing, so it must not bootstrap the
+35:             // refusal String. It consults the same payer, sticky refusal,
+36:             // reserved floor and refusal_spent state that a positive request
+37:             // would, then authenticates only. Positive requests below keep
+38:             // their original bootstrap and charges byte-for-byte.
+39:             let admitted = match self.payer {
+40:                 AllocationPayer::LegacyUnobserved => true,
+41:                 AllocationPayer::ActiveBuilder => {
+42:                     if self.refusal_spent || crate::bounded_output::active_refused() {
+43:                         return Err(self.budget_refusal(
+44:                             function,
+45:                             "ordinary builder already failed",
+46:                             "",
+47:                         ));
+48:                     }
+49:                     crate::bounded_output::reserve_active_required(0)
+50:                 }
+51:                 #[cfg(test)]
+52:                 AllocationPayer::Oracle(lease) => {
+53:                     if self.refusal_spent || lease.refused() {
+54:                         return Err(self.budget_refusal(
+55:                             function,
+56:                             "ordinary builder already failed",
+57:                             "",
+58:                         ));
+59:                     }
+60:                     lease.charge(0).is_ok()
+61:                 }
+62:                 AllocationPayer::SelectedReservation => self
+63:                     .physical
+64:                     .as_deref_mut()
+65:                     .expect("selected reservation payer")
+66:                     .reserve(0)
+67:                     .is_ok(),
+68:             };
+69:             return if admitted {
+70:                 Ok(())
+71:             } else {
+72:                 Err(self.budget_refusal(
+73:                     function,
+74:                     "cleanup replay physical reservation exhausted during ",
+75:                     phase,
+76:                 ))
+77:             };
+78:         }
+79:         self.prepare_builder(function)?;
+80:         let accepted = match self.payer {
+81:             AllocationPayer::LegacyUnobserved => true,
+82:             AllocationPayer::ActiveBuilder => {
+83:                 !self.refusal_spent
+84:                     && !crate::bounded_output::active_refused()
+85:                     && crate::bounded_output::reserve_active_required(bytes)
+86:             }
+87:             #[cfg(test)]
+88:             AllocationPayer::Oracle(lease) => {
+89:                 !self.refusal_spent && !lease.refused() && lease.charge(bytes).is_ok()
+90:             }
+91:             AllocationPayer::SelectedReservation => self
+92:                 .physical
+93:                 .as_deref_mut()
+94:                 .expect("selected reservation payer")
+95:                 .reserve(bytes)
+96:                 .is_ok(),
+97:         };
+98:         if accepted {
+99:             Ok(())
+100:         } else {
+101:             Err(self.budget_refusal(
+102:                 function,
+103:                 "cleanup replay physical reservation exhausted during ",
+104:                 phase,
+105:             ))
+106:         }
+107:     }
+108: 
+109:     pub(super) fn reserve_clone<T: ClonePayload>(
+110:         &mut self,
+111:         function: &ResolvedFunction,
+112:         value: &T,
+113:         phase: &str,
+114:     ) -> Result<(), Diagnostic> {
+115:         if !self.pays_allocations() {
+116:             return Ok(());
+117:         }
+118:         self.prepare_clone_cursor(function)?;
+119:         #[cfg(test)]
+120:         let payload = match self.oracle_lease() {
+121:             Some(lease) => {
+122:                 value.clone_payload_bytes_with_work(&mut |units| lease.charge_work(units).is_ok())
+123:             }
+124:             None => value.clone_payload_bytes(),
+125:         };
+
+===== src/cleanup_plan/replay/expression_facts/receiving/directory.rs:95-180 sha256 a5d9e5fa66faf99fd0853a3322c04fcf8e3e3a48ebe26ed6d6c4fcc923623c14 =====
+95:     found: bool,
+96:     parent: usize,
+97:     before: usize,
+98:     after: usize,
+99:     side: Ordering,
+100: }
+101: 
+102: pub(super) struct Directory<K> {
+103:     nodes: Vec<Node<K>>,
+104:     root: usize,
+105:     first: usize,
+106:     phase: &'static str,
+107: }
+108: 
+109: struct Iter<'a, K> {
+110:     nodes: &'a [Node<K>],
+111:     next: usize,
+112: }
+113: 
+114: impl<'a, K> Iterator for Iter<'a, K> {
+115:     type Item = &'a K;
+116:     fn next(&mut self) -> Option<Self::Item> {
+117:         let node = self.nodes.get(self.next)?;
+118:         self.next = node.next;
+119:         Some(&node.key)
+120:     }
+121: }
+122: 
+123: fn overflow(
+124:     function: &ResolvedFunction,
+125:     budget: &mut ReplayBudget,
+126:     detail: &'static str,
+127: ) -> Diagnostic {
+128:     budget.budget_refusal(function, detail, "")
+129: }
+130: 
+131: impl<K: KeyWork> Directory<K> {
+132:     pub(super) fn new(
+133:         function: &ResolvedFunction,
+134:         budget: &mut ReplayBudget,
+135:         phase: &'static str,
+136:     ) -> Result<Self, Diagnostic> {
+137:         budget.reserve_bytes(function, 0, phase)?;
+138:         budget.charge(function, 0, phase)?;
+139:         Ok(Self {
+140:             nodes: Vec::new(),
+141:             root: NIL,
+142:             first: NIL,
+143:             phase,
+144:         })
+145:     }
+146: 
+147:     pub(super) fn is_empty(&self) -> bool {
+148:         self.nodes.is_empty()
+149:     }
+150: 
+151:     pub(super) fn len(&self) -> usize {
+152:         self.nodes.len()
+153:     }
+154: 
+155:     fn authenticate(
+156:         &self,
+157:         function: &ResolvedFunction,
+158:         budget: &mut ReplayBudget,
+159:     ) -> Result<(), Diagnostic> {
+160:         budget.reserve_bytes(function, 0, self.phase)?;
+161:         budget.charge(function, 0, self.phase)
+162:     }
+163: 
+164:     fn next_paid<'a>(
+165:         &self,
+166:         iter: &mut Iter<'a, K>,
+167:         function: &ResolvedFunction,
+168:         budget: &mut ReplayBudget,
+169:     ) -> Result<Option<&'a K>, Diagnostic> {
+170:         if iter.next != NIL {
+171:             budget.charge(function, STEP_UNITS, self.phase)?;
+172:         }
+173:         Ok(iter.next())
+174:     }
+175: 
+176:     fn iter(&self) -> Iter<'_, K> {
+177:         Iter {
+178:             nodes: &self.nodes,
+179:             next: self.first,
+180:         }
+
+===== src/cleanup_plan/replay/expression_facts/receiving/directory.rs:265-290 sha256 a5d9e5fa66faf99fd0853a3322c04fcf8e3e3a48ebe26ed6d6c4fcc923623c14 =====
+265:         } else {
+266:             self.nodes[probe.parent].right = index;
+267:         }
+268:         self.rebalance(probe.parent, function, budget)?;
+269:         Ok(true)
+270:     }
+271: 
+272:     // Relocation is metered before any work; `reserve_vec` pays the complete
+273:     // replacement array while the old allocation is still live.
+274:     fn grow(
+275:         &mut self,
+276:         function: &ResolvedFunction,
+277:         budget: &mut ReplayBudget,
+278:     ) -> Result<(), Diagnostic> {
+279:         if self.nodes.len() == self.nodes.capacity() {
+280:             let units =
+281:                 self.nodes.len().checked_add(1).ok_or_else(|| {
+282:                     overflow(function, budget, "directory relocation work overflow")
+283:                 })?;
+284:             budget.charge(function, units, self.phase)?;
+285:         }
+286:         budget.reserve_vec(function, &mut self.nodes, 1, self.phase)
+287:     }
+288: 
+289:     /// Full-key set equality by lockstep ordered walk.
+290:     pub(super) fn same_keys(
+
+===== src/bounded_output/classifier_string.rs:187-220 sha256 c301a761a04ef7036c7eed8375e0ee77c34266eeb89b6e1c3ae38eaad5a86193 =====
+187:     }
+188: }
+189: 
+190: /// Exact invocation binding only; this scalar/Rc carrier grants no allowance,
+191: /// cached admission or source authority. Its caller pays its containing control.
+192: pub(crate) struct ClassifierLedger(Option<Rc<Budget>>);
+193: impl ClassifierLedger {
+194:     /// A test-account caller authenticates its own invocation separately. This
+195:     /// detached marker contains no ACTIVE handle and grants no ordinary payer.
+196:     #[cfg(test)]
+197:     pub(crate) fn oracle_marker() -> Self {
+198:         Self(None)
+199:     }
+200: 
+201:     pub(crate) fn capture() -> Self {
+202:         Self(active())
+203:     }
+204:     pub(crate) fn current(&self) -> bool {
+205:         let current = active();
+206:         let same = match (&self.0, current) {
+207:             (None, None) => true,
+208:             (Some(held), Some(current)) => Rc::ptr_eq(held, &current),
+209:             _ => false,
+210:         };
+211:         if !same {
+212:             if let Some(held) = &self.0 {
+213:                 super::record_refusal(held, 0);
+214:                 held.overflowed.set(true);
+215:             }
+216:         }
+217:         same
+218:     }
+219: }
+220: 
+
+===== docs/evidence/cleanup-status-directory-retention/HANDOFF.md:1-9 sha256 712a3a79d0e9b76a155f9bf91162e73fed171cced2e65142fb0e06a8b99ce345 =====
+1: # Retain the ordinary validated status directory
+2: 
+3: Source-only optimization of the actual owner17 H006 during the second status-directory construction. The first pass already pays every identity insertion, comparison, allocation and rotation. The unchanged immutable function is borrowed through the later block/edge pass; that pass reuses those exact keys and removes its redundant reconstruction. It still authenticates the same payer and charges every actual membership probe. A private token binds exact function and budget addresses. Regions/entry retain their original execution order. The ordinary driver alone selects this route; full previous status and block receivers remain independently compiled and the lexical route remains unchanged. No quota, work unit, ceiling, refund or fixture assertion changes.
+4: 
+5: The retained directory lives longer across region/entry validation; its original complete allocation remains paid. It does not allocate or clone another directory. Later exhausted membership phases now name the retained identity directory; first semantic error order and all six fields are compared on ample accounts. Tests observe both complete status/block phase receivers and Drop, with facts and fixtures prepared explicitly outside that phase observer. Auth controls reject foreign function/budget and work refusal remains sticky. Existing exact/short/zero paid-directory controls remain unchanged. The actual full owner17 retry control remains required: source redundancy removal alone does not prove that the 32-million work ceiling now admits this fixture.
+6: 
+7: Owner159 retains all eight provider identity/layout/path/body attacks. Literal-site schema remains the existing static-text constant. Whole-module schema expectation derives actual Vec-field use and references existing graph constants through test-only reexports; no replacement schema string is introduced. Full original fixture and host-adapter inverses compose, preserving protected archive hashes.
+8: 
+9: Static whole-source reconstruction checked own seven records, both prior receiving packets, the changed paid receiving source, and all five host adapter originals. The paid expression-facts projection had a pre-existing missing test-oracle registration inverse; its exact five-line registration is now explicitly inverted, with protected archive untouched. No Cargo, runtime, Clippy or Claude review was run for this packet. Actual parent runtime and Clippy qualification remain required.
+
+===== docs/SCOPED-REPLAY-ORACLE-ACCOUNT-V1.md:1-27 sha256 0d2d6067ac0a2b75cf9af4305debfdd8f1e3a2c6d8ebd9d40a3c911331949594 =====
+1: # Scoped replay oracle account v1
+2: 
+3: Status: source foundation only. No build, test or allocation measurement was run in this lane. OPT810 remains open.
+4: 
+5: The test-only affine account separates allocation payment from admission. It has finite byte and work allowances, cumulative calls, balanced receiver counters, sticky first byte/work/physical refusal, epoch-bound leases and RAII scope cleanup. Missing, expired, nested and stale invocation authority fail closed. Oracle budgets retain Ordinary ceilings; they do not select retained admission, modify ACTIVE, refund work, normalize observations or cache verdicts.
+6: 
+7: ## Activation boundary
+8: 
+9: The complete original `factored::cross_check` body remains unchanged. The two original failing owner tests also remain byte-exact, including their `1 << 20` literals, sticky retries, Drop receipts and aggregate assertions. Neither owner selects the new account. A private test receiver in `factored/oracle_hook.rs` exercises the proposed enum-then-factored pair on the live borrowed context and function. Its tests are pending; this checkpoint does not fix the two reported owner failures.
+10: 
+11: The proposed receiver uses independent fresh budgets and invocation guards, runs both receivers, and rejects physical/account refusal rather than converting it into a semantic verdict. It is deliberately inactive until the transitive acquisition audit is complete.
+12: 
+13: ## Implemented source foundation
+14: 
+15: - Inline scoped account, byte/work receipts, authentication, unwind and expiry controls.
+16: - Payer routing for replay backing, refusal text, overlap and clone cursors, without changing ordinary constructors or production ledger state.
+17: - Explicit funded renewal inventories, moving string operands, string condition reads and helper classifications. Shared storage seams preserve the old work/depth ceilings and the independent old receivers.
+18: - Borrowed diagnostic arguments in the replay root, counted before the complete message backing is reserved. The original diagnostic body remains an independent receiver with all six fields. Pre-owned messages fail closed on the funded route because their earlier allocation has not been authenticated.
+19: - Additive finite-account helper allocation observations through output Drop, plus scripted exact/short/sticky boundary controls. These do not prove the complete pair.
+20: 
+21: ## Open acquisition audit
+22: 
+23: | Boundary | Remaining work |
+24: | --- | --- |
+25: | Replay child diagnostics | Source-converted, unbuilt and unqualified: direct `format!` arguments to `replay_error` in the replay children now pass borrowed `format_args!` at the call, `semantic_refusal` formats branch-locally, and the lexical certificate/boundary `fail` closures forward `&str`. Still owned: `String` errors mapped through `replay_error` (`nested_shape.rs`, `paid_type_facts.rs`, `paid_type_facts/droppability.rs`, `ordinary_inventory/substitute.rs` `hir_error`); these fail closed on the funded route. Static census converted 37 direct formatting arguments plus all eight semantic-refusal arms and four lexical closures; the 18 remaining direct owned formatting calls belong to explicit test or original receivers. New controls observe finite-account diagnostic output through Drop and all eight atoms against a complete independent original adapter. These controls are unrun. |
+26: | Byte helper census refusal | Source-changed, unqualified: the shared seam takes an explicit error constructor. Ordinary and selected routes pass the original owning `census_error`; the funded route passes an inline `io_static` carrier with the same six fields, and its diagnostics are discarded in favour of the recorded refusal, so it builds no owned diagnostic. The funded route constructs no real owned diagnostic, so there is no backing to prepay there. |
+27: | Upstream error routing | Source-only: raw substitution H006 text now uses an explicit authenticated raw receiver with prior backing debit, preserving the complete original raw constructor and six fields. Account-authorized unbudgeted type probes use the existing paid droppability receiver and the same cumulative account; Ordinary defaults remain unchanged. Saved independent classifier receivers fail visibly if selected as account-funded evidence. |

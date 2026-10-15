@@ -120,7 +120,7 @@ fn explicit_match_modes_select_v21_and_are_distinct_in_graph_and_agent_views() {
         "test-source-revision",
         &selected_functions,
         &selected_types,
-        &GraphView::Module,
+        &GraphView::Module { static_text: false },
     )
     .unwrap();
     assert!(module.starts_with("{\"schema\":\"semaprax.graph.v21\","));
@@ -132,6 +132,7 @@ fn explicit_match_modes_select_v21_and_are_distinct_in_graph_and_agent_views() {
         &selected_functions,
         &selected_types,
         &GraphView::Context {
+            static_text: false,
             root: &root,
             depth: 1,
             frontier: &selected_functions,

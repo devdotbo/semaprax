@@ -1,0 +1,100 @@
+{
+  "status": "SOURCE_ONLY_PENDING_ACTUAL_QUALIFICATION",
+  "base": "346690b8cdf82da5c21416ecd5792204ea762da0",
+  "scope": "Reuse one real paid borrowed-child scratch only inside one CFG discovery; no cap, frame/profile, work charge or semantic authority change.",
+  "current_sources": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
+      "sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "bytes": 98424
+    },
+    "src/loan_plan/adjacency.rs": {
+      "sha256": "cb1e73799e15c83b8158378f5e07963e76207bc1f4166eae698da0fe70d6ad09",
+      "bytes": 3579
+    },
+    "src/loan_plan/cfg_directory.rs": {
+      "sha256": "5092d6bbbc5cae4ec2f69da515f52c248d8d715b2e1de06e7d4aacfd9c8a1450",
+      "bytes": 5025
+    },
+    "src/loan_plan/paid_cfg.rs": {
+      "sha256": "b643acd17788fdd668e442270b5637f45c12c23f935472484a340aa3c607a1b0",
+      "bytes": 16958
+    },
+    "src/loan_plan/paid_plan_legacy.rs": {
+      "sha256": "718cf55938c62125e054707b0b927c04703c994fae0056985f3e5f190e9a61cd",
+      "bytes": 17656
+    },
+    "src/loan_plan/paid_cfg/original.rs": {
+      "sha256": "5a1995e3ae65126afa9a1f78b2c901d3f921b17a2d567055baf7a4a2995d0dea",
+      "bytes": 15678
+    },
+    "src/loan_plan/paid_cfg/tests.rs": {
+      "sha256": "c4e0f468fdc040fbeff7b64341decd8a01d6b18e8103781e502b33f7ee241595",
+      "bytes": 18640
+    }
+  },
+  "unchanged_complete_originals_and_common_helpers": {
+    "src/loan_plan/paid_children.rs": "2d4dbf70b4e0555e3a95bf9a1abe19990d0239d5f34ffe5cdc140f68aa5be141",
+    "src/loan_plan/storage.rs": "ad0d110526038c1f07228668323d2ec123ef934dcece68d6713dff8f679017a6",
+    "src/loan_plan/saved_planner.rs": "d2cba7422238d465d0bd9a20791303fecf910c4860b074541c1c31202eb4c567",
+    "src/loan_plan/saved_planner/cfg_build.rs": "a6cc00aac578f71f6c5b00b68384538b5fce55fd525e0d1e86408831851c4de6",
+    "src/loan_plan/funded_flat_legacy.rs": "08ec97dec3755d2714c49e88ac2984a58dedd947a604bb3d875b924311404902",
+    "src/loan_plan/paid_candidate_legacy.rs": "e8d0ffd75cf955ca449290094d4d3f4482fd13a4859ed1ca5e5cc898acc8cc17",
+    "src/loan_plan/paid_candidate_before.rs": "2171767962fc58bd699165f3023910712146871fadc6b2bc6077a02d7374bbbe",
+    "src/hir/canonical_loan_storage/caller.rs": "bc304cfbb469891c8eb8cdc150a395affba58dadd3ae3b9a136c6c7f40076056",
+    "src/loan_plan.rs": "369548317681a0e9856e2192a617dd27474fe91b5dae28b79081b440e2c3caf8"
+  },
+  "new_exact_pending_owners": [
+    {
+      "harness": "semaprax::lib",
+      "selector": "loan_plan::paid_cfg::tests::complete_cfg_child_scratch_reuse_pays_actual_acquisition_exact_short_sticky_and_drop"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "loan_plan::paid_cfg::tests::complete_cfg_fields_order_and_semantic_work_frontiers_match_both_originals"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "loan_plan::paid_cfg::tests::complete_cfg_duplicate_and_point_edge_bound_diagnostics_keep_old_priority"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "loan_plan::paid_cfg::tests::every_small_cfg_acquisition_frontier_preserves_sticky_first_refusal_and_complete_drop"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "loan_plan::paid_cfg::tests::whole_original_cfg_legacy_plan_and_child_projection_sources_remain_exact"
+    }
+  ],
+  "retained_required_owners": [
+    {
+      "harness": "semaprax::lib",
+      "selector": "loan_plan::funded_flat::directories_tests::complete_old_btree_receiver_constructor_drop_exact_short_and_original_applications"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "loan_plan::funded_flat::directories_tests::complete_old_btree_plan_and_checked_work_first_errors_keep_exact_priority"
+    },
+    {
+      "harness": "semaprax-native-rust-interop::lib",
+      "selector": "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions"
+    }
+  ],
+  "existing_application_gate_pending": {
+    "catalog": "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+    "service": "service_template_has_exact_bytes_and_passes_the_developer_loop",
+    "no_new_fit_or_saving_claim": true
+  },
+  "source_audit": {
+    "complete_inverse_files": 5,
+    "old_paid_CFG373lines_exact": true,
+    "old_paid_plan_only_lexical_import_adapter": true,
+    "all_36_OPT810_HIR_validation_inverses": "STATIC_PASS",
+    "all_5_import_inverses_and_68_projection_members": "STATIC_PASS",
+    "all_new_children_joined_in_existing_interop_loan_inventory": true,
+    "maximum_changed_Rust_lines": 1218,
+    "Rust_parse_stdout": "PASS_SOURCE_ONLY_NO_REWRITE",
+    "diff_whitespace": "PASS",
+    "Cargo_build_tests": false,
+    "pins_changed": false
+  }
+}

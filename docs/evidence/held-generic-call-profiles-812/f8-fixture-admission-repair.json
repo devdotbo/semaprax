@@ -1,0 +1,38 @@
+{
+  "base": "f8d39034fbe2145590160442ae17c4d69145134d",
+  "observed_failures": [
+    279,
+    280,
+    283,
+    284,
+    285
+  ],
+  "defect": "Shared positive source fixture rejected by unchanged T223 generic-copy and O002 ownership admission before any memo receiver ran.",
+  "repair": "Admitted direct-T Bag<i64> by-value root keeps successful generic copy classification at parameter0; independently checked borrow Vec<i64> rows supplies full hostile nested generic argument.",
+  "full_negative_sources": [
+    "Original Vec<T> field literal unchanged",
+    "Previous direct-T borrow Bag<Vec<i64>> source reconstructed using exactly original two transformations; full verify/check diagnostic equality, T223 first and O002 retained"
+  ],
+  "strict_hostile_constructor_unwrap_and_all_full_receivers": "unchanged; no tolerance of early constructor error or narrowed execution",
+  "production_sources": "unchanged; all3 full 812 inverse projections pass",
+  "protected_original_archives": 6,
+  "fixture_original_sha256": "8d2202c56b9b68647cf95e0b4f8b6ee21f07e4ff51b324b2a083f74e13594772",
+  "current_source_bindings": {
+    "src/hir/validation/held_profiles/tests.rs": {
+      "sha256": "acc1e8e88365c35f8441848387ddead8c7e5babfb5cbd1b7dd0cf4649895b66f",
+      "lines": 145
+    },
+    "src/hir/validation/call_parameters/held_tests.rs": {
+      "sha256": "0c75cb122a76652eba513b80dccd1bf8454c8a577106fe3a858c202a5aa68d16",
+      "lines": 262
+    }
+  },
+  "review_findings_resolution": [
+    "verify::verify delegates to complete source_verify; check invokes same complete verifier, including O002",
+    "Existing source-owned collection tests admit borrow Vec<i64>; positive uses only existing direct scalar generic copy admission",
+    "ConstructorSeed authenticates IDs/call graph/lookup; it does not invoke source admission. Strict original constructor unwrap remains to expose any actual downstream refusal",
+    "Rows checked parameter retrieved by name and source transforms counted, not guessed ordinal"
+  ],
+  "new_selector": "hir::validation::held_profiles::tests::complete_previous_nested_generic_borrow_fixture_keeps_full_t223_and_o002_refusal",
+  "qualification": "source-only; no Cargo/tests/Clippy; no semantic/runtime gain claim"
+}

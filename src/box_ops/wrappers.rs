@@ -1,6 +1,7 @@
 //! Exact transparent generic wrappers admitted only for `std.mem`.
 use super::BoxOp;
-use crate::ast::{Expr, ExprKind, Function, Program, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, Type};
 use crate::hir::{
     ResolvedExpr, ResolvedExprKind, ResolvedFunctionTemplate, ResolvedProgram, ResolvedType,
 };
@@ -19,8 +20,8 @@ pub(crate) fn with_authenticated_linked_source<T>(operation: impl FnOnce() -> T)
     drop(restore);
     result
 }
-pub(crate) fn source_module_is_authenticated(program: &Program) -> bool {
-    program.module == MODULE || AUTHENTICATED_LINKED_SOURCE.with(Cell::get)
+pub(crate) fn source_module_is_authenticated(program: &dyn ProgramSource) -> bool {
+    program.module() == MODULE || AUTHENTICATED_LINKED_SOURCE.with(Cell::get)
 }
 pub(crate) fn wrapper_id(op: BoxOp) -> &'static str {
     match op {
@@ -39,14 +40,14 @@ pub(crate) fn wrapper_name(op: BoxOp) -> &'static str {
 pub(crate) fn wrapper_by_id(id: &str) -> Option<BoxOp> {
     super::ALL.into_iter().find(|op| wrapper_id(*op) == id)
 }
-pub(crate) fn is_source_candidate(program: &Program, function: &Function) -> bool {
-    program.module == MODULE
+pub(crate) fn is_source_candidate(program: &dyn ProgramSource, function: &Function) -> bool {
+    program.module() == MODULE
         && (wrapper_by_id(&function.stable_id).is_some()
             || super::ALL
                 .into_iter()
                 .any(|op| wrapper_name(op) == function.name))
 }
-pub(crate) fn source_wrapper(program: &Program, function: &Function) -> Option<BoxOp> {
+pub(crate) fn source_wrapper(program: &dyn ProgramSource, function: &Function) -> Option<BoxOp> {
     if !source_module_is_authenticated(program)
         || !function.explicit_id
         || function.type_parameters.len() != 1
@@ -61,16 +62,22 @@ pub(crate) fn source_wrapper(program: &Program, function: &Function) -> Option<B
     if function.name != wrapper_name(op) {
         return None;
     }
-    let parameter = Type::Named {
-        name: "T".to_owned(),
-        arguments: Vec::new(),
-    };
-    let expected = super::ast_params(op, &parameter);
     if function.params.len() != 1
         || function.params[0].name != "value"
-        || function.params[0].mode != expected[0].mode
-        || function.params[0].ty != expected[0].ty
-        || function.return_type != op.ast_return_type(&parameter)
+        || function.params[0].mode
+            != match op.param_ownership() {
+                crate::hir::OwnershipMode::Own => crate::ast::ParamMode::Own,
+                crate::hir::OwnershipMode::Borrow => crate::ast::ParamMode::Borrow,
+                _ => crate::ast::ParamMode::Value,
+            }
+        || !match op {
+            BoxOp::New => generic_parameter(&function.params[0].ty),
+            _ => generic_box(&function.params[0].ty),
+        }
+        || !match op {
+            BoxOp::New => generic_box(&function.return_type),
+            _ => generic_parameter(&function.return_type),
+        }
     {
         return None;
     }
@@ -90,15 +97,18 @@ fn exact_source_body(body: &Expr, op: BoxOp, param: &crate::ast::Param) -> bool 
     };
     statements.is_empty()
         && name == op.name()
-        && type_arguments
-            == &[Type::Named {
-                name: "T".to_owned(),
-                arguments: Vec::new(),
-            }]
+        && matches!(type_arguments.as_slice(), [argument] if generic_parameter(argument))
         && matches!(args.as_slice(),[arg] if matches!(&arg.kind,ExprKind::Var(name) if name==&param.name))
 }
+fn generic_parameter(ty: &Type) -> bool {
+    matches!(ty, Type::Named { name, arguments } if name == "T" && arguments.is_empty())
+}
+fn generic_box(ty: &Type) -> bool {
+    matches!(ty, Type::Named { name, arguments } if name == "Box" && matches!(arguments.as_slice(), [element] if generic_parameter(element)))
+}
+
 pub(crate) fn source_parameter_is_admitted(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     op: BoxOp,
     ty: &Type,
@@ -107,7 +117,7 @@ pub(crate) fn source_parameter_is_admitted(
         && matches!(ty,Type::Named{name,arguments} if name=="T"&&arguments.is_empty())
 }
 pub(crate) fn source_arguments_are_admitted(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     args: &[Type],
 ) -> bool {
@@ -213,4 +223,16 @@ pub(crate) fn template_ownership(
         BoxOp::Get => crate::hir::OwnershipMode::Borrow,
         BoxOp::New | BoxOp::IntoInner => crate::hir::OwnershipMode::Own,
     })
+}
+
+#[cfg(test)]
+mod original;
+#[cfg(test)]
+mod source_view_tests;
+#[cfg(test)]
+pub(crate) fn source_wrapper_original(
+    program: &dyn ProgramSource,
+    function: &Function,
+) -> Option<BoxOp> {
+    original::source_wrapper(program, function)
 }

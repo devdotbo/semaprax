@@ -113,18 +113,16 @@ impl Drop for ResolvedProgramOwner {
                 crate::hir::ResolvedTypeDeclarationKind::Resource { .. } => {}
                 crate::hir::ResolvedTypeDeclarationKind::Record { fields }
                 | crate::hir::ResolvedTypeDeclarationKind::Class { fields, .. } => {
-                    for field in fields {
-                        disposal_push(&mut self.frames, ResolvedDisposeFrame::Type(field.ty));
+                    fields.drain_recursive_types(|ty| {
+                        disposal_push(&mut self.frames, ResolvedDisposeFrame::Type(ty));
                         drain_disposal_frames(&mut self.frames, None);
-                    }
+                    });
                 }
                 crate::hir::ResolvedTypeDeclarationKind::Variant { cases } => {
-                    for case in cases {
-                        for field in case.fields {
-                            disposal_push(&mut self.frames, ResolvedDisposeFrame::Type(field.ty));
-                            drain_disposal_frames(&mut self.frames, None);
-                        }
-                    }
+                    cases.drain_recursive_types(|ty| {
+                        disposal_push(&mut self.frames, ResolvedDisposeFrame::Type(ty));
+                        drain_disposal_frames(&mut self.frames, None);
+                    });
                 }
             }
         }
@@ -240,6 +238,9 @@ fn drain_disposal_frames(
                     disposal_push(frames, ResolvedDisposeFrame::Captures(captures));
                     disposal_push(frames, ResolvedDisposeFrame::Bindings(parameters));
                 }
+                ResolvedExprKind::LexicalExit { value, .. } => {
+                    pending_expression = value.map(|value| *value);
+                }
                 ResolvedExprKind::FunctionReference { .. } => {}
                 ResolvedExprKind::Invoke { callable, args } => {
                     disposal_push(frames, ResolvedDisposeFrame::Exprs(args));
@@ -256,6 +257,7 @@ fn drain_disposal_frames(
                 | ResolvedExprKind::Float64(_)
                 | ResolvedExprKind::Bool(_)
                 | ResolvedExprKind::String(_)
+                | ResolvedExprKind::BorrowedUtf8Literal(_)
                 | ResolvedExprKind::Place(_)
                 | ResolvedExprKind::BorrowPlace { .. } => {}
                 ResolvedExprKind::ByteRange {
@@ -271,6 +273,18 @@ fn drain_disposal_frames(
                     ..
                 } => {
                     disposal_push(frames, ResolvedDisposeFrame::Types(type_arguments));
+                    disposal_push(frames, ResolvedDisposeFrame::Exprs(args));
+                }
+                ResolvedExprKind::RowLoan { loan, args } => {
+                    let hir::RowLoan { element, .. } = *loan;
+                    disposal_push(frames, ResolvedDisposeFrame::Type(element));
+                    disposal_push(frames, ResolvedDisposeFrame::Exprs(args));
+                }
+                ResolvedExprKind::LiteralFormat { args, .. } => {
+                    disposal_push(frames, ResolvedDisposeFrame::Exprs(args));
+                }
+                ResolvedExprKind::VecFieldRead { element, args, .. } => {
+                    disposal_push(frames, ResolvedDisposeFrame::Type(element));
                     disposal_push(frames, ResolvedDisposeFrame::Exprs(args));
                 }
                 ResolvedExprKind::NativeRustImportCall(call) => {
@@ -289,7 +303,10 @@ fn drain_disposal_frames(
                     disposal_push(frames, ResolvedDisposeFrame::ExprBox(right));
                     pending_expression = Some(*left);
                 }
-                ResolvedExprKind::Block { statements, tail } => {
+                ResolvedExprKind::Block { statements, tail }
+                | ResolvedExprKind::VecConstructor {
+                    statements, tail, ..
+                } => {
                     disposal_push(frames, ResolvedDisposeFrame::ExprBox(tail));
                     disposal_push(frames, ResolvedDisposeFrame::Statements(statements));
                 }
@@ -358,6 +375,9 @@ fn drain_disposal_frames(
                 if let Some(statement) = statements.pop() {
                     disposal_push(frames, ResolvedDisposeFrame::Statements(statements));
                     match statement {
+                        crate::hir::ResolvedStatement::CopyDiscard { value, .. } => {
+                            pending_expression = Some(value);
+                        }
                         crate::hir::ResolvedStatement::Let { binding, value, .. }
                         | crate::hir::ResolvedStatement::Assign { binding, value, .. } => {
                             disposal_push(frames, ResolvedDisposeFrame::Type(binding.ty));
@@ -367,6 +387,9 @@ fn drain_disposal_frames(
                             pending_expression = Some(*body);
                         }
                         crate::hir::ResolvedStatement::While {
+                            condition, body, ..
+                        }
+                        | crate::hir::ResolvedStatement::LexicalWhile {
                             condition, body, ..
                         } => {
                             disposal_push(frames, ResolvedDisposeFrame::ExprBox(body));

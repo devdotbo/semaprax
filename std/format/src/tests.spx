@@ -128,7 +128,24 @@ fn test_utf8() -> i64
 @id("std.format.tests.helpers")
 fn test_helpers() -> i64
 {
-    if byte(255) == 255u8 && digit_byte(9usize) == 57u8 { 0 } else { 1 }
+    let mut expected = 0u8;
+    let mut value = 0;
+    let mut same = true;
+    while value < 256 {
+        same = same && byte(value) == expected;
+        expected = if value < 255 { expected + 1u8 } else { expected };
+        value = value + 1;
+        0
+    }
+    let mut digit = 0usize;
+    let mut wanted = 48u8;
+    while digit < 10usize {
+        same = same && digit_byte(digit) == wanted;
+        wanted = wanted + 1u8;
+        digit = digit + 1usize;
+        0
+    }
+    if same && byte(255) == 255u8 && digit_byte(9usize) == 57u8 { 0 } else { 1 }
 }
 
 @id("std.format.tests.pad-left")

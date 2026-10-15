@@ -1,0 +1,1391 @@
+[
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0583]: file not found for module `borrowed`\n  --> src/hir/prelude_bundle.rs:13:1\n   |\n13 | mod borrowed;\n   | ^^^^^^^^^^^^^\n   |\n   = help: to create the module `borrowed`, create file \"src/hir/borrowed.rs\" or \"src/hir/borrowed/mod.rs\"\n   = note: if there is a `mod borrowed` elsewhere in the crate already, import it with `use crate::...` instead\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "to create the module `borrowed`, create file \"src/hir/borrowed.rs\" or \"src/hir/borrowed/mod.rs\"",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "if there is a `mod borrowed` elsewhere in the crate already, import it with `use crate::...` instead",
+          "rendered": null,
+          "spans": []
+        }
+      ],
+      "level": "error",
+      "message": "file not found for module `borrowed`",
+      "spans": [
+        {
+          "byte_end": 622,
+          "byte_start": 609,
+          "column_end": 14,
+          "column_start": 1,
+          "expansion": null,
+          "file_name": "src/hir/prelude_bundle.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 13,
+          "line_start": 13,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 14,
+              "highlight_start": 1,
+              "text": "mod borrowed;"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0583",
+        "explanation": "A file wasn't found for an out-of-line module.\n\nErroneous code example:\n\n```compile_fail,E0583\nmod file_that_doesnt_exist; // error: file not found for module\n\nfn main() {}\n```\n\nPlease be sure that a file corresponding to the module exists. If you\nwant to use a module named `file_that_doesnt_exist`, you need to have a file\nnamed `file_that_doesnt_exist.rs` or `file_that_doesnt_exist/mod.rs` in the\nsame directory.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0583]: file not found for module `fixed_work`\n  --> src/hir/prelude_bundle.rs:14:1\n   |\n14 | mod fixed_work;\n   | ^^^^^^^^^^^^^^^\n   |\n   = help: to create the module `fixed_work`, create file \"src/hir/fixed_work.rs\" or \"src/hir/fixed_work/mod.rs\"\n   = note: if there is a `mod fixed_work` elsewhere in the crate already, import it with `use crate::...` instead\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "to create the module `fixed_work`, create file \"src/hir/fixed_work.rs\" or \"src/hir/fixed_work/mod.rs\"",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "if there is a `mod fixed_work` elsewhere in the crate already, import it with `use crate::...` instead",
+          "rendered": null,
+          "spans": []
+        }
+      ],
+      "level": "error",
+      "message": "file not found for module `fixed_work`",
+      "spans": [
+        {
+          "byte_end": 638,
+          "byte_start": 623,
+          "column_end": 16,
+          "column_start": 1,
+          "expansion": null,
+          "file_name": "src/hir/prelude_bundle.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 14,
+          "line_start": 14,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 16,
+              "highlight_start": 1,
+              "text": "mod fixed_work;"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0583",
+        "explanation": "A file wasn't found for an out-of-line module.\n\nErroneous code example:\n\n```compile_fail,E0583\nmod file_that_doesnt_exist; // error: file not found for module\n\nfn main() {}\n```\n\nPlease be sure that a file corresponding to the module exists. If you\nwant to use a module named `file_that_doesnt_exist`, you need to have a file\nnamed `file_that_doesnt_exist.rs` or `file_that_doesnt_exist/mod.rs` in the\nsame directory.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0583]: file not found for module `invocation`\n  --> src/hir/prelude_bundle.rs:15:1\n   |\n15 | mod invocation;\n   | ^^^^^^^^^^^^^^^\n   |\n   = help: to create the module `invocation`, create file \"src/hir/invocation.rs\" or \"src/hir/invocation/mod.rs\"\n   = note: if there is a `mod invocation` elsewhere in the crate already, import it with `use crate::...` instead\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "to create the module `invocation`, create file \"src/hir/invocation.rs\" or \"src/hir/invocation/mod.rs\"",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "if there is a `mod invocation` elsewhere in the crate already, import it with `use crate::...` instead",
+          "rendered": null,
+          "spans": []
+        }
+      ],
+      "level": "error",
+      "message": "file not found for module `invocation`",
+      "spans": [
+        {
+          "byte_end": 654,
+          "byte_start": 639,
+          "column_end": 16,
+          "column_start": 1,
+          "expansion": null,
+          "file_name": "src/hir/prelude_bundle.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 15,
+          "line_start": 15,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 16,
+              "highlight_start": 1,
+              "text": "mod invocation;"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0583",
+        "explanation": "A file wasn't found for an out-of-line module.\n\nErroneous code example:\n\n```compile_fail,E0583\nmod file_that_doesnt_exist; // error: file not found for module\n\nfn main() {}\n```\n\nPlease be sure that a file corresponding to the module exists. If you\nwant to use a module named `file_that_doesnt_exist`, you need to have a file\nnamed `file_that_doesnt_exist.rs` or `file_that_doesnt_exist/mod.rs` in the\nsame directory.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0583]: file not found for module `materialize`\n  --> src/hir/prelude_bundle.rs:16:1\n   |\n16 | mod materialize;\n   | ^^^^^^^^^^^^^^^^\n   |\n   = help: to create the module `materialize`, create file \"src/hir/materialize.rs\" or \"src/hir/materialize/mod.rs\"\n   = note: if there is a `mod materialize` elsewhere in the crate already, import it with `use crate::...` instead\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "to create the module `materialize`, create file \"src/hir/materialize.rs\" or \"src/hir/materialize/mod.rs\"",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "if there is a `mod materialize` elsewhere in the crate already, import it with `use crate::...` instead",
+          "rendered": null,
+          "spans": []
+        }
+      ],
+      "level": "error",
+      "message": "file not found for module `materialize`",
+      "spans": [
+        {
+          "byte_end": 671,
+          "byte_start": 655,
+          "column_end": 17,
+          "column_start": 1,
+          "expansion": null,
+          "file_name": "src/hir/prelude_bundle.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 16,
+          "line_start": 16,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 17,
+              "highlight_start": 1,
+              "text": "mod materialize;"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0583",
+        "explanation": "A file wasn't found for an out-of-line module.\n\nErroneous code example:\n\n```compile_fail,E0583\nmod file_that_doesnt_exist; // error: file not found for module\n\nfn main() {}\n```\n\nPlease be sure that a file corresponding to the module exists. If you\nwant to use a module named `file_that_doesnt_exist`, you need to have a file\nnamed `file_that_doesnt_exist.rs` or `file_that_doesnt_exist/mod.rs` in the\nsame directory.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0583]: file not found for module `merge`\n  --> src/hir/prelude_bundle.rs:17:1\n   |\n17 | mod merge;\n   | ^^^^^^^^^^\n   |\n   = help: to create the module `merge`, create file \"src/hir/merge.rs\" or \"src/hir/merge/mod.rs\"\n   = note: if there is a `mod merge` elsewhere in the crate already, import it with `use crate::...` instead\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "to create the module `merge`, create file \"src/hir/merge.rs\" or \"src/hir/merge/mod.rs\"",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "if there is a `mod merge` elsewhere in the crate already, import it with `use crate::...` instead",
+          "rendered": null,
+          "spans": []
+        }
+      ],
+      "level": "error",
+      "message": "file not found for module `merge`",
+      "spans": [
+        {
+          "byte_end": 682,
+          "byte_start": 672,
+          "column_end": 11,
+          "column_start": 1,
+          "expansion": null,
+          "file_name": "src/hir/prelude_bundle.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 17,
+          "line_start": 17,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 11,
+              "highlight_start": 1,
+              "text": "mod merge;"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0583",
+        "explanation": "A file wasn't found for an out-of-line module.\n\nErroneous code example:\n\n```compile_fail,E0583\nmod file_that_doesnt_exist; // error: file not found for module\n\nfn main() {}\n```\n\nPlease be sure that a file corresponding to the module exists. If you\nwant to use a module named `file_that_doesnt_exist`, you need to have a file\nnamed `file_that_doesnt_exist.rs` or `file_that_doesnt_exist/mod.rs` in the\nsame directory.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0583]: file not found for module `overlay`\n  --> src/hir/prelude_bundle.rs:18:1\n   |\n18 | mod overlay;\n   | ^^^^^^^^^^^^\n   |\n   = help: to create the module `overlay`, create file \"src/hir/overlay.rs\" or \"src/hir/overlay/mod.rs\"\n   = note: if there is a `mod overlay` elsewhere in the crate already, import it with `use crate::...` instead\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "to create the module `overlay`, create file \"src/hir/overlay.rs\" or \"src/hir/overlay/mod.rs\"",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "if there is a `mod overlay` elsewhere in the crate already, import it with `use crate::...` instead",
+          "rendered": null,
+          "spans": []
+        }
+      ],
+      "level": "error",
+      "message": "file not found for module `overlay`",
+      "spans": [
+        {
+          "byte_end": 695,
+          "byte_start": 683,
+          "column_end": 13,
+          "column_start": 1,
+          "expansion": null,
+          "file_name": "src/hir/prelude_bundle.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 18,
+          "line_start": 18,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 13,
+              "highlight_start": 1,
+              "text": "mod overlay;"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0583",
+        "explanation": "A file wasn't found for an out-of-line module.\n\nErroneous code example:\n\n```compile_fail,E0583\nmod file_that_doesnt_exist; // error: file not found for module\n\nfn main() {}\n```\n\nPlease be sure that a file corresponding to the module exists. If you\nwant to use a module named `file_that_doesnt_exist`, you need to have a file\nnamed `file_that_doesnt_exist.rs` or `file_that_doesnt_exist/mod.rs` in the\nsame directory.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0583]: file not found for module `paid`\n  --> src/hir/prelude_bundle.rs:19:1\n   |\n19 | mod paid;\n   | ^^^^^^^^^\n   |\n   = help: to create the module `paid`, create file \"src/hir/paid.rs\" or \"src/hir/paid/mod.rs\"\n   = note: if there is a `mod paid` elsewhere in the crate already, import it with `use crate::...` instead\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "to create the module `paid`, create file \"src/hir/paid.rs\" or \"src/hir/paid/mod.rs\"",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "if there is a `mod paid` elsewhere in the crate already, import it with `use crate::...` instead",
+          "rendered": null,
+          "spans": []
+        }
+      ],
+      "level": "error",
+      "message": "file not found for module `paid`",
+      "spans": [
+        {
+          "byte_end": 705,
+          "byte_start": 696,
+          "column_end": 10,
+          "column_start": 1,
+          "expansion": null,
+          "file_name": "src/hir/prelude_bundle.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 19,
+          "line_start": 19,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 10,
+              "highlight_start": 1,
+              "text": "mod paid;"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0583",
+        "explanation": "A file wasn't found for an out-of-line module.\n\nErroneous code example:\n\n```compile_fail,E0583\nmod file_that_doesnt_exist; // error: file not found for module\n\nfn main() {}\n```\n\nPlease be sure that a file corresponding to the module exists. If you\nwant to use a module named `file_that_doesnt_exist`, you need to have a file\nnamed `file_that_doesnt_exist.rs` or `file_that_doesnt_exist/mod.rs` in the\nsame directory.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0583]: file not found for module `producer`\n  --> src/hir/prelude_bundle.rs:20:1\n   |\n20 | mod producer;\n   | ^^^^^^^^^^^^^\n   |\n   = help: to create the module `producer`, create file \"src/hir/producer.rs\" or \"src/hir/producer/mod.rs\"\n   = note: if there is a `mod producer` elsewhere in the crate already, import it with `use crate::...` instead\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "to create the module `producer`, create file \"src/hir/producer.rs\" or \"src/hir/producer/mod.rs\"",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "if there is a `mod producer` elsewhere in the crate already, import it with `use crate::...` instead",
+          "rendered": null,
+          "spans": []
+        }
+      ],
+      "level": "error",
+      "message": "file not found for module `producer`",
+      "spans": [
+        {
+          "byte_end": 719,
+          "byte_start": 706,
+          "column_end": 14,
+          "column_start": 1,
+          "expansion": null,
+          "file_name": "src/hir/prelude_bundle.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 20,
+          "line_start": 20,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 14,
+              "highlight_start": 1,
+              "text": "mod producer;"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0583",
+        "explanation": "A file wasn't found for an out-of-line module.\n\nErroneous code example:\n\n```compile_fail,E0583\nmod file_that_doesnt_exist; // error: file not found for module\n\nfn main() {}\n```\n\nPlease be sure that a file corresponding to the module exists. If you\nwant to use a module named `file_that_doesnt_exist`, you need to have a file\nnamed `file_that_doesnt_exist.rs` or `file_that_doesnt_exist/mod.rs` in the\nsame directory.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0583]: file not found for module `work_model`\n  --> src/hir/prelude_bundle.rs:21:1\n   |\n21 | mod work_model;\n   | ^^^^^^^^^^^^^^^\n   |\n   = help: to create the module `work_model`, create file \"src/hir/work_model.rs\" or \"src/hir/work_model/mod.rs\"\n   = note: if there is a `mod work_model` elsewhere in the crate already, import it with `use crate::...` instead\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "to create the module `work_model`, create file \"src/hir/work_model.rs\" or \"src/hir/work_model/mod.rs\"",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "if there is a `mod work_model` elsewhere in the crate already, import it with `use crate::...` instead",
+          "rendered": null,
+          "spans": []
+        }
+      ],
+      "level": "error",
+      "message": "file not found for module `work_model`",
+      "spans": [
+        {
+          "byte_end": 735,
+          "byte_start": 720,
+          "column_end": 16,
+          "column_start": 1,
+          "expansion": null,
+          "file_name": "src/hir/prelude_bundle.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 21,
+          "line_start": 21,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 16,
+              "highlight_start": 1,
+              "text": "mod work_model;"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0583",
+        "explanation": "A file wasn't found for an out-of-line module.\n\nErroneous code example:\n\n```compile_fail,E0583\nmod file_that_doesnt_exist; // error: file not found for module\n\nfn main() {}\n```\n\nPlease be sure that a file corresponding to the module exists. If you\nwant to use a module named `file_that_doesnt_exist`, you need to have a file\nnamed `file_that_doesnt_exist.rs` or `file_that_doesnt_exist/mod.rs` in the\nsame directory.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0603]: module `replay` is private\n  --> src/hir/nominal_payload/elements.rs:3:26\n   |\n 3 | use crate::cleanup_plan::replay::physical_clone::ClonePayload;\n   |                          ^^^^^^ private module   ------------ trait `ClonePayload` is not publicly re-exported\n   |\nnote: the module `replay` is defined here\n  --> src/cleanup_plan.rs:32:1\n   |\n32 | mod replay;\n   | ^^^^^^^^^^^\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "the module `replay` is defined here",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 1420,
+              "byte_start": 1409,
+              "column_end": 12,
+              "column_start": 1,
+              "expansion": null,
+              "file_name": "src/cleanup_plan.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 32,
+              "line_start": 32,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 12,
+                  "highlight_start": 1,
+                  "text": "mod replay;"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "error",
+      "message": "module `replay` is private",
+      "spans": [
+        {
+          "byte_end": 107,
+          "byte_start": 101,
+          "column_end": 32,
+          "column_start": 26,
+          "expansion": null,
+          "file_name": "src/hir/nominal_payload/elements.rs",
+          "is_primary": true,
+          "label": "private module",
+          "line_end": 3,
+          "line_start": 3,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 32,
+              "highlight_start": 26,
+              "text": "use crate::cleanup_plan::replay::physical_clone::ClonePayload;"
+            }
+          ]
+        },
+        {
+          "byte_end": 137,
+          "byte_start": 125,
+          "column_end": 62,
+          "column_start": 50,
+          "expansion": null,
+          "file_name": "src/hir/nominal_payload/elements.rs",
+          "is_primary": false,
+          "label": "trait `ClonePayload` is not publicly re-exported",
+          "line_end": 3,
+          "line_start": 3,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 62,
+              "highlight_start": 50,
+              "text": "use crate::cleanup_plan::replay::physical_clone::ClonePayload;"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0603",
+        "explanation": "A private item was used outside its scope.\n\nErroneous code example:\n\n```compile_fail,E0603\nmod foo {\n    const PRIVATE: u32 = 0x_a_bad_1dea_u32; // This const is private, so we\n                                            // can't use it outside of the\n                                            // `foo` module.\n}\n\nprintln!(\"const value: {}\", foo::PRIVATE); // error: constant `PRIVATE`\n                                                  //        is private\n```\n\nIn order to fix this error, you need to make the item public by using the `pub`\nkeyword. Example:\n\n```\nmod foo {\n    pub const PRIVATE: u32 = 0x_a_bad_1dea_u32; // We set it public by using the\n                                                // `pub` keyword.\n}\n\nprintln!(\"const value: {}\", foo::PRIVATE); // ok!\n```\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0599]: no method named `clone_payload_bytes` found for enum `nodes::ResolvedType` in the current scope\n   --> src/hir/nominal_payload/elements.rs:66:45\n    |\n 66 |         self.name.len().checked_add(self.ty.clone_payload_bytes()?)\n    |                                             ^^^^^^^^^^^^^^^^^^^ method not found in `nodes::ResolvedType`\n    |\n   ::: src/cleanup_plan/replay/physical_clone.rs:8:8\n    |\n  8 |     fn clone_payload_bytes(&self) -> Option<usize>;\n    |        ------------------- the method is available for `nodes::ResolvedType` here\n    |\n   ::: src/hir/nodes.rs:145:1\n    |\n145 | pub enum ResolvedType {\n    | --------------------- method `clone_payload_bytes` not found for this enum\n    |\n    = help: items from traits can only be used if the trait is in scope\nhelp: trait `ClonePayload` which provides `clone_payload_bytes` is implemented but not in scope; perhaps you want to import it\n    |\n  2 + use crate::cleanup_plan::replay::physical_clone::ClonePayload;\n    |\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "items from traits can only be used if the trait is in scope",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "trait `ClonePayload` which provides `clone_payload_bytes` is implemented but not in scope; perhaps you want to import it",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 62,
+              "byte_start": 62,
+              "column_end": 1,
+              "column_start": 1,
+              "expansion": null,
+              "file_name": "src/hir/nominal_payload/elements.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 2,
+              "line_start": 2,
+              "suggested_replacement": "use crate::cleanup_plan::replay::physical_clone::ClonePayload;\n",
+              "suggestion_applicability": "MaybeIncorrect",
+              "text": [
+                {
+                  "highlight_end": 1,
+                  "highlight_start": 1,
+                  "text": "use super::*;"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "error",
+      "message": "no method named `clone_payload_bytes` found for enum `nodes::ResolvedType` in the current scope",
+      "spans": [
+        {
+          "byte_end": 2373,
+          "byte_start": 2354,
+          "column_end": 64,
+          "column_start": 45,
+          "expansion": null,
+          "file_name": "src/hir/nominal_payload/elements.rs",
+          "is_primary": true,
+          "label": "method not found in `nodes::ResolvedType`",
+          "line_end": 66,
+          "line_start": 66,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 64,
+              "highlight_start": 45,
+              "text": "        self.name.len().checked_add(self.ty.clone_payload_bytes()?)"
+            }
+          ]
+        },
+        {
+          "byte_end": 338,
+          "byte_start": 319,
+          "column_end": 27,
+          "column_start": 8,
+          "expansion": null,
+          "file_name": "src/cleanup_plan/replay/physical_clone.rs",
+          "is_primary": false,
+          "label": "the method is available for `nodes::ResolvedType` here",
+          "line_end": 8,
+          "line_start": 8,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 27,
+              "highlight_start": 8,
+              "text": "    fn clone_payload_bytes(&self) -> Option<usize>;"
+            }
+          ]
+        },
+        {
+          "byte_end": 5038,
+          "byte_start": 5017,
+          "column_end": 22,
+          "column_start": 1,
+          "expansion": null,
+          "file_name": "src/hir/nodes.rs",
+          "is_primary": false,
+          "label": "method `clone_payload_bytes` not found for this enum",
+          "line_end": 145,
+          "line_start": 145,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 22,
+              "highlight_start": 1,
+              "text": "pub enum ResolvedType {"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0599",
+        "explanation": "This error occurs when a method is used on a type which doesn't implement it:\n\nErroneous code example:\n\n```compile_fail,E0599\nstruct Mouth;\n\nlet x = Mouth;\nx.chocolate(); // error: no method named `chocolate` found for type `Mouth`\n               //        in the current scope\n```\n\nIn this case, you need to implement the `chocolate` method to fix the error:\n\n```\nstruct Mouth;\n\nimpl Mouth {\n    fn chocolate(&self) { // We implement the `chocolate` method here.\n        println!(\"Hmmm! I love chocolate!\");\n    }\n}\n\nlet x = Mouth;\nx.chocolate(); // ok!\n```\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0599]: no method named `types_slice` found for reference `&BasePreludeBundle` in the current scope\n  --> src/hir/declaration_index/nominal_base.rs:21:14\n   |\n21 |         base.types_slice().get(ordinal)\n   |              ^^^^^^^^^^^\n   |\nhelp: there is a method `type_id` with a similar name\n   |\n21 -         base.types_slice().get(ordinal)\n21 +         base.type_id().get(ordinal)\n   |\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "there is a method `type_id` with a similar name",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 925,
+              "byte_start": 914,
+              "column_end": 25,
+              "column_start": 14,
+              "expansion": null,
+              "file_name": "src/hir/declaration_index/nominal_base.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 21,
+              "line_start": 21,
+              "suggested_replacement": "type_id",
+              "suggestion_applicability": "MaybeIncorrect",
+              "text": [
+                {
+                  "highlight_end": 25,
+                  "highlight_start": 14,
+                  "text": "        base.types_slice().get(ordinal)"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "error",
+      "message": "no method named `types_slice` found for reference `&BasePreludeBundle` in the current scope",
+      "spans": [
+        {
+          "byte_end": 925,
+          "byte_start": 914,
+          "column_end": 25,
+          "column_start": 14,
+          "expansion": null,
+          "file_name": "src/hir/declaration_index/nominal_base.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 21,
+          "line_start": 21,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 25,
+              "highlight_start": 14,
+              "text": "        base.types_slice().get(ordinal)"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0599",
+        "explanation": "This error occurs when a method is used on a type which doesn't implement it:\n\nErroneous code example:\n\n```compile_fail,E0599\nstruct Mouth;\n\nlet x = Mouth;\nx.chocolate(); // error: no method named `chocolate` found for type `Mouth`\n               //        in the current scope\n```\n\nIn this case, you need to implement the `chocolate` method to fix the error:\n\n```\nstruct Mouth;\n\nimpl Mouth {\n    fn chocolate(&self) { // We implement the `chocolate` method here.\n        println!(\"Hmmm! I love chocolate!\");\n    }\n}\n\nlet x = Mouth;\nx.chocolate(); // ok!\n```\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0599]: no method named `declarations_slice` found for reference `&BasePreludeBundle` in the current scope\n  --> src/hir/declaration_index/nominal_base.rs:33:33\n   |\n33 |         for declaration in base.declarations_slice() {\n   |                                 ^^^^^^^^^^^^^^^^^^\n   |\nhelp: there is a method `declarations` with a similar name\n   |\n33 -         for declaration in base.declarations_slice() {\n33 +         for declaration in base.declarations() {\n   |\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "there is a method `declarations` with a similar name",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 1494,
+              "byte_start": 1476,
+              "column_end": 51,
+              "column_start": 33,
+              "expansion": null,
+              "file_name": "src/hir/declaration_index/nominal_base.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 33,
+              "line_start": 33,
+              "suggested_replacement": "declarations",
+              "suggestion_applicability": "MaybeIncorrect",
+              "text": [
+                {
+                  "highlight_end": 51,
+                  "highlight_start": 33,
+                  "text": "        for declaration in base.declarations_slice() {"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "error",
+      "message": "no method named `declarations_slice` found for reference `&BasePreludeBundle` in the current scope",
+      "spans": [
+        {
+          "byte_end": 1494,
+          "byte_start": 1476,
+          "column_end": 51,
+          "column_start": 33,
+          "expansion": null,
+          "file_name": "src/hir/declaration_index/nominal_base.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 33,
+          "line_start": 33,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 51,
+              "highlight_start": 33,
+              "text": "        for declaration in base.declarations_slice() {"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0599",
+        "explanation": "This error occurs when a method is used on a type which doesn't implement it:\n\nErroneous code example:\n\n```compile_fail,E0599\nstruct Mouth;\n\nlet x = Mouth;\nx.chocolate(); // error: no method named `chocolate` found for type `Mouth`\n               //        in the current scope\n```\n\nIn this case, you need to implement the `chocolate` method to fix the error:\n\n```\nstruct Mouth;\n\nimpl Mouth {\n    fn chocolate(&self) { // We implement the `chocolate` method here.\n        println!(\"Hmmm! I love chocolate!\");\n    }\n}\n\nlet x = Mouth;\nx.chocolate(); // ok!\n```\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0599]: no method named `types_slice` found for reference `&BasePreludeBundle` in the current scope\n  --> src/hir/declaration_index/nominal_base.rs:44:23\n   |\n44 |         for _ in base.types_slice() {\n   |                       ^^^^^^^^^^^\n   |\nhelp: there is a method `type_id` with a similar name\n   |\n44 -         for _ in base.types_slice() {\n44 +         for _ in base.type_id() {\n   |\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "there is a method `type_id` with a similar name",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 1960,
+              "byte_start": 1949,
+              "column_end": 34,
+              "column_start": 23,
+              "expansion": null,
+              "file_name": "src/hir/declaration_index/nominal_base.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 44,
+              "line_start": 44,
+              "suggested_replacement": "type_id",
+              "suggestion_applicability": "MaybeIncorrect",
+              "text": [
+                {
+                  "highlight_end": 34,
+                  "highlight_start": 23,
+                  "text": "        for _ in base.types_slice() {"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "error",
+      "message": "no method named `types_slice` found for reference `&BasePreludeBundle` in the current scope",
+      "spans": [
+        {
+          "byte_end": 1960,
+          "byte_start": 1949,
+          "column_end": 34,
+          "column_start": 23,
+          "expansion": null,
+          "file_name": "src/hir/declaration_index/nominal_base.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 44,
+          "line_start": 44,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 34,
+              "highlight_start": 23,
+              "text": "        for _ in base.types_slice() {"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0599",
+        "explanation": "This error occurs when a method is used on a type which doesn't implement it:\n\nErroneous code example:\n\n```compile_fail,E0599\nstruct Mouth;\n\nlet x = Mouth;\nx.chocolate(); // error: no method named `chocolate` found for type `Mouth`\n               //        in the current scope\n```\n\nIn this case, you need to implement the `chocolate` method to fix the error:\n\n```\nstruct Mouth;\n\nimpl Mouth {\n    fn chocolate(&self) { // We implement the `chocolate` method here.\n        println!(\"Hmmm! I love chocolate!\");\n    }\n}\n\nlet x = Mouth;\nx.chocolate(); // ok!\n```\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0308]: mismatched types\n  --> src/hir/renewal_probes.rs:63:16\n   |\n63 |         lookup(&self.type_parameters, key, work)\n   |         ------ ^^^^^^^^^^^^^^^^^^^^^ expected `&BTreeMap<DeclarationId, Vec<...>>`, found `&IndexMap<NominalPayload<...>>`\n   |         |\n   |         arguments to this function are incorrect\n   |\n   = note: expected reference `&std::collections::BTreeMap<ids::DeclarationId, Vec<nodes::ResolvedTypeParameterDeclaration>>`\n              found reference `&hir::nominal_payload::map::IndexMap<hir::nominal_payload::NominalPayload<nodes::ResolvedTypeParameterDeclaration>>`\nnote: function defined here\n  --> src/hir/renewal_probes.rs:12:15\n   |\n12 | pub(crate) fn lookup<'a, V>(\n   |               ^^^^^^\n13 |     map: &'a BTreeMap<DeclarationId, V>,\n   |     -----------------------------------\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "expected reference `&std::collections::BTreeMap<ids::DeclarationId, Vec<nodes::ResolvedTypeParameterDeclaration>>`\n   found reference `&hir::nominal_payload::map::IndexMap<hir::nominal_payload::NominalPayload<nodes::ResolvedTypeParameterDeclaration>>`",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "function defined here",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 410,
+              "byte_start": 375,
+              "column_end": 40,
+              "column_start": 5,
+              "expansion": null,
+              "file_name": "src/hir/renewal_probes.rs",
+              "is_primary": false,
+              "label": "",
+              "line_end": 13,
+              "line_start": 13,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 40,
+                  "highlight_start": 5,
+                  "text": "    map: &'a BTreeMap<DeclarationId, V>,"
+                }
+              ]
+            },
+            {
+              "byte_end": 362,
+              "byte_start": 356,
+              "column_end": 21,
+              "column_start": 15,
+              "expansion": null,
+              "file_name": "src/hir/renewal_probes.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 12,
+              "line_start": 12,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 21,
+                  "highlight_start": 15,
+                  "text": "pub(crate) fn lookup<'a, V>("
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "error",
+      "message": "mismatched types",
+      "spans": [
+        {
+          "byte_end": 1946,
+          "byte_start": 1925,
+          "column_end": 37,
+          "column_start": 16,
+          "expansion": null,
+          "file_name": "src/hir/renewal_probes.rs",
+          "is_primary": true,
+          "label": "expected `&BTreeMap<DeclarationId, Vec<...>>`, found `&IndexMap<NominalPayload<...>>`",
+          "line_end": 63,
+          "line_start": 63,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 37,
+              "highlight_start": 16,
+              "text": "        lookup(&self.type_parameters, key, work)"
+            }
+          ]
+        },
+        {
+          "byte_end": 1924,
+          "byte_start": 1918,
+          "column_end": 15,
+          "column_start": 9,
+          "expansion": null,
+          "file_name": "src/hir/renewal_probes.rs",
+          "is_primary": false,
+          "label": "arguments to this function are incorrect",
+          "line_end": 63,
+          "line_start": 63,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 15,
+              "highlight_start": 9,
+              "text": "        lookup(&self.type_parameters, key, work)"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0308",
+        "explanation": "Expected type did not match the received type.\n\nErroneous code examples:\n\n```compile_fail,E0308\nfn plus_one(x: i32) -> i32 {\n    x + 1\n}\n\nplus_one(\"Not a number\");\n//       ^^^^^^^^^^^^^^ expected `i32`, found `&str`\n\nif \"Not a bool\" {\n// ^^^^^^^^^^^^ expected `bool`, found `&str`\n}\n\nlet x: f32 = \"Not a float\";\n//     ---   ^^^^^^^^^^^^^ expected `f32`, found `&str`\n//     |\n//     expected due to this\n```\n\nThis error occurs when an expression was used in a place where the compiler\nexpected an expression of a different type. It can occur in several cases, the\nmost common being when calling a function and passing an argument which has a\ndifferent type than the matching type in the function declaration.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0308]: mismatched types\n  --> src/hir/renewal_probes.rs:70:16\n   |\n70 |         lookup(&self.record_fields, key, work)\n   |         ------ ^^^^^^^^^^^^^^^^^^^ expected `&BTreeMap<DeclarationId, Vec<...>>`, found `&IndexMap<NominalPayload<...>>`\n   |         |\n   |         arguments to this function are incorrect\n   |\n   = note: expected reference `&std::collections::BTreeMap<ids::DeclarationId, Vec<nodes::ResolvedFieldDeclaration>>`\n              found reference `&hir::nominal_payload::map::IndexMap<hir::nominal_payload::NominalPayload<nodes::ResolvedFieldDeclaration>>`\nnote: function defined here\n  --> src/hir/renewal_probes.rs:12:15\n   |\n12 | pub(crate) fn lookup<'a, V>(\n   |               ^^^^^^\n13 |     map: &'a BTreeMap<DeclarationId, V>,\n   |     -----------------------------------\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "expected reference `&std::collections::BTreeMap<ids::DeclarationId, Vec<nodes::ResolvedFieldDeclaration>>`\n   found reference `&hir::nominal_payload::map::IndexMap<hir::nominal_payload::NominalPayload<nodes::ResolvedFieldDeclaration>>`",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "function defined here",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 410,
+              "byte_start": 375,
+              "column_end": 40,
+              "column_start": 5,
+              "expansion": null,
+              "file_name": "src/hir/renewal_probes.rs",
+              "is_primary": false,
+              "label": "",
+              "line_end": 13,
+              "line_start": 13,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 40,
+                  "highlight_start": 5,
+                  "text": "    map: &'a BTreeMap<DeclarationId, V>,"
+                }
+              ]
+            },
+            {
+              "byte_end": 362,
+              "byte_start": 356,
+              "column_end": 21,
+              "column_start": 15,
+              "expansion": null,
+              "file_name": "src/hir/renewal_probes.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 12,
+              "line_start": 12,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 21,
+                  "highlight_start": 15,
+                  "text": "pub(crate) fn lookup<'a, V>("
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "error",
+      "message": "mismatched types",
+      "spans": [
+        {
+          "byte_end": 2156,
+          "byte_start": 2137,
+          "column_end": 35,
+          "column_start": 16,
+          "expansion": null,
+          "file_name": "src/hir/renewal_probes.rs",
+          "is_primary": true,
+          "label": "expected `&BTreeMap<DeclarationId, Vec<...>>`, found `&IndexMap<NominalPayload<...>>`",
+          "line_end": 70,
+          "line_start": 70,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 35,
+              "highlight_start": 16,
+              "text": "        lookup(&self.record_fields, key, work)"
+            }
+          ]
+        },
+        {
+          "byte_end": 2136,
+          "byte_start": 2130,
+          "column_end": 15,
+          "column_start": 9,
+          "expansion": null,
+          "file_name": "src/hir/renewal_probes.rs",
+          "is_primary": false,
+          "label": "arguments to this function are incorrect",
+          "line_end": 70,
+          "line_start": 70,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 15,
+              "highlight_start": 9,
+              "text": "        lookup(&self.record_fields, key, work)"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0308",
+        "explanation": "Expected type did not match the received type.\n\nErroneous code examples:\n\n```compile_fail,E0308\nfn plus_one(x: i32) -> i32 {\n    x + 1\n}\n\nplus_one(\"Not a number\");\n//       ^^^^^^^^^^^^^^ expected `i32`, found `&str`\n\nif \"Not a bool\" {\n// ^^^^^^^^^^^^ expected `bool`, found `&str`\n}\n\nlet x: f32 = \"Not a float\";\n//     ---   ^^^^^^^^^^^^^ expected `f32`, found `&str`\n//     |\n//     expected due to this\n```\n\nThis error occurs when an expression was used in a place where the compiler\nexpected an expression of a different type. It can occur in several cases, the\nmost common being when calling a function and passing an argument which has a\ndifferent type than the matching type in the function declaration.\n"
+      }
+    }
+  }
+]

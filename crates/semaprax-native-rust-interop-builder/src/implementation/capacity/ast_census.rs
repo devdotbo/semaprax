@@ -29,6 +29,7 @@ pub(in crate::implementation) fn scan_ast_capacity<'a>(
                     .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
                 stats.max_depth = stats.max_depth.max(depth);
                 let indexed_children = match &expression.kind {
+                    crate::ast::ExprKind::LexicalExit { value, .. } => usize::from(value.is_some()),
                     crate::ast::ExprKind::Closure { .. } => 1,
                     crate::ast::ExprKind::Call { args, .. } => args.len(),
                     crate::ast::ExprKind::MethodCall { args, .. } => args.len() + 1,
@@ -65,7 +66,8 @@ pub(in crate::implementation) fn scan_ast_capacity<'a>(
                     crate::ast::ExprKind::UpdateRecord { fields, .. } => fields.len() + 1,
                     crate::ast::ExprKind::If { .. } => 3,
                     crate::ast::ExprKind::Binary { .. } => 2,
-                    crate::ast::ExprKind::Unary { .. }
+                    crate::ast::ExprKind::VecConstructor { .. }
+                    | crate::ast::ExprKind::Unary { .. }
                     | crate::ast::ExprKind::Try { .. }
                     | crate::ast::ExprKind::Yield { .. }
                     | crate::ast::ExprKind::Project { .. } => 1,
@@ -80,6 +82,7 @@ pub(in crate::implementation) fn scan_ast_capacity<'a>(
                     | crate::ast::ExprKind::Float64(_)
                     | crate::ast::ExprKind::Bool(_)
                     | crate::ast::ExprKind::String(_)
+                    | crate::ast::ExprKind::BorrowedUtf8Literal(_)
                     | crate::ast::ExprKind::Var(_) => 0,
                 };
                 stats.max_indexed_children = stats.max_indexed_children.max(indexed_children);
@@ -105,6 +108,12 @@ pub(in crate::implementation) fn scan_ast_capacity<'a>(
                                 | crate::ast::Statement::ForOwn { item, .. } => {
                                     Some((count.checked_add(1)?, bytes.checked_add(item.len())?))
                                 }
+                                crate::ast::Statement::ForBorrow { item, index, .. } => Some((
+                                    count.checked_add(1 + usize::from(index.is_some()))?,
+                                    bytes.checked_add(item.len())?.checked_add(
+                                        index.as_ref().map_or(0, |index| index.name.len()),
+                                    )?,
+                                )),
                                 crate::ast::Statement::Unsafe { .. }
                                 | crate::ast::Statement::While { .. } => Some((count, bytes)),
                             },
@@ -408,7 +417,8 @@ fn ast_resource_leaf_count(
             .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?
         {
             Frame::Enter(
-                crate::ast::Type::I64
+                crate::ast::Type::Never
+                | crate::ast::Type::I64
                 | crate::ast::Type::I32
                 | crate::ast::Type::Char
                 | crate::ast::Type::U8

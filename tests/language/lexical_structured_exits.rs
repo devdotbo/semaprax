@@ -1,0 +1,244 @@
+//! Owning source controls for the selective lexical-control-flow profile.
+use semaprax::{format, hir, parse, verify};
+fn source(body: &str) -> String {
+    format!("module app.exits; @id(\"app.main\") fn main()->i64 {{ {body} }}")
+}
+#[test]
+fn guard_exits_and_loop_return_canonicalize_without_dummy_values() {
+    for body in [
+        "let mut index=0; while index<4 { index=index+1; if index==2 { continue; }; if index==3 { break; }; 0 } return index;",
+        "let mut index=0; while index<4 { index=index+1; if index==2 { return index; }; 0 } return 8;",
+    ] {
+        let program=parse(&source(body),"lexical-exits.spx").unwrap();
+        let diagnostics=verify::verify(&program);
+        assert!(diagnostics.is_empty(),"{diagnostics:#?}");
+        let canonical=format::canonical(&program);
+        assert_eq!(format::canonical(&parse(&canonical,"lexical-exits.spx").unwrap()),canonical);
+        assert!(canonical.contains("return "));
+        let resolved=hir::resolve(&program).unwrap();
+        hir::validate(&resolved).unwrap();
+        assert_eq!(resolved.functions[0].loan_plan.schema,"semaprax.loan-plan.v3");
+    }
+}
+#[test]
+fn loop_exit_outside_loop_has_stable_source_diagnostic() {
+    for body in ["break;", "continue;"] {
+        let program = parse(&source(body), "outside-loop.spx").unwrap();
+        assert!(verify::verify(&program)
+            .iter()
+            .any(|d| d.code == "SPX-T313"));
+    }
+}
+#[test]
+fn initializer_exit_crossing_is_refused_before_ownership_lowering() {
+    let program = parse(
+        &source("let value={ while false { 0 } return 7; }; value"),
+        "crossing.spx",
+    )
+    .unwrap();
+    assert!(verify::verify(&program)
+        .iter()
+        .any(|d| d.code == "SPX-T312"));
+}
+#[test]
+fn lexical_exit_unreachable_suffix_is_not_discarded() {
+    assert!(parse(&source("while true { break; 99 } 0"), "suffix.spx").is_err());
+}
+#[test]
+fn old_acyclic_return_projection_remains_identical() {
+    let authored = parse(&source("if true { return 7; } return 9;"), "old-return.spx").unwrap();
+    let ordinary = parse(&source("if true { 7 } else { 9 }"), "old-return.spx").unwrap();
+    assert_eq!(format::canonical(&authored), format::canonical(&ordinary));
+}
+
+fn checked_loop() -> hir::ResolvedProgram {
+    let program = parse(
+        &source("while true { continue; } return 7;"),
+        "target-replay.spx",
+    )
+    .unwrap();
+    assert!(verify::verify(&program).is_empty());
+    hir::resolve(&program).unwrap()
+}
+fn loop_parts(
+    program: &mut hir::ResolvedProgram,
+) -> (&mut hir::ResolvedExpr, &mut hir::LoopLatchKind) {
+    let hir::ResolvedExprKind::Block { statements, .. } = &mut program.functions[0].body.kind
+    else {
+        panic!("function block")
+    };
+    let hir::ResolvedStatement::LexicalWhile { body, latch, .. } = &mut statements[0] else {
+        panic!("selective lexical loop")
+    };
+    let hir::ResolvedExprKind::Block { tail, .. } = &mut body.kind else {
+        panic!("loop block")
+    };
+    (tail, latch)
+}
+#[test]
+fn hostile_loop_target_and_latch_are_independently_rejected() {
+    let mut program = checked_loop();
+    let (exit, _) = loop_parts(&mut program);
+    let hir::ResolvedExprKind::LexicalExit { target, .. } = &mut exit.kind else {
+        panic!("continue")
+    };
+    let hir::ControlTarget::Loop { owner, .. } = target else {
+        panic!("loop target")
+    };
+    *owner =
+        hir::FunctionExecutionId::Monomorphic(hir::DeclarationId::new("forged.owner".to_owned()));
+    assert_eq!(hir::validate(&program).unwrap_err().code, "SPX-H006");
+    let mut program = checked_loop();
+    let (exit, latch) = loop_parts(&mut program);
+    *latch = hir::LoopLatchKind::SourceForStep {
+        kind: hir::SourceForKind::Copy,
+        step: exit.id.clone(),
+    };
+    assert_eq!(hir::validate(&program).unwrap_err().code, "SPX-H006");
+}
+#[test]
+fn compiler_completion_is_not_a_public_result_or_storage_value() {
+    let mut program = checked_loop();
+    program.functions[0].return_type = hir::ResolvedType::Never;
+    assert_eq!(hir::validate(&program).unwrap_err().code, "SPX-H006");
+    let mut program = checked_loop();
+    let (exit, _) = loop_parts(&mut program);
+    exit.ownership = hir::OwnershipMode::Own;
+    assert_eq!(hir::validate(&program).unwrap_err().code, "SPX-H006");
+}
+#[test]
+fn lexical_return_keeps_exact_declared_result_type() {
+    let program = parse(
+        &source("while false { 0 } return true;"),
+        "wrong-return.spx",
+    )
+    .unwrap();
+    assert!(verify::verify(&program)
+        .iter()
+        .any(|d| d.code == "SPX-T103"));
+}
+
+#[test]
+fn loop_break_cannot_hide_an_outer_owner_transfer_before_later_read() {
+    let source = r#"module app.owner_exit;
+@id("consume") fn consume(value:own string)->i64 {0}
+@id("main") fn main()->i64 {
+    let value="owner";
+    while true { let consumed=consume(value); break; }
+    consume(value)
+}"#;
+    let program = parse(source, "moved-before-break.spx").unwrap();
+    let diagnostics = verify::verify(&program);
+    assert!(
+        diagnostics
+            .iter()
+            .any(|d| matches!(d.code, "SPX-O101" | "SPX-O104" | "SPX-T252"))
+            || hir::resolve(&program)
+                .err()
+                .is_some_and(|errors| errors.iter().any(|d| d.code == "SPX-H006")),
+        "a lexical break must not republish an already transferred outer owner"
+    );
+}
+
+#[test]
+fn legacy_terminal_and_guard_returns_after_unrelated_loop_keep_projection() {
+    for (authored, ordinary) in [
+        ("while false { 0 } return 7;", "while false { 0 } 7"),
+        (
+            "while false { 0 } if true { return 7; } return 9;",
+            "while false { 0 } if true {7} else {9}",
+        ),
+    ] {
+        assert_eq!(
+            format::canonical(&parse(&source(authored), "legacy-loop.spx").unwrap()),
+            format::canonical(&parse(&source(ordinary), "legacy-loop.spx").unwrap())
+        );
+    }
+}
+#[test]
+fn selective_parse_rollback_preserves_authored_and_prior_discard_names() {
+    let program=parse(&source("let _if1=1; if false { let before=2; }; while true { if true { continue; }; break; } return _if1;"),"discard-rollback.spx").unwrap();
+    let canonical = format::canonical(&program);
+    assert_eq!(
+        format::canonical(&parse(&canonical, "discard-rollback.spx").unwrap()),
+        canonical
+    );
+    assert!(verify::verify(&program).is_empty());
+}
+
+#[test]
+fn loop_exit_branches_keep_outer_owner_transfers_and_function_returns_discard_them() {
+    for body in [
+        "let consumed=consume(value); continue;",
+        "if true {let consumed=consume(value);break;};0",
+        "if true {let consumed=consume(value);continue;};0",
+        "match true {true=>{let consumed=consume(value);break;},false=>{0},}",
+    ] {
+        let source = format!("module app.owner_join; @id(\"consume\") fn consume(value:own string)->i64 {{0}} @id(\"main\") fn main()->i64 {{let value=\"owner\"; while true {{{body}}} consume(value)}}");
+        let program = parse(&source, "moved-before-exit-branch.spx").unwrap();
+        assert!(
+            verify::verify(&program)
+                .iter()
+                .any(|d| matches!(d.code, "SPX-O101" | "SPX-O104" | "SPX-T252")),
+            "{body}"
+        );
+        assert!(
+            hir::resolve(&program).is_err(),
+            "independent HIR must retain transfer on {body}"
+        );
+    }
+    let source = "module app.return_join; @id(\"main\") fn probe()->string {let value=\"owner\"; while true {return value;} value} @id(\"entry.main\") fn main()->i64 {0}";
+    let program = semaprax::check(source, "whole-function-return.spx").unwrap();
+    let resolved = hir::resolve(&program).unwrap();
+    hir::validate(&resolved).unwrap();
+}
+
+#[test]
+fn guarded_loop_transfers_cannot_hide_behind_a_later_function_return() {
+    for exit in ["break", "continue"] {
+        let source = format!("module app.guarded_exit; @id(\"consume\") fn consume(value:string)->i64 {{0}} @id(\"main\") fn probe(flag:bool)->i64 {{let value=\"owner\"; while true {{if flag {{let consumed=consume(value);{exit};}};return 0;}} consume(value)}} @id(\"entry.main\") fn main()->i64 {{0}}");
+        let ast = parse(&source, "guarded-transfer-return.spx").unwrap();
+        let errors = verify::verify(&ast);
+        assert!(
+            errors
+                .iter()
+                .any(|d| matches!(d.code, "SPX-T252" | "SPX-O101" | "SPX-O104")),
+            "{errors:?}"
+        );
+        // Invalid source must stop before HIR construction. The public resolver
+        // preserves the complete source diagnostic set; it cannot manufacture
+        // an independent HIR invariant failure for this rejected program.
+        let expected: Vec<_> = errors.iter().map(|diagnostic| diagnostic.json()).collect();
+        let resolved_errors = hir::resolve(&ast).unwrap_err();
+        assert_eq!(
+            resolved_errors
+                .iter()
+                .map(|diagnostic| diagnostic.json())
+                .collect::<Vec<_>>(),
+            expected,
+            "{exit}: source refusal must survive the HIR boundary unchanged"
+        );
+        let analysis = hir::analyze(&ast);
+        assert!(
+            analysis.resolved.is_none(),
+            "{exit}: invalid source acquired HIR"
+        );
+        assert_eq!(
+            analysis
+                .diagnostics
+                .iter()
+                .map(|diagnostic| diagnostic.json())
+                .collect::<Vec<_>>(),
+            expected
+        );
+    }
+    let source = "module app.nested_return; @id(\"main\") fn probe()->string {let value=\"owner\";while true {while true {break;}return value;} value} @id(\"entry.main\") fn main()->i64 {0}";
+    let ast = semaprax::check(source, "local-break-then-return.spx").unwrap();
+    let program = hir::resolve(&ast).unwrap();
+    hir::validate(&program).unwrap();
+    let canonical = format::canonical(&ast);
+    assert_eq!(
+        format::canonical(&parse(&canonical, "local-break-roundtrip.spx").unwrap()),
+        canonical
+    );
+}

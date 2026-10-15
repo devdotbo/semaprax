@@ -1,0 +1,31 @@
+{
+  "status": "STRICT_ACTUAL086C_PLAN_AND_PATCH_DATA_ONLY_NOT_APPLIED",
+  "source_head": "086c4f1ee917199424f06f37d0f943b693d7e776",
+  "private_repository": "/Volumes/Semaprax/worktrees/sharing-actual-pins-1a0b-20261015",
+  "private_head": "086c4f1ee917199424f06f37d0f943b693d7e776",
+  "repository_status": "",
+  "capture_apply_performed": false,
+  "literal_edits": 11,
+  "source_metadata_rows": [
+    {
+      "path": "src/workspace_graph/type_proof_tests.rs",
+      "before_sha256": "1095f188f0b3da85a832f826efc38e3b6932f72b4db7a47fb7962962522a15b1",
+      "candidate_after_sha256": "5151cceb4b99db3470a01f7ed5d192de9e5c212610aa774e11a4079c17d27c92"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before_sha256": "1efb7f50c84ec3ecec1f74dc27fc465866caf1e199e88427ac2d6f1c91b24246",
+      "candidate_after_sha256": "00786b21cf8e3d6a23ef90e4ca042ac5a5b2a57842916675c78ffed0b1b6347e"
+    },
+    {
+      "path": "docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json",
+      "before_sha256": "6de9651c74d451f6caeeab09378e4179648b881da93ae9ad866ebe9cbda65591",
+      "candidate_after_sha256": "88e9e3316e5e68ebbe4cfb7b9e985e4c1d17a1b48cc32c86cd89b9510ba76a55"
+    }
+  ],
+  "existing_complete_original_inverse_verified": true,
+  "whole_previous_wire_inverses_verified": 10,
+  "patch_sha256": "1d3d38506e38b4c73ea0d667e37699819aeb6716483bfb146ed0679d59c73607",
+  "inverse_patch_sha256": "0251df601ffc0a867c2f65207cd377509b143e719e0ffdd5f89e7242359165cb",
+  "future_application_requirement": "After ROOT authorization copy complete old/current capture/evidence/history and actual application basis record; preflight ALL exact target old owner bytes before any write. Do not relabel086c as a later producer or apply this patch without its retained evidence."
+}

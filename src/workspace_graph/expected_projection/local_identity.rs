@@ -26,8 +26,16 @@ pub(super) fn discount(
                                 let count = counts.entry(name).or_default();
                                 *count = count.saturating_add(1);
                             }
-                            Statement::For { item, .. } | Statement::ForOwn { item, .. } => {
+                            Statement::For { item, .. }
+                            | Statement::ForBorrow { item, .. }
+                            | Statement::ForOwn { item, .. } => {
                                 blocked.insert(item);
+                                if let Statement::ForBorrow {
+                                    index: Some(index), ..
+                                } = statement
+                                {
+                                    blocked.insert(&index.name);
+                                }
                             }
                             _ => {}
                         }

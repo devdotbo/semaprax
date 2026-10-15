@@ -7,7 +7,7 @@ impl HirValidator<'_> {
         operation: &DeclarationId,
         place: &Place,
         span: crate::ast::Span,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<ResolvedType, Diagnostic> {
         if operation.as_str() == crate::stdin_stream_ops::CHUNK_ID {
             let binding = scope
@@ -170,12 +170,9 @@ pub(super) fn reject_sealed_escape(program: &ResolvedProgram) -> Result<(), Diag
     Ok(())
 }
 
-pub(super) fn reopen_reader(
-    scope: &mut BTreeMap<ValueId, ValidationBinding>,
-    owner: &ValueId,
-) -> Result<(), Diagnostic> {
+pub(super) fn reopen_reader(scope: &mut dyn ScopeWrite, owner: &ValueId) -> Result<(), Diagnostic> {
     let binding = scope
-        .get_mut(owner)
+        .get_mut(owner)?
         .ok_or_else(|| hir_error("streaming renewal owner is absent"))?;
     if !crate::stdin_stream_ops::is_reader(&binding.ty)
         || binding.ownership != OwnershipMode::Own
@@ -189,3 +186,5 @@ pub(super) fn reopen_reader(
     binding.availability = Availability::Available;
     Ok(())
 }
+
+pub(super) mod paid;

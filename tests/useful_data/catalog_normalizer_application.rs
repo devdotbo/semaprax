@@ -694,7 +694,10 @@ fn focused_r05_controls_agree_across_interpreter_native_and_core_wasm() {
 
 #[test]
 fn batch_boundaries_and_string_normalization_agree_across_backends() {
-    let root = fixture();
+    assert_batch_backend_matrix(&fixture());
+}
+
+fn assert_batch_backend_matrix(root: &Path) {
     for source in SOURCE_FILES {
         let path = root.join("src").join(source);
         let bytes = std::fs::read_to_string(&path).unwrap();
@@ -940,6 +943,9 @@ fn batch_boundaries_and_string_normalization_agree_across_backends() {
                 "catalog-normalizer application disagreed with the oracle for {name}"
             );
         }
+        // Deliberate fingerprint collisions, escaped/raw equivalence, 64/65,
+        // 256 rows and first-error order run in this same snapshot.
+        decoded_index::assert_decoded_index_cases(snapshot.test_program())?;
         let denied_input = b"{\"id\":\"widget-1\",\"label\":\"l\",\"quantity\":1}\n{\"id\":\"blocked-vendor\",\"label\":\"l\",\"quantity\":1}\n{\"id\":\"later\",\"label\":\"l\",\"quantity\":1}\n";
         let denied_expected = run_oracle_with(denied_input, true);
         let denied_response: serde_json::Value =
@@ -1029,7 +1035,15 @@ fn batch_boundaries_and_string_normalization_agree_across_backends() {
             host.push_str(
                 &std::fs::read_to_string(
                     Path::new(env!("CARGO_MANIFEST_DIR"))
-                        .join("tests/useful_data/catalog_normalizer_application.mjs"),
+                        .join(if snapshot.test_program().functions.iter().any(|function| {
+                            function.id.as_str() == "std.data.json.dec.fingerprint_match"
+                        }) {
+                            "tests/useful_data/catalog_normalizer_application/decoded_index/host.mjs"
+                        } else {
+                            // The independently frozen pairwise source retains
+                            // its exact original import list and host controls.
+                            "tests/useful_data/catalog_normalizer_application.mjs"
+                        }),
                 )
                 .unwrap(),
             );
@@ -1052,7 +1066,7 @@ fn batch_boundaries_and_string_normalization_agree_across_backends() {
     // A candidate that counts the terminal LF as a record must fail the
     // frozen CNORM-001 case; success above cannot come from an inert harness.
     assert_batch_mutant_rejected(
-        &root,
+        root,
         scratch.path(),
         "terminal-lf-mutant",
         "if only_line { 0usize } else { count }",
@@ -1062,7 +1076,7 @@ fn batch_boundaries_and_string_normalization_agree_across_backends() {
     // CNORM-005 is not covered by the terminal-LF control. Deliberately
     // accepting every line must make the raw malformed-sequence case fail.
     assert_batch_mutant_rejected(
-        &root,
+        root,
         scratch.path(),
         "utf8-mutant",
         "line_utf8_end_range(body, start, end) == end - start",
@@ -1072,10 +1086,16 @@ fn batch_boundaries_and_string_normalization_agree_across_backends() {
     // CNORM-015's boundary is likewise independent of record splitting: a
     // checked-total predicate that never reports overflow must be caught.
     assert_batch_mutant_rejected(
-        &root,
+        root,
         scratch.path(),
         "total-mutant",
         "total > 9223372036854775807 - quantity",
         "false",
     );
 }
+
+#[path = "catalog_normalizer_application/ndjson.rs"]
+mod ndjson;
+
+#[path = "catalog_normalizer_application/decoded_index.rs"]
+mod decoded_index;

@@ -1,0 +1,14 @@
+{
+  "root_owns_join_mutations": true,
+  "add_to_existing_complete_canonical_loan_storage_inventory": [
+    "src/hir/canonical_loan_storage/caller_before.rs",
+    "src/hir/canonical_loan_storage/scratch.rs",
+    "src/hir/canonical_loan_storage/tests/reuse.rs"
+  ],
+  "existing_roots_and_original_tests_must_remain": [
+    "src/hir/canonical_loan_storage.rs",
+    "src/hir/canonical_loan_storage/caller.rs",
+    "src/hir/canonical_loan_storage/tests.rs"
+  ],
+  "no_source_join_edits_in_this_commit": true
+}

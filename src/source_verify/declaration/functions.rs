@@ -1,13 +1,12 @@
 //! Function-level checks: declaration admission, generic call cycles, and the
 //! per-function body, contract, and effect checks.
-
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
     Expr, ExprKind, Function, ImportDeclaration, InterfaceDeclaration, MatchPattern, ParamMode,
-    Program, RecordMatchFieldPattern, Statement, Type,
+    RecordMatchFieldPattern, Statement, Type,
 };
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::binding::{Availability, Binding};
-use crate::source_verify::declared_type::generic_result;
 use crate::source_verify::declared_type::{
     check_declared_type, check_ownership_mode, function_reaches, function_reaches_any,
     generic_function_arguments_are_forwarded, generic_function_contains_nested_owned_record_slot,
@@ -17,21 +16,24 @@ use crate::source_verify::declared_type::{
     generic_function_signature_slot, owned_record_function_substitutions,
     scalar_function_substitutions,
 };
+use crate::source_verify::declared_type::{declared_collection::reject_function, generic_result};
 use crate::source_verify::diagnostics::{
-    error, invalid_stable_id, reject_native_unit_value, reject_reserved_host_id, require_bool,
-    source_identifier,
+    error, invalid_stable_id, reject_native_unit_value, reject_reserved_host_id,
+    require_bool_with_signature, source_identifier,
 };
-use crate::source_verify::iterative::check_expr_iterative;
+use crate::source_verify::iterative::check_expr_with_signature_view;
+mod signature_refusal;
 use crate::source_verify::type_table::TypeTable;
+pub(in crate::source_verify) use signature_refusal::SignatureOrigin;
 use std::collections::{BTreeSet, HashMap, HashSet};
-
 pub(super) fn check_function_declarations<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
+    types: &TypeTable<'p>,
     functions: &mut HashMap<&'p str, &'p Function>,
     ids: &mut HashSet<&'p str>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for function in &program.functions {
+    for function in program.functions() {
         if !source_identifier(&function.name) {
             diagnostics.push(error(
                 program,
@@ -40,7 +42,8 @@ pub(super) fn check_function_declarations<'p>(
                 function.name_span,
             ));
         }
-        if crate::string_ops::by_name(&function.name).is_some()
+        if function.name == crate::literal_format::NAME
+            || crate::string_ops::by_name(&function.name).is_some()
             || crate::map_ops::by_name(&function.name).is_some()
         {
             diagnostics.push(error(
@@ -75,7 +78,7 @@ pub(super) fn check_function_declarations<'p>(
                 function.name_span,
             ));
         }
-        if crate::vec_ops::by_name(&function.name).is_some() {
+        if super::super::vec_field::reserved_function(function) {
             diagnostics.push(error(
                 program,
                 "SPX-S113",
@@ -187,7 +190,7 @@ pub(super) fn check_function_declarations<'p>(
                     ),
                     function.name_span,
                 )
-                .at_path(&program.path)
+                .at_path(program.path())
                 .with_help("add @id(\"your.namespace.symbol\") before the declaration"),
             );
         }
@@ -229,7 +232,8 @@ pub(super) fn check_function_declarations<'p>(
                 "SPX-T286",
                 format!(
                     "`{}.{}` must be one exact transparent compiler-owned box wrapper",
-                    program.module, function.name
+                    program.module(),
+                    function.name
                 ),
                 function.span,
             ));
@@ -243,7 +247,8 @@ pub(super) fn check_function_declarations<'p>(
                 "SPX-T283",
                 format!(
                     "`{}.{}` must be one exact transparent compiler-owned vector wrapper",
-                    program.module, function.name
+                    program.module(),
+                    function.name
                 ),
                 function.span,
             ));
@@ -260,7 +265,8 @@ pub(super) fn check_function_declarations<'p>(
                     "SPX-T283",
                     format!(
                         "`{}.{}` must be one exact transparent compiler-owned vector wrapper",
-                        program.module, function.name
+                        program.module(),
+                        function.name
                     ),
                     function.span,
                 ));
@@ -277,7 +283,8 @@ pub(super) fn check_function_declarations<'p>(
                     "SPX-T286",
                     format!(
                         "`{}.{}` must be one exact transparent compiler-owned box wrapper",
-                        program.module, function.name
+                        program.module(),
+                        function.name
                     ),
                     function.span,
                 ));
@@ -324,19 +331,13 @@ pub(super) fn check_function_declarations<'p>(
                     function.span,
                 ));
             }
-            let variant = crate::source_verify::declared_type::generic_variant::profile(
-                function,
-                &TypeTable::new(program),
-            );
+            let variant =
+                crate::source_verify::declared_type::generic_variant::profile(function, types);
             let owned_result = generic_result::profile(function);
             let collection =
                 crate::source_verify::declared_type::generic_collection::profile(function);
             for param in &function.params {
-                let owned_record = generic_function_owned_record_slot(
-                    function,
-                    &param.ty,
-                    &TypeTable::new(program),
-                );
+                let owned_record = generic_function_owned_record_slot(function, &param.ty, types);
                 if !((param.mode == ParamMode::Value
                     && (generic_function_signature_slot(&param.ty, &parameter_names)
                         || (collection
@@ -349,15 +350,20 @@ pub(super) fn check_function_declarations<'p>(
                         && (owned_record
                             || (variant
                                 && crate::source_verify::declared_type::generic_variant::slot(
-                                    function,
-                                    &param.ty,
-                                    &TypeTable::new(program),
+                                    function, &param.ty, types,
                                 ))
                             || (collection
                                 && crate::source_verify::declared_type::generic_collection::slot(
                                     function, &param.ty,
                                 ))
                             || (owned_result && generic_result::slot(function, &param.ty)))))
+                    && !signature_refusal::unknown_component(
+                        program,
+                        &param.ty,
+                        param.span,
+                        types,
+                        &parameter_names,
+                    )
                 {
                     diagnostics.push(error(
                         program,
@@ -374,10 +380,13 @@ pub(super) fn check_function_declarations<'p>(
                 && !variant
                 && !collection
                 && !generic_function_signature_slot(&function.return_type, &parameter_names)
-                && !generic_function_owned_record_slot(
-                    function,
+                && !generic_function_owned_record_slot(function, &function.return_type, types)
+                && !signature_refusal::unknown_component(
+                    program,
                     &function.return_type,
-                    &TypeTable::new(program),
+                    function.span,
+                    types,
+                    &parameter_names,
                 )
             {
                 diagnostics.push(error(
@@ -390,13 +399,9 @@ pub(super) fn check_function_declarations<'p>(
                     function.span,
                 ));
             }
-            if generic_function_contains_nested_owned_record_slot(
-                function,
-                &TypeTable::new(program),
-            ) && !generic_function_has_owned_record_composition(
-                function,
-                &TypeTable::new(program),
-            ) {
+            if generic_function_contains_nested_owned_record_slot(function, types)
+                && !generic_function_has_owned_record_composition(function, types)
+            {
                 diagnostics.push(error(
                     program,
                     "SPX-T224",
@@ -412,7 +417,6 @@ pub(super) fn check_function_declarations<'p>(
             {
                 diagnostics.push(diagnostic);
             }
-            let types = TypeTable::new(program);
             let invalid_contract = function
                 .requires
                 .iter()
@@ -420,13 +424,13 @@ pub(super) fn check_function_declarations<'p>(
                 .any(|expression| !generic_function_expression_is_direct_scalar(expression));
             let invalid_body = !crate::source_verify::declared_type::generic_variant::body(
                 function,
-                &types,
+                types,
                 &function.body,
             ) && !generic_result::body(function, &function.body)
                 && !generic_function_expression_is_direct_scalar(&function.body)
                 && !generic_function_expression_is_owned_record_composition(
                     function,
-                    &types,
+                    types,
                     &function.body,
                 );
             let invalid_body = invalid_body && !(crate::source_verify::generic_collection_profile(function)
@@ -445,21 +449,20 @@ pub(super) fn check_function_declarations<'p>(
         }
     }
 }
-
-pub(super) fn check_generic_function_cycles<'p>(
-    program: &'p Program,
+pub(super) fn check_generic_function_cycles_with_types<'p>(
+    program: &'p dyn ProgramSource,
     call_graph: &HashMap<String, Vec<String>>,
     generic_functions: &HashSet<&'p str>,
+    types: &TypeTable<'p>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
     let functions = program
-        .functions
+        .functions()
         .iter()
         .map(|function| (function.name.as_str(), function))
         .collect::<HashMap<_, _>>();
-    let types = TypeTable::new(program);
     for function in program
-        .functions
+        .functions()
         .iter()
         .filter(|function| !function.type_parameters.is_empty())
     {
@@ -480,12 +483,12 @@ pub(super) fn check_generic_function_cycles<'p>(
                 expression,
                 &mut bindings,
                 &functions,
-                &types,
+                types,
                 diagnostics,
                 0,
             );
             expression.visit_call_instances(&mut |callee, arguments, span| {
-                if let Some(target) = program.functions.iter().find(|target| {
+                if let Some(target) = program.functions().iter().find(|target| {
                     target.name == callee && !target.type_parameters.is_empty()
                 }) {
                     if arguments.is_empty() {
@@ -544,28 +547,14 @@ pub(super) fn check_generic_function_cycles<'p>(
         }
     }
 }
-
+mod traversal_scope;
+use traversal_scope::static_binding;
 const MAX_STATIC_MAPPING_DEPTH: usize = 128;
-
-fn static_binding(ty: Type) -> Binding {
-    Binding {
-        ty,
-        mode: ParamMode::Value,
-        availability: Availability::Available,
-        moved_places: HashMap::new(),
-        definitely_partial: HashSet::new(),
-        native_unit_discard: false,
-        mutable: false,
-        active_loans: BTreeSet::new(),
-        borrow_origin: None,
-    }
-}
-
 /// Carries the lexical scope, declaration table, and bounded traversal state
 /// required to authenticate an omitted symbolic mapping before body checking.
 #[allow(clippy::too_many_arguments)]
 fn check_omitted_generic_mappings(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     bindings: &mut HashMap<String, Binding>,
@@ -596,6 +585,7 @@ fn check_omitted_generic_mappings(
     }
     let next = depth + 1;
     match &expression.kind {
+        ExprKind::LexicalExit { value: None, .. } => {}
         ExprKind::Closure { .. } => {}
         ExprKind::Call {
             name,
@@ -714,6 +704,9 @@ fn check_omitted_generic_mappings(
                     Statement::For {
                         item, values, body, ..
                     }
+                    | Statement::ForBorrow {
+                        item, values, body, ..
+                    }
                     | Statement::ForOwn {
                         item, values, body, ..
                     } => {
@@ -729,6 +722,12 @@ fn check_omitted_generic_mappings(
                         );
                         let mut body_scope = scope.clone();
                         body_scope.remove(item);
+                        if let Statement::ForBorrow {
+                            index: Some(index), ..
+                        } = statement
+                        {
+                            body_scope.remove(&index.name);
+                        }
                         check_omitted_generic_mappings(
                             program,
                             current,
@@ -753,7 +752,11 @@ fn check_omitted_generic_mappings(
                 next,
             );
         }
-        ExprKind::Unary { value, .. }
+        ExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }
         | ExprKind::Project { base: value, .. } => check_omitted_generic_mappings(
@@ -927,12 +930,12 @@ fn check_omitted_generic_mappings(
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::ArrayU8(_)
         | ExprKind::RepeatArrayU8 { .. }
         | ExprKind::Var(_) => {}
     }
 }
-
 fn clear_pattern_bindings(pattern: &MatchPattern, bindings: &mut HashMap<String, Binding>) {
     match pattern {
         MatchPattern::Variant { fields, .. } => {
@@ -951,7 +954,6 @@ fn clear_pattern_bindings(pattern: &MatchPattern, bindings: &mut HashMap<String,
         MatchPattern::Wildcard { .. } | MatchPattern::Literal { .. } | MatchPattern::Or { .. } => {}
     }
 }
-
 fn clear_record_pattern_bindings(
     pattern: &RecordMatchFieldPattern,
     bindings: &mut HashMap<String, Binding>,
@@ -968,22 +970,25 @@ fn clear_record_pattern_bindings(
         RecordMatchFieldPattern::Wildcard { .. } => {}
     }
 }
-
 pub(super) fn check_function_bodies<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     functions: &HashMap<&'p str, &'p Function>,
     import_keys: &HashMap<&'p str, (&'p InterfaceDeclaration, &'p ImportDeclaration)>,
     types: &TypeTable<'p>,
     diagnostics: &mut Vec<Diagnostic>,
+    fused_producer: Option<&'p Expr>,
 ) {
+    let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
     let function_value_targets =
         crate::source_verify::function_value_inventory::function_value_targets(program, functions);
-    for template in &program.functions {
+    for template in program.functions() {
+        reject_function(program, template, types, diagnostics);
         let type_parameters = template
             .type_parameters
             .iter()
             .map(|parameter| parameter.name.as_str())
             .collect::<HashSet<_>>();
+        let return_frontier = diagnostics.len();
         check_declared_type(
             program,
             &template.return_type,
@@ -992,6 +997,9 @@ pub(super) fn check_function_bodies<'p>(
             &type_parameters,
             diagnostics,
         );
+        let return_unknown = diagnostics[return_frontier..]
+            .iter()
+            .any(|diagnostic| diagnostic.code == "SPX-T001");
         for param in &template.params {
             check_declared_type(
                 program,
@@ -1031,11 +1039,13 @@ pub(super) fn check_function_bodies<'p>(
                 == template.type_parameters.len();
         let transparent_vec_wrapper = crate::vec_ops::source_wrapper(program, template);
         let transparent_box_wrapper = crate::box_ops::source_wrapper(program, template);
-        let specializations = if template.type_parameters.is_empty()
+        let specializations: std::borrow::Cow<'_, [Function]> = if template
+            .type_parameters
+            .is_empty()
             || transparent_vec_wrapper.is_some()
             || transparent_box_wrapper.is_some()
         {
-            vec![template.clone()]
+            std::borrow::Cow::Borrowed(std::slice::from_ref(template))
         } else if generic_parameter_list_is_valid {
             // These clones exist only to validate every admitted direct-scalar
             // substitution. Executable HIR instances are discovered separately
@@ -1055,22 +1065,28 @@ pub(super) fn check_function_bodies<'p>(
             } else {
                 scalar_function_substitutions(template.type_parameters.len())
             };
-            substitutions
-                .iter()
-                .filter_map(|arguments| {
-                    crate::source_verify::closure::specialize_checked(
-                        program,
-                        template,
-                        arguments,
-                        diagnostics,
-                    )
-                })
-                .collect()
+            std::borrow::Cow::Owned(
+                substitutions
+                    .iter()
+                    .filter_map(|arguments| {
+                        crate::source_verify::closure::specialize_checked(
+                            program,
+                            template,
+                            arguments,
+                            diagnostics,
+                        )
+                    })
+                    .collect(),
+            )
         } else {
-            Vec::new()
+            std::borrow::Cow::Owned(Vec::new())
         };
         let mut specialized_diagnostics = HashSet::new();
-        for function in &specializations {
+        for function in specializations.iter() {
+            let return_unknown = return_unknown
+                || signature_refusal::origin(program, template, function)
+                    .and_then(|origin| origin.return_refusal(program, function, types, diagnostics))
+                    .is_some();
             let specialized_diagnostic_start = diagnostics.len();
             let mut variables = HashMap::new();
             if function.return_type == Type::Str {
@@ -1128,6 +1144,8 @@ pub(super) fn check_function_bodies<'p>(
                     .insert(
                         param.name.clone(),
                         Binding {
+                            contract_local: false,
+                            traversal_row: None,
                             ty: param.ty.clone(),
                             mode: binding_mode,
                             availability: Availability::Available,
@@ -1150,7 +1168,6 @@ pub(super) fn check_function_bodies<'p>(
                 }
             }
 
-            let entry_variables = variables.clone();
             for contract in &function.requires {
                 contract.visit_calls(&mut |callee, span| {
                     if crate::host_io_ops::by_name(callee).is_some() {
@@ -1170,20 +1187,21 @@ pub(super) fn check_function_bodies<'p>(
                         ));
                     }
                 });
-                require_bool(
+                require_bool_with_signature(
                     program,
                     function,
                     contract,
-                    &entry_variables,
+                    &variables,
                     functions,
                     types,
                     None,
                     diagnostics,
                     "precondition",
+                    signature_refusal::origin(program, template, function),
                 );
             }
 
-            if let Some(actual) = check_expr_iterative(
+            let (body_value, refusal_view) = check_expr_with_signature_view(
                 program,
                 function,
                 &function.body,
@@ -1193,22 +1211,43 @@ pub(super) fn check_function_bodies<'p>(
                 None,
                 true,
                 diagnostics,
-            ) {
+                Some(&byte_helpers),
+                fused_producer,
+                signature_refusal::origin(program, template, function),
+            );
+            if let Some(actual) = body_value {
                 if actual.native_unit {
                     reject_native_unit_value(program, &function.body, &actual, diagnostics);
                 }
-                if !actual.native_unit && actual.ty != function.return_type {
+                if !actual.native_unit
+                    && actual.ty != Type::Never
+                    && actual.ty != function.return_type
+                    && !return_unknown
+                    && !refusal_view.is_some_and(|view| view.declared == &function.return_type)
+                {
                     diagnostics.push(error(
                         program,
                         "SPX-T103",
                         format!(
                             "function `{}` returns {}, but its signature declares {}",
-                            function.name, actual.ty, function.return_type
+                            function.name,
+                            crate::source_verify::private_names::type_name(
+                                program, types, &actual.ty
+                            ),
+                            crate::source_verify::private_names::type_name(
+                                program,
+                                types,
+                                &function.return_type
+                            )
                         ),
                         function.body.span,
                     ));
                 }
-                if types.needs_drop(&function.return_type) && actual.mode != ParamMode::Own {
+                if actual.ty != Type::Never
+                    && (actual.native_unit || actual.ty == function.return_type)
+                    && types.needs_drop(&function.return_type)
+                    && actual.mode != ParamMode::Own
+                {
                     diagnostics.push(
                         error(
                             program,
@@ -1246,7 +1285,7 @@ pub(super) fn check_function_bodies<'p>(
                         ));
                     }
                 });
-                require_bool(
+                require_bool_with_signature(
                     program,
                     function,
                     contract,
@@ -1256,6 +1295,7 @@ pub(super) fn check_function_bodies<'p>(
                     Some(&function.return_type),
                     diagnostics,
                     "postcondition",
+                    signature_refusal::origin(program, template, function),
                 );
             }
 
@@ -1298,7 +1338,7 @@ pub(super) fn check_function_bodies<'p>(
                 }
             }
             for effect in &function.effects {
-                if !program.permits.iter().any(|permit| permit == effect) {
+                if !program.permits().iter().any(|permit| permit == effect) {
                     diagnostics.push(crate::source_verify::hints::unpermitted_effect(
                         program, function, effect,
                     ));
@@ -1364,135 +1404,34 @@ pub(super) fn check_function_bodies<'p>(
             }
         }
     }
+    if let Some(error) = byte_helpers.failure() {
+        diagnostics.push(error.at_path(program.path()));
+    }
 }
 
 #[cfg(test)]
-mod generic_inference_tests {
-    use super::*;
-    use std::path::Path;
+mod generic_inference_tests;
 
-    fn parsed(source: &str) -> Program {
-        crate::parse(source, Path::new("generic-forwarding-precheck.spx")).unwrap()
-    }
+#[cfg(test)]
+#[rustfmt::skip]
+pub(super) mod old;
 
-    fn mapping_diagnostics(program: &Program) -> Vec<Diagnostic> {
-        let functions = program
-            .functions
-            .iter()
-            .map(|function| (function.name.as_str(), function))
-            .collect::<HashMap<_, _>>();
-        let function_value_targets =
-            crate::source_verify::function_value_inventory::function_value_targets(
-                program, &functions,
-            );
-        let call_graph = program
-            .functions
-            .iter()
-            .map(|function| {
-                (
-                    function.name.clone(),
-                    crate::source_verify::function_value_inventory::calls(
-                        function,
-                        &functions,
-                        &function_value_targets,
-                    ),
-                )
-            })
-            .collect();
-        let generic_functions = program
-            .functions
-            .iter()
-            .filter(|function| !function.type_parameters.is_empty())
-            .map(|function| function.name.as_str())
-            .collect();
-        let mut diagnostics = Vec::new();
-        check_generic_function_cycles(program, &call_graph, &generic_functions, &mut diagnostics);
-        diagnostics
-    }
-
-    fn nested_calls(count: usize, explicit: bool) -> Program {
-        let mut program = parsed(
-            r#"
-module test.generic_precheck;
-@id("infer.id") fn id<T>(value:T)->T{value}
-@id("infer.outer") fn outer<T>(value:T)->T{value}
-@id("app.main") fn main()->i64{0}
-"#,
-        );
-        let mut expression = Expr {
-            kind: ExprKind::Var("value".to_owned()),
-            span: crate::ast::Span::default(),
-        };
-        for _ in 0..count {
-            expression = Expr {
-                kind: ExprKind::Call {
-                    name: "id".to_owned(),
-                    type_arguments: if explicit {
-                        vec![Type::Named {
-                            name: "T".to_owned(),
-                            arguments: Vec::new(),
-                        }]
-                    } else {
-                        Vec::new()
-                    },
-                    args: vec![expression],
-                },
-                span: crate::ast::Span::default(),
-            };
-        }
-        program
-            .functions
-            .iter_mut()
-            .find(|function| function.name == "outer")
-            .unwrap()
-            .body = expression;
-        program
-    }
-
-    #[test]
-    fn omitted_mapping_depth_fails_closed_without_rejecting_explicit_mapping() {
-        assert!(mapping_diagnostics(&nested_calls(128, false)).is_empty());
-        let omitted_program = nested_calls(129, false);
-        let omitted = mapping_diagnostics(&omitted_program);
-        assert!(omitted.iter().any(|diagnostic| {
-            diagnostic.code == "SPX-T225"
-                && diagnostic
-                    .message
-                    .contains("beyond the bounded static traversal")
-        }));
-        let explicit_program = nested_calls(129, true);
-        assert!(mapping_diagnostics(&explicit_program).is_empty());
-    }
-
-    #[test]
-    fn unknown_let_shadow_cannot_reuse_the_outer_parameter_fact() {
-        let program = parsed(
-            r#"
-module test.generic_shadow;
-@id("infer.id") fn id<T>(value:T)->T{value}
-@id("infer.outer") fn outer<T>(value:T)->T{{let value=missing;id(value)}}
-@id("app.main") fn main()->i64{0}
-"#,
-        );
-        let diagnostics = mapping_diagnostics(&program);
-        assert!(diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "SPX-T225"));
-    }
-
-    #[test]
-    fn match_binding_shadow_cannot_reuse_the_outer_parameter_fact() {
-        let program = parsed(
-            r#"
-module test.generic_match_shadow;
-@id("infer.id") fn id<T>(value:T)->T{value}
-@id("infer.outer") fn outer<T>(value:T)->T{match value{value=>id(value),}}
-@id("app.main") fn main()->i64{0}
-"#,
-        );
-        let diagnostics = mapping_diagnostics(&program);
-        assert!(diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "SPX-T225"));
-    }
+#[cfg(test)]
+pub(super) fn check_generic_function_cycles<'p>(
+    program: &'p dyn ProgramSource,
+    call_graph: &HashMap<String, Vec<String>>,
+    generic_functions: &HashSet<&'p str>,
+    diagnostics: &mut Vec<Diagnostic>,
+) {
+    check_generic_function_cycles_with_types(
+        program,
+        call_graph,
+        generic_functions,
+        &TypeTable::new(program),
+        diagnostics,
+    );
 }
+
+#[cfg(test)]
+#[rustfmt::skip]
+pub(in crate::source_verify) mod public_signature_before;

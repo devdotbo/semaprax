@@ -1,0 +1,34 @@
+{
+  "src/workspace_graph/generic_type_import.rs": {
+    "sha256": "e77b8101263cd06efff59b0144c4aedaf9fa7edcc691b56d38b21b91df3c564d",
+    "bytes": 10623
+  },
+  "src/workspace_graph/generic_type_import/original.rs": {
+    "sha256": "24d2c8507f1090f5a6124629be65423b0d38fc6eb12f6e626787e7365925f2da",
+    "bytes": 8134
+  },
+  "src/workspace_graph/generic_type_import/borrowed_tests.rs": {
+    "sha256": "d331c855c41b28628584bd2576c93c0f72226ed07beb1cfe25272e178a0a9b31",
+    "bytes": 21897
+  },
+  "src/workspace_graph/expected_projection/cost.rs": {
+    "sha256": "dc82998ecf0fc9660069c46c67de574ced77a7c33a2a1013aaaa70f15a0f4dc5",
+    "bytes": 40093
+  },
+  "src/workspace_graph/expected_projection/cost/generic_rewrite_test_bridge.rs": {
+    "sha256": "31391c27adf5fa9a0d174721309f33b3a7c453729890c828f33aed3720694903",
+    "bytes": 1381
+  },
+  "tests/workspace/semantic_graph/source_inventory.rs": {
+    "sha256": "b3e5276b6bd016d1632ed6349ce34cd2e25fce762627b12c4416790ac02842be",
+    "bytes": 26223
+  },
+  "src/workspace_graph/generic_type_import/parameter_names.rs": {
+    "sha256": "391f07555cafca7f17e8f214dacbf0d73049f0230b605e772fe4b3475f1644bd",
+    "bytes": 3635
+  },
+  "src/workspace_graph/generic_type_import/parameter_names/tests.rs": {
+    "sha256": "ef445329240ecd04add5142d9440efd64b1ec568a4df3a53a91acf84172591f0",
+    "bytes": 9544
+  }
+}

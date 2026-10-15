@@ -165,7 +165,7 @@ fn direction(outcome: &Result<ProjectCandidateRebase>, prefix: usize) -> Result<
             }
             let mut remaining = MAX_DIAGNOSTIC_BYTES;
             for diagnostic in diagnostics {
-                for text in [diagnostic.code, diagnostic.message.as_str()] {
+                for text in [diagnostic.code, diagnostic.message.as_ref()] {
                     remaining = remaining.checked_sub(text.len()).ok_or_else(|| {
                         capacity("candidate merge preview diagnostic text exceeds its bound")
                     })?;
@@ -224,7 +224,7 @@ mod tests {
         let message = "é".repeat((MAX_DIAGNOSTIC_BYTES - code.len()) / 2);
         let mut diagnostics = vec![Diagnostic::io(code, message)];
         assert!(direction(&Err(diagnostics.clone()), 0).is_ok());
-        diagnostics[0].message.push('x');
+        diagnostics[0].message.to_mut().push('x');
         assert_eq!(
             direction(&Err(diagnostics), 0).unwrap_err()[0].code,
             "SPX-G226"

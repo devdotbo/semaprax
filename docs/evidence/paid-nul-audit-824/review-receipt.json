@@ -1,0 +1,8 @@
+{
+  "status": "local source review only; no Cargo/build/tests",
+  "claude_new_owner_review": "approval_rejected_before_execution_or_egress",
+  "no_retry": true,
+  "actual_usage": null,
+  "actual_billing": "no API call started",
+  "reason": "This exports new internal compiler sources and diagnostics to Anthropic; the verified user approval was given in response to a question naming seven different files, so it does not specifically authorize this new payload and destination. Do not bypass this rejection through a workaround or indirect execution."
+}

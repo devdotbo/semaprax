@@ -29,15 +29,19 @@ pub(super) struct Destructure {
     pub(super) owned_bindings: Vec<OwnedBinding>,
 }
 
-pub(super) fn contains_nested(fields: &[ResolvedRecordMatchPatternField]) -> bool {
-    let mut pending = fields.iter().collect::<Vec<_>>();
-    while let Some(field) = pending.pop() {
-        if let ResolvedRecordMatchFieldPattern::Record { fields, .. } = &field.pattern {
-            pending.extend(fields);
-            return true;
+pub(super) fn contains_nested(
+    index: &crate::hir::DeclarationIndex,
+    root: &ResolvedType,
+    fields: &[ResolvedRecordMatchPatternField],
+) -> bool {
+    fields.iter().any(|field| match &field.pattern {
+        ResolvedRecordMatchFieldPattern::Record { .. } => true,
+        ResolvedRecordMatchFieldPattern::Binding(binding) => {
+            crate::hir::owned_record_subtree::candidate(binding)
+                && crate::hir::owned_record_subtree::admitted(index, root, &binding.ty)
         }
-    }
-    false
+        ResolvedRecordMatchFieldPattern::Wildcard => false,
+    })
 }
 
 pub(super) fn transfer_owned(
@@ -110,7 +114,7 @@ pub(super) fn observe_borrow(
     else {
         return Ok(());
     };
-    if contains_nested(fields) {
+    if contains_nested(&builder.program.declarations, instance, fields) {
         let result = derive(
             builder.program,
             record,
@@ -237,8 +241,21 @@ pub(super) fn derive(
                             "nested record binding type or ownership is not canonical",
                         ));
                     }
+                    let subtree = needs_drop
+                        && mode == ResolvedMatchMode::Own
+                        && crate::hir::owned_record_subtree::admitted(
+                            &program.declarations,
+                            instance,
+                            &field_ty,
+                        );
+                    nested |= subtree;
                     non_byte_owned_terminal |= needs_drop
-                        && !matches!(field_ty, ResolvedType::Bytes | ResolvedType::String);
+                        && !subtree
+                        && !matches!(field_ty, ResolvedType::Bytes | ResolvedType::String)
+                        && !crate::hir::owned_collection_record::vector(
+                            &program.declarations,
+                            &field_ty,
+                        );
                     if needs_drop && mode == ResolvedMatchMode::Own {
                         if owned_bindings.len() >= MAX_OWNED_LEAVES {
                             return Err(super::plan_error(

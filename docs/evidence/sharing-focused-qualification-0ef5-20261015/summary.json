@@ -1,0 +1,30 @@
+{
+  "source_subject": "0ef52c381ed4615da7c6b124df7fafa420a71902",
+  "selected": 71,
+  "passed": 64,
+  "failed": 7,
+  "count_mismatches": [],
+  "production_lib_cli_clippy": "PASS warnings denied",
+  "maximum_positive_swap_used_delta_bytes": 0,
+  "mutex_every_acquisition_refusal_owner": "PASS; real post-refusal allocation repair confirmed",
+  "whole_nominal_funding": "FAIL allocated27765 paid18685 live15680 highwater15800",
+  "remaining_failures": [
+    "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+    "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+    "workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core",
+    "hir::identity_resolution::nominal_tests::nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal",
+    "workspace_graph::type_proof_tests::projection_tests::rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+    "semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+    "semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact"
+  ],
+  "pin_capture_status": {
+    "public_graph": 101,
+    "analysis": 101,
+    "projection_wire": 0,
+    "note": "Actual captures complete; three stale consumer pins remain, strict new plan outside repo not applied."
+  },
+  "no_full_suite": true,
+  "no_new_live_benchmark": true,
+  "application_recovery": false,
+  "issue_closures": []
+}

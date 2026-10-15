@@ -5,6 +5,7 @@
 //! user's canonical `.spx` file. The revision digest binds this schema so an
 //! implicit-prelude change cannot silently retain an old semantic base.
 
+use crate::ast::program_source::ProgramSource;
 use std::fmt::Write as _;
 use std::sync::OnceLock;
 
@@ -27,6 +28,21 @@ pub(crate) const SCHEMA_V9: &str = "semaprax.prelude.v9";
 pub(crate) const SCHEMA_V10: &str = "semaprax.prelude.v10";
 pub(crate) const SCHEMA_V11: &str = "semaprax.prelude.v11";
 pub(crate) const SCHEMA_V12: &str = "semaprax.prelude.v12";
+pub(crate) const SCHEMA_V18: &str = "semaprax.prelude.v18";
+#[path = "prelude_field_unique.rs"]
+pub(crate) mod field_unique;
+pub(crate) const SCHEMA_V17: &str = "semaprax.prelude.v17";
+pub(crate) const SCHEMA_V16: &str = "semaprax.prelude.v16";
+#[path = "prelude_static_text.rs"]
+pub(crate) mod static_text;
+pub(crate) const SCHEMA_V15: &str = "semaprax.prelude.v15";
+#[path = "prelude_sort_keys.rs"]
+pub(crate) mod sort_keys;
+#[path = "prelude_string_slots.rs"]
+pub(crate) mod string_slots;
+pub(crate) const SCHEMA_V14: &str = "semaprax.prelude.v14";
+#[path = "prelude_owned_leaf.rs"]
+pub(crate) mod owned_leaf;
 pub(crate) const SCHEMA_V13: &str = "semaprax.prelude.v13";
 #[path = "prelude_map.rs"]
 mod collections;
@@ -34,6 +50,12 @@ pub(crate) use collections::{contract_bytes_v13, digest_text_v13};
 #[path = "prelude_sort.rs"]
 mod sorting;
 pub(crate) use sorting::{contract_bytes_v12, digest_text_v12};
+
+#[cfg(test)]
+#[path = "prelude/base_original.rs"]
+mod base_original;
+#[path = "prelude/base_schema.rs"]
+pub(crate) mod base_schema;
 
 pub(crate) const OPTION_ID: &str = "core.option";
 pub(crate) const OPTION_NONE_ID: &str = "core.option.none";
@@ -48,9 +70,45 @@ pub(crate) const RESULT_ERR_ERROR_ID: &str = "core.result.err.error";
 pub(crate) const VEC_ID: &str = "core.vec";
 pub(crate) const BOX_ID: &str = "core.box";
 
+/// The owning construction of the process prelude table. The `OnceLock` below
+/// is its only production caller; declarations, order and bytes are unchanged.
+fn owned_declarations() -> Vec<TypeDeclaration> {
+    vec![
+        option(),
+        result(),
+        owned_vec(),
+        owned_box(),
+        owned_iter(),
+        iter_step(),
+        immutable_list(),
+        list_step(),
+        crate::stdin_stream_ops::declaration(),
+        collections::declaration(false),
+        collections::declaration(true),
+    ]
+}
+
 pub(crate) fn declarations() -> &'static [TypeDeclaration] {
     static DECLARATIONS: OnceLock<Vec<TypeDeclaration>> = OnceLock::new();
-    DECLARATIONS.get_or_init(|| {
+    DECLARATIONS.get_or_init(owned_declarations)
+}
+
+/// Test-only access to a fresh, caller-owned copy of the same construction,
+/// so allocation controls can measure it through Drop without the cache.
+#[cfg(test)]
+pub(crate) fn owned_declarations_for_tests() -> Vec<TypeDeclaration> {
+    owned_declarations()
+}
+
+/// Independent reference: the complete original `OnceLock` initializer body,
+/// retained verbatim before the owning factory was extracted.
+#[cfg(test)]
+#[allow(
+    clippy::redundant_closure_call,
+    reason = "complete original OnceLock initializer retained byte-exact as an independent receiving oracle"
+)]
+pub(crate) fn original_initializer_reference() -> Vec<TypeDeclaration> {
+    (|| {
         vec![
             option(),
             result(),
@@ -64,12 +122,10 @@ pub(crate) fn declarations() -> &'static [TypeDeclaration] {
             collections::declaration(false),
             collections::declaration(true),
         ]
-    })
+    })()
 }
 
-pub(crate) fn declarations_for_program(
-    program: &crate::ast::Program,
-) -> &'static [TypeDeclaration] {
+pub(crate) fn declarations_for_program(program: &dyn ProgramSource) -> &'static [TypeDeclaration] {
     if crate::map_ops::program_uses(program) {
         declarations()
     } else if crate::stdin_stream_ops::program_uses(program)
@@ -217,8 +273,8 @@ pub(crate) fn all_type_ids_v9() -> [&'static str; 23] {
     ids
 }
 
-pub(crate) fn all_reserved_ids() -> [&'static str; 66] {
-    let mut ids = [""; 66];
+pub(crate) fn all_reserved_ids() -> [&'static str; 67] {
+    let mut ids = [""; 67];
     ids[..46].copy_from_slice(&[
         OPTION_ID,
         OPTION_NONE_ID,
@@ -267,7 +323,8 @@ pub(crate) fn all_reserved_ids() -> [&'static str; 66] {
         crate::stdin_stream_ops::CHUNK_ID,
         crate::stdin_stream_ops::EOF_ID,
     ]);
-    ids[46..].copy_from_slice(&crate::map_ops::reserved_ids());
+    ids[46..66].copy_from_slice(&crate::map_ops::reserved_ids());
+    ids[66] = crate::construction_fusion::partition::ID;
     ids
 }
 
@@ -553,7 +610,7 @@ pub(crate) fn digest_text_v5() -> String {
     output
 }
 
-pub(crate) fn program_uses_box(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses_box(program: &dyn ProgramSource) -> bool {
     fn function_uses_box(function: &crate::ast::Function) -> bool {
         crate::box_ops::wrapper_by_id(&function.stable_id).is_some()
             || function
@@ -569,9 +626,9 @@ pub(crate) fn program_uses_box(program: &crate::ast::Program) -> bool {
                     found
                 })
     }
-    program.module_uses.iter().any(|module_use| module_use.kind == ModuleUseKind::Function && module_use.target_module == crate::box_ops::MODULE && crate::box_ops::wrapper_by_id(&module_use.persistent_id).is_some())
-        || program.functions.iter().any(function_uses_box)
-        || program.types.iter().any(|declaration| matches!(&declaration.kind, TypeDeclarationKind::Class { methods, .. } if methods.iter().any(function_uses_box)))
+    program.module_uses().iter().any(|module_use| module_use.kind == ModuleUseKind::Function && module_use.target_module == crate::box_ops::MODULE && crate::box_ops::wrapper_by_id(&module_use.persistent_id).is_some())
+        || program.functions().iter().any(function_uses_box)
+        || program.types().iter().any(|declaration| matches!(&declaration.kind, TypeDeclarationKind::Class { methods, .. } if methods.iter().any(function_uses_box)))
 }
 
 fn vec_v3_op(op: crate::vec_ops::VecOp) -> bool {
@@ -583,7 +640,7 @@ fn vec_v3_op(op: crate::vec_ops::VecOp) -> bool {
     )
 }
 
-pub(crate) fn program_uses_vec_v3(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses_vec_v3(program: &dyn ProgramSource) -> bool {
     fn function_uses_vec_v3(function: &crate::ast::Function) -> bool {
         crate::vec_ops::wrapper_by_id(&function.stable_id).is_some_and(vec_v3_op)
             || function
@@ -600,12 +657,12 @@ pub(crate) fn program_uses_vec_v3(program: &crate::ast::Program) -> bool {
                 })
     }
 
-    program.module_uses.iter().any(|module_use| {
+    program.module_uses().iter().any(|module_use| {
         module_use.kind == ModuleUseKind::Function
             && module_use.target_module == crate::vec_ops::MODULE
             && crate::vec_ops::wrapper_by_id(&module_use.persistent_id).is_some_and(vec_v3_op)
-    }) || program.functions.iter().any(function_uses_vec_v3)
-        || program.types.iter().any(|declaration| {
+    }) || program.functions().iter().any(function_uses_vec_v3)
+        || program.types().iter().any(|declaration| {
             matches!(
                 &declaration.kind,
                 TypeDeclarationKind::Class { methods, .. }
@@ -614,7 +671,7 @@ pub(crate) fn program_uses_vec_v3(program: &crate::ast::Program) -> bool {
         })
 }
 
-pub(crate) fn program_uses_vec(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses_vec(program: &dyn ProgramSource) -> bool {
     fn type_uses_vec(ty: &Type) -> bool {
         let mut pending = vec![ty];
         while let Some(ty) = pending.pop() {
@@ -642,13 +699,14 @@ pub(crate) fn program_uses_vec(program: &crate::ast::Program) -> bool {
             .chain(&function.ensures)
         {
             expression.visit_calls(&mut |name, _| {
-                found |= crate::vec_ops::by_name(name).is_some();
+                found |= crate::vec_ops::by_name(name).is_some()
+                    || name == crate::construction_fusion::partition::NAME;
             });
         }
         found
     }
 
-    program.types.iter().any(|declaration| {
+    program.types().iter().any(|declaration| {
         declaration.extends.as_ref().is_some_and(type_uses_vec)
             || match &declaration.kind {
                 TypeDeclarationKind::Resource { .. } => false,
@@ -664,7 +722,7 @@ pub(crate) fn program_uses_vec(program: &crate::ast::Program) -> bool {
                         || methods.iter().any(function_uses_vec)
                 }
             }
-    }) || program.functions.iter().any(function_uses_vec)
+    }) || program.functions().iter().any(function_uses_vec)
 }
 
 #[cfg(test)]
@@ -682,10 +740,39 @@ pub(crate) fn selected_for_source(source: &str) -> (&'static str, Vec<u8>, Strin
     selected_for_program(&program)
 }
 
-pub(crate) fn selected_for_program(
-    program: &crate::ast::Program,
-) -> (&'static str, Vec<u8>, String) {
-    if crate::map_ops::program_uses(program) {
+pub(crate) fn selected_for_program(program: &dyn ProgramSource) -> (&'static str, Vec<u8>, String) {
+    let (sort_keys, static_text, string_slots) = sort_keys::selection(program);
+    if crate::vec_ops::field_unique::source_uses(program) {
+        (
+            SCHEMA_V18,
+            self::field_unique::contract_bytes(),
+            self::field_unique::digest_text(),
+        )
+    } else if string_slots {
+        (
+            SCHEMA_V17,
+            self::string_slots::contract_bytes(),
+            self::string_slots::digest_text(),
+        )
+    } else if static_text {
+        (
+            SCHEMA_V16,
+            self::static_text::contract_bytes(),
+            self::static_text::digest_text(),
+        )
+    } else if sort_keys {
+        (
+            SCHEMA_V15,
+            sort_keys::contract_bytes(),
+            sort_keys::digest_text(),
+        )
+    } else if owned_leaf::program_uses(program) {
+        (
+            SCHEMA_V14,
+            owned_leaf::contract_bytes(),
+            owned_leaf::digest_text(),
+        )
+    } else if crate::map_ops::program_uses(program) {
         (SCHEMA_V13, contract_bytes_v13(), digest_text_v13())
     } else if crate::vec_ops::program_uses_sort(program) {
         (SCHEMA_V12, contract_bytes_v12(), digest_text_v12())
@@ -758,53 +845,11 @@ fn case(id: &str, name: &str, fields: Vec<FieldDeclaration>) -> VariantCaseDecla
 }
 
 fn option() -> TypeDeclaration {
-    TypeDeclaration {
-        stable_id: OPTION_ID.to_owned(),
-        explicit_id: true,
-        name: "Option".to_owned(),
-        name_span: Span::default(),
-        type_parameters: vec![parameter("T")],
-        kind: TypeDeclarationKind::Variant {
-            cases: vec![
-                case(OPTION_NONE_ID, "None", Vec::new()),
-                case(
-                    OPTION_SOME_ID,
-                    "Some",
-                    vec![field(OPTION_SOME_VALUE_ID, "value", parameter_type("T"))],
-                ),
-            ],
-        },
-        extends: None,
-        invariants: None,
-        span: Span::default(),
-    }
+    base_schema::declaration(&base_schema::OPTION)
 }
 
 fn result() -> TypeDeclaration {
-    TypeDeclaration {
-        stable_id: RESULT_ID.to_owned(),
-        explicit_id: true,
-        name: "Result".to_owned(),
-        name_span: Span::default(),
-        type_parameters: vec![parameter("T"), parameter("E")],
-        kind: TypeDeclarationKind::Variant {
-            cases: vec![
-                case(
-                    RESULT_OK_ID,
-                    "Ok",
-                    vec![field(RESULT_OK_VALUE_ID, "value", parameter_type("T"))],
-                ),
-                case(
-                    RESULT_ERR_ID,
-                    "Err",
-                    vec![field(RESULT_ERR_ERROR_ID, "error", parameter_type("E"))],
-                ),
-            ],
-        },
-        extends: None,
-        invariants: None,
-        span: Span::default(),
-    }
+    base_schema::declaration(&base_schema::RESULT)
 }
 
 fn owned_vec() -> TypeDeclaration {

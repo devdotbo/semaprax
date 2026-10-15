@@ -1,0 +1,51 @@
+# Scalar Expression Statements v1
+
+Status: authored implementation; focused qualification pending.
+Audience: SEMAPRAX authors and compiler contributors.
+
+An intermediate `expr;` discards exactly one existing Copy scalar: `i64`,
+`i32`, `u8`, `usize`, `char`, `f32`, `f64`, or `bool`. There must be a following
+block item. A block still requires its final value; `expr; }` retains `SPX-P106`.
+Owning values, aggregates, functions and borrowed views require an explicit
+binding (`SPX-T315`). Operand typing and its diagnostics run first.
+
+The parser normalizes the statement to an immutable unannotated ordinary let.
+Its fresh `_if<n>` name skips every identifier in the whole file, including
+later text and nested scopes, using the statement-if name issuer. `_` remains
+an ordinary binding: repeated `let _` retains `SPX-T209`.
+
+`LetSyntax::ExpressionStatement` appends AST cache tag 3; existing tags retain
+exact bytes. The marker grants no HIR, cleanup, loan, capability, lexical-exit
+or graph authority. Both source verifiers independently check its shape,
+actual scalar type and Value mode. Nonlexical statements retain the ordinary
+let; the selective lexical extension below uses an explicit no-result HIR
+statement. Backends retain ordinary left-to-right operands, staged calls and cleanup.
+Lazy boolean operands stay lazy. No owning-result discard is introduced.
+The semantic lowering equals the explicit fresh-let form, while the graph
+revision remains bound to each distinct canonical source spelling. Cross-source
+graph replay remains refused. Unknown operands retain `SPX-T202` before discard
+typing.
+
+Canonical formatting preserves `expr;` only for structurally consistent
+markers whose binding has no readers or competing declarations in the enclosing
+body. One bounded borrowed-name census is shared by nested writers; forged
+readers, duplicates, mutability or annotations preserve the full let spelling.
+Name scratch is reserved before growth; global-budget refusal remains sticky.
+The hidden structural AST helper is presentation support, never typed authority.
+
+A direct authenticated Match expression statement may contain a checked
+lexical exit through its statement contour. This selectively lowers to
+CopyDiscard, independently checked for Value Copy scalar or Never completion.
+It does not create a binding or owning-result storage. Generic Block statements, calls, operators,
+constructor fields and named Let initializers retain their value-evaluation
+boundaries and SPX-T312. StatementIf retains its existing separate scalar-zero
+guard completion privilege. See
+[finite owned-record discard loops](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md) for
+the restricted allocating while profile and graph/cache versions.
+
+Owning gates: `language::statement_if::scalar_expression::` (seven authored
+bodies), the existing statement-if/foreign-syntax controls, and AST carrier
+cache round-trip. These cover all eight scalars, hygiene, canonical/graph
+replay, forged markers, owning/borrowed refusals, prior diagnostics, consumed
+String arguments and lazy checked failure on ordinary backend routes.
+Qualification and application/cost evidence remain separate obligations.

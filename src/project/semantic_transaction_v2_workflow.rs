@@ -252,7 +252,10 @@ fn annotate_step(diagnostics: Vec<Diagnostic>, index: usize, target: &str) -> Ve
     diagnostics
         .into_iter()
         .map(|diagnostic| Diagnostic {
-            message: format!("workflow step {index} ({target}): {}", diagnostic.message),
+            message: std::borrow::Cow::Owned(format!(
+                "workflow step {index} ({target}): {}",
+                diagnostic.message
+            )),
             ..diagnostic
         })
         .collect()

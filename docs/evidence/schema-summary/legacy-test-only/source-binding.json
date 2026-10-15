@@ -1,0 +1,50 @@
+{
+  "status": "SOURCE_ONLY_PENDING_CLIPPY_BUILD_RUNTIME",
+  "base": "f8d39034fbe2145590160442ae17c4d69145134d",
+  "actual_clippy_log": "/Volumes/Semaprax/lane-prompts/large-capacity-held-fixed-f8d390-20261014/clippy-production.log",
+  "changed_receiving_sources": {
+    "src/cleanup.rs": {
+      "original_whole_archive": "docs/evidence/schema-summary/legacy-test-only/src__cleanup.rs.before.txt",
+      "original_sha256": "e2a653179270f02ca7d56cfffc11e503043fd00068aac09152a89a493660159f",
+      "receiving_sha256": "a0279d669c72ba770bb214bd1a7f8ca06e0e3b55071d49e8dc48aa64071d1712",
+      "whole_inverse_edits": [
+        {
+          "original": "#[cfg(test)]\npub(crate) use inventory_builder::build_borrowed_helper_inventory_with_budget;\nmod inventory_builder;\npub(crate) mod schema_summary;\nuse inventory_builder::InventoryBuilder;\npub(crate) use inventory_builder::{\n",
+          "receiving": "#[cfg(test)]\npub(crate) use inventory_builder::build_borrowed_helper_inventory_with_budget;\nmod inventory_builder;\n#[cfg(test)]\npub(crate) mod schema_summary;\nuse inventory_builder::InventoryBuilder;\npub(crate) use inventory_builder::{\n"
+        }
+      ]
+    },
+    "src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs": {
+      "original_whole_archive": "docs/evidence/schema-summary/legacy-test-only/src__cleanup_plan__replay__paid_type_facts__inventory_profile__tests.rs.before.txt",
+      "original_sha256": "82942c977e8f197b0f1669e795830895648f2f72e28daa1915513ad2cc72d5ee",
+      "receiving_sha256": "5ea294d9cb5d671633376da6d2e9e4709cdd9445bc37e3261550167e05426d70",
+      "whole_inverse_edits": [
+        {
+          "original": "#[test]\nfn complete_original_cleanup_root_remains_byte_exact_with_paid_profile_separate() {\n    let source = include_str!(\"../../../../cleanup.rs\");\n    let registration = \"pub(crate) mod schema_summary;\\n\";\n    assert_eq!(source.matches(registration).count(), 1);\n    let projected = source.replacen(registration, \"\", 1);\n    assert_eq!(\n",
+          "receiving": "#[test]\nfn complete_original_cleanup_root_remains_byte_exact_with_paid_profile_separate() {\n    let source = include_str!(\"../../../../cleanup.rs\");\n    let registration = \"#[cfg(test)]\\npub(crate) mod schema_summary;\\n\";\n    assert_eq!(source.matches(registration).count(), 1);\n    let projected = source.replacen(registration, \"\", 1);\n    assert_eq!(\n"
+        }
+      ]
+    }
+  },
+  "unchanged_complete_legacy_receivers": {
+    "src/cleanup/schema_summary.rs": "54e038e5d81554bf704ec082d2b16b0c82632e78ffd22cf607a754281a18073d",
+    "src/cleanup/schema_summary/generic_record.rs": "a46d2b2b6b83918f72eab634ced94c6982b4e25f92b3b585afd4b40f84328c1a",
+    "src/cleanup/schema_summary/support.rs": "eb9a6cd7961d586370fce7b30552ef0e5ccd4c5d23032a9717447fe32efbe6f2",
+    "src/cleanup/schema_summary/tests.rs": "2235bc65b6560297422217de815d43923ed76db6dc142ffa781d9814dc485d81"
+  },
+  "reachability_evidence": {
+    "graft_callers": "/tmp/legacy-schema-summary-callers-f8.txt",
+    "graft_callers_caveat": "collect is ambiguous; no incoming index edges is not by itself exhaustive proof.",
+    "graft_exhaustive_module_references": "/tmp/legacy-schema-summary-exhaustive-f8.txt",
+    "exhaustive_rust_module_references": "Only declaration, source guards and source include inventories; no external named or imported production reference.",
+    "actual_legacy_collect_calls": "src/cleanup/schema_summary/tests.rs uses super::* and directly exercises collect.",
+    "production_routes": "schema::paid_summary::selected_with_budget uses paid_type_facts::inventory_summary::collect; compatibility schema::selected_schema_with_index uses cleanup::build_inventory."
+  },
+  "pending_existing_owners": [
+    "cleanup_plan::replay::paid_type_facts::inventory_profile::tests::complete_original_cleanup_root_remains_byte_exact_with_paid_profile_separate",
+    "cleanup::schema_summary::tests::complete_ordinary_summary_matches_full_receiver_and_receiving_drop",
+    "cleanup::schema_summary::tests::late_missing_type_preserves_full_first_diagnostic_after_earlier_owners",
+    "cleanup::schema_summary::tests::discovery_indices_survive_discarded_directories_and_empty_flags",
+    "cleanup::schema_summary::tests::independently_compiled_full_producer_sources_remain_byte_exact"
+  ]
+}

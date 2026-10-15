@@ -66,7 +66,7 @@ impl OwnedAllocationProvenanceV2 {
         self.next = next;
         Ok(Value::Bytes(OwnedBytesValue {
             allocation: next,
-            bytes,
+            bytes: bytes.into(),
         }))
     }
 
@@ -105,10 +105,10 @@ fn inventory(roots: &[&Value]) -> Option<BTreeMap<u32, Weak<[u8]>>> {
         };
         for value in fields.values() {
             if let Value::Bytes(v) = value {
-                if Arc::strong_count(&v.bytes) != 1
+                if Arc::strong_count(v.bytes.ordinary()) != 1
                     || v.allocation == 0
                     || output
-                        .insert(v.allocation, Arc::downgrade(&v.bytes))
+                        .insert(v.allocation, Arc::downgrade(v.bytes.ordinary()))
                         .is_some()
                 {
                     return None;

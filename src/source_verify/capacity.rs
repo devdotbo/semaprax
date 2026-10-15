@@ -1,15 +1,19 @@
 //! Source-level byte-data storage, call-path, and transcript capacity projection.
 use super::*;
-
+use crate::ast::program_source::ProgramSource;
 mod command_io;
-
+mod empty_clone;
 mod functions;
-pub(super) use functions::source_capacity_functions;
-
+mod fused_selection;
+pub(super) use functions::{source_array_payload, source_capacity_functions};
+pub(super) use fused_selection::verify_selected_capacity;
 pub(super) struct SourceCapacityContext<'a> {
+    pub(super) program: &'a dyn ProgramSource,
     pub(super) types: &'a TypeTable<'a>,
     pub(super) ordinary: &'a BTreeMap<&'a str, &'a Function>,
     pub(super) enclosing_class: Option<&'a str>,
+    /// Held `FusedConstructionV1` selection; `None` on every default path.
+    pub(super) fused: Option<&'a crate::source_verify::fused_construction::SourceProof<'a>>,
 }
 
 struct SourceCapacityScope {
@@ -204,47 +208,6 @@ pub(super) fn source_transcript_frame_scratch_peak() -> (usize, usize) {
         SOURCE_TRANSCRIPT_ROOT_REF_PEAK.with(std::cell::Cell::get),
     )
 }
-fn source_array_payload(types: &TypeTable<'_>, ty: &Type) -> Result<u32, ()> {
-    let mut total = 0_u32;
-    let mut pending = vec![ty.clone()];
-    let mut expanded = 0_usize;
-    while let Some(ty) = pending.pop() {
-        expanded = expanded.checked_add(1).ok_or(())?;
-        if expanded > 65_536 {
-            return Err(());
-        }
-        match ty {
-            Type::ArrayU8(length) => total = total.checked_add(length).ok_or(())?,
-            Type::Named { .. } => {
-                if let Some(fields) = types.record_fields(&ty) {
-                    for field in fields.iter().rev() {
-                        pending.push(types.record_field_type(&ty, field).ok_or(())?);
-                    }
-                }
-            }
-            Type::I64
-            | Type::I32
-            | Type::Char
-            | Type::U8
-            | Type::Usize
-            | Type::F32
-            | Type::F64
-            | Type::Bool
-            | Type::String
-            | Type::Bytes
-            | Type::Str
-            | Type::SliceU8
-            | Type::StringMap
-            | Type::OnceFunction
-            | Type::OnceFunctionI64
-            | Type::OnceFunctionI64Pair
-            | Type::MutFunctionI64
-            | Type::Function { .. } => {}
-        }
-    }
-    Ok(total)
-}
-
 fn source_capacity_super_method<'a>(
     context: &SourceCapacityContext<'a>,
     method: &str,
@@ -306,6 +269,7 @@ pub(super) fn source_capacity_expr_type(
         ExprKind::Float64(_) => Some(Type::F64),
         ExprKind::Bool(_) => Some(Type::Bool),
         ExprKind::String(_) => Some(Type::String),
+        ExprKind::BorrowedUtf8Literal(_) => Some(Type::Str),
         ExprKind::Var(name) => bindings.get(name).cloned(),
         ExprKind::Call { name, .. } => crate::byte_ops::by_name(name)
             .map(crate::byte_ops::ByteOp::ast_return_type)
@@ -321,6 +285,8 @@ pub(super) fn source_capacity_expr_type(
                     .get(name.as_str())
                     .map(|item| item.return_type.clone())
             }),
+        ExprKind::VecConstructor { .. } => crate::ast::vec_constructor::return_type(expression),
+        ExprKind::LexicalExit { .. } => Some(Type::Never),
         ExprKind::MethodCall { .. }
         | ExprKind::Unary { .. }
         | ExprKind::Try { .. }
@@ -361,7 +327,11 @@ pub(super) fn source_capacity_expr_type(
                 current = receiver;
                 continue;
             }
-            ExprKind::Unary { value, .. }
+            ExprKind::LexicalExit { .. } => {
+                result = Some(Type::Never);
+            }
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value } => {
                 current = value;
@@ -592,7 +562,7 @@ pub(super) fn source_transcript_source_from_roots(
                 ExprKind::RepeatArrayU8 { count, .. } => {
                     results.push(TranscriptSource::Fixed(u64::from(*count)));
                 }
-                ExprKind::String(value) => results.push(
+                ExprKind::String(value) | ExprKind::BorrowedUtf8Literal(value) => results.push(
                     u64::try_from(value.len())
                         .map(TranscriptSource::Fixed)
                         .unwrap_or(TranscriptSource::Unknown),
@@ -713,6 +683,7 @@ pub(super) fn source_transcript_source_from_roots(
                         Statement::Unsafe { .. }
                         | Statement::While { .. }
                         | Statement::For { .. }
+                        | Statement::ForBorrow { .. }
                         | Statement::ForOwn { .. } => {}
                     }
                 }
@@ -903,6 +874,8 @@ fn source_capacity_expr(
         Sequence(usize),
         Alternative(usize),
         Loop,
+        FiniteOwnedLoop(u32),
+        FusedConstruction,
         Block {
             statements: &'a [Statement],
             next: usize,
@@ -1026,11 +999,21 @@ fn source_capacity_expr(
                     ExprKind::Closure { .. } => frames.push(Frame::Emit(CapacityFlow::Empty)),
                     ExprKind::Call { name, args, .. } => {
                         let target = context.ordinary.get(name.as_str()).copied();
-                        let effect = if name == crate::byte_ops::COPY_NAME {
+                        let effect = if let Some(flow) =
+                            empty_clone::clone_capacity_flow(context, expression, &path)
+                        {
+                            Some(flow)
+                        } else if name == crate::byte_ops::COPY_NAME {
                             Some(CapacityFlow::BytesCopy {
                                 site: path.clone(),
                                 conservative_payload_bytes:
                                     crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES,
+                            })
+                        } else if name == crate::byte_ops::ZEROED_BOUNDED_NAME {
+                            Some(CapacityFlow::BytesCopy {
+                                site: path.clone(),
+                                conservative_payload_bytes:
+                                    super::owned_buffer::bounded_allocation_payload_bytes(args),
                             })
                         } else if name == crate::byte_ops::ZEROED_NAME {
                             Some(CapacityFlow::BytesCopy {
@@ -1161,7 +1144,20 @@ fn source_capacity_expr(
                             });
                         }
                     }
-                    ExprKind::Unary { value, .. }
+                    ExprKind::LexicalExit { value, .. } => {
+                        if let Some(value) = value {
+                            frames.push(Frame::Visit {
+                                expression: value,
+                                path: format!("{path}.value"),
+                                scope: std::rc::Rc::clone(&scope),
+                                direct_destination: false,
+                            });
+                        } else {
+                            results.push(crate::byte_data_capacity::CapacityFlow::Empty);
+                        }
+                    }
+                    ExprKind::VecConstructor { value, .. }
+                    | ExprKind::Unary { value, .. }
                     | ExprKind::Try { operand: value }
                     | ExprKind::Yield { request: value } => {
                         frames.push(Frame::Visit {
@@ -1292,6 +1288,7 @@ fn source_capacity_expr(
                     | ExprKind::Float64(_)
                     | ExprKind::Bool(_)
                     | ExprKind::String(_)
+                    | ExprKind::BorrowedUtf8Literal(_)
                     | ExprKind::Var(_) => results.push(CapacityFlow::Empty),
                 }
             }
@@ -1325,6 +1322,23 @@ fn source_capacity_expr(
                 } else {
                     CapacityFlow::Alternative(children)
                 });
+            }
+            Frame::FiniteOwnedLoop(iterations) => {
+                let body = results.pop().ok_or(())?;
+                let initialization = results.pop().ok_or(())?;
+                results.push(sequence(vec![
+                    initialization,
+                    CapacityFlow::FiniteOwnedLoop {
+                        iterations,
+                        condition: Box::new(CapacityFlow::Empty),
+                        body: Box::new(body),
+                    },
+                ]));
+            }
+            Frame::FusedConstruction => {
+                let body = results.pop().ok_or(())?;
+                let condition = results.pop().ok_or(())?;
+                results.push(fused_selection::selected_flow(context, condition, body)?);
             }
             Frame::Loop => {
                 let body = results.pop().ok_or(())?;
@@ -1393,6 +1407,7 @@ fn source_capacity_expr(
                             ..
                         }
                         | Statement::For { values, body, .. }
+                        | Statement::ForBorrow { values, body, .. }
                         | Statement::ForOwn { values, body, .. } => {
                             frames.push(Frame::BlockAfter {
                                 statements,
@@ -1403,7 +1418,31 @@ fn source_capacity_expr(
                                 direct_destination,
                                 update: BlockUpdate::None,
                             });
-                            frames.push(Frame::Loop);
+                            let finite = if matches!(statement, Statement::ForOwn { .. }) {
+                                context.ordinary.values().find_map(|function| {
+                                    crate::finite_byte_scratch::source(function, body)
+                                        .map(|proof| proof.iterations)
+                                })
+                            } else {
+                                crate::source_verify::finite_row_loop(context.program, body)
+                                    .or_else(|| {
+                                        matches!(statement, Statement::While { .. })
+                                            .then(|| {
+                                                context.ordinary.values().find_map(|function| {
+                                                    crate::finite_owned_record_loop::source(
+                                                        function, body,
+                                                    )
+                                                    .map(|proof| proof.iterations)
+                                                })
+                                            })
+                                            .flatten()
+                                    })
+                            };
+                            frames.push(if fused_selection::selected_loop(context, statement) {
+                                Frame::FusedConstruction
+                            } else {
+                                finite.map_or(Frame::Loop, Frame::FiniteOwnedLoop)
+                            });
                             frames.push(Frame::Visit {
                                 expression: body,
                                 path: format!("{statement_path}.body"),
@@ -1550,110 +1589,11 @@ fn source_capacity_expr(
     }
 }
 
+/// The unchanged default, analyzed under `AllocationStrategy::Legacy`.
+#[cfg(test)]
 pub(super) fn verify_byte_data_capacity(
-    program: &Program,
+    program: &dyn ProgramSource,
     types: &TypeTable<'_>,
 ) -> Result<(), crate::byte_data_capacity::CapacityError> {
-    use crate::byte_data_capacity::{ArrayStorageKind, CapacityFlow, FunctionCapacityInput};
-
-    let ordinary = program
-        .functions
-        .iter()
-        .map(|function| (function.name.as_str(), function))
-        .collect::<BTreeMap<_, _>>();
-    let inputs = source_capacity_functions(program)
-        .into_iter()
-        .map(|(enclosing_class, function)| {
-            let context = SourceCapacityContext {
-                types,
-                ordinary: &ordinary,
-                enclosing_class,
-            };
-            let mut slots = Vec::new();
-            let mut bindings = BTreeMap::new();
-            let mut transcript_roots = function
-                .params
-                .iter()
-                .map(|parameter| {
-                    (
-                        parameter.name.clone(),
-                        crate::byte_data_capacity::TranscriptSource::Unknown,
-                    )
-                })
-                .collect::<BTreeMap<_, _>>();
-            for (index, parameter) in function.params.iter().enumerate() {
-                source_capacity_slot(
-                    &mut slots,
-                    types,
-                    format!("{}.param.{index}", function.stable_id),
-                    ArrayStorageKind::Parameter,
-                    &parameter.ty,
-                )
-                .map_err(|()| command_io::source_capacity_invariant(&function.stable_id))?;
-                bindings.insert(parameter.name.clone(), parameter.ty.clone());
-            }
-            source_capacity_slot(
-                &mut slots,
-                types,
-                format!("{}.result", function.stable_id),
-                ArrayStorageKind::ProvisionalResult,
-                &function.return_type,
-            )
-            .map_err(|()| command_io::source_capacity_invariant(&function.stable_id))?;
-            let mut execution = function
-                .requires
-                .iter()
-                .enumerate()
-                .map(|(index, expression)| {
-                    source_capacity_expr(
-                        expression,
-                        &format!("{}.requires.{index}", function.stable_id),
-                        &mut bindings.clone(),
-                        &mut transcript_roots.clone(),
-                        &mut slots,
-                        &context,
-                        false,
-                    )
-                    .map_err(|()| command_io::source_capacity_invariant(&function.stable_id))
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-            execution.push(
-                source_capacity_expr(
-                    &function.body,
-                    &format!("{}.body", function.stable_id),
-                    &mut bindings,
-                    &mut transcript_roots,
-                    &mut slots,
-                    &context,
-                    true,
-                )
-                .map_err(|()| command_io::source_capacity_invariant(&function.stable_id))?,
-            );
-            execution.extend(
-                function
-                    .ensures
-                    .iter()
-                    .enumerate()
-                    .map(|(index, expression)| {
-                        source_capacity_expr(
-                            expression,
-                            &format!("{}.ensures.{index}", function.stable_id),
-                            &mut bindings.clone(),
-                            &mut transcript_roots.clone(),
-                            &mut slots,
-                            &context,
-                            false,
-                        )
-                        .map_err(|()| command_io::source_capacity_invariant(&function.stable_id))
-                    })
-                    .collect::<Result<Vec<_>, _>>()?,
-            );
-            Ok(FunctionCapacityInput {
-                function: function.stable_id.clone(),
-                array_slots: slots,
-                execution: CapacityFlow::Sequence(execution),
-            })
-        })
-        .collect::<Result<Vec<_>, crate::byte_data_capacity::CapacityError>>()?;
-    crate::byte_data_capacity::analyze(&inputs).map(|_| ())
+    verify_selected_capacity(program, types, None)
 }

@@ -1,0 +1,68 @@
+{
+  "base": "43db802ea9d892a5a9a44d2eafa8468d98633979",
+  "status": "source-only; no Cargo/build/tests/Clippy",
+  "observed_owner": {
+    "selector": "workspace_graph::custody::tests::actual_custody_receiving_backing_complete_drop_exact_short_and_zero_sticky",
+    "prior_actual": {
+      "allocations": 13,
+      "allocated": 2896,
+      "freed": 2896,
+      "highwater": 1712,
+      "paid": 1112
+    },
+    "attribution": "Source shows prune preserves functions Vec capacity, so restoring same removed members does not normally allocate. Four temporary Program::Drop frontiers acquire additional backing. No per-allocation runtime attribution or new numeric saving is claimed."
+  },
+  "implementation": "Four Vec worklist constructors become inline16 LIFO frontiers with ordinary Vec spill. Every original push/extend/pop, traversal, take/replace and field remains unchanged. No Drop refusal, skipped release, recursive fallback, payer change or admission cap.",
+  "independent_original": "Complete old Program Drop compiled through Original(Program) Deref adapter, draining all recursive roots before empty inner Program field glue; entire old deep-root test compiled through lexical drop adapter. Both complete originals source-bound.",
+  "current_bindings": {
+    "src/ast.rs": {
+      "sha256": "0a019a46efa6a3d92ef1fd70137fad894ef52d97c3be833b339c51db4cdc0166",
+      "lines": 1409,
+      "registered_source_only": true
+    },
+    "src/ast/drop_frontier.rs": {
+      "sha256": "d68420b52fcd4c5c038b4e2baab9f81a1b9fa905ef67c7bb9890145edb93bcee",
+      "lines": 88,
+      "registered_source_only": true
+    },
+    "src/ast/drop_original.rs": {
+      "sha256": "977f90c406406f50e8041e6b0df02aabca5a4c39cd8372623e9c508d06ea40d4",
+      "lines": 268,
+      "registered_source_only": true
+    },
+    "src/ast/drop_original_tests.rs": {
+      "sha256": "95302c749e0c8623de114c9565b046358c43f868336c40b50dc66af7f68b2356",
+      "lines": 179,
+      "registered_source_only": true
+    },
+    "src/ast/iterative_program_drop_tests.rs": {
+      "sha256": "d2f913870eb83ec9d760a3ffb4ace97967267abb01427a3031572a33e3581138",
+      "lines": 347,
+      "registered_source_only": true
+    }
+  },
+  "originals": {
+    "docs/evidence/custody-ast-drop-frontier/iterative-program-drop-tests.before.txt": {
+      "sha256": "95302c749e0c8623de114c9565b046358c43f868336c40b50dc66af7f68b2356",
+      "bytes": 4856
+    },
+    "docs/evidence/custody-ast-drop-frontier/ast.rs.before.txt": {
+      "sha256": "9592deb72769b5da0ec095ac87df7928b59e58f2f5d5755bd92c9851e86d6025",
+      "bytes": 45986
+    },
+    "docs/evidence/custody-ast-drop-frontier/program-drop.before.txt": {
+      "sha256": "764b9101ace64600e46afa17ee87d9d237cffdf27cdc45c50f591735fe9e7938",
+      "bytes": 9932
+    }
+  },
+  "source_inverses": "Entire original ast.rs restored by removing exact two child registrations and replacing exactly four carrier constructors; complete Original Drop equals old Drop after only receiver-name inverse; entire original deep test child equals archived source.",
+  "custody_and_restoration": "Production custody/pruning files and entire observer unchanged; original program/source pointer and restored count controls retained.",
+  "honest_residuals": [
+    "Ordinary frontier spill still acquires unpriced Vec backing; inline16 is not a depth/language bound.",
+    "Existing functions Vec accumulator can grow while collecting class methods; unchanged and unpriced.",
+    "Original field glue for implementations/session protocols/agents remains unchanged; no new general recursive teardown claim."
+  ],
+  "source_reader_joins": "No existing Rust contract reader included ast.rs; new owning whole-source guard joins root and all three new descendants explicitly. Original old/current deep test modules both registered via explicit #[path]. Root may union these paths into its consolidated current-source inventory.",
+  "docs": "Architecture scratch owner and source-only change history updated; completion/product support unchanged.",
+  "actual_execution": "none"
+}

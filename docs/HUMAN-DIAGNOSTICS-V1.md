@@ -37,3 +37,14 @@ navigate to it, grant filesystem authority, or authenticate current source bytes
 Executable evidence covers path plus span, path only, span only, absent
 locations, help placement, control-character escaping, unchanged JSON, and an
 actual `semaprax check` failure.
+
+## Static refusal text representation
+
+The source-authored Rust facade v3 migration stores diagnostic messages as
+`Cow<'static, str>`. Fixed validation refusal literals borrow static bytes;
+public dynamic constructors retain owned String conversion and paid capacity.
+The full location/JSON/Display/Debug parity owners are in
+`diagnostic::refusal_tests`; original diagnostic owners remain unchanged.
+This storage change preserves this presentation contract and schema versions.
+Rendering and report-vector allocation have separate owners and are not made
+funded by zero-allocation fixed refusal messages. Qualification is pending.

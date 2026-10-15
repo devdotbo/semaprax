@@ -1,0 +1,61 @@
+{
+  "packet_bytes": 11219,
+  "packet_sha256": "7c7e6ad49a55da66c3120f448a84b430b36614309202f8fb4b6b1cd2ca159d15",
+  "requested_model": "sonnet",
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 8942,
+      "cacheReadInputTokens": 535,
+      "cacheCreationInputTokens": 5914,
+      "webSearchRequests": 0,
+      "costUSD": 0.1131335,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 5336,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 5914,
+    "cache_read_input_tokens": 535,
+    "output_tokens": 8942,
+    "output_tokens_details": {
+      "thinking_tokens": 5336
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 5914,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 8942,
+        "cache_read_input_tokens": 535,
+        "cache_creation_input_tokens": 5914,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 5914
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "cli_total_cost_usd": 0.1131335,
+  "actual_billing": "unknown",
+  "duration_ms": 67266,
+  "tools_enabled": false,
+  "executed": true,
+  "scope": "Complete old walkers/child dispatcher/borrowed use receiver; budget API deliberately inspected and adapted locally."
+}

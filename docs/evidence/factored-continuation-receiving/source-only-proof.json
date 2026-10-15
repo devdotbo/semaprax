@@ -1,0 +1,11 @@
+{
+  "state": "SOURCE_ONLY_UNEXECUTED",
+  "basis": "be8ff06ff1e3319c63a3e00f82f7085dd7b83ce9 plus extension corrective4d29 and receivingc624/a434",
+  "whole_original_inverse_rows": 11,
+  "controls": 4,
+  "source_joins": "all3 inventories include all3 newchildren; live b.rs newjoin undo; parent owns exactsource-a hooks supplied separately",
+  "parent_source_a_inverse_data": "/Volumes/Semaprax/provenance/continuation-receiving-source-a-inverses-c624-20261015.json",
+  "required_owner3_unchanged": true,
+  "caps_and_work_bounds_unchanged": true,
+  "rustfmt_diff_only": true
+}

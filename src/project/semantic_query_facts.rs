@@ -363,6 +363,7 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
         ResolvedExprKind::ByteRange {
@@ -370,7 +371,10 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
         } => {
             pending.extend([end.as_ref(), start.as_ref(), source.as_ref()]);
         }
-        ResolvedExprKind::Call { args, .. }
+        ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. }
+        | ResolvedExprKind::Call { args, .. }
         | ResolvedExprKind::NativeRustImportCall(crate::hir::ResolvedNativeRustImportCall {
             args,
             ..
@@ -378,12 +382,16 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
         | ResolvedExprKind::HostCommandCall(crate::hir::ResolvedHostCommandCall { args, .. }) => {
             pending.extend(args.iter().rev());
         }
+        ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Upcast { source: value }
         | ResolvedExprKind::Yield { request: value } => pending.push(value),
         ResolvedExprKind::Binary { left, right, .. } => pending.extend([right.as_ref(), left]),
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             pending.push(tail);
             for statement in statements.iter().rev() {
                 for index in (0..statement.child_count()).rev() {
@@ -534,7 +542,8 @@ fn collect_expression_uses(
             );
         }
         ResolvedExprKind::Project { field, .. } => matches_id(field, target, "project_field", uses),
-        ResolvedExprKind::Block { statements, .. } => {
+        ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } => {
             for statement in statements {
                 if let ResolvedStatement::Assign {
                     field: Some(field), ..
@@ -680,6 +689,7 @@ fn loan_value(loan: &crate::loan_plan::Loan) -> Value {
     let cause = match &loan.cause {
         LoanCause::SliceView => json!({"kind":"slice_view"}),
         LoanCause::StrView => json!({"kind":"str_view"}),
+        LoanCause::TraversalFreeze => json!({"kind":"traversal_freeze"}),
         LoanCause::BorrowedCall { argument } => json!({"argument":argument,"kind":"borrowed_call"}),
         LoanCause::MatchBorrow { arm } => json!({"arm":arm,"kind":"match_borrow"}),
     };
@@ -718,17 +728,22 @@ fn expression_kind(kind: &ResolvedExprKind) -> &'static str {
         ResolvedExprKind::Float64(_) => "f64",
         ResolvedExprKind::Bool(_) => "bool",
         ResolvedExprKind::String(_) => "string",
+        ResolvedExprKind::BorrowedUtf8Literal(_) => "borrowed_utf8_literal",
         ResolvedExprKind::Place(_) => "place",
         ResolvedExprKind::BorrowPlace { .. } => "borrow_place",
         ResolvedExprKind::ByteRange { .. } => "byte_range",
         ResolvedExprKind::FunctionReference { .. } => "function_reference",
         ResolvedExprKind::Invoke { .. } => "invoke",
         ResolvedExprKind::Call { .. } => "call",
+        ResolvedExprKind::LiteralFormat { .. } => "literal_format",
+        ResolvedExprKind::VecFieldRead { .. } => "vec_field_read",
+        ResolvedExprKind::RowLoan { .. } => "row_loan",
         ResolvedExprKind::NativeRustImportCall(_) => "native_import_call",
         ResolvedExprKind::HostCommandCall(_) => "host_command_call",
+        ResolvedExprKind::LexicalExit { .. } => "lexical_exit",
         ResolvedExprKind::Unary { .. } => "unary",
         ResolvedExprKind::Binary { .. } => "binary",
-        ResolvedExprKind::Block { .. } => "block",
+        ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. } => "block",
         ResolvedExprKind::If { .. } => "if",
         ResolvedExprKind::ConstructRecord { .. } => "record",
         ResolvedExprKind::ConstructVariant { .. } => "variant",

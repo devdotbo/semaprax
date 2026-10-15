@@ -165,6 +165,17 @@ or JavaScript object twice. Borrowed `str` and `Slice<u8>` parameters share
 one counter: one invocation admits at most 65,536 cumulative external root
 bytes across both carrier kinds.
 
+The native entry guard uses the actual runtime call depth before entering the
+function. The first private helper with borrowed parameters is not an external
+entry merely because its caller had no borrowed parameters. In particular,
+an internally created owned buffer retains its existing 131,072-byte bound
+when forwarded to such a helper. Borrowed-frame depth still tracks balanced
+entry and cleanup; it does not establish foreign-input authority. Byte reads
+likewise validate the existing internal view against its 131,072-byte capacity,
+including any selected stream epoch, after the separate external entry guard.
+They do not reapply the 65,536-byte foreign-root limit to an internal view. The source
+repair and focused cross-backend/root-bound regressions await execution.
+
 The exact source composition
 `str_as_bytes(string_as_str(owner))` is also admitted when `owner` is one
 available, unprojected named owning `string`. Resolution fuses this pair into
@@ -214,8 +225,14 @@ described above. Its per-function and per-root summaries are target-neutral
 compiler facts and Graph v17 serializes them.
 
 The executable closure containing `bytes_copy` must be acyclic. An
-allocation-producing operation is forbidden in a `while` body or condition,
-and direct or mutual recursion reaching one is rejected before emission. The
+allocation-producing operation is forbidden in an ordinary `while` body or
+condition, and direct or mutual recursion reaching one is rejected before emission.
+The later [Finite owned-record discard loops v1](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md)
+profile admits only its independently reconstructed exact finite body, multiplying
+that body's complete demand by the proved literal bound under these unchanged
+site and payload limits. It does not widen the general indexed-byte loop profile;
+allocating conditions, unproved loops and recursive allocation closures remain
+refused. The
 compiler computes the conservative maximum across branches and the sum across
 calls; it does not trust a backend counter. This ensures the semantic bound
 cannot be exhausted dynamically by a loop and avoids inventing a recoverable
@@ -233,6 +250,17 @@ HIR has distinct type variants for `usize`, `[u8; N]`, `Bytes`, and
 a generic pointer/length pair is not sufficient HIR evidence. Type facts mark
 `usize` and `[u8; N]` Copy, `Bytes` uniquely owned/non-Copy, and `Slice<u8>`
 borrowed/non-storable/non-droppable.
+
+`byte_range` also accepts the exact inline source
+`bytes_as_slice(named_owner)` for a live, unprojected owned `Bytes` root.
+Independent HIR validation authenticates that operation, root type, ownership,
+and current availability. An immutable local derived from this range retains
+that same symbolic owner provenance, and a borrowed call receives the same
+root loan. Existing named-slice ranges retain their prior admission; arbitrary
+slice-producing calls, temporary owners, inline array/String views, projected
+inline roots, and recursive inline ranges remain refused. Ordinary while
+bodies retain their existing named-slice rule. No carrier, cap, or graph schema
+changes, and canonical source keeps the explicit composed operations.
 
 Graph v17 is mandatory if the reachable resolved program contains any of the
 four new types, an array literal, a byte-data operation, or a byte-slice
@@ -349,6 +377,23 @@ with domain `semaprax.contract.v1`. The npm semantic recipe renders each
 function's `requires` and `ensures` lines, naming the return value `result`,
 so replay binds contracts byte for byte with the body. Functions that
 declare effects are still rejected with `SPX-W121`.
+
+A direct owned `Bytes` or `string` result can be observed through its ordinary
+unprojected immutable views in `ensures`: for example,
+`ensures byte_len(bytes_as_slice(result)) == 2usize`. Source verification binds
+this exact return type only in the postcondition scope. Independent HIR scope,
+view-type and loan replay authenticate the enclosing function's exact result
+identity. This is the callee's provisional storage: it remains owned until all
+postconditions and non-result cleanup complete. A failing postcondition drops
+that storage and preserves the selected failure with no caller result write.
+`result` remains absent from requires/body; contract transfers still refuse
+`SPX-O105`, and this direct view rule admits no projected result fields or
+escaping borrowed result. Cleanup and loan schemas and all physical byte bounds
+remain unchanged. The `hir::provisional_result_borrow_tests::` regressions,
+`cleanup_backends lexical_exits::provisional_result::` native O0/O2 probe, and
+existing `owned_data lexical_exits::returned_owned_result_stays_protected_until_selected_postconditions`
+interpreter/Core Wasm success, failure and reentry cases own qualification;
+these new definitions have not yet run on the current head.
 
 The data-export module retains the historical void Core-Wasm signature for its
 otherwise unused `spx_contract_fail` import. Data-export arithmetic, contract,

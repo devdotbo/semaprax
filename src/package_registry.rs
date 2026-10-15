@@ -341,10 +341,10 @@ fn apply_yank_policy(
             warnings.push(Diagnostic {
                 code: "SPX-PKR609",
                 severity: Severity::Warning,
-                message: format!(
+                message: std::borrow::Cow::Owned(format!(
                     "including yanked `{package}@{}` ({reason})",
                     canonical_version_text(version)
-                ),
+                )),
                 path: None,
                 span: None,
                 help: None,

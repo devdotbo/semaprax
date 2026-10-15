@@ -6,11 +6,16 @@ use crate::source_verify::diagnostics::error;
 use crate::source_verify::IterativeVerifier;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
-    pub(super) fn reject_for_body_disallowed(
+    pub(super) fn reject_for_body_in_scope(
         &mut self,
         body: &'p Expr,
         source: &str,
+        byte_entry_scope: Option<usize>,
     ) -> Result<(), ()> {
+        #[cfg(test)]
+        if crate::source_verify::byte_traversal::nested::before_selected() {
+            return self.reject_for_body_disallowed_before_nested(body, source);
+        }
         enum Item<'a> {
             Expr(&'a Expr),
             Statement(&'a Statement),
@@ -27,7 +32,17 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     ));
                     return Err(());
                 }
-                Item::Statement(Statement::For { span, .. } | Statement::ForOwn { span, .. }) => {
+                Item::Statement(Statement::For { values, body, .. })
+                    if byte_entry_scope
+                        .is_some_and(|scope| self.nested_byte_source(scope, values)) =>
+                {
+                    pending.push(Item::Expr(body));
+                }
+                Item::Statement(
+                    Statement::For { span, .. }
+                    | Statement::ForBorrow { span, .. }
+                    | Statement::ForOwn { span, .. },
+                ) => {
                     self.diagnostics.push(error(
                         self.program,
                         "SPX-T284",
@@ -79,6 +94,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
     /// fail-closed outside the admitted per-iteration lifetime profile.
     /// Computed String conditions have a separate per-iteration cleanup region.
     pub(super) fn reject_while_disallowed(&mut self, expression: &'p Expr) -> Result<(), ()> {
+        if crate::finite_owned_record_loop::source(self.current, expression).is_some() {
+            return Ok(());
+        }
         self.reject_iterator_body(expression, None)
     }
     pub(super) fn reject_iterator_body(
@@ -86,6 +104,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         expression: &'p Expr,
         owned_item: Option<&str>,
     ) -> Result<(), ()> {
+        let scope = self.active_byte_entry_scope();
+        self.reject_iterator_body_in_scope(expression, owned_item, scope)
+    }
+    pub(super) fn reject_iterator_body_in_scope(
+        &mut self,
+        expression: &'p Expr,
+        owned_item: Option<&str>,
+        byte_entry_scope: Option<usize>,
+    ) -> Result<(), ()> {
+        #[cfg(test)]
+        if crate::source_verify::byte_traversal::nested::before_selected() {
+            return self.reject_iterator_body_before_nested(expression, owned_item);
+        }
+        let finite_scratch =
+            owned_item.and_then(|_| crate::finite_byte_scratch::source(self.current, expression));
         enum Frame<'a> {
             Expression(&'a Expr),
             Statement(&'a Statement),
@@ -151,7 +184,16 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         frames.push(Frame::Expression(condition));
                         continue;
                     }
-                    Statement::For { span, .. } | Statement::ForOwn { span, .. } => {
+                    Statement::For { values, body, .. }
+                        if byte_entry_scope
+                            .is_some_and(|scope| self.nested_byte_source(scope, values)) =>
+                    {
+                        frames.push(Frame::Expression(body));
+                        continue;
+                    }
+                    Statement::For { span, .. }
+                    | Statement::ForBorrow { span, .. }
+                    | Statement::ForOwn { span, .. } => {
                         self.diagnostics.push(error(
                             self.program,
                             "SPX-T284",
@@ -252,6 +294,19 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             };
 
             match &expression.kind {
+                ExprKind::LexicalExit { kind, value } => {
+                    if let Some(value) = value {
+                        if *kind == crate::ast::LexicalExitKind::Return
+                            && crate::hir::lexical_exit::return_operand::source_named_handoff(value)
+                        {
+                            results.push(Ok(()));
+                        } else {
+                            frames.push(Frame::Expression(value));
+                        }
+                    } else {
+                        results.push(Ok(()));
+                    }
+                }
                 ExprKind::Closure { .. } => results.push(Ok(())),
 
                 ExprKind::Int(_)
@@ -266,6 +321,19 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 // Owned String Loops v1: a literal allocates one owned
                 // String in the per-iteration body region.
                 ExprKind::String(_) => results.push(Ok(())),
+                ExprKind::BorrowedUtf8Literal(text) => {
+                    match crate::source_verify::static_text::checked(
+                        self.program,
+                        expression.span,
+                        text,
+                    ) {
+                        Ok(_) => results.push(Ok(())),
+                        Err(error) => {
+                            self.diagnostics.push(error);
+                            results.push(Err(()));
+                        }
+                    }
+                }
                 ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => {
                     self.diagnostics.push(error(
                         self.program,
@@ -275,7 +343,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     ));
                     results.push(Err(()));
                 }
-                ExprKind::Unary { value, .. } => frames.push(Frame::Expression(value)),
+                ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                    frames.push(Frame::Expression(value))
+                }
                 ExprKind::Binary { left, right, .. } => {
                     frames.push(Frame::JoinAll(2));
                     frames.push(Frame::Expression(right));
@@ -307,6 +377,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     let vec_operation = crate::vec_ops::by_name(name);
                     if !type_arguments.is_empty()
                         && vec_operation.is_none()
+                        && name != crate::vec_field::NAME
                         && crate::map_ops::by_generic_name(name, type_arguments).is_none()
                     {
                         self.diagnostics.push(error(
@@ -320,10 +391,25 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     }
                     if let Some(operation) = vec_operation {
                         if !operation.admitted_in_while()
-                            || type_arguments.len() != 1
-                            || !crate::vec_ops::ast_element_is_admitted(&type_arguments[0])
+                            || (if operation == crate::vec_ops::VecOp::StrAt {
+                                !crate::source_verify::string_slot::while_shape(
+                                    type_arguments,
+                                    args,
+                                )
+                            } else {
+                                type_arguments.len() != 1
+                            || !(crate::vec_ops::ast_element_is_admitted(&type_arguments[0])
+                                || crate::source_verify::declared_type::copy_record_collection::source_admitted(self.program, &type_arguments[0]) || crate::source_verify::declared_type::owned_leaf_collection::source_admitted(self.program, &type_arguments[0]))
+                            })
                             || args.len() != operation.arity()
                         {
+                            #[cfg(test)]
+                            crate::source_verify::string_slot::trace_while_refusal(
+                                "iterative",
+                                operation,
+                                type_arguments,
+                                args,
+                            );
                             self.diagnostics.push(error(
                                 self.program,
                                 "SPX-T283",
@@ -361,7 +447,19 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         continue;
                     }
                     if let Some(operation) = crate::byte_ops::by_name(name) {
-                        if !operation.admitted_in_while() || args.len() != operation.arity() {
+                        if (!operation.admitted_in_while()
+                            && !crate::source_verify::finite_row_allocation(
+                                self.program,
+                                expression,
+                            )
+                            && !self
+                                .fused_producer
+                                .is_some_and(|producer| std::ptr::eq(producer, expression))
+                            && !finite_scratch
+                                .as_ref()
+                                .is_some_and(|proof| proof.permits(expression)))
+                            || args.len() != operation.arity()
+                        {
                             self.diagnostics.push(error(
                             self.program,
                             "SPX-T252",
@@ -379,7 +477,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     // loop cleanup-edge-free; unknown names keep flowing so the
                     // established unresolved-value diagnostic fires instead.
                     if let Some(declared) = self.functions.get(name.as_str()) {
-                        let scalar_signature = crate::stdin_stream_ops::ast_forward_signature(declared) || ( crate::loop_calls::effects_admitted(&declared.effects)
+                        let scalar_signature = self.byte_helper_target(declared) || crate::stdin_stream_ops::ast_forward_signature(declared) || ( crate::loop_calls::effects_admitted(&declared.effects)
                             && crate::loop_calls::ast_result_admitted(self.program, &declared.return_type)
                             && declared.params.iter().zip(args).all(|(param, argument)| {
                                 crate::loop_calls::ast_param_admitted(self.program, param.mode, &param.ty)
@@ -387,8 +485,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                         && crate::source_verify::declared_type::owned_record_collection::is_owner_renewal_record(self.types, &param.ty))
                                     || (param.mode == ParamMode::Own
                                         && (param.ty == Type::Bytes
-                                            || crate::source_verify::declared_type::owned_record_collection::
-                                                is_admitted_owned_record_collection_element(self.types, &param.ty))
+                                            || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(self.types, &param.ty))
                                         && owned_item.is_some_and(|item| matches!(&argument.kind, ExprKind::Var(name) if name == item)))
                             }));
                         if !scalar_signature {
@@ -424,23 +521,30 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     ));
                     results.push(Err(()));
                 }
-                ExprKind::Project { .. } => {
-                    self.diagnostics.push(error(
-                        self.program,
-                        "SPX-T252",
-                        "record field projection is not yet admitted in while bodies",
-                        expression.span,
-                    ));
-                    results.push(Err(()));
-                }
-                ExprKind::ConstructRecord { .. } => {
-                    self.diagnostics.push(error(
-                        self.program,
-                        "SPX-T252",
-                        "record construction is not yet admitted in while bodies",
-                        expression.span,
-                    ));
-                    results.push(Err(()));
+                ExprKind::Project { base, .. } => frames.push(Frame::Expression(base)),
+                ExprKind::ConstructRecord {
+                    type_name,
+                    type_arguments,
+                    fields,
+                    ..
+                } => {
+                    let ty = Type::Named {
+                        name: type_name.clone(),
+                        arguments: type_arguments.clone(),
+                    };
+                    if crate::source_verify::declared_type::owned_leaf_collection::copy_or_leaf_admitted(
+                        self.types, &ty,
+                    ) {
+                        frames.push(Frame::FieldsNext { fields, next: 0 });
+                    } else {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T252",
+                            "record construction is not yet admitted in while bodies",
+                            expression.span,
+                        ));
+                        results.push(Err(()));
+                    }
                 }
                 ExprKind::ConstructVariant {
                     type_name,
@@ -501,7 +605,14 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         results.pop().unwrap_or(Err(()))
     }
 
-    pub(super) fn admits_record_owner_renewal(&self, binding: &str, value: &Expr) -> bool {
+    pub(in crate::source_verify) fn admits_record_owner_renewal(
+        &self,
+        binding: &str,
+        value: &Expr,
+    ) -> bool {
+        if self.byte_helper_assignment(binding, value) {
+            return true;
+        }
         let ExprKind::Call {
             name,
             type_arguments,
@@ -628,3 +739,92 @@ fn record_renewal_named_view_admission_agrees_with_iterative_verifier() {
         assert_eq!(key(actual_diagnostics), key(oracle_diagnostics));
     }
 }
+
+#[cfg(test)]
+fn string_slot_loop_admission(source: &str, admitted: bool) {
+    use crate::source_verify::oracle::while_oracle::reject_while_disallowed_oracle;
+    use crate::source_verify::type_table::TypeTable;
+    use std::collections::HashMap;
+    let program = crate::parse(source, std::path::Path::new("slots-loop.spx")).unwrap();
+    let current = program
+        .functions
+        .iter()
+        .find(|f| f.name == "inspect")
+        .unwrap();
+    let functions = program
+        .functions
+        .iter()
+        .map(|f| (f.name.as_str(), f))
+        .collect();
+    let types = TypeTable::new(&program);
+    let ExprKind::Block { statements, .. } = &current.body.kind else {
+        panic!("inspect block")
+    };
+    let body = statements
+        .iter()
+        .find_map(|statement| match statement {
+            Statement::While { body, .. } => Some(body.as_ref()),
+            _ => None,
+        })
+        .unwrap();
+    let mut expected_diagnostics = Vec::new();
+    let expected = reject_while_disallowed_oracle(
+        &program,
+        body,
+        &functions,
+        &types,
+        &mut expected_diagnostics,
+    );
+    let mut actual_diagnostics = Vec::new();
+    let mut verifier = crate::source_verify::IterativeVerifier::new(
+        &program,
+        current,
+        HashMap::new(),
+        &functions,
+        &types,
+        None,
+        true,
+        &mut actual_diagnostics,
+    );
+    let actual = verifier.reject_while_disallowed(body);
+    assert_eq!(actual, expected);
+    assert_eq!(actual.is_ok(), admitted);
+    let keys = |items: Vec<crate::diagnostic::Diagnostic>| {
+        items
+            .into_iter()
+            .map(|d| (d.code, d.severity, d.message, d.path, d.span, d.help))
+            .collect::<Vec<_>>()
+    };
+    if !admitted {
+        assert!(actual_diagnostics.iter().any(|d| d.code == "SPX-T283"));
+    }
+    assert_eq!(keys(actual_diagnostics), keys(expected_diagnostics));
+}
+
+#[test]
+fn string_slot_named_root_fused_loop_source_matches_independent_oracle() {
+    let source = include_str!("../../../tests/fixtures/string-slot-views.spx");
+    crate::check(source, "slots-loop.spx").unwrap();
+    string_slot_loop_admission(source, true);
+}
+
+#[test]
+fn string_slot_explicit_types_and_computed_roots_keep_exact_loop_refusal() {
+    let source = include_str!("../../../tests/fixtures/string-slot-views.spx");
+    for replacement in [
+        "str_as_bytes(vec_str_at<string>(values,0usize))",
+        "str_as_bytes(vec_str_at({values},0usize))",
+        "str_as_bytes(vec_str_at(values))",
+    ] {
+        let changed = source.replace("str_as_bytes(vec_str_at(values,0usize))", replacement);
+        assert_ne!(changed, source);
+        string_slot_loop_admission(&changed, false);
+    }
+}
+
+#[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "complete independently compiled pre-nesting loop admission oracle"
+)]
+mod before_nested;

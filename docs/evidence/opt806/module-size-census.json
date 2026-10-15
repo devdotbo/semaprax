@@ -1,0 +1,167 @@
+{
+  "affected": [
+    {
+      "budget": 1500,
+      "lines": 1494,
+      "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity.rs",
+      "remaining": 6
+    },
+    {
+      "budget": 1500,
+      "lines": 319,
+      "path": "src/source_verify.rs",
+      "remaining": 1181
+    },
+    {
+      "budget": 1500,
+      "lines": 570,
+      "path": "src/source_verify/closure.rs",
+      "remaining": 930
+    },
+    {
+      "budget": 1500,
+      "lines": 302,
+      "path": "src/source_verify/constructor_tests.rs",
+      "remaining": 1198
+    },
+    {
+      "budget": 1500,
+      "lines": 1408,
+      "path": "src/source_verify/declaration/functions.rs",
+      "remaining": 92
+    },
+    {
+      "budget": 1500,
+      "lines": 1395,
+      "path": "src/source_verify/declaration/functions/old.rs",
+      "remaining": 105
+    },
+    {
+      "budget": 1500,
+      "lines": 357,
+      "path": "src/source_verify/iterative.rs",
+      "remaining": 1143
+    },
+    {
+      "budget": 1500,
+      "lines": 1137,
+      "path": "src/source_verify/iterative/blocks.rs",
+      "remaining": 363
+    },
+    {
+      "budget": 1500,
+      "lines": 1468,
+      "path": "src/source_verify/iterative/enter.rs",
+      "remaining": 32
+    },
+    {
+      "budget": 1500,
+      "lines": 693,
+      "path": "src/source_verify/iterative/match_arms.rs",
+      "remaining": 807
+    },
+    {
+      "budget": 1500,
+      "lines": 568,
+      "path": "src/source_verify/iterative/matching.rs",
+      "remaining": 932
+    },
+    {
+      "budget": 1500,
+      "lines": 564,
+      "path": "src/source_verify/iterative/operators.rs",
+      "remaining": 936
+    },
+    {
+      "budget": 1500,
+      "lines": 577,
+      "path": "src/source_verify/iterative/records.rs",
+      "remaining": 923
+    },
+    {
+      "budget": 1500,
+      "lines": 467,
+      "path": "src/source_verify/iterative/run.rs",
+      "remaining": 1033
+    },
+    {
+      "budget": 1500,
+      "lines": 210,
+      "path": "src/source_verify/recovery.rs",
+      "remaining": 1290
+    },
+    {
+      "budget": 1500,
+      "lines": 215,
+      "path": "src/source_verify/recovery_legacy.rs",
+      "remaining": 1285
+    },
+    {
+      "budget": 1500,
+      "lines": 517,
+      "path": "src/source_verify/recovery_legacy/blocks.rs",
+      "remaining": 983
+    },
+    {
+      "budget": 1500,
+      "lines": 1454,
+      "path": "src/source_verify/recovery_legacy/enter.rs",
+      "remaining": 46
+    },
+    {
+      "budget": 1500,
+      "lines": 281,
+      "path": "src/source_verify/recovery_legacy/match_arms.rs",
+      "remaining": 1219
+    },
+    {
+      "budget": 1500,
+      "lines": 228,
+      "path": "src/source_verify/recovery_legacy/operators.rs",
+      "remaining": 1272
+    },
+    {
+      "budget": 1500,
+      "lines": 58,
+      "path": "src/source_verify/recovery_legacy/records.rs",
+      "remaining": 1442
+    },
+    {
+      "budget": 1500,
+      "lines": 275,
+      "path": "src/source_verify/recovery_tests.rs",
+      "remaining": 1225
+    },
+    {
+      "budget": 1500,
+      "lines": 280,
+      "path": "src/source_verify/recovery_tests/boundaries.rs",
+      "remaining": 1220
+    },
+    {
+      "budget": 1500,
+      "lines": 243,
+      "path": "src/source_verify/recovery_tests/proposal_corpus.rs",
+      "remaining": 1257
+    },
+    {
+      "budget": 1500,
+      "lines": 587,
+      "path": "src/source_verify/scope.rs",
+      "remaining": 913
+    },
+    {
+      "budget": 1500,
+      "lines": 332,
+      "path": "tests/language/variants_semantics.rs",
+      "remaining": 1168
+    }
+  ],
+  "budget": "tests/module-size-budget.tsv",
+  "failures": [],
+  "integrated_head": "2adb721123ea9d9460fed12e2d3891e9bba1455e",
+  "limit": 1500,
+  "qualification": "Static file census, not execution of the module_size Rust test.",
+  "source_count": 5635,
+  "stale": []
+}

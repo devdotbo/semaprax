@@ -1,0 +1,37 @@
+{
+  "base": "5305f4ab9",
+  "original_source": "docs/evidence/borrowed-root-bindings/src__hir__closure__resolve.rs.txt",
+  "original_sha256": "bd47e88b57a91b87c272da799f45834097b43dd069ff3c652d3af53a4754e9ea",
+  "original_matches_entire_5ff_source": true,
+  "original_manifest_unchanged": true,
+  "current_source": "src/hir/closure/resolve.rs",
+  "exact_full_file_projection": {
+    "old": "&DeclarationId::new(source_function.stable_id.clone())",
+    "new": "&self.declarations.held_identity(&source_function.stable_id)",
+    "occurrences": 1
+  },
+  "compiled_original_receiver": "src/hir/borrowed_root_oracle/closure/resolve.rs",
+  "runtime_control": "Symbolic generic T capture invokes original/current receiver and compares every HIR/Diagnostic field with complete receiving Drop through existing receiver helper. Source-authored; not run.",
+  "source_joins": "Existing source_audit reader retained; new runtime fixture joined in hir_resolver_source_inventory. No new Rust child modules or test binaries.",
+  "pending_exact_selectors": [
+    "hir::resolver_scope::source_audit::complete_frozen_receiver_and_shared_boundaries_match_static_body_provenance",
+    "hir::resolver_scope::source_audit::full_current_closure_source_is_exact_original_held_identity_projection",
+    "hir::resolver_scope::tests::frozen_generic_closure_receiver_keeps_held_owner_projection_and_actual_drop",
+    "hir::resolver_scope::tests::frozen_closure_receiver_keeps_owned_capture_publication_and_borrow_boundaries",
+    "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions"
+  ],
+  "static_checks": [
+    "old archive byte-identical to full5ff source",
+    "full current bytes equal precisely one old->held replacement",
+    "old manifest and old digest unchanged",
+    "Python syntax parsed",
+    "leaf rustfmt and git diffcheck"
+  ],
+  "not_run": [
+    "Cargo",
+    "build",
+    "tests",
+    "Claude"
+  ],
+  "graft_tokens_saved_this_turn": 162668
+}

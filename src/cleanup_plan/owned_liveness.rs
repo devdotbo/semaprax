@@ -248,7 +248,9 @@ fn find_in_block(
     };
     for statement in statements {
         match statement {
-            ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => {
+            ResolvedStatement::Let { value, .. }
+            | ResolvedStatement::Assign { value, .. }
+            | ResolvedStatement::CopyDiscard { value, .. } => {
                 if find_in_value(value, site, executed)? {
                     return Ok(true);
                 }
@@ -256,6 +258,9 @@ fn find_in_block(
                 mark_executed(value, executed);
             }
             ResolvedStatement::While {
+                condition, body, ..
+            }
+            | ResolvedStatement::LexicalWhile {
                 condition, body, ..
             } => {
                 if find_in_block(body, false, site, executed)? {
@@ -297,7 +302,9 @@ fn find_in_value(
             }
             find_in_block(else_branch, false, site, executed)
         }
-        ResolvedExprKind::Block { .. } => find_in_block(expr, false, site, executed),
+        ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. } => {
+            find_in_block(expr, false, site, executed)
+        }
         _ => Ok(false),
     }
 }
@@ -734,14 +741,21 @@ fn scalar_branch_join(flag: bool) -> i64 {
     /// only to locate a fixture's marker unambiguously.
     fn marker_site(expr: &ResolvedExpr, marker: &str) -> Option<ExpressionId> {
         match &expr.kind {
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     let (binding, value, nested) = match statement {
                         ResolvedStatement::Let { binding, value, .. }
                         | ResolvedStatement::Assign { binding, value, .. } => {
                             (Some(binding), Some(value), None)
                         }
-                        ResolvedStatement::While { body, .. } => (None, None, Some(body.as_ref())),
+                        ResolvedStatement::While { body, .. }
+                        | ResolvedStatement::LexicalWhile { body, .. } => {
+                            (None, None, Some(body.as_ref()))
+                        }
+                        ResolvedStatement::CopyDiscard { value, .. } => (None, None, Some(value)),
                         ResolvedStatement::Unsafe { body, .. } => (None, None, Some(body.as_ref())),
                     };
                     if let Some(binding) = binding {
@@ -790,7 +804,10 @@ fn scalar_branch_join(flag: bool) -> i64 {
     fn binding_storage(function: &ResolvedFunction, name: &str) -> StorageId {
         fn find(expr: &ResolvedExpr, name: &str) -> Option<crate::hir::ValueId> {
             match &expr.kind {
-                ResolvedExprKind::Block { statements, tail } => {
+                ResolvedExprKind::Block { statements, tail }
+                | ResolvedExprKind::VecConstructor {
+                    statements, tail, ..
+                } => {
                     for statement in statements {
                         if let ResolvedStatement::Let { binding, .. }
                         | ResolvedStatement::Assign { binding, .. } = statement
@@ -801,8 +818,10 @@ fn scalar_branch_join(flag: bool) -> i64 {
                         }
                         let nested = match statement {
                             ResolvedStatement::Let { value, .. }
-                            | ResolvedStatement::Assign { value, .. } => Some(value),
+                            | ResolvedStatement::Assign { value, .. }
+                            | ResolvedStatement::CopyDiscard { value, .. } => Some(value),
                             ResolvedStatement::While { body, .. }
+                            | ResolvedStatement::LexicalWhile { body, .. }
                             | ResolvedStatement::Unsafe { body, .. } => Some(body.as_ref()),
                         };
                         if let Some(nested) = nested {

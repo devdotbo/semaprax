@@ -1,0 +1,9 @@
+{
+  "capture_head": "9dd051bce67bdfbb409c1833617161465bd57591",
+  "later_root_head_at_preparation": "81be05249ec2eccfe94eda5a055eff0d7cc68a58",
+  "build_receipt_sha256": "d7996119b63989ee104f25b62c8a3e4b65d21d5fbd3ea2a8148d9813ae536c0e",
+  "producer_receipt_sha256": "cac575808ce6720b330197d634228d241ec078de6d4fe3da88f1b3b212d0078f",
+  "root": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+  "capture": "/Volumes/Semaprax/provenance/link-edge-actual-pin-capture-9dd0-20261015",
+  "round": "/Volumes/Semaprax/lane-prompts/link-edge-9dd0-20261015"
+}

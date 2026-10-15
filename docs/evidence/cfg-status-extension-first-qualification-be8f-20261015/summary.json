@@ -1,0 +1,23 @@
+{
+  "source_subject": "be8ff06ff1e3319c63a3e00f82f7085dd7b83ce9",
+  "selected": 116,
+  "passed": 106,
+  "failed": 10,
+  "failed_selectors": [
+    "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+    "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+    "workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core",
+    "workspace_graph::type_proof_tests::projection_tests::rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+    "semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+    "semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+    "workspace_graph::expected_projection::prelude_forecast::tests::complete_receiving_sources_reconstruct_pinned_originals",
+    "hir::prelude_bundle::vector_extension::tests::vector_work_exact_short_zero_and_sticky_failure_keep_whole_producer_drop_paid",
+    "hir::prelude_bundle::vector_extension::tests::every_extension_slot_work_exact_short_zero_and_partial_roots_drop_without_allocation",
+    "workspace_graph::identity_resolution::base::vector_tests::all_admitted_core_prefixes_keep_full_old_hir_wire_payload_owners_and_final_drop"
+  ],
+  "passed_new": "CFG3/status3/exit3/stage5/link4",
+  "full_suite": false,
+  "application_recovery": false,
+  "new_live_benchmark": false,
+  "clippy": "FAIL101 old nominal-base adapter nowtestonly"
+}

@@ -1,0 +1,1590 @@
+Independent explicitly authorized source-only review of prelude correction68b95366ba9420e189fce45f69b7d4d542aa6183 and source-audit followup a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966. No tools, execution, file access or web. Review the exact source below. Focus full mathematical meaning, omitted terms, possible doublecount, all modes0..7 plus both parsed/semantic retention profiles, full original producer semantics, and old numeric receipt contracts. New versioned contract explicitly supersedes fitting-receipt preservation only for missing unconditional Option/Result retained declaration term; historical receipts stay prior-model, current receipts are unqualified until execution. No cap increase, observed-gap allowance, physical allocation claim, or extended selected prelude sufficiency is claimed. Complete independent old forecaster and original Option/Result constructors are provided. Decide concrete blockers or source-proved correctness with limitations. Do not fabricate approval, tests, or causality. Keep response under900 words.
+
+=== src/prelude/base_schema.rs:1-132 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+//! Borrowed construction metadata for the two unconditional base declarations.
+//! Forecast consumers borrow this schema without initializing the process table.
+use super::*;
+
+pub(crate) struct Variant {
+    pub(crate) id: &'static str,
+    pub(crate) name: &'static str,
+    pub(crate) parameters: &'static [&'static str],
+    pub(crate) cases: &'static [Case],
+}
+pub(crate) struct Case {
+    pub(crate) id: &'static str,
+    pub(crate) name: &'static str,
+    pub(crate) fields: &'static [Field],
+}
+pub(crate) struct Field {
+    pub(crate) id: &'static str,
+    pub(crate) name: &'static str,
+    pub(crate) parameter: &'static str,
+}
+pub(crate) const OPTION: Variant = Variant {
+    id: OPTION_ID,
+    name: "Option",
+    parameters: &["T"],
+    cases: &[
+        Case {
+            id: OPTION_NONE_ID,
+            name: "None",
+            fields: &[],
+        },
+        Case {
+            id: OPTION_SOME_ID,
+            name: "Some",
+            fields: &[Field {
+                id: OPTION_SOME_VALUE_ID,
+                name: "value",
+                parameter: "T",
+            }],
+        },
+    ],
+};
+pub(crate) const RESULT: Variant = Variant {
+    id: RESULT_ID,
+    name: "Result",
+    parameters: &["T", "E"],
+    cases: &[
+        Case {
+            id: RESULT_OK_ID,
+            name: "Ok",
+            fields: &[Field {
+                id: RESULT_OK_VALUE_ID,
+                name: "value",
+                parameter: "T",
+            }],
+        },
+        Case {
+            id: RESULT_ERR_ID,
+            name: "Err",
+            fields: &[Field {
+                id: RESULT_ERR_ERROR_ID,
+                name: "error",
+                parameter: "E",
+            }],
+        },
+    ],
+};
+/// `declarations_for_program` always selects this ordered prefix, including
+/// when authored names overlap. Neither index nor resolver filters it by use.
+pub(crate) const BASE: [&Variant; 2] = [&OPTION, &RESULT];
+
+pub(super) fn declaration(schema: &Variant) -> TypeDeclaration {
+    TypeDeclaration {
+        stable_id: schema.id.to_owned(),
+        explicit_id: true,
+        name: schema.name.to_owned(),
+        name_span: Span::default(),
+        type_parameters: schema
+            .parameters
+            .iter()
+            .map(|name| parameter(name))
+            .collect(),
+        kind: TypeDeclarationKind::Variant {
+            cases: schema
+                .cases
+                .iter()
+                .map(|schema| {
+                    case(
+                        schema.id,
+                        schema.name,
+                        schema
+                            .fields
+                            .iter()
+                            .map(|schema| {
+                                field(schema.id, schema.name, parameter_type(schema.parameter))
+                            })
+                            .collect(),
+                    )
+                })
+                .collect(),
+        },
+        extends: None,
+        invariants: None,
+        span: Span::default(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn base_metadata_preserves_complete_original_constructors_and_physical_drop() {
+        for (schema, original) in [
+            (
+                &OPTION,
+                super::super::base_original::option as fn() -> TypeDeclaration,
+            ),
+            (
+                &RESULT,
+                super::super::base_original::result as fn() -> TypeDeclaration,
+            ),
+        ] {
+            assert_eq!(declaration(schema), original());
+            let (_, saved) = crate::test_allocation_observer::measure(|| drop(original()));
+            let (_, current) =
+                crate::test_allocation_observer::measure(|| drop(declaration(schema)));
+            assert_eq!(current, saved);
+            assert!(!current.invalid);
+            assert_eq!(current.live, 0);
+            assert_eq!(current.allocated, current.freed);
+        }
+    }
+}
+
+=== src/workspace_graph/expected_projection/prelude_forecast.rs:1-80 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+//! Base prelude HIR input missing from authored AST forecasting. This uses
+//! borrowed producer metadata and existing structural/string/identity factors.
+//! It bounds the unconditional prefix only; extended selected declarations
+//! and independent constructor/replay terms retain their existing accounting.
+use super::{
+    active_builder_limit, checked_builder_sum, limit_error, StructuralCost,
+    HIR_IDENTITY_COPY_FACTOR, HIR_STRING_COPY_FACTOR, HIR_STRUCTURE_EXPANSION_FACTOR,
+};
+use crate::ast::{
+    FieldDeclaration, Type, TypeDeclaration, TypeParameterDeclaration, VariantCaseDeclaration,
+};
+use crate::diagnostic::Diagnostic;
+use crate::prelude::base_schema::Variant;
+
+fn input_cost(selected: &[&Variant]) -> Result<(StructuralCost, usize), Vec<Diagnostic>> {
+    let mut cost = StructuralCost::new();
+    let mut slots = 0;
+    for declaration in selected {
+        cost.add(std::mem::size_of::<TypeDeclaration>())?;
+        cost.string(declaration.id)?;
+        cost.string(declaration.name)?;
+        for parameter in declaration.parameters {
+            cost.add(std::mem::size_of::<TypeParameterDeclaration>())?;
+            cost.string(parameter)?;
+        }
+        for case in declaration.cases {
+            cost.add(std::mem::size_of::<VariantCaseDeclaration>())?;
+            cost.string(case.id)?;
+            cost.string(case.name)?;
+            for field in case.fields {
+                cost.add(std::mem::size_of::<FieldDeclaration>())?;
+                cost.string(field.id)?;
+                cost.string(field.name)?;
+                cost.add(std::mem::size_of::<Type>())?;
+                cost.string(field.parameter)?;
+                slots = checked_builder_sum(slots, 1)?;
+            }
+        }
+    }
+    Ok((cost, slots))
+}
+
+pub(super) fn retained_upper(
+    selected: &[&Variant],
+    maximum_identity: usize,
+) -> Result<usize, Vec<Diagnostic>> {
+    let (cost, slots) = input_cost(selected)?;
+    let maximum_identity = selected
+        .iter()
+        .flat_map(|schema| {
+            std::iter::once(schema.id).chain(schema.cases.iter().flat_map(|case| {
+                std::iter::once(case.id).chain(case.fields.iter().map(|field| field.id))
+            }))
+        })
+        .map(str::len)
+        .fold(maximum_identity, usize::max);
+    let bytes = cost
+        .total
+        .checked_sub(cost.string_bytes)
+        .and_then(|n| n.checked_mul(HIR_STRUCTURE_EXPANSION_FACTOR))
+        .and_then(|n| {
+            cost.string_bytes
+                .checked_mul(HIR_STRING_COPY_FACTOR)
+                .and_then(|strings| n.checked_add(strings))
+        })
+        .and_then(|n| {
+            slots
+                .checked_mul(maximum_identity)
+                .and_then(|n| n.checked_mul(HIR_IDENTITY_COPY_FACTOR))
+                .and_then(|identities| n.checked_add(identities))
+        })
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    // The same live bound applies to this independent term before combining it
+    // with the authored expression bundle; no synthetic AST clone owns it.
+    super::checked_usage(0, bytes, "builder_bytes", active_builder_limit())
+}
+
+#[cfg(test)]
+#[path = "prelude_forecast_tests.rs"]
+mod tests;
+
+=== docs/WORKSPACE-GRAPH-PRELUDE-FORECAST-V1.md:1-87 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+# Workspace Graph Prelude Forecast Accounting v1
+
+Status: source-ready accounting correction; executable qualification pending.
+
+This additive private forecast revision supersedes the fitting-receipt
+preservation clauses in Workspace Semantic Graph v1 only for the missing
+unconditional compiler-owned Option/Result retained-declaration term. It applies
+to all private forecast modes zero through seven. Public graph schemas, source
+syntax, identities, allocation authority, the 64 MiB builder ceiling, replay
+work ceilings, and physical limits remain unchanged. Historical receipts remain
+complete prior-model evidence, not corrected current-model receipts.
+
+## Owning input and formula
+
+`prelude::declarations_for_program` always selects the ordered Option/Result
+prefix. Both `DeclarationIndex` construction and the resolver's returned type
+chain retain it, including with no source use. Neither filters that prefix by
+an authored name. Empty, Option-only, Result-only and both-selected controls
+exercise the borrowed schema seam, not four newly admitted production modes.
+Parser-only overlapping-name controls do not change source verification rules.
+
+`prelude/base_schema.rs` owns immutable metadata used by the ordinary Option and
+Result constructors. Estimation borrows this metadata; it neither initializes
+the process OnceLock table nor allocates a duplicate AST. Metadata contains
+exact stable IDs, names, parameter names, case order, field order, and each
+field's named parameter type. Complete original constructors independently
+check declaration equality and physical requested backing through Drop.
+
+Let `C` be the existing uncollapsed declaration source-input cost: each
+TypeDeclaration, TypeParameterDeclaration, VariantCaseDeclaration,
+FieldDeclaration and field Type uses its actual Rust `size_of`; each string uses
+the existing String header plus exact byte length. This is exactly the existing
+`ast_type_declaration_cost` with `StructuralCost::new`, checked independently
+against held declarations. Let `S=C.string_bytes`, and let `N` count the named
+field-type identity occurrences using the existing identity-slot rules. Let
+`M` be the maximum of the dependency identity bound and these selected base
+declaration/case/field stable-ID lengths. The missing retained term is:
+
+```text
+P = (C.total - S) * HIR_STRUCTURE_EXPANSION_FACTOR
+  + S * HIR_STRING_COPY_FACTOR
+  + N * M * HIR_IDENTITY_COPY_FACTOR
+```
+
+All factors are imported from the existing owning forecast (currently 24, 64,
+and 16); this revision introduces no independent multiplier, observed-gap
+allowance, or cap. Existing compile-time declaration bundle assertions support
+the structural factor; ordinary index, resolved-HIR and transient map/string
+retention remains conservatively covered by those same expansion rules. The
+term is a conservative bound, not an exact allocator measurement. Each sum,
+product and final term is checked under the caller's active builder limit;
+refusal retains the ordinary complete SPX-G171 diagnostic contract.
+
+## No double counting or discount substitution
+
+The pre-correction raw census traverses only authored `program.types`. Imported
+declarations and private-layout/default/main materialization do not append these
+compiler-owned base declarations to synthetic AST. `prelude::all_ids` supplies
+maximum identity length only; it supplies neither an occurrence count nor a
+constructor-shaped cost. There is therefore no selected-base source-input term
+in the original raw, runtime or generic-instance cost.
+
+`P` is added once to `retained_hir` after the ordinary fixed expression discount.
+It flows once into retained clone/HIR and total clone/HIR bounds. Synthetic AST,
+runtime, transient imported clone and authored expression discount fields remain
+unchanged. A complete old forecaster independently verifies precisely this
+field-by-field delta for every mode and both parsed/semantic retention profiles.
+The correction does not reinterpret an expression discount or count a prelude
+AST clone. Extended selected Vec/Box/iterator/list/stream/collection accounting
+is outside this correction's sufficiency claim.
+
+## Qualification
+
+The complete pre-correction forecaster, source archives, pinned source hashes,
+and exact byte inverses preserve historical evidence without normalizing old
+results. Existing numeric receipt pins are not guessed or edited in this
+source-only lane: an authorized actual producer run must regenerate any moved
+current-model pins while retaining old receipts as historical controls.
+
+Required gates include metadata zero-allocation input parity, complete original
+producer parity through physical Drop, complete old-forecaster delta, exact,
+one-short and zero term/whole-forecast boundaries, live first-sticky refusal
+preservation, source inverse/inventory gates, and the unchanged seven-fixture
+carrier resolver/replay highwater gate. Existing application controls and full
+quality gates remain required. Until those execute on the corrected source,
+no current-source fit, exclusive causal attribution, allocation savings, hosted
+support or completion status is claimed.
+
+=== src/prelude/base_original.rs:1-51 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+//! Complete original Option/Result constructors, retained independently.
+use super::*;
+pub(super) fn option() -> TypeDeclaration {
+    TypeDeclaration {
+        stable_id: OPTION_ID.to_owned(),
+        explicit_id: true,
+        name: "Option".to_owned(),
+        name_span: Span::default(),
+        type_parameters: vec![parameter("T")],
+        kind: TypeDeclarationKind::Variant {
+            cases: vec![
+                case(OPTION_NONE_ID, "None", Vec::new()),
+                case(
+                    OPTION_SOME_ID,
+                    "Some",
+                    vec![field(OPTION_SOME_VALUE_ID, "value", parameter_type("T"))],
+                ),
+            ],
+        },
+        extends: None,
+        invariants: None,
+        span: Span::default(),
+    }
+}
+
+pub(super) fn result() -> TypeDeclaration {
+    TypeDeclaration {
+        stable_id: RESULT_ID.to_owned(),
+        explicit_id: true,
+        name: "Result".to_owned(),
+        name_span: Span::default(),
+        type_parameters: vec![parameter("T"), parameter("E")],
+        kind: TypeDeclarationKind::Variant {
+            cases: vec![
+                case(
+                    RESULT_OK_ID,
+                    "Ok",
+                    vec![field(RESULT_OK_VALUE_ID, "value", parameter_type("T"))],
+                ),
+                case(
+                    RESULT_ERR_ID,
+                    "Err",
+                    vec![field(RESULT_ERR_ERROR_ID, "error", parameter_type("E"))],
+                ),
+            ],
+        },
+        extends: None,
+        invariants: None,
+        span: Span::default(),
+    }
+}
+
+=== src/workspace_graph/expected_projection/prelude_forecast_original.rs:1-522 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+//! Shared source-held closure consumption for forecast and synthetic construction.
+use super::{
+    active_builder_limit, ast_function_contract_cost, ast_function_cost,
+    ast_function_identity_slots, ast_function_signature_cost, ast_program_cost,
+    ast_program_identity_slots, ast_type_declaration_cost, ast_type_declaration_identity_slots,
+    ast_type_identity_slots, cached_exact, call_identity, checked_builder_sum, checked_usage, cost,
+    default_expr, generic_instance_source_cost, graph_error, import_stub, limit_error,
+    private_layout, reserve_builder_structure, synthetic_main_runtime_cost, type_rewrite,
+    AuthoredDeclaration, StructuralCost, SyntheticBuilderCosts, HIR_IDENTITY_COPY_FACTOR,
+    HIR_STRING_COPY_FACTOR, HIR_STRUCTURE_EXPANSION_FACTOR,
+};
+use crate::ast::{Expr, ExprKind, Function, ModuleUseKind, Program, Span, Type, TypeDeclaration};
+use crate::bounded_output::budgeted_format;
+use crate::diagnostic::Diagnostic;
+use crate::{hir, prelude};
+use std::collections::{BTreeMap, BTreeSet};
+pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_with_registry(
+    program: &Program,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    programs: &[Program],
+    maximum_identity: Option<usize>,
+    include_imports: bool,
+    profile: (u8, cached_exact::Retention),
+    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
+) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
+    synthetic_builder_bytes_scoped_with_retention_with_registry_using(
+        program,
+        authored,
+        programs,
+        maximum_identity,
+        include_imports,
+        profile,
+        (registry, None),
+    )
+}
+
+pub(in crate::workspace_graph) fn synthetic_builder_bytes_core<'a>(
+    program: &Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    maximum_identity: Option<usize>,
+    include_imports: bool,
+    profile: (u8, cached_exact::Retention),
+    proofs: (
+        Option<&private_layout::registry::LayoutRegistry<'_>>,
+        &mut import_stub::core_proofs::CoreProviderProofs<'a>,
+    ),
+) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
+    synthetic_builder_bytes_scoped_with_retention_with_registry_using(
+        program,
+        authored,
+        programs,
+        maximum_identity,
+        include_imports,
+        profile,
+        (proofs.0, Some(proofs.1)),
+    )
+}
+
+pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_with_registry_using<
+    'a,
+>(
+    program: &Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    maximum_identity: Option<usize>,
+    include_imports: bool,
+    profile: (u8, cached_exact::Retention),
+    proofs: (
+        Option<&private_layout::registry::LayoutRegistry<'_>>,
+        Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,
+    ),
+) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
+    let (registry, core) = proofs;
+    let (layout_mode, retention) = profile;
+    let mut raw = StructuralCost::raw_ast(layout_mode >= 1).with_inline_values(layout_mode >= 2);
+    ast_program_cost(program, &mut raw, include_imports)?;
+    let fresh;
+    let held;
+    let layout = if let Some(registry) = registry {
+        held = registry.get(program, authored, programs)?;
+        &*held
+    } else {
+        fresh = private_layout::LayoutClosure::derive(program, authored, programs)?;
+        &fresh
+    };
+    let mut identity_slots = ast_program_identity_slots(program)?;
+    let mut runtime = StructuralCost::new();
+    let mut default_memo = [BTreeMap::new(), BTreeMap::new()];
+    let mut byte_proofs = import_stub::core_proofs::Phase::new(authored, programs, core)
+        .map_err(|error| vec![error])?;
+    let mut transient_import_clone = 0usize;
+    layout.add_costs(
+        program,
+        programs,
+        &mut raw,
+        &mut runtime,
+        &mut identity_slots,
+    )?;
+    for module_use in program.module_uses.iter().filter(|_| include_imports) {
+        if module_use.kind == ModuleUseKind::Protocol {
+            continue;
+        }
+        let target = &authored[module_use.persistent_id.as_str()];
+        runtime.string(&module_use.alias)?;
+        if let Some(function) = target.function {
+            // `synthetic_program` retains an imported function as a stub: the
+            // signature it rewrites, with `requires` and `ensures` cleared and
+            // the body replaced by the return type's default expression. Only
+            // the retained signature is charged here; the default body is
+            // charged as runtime cost below. The provider's own contract and
+            // body reach the resolver exactly once, through the defining
+            // module's own `ast_program_cost`.
+            ast_function_signature_cost(function, &mut raw)?;
+            // Preserve old fitting receipts even though ordinary stubs now
+            // clone only their signature. The historical transient-body debit
+            // remains conservative; only mode 4 removes its peak after all
+            // older estimates refuse. Intrinsic wrapper bodies are separately
+            // charged as retained runtime structures below.
+            transient_import_clone =
+                transient_import_clone.max(ast_function_contract_cost(function)?.total);
+            if programs
+                .iter()
+                .find(|provider| provider.module == target.module)
+                .is_some_and(|provider| {
+                    crate::vec_ops::source_wrapper(provider, function).is_some()
+                        || crate::box_ops::source_wrapper(provider, function).is_some()
+                })
+            {
+                ast_function_cost(function, &mut runtime)?;
+                identity_slots =
+                    checked_builder_sum(identity_slots, ast_function_identity_slots(function)?)?;
+                continue;
+            }
+            identity_slots = checked_builder_sum(
+                identity_slots,
+                ast_type_identity_slots(&function.return_type)?,
+            )?;
+            for param in &function.params {
+                identity_slots =
+                    checked_builder_sum(identity_slots, ast_type_identity_slots(&param.ty)?)?;
+                type_rewrite::runtime_cost_with_layout(
+                    &param.ty,
+                    target.module,
+                    program,
+                    programs,
+                    &mut runtime,
+                    Some(layout),
+                )?;
+            }
+            type_rewrite::runtime_cost_with_layout(
+                &function.return_type,
+                target.module,
+                program,
+                programs,
+                &mut runtime,
+                Some(layout),
+            )?;
+            let cost = import_stub::default_expr_expanded_cost_with_layout(
+                function,
+                target.module,
+                program,
+                authored,
+                programs,
+                &mut default_memo,
+                &mut BTreeSet::new(),
+                super::super::owned_function_import::admitted_with_layout(
+                    program, target, authored, programs, layout,
+                ),
+                import_stub::byte_helper_authorized(
+                    function,
+                    target.module,
+                    byte_proofs.get().map_err(|error| vec![error])?,
+                )?,
+                Some(layout),
+            )?;
+            runtime.add_split(cost.bytes, cost.string_bytes)?;
+            runtime.add_identity_carriers(cost.identity_carriers)?;
+            identity_slots = checked_builder_sum(identity_slots, cost.identity_slots)?;
+        } else {
+            let declaration = target.ty.expect("validated type target");
+            ast_type_declaration_cost(declaration, &mut raw)?;
+            identity_slots = checked_builder_sum(
+                identity_slots,
+                ast_type_declaration_identity_slots(declaration)?,
+            )?;
+            super::super::generic_type_import::rewrite_declaration_runtime_cost_with_layout(
+                declaration,
+                target.module,
+                program,
+                programs,
+                &mut runtime,
+                Some(layout),
+            )?;
+        }
+    }
+    if !program
+        .functions
+        .iter()
+        .any(|function| function.name == "main")
+    {
+        let synthetic_main = synthetic_main_runtime_cost(&program.module)?;
+        runtime.add_split(synthetic_main.total, synthetic_main.string_bytes)?;
+        runtime.add_identity_carriers(synthetic_main.identity_carriers)?;
+    }
+    if layout_mode >= 2 {
+        identity_slots = identity_slots
+            .checked_sub(call_identity::discount_with_imports(
+                program,
+                authored,
+                include_imports,
+            ))
+            .expect("scalar calls retain their expression and callee identity slots");
+    }
+    identity_slots = identity_slots
+        .checked_sub(raw.scalar_identity_discount)
+        .expect("raw scalar discount retains each expression identity slot");
+    let generic_instances = generic_instance_source_cost(program)?;
+    identity_slots = checked_builder_sum(identity_slots, generic_instances.identity_slots)?;
+    let hir_input = checked_usage(
+        raw.total,
+        runtime.total,
+        "builder_bytes",
+        active_builder_limit(),
+    )?;
+    let hir_input = checked_usage(
+        hir_input,
+        generic_instances.bytes,
+        "builder_bytes",
+        active_builder_limit(),
+    )?;
+    let string_input = checked_builder_sum(raw.string_bytes, runtime.string_bytes)?;
+    let string_input = checked_builder_sum(string_input, generic_instances.string_bytes)?;
+    // String contents are part of `hir_input`; only the remaining structural
+    // bytes expand by the structural factor.
+    let structure_input = hir_input.saturating_sub(string_input);
+    let fixed_hir_upper = structure_input
+        .checked_mul(HIR_STRUCTURE_EXPANSION_FACTOR)
+        .and_then(|structure| {
+            string_input
+                .checked_mul(HIR_STRING_COPY_FACTOR)
+                .and_then(|strings| structure.checked_add(strings))
+        })
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    let maximum_identity_bytes = maximum_identity.unwrap_or_else(|| {
+        authored
+            .keys()
+            .map(|id| id.len())
+            .chain(prelude::all_ids().into_iter().map(str::len))
+            .max()
+            .unwrap_or(0)
+    });
+    #[cfg(test)]
+    let prior_fixed_hir_upper = fixed_hir_upper;
+    let fixed_hir_upper = if layout_mode == cached_exact::MODE {
+        cached_exact::fixed_upper(fixed_hir_upper, &raw, &runtime, retention)?
+    } else {
+        fixed_hir_upper
+            .checked_sub(cost::fixed_hir_discount(layout_mode, &raw, &runtime)?)
+            .expect("literal storage discount retains the complete reduced fixed bundle")
+    };
+    let identity_occurrence_upper = identity_slots
+        .checked_mul(maximum_identity_bytes)
+        .and_then(|bytes| bytes.checked_mul(HIR_IDENTITY_COPY_FACTOR))
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    // Heap carriers are prebound independently of inline layouts and shared clones.
+    let identity_carriers = cost::identity_carriers(layout_mode, &raw, &runtime)?;
+    let identity_carriers =
+        checked_builder_sum(identity_carriers, generic_instances.identity_carriers)?;
+    let identity_carrier_bytes = identity_carriers
+        .checked_mul(hir::ExpressionId::SHARED_ALLOCATION_CARRIER_BYTES)
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    let hir_upper = fixed_hir_upper
+        .checked_add(identity_carrier_bytes)
+        .and_then(|bytes| bytes.checked_add(identity_occurrence_upper))
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    let retained_clone_and_hir = checked_usage(
+        raw.total,
+        hir_upper,
+        "builder_bytes",
+        active_builder_limit(),
+    )?;
+    #[cfg(test)]
+    let original_mode7_fixed_upper = raw
+        .exact_expressions
+        .checked_add(runtime.exact_expressions)
+        .and_then(|count| {
+            count
+                .checked_mul(super::super::HIR_FIXED_EXPANSION_FACTOR)
+                .and_then(|n| n.checked_mul(std::mem::size_of::<crate::ast::Expr>()))
+                .and_then(|old| prior_fixed_hir_upper.checked_sub(old))
+                .and_then(|base| {
+                    count
+                        .checked_mul(if retention == cached_exact::Retention::Semantic {
+                            2
+                        } else {
+                            1
+                        })
+                        .and_then(|n| n.checked_mul(super::super::HIR_EXPR_FIXED_BUNDLE))
+                        .and_then(|exact| base.checked_add(exact))
+                })
+        })
+        .unwrap_or(usize::MAX);
+    #[cfg(test)]
+    super::super::forecast_observation::record(
+        &program.path,
+        layout_mode,
+        retention == cached_exact::Retention::Semantic,
+        [
+            raw.total,
+            raw.string_bytes,
+            raw.exact_expressions,
+            raw.literal_fixed_discount,
+            runtime.total,
+            runtime.string_bytes,
+            runtime.exact_expressions,
+            structure_input,
+            string_input,
+            prior_fixed_hir_upper,
+            fixed_hir_upper,
+            identity_occurrence_upper,
+            identity_carrier_bytes,
+            retained_clone_and_hir,
+            generic_instances.bytes,
+            transient_import_clone,
+            original_mode7_fixed_upper,
+        ],
+    );
+    let result = SyntheticBuilderCosts {
+        raw_clone_and_hir: checked_usage(
+            retained_clone_and_hir,
+            transient_import_clone,
+            "builder_bytes",
+            active_builder_limit(),
+        )?,
+        retained_clone_and_hir,
+        transient_import_clone,
+        runtime: runtime.total,
+        retained_hir: hir_upper,
+        synthetic_ast: checked_usage(
+            raw.total,
+            runtime.total,
+            "builder_bytes",
+            active_builder_limit(),
+        )?,
+    };
+    byte_proofs.complete().map_err(|error| vec![error])?;
+    Ok(result)
+}
+
+pub(in crate::workspace_graph) fn synthetic_program_with_registry(
+    program: &Program,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    programs: &[Program],
+    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
+) -> Result<Program, Vec<Diagnostic>> {
+    synthetic_program_with_registry_using(program, authored, programs, registry, None)
+}
+
+pub(in crate::workspace_graph) fn synthetic_program_core<'a>(
+    program: &Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
+    core: &mut import_stub::core_proofs::CoreProviderProofs<'a>,
+) -> Result<Program, Vec<Diagnostic>> {
+    synthetic_program_with_registry_using(program, authored, programs, registry, Some(core))
+}
+
+pub(in crate::workspace_graph) fn synthetic_program_with_registry_using<'a>(
+    program: &Program,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+    registry: Option<&private_layout::registry::LayoutRegistry<'_>>,
+    core: Option<&mut import_stub::core_proofs::CoreProviderProofs<'a>>,
+) -> Result<Program, Vec<Diagnostic>> {
+    let fresh;
+    let held;
+    let layout = if let Some(registry) = registry {
+        held = registry.get(program, authored, programs)?;
+        &*held
+    } else {
+        fresh = private_layout::LayoutClosure::derive(program, authored, programs)?;
+        &fresh
+    };
+    let mut byte_proofs = import_stub::core_proofs::Phase::new(authored, programs, core)
+        .map_err(|error| vec![error])?;
+    let mut synthetic = program.clone();
+    synthetic.module_uses.clear();
+    // Project validation already authenticated static implementation sidecars.
+    // Runtime HIR has no witness or dispatch representation for them.
+    synthetic.implementations.clear();
+    for module_use in program
+        .module_uses
+        .iter()
+        .filter(|item| item.kind == ModuleUseKind::Type)
+    {
+        let target = &authored[module_use.persistent_id.as_str()];
+        let mut ty = target.ty.expect("validated type target").clone();
+        ty.name = crate::bounded_output::budgeted_clone(&module_use.alias);
+        super::super::generic_type_import::rewrite_declaration_with_layout(
+            &mut ty,
+            target.module,
+            program,
+            programs,
+            Some(layout),
+        )?;
+        synthetic.types.push(ty);
+    }
+    layout.append_types(&mut synthetic, program, programs)?;
+    let type_index_bytes = synthetic
+        .types
+        .len()
+        .checked_mul(std::mem::size_of::<(&str, &TypeDeclaration)>())
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    reserve_builder_structure(type_index_bytes)?;
+    let mut type_declarations = Vec::with_capacity(synthetic.types.len());
+    for declaration in &synthetic.types {
+        type_declarations.push((declaration.name.as_str(), declaration));
+    }
+    type_declarations.sort_by(|left, right| left.0.cmp(right.0));
+    if type_declarations
+        .windows(2)
+        .any(|items| items[0].0 == items[1].0)
+    {
+        return Err(vec![graph_error(
+            "SPX-G173",
+            "synthetic workspace type-name index is not unique",
+        )]);
+    }
+    for module_use in program
+        .module_uses
+        .iter()
+        .filter(|item| item.kind == ModuleUseKind::Function)
+    {
+        let target = &authored[module_use.persistent_id.as_str()];
+        let target_function = target.function.expect("validated function target");
+        let retain_body = programs
+            .iter()
+            .find(|provider| provider.module == target.module)
+            .is_some_and(|provider| {
+                crate::vec_ops::source_wrapper(provider, target_function).is_some()
+                    || crate::box_ops::source_wrapper(provider, target_function).is_some()
+            });
+        let mut function = if retain_body {
+            target_function.clone()
+        } else {
+            import_stub::signature(target_function)
+        };
+        function.name = crate::bounded_output::budgeted_clone(&module_use.alias);
+        if retain_body {
+            synthetic.functions.push(function);
+            continue;
+        }
+        for param in &mut function.params {
+            type_rewrite::rewrite_with_layout(
+                &mut param.ty,
+                target.module,
+                program,
+                programs,
+                Some(layout),
+            )?;
+        }
+        type_rewrite::rewrite_with_layout(
+            &mut function.return_type,
+            target.module,
+            program,
+            programs,
+            Some(layout),
+        )?;
+        // Clearing would retain the cloned contracts' Vec capacities in every
+        // finished stub. Replace the vectors so the full imported contracts
+        // remain transient, matching the final peak-only pre-bound.
+        function.requires = Vec::new();
+        function.ensures = Vec::new();
+        function.body = default_expr(
+            &function,
+            &type_declarations,
+            super::super::owned_function_import::admitted_with_layout(
+                program, target, authored, programs, layout,
+            ),
+            import_stub::byte_helper_authorized(
+                target_function,
+                target.module,
+                byte_proofs.get().map_err(|error| vec![error])?,
+            )?,
+        )?;
+        synthetic.functions.push(function);
+    }
+    if !synthetic
+        .functions
+        .iter()
+        .any(|function| function.name == "main")
+    {
+        reserve_builder_structure(std::mem::size_of::<Function>())?;
+        reserve_builder_structure(std::mem::size_of::<Expr>())?;
+        synthetic.functions.push(Function {
+            stable_id: budgeted_format(format_args!(
+                "workspace.synthetic.main.{}",
+                synthetic.module
+            )),
+            explicit_id: true,
+            name: crate::bounded_output::budgeted_clone("main"),
+            name_span: Span::default(),
+            type_parameters: Vec::new(),
+            params: Vec::new(),
+            return_type: Type::I64,
+            effects: Vec::new(),
+            yields: None,
+            follows: None,
+            requires: Vec::new(),
+            ensures: Vec::new(),
+            body: Expr {
+                kind: ExprKind::Int(0),
+                span: Span::default(),
+            },
+            span: Span::default(),
+        });
+    }
+    byte_proofs.complete().map_err(|error| vec![error])?;
+    Ok(synthetic)
+}
+
+=== src/workspace_graph/expected_projection/held_projection.rs:200-355 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+        .any(|function| function.name == "main")
+    {
+        let synthetic_main = synthetic_main_runtime_cost(&program.module)?;
+        runtime.add_split(synthetic_main.total, synthetic_main.string_bytes)?;
+        runtime.add_identity_carriers(synthetic_main.identity_carriers)?;
+    }
+    if layout_mode >= 2 {
+        identity_slots = identity_slots
+            .checked_sub(call_identity::discount_with_imports(
+                program,
+                authored,
+                include_imports,
+            ))
+            .expect("scalar calls retain their expression and callee identity slots");
+    }
+    identity_slots = identity_slots
+        .checked_sub(raw.scalar_identity_discount)
+        .expect("raw scalar discount retains each expression identity slot");
+    let generic_instances = generic_instance_source_cost(program)?;
+    identity_slots = checked_builder_sum(identity_slots, generic_instances.identity_slots)?;
+    let hir_input = checked_usage(
+        raw.total,
+        runtime.total,
+        "builder_bytes",
+        active_builder_limit(),
+    )?;
+    let hir_input = checked_usage(
+        hir_input,
+        generic_instances.bytes,
+        "builder_bytes",
+        active_builder_limit(),
+    )?;
+    let string_input = checked_builder_sum(raw.string_bytes, runtime.string_bytes)?;
+    let string_input = checked_builder_sum(string_input, generic_instances.string_bytes)?;
+    // String contents are part of `hir_input`; only the remaining structural
+    // bytes expand by the structural factor.
+    let structure_input = hir_input.saturating_sub(string_input);
+    let fixed_hir_upper = structure_input
+        .checked_mul(HIR_STRUCTURE_EXPANSION_FACTOR)
+        .and_then(|structure| {
+            string_input
+                .checked_mul(HIR_STRING_COPY_FACTOR)
+                .and_then(|strings| structure.checked_add(strings))
+        })
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    let maximum_identity_bytes = maximum_identity.unwrap_or_else(|| {
+        authored
+            .keys()
+            .map(|id| id.len())
+            .chain(prelude::all_ids().into_iter().map(str::len))
+            .max()
+            .unwrap_or(0)
+    });
+    #[cfg(test)]
+    let prior_fixed_hir_upper = fixed_hir_upper;
+    let fixed_hir_upper = if layout_mode == cached_exact::MODE {
+        cached_exact::fixed_upper(fixed_hir_upper, &raw, &runtime, retention)?
+    } else {
+        fixed_hir_upper
+            .checked_sub(cost::fixed_hir_discount(layout_mode, &raw, &runtime)?)
+            .expect("literal storage discount retains the complete reduced fixed bundle")
+    };
+    let identity_occurrence_upper = identity_slots
+        .checked_mul(maximum_identity_bytes)
+        .and_then(|bytes| bytes.checked_mul(HIR_IDENTITY_COPY_FACTOR))
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    // Heap carriers are prebound independently of inline layouts and shared clones.
+    let identity_carriers = cost::identity_carriers(layout_mode, &raw, &runtime)?;
+    let identity_carriers =
+        checked_builder_sum(identity_carriers, generic_instances.identity_carriers)?;
+    let identity_carrier_bytes = identity_carriers
+        .checked_mul(hir::ExpressionId::SHARED_ALLOCATION_CARRIER_BYTES)
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    // The resolver's source chain also retains the compiler-owned base
+    // variants. They are absent from synthetic AST and cannot spend an authored
+    // expression discount. Borrow their producer metadata, without warming or
+    // constructing the process prelude table during estimation.
+    let prelude_hir_upper = super::prelude_forecast::retained_upper(
+        &prelude::base_schema::BASE,
+        maximum_identity_bytes,
+    )?;
+    let hir_upper = fixed_hir_upper
+        .checked_add(prelude_hir_upper)
+        .and_then(|bytes| bytes.checked_add(identity_carrier_bytes))
+        .and_then(|bytes| bytes.checked_add(identity_occurrence_upper))
+        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
+    let retained_clone_and_hir = checked_usage(
+        raw.total,
+        hir_upper,
+        "builder_bytes",
+        active_builder_limit(),
+    )?;
+    #[cfg(test)]
+    let original_mode7_fixed_upper = raw
+        .exact_expressions
+        .checked_add(runtime.exact_expressions)
+        .and_then(|count| {
+            count
+                .checked_mul(super::super::HIR_FIXED_EXPANSION_FACTOR)
+                .and_then(|n| n.checked_mul(std::mem::size_of::<crate::ast::Expr>()))
+                .and_then(|old| prior_fixed_hir_upper.checked_sub(old))
+                .and_then(|base| {
+                    count
+                        .checked_mul(if retention == cached_exact::Retention::Semantic {
+                            2
+                        } else {
+                            1
+                        })
+                        .and_then(|n| n.checked_mul(super::super::HIR_EXPR_FIXED_BUNDLE))
+                        .and_then(|exact| base.checked_add(exact))
+                })
+        })
+        .unwrap_or(usize::MAX);
+    #[cfg(test)]
+    super::super::forecast_observation::record(
+        &program.path,
+        layout_mode,
+        retention == cached_exact::Retention::Semantic,
+        [
+            raw.total,
+            raw.string_bytes,
+            raw.exact_expressions,
+            raw.literal_fixed_discount,
+            runtime.total,
+            runtime.string_bytes,
+            runtime.exact_expressions,
+            structure_input,
+            string_input,
+            prior_fixed_hir_upper,
+            fixed_hir_upper,
+            identity_occurrence_upper,
+            identity_carrier_bytes,
+            retained_clone_and_hir,
+            generic_instances.bytes,
+            transient_import_clone,
+            original_mode7_fixed_upper,
+        ],
+    );
+    let result = SyntheticBuilderCosts {
+        raw_clone_and_hir: checked_usage(
+            retained_clone_and_hir,
+            transient_import_clone,
+            "builder_bytes",
+            active_builder_limit(),
+        )?,
+        retained_clone_and_hir,
+        transient_import_clone,
+        runtime: runtime.total,
+        retained_hir: hir_upper,
+        synthetic_ast: checked_usage(
+            raw.total,
+            runtime.total,
+            "builder_bytes",
+            active_builder_limit(),
+        )?,
+    };
+
+=== src/prelude.rs:95-150 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+
+/// Test-only access to a fresh, caller-owned copy of the same construction,
+/// so allocation controls can measure it through Drop without the cache.
+#[cfg(test)]
+pub(crate) fn owned_declarations_for_tests() -> Vec<TypeDeclaration> {
+    owned_declarations()
+}
+
+/// Independent reference: the complete original `OnceLock` initializer body,
+/// retained verbatim before the owning factory was extracted.
+#[cfg(test)]
+#[allow(
+    clippy::redundant_closure_call,
+    reason = "complete original OnceLock initializer retained byte-exact as an independent receiving oracle"
+)]
+pub(crate) fn original_initializer_reference() -> Vec<TypeDeclaration> {
+    (|| {
+        vec![
+            option(),
+            result(),
+            owned_vec(),
+            owned_box(),
+            owned_iter(),
+            iter_step(),
+            immutable_list(),
+            list_step(),
+            crate::stdin_stream_ops::declaration(),
+            collections::declaration(false),
+            collections::declaration(true),
+        ]
+    })()
+}
+
+pub(crate) fn declarations_for_program(program: &dyn ProgramSource) -> &'static [TypeDeclaration] {
+    if crate::map_ops::program_uses(program) {
+        declarations()
+    } else if crate::stdin_stream_ops::program_uses(program)
+        || crate::source_verify::program_uses_record_iterator(program)
+    {
+        &declarations()[..9]
+    } else if crate::list_ops::program_uses_list(program) {
+        &declarations()[..8]
+    } else if crate::iterator_ops::program_uses_iterator(program) {
+        &declarations()[..6]
+    } else if crate::box_ops::program_uses_owned_payload(program) || program_uses_box(program) {
+        &declarations()[..4]
+    } else if program_uses_vec(program) {
+        &declarations()[..3]
+    } else {
+        &declarations()[..2]
+    }
+}
+
+pub(crate) fn is_reserved_type_name(name: &str) -> bool {
+    matches!(
+        name,
+
+=== src/prelude.rs:811-855 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+fn parameter(name: &str) -> TypeParameterDeclaration {
+    TypeParameterDeclaration {
+        name: name.to_owned(),
+        span: Span::default(),
+    }
+}
+
+fn parameter_type(name: &str) -> Type {
+    Type::Named {
+        name: name.to_owned(),
+        arguments: Vec::new(),
+    }
+}
+
+fn field(id: &str, name: &str, ty: Type) -> FieldDeclaration {
+    FieldDeclaration {
+        stable_id: id.to_owned(),
+        explicit_id: true,
+        name: name.to_owned(),
+        name_span: Span::default(),
+        ty,
+        span: Span::default(),
+    }
+}
+
+fn case(id: &str, name: &str, fields: Vec<FieldDeclaration>) -> VariantCaseDeclaration {
+    VariantCaseDeclaration {
+        stable_id: id.to_owned(),
+        explicit_id: true,
+        name: name.to_owned(),
+        name_span: Span::default(),
+        fields,
+        span: Span::default(),
+    }
+}
+
+fn option() -> TypeDeclaration {
+    base_schema::declaration(&base_schema::OPTION)
+}
+
+fn result() -> TypeDeclaration {
+    base_schema::declaration(&base_schema::RESULT)
+}
+
+fn owned_vec() -> TypeDeclaration {
+
+=== src/workspace_graph/expected_projection/cost.rs:300-470 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+        self.add(if self.inline_values {
+            bytes
+                .checked_sub(std::mem::size_of::<crate::ast::Expr>())
+                .expect("audited parent contains one inline Expr")
+        } else {
+            bytes
+        })
+    }
+
+    pub(super) fn embedded_string(&mut self, value: &str) -> Result<(), Vec<Diagnostic>> {
+        if self.embedded_headers {
+            self.add_split(value.len(), value.len())
+        } else {
+            self.string(value)
+        }
+    }
+
+    pub(super) fn function_signature(
+        &mut self,
+        function: &crate::ast::Function,
+    ) -> Result<(), Vec<Diagnostic>> {
+        if self.inline_values {
+            self.add(
+                std::mem::size_of_val(function)
+                    - std::mem::size_of::<crate::ast::Expr>()
+                    - std::mem::size_of::<crate::ast::Type>(),
+            )
+        } else {
+            self.value(function)
+        }
+    }
+
+    pub(super) fn inline_type_parent<T>(&mut self, parent: &T) -> Result<(), Vec<Diagnostic>> {
+        self.add(if self.inline_values {
+            std::mem::size_of_val(parent)
+                .checked_sub(std::mem::size_of::<crate::ast::Type>())
+                .expect("audited parent contains an inline Type")
+        } else {
+            std::mem::size_of_val(parent)
+        })
+    }
+
+    pub(super) fn match_arm(&mut self, arm: &crate::ast::MatchArm) -> Result<(), Vec<Diagnostic>> {
+        if self.inline_values {
+            self.add(
+                std::mem::size_of_val(arm)
+                    - std::mem::size_of::<crate::ast::Expr>()
+                    - std::mem::size_of_val(&arm.pattern),
+            )
+        } else {
+            self.value(arm)
+        }
+    }
+
+    pub(super) const fn structure(bytes: usize) -> Self {
+        Self {
+            total: bytes,
+            string_bytes: 0,
+            embedded_headers: false,
+            inline_values: false,
+            scalar_identity_discount: 0,
+            literal_fixed_discount: 0,
+            identity_carriers: 0,
+            single_identity_carriers: 0,
+            exact_fixed_discount: 0,
+            exact_expressions: 0,
+            exact_absent_roots: [0; 3],
+            exact_carrier_free_roots: 0,
+            exact_carrier_free_ifs: 0,
+            exact_carrier_free_vars: 0,
+            exact_carrier_free_blocks: 0,
+        }
+    }
+
+    pub(super) fn add(&mut self, bytes: usize) -> Result<(), Vec<Diagnostic>> {
+        self.total = checked_usage(self.total, bytes, "builder_bytes", active_builder_limit())?;
+        Ok(())
+    }
+
+    /// Absorbs a cost whose `string_bytes` are already part of `bytes`.
+    pub(super) fn add_split(
+        &mut self,
+        bytes: usize,
+        string_bytes: usize,
+    ) -> Result<(), Vec<Diagnostic>> {
+        self.add(bytes)?;
+        self.string_bytes = checked_usage(
+            self.string_bytes,
+            string_bytes,
+            "builder_bytes",
+            active_builder_limit(),
+        )?;
+        Ok(())
+    }
+
+    pub(super) fn value<T>(&mut self, value: &T) -> Result<(), Vec<Diagnostic>> {
+        self.add(std::mem::size_of_val(value))
+    }
+
+    pub(super) fn string(&mut self, value: &str) -> Result<(), Vec<Diagnostic>> {
+        self.add(std::mem::size_of::<String>())?;
+        self.add_split(value.len(), value.len())
+    }
+
+    pub(super) fn program(&mut self, program: &crate::ast::Program) -> Result<(), Vec<Diagnostic>> {
+        self.add(program_carrier_bytes(std::slice::from_ref(program)).unwrap())?;
+        for agent in &program.agents {
+            self.embedded_string(&agent.stable_id)?;
+            self.embedded_string(&agent.name)?;
+            for role in &agent.types {
+                self.value(role)?;
+                self.embedded_string(&role.stable_id)?;
+            }
+            for operation in &agent.operations {
+                self.value(operation)?;
+                self.embedded_string(&operation.stable_id)?;
+            }
+            self.embedded_string(&agent.runtime_v1_json)?;
+            if agent.has_execution_metadata() {
+                // The sealed HIR origin is a distinct retained allocation;
+                // account it before constructing/cloning the synthetic HIR.
+                self.add(std::mem::size_of::<
+                    crate::hir::AgentExecutionSourceAssociation,
+                >())?;
+                self.embedded_string(&program.module)?;
+                for operation in &agent.operations {
+                    self.add(std::mem::size_of::<crate::hir::ResolvedAgentOperationRole>())?;
+                    self.embedded_string(&operation.stable_id)?;
+                }
+                if let Some(binding) = &agent.model_wait {
+                    self.add(std::mem::size_of::<crate::hir::ResolvedAgentModelWaitBinding>())?;
+                    self.embedded_string(&binding.helper_id)?;
+                }
+            }
+            if let Some(binding) = &agent.model_wait {
+                self.value(binding.as_ref())?;
+                self.embedded_string(&binding.helper_id)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+pub(crate) fn program_carrier_bytes(programs: &[crate::ast::Program]) -> Option<usize> {
+    let base = std::mem::size_of::<crate::ast::Program>()
+        - std::mem::size_of::<Vec<crate::ast::AgentDeclaration>>();
+    programs.len().checked_mul(base)?.checked_add(
+        programs
+            .iter()
+            .map(|program| program.agents.len())
+            .try_fold(0usize, usize::checked_add)?
+            .checked_mul(std::mem::size_of::<crate::ast::AgentDeclaration>())?,
+    )
+}
+
+pub(super) fn is_builder_refusal(errors: &[Diagnostic]) -> bool {
+    !errors.is_empty()
+        && errors.iter().all(|error| {
+            error.code == "SPX-G171"
+                && error.message
+                    == format!(
+                        "Workspace Semantic Graph `builder_bytes` exceeds {}",
+                        active_builder_limit()
+                    )
+        })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::StructuralCost;
+
+
+=== src/workspace_graph/expected_projection/declaration_cost.rs:35-150 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+    function: &Function,
+    cost: &mut StructuralCost,
+) -> Result<(), Vec<Diagnostic>> {
+    cost.function_signature(function)?;
+    cost.embedded_string(&function.stable_id)?;
+    cost.embedded_string(&function.name)?;
+    for parameter in &function.type_parameters {
+        cost.value(parameter)?;
+        cost.embedded_string(&parameter.name)?;
+    }
+    for param in &function.params {
+        ast_param_cost(param, cost)?;
+    }
+    ast_type_cost(&function.return_type, cost)?;
+    for effect in &function.effects {
+        cost.string(effect)?;
+    }
+    Ok(())
+}
+
+/// The preconditions, body, and postconditions of a function. An imported
+/// function's contract is cloned transiently and then discarded, so it is
+/// charged as a peak rather than as retained structure.
+pub(super) fn ast_function_contract_cost(
+    function: &Function,
+) -> Result<StructuralCost, Vec<Diagnostic>> {
+    let mut cost = StructuralCost::new();
+    ast_function_contract_cost_into(function, &mut cost)?;
+    Ok(cost)
+}
+
+fn ast_function_contract_cost_into(
+    function: &Function,
+    cost: &mut StructuralCost,
+) -> Result<(), Vec<Diagnostic>> {
+    for expression in function
+        .requires
+        .iter()
+        .chain(std::iter::once(&function.body))
+        .chain(&function.ensures)
+    {
+        ast_expr_cost(expression, cost)?;
+    }
+    Ok(())
+}
+
+pub(super) fn ast_param_cost(
+    param: &crate::ast::Param,
+    cost: &mut StructuralCost,
+) -> Result<(), Vec<Diagnostic>> {
+    cost.inline_type_parent(param)?;
+    cost.embedded_string(&param.name)?;
+    ast_type_cost(&param.ty, cost)
+}
+
+pub(super) fn ast_type_cost(ty: &Type, cost: &mut StructuralCost) -> Result<(), Vec<Diagnostic>> {
+    cost.value(ty)?;
+    if let Type::Named { name, arguments } = ty {
+        cost.embedded_string(name)?;
+        for argument in arguments {
+            ast_type_cost(argument, cost)?;
+        }
+    }
+    if cost.is_raw_fallback() {
+        if let Type::Function { parameters, result } = ty {
+            for parameter in parameters {
+                ast_type_cost(parameter, cost)?;
+            }
+            ast_type_cost(result, cost)?;
+        }
+    }
+    Ok(())
+}
+
+/// Where the parent places a child's resolved root. `CarrierFree` is used only
+/// for a `Box` slot of a unary, binary, `if` or block-tail node, or an element
+/// of a free-function call's argument list (every intrinsic route only moves
+/// or boxes its arguments): no binding, statement, field initializer, arm or
+/// pattern field is constructed for it there. Only literal/unary/binary and
+/// `if` roots in such a slot are censused; variable roots are also censused
+/// outside every authored closure subtree, retaining all their storage.
+/// Block roots in those same positions are also carrier-free: their statements
+/// remain independently charged and their tail is boxed by finish_block. Every
+/// other child, and every root reached through `ast_expr_cost`, is `Delegated` and keeps its complete
+/// bundle.
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum RootPosition {
+    CarrierFree,
+    Delegated,
+}
+
+pub(super) fn ast_expr_cost(
+    expression: &Expr,
+    cost: &mut StructuralCost,
+) -> Result<(), Vec<Diagnostic>> {
+    ast_expr_cost_at(expression, cost, RootPosition::Delegated, true)
+}
+
+fn ast_expr_cost_at(
+    expression: &Expr,
+    cost: &mut StructuralCost,
+    position: RootPosition,
+    outside_closure: bool,
+) -> Result<(), Vec<Diagnostic>> {
+    use RootPosition::CarrierFree;
+    cost.value(expression)?;
+    // `super` allocates the initial receiver before recreating its source,
+    // upcast wrapper and call root; the discarded receiver still costs bytes.
+    cost.add_identity_carriers(if matches!(expression.kind, ExprKind::SuperMethod { .. }) {
+        4
+    } else {
+        3
+    })?;
+    // These resolver branches construct one root ExpressionId. Child trees,
+    // imported defaults, generic expansions, and desugared statements keep
+    // their independent bounds; other shapes keep the three-carrier ceiling.
+
+=== src/workspace_graph/expected_projection/cost.rs:133-170 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+impl StructuralCost {
+    pub(super) const fn new() -> Self {
+        Self {
+            total: 0,
+            string_bytes: 0,
+            embedded_headers: false,
+            inline_values: false,
+            scalar_identity_discount: 0,
+            literal_fixed_discount: 0,
+            identity_carriers: 0,
+            single_identity_carriers: 0,
+            exact_fixed_discount: 0,
+            exact_expressions: 0,
+            exact_absent_roots: [0; 3],
+            exact_carrier_free_roots: 0,
+            exact_carrier_free_ifs: 0,
+            exact_carrier_free_vars: 0,
+            exact_carrier_free_blocks: 0,
+        }
+    }
+
+    /// Raw AST fallback only. Every payload-only call must follow charging the
+    /// enclosing Rust value, whose inline layout already includes this header.
+    /// Fixed HIR bundle assertions use the full Expr/Function/TypeDeclaration
+    /// footprints, all still charged; payload and identity multipliers are
+    /// unchanged. Vec<String> elements and synthesized strings use `string`.
+    pub(super) fn raw_ast(embedded_headers: bool) -> Self {
+        Self {
+            embedded_headers,
+            ..Self::new()
+        }
+    }
+
+    pub(super) fn is_raw_fallback(&self) -> bool {
+        self.inline_values
+    }
+
+    pub(super) fn with_inline_values(mut self, enabled: bool) -> Self {
+
+=== src/workspace_graph/expected_projection.rs:430-480 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+fn ast_type_declaration_cost(
+    declaration: &TypeDeclaration,
+    cost: &mut StructuralCost,
+) -> Result<(), Vec<Diagnostic>> {
+    cost.value(declaration)?;
+    cost.embedded_string(&declaration.stable_id)?;
+    cost.embedded_string(&declaration.name)?;
+    for parameter in &declaration.type_parameters {
+        cost.value(parameter)?;
+        cost.embedded_string(&parameter.name)?;
+    }
+    match &declaration.kind {
+        TypeDeclarationKind::Resource { lifecycles } => {
+            for lifecycle in lifecycles {
+                cost.value(lifecycle)?;
+                if let Some(id) = &lifecycle.stable_id {
+                    cost.embedded_string(id)?;
+                }
+                if let crate::ast::ResourceLifecycleKind::Imported { import_key } = &lifecycle.kind
+                {
+                    cost.embedded_string(import_key)?;
+                }
+            }
+        }
+        TypeDeclarationKind::Record { fields } => {
+            for field in fields {
+                ast_field_cost(field, cost)?;
+            }
+        }
+        TypeDeclarationKind::Class { fields, methods } => {
+            for field in fields {
+                ast_field_cost(field, cost)?;
+            }
+            for method in methods {
+                ast_function_cost(method, cost)?;
+            }
+        }
+        TypeDeclarationKind::Variant { cases } => {
+            for case in cases {
+                cost.value(case)?;
+                cost.embedded_string(&case.stable_id)?;
+                cost.embedded_string(&case.name)?;
+                for field in &case.fields {
+                    ast_field_cost(field, cost)?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+fn ast_pattern_cost(
+
+=== src/workspace_graph/expected_projection/identity_slots.rs:28-85 at a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966 ===
+pub(super) fn ast_type_declaration_identity_slots(
+    declaration: &TypeDeclaration,
+) -> Result<usize, Vec<Diagnostic>> {
+    let mut slots = 0usize;
+    match &declaration.kind {
+        TypeDeclarationKind::Resource { .. } => {}
+        TypeDeclarationKind::Record { fields } => {
+            for field in fields {
+                slots = checked_builder_sum(slots, ast_type_identity_slots(&field.ty)?)?;
+            }
+        }
+        TypeDeclarationKind::Class { fields, methods } => {
+            for field in fields {
+                slots = checked_builder_sum(slots, ast_type_identity_slots(&field.ty)?)?;
+            }
+            for method in methods {
+                slots = checked_builder_sum(slots, ast_function_identity_slots(method)?)?;
+            }
+        }
+        TypeDeclarationKind::Variant { cases } => {
+            for case in cases {
+                for field in &case.fields {
+                    slots = checked_builder_sum(slots, ast_type_identity_slots(&field.ty)?)?;
+                }
+            }
+        }
+    }
+    Ok(slots)
+}
+
+pub(super) fn ast_function_identity_slots(function: &Function) -> Result<usize, Vec<Diagnostic>> {
+    let mut slots = ast_type_identity_slots(&function.return_type)?;
+    for param in &function.params {
+        slots = checked_builder_sum(slots, ast_type_identity_slots(&param.ty)?)?;
+    }
+    for expression in function
+        .requires
+        .iter()
+        .chain(std::iter::once(&function.body))
+        .chain(&function.ensures)
+    {
+        slots = checked_builder_sum(slots, ast_expr_identity_slots(expression)?)?;
+    }
+    Ok(slots)
+}
+
+pub(super) fn ast_type_identity_slots(ty: &Type) -> Result<usize, Vec<Diagnostic>> {
+    let Type::Named { arguments, .. } = ty else {
+        return Ok(0);
+    };
+    let mut slots = 1usize;
+    for argument in arguments {
+        slots = checked_builder_sum(slots, ast_type_identity_slots(argument)?)?;
+    }
+    Ok(slots)
+}
+
+/// Declaration identities one resolved expression retains besides those of

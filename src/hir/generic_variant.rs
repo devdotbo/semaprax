@@ -1,7 +1,7 @@
 //! Independent admission for authored generic owned variant functions.
 use super::{
     DeclarationId, DeclarationIndex, FunctionExecutionId, FunctionInstanceId, OwnershipMode,
-    ResolvedFunction, ResolvedFunctionTemplate, ResolvedMatchMode, ResolvedProgram, ResolvedType,
+    ResolvedFunction, ResolvedFunctionTemplate, ResolvedMatchMode, ResolvedType,
 };
 
 pub(crate) fn substitutions() -> Vec<Vec<ResolvedType>> {
@@ -34,7 +34,10 @@ pub(crate) fn slot(
                 .is_ok_and(|ty| concrete(declarations, &ty))
         })
 }
-pub(crate) fn profile(program: &ResolvedProgram, template: &ResolvedFunctionTemplate) -> bool {
+pub(crate) fn profile(
+    program: &dyn crate::cleanup::ReplayContext,
+    template: &ResolvedFunctionTemplate,
+) -> bool {
     if super::generic_collection::profile(template) {
         let mut pending = vec![&template.body];
         while let Some(expression) = pending.pop() {
@@ -48,7 +51,7 @@ pub(crate) fn profile(program: &ResolvedProgram, template: &ResolvedFunctionTemp
     if super::generic_collection::profile(template) && std::iter::once(&template.return_type).chain(template.params.iter().map(|p| &p.ty)).any(|ty| matches!(ty, ResolvedType::Nominal { declaration, .. } if declaration.as_str() == crate::iterator_ops::STEP_ID)) { return true; }
     let carrier = |ty: &ResolvedType| {
         slot(
-            &program.declarations,
+            program.declarations(),
             ty,
             &template.id,
             template.type_parameters.len(),
@@ -76,11 +79,11 @@ pub(crate) fn profile(program: &ResolvedProgram, template: &ResolvedFunctionTemp
 /// Authenticate full substituted function meaning, including proof-only
 /// substitutions that have not entered the discovered executable cache yet.
 pub(crate) fn bounded_template<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Option<&'a ResolvedFunctionTemplate> {
     let mut matched = None;
-    for template in &program.function_templates {
+    for template in program.function_templates() {
         if !profile(program, template) {
             continue;
         }
@@ -99,7 +102,7 @@ pub(crate) fn bounded_template<'a>(
     matched
 }
 pub(crate) fn match_result(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     mode: ResolvedMatchMode,
     ty: &ResolvedType,
@@ -116,10 +119,10 @@ pub(crate) fn match_result(
             && super::type_reachability::nested_record_copy_scalar_is_admitted(ty))
             || (mode == ResolvedMatchMode::Own
                 && ownership == OwnershipMode::Own
-                && concrete(&program.declarations, ty)))
+                && concrete(program.declarations(), ty)))
 }
 pub(crate) fn match_result_execution(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     execution: &FunctionExecutionId,
     mode: ResolvedMatchMode,
     ty: &ResolvedType,
@@ -127,7 +130,7 @@ pub(crate) fn match_result_execution(
 ) -> bool {
     if let FunctionExecutionId::Monomorphic(id) = execution {
         if program
-            .functions
+            .functions()
             .iter()
             .find(|function| &function.id == id)
             .is_some_and(|function| monomorphic_list_result(function, mode, ty, ownership))
@@ -142,7 +145,7 @@ pub(crate) fn match_result_execution(
         return false;
     };
     program
-        .function_templates
+        .function_templates()
         .iter()
         .filter(|template| profile(program, template))
         .any(|template| {
@@ -152,7 +155,7 @@ pub(crate) fn match_result_execution(
                         && super::type_reachability::nested_record_copy_scalar_is_admitted(ty))
                         || (mode == ResolvedMatchMode::Own
                             && ownership == OwnershipMode::Own
-                            && concrete(&program.declarations, ty)))
+                            && concrete(program.declarations(), ty)))
             })
         })
 }
@@ -197,7 +200,7 @@ pub(crate) fn symbolic_slot(ty: &ResolvedType, owner: &DeclarationId, count: usi
 /// Re-derive the private two-argument carrier from retained declarations. The
 /// workspace separately authenticates each declaration's explicit provenance.
 pub(crate) fn concrete_signature(
-    types: &[super::ResolvedTypeDeclaration],
+    types: &(impl crate::hir::items::ItemSource<super::ResolvedTypeDeclaration> + ?Sized),
     function: &ResolvedFunction,
 ) -> bool {
     let scalar = super::type_reachability::nested_record_copy_scalar_is_admitted;
@@ -258,14 +261,14 @@ pub(crate) fn concrete_signature(
 
 // Iterator v1 retains the same checked owning-variant reconstruction path.
 fn iterator_match_result(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     mode: ResolvedMatchMode,
     ty: &ResolvedType,
     ownership: OwnershipMode,
 ) -> bool {
     mode == ResolvedMatchMode::Own
         && ownership == OwnershipMode::Own
-        && crate::iterator_ops::step_shape(&program.declarations, ty)
+        && crate::iterator_ops::step_shape(program.declarations(), ty)
 }
 
 fn template_substitutions(template: &ResolvedFunctionTemplate) -> Vec<Vec<ResolvedType>> {

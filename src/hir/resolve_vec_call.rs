@@ -1,26 +1,25 @@
 //! Exact compiler-owned `Vec<T>` call lowering shared by the production
 //! iterative resolver and its test-only recursive reference.
-
-use std::collections::BTreeMap;
-use std::rc::Rc;
+use crate::hir::resolver_scope::Scope;
 
 use crate::ast::{Expr, Span, Type};
 use crate::diagnostic::Diagnostic;
 
 use super::expr_nodes::{ResolvedExpr, ResolvedExprKind};
-use super::ids::{DeclarationId, ExpressionId, FunctionExecutionId};
+use super::ids::{DeclarationId, FunctionExecutionId};
 use super::nodes::{is_scalar_resolved_type, OwnershipMode, ResolvedBinding, ResolvedType};
+use super::resolve_expr::path_arena::{PathId, Seg};
 use super::resolve_expr_frame::Frame;
-use super::{Binding, Resolver};
+use super::{ExprPath, Resolver};
 
 pub(super) struct VecCallSite {
-    pub(super) path: String,
+    pub(super) path: PathId,
     pub(super) span: Span,
     pub(super) op: crate::vec_ops::VecOp,
 }
 
 impl VecCallSite {
-    pub(super) fn new(path: String, span: Span, op: crate::vec_ops::VecOp) -> Self {
+    pub(super) fn new(path: PathId, span: Span, op: crate::vec_ops::VecOp) -> Self {
         Self { path, span, op }
     }
 }
@@ -35,7 +34,7 @@ fn resolve_element(
     if let FunctionExecutionId::Monomorphic(owner) = function {
         if let Some(candidate) = resolver
             .program
-            .functions
+            .functions()
             .iter()
             .find(|candidate| candidate.stable_id == owner.as_str())
             .filter(|candidate| {
@@ -76,6 +75,7 @@ pub(super) fn validate_whole_assignment(
         )
         && !crate::byte_ops::is_same_owner_set_hir(value, &target.id)
         && !crate::string_ops::is_same_owner_concat_hir(value, &target.id)
+        && !byte_helper_renewal(resolver, target, value)
         && !record_owner_renewal(resolver, target, value)
         && !crate::stdin_stream_ops::hir_reopen(value, &target.id)
     {
@@ -111,7 +111,7 @@ fn record_owner_renewal(
     };
     let Some(target) = resolver
         .program
-        .functions
+        .functions()
         .iter()
         .find(|function| function.stable_id == callee.as_str())
     else {
@@ -173,26 +173,31 @@ pub(super) fn schedule<'expr>(
     frames: &mut Vec<Frame<'expr>>,
     type_arguments: &[Type],
     args: &'expr [Expr],
-    bindings: Rc<BTreeMap<String, Binding>>,
+    bindings: Scope<'expr>,
     site: VecCallSite,
 ) -> Result<(), Diagnostic> {
     let VecCallSite { path, span, op } = site;
-    if type_arguments.len() != 1 || args.len() != op.arity() {
+    if (if op == crate::vec_ops::VecOp::StrAt {
+        !type_arguments.is_empty() || function.instance().is_some()
+    } else {
+        type_arguments.len() != 1
+    }) || args.len() != op.arity()
+    {
         return Err(resolver.error(
             "SPX-H006",
             format!("invalid vector operation `{}` call shape", op.name()),
             span,
         ));
     }
-    let element = resolve_element(resolver, function, op, &type_arguments[0], span)?;
-    if !crate::vec_ops::resolved_operation_element_is_admitted(op, &element)
+    let element = if op == crate::vec_ops::VecOp::StrAt {
+        ResolvedType::String
+    } else {
+        resolve_element(resolver, function, op, &type_arguments[0], span)?
+    };
+    if !super::owned_leaf_collection::vec_operation_admitted(&resolver.declarations, op, &element)
         && !crate::vec_ops::resolved_parameter_is_admitted(function, op, &element)
-        && !super::generic_collection::source_parameter(resolver.program, function, &element)
-        && !super::owned_record_collection::admits_vec_operation_element(
-            &resolver.declarations,
-            op,
-            &element,
-        )
+        && !(!op.owned_leaf_only()
+            && super::generic_collection::source_parameter(resolver.program, function, &element))
     {
         return Err(resolver.error(
             "SPX-H006",
@@ -205,7 +210,7 @@ pub(super) fn schedule<'expr>(
     }
     frames.push(Frame::FinishOwnedGenericOp {
         span,
-        path: path.clone(),
+        path,
         op: super::resolve_box_call::OwnedGenericCallSite::Vec(op),
         element,
         argument_count: args.len(),
@@ -215,15 +220,15 @@ pub(super) fn schedule<'expr>(
         index: 0,
         bindings,
         path,
-        segment: "arg",
+        segment: Seg::Arg,
     });
     Ok(())
 }
 
-pub(super) fn finish(
+pub(super) fn finish<'p>(
     resolver: &Resolver<'_>,
     function: &FunctionExecutionId,
-    path: &str,
+    path: impl Into<ExprPath<'p>>,
     span: Span,
     op: crate::vec_ops::VecOp,
     element: ResolvedType,
@@ -242,13 +247,23 @@ pub(super) fn finish(
         }
     }
     let ty = op.resolved_return_type(&element);
-    let ownership = if op.returns_owner() {
+    if op == crate::vec_ops::VecOp::StrAt && !crate::vec_ops::string_slot::arguments(&args) {
+        return Err(resolver.error("SPX-H006", crate::vec_ops::string_slot::SHAPE, span));
+    }
+    if op == crate::vec_ops::VecOp::UniqueBy
+        && !crate::vec_ops::field_unique::arguments(&args, &element)
+    {
+        return Err(resolver.error("SPX-H006", crate::vec_ops::field_unique::SHAPE, span));
+    }
+    let ownership = if op == crate::vec_ops::VecOp::StrAt {
+        OwnershipMode::Borrow
+    } else if op.returns_owner() {
         OwnershipMode::Own
     } else {
         OwnershipMode::Value
     };
     Ok(ResolvedExpr {
-        id: ExpressionId::new(function, path),
+        id: path.into().expression_id(function),
         ty,
         ownership,
         kind: ResolvedExprKind::Call {
@@ -277,22 +292,27 @@ pub(super) fn resolve_reference(
         span,
     } = call;
     let name = op.name();
-    if type_arguments.len() != 1 || args.len() != op.arity() {
+    if (if op == crate::vec_ops::VecOp::StrAt {
+        !type_arguments.is_empty() || function.instance().is_some()
+    } else {
+        type_arguments.len() != 1
+    }) || args.len() != op.arity()
+    {
         return Err(resolver.error(
             "SPX-H006",
             format!("invalid vector operation `{name}` call shape"),
             span,
         ));
     }
-    let element = resolve_element(resolver, function, op, &type_arguments[0], span)?;
-    if !crate::vec_ops::resolved_operation_element_is_admitted(op, &element)
+    let element = if op == crate::vec_ops::VecOp::StrAt {
+        ResolvedType::String
+    } else {
+        resolve_element(resolver, function, op, &type_arguments[0], span)?
+    };
+    if !super::owned_leaf_collection::vec_operation_admitted(&resolver.declarations, op, &element)
         && !crate::vec_ops::resolved_parameter_is_admitted(function, op, &element)
-        && !super::generic_collection::source_parameter(resolver.program, function, &element)
-        && !super::owned_record_collection::admits_vec_operation_element(
-            &resolver.declarations,
-            op,
-            &element,
-        )
+        && !(!op.owned_leaf_only()
+            && super::generic_collection::source_parameter(resolver.program, function, &element))
     {
         return Err(resolver.error(
             "SPX-H006",
@@ -325,7 +345,7 @@ fn scoped_collection_assignment(
 ) -> bool {
     if let ResolvedType::TypeParameter { owner, .. } = &value.ty {
         if value.ownership == OwnershipMode::Value
-            && resolver.program.functions.iter().any(|function| {
+            && resolver.program.functions().iter().any(|function| {
                 function.stable_id == owner.as_str()
                     && crate::source_verify::generic_collection_profile(function)
                     && super::generic_collection::parameter(
@@ -341,7 +361,7 @@ fn scoped_collection_assignment(
     let Some(owner) = execution.monomorphic_declaration() else {
         return false;
     };
-    if !resolver.program.functions.iter().any(|f| {
+    if !resolver.program.functions().iter().any(|f| {
         f.stable_id == owner.as_str() && crate::source_verify::generic_collection_profile(f)
     }) {
         return false;
@@ -377,4 +397,36 @@ fn scoped_collection_assignment(
             .is_some_and(|op| op.reopens_same_owner() && args.len() == op.arity())
         && matches!(type_arguments.as_slice(), [argument] if super::generic_collection::parameter(argument, owner, super::generic_collection::source_count(resolver.program, owner)))
         && matches!(&args[0].kind, ResolvedExprKind::Place(place) if place.root == target.id && place.projections.is_empty())
+}
+
+fn byte_helper_renewal(
+    resolver: &Resolver<'_>,
+    binding: &ResolvedBinding,
+    value: &ResolvedExpr,
+) -> bool {
+    let ResolvedExprKind::Call {
+        callee,
+        type_arguments,
+        instance: None,
+        args,
+    } = &value.kind
+    else {
+        return false;
+    };
+    let Some(target) = resolver
+        .program
+        .functions()
+        .iter()
+        .find(|f| f.stable_id == callee.as_str())
+    else {
+        return false;
+    };
+    binding.ty == super::ResolvedType::Bytes && value.ty == binding.ty
+        && binding.ownership == OwnershipMode::Own && value.ownership == OwnershipMode::Own
+        && type_arguments.is_empty() && args.len() == target.params.len()
+        && resolver.byte_helpers.target(target)
+        && target.params.iter().zip(args).all(|(p, arg)| {
+            resolver.resolve_type(&p.ty, arg.span).is_ok_and(|ty| ty == arg.ty)
+                && (p.mode != crate::ast::ParamMode::Own || matches!(&arg.kind, ResolvedExprKind::Place(place) if place.root == binding.id && place.projections.is_empty()))
+        })
 }

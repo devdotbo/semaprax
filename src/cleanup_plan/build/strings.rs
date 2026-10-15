@@ -11,14 +11,15 @@ pub(super) fn owns_clone(expression: &ResolvedExpr) -> bool {
 }
 impl PlanBuilder<'_> {
     /// An owning String read allocates a clone, except the first operand of
-    /// an Owned String Loops v1 same-owner append, which moves the binding.
+    /// an Owned String Loops v1 same-owner append or a direct literal-format
+    /// owned Place argument, which transfers its existing generation.
     pub(super) fn owns_string_clone(&self, expression: &ResolvedExpr) -> bool {
         owns_clone(expression)
-            && !self.string_appends.contains_key(&expression.id)
+            && !self.string_owner_moves.contains(&expression.id)
             && !self.string_condition_reads.contains(&expression.id)
     }
 
-    /// An append move or condition inspection never initializes its inventory
+    /// A consuming move or condition inspection never initializes its inventory
     /// temporary, but that storage still belongs to the clone's lexical region.
     pub(super) fn assign_moved_string_slot(
         &mut self,
@@ -28,7 +29,7 @@ impl PlanBuilder<'_> {
         // Only a String operand would otherwise have cloned; a moving map
         // reopen operand never had an inventory temporary.
         if expression.ty == ResolvedType::String
-            && (self.string_appends.contains_key(&expression.id)
+            && (self.string_owner_moves.contains(&expression.id)
                 || self.string_condition_reads.contains(&expression.id))
         {
             let region = self.blocks[block.0 as usize].region;
@@ -49,7 +50,13 @@ impl PlanBuilder<'_> {
             && source.projections.is_empty()
             && state
                 .renewals
-                .insert(at.clone(), state.live_order.clone())
+                .insert(
+                    at.clone(),
+                    super::super::renewal_history::RenewalHistory::new(
+                        state.live_order.clone(),
+                        None,
+                    ),
+                )
                 .is_some()
         {
             return Err(plan_error("string append reserves its owner twice"));
@@ -84,9 +91,10 @@ impl PlanBuilder<'_> {
         &mut self,
         expression: &ResolvedExpr,
         block: BlockId,
-        mut state: FlowState,
+        state: FlowState,
     ) -> Result<EvalResult, Diagnostic> {
         let region = self.blocks[block.0 as usize].region;
+        let (block, mut state) = self.split_allocation(expression, block, state, region)?;
         let destination = self
             .expression_slot(expression, region)?
             .ok_or_else(|| plan_error("owned string clone has no temporary slot"))?;
@@ -297,9 +305,15 @@ impl PlanBuilder<'_> {
 /// replay's materialization-operation counter remains a separate contract.
 #[cfg(test)]
 pub(super) fn derived_metadata_capacity(builder: &PlanBuilder<'_>) -> usize {
-    builder.string_appends.len()
-        * (std::mem::size_of::<(ExpressionId, ExpressionId)>()
-            + std::mem::size_of::<BTreeMap<ExpressionId, ExpressionId>>())
+    let lexical = builder.lexical.as_ref().map_or(0, |state| {
+        state.owned_capacity()
+            + super::lexical_control::capacity::lexical_exit_payload_extra(builder)
+    });
+    lexical
+        + super::capacity_observation::string_owner_moves(builder)
+        + builder.string_appends.len()
+            * (std::mem::size_of::<(ExpressionId, ExpressionId)>()
+                + std::mem::size_of::<BTreeMap<ExpressionId, ExpressionId>>())
         + builder
             .string_appends
             .iter()

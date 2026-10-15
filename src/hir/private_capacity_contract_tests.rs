@@ -469,3 +469,6 @@ fn cleanup_capacity_covers_conditional_parameters_and_active_finalize_cases() {
         );
     }
 }
+
+#[path = "private_capacity_contract_tests/lexical.rs"]
+mod lexical;

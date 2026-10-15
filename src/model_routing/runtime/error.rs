@@ -57,7 +57,7 @@ impl RuntimeRoutingError {
         Self::Deployment {
             profile: profile.to_owned(),
             code: first.map_or("", |d| d.code).to_owned(),
-            message: first.map_or_else(String::new, |d| d.message.clone()),
+            message: first.map_or_else(String::new, |d| d.message.clone().into_owned()),
         }
     }
 
@@ -65,7 +65,7 @@ impl RuntimeRoutingError {
         let first = diagnostics.first();
         Self::Execution {
             code: first.map_or("", |d| d.code).to_owned(),
-            message: first.map_or_else(String::new, |d| d.message.clone()),
+            message: first.map_or_else(String::new, |d| d.message.clone().into_owned()),
         }
     }
 

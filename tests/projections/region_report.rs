@@ -189,7 +189,15 @@ fn reported_binding_ids_equal_the_resolved_hir_inventory() {
 
     fn collect_expr(expression: &hir::ResolvedExpr, ids: &mut Vec<String>) {
         match &expression.kind {
-            hir::ResolvedExprKind::Block { statements, tail } => {
+            hir::ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    collect_expr(value, ids);
+                }
+            }
+            hir::ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            }
+            | hir::ResolvedExprKind::Block { statements, tail } => {
                 for statement in statements {
                     ids.push(statement.binding().id.as_str().to_owned());
                     collect_expr(statement.value(), ids);
@@ -236,7 +244,10 @@ fn reported_binding_ids_equal_the_resolved_hir_inventory() {
                     collect_expr(argument, ids);
                 }
             }
-            hir::ResolvedExprKind::Call { args, .. } => {
+            hir::ResolvedExprKind::Call { args, .. }
+            | hir::ResolvedExprKind::LiteralFormat { args, .. }
+            | hir::ResolvedExprKind::VecFieldRead { args, .. }
+            | hir::ResolvedExprKind::RowLoan { args, .. } => {
                 for argument in args {
                     collect_expr(argument, ids);
                 }
@@ -291,6 +302,7 @@ fn reported_binding_ids_equal_the_resolved_hir_inventory() {
             | hir::ResolvedExprKind::Float64(_)
             | hir::ResolvedExprKind::Bool(_)
             | hir::ResolvedExprKind::String(_)
+            | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
             | hir::ResolvedExprKind::Place(_)
             | hir::ResolvedExprKind::BorrowPlace { .. } => {}
         }

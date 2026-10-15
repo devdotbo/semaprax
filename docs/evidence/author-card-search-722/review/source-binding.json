@@ -1,0 +1,7 @@
+{
+  "src/cli/help/authoring.rs": "b55324465d05326139c11c529fb3300825b7479f945c8a16553e6dc2463e1287",
+  "src/cli/help/authoring/discovery.rs": "8aaf0c2115200e1d04b0ba743fa7307a366ec6fbdf0f7a82b189e8710848a91c",
+  "tests/cli_help_surface_v1.rs": "a2d41c4978b49604e431fc2a69450124178a21a832f28336e9dda89a35209b7a",
+  "docs/CLI-HELP-V5.md": "94a1f9e4cbc6efd40f0af444f5ac541a3a102475199c0e7d4157ddd9aec412dc",
+  "docs/AGENT-AUTHORING-GUIDE.md": "f175ce741f63d9551ab2dd7dda214d30d5dc48986ad0b342e7d7eeb3d0c4bce7"
+}

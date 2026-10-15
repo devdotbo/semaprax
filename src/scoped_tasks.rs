@@ -870,7 +870,7 @@ impl<'a> ScopedTaskRun<'a> {
 
     #[must_use]
     pub fn task_phase(&self, task: &str) -> Option<TaskPhase> {
-        let runtime = self.states.get(&DeclarationId::new(task))?;
+        let runtime = self.states.get(task)?;
         Some(match runtime.state {
             TaskState::Pending => TaskPhase::Pending,
             TaskState::Started => TaskPhase::Started,
@@ -882,7 +882,7 @@ impl<'a> ScopedTaskRun<'a> {
 
     #[must_use]
     pub fn is_scope_cancelled(&self, scope: &str) -> bool {
-        self.cancelled_scopes.contains(&DeclarationId::new(scope))
+        self.cancelled_scopes.contains(scope)
     }
 
     /// Propagate sticky cancellation to one scope and all of its descendants.
@@ -895,11 +895,12 @@ impl<'a> ScopedTaskRun<'a> {
         if self.complete {
             return Err(ScopedTasksError::RunAlreadyComplete);
         }
-        let id = DeclarationId::new(scope);
-        if !self.model.scopes.contains_key(&id) {
-            return Err(ScopedTasksError::UnknownScope);
-        }
-        let targets = self.descendants_including(&id);
+        let model = self.model;
+        let (id, _) = model
+            .scopes
+            .get_key_value(scope)
+            .ok_or(ScopedTasksError::UnknownScope)?;
+        let targets = self.descendants_including(id);
         let mut inserted = false;
         for candidate in targets {
             inserted |= self.cancelled_scopes.insert(candidate);
@@ -1011,7 +1012,7 @@ impl<'a> ScopedTaskRun<'a> {
     /// First sticky failure observed in the given scope's subtree.
     #[must_use]
     pub fn first_failure(&self, scope: &str) -> Option<(&DeclarationId, FailureKind)> {
-        let (_, task, failure) = self.scope_failures.get(&DeclarationId::new(scope))?;
+        let (_, task, failure) = self.scope_failures.get(scope)?;
         Some((task, *failure))
     }
 
@@ -1181,7 +1182,7 @@ impl<'a> ScopedTaskRun<'a> {
                 self.states
                     .iter()
                     .filter(|(task, _)| {
-                        self.model.tasks.get(task).map(|entry| &entry.scope) == Some(id)
+                        self.model.tasks.get(*task).map(|entry| &entry.scope) == Some(id)
                     })
                     .all(|(_, runtime)| {
                         matches!(
@@ -1193,7 +1194,7 @@ impl<'a> ScopedTaskRun<'a> {
             .filter(|(id, _)| {
                 self.model
                     .children
-                    .get(id)
+                    .get(*id)
                     .map(|children| {
                         children
                             .iter()
@@ -1413,3 +1414,6 @@ fn scope_exit_outcome_json(outcome: &ScopeExitOutcome) -> String {
 #[cfg(test)]
 #[path = "scoped_tasks/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod borrowed_lookup_tests;

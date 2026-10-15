@@ -2,11 +2,17 @@
 
 use std::collections::BTreeSet;
 
+mod param_view;
+pub(super) use param_view::{
+    ordinary_borrows_enabled, owned_parameter_indices_match, resolved_call_param_view, Param,
+    Params,
+};
+
 use crate::cleanup_plan::{CleanupPlace, StorageId};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
     DeclarationId, ExpressionId, FunctionInstanceId, IdentityOrigin, ResolvedExprKind,
-    ResolvedFunction, ResolvedParam, ResolvedProgram, ResolvedType,
+    ResolvedFunction, ResolvedParam, ResolvedType,
 };
 
 use super::{
@@ -68,7 +74,7 @@ pub(super) fn owned_try_residual_places(
 }
 
 pub(super) fn seal_changed_success_try_residual(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     at: &ExpressionId,
     destination: &CleanupPlace,
@@ -117,7 +123,7 @@ pub(super) fn seal_changed_success_try_residual(
         root,
         variant: result.clone(),
         cases: program
-            .declarations
+            .declarations()
             .variant_cases(result)
             .ok_or_else(|| replay_error(function, "changed-success Result has no case domain"))?
             .iter()
@@ -142,7 +148,7 @@ pub(super) fn seal_changed_success_try_residual(
 }
 
 fn authenticated_changed_success_result<'a>(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &'a crate::hir::ResolvedExpr,
     destination: &CleanupPlace,
@@ -191,12 +197,12 @@ fn authenticated_changed_success_result<'a>(
             .iter()
             .any(|id| {
                 program
-                    .declarations
+                    .declarations()
                     .declaration(id)
                     .is_none_or(|item| item.identity_origin != IdentityOrigin::CompilerOwned)
             })
         || program
-            .declarations
+            .declarations()
             .variant_cases(result)
             .is_none_or(|cases| {
                 cases.len() != 2
@@ -206,11 +212,11 @@ fn authenticated_changed_success_result<'a>(
                     || !cases.iter().any(|case| case.id == *err_case)
             })
         || program
-            .declarations
+            .declarations()
             .case_fields(ok_case)
             .is_none_or(|fields| !matches!(fields, [field] if field.id == *ok_field))
         || program
-            .declarations
+            .declarations()
             .case_fields(err_case)
             .is_none_or(|fields| !matches!(fields, [field] if field.id == *err_field))
         || source != result
@@ -226,7 +232,7 @@ fn authenticated_changed_success_result<'a>(
 }
 
 pub(super) fn owned_try_residual_result_place(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &crate::hir::ResolvedExpr,
     destination: &CleanupPlace,
@@ -247,12 +253,74 @@ pub(super) fn owned_try_residual_result_place(
 /// their reserved identity instead of an authored declaration and use their
 /// synthetic parameters.
 pub(super) fn resolved_call_params(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
+    expression: &crate::hir::ResolvedExpr,
     callee: &DeclarationId,
     instance: Option<&FunctionInstanceId>,
     type_arguments: &[ResolvedType],
 ) -> Result<Vec<ResolvedParam>, Diagnostic> {
+    if callee.as_str() == crate::vec_field::ID {
+        let ResolvedExprKind::VecFieldRead {
+            origin: _,
+            element,
+            field,
+            bytes,
+            args,
+        } = &expression.kind
+        else {
+            return Err(replay_error(
+                function,
+                "scoped vector callee lacks its dedicated operation",
+            ));
+        };
+        let [source, index] = args.as_slice() else {
+            return Err(replay_error(function, "scoped vector read arity mismatch"));
+        };
+        let selected = crate::hir::vec_field::field(program.declarations(), element, field)
+            .and_then(|f| f.result_type(*bytes));
+        if instance.is_some()
+            || !type_arguments.is_empty()
+            || selected.as_ref() != Some(&expression.ty)
+            || source.ty != crate::vec_ops::resolved_vec(element.clone())
+            || !matches!(source.kind, ResolvedExprKind::Place(_))
+            || !matches!(
+                source.ownership,
+                crate::hir::OwnershipMode::Own | crate::hir::OwnershipMode::Borrow
+            )
+            || index.ty != ResolvedType::Usize
+            || index.ownership != crate::hir::OwnershipMode::Value
+        {
+            return Err(replay_error(
+                function,
+                "scoped vector read replay signature is inconsistent",
+            ));
+        }
+        return Ok(crate::vec_field::resolved_params(args));
+    }
+    if callee.as_str() == crate::literal_format::ID {
+        let ResolvedExprKind::LiteralFormat { args, template } = &expression.kind else {
+            return Err(replay_error(
+                function,
+                "literal format callee lacks its dedicated operation",
+            ));
+        };
+        let pieces = crate::literal_format::scan(template)
+            .map_err(|reason| replay_error(function, reason.message()))?;
+        if instance.is_some()
+            || !type_arguments.is_empty()
+            || args.len() != crate::literal_format::field_count(&pieces)
+            || args
+                .iter()
+                .any(|arg| !crate::literal_format::accepts_hir_type(&arg.ty))
+        {
+            return Err(replay_error(
+                function,
+                "literal format replay signature is inconsistent",
+            ));
+        }
+        return Ok(crate::literal_format::resolved_params(args));
+    }
     if instance.is_none() {
         if let Some(params) = crate::hir::closure::once::params(callee) {
             if !type_arguments.is_empty() {
@@ -268,7 +336,7 @@ pub(super) fn resolved_call_params(
                     return Err(replay_error(
                         function,
                         "indirect call lacks exact callable signature",
-                    ))
+                    ));
                 }
             };
             if !signature.is_mut_function() && !crate::hir::function_value::is_signature(signature)
@@ -338,8 +406,10 @@ pub(super) fn resolved_call_params(
                     "iterator call has incorrect type arity",
                 ));
             };
-            if !crate::iterator_ops::resolved_element_is_admitted_in(&program.declarations, element)
-            {
+            if !crate::iterator_ops::resolved_element_is_admitted_in(
+                program.declarations(),
+                element,
+            ) {
                 return Err(replay_error(
                     function,
                     "iterator call has unsupported element",
@@ -354,7 +424,21 @@ pub(super) fn resolved_call_params(
                     "cleanup bounded Vec call has incorrect type arity",
                 ));
             };
-            return Ok(crate::vec_ops::resolved_params(op, element));
+            if !crate::hir::owned_leaf_collection::vec_operation_admitted(
+                program.declarations(),
+                op,
+                element,
+            ) {
+                return Err(replay_error(
+                    function,
+                    "cleanup bounded Vec call has unsupported element",
+                ));
+            }
+            return Ok(crate::vec_ops::resolved_params_in(
+                program.declarations(),
+                op,
+                element,
+            ));
         }
         if let Some(op) = crate::box_ops::by_id(callee.as_str()) {
             let [element] = type_arguments else {
@@ -368,7 +452,7 @@ pub(super) fn resolved_call_params(
     }
     if instance.is_none()
         && program
-            .interfaces
+            .interfaces()
             .iter()
             .flat_map(|interface| &interface.imports)
             .any(|import| import.native_rust && &import.id == callee)
@@ -380,7 +464,7 @@ pub(super) fn resolved_call_params(
         .ok_or_else(|| {
             replay_error(
                 function,
-                format!("cleanup call has unknown callee `{callee}`"),
+                format_args!("cleanup call has unknown callee `{callee}`"),
             )
         })?;
     Ok(target.params.clone())
@@ -406,11 +490,12 @@ pub(super) fn defers_owner_commit(expression: &crate::hir::ResolvedExpr) -> bool
                 crate::vec_ops::VecOp::Push
                     | crate::vec_ops::VecOp::ReserveExact
                     | crate::vec_ops::VecOp::Set
+                | crate::vec_ops::VecOp::Replace | crate::vec_ops::VecOp::ReserveOwned
             )
         )
             || callee.as_str() == crate::iterator_ops::NEXT_ID
             || (callee.as_str() == crate::iterator_ops::INTO_ITER_ID
-                && matches!(type_arguments.as_slice(), [crate::hir::ResolvedType::Bytes]))
+                && matches!(type_arguments.as_slice(), [crate::hir::ResolvedType::Bytes | crate::hir::ResolvedType::String | crate::hir::ResolvedType::Nominal { .. }]))
             || crate::byte_ops::by_id(callee.as_str())
                 .is_some_and(crate::byte_ops::ByteOp::is_fallible)
             || (callee.as_str() == crate::box_ops::NEW_ID

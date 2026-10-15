@@ -1,22 +1,36 @@
 use crate::diagnostic::Diagnostic;
 use crate::hir::{DeclarationId, ResolvedProgram};
 
+#[cfg(test)]
 use super::build::build_plan;
 use super::{CleanupPlan, CleanupSlot};
 
+#[cfg(test)]
+pub(in crate::cleanup_plan) mod owned;
 pub(crate) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    let mut frontier = crate::loop_calls::byte_writer::validation_frontier::Frontier::new(program);
     for function in &program.functions {
-        let expected = build_plan(program, function)?;
+        let current = frontier.current()?;
+        let expected = super::build::helper_index::validation::build_current(program, &current)?;
         validate_canonical_plan(&function.id, &function.cleanup_plan, &expected)?;
+        drop(expected);
+        current.finish()?;
+        frontier.advance()?;
     }
     for instance in &program.function_instances {
-        let expected = build_plan(program, &instance.function)?;
+        let current = frontier.current()?;
+        let expected = super::build::helper_index::validation::build_current(program, &current)?;
         validate_canonical_plan(
             &instance.template,
             &instance.function.cleanup_plan,
             &expected,
         )?;
+        drop(expected);
+        current.finish()?;
+        frontier.advance()?;
     }
+    drop(frontier);
+    // Complete fresh independent replay never borrows frontier proofs.
     super::replay::validate_program(program)
 }
 
@@ -52,6 +66,9 @@ fn validate_canonical_plan(
     if actual.exits != expected.exits {
         return Err(noncanonical(function, "exit sequence"));
     }
+    if actual.lexical_control != expected.lexical_control {
+        return Err(noncanonical(function, "lexical-control certificate"));
+    }
     Ok(())
 }
 
@@ -81,3 +98,6 @@ fn noncanonical(function: &DeclarationId, component: &str) -> Diagnostic {
         format!("cleanup plan for function `{function}` has a non-canonical {component}"),
     )
 }
+
+#[cfg(test)]
+mod frontier_tests;

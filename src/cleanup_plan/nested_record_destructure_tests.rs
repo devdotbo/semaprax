@@ -246,3 +246,6 @@ module test.cleanup_nested_update;
     downgraded.cleanup_plan.schema = CLEANUP_PLAN_SCHEMA_V8;
     assert!(validate_structure(&program, &downgraded).is_err());
 }
+
+#[path = "nested_record_destructure_tests/subtree.rs"]
+mod subtree;

@@ -1,0 +1,18 @@
+{
+  "source_base": "ba1138946fbf99ba426170bde744448db91272d0",
+  "source": "tests/workspace/semantic_graph.rs",
+  "original_whole_source_sha256": "883db471a7279f88856c2ca9a67eed0c50e7636c70fd513dc8892fd515748b85",
+  "current_whole_source_sha256": "ae0cbe842d6f44a002d1cb3914cb3ab7a18972e9680b1a9f61000c1379686835",
+  "unique_inverse_remove": "        // These two constructors are private to ast::program_source; the joined\n        // source keeps their exact facades without granting workspace authority.\n        \"pub(super) fn append(authored: &'a [T], generated: &'a [T]) -> Option<Self> {\",\n        \"pub(super) fn selected(\",\n",
+  "whole_source_inverse_equal": true,
+  "original_guard_archive": "complete-original-guard.before.txt",
+  "guard_archive_sha256": "135360baa1fafd52c292ef3f62bc64e55b9765e812834fb0f6500cb29c56bc53",
+  "actual_producer_log": "/Volumes/Semaprax/lane-prompts/large-composed-ast-cold-346690-v2-20261014/owning-selected-181.log",
+  "actual_added_entries": [
+    "pub(super) fn append(authored: &'a [T], generated: &'a [T]) -> Option<Self> {",
+    "pub(super) fn selected("
+  ],
+  "rationale": "Full joined projection union now includes existing private AST DeclSlices constructors. Exact list gains only these observed existing child-private entries; all prior facade names, full68-member union, forbidden wildcard/helper checks and visibility assertions remain. No production authority changes.",
+  "pending_selector": "semantic_graph::expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root",
+  "qualification": "source-only; actual filtered owner still pending"
+}

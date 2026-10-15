@@ -1,0 +1,18 @@
+{
+  "schema": "semaprax.loglens-selected-file-derivation.v1",
+  "status": "authored-unqualified",
+  "baseline": "experiments/ascii-pattern-source/loglens-reference/qualified-source",
+  "baseline_files_sha256": {
+    "loglens.spx": "4b6943ce1a11a126d3de07b1856c5ad6c86f3535d6c6ea73f0223a4692336444",
+    "unit.spx": "02f0d43cfac00a54e85119a737f07dfeab03d361f435b16c9d7d7d5e000e4c82",
+    "tests.mjs": "dfe55d51ff79cb39e8d392605bdc2f5e35c154037ae5729698d125a67d5bea53",
+    "semaprax.toml": "a35d6886d811a697d729a6a2dd5c55c8a83ed3c6c2bc7f8f2a86ac95238c5877"
+  },
+  "source_changes": [
+    "selected-file resource profile",
+    "source-owned filename flag and ASCII top digit validation"
+  ],
+  "retained_tests_change": "public sample path only; all assertions retained",
+  "historical_acceptance_transfer": false,
+  "benchmark_executed": false
+}

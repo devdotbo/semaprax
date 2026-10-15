@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import authored_source_recount as authored_recount
+import compiler_input_capture as compiler_capture
 
 import live_campaign
 import live_campaign_common as shared
@@ -19,6 +20,465 @@ import cli_typescript_bootstrap as ts_bootstrap
 
 
 class LiveCampaignTests(unittest.TestCase):
+    def test_nested_codec_capture_requires_both_canonical_profile_bounds(self):
+        base = ["json-codec", "semaprax.toml", "--source", "src/schema.spx",
+                "--type", "app.root", "--output", "derived.spx"]
+        arguments = lambda byte_bound, item_bound: [*base, "--profile", "bounded-nested-request.v1",
+            "--max-string-bytes", byte_bound, "--max-array-items", item_bound]
+        for byte_bound, item_bound in (("1", "1"), ("64", "256"), ("16", "8")):
+            parsed = compiler_capture._options(arguments(byte_bound, item_bound))
+            self.assertEqual(parsed["--max-string-bytes"], byte_bound)
+            self.assertEqual(parsed["--max-array-items"], item_bound)
+        for byte_bound, item_bound in (("0", "1"), ("65", "1"), ("1", "0"), ("1", "257"),
+            ("01", "1"), ("1", "0256"), ("+1", "1"), ("1", "+1"), (" 1", "1"),
+            ("1", "1 "), ("١", "1"), ("1", "２５６"), ("9" * 5000, "1"), ("1", "9" * 5000)):
+            with self.subTest(byte_bound=byte_bound, item_bound=item_bound):
+                self.assertIsNone(compiler_capture._options(arguments(byte_bound, item_bound)))
+        for removed in (8, 10, 12):
+            partial = arguments("64", "256")
+            del partial[removed:removed + 2]
+            self.assertIsNone(compiler_capture._options(partial))
+        reordered = arguments("64", "256")
+        reordered[10:14] = ["--max-array-items", "256", "--max-string-bytes", "64"]
+        self.assertIsNotNone(compiler_capture._options(reordered))
+        duplicate = arguments("64", "256")
+        duplicate[12] = "--max-string-bytes"
+        self.assertIsNone(compiler_capture._options(duplicate))
+        unknown = arguments("64", "256")
+        unknown[12] = "--maximum-array-items"
+        self.assertIsNone(compiler_capture._options(unknown))
+        for profile in compiler_capture.PROFILES - {"bounded-nested-request.v1", "bounded-stream-nested-request.v1"}:
+            stale = arguments("64", "256")
+            stale[9] = profile
+            self.assertIsNone(compiler_capture._options(stale))
+
+    def test_stream_nested_codec_capture_keeps_both_bounds_and_actual_selector(self):
+        base = ["json-codec", "semaprax.toml", "--source", "src/schema.spx",
+                "--type", "orders.request", "--output", "derived.spx", "--profile",
+                "bounded-stream-nested-request.v1", "--max-string-bytes", "16",
+                "--max-array-items", "8"]
+        parsed = compiler_capture._options(base)
+        self.assertEqual(parsed["--profile"], "bounded-stream-nested-request.v1")
+        self.assertEqual(parsed["--max-string-bytes"], "16")
+        self.assertEqual(parsed["--max-array-items"], "8")
+        for index, invalid in ((11, "0"), (11, "65"), (11, "016"), (11, "+16"),
+                               (13, "0"), (13, "257"), (13, "08"), (13, "８")):
+            changed = list(base)
+            changed[index] = invalid
+            self.assertIsNone(compiler_capture._options(changed))
+        for removed in (8, 10, 12):
+            changed = list(base)
+            del changed[removed:removed + 2]
+            self.assertIsNone(compiler_capture._options(changed))
+
+    def test_json_codec_capture_profile_bound_matches_closed_cli_grammar(self):
+        base = ["json-codec", "semaprax.toml", "--source", "src/schema.spx",
+                "--type", "app.request", "--output", "derived.spx"]
+        bounded_profiles = ("utf8-owned-request.v1", "stream-utf8-owned-request.v1",
+                            "bounded-collection-response.v1")
+        for profile in bounded_profiles:
+            good = [*base, "--profile", profile, "--max-string-bytes", "64"]
+            self.assertEqual(compiler_capture._options(good)["--max-string-bytes"], "64")
+            for bound in ("0", "65", "01", "+1", " 1", "", "9" * 5_000, "١", "６４"):
+                with self.subTest(profile=profile, bound=bound):
+                    args = [*base, "--profile", profile, "--max-string-bytes", bound]
+                    self.assertIsNone(compiler_capture._options(args))
+            self.assertIsNone(compiler_capture._options([*base, "--profile", profile]))
+        self.assertIsNone(compiler_capture._options([
+            *base, "--profile", "owned-request.v1", "--max-string-bytes", "8"
+        ]))
+        for profile in compiler_capture.PROFILES - set(bounded_profiles):
+            self.assertIsNone(compiler_capture._options([
+                *base, "--profile", profile, "--max-string-bytes", "8"
+            ]))
+
+    def _codec_capture_fixture(self, root):
+        candidate = root / "candidate"
+        (candidate / "src").mkdir(parents=True)
+        (candidate / "semaprax.toml").write_bytes(b"source = 'src/schema.spx'\n")
+        (candidate / "src/schema.spx").write_bytes(b"authored schema before generation\n")
+        compiler = root / "actual-compiler"
+        compiler.write_bytes(b"immutable compiler fixture")
+        mailbox, evidence = root / "mailbox", root / "evidence"
+        mailbox.mkdir()
+        evidence.mkdir()
+        binding = {"source_commit": "a" * 40,
+            "binary_sha256": compiler_capture.provenance.digest(compiler), "real_binary": str(compiler)}
+        broker = compiler_capture.Broker(candidate, mailbox, evidence, binding)
+        self.addCleanup(broker.finish)
+        config = {"candidate": str(candidate), "mailbox": str(mailbox),
+            "evidence": str(evidence), "compiler": binding}
+        args = ["json-codec", "semaprax.toml", "--source", "src/schema.spx", "--type", "app.row",
+            "--output", "derived.spx"]
+        return candidate, compiler, broker, config, args
+
+    def test_authoring_proxy_retains_schema_and_mixed_output_without_authorship_subtraction(self):
+        for profile in (None, *sorted(compiler_capture.PROFILES)):
+            with self.subTest(profile=profile):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    candidate, compiler, broker, config, args = self._codec_capture_fixture(root)
+                    if profile is not None:
+                        args.extend(["--profile", profile])
+                        if profile in ("utf8-owned-request.v1", "stream-utf8-owned-request.v1",
+                                       "bounded-collection-response.v1", "bounded-nested-request.v1",
+                                       "bounded-stream-nested-request.v1"):
+                            args.extend(["--max-string-bytes", "64"])
+                        if profile in ("bounded-nested-request.v1", "bounded-stream-nested-request.v1"):
+                            args.extend(["--max-array-items", "256"])
+                    authored = (candidate / "src/schema.spx").read_bytes()
+                    mixed = authored + b"compiler-authored helpers\n"
+
+                    def notification(configuration, document):
+                        identifier = f"{len(broker.seen) + 1:032x}"
+                        response = broker.handle(identifier, document)
+                        self.assertNotIn("capture_error", response)
+                        return identifier
+
+                    def compile_after_snapshot(command, **kwargs):
+                        retained = root / "evidence" / ("0" * 31 + "1") / "before/inputs/src/schema.spx"
+                        self.assertEqual(retained.read_bytes(), authored)
+                        self.assertEqual(command, [str(compiler), *args])
+                        self.assertEqual(kwargs, {"check": False})  # inherited streams, environment and group
+                        (candidate / "derived.spx").write_bytes(mixed)
+                        (candidate / "src/schema.spx").write_bytes(mixed)
+                        return subprocess.CompletedProcess(command, 0)
+
+                    with patch.object(compiler_capture.os, "getcwd", return_value=str(candidate)), \
+                         patch.object(compiler_capture, "_request", side_effect=notification), \
+                         patch.object(compiler_capture.subprocess, "run", side_effect=compile_after_snapshot) as launch:
+                        self.assertEqual(compiler_capture.proxy_main(config, args), 0)
+                        launch.assert_called_once()
+                    before = json.loads((root / "evidence" / ("0" * 31 + "1") / "receipt.json").read_text())
+                    after = json.loads((root / "evidence" / ("0" * 31 + "2") / "receipt.json").read_text())
+                    self.assertEqual(before["compiler"], config["compiler"])
+                    self.assertEqual(before["argv"], args)
+                    self.assertFalse(before["input_closure_complete"])
+                    self.assertFalse(before["exact_compiler_input_binding"])
+                    self.assertIsNone(before["generated_source_classification"])
+                    self.assertIsNone(before["authored_token_subtraction"])
+                    self.assertIsNone(before["repeat_output_sha256"])
+                    self.assertFalse(after["compiler_status_independently_observed"])
+                    self.assertEqual(after["exit_code_proxy_reported"], 0)
+                    self.assertEqual(after["declared_output_bytes"]["files"][0]["sha256"], hashlib.sha256(mixed).hexdigest())
+    def test_authoring_proxy_keeps_compiler_failure_and_capture_refusal_separate(self):
+        for limit in (compiler_capture.MAX_SELECTION_BYTES, 1):
+            with self.subTest(limit=limit), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                candidate, compiler, broker, config, args = self._codec_capture_fixture(root)
+
+                def notification(configuration, document):
+                    identifier = f"{len(broker.seen) + 1:032x}"
+                    response = broker.handle(identifier, document)
+                    if "capture_error" in response:
+                        raise ValueError(response["capture_error"])
+                    return identifier
+
+                with patch.object(compiler_capture, "MAX_SELECTION_BYTES", limit), \
+                     patch.object(compiler_capture.os, "getcwd", return_value=str(candidate)), \
+                     patch.object(compiler_capture, "_request", side_effect=notification), \
+                     patch.object(compiler_capture.subprocess, "run", return_value=subprocess.CompletedProcess([], 2)) as launch, \
+                     patch("builtins.print") as diagnostic:
+                    self.assertEqual(compiler_capture.proxy_main(config, args), 2)
+                    launch.assert_called_once_with([str(compiler), *args], check=False)
+                    diagnostic.assert_not_called()
+                receipts = [json.loads(path.read_text()) for path in sorted((root / "evidence").glob("*/receipt.json"))]
+                self.assertTrue(receipts)
+                if limit == 1:
+                    self.assertEqual(len(receipts), 1)
+                    self.assertEqual(receipts[0]["status"], "missing_retention")
+                    self.assertIn("byte budget", receipts[0]["capture_error"])
+                else:
+                    self.assertEqual(receipts[-1]["exit_code_proxy_reported"], 2)
+                    self.assertNotIn("declared_output_bytes", receipts[-1])
+
+    def test_authoring_proxy_delegates_noncodec_and_malformed_cli_without_guessing_inputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _, compiler, _, config, good = self._codec_capture_fixture(root)
+            for args in (["check", "a.spx"], ["json-codec", "--help"], good[:-1],
+                         [*good, "--profile", "unknown"],
+                         ["json-codec", "p", "--source", "a", "--source", "b", "--output", "c"]):
+                with self.subTest(args=args), patch.object(compiler_capture.os, "execv", side_effect=SystemExit(17)) as delegate, \
+                     patch.object(compiler_capture, "_request") as notify:
+                    with self.assertRaises(SystemExit):
+                        compiler_capture.proxy_main(config, args)
+                    delegate.assert_called_once_with(str(compiler), [str(compiler), *args])
+                    notify.assert_not_called()
+
+    def test_authoring_proxy_preserves_compiler_kill_status_without_installing_a_kill_handler(self):
+        with tempfile.TemporaryDirectory() as directory:
+            _, _, _, config, args = self._codec_capture_fixture(Path(directory))
+            with patch.object(compiler_capture, "_request", side_effect=ValueError("unavailable")), \
+                 patch.object(compiler_capture, "_measurement"), \
+                 patch.object(compiler_capture.subprocess, "run", return_value=subprocess.CompletedProcess([], -9)), \
+                 patch.object(compiler_capture.signal, "signal") as handler, \
+                 patch.object(compiler_capture.os, "kill", side_effect=SystemExit(137)) as killed:
+                with self.assertRaises(SystemExit):
+                    compiler_capture.proxy_main(config, args)
+                handler.assert_not_called()
+                killed.assert_called_once_with(os.getpid(), compiler_capture.signal.SIGKILL)
+
+    def test_capture_broker_refuses_replay_symlinks_oversize_and_aggregate_retention(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            candidate, _, broker, _, args = self._codec_capture_fixture(root)
+            identifier = "1" * 32
+            request = {"operation": "start", "argv": args, "cwd": str(candidate)}
+            response = broker.handle(identifier, request)
+            self.assertEqual(response["status"], "selected_inputs_retained")
+            original = (root / "evidence" / identifier / "receipt.json").read_bytes()
+            with self.assertRaisesRegex(ValueError, "replayed"):
+                broker.handle(identifier, request)
+            self.assertEqual((root / "evidence" / identifier / "receipt.json").read_bytes(), original)
+            with patch.object(compiler_capture, "MAX_RETAINED_BYTES", broker.retained_bytes):
+                refused = broker.handle("2" * 32, request)
+            self.assertIn("byte budget", refused["capture_error"])
+            schema = candidate / "src/schema.spx"
+            schema.unlink()
+            outside = root / "secret.spx"
+            outside.write_bytes(b"must not enter retained evidence")
+            schema.symlink_to(outside)
+            refused = broker.handle("3" * 32, request)
+            self.assertIn("symlink", refused["capture_error"])
+            self.assertFalse((root / "evidence" / ("3" * 32) / "before").exists())
+            message = root / "mailbox/oversize.request.json"
+            message.write_bytes(b"x" * (compiler_capture.MAX_MESSAGE_BYTES + 1))
+            with self.assertRaisesRegex(ValueError, "byte budget"):
+                compiler_capture._read_message(message.parent, message.name)
+            message.unlink()
+            message.symlink_to(outside)
+            with self.assertRaisesRegex(ValueError, "without following symlinks"):
+                compiler_capture._read_message(message.parent, message.name)
+            with self.assertRaisesRegex(ValueError, "invalid"):
+                broker.handle("../escape", request)
+            refused = broker.handle("5" * 32, {**request, "cwd": str(root)})
+            self.assertEqual(refused["status"], "missing_retention")
+            self.assertNotIn("selected_inputs", refused)
+            mailbox_link = root / "mailbox-link"
+            mailbox_link.symlink_to(root / "mailbox", target_is_directory=True)
+            with self.assertRaises(OSError):
+                compiler_capture._read_message(mailbox_link, message.name)
+            with patch.object(compiler_capture, "MAX_REQUESTS", len(broker.seen)):
+                with self.assertRaisesRegex(ValueError, "count budget"):
+                    broker.handle("4" * 32, request)
+
+    def test_authoring_capture_cleanup_on_interruption_and_typescript_has_no_proxy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workspace = root / "workspace"
+            workspace.mkdir()
+            binary = root / "compiler"
+            binary.write_bytes(b"compiler")
+            settings = {"compiler_source_commit": "a" * 40,
+                "source_binary_sha256": compiler_capture.provenance.digest(binary),
+                "harness_source_files_sha256": {"benchmarks/" + name:
+                    compiler_capture.provenance.digest(Path(compiler_capture.__file__).with_name(name))
+                    for name in ("compiler_input_capture.py", "compiler_output_provenance.py")}}
+            row = {}
+            with self.assertRaises(KeyboardInterrupt):
+                with compiler_capture.authoring_compiler("semaprax", workspace / "candidate", workspace,
+                        root / "artifacts", "semaprax-01", settings, binary, row) as proxy:
+                    self.assertNotEqual(proxy, binary)
+                    self.assertFalse(row["compiler_authoring_proxy"]["proxy_is_compiler_binary"])
+                    raise KeyboardInterrupt()
+            self.assertEqual(list(workspace.iterdir()), [])
+            self.assertFalse(row["compiler_input_retention"]["measurement_eligible_for_generated_authorship"])
+            self.assertTrue((root / "artifacts/compiler-input-retention/semaprax-01/summary.json").is_file())
+            other = {}
+            with compiler_capture.authoring_compiler("typescript", workspace / "candidate", workspace,
+                    root / "typescript-artifacts", "typescript-01", {}, binary, other) as actual:
+                self.assertEqual(actual, binary)
+            self.assertEqual(other, {})
+            self.assertFalse((root / "typescript-artifacts").exists())
+            missing = {}
+            with compiler_capture.authoring_compiler("semaprax", workspace / "candidate", workspace,
+                    root / "missing-artifacts", "semaprax-01", {}, binary, missing) as actual:
+                self.assertEqual(actual, binary)
+            self.assertEqual(missing["compiler_input_retention"]["status"], "unavailable")
+            self.assertEqual(list(workspace.iterdir()), [])
+
+    def test_capture_mailbox_directory_swap_cannot_redirect_publication_or_broker_reads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            candidate, _, broker, config, args = self._codec_capture_fixture(root)
+            mailbox = root / "mailbox"
+            outside = root / "outside"
+            outside.mkdir()
+            sentinel = outside / (("f" * 32) + ".request.json")
+            sentinel.write_bytes(b"outside sentinel must not be read or overwritten")
+            expected = sentinel.read_bytes()
+            link = compiler_capture.os.link
+
+            def swap_before_publication(source, destination, **kwargs):
+                mailbox.rename(root / "original-mailbox")
+                mailbox.symlink_to(outside, target_is_directory=True)
+                return link(source, destination, **kwargs)
+
+            with patch.object(compiler_capture.os, "link", side_effect=swap_before_publication):
+                identifier = compiler_capture._publish_request(config,
+                    {"operation": "start", "argv": args, "cwd": str(candidate)})
+            self.assertTrue((root / "original-mailbox" / (identifier + ".request.json")).is_file())
+            broker.stop.set()
+            broker._watch()  # one final bounded drain through the held directory FD
+            self.assertEqual(broker.seen, {identifier})
+            response = json.loads((root / "evidence" / identifier / "receipt.json").read_text())
+            self.assertEqual(response["status"], "selected_inputs_retained")
+            self.assertEqual(sentinel.read_bytes(), expected)
+            self.assertEqual(list(outside.iterdir()), [sentinel])
+
+    def test_proxy_measurement_is_separate_bounded_overhead_and_not_execution_proof(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _, _, broker, _, _ = self._codec_capture_fixture(root)
+            response = broker.handle("6" * 32, {"operation": "measurement",
+                "capture_wait_ns_proxy_reported": 30_000_000_000,
+                "capture_error": "acknowledgement unavailable", "exit_code_proxy_reported": 2})
+            self.assertEqual(response["status"], "proxy_measurement_reported")
+            self.assertEqual(response["exit_code_proxy_reported"], 2)
+            self.assertFalse(response["proxy_measurement_independently_observed"])
+            summary = broker.finish()
+            self.assertEqual(summary["capture_wait_ns_proxy_reported"], 30_000_000_000)
+            self.assertFalse(summary["capture_wait_independently_observed"])
+            self.assertEqual(summary["capture_errors"], ["acknowledgement unavailable"])
+            self.assertFalse(summary["measurement_eligible_for_generated_authorship"])
+
+    def test_capture_broker_refuses_candidate_ancestor_symlink_before_outside_reads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            candidate = root / "workspace/nested/candidate"
+            candidate.mkdir(parents=True)
+            (candidate / "semaprax.toml").write_bytes(b"original manifest")
+            (candidate / "schema.spx").write_bytes(b"original schema")
+            mailbox, evidence = root / "workspace/channel", root / "evidence"
+            mailbox.mkdir()
+            evidence.mkdir()
+            broker = compiler_capture.Broker(candidate, mailbox, evidence, {}, root / "workspace")
+            self.addCleanup(broker.finish)
+            outside = root / "outside"
+            (outside / "candidate").mkdir(parents=True)
+            secret = outside / "candidate/schema.spx"
+            secret.write_bytes(b"outside bytes must never be captured")
+            (outside / "candidate/semaprax.toml").write_bytes(b"outside manifest")
+            (root / "workspace/nested").rename(root / "workspace/original-nested")
+            (root / "workspace/nested").symlink_to(outside, target_is_directory=True)
+            response = broker.handle("7" * 32, {"operation": "start", "cwd": str(candidate),
+                "argv": ["json-codec", ".", "--source", "schema.spx", "--type", "record",
+                    "--output", "derived.spx"]})
+            self.assertEqual(response["status"], "missing_retention")
+            self.assertNotIn("selected_inputs", response)
+            self.assertFalse((evidence / ("7" * 32) / "before").exists())
+            self.assertEqual(secret.read_bytes(), b"outside bytes must never be captured")
+
+    def test_input_snapshot_authorized_handle_preserves_namespace_after_path_swap(self):
+        proof = compiler_capture.provenance
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            candidate = root / "candidate"
+            candidate.mkdir()
+            (candidate / "schema.spx").write_bytes(b"original")
+            fd = os.open(candidate, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            try:
+                outside = root / "outside"
+                outside.mkdir()
+                (outside / "schema.spx").write_bytes(b"outside")
+                candidate.rename(root / "original")
+                candidate.symlink_to(outside, target_is_directory=True)
+                receipt, receipt_sha = proof.capture_inputs(candidate, root / "evidence", ["schema.spx"],
+                    authorized_directory_fd=fd)
+                rows = proof.validate_input_snapshot(receipt, receipt_sha)
+                self.assertEqual(rows[0]["sha256"], hashlib.sha256(b"original").hexdigest())
+                self.assertEqual((receipt.parent / "inputs/schema.spx").read_bytes(), b"original")
+                self.assertEqual((outside / "schema.spx").read_bytes(), b"outside")
+                with self.assertRaisesRegex(ValueError, "outside the candidate"):
+                    proof.capture_inputs(candidate, candidate / "evidence", ["schema.spx"],
+                        authorized_directory_fd=fd)
+            finally:
+                os.close(fd)
+
+    def test_compiler_input_snapshot_preserves_authored_schema_after_replacement(self):
+        proof = authored_recount.compiler_provenance
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            candidate = root / "candidate"
+            (candidate / "src").mkdir(parents=True)
+            schema = candidate / "src/schema.spx"
+            schema.write_text("module schema;\n", encoding="utf-8")
+            (candidate / "semaprax.toml").write_text("source = 'src/schema.spx'\n")
+            paths = ["src/schema.spx", "semaprax.toml"]
+            expected = schema.read_bytes()
+            total = len(expected) + (candidate / "semaprax.toml").stat().st_size
+            receipt, receipt_sha = proof.capture_inputs(candidate, root / "evidence", paths, total)
+            schema.write_text("compiler output with original schema and helpers")
+            rows = proof.validate_input_snapshot(receipt, receipt_sha)
+            self.assertEqual([row["path"] for row in rows], sorted(paths))
+            self.assertEqual((receipt.parent / "inputs/src/schema.spx").read_bytes(), expected)
+            with self.assertRaises(FileExistsError):
+                proof.capture_inputs(candidate, receipt.parent, paths)
+            (receipt.parent / "inputs/src/schema.spx").write_text("mutated snapshot")
+            with self.assertRaisesRegex(ValueError, "snapshot bytes differ"):
+                proof.validate_input_snapshot(receipt, receipt_sha)
+
+    def test_compiler_input_snapshot_refuses_unsafe_selection_and_cleans_partial_evidence(self):
+        proof = authored_recount.compiler_provenance
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            candidate = root / "candidate"
+            candidate.mkdir()
+            (candidate / "a.spx").write_bytes(b"abc")
+            destination = root / "evidence"
+            for paths, limit in [(["a.spx"], 2), (["a.spx", "missing.spx"], 100),
+                                 (["../outside"], 100), (["a.spx", "a.spx"], 100)]:
+                with self.assertRaises((ValueError, FileNotFoundError)):
+                    proof.capture_inputs(candidate, destination, paths, limit)
+                self.assertFalse(destination.exists())
+            (candidate / "link.spx").symlink_to(candidate / "a.spx")
+            with self.assertRaisesRegex(ValueError, "symlink"):
+                proof.capture_inputs(candidate, destination, ["link.spx"])
+            self.assertFalse(destination.exists())
+            with self.assertRaisesRegex(ValueError, "outside the candidate"):
+                proof.capture_inputs(candidate, candidate / "evidence", ["a.spx"])
+
+    def test_compiler_input_snapshot_refuses_file_and_ancestor_symlink_races(self):
+        proof = authored_recount.compiler_provenance
+        for ancestor in (False, True):
+            with self.subTest(ancestor=ancestor), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                candidate = root / "candidate"
+                (candidate / "src").mkdir(parents=True)
+                local = candidate / "src/a.spx"
+                local.write_bytes(b"local")
+                outside = root / "outside"
+                outside.mkdir()
+                secret = outside / "a.spx"
+                secret.write_bytes(b"outside bytes must not be retained")
+                check = proof._regular_under
+
+                def swap_after_check(base, relative):
+                    target = check(base, relative)
+                    if ancestor:
+                        (candidate / "src").rename(candidate / "old-src")
+                        (candidate / "src").symlink_to(outside, target_is_directory=True)
+                    else:
+                        local.unlink()
+                        local.symlink_to(secret)
+                    return target
+
+                with patch.object(proof, "_regular_under", side_effect=swap_after_check):
+                    with self.assertRaisesRegex(ValueError, "without following symlinks"):
+                        proof.capture_inputs(candidate, root / "evidence", ["src/a.spx"])
+                self.assertFalse((root / "evidence").exists())
+                self.assertEqual(secret.read_bytes(), b"outside bytes must not be retained")
+
+    def test_compiler_input_snapshot_bounds_receipt_reads_before_hashing(self):
+        proof = authored_recount.compiler_provenance
+        with tempfile.TemporaryDirectory() as directory:
+            receipt = Path(directory) / "snapshot.json"
+            with receipt.open("wb") as stream:
+                stream.truncate(proof.MAX_INPUT_RECEIPT_BYTES + 1)
+            with self.assertRaisesRegex(ValueError, "receipt exceeds byte budget"):
+                proof.validate_input_snapshot(receipt, "0" * 64)
+
     def test_hash_bound_authored_recount_separates_generated_and_lock_files(self):
         with tempfile.TemporaryDirectory() as directory:
             candidate = Path(directory); (candidate / "src").mkdir(); (candidate / "public").mkdir()
@@ -127,6 +587,18 @@ class LiveCampaignTests(unittest.TestCase):
                     self.assertEqual(authored_recount.main(), 2)
                 self.assertFalse(refused_output.exists())
             original_receipt = receipt.read_text()
+            # A valid trusted receipt still cannot reclassify an authored input
+            # as generated, including an auxiliary input rather than argv[1].
+            for input_path in ("app.spx", "app.js"):
+                changed = json.loads(original_receipt)
+                if input_path == "app.js":
+                    changed["input_files"].append({"path": input_path, "sha256": by_path[input_path]["sha256"]})
+                (raw / "input-copy").write_bytes((candidate / input_path).read_bytes())
+                changed["raw_outputs"] = [{"raw_path": "input-copy", "final_path": input_path, "sha256": by_path[input_path]["sha256"]}]
+                changed["repeat_outputs"] = [{"raw_path": "input-copy", "sha256": by_path[input_path]["sha256"]}]
+                receipt.write_text(json.dumps(changed))
+                with self.assertRaisesRegex(ValueError, "overlaps authored input"):
+                    authored_recount.compiler_provenance.validate(receipt, authored_recount.digest(receipt), candidate, *kwargs["trusted_compiler"])
             for bad_argv in (["webapp", "../app.spx", "-o", "{output}"], ["webapp", "missing.spx", "-o", "{output}"]):
                 changed = {**receipt_data, "argv": bad_argv}; receipt.write_text(json.dumps(changed))
                 with self.assertRaises(ValueError):

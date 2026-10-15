@@ -21,12 +21,35 @@ pub(crate) fn graph_schema(program: &ResolvedProgram) -> Result<&'static str, Di
 }
 pub(crate) fn graph_schema_from_parts_and_instances(
     i: &[hir::ResolvedInterface],
-    t: &[hir::ResolvedTypeDeclaration],
-    f: &[ResolvedFunction],
-    x: &[hir::ResolvedFunctionTemplate],
+    t: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    f: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    x: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
     n: &[hir::ResolvedFunctionInstance],
 ) -> Result<&'static str, Diagnostic> {
-    let previous = super::vec_loop_renewal::graph_schema_from_parts_and_instances(i, t, f, x, n)?;
+    graph_schema_from_parts_and_instances_with_renewal_authority(i, t, f, x, n, None)
+}
+
+pub(crate) fn graph_schema_from_parts_and_instances_with_renewal_authority(
+    i: &[hir::ResolvedInterface],
+    t: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    f: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    x: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
+    n: &[hir::ResolvedFunctionInstance],
+    renewal_authority: Option<&dyn Fn(&ResolvedFunction) -> bool>,
+) -> Result<&'static str, Diagnostic> {
+    let previous = match renewal_authority {
+        None => super::vec_loop_renewal::graph_schema_from_parts_and_instances(i, t, f, x, n),
+        Some(_) => {
+            super::vec_loop_renewal::graph_schema_from_parts_and_instances_with_renewal_authority(
+                i,
+                t,
+                f,
+                x,
+                n,
+                renewal_authority,
+            )
+        }
+    }?;
     Ok(
         if f.iter().chain(n.iter().map(|i| &i.function)).any(requires) {
             SCHEMA

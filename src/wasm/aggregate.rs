@@ -8,6 +8,7 @@ mod cleanup;
 #[path = "closure.rs"]
 mod closure;
 mod collect_block;
+mod collect_expression;
 mod expressions;
 mod function_value;
 pub(super) mod semantic_work;
@@ -19,10 +20,19 @@ pub(in crate::wasm) use function_value::{
 };
 use function_value::{executable_functions, hex_execution_identity, program_uses_byte_range};
 mod binary_ops;
+mod borrowed_call;
+mod byte_partition;
+mod contract_scope;
 pub(super) mod conversions;
 mod filesystem_checked;
 mod filesystem_ops;
 mod filesystem_v2;
+mod lexical_control;
+mod literal_format;
+mod str_equality;
+mod str_helpers;
+mod str_usage;
+use str_usage::program_uses_str_ops;
 mod generic_record;
 mod generic_variant;
 mod guarded_variant;
@@ -42,7 +52,11 @@ mod owned_try;
 mod post_transitions;
 mod process_io;
 mod provider_lowering;
+mod static_text_profile;
 mod string_replacement;
+pub(super) use static_text_profile::{
+    emit_partition, emit_scalar_exports_with_static_text, emit_with_static_text,
+};
 pub(super) mod text_toolkit;
 pub(super) use provider_lowering::{
     lower_public_generic_provider_closure, PUBLIC_GENERIC_PROVIDER_SOURCE_INDEX_MIN,
@@ -72,9 +86,14 @@ use crate::hir::{
 use crate::variant_layout::{VariantLayout, VariantLayoutCache, VariantTarget};
 
 mod box_ops;
+mod row_loan;
 mod scalar_shape;
 pub(super) mod string_runtime;
+mod string_slot;
 mod variant_equality;
+mod vec_copy_record;
+mod vec_field;
+mod vec_owned_leaf;
 mod vec_owned_payload;
 mod vec_record_payload;
 use crate::wasm::vec_ops::is_wasm_owned_vec_type as owned_vec;
@@ -102,6 +121,7 @@ const OWNED_UTF8_LITERAL_BASE: u32 = 196_608;
 #[derive(Default)]
 struct OwnedUtf8Literals {
     base: Option<u32>,
+    static_pool: bool,
     offsets: HashMap<String, u32>,
     bytes: Vec<u8>,
 }
@@ -113,6 +133,11 @@ impl OwnedUtf8Literals {
     fn intern(&mut self, value: &str) -> Result<(u32, u32), Diagnostic> {
         if let Some(offset) = self.offsets.get(value) {
             return Ok((*offset, value.len() as u32));
+        }
+        if self.static_pool && value.is_empty() {
+            let offset = self.base();
+            self.offsets.insert(value.to_owned(), offset);
+            return Ok((offset, 0));
         }
         let relative = u32::try_from(self.bytes.len())
             .map_err(|_| error("owned UTF-8 literal table overflows u32"))?;
@@ -161,7 +186,9 @@ pub(super) const STATUS_VEC_PUSH_FULL: i32 = 13;
 pub(super) const STATUS_VEC_GET_OUT_OF_BOUNDS: i32 = 14;
 pub(super) const STATUS_VEC_ALLOCATION_FAILURE: i32 = 15;
 pub(super) const STATUS_BYTE_BUFFER_INDEX_OUT_OF_BOUNDS: i32 = 16;
+pub(super) const STATUS_BYTE_BUFFER_CAPACITY_EXCEEDED: i32 = 35;
 pub(super) const STATUS_BOX_ALLOCATION_FAILURE: i32 = 17;
+pub(super) const STATUS_STRING_FORMAT_FAILURE: i32 = 34;
 pub(super) const STATUS_LIST_LENGTH_LIMIT: i32 = 19;
 pub(super) const STATUS_LIST_MEMORY_LIMIT: i32 = 20;
 pub(super) const STATUS_INTERNAL_INVALID_TAG: i32 = -1;
@@ -181,9 +208,20 @@ struct Pointer {
 
 #[derive(Clone)]
 enum Value {
-    Scalar { local: u32, ty: ResolvedType },
-    ScalarMemory { pointer: Pointer, ty: ResolvedType },
-    Aggregate { pointer: Pointer, ty: ResolvedType },
+    /// Emitter control completion only; no local, ABI or runtime value exists.
+    Bottom,
+    Scalar {
+        local: u32,
+        ty: ResolvedType,
+    },
+    ScalarMemory {
+        pointer: Pointer,
+        ty: ResolvedType,
+    },
+    Aggregate {
+        pointer: Pointer,
+        ty: ResolvedType,
+    },
 }
 
 struct VariantMatchEmission<'a> {
@@ -243,6 +281,7 @@ struct FunctionPlan {
     has_try: bool,
     result_out: u32,
     result_stage_scalar: Option<u32>,
+    lexical_return_resume: Option<u32>,
     result_stage_aggregate: Option<u32>,
     scalar_expressions: HashMap<ExpressionId, u32>,
     scalar_bindings: HashMap<ValueId, u32>,
@@ -252,7 +291,12 @@ struct FunctionPlan {
     function_callables: HashMap<ExpressionId, u32>,
     function_arguments: HashMap<ExpressionId, u32>,
     range_descriptors: HashMap<ExpressionId, u32>,
+    literal_format_scratch: HashMap<ExpressionId, [u32; 3]>,
+    literal_format_args: HashMap<ExpressionId, Vec<Option<u32>>>,
     range_scratch: Option<RangeScratch>,
+    copy_record_scratch: Option<[u32; 14]>,
+    owned_leaf_scratch: HashMap<ExpressionId, u32>,
+    row_loans: row_loan::Plan,
     cleanup_flags: std::collections::BTreeMap<crate::cleanup::LivenessFlagId, u32>,
     cleanup_place_flags: std::collections::BTreeMap<crate::cleanup_plan::CleanupPlace, u32>,
     runtime_cleanup_storage: std::collections::BTreeSet<crate::cleanup_plan::StorageId>,
@@ -406,8 +450,31 @@ impl FunctionPlan {
                 })
             })
             .transpose()?;
-        let has_try = expressions::expression_has_try(&function.body);
+        let copy_record_scratch = crate::hir::copy_record_collection::program_uses(program)
+            .then(|| {
+                let mut locals = [0; 14];
+                for local in &mut locals {
+                    *local = add_local(I64)?;
+                }
+                Ok::<_, Diagnostic>(locals)
+            })
+            .transpose()?;
+        let has_try = expressions::expression_has_try(&function.body)
+            || function.cleanup_plan.lexical_control.is_some();
         let result_staged = if has_try { Some(add_local(I32)?) } else { None };
+        let lexical_return_resume = if function
+            .cleanup_plan
+            .lexical_control
+            .as_deref()
+            .is_some_and(|control| {
+                control.exits.iter().any(|exit| {
+                    exit.kind == crate::hir::LexicalExitKind::Return && exit.resume.is_some()
+                })
+            }) {
+            Some(add_local(I32)?)
+        } else {
+            None
+        };
         let mut cleanup_flags = std::collections::BTreeMap::new();
         let mut cleanup_place_flags = std::collections::BTreeMap::new();
         let mut cleanup_storage_types = HashMap::new();
@@ -497,6 +564,7 @@ impl FunctionPlan {
             has_try,
             result_out,
             result_stage_scalar,
+            lexical_return_resume,
             result_stage_aggregate,
             scalar_expressions: HashMap::new(),
             scalar_bindings: HashMap::new(),
@@ -506,7 +574,12 @@ impl FunctionPlan {
             function_callables: HashMap::new(),
             function_arguments: HashMap::new(),
             range_descriptors: HashMap::new(),
+            literal_format_scratch: HashMap::new(),
+            literal_format_args: HashMap::new(),
             range_scratch,
+            copy_record_scratch,
+            owned_leaf_scratch: HashMap::new(),
+            row_loans: row_loan::Plan::default(),
             cleanup_flags,
             cleanup_place_flags,
             runtime_cleanup_storage: cleanup::runtime_storages(&function.cleanup_plan),
@@ -549,6 +622,7 @@ impl FunctionPlan {
                 &mut frame,
             )?;
         }
+        plan.collect_row_loans(program, function, &mut frame)?;
         plan.frame_size = frame.finish()?;
         Ok(plan)
     }
@@ -561,222 +635,6 @@ impl FunctionPlan {
             .checked_add(1)
             .and_then(|base| base.checked_add(relative))
             .ok_or_else(|| error("aggregate local index overflows u32"))
-    }
-
-    fn collect_expr(
-        &mut self,
-        program: &ResolvedProgram,
-        variant_layouts: &VariantLayoutCache,
-        expr: &ResolvedExpr,
-        parameter_count: u32,
-        frame: &mut FrameAllocator,
-    ) -> Result<(), Diagnostic> {
-        if is_aggregate(program, &expr.ty)? {
-            let (size, align) = aggregate_size_align(program, variant_layouts, &expr.ty)?;
-            let offset = frame.allocate(size, align)?;
-            if self
-                .aggregate_expressions
-                .insert(expr.id.clone(), offset)
-                .is_some()
-            {
-                return Err(error(format!(
-                    "duplicate aggregate expression identity `{}`",
-                    expr.id
-                )));
-            }
-        } else {
-            let ty = scalar_wasm_type(program, &expr.ty)?;
-            let local = self.add_local(parameter_count, ty)?;
-            if self
-                .scalar_expressions
-                .insert(expr.id.clone(), local)
-                .is_some()
-            {
-                return Err(error(format!(
-                    "duplicate scalar expression identity `{}`",
-                    expr.id
-                )));
-            }
-            if matches!(
-                expr.kind,
-                ResolvedExprKind::Call { .. }
-                    | ResolvedExprKind::HostCommandCall(_)
-                    | ResolvedExprKind::Invoke { .. }
-            ) {
-                let (size, align) = if matches!(&expr.kind,ResolvedExprKind::Call{callee,..} if crate::map_ops::by_id(callee.as_str()).is_some() || crate::string_ops::by_id(callee.as_str()).and_then(map_collections::legacy_op).is_some())
-                {
-                    (8, 8)
-                } else {
-                    scalar_size_align(program, &expr.ty)?
-                };
-                self.call_out
-                    .insert(expr.id.clone(), frame.allocate(size, align)?);
-            }
-        }
-        if matches!(expr.kind, ResolvedExprKind::ByteRange { .. }) {
-            let offset = frame.allocate(RANGE_DESCRIPTOR_SIZE, 8)?;
-            if self
-                .range_descriptors
-                .insert(expr.id.clone(), offset)
-                .is_some()
-            {
-                return Err(error(format!(
-                    "duplicate byte-range descriptor identity `{}`",
-                    expr.id
-                )));
-            }
-        }
-
-        match &expr.kind {
-            ResolvedExprKind::Closure { captures, .. } => {
-                for capture in captures {
-                    self.collect_expr(
-                        program,
-                        variant_layouts,
-                        &capture.value,
-                        parameter_count,
-                        frame,
-                    )?;
-                }
-            }
-            ResolvedExprKind::Invoke { callable, args } => {
-                self.collect_expr(program, variant_layouts, callable, parameter_count, frame)?;
-                self.collect_exprs(program, variant_layouts, args, parameter_count, frame)?;
-                let local = self.add_local(parameter_count, I32)?;
-                if self
-                    .function_callables
-                    .insert(expr.id.clone(), local)
-                    .is_some()
-                {
-                    return Err(error("aggregate function invocation scratch repeats"));
-                }
-                for argument in args {
-                    let local =
-                        self.add_local(parameter_count, scalar_wasm_type(program, &argument.ty)?)?;
-                    if self
-                        .function_arguments
-                        .insert(argument.id.clone(), local)
-                        .is_some()
-                    {
-                        return Err(error(
-                            "aggregate function invocation argument scratch repeats",
-                        ));
-                    }
-                }
-            }
-            ResolvedExprKind::FunctionReference { .. } => {}
-            ResolvedExprKind::Call { args, .. } => {
-                self.collect_exprs(program, variant_layouts, args, parameter_count, frame)?
-            }
-            ResolvedExprKind::NativeRustImportCall(call) => {
-                self.collect_exprs(program, variant_layouts, &call.args, parameter_count, frame)?
-            }
-            ResolvedExprKind::HostCommandCall(call) => {
-                self.collect_exprs(program, variant_layouts, &call.args, parameter_count, frame)?
-            }
-            ResolvedExprKind::ByteRange {
-                source, start, end, ..
-            } => self.collect_byte_range(
-                program,
-                variant_layouts,
-                source,
-                start,
-                end,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::Unary { value, .. } => {
-                self.collect_expr(program, variant_layouts, value, parameter_count, frame)?;
-            }
-            ResolvedExprKind::Try { operand, .. } | ResolvedExprKind::TryOption { operand, .. } => {
-                self.collect_expr(program, variant_layouts, operand, parameter_count, frame)?;
-            }
-            ResolvedExprKind::Binary { left, right, .. } => self.collect_binary(
-                program,
-                variant_layouts,
-                left,
-                right,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::Block { statements, tail } => self.collect_block(
-                program,
-                variant_layouts,
-                statements,
-                tail,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::If {
-                condition,
-                then_branch,
-                else_branch,
-            } => self.collect_if(
-                program,
-                variant_layouts,
-                condition,
-                then_branch,
-                else_branch,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::ConstructRecord { fields, .. } => self.collect_record_fields(
-                program,
-                variant_layouts,
-                fields,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::ConstructVariant { fields, .. } => self.collect_variant_fields(
-                program,
-                variant_layouts,
-                fields,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::Match {
-                scrutinee, arms, ..
-            } => self.collect_match(
-                program,
-                variant_layouts,
-                scrutinee,
-                arms,
-                parameter_count,
-                frame,
-            )?,
-            ResolvedExprKind::Project { base, .. } => {
-                self.collect_expr(program, variant_layouts, base, parameter_count, frame)?;
-            }
-            ResolvedExprKind::Upcast { source } | ResolvedExprKind::Yield { request: source } => {
-                self.collect_expr(program, variant_layouts, source, parameter_count, frame)?;
-            }
-            ResolvedExprKind::UpdateRecord { base, fields, .. } => {
-                self.collect_expr(program, variant_layouts, base, parameter_count, frame)?;
-                for field in fields {
-                    self.collect_expr(
-                        program,
-                        variant_layouts,
-                        &field.value,
-                        parameter_count,
-                        frame,
-                    )?;
-                }
-            }
-            ResolvedExprKind::Int(_)
-            | ResolvedExprKind::Int32(_)
-            | ResolvedExprKind::Char(_)
-            | ResolvedExprKind::Uint8(_)
-            | ResolvedExprKind::Usize(_)
-            | ResolvedExprKind::Float32(_)
-            | ResolvedExprKind::Float64(_)
-            | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::ArrayU8(_)
-            | ResolvedExprKind::RepeatArrayU8 { .. }
-            | ResolvedExprKind::String(_)
-            | ResolvedExprKind::Place(_)
-            | ResolvedExprKind::BorrowPlace { .. } => {}
-        }
-        Ok(())
     }
 
     fn collect_exprs(
@@ -907,106 +765,6 @@ impl FunctionPlan {
             })
             .ok_or_else(|| error(format!("missing aggregate slot for `{}`", expr.id)))
     }
-}
-
-fn expression_uses_str_ops(expression: &ResolvedExpr) -> bool {
-    match &expression.kind {
-        ResolvedExprKind::Invoke { callable, args } => {
-            expression_uses_str_ops(callable) || args.iter().any(expression_uses_str_ops)
-        }
-        ResolvedExprKind::Call { callee, args, .. } => {
-            crate::str_ops::by_id(callee.as_str()).is_some_and(|op| {
-                matches!(
-                    op,
-                    crate::str_ops::StrOp::StartsWith | crate::str_ops::StrOp::Contains
-                )
-            }) || matches!(
-                crate::string_ops::by_id(callee.as_str()),
-                Some(
-                    crate::string_ops::StringOp::StartsWith | crate::string_ops::StringOp::Contains
-                )
-            ) || args.iter().any(expression_uses_str_ops)
-        }
-        ResolvedExprKind::NativeRustImportCall(call) => {
-            call.args.iter().any(expression_uses_str_ops)
-        }
-        ResolvedExprKind::HostCommandCall(call) => call.args.iter().any(expression_uses_str_ops),
-        ResolvedExprKind::ByteRange {
-            source, start, end, ..
-        } => {
-            expression_uses_str_ops(source)
-                || expression_uses_str_ops(start)
-                || expression_uses_str_ops(end)
-        }
-        ResolvedExprKind::Unary { value, .. }
-        | ResolvedExprKind::Try { operand: value, .. }
-        | ResolvedExprKind::TryOption { operand: value, .. }
-        | ResolvedExprKind::Project { base: value, .. }
-        | ResolvedExprKind::Upcast { source: value }
-        | ResolvedExprKind::Yield { request: value } => expression_uses_str_ops(value),
-        ResolvedExprKind::Binary { left, right, .. } => {
-            expression_uses_str_ops(left) || expression_uses_str_ops(right)
-        }
-        ResolvedExprKind::Block { statements, tail } => {
-            statements.iter().any(|statement| {
-                (0..statement.child_count())
-                    .any(|index| statement.child(index).is_some_and(expression_uses_str_ops))
-            }) || expression_uses_str_ops(tail)
-        }
-        ResolvedExprKind::If {
-            condition,
-            then_branch,
-            else_branch,
-        } => {
-            expression_uses_str_ops(condition)
-                || expression_uses_str_ops(then_branch)
-                || expression_uses_str_ops(else_branch)
-        }
-        ResolvedExprKind::ConstructRecord { fields, .. }
-        | ResolvedExprKind::ConstructVariant { fields, .. } => fields
-            .iter()
-            .any(|field| expression_uses_str_ops(&field.value)),
-        ResolvedExprKind::Match {
-            scrutinee, arms, ..
-        } => {
-            expression_uses_str_ops(scrutinee)
-                || arms.iter().any(|arm| {
-                    arm.guard.as_deref().is_some_and(expression_uses_str_ops)
-                        || expression_uses_str_ops(&arm.value)
-                })
-        }
-        ResolvedExprKind::UpdateRecord { base, fields, .. } => {
-            expression_uses_str_ops(base)
-                || fields
-                    .iter()
-                    .any(|field| expression_uses_str_ops(&field.value))
-        }
-        ResolvedExprKind::Int(_)
-        | ResolvedExprKind::Int32(_)
-        | ResolvedExprKind::Char(_)
-        | ResolvedExprKind::Uint8(_)
-        | ResolvedExprKind::Usize(_)
-        | ResolvedExprKind::Float32(_)
-        | ResolvedExprKind::Float64(_)
-        | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::ArrayU8(_)
-        | ResolvedExprKind::RepeatArrayU8 { .. }
-        | ResolvedExprKind::String(_)
-        | ResolvedExprKind::Place(_)
-        | ResolvedExprKind::BorrowPlace { .. }
-        | ResolvedExprKind::FunctionReference { .. } => false,
-        ResolvedExprKind::Closure { captures, .. } => captures
-            .iter()
-            .any(|capture| expression_uses_str_ops(&capture.value)),
-    }
-}
-
-fn program_uses_str_ops(program: &ResolvedProgram) -> bool {
-    program.functions.iter().any(|function| {
-        expression_uses_str_ops(&function.body)
-            || function.requires.iter().any(expression_uses_str_ops)
-            || function.ensures.iter().any(expression_uses_str_ops)
-    })
 }
 
 fn error(message: impl Into<String>) -> Diagnostic {
@@ -1197,7 +955,7 @@ fn aggregate_size_align(
             crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
                 &program.declarations,
                 element,
-            )
+            ) || crate::hir::owned_leaf_collection::layout(&program.declarations, element).is_some()
         }) {
             let layout = variant_layout(variant_layouts, ty)?;
             return Ok((layout.size, layout.align));
@@ -1418,20 +1176,6 @@ pub(super) fn lower_selected_function_instances(
     })
 }
 
-pub(super) fn emit(program: &ResolvedProgram) -> Result<Vec<u8>, Diagnostic> {
-    emit_profile(program, false, false)
-}
-
-/// Emit the frozen public scalar wrappers over the aggregate lane's internal
-/// result-pointer/status ABI. Admission remains wholly owned by
-/// `scalar_exports::prepare`; this function only transports its exact plan.
-pub(super) fn emit_scalar_exports(
-    program: &ResolvedProgram,
-    plans: &[super::scalar_exports::ScalarExportPlan],
-) -> Result<Vec<u8>, Diagnostic> {
-    emit_profile_with_scalar_exports(program, false, false, plans)
-}
-
 #[cfg(test)]
 pub(super) fn emit_stdout_transcript(program: &ResolvedProgram) -> Result<Vec<u8>, Diagnostic> {
     emit_profile(program, false, true)
@@ -1503,28 +1247,42 @@ fn emit_byte_exports_profile(
             .iter()
             .map(|body| (body, FunctionExecutionId::Monomorphic(body.id.clone()))),
     );
-    let has_owned_utf8 = (command_io
-        .is_some_and(super::command_io::CommandPlan::is_environment_command)
-        && super::program_uses_strings(program))
+    let static_utf8 = crate::hir::validate_with_static_text(program)?;
+    if static_utf8 && (!plans.is_empty() || !owned_plans.is_empty()) {
+        return Err(Diagnostic::io(
+            "SPX-W119",
+            "static borrowed UTF-8 does not widen public data export profiles",
+        ));
+    }
+    let has_owned_utf8 = static_utf8
+        // Runtime selection follows the exact bodies emitted below, including
+        // materialized instances and closure bodies, not only their signatures.
+        || super::functions_use_strings(executable_functions.iter().map(|(function, _)| *function))
+        || (command_io.is_some_and(super::command_io::CommandPlan::is_environment_command)
+            && super::program_uses_strings(program))
         || owned_plans
             .iter()
             .any(|plan| plan.result == super::owned_data_exports::ResultLayout::Utf8)
         || executable_functions.iter().any(|(function, _)| {
             function.return_type == ResolvedType::String
-                || crate::hir::owned_text_record::admitted(
+                || crate::hir::owned_text_record::runtime_admitted(
                     &function.return_type,
                     &program.declarations,
                 )
                 || function.params.iter().any(|param| {
                     param.ty == ResolvedType::String
-                        || crate::hir::owned_text_record::admitted(&param.ty, &program.declarations)
+                        || crate::hir::owned_text_record::runtime_admitted(
+                            &param.ty,
+                            &program.declarations,
+                        )
                 })
         });
     let uses_str_ops = program_uses_str_ops(program);
     let text_helper_count = if uses_str_ops { 2_u32 } else { 0 };
     let mut owned_utf8_literals = OwnedUtf8Literals {
+        static_pool: static_utf8,
         base: command_io
-            .filter(|plan| plan.is_environment_command())
+            .filter(|plan| static_utf8 || plan.is_environment_command())
             .map(|_| 393_216),
         ..Default::default()
     };
@@ -1945,17 +1703,18 @@ fn emit_byte_exports_profile(
 
     let mut memory = Vec::new();
     write_u32(&mut memory, 1);
-    let base_memory_pages = if has_owned_utf8 && environment_io {
-        7
-    } else if has_owned_utf8 {
-        4
-    } else if command_io.is_some() {
-        6
-    } else if host_output {
-        super::host_output::MEMORY_PAGES
-    } else {
-        super::data_exports::FIXED_MEMORY_PAGES
-    };
+    let base_memory_pages =
+        if has_owned_utf8 && (environment_io || static_utf8 && command_io.is_some()) {
+            7
+        } else if has_owned_utf8 {
+            4
+        } else if command_io.is_some() {
+            6
+        } else if host_output {
+            super::host_output::MEMORY_PAGES
+        } else {
+            super::data_exports::FIXED_MEMORY_PAGES
+        };
     let memory_pages = base_memory_pages;
     memory.extend([0x01, memory_pages, memory_pages]);
     section(&mut module, 5, memory);
@@ -2274,7 +2033,7 @@ fn emit_profile(
     test_exports: bool,
     host_output: bool,
 ) -> Result<Vec<u8>, Diagnostic> {
-    emit_profile_with_scalar_exports(program, test_exports, host_output, &[])
+    emit_profile_with_scalar_exports(program, test_exports, host_output, &[], None)
 }
 
 fn emit_profile_with_scalar_exports(
@@ -2282,20 +2041,25 @@ fn emit_profile_with_scalar_exports(
     test_exports: bool,
     host_output: bool,
     scalar_exports: &[super::scalar_exports::ScalarExportPlan],
+    checked_static_utf8: Option<bool>,
 ) -> Result<Vec<u8>, Diagnostic> {
     string_runtime::refuse_unimplemented_collections(program)?;
     let uses_string_runtime = string_runtime::program_uses_runtime(program);
+    let text_helper_count = u32::from(program_uses_str_ops(program)) * 2;
     let uses_record_iterator = crate::iterator_ops::resolved_program_uses_record_iterator(program);
     let uses_maps = map_collections::uses(program);
     let uses_byte_data = super::program_uses_byte_data(program)
         || super::program_uses_strings(program)
         || uses_record_iterator
-        || uses_maps;
+        || uses_maps
+        || super::vec_ops::program_uses_owned_leaf_vec(program);
     let uses_owned_buffer = program_uses_owned_buffer(program);
     let uses_vec = super::program_uses_vec(program);
     let uses_extended_vec = super::vec_ops::program_uses_extended_vec(program);
     let uses_vec_sort = crate::vec_ops::resolved_program_uses_sort(program);
     let uses_vec_record = super::vec_ops::program_uses_record_vec(program);
+    let uses_owned_leaf_vec = super::vec_ops::program_uses_owned_leaf_vec(program)
+        || vec_owned_leaf::binds_record_keys(program);
     let uses_owned_iterator = crate::iterator_ops::resolved_program_uses_owned_iterator(program);
     let uses_box = super::program_uses_box(program);
     let uses_list = crate::list_ops::resolved_program_uses_list(program);
@@ -2320,6 +2084,16 @@ fn emit_profile_with_scalar_exports(
 
     let mut types = Vec::<Signature>::new();
     let mut type_indexes = HashMap::<Signature, u32>::new();
+    let partition_type = byte_partition::uses(program).then(|| {
+        intern_type(
+            Signature {
+                params: vec![I64, I64, I64],
+                results: vec![I64, I32],
+            },
+            &mut types,
+            &mut type_indexes,
+        )
+    });
     let binary_checked = intern_type(
         Signature {
             params: vec![I64, I64],
@@ -2374,6 +2148,8 @@ fn emit_profile_with_scalar_exports(
             &mut type_indexes,
         )
     });
+    let text_helper_type =
+        str_helpers::helper_type(text_helper_count, &mut types, &mut type_indexes);
     let string_from_char = uses_string_runtime.then(|| {
         intern_type(
             Signature {
@@ -2466,6 +2242,8 @@ fn emit_profile_with_scalar_exports(
             &mut type_indexes,
         )
     });
+    let owned_leaf_types =
+        vec_owned_leaf::import_types(program, uses_owned_leaf_vec, &mut types, &mut type_indexes);
     let (iter_into, iter_next, iter_drop, record_iter_next) = iterator_ops::intern_import_types(
         uses_owned_iterator,
         uses_record_iterator,
@@ -2558,6 +2336,7 @@ fn emit_profile_with_scalar_exports(
     );
     let map_types = map_collections::import_types(program, &mut types, &mut type_indexes);
     let toolkit_types = text_toolkit::import_types(program, &mut types, &mut type_indexes);
+    let format_step_type = literal_format::import_type(program, &mut types, &mut type_indexes);
     let map_count = if uses_maps {
         map_collections::IMPORT_COUNT
     } else {
@@ -2614,10 +2393,35 @@ fn emit_profile_with_scalar_exports(
                         0
                     }
                     + map_count
+                    + if uses_owned_leaf_vec {
+                        vec_owned_leaf::import_count(program)
+                    } else {
+                        0
+                    }
+                    + u32::from(partition_type.is_some())
+                    + text_helper_count
                     + u32::try_from(index).unwrap_or(u32::MAX),
             )
         })
         .collect::<HashMap<_, _>>();
+    let partition_index = partition_type.map(|_| {
+        function_indexes
+            .values()
+            .copied()
+            .min()
+            .expect("checked main function")
+            - text_helper_count
+            - 1
+    });
+    str_helpers::insert_indexes(text_helper_count, &mut function_indexes)?;
+    if let Some(index) = partition_index {
+        function_indexes.insert(
+            FunctionExecutionId::Monomorphic(crate::hir::DeclarationId::new(
+                crate::construction_fusion::partition::ID,
+            )),
+            index,
+        );
+    }
 
     let mut module = b"\0asm\x01\0\0\0".to_vec();
     let mut type_section = Vec::new();
@@ -2663,7 +2467,13 @@ fn emit_profile_with_scalar_exports(
             } else {
                 0
             }
-            + map_count,
+            + map_count
+            + u32::from(partition_type.is_some())
+            + if uses_owned_leaf_vec {
+                vec_owned_leaf::import_count(program)
+            } else {
+                0
+            },
     );
     for name in ["spx_add", "spx_sub", "spx_mul", "spx_div", "spx_rem"] {
         function_import(&mut imports, "env", name, binary_checked);
@@ -2745,6 +2555,7 @@ fn emit_profile_with_scalar_exports(
                 *ty,
             );
         }
+        literal_format::emit_import(&mut imports, format_step_type);
         let base = SCALAR_IMPORT_COUNT
             + if uses_byte_data { BYTE_IMPORT_COUNT } else { 0 }
             + if uses_owned_buffer {
@@ -2784,6 +2595,13 @@ fn emit_profile_with_scalar_exports(
                     + offset as u32,
             );
         }
+        literal_format::insert_index(
+            &mut function_indexes,
+            base,
+            program,
+            toolkit_types.len(),
+            format_step_type,
+        );
     }
     if let Some(types) = map_types {
         let base = SCALAR_IMPORT_COUNT
@@ -2820,14 +2638,30 @@ fn emit_profile_with_scalar_exports(
         map_collections::emit_imports(&mut imports, types);
         map_collections::insert_indexes(&mut function_indexes, base);
     }
+    if let Some(types) = owned_leaf_types {
+        vec_owned_leaf::emit_imports(&mut imports, types);
+    }
+    if let Some(ty) = partition_type {
+        function_import(&mut imports, "env", "spx_bytes_partition", ty);
+    }
     section(&mut module, 2, imports);
 
     let mut function_section = Vec::new();
     write_u32(
         &mut function_section,
-        u32::try_from(function_types.len() + 1 + scalar_export_types.len() + adapter_types.len())
-            .map_err(|_| error("too many aggregate functions"))?,
+        u32::try_from(
+            function_types.len()
+                + 1
+                + scalar_export_types.len()
+                + adapter_types.len()
+                + text_helper_count as usize,
+        )
+        .map_err(|_| error("too many aggregate functions"))?,
     );
+    if let Some(ty) = text_helper_type {
+        write_u32(&mut function_section, ty);
+        write_u32(&mut function_section, ty);
+    }
     for ty in function_types {
         write_u32(&mut function_section, ty);
     }
@@ -2847,16 +2681,31 @@ fn emit_profile_with_scalar_exports(
         write_u32(&mut tables, function_value_plan.targets.len() as u32);
         section(&mut module, 4, tables);
     }
-    let owned_utf8 = super::program_uses_strings(program);
-    let mut utf8_literals = OwnedUtf8Literals::default();
+    let static_utf8 = match checked_static_utf8 {
+        Some(selected) => selected,
+        None => crate::hir::static_text::validate_pool(program)?,
+    };
+    let owned_utf8 = static_utf8 || super::program_uses_strings(program);
+    let mut utf8_literals = OwnedUtf8Literals {
+        static_pool: static_utf8,
+        ..Default::default()
+    };
     let mut memory = Vec::new();
     write_u32(&mut memory, 1);
     if uses_byte_data {
         if host_output {
             memory.extend([
                 0x01,
-                super::host_output::MEMORY_PAGES,
-                super::host_output::MEMORY_PAGES,
+                if static_utf8 {
+                    4
+                } else {
+                    super::host_output::MEMORY_PAGES
+                },
+                if static_utf8 {
+                    4
+                } else {
+                    super::host_output::MEMORY_PAGES
+                },
             ]);
         } else {
             let pages = if owned_utf8 { 4 } else { 2 };
@@ -2972,7 +2821,17 @@ fn emit_profile_with_scalar_exports(
             })
         })
         .and_then(|value| value.checked_add(map_count))
+        .and_then(|value| value.checked_add(u32::from(partition_type.is_some())))
+        .and_then(|value| {
+            value.checked_add(if uses_owned_leaf_vec {
+                vec_owned_leaf::import_count(program)
+            } else {
+                0
+            })
+        })
         .ok_or_else(|| error("aggregate wrapper import count overflows u32"))?
+        .checked_add(text_helper_count)
+        .ok_or_else(|| error("text helper count overflows u32"))?
         .checked_add(
             u32::try_from(executable_functions.len()).map_err(|_| error("too many functions"))?,
         )
@@ -3057,9 +2916,16 @@ fn emit_profile_with_scalar_exports(
     let mut code = Vec::new();
     write_u32(
         &mut code,
-        u32::try_from(executable_functions.len() + 1 + scalar_exports.len() + adapter_types.len())
-            .map_err(|_| error("too many aggregate function bodies"))?,
+        u32::try_from(
+            executable_functions.len()
+                + 1
+                + scalar_exports.len()
+                + adapter_types.len()
+                + text_helper_count as usize,
+        )
+        .map_err(|_| error("too many aggregate function bodies"))?,
     );
+    str_helpers::append_bodies(text_helper_count, &mut code);
     for (function, _) in &executable_functions {
         let body = emit_function(
             program,
@@ -3309,6 +3175,9 @@ fn emit_function_profile(
         bindings,
         call_argument_values: HashMap::new(),
         control_depth: 0,
+        lexical_loops: Vec::new(),
+        lexical_resume: None,
+        iterator_true_match: None,
         status_exit_extra_depth: 1,
         try_target_enabled: false,
         failure_expression: None,
@@ -3331,6 +3200,7 @@ fn emit_function_profile(
         emitter.failure_expression = Some(contract.id.clone());
         emitter.fail_if_in_lane(STATUS_REQUIRES_FALSE, StatusLane::ContractFalse)?;
         emitter.failure_expression = None;
+        emitter.emit_contract_scope_success(&contract.id)?;
     }
     if plan.has_try {
         emitter.output.extend([0x02, 0x40]);
@@ -3339,34 +3209,7 @@ fn emit_function_profile(
     }
     let result = emitter.emit_expr(&function.body)?;
     emitter.try_target_enabled = false;
-    let staged = if let Some(local) = plan.result_stage_scalar {
-        emitter.require_scalar(&result, &function.return_type, "function result")?;
-        emitter.get_scalar(&result);
-        emitter.output.push(0x21);
-        write_u32(emitter.output, local);
-        if owned_string_profile && function.return_type == ResolvedType::String
-            || crate::map_ops::is_collection(&function.return_type)
-        {
-            emitter.clear_scalar(&result)?;
-        }
-        Value::Scalar {
-            local,
-            ty: function.return_type.clone(),
-        }
-    } else {
-        let offset = plan
-            .result_stage_aggregate
-            .ok_or_else(|| error("missing aggregate result staging slot"))?;
-        let staged = Value::Aggregate {
-            pointer: Pointer {
-                local: plan.frame_base,
-                offset,
-            },
-            ty: function.return_type.clone(),
-        };
-        emitter.copy_value(&staged, &result, "function result")?;
-        staged
-    };
+    let staged = emitter.stage_function_result(&result)?;
     if let Some(result_staged) = plan.result_staged {
         emitter.output.extend([0x41, 0x01, 0x21]);
         write_u32(emitter.output, result_staged);
@@ -3379,16 +3222,20 @@ fn emit_function_profile(
     emitter
         .bindings
         .insert(function.result_id.clone(), staged.clone());
-    for contract in &function.ensures {
-        let condition = emitter.emit_expr(contract)?;
-        emitter.require_scalar(&condition, &ResolvedType::Bool, "postcondition")?;
-        emitter.get_scalar(&condition);
-        emitter.output.push(0x45);
-        emitter.failure_expression = Some(contract.id.clone());
-        emitter.fail_if_in_lane(STATUS_ENSURES_FALSE, StatusLane::ContractFalse)?;
-        emitter.failure_expression = None;
+    if function.cleanup_plan.lexical_control.is_some() {
+        emitter.emit_lexical_epilogues()?;
+    } else {
+        for contract in &function.ensures {
+            let condition = emitter.emit_expr(contract)?;
+            emitter.require_scalar(&condition, &ResolvedType::Bool, "postcondition")?;
+            emitter.get_scalar(&condition);
+            emitter.output.push(0x45);
+            emitter.failure_expression = Some(contract.id.clone());
+            emitter.fail_if_in_lane(STATUS_ENSURES_FALSE, StatusLane::ContractFalse)?;
+            emitter.failure_expression = None;
+        }
+        emitter.emit_success_cleanup(&function.cleanup_plan)?;
     }
-    emitter.emit_success_cleanup(&function.cleanup_plan)?;
     let caller = if is_aggregate(program, &function.return_type)? {
         Value::Aggregate {
             pointer: Pointer {
@@ -3544,6 +3391,9 @@ struct Emitter<'a> {
     /// Exact physical carriers for authenticated call-argument epochs.
     call_argument_values: HashMap<crate::cleanup_plan::StorageId, Value>,
     control_depth: u32,
+    lexical_loops: Vec<lexical_control::LoopLabel<'a>>,
+    lexical_resume: Option<crate::cleanup_plan::BlockId>,
+    iterator_true_match: Option<ExpressionId>,
     status_exit_extra_depth: u32,
     try_target_enabled: bool,
     failure_expression: Option<ExpressionId>,
@@ -3560,6 +3410,9 @@ struct Emitter<'a> {
 impl Emitter<'_> {
     fn emit_expr(&mut self, expr: &ResolvedExpr) -> Result<Value, Diagnostic> {
         let value = self.emit_expr_inner(expr)?;
+        if matches!(value, Value::Bottom) {
+            return Ok(value);
+        }
         let owned_match = matches!(
             expr.kind,
             ResolvedExprKind::Match {
@@ -3578,7 +3431,20 @@ impl Emitter<'_> {
         );
         if !owned_match {
             if !owned_try {
-                self.apply_post_transitions(&expr.id, &value)?;
+                if self.cleanup_plan.lexical_control.is_some()
+                    && matches!(expr.kind, ResolvedExprKind::Block { .. })
+                {
+                    // The block-result handoff preceded its canonical scope end.
+                    // Remaining at-anchor continuations occur after that boundary.
+                    self.apply_post_transitions_storage(
+                        &expr.id,
+                        &value,
+                        &crate::cleanup_plan::StorageId::Temporary(expr.id.clone()),
+                        false,
+                    )?;
+                } else {
+                    self.apply_post_transitions(&expr.id, &value)?;
+                }
             }
             nested_owned::emit_update_scope_cleanup(self, expr)?;
         }
@@ -3590,10 +3456,11 @@ impl Emitter<'_> {
         plan: &crate::cleanup_plan::CleanupPlan,
     ) -> Result<(), Diagnostic> {
         let mut commits = plan.exits.iter().filter(|exit| {
-            matches!(
-                exit.continuation,
-                crate::cleanup_plan::ExitContinuation::CommitResult { .. }
-            )
+            plan.lexical_block_in_context(self.lexical_resume, exit.from)
+                && matches!(
+                    exit.continuation,
+                    crate::cleanup_plan::ExitContinuation::CommitResult { .. }
+                )
         });
         let commit = commits
             .next()
@@ -3611,6 +3478,12 @@ impl Emitter<'_> {
     ) -> Result<(), Diagnostic> {
         let mut selected = None;
         for exit in &self.cleanup_plan.exits {
+            if !self
+                .cleanup_plan
+                .lexical_block_in_context(self.lexical_resume, exit.from)
+            {
+                continue;
+            }
             if let crate::cleanup_plan::ExitContinuation::ReturnFailure { source } =
                 &exit.continuation
             {
@@ -3640,6 +3513,7 @@ impl Emitter<'_> {
             .cleanup_plan
             .regions
             .iter()
+            .filter(|region| self.lexical_region_in_context(region.id))
             .filter(|region| region.slots.iter().any(|slot| anchors.contains(slot)))
             .collect::<Vec<_>>();
         let region = match matching.as_slice() {
@@ -3666,10 +3540,7 @@ impl Emitter<'_> {
             return Ok(());
         }
         let exit = self
-            .cleanup_plan
-            .exits
-            .get(region.normal_scope_end.0 as usize)
-            .filter(|exit| exit.id == region.normal_scope_end)
+            .lexical_scope_end(region)
             .ok_or_else(|| error("Bytes block region has no exact normal-scope exit"))?;
         if !matches!(
             exit.continuation,
@@ -3690,15 +3561,20 @@ impl Emitter<'_> {
         let crate::hir::ResolvedMatchPattern::Record { fields, .. } = pattern else {
             return Err(error("owned record match cleanup has a non-record pattern"));
         };
-        let storage = nested_owned::owned_record_pattern_anchors(fields)?;
+        let storage = nested_owned::owned_record_pattern_anchors(self.program, fields)?;
         if storage.is_empty() {
             return Err(error("owned record match has no Bytes bindings"));
         }
-        let mut regions = self.cleanup_plan.regions.iter().filter(|region| {
-            storage
-                .iter()
-                .all(|candidate| region.slots.contains(candidate))
-        });
+        let mut regions = self
+            .cleanup_plan
+            .regions
+            .iter()
+            .filter(|region| self.lexical_region_in_context(region.id))
+            .filter(|region| {
+                storage
+                    .iter()
+                    .all(|candidate| region.slots.contains(candidate))
+            });
         let region = regions
             .next()
             .ok_or_else(|| error("owned record bindings have no CleanupPlan region"))?;
@@ -3708,10 +3584,7 @@ impl Emitter<'_> {
             ));
         }
         let exit = self
-            .cleanup_plan
-            .exits
-            .get(region.normal_scope_end.0 as usize)
-            .filter(|exit| exit.id == region.normal_scope_end)
+            .lexical_scope_end(region)
             .ok_or_else(|| error("owned record match region has no normal exit"))?;
         if !matches!(
             exit.continuation,
@@ -3884,6 +3757,7 @@ impl Emitter<'_> {
             ));
         }
         match value {
+            Value::Bottom => return Err(error("a bottom completion has no scalar storage")),
             Value::Scalar { local, .. } => {
                 self.output.extend([0x42, 0x00, 0x21]);
                 write_u32(self.output, *local);
@@ -4129,6 +4003,10 @@ impl Emitter<'_> {
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter_map(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::CallCommit { call, arguments }
@@ -4163,6 +4041,10 @@ impl Emitter<'_> {
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter_map(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::Transfer {
@@ -4389,6 +4271,10 @@ impl Emitter<'_> {
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::Initialize { at, destination } => {
@@ -4463,6 +4349,10 @@ impl Emitter<'_> {
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter_map(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::TransferVariant {
@@ -4498,14 +4388,22 @@ impl Emitter<'_> {
         expression: &ExpressionId,
         selected: &DeclarationId,
     ) -> Result<(), Diagnostic> {
-        let mut blocks = self.cleanup_plan.blocks.iter().filter(|block| {
-            block.transitions.iter().any(|transition| {
-                matches!(transition,
+        let mut blocks = self
+            .cleanup_plan
+            .blocks
+            .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
+            .filter(|block| {
+                block.transitions.iter().any(|transition| {
+                    matches!(transition,
                         crate::cleanup_plan::CleanupTransition::AuthenticateVariantCase {
                             at, case, ..
                         } if at == expression && case == selected)
-            })
-        });
+                })
+            });
         let block = blocks
             .next()
             .ok_or_else(|| error("owned Try success has no authenticated cleanup block"))?;
@@ -4572,6 +4470,10 @@ impl Emitter<'_> {
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter_map(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::Transfer {
@@ -4607,6 +4509,9 @@ impl Emitter<'_> {
 
     fn emit_complex_expr(&mut self, expr: &ResolvedExpr) -> Result<Value, Diagnostic> {
         match &expr.kind {
+            ResolvedExprKind::LexicalExit { .. } => {
+                Err(error("lexical exit bypassed its typed emitter"))
+            }
             ResolvedExprKind::Closure { .. } => self.emit_closure(expr),
             ResolvedExprKind::FunctionReference { target } => {
                 self.emit_function_reference(expr, target)
@@ -4706,6 +4611,33 @@ impl Emitter<'_> {
                     ty: ResolvedType::Bool,
                 })
             }
+            ResolvedExprKind::BorrowedUtf8Literal(value) => {
+                if self.standalone_strings {
+                    return Err(error(
+                        "static borrowed UTF-8 is outside the standalone String arena profile",
+                    ));
+                }
+                let literals = self
+                    .owned_utf8_literals
+                    .as_deref_mut()
+                    .filter(|table| table.static_pool)
+                    .ok_or_else(|| {
+                        error("static borrowed UTF-8 lacks an authenticated literal pool")
+                    })?;
+                let (offset, length) = literals.intern(value.as_str())?;
+                let destination = self.plan.expr_scalar(expr)?;
+                self.output.push(0x42);
+                write_i64(
+                    self.output,
+                    ((u64::from(offset) << 32) | u64::from(length)) as i64,
+                );
+                self.output.push(0x21);
+                write_u32(self.output, destination);
+                Ok(Value::Scalar {
+                    local: destination,
+                    ty: ResolvedType::Str,
+                })
+            }
             ResolvedExprKind::String(value) => {
                 let literals = self.owned_utf8_literals.as_deref_mut().ok_or_else(|| {
                     error("owned string literal reached a non-v10 WebAssembly profile")
@@ -4740,6 +4672,9 @@ impl Emitter<'_> {
                 })
             }
             ResolvedExprKind::Place(place) => {
+                if let Some(value) = self.emit_row_loan_read(expr, place)? {
+                    return Ok(value);
+                }
                 let value = self.place_value(place)?;
                 if self.string_condition_reads.contains(&expr.id) {
                     return Ok(value);
@@ -4747,7 +4682,7 @@ impl Emitter<'_> {
                 if self.owned_utf8_literals.is_some()
                     && expr.ty == ResolvedType::String
                     && expr.ownership == crate::hir::OwnershipMode::Own
-                    && !self.moves_string_owner(expr)
+                    && !self.moves_string_owner(expr)?
                 {
                     let local = self.plan.expr_scalar(expr)?;
                     owned_strings::emit_empty_guard(self.output, local);
@@ -4790,10 +4725,16 @@ impl Emitter<'_> {
             ResolvedExprKind::Unary { .. }
             | ResolvedExprKind::Binary { .. }
             | ResolvedExprKind::Block { .. }
+            | ResolvedExprKind::VecConstructor { .. }
             | ResolvedExprKind::If { .. }
-            | ResolvedExprKind::Call { .. } => {
+            | ResolvedExprKind::Call { .. }
+            | ResolvedExprKind::LiteralFormat { .. }
+            | ResolvedExprKind::VecFieldRead { .. } => {
                 unreachable!("recursive expression is handled by the small dispatcher")
             }
+            ResolvedExprKind::RowLoan { .. } => Err(error(
+                "row loan reached evaluation outside its call argument slot",
+            )),
             ResolvedExprKind::ConstructRecord { record, fields } => {
                 let destination = Value::Aggregate {
                     pointer: self.plan.expr_pointer(expr)?,
@@ -4930,7 +4871,9 @@ impl Emitter<'_> {
                     let [arm] = arms.as_slice() else {
                         return Err(error("irrefutable record match must have exactly one arm"));
                     };
-                    let destination = if aggregate_result {
+                    let destination = if expr.ty == ResolvedType::Never {
+                        Value::Bottom
+                    } else if aggregate_result {
                         Value::Aggregate {
                             pointer: self.plan.expr_pointer(expr)?,
                             ty: expr.ty.clone(),
@@ -4948,7 +4891,7 @@ impl Emitter<'_> {
                     // any canonical transition vector.
                     let match_bindings = match &arm.pattern {
                         crate::hir::ResolvedMatchPattern::Record { fields, .. } => {
-                            nested_owned::owned_record_pattern_anchors(fields)?
+                            nested_owned::owned_record_pattern_anchors(self.program, fields)?
                         }
                         _ => BTreeSet::new(),
                     };
@@ -4992,7 +4935,9 @@ impl Emitter<'_> {
                     // dead before scope exit.
                     let value = self.emit_expr(&arm.value)?;
                     self.copy_value(&destination, &value, "record match arm result")?;
-                    if *mode == crate::hir::ResolvedMatchMode::Own {
+                    if *mode == crate::hir::ResolvedMatchMode::Own
+                        && !matches!(value, Value::Bottom)
+                    {
                         self.emit_owned_record_match_cleanup(&arm.pattern)?;
                         self.authenticate_record_match_phase(
                             &expr.id,
@@ -5026,7 +4971,9 @@ impl Emitter<'_> {
                 } else {
                     self.fail_if(STATUS_INTERNAL_INVALID_TAG)?;
                 }
-                let destination = if aggregate_result {
+                let destination = if expr.ty == ResolvedType::Never {
+                    Value::Bottom
+                } else if aggregate_result {
                     Value::Aggregate {
                         pointer: self.plan.expr_pointer(expr)?,
                         ty: expr.ty.clone(),
@@ -5048,7 +4995,11 @@ impl Emitter<'_> {
                 if arms.iter().any(|arm| arm.guard.is_some()) {
                     self.emit_guarded_variant_match(&emission)?;
                 } else {
-                    self.emit_match_arms(&emission, 0)?;
+                    let yield_only = self.iterator_true_match.as_ref() == Some(&expr.id);
+                    let normal = self.emit_match_arms(&emission, usize::from(yield_only))?;
+                    if yield_only && !normal {
+                        return Ok(Value::Bottom);
+                    }
                 }
                 if aggregate_result {
                     self.apply_variant_match_continuation(expr, &destination)?;
@@ -5548,6 +5499,9 @@ impl Emitter<'_> {
     }
 
     fn materialize(&mut self, expr: &ResolvedExpr, source: &Value) -> Result<Value, Diagnostic> {
+        if matches!(source, Value::Bottom) {
+            return Ok(Value::Bottom);
+        }
         let destination = if is_aggregate(self.program, &expr.ty)? {
             Value::Aggregate {
                 pointer: self.plan.expr_pointer(expr)?,
@@ -5561,7 +5515,8 @@ impl Emitter<'_> {
         };
         if expr.ownership == crate::hir::OwnershipMode::Borrow
             && (matches!(expr.ty, ResolvedType::Bytes | ResolvedType::String)
-                || crate::map_ops::is_collection(&expr.ty))
+                || crate::map_ops::is_collection(&expr.ty)
+                || owned_vec(self.program, &expr.ty))
         {
             self.copy_borrowed_scalar_alias(&destination, source)?;
         } else {
@@ -5574,7 +5529,7 @@ impl Emitter<'_> {
         &mut self,
         emission: &VariantMatchEmission<'_>,
         index: usize,
-    ) -> Result<(), Diagnostic> {
+    ) -> Result<bool, Diagnostic> {
         let VariantMatchEmission {
             destination,
             scrutinee,
@@ -5587,9 +5542,10 @@ impl Emitter<'_> {
         let mode = *mode;
         let Some(arm) = arms.get(index) else {
             self.output.push(0x00);
-            return Ok(());
+            return Ok(false);
         };
         let saved = self.bindings.clone();
+        let mut normal = false;
         if arm.guard.is_some() {
             return Err(error("guards are outside aggregate match lowering"));
         }
@@ -5631,13 +5587,14 @@ impl Emitter<'_> {
                     self.output.extend([0xfc, 0x0b, 0x00]);
                 }
                 let value = self.emit_expr(&arm.value)?;
+                normal |= !matches!(value, Value::Bottom);
                 self.copy_value(destination, &value, "match arm result")?;
-                if mode == crate::hir::ResolvedMatchMode::Own {
+                if mode == crate::hir::ResolvedMatchMode::Own && !matches!(value, Value::Bottom) {
                     self.emit_owned_variant_match_cleanup(fields)?;
                 }
                 self.bindings = saved.clone();
                 self.output.push(0x05);
-                self.emit_match_arms(emission, index + 1)?;
+                normal |= self.emit_match_arms(emission, index + 1)?;
                 self.control_depth -= 1;
                 self.output.push(0x0b);
             }
@@ -5646,13 +5603,15 @@ impl Emitter<'_> {
                     return Err(error("owned variant wildcard cannot hide a live payload"));
                 }
                 let value = self.emit_expr(&arm.value)?;
+                normal |= !matches!(value, Value::Bottom);
                 self.copy_value(destination, &value, "wildcard match arm result")?;
             }
             crate::hir::ResolvedMatchPattern::Record { .. } => {
                 return Err(error("record pattern has a variant match scrutinee"));
             }
             crate::hir::ResolvedMatchPattern::Or(alternatives) => {
-                self.emit_case_or_arm(emission, index, alternatives)?
+                self.emit_case_or_arm(emission, index, alternatives)?;
+                normal = true;
             }
             crate::hir::ResolvedMatchPattern::Literal(_)
             | crate::hir::ResolvedMatchPattern::Binding(_) => {
@@ -5662,7 +5621,7 @@ impl Emitter<'_> {
             }
         }
         self.bindings = saved;
-        Ok(())
+        Ok(normal)
     }
 
     /// Refutable Match v1 aggregate-lane lowering. The scrutinee is a scalar
@@ -5685,18 +5644,19 @@ impl Emitter<'_> {
         else {
             return Err(error("scalar match scrutinee is not scalar storage"));
         };
-        let destination =
-            if crate::variant_guards::copy_variant(&self.program.declarations, &expr.ty) {
-                Value::Aggregate {
-                    pointer: self.plan.expr_pointer(expr)?,
-                    ty: expr.ty.clone(),
-                }
-            } else {
-                Value::Scalar {
-                    local: self.plan.expr_scalar(expr)?,
-                    ty: expr.ty.clone(),
-                }
-            };
+        let destination = if expr.ty == ResolvedType::Never {
+            Value::Bottom
+        } else if crate::variant_guards::copy_variant(&self.program.declarations, &expr.ty) {
+            Value::Aggregate {
+                pointer: self.plan.expr_pointer(expr)?,
+                ty: expr.ty.clone(),
+            }
+        } else {
+            Value::Scalar {
+                local: self.plan.expr_scalar(expr)?,
+                ty: expr.ty.clone(),
+            }
+        };
         // block $done (void): selecting any arm jumps here after storing.
         self.output.extend([0x02, 0x40]);
         self.control_depth += 1;
@@ -5747,7 +5707,7 @@ impl Emitter<'_> {
             }
             let value = self.emit_expr(&arm.value)?;
             self.copy_value(&destination, &value, "refutable match arm result")?;
-            if !(arms.len() == 1 && arm.guard.is_none()) {
+            if !matches!(value, Value::Bottom) && !(arms.len() == 1 && arm.guard.is_none()) {
                 self.emit_scalar_match_value_cleanup(expr, &arm.value)?;
             }
             self.bindings = saved;
@@ -6209,26 +6169,10 @@ impl Emitter<'_> {
                 && crate::cleanup::is_owned_bounded_box_type(&parameter.ty);
             let borrowed_aggregate = parameter.ownership == crate::hir::OwnershipMode::Borrow
                 && is_aggregate(self.program, &parameter.ty)?;
-            let value = if borrowed_bytes || borrowed_vec || borrowed_box || borrowed_aggregate {
-                let ResolvedExprKind::Place(place) = &argument.kind else {
-                    return Err(error(if borrowed_bytes || borrowed_vec || borrowed_box {
-                        "borrowed direct owner call argument is not an exact place"
-                    } else {
-                        "borrowed aggregate call argument is not an exact place"
-                    }));
-                };
-                if (borrowed_vec || borrowed_box || borrowed_aggregate)
-                    && !place.projections.is_empty()
-                {
-                    return Err(error(
-                        "borrowed aggregate call projections are outside flat v1",
-                    ));
-                }
-                // Borrowed record parameters alias the authenticated caller
-                // carrier. Going through ordinary expression materialization
-                // would perform an owned field move while CleanupPlan quite
-                // correctly emits no ownership transition for the borrow.
-                self.place_value(place)?
+            let value = if matches!(argument.kind, ResolvedExprKind::RowLoan { .. }) {
+                self.emit_row_loan_argument(argument)?
+            } else if borrowed_bytes || borrowed_vec || borrowed_box || borrowed_aggregate {
+                self.borrowed_call_argument(argument, borrowed_bytes)?
             } else {
                 self.emit_expr(argument)?
             };
@@ -6267,6 +6211,7 @@ impl Emitter<'_> {
         self.apply_call_commit(&expr.id)?;
         for value in &values {
             match value {
+                Value::Bottom => return Err(error("Never cannot be passed through a call ABI")),
                 Value::Scalar { local, .. } => {
                     self.output.push(0x20);
                     write_u32(self.output, *local);
@@ -6367,14 +6312,29 @@ impl Emitter<'_> {
         type_arguments: &[ResolvedType],
         args: &[ResolvedExpr],
     ) -> Result<Value, Diagnostic> {
+        if op == crate::vec_ops::VecOp::StrAt {
+            return self.emit_string_slot(expr);
+        }
+        if op == crate::vec_ops::VecOp::UniqueBy {
+            return self.emit_field_unique(expr);
+        }
         let [element] = type_arguments else {
             return Err(error("Vec operation requires one exact type argument"));
         };
+        if crate::hir::copy_record_collection::admitted(&self.program.declarations, element) {
+            return self.emit_copy_record_vec(expr, op, element, args);
+        }
         if crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
             &self.program.declarations,
             element,
-        ) {
+        ) && !op.owned_leaf_only()
+            && !vec_field::typed_legacy_constructor(self.program, op)
+        {
             return self.emit_vec_record_payload(expr, op, element, args);
+        }
+        if crate::hir::owned_leaf_collection::layout(&self.program.declarations, element).is_some()
+        {
+            return self.emit_owned_leaf_vec(expr, op, element, args);
         }
         if !crate::vec_ops::resolved_operation_element_is_admitted(op, element)
             || args.len() != op.arity()
@@ -6658,6 +6618,15 @@ impl Emitter<'_> {
                 self.store_vec_element_bits(&result, element)?;
                 Ok(result)
             }
+            crate::vec_ops::VecOp::StrAt
+            | crate::vec_ops::VecOp::CloneAt
+            | crate::vec_ops::VecOp::Replace
+            | crate::vec_ops::VecOp::ReserveOwned
+            | crate::vec_ops::VecOp::SortOwned
+            | crate::vec_ops::VecOp::SortBy
+            | crate::vec_ops::VecOp::UniqueBy => {
+                Err(error("owned-leaf Vec operation has no admitted element"))
+            }
         }
     }
 
@@ -6669,8 +6638,14 @@ impl Emitter<'_> {
         let ResolvedExprKind::Place(place) = &argument.kind else {
             return Err(error("borrowed Vec argument is not an exact place"));
         };
-        if !place.projections.is_empty() {
-            return Err(error("borrowed Vec projections are outside bounded Vec v1"));
+        if !place.projections.is_empty()
+            && !crate::hir::owned_collection_record::projected_field(
+                &self.program.declarations,
+                place,
+                &argument.ty,
+            )
+        {
+            return Err(error("borrowed Vec field path is unauthenticated"));
         }
         let value = self.place_value(place)?;
         require_type(
@@ -6751,7 +6726,9 @@ impl Emitter<'_> {
             require_type(value_type(&value), expected, "byte operation argument")?;
             values.push(value);
         }
-        if op == crate::byte_ops::ByteOp::Set {
+        if op == crate::byte_ops::ByteOp::ZeroedBounded {
+            self.emit_owned_buffer_capacity_failure(&expr.id, &values[0], &values[1])?;
+        } else if op == crate::byte_ops::ByteOp::Set {
             // The element bound is checked in generated code before the owner
             // transfer commits, so a failed store runs the canonical failure
             // cleanup with the buffer still in its call-argument slot. The
@@ -6766,6 +6743,9 @@ impl Emitter<'_> {
             self.emit_owned_buffer_set1_or6_or48_failure(
                 &expr.id, &values[0], &values[1], &values[4],
             )?;
+        }
+        if op == crate::byte_ops::ByteOp::Partition {
+            return self.emit_byte_partition(expr, &values);
         }
         self.apply_call_commit(&expr.id)?;
         if self.standalone_strings
@@ -6808,14 +6788,29 @@ impl Emitter<'_> {
                         self.emit_indexed_byte_get(expr, &values)
                     }
                 }
+                crate::hir::ByteSliceRootKind::SourceExprStatic => Err(error(
+                    "static borrowed UTF-8 is outside the standalone String arena profile",
+                )),
+                crate::hir::ByteSliceRootKind::OwnedVectorField
+                | crate::hir::ByteSliceRootKind::OwnedVectorStringSlot => {
+                    Err(error("standalone byte view excludes owned vector fields"))
+                }
                 _ => Err(error("standalone byte view has an unsupported root")),
             };
         }
-        if op != crate::byte_ops::ByteOp::Zeroed {
+        if !matches!(
+            op,
+            crate::byte_ops::ByteOp::Zeroed | crate::byte_ops::ByteOp::ZeroedBounded
+        ) {
             self.validate_byte_slice(&values[0]);
         }
         require_type(&expr.ty, &op.return_type(), "byte operation result")?;
         match op {
+            crate::byte_ops::ByteOp::Partition => {
+                return Err(error(
+                    "byte partition requires its checked private receiver",
+                ));
+            }
             crate::byte_ops::ByteOp::Len => {
                 let local = self.plan.expr_scalar(expr)?;
                 self.get_scalar(&values[0]);
@@ -6862,7 +6857,7 @@ impl Emitter<'_> {
             crate::byte_ops::ByteOp::Range => Err(error(
                 "byte range must lower from authenticated ByteRange HIR",
             )),
-            crate::byte_ops::ByteOp::Zeroed => {
+            crate::byte_ops::ByteOp::Zeroed | crate::byte_ops::ByteOp::ZeroedBounded => {
                 let local = self.plan.expr_scalar(expr)?;
                 self.get_scalar(&values[0]);
                 self.output.push(0x10);
@@ -6956,7 +6951,9 @@ impl Emitter<'_> {
                 }
             }
             crate::str_ops::StrOp::StartsWith | crate::str_ops::StrOp::Contains => {
-                let helper = if let Some(validator) = self.environment_utf8_index {
+                let helper = if let Some(runtime) = self.owned_str_predicate(op, &values) {
+                    runtime
+                } else if let Some(validator) = self.environment_utf8_index {
                     // Environment helper parameters retain aggregate byte
                     // carriers and authenticate every byte through the host.
                     self.emit_text_helper_view(&values[0]);
@@ -7145,10 +7142,16 @@ impl Emitter<'_> {
         }
         self.output.push(0x21);
         write_u32(self.output, local);
-        Ok(Value::Scalar {
+        let result = Value::Scalar {
             local,
             ty: expr.ty.clone(),
-        })
+        };
+        if operation.as_str() == crate::byte_ops::STR_AS_BYTES_ID
+            && crate::vec_ops::string_slot::resolved_uses(self.program)
+        {
+            self.validate_byte_slice(&result);
+        }
+        Ok(result)
     }
 
     fn emit_byte_range(
@@ -7475,9 +7478,31 @@ impl Emitter<'_> {
         self.output.extend([0x42, 0x20, 0x88, 0xa7, 0xad, 0x42]);
         write_i64(self.output, 131_072);
         self.get_scalar(value);
-        self.output.extend([
-            0xa7, 0xad, 0x7d, 0x58, 0x72, 0x71, 0x45, 0x04, 0x40, 0x00, 0x0b,
-        ]);
+        self.output.extend([0xa7, 0xad, 0x7d, 0x58]);
+        if let Some(base) = self
+            .owned_utf8_literals
+            .as_deref()
+            .filter(|table| table.static_pool)
+            .map(OwnedUtf8Literals::base)
+        {
+            // Only this selected module owns this immutable constant interval.
+            // Foreign entry descriptors retain their independent admission fence.
+            self.get_scalar(value);
+            self.output.extend([0xa7, 0xad, 0x42]);
+            write_i64(self.output, 65_536);
+            self.output.push(0x58);
+            self.get_scalar(value);
+            self.output.extend([0x42, 0x20, 0x88, 0xa7, 0xad, 0x42]);
+            write_i64(self.output, i64::from(base));
+            self.output.extend([0x5a, 0x71]);
+            self.get_scalar(value);
+            self.output.extend([0x42, 0x20, 0x88, 0xa7, 0xad, 0x42]);
+            write_i64(self.output, i64::from(base) + 65_536);
+            self.get_scalar(value);
+            self.output.extend([0xa7, 0xad, 0x7d, 0x58, 0x71, 0x72]);
+        }
+        self.output
+            .extend([0x72, 0x71, 0x45, 0x04, 0x40, 0x00, 0x0b]);
         if self.plan.range_scratch.is_some() {
             self.output.push(0x0b);
         }
@@ -7589,39 +7614,6 @@ impl Emitter<'_> {
             local: destination,
             ty: expr.ty.clone(),
         })
-    }
-
-    fn emit_if(
-        &mut self,
-        expr: &ResolvedExpr,
-        condition: &ResolvedExpr,
-        then_branch: &ResolvedExpr,
-        else_branch: &ResolvedExpr,
-    ) -> Result<Value, Diagnostic> {
-        let condition = self.emit_expr(condition)?;
-        self.require_scalar(&condition, &ResolvedType::Bool, "if condition")?;
-        let destination = if is_aggregate(self.program, &expr.ty)? {
-            Value::Aggregate {
-                pointer: self.plan.expr_pointer(expr)?,
-                ty: expr.ty.clone(),
-            }
-        } else {
-            Value::Scalar {
-                local: self.plan.expr_scalar(expr)?,
-                ty: expr.ty.clone(),
-            }
-        };
-        self.get_scalar(&condition);
-        self.output.extend([0x04, 0x40]);
-        self.control_depth += 1;
-        let then_value = self.emit_expr(then_branch)?;
-        self.copy_value(&destination, &then_value, "then branch")?;
-        self.output.push(0x05);
-        let else_value = self.emit_expr(else_branch)?;
-        self.copy_value(&destination, &else_value, "else branch")?;
-        self.control_depth -= 1;
-        self.output.push(0x0b);
-        Ok(destination)
     }
 
     fn emit_checked_add(
@@ -8097,8 +8089,12 @@ impl Emitter<'_> {
         source: &Value,
         context: &str,
     ) -> Result<(), Diagnostic> {
+        if matches!(source, Value::Bottom) {
+            return Ok(());
+        }
         require_type(value_type(source), value_type(destination), context)?;
         match destination {
+            Value::Bottom => return Err(error("a bottom completion cannot be stored")),
             Value::Scalar { local, ty } => {
                 if self.owned_utf8_literals.is_some() && *ty == ResolvedType::String {
                     owned_strings::emit_empty_guard(self.output, *local);
@@ -8137,6 +8133,15 @@ impl Emitter<'_> {
                         "{context} mixes scalar and aggregate values"
                     )));
                 };
+                // The planner aliases only a literal initializer's exact
+                // ArrayU8 slot with its binding. The literal has already run
+                // through emit_expr, including all canonical post transitions.
+                if matches!(ty, ResolvedType::ArrayU8(_))
+                    && destination.local == source.local
+                    && destination.offset == source.offset
+                {
+                    return Ok(());
+                }
                 if self.copy_iterator_value(*destination, *source, ty)? {
                     return Ok(());
                 }
@@ -8179,14 +8184,7 @@ impl Emitter<'_> {
                 }
                 if is_variant(self.program, ty)? {
                     let variant = variant_layout(self.variant_layouts, ty)?;
-                    if variant
-                        .cases
-                        .iter()
-                        .flat_map(|case| &case.fields)
-                        .any(|field| {
-                            matches!(&field.ty, ResolvedType::Bytes | ResolvedType::String)
-                        })
-                    {
+                    if generic_variant::has_owned_payload(&variant) {
                         // Authenticate the tag before reading any union payload.
                         self.emit_pointer(*source);
                         self.output.extend([0x28, 0x02, 0x00, 0x41]);
@@ -8276,16 +8274,13 @@ impl Emitter<'_> {
             value_type(destination),
             "borrowed record field alias",
         )?;
-        if !matches!(
-            value_type(source),
-            ResolvedType::Bytes | ResolvedType::String
-        ) && !crate::map_ops::is_collection(value_type(source))
-        {
+        if !nested_owned::borrowed_leaf_is_admitted(self.program, value_type(source)) {
             return Err(error(
                 "borrowed record field alias requires an exact Bytes or String carrier",
             ));
         }
         match destination {
+            Value::Bottom => return Err(error("a bottom completion cannot be stored")),
             Value::Scalar { local, .. } => {
                 self.get_scalar(source);
                 self.output.push(0x21);
@@ -8325,7 +8320,7 @@ impl Emitter<'_> {
                 self.emit_pointer(*pointer);
                 self.load_scalar(ty);
             }
-            Value::Aggregate { .. } => unreachable!("validated scalar value"),
+            Value::Aggregate { .. } | Value::Bottom => unreachable!("validated scalar value"),
         }
     }
 
@@ -8421,8 +8416,8 @@ impl Emitter<'_> {
     }
 }
 
-/// Acyclic Nested Owned-Byte Records v1 admits a `bytes_as_slice` borrow of a
-/// transitive `Bytes` leaf through a stable field-ID path. Such a path enters
+/// Authenticated owned records admit Bytes slices and projected String views
+/// through a stable field-ID path. Such a path enters
 /// each owning record declaration at most once, so a field ID cannot repeat
 /// along it: a repeated or variant projection is a forged path, not a deeper
 /// legal one, and stays rejected here.
@@ -8440,7 +8435,12 @@ fn borrow_place_shape_is_admitted(operation: &DeclarationId, place: &crate::hir:
         }
         walked.push(field);
     }
-    operation.as_str() == crate::byte_ops::BYTES_AS_SLICE_ID
+    matches!(
+        operation.as_str(),
+        crate::byte_ops::BYTES_AS_SLICE_ID
+            | crate::byte_ops::STRING_AS_STR_ID
+            | crate::byte_ops::STR_AS_BYTES_ID
+    )
 }
 
 use function_value::value_type;

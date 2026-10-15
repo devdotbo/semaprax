@@ -7,8 +7,8 @@ pub(super) fn schedule<'expr>(
     frames: &mut Vec<Frame<'expr>>,
     type_arguments: &[Type],
     args: &'expr [Expr],
-    bindings: Rc<BTreeMap<String, Binding>>,
-    path: String,
+    bindings: Scope<'expr>,
+    path: PathId,
     span: Span,
     op: IteratorOp,
 ) -> Result<(), Diagnostic> {
@@ -32,7 +32,7 @@ pub(super) fn schedule<'expr>(
     let _ = function;
     frames.push(Frame::FinishOwnedGenericOp {
         span,
-        path: path.clone(),
+        path,
         op: OwnedGenericCallSite::Iterator(op),
         element,
         argument_count: 1,
@@ -42,13 +42,13 @@ pub(super) fn schedule<'expr>(
         index: 0,
         bindings,
         path,
-        segment: "arg",
+        segment: Seg::Arg,
     });
     Ok(())
 }
-pub(super) fn finish(
+pub(super) fn finish<'p>(
     function: &FunctionExecutionId,
-    path: &str,
+    path: impl Into<ExprPath<'p>>,
     span: Span,
     op: IteratorOp,
     element: ResolvedType,
@@ -62,11 +62,11 @@ pub(super) fn finish(
         ));
     }
     Ok(ResolvedExpr {
-        id: ExpressionId::new(function, path),
+        id: path.into().expression_id(function),
         ownership: OwnershipMode::Own,
         ty: op.resolved_return_type(&element),
         kind: ResolvedExprKind::Call {
-            callee: DeclarationId::new(op.id()),
+            callee: DeclarationId::compiler(crate::hir::CompilerDeclaration::IteratorOperation(op)),
             type_arguments: vec![element],
             instance: None,
             args,
@@ -106,7 +106,7 @@ fn resolve_element(
     span: Span,
 ) -> Result<ResolvedType, Diagnostic> {
     if let FunctionExecutionId::Monomorphic(owner) = function {
-        if let Some(candidate) = resolver.program.functions.iter().find(|candidate| {
+        if let Some(candidate) = resolver.program.functions().iter().find(|candidate| {
             candidate.stable_id == owner.as_str()
                 && crate::source_verify::generic_collection_profile(candidate)
         }) {
@@ -115,3 +115,7 @@ fn resolve_element(
     }
     resolver.resolve_type(ty, span)
 }
+
+#[cfg(test)]
+#[path = "iterator/identity_tests.rs"]
+mod identity_tests;

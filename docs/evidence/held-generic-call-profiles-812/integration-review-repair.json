@@ -1,0 +1,166 @@
+{
+  "source_base": "116853e6e25f51d5d7ad08bf2c0cc875999f0327",
+  "scope": "bounded812/785 source-only integration review; no production code changes",
+  "fixed_defects": [
+    {
+      "file": "src/hir/validation/held_profiles/tests.rs",
+      "defect": "Positive fixture had source-rejected Bag<T>{items:Vec<T>} declaration.",
+      "repair": "Entire exact original source literal retained as full T223 negative; positive uses existing direct-T declaration with checked Bag<Vec<i64>> arguments."
+    },
+    {
+      "file": "src/hir/validation/call_parameters/held_tests.rs",
+      "defect": "Changed-arguments expected branch used out-of-scope ty from another closure.",
+      "repair": "Use actual held ParameterView.ty, preserving the same full expected classifier result."
+    }
+  ],
+  "new_selector": "hir::validation::held_profiles::tests::complete_original_generic_vector_field_source_keeps_full_t223_refusal",
+  "whole_812_inverse_projections": "all3 exact restored owners match full unchanged originals",
+  "protected_archive_counts": {
+    "812": 6,
+    "785": 8
+  },
+  "original_fixture_utf8_sha256": "8d2202c56b9b68647cf95e0b4f8b6ee21f07e4ff51b324b2a083f74e13594772",
+  "rust_owner_line_census": [
+    {
+      "source": "src/hir/validation.rs",
+      "lines": 8289,
+      "maximum": 8812,
+      "sha256": "df2442a9f040d8950374ee135128a10ae43fe7ddbcf73a9cea6b7d941fa4068e"
+    },
+    {
+      "source": "src/hir/validation/call_parameters.rs",
+      "lines": 270,
+      "maximum": 1500,
+      "sha256": "dc3f689d03476a4de4c6b3914524ba4feddbc2bc852071f681b19134926b6c51"
+    },
+    {
+      "source": "src/hir/validation/executable_profiles.rs",
+      "lines": 206,
+      "maximum": 1500,
+      "sha256": "d3e984c28b0229fe410a1c2eceb79391aedabb4f2c6129705cafd3cce1b33956"
+    },
+    {
+      "source": "src/hir/validation/held_profiles.rs",
+      "lines": 218,
+      "maximum": 1500,
+      "sha256": "29cd59495ad1015d7efccf12e63e228cd2b454449d4e355af6c3a381a7194529"
+    },
+    {
+      "source": "src/hir/validation/held_profiles/tests.rs",
+      "lines": 122,
+      "maximum": 1500,
+      "sha256": "76e8236678fcfa40b4e65dab2e6192bbdfee97ec31920f02b2579e82956bdf57"
+    },
+    {
+      "source": "src/hir/validation/held_profiles/source_audit.rs",
+      "lines": 61,
+      "maximum": 1500,
+      "sha256": "90a5037888e27005e1d07c55fe64c9a455aace69fe6009b5952f6e158d3ef020"
+    },
+    {
+      "source": "src/hir/validation/executable_profiles/held.rs",
+      "lines": 137,
+      "maximum": 1500,
+      "sha256": "4d20c1a2fc8a27190a847e4fc15776d0312f42804cd593881e3e7862c2d65d84"
+    },
+    {
+      "source": "src/hir/validation/executable_profiles/before_812.rs",
+      "lines": 181,
+      "maximum": 1500,
+      "sha256": "8cd944f683cc414342312057ecbbc017532d011c60dc3c0b1e9a1e49e17f8e48"
+    },
+    {
+      "source": "src/hir/validation/call_parameters/before_812.rs",
+      "lines": 87,
+      "maximum": 1500,
+      "sha256": "98115f50ad513fa125e774d23d692d1e7b5d3d49a829491813f08ecf4decdfa2"
+    },
+    {
+      "source": "src/hir/validation/call_parameters/held_tests.rs",
+      "lines": 250,
+      "maximum": 1500,
+      "sha256": "a09ab48aa35c6aed14c966c32c49d1f37f4a747afb4627a2e24d0ea6bb441782"
+    },
+    {
+      "source": "src/hir/ids.rs",
+      "lines": 681,
+      "maximum": 1500,
+      "sha256": "afbbd5de9f56e15dc761c6b01ae591db9472efc4664effcb5c5093833dcfa569"
+    },
+    {
+      "source": "src/hir/ids/compiler.rs",
+      "lines": 97,
+      "maximum": 1500,
+      "sha256": "e13112ab00ee40b22d84d2ca7aafb812d194d3e461b2bb6c931b433a5e733a2f"
+    },
+    {
+      "source": "src/map_ops.rs",
+      "lines": 505,
+      "maximum": 1500,
+      "sha256": "7967f670d39d17e532a1db3316a617a2cdbd7d96f1faa310ab03268a23360203"
+    },
+    {
+      "source": "src/hir/resolve_box_call/map.rs",
+      "lines": 113,
+      "maximum": 1500,
+      "sha256": "b7bcaad9459c3199df5519a574b6001859eff13aa29780ea9508b4b3d841218d"
+    },
+    {
+      "source": "src/hir/resolve_box_call/list.rs",
+      "lines": 104,
+      "maximum": 1500,
+      "sha256": "a2c91ec14e6e4b21f570d1df0502a91b3d57348194376a6c7bc0e7e632af10cc"
+    },
+    {
+      "source": "src/hir/resolve_box_call/iterator.rs",
+      "lines": 121,
+      "maximum": 1500,
+      "sha256": "ae9ccaa46f0b096abb043ee026b88344da8ffb607d3f920b9aed245195663da2"
+    },
+    {
+      "source": "src/hir/ids/fixed_operation_tests.rs",
+      "lines": 356,
+      "maximum": 1500,
+      "sha256": "2c3b5dde9b873f32d93928fd66258b2cd69b3641ff827b936b594d905ff0e8dd"
+    },
+    {
+      "source": "src/hir/resolve_box_call/map/identity_tests.rs",
+      "lines": 124,
+      "maximum": 1500,
+      "sha256": "0b68e349e330bb35bf1aaa53ca7063c96751850a373a8396ba1dd02d57ab3e99"
+    },
+    {
+      "source": "src/hir/resolve_box_call/list/identity_tests.rs",
+      "lines": 119,
+      "maximum": 1500,
+      "sha256": "60ba6a78c49c5909367a9c9ee715fc540fc5e8313173e3bdb6307f7910fb7dad"
+    },
+    {
+      "source": "src/hir/resolve_box_call/iterator/identity_tests.rs",
+      "lines": 103,
+      "maximum": 1500,
+      "sha256": "78866720c571deba7a20f2de38eb89f0ce4707b81f365805f56b1890d6b060c6"
+    }
+  ],
+  "claude_verdict": "No additional definite Rust blocker in supplied source.",
+  "claude_uncertainties_locally_resolved": [
+    "Payer::authenticate visibility and Result<(),Diagnostic>",
+    "with_limit returns (T,bool)",
+    "bounded_output and observer API signatures exist with required crate visibility",
+    "held_parameters initialized before supplied span and mod held_profiles registered",
+    "verify::verify returns Vec<Diagnostic>, matching crate::check error",
+    "HirValidator Clone/with_profiles signatures present",
+    "No current test literal State or ParameterView initializer missing new fields"
+  ],
+  "runtime_uncertainty": "Hostile changed-parameter constructor/classifier outcomes and all owning allocation assertions await consolidated actual qualification; no semantic success or gain claim.",
+  "root_reader_unions": "Parent fixed all11 descendant joins in dbb34aec2730ee4dd10e5cdac40bc1b2437a008f; this private patch does not edit unions.",
+  "verification": [
+    "leaf rustfmt",
+    "diff --check",
+    "exact old raw literal bytes",
+    "full3 current-owner source inverses",
+    "all14 protected snapshot hashes",
+    "all20 changed Rust owner budgets"
+  ],
+  "executed_test_bodies": 0
+}

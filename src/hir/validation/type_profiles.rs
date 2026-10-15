@@ -2,6 +2,24 @@
 
 use super::*;
 
+/// Concrete vector storage is legal only inside its independently admitted
+/// whole record. Logical text schemas retain their existing declaration rule.
+pub(super) fn record_field_storage_instance_is_admitted(
+    program: &ResolvedProgram,
+    record: &DeclarationId,
+    field: &ResolvedType,
+) -> bool {
+    crate::hir::declared_collection::vector(&program.declarations, field)
+        || (crate::hir::owned_collection_record::vector(&program.declarations, field)
+            && crate::hir::owned_collection_record::admitted(
+                &ResolvedType::Nominal {
+                    declaration: record.clone(),
+                    arguments: Vec::new(),
+                },
+                &program.declarations,
+            ))
+}
+
 pub(super) fn template_ownership(
     program: &ResolvedProgram,
     template: &ResolvedFunctionTemplate,
@@ -173,7 +191,7 @@ pub(crate) fn resolved_type_contains_owned_bytes(
     program: &ResolvedProgram,
     ty: &ResolvedType,
 ) -> bool {
-    let mut pending = vec![ty.clone()];
+    let mut pending = vec![ty];
     let mut visited = BTreeSet::new();
     while let Some(ty) = pending.pop() {
         match ty {
@@ -188,31 +206,32 @@ pub(crate) fn resolved_type_contains_owned_bytes(
                 arguments,
             } => {
                 pending.extend(arguments);
-                if !visited.insert(declaration.clone()) {
+                if !visited.insert(declaration) {
                     continue;
                 }
                 let Some(item) = program
                     .types
                     .iter()
-                    .find(|candidate| candidate.id == declaration)
+                    .find(|candidate| candidate.id == *declaration)
                 else {
                     continue;
                 };
                 match &item.kind {
                     ResolvedTypeDeclarationKind::Record { fields }
                     | ResolvedTypeDeclarationKind::Class { fields, .. } => {
-                        pending.extend(fields.iter().map(|field| field.ty.clone()));
+                        pending.extend(fields.iter().map(|field| &field.ty));
                     }
                     ResolvedTypeDeclarationKind::Variant { cases } => pending.extend(
                         cases
                             .iter()
                             .flat_map(|case| &case.fields)
-                            .map(|field| field.ty.clone()),
+                            .map(|field| &field.ty),
                     ),
                     ResolvedTypeDeclarationKind::Resource { .. } => {}
                 }
             }
-            ResolvedType::Unit
+            ResolvedType::Never
+            | ResolvedType::Unit
             | ResolvedType::I64
             | ResolvedType::I32
             | ResolvedType::Char
@@ -237,6 +256,12 @@ pub(super) fn validate_nested_update_base_shape(
     base: &ResolvedExpr,
     span: crate::ast::Span,
 ) -> Result<(), Diagnostic> {
+    if crate::hir::owned_collection_record::admitted(&base.ty, &program.declarations) {
+        return Err(hir_error_at_span(
+            span,
+            "Vec-bearing record update is outside the nested collection-record profile",
+        ));
+    }
     if (crate::hir::type_reachability::is_nested_nonflat_owned_byte_record(
         &program.declarations,
         &base.ty,
@@ -288,9 +313,19 @@ pub(super) fn resolved_type_is_flat_owned_byte_variant(
     )
 }
 
-pub(super) fn resolved_type_is_flat_owned_string_variant(
+pub(super) fn resolved_type_is_direct_owned_variant(
     program: &ResolvedProgram,
     ty: &ResolvedType,
 ) -> bool {
     crate::hir::is_admitted_owned_string_variant(&program.declarations, ty)
+        || crate::hir::collection_outcome::runtime_admitted(&program.declarations, ty)
 }
+
+pub(super) fn requires_record_pattern(program: &ResolvedProgram, ty: &ResolvedType) -> bool {
+    !crate::hir::owned_collection_record::vector(&program.declarations, ty)
+        && matches!(ty, ResolvedType::Nominal { declaration, .. }
+            if program.declarations.declaration(declaration).is_some_and(|item| item.kind == DeclarationKind::Record))
+}
+
+#[cfg(test)]
+mod owned_bytes_tests;

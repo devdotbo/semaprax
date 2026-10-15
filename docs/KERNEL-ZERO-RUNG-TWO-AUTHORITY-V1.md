@@ -58,6 +58,14 @@ adds no capability. Bootstrap-v2 target execution and its recovery model stay
 test-only evidence under `rung_two_bootstrap/` and are governed separately by
 [Rung-2 Target and Recovery Evidence v1](KERNEL-ZERO-RUNG-TWO-TARGET-RECOVERY-V1.md).
 
+The integer, character, and string-scalar byte lanes stage their one or two
+Kernel-0 arguments in fixed stack slots. The closed one- or two-byte operator
+lane also assembles its intermediate token in fixed storage; test-only byte
+projection still copies it for the independent oracle. Exact-source replay,
+evaluation, owned handoff, and final Rust-byte comparison remain required on
+every ordinary token. These source changes have no measured speedup claim until
+a bounded before/after run and the focused correctness selectors pass.
+
 ## Required evidence
 
 The authority module tests refusal, mismatch, and oversized candidate recovery
@@ -80,3 +88,38 @@ This finite comparison route does not prove source/HIR correspondence, backend
 equivalence, an owned-buffer interface, or universal formatter equivalence.
 The self-hosting ladder remains at rung 1 until the independent requirements
 in [Semantic Kernel v1](SEMANTIC-KERNEL-V1.md) are accepted.
+
+## Borrowed entry discovery (OPT708)
+
+All five scalar renderers discover each length/byte entry by exact borrowed
+identity text in their already-held KernelProgram. This preserves the linear
+first-match order and actual current function pointer; persistent declaration
+IDs and exact-source replay are unchanged. It removes the temporary owned ID
+allocation per query, without caching another program's lookup or changing
+evaluation, fuel, settlement or Rust byte authority.
+
+Two focused owning controls compare a saved linear lookup, duplicate and foreign
+program pointers, 1,000 observed owned-ID versus borrowed queries, and actual
+authenticated integer-renderer evaluation including both i64 extremes. Their
+allocation scope is lookup only; compiler construction, evaluation and handoff
+are outside that observer. These controls are authored, not executed in this
+tranche. No whole-formatter speedup, full OPT708 completion or rung promotion is
+claimed.
+
+## Borrowed evaluator bindings (OPT708)
+
+The reference evaluator's call-local environment stores borrowed ValueId
+references into the immutable current entry/term. It retains the same fresh
+callee environment, newest-first shadow lookup, left-to-right argument
+evaluation and pop on selected failure. No reference escapes evaluation.
+ValueId clones already share Arc backing; the removed work is reference-count
+traffic and the larger inline ValueId in each environment slot, not an ID
+payload allocation. Environment and argument vectors remain real allocations.
+
+The saved owned-environment evaluator is a test-only independent storage and
+traversal oracle. Two controls cover literal requested allocation totals for
+1,000 one-parameter calls through Drop, nested shadowing, fresh callee scopes,
+lazy and first-fault order, failed-let restoration, reentry, and authenticated
+integer renderer bytes. Construction and source replay are outside the
+allocation observer. Qualification and whole-formatter performance remain
+pending; this does not establish full OPT708 completion.

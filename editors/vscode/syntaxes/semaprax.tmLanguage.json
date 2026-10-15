@@ -86,7 +86,7 @@
         },
         {
           "name": "keyword.control.semaprax",
-          "match": "\\b(if|else|match|while|for|in|unsafe|with|yield)\\b"
+          "match": "\\b(if|else|match|while|for|in|at|unsafe|with|yield)\\b"
         },
         {
           "name": "storage.modifier.semaprax",

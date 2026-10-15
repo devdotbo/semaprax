@@ -656,6 +656,8 @@ fn join<'a, 'b>(
     if matches!(
         fact.expression.kind,
         ResolvedExprKind::Upcast { .. }
+            | ResolvedExprKind::VecFieldRead { .. }
+            | ResolvedExprKind::RowLoan { .. }
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::ByteRange { .. }
             | ResolvedExprKind::NativeRustImportCall(_)
@@ -674,6 +676,27 @@ fn join<'a, 'b>(
     let resolved = hir_kind(&fact.expression.kind);
     if authored != resolved && !(authored == "project" && resolved == "place") {
         return None;
+    }
+    if let ResolvedExprKind::LiteralFormat { template, args } = &fact.expression.kind {
+        let ExprKind::Call {
+            name,
+            type_arguments,
+            args: source_args,
+        } = &node.expression.kind
+        else {
+            return None;
+        };
+        if name != "string_format"
+            || !type_arguments.is_empty()
+            || source_args.len() != args.len() + 1
+            || !matches!(&source_args[0].kind, ExprKind::String(source) if source == template)
+            || !source_args[1..]
+                .iter()
+                .zip(args)
+                .all(|(source, resolved)| source.span == resolved.span)
+        {
+            return None;
+        }
     }
     Some(node)
 }
@@ -749,6 +772,11 @@ fn visit_hir<'a>(
     facts: &mut Vec<Fact<'a>>,
     scope_count: &mut usize,
 ) -> Result<()> {
+    if matches!(&expression.kind, ResolvedExprKind::LexicalExit { .. }) {
+        return Err(invalid(
+            "lexical exits are outside the expression candidate profile",
+        ));
+    }
     if depth > MAX_DEPTH || facts.len() >= MAX_EXPRESSIONS {
         return Err(limit("expression catalogue traversal exceeds its bound"));
     }
@@ -766,7 +794,16 @@ fn visit_hir<'a>(
         scope: scope.clone(),
     });
     match &expression.kind {
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::LexicalExit { .. } => {
+            return Err(invalid(
+                "lexical exits are outside the expression candidate profile",
+            ))
+        }
+
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut local = scope.clone();
             for statement in statements {
                 match statement {
@@ -779,11 +816,17 @@ fn visit_hir<'a>(
                         visit_hir(value, phase, &local, depth + 1, facts, scope_count)?;
                         insert_binding(&mut local, binding, *mutable);
                     }
-                    ResolvedStatement::Assign { value, .. } => {
+                    ResolvedStatement::Assign { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. } => {
                         visit_hir(value, phase, &local, depth + 1, facts, scope_count)?
                     }
                     ResolvedStatement::Unsafe { body, .. } => {
                         visit_hir(body, phase, &local, depth + 1, facts, scope_count)?
+                    }
+                    ResolvedStatement::LexicalWhile { .. } => {
+                        return Err(invalid(
+                            "lexical loops are outside the expression candidate profile",
+                        ))
                     }
                     ResolvedStatement::While {
                         condition, body, ..
@@ -941,7 +984,9 @@ fn ast_children(expression: &Expr) -> Vec<&Expr> {
         ExprKind::MethodCall { receiver, args, .. } => {
             std::iter::once(receiver.as_ref()).chain(args).collect()
         }
-        ExprKind::Unary { value, .. }
+        ExprKind::LexicalExit { value, .. } => value.iter().map(|v| v.as_ref()).collect(),
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }
         | ExprKind::Project { base: value, .. } => vec![value],
@@ -990,6 +1035,7 @@ fn ast_children(expression: &Expr) -> Vec<&Expr> {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => Vec::new(),
     }
 }
@@ -1003,7 +1049,9 @@ fn ast_children_mut(expression: &mut Expr) -> Vec<&mut Expr> {
         ExprKind::MethodCall { receiver, args, .. } => {
             std::iter::once(receiver.as_mut()).chain(args).collect()
         }
-        ExprKind::Unary { value, .. }
+        ExprKind::LexicalExit { value, .. } => value.iter_mut().map(|v| v.as_mut()).collect(),
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }
         | ExprKind::Project { base: value, .. } => vec![value],
@@ -1023,6 +1071,7 @@ fn ast_children_mut(expression: &mut Expr) -> Vec<&mut Expr> {
                         children.push(body.as_mut());
                     }
                     Statement::For { values, body, .. }
+                    | Statement::ForBorrow { values, body, .. }
                     | Statement::ForOwn { values, body, .. } => {
                         children.push(values.as_mut());
                         children.push(body.as_mut());
@@ -1066,12 +1115,14 @@ fn ast_children_mut(expression: &mut Expr) -> Vec<&mut Expr> {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => Vec::new(),
     }
 }
 
 fn ast_kind(kind: &ExprKind) -> &'static str {
     match kind {
+        ExprKind::VecConstructor { .. } => "vec_constructor",
         ExprKind::Closure { .. } => "closure",
         ExprKind::Int(_) => "i64",
         ExprKind::Int32(_) => "i32",
@@ -1084,10 +1135,12 @@ fn ast_kind(kind: &ExprKind) -> &'static str {
         ExprKind::Float64(_) => "f64",
         ExprKind::Bool(_) => "bool",
         ExprKind::String(_) => "string",
+        ExprKind::BorrowedUtf8Literal(_) => "borrowed_utf8_literal",
         ExprKind::Var(_) => "place",
         ExprKind::Call { .. } => "call",
         ExprKind::MethodCall { .. } => "method_call",
         ExprKind::SuperMethod { .. } => "super_method",
+        ExprKind::LexicalExit { .. } => "lexical_exit",
         ExprKind::Unary { .. } => "unary",
         ExprKind::Binary { .. } => "binary",
         ExprKind::Block { .. } => "block",
@@ -1116,17 +1169,22 @@ fn hir_kind(kind: &ResolvedExprKind) -> &'static str {
         ResolvedExprKind::Float64(_) => "f64",
         ResolvedExprKind::Bool(_) => "bool",
         ResolvedExprKind::String(_) => "string",
+        ResolvedExprKind::BorrowedUtf8Literal(_) => "borrowed_utf8_literal",
         ResolvedExprKind::Place(_) => "place",
         ResolvedExprKind::FunctionReference { .. } => "function_reference",
         ResolvedExprKind::Invoke { .. } => "invoke",
-        ResolvedExprKind::Call { .. } => "call",
+        ResolvedExprKind::VecFieldRead { .. }
+        | ResolvedExprKind::Call { .. }
+        | ResolvedExprKind::LiteralFormat { .. } => "call",
+        ResolvedExprKind::RowLoan { .. } => "row_loan",
         ResolvedExprKind::BorrowPlace { .. } => "borrow_place",
         ResolvedExprKind::ByteRange { .. } => "byte_range",
         ResolvedExprKind::NativeRustImportCall(_) => "native_import_call",
         ResolvedExprKind::HostCommandCall(_) => "host_command_call",
+        ResolvedExprKind::LexicalExit { .. } => "lexical_exit",
         ResolvedExprKind::Unary { .. } => "unary",
         ResolvedExprKind::Binary { .. } => "binary",
-        ResolvedExprKind::Block { .. } => "block",
+        ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. } => "block",
         ResolvedExprKind::If { .. } => "if",
         ResolvedExprKind::ConstructRecord { .. } => "record",
         ResolvedExprKind::ConstructVariant { .. } => "variant",
@@ -1255,5 +1313,78 @@ fn audited(value: i64) -> i64 {
             })
             .unwrap();
         reject_unsafe_ancestor(&function.body, &tail.path).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod literal_format_join_tests {
+    use super::*;
+
+    #[test]
+    fn literal_format_joins_only_its_authored_template_and_ordered_dynamic_arguments() {
+        let source = r#"module audit.test;
+@id("format.render") fn render(n:i64)->string {string_format("{}:{}",n,1)}
+"#;
+        let program = crate::parse(source, std::path::Path::new("format.spx")).unwrap();
+        let ast = ast_facts(&program.functions[0]).unwrap();
+        let authored = ast
+            .iter()
+            .find(|fact| {
+                source
+                    .get(fact.expression.span.start..fact.expression.span.end)
+                    .is_some_and(|text| text.starts_with("string_format("))
+            })
+            .unwrap();
+        let ExprKind::Call {
+            args: source_args, ..
+        } = &authored.expression.kind
+        else {
+            panic!("expected authored call");
+        };
+        let dynamic = source_args[1..]
+            .iter()
+            .enumerate()
+            .map(|(index, source_arg)| ResolvedExpr {
+                id: hir::ExpressionId::from_owned(format!("arg.{index}")),
+                ty: hir::ResolvedType::I64,
+                ownership: OwnershipMode::Value,
+                kind: ResolvedExprKind::Int(index as i64),
+                span: source_arg.span,
+            })
+            .collect();
+        let mut resolved = ResolvedExpr {
+            id: hir::ExpressionId::from_owned("format".to_owned()),
+            ty: hir::ResolvedType::String,
+            ownership: OwnershipMode::Own,
+            kind: ResolvedExprKind::LiteralFormat {
+                template: "{}:{}".to_owned(),
+                args: dynamic,
+            },
+            span: authored.expression.span,
+        };
+        let joined = |expression: &ResolvedExpr| {
+            let fact = Fact {
+                expression,
+                phase: authored.phase,
+                scope: Scope::new(),
+            };
+            let spans = hir_span_counts(std::slice::from_ref(&fact));
+            join(&fact, &ast, &spans, source).is_some()
+        };
+        assert!(joined(&resolved));
+        if let ResolvedExprKind::LiteralFormat { template, .. } = &mut resolved.kind {
+            *template = "{}:{}!".to_owned();
+        }
+        assert!(!joined(&resolved));
+        if let ResolvedExprKind::LiteralFormat { template, args } = &mut resolved.kind {
+            *template = "{}:{}".to_owned();
+            args.swap(0, 1);
+        }
+        assert!(!joined(&resolved));
+        if let ResolvedExprKind::LiteralFormat { args, .. } = &mut resolved.kind {
+            args.swap(0, 1);
+            args.pop();
+        }
+        assert!(!joined(&resolved));
     }
 }

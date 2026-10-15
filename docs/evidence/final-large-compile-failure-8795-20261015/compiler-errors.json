@@ -1,0 +1,848 @@
+[
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0603]: function `acquire` is private\n   --> src/cleanup_plan/replay/selected_entry/tests/session_errors.rs:210:37\n    |\n210 |             selected_context::paid::acquire::<selected_context::Context<'_>>(\n    |                                     ^^^^^^^ private function\n    |\nnote: the function `acquire` is defined here\n   --> src/cleanup_plan/replay/selected_context/paid.rs:7:1\n    |\n  7 | / pub(super) fn acquire<T>(\n  8 | |     function: &ResolvedFunction,\n  9 | |     budget: &mut ReplayBudget,\n 10 | | ) -> Result<(), Error> {\n...   |\n 21 | |     Ok(())\n 22 | | }\n    | |_^\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "the function `acquire` is defined here",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 890,
+              "byte_start": 387,
+              "column_end": 2,
+              "column_start": 1,
+              "expansion": null,
+              "file_name": "src/cleanup_plan/replay/selected_context/paid.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 22,
+              "line_start": 7,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 26,
+                  "highlight_start": 1,
+                  "text": "pub(super) fn acquire<T>("
+                },
+                {
+                  "highlight_end": 33,
+                  "highlight_start": 1,
+                  "text": "    function: &ResolvedFunction,"
+                },
+                {
+                  "highlight_end": 31,
+                  "highlight_start": 1,
+                  "text": "    budget: &mut ReplayBudget,"
+                },
+                {
+                  "highlight_end": 25,
+                  "highlight_start": 1,
+                  "text": ") -> Result<(), Error> {"
+                },
+                {
+                  "highlight_end": 25,
+                  "highlight_start": 1,
+                  "text": "    type Controls<T> = ("
+                },
+                {
+                  "highlight_end": 35,
+                  "highlight_start": 1,
+                  "text": "        semantic_refusal::Receipt,"
+                },
+                {
+                  "highlight_end": 15,
+                  "highlight_start": 1,
+                  "text": "        Error,"
+                },
+                {
+                  "highlight_end": 26,
+                  "highlight_start": 1,
+                  "text": "        Result<T, Error>,"
+                },
+                {
+                  "highlight_end": 56,
+                  "highlight_start": 1,
+                  "text": "        Result<crate::hir::FunctionExecutionId, Error>,"
+                },
+                {
+                  "highlight_end": 27,
+                  "highlight_start": 1,
+                  "text": "        Result<(), Error>,"
+                },
+                {
+                  "highlight_end": 23,
+                  "highlight_start": 1,
+                  "text": "        Option<Error>,"
+                },
+                {
+                  "highlight_end": 7,
+                  "highlight_start": 1,
+                  "text": "    );"
+                },
+                {
+                  "highlight_end": 92,
+                  "highlight_start": 1,
+                  "text": "    budget.reserve_array::<Controls<T>>(function, 1, \"selected session refusal controls\")?;"
+                },
+                {
+                  "highlight_end": 70,
+                  "highlight_start": 1,
+                  "text": "    budget.charge(function, 6, \"selected session refusal controls\")?;"
+                },
+                {
+                  "highlight_end": 11,
+                  "highlight_start": 1,
+                  "text": "    Ok(())"
+                },
+                {
+                  "highlight_end": 2,
+                  "highlight_start": 1,
+                  "text": "}"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "error",
+      "message": "function `acquire` is private",
+      "spans": [
+        {
+          "byte_end": 9524,
+          "byte_start": 9517,
+          "column_end": 44,
+          "column_start": 37,
+          "expansion": null,
+          "file_name": "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
+          "is_primary": true,
+          "label": "private function",
+          "line_end": 210,
+          "line_start": 210,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 44,
+              "highlight_start": 37,
+              "text": "            selected_context::paid::acquire::<selected_context::Context<'_>>("
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0603",
+        "explanation": "A private item was used outside its scope.\n\nErroneous code example:\n\n```compile_fail,E0603\nmod foo {\n    const PRIVATE: u32 = 0x_a_bad_1dea_u32; // This const is private, so we\n                                            // can't use it outside of the\n                                            // `foo` module.\n}\n\nprintln!(\"const value: {}\", foo::PRIVATE); // error: constant `PRIVATE`\n                                                  //        is private\n```\n\nIn order to fix this error, you need to make the item public by using the `pub`\nkeyword. Example:\n\n```\nmod foo {\n    pub const PRIVATE: u32 = 0x_a_bad_1dea_u32; // We set it public by using the\n                                                // `pub` keyword.\n}\n\nprintln!(\"const value: {}\", foo::PRIVATE); // ok!\n```\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0308]: mismatched types\n   --> src/cleanup_plan/replay/selected_entry/tests/session_errors.rs:136:27\n    |\n136 |           let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {\n    |  ___________________________^^____-\n    | |                           |\n    | |                           expected `usize`, found `()`\n137 | |             let (_, observed) = measure(|| {\n138 | |                 let mut owner = acquire(&context, function, base + extra);\n139 | |                 let backing = owner.report.as_ref().unwrap().backing();\n...   |\n173 | |             assert_eq!(observed.allocated, observed.freed);\n174 | |         });\n    | |__________- this expression has type `((), bool, usize)`\n\n",
+      "$message_type": "diagnostic",
+      "children": [],
+      "level": "error",
+      "message": "mismatched types",
+      "spans": [
+        {
+          "byte_end": 5960,
+          "byte_start": 5958,
+          "column_end": 29,
+          "column_start": 27,
+          "expansion": null,
+          "file_name": "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
+          "is_primary": true,
+          "label": "expected `usize`, found `()`",
+          "line_end": 136,
+          "line_start": 136,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 29,
+              "highlight_start": 27,
+              "text": "        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {"
+            }
+          ]
+        },
+        {
+          "byte_end": 8056,
+          "byte_start": 5964,
+          "column_end": 11,
+          "column_start": 33,
+          "expansion": null,
+          "file_name": "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
+          "is_primary": false,
+          "label": "this expression has type `((), bool, usize)`",
+          "line_end": 174,
+          "line_start": 136,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 89,
+              "highlight_start": 33,
+              "text": "        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {"
+            },
+            {
+              "highlight_end": 45,
+              "highlight_start": 1,
+              "text": "            let (_, observed) = measure(|| {"
+            },
+            {
+              "highlight_end": 75,
+              "highlight_start": 1,
+              "text": "                let mut owner = acquire(&context, function, base + extra);"
+            },
+            {
+              "highlight_end": 72,
+              "highlight_start": 1,
+              "text": "                let backing = owner.report.as_ref().unwrap().backing();"
+            },
+            {
+              "highlight_end": 84,
+              "highlight_start": 1,
+              "text": "                let ledger = owner.budget.physical.as_deref().unwrap() as *const _;"
+            },
+            {
+              "highlight_end": 48,
+              "highlight_start": 1,
+              "text": "                let before = current_metrics();"
+            },
+            {
+              "highlight_end": 61,
+              "highlight_start": 1,
+              "text": "                let error = selected_context::paid::refusal("
+            },
+            {
+              "highlight_end": 30,
+              "highlight_start": 1,
+              "text": "                    function,"
+            },
+            {
+              "highlight_end": 39,
+              "highlight_start": 1,
+              "text": "                    &mut owner.budget,"
+            },
+            {
+              "highlight_end": 84,
+              "highlight_start": 1,
+              "text": "                    \"selected lexical function is not held by its current context\","
+            },
+            {
+              "highlight_end": 19,
+              "highlight_start": 1,
+              "text": "                );"
+            },
+            {
+              "highlight_end": 28,
+              "highlight_start": 1,
+              "text": "                assert_eq!("
+            },
+            {
+              "highlight_end": 92,
+              "highlight_start": 1,
+              "text": "                    matches!(&error, expression_facts::errors::EngineError::Structural(_)),"
+            },
+            {
+              "highlight_end": 29,
+              "highlight_start": 1,
+              "text": "                    semantic"
+            },
+            {
+              "highlight_end": 19,
+              "highlight_start": 1,
+              "text": "                );"
+            },
+            {
+              "highlight_end": 79,
+              "highlight_start": 1,
+              "text": "                assert_eq!(current_metrics().allocations, before.allocations);"
+            },
+            {
+              "highlight_end": 30,
+              "highlight_start": 1,
+              "text": "                if semantic {"
+            },
+            {
+              "highlight_end": 65,
+              "highlight_start": 1,
+              "text": "                    assert_eq!(owner.usage().1, base + bytes());"
+            },
+            {
+              "highlight_end": 18,
+              "highlight_start": 1,
+              "text": "                }"
+            },
+            {
+              "highlight_end": 88,
+              "highlight_start": 1,
+              "text": "                let mut refusal = owner.into_failed_preparation().refuse_engine(error);"
+            },
+            {
+              "highlight_end": 75,
+              "highlight_start": 1,
+              "text": "                assert_eq!(refusal.report().unwrap().as_ptr(), backing.0);"
+            },
+            {
+              "highlight_end": 86,
+              "highlight_start": 1,
+              "text": "                assert_eq!(refusal.report().unwrap()[0].message.as_ptr(), backing.1);"
+            },
+            {
+              "highlight_end": 79,
+              "highlight_start": 1,
+              "text": "                assert_eq!(refusal.ledger_mut().unwrap() as *const _, ledger);"
+            },
+            {
+              "highlight_end": 30,
+              "highlight_start": 1,
+              "text": "                if semantic {"
+            },
+            {
+              "highlight_end": 32,
+              "highlight_start": 1,
+              "text": "                    assert_eq!("
+            },
+            {
+              "highlight_end": 71,
+              "highlight_start": 1,
+              "text": "                        refusal.structural_receipt().unwrap().stage(),"
+            },
+            {
+              "highlight_end": 43,
+              "highlight_start": 1,
+              "text": "                        \"selected session\""
+            },
+            {
+              "highlight_end": 23,
+              "highlight_start": 1,
+              "text": "                    );"
+            },
+            {
+              "highlight_end": 18,
+              "highlight_start": 1,
+              "text": "                }"
+            },
+            {
+              "highlight_end": 83,
+              "highlight_start": 1,
+              "text": "                let first = refusal.ledger_mut().unwrap().reserve(0).unwrap_err();"
+            },
+            {
+              "highlight_end": 90,
+              "highlight_start": 1,
+              "text": "                assert_eq!(refusal.ledger_mut().unwrap().reserve(1).unwrap_err(), first);"
+            },
+            {
+              "highlight_end": 90,
+              "highlight_start": 1,
+              "text": "                assert_eq!(refusal.ledger_mut().unwrap().reserve(0).unwrap_err(), first);"
+            },
+            {
+              "highlight_end": 63,
+              "highlight_start": 1,
+              "text": "                drop(refusal.into_report(FORM).ok().unwrap());"
+            },
+            {
+              "highlight_end": 79,
+              "highlight_start": 1,
+              "text": "                assert_eq!(current_metrics().allocations, before.allocations);"
+            },
+            {
+              "highlight_end": 16,
+              "highlight_start": 1,
+              "text": "            });"
+            },
+            {
+              "highlight_end": 40,
+              "highlight_start": 1,
+              "text": "            assert!(!observed.invalid);"
+            },
+            {
+              "highlight_end": 42,
+              "highlight_start": 1,
+              "text": "            assert_eq!(observed.live, 0);"
+            },
+            {
+              "highlight_end": 60,
+              "highlight_start": 1,
+              "text": "            assert_eq!(observed.allocated, observed.freed);"
+            },
+            {
+              "highlight_end": 11,
+              "highlight_start": 1,
+              "text": "        });"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0308",
+        "explanation": "Expected type did not match the received type.\n\nErroneous code examples:\n\n```compile_fail,E0308\nfn plus_one(x: i32) -> i32 {\n    x + 1\n}\n\nplus_one(\"Not a number\");\n//       ^^^^^^^^^^^^^^ expected `i32`, found `&str`\n\nif \"Not a bool\" {\n// ^^^^^^^^^^^^ expected `bool`, found `&str`\n}\n\nlet x: f32 = \"Not a float\";\n//     ---   ^^^^^^^^^^^^^ expected `f32`, found `&str`\n//     |\n//     expected due to this\n```\n\nThis error occurs when an expression was used in a place where the compiler\nexpected an expression of a different type. It can occur in several cases, the\nmost common being when calling a function and passing an argument which has a\ndifferent type than the matching type in the function declaration.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0308]: mismatched types\n   --> src/cleanup_plan/replay/selected_entry/tests/session_errors.rs:178:27\n    |\n178 |           let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {\n    |  ___________________________^^____-\n    | |                           |\n    | |                           expected `usize`, found `()`\n179 | |             let mut owner = acquire(&context, function, usize::MAX);\n180 | |             owner.budget.remaining = work;\n181 | |             let error = selected_context::paid::refusal(\n...   |\n190 | |             assert_eq!(owner.budget.remaining, 0);\n191 | |         });\n    | |__________- this expression has type `((), bool, usize)`\n\n",
+      "$message_type": "diagnostic",
+      "children": [],
+      "level": "error",
+      "message": "mismatched types",
+      "spans": [
+        {
+          "byte_end": 8148,
+          "byte_start": 8146,
+          "column_end": 29,
+          "column_start": 27,
+          "expansion": null,
+          "file_name": "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
+          "is_primary": true,
+          "label": "expected `usize`, found `()`",
+          "line_end": 178,
+          "line_start": 178,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 29,
+              "highlight_start": 27,
+              "text": "        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {"
+            }
+          ]
+        },
+        {
+          "byte_end": 8719,
+          "byte_start": 8152,
+          "column_end": 11,
+          "column_start": 33,
+          "expansion": null,
+          "file_name": "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
+          "is_primary": false,
+          "label": "this expression has type `((), bool, usize)`",
+          "line_end": 191,
+          "line_start": 178,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 89,
+              "highlight_start": 33,
+              "text": "        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {"
+            },
+            {
+              "highlight_end": 69,
+              "highlight_start": 1,
+              "text": "            let mut owner = acquire(&context, function, usize::MAX);"
+            },
+            {
+              "highlight_end": 43,
+              "highlight_start": 1,
+              "text": "            owner.budget.remaining = work;"
+            },
+            {
+              "highlight_end": 57,
+              "highlight_start": 1,
+              "text": "            let error = selected_context::paid::refusal("
+            },
+            {
+              "highlight_end": 26,
+              "highlight_start": 1,
+              "text": "                function,"
+            },
+            {
+              "highlight_end": 35,
+              "highlight_start": 1,
+              "text": "                &mut owner.budget,"
+            },
+            {
+              "highlight_end": 52,
+              "highlight_start": 1,
+              "text": "                \"selected profile cursor is empty\","
+            },
+            {
+              "highlight_end": 15,
+              "highlight_start": 1,
+              "text": "            );"
+            },
+            {
+              "highlight_end": 24,
+              "highlight_start": 1,
+              "text": "            assert_eq!("
+            },
+            {
+              "highlight_end": 87,
+              "highlight_start": 1,
+              "text": "                matches!(error, expression_facts::errors::EngineError::Structural(_)),"
+            },
+            {
+              "highlight_end": 26,
+              "highlight_start": 1,
+              "text": "                work == 6"
+            },
+            {
+              "highlight_end": 15,
+              "highlight_start": 1,
+              "text": "            );"
+            },
+            {
+              "highlight_end": 51,
+              "highlight_start": 1,
+              "text": "            assert_eq!(owner.budget.remaining, 0);"
+            },
+            {
+              "highlight_end": 11,
+              "highlight_start": 1,
+              "text": "        });"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0308",
+        "explanation": "Expected type did not match the received type.\n\nErroneous code examples:\n\n```compile_fail,E0308\nfn plus_one(x: i32) -> i32 {\n    x + 1\n}\n\nplus_one(\"Not a number\");\n//       ^^^^^^^^^^^^^^ expected `i32`, found `&str`\n\nif \"Not a bool\" {\n// ^^^^^^^^^^^^ expected `bool`, found `&str`\n}\n\nlet x: f32 = \"Not a float\";\n//     ---   ^^^^^^^^^^^^^ expected `f32`, found `&str`\n//     |\n//     expected due to this\n```\n\nThis error occurs when an expression was used in a place where the compiler\nexpected an expression of a different type. It can occur in several cases, the\nmost common being when calling a function and passing an argument which has a\ndifferent type than the matching type in the function declaration.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0308]: mismatched types\n   --> src/cleanup_plan/replay/selected_entry/tests/session_errors.rs:202:27\n    |\n202 |           let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {\n    |  ___________________________^^____-\n    | |                           |\n    | |                           expected `usize`, found `()`\n203 | |             let mut owner = acquire(&context, function, usize::MAX);\n204 | |             // Both complete receiving controls are prepaid before their atoms.\n205 | |             let selected = selected_context::paid::refusal(\n...   |\n243 | |             );\n244 | |         });\n    | |__________- this expression has type `((), bool, usize)`\n\n",
+      "$message_type": "diagnostic",
+      "children": [],
+      "level": "error",
+      "message": "mismatched types",
+      "spans": [
+        {
+          "byte_end": 9055,
+          "byte_start": 9053,
+          "column_end": 29,
+          "column_start": 27,
+          "expansion": null,
+          "file_name": "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
+          "is_primary": true,
+          "label": "expected `usize`, found `()`",
+          "line_end": 202,
+          "line_start": 202,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 29,
+              "highlight_start": 27,
+              "text": "        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {"
+            }
+          ]
+        },
+        {
+          "byte_end": 10782,
+          "byte_start": 9059,
+          "column_end": 11,
+          "column_start": 33,
+          "expansion": null,
+          "file_name": "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
+          "is_primary": false,
+          "label": "this expression has type `((), bool, usize)`",
+          "line_end": 244,
+          "line_start": 202,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 89,
+              "highlight_start": 33,
+              "text": "        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {"
+            },
+            {
+              "highlight_end": 69,
+              "highlight_start": 1,
+              "text": "            let mut owner = acquire(&context, function, usize::MAX);"
+            },
+            {
+              "highlight_end": 80,
+              "highlight_start": 1,
+              "text": "            // Both complete receiving controls are prepaid before their atoms."
+            },
+            {
+              "highlight_end": 60,
+              "highlight_start": 1,
+              "text": "            let selected = selected_context::paid::refusal("
+            },
+            {
+              "highlight_end": 26,
+              "highlight_start": 1,
+              "text": "                function,"
+            },
+            {
+              "highlight_end": 35,
+              "highlight_start": 1,
+              "text": "                &mut owner.budget,"
+            },
+            {
+              "highlight_end": 80,
+              "highlight_start": 1,
+              "text": "                \"selected lexical function is not held by its current context\","
+            },
+            {
+              "highlight_end": 15,
+              "highlight_start": 1,
+              "text": "            );"
+            },
+            {
+              "highlight_end": 78,
+              "highlight_start": 1,
+              "text": "            selected_context::paid::acquire::<selected_context::Context<'_>>("
+            },
+            {
+              "highlight_end": 26,
+              "highlight_start": 1,
+              "text": "                function,"
+            },
+            {
+              "highlight_end": 35,
+              "highlight_start": 1,
+              "text": "                &mut owner.budget,"
+            },
+            {
+              "highlight_end": 14,
+              "highlight_start": 1,
+              "text": "            )"
+            },
+            {
+              "highlight_end": 23,
+              "highlight_start": 1,
+              "text": "            .unwrap();"
+            },
+            {
+              "highlight_end": 29,
+              "highlight_start": 1,
+              "text": "            let structural ="
+            },
+            {
+              "highlight_end": 96,
+              "highlight_start": 1,
+              "text": "                <expression_facts::errors::EngineError as semantic_refusal::Error>::structural("
+            },
+            {
+              "highlight_end": 30,
+              "highlight_start": 1,
+              "text": "                    function,"
+            },
+            {
+              "highlight_end": 85,
+              "highlight_start": 1,
+              "text": "                    semantic_refusal::Atom::UnknownStatus(function.body.id.clone()),"
+            },
+            {
+              "highlight_end": 19,
+              "highlight_start": 1,
+              "text": "                );"
+            },
+            {
+              "highlight_end": 53,
+              "highlight_start": 1,
+              "text": "            let (first, later) = if selected_first {"
+            },
+            {
+              "highlight_end": 39,
+              "highlight_start": 1,
+              "text": "                (selected, structural)"
+            },
+            {
+              "highlight_end": 21,
+              "highlight_start": 1,
+              "text": "            } else {"
+            },
+            {
+              "highlight_end": 39,
+              "highlight_start": 1,
+              "text": "                (structural, selected)"
+            },
+            {
+              "highlight_end": 15,
+              "highlight_start": 1,
+              "text": "            };"
+            },
+            {
+              "highlight_end": 67,
+              "highlight_start": 1,
+              "text": "            let mut preparation = owner.into_failed_preparation();"
+            },
+            {
+              "highlight_end": 47,
+              "highlight_start": 1,
+              "text": "            preparation.receipt = Some(first);"
+            },
+            {
+              "highlight_end": 60,
+              "highlight_start": 1,
+              "text": "            let refusal = preparation.refuse_engine(later);"
+            },
+            {
+              "highlight_end": 24,
+              "highlight_start": 1,
+              "text": "            assert_eq!("
+            },
+            {
+              "highlight_end": 52,
+              "highlight_start": 1,
+              "text": "                refusal.refused().unwrap().stage(),"
+            },
+            {
+              "highlight_end": 41,
+              "highlight_start": 1,
+              "text": "                Some(if selected_first {"
+            },
+            {
+              "highlight_end": 39,
+              "highlight_start": 1,
+              "text": "                    \"selected session\""
+            },
+            {
+              "highlight_end": 25,
+              "highlight_start": 1,
+              "text": "                } else {"
+            },
+            {
+              "highlight_end": 40,
+              "highlight_start": 1,
+              "text": "                    \"structural replay\""
+            },
+            {
+              "highlight_end": 19,
+              "highlight_start": 1,
+              "text": "                })"
+            },
+            {
+              "highlight_end": 15,
+              "highlight_start": 1,
+              "text": "            );"
+            },
+            {
+              "highlight_end": 24,
+              "highlight_start": 1,
+              "text": "            assert_eq!("
+            },
+            {
+              "highlight_end": 63,
+              "highlight_start": 1,
+              "text": "                refusal.structural_receipt().unwrap().stage(),"
+            },
+            {
+              "highlight_end": 36,
+              "highlight_start": 1,
+              "text": "                if selected_first {"
+            },
+            {
+              "highlight_end": 39,
+              "highlight_start": 1,
+              "text": "                    \"selected session\""
+            },
+            {
+              "highlight_end": 25,
+              "highlight_start": 1,
+              "text": "                } else {"
+            },
+            {
+              "highlight_end": 40,
+              "highlight_start": 1,
+              "text": "                    \"structural replay\""
+            },
+            {
+              "highlight_end": 18,
+              "highlight_start": 1,
+              "text": "                }"
+            },
+            {
+              "highlight_end": 15,
+              "highlight_start": 1,
+              "text": "            );"
+            },
+            {
+              "highlight_end": 11,
+              "highlight_start": 1,
+              "text": "        });"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0308",
+        "explanation": "Expected type did not match the received type.\n\nErroneous code examples:\n\n```compile_fail,E0308\nfn plus_one(x: i32) -> i32 {\n    x + 1\n}\n\nplus_one(\"Not a number\");\n//       ^^^^^^^^^^^^^^ expected `i32`, found `&str`\n\nif \"Not a bool\" {\n// ^^^^^^^^^^^^ expected `bool`, found `&str`\n}\n\nlet x: f32 = \"Not a float\";\n//     ---   ^^^^^^^^^^^^^ expected `f32`, found `&str`\n//     |\n//     expected due to this\n```\n\nThis error occurs when an expression was used in a place where the compiler\nexpected an expression of a different type. It can occur in several cases, the\nmost common being when calling a function and passing an argument which has a\ndifferent type than the matching type in the function declaration.\n"
+      }
+    }
+  }
+]

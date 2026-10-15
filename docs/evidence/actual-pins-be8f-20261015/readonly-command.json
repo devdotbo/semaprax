@@ -1,0 +1,15 @@
+[
+  "python3",
+  "/Volumes/Semaprax/provenance/paid-route-pin-plan-be8f-20261015/strict-current-check-be8f-only.py",
+  "/Volumes/Semaprax/provenance/cfg-status-extension-actual-pins-be8f-20261015",
+  "--repo",
+  "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+  "--expected-capture-head",
+  "be8ff06ff1e3319c63a3e00f82f7085dd7b83ce9",
+  "--round",
+  "/Volumes/Semaprax/lane-prompts/cfg-status-extension-be8f-20261015",
+  "--expected-build-receipt-sha256",
+  "69dc6f55bbcc75890771bfcafb4dd73902859b9ec91425c5633dcd572c63cf47",
+  "--expected-producer-receipt-sha256",
+  "7455173fb16116c3db2cd539ba76e4238666103bf595cc5ecfb935242b990cf6"
+]

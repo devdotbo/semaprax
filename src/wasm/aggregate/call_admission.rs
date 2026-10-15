@@ -144,6 +144,13 @@ impl Emitter<'_> {
         write_i64(self.output, i64::from(CALL_DEPTH_STATUS));
         self.output.push(0x21);
         write_u32(self.output, self.plan.status);
+        if self.cleanup_plan.lexical_control.is_some() {
+            let function = self.function;
+            self.emit_execution_boundary_cleanup(
+                crate::cleanup_plan::ExecutionBoundaryKind::FunctionEntry,
+                &function.body.id,
+            )?;
+        }
         self.output.push(0x0c);
         write_u32(
             self.output,

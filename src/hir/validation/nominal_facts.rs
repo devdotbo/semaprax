@@ -4,8 +4,10 @@
 //! metadata is owned here; validator clones share that metadata. Other types and
 //! absent retained entries keep the original owning/recomputation path.
 use super::*;
+#[cfg(test)]
 use std::borrow::Cow;
 use std::cell::OnceCell;
+#[cfg(test)]
 use std::fmt::Write as _;
 use std::sync::Arc;
 
@@ -42,6 +44,7 @@ fn eligible(program: &ResolvedProgram, declaration: &ResolvedTypeDeclaration) ->
             .is_some_and(|parameters| parameters.is_empty())
 }
 
+#[cfg(test)]
 fn nominal_key(identity: &DeclarationId) -> Result<String, Diagnostic> {
     let length = identity.as_str().len();
     let mut remaining = length;
@@ -64,6 +67,48 @@ fn nominal_key(identity: &DeclarationId) -> Result<String, Diagnostic> {
 
 impl<'a> Lookup<'a> {
     fn prepare(program: &'a ResolvedProgram) -> Result<Option<SharedEntries<'a>>, Diagnostic> {
+        let count = program
+            .types
+            .iter()
+            .filter(|declaration| eligible(program, declaration))
+            .count();
+        if count == 0 {
+            return Ok(None);
+        }
+        let bytes = count
+            .checked_mul(std::mem::size_of::<Entry<'a>>())
+            .ok_or_else(refused)?;
+        reserve(bytes.checked_add(CARRIER_BYTES).ok_or_else(refused)?)?;
+        let mut entries = Vec::with_capacity(count);
+        let excess = entries
+            .capacity()
+            .checked_sub(count)
+            .and_then(|slots| slots.checked_mul(std::mem::size_of::<Entry<'a>>()))
+            .ok_or_else(refused)?;
+        reserve(excess)?;
+        for declaration in program
+            .types
+            .iter()
+            .filter(|declaration| eligible(program, declaration))
+        {
+            if let Some(facts) = program
+                .declarations
+                .cached_zero_argument_facts(&declaration.id)
+            {
+                entries.push((&declaration.id, facts));
+            }
+        }
+        if entries.is_empty() {
+            return Ok(None);
+        }
+        entries.sort_unstable_by(|left, right| left.0.cmp(right.0));
+        Ok(Some(Arc::new(entries)))
+    }
+
+    #[cfg(test)]
+    fn prepare_owned_keys(
+        program: &'a ResolvedProgram,
+    ) -> Result<Option<SharedEntries<'a>>, Diagnostic> {
         let count = program
             .types
             .iter()
@@ -149,6 +194,7 @@ impl<'a> Lookup<'a> {
     }
 }
 
+#[cfg(test)]
 impl<'a> HirValidator<'a> {
     pub(super) fn borrowed_type_facts(
         &self,
@@ -158,6 +204,28 @@ impl<'a> HirValidator<'a> {
             Ok(Some(Cow::Borrowed(facts)))
         } else {
             Ok(self.program.declarations.type_facts(ty).map(Cow::Owned))
+        }
+    }
+}
+
+// The exact nominal receiver stays first; only its owning fallback changes.
+impl HirValidator<'_> {
+    pub(super) fn borrowed_ownership_copy(
+        &self,
+        ty: &ResolvedType,
+    ) -> Result<Option<bool>, Diagnostic> {
+        ownership_flags::Payer::authenticate()?;
+        if let Some(facts) = self.nominal_facts.get(self.program, ty)? {
+            Ok(Some(facts.copy))
+        } else {
+            self.program
+                .declarations
+                .type_flags_paid_lazy(
+                    ty,
+                    ownership_flags::Payer::authenticate,
+                    ownership_flags::Payer::new,
+                )
+                .map(|facts| facts.map(|facts| facts.copy))
         }
     }
 }

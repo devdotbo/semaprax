@@ -1,0 +1,15 @@
+module std.data.ndjson.examples;
+use type @id("std.data.ndjson.frame") from std.data.ndjson as Frame;
+use type @id("std.data.ndjson.fault") from std.data.ndjson as Fault;
+use function @id("std.data.ndjson.frame-at") from std.data.ndjson as frame_at;
+use function @id("std.data.ndjson.basic-fault") from std.data.ndjson as basic_fault;
+
+@id("std.data.ndjson.examples.main")
+fn main() -> i64
+{
+    let input = [123u8, 125u8, 10u8];
+    let body = array_as_slice(input);
+    let frame = frame_at(body, 0usize);
+    let fault = basic_fault(body, frame);
+    if fault.category == 0 && frame.end == 2usize { 0 } else { 1 }
+}

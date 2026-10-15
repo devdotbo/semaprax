@@ -1,0 +1,21 @@
+@id("shiftsim.schedule.unique_patient_ids")
+fn unique_patient_ids(values: borrow Vec<Patient>) -> bool
+{
+    let length = vec_len<Patient>(values);
+    let mut index = 0usize;
+    let mut valid = true;
+    while valid && index < length {
+        let current = vec_field<Patient>(values, index, "id");
+        let mut previous_index = 0usize;
+        while valid && previous_index < index {
+            let previous = vec_field<Patient>(values, previous_index, "id");
+            valid = current != previous;
+            previous_index = previous_index + 1usize;
+            valid && previous_index < index
+        }
+        index = index + 1usize;
+        valid && index < length
+    }
+    valid
+}
+

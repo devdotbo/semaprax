@@ -5,6 +5,7 @@
 //! declared shape that produces it rather than to whichever check happens to
 //! run first in the whole-program pass.
 
+use crate::ast::Program;
 use std::path::Path;
 
 use super::*;

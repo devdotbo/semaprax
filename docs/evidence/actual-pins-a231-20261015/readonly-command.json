@@ -1,0 +1,15 @@
+[
+  "python3",
+  "/Volumes/Semaprax/provenance/paid-route-pin-workflow-a231-20261015/strict-a231-capture-only.py",
+  "/Volumes/Semaprax/provenance/receiving-union-actual-pins-a231-20261015",
+  "--repo",
+  "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+  "--expected-capture-head",
+  "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+  "--round",
+  "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015",
+  "--expected-build-receipt-sha256",
+  "2c0887bed598fe38ad681878758104831d5abede3fbc3c5d07d9568719c3c3b0",
+  "--expected-producer-receipt-sha256",
+  "478f60578e461eb5c520e4c551b5fd1f851e1e779355a4165105dd44ca95d461"
+]

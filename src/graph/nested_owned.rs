@@ -1,10 +1,10 @@
-pub(crate) use super::byte_buffer_renewal::graph_schema;
+pub(crate) use super::byte_helper_renewal::graph_schema;
 use crate::cleanup::FieldLivenessShape;
 use crate::cleanup_plan::{
     StorageId, CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11, CLEANUP_PLAN_SCHEMA_V12,
     CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14, CLEANUP_PLAN_SCHEMA_V15,
-    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V7,
-    CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
+    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18,
+    CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
 };
 use crate::diagnostic::Diagnostic;
 use crate::hir::{PlaceProjection, ResolvedFunction, ResolvedProgram};
@@ -46,6 +46,22 @@ pub(super) fn nested_cleanup_graph_schema<'a>(
     }
     reject_nested_native_flags(has_nested_cleanup, has_native_import)?;
 
+    // Graph v84 composes this independently checked current finite-discard
+    // profile. A parts-only view or equal-content foreign function cannot
+    // activate it; frozen nested schemas retain their original loan guard.
+    if let Some(program) = program {
+        let current = functions.iter().all(|function| {
+            program
+                .functions
+                .iter()
+                .chain(program.function_instances.iter().map(|i| &i.function))
+                .any(|held| std::ptr::eq(held, *function))
+        });
+        if current && super::copy_discard::authenticate_finite_composition(program)? {
+            return Ok(Some("semaprax.graph.v84"));
+        }
+    }
+
     let has_attached_loans = functions
         .iter()
         .any(|function| !function.loan_plan.loans.is_empty());
@@ -60,25 +76,29 @@ pub(super) fn nested_cleanup_graph_schema<'a>(
     }
 
     let mut has_authenticated_nested_projected_loan = false;
+    let mut lexical_replayed = false;
     for function in &functions {
         if function.loan_plan.loans.is_empty() {
             continue;
         }
+        let lexical_overlay =
+            authenticate_lexical_overlay(program, function, &mut lexical_replayed)?;
         for loan in &function.loan_plan.loans {
             if loan.origin.projections.len() < 2
-                || !matches!(
-                    function.cleanup_plan.schema,
-                    CLEANUP_PLAN_SCHEMA_V7
-                        | CLEANUP_PLAN_SCHEMA_V8
-                        | CLEANUP_PLAN_SCHEMA_V9
-                        | CLEANUP_PLAN_SCHEMA_V10
-                        | CLEANUP_PLAN_SCHEMA_V11
-                        | CLEANUP_PLAN_SCHEMA_V12
-                        | CLEANUP_PLAN_SCHEMA_V13
-                        | CLEANUP_PLAN_SCHEMA_V15
-                        | CLEANUP_PLAN_SCHEMA_V16
-                        | CLEANUP_PLAN_SCHEMA_V17
-                )
+                || !(lexical_overlay
+                    || matches!(
+                        function.cleanup_plan.schema,
+                        CLEANUP_PLAN_SCHEMA_V7
+                            | CLEANUP_PLAN_SCHEMA_V8
+                            | CLEANUP_PLAN_SCHEMA_V9
+                            | CLEANUP_PLAN_SCHEMA_V10
+                            | CLEANUP_PLAN_SCHEMA_V11
+                            | CLEANUP_PLAN_SCHEMA_V12
+                            | CLEANUP_PLAN_SCHEMA_V13
+                            | CLEANUP_PLAN_SCHEMA_V15
+                            | CLEANUP_PLAN_SCHEMA_V16
+                            | CLEANUP_PLAN_SCHEMA_V17
+                    ))
                 || !function_has_nested_storage(function)?
                 || !loan_origin_is_nested_owned_leaf(function, loan)
                 || program.is_some_and(|program| {
@@ -211,9 +231,9 @@ fn composition_error(message: &str) -> Diagnostic {
 }
 
 fn parts_use_iterator(
-    types: &[crate::hir::ResolvedTypeDeclaration],
-    functions: &[ResolvedFunction],
-    templates: &[crate::hir::ResolvedFunctionTemplate],
+    types: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    templates: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedFunctionTemplate> + ?Sized),
     instances: &[crate::hir::ResolvedFunctionInstance],
 ) -> bool {
     fn function_uses_iterator(function: &ResolvedFunction) -> bool {
@@ -273,13 +293,34 @@ fn parts_use_iterator(
 // Frozen workspace source metadata retains its versioned pre-v34 contract.
 pub(super) fn pre_filesystem_schema_from_parts(
     interfaces: &[crate::hir::ResolvedInterface],
-    types: &[crate::hir::ResolvedTypeDeclaration],
-    functions: &[ResolvedFunction],
-    function_templates: &[crate::hir::ResolvedFunctionTemplate],
+    types: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    function_templates: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedFunctionTemplate>
+          + ?Sized),
     function_instances: &[crate::hir::ResolvedFunctionInstance],
+) -> Result<&'static str, Diagnostic> {
+    pre_filesystem_schema_from_parts_with_renewal_authority(
+        interfaces,
+        types,
+        functions,
+        function_templates,
+        function_instances,
+        None,
+    )
+}
+
+pub(super) fn pre_filesystem_schema_from_parts_with_renewal_authority(
+    interfaces: &[crate::hir::ResolvedInterface],
+    types: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    function_templates: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedFunctionTemplate>
+          + ?Sized),
+    function_instances: &[crate::hir::ResolvedFunctionInstance],
+    renewal_authority: Option<&dyn Fn(&ResolvedFunction) -> bool>,
 ) -> Result<&'static str, Diagnostic> {
     let iterator_schema = iterator_loop_schema(
         None,
+        renewal_authority,
         functions
             .iter()
             .chain(function_instances.iter().map(|instance| &instance.function)),
@@ -298,6 +339,7 @@ pub(super) fn pre_filesystem_schema_from_parts(
                     | CLEANUP_PLAN_SCHEMA_V15
                     | CLEANUP_PLAN_SCHEMA_V16
                     | CLEANUP_PLAN_SCHEMA_V17
+                    | CLEANUP_PLAN_SCHEMA_V18
             )
         })
         && super::native_import::declares_native_rust_import(interfaces)
@@ -380,6 +422,7 @@ pub(super) fn pre_filesystem_graph_schema(
 ) -> Result<&'static str, Diagnostic> {
     let iterator_schema = iterator_loop_schema(
         Some(program),
+        None,
         program.functions.iter().chain(
             program
                 .function_instances
@@ -407,6 +450,7 @@ pub(super) fn pre_filesystem_graph_schema(
                     | CLEANUP_PLAN_SCHEMA_V15
                     | CLEANUP_PLAN_SCHEMA_V16
                     | CLEANUP_PLAN_SCHEMA_V17
+                    | CLEANUP_PLAN_SCHEMA_V18
             )
         })
         && super::native_import::declares_native_rust_import(&program.interfaces)
@@ -423,7 +467,13 @@ pub(super) fn pre_filesystem_graph_schema(
                 || requires_generic_result_schema(program)
                 || super::generic_mapping::requires_v35(&program.function_templates)
                 || crate::hir::function_value::requires_function_values(program)
-                || super::owned_text_record_loans::requires(program),
+                || super::owned_text_record_loans::requires(program)
+                || super::owned_collection_records::requires(program)
+                || super::projected_string_view::requires(program)
+                || super::owned_nested_outcome::requires(program)
+                || super::scoped_vec_field::requires(program)
+                || crate::vec_ops::string_slot::resolved_uses(program)
+                || crate::hir::vec_constructor::program_uses(program)?,
         )?;
         return Ok(iterator_schema);
     }
@@ -437,6 +487,15 @@ pub(super) fn pre_filesystem_graph_schema(
         && !requires_generic_result_schema(program)
         && !super::generic_mapping::requires_v35(&program.function_templates)
         && !super::owned_text_record_loans::requires(program)
+        && !super::owned_collection_records::requires(program)
+        && !super::projected_string_view::requires(program)
+        && !super::owned_nested_outcome::requires(program)
+        && !super::scoped_vec_field::requires(program)
+        && !super::byte_helper_renewal::requires(program)
+        && !super::finite_byte_scratch::requires(program)
+        && !super::consuming_vec_renewal::requires(program)
+        && !crate::hir::vec_constructor::program_uses(program)?
+        && !crate::vec_ops::string_slot::resolved_uses(program)
     {
         return legacy_graph_schema(program);
     }
@@ -463,17 +522,79 @@ pub(super) fn requires_generic_result_schema(program: &ResolvedProgram) -> bool 
 pub(super) fn generic_payload_schema(
     program: &ResolvedProgram,
 ) -> Result<&'static str, Diagnostic> {
+    if super::consuming_vec_renewal::requires(program) {
+        return super::consuming_vec_renewal::graph_schema(program);
+    }
+    if super::finite_byte_scratch::requires(program) {
+        return super::finite_byte_scratch::graph_schema(program);
+    }
+    if super::byte_helper_renewal::requires(program) {
+        return super::byte_helper_renewal::graph_schema(program);
+    }
     program_schema(
         program,
         !program.function_instances.is_empty()
             || requires_generic_result_schema(program)
             || super::generic_mapping::requires_v35(&program.function_templates)
             || crate::hir::function_value::requires_function_values(program)
-            || super::owned_text_record_loans::requires(program),
+            || super::owned_text_record_loans::requires(program)
+            || super::owned_collection_records::requires(program)
+            || super::projected_string_view::requires(program)
+            || super::owned_nested_outcome::requires(program)
+            || super::scoped_vec_field::requires(program)
+            || crate::vec_ops::string_slot::resolved_uses(program),
     )
 }
 
 pub(crate) fn legacy_graph_schema(program: &ResolvedProgram) -> Result<&'static str, Diagnostic> {
+    if crate::hir::vec_constructor::program_uses(program)? {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "Vec constructors require Graph v81",
+        ));
+    }
+    if crate::vec_ops::string_slot::resolved_uses(program) {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "String slot views require Graph v80",
+        ));
+    }
+    if super::consuming_vec_renewal::requires(program) {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "consuming owned-record renewal requires Graph v79",
+        ));
+    }
+    if super::finite_byte_scratch::requires(program) {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "finite owned-iterator scratch requires Graph v78",
+        ));
+    }
+    if super::byte_helper_renewal::requires(program) {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "byte helper renewal requires Graph v76",
+        ));
+    }
+    if super::owned_nested_outcome::requires(program) {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "owning nested outcomes require Graph v74",
+        ));
+    }
+    if super::projected_string_view::requires(program) {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "projected String views require Graph v73",
+        ));
+    }
+    if super::owned_collection_records::requires(program) {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "nested collection records require Graph v72",
+        ));
+    }
     if super::owned_text_record_loans::requires(program) {
         return Err(Diagnostic::io(
             "SPX-G410",
@@ -490,6 +611,7 @@ fn program_schema(
     super::work_counter::record(super::work_counter::Work::SchemaSelection, 1);
     let iterator_schema = iterator_loop_schema(
         Some(program),
+        None,
         program.functions.iter().chain(
             program
                 .function_instances
@@ -585,6 +707,19 @@ pub(super) fn graph_schema_includes_modern_composite_facts(schema: &str) -> bool
             | "semaprax.graph.v69"
             | "semaprax.graph.v70"
             | "semaprax.graph.v71"
+            | "semaprax.graph.v72"
+            | "semaprax.graph.v73"
+            | "semaprax.graph.v74"
+            | "semaprax.graph.v76"
+            | "semaprax.graph.v78"
+            | "semaprax.graph.v79"
+            | "semaprax.graph.v80"
+            | "semaprax.graph.v81"
+            | "semaprax.graph.v82"
+            | "semaprax.graph.v83"
+            | "semaprax.graph.v84" | "semaprax.graph.v85"
+            | "semaprax.graph.v77"
+            | "semaprax.graph.v75"
     )
 }
 
@@ -620,6 +755,19 @@ pub(super) fn graph_schema_includes_loans(schema: &str) -> bool {
             | "semaprax.graph.v69"
             | "semaprax.graph.v70"
             | "semaprax.graph.v71"
+            | "semaprax.graph.v72"
+            | "semaprax.graph.v73"
+            | "semaprax.graph.v74"
+            | "semaprax.graph.v76"
+            | "semaprax.graph.v78"
+            | "semaprax.graph.v79"
+            | "semaprax.graph.v80"
+            | "semaprax.graph.v81"
+            | "semaprax.graph.v82"
+            | "semaprax.graph.v83"
+            | "semaprax.graph.v84" | "semaprax.graph.v85"
+            | "semaprax.graph.v77"
+            | "semaprax.graph.v75"
     )
 }
 
@@ -653,25 +801,70 @@ pub(super) fn graph_schema_includes_projected_provenance(schema: &str) -> bool {
             | "semaprax.graph.v69"
             | "semaprax.graph.v70"
             | "semaprax.graph.v71"
+            | "semaprax.graph.v72"
+            | "semaprax.graph.v73"
+            | "semaprax.graph.v74"
+            | "semaprax.graph.v76"
+            | "semaprax.graph.v78"
+            | "semaprax.graph.v79"
+            | "semaprax.graph.v80"
+            | "semaprax.graph.v81"
+            | "semaprax.graph.v82"
+            | "semaprax.graph.v83"
+            | "semaprax.graph.v84" | "semaprax.graph.v85"
+            | "semaprax.graph.v77"
+            | "semaprax.graph.v75"
     )
 }
 
 pub(super) fn rejected_evidence_schema(schema: &str) -> Option<Diagnostic> {
     let message = match schema {
-        "semaprax.graph.v71" => "owned-String byte-view composition selects `semaprax.graph.v71`, which is outside this evidence flow's admission",
-        "semaprax.graph.v70" => "same-owner byte-buffer renewal selects `semaprax.graph.v70`, which is outside this evidence flow's admission",
-        "semaprax.graph.v69" => "owned-text record loans select `semaprax.graph.v69`, which is outside this evidence flow's admission",
-        "semaprax.graph.v68" => "String replacement selects `semaprax.graph.v68`, which is outside this evidence flow's admission",
-        "semaprax.graph.v67" => "owned-record iteration selects `semaprax.graph.v67`, which is outside this evidence flow's admission",
-        "semaprax.graph.v66" => "ordinary Vec renewal selects `semaprax.graph.v66`, which is outside this evidence flow's admission",
-        "semaprax.graph.v27" => "nested owned-record programs composed with shared loans select `semaprax.graph.v27`, which is outside this evidence flow's admission",
-        "semaprax.graph.v26" => "nested owned-record programs select `semaprax.graph.v26`, which is outside this evidence flow's admission",
-        "semaprax.graph.v29" => "nested owned-record destructuring composed with authenticated projected loans selects `semaprax.graph.v29`, which is outside this evidence flow's admission",
-        "semaprax.graph.v28" => "nested owned-record destructuring selects `semaprax.graph.v28`, which is outside this evidence flow's admission",
-        "semaprax.graph.v31" => "nested owned-record update composed with authenticated projected loans selects `semaprax.graph.v31`, which is outside this evidence flow's admission",
-        "semaprax.graph.v30" => "nested owned-record update selects `semaprax.graph.v30`, which is outside this evidence flow's admission",
-        "semaprax.graph.v33" => "owned-variant programs composed with projected shared loans select `semaprax.graph.v33`, which is outside this evidence flow's admission",
-        "semaprax.graph.v32" => "owned-variant programs composed with shared loans select `semaprax.graph.v32`, which is outside this evidence flow's admission",
+        "semaprax.graph.v85" => { "scoped Vec field source forms select `semaprax.graph.v85`, which is outside this evidence flow's admission" }
+        "semaprax.graph.v75" => {
+            "scoped Vec field reads select `semaprax.graph.v75`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v71" => {
+            "owned-String byte-view composition selects `semaprax.graph.v71`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v70" => {
+            "same-owner byte-buffer renewal selects `semaprax.graph.v70`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v69" => {
+            "owned-text record loans select `semaprax.graph.v69`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v68" => {
+            "String replacement selects `semaprax.graph.v68`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v67" => {
+            "owned-record iteration selects `semaprax.graph.v67`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v66" => {
+            "ordinary Vec renewal selects `semaprax.graph.v66`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v27" => {
+            "nested owned-record programs composed with shared loans select `semaprax.graph.v27`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v26" => {
+            "nested owned-record programs select `semaprax.graph.v26`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v29" => {
+            "nested owned-record destructuring composed with authenticated projected loans selects `semaprax.graph.v29`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v28" => {
+            "nested owned-record destructuring selects `semaprax.graph.v28`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v31" => {
+            "nested owned-record update composed with authenticated projected loans selects `semaprax.graph.v31`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v30" => {
+            "nested owned-record update selects `semaprax.graph.v30`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v33" => {
+            "owned-variant programs composed with projected shared loans select `semaprax.graph.v33`, which is outside this evidence flow's admission"
+        }
+        "semaprax.graph.v32" => {
+            "owned-variant programs composed with shared loans select `semaprax.graph.v32`, which is outside this evidence flow's admission"
+        }
         _ => return None,
     };
     Some(Diagnostic::io("SPX-G410", message))
@@ -692,8 +885,9 @@ pub(super) fn reject_nested_native_flags(
 
 fn iterator_loop_schema<'a>(
     program: Option<&ResolvedProgram>,
+    renewal_authority: Option<&dyn Fn(&ResolvedFunction) -> bool>,
     functions: impl IntoIterator<Item = &'a ResolvedFunction>,
-    templates: &[crate::hir::ResolvedFunctionTemplate],
+    templates: &(impl crate::hir::items::ItemSource<crate::hir::ResolvedFunctionTemplate> + ?Sized),
 ) -> Result<&'static str, Diagnostic> {
     let mut has_loop = templates
         .iter()
@@ -701,7 +895,10 @@ fn iterator_loop_schema<'a>(
     let mut has_renewal = templates
         .iter()
         .any(crate::hir::iterator_loop::template_requires_renewal);
+    let mut lexical_replayed = false;
     for function in functions {
+        let lexical_overlay =
+            authenticate_lexical_overlay(program, function, &mut lexical_replayed)?;
         let expected_renewal = crate::hir::iterator_loop::function_requires_renewal(function)
             || program.map_or_else(
                 || crate::hir::iterator_loop::function_may_require_record_renewal(function),
@@ -722,6 +919,7 @@ fn iterator_loop_schema<'a>(
                 },
             );
         if owned_iterator
+            && !lexical_overlay
             && !matches!(
                 function.cleanup_plan.schema,
                 CLEANUP_PLAN_SCHEMA_V13
@@ -732,29 +930,44 @@ fn iterator_loop_schema<'a>(
         {
             return Err(composition_error("owned iterator cleanup schema disagrees"));
         }
-        let ordinary_renewal = crate::hir::vec_loop_renewal::requires(function);
+        // Without retained declarations the frozen from-parts view cannot
+        // authenticate the additive nominal Copy-record renewal classifier.
+        let ordinary_renewal = program.map_or_else(
+            || {
+                renewal_authority.map_or_else(
+                    || crate::hir::vec_loop_renewal::requires(function),
+                    |authority| authority(function),
+                )
+            },
+            |program| crate::hir::vec_loop_renewal::requires_in(program, function),
+        );
         let string_replacement = crate::string_ops::replacement::requires(function);
         let byte_renewal = crate::byte_ops::requires_same_owner_set(function);
-        if (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V17) != byte_renewal {
+        if !lexical_overlay
+            && (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V17) != byte_renewal
+        {
             return Err(composition_error(
                 "byte-buffer renewal cleanup schema disagrees",
             ));
         }
-        if (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V16)
-            != (!byte_renewal && string_replacement)
+        if !lexical_overlay
+            && (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V16)
+                != (!byte_renewal && string_replacement)
         {
             return Err(composition_error(
                 "String replacement cleanup schema disagrees",
             ));
         }
-        if (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V15)
-            != (!byte_renewal && !string_replacement && ordinary_renewal)
+        if !lexical_overlay
+            && (function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V15)
+                != (!byte_renewal && !string_replacement && ordinary_renewal)
         {
             return Err(composition_error(
                 "ordinary Vec renewal cleanup schema disagrees",
             ));
         }
-        if !owned_iterator
+        if !lexical_overlay
+            && !owned_iterator
             && !ordinary_renewal
             && !string_replacement
             && !byte_renewal
@@ -788,6 +1001,7 @@ pub(super) fn has_iterator_cleanup(function: &ResolvedFunction) -> bool {
             | CLEANUP_PLAN_SCHEMA_V15
             | CLEANUP_PLAN_SCHEMA_V16
             | CLEANUP_PLAN_SCHEMA_V17
+            | CLEANUP_PLAN_SCHEMA_V18
     ) {
         return function
             .cleanup
@@ -828,3 +1042,35 @@ pub(super) fn has_nested_cleanup(function: &ResolvedFunction) -> bool {
         CLEANUP_PLAN_SCHEMA_V7 | CLEANUP_PLAN_SCHEMA_V8 | CLEANUP_PLAN_SCHEMA_V9
     )
 }
+
+// A source-bound lexical overlay cannot stand in for underlying family facts.
+fn authenticate_lexical_overlay(
+    program: Option<&ResolvedProgram>,
+    function: &ResolvedFunction,
+    replayed: &mut bool,
+) -> Result<bool, Diagnostic> {
+    let selected = function.cleanup_plan.schema == CLEANUP_PLAN_SCHEMA_V18;
+    let required = crate::hir::lexical_exit::requires(function)?;
+    if !selected && !required && function.cleanup_plan.lexical_control.is_none() {
+        return Ok(false);
+    }
+    let program = program.ok_or_else(|| {
+        composition_error("lexical composition requires retained typed program authority")
+    })?;
+    if selected && !required {
+        return Err(composition_error(
+            "lexical cleanup schema has no authored exits",
+        ));
+    }
+    let owner = crate::hir::lexical_exit::owner(program, function)?;
+    crate::hir::lexical_exit::validate_function(program, function, &owner)?;
+    if !*replayed {
+        crate::cleanup_plan::validate_program(program)?;
+        *replayed = true;
+    }
+    Ok(selected)
+}
+
+#[cfg(test)]
+#[path = "nested_owned/lexical_composition_tests.rs"]
+mod lexical_composition_tests;

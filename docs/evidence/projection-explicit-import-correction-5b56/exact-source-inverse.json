@@ -1,0 +1,12 @@
+{
+  "source": "src/workspace_graph/expected_projection/borrowed_imports/inline.rs",
+  "current_sha256": "21e084ec204ca71b1b43aae82bf850176e60b972020efc3971b9ff3db08166f3",
+  "original": "inline.rs.before",
+  "original_sha256": "2ec35500f7636cd17a12560f0da8d1a83f315f413fd95e241cbfd546aedf01cd",
+  "edits": [
+    {
+      "after": "use super::{\n    alias_clone, ast_function_cost, ast_function_signature_cost, ast_type_declaration_cost,\n    budgeted_format, directory, eligible, graph_error, import_stub, iterative,\n    pay_default_teardown, pay_signature, pay_teardown, pay_teardown_minimum, pay_type, refusal,\n    reserve_builder_structure, type_rewrite, AuthoredDeclaration, LayoutRegistry, StructuralCost,\n};\nuse crate::ast::program_source::{generated_roots::GeneratedRoots, SyntheticProgramView};\nuse crate::ast::{Expr, ExprKind, Function, ModuleUseKind, Program, Type, TypeDeclaration};\nuse std::collections::BTreeMap;",
+      "before": "use super::*;"
+    }
+  ]
+}

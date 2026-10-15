@@ -1,0 +1,117 @@
+Review DISTINCT removal of write-only referenced_exits AVL with exact repeated-vs-wrongowner error priority. No tools/execution. Full old440line receiving function independentlycompiled verbatim; alloldstatus/edge/code unchanged. Incomingfunction/plan sharedborrowedimmutable throughout. Callerloop checks block.id==enumeration index and regionbounds BEFORE transitions/terminator. Reachingcurrentblock therefore proves earlierprefix passed every transition+terminator. Existingedgeinventory loopstillfirst. No alternateExit handlingbetweenguardanddispatch. StatusSources token exactfunction/budgetaddress/currentcapturedACTIVE checked atentry. No cap/unitdiscount, canonicalplan neverreordered. Need assess counterexamples/coldcontrolfunding/firsterrororder.
+Proof: oldsethasx iff some earlier accepted block terminatedExit(x). Suchblock's post-insert ownercheck required exits[x].from==block.id, orfunctionalreadyreturned. ContiguouscheckedearlierIDs areunique/index-addressable. Therefore oldsetcontainsx iff declaredowner<current AND plan.blocks[declaredowner] has exactownerID and terminatorExit(x). If declaredowner==current, xcannotalreadybeinserted. If wrongowner earlier/differentexit/nonExit/future/outofrange, oldfirstinsertionwouldpass thenwrongowner; preserveit. If earlierownerreallyExit(x), oldduplicatewins beforewrongowner; newdetectsandsame6fielddiagnostic. Do notvalidateExitTarget.id (oldusesindexedkey+fromonly), no countassumption. Earliertamperedblockguard/errors stopbeforecurrent. Onlycoldwrongownerroute createspaidProbe; successfulroute createsnone. OriginalDirectory::new0+insert0auth checks explicitlypreserved SAMElabels/locationbeforeexistingownerread. Newcoldreads onlyafterfullControl+20derivedstep prepayments; nohelperResultintroduced (inlineexistingarm). Fullold/newactualwork/byteexactshortzero/sticky/Drop+hostileparity pending, noexecutionclaim.
+OLD creation:
+let mut referenced_exits =
+Directory::new(function, budget, "cleanup referenced exit directory")?;
+
+OLD completeexitdispatch:
+CleanupTerminator::Exit(exit) => {
+if usize::try_from(exit.0)
+.ok()
+.is_none_or(|value| value >= plan.exits.len())
+|| !referenced_exits.insert(function, *exit, budget)?
+{
+return Err(replay_error(
+function,
+"cleanup block references an unknown or repeated exit",
+));
+}
+if plan.exits[exit.0 as usize].from != block.id {
+return Err(replay_error(
+function,
+"cleanup exit is owned by the wrong block",
+));
+}
+}
+CURRENT zeroauth constructorreplacement:
+// Preserve the original directory constructor's zero/current/sticky checks.
+budget.reserve_bytes(function, 0, "cleanup referenced exit directory")?;
+budget.charge(function, 0, "cleanup referenced exit directory")?;
+
+ACTUAL callerblockguard:
+for (index, block) in plan.blocks.iter().enumerate() {
+if block.id.0 != u32_index(function, index, "cleanup block")?
+|| usize::try_from(block.region.0)
+.ok()
+.is_none_or(|region| region >= plan.regions.len())
+{
+return Err(replay_error(
+function,
+"cleanup block has a non-contiguous ID or unknown region",
+));
+}
+
+CURRENT completeexitdispatch:
+CleanupTerminator::Exit(exit) => {
+if usize::try_from(exit.0)
+.ok()
+.is_none_or(|value| value >= plan.exits.len())
+{
+return Err(replay_error(
+function,
+"cleanup block references an unknown or repeated exit",
+));
+}
+// The eliminated insert authenticated even an already-paid
+// slot. Keep both zero checks before the original owner read.
+budget.reserve_bytes(function, 0, "cleanup referenced exit directory")?;
+budget.charge(function, 0, "cleanup referenced exit directory")?;
+if plan.exits[exit.0 as usize].from != block.id {
+// Only a malformed owner needs a bounded previous-block
+// proof. Pay every control and step before these new reads.
+budget.reserve_bytes(function, exit_prefix::CONTROL_BYTES,
+"cleanup prior exit reference controls")?;
+budget.charge(function, exit_prefix::PROBE_UNITS,
+"cleanup prior exit reference proof")?;
+let mut probe = exit_prefix::Probe {
+owner: plan.exits[exit.0 as usize].from,
+current: block.id,
+exit: *exit,
+previous: None,
+repeated: false,
+};
+if probe.owner.0 < probe.current.0 {
+probe.previous = plan.blocks.get(probe.owner.0 as usize);
+if let Some(previous) = probe.previous {
+probe.repeated = previous.id == probe.owner
+&& matches!(previous.terminator,
+CleanupTerminator::Exit(seen) if seen == probe.exit);
+}
+}
+if probe.repeated {
+return Err(replay_error(function,
+"cleanup block references an unknown or repeated exit"));
+}
+return Err(replay_error(
+function,
+"cleanup exit is owned by the wrong block",
+));
+}
+}
+NEW fullcoldcontrols/work contract:
+//! Cold malformed-owner proof only; valid exits initialize no new carrier.
+use super::*;
+
+pub(super) struct Probe<'a> {
+pub(super) owner: BlockId,
+pub(super) current: BlockId,
+pub(super) exit: crate::cleanup_plan::ExitTargetId,
+pub(super) previous: Option<&'a crate::cleanup_plan::CleanupBlock>,
+pub(super) repeated: bool,
+}
+// Full initialized and receiving probe overlap, get-result option, plus the simultaneously received previous/seen
+// pattern bindings and comparison booleans. No old Directory/header credit.
+pub(super) const CONTROL_BYTES: usize = 2 * std::mem::size_of::<Probe<'static>>()
++ std::mem::size_of::<Option<&crate::cleanup_plan::CleanupBlock>>()
++ std::mem::size_of::<&crate::cleanup_plan::CleanupBlock>()
++ std::mem::size_of::<crate::cleanup_plan::ExitTargetId>()
++ 3 * std::mem::size_of::<bool>();
+// A conservative source-derived ceiling, paid before every new proof read:
+// five initializers, owner comparison/index conversion (2), indexed node/key/
+// child access (3), previous assignment/binding (2), id comparison (1), variant
+// discriminator/binding/value comparison (3), conjunction/repeated assignment
+// and final decision (3): nineteen one-step operations, plus one for
+// the optional-presence branch. Existing numeric/comparator prices stay fixed.
+pub(super) const PROBE_UNITS: usize = 20;
+
+OldAVL insert authenticatesreserve0+charge0, fullnumericcomparison1+nodevisits3 perprobe, fullreplacementVec+relocation paid, nodeinsert3, rebalance16/rotation20. Validnewroute removesonlyactualAVLoperations; retainsoldbounds+ownerreads/zeroauth; no newpositivecarrierfee validroute. Cold CONTROL_BYTES funds2fullinitialized/receivingProbe layouts, fullgetreturnOption, separateprevious/seenpatternbindings,3comparisonbools beforeanynewread;20stepceiling derivesfieldinit/read/compare/branch count. Does logic preserveunknown/repeatedvswrongowner evenforforgedcurrent/future/priorowner/exitid/terminators/multiplefaults? Anyunfundednewcarrier/control, lostauth or staleverdict?

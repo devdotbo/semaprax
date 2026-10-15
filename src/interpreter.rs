@@ -58,9 +58,23 @@
 //! persistence, no hot reload, no debugger mapping, executes no target, and
 //! changes no source.
 mod api_admission;
+#[allow(
+    dead_code,
+    reason = "ordinary partition receiving closure pending targets and public copy-out; no Value installer"
+)]
+pub(crate) mod byte_partition;
+mod call_frame;
+mod checked_allocation;
 mod closures;
 mod command_state;
+pub(crate) mod construction_fusion;
+mod copy_projection;
+use construction_fusion::{BorrowedSliceValue, OwnedBytesValue};
+mod static_text;
+use static_text::{BorrowedRoot, Utf8Backing};
 pub(crate) mod environment;
+mod evaluate_control;
+mod evaluate_remaining;
 mod expression_children;
 mod failure_detail;
 pub(crate) mod filesystem;
@@ -68,6 +82,8 @@ mod function_values;
 mod generic_owned;
 pub mod internal_strings;
 mod iterator;
+mod lexical_control;
+mod lexical_temporary;
 mod list;
 mod mutable_closure;
 mod nested_owned;
@@ -75,12 +91,20 @@ pub(crate) mod network;
 pub(crate) mod process;
 pub mod source_entry;
 use command_state::CommandInputState;
+#[cfg(test)]
+mod byte_traversal_peak_tests;
+#[cfg(test)]
+mod fused_row_backing;
 mod owned_box;
 mod owned_buffer;
 mod owned_try;
 mod owned_vec;
 mod prepared;
+mod projected_string_view;
 mod public_api_argument;
+mod row_loan;
+mod string_slot;
+mod vec_field;
 pub use public_api_argument::PublicApiArgument;
 mod map_collections;
 mod resolved_case;
@@ -938,7 +962,7 @@ pub fn evaluate_resolved_owned_data(
                     Err(Flow::Guard(detail)) => {
                         OwnedDataEvaluationOutcome::GuardError(detail.to_owned())
                     }
-                    Err(Flow::Residual(_)) => OwnedDataEvaluationOutcome::GuardError(
+                    Err(Flow::Residual(_) | Flow::Lexical(_)) => OwnedDataEvaluationOutcome::GuardError(
                         owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
                     ),
                 };
@@ -1160,9 +1184,11 @@ pub(crate) fn evaluate_resolved_public_api(
                     Err(Flow::Guard(detail)) => {
                         PublicApiEvaluationOutcome::GuardError(detail.to_owned())
                     }
-                    Err(Flow::Residual(_)) => PublicApiEvaluationOutcome::GuardError(
-                        owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
-                    ),
+                    Err(Flow::Residual(_) | Flow::Lexical(_)) => {
+                        PublicApiEvaluationOutcome::GuardError(
+                            owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
+                        )
+                    }
                 };
                 PublicApiEvaluation {
                     function_id: entry.id.clone(),
@@ -1372,9 +1398,11 @@ pub(crate) fn evaluate_resolved_flat_owned_record_api(
                     Err(Flow::Guard(detail)) => {
                         FlatOwnedRecordEvaluationOutcome::GuardError(detail.to_owned())
                     }
-                    Err(Flow::Residual(_)) => FlatOwnedRecordEvaluationOutcome::GuardError(
-                        owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
-                    ),
+                    Err(Flow::Residual(_) | Flow::Lexical(_)) => {
+                        FlatOwnedRecordEvaluationOutcome::GuardError(
+                            owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
+                        )
+                    }
                 };
                 FlatOwnedRecordEvaluation {
                     function_id: entry.id.clone(),
@@ -1586,9 +1614,11 @@ pub(crate) fn evaluate_resolved_owned_utf8_api(
                     Err(Flow::Guard(detail)) => {
                         OwnedUtf8ApiEvaluationOutcome::GuardError(detail.to_owned())
                     }
-                    Err(Flow::Residual(_)) => OwnedUtf8ApiEvaluationOutcome::GuardError(
-                        owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
-                    ),
+                    Err(Flow::Residual(_) | Flow::Lexical(_)) => {
+                        OwnedUtf8ApiEvaluationOutcome::GuardError(
+                            owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
+                        )
+                    }
                 };
                 OwnedUtf8ApiEvaluation {
                     function_id: entry.id.clone(),
@@ -1642,6 +1672,9 @@ fn settle_interpreted_bytes(
     let Value::Bytes(value) = value else {
         return Err("owned-data result payload is not Bytes");
     };
+    if matches!(value.bytes, construction_fusion::Backing::Leased(_)) {
+        return Err("private invocation-owned range cannot cross the public ABI");
+    }
     if value.bytes.len() as u64 > crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES {
         return Err("owned-data result exceeds the public output bound");
     }
@@ -2062,7 +2095,7 @@ fn interpret_on_current_thread(
                 )]);
             }
             Flow::Guard(detail) => return Err(vec![guard_error(detail)]),
-            Flow::Residual(_) => {
+            Flow::Residual(_) | Flow::Lexical(_) => {
                 return Err(vec![guard_error(owned_try::ESCAPED_RESIDUAL_GUARD)]);
             }
         },
@@ -2303,10 +2336,13 @@ fn variant_constructor_is_admitted(
         seen.insert(field.field.clone())
             && field.value.ty == *declared_ty
             && field.value.ownership
-                == if *declared_ty == ResolvedType::Bytes
-                    || *declared_ty == ResolvedType::String
-                    || crate::iterator_ops::is_iter(declared_ty)
-                {
+                == if variant_admission::field_is_owned(
+                    declarations,
+                    &expression.ty,
+                    case,
+                    &field.field,
+                    declared_ty,
+                ) {
                     hir::OwnershipMode::Own
                 } else {
                     hir::OwnershipMode::Value
@@ -2321,7 +2357,6 @@ fn variant_pattern_is_admitted(
     arms: &[hir::ResolvedMatchArm],
 ) -> bool {
     let list_step = crate::list_ops::step_shape(declarations, ty);
-    let record_iterator_step = crate::iterator_ops::step_shape(declarations, ty);
     if !(is_admitted_owned_variant(declarations, ty)
         || variant_admission::is_admitted_copy_scalar_variant(declarations, ty)
         || list_step)
@@ -2402,15 +2437,13 @@ fn variant_pattern_is_admitted(
                 {
                     return false;
                 }
-                let expected_ownership = if *declared_ty == ResolvedType::Bytes
-                    || *declared_ty == ResolvedType::String
-                    || crate::iterator_ops::is_iter(declared_ty)
-                    || (record_iterator_step
-                        && hir::owned_record_collection::is_admitted_owned_record_collection_element(
-                            declarations,
-                            declared_ty,
-                        ))
-                {
+                let expected_ownership = if variant_admission::field_is_owned(
+                    declarations,
+                    ty,
+                    case,
+                    &field.field,
+                    declared_ty,
+                ) {
                     match mode {
                         hir::ResolvedMatchMode::Own => hir::OwnershipMode::Own,
                         hir::ResolvedMatchMode::Borrow => hir::OwnershipMode::Borrow,
@@ -2516,7 +2549,11 @@ fn scan_closure(
                 Err(reject_scan(expression, REASON_RECORD_UPDATE))
             }
             ResolvedExprKind::Project { .. } => {
-                Err(reject_scan(expression, REASON_RECORD_PROJECTION))
+                if copy_projection::admitted(program, expression) {
+                    Ok(())
+                } else {
+                    Err(reject_scan(expression, REASON_RECORD_PROJECTION))
+                }
             }
             ResolvedExprKind::Upcast { .. } => {
                 Err(reject_scan(expression, REASON_RECORD_PROJECTION))
@@ -2564,12 +2601,14 @@ fn scan_closure(
                 // A `string` arm result is an independent value: each arm
                 // builds its own, exactly as for a scalar result.
                 let owned_byte_variant = (is_admitted_resolved_scalar(&expression.ty)
-                    || expression.ty == ResolvedType::String)
+                    || expression.ty == ResolvedType::String
+                    || hir::collection_outcome::match_join(declarations, expression))
                     && variant_pattern_is_admitted(declarations, *mode, &scrutinee.ty, arms);
                 let agg = nested_owned::bc_match(declarations, *mode, &scrutinee.ty, arms);
                 if (!scalar
                     && !option_u8
                     && !owned_byte_record
+                    && !nested_owned::copy_record_scalar_match(declarations, expression)
                     && !owned_byte_variant
                     && !owned_record_result
                     && !agg)
@@ -2600,9 +2639,15 @@ fn scan_closure(
             {
                 Err(reject_scan(expression, REASON_PLACE_PROJECTION))
             }
+            ResolvedExprKind::LiteralFormat { .. }
+            | ResolvedExprKind::VecFieldRead { .. }
+            | ResolvedExprKind::RowLoan { .. } => Ok(()),
             ResolvedExprKind::Call {
                 callee, instance, ..
             } => {
+                if callee.as_str() == crate::construction_fusion::partition::ID {
+                    return Err(reject_scan(expression, REASON_UNSUPPORTED_CALLEE));
+                }
                 let intrinsic = crate::map_ops::by_id(callee.as_str()).is_some()
                     || crate::string_ops::by_id(callee.as_str()).is_some()
                     || crate::str_ops::by_id(callee.as_str()).is_some()
@@ -2623,7 +2668,8 @@ fn scan_closure(
                 }
                 Ok(())
             }
-            ResolvedExprKind::Block { statements, .. } => {
+            ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } => {
                 for statement in statements {
                     if matches!(statement, ResolvedStatement::Unsafe { .. }) {
                         return Err(reject_scan(expression, REASON_UNSAFE_BOUNDARY));
@@ -2763,7 +2809,8 @@ fn resolved_function_value_types(function: &ResolvedFunction) -> BTreeMap<ValueI
         .collect::<Vec<_>>();
     while let Some(expression) = pending.pop() {
         match &expression.kind {
-            ResolvedExprKind::Block { statements, .. } => {
+            ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } => {
                 for statement in statements {
                     if let ResolvedStatement::Let { binding, .. }
                     | ResolvedStatement::Assign { binding, .. } = statement
@@ -2915,7 +2962,7 @@ pub(crate) fn evaluate_resolved_stdout_transcript(
             )
         }
         Err(Flow::Guard(detail)) => ResolvedEvaluationOutcome::GuardError(detail.to_owned()),
-        Err(Flow::Residual(_)) => {
+        Err(Flow::Residual(_) | Flow::Lexical(_)) => {
             ResolvedEvaluationOutcome::GuardError(owned_try::ESCAPED_RESIDUAL_GUARD.to_owned())
         }
     };
@@ -3043,6 +3090,8 @@ pub(crate) fn evaluate_resolved_language_command(
         budget: max_steps,
         next_byte_allocation: 0,
         allocated_byte_payload: 0,
+        partition: None,
+        fused: Default::default(),
         box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
         stdout_transcript: Some(Vec::new()),
@@ -3059,6 +3108,7 @@ pub(crate) fn evaluate_resolved_language_command(
         resumption: resumable::Resumption::Refused,
         semantic: Default::default(),
         string_condition_reads: Default::default(),
+        checked_allocation: None,
     };
     let evaluated = evaluator.call_frame(entry, Vec::new(), 0);
     let outcome = match evaluated {
@@ -3076,7 +3126,7 @@ pub(crate) fn evaluate_resolved_language_command(
             "unexpected UTF-8 materialization limit in hosted command evaluation".to_owned(),
         ),
         Err(Flow::Guard(detail)) => CommandEvaluationOutcome::GuardError(detail.to_owned()),
-        Err(Flow::Residual(_)) => {
+        Err(Flow::Residual(_) | Flow::Lexical(_)) => {
             CommandEvaluationOutcome::GuardError(owned_try::ESCAPED_RESIDUAL_GUARD.to_owned())
         }
     };
@@ -3120,6 +3170,8 @@ enum Value {
     ArrayU8(Arc<[u8]>),
     Bytes(OwnedBytesValue),
     Vec(Arc<owned_vec::OwnedVecValue>),
+    PartitionVec(byte_partition::flat::PartitionVec),
+    PartitionIter(byte_partition::flat::PartitionIterator),
     Iter(Arc<iterator::IteratorValue>),
     List(crate::immutable_list::ImmutableList),
     Box(Arc<owned_box::OwnedBoxValue>),
@@ -3127,6 +3179,7 @@ enum Value {
     Map(Arc<string_operations::StringMapValue>),
     Collection(Arc<map_collections::MapValue>),
     String(String),
+    CheckedString(checked_allocation::OwnedUtf8),
     BorrowedStr(BorrowedStrValue),
     BorrowedSlice(BorrowedSliceValue),
     OptionU8(Option<u8>),
@@ -3148,50 +3201,8 @@ enum Value {
 
 #[derive(Clone, Debug, PartialEq)]
 struct BorrowedStrValue {
-    invocation_root: ValueId,
-    bytes: Arc<[u8]>,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-struct BorrowedSliceValue {
-    invocation_root: ValueId,
-    backing: Arc<[u8]>,
-    start: usize,
-    end: usize,
-}
-
-impl BorrowedSliceValue {
-    fn whole(invocation_root: ValueId, backing: Arc<[u8]>) -> Self {
-        let end = backing.len();
-        Self {
-            invocation_root,
-            backing,
-            start: 0,
-            end,
-        }
-    }
-
-    fn bytes(&self) -> &[u8] {
-        &self.backing[self.start..self.end]
-    }
-
-    fn range(&self, start: usize, end: usize) -> Self {
-        Self {
-            invocation_root: self.invocation_root.clone(),
-            backing: Arc::clone(&self.backing),
-            start: self.start + start,
-            end: self.start + end,
-        }
-    }
-}
-
-/// One logical `bytes_copy` allocation. The monotonically assigned identity
-/// distinguishes even zero-length copies, for which allocators are permitted
-/// to reuse the same dangling physical pointer.
-#[derive(Clone, Debug, PartialEq)]
-struct OwnedBytesValue {
-    allocation: u32,
-    bytes: Arc<[u8]>,
+    invocation_root: BorrowedRoot,
+    bytes: Utf8Backing,
 }
 
 #[derive(Debug, PartialEq)]
@@ -3217,6 +3228,7 @@ fn borrowed_text(value: &Value) -> Option<&str> {
 
 #[derive(Debug)]
 enum Flow {
+    Lexical(lexical_control::ExitFlow),
     Failure(NormalizedStatus),
     /// Function-local early return synthesized by an authenticated owned
     /// postfix `?`. `call_frame_inner` catches it before postconditions.
@@ -3372,6 +3384,9 @@ fn normalize_byte_range(code: u32) -> NormalizedStatus {
 /// their suffix in structural order, so the index never needs to search or
 /// rebuild the retained prefix.
 struct Environment {
+    slot_function: Option<usize>,
+    slot_views: bool,
+    control: Option<Box<lexical_control::FrameControl>>,
     bindings: Vec<(ValueId, Value)>,
     slots: HashMap<ValueId, usize>,
 }
@@ -3383,7 +3398,13 @@ impl From<Vec<(ValueId, Value)>> for Environment {
             .enumerate()
             .map(|(index, (id, _))| (id.clone(), index))
             .collect();
-        Self { bindings, slots }
+        Self {
+            slot_function: None,
+            slot_views: false,
+            control: None,
+            bindings,
+            slots,
+        }
     }
 }
 
@@ -3445,6 +3466,7 @@ impl Environment {
 }
 
 enum FunctionLookup<'a> {
+    Checked(&'a hir::ResolvedProgram),
     Borrowed(&'a BTreeMap<&'a str, &'a ResolvedFunction>),
     Prepared {
         functions: &'a [ResolvedFunction],
@@ -3457,6 +3479,10 @@ impl<'a> FunctionLookup<'a> {
     fn get(&self, id: &str) -> Option<&'a ResolvedFunction> {
         match self {
             Self::Borrowed(functions) => functions.get(id).copied(),
+            Self::Checked(program) => program
+                .functions
+                .iter()
+                .find(|function| function.id.as_str() == id),
             Self::Prepared {
                 functions,
                 function_instances,
@@ -3479,6 +3505,8 @@ struct Evaluator<'a> {
     budget: usize,
     next_byte_allocation: u32,
     allocated_byte_payload: u64,
+    partition: Option<byte_partition::invocation::Invocation<'a>>,
+    fused: construction_fusion::Registry<'a>,
     box_live_allocations: Arc<std::sync::atomic::AtomicUsize>,
     utf8_materialization_budget: Utf8MaterializationBudget,
     stdout_transcript: Option<Vec<u8>>,
@@ -3495,6 +3523,7 @@ struct Evaluator<'a> {
     resumption: resumable::Resumption,
     semantic: semantic_work::SemanticMeter,
     string_condition_reads: BTreeSet<hir::ExpressionId>,
+    checked_allocation: Option<checked_allocation::Invocation<'a>>,
 }
 
 use function_values::{evaluate_resolved_entry, evaluate_resolved_entry_with_utf8_budget};
@@ -3516,6 +3545,8 @@ impl Evaluator<'_> {
             budget,
             next_byte_allocation: 0,
             allocated_byte_payload: 0,
+            partition: None,
+            fused: Default::default(),
             box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
             utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
             stdout_transcript: None,
@@ -3532,6 +3563,7 @@ impl Evaluator<'_> {
             resumption: resumable::Resumption::Refused,
             semantic: Default::default(),
             string_condition_reads: Default::default(),
+            checked_allocation: None,
         }
     }
 
@@ -3732,7 +3764,7 @@ impl Evaluator<'_> {
                 "borrowed Bytes call place does not contain owned bytes",
             ));
         };
-        if value.allocation == 0 || value.allocation > self.next_byte_allocation {
+        if value.allocation == 0 || value.allocation > self.byte_allocation_count() {
             return Err(Flow::Guard(
                 "borrowed Bytes call has an invalid logical allocation",
             ));
@@ -3787,8 +3819,8 @@ impl Evaluator<'_> {
                 (ResolvedType::Bool, ArgumentValue::Bool(inner)) => Value::Bool(*inner),
                 (ResolvedType::Str, ArgumentValue::BorrowedStr(inner)) => {
                     Value::BorrowedStr(BorrowedStrValue {
-                        invocation_root: param.id.clone(),
-                        bytes: Arc::from(inner.as_bytes()),
+                        invocation_root: param.id.clone().into(),
+                        bytes: Arc::<[u8]>::from(inner.as_bytes()).into(),
                     })
                 }
                 (ResolvedType::SliceU8, ArgumentValue::BorrowedSlice(inner)) => {
@@ -3814,6 +3846,16 @@ impl Evaluator<'_> {
         depth: usize,
     ) -> Result<Value, Flow> {
         if depth >= MAX_CALL_DEPTH {
+            if function.cleanup_plan.lexical_control.is_some() {
+                let mut frame = Environment::from(values);
+                frame.control = lexical_control::frame_control(function)?;
+                self.settle_execution_boundary(
+                    function,
+                    &mut frame,
+                    crate::cleanup_plan::ExecutionBoundaryKind::FunctionEntry,
+                    &function.body.id,
+                )?;
+            }
             return Err(Flow::DepthExceeded);
         }
         // Legacy evaluators do not record trace events. Keep their call path
@@ -3830,79 +3872,6 @@ impl Evaluator<'_> {
         result
     }
 
-    fn call_frame_inner(
-        &mut self,
-        function: &ResolvedFunction,
-        values: Vec<(ValueId, Value)>,
-        depth: usize,
-    ) -> Result<Value, Flow> {
-        // Stage semantic work v1: one unit per admitted source frame.
-        self.semantic_charge()?;
-        let mut frame = Environment::from(values);
-        self.set_trace_phase(ResolvedTracePhase::Requires);
-        for (index, clause) in function.requires.iter().enumerate() {
-            self.charge()?;
-            match self.evaluate(clause, &mut frame, depth)? {
-                Value::Bool(true) => {}
-                Value::Bool(false) => {
-                    return Err(self.contract_failure(
-                        function,
-                        &frame,
-                        ContractPhase::Requires,
-                        index,
-                    ))
-                }
-                _ => return Err(Flow::Guard("non-boolean requires clause")),
-            }
-        }
-        self.set_trace_phase(ResolvedTracePhase::Body);
-        let mut value = match self.evaluate(&function.body, &mut frame, depth) {
-            Ok(value) | Err(Flow::Residual(value)) => value,
-            Err(flow) => return Err(flow),
-        };
-        let retained_result = !function.ensures.is_empty()
-            && (matches!(value, Value::OnceClosure(_))
-                || matches!(&value, Value::Closure(closure) if closure.mutable.is_some()));
-        if !function.ensures.is_empty() {
-            let result_value = if retained_result {
-                std::mem::replace(&mut value, Value::Moved)
-            } else {
-                self.clone_value(&value)?
-            };
-            frame.push((function.result_id.clone(), result_value));
-        }
-        self.set_trace_phase(ResolvedTracePhase::Ensures);
-        for (index, clause) in function.ensures.iter().enumerate() {
-            self.charge()?;
-            match self.evaluate(clause, &mut frame, depth)? {
-                Value::Bool(true) => {}
-                Value::Bool(false) => {
-                    return Err(self.contract_failure(
-                        function,
-                        &frame,
-                        ContractPhase::Ensures,
-                        index,
-                    ))
-                }
-                _ => return Err(Flow::Guard("non-boolean ensures clause")),
-            }
-        }
-        if retained_result {
-            take_owned_place(
-                &mut frame,
-                &crate::hir::Place {
-                    root: function.result_id.clone(),
-                    projections: Vec::new(),
-                },
-            )
-            .ok_or(Flow::Guard(
-                "affine provisional result was consumed by a contract",
-            ))
-        } else {
-            Ok(value)
-        }
-    }
-
     fn evaluate(
         &mut self,
         expression: &ResolvedExpr,
@@ -3911,1122 +3880,19 @@ impl Evaluator<'_> {
     ) -> Result<Value, Flow> {
         self.begin_expression(expression, depth)?;
         match &expression.kind {
-            // Resumable Effects v1 (#204): `resumable::settle_yield` owns the
-            // whole yield site -- refusal on every ordinary lane, suspension
-            // on a fresh invocation, drift check + answer on a replayed one.
-            ResolvedExprKind::Yield { request } => {
-                let produced = self.evaluate(request, environment, depth)?;
-                resumable::settle_yield(&mut self.resumption, &expression.id, produced, environment)
+            ResolvedExprKind::Binary { .. } => {
+                self.evaluate_binary_expression(expression, environment, depth)
             }
-            ResolvedExprKind::Closure { .. }
-            | ResolvedExprKind::FunctionReference { .. }
-            | ResolvedExprKind::Invoke { .. } => {
-                self.evaluate_function_value(expression, environment, depth)
+            ResolvedExprKind::If { .. } => {
+                self.evaluate_conditional_expression(expression, environment, depth)
             }
-            ResolvedExprKind::Int(value) => Ok(Value::Int(*value)),
-            ResolvedExprKind::Int32(value) => Ok(Value::Int32(*value)),
-            ResolvedExprKind::Uint8(value) => Ok(Value::Uint8(*value)),
-            ResolvedExprKind::Usize(value) => Ok(Value::Usize(*value)),
-            ResolvedExprKind::Char(value) => Ok(Value::Char(*value)),
-            ResolvedExprKind::Float32(bits) => Ok(Value::Float32(f32::from_bits(*bits))),
-            ResolvedExprKind::Float64(bits) => Ok(Value::Float64(f64::from_bits(*bits))),
-            ResolvedExprKind::Bool(value) => Ok(Value::Bool(*value)),
-            ResolvedExprKind::ArrayU8(values) => Ok(Value::ArrayU8(Arc::from(values.as_slice()))),
-            ResolvedExprKind::RepeatArrayU8 { value, count } => {
-                let length = usize::try_from(*count)
-                    .map_err(|_| Flow::Guard("fixed byte array length does not fit host usize"))?;
-                Ok(Value::ArrayU8(Arc::from(vec![*value; length])))
+            ResolvedExprKind::Call { .. } => {
+                self.evaluate_call_expression(expression, environment, depth)
             }
-            ResolvedExprKind::String(value) => {
-                Ok(Value::String(self.materialize_utf8_copy(value)?))
+            ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. } => {
+                self.evaluate_block_expression(expression, environment, depth)
             }
-            ResolvedExprKind::Place(place) => {
-                let moves_storage = expression.ownership == hir::OwnershipMode::Own
-                    && matches!(
-                        &expression.ty,
-                        ResolvedType::Bytes
-                            | ResolvedType::StringMap
-                            | ResolvedType::OnceFunction
-                            | ResolvedType::OnceFunctionI64
-                            | ResolvedType::OnceFunctionI64Pair
-                            | ResolvedType::MutFunctionI64
-                            | ResolvedType::Nominal { .. }
-                    );
-                if moves_storage {
-                    take_owned_place(environment, place)
-                        .ok_or(Flow::Guard("use of moved owned storage"))
-                } else {
-                    self.lookup_place(environment, place)?
-                        .ok_or(Flow::Guard("unresolved scalar place"))
-                }
-            }
-            ResolvedExprKind::BorrowPlace { operation, place } => {
-                let op = crate::byte_ops::by_id(operation.as_str())
-                    .ok_or(Flow::Guard("unknown compiler-owned byte view"))?;
-                let source = self
-                    .lookup_place(environment, place)?
-                    .ok_or(Flow::Guard("unresolved byte view storage root"))?;
-                match (op, source) {
-                    (crate::byte_ops::ByteOp::BytesAsSlice, Value::Bytes(value)) => {
-                        if value.allocation == 0 || value.allocation > self.next_byte_allocation {
-                            return Err(Flow::Guard(
-                                "owned byte view has an invalid logical allocation",
-                            ));
-                        }
-                        Ok(Value::BorrowedSlice(BorrowedSliceValue::whole(
-                            place.root.clone(),
-                            value.bytes,
-                        )))
-                    }
-                    (crate::byte_ops::ByteOp::ArrayAsSlice, Value::ArrayU8(bytes)) => Ok(
-                        Value::BorrowedSlice(BorrowedSliceValue::whole(place.root.clone(), bytes)),
-                    ),
-                    (crate::byte_ops::ByteOp::StrAsBytes, Value::BorrowedStr(value)) => {
-                        Ok(Value::BorrowedSlice(BorrowedSliceValue::whole(
-                            value.invocation_root,
-                            value.bytes,
-                        )))
-                    }
-                    (crate::byte_ops::ByteOp::StrAsBytes, Value::String(value)) => {
-                        // The fused HIR form is exactly
-                        // str_as_bytes(string_as_str(owner)); retain the
-                        // owner identity while materializing the evaluator's
-                        // abstract borrowed-byte representation.
-                        Ok(Value::BorrowedSlice(BorrowedSliceValue::whole(
-                            place.root.clone(),
-                            Arc::from(value.as_bytes()),
-                        )))
-                    }
-                    (crate::byte_ops::ByteOp::StringAsStr, Value::String(value)) => {
-                        Ok(Value::BorrowedStr(BorrowedStrValue {
-                            invocation_root: place.root.clone(),
-                            bytes: Arc::from(value.as_bytes()),
-                        }))
-                    }
-                    _ => Err(Flow::Guard("ill-typed compiler-owned byte view")),
-                }
-            }
-            ResolvedExprKind::ByteRange {
-                operation,
-                source,
-                start,
-                end,
-            } => {
-                if operation.as_str() != crate::byte_ops::RANGE_ID {
-                    return Err(Flow::Guard("unknown compiler-owned byte range"));
-                }
-                let source = self.evaluate(source, environment, depth)?;
-                let start = self.evaluate(start, environment, depth)?;
-                let end = self.evaluate(end, environment, depth)?;
-                let (Value::BorrowedSlice(source), Value::Usize(start), Value::Usize(end)) =
-                    (source, start, end)
-                else {
-                    return Err(Flow::Guard("ill-typed compiler-owned byte range"));
-                };
-                if start > end {
-                    return Err(Flow::Failure(normalize_byte_range(
-                        crate::byte_ops::RANGE_START_AFTER_END_CODE,
-                    )));
-                }
-                let Some((start, end)) = usize::try_from(start).ok().zip(usize::try_from(end).ok())
-                else {
-                    return Err(Flow::Failure(normalize_byte_range(
-                        crate::byte_ops::RANGE_END_OUT_OF_BOUNDS_CODE,
-                    )));
-                };
-                if end > source.bytes().len() {
-                    return Err(Flow::Failure(normalize_byte_range(
-                        crate::byte_ops::RANGE_END_OUT_OF_BOUNDS_CODE,
-                    )));
-                }
-                Ok(Value::BorrowedSlice(source.range(start, end)))
-            }
-            ResolvedExprKind::Unary { op, value } => {
-                let inner = self.evaluate(value, environment, depth)?;
-                match (*op, inner) {
-                    (UnaryOp::Neg, Value::Int(inner)) => inner.checked_neg().map_or_else(
-                        || {
-                            Err(Flow::Failure(normalize_arithmetic(
-                                StatusCase::NegationOverflow,
-                            )))
-                        },
-                        |negated| Ok(Value::Int(negated)),
-                    ),
-                    (UnaryOp::Neg, Value::Int32(inner)) => inner.checked_neg().map_or_else(
-                        || {
-                            Err(Flow::Failure(normalize_arithmetic(
-                                StatusCase::NegationOverflow,
-                            )))
-                        },
-                        |negated| Ok(Value::Int32(negated)),
-                    ),
-                    (UnaryOp::Neg, Value::Float32(inner)) => Ok(Value::Float32(-inner)),
-                    (UnaryOp::Neg, Value::Float64(inner)) => Ok(Value::Float64(-inner)),
-                    (UnaryOp::Not, Value::Bool(inner)) => Ok(Value::Bool(!inner)),
-                    _ => Err(Flow::Guard("unsupported unary operand")),
-                }
-            }
-            ResolvedExprKind::Binary {
-                op, left, right, ..
-            } => {
-                let lhs = self.evaluate(left, environment, depth)?;
-                match op {
-                    BinaryOp::And => match lhs {
-                        Value::Bool(false) => Ok(Value::Bool(false)),
-                        Value::Bool(true) => match self.evaluate(right, environment, depth)? {
-                            Value::Bool(rhs) => Ok(Value::Bool(rhs)),
-                            _ => Err(Flow::Guard("ill-typed conjunction operand")),
-                        },
-                        _ => Err(Flow::Guard("ill-typed conjunction operand")),
-                    },
-                    BinaryOp::Or => match lhs {
-                        Value::Bool(true) => Ok(Value::Bool(true)),
-                        Value::Bool(false) => match self.evaluate(right, environment, depth)? {
-                            Value::Bool(rhs) => Ok(Value::Bool(rhs)),
-                            _ => Err(Flow::Guard("ill-typed disjunction operand")),
-                        },
-                        _ => Err(Flow::Guard("ill-typed disjunction operand")),
-                    },
-                    _ => {
-                        let rhs = self.evaluate(right, environment, depth)?;
-                        match combine(*op, lhs, rhs) {
-                            Some(Ok(value)) => Ok(value),
-                            Some(Err(status)) => Err(Flow::Failure(status)),
-                            None => Err(Flow::Guard("ill-typed operands")),
-                        }
-                    }
-                }
-            }
-            ResolvedExprKind::HostCommandCall(call) => match call.operation {
-                fs if crate::filesystem_ops::is_filesystem(fs) => {
-                    self.evaluate_filesystem_operation(call, environment, depth)
-                }
-                Operation::NetConnect
-                | Operation::NetSend
-                | Operation::NetRecv
-                | Operation::NetStreamStdout
-                | Operation::NetWait
-                | Operation::NetClose
-                | Operation::NetTlsConnect
-                | Operation::NetListen
-                | Operation::NetAccept
-                | Operation::NetTlsAccept
-                | Operation::HttpsGet
-                | Operation::HttpsPost
-                | Operation::NetCloseListener => {
-                    self.evaluate_network_operation(call, environment, depth)
-                }
-                Operation::ArgsLen => {
-                    if !call.args.is_empty() {
-                        return Err(Flow::Guard("invalid args_len arity"));
-                    }
-                    let input = self.command_input.as_ref().ok_or(Flow::Guard(
-                        "args_len reached an evaluator without command input",
-                    ))?;
-                    Ok(Value::Usize(input.arguments.len() as u64))
-                }
-                env if environment::handles(env) => {
-                    self.evaluate_environment_operation(call, environment, depth)
-                }
-                Operation::ArgUtf8 => {
-                    let [argument] = call.args.as_slice() else {
-                        return Err(Flow::Guard("invalid arg_utf8 arity"));
-                    };
-                    let index = match self.evaluate(argument, environment, depth)? {
-                        Value::Usize(value) => usize::try_from(value).ok(),
-                        _ => return Err(Flow::Guard("ill-typed arg_utf8 index")),
-                    };
-                    let bytes = index
-                        .and_then(|index| {
-                            self.command_input
-                                .as_ref()
-                                .and_then(|input| input.arguments.get(index))
-                        })
-                        .cloned()
-                        .ok_or_else(|| {
-                            Flow::Failure(normalize_command_input(
-                                crate::command_io_ops::ARG_INDEX_OUT_OF_BOUNDS,
-                            ))
-                        })?;
-                    if std::str::from_utf8(bytes.as_ref()).is_err() {
-                        return Err(Flow::Failure(normalize_command_input(
-                            crate::command_io_ops::ARG_INVALID_UTF8,
-                        )));
-                    }
-                    Ok(Value::BorrowedStr(BorrowedStrValue {
-                        invocation_root: ValueId::intrinsic_parameter(
-                            crate::command_io_ops::ARG_UTF8_ID,
-                            usize::MAX,
-                        ),
-                        bytes,
-                    }))
-                }
-                Operation::StdinRead => {
-                    if !call.args.is_empty() {
-                        return Err(Flow::Guard("invalid stdin_read arity"));
-                    }
-                    let input = self.command_input.as_ref().ok_or(Flow::Guard(
-                        "stdin_read reached an evaluator without command input",
-                    ))?;
-                    if input.stdin_consumed {
-                        return Err(Flow::Failure(normalize_command_input(
-                            crate::command_io_ops::STDIN_READ_FAILED,
-                        )));
-                    }
-                    let length = u64::try_from(input.stdin.len()).map_err(|_| {
-                        Flow::Failure(normalize_command_input(
-                            crate::command_io_ops::INPUT_CAPACITY_EXCEEDED,
-                        ))
-                    })?;
-                    if length > crate::command_io_ops::MAX_INPUT_BYTES {
-                        return Err(Flow::Failure(normalize_command_input(
-                            crate::command_io_ops::INPUT_CAPACITY_EXCEEDED,
-                        )));
-                    }
-                    let next_count = self.next_byte_allocation.checked_add(1).ok_or_else(|| {
-                        Flow::Failure(normalize_command_input(
-                            crate::command_io_ops::INPUT_CAPACITY_EXCEEDED,
-                        ))
-                    })?;
-                    let next_payload =
-                        self.allocated_byte_payload
-                            .checked_add(length)
-                            .ok_or_else(|| {
-                                Flow::Failure(normalize_command_input(
-                                    crate::command_io_ops::INPUT_CAPACITY_EXCEEDED,
-                                ))
-                            })?;
-                    if next_count > crate::byte_data_capacity::MAX_BYTES_COPY_SITES
-                        || next_payload > crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES
-                    {
-                        return Err(Flow::Failure(normalize_command_input(
-                            crate::command_io_ops::INPUT_CAPACITY_EXCEEDED,
-                        )));
-                    }
-                    let bytes = Arc::from(input.stdin.as_ref());
-                    self.next_byte_allocation = next_count;
-                    self.allocated_byte_payload = next_payload;
-                    self.command_input
-                        .as_mut()
-                        .expect("command input presence was checked")
-                        .stdin_consumed = true;
-                    Ok(Value::Bytes(OwnedBytesValue {
-                        allocation: next_count,
-                        bytes,
-                    }))
-                }
-                Operation::StderrWrite | Operation::StdoutAppend | Operation::StderrAppend => {
-                    let [argument] = call.args.as_slice() else {
-                        return Err(Flow::Guard("invalid command output arity"));
-                    };
-                    let value = self.evaluate(argument, environment, depth)?;
-                    let Value::BorrowedSlice(value) = value else {
-                        return Err(Flow::Guard("ill-typed command output operand"));
-                    };
-                    let bytes = value.bytes();
-                    let stdout_length = self.stdout_transcript.as_ref().map_or(0, Vec::len);
-                    let stderr_length = self.stderr_transcript.as_ref().map_or(0, Vec::len);
-                    let combined = stdout_length
-                        .checked_add(stderr_length)
-                        .and_then(|length| length.checked_add(bytes.len()))
-                        .ok_or(Flow::Guard("command transcript length overflowed"))?;
-                    if combined > crate::command_io_ops::MAX_OUTPUT_BYTES as usize {
-                        if matches!(call.operation, Operation::StderrWrite) {
-                            return Err(Flow::Guard(
-                                "combined command transcript exceeds verified capacity",
-                            ));
-                        }
-                        return Err(Flow::Failure(normalize_command_output(
-                            crate::command_io_ops::OUTPUT_CAPACITY_EXCEEDED,
-                        )));
-                    }
-                    match call.operation {
-                        Operation::StdoutAppend => self
-                            .stdout_transcript
-                            .as_mut()
-                            .ok_or(Flow::Guard(
-                                "stdout_append reached an evaluator without command output",
-                            ))?
-                            .extend_from_slice(bytes),
-                        Operation::StderrWrite | Operation::StderrAppend => self
-                            .stderr_transcript
-                            .as_mut()
-                            .ok_or(Flow::Guard(
-                                "stderr output reached an evaluator without command output",
-                            ))?
-                            .extend_from_slice(bytes),
-                        _ => unreachable!("command output operation was matched above"),
-                    }
-                    Ok(Value::Usize(bytes.len() as u64))
-                }
-                _ => Err(Flow::Guard("unknown host operation")),
-            },
-            ResolvedExprKind::If {
-                condition,
-                then_branch,
-                else_branch,
-            } => {
-                let branch = match self.evaluate(condition, environment, depth)? {
-                    Value::Bool(true) => then_branch,
-                    Value::Bool(false) => else_branch,
-                    _ => return Err(Flow::Guard("non-boolean condition")),
-                };
-                self.evaluate(branch, environment, depth)
-            }
-            ResolvedExprKind::ConstructRecord { record, fields } => {
-                let mut values = BTreeMap::new();
-                for field in fields {
-                    let value = self.evaluate(&field.value, environment, depth)?;
-                    if values.insert(field.field.clone(), value).is_some() {
-                        return Err(Flow::Guard(
-                            "record construction repeated an authenticated field identity",
-                        ));
-                    }
-                }
-                Ok(Value::Record(Arc::new(OwnedRecordValue {
-                    record: record.clone(),
-                    fields: values,
-                })))
-            }
-            ResolvedExprKind::ConstructVariant {
-                variant,
-                case,
-                fields,
-            } => {
-                if !nested_owned::construct_ok(self.declarations, expression) {
-                    return Err(Flow::Guard(
-                        "variant construction is outside owned byte variant v1",
-                    ));
-                }
-                let ResolvedType::Nominal {
-                    declaration: concrete_variant,
-                    ..
-                } = &expression.ty
-                else {
-                    return Err(Flow::Guard("owned byte variant type is not nominal"));
-                };
-                if concrete_variant != variant {
-                    return Err(Flow::Guard(
-                        "variant constructor identity disagrees with its concrete type",
-                    ));
-                }
-                let declared_fields =
-                    concrete_variant_case_fields(self.declarations, &expression.ty, case).ok_or(
-                        Flow::Guard("variant constructor references an unauthenticated case"),
-                    )?;
-                if fields.len() != declared_fields.len() {
-                    return Err(Flow::Guard(
-                        "variant constructor field inventory is incomplete",
-                    ));
-                }
-                let mut values = BTreeMap::new();
-                for field in fields {
-                    let declared_ty = declared_fields
-                        .iter()
-                        .find_map(|(field_id, ty)| (field_id == &field.field).then_some(ty))
-                        .ok_or(Flow::Guard(
-                            "variant constructor references an unauthenticated field",
-                        ))?;
-                    let value = self.evaluate(&field.value, environment, depth)?;
-                    if !self.value_has_type(&value, declared_ty) {
-                        return Err(Flow::Guard(
-                            "variant constructor payload disagrees with its concrete field type",
-                        ));
-                    }
-                    if values.insert(field.field.clone(), value).is_some() {
-                        return Err(Flow::Guard(
-                            "variant construction repeated an authenticated field identity",
-                        ));
-                    }
-                }
-                Ok(Value::Variant(Arc::new(OwnedVariantValue {
-                    ty: expression.ty.clone(),
-                    variant: variant.clone(),
-                    case: case.clone(),
-                    fields: values,
-                })))
-            }
-            ResolvedExprKind::Call {
-                callee,
-                instance,
-                type_arguments,
-                args,
-            } => {
-                let vec_intrinsic = owned_vec::is_intrinsic_call(callee, instance, type_arguments);
-                let box_intrinsic = owned_box::is_intrinsic_call(callee, instance, type_arguments);
-                if !vec_intrinsic
-                    && !(instance.is_none()
-                        && crate::iterator_ops::by_id(callee.as_str()).is_some())
-                    && !(instance.is_none() && crate::map_ops::by_id(callee.as_str()).is_some())
-                    && !box_intrinsic
-                    && instance.is_some() != !type_arguments.is_empty()
-                {
-                    return Err(Flow::Guard("generic call identity is incomplete"));
-                }
-                if let Some(op) = crate::map_ops::by_id(callee.as_str()) {
-                    return self.evaluate_typed_map(op, type_arguments, args, environment, depth);
-                }
-                if let Some(op) = crate::string_ops::by_id(callee.as_str()) {
-                    // Compiler-owned string operations evaluate in place;
-                    // their byte semantics match the native and Wasm backends.
-                    return self.evaluate_string_op(op, args, environment, depth);
-                }
-                if let Some(op) = crate::str_ops::by_id(callee.as_str()) {
-                    self.charge()?;
-                    let mut values = Vec::with_capacity(args.len());
-                    for argument in args {
-                        values.push(self.evaluate(argument, environment, depth)?);
-                    }
-                    return match op {
-                        crate::str_ops::StrOp::ByteAt => match values.as_slice() {
-                            [Value::BorrowedStr(text), Value::Usize(index)] => Ok(Value::OptionU8(
-                                usize::try_from(*index)
-                                    .ok()
-                                    .and_then(|index| text.bytes.as_ref().get(index))
-                                    .copied(),
-                            )),
-                            _ => Err(Flow::Guard("ill-typed borrowed string byte read")),
-                        },
-                        crate::str_ops::StrOp::LenBytes => borrowed_text(&values[0])
-                            .map(|value| Value::Int(value.len() as i64))
-                            .ok_or(Flow::Guard("ill-typed borrowed string operand")),
-                        crate::str_ops::StrOp::IsEmpty => borrowed_text(&values[0])
-                            .map(|value| Value::Bool(value.is_empty()))
-                            .ok_or(Flow::Guard("ill-typed borrowed string operand")),
-                        crate::str_ops::StrOp::StartsWith => {
-                            match (borrowed_text(&values[0]), borrowed_text(&values[1])) {
-                                (Some(value), Some(prefix)) => {
-                                    Ok(Value::Bool(value.starts_with(prefix)))
-                                }
-                                _ => Err(Flow::Guard("ill-typed borrowed string operand")),
-                            }
-                        }
-                        crate::str_ops::StrOp::Contains => {
-                            match (borrowed_text(&values[0]), borrowed_text(&values[1])) {
-                                (Some(value), Some(needle)) => {
-                                    crate::str_ops::contains(value, needle)
-                                        .map(Value::Bool)
-                                        .ok_or(Flow::Guard(
-                                            "borrowed string operation exceeds byte budget",
-                                        ))
-                                }
-                                _ => Err(Flow::Guard("ill-typed borrowed string operand")),
-                            }
-                        }
-                    };
-                }
-                if let Some(op) = crate::byte_ops::by_id(callee.as_str()) {
-                    self.charge()?;
-                    let mut values = Vec::with_capacity(args.len());
-                    for argument in args {
-                        values.push(self.evaluate(argument, environment, depth)?);
-                    }
-                    if op.is_owned_buffer_chain() {
-                        return self.evaluate_owned_buffer_operation(op, values);
-                    }
-                    return match (op, values.as_slice()) {
-                        (crate::byte_ops::ByteOp::Len, [Value::BorrowedSlice(value)]) => {
-                            Ok(Value::Usize(value.bytes().len() as u64))
-                        }
-                        (
-                            crate::byte_ops::ByteOp::Get,
-                            [Value::BorrowedSlice(value), Value::Usize(index)],
-                        ) => {
-                            let byte = usize::try_from(*index)
-                                .ok()
-                                .and_then(|index| value.bytes().get(index))
-                                .copied();
-                            Ok(Value::OptionU8(byte))
-                        }
-                        (crate::byte_ops::ByteOp::Copy, [Value::BorrowedSlice(value)]) => {
-                            let length = u64::try_from(value.bytes().len()).map_err(|_| {
-                                Flow::Guard("owned byte payload length does not fit u64")
-                            })?;
-                            if length > crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES {
-                                return Err(Flow::Guard(
-                                    "owned byte payload exceeds the verified profile limit",
-                                ));
-                            }
-                            let next_count = self
-                                .next_byte_allocation
-                                .checked_add(1)
-                                .ok_or(Flow::Guard("owned byte allocation count overflowed"))?;
-                            if next_count > crate::byte_data_capacity::MAX_BYTES_COPY_SITES {
-                                return Err(Flow::Guard(
-                                    "owned byte allocation count exceeds verified capacity",
-                                ));
-                            }
-                            let next_payload = self
-                                .allocated_byte_payload
-                                .checked_add(length)
-                                .ok_or(Flow::Guard("owned byte payload accounting overflowed"))?;
-                            if next_payload
-                                > crate::byte_data_capacity::MAX_OWNED_BYTE_PAYLOAD_BYTES
-                            {
-                                return Err(Flow::Guard(
-                                    "owned byte payload exceeds verified capacity",
-                                ));
-                            }
-                            self.next_byte_allocation = next_count;
-                            self.allocated_byte_payload = next_payload;
-                            // `Arc::from(&[u8])` copies into a fresh backing
-                            // allocation for every non-empty input. The
-                            // logical identity above distinguishes empty
-                            // allocations as required by the language model.
-                            Ok(Value::Bytes(OwnedBytesValue {
-                                allocation: next_count,
-                                bytes: Arc::from(value.bytes()),
-                            }))
-                        }
-                        (crate::byte_ops::ByteOp::Range, _) => Err(Flow::Guard(
-                            "byte_range reached interpreter as an ordinary call",
-                        )),
-                        _ => Err(Flow::Guard("ill-typed borrowed byte operation operand")),
-                    };
-                }
-                if let Some(op) = crate::iterator_ops::by_id(callee.as_str()) {
-                    return self.evaluate_iterator_op(op, type_arguments, args, environment, depth);
-                }
-                if let Some(op) = crate::list_ops::by_id(callee.as_str()) {
-                    return self.evaluate_list_op(op, type_arguments, args, environment, depth);
-                }
-                if let Some(op) = crate::vec_ops::by_id(callee.as_str()) {
-                    return self.evaluate_vec_op(op, type_arguments, args, environment, depth);
-                }
-                if let Some(op) = crate::box_ops::by_id(callee.as_str()) {
-                    return self.evaluate_box_op(op, type_arguments, args, environment, depth);
-                }
-                if crate::host_io_ops::by_id(callee.as_str()).is_some() {
-                    self.charge()?;
-                    let [argument] = args.as_slice() else {
-                        return Err(Flow::Guard("invalid stdout_write arity"));
-                    };
-                    let value = self.evaluate(argument, environment, depth)?;
-                    let Value::BorrowedSlice(value) = value else {
-                        return Err(Flow::Guard("ill-typed stdout_write operand"));
-                    };
-                    let stderr_length = self.stderr_transcript.as_ref().map_or(0, Vec::len);
-                    let transcript = self
-                        .stdout_transcript
-                        .as_mut()
-                        .ok_or(Flow::Guard("stdout_write reached effect-free interpreter"))?;
-                    let next = transcript
-                        .len()
-                        .checked_add(value.bytes().len())
-                        .ok_or(Flow::Guard("stdout transcript length overflowed"))?;
-                    if next.checked_add(stderr_length).is_none_or(|combined| {
-                        combined > crate::host_io_ops::MAX_STDOUT_TRANSCRIPT_BYTES as usize
-                    }) {
-                        return Err(Flow::Guard("stdout transcript exceeds verified capacity"));
-                    }
-                    transcript.extend_from_slice(value.bytes());
-                    return Ok(Value::Usize(value.bytes().len() as u64));
-                }
-                let execution = instance
-                    .as_ref()
-                    .map_or_else(|| callee.as_str(), hir::FunctionInstanceId::as_str);
-                let Some(function) = self.admitted.get(execution) else {
-                    return Err(Flow::Guard("call outside the admitted closure"));
-                };
-                let mut values: Vec<(ValueId, Value)> = Vec::with_capacity(args.len());
-                for (param, argument) in function.params.iter().zip(args.iter()) {
-                    let value = if param.ownership == hir::OwnershipMode::Borrow
-                        && param.ty == ResolvedType::Bytes
-                    {
-                        self.borrow_bytes_call_argument(environment, argument, depth)?
-                    } else if param.ownership == hir::OwnershipMode::Borrow
-                        && matches!(param.ty, ResolvedType::Nominal { .. })
-                    {
-                        // The resolved argument expression retains the owned
-                        // place's type/mode. Parameter ownership is the call
-                        // boundary authority: charge the argument node, then
-                        // stage an alias without tombstoning its caller slot.
-                        self.charge()?;
-                        let ResolvedExprKind::Place(place) = &argument.kind else {
-                            return Err(Flow::Guard(
-                                "borrowed record call argument is not a named place",
-                            ));
-                        };
-                        if !place.projections.is_empty() {
-                            return Err(Flow::Guard("borrowed record call argument is projected"));
-                        }
-                        self.lookup(environment, &place.root)?
-                            .ok_or(Flow::Guard("borrowed record call owner is unavailable"))?
-                    } else {
-                        self.evaluate(argument, environment, depth)?
-                    };
-                    values.push((param.id.clone(), value));
-                }
-                if values.len() != function.params.len() {
-                    return Err(Flow::Guard("argument arity mismatch"));
-                }
-                self.call_frame(function, values, depth + 1)
-            }
-            ResolvedExprKind::Block { statements, tail } => {
-                let base = environment.len();
-                let mut interrupted = None;
-                'statements: for statement in statements {
-                    match statement {
-                        ResolvedStatement::Let { binding, value, .. } => {
-                            match self.resolve_let_value(&binding.id, value, environment, depth) {
-                                Ok(value) => environment.push((binding.id.clone(), value)),
-                                Err(flow) => {
-                                    interrupted = Some(flow);
-                                    break;
-                                }
-                            }
-                        }
-                        ResolvedStatement::Assign {
-                            binding,
-                            field,
-                            value,
-                            ..
-                        } => {
-                            let stored =
-                                self.evaluate(value, environment, depth).and_then(|value| {
-                                    match field {
-                                        // Explicit Mutation v1 replaces the whole
-                                        // scalar binding.
-                                        None => match environment.get_mut(&binding.id) {
-                                            Some(slot) => {
-                                                *slot = value;
-                                                Ok(())
-                                            }
-                                            None => {
-                                                Err(Flow::Guard("assignment to an unknown binding"))
-                                            }
-                                        },
-                                        Some(field) => self.store_record_field(
-                                            environment,
-                                            binding,
-                                            field,
-                                            value,
-                                        ),
-                                    }
-                                });
-                            if let Err(flow) = stored {
-                                interrupted = Some(flow);
-                                break;
-                            }
-                        }
-                        ResolvedStatement::Unsafe { .. } => {
-                            interrupted =
-                                Some(Flow::Guard("unsafe boundary outside the admitted surface"));
-                            break;
-                        }
-                        ResolvedStatement::While {
-                            condition, body, ..
-                        } => {
-                            if let Err(flow) =
-                                self.evaluate_while(condition, body, environment, depth)
-                            {
-                                interrupted = Some(flow);
-                                break 'statements;
-                            }
-                        }
-                    }
-                }
-                let outcome = match interrupted {
-                    Some(flow) => Err(flow),
-                    None => self.evaluate(tail, environment, depth),
-                };
-                environment.truncate(base);
-                outcome
-            }
-            // Refutable Match v1: one scrutinee evaluation, arms tested in
-            // order, guards evaluated once after their pattern matched, and
-            // failing guards fall through. Every evaluated node charges fuel
-            // through the ordinary recursive `evaluate` calls.
-            ResolvedExprKind::Match {
-                mode,
-                scrutinee,
-                arms,
-            } => {
-                let staged = if *mode == hir::ResolvedMatchMode::Borrow {
-                    // Borrow-mode resolution authenticates an unprojected
-                    // named place. Charge that expression node, but retain
-                    // the environment's owner and stage only an Arc alias.
-                    self.charge()?;
-                    let ResolvedExprKind::Place(place) = &scrutinee.kind else {
-                        return Err(Flow::Guard(
-                            "borrowed record match has a non-place scrutinee",
-                        ));
-                    };
-                    if !place.projections.is_empty() {
-                        return Err(Flow::Guard(
-                            "borrowed record match has a projected scrutinee",
-                        ));
-                    }
-                    self.lookup(environment, &place.root)?
-                        .ok_or(Flow::Guard("borrowed record owner is unavailable"))?
-                } else {
-                    self.evaluate(scrutinee, environment, depth)?
-                };
-                if let Value::Record(record) = staged {
-                    let [arm] = arms.as_slice() else {
-                        return Err(Flow::Guard(
-                            "owned-byte record match does not have exactly one arm",
-                        ));
-                    };
-                    if arm.guard.is_some() {
-                        return Err(Flow::Guard(
-                            "owned-byte record match unexpectedly has a guard",
-                        ));
-                    }
-                    let crate::hir::ResolvedMatchPattern::Record {
-                        record: pattern_record,
-                        fields,
-                        ..
-                    } = &arm.pattern
-                    else {
-                        return Err(Flow::Guard(
-                            "owned-byte record match has a non-record pattern",
-                        ));
-                    };
-                    if pattern_record != &record.record || fields.len() != record.fields.len() {
-                        return Err(Flow::Guard(
-                            "owned-byte record pattern disagrees with its runtime carrier",
-                        ));
-                    }
-                    let mut bindings = Vec::new();
-                    match mode {
-                        hir::ResolvedMatchMode::Own => {
-                            bind_owned_pattern(
-                                self.declarations,
-                                &scrutinee.ty,
-                                record,
-                                fields,
-                                &mut bindings,
-                            )?;
-                        }
-                        hir::ResolvedMatchMode::Borrow => {
-                            bind_borrowed_pattern(
-                                self.declarations,
-                                &scrutinee.ty,
-                                &record,
-                                fields,
-                                &mut bindings,
-                            )?;
-                        }
-                        hir::ResolvedMatchMode::Value => {
-                            return Err(Flow::Guard(
-                                "owned-byte record reached a plain value match",
-                            ));
-                        }
-                    }
-                    let base = environment.len();
-                    environment.extend(bindings);
-                    let outcome = self.evaluate(&arm.value, environment, depth);
-                    environment.truncate(base);
-                    return outcome;
-                }
-                if let Value::Variant(variant) = staged {
-                    if arms.iter().any(|arm| arm.guard.is_some()) {
-                        return self.evaluate_guarded_copy_variant(
-                            *mode,
-                            scrutinee,
-                            arms,
-                            &variant,
-                            environment,
-                            depth,
-                        );
-                    }
-                    let agg = nested_owned::bc_match(self.declarations, *mode, &scrutinee.ty, arms)
-                        || variant_admission::is_admitted_copy_scalar_variant(
-                            self.declarations,
-                            &scrutinee.ty,
-                        )
-                        || crate::list_ops::is_step(&scrutinee.ty);
-                    if !nested_owned::variant_ok(self.declarations, *mode, &scrutinee.ty, arms) {
-                        return Err(Flow::Guard(
-                            "owned byte variant match is outside the authenticated profile",
-                        ));
-                    }
-                    let ResolvedType::Nominal {
-                        declaration: expected_variant,
-                        ..
-                    } = &scrutinee.ty
-                    else {
-                        return Err(Flow::Guard("owned byte variant scrutinee is not nominal"));
-                    };
-                    if variant.ty != scrutinee.ty || &variant.variant != expected_variant {
-                        return Err(Flow::Guard(
-                            "owned byte variant runtime carrier disagrees with its scrutinee",
-                        ));
-                    }
-                    // A trailing `_` arm of a Value-mode match selects every
-                    // case no earlier arm named; it binds nothing.
-                    if let Some(arm) = arms.iter().find(|arm| {
-                        matches!(arm.pattern, hir::ResolvedMatchPattern::Wildcard)
-                            || nested_owned::arm_case_patterns(&arm.pattern).is_some_and(|patterns| {
-                                patterns.iter().any(|pattern| matches!(pattern, hir::ResolvedMatchPattern::Variant { case, .. } if case == &variant.case))
-                            })
-                    }) {
-                        if matches!(arm.pattern, hir::ResolvedMatchPattern::Wildcard) {
-                            if *mode != hir::ResolvedMatchMode::Value {
-                                return Err(Flow::Guard(
-                                    "variant wildcard arm reached a non-value match",
-                                ));
-                            }
-                            return self.evaluate(&arm.value, environment, depth);
-                        }
-                    }
-                    let (arm, pattern) = arms
-                        .iter()
-                        .find_map(|arm| {
-                            nested_owned::arm_case_patterns(&arm.pattern)?
-                                .iter()
-                                .find(|pattern| matches!(pattern, hir::ResolvedMatchPattern::Variant { case, .. } if case == &variant.case))
-                                .map(|pattern| (arm, pattern))
-                        })
-                        .ok_or(Flow::Guard(
-                            "owned byte variant active case selected no exhaustive arm",
-                        ))?;
-                    let hir::ResolvedMatchPattern::Variant {
-                        variant: pattern_variant,
-                        case: pattern_case,
-                        fields,
-                    } = pattern
-                    else {
-                        unreachable!("admitted owned byte variant arm is a variant pattern")
-                    };
-                    if pattern_variant != &variant.variant || pattern_case != &variant.case {
-                        return Err(Flow::Guard(
-                            "owned byte variant pattern identity disagrees with its carrier",
-                        ));
-                    }
-                    let declared_fields =
-                        concrete_variant_case_fields(self.declarations, &variant.ty, &variant.case)
-                            .ok_or(Flow::Guard(
-                                "owned byte variant carrier has an unauthenticated active case",
-                            ))?;
-                    if fields.len() != declared_fields.len()
-                        || variant.fields.len() != declared_fields.len()
-                    {
-                        return Err(Flow::Guard(
-                            "owned byte variant active payload inventory is inconsistent",
-                        ));
-                    }
-                    let mut bindings = Vec::with_capacity(fields.len());
-                    match mode {
-                        hir::ResolvedMatchMode::Own => {
-                            let mut variant = Arc::try_unwrap(variant).map_err(|_| {
-                                Flow::Guard("owned byte variant still has a live alias at transfer")
-                            })?;
-                            for field in fields {
-                                let declared_ty = declared_fields
-                                    .iter()
-                                    .find_map(|(field_id, ty)| {
-                                        (field_id == &field.field).then_some(ty)
-                                    })
-                                    .ok_or(Flow::Guard(
-                                        "owned byte variant pattern references an unauthenticated field",
-                                    ))?;
-                                let value =
-                                    variant.fields.remove(&field.field).ok_or(Flow::Guard(
-                                        "owned byte variant pattern references an absent payload",
-                                    ))?;
-                                if !self.value_has_type(&value, declared_ty) {
-                                    return Err(Flow::Guard(
-                                        "owned byte variant payload type changed before transfer",
-                                    ));
-                                }
-                                bindings.push((field.binding.id.clone(), value));
-                            }
-                            if !variant.fields.is_empty() {
-                                return Err(Flow::Guard(
-                                    "owned byte variant transfer left unauthenticated payloads",
-                                ));
-                            }
-                        }
-                        hir::ResolvedMatchMode::Borrow => {
-                            for field in fields {
-                                let declared_ty = declared_fields
-                                    .iter()
-                                    .find_map(|(field_id, ty)| {
-                                        (field_id == &field.field).then_some(ty)
-                                    })
-                                    .ok_or(Flow::Guard(
-                                        "borrowed byte variant pattern references an unauthenticated field",
-                                    ))?;
-                                let value = variant.fields.get(&field.field).ok_or(Flow::Guard(
-                                    "borrowed byte variant pattern references an absent payload",
-                                ))?;
-                                if !self.value_has_type(value, declared_ty) {
-                                    return Err(Flow::Guard(
-                                        "borrowed byte variant payload type changed before aliasing",
-                                    ));
-                                }
-                                bindings.push((field.binding.id.clone(), self.clone_value(value)?));
-                            }
-                        }
-                        hir::ResolvedMatchMode::Value if agg => {
-                            bindings = nested_owned::bc_bind_fields(
-                                self,
-                                &declared_fields,
-                                fields,
-                                &variant,
-                            )?;
-                        }
-                        hir::ResolvedMatchMode::Value => {
-                            if !is_admitted_fieldless_variant(self.declarations, &variant.ty)
-                                || !fields.is_empty()
-                                || !variant.fields.is_empty()
-                            {
-                                return Err(Flow::Guard(
-                                    "owned byte variant reached a plain value match",
-                                ));
-                            }
-                        }
-                    }
-                    let base = environment.len();
-                    environment.extend(bindings);
-                    let outcome = self.evaluate(&arm.value, environment, depth);
-                    environment.truncate(base);
-                    return outcome;
-                }
-                for arm in arms {
-                    let mut aggregate_bindings = Vec::new();
-                    let selected = match &arm.pattern {
-                        crate::hir::ResolvedMatchPattern::Wildcard => true,
-                        crate::hir::ResolvedMatchPattern::Binding(binding) => {
-                            let _ = binding;
-                            true
-                        }
-                        crate::hir::ResolvedMatchPattern::Literal(value) => {
-                            pattern_value_matches(&staged, *value)
-                        }
-                        crate::hir::ResolvedMatchPattern::Or(alternatives) => {
-                            let mut matched = false;
-                            for alternative in alternatives {
-                                match alternative {
-                                    crate::hir::ResolvedMatchPattern::Literal(value) => {
-                                        matched |= pattern_value_matches(&staged, *value);
-                                    }
-                                    _ => {
-                                        return Err(Flow::Guard(
-                                            "or-pattern alternative is not a literal",
-                                        ));
-                                    }
-                                }
-                            }
-                            matched
-                        }
-                        crate::hir::ResolvedMatchPattern::Variant {
-                            variant,
-                            case,
-                            fields,
-                        } => {
-                            if variant.as_str() != crate::prelude::OPTION_ID {
-                                return Err(Flow::Guard(
-                                    "non-Option variant reached byte evaluation",
-                                ));
-                            }
-                            match (&staged, case.as_str()) {
-                                (Value::OptionU8(None), crate::prelude::OPTION_NONE_ID)
-                                    if fields.is_empty() =>
-                                {
-                                    true
-                                }
-                                (Value::OptionU8(Some(value)), crate::prelude::OPTION_SOME_ID)
-                                    if fields.len() == 1
-                                        && fields[0].field.as_str()
-                                            == crate::prelude::OPTION_SOME_VALUE_ID =>
-                                {
-                                    aggregate_bindings
-                                        .push((fields[0].binding.id.clone(), Value::Uint8(*value)));
-                                    true
-                                }
-                                (Value::OptionU8(_), _) => false,
-                                (Value::OptionI64(None), crate::prelude::OPTION_NONE_ID)
-                                    if fields.is_empty() =>
-                                {
-                                    true
-                                }
-                                (Value::OptionI64(Some(value)), crate::prelude::OPTION_SOME_ID)
-                                    if fields.len() == 1
-                                        && fields[0].field.as_str()
-                                            == crate::prelude::OPTION_SOME_VALUE_ID =>
-                                {
-                                    aggregate_bindings
-                                        .push((fields[0].binding.id.clone(), Value::Int(*value)));
-                                    true
-                                }
-                                (Value::OptionI64(_), _) => false,
-                                _ => {
-                                    return Err(Flow::Guard(
-                                        "variant pattern has non-variant value",
-                                    ))
-                                }
-                            }
-                        }
-                        crate::hir::ResolvedMatchPattern::Record { .. } => {
-                            return Err(Flow::Guard(
-                                "aggregate match shape reached scalar evaluation",
-                            ));
-                        }
-                    };
-                    if !selected {
-                        continue;
-                    }
-                    let aggregate_count = aggregate_bindings.len();
-                    environment.extend(aggregate_bindings);
-                    // Binding arms capture the staged scrutinee value.
-                    let mut has_bound_value = false;
-                    if let crate::hir::ResolvedMatchPattern::Binding(binding) = &arm.pattern {
-                        let bound_value = self.clone_value(&staged)?;
-                        environment.push((binding.id.clone(), bound_value));
-                        has_bound_value = true;
-                    }
-                    let guard_ok = match &arm.guard {
-                        Some(guard) => match self.evaluate(guard.as_ref(), environment, depth)? {
-                            Value::Bool(flag) => flag,
-                            _ => return Err(Flow::Guard("non-boolean match guard")),
-                        },
-                        None => true,
-                    };
-                    if !guard_ok {
-                        if has_bound_value {
-                            environment.pop();
-                        }
-                        environment.truncate(environment.len().saturating_sub(aggregate_count));
-                        continue;
-                    }
-                    let outcome = self.evaluate(&arm.value, environment, depth);
-                    if has_bound_value {
-                        environment.pop();
-                    }
-                    environment.truncate(environment.len().saturating_sub(aggregate_count));
-                    return outcome;
-                }
-                Err(Flow::Guard("refutable match selected no arm"))
-            }
-            ResolvedExprKind::UpdateRecord {
-                base,
-                record,
-                fields,
-            } => {
-                let base = self.evaluate(base, environment, depth)?;
-                let Value::Record(base) = base else {
-                    return Err(Flow::Guard("record update base is not a record carrier"));
-                };
-                if &base.record != record {
-                    return Err(Flow::Guard("record update base identity is inconsistent"));
-                }
-                let mut replacements = Vec::with_capacity(fields.len());
-                for field in fields {
-                    let value = self.evaluate(&field.value, environment, depth)?;
-                    replacements.push((field.field.clone(), value));
-                }
-                update_owned_record(self.declarations, &expression.ty, base, replacements)
-            }
-            ResolvedExprKind::Try { .. } => self.evaluate_owned_try(expression, environment, depth),
-            ResolvedExprKind::Project { .. }
-            | ResolvedExprKind::Upcast { .. }
-            | ResolvedExprKind::TryOption { .. }
-            | ResolvedExprKind::NativeRustImportCall(_) => Err(Flow::Guard(
-                "aggregate/import/match/try shape reached evaluation",
-            )),
+            _ => self.evaluate_remaining(expression, environment, depth),
         }
     }
 
@@ -5051,10 +3917,12 @@ impl Evaluator<'_> {
 /// on verified programs); `Some(Err(..))` is the exact compiler-owned failure
 /// status selected by the checked operation.
 fn combine(op: BinaryOp, lhs: Value, rhs: Value) -> Option<Result<Value, NormalizedStatus>> {
+    // The status owns its domain text; build it only for an actual failure.
     let arithmetic = |outcome: Option<Value>, case: StatusCase| {
-        outcome.map_or(Some(Err(normalize_arithmetic(case))), |value| {
-            Some(Ok(value))
-        })
+        outcome.map_or_else(
+            || Some(Err(normalize_arithmetic(case))),
+            |value| Some(Ok(value)),
+        )
     };
     let ordered = |less: bool, equal: bool| -> Option<Result<Value, NormalizedStatus>> {
         let value = match op {
@@ -5196,8 +4064,30 @@ fn combine(op: BinaryOp, lhs: Value, rhs: Value) -> Option<Result<Value, Normali
                 _ => None,
             }
         }
-        // Owned strings compare by exact UTF-8 contents; any other operator
-        // over strings is ill-typed on verified programs.
+        // Borrowed views compare exact bytes without cloning their owners.
+        // Ordering remains ill-typed for Str on verified programs.
+        (Value::BorrowedStr(a), Value::BorrowedStr(b)) => match op {
+            BinaryOp::Eq => Some(Ok(Value::Bool(a.bytes.as_ref() == b.bytes.as_ref()))),
+            BinaryOp::Ne => Some(Ok(Value::Bool(a.bytes.as_ref() != b.bytes.as_ref()))),
+            _ => None,
+        },
+        (Value::CheckedString(a), Value::CheckedString(b)) => match op {
+            BinaryOp::Eq => Some(Ok(Value::Bool(a.as_str() == b.as_str()))),
+            BinaryOp::Ne => Some(Ok(Value::Bool(a.as_str() != b.as_str()))),
+            BinaryOp::Lt => Some(Ok(Value::Bool(
+                a.as_str().as_bytes() < b.as_str().as_bytes(),
+            ))),
+            BinaryOp::Le => Some(Ok(Value::Bool(
+                a.as_str().as_bytes() <= b.as_str().as_bytes(),
+            ))),
+            BinaryOp::Gt => Some(Ok(Value::Bool(
+                a.as_str().as_bytes() > b.as_str().as_bytes(),
+            ))),
+            BinaryOp::Ge => Some(Ok(Value::Bool(
+                a.as_str().as_bytes() >= b.as_str().as_bytes(),
+            ))),
+            _ => None,
+        },
         (Value::String(a), Value::String(b)) => match op {
             BinaryOp::Eq => Some(Ok(Value::Bool(a == b))),
             BinaryOp::Ne => Some(Ok(Value::Bool(a != b))),
@@ -5467,7 +4357,7 @@ fn verify_envelope_with_profile(envelope: &str, profile: SourceProfile) -> Resul
             _ => {
                 return Err(consistency_error(
                     "argument type is outside the canonical interpreter boundary".to_owned(),
-                ))
+                ));
             }
         };
         let Some(value_text) = argument["value"].as_str() else {
@@ -5609,7 +4499,7 @@ fn verify_envelope_with_profile(envelope: &str, profile: SourceProfile) -> Resul
             return Err(consistency_error(format!(
                 "outcome kind must be one of [{OUTCOME_RETURNED}, {OUTCOME_FAILED}, \
                  {OUTCOME_FUEL_EXHAUSTED}, {OUTCOME_CALL_DEPTH_EXCEEDED}]"
-            )))
+            )));
         }
     }
 
@@ -5733,6 +4623,23 @@ fn verify_status(status: &serde_json::Value) -> Result<(), Diagnostic> {
                 ));
             }
         }
+        Some(crate::byte_ops::RANGE_STATUS_DOMAIN) => {
+            if ![
+                crate::byte_ops::RANGE_START_AFTER_END_CODE,
+                crate::byte_ops::RANGE_END_OUT_OF_BOUNDS_CODE,
+            ]
+            .into_iter()
+            .any(|known| code == u64::from(known))
+            {
+                return Err(consistency_error(
+                    "byte-range status code is outside the closed v1 table".to_owned(),
+                ));
+            }
+            normalize_byte_range(u32::try_from(code).expect("finite byte-range code")).to_json()
+        }
+        Some(crate::string_ops::CONVERT_STATUS_DOMAIN) => {
+            string_operations::rebuild_conversion_status(code)?
+        }
         _ => owned_box::rebuild_collection_status(status["domain_id"].as_str(), code)?,
     };
     if rebuilt
@@ -5838,19 +4745,25 @@ fn main() -> i64 { 0 }
         let right = hir::DeclarationId::new("test.packet.right");
         let left_value = OwnedBytesValue {
             allocation: 1,
-            bytes: Arc::from([1u8, 2u8].as_slice()),
+            bytes: Arc::<[u8]>::from([1u8, 2u8].as_slice()).into(),
         };
         let right_value = OwnedBytesValue {
             allocation: 2,
-            bytes: Arc::from([3u8].as_slice()),
+            bytes: Arc::<[u8]>::from([3u8].as_slice()).into(),
         };
         let mut environment = Environment::from(vec![(
             root.clone(),
             Value::Record(Arc::new(OwnedRecordValue {
                 record: hir::DeclarationId::new("test.packet"),
                 fields: BTreeMap::from([
-                    (left.clone(), Value::Bytes(left_value.clone())),
-                    (right.clone(), Value::Bytes(right_value.clone())),
+                    (
+                        left.clone(),
+                        Value::Bytes(left_value.borrow_alias().unwrap()),
+                    ),
+                    (
+                        right.clone(),
+                        Value::Bytes(right_value.borrow_alias().unwrap()),
+                    ),
                 ]),
             })),
         )]);
@@ -6039,6 +4952,8 @@ fn main() -> i64 { 0 }
                 budget: 10_000,
                 next_byte_allocation: 0,
                 allocated_byte_payload: 0,
+                partition: None,
+                fused: Default::default(),
                 box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
                 utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
                 stdout_transcript: None,
@@ -6055,6 +4970,7 @@ fn main() -> i64 { 0 }
                 resumption: resumable::Resumption::Refused,
                 semantic: Default::default(),
                 string_condition_reads: Default::default(),
+                checked_allocation: None,
             };
             let outcome = evaluator.call_frame(
                 inspect,
@@ -6128,6 +5044,8 @@ fn inspect(value: borrow Either<Bytes, Bytes>) -> i64 {
                 budget: 10_000,
                 next_byte_allocation: 0,
                 allocated_byte_payload: 0,
+                partition: None,
+                fused: Default::default(),
                 box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
                 utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
                 stdout_transcript: None,
@@ -6144,6 +5062,7 @@ fn inspect(value: borrow Either<Bytes, Bytes>) -> i64 {
                 resumption: resumable::Resumption::Refused,
                 semantic: Default::default(),
                 string_condition_reads: Default::default(),
+                checked_allocation: None,
             };
             let outcome = evaluator.call_frame(
                 inspect,
@@ -6429,8 +5348,8 @@ fn inspect(value: borrow Either<Bytes, Bytes>) -> i64 {
     fn borrowed_str_clones_preserve_invocation_root_and_shared_evidence() {
         let root = ValueId::intrinsic_parameter("test.borrowed.root", 0);
         let original = Value::BorrowedStr(BorrowedStrValue {
-            invocation_root: root.clone(),
-            bytes: Arc::from("aé\0z".as_bytes()),
+            invocation_root: root.clone().into(),
+            bytes: Arc::<[u8]>::from("aé\0z".as_bytes()).into(),
         });
         let Value::BorrowedStr(value) = &original else {
             unreachable!("constructed borrowed string value")
@@ -6440,9 +5359,17 @@ fn inspect(value: borrow Either<Bytes, Bytes>) -> i64 {
         else {
             panic!("borrowed values retain their distinct runtime form")
         };
-        assert_eq!(original.invocation_root, root);
-        assert_eq!(forwarded.invocation_root, root);
-        assert!(Arc::ptr_eq(&original.bytes, &forwarded.bytes));
+        assert_eq!(
+            original.invocation_root,
+            BorrowedRoot::Invocation(root.clone())
+        );
+        assert_eq!(forwarded.invocation_root, BorrowedRoot::Invocation(root));
+        let (Utf8Backing::Invocation(left), Utf8Backing::Invocation(right)) =
+            (&original.bytes, &forwarded.bytes)
+        else {
+            panic!("foreign input keeps its invocation backing")
+        };
+        assert!(Arc::ptr_eq(left, right));
     }
 
     #[test]

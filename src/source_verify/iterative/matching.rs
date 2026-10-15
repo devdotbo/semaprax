@@ -16,27 +16,41 @@ use crate::source_verify::variant_or::AGGREGATE_REFUTABLE_HELP;
 use crate::source_verify::IterativeVerifier;
 use std::collections::HashSet;
 
+#[cfg(test)]
+mod matching_before_799;
+
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     pub(super) fn frame_resume_match_scrutinee(
         &mut self,
+        checkpoint: crate::source_verify::recovery::Checkpoint,
         expression: &'p Expr,
         scrutinee: &'p Expr,
         arms: &'p [crate::ast::MatchArm],
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self
+                .before_match_799_frame_resume_match_scrutinee(expression, scrutinee, arms, scope);
+        }
         let match_mode = match &expression.kind {
             ExprKind::Match { mode, .. } => *mode,
             _ => unreachable!("match continuation has a non-match expression"),
         };
-        let scrutinee_value = self.values.pop().unwrap_or(None);
+        let mut scrutinee_value = self.values.pop().unwrap_or(None);
+        let scrutinee_diagnostics = self.diagnostics.len();
         if let Some(value) = &scrutinee_value {
             reject_native_unit_value(self.program, scrutinee, value, self.diagnostics);
             let exact_owned_record_item = value.mode == ParamMode::Own
-                && crate::source_verify::declared_type::owned_record_collection::
-                    is_admitted_owned_record_collection_element(self.types, &value.ty)
+                && crate::source_verify::declared_type::owned_leaf_collection::runtime_element(
+                    self.types, &value.ty,
+                )
                 && matches!(&scrutinee.kind, ExprKind::Var(name)
                     if self.owned_iterator_items.last().is_some_and(|item| item == name));
-            if self.loop_depth != 0 && !exact_owned_record_item {
+            if self.loop_depth != 0
+                && !exact_owned_record_item
+                && !crate::finite_owned_record_loop::source_permits(self.current, expression)
+            {
                 reject_loop_match_scrutinee(
                     self.program,
                     self.types,
@@ -45,6 +59,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     self.diagnostics,
                 );
             }
+        }
+        if self.diagnostics.len() != scrutinee_diagnostics {
+            scrutinee_value = None;
         }
         // Refutable Match v1: Copy-scalar scrutinees take the
         // literal/guard decision chain; every other type keeps
@@ -204,7 +221,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         | MatchPattern::Binding { .. }
                 ) && !arm.pattern.is_variant_or())
         });
-        if refutable_syntax {
+        if refutable_syntax && scrutinee_value.is_some() {
             self.diagnostics.push(
                 error(
                     self.program,
@@ -225,7 +242,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             if match_mode != MatchMode::Value
                 && self.types.contains_owned_bytes(&scrutinee_value.ty)
                 && !(self.types.is_nested_owned_byte_record(&scrutinee_value.ty)
-                    || crate::source_verify::declared_type::string_record::admitted(
+                    || crate::source_verify::declared_type::string_record::runtime_admitted(
                         &scrutinee_value.ty,
                         self.types,
                     ))
@@ -251,7 +268,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 MatchMode::Own => {
                     let recursive_profile =
                         (self.types.is_nested_owned_byte_record(&scrutinee_value.ty)
-                            || crate::source_verify::declared_type::string_record::admitted(
+                            || crate::source_verify::declared_type::string_record::runtime_admitted(
                                 &scrutinee_value.ty,
                                 self.types,
                             ))
@@ -310,7 +327,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     "SPX-M101",
                     format!(
                         "non-exhaustive match; missing record pattern for `{}`",
-                        scrutinee_value.ty
+                        crate::source_verify::private_names::type_name(
+                            self.program,
+                            self.types,
+                            &scrutinee_value.ty
+                        )
                     ),
                     expression.span,
                 ));
@@ -331,6 +352,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 .cloned()
                 .collect::<Vec<_>>();
             let arm_scope = self.scopes.len();
+            self.recovery.fork(Some(scope), arm_scope);
             self.scopes.push(VerifierScope {
                 bindings: self.scopes[scope].bindings.clone(),
                 local_borrow_count: self.scopes[scope].local_borrow_count,
@@ -397,7 +419,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 owns_record_input: match_mode == MatchMode::Own
                     && scrutinee_value.mode == ParamMode::Own
                     && (self.types.is_nested_owned_byte_record(&scrutinee_value.ty)
-                        || crate::source_verify::declared_type::string_record::admitted(
+                        || crate::source_verify::declared_type::string_record::runtime_admitted(
                             &scrutinee_value.ty,
                             self.types,
                         )),
@@ -412,7 +434,27 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             });
             return Ok(());
         }
+        // Capture the selected child origin now; arm errors must never become
+        // provenance for names whose scrutinee was refused earlier.
+        let refused_input = if scrutinee_value.is_none() {
+            match self.recovery.refusal_origin(checkpoint, self.diagnostics) {
+                Some(origin) => Some(origin),
+                None => {
+                    let origin = self.diagnostics.len();
+                    self.diagnostics.push(error(
+                        self.program,
+                        "SPX-M103",
+                        "match scrutinee must be a Copy variant, received an invalid value",
+                        scrutinee.span,
+                    ));
+                    Some(origin)
+                }
+            }
+        } else {
+            None
+        };
         let variant_instance = scrutinee_value.as_ref().and_then(|value| match &value.ty {
+            Type::Never => None,
             Type::Named { name, arguments } if self.types.variant_cases(&value.ty).is_some() => {
                 Some((name.clone(), arguments.clone()))
             }
@@ -441,7 +483,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         let declared_cases = scrutinee_value
             .as_ref()
             .and_then(|value| self.types.variant_cases(&value.ty));
-        if declared_cases.is_none() {
+        if declared_cases.is_none() && scrutinee_value.is_some() {
             self.diagnostics.push(error(
                 self.program,
                 "SPX-M103",
@@ -449,7 +491,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     "match scrutinee must be a Copy variant, received {}",
                     scrutinee_value.as_ref().map_or_else(
                         || "an invalid value".to_owned(),
-                        |value| value.ty.to_string()
+                        |value| crate::source_verify::private_names::type_name(
+                            self.program,
+                            self.types,
+                            &value.ty
+                        )
                     )
                 ),
                 scrutinee.span,
@@ -469,7 +515,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 MatchMode::Own
                     if !variant_needs_drop
                         || !(self.types.is_flat_owned_byte_variant(&scrutinee_value.ty)
-                            || self.types.is_flat_owned_string_variant(&scrutinee_value.ty))
+                            || self.types.is_direct_owned_variant(&scrutinee_value.ty))
                         || scrutinee_value.mode != ParamMode::Own =>
                 {
                     self.diagnostics.push(error(
@@ -495,7 +541,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 MatchMode::Borrow
                     if !variant_needs_drop
                         || !(self.types.is_flat_owned_byte_variant(&scrutinee_value.ty)
-                            || self.types.is_flat_owned_string_variant(&scrutinee_value.ty)
+                            || self.types.is_direct_owned_variant(&scrutinee_value.ty)
                             || crate::native_rust_binding::admitted_regex_result(
                                 self.program,
                                 &scrutinee_value.ty,
@@ -538,7 +584,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             covered: HashSet::new(),
             wildcard_seen: false,
             result: None,
-            variant_name,
+            variant_name: match variant_name {
+                Some(name) => crate::source_verify::scope::VariantMatchName::Known(name),
+                None => crate::source_verify::scope::VariantMatchName::Unknown(refused_input),
+            },
             variant_arguments: variant_instance
                 .map(|(_, arguments)| arguments)
                 .unwrap_or_default(),

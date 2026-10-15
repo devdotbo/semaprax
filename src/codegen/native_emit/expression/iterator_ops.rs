@@ -1,9 +1,11 @@
 //! Native lowering for consuming scalar iterator operations.
 
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedExpr, ResolvedType};
 
 use super::super::{backend_error, CEmitter, COutput, CValue};
+mod owned_leaf;
 
 impl<'a, O: COutput> CEmitter<'a, O> {
     pub(super) fn emit_iterator_op(
@@ -24,6 +26,14 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             return Err(backend_error(
                 "iterator operation has invalid resolved shape",
             ));
+        }
+        if crate::hir::owned_leaf_collection::layout(&self.program.declarations, element).is_some()
+            && !crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
+                &self.program.declarations,
+                element,
+            )
+        {
+            return self.emit_owned_leaf_iterator(expr, op, element, args);
         }
         let tag = match element {
             ResolvedType::I64 => 1,
@@ -79,7 +89,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "spx_status = spx_iter_bytes_next(spx_ctx, &{source}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
             }
             crate::iterator_ops::IteratorOp::VecIntoIter if tag == 10 => self.line(&format!(
                 "{destination} = spx_iter_record_from_vec(spx_ctx, &{source});"
@@ -102,7 +112,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "spx_status = spx_iter_record_next(spx_ctx, &{source}, &{step_tag}, &{raw}, &{rest});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("({destination}).spx_tag = {step_tag};"));
                 let case = super::super::c_case_symbol(&crate::hir::DeclarationId::new(
                     crate::iterator_ops::YIELD_ID,
@@ -140,7 +150,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             )),
             crate::iterator_ops::IteratorOp::Next => {
                 self.line(&format!("spx_status = spx_iter_next(spx_ctx, &{source}, UINT32_C({tag}), &{destination});"));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
             }
         }
         // Both helpers have consumed the source only after their authenticated

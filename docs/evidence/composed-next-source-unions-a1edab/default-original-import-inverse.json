@@ -1,0 +1,37 @@
+{
+  "source_only": true,
+  "source": "src/workspace_graph/expected_projection/defaults/original.rs",
+  "original_sha256": "0b1c97abf52ee327690f629fdbf406cd34ab9e5f21a8d07f1c457e5fe85db07e",
+  "inverse": [
+    {
+      "hook": "nested-default-cost-import-adapter",
+      "current": "//! Complete original recursive default receiver, independently compiled.\nuse super::{\n    checked_builder_sum, collection_constructor, graph_error, reserve_builder_structure,\n    Diagnostic, Expr, ExprKind, FieldInitializer, Span, StructuralCost, Type, TypeDeclaration,\n    TypeDeclarationKind,\n};\n\n",
+      "before": "//! Complete original recursive default receiver, independently compiled.\nuse super::{\n    collection_constructor, graph_error, reserve_builder_structure, Diagnostic, Expr, ExprKind,\n    FieldInitializer, Span, Type, TypeDeclaration, TypeDeclarationKind,\n};\n\n"
+    },
+    {
+      "hook": "nested-default-vector-predicate-namespace",
+      "current": "            && super::super::type_rewrite::default_vector_element(ty, declarations).is_some() =>",
+      "before": "            && super::type_rewrite::default_vector_element(ty, declarations).is_some() =>"
+    },
+    {
+      "hook": "nested-default-vector-element-namespace",
+      "current": "            let element = super::super::type_rewrite::default_vector_element(ty, declarations)",
+      "before": "            let element = super::type_rewrite::default_vector_element(ty, declarations)"
+    },
+    {
+      "hook": "nested-default-declaration-cost-namespace",
+      "current": "            super::super::declaration_cost::ast_type_cost(element, &mut cost)?;",
+      "before": "            super::declaration_cost::ast_type_cost(element, &mut cost)?;"
+    },
+    {
+      "hook": "explicit-import-adapter",
+      "current": "//! Complete original recursive default receiver, independently compiled.\nuse super::{\n    collection_constructor, graph_error, reserve_builder_structure, Diagnostic, Expr, ExprKind,\n    FieldInitializer, Span, Type, TypeDeclaration, TypeDeclarationKind,\n};\n\n",
+      "before": "//! Complete original recursive default receiver, independently compiled.\nuse super::*;\n\n"
+    },
+    {
+      "hook": "original-final-newline",
+      "current": "    Ok(Expr { kind, span })\n}\n",
+      "before": "    Ok(Expr { kind, span })\n}\n\n"
+    }
+  ]
+}

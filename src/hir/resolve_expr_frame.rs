@@ -1,9 +1,13 @@
 //! Continuation frames for the iterative expression resolver.
 //!
-//! Hoisted out of `resolve_expr_iterative` unchanged: the frame shape,
-//! its result splice helper, and the test-only capacity probe.
+//! Hoisted out of `resolve_expr_iterative`: the frame shape, its result splice
+//! helper, and the test-only capacity probe. Expression paths are four-byte
+//! `PathId` coordinates into the call's private path arena; the census counts
+//! that arena's backing once, beside the frame stack.
 
+#[cfg(test)]
 use std::collections::BTreeMap;
+#[cfg(test)]
 use std::rc::Rc;
 
 use crate::ast::{BinaryOp, Expr, Span, Statement, Type, UnaryOp};
@@ -12,7 +16,7 @@ use crate::ast::{BinaryOp, Expr, Span, Statement, Type, UnaryOp};
 use super::capacity_probe::{
     resolved_expr_owned_capacity, resolved_field_initializer_owned_capacity,
     resolved_match_arm_owned_capacity, resolved_statement_owned_capacity,
-    resolved_type_owned_capacity, resolver_scope_owned_capacity,
+    resolved_type_owned_capacity,
 };
 use super::expr_nodes::{
     ResolvedExpr, ResolvedFieldInitializer, ResolvedMatchArm, ResolvedMatchPattern,
@@ -22,30 +26,44 @@ use super::ids::{DeclarationId, FunctionInstanceId};
 use super::nodes::{
     DeclarationKind, ResolvedBinding, ResolvedHostCommandOperation, ResolvedMatchMode, ResolvedType,
 };
-use super::Binding;
+use super::resolve_expr::path_arena::{PathId, Seg, Step};
+use super::Scope;
 
 pub(super) enum Frame<'expr> {
+    FinishVecConstructor {
+        element: ResolvedType,
+        count: u32,
+    },
+    EnterLoop(super::ControlTarget),
+    LeaveLoop,
+    FinishLexicalExit {
+        span: Span,
+        path: PathId,
+        kind: crate::ast::LexicalExitKind,
+        target: super::ControlTarget,
+        has_value: bool,
+    },
     ForOwn(Box<super::resolve_for_own::ForOwnFrame<'expr>>),
     Enter {
         expr: &'expr Expr,
-        bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
+        bindings: Scope<'expr>,
+        path: PathId,
     },
     FinishInvoke {
         span: Span,
-        path: String,
+        path: PathId,
         callable: ResolvedExpr,
         argument_count: usize,
     },
     FinishNativeCall {
         span: Span,
-        path: String,
+        path: PathId,
         import: DeclarationId,
         argument_count: usize,
     },
     FinishCall {
         span: Span,
-        path: String,
+        path: PathId,
         callee: DeclarationId,
         type_arguments: Vec<ResolvedType>,
         instance: Option<FunctionInstanceId>,
@@ -55,96 +73,120 @@ pub(super) enum Frame<'expr> {
     },
     FinishStringOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: crate::string_ops::StringOp,
         argument_count: usize,
     },
+    FinishSortBy {
+        span: Span,
+        path: PathId,
+        element: ResolvedType,
+        callee: DeclarationId,
+    },
+    FinishVecField {
+        span: Span,
+        path: PathId,
+        element: ResolvedType,
+        field: DeclarationId,
+    },
+    FinishLiteralFormat {
+        span: Span,
+        path: PathId,
+        template: String,
+        argument_count: usize,
+    },
+    LiteralFormatArgNext {
+        args: &'expr [Expr],
+        index: usize,
+        bindings: Scope<'expr>,
+        path: PathId,
+    },
     FinishStrOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: crate::str_ops::StrOp,
         argument_count: usize,
     },
     FinishByteOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: crate::byte_ops::ByteOp,
         argument_count: usize,
     },
     FinishOwnedGenericOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: super::resolve_box_call::OwnedGenericCallSite,
         element: ResolvedType,
         argument_count: usize,
     },
     FinishHostIoOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: crate::host_io_ops::HostIoOp,
         argument_count: usize,
     },
     FinishHostCommandOp {
         span: Span,
-        path: String,
+        path: PathId,
         op: ResolvedHostCommandOperation,
         argument_count: usize,
     },
     ChildNext {
         children: &'expr [Expr],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
-        segment: &'static str,
+        bindings: Scope<'expr>,
+        path: PathId,
+        segment: Seg,
     },
     MethodArgNext {
         args: &'expr [Expr],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
-        path: String,
+        bindings: Scope<'expr>,
+        path: PathId,
     },
     FinishUnary {
         span: Span,
-        path: String,
+        path: PathId,
         op: UnaryOp,
     },
     FinishBinary {
         span: Span,
-        path: String,
+        path: PathId,
         op: BinaryOp,
     },
     AfterBinaryLeft {
         span: Span,
-        path: String,
+        path: PathId,
         op: BinaryOp,
         right: &'expr Expr,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
     },
     BlockNext {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
-        scope: Rc<BTreeMap<String, Binding>>,
+        scope: Scope<'expr>,
         resolved: Vec<ResolvedStatement>,
     },
     BlockAfterLet {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
-        scope: Rc<BTreeMap<String, Binding>>,
+        scope: Scope<'expr>,
         resolved: Vec<ResolvedStatement>,
     },
     BlockAfterAssign {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
-        scope: Rc<BTreeMap<String, Binding>>,
+        scope: Scope<'expr>,
         resolved: Vec<ResolvedStatement>,
         target: ResolvedBinding,
         /// Field Mutation v1: the resolved direct field and its
@@ -153,94 +195,94 @@ pub(super) enum Frame<'expr> {
     },
     BlockAfterUnsafe {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
-        scope: Rc<BTreeMap<String, Binding>>,
+        scope: Scope<'expr>,
         resolved: Vec<ResolvedStatement>,
     },
     BlockWhileCondition {
         span: Span,
-        path: String,
+        path: PathId,
         condition: &'expr Expr,
         body: &'expr Expr,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
-        scope: Rc<BTreeMap<String, Binding>>,
+        scope: Scope<'expr>,
         resolved: Vec<ResolvedStatement>,
     },
     BlockWhileBody {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
-        scope: Rc<BTreeMap<String, Binding>>,
+        scope: Scope<'expr>,
         resolved: Vec<ResolvedStatement>,
         condition: Box<ResolvedExpr>,
         condition_span: Span,
     },
     BlockForBody {
         span: Span,
-        path: String,
+        path: PathId,
         statements: &'expr [Statement],
         tail: &'expr Expr,
         index: usize,
-        scope: Rc<BTreeMap<String, Binding>>,
+        scope: Scope<'expr>,
         resolved: Vec<ResolvedStatement>,
         source: ResolvedBinding,
         element: ResolvedType,
     },
     FinishBlock {
         span: Span,
-        path: String,
+        path: PathId,
         statements: Vec<ResolvedStatement>,
     },
     FinishIf {
         span: Span,
-        path: String,
+        path: PathId,
     },
     AfterIfCondition {
         span: Span,
-        path: String,
+        path: PathId,
         then_branch: &'expr Expr,
         else_branch: &'expr Expr,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
     },
     AfterIfThen {
         span: Span,
-        path: String,
+        path: PathId,
         else_branch: &'expr Expr,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
     },
     RecordNext {
         span: Span,
-        path: String,
+        path: PathId,
         type_name: &'expr str,
         record: DeclarationId,
         arguments: Vec<ResolvedType>,
         fields: &'expr [crate::ast::FieldInitializer],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         resolved: Vec<ResolvedFieldInitializer>,
     },
     RecordAfterField {
         span: Span,
-        path: String,
+        path: PathId,
         type_name: &'expr str,
         record: DeclarationId,
         arguments: Vec<ResolvedType>,
         fields: &'expr [crate::ast::FieldInitializer],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         resolved: Vec<ResolvedFieldInitializer>,
         field: DeclarationId,
     },
     VariantNext {
         span: Span,
-        path: String,
+        path: PathId,
         type_name: &'expr str,
         case_name: &'expr str,
         variant: DeclarationId,
@@ -248,12 +290,12 @@ pub(super) enum Frame<'expr> {
         type_arguments: &'expr [Type],
         fields: &'expr [crate::ast::FieldInitializer],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         resolved: Vec<ResolvedFieldInitializer>,
     },
     VariantAfterField {
         span: Span,
-        path: String,
+        path: PathId,
         type_name: &'expr str,
         case_name: &'expr str,
         variant: DeclarationId,
@@ -261,24 +303,24 @@ pub(super) enum Frame<'expr> {
         type_arguments: &'expr [Type],
         fields: &'expr [crate::ast::FieldInitializer],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         resolved: Vec<ResolvedFieldInitializer>,
         field: DeclarationId,
     },
     AfterMatchScrutinee {
         span: Span,
-        path: String,
+        path: PathId,
         mode: ResolvedMatchMode,
         arms: &'expr [crate::ast::MatchArm],
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
     },
     MatchNext {
         span: Span,
-        path: String,
+        path: PathId,
         mode: ResolvedMatchMode,
         arms: &'expr [crate::ast::MatchArm],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         scrutinee: ResolvedExpr,
         matched_type: DeclarationId,
         instance_arguments: Vec<ResolvedType>,
@@ -287,11 +329,11 @@ pub(super) enum Frame<'expr> {
     },
     MatchAfterArm {
         span: Span,
-        path: String,
+        path: PathId,
         mode: ResolvedMatchMode,
         arms: &'expr [crate::ast::MatchArm],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         scrutinee: ResolvedExpr,
         matched_type: DeclarationId,
         instance_arguments: Vec<ResolvedType>,
@@ -304,98 +346,104 @@ pub(super) enum Frame<'expr> {
     /// binding arms extend them for their own arm only.
     ScalarMatchNext {
         span: Span,
-        path: String,
+        path: PathId,
         mode: ResolvedMatchMode,
         arms: &'expr [crate::ast::MatchArm],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         scrutinee: ResolvedExpr,
         resolved: Vec<ResolvedMatchArm>,
     },
     ScalarMatchAfterArm {
         span: Span,
-        path: String,
+        path: PathId,
         mode: ResolvedMatchMode,
         arms: &'expr [crate::ast::MatchArm],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         scrutinee: ResolvedExpr,
         resolved: Vec<ResolvedMatchArm>,
         pattern: ResolvedMatchPattern,
     },
     FinishTry {
         span: Span,
-        path: String,
+        path: PathId,
     },
     /// Resumable Effects v1 (issue #204). See `hir::resolve_yield`.
     FinishYield {
         span: Span,
-        path: String,
+        path: PathId,
     },
     AfterUpdateBase {
         span: Span,
-        path: String,
+        path: PathId,
         fields: &'expr [crate::ast::FieldInitializer],
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
     },
     UpdateNext {
         span: Span,
-        path: String,
+        path: PathId,
         base: ResolvedExpr,
         record: DeclarationId,
         fields: &'expr [crate::ast::FieldInitializer],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         resolved: Vec<ResolvedFieldInitializer>,
     },
     UpdateAfterField {
         span: Span,
-        path: String,
+        path: PathId,
         base: ResolvedExpr,
         record: DeclarationId,
         fields: &'expr [crate::ast::FieldInitializer],
         index: usize,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         resolved: Vec<ResolvedFieldInitializer>,
         field: DeclarationId,
     },
     FinishProject {
         span: Span,
-        path: String,
+        path: PathId,
         field: &'expr str,
     },
     FinishMethodCall {
         span: Span,
-        path: String,
+        path: PathId,
         method: &'expr str,
         receiver: &'expr Expr,
-        bindings: Rc<BTreeMap<String, Binding>>,
+        bindings: Scope<'expr>,
         type_arguments: Vec<ResolvedType>,
         args_len: usize,
     },
     FinishSuperMethod {
         span: Span,
         method_span: Span,
-        path: String,
+        path: PathId,
         method: &'expr str,
         holder: DeclarationId,
         callee: DeclarationId,
         args_len: usize,
     },
+    /// The slot edge is created only when this frame resumes, after the
+    /// interrupted continuation is re-pushed, preserving the slot bound.
     StartUpcast {
         source: &'expr Expr,
-        bindings: Rc<BTreeMap<String, Binding>>,
-        slot_path: String,
+        bindings: Scope<'expr>,
+        slot_parent: PathId,
+        slot_edge: Step,
         holder: DeclarationId,
         span: Span,
         resume: Box<Frame<'expr>>,
     },
     FinishUpcast {
-        slot_path: String,
+        slot_path: PathId,
         holder: DeclarationId,
         span: Span,
     },
 }
+
+mod fixed_results;
+pub(super) use fixed_results::{take_pair, take_triple};
 
 pub(super) fn take_results(results: &mut Vec<ResolvedExpr>, count: usize) -> Vec<ResolvedExpr> {
     let start = results
@@ -408,75 +456,17 @@ pub(super) fn take_results(results: &mut Vec<ResolvedExpr>, count: usize) -> Vec
 #[cfg(test)]
 pub(super) fn frame_owned_capacity(
     frame: &Frame<'_>,
-    seen_scopes: &mut std::collections::HashSet<*const BTreeMap<String, Binding>>,
+    seen_scopes: &mut std::collections::HashSet<*const ()>,
 ) -> usize {
-    if let Frame::ForOwn(frame) = frame {
-        return super::resolve_for_own::capacity(frame, seen_scopes);
-    }
-    let path = match frame {
-        Frame::ForOwn(_) => unreachable!("handled above"),
-        Frame::FinishInvoke { path, .. }
-        | Frame::Enter { path, .. }
-        | Frame::FinishNativeCall { path, .. }
-        | Frame::FinishCall { path, .. }
-        | Frame::FinishStringOp { path, .. }
-        | Frame::FinishStrOp { path, .. }
-        | Frame::FinishByteOp { path, .. }
-        | Frame::FinishOwnedGenericOp { path, .. }
-        | Frame::FinishHostIoOp { path, .. }
-        | Frame::FinishHostCommandOp { path, .. }
-        | Frame::ChildNext { path, .. }
-        | Frame::MethodArgNext { path, .. }
-        | Frame::FinishUnary { path, .. }
-        | Frame::FinishBinary { path, .. }
-        | Frame::AfterBinaryLeft { path, .. }
-        | Frame::BlockNext { path, .. }
-        | Frame::BlockAfterLet { path, .. }
-        | Frame::BlockAfterAssign { path, .. }
-        | Frame::BlockAfterUnsafe { path, .. }
-        | Frame::BlockWhileCondition { path, .. }
-        | Frame::BlockWhileBody { path, .. }
-        | Frame::BlockForBody { path, .. }
-        | Frame::FinishBlock { path, .. }
-        | Frame::FinishIf { path, .. }
-        | Frame::AfterIfCondition { path, .. }
-        | Frame::AfterIfThen { path, .. }
-        | Frame::RecordNext { path, .. }
-        | Frame::RecordAfterField { path, .. }
-        | Frame::VariantNext { path, .. }
-        | Frame::VariantAfterField { path, .. }
-        | Frame::AfterMatchScrutinee { path, .. }
-        | Frame::MatchNext { path, .. }
-        | Frame::MatchAfterArm { path, .. }
-        | Frame::ScalarMatchNext { path, .. }
-        | Frame::ScalarMatchAfterArm { path, .. }
-        | Frame::FinishTry { path, .. }
-        | Frame::FinishYield { path, .. }
-        | Frame::AfterUpdateBase { path, .. }
-        | Frame::UpdateNext { path, .. }
-        | Frame::UpdateAfterField { path, .. }
-        | Frame::FinishProject { path, .. }
-        | Frame::FinishMethodCall { path, .. }
-        | Frame::FinishSuperMethod { path, .. }
-        | Frame::StartUpcast {
-            slot_path: path, ..
-        }
-        | Frame::FinishUpcast {
-            slot_path: path, ..
-        } => path.capacity(),
-    };
-    // Continuations share immutable binding maps through `Rc`. Count
-    // the owned map allocation once, not once per retaining frame.
-    let mut unique_scope_capacity = |scope: &Rc<BTreeMap<String, Binding>>| {
-        if seen_scopes.insert(Rc::as_ptr(scope)) {
-            resolver_scope_owned_capacity(scope)
-        } else {
-            0
-        }
-    };
-    let scope = match frame {
+    frame_owned_capacity_with(frame, &mut |pointer| seen_scopes.insert(pointer))
+}
+
+#[cfg(test)]
+fn frame_scope<'a, 'scope>(frame: &'a Frame<'scope>) -> Option<&'a Scope<'scope>> {
+    match frame {
         Frame::Enter { bindings, .. }
         | Frame::ChildNext { bindings, .. }
+        | Frame::LiteralFormatArgNext { bindings, .. }
         | Frame::MethodArgNext { bindings, .. }
         | Frame::StartUpcast { bindings, .. }
         | Frame::AfterBinaryLeft { bindings, .. }
@@ -493,18 +483,63 @@ pub(super) fn frame_owned_capacity(
         | Frame::ScalarMatchAfterArm { bindings, .. }
         | Frame::AfterUpdateBase { bindings, .. }
         | Frame::UpdateNext { bindings, .. }
-        | Frame::UpdateAfterField { bindings, .. } => unique_scope_capacity(bindings),
+        | Frame::UpdateAfterField { bindings, .. } => Some(bindings),
         Frame::BlockNext { scope, .. }
         | Frame::BlockAfterLet { scope, .. }
         | Frame::BlockAfterAssign { scope, .. }
         | Frame::BlockAfterUnsafe { scope, .. }
         | Frame::BlockWhileCondition { scope, .. }
-        | Frame::BlockWhileBody { scope, .. } => unique_scope_capacity(scope),
-        Frame::BlockForBody { scope, .. } => unique_scope_capacity(scope),
-        _ => 0,
-    };
+        | Frame::BlockWhileBody { scope, .. } => Some(scope),
+        Frame::BlockForBody { scope, .. } => Some(scope),
+        Frame::ForOwn(frame) => Some(&frame.scope),
+        _ => None,
+    }
+}
+
+/// Borrow every retained scope, including boxed upcast resumes, in the same
+/// order as the owned-capacity receiver. No pointer is retained or dereferenced.
+#[cfg(test)]
+pub(super) fn visit_frame_scopes(mut frame: &Frame<'_>, mut visit: impl FnMut(*const ())) {
+    loop {
+        if let Some(scope) = frame_scope(frame) {
+            visit(Rc::as_ptr(scope) as *const ());
+        }
+        match frame {
+            Frame::StartUpcast { resume, .. } => frame = resume,
+            _ => break,
+        }
+    }
+}
+
+#[cfg(test)]
+pub(super) fn frame_owned_capacity_with(
+    frame: &Frame<'_>,
+    first_scope: &mut dyn FnMut(*const ()) -> bool,
+) -> usize {
+    if let Frame::ForOwn(frame) = frame {
+        return super::resolve_for_own::capacity(frame, first_scope);
+    }
+    // Path coordinates are inline; their backing is counted once by the probe.
+    let scope = frame_scope(frame).map_or(0, |scope| {
+        if first_scope(Rc::as_ptr(scope) as *const ()) {
+            super::resolver_scope::owned_capacity(scope)
+        } else {
+            0
+        }
+    });
     let retained = match frame {
+        Frame::FinishVecConstructor { element, .. } => resolved_type_owned_capacity(element),
+        Frame::EnterLoop(target) | Frame::FinishLexicalExit { target, .. } => {
+            super::capacity_probe::lexical_target_capacity(target)
+        }
         Frame::FinishInvoke { callable, .. } => resolved_expr_owned_capacity(callable),
+        Frame::FinishLiteralFormat { template, .. } => template.capacity(),
+        Frame::FinishVecField { element, field, .. }
+        | Frame::FinishSortBy {
+            element,
+            callee: field,
+            ..
+        } => resolved_type_owned_capacity(element) + field.as_str().len(),
         Frame::FinishMethodCall { type_arguments, .. } => {
             type_arguments.capacity() * std::mem::size_of::<ResolvedType>()
                 + type_arguments
@@ -527,7 +562,8 @@ pub(super) fn frame_owned_capacity(
                         parameters.capacity() * std::mem::size_of::<Type>()
                             + std::mem::size_of::<Type>()
                     }
-                    Type::OnceFunction
+                    Type::Never
+                    | Type::OnceFunction
                     | Type::OnceFunctionI64
                     | Type::OnceFunctionI64Pair
                     | Type::MutFunctionI64
@@ -643,5 +679,99 @@ pub(super) fn frame_owned_capacity(
         }
         _ => 0,
     };
-    path.saturating_add(scope).saturating_add(retained)
+    // An interrupted continuation boxed beneath an upcast is retained too.
+    let resumed = match frame {
+        Frame::StartUpcast { resume, .. } => std::mem::size_of::<Frame<'_>>()
+            .saturating_add(frame_owned_capacity_with(resume, first_scope)),
+        _ => 0,
+    };
+    scope.saturating_add(retained).saturating_add(resumed)
+}
+
+#[cfg(test)]
+pub(super) mod capacity_old;
+
+#[cfg(test)]
+mod literal_format_capacity_tests {
+    use super::*;
+    #[test]
+    fn literal_format_frames_count_template_paths_and_shared_scope_once() {
+        use super::super::resolve_expr::path_arena::PathArena;
+        let bindings = crate::hir::resolver_scope::owned(BTreeMap::new());
+        let template = "prefix {}".to_owned();
+        let mut paths = PathArena::new("body");
+        let path = paths.child_at(1, 1, PathId::ROOT, Seg::Arg.at(0));
+        assert_eq!(paths.at(path).materialize_with(&[]), "body.arg.0");
+        // The coordinate owns no backing; the arena's is counted once.
+        let arena = paths.owned_capacity();
+        assert_eq!(
+            arena,
+            super::super::resolve_expr::path_arena::PATH_NODE_BYTES
+        );
+        let frame = Frame::FinishLiteralFormat {
+            span: Span::default(),
+            path,
+            template: template.clone(),
+            argument_count: 1,
+        };
+        let mut seen = std::collections::HashSet::new();
+        assert_eq!(frame_owned_capacity(&frame, &mut seen), template.capacity());
+        let next = Frame::LiteralFormatArgNext {
+            args: &[],
+            index: 1,
+            bindings: Rc::clone(&bindings),
+            path,
+        };
+        assert_eq!(
+            frame_owned_capacity(&next, &mut seen),
+            super::super::resolver_scope::owned_capacity(&bindings)
+        );
+        assert_eq!(seen.len(), 1);
+        assert_eq!(frame_owned_capacity(&next, &mut seen), 0);
+        assert_eq!(paths.owned_capacity(), arena);
+    }
+
+    #[test]
+    fn boxed_upcast_resume_frames_are_retained_capacity() {
+        let resume = Frame::FinishLiteralFormat {
+            span: Span::default(),
+            path: PathId::ROOT,
+            template: "resume {}".to_owned(),
+            argument_count: 1,
+        };
+        let template = match &resume {
+            Frame::FinishLiteralFormat { template, .. } => template.capacity(),
+            _ => unreachable!(),
+        };
+        let expr = crate::ast::Expr {
+            kind: crate::ast::ExprKind::Int(0),
+            span: Span::default(),
+        };
+        let frame = Frame::FinishUpcast {
+            slot_path: PathId::ROOT,
+            holder: DeclarationId::new("holder"),
+            span: Span::default(),
+        };
+        let mut seen = std::collections::HashSet::new();
+        assert_eq!(frame_owned_capacity(&frame, &mut seen), 0);
+        let start = Frame::StartUpcast {
+            source: &expr,
+            bindings: crate::hir::resolver_scope::owned(BTreeMap::new()),
+            slot_parent: PathId::ROOT,
+            slot_edge: Seg::ArgZero.into(),
+            holder: DeclarationId::new("holder"),
+            span: Span::default(),
+            resume: Box::new(resume),
+        };
+        let scope = match &start {
+            Frame::StartUpcast { bindings, .. } => {
+                super::super::resolver_scope::owned_capacity(bindings)
+            }
+            _ => unreachable!(),
+        };
+        assert_eq!(
+            frame_owned_capacity(&start, &mut seen),
+            scope + std::mem::size_of::<Frame<'_>>() + template
+        );
+    }
 }

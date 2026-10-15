@@ -39,6 +39,11 @@ pub(in crate::implementation) fn validate_native_rust_source_expression_budget(
                     .take()
                     .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
                 if next_child == 0 {
+                    if matches!(expression.kind, crate::ast::ExprKind::LexicalExit { .. }) {
+                        return Err(b107(
+                            "lexical control is outside native Rust interop builder v1",
+                        ));
+                    }
                     debit(std::mem::size_of::<&crate::ast::Expr>())?;
                     if depth > MAX_SEMANTIC_EXPRESSION_DEPTH {
                         return Err(b109(
@@ -123,12 +128,22 @@ pub(in crate::implementation) fn validate_native_rust_expression_budget_for_clos
                 pending.extend(captures.iter().map(|capture| (&capture.value, child_depth)));
                 pending.push((body, child_depth));
             }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    pending.push((value, child_depth));
+                }
+            }
             ResolvedExprKind::FunctionReference { .. } => {}
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push((callable, child_depth));
                 pending.extend(args.iter().map(|value| (value, child_depth)));
             }
             ResolvedExprKind::Call { args, .. } => {
+                pending.extend(args.iter().map(|value| (value, child_depth)))
+            }
+            ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
                 pending.extend(args.iter().map(|value| (value, child_depth)))
             }
             ResolvedExprKind::ByteRange {
@@ -154,7 +169,10 @@ pub(in crate::implementation) fn validate_native_rust_expression_budget_for_clos
                 pending.push((left, child_depth));
                 pending.push((right, child_depth));
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     pending.extend(
                         (0..statement.child_count())
@@ -203,6 +221,7 @@ pub(in crate::implementation) fn validate_native_rust_expression_budget_for_clos
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
         }

@@ -220,6 +220,7 @@ pub fn execute_for_conformance(
     Executor::new(program, function, scenario)?.run()
 }
 
+mod lexical;
 mod result_admission;
 use result_admission::validate_public_result_type;
 
@@ -233,6 +234,11 @@ fn collect_variant_domains(
         domains: &mut BTreeMap<ExpressionId, BTreeSet<DeclarationId>>,
     ) -> Result<(), CleanupExecutionError> {
         match &expression.kind {
+            hir::ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(operand) = value {
+                    visit(program, operand, domains)?;
+                }
+            }
             hir::ResolvedExprKind::Int(_)
             | hir::ResolvedExprKind::Int32(_)
             | hir::ResolvedExprKind::Char(_)
@@ -244,6 +250,7 @@ fn collect_variant_domains(
             | hir::ResolvedExprKind::Float64(_)
             | hir::ResolvedExprKind::Bool(_)
             | hir::ResolvedExprKind::String(_)
+            | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
             | hir::ResolvedExprKind::Place(_)
             | hir::ResolvedExprKind::BorrowPlace { .. } => {}
             hir::ResolvedExprKind::Closure { captures, .. } => {
@@ -258,7 +265,10 @@ fn collect_variant_domains(
                     visit(program, arg, domains)?;
                 }
             }
-            hir::ResolvedExprKind::Call { args, .. } => {
+            hir::ResolvedExprKind::Call { args, .. }
+            | hir::ResolvedExprKind::LiteralFormat { args, .. }
+            | hir::ResolvedExprKind::VecFieldRead { args, .. }
+            | hir::ResolvedExprKind::RowLoan { args, .. } => {
                 for argument in args {
                     visit(program, argument, domains)?;
                 }
@@ -290,7 +300,10 @@ fn collect_variant_domains(
                 visit(program, left, domains)?;
                 visit(program, right, domains)?;
             }
-            hir::ResolvedExprKind::Block { statements, tail } => {
+            hir::ResolvedExprKind::Block { statements, tail }
+            | hir::ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -666,10 +679,11 @@ struct Executor<'a> {
 }
 
 impl<'a> Executor<'a> {
-    fn new(
+    fn new_with_lifecycle_policy(
         program: &'a ResolvedProgram,
         function: &'a ResolvedFunction,
         scenario: CleanupScenario,
+        checked_allocation: bool,
     ) -> Result<Self, CleanupExecutionError> {
         let mut leaves = BTreeMap::new();
         for slot in &function.cleanup_plan.slots {
@@ -684,7 +698,8 @@ impl<'a> Executor<'a> {
         // and before execution can emit any event. A binding is required for
         // every imported lifecycle present anywhere in this function's plan,
         // even when the selected path would leave its guard false.
-        let lifecycle_bindings = preflight_finalizer_bindings(program, function, &scenario)?;
+        let lifecycle_bindings =
+            preflight_finalizer_bindings(program, function, &scenario, checked_allocation)?;
         let variant_domains = collect_variant_domains(program, function)?;
         let status_arena = StatusArena::new(
             StatusContextId::new(scenario.context_nonce),
@@ -784,9 +799,15 @@ impl<'a> Executor<'a> {
                 CleanupTerminator::Exit(exit) => {
                     let exit = self.exit(exit, current)?.clone();
                     self.execute_finalizers(&exit)?;
+                    let exit_id = exit.id;
                     match exit.continuation {
-                        ExitContinuation::Continue(edge) => {
+                        ExitContinuation::Continue(edge)
+                        | ExitContinuation::LoopBreak { edge, .. }
+                        | ExitContinuation::FunctionReturn { edge, .. } => {
                             current = self.follow_goto(current, edge)?;
+                        }
+                        ExitContinuation::LoopLatch { .. } => {
+                            current = self.latch_successor(exit_id)?;
                         }
                         ExitContinuation::CommitResult { source } => {
                             break (self.commit_result(source)?, TerminalKind::CommitResult);
@@ -1065,7 +1086,10 @@ impl<'a> Executor<'a> {
                 ..
             } = &expression.kind
             {
-                if crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
+                if checked_allocation::is_intrinsic_call(self, expression)
+                    || super::deferred_commit::is_total_str_len_bytes(callee)
+                    || crate::string_ops::take::operand(expression).is_some()
+                    || crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
                     || crate::host_io_ops::by_id(callee.as_str()).is_some()
                     || matches!(
                         crate::vec_ops::by_id(callee.as_str()),
@@ -1074,6 +1098,8 @@ impl<'a> Executor<'a> {
                                 | crate::vec_ops::VecOp::Capacity
                                 | crate::vec_ops::VecOp::Clear
                                 | crate::vec_ops::VecOp::Sort
+                                | crate::vec_ops::VecOp::SortOwned
+                                | crate::vec_ops::VecOp::SortBy
                         )
                     )
                     || crate::box_ops::by_id(callee.as_str()).is_some_and(|op| {
@@ -1101,7 +1127,9 @@ impl<'a> Executor<'a> {
                 "call `{call}` status source is not a propagated call"
             )));
         };
-        if self.program.functions.iter().any(|item| item.id == *callee) {
+        if callee.as_str() == crate::vec_field::ID
+            || self.program.functions.iter().any(|item| item.id == *callee)
+        {
             return Ok(callee.clone());
         }
         if self
@@ -1131,6 +1159,9 @@ impl<'a> Executor<'a> {
             .map(|candidate| candidate.producer.clone())
             .ok_or_else(|| invariant(format!("unknown failure source `{}`", source.expression)))?;
         let status = match producer {
+            StatusProducer::CheckedAllocation {
+                normalized_cases, ..
+            } => checked_allocation::failure_status(self, &source, normalized_cases)?,
             StatusProducer::ContractFalse { phase, .. } => NormalizedStatus::contract(phase),
             StatusProducer::CheckedArithmetic {
                 normalized_cases, ..
@@ -1496,7 +1527,7 @@ impl<'a> Executor<'a> {
                 | ResolvedType::MutFunctionI64
                 | ResolvedType::Function { .. },
             )
-            | (_, ResolvedType::TypeParameter { .. }) => false,
+            | (_, ResolvedType::TypeParameter { .. } | ResolvedType::Never) => false,
         };
         if !matches_type || !source_matches {
             return Err(invariant(
@@ -1730,8 +1761,8 @@ fn invariant(detail: impl Into<String>) -> CleanupExecutionError {
     CleanupExecutionError::HarnessInvariant(detail.into())
 }
 
+pub(in crate::cleanup_plan) mod checked_allocation;
 mod propagated_status;
-
 use propagated_status::validate_propagated_status;
 
 #[cfg(test)]

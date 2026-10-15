@@ -1,0 +1,165 @@
+{
+  "qualification": "not executed; source-authored exact selectors only",
+  "selectors": [
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::scratch_reuse::complete_paid_before_and_reused_inventory_preserve_every_shape_flag_and_work",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
+      "line": 25,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
+      "status": "new/unexecuted"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::scratch_reuse::full_late_malformed_duplicate_and_flag_census_diagnostics_keep_original_priority",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
+      "line": 68,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
+      "status": "new/unexecuted"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::scratch_reuse::retained_scalar_backing_exact_short_sticky_zero_and_full_drop_are_literal",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
+      "line": 185,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
+      "status": "new/unexecuted"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::scratch_reuse::warm_success_late_unknown_and_retry_clear_payloads_without_losing_backing",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
+      "line": 240,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
+      "status": "new/unexecuted"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::scratch_reuse::full_archived_paid_and_inventory_sources_bind_every_current_hook",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
+      "line": 276,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
+      "status": "new/unexecuted"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::scratch_reuse::late_child_after_valid_owned_fields_preserves_full_error_flags_and_settlement",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
+      "line": 344,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
+      "status": "new/unexecuted"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::scratch_reuse::warmed_scalar_then_real_nested_growth_exact_short_and_sticky_drop_keep_every_debit",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
+      "line": 399,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
+      "status": "new/unexecuted"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::scratch_reuse::retained_backing_and_payloads_settle_on_unwind_without_changing_authority",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs",
+      "line": 469,
+      "sha256": "55aa1523362c8528170178e81d33bf3d2bd1fbb6a2e745a80648ea55d705d020",
+      "status": "new/unexecuted"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::complete_original_nested_and_resource_variant_receivers_preserve_verdicts_and_work",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
+      "line": 48,
+      "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
+      "status": "original unchanged bodies/pending current qualification"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::late_unknown_entry_storage_precedes_retained_earlier_entry_mismatch",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
+      "line": 73,
+      "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
+      "status": "original unchanged bodies/pending current qualification"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::one_paid_fixed_cursor_reuses_original_capacity_without_per_expression_requests",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
+      "line": 101,
+      "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
+      "status": "original unchanged bodies/pending current qualification"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::whole_current_inventory_exact_short_and_sticky_refusal_settle_through_receiving_drop",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
+      "line": 153,
+      "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
+      "status": "original unchanged bodies/pending current qualification"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::paid_substitution_preserves_complete_original_callable_and_nominal_payloads",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
+      "line": 195,
+      "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
+      "status": "original unchanged bodies/pending current qualification"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::duplicate_inventory_ids_keep_the_complete_old_last_insertion_receiver",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
+      "line": 234,
+      "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
+      "status": "original unchanged bodies/pending current qualification"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::complete_original_inventory_construction_receiving_and_drop_reports_both_real_costs",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
+      "line": 267,
+      "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
+      "status": "original unchanged bodies/pending current qualification"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::ordinary_inventory::tests::complete_paid_shape_receivers_keep_original_flags_exact_short_sticky_and_drop",
+      "expected_tests": 1,
+      "expected_ignored": 0,
+      "source": "src/cleanup_plan/replay/ordinary_inventory/tests.rs",
+      "line": 305,
+      "sha256": "6a0f7a95d7e7c03e9ea1359cc6d39fc056a77f35524b3374ae3234938e289d00",
+      "status": "original unchanged bodies/pending current qualification"
+    }
+  ]
+}

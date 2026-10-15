@@ -1,17 +1,17 @@
 //! Independent case and Boolean observations for guarded Copy variants.
 use super::*;
 #[allow(clippy::too_many_arguments)]
-pub(super) fn finish_arm(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    scrutinee: &ResolvedExpr,
-    arm: &ResolvedMatchArm,
+pub(super) fn finish_arm<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    expression: &'hir ResolvedExpr,
+    scrutinee: &'hir ResolvedExpr,
+    arm: &'hir ResolvedMatchArm,
     final_arm: bool,
     remaining: Vec<ExprSkeletonPath>,
     arm_paths: &[ExprSkeletonPath],
     results: &mut Vec<ExprSkeletonPath>,
-    work: &mut SkeletonWork<'_, '_>,
+    work: &mut SkeletonWork<'hir, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     let ResolvedExprKind::Match { mode, .. } = &expression.kind else {
         unreachable!()
@@ -22,7 +22,7 @@ pub(super) fn finish_arm(
         .ok_or_else(|| replay_error(function, "guarded variant arm lost its guard"))?;
     if final_arm
         || !crate::variant_guards::admitted(
-            &program.declarations,
+            program.declarations(),
             &scrutinee.ty,
             *mode,
             &arm.pattern,
@@ -147,7 +147,7 @@ module test.general_guard_replay;
             &crate::parse(SOURCE, Path::new("general-guard-replay.spx")).unwrap(),
         )
         .unwrap();
-        for function in &program.functions {
+        for function in program.functions() {
             validate_structure(&program, function).unwrap();
             crate::cleanup_plan::build::assert_expression_lowering_oracle(
                 &program,
@@ -163,7 +163,7 @@ module test.general_guard_replay;
         )
         .unwrap();
         let original = program
-            .functions
+            .functions()
             .iter()
             .find(|f| f.id.as_str() == "g.main")
             .unwrap();

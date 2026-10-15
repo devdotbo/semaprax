@@ -1,0 +1,47 @@
+{
+  "source_commit": "5b2835300a2e35b7d158b528a372241f2d71f913",
+  "files": [
+    {
+      "path": "src/hir/prelude_bundle.rs",
+      "sha256": "6354cdcac10a362b167fe648080574a9ad7c0e9e577d1bed670251bd2a8c61f8"
+    },
+    {
+      "path": "src/hir/prelude_bundle/original.rs",
+      "sha256": "db49e39035c07f3a13ce06f9fb97ed49cb26eafe50b08db3e5139d1440e65e67"
+    },
+    {
+      "path": "src/hir/prelude_bundle/overlay.rs",
+      "sha256": "0776de47611bf6f525c1dd5b33c390ed2237354c8d481a05aab58be1b5f45dbe"
+    },
+    {
+      "path": "src/hir/prelude_bundle/paid.rs",
+      "sha256": "2b9ecba27d52c0e27cedda155ec9860729189b3d1dfaffddf07f274f63443ead"
+    },
+    {
+      "path": "src/hir/prelude_bundle/producer.rs",
+      "sha256": "78aebc622f9ddb1702568304f718f8ff246688d83ed68cd8d80b1adab1b925a4"
+    },
+    {
+      "path": "src/hir/prelude_bundle/tests.rs",
+      "sha256": "d43f4351d65c97de7f07e55fce8ab7f76008409047cad93b92fadb22256f9a96"
+    },
+    {
+      "path": "docs/PAID-INVOCATION-BASE-PRELUDE-V1.md",
+      "sha256": "23334d305911e3aa24b586865e39a78743e220288bbc1e7aec9f19662d723dd7"
+    },
+    {
+      "path": "src/prelude/base_schema.rs",
+      "sha256": "13a596c3469dc07ab192ca0c6d169bb5c5bfc01b636fca69aba4dabad01db338"
+    },
+    {
+      "dependency_snapshot": "/Volumes/Semaprax/worktrees/nominal-payload-827-20261015/src/hir/nominal_payload.rs",
+      "sha256": "9c1928591ba5e121ced3157b1ec761d2a0c50d20e7e170ae1c4beacb0bc32beb",
+      "status": "uncommitted independent lane; interface context only"
+    },
+    {
+      "dependency_snapshot": "/Volumes/Semaprax/worktrees/nominal-payload-827-20261015/src/hir/nominal_payload/elements.rs",
+      "sha256": "d1104c96520fc87c6b636e857f389ac1eab3f9ec6a35f423f268463678151472",
+      "status": "uncommitted independent lane; interface context only"
+    }
+  ]
+}

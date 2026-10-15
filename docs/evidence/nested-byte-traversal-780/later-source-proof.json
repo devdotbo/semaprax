@@ -1,0 +1,521 @@
+{
+  "status": "SOURCE_ONLY_NO_RUST_EXECUTION",
+  "basis": "d048d61",
+  "packets": [
+    {
+      "packet": "docs/evidence/loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "rows": 8,
+      "repairs": [
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 8,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-membership-index-39c6/whole-source-inverses.json",
+      "rows": 4,
+      "repairs": [
+        {
+          "source": "tests/workspace/semantic_graph/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "a938adb88cb44f9d3f154067c7537187aadf8a0e509f37254cfca67b95964a37",
+          "current_sha256": "0014f97da6597fb226e335159837994d6fd89b6f3e2852f4dc6180c2afefc835"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 4,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/loan-inner-stages-829/exact-source-inverses.json",
+      "rows": 9,
+      "repairs": [
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 9,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "rows": 3,
+      "repairs": [
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 3,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "rows": 10,
+      "repairs": [
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 10,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/paid-cfg-child-scratch/exact-source-inverses.json",
+      "rows": 5,
+      "repairs": [
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 5,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/referenced-edge-ownership-proof/exact-source-inverses.json",
+      "rows": 4,
+      "repairs": [
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 4,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/prefix-certified-expression-lookup/exact-source-inverses.json",
+      "rows": 3,
+      "repairs": [
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 3,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "rows": 17,
+      "repairs": [
+        {
+          "source": "tests/workspace/semantic_graph/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "a938adb88cb44f9d3f154067c7537187aadf8a0e509f37254cfca67b95964a37",
+          "current_sha256": "0014f97da6597fb226e335159837994d6fd89b6f3e2852f4dc6180c2afefc835"
+        },
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 17,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "rows": 11,
+      "repairs": [
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "tests/workspace/semantic_graph/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "a938adb88cb44f9d3f154067c7537187aadf8a0e509f37254cfca67b95964a37",
+          "current_sha256": "0014f97da6597fb226e335159837994d6fd89b6f3e2852f4dc6180c2afefc835"
+        },
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 11,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/receiving-transitive-results-816/exact-source-inverses.json",
+      "rows": 9,
+      "repairs": [
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 9,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/dense-loan-live-scratch/exact-source-inverses.json",
+      "rows": 15,
+      "repairs": [
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        },
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "tests/workspace/semantic_graph/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "a938adb88cb44f9d3f154067c7537187aadf8a0e509f37254cfca67b95964a37",
+          "current_sha256": "0014f97da6597fb226e335159837994d6fd89b6f3e2852f4dc6180c2afefc835"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 15,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-type-rewrite-141387/whole-source-inverses.json",
+      "rows": 3,
+      "repairs": [
+        {
+          "source": "tests/workspace/semantic_graph/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "a938adb88cb44f9d3f154067c7537187aadf8a0e509f37254cfca67b95964a37",
+          "current_sha256": "0014f97da6597fb226e335159837994d6fd89b6f3e2852f4dc6180c2afefc835"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 3,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/exit-prefix-reference-proof/exact-source-inverses.json",
+      "rows": 4,
+      "repairs": [
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 4,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "rows": 3,
+      "repairs": [
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 3,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/status-fact-borrow-reuse/exact-source-inverses.json",
+      "rows": 5,
+      "repairs": [
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 5,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/status-prefix-insertion/exact-source-inverses.json",
+      "rows": 11,
+      "repairs": [
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        },
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "tests/workspace/semantic_graph/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "a938adb88cb44f9d3f154067c7537187aadf8a0e509f37254cfca67b95964a37",
+          "current_sha256": "0014f97da6597fb226e335159837994d6fd89b6f3e2852f4dc6180c2afefc835"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 11,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/loan-endpoint-ordered-union-827/exact-source-inverses.json",
+      "rows": 6,
+      "repairs": [
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 6,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "rows": 18,
+      "repairs": [
+        {
+          "source": "tests/workspace/semantic_graph/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "a938adb88cb44f9d3f154067c7537187aadf8a0e509f37254cfca67b95964a37",
+          "current_sha256": "0014f97da6597fb226e335159837994d6fd89b6f3e2852f4dc6180c2afefc835"
+        },
+        {
+          "source": "tests/hir_module_boundaries.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d28cc48d0e886297dec2cc98e9f5ebfcb1a153181eb5ef68e2fa2c8cbfb60a37",
+          "current_sha256": "23b693fa9a9149a78d1c68151bad8cf606ac5f524e444d4f3b1a69879d040187"
+        },
+        {
+          "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "d5e4a7582f0271dd336e9f60d35a29f38504748c306e3d66185cc6c28cc26c33",
+          "current_sha256": "e0145f1e45f4645db6e97295b98ebe1bfbcc4beb6b53558a0a975f0225e44be2"
+        },
+        {
+          "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+          "exact_later_blocks": 1,
+          "complete_inverse_checkpoint": "d048d61",
+          "checkpoint_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+          "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe"
+        }
+      ],
+      "all_originals_verified": true,
+      "projected_original_rows": 11,
+      "independently_bound_new_rows": 7
+    },
+    {
+      "packet": "docs/evidence/nominal-payload-827/exact-source-inverses-activation-v14.json",
+      "rows": 79,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 79,
+      "independently_bound_new_rows": 0
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "status": "SOURCE_ONLY_NO_RUST_EXECUTION",
+  "basis": "a33c16996b4f095ffa2cf631bc39db4589e28302",
+  "packets": [
+    {
+      "packet": "docs/evidence/loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "rows": 8,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 8,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-membership-index-39c6/whole-source-inverses.json",
+      "rows": 4,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 4,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/loan-inner-stages-829/exact-source-inverses.json",
+      "rows": 9,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 9,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "rows": 3,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 3,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "rows": 10,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 10,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/factored-closure-index/exact-source-inverses.json",
+      "rows": 9,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 9,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/paid-cfg-child-scratch/exact-source-inverses.json",
+      "rows": 5,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 5,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/referenced-edge-ownership-proof/exact-source-inverses.json",
+      "rows": 4,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 4,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/prefix-certified-expression-lookup/exact-source-inverses.json",
+      "rows": 3,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 3,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "rows": 17,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 17,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "rows": 11,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 11,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/receiving-transitive-results-816/exact-source-inverses.json",
+      "rows": 9,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 9,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/dense-loan-live-scratch/exact-source-inverses.json",
+      "rows": 15,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 15,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-type-rewrite-141387/whole-source-inverses.json",
+      "rows": 3,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 3,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/exit-prefix-reference-proof/exact-source-inverses.json",
+      "rows": 4,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 4,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "rows": 3,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 3,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/status-fact-borrow-reuse/exact-source-inverses.json",
+      "rows": 5,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 5,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/status-prefix-insertion/exact-source-inverses.json",
+      "rows": 11,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 11,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/loan-endpoint-ordered-union-827/exact-source-inverses.json",
+      "rows": 6,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 6,
+      "independently_bound_new_rows": 0
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "rows": 18,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 11,
+      "independently_bound_new_rows": 7
+    },
+    {
+      "packet": "docs/evidence/nominal-payload-827/exact-source-inverses-activation-v14.json",
+      "rows": 79,
+      "repairs": [],
+      "all_originals_verified": true,
+      "projected_original_rows": 79,
+      "independently_bound_new_rows": 0
+    }
+  ]
+}

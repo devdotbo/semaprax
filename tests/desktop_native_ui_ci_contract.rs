@@ -15,7 +15,110 @@ fn private_native_ui_is_platform_real_feature_gated_and_source_locked() {
     let workflow = read(root, ".github/workflows/ci.yml");
     let diagnostics = format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
-        read(root, "src/codegen.rs"),
+        [
+            [
+                read(root, "src/codegen.rs"),
+                read(root, "src/codegen/selected_fused_row.rs"),
+                read(root, "src/codegen/selected_fused_row/cleanup.rs"),
+                read(root, "src/codegen/selected_fused_row/crossing.rs"),
+                read(root, "src/codegen/selected_fused_row/emit.rs"),
+                read(root, "src/codegen/selected_fused_row/layout.rs"),
+                read(root, "src/codegen/selected_fused_row/lower.rs"),
+                read(root, "src/codegen/selected_fused_row/lower/expr.rs"),
+                read(root, "src/codegen/selected_fused_row/lower/plan.rs"),
+                read(root, "src/codegen/selected_fused_row/lower/prefix.rs"),
+                read(root, "src/codegen/selected_fused_row/precursor.rs"),
+                read(root, "src/codegen/selected_fused_row/selection.rs"),
+                read(root, "src/codegen/selected_fused_row/source_profile.rs"),
+                read(root, "src/codegen/checked_final_utf8_preflight.rs"),
+                read(root, "src/codegen/checked_string_allocation.rs"),
+                read(root, "src/codegen/native_adapter_abi.rs"),
+                read(root, "src/codegen/native_aggregate.rs"),
+                read(root, "src/codegen/native_byte_data.rs"),
+                read(root, "src/codegen/native_byte_data/stream_epoch.rs"),
+                read(root, "src/codegen/native_callable_abi.rs"),
+                read(root, "src/codegen/native_callable_abi_v3.rs"),
+                read(root, "src/codegen/native_callable_bundle.rs"),
+                read(root, "src/codegen/native_callable_execution.rs"),
+                read(root, "src/codegen/native_callable_provider.rs"),
+                read(root, "src/codegen/native_callable_provider_v3.rs"),
+                read(root, "src/codegen/native_callable_settlement_proof.rs"),
+                read(root, "src/codegen/native_callable_wire_v3.rs"),
+                read(root, "src/codegen/native_capability_authority.rs"),
+                read(root, "src/codegen/native_capability_token.rs"),
+                read(root, "src/codegen/native_cleanup.rs"),
+                read(root, "src/codegen/native_cleanup_emit.rs"),
+                read(root, "src/codegen/native_command.rs"),
+                read(root, "src/codegen/native_conformance.rs"),
+                read(root, "src/codegen/native_conformance_materialize.rs"),
+                read(root, "src/codegen/native_conformance_wire.rs"),
+                read(root, "src/codegen/native_host_contract.rs"),
+                read(root, "src/codegen/native_host_output.rs"),
+                read(root, "src/codegen/native_module_lease.rs"),
+                read(root, "src/codegen/native_owned_data_provider.rs"),
+                read(
+                    root,
+                    "src/codegen/native_owned_data_provider/nested_record.rs"
+                ),
+                read(root, "src/codegen/native_resource.rs"),
+                read(root, "src/codegen/native_runtime.rs"),
+                read(root, "src/codegen/native_selected_file_command.rs"),
+                read(root, "src/codegen/native_settlement_derivation.rs"),
+                read(root, "src/codegen/selected_final_utf8.rs"),
+                read(root, "src/codegen/selected_final_utf8/adapter.rs"),
+                read(root, "src/codegen/selected_final_utf8/certificate.rs"),
+                read(root, "src/codegen/selected_final_utf8/runtime.rs"),
+                read(root, "src/codegen/native_trace.rs"),
+                read(root, "src/codegen/native_trace_runtime.rs"),
+                read(root, "src/codegen/native_value.rs")
+            ]
+            .join("\n"),
+            read(root, "src/codegen/native_bytes.rs"),
+            read(root, "src/codegen/native_bytes/lexical_exit.rs"),
+            read(root, "src/codegen/native_bytes/origin.rs"),
+            read(root, "src/codegen/native_bytes/producer.rs"),
+            read(root, "src/codegen/native_bytes/view.rs"),
+            read(root, "src/codegen/native_bytes/nested_owned.rs"),
+            read(root, "src/codegen/native_bytes/owned_leaf.rs"),
+            read(root, "src/codegen/native_bytes/replacement.rs"),
+            read(root, "src/codegen/native_bytes/scalar_match_scope.rs"),
+            read(root, "src/codegen/native_bytes/scoped_vec_field.rs"),
+            read(root, "src/codegen/native_bytes/semantic_work.rs"),
+            read(root, "src/codegen/native_bytes/string_slots.rs"),
+            read(root, "src/codegen/native_bytes/terminal_exits.rs"),
+            read(
+                root,
+                "src/codegen/native_bytes/terminal_exits/nonlexical.rs"
+            ),
+            read(root, "src/codegen/native_emit/mod.rs"),
+            read(root, "src/codegen/native_emit/string_views/owned_runtime.c"),
+            read(root, "src/codegen/native_emit/emission.rs"),
+            read(root, "src/codegen/native_emit/checked_allocation.rs"),
+            read(
+                root,
+                "src/codegen/native_emit/checked_allocation/constructors.rs"
+            ),
+            read(root, "src/codegen/native_emit/checked_allocation/runtime.c"),
+            read(root, "src/codegen/native_emit/checked_allocation/bytes.c"),
+            read(root, "src/codegen/native_emit/checked_allocation/format.c"),
+            read(
+                root,
+                "src/codegen/native_emit/checked_allocation/escaped.rs"
+            ),
+            read(root, "src/codegen/native_emit/checked_allocation/escaped.c"),
+            read(root, "src/codegen/native_emit/context.rs"),
+            read(root, "src/codegen/native_emit/lexical_epilogue.rs"),
+            read(root, "src/codegen/native_emit/expression/lexical_break.rs"),
+            read(root, "src/codegen/native_emit/expression/lexical_exit.rs"),
+            read(root, "src/codegen/native_emit/expression/lexical_lookup.rs"),
+            read(root, "src/codegen/native_emit/expression/scalar_match.rs"),
+            read(root, "src/codegen/native_emit/expression/str_equality.rs"),
+            read(
+                root,
+                "src/codegen/native_emit/expression/vec_ops/string_slot.rs"
+            ),
+        ]
+        .join("\n"),
         read(root, "src/codegen/native_emit/guarded_variant.rs"),
         read(root, "src/codegen/native_emit/indexed_reads.rs"),
         format_args!(
@@ -36,7 +139,24 @@ fn private_native_ui_is_platform_real_feature_gated_and_source_locked() {
             root,
             "src/codegen/native_stdin_stream/exit_status/process_adapter.rs"
         ),
-        read(root, "src/codegen/native_vec.rs"),
+        format_args!(
+            "{}\n{}\n{}\n{}\n{}",
+            [
+                read(root, "src/codegen/native_vec.rs"),
+                read(root, "src/codegen/native_vec/copy_record.rs"),
+                read(root, "src/codegen/native_vec/owned_leaf.rs")
+            ]
+            .join("\n"),
+            read(root, "src/codegen/native_vec/sort_keys_check.c"),
+            read(root, "src/codegen/native_vec/sort_keys.c"),
+            read(root, "src/codegen/native_vec/owned_sort_keys.c"),
+            [
+                read(root, "src/codegen/native_vec/field_unique.c"),
+                read(root, "src/codegen/native_vec/copy_field_unique.c"),
+                read(root, "src/codegen/native_vec/owned_field_unique.c")
+            ]
+            .join("\n")
+        ),
         format_args!(
             "{}\n{}",
             read(root, "src/codegen/native_vec/owned_payload.rs"),

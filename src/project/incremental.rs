@@ -8,6 +8,7 @@ use std::sync::Arc;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
+use crate::ast::program_source::{checked_key::CheckedSource, ProgramSource};
 use crate::ast::Program;
 use crate::diagnostic::Diagnostic;
 use crate::semantic_workspace::SemanticWorkspaceSource;
@@ -36,14 +37,20 @@ mod snapshot;
 ))]
 pub(crate) use snapshot::{decode_snapshot, encode_snapshot};
 
+pub(crate) mod checked_hir;
 /// Read-only replay measuring `FrontendPass::lookup`'s `Program::clone` cost
 /// (SPX-AI-031/#130, SPX-AI-032/#131). See that module's doc comment.
 mod clone_cost_report;
+pub(crate) mod paid_resolution;
+mod source_handoff;
+use checked_hir::{CheckedModuleLease, ResolvedModuleInput};
 
 pub const PROJECT_FRONTEND_CACHE_SCHEMA: &str = "semaprax.project-frontend-cache-work.v1";
 pub const PROJECT_FRONTEND_CACHE_COMPATIBILITY: &str = "semaprax.project-frontend-canonical-ast.v3";
 pub const PROJECT_SEMANTIC_CACHE_SCHEMA: &str = "semaprax.project-semantic-cache-work.v1";
-pub const PROJECT_SEMANTIC_CACHE_COMPATIBILITY: &str = "semaprax.project-checked-module-hir.v6";
+/// v11 retains scoped field source forms after v10 CopyDiscard and v9 row loans.
+/// Older cached modules must be freshly source-checked, never reinterpreted.
+pub const PROJECT_SEMANTIC_CACHE_COMPATIBILITY: &str = "semaprax.project-checked-module-hir.v11";
 pub const MAX_PROJECT_FRONTEND_CACHE_SOURCE_BYTES: usize = MAX_TOTAL_SOURCE_BYTES;
 /// The frontend retains the complete admitted semantic module closure, which
 /// includes bundled/dependency modules beyond the manifest's sixteen authored
@@ -87,13 +94,8 @@ impl ProjectFrontendSource {
     }
 }
 
-struct CachedModule {
-    source: String,
-    program: Arc<Program>,
-}
-
 struct CheckedModule {
-    synthetic: Program,
+    synthetic: CheckedSource,
     resolved: crate::hir::ResolvedProgram,
     resolver_bytes: usize,
     retained_loan_bytes: usize,
@@ -104,7 +106,7 @@ struct CheckedModule {
 /// root, serde constructor, global singleton, or checked-HIR bypass.
 pub struct ProjectFrontendCache {
     context: String,
-    entries: BTreeMap<String, Arc<CachedModule>>,
+    entries: source_directory::SourceDirectory,
     semantic: bool,
     checked: BTreeMap<String, Arc<CheckedModule>>,
     restore_work: Option<String>,
@@ -135,7 +137,7 @@ impl ProjectFrontendCache {
     pub fn new() -> Self {
         Self {
             context: String::new(),
-            entries: BTreeMap::new(),
+            entries: source_directory::SourceDirectory::default(),
             semantic: false,
             checked: BTreeMap::new(),
             restore_work: None,
@@ -181,6 +183,33 @@ impl ProjectFrontendCache {
         selections: &[super::ProjectIndexedRustImport],
     ) -> Result<ProjectFrontendBuild> {
         let indexed_identity = super::indexed_rust::validate(selections, sources)?;
+        // Live Project loads supply authored files; stored entries also retain
+        // compiler-bundled dependencies. Form the same current closure before
+        // invalidation, otherwise absent dependency keys lose their source
+        // entries and cannot pass checked_module's exact association replay.
+        if sources.len() > MAX_PROJECT_FRONTEND_CACHE_MODULES {
+            return Err(capacity(
+                "frontend source inventory exceeds its module bound",
+            ));
+        }
+        let mut input_bytes = 0usize;
+        for source in sources {
+            input_bytes = input_bytes
+                .checked_add(source.source.len())
+                .ok_or_else(|| capacity("frontend source accounting overflow"))?;
+            if input_bytes > MAX_TOTAL_SOURCE_BYTES {
+                return Err(capacity("frontend source inventory exceeds its byte bound"));
+            }
+        }
+        let mut complete = sources
+            .iter()
+            .map(|source| SemanticWorkspaceSource {
+                path: source.path.clone(),
+                source: source.source.clone(),
+            })
+            .collect::<Vec<_>>();
+        super::standard_dependencies::extend_sources(manifest, &mut complete)?;
+        let sources = complete.as_slice();
         if sources.len() > MAX_PROJECT_FRONTEND_CACHE_MODULES {
             return Err(capacity(
                 "frontend source inventory exceeds its module bound",
@@ -219,12 +248,12 @@ impl ProjectFrontendCache {
         let reset = context != self.context;
         let mut invalidated = BTreeSet::new();
         for (path, entry) in &self.entries {
-            if reset || current.get(path.as_str()).copied() != Some(entry.source.as_str()) {
+            if reset || current.get(path.as_str()).copied() != Some(entry.input().source.as_str()) {
                 invalidated.insert(path.clone());
             }
         }
         for path in current.keys() {
-            if reset || !self.entries.contains_key(*path) {
+            if reset || !self.entries.contains_key(path) {
                 invalidated.insert((*path).to_owned());
             }
         }
@@ -239,7 +268,7 @@ impl ProjectFrontendCache {
         //    is unchanged reparses to a bit-identical `Program` regardless of
         //    what any provider did -- there is no "stale AST" a provider edit
         //    could produce here to hide.
-        // 2. `lookup` below re-checks `entry.source == source` itself before
+        // 2. `lookup` below re-checks `entry.input().source == source` itself before
         //    ever returning a cached `Program`, so this set only has to be
         //    exactly right about *this file's own* text; it is not trusted to
         //    know whether reuse is safe on its own.
@@ -262,7 +291,7 @@ impl ProjectFrontendCache {
         // and `narrowing_disabled_would_leak_a_stale_ast_clone` for the
         // fault-injected negative control proving a change that truly matters
         // (the provider's own text) still invalidates.
-        let retained = self
+        let retained: BTreeMap<_, _> = self
             .entries
             .iter()
             .filter(|(path, _)| !reset && !invalidated.contains(*path))
@@ -270,7 +299,7 @@ impl ProjectFrontendCache {
             .collect();
         let mut pass = FrontendPass {
             indexed_imports: selections.to_vec(),
-            entries: retained,
+            entries: retained.into(),
             parsed: 0,
             reused: 0,
             canonicalizations: 0,
@@ -297,13 +326,10 @@ impl ProjectFrontendCache {
             functions_resolved: 0,
             functions_reused: 0,
         };
-        let owned = sources
-            .iter()
-            .map(|source| SemanticWorkspaceSource {
-                path: source.path.clone(),
-                source: source.source.clone(),
-            })
-            .collect();
+        // All borrowed current-source guards have completed. Transfer their
+        // exact owned closure, preserving order and bytes without another copy.
+        drop(current);
+        let owned = source_handoff::consume(complete);
         let built = super::build::build_owned_with_frontend(manifest, owned, &mut pass)?;
         let revision = Arc::new(ProjectRevision::from_built(manifest.clone(), built));
         let json=super::image::render(json!({"schema":if self.semantic {PROJECT_SEMANTIC_CACHE_SCHEMA}else{PROJECT_FRONTEND_CACHE_SCHEMA},
@@ -359,7 +385,7 @@ impl ProjectFrontendCache {
 /// canonical ASTs; the public cache commits it after complete Project admission.
 pub(crate) struct FrontendPass {
     pub(crate) indexed_imports: Vec<super::ProjectIndexedRustImport>,
-    entries: BTreeMap<String, Arc<CachedModule>>,
+    entries: source_directory::SourceDirectory,
     parsed: usize,
     reused: usize,
     canonicalizations: usize,
@@ -389,15 +415,30 @@ pub(crate) struct SelectiveResolvedModule {
     pub(crate) resolved: crate::hir::ResolvedProgram,
     pub(crate) function_costs: BTreeMap<String, usize>,
     pub(crate) reused_functions: usize,
+    pub(crate) static_text: bool,
 }
 impl SelectiveResolvedModule {
     pub(crate) fn into_parts(
         self,
-    ) -> (crate::hir::ResolvedProgram, BTreeMap<String, usize>, usize) {
-        (self.resolved, self.function_costs, self.reused_functions)
+    ) -> (
+        crate::hir::ResolvedProgram,
+        BTreeMap<String, usize>,
+        usize,
+        bool,
+    ) {
+        (
+            self.resolved,
+            self.function_costs,
+            self.reused_functions,
+            self.static_text,
+        )
     }
 }
 impl FrontendPass {
+    pub(crate) fn retains_checked_hir(&self) -> bool {
+        self.semantic
+    }
+
     pub(crate) fn checkpoint_core_attempt(&self) -> Option<CoreAttemptCheckpoint> {
         if !self.next_checked.is_empty() {
             return None;
@@ -430,16 +471,25 @@ impl FrontendPass {
         &mut self,
         path: &str,
         synthetic: &Program,
-    ) -> Option<(crate::hir::ResolvedProgram, usize, usize)> {
+    ) -> Option<(CheckedModuleLease, usize, usize)> {
+        self.checked_module_source(path, synthetic)
+    }
+
+    pub(crate) fn checked_module_source(
+        &mut self,
+        path: &str,
+        synthetic: &dyn crate::ast::program_source::ProgramSource,
+    ) -> Option<(CheckedModuleLease, usize, usize)> {
         if !self.semantic {
             return None;
         }
         let entry = self.checked.get(path)?;
-        if entry.synthetic != *synthetic {
+        let previous = entry.synthetic.ready()?;
+        if !checked_source_matches(synthetic, &previous) {
             return None;
         }
         crate::hir::replay_agent_source_associations(
-            &self.entries.get(path)?.program,
+            self.entries.get(path)?.program(),
             &entry.resolved.agents,
         )
         .ok()?;
@@ -447,16 +497,64 @@ impl FrontendPass {
         self.functions_reused += entry.resolved.functions.len();
         self.next_checked.insert(path.to_owned(), Arc::clone(entry));
         Some((
-            entry.resolved.clone(),
+            CheckedModuleLease::new(Arc::clone(entry)),
             entry.resolver_bytes,
             entry.retained_loan_bytes,
         ))
     }
 
-    pub(crate) fn resolve_functions(
+    /// Only a genuinely first checked resolution may use a borrowed source.
+    /// Existing candidates retain exact owned environment/body-reuse checks.
+    pub(crate) fn permits_borrowed_cold_source(&self, path: &str) -> bool {
+        self.semantic && !self.checked.contains_key(path)
+    }
+
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "legacy unpaid selective route; workspace uses the explicit-owner sibling"
+        )
+    )]
+    pub(crate) fn resolve_borrowed_cold_source<'p>(
         &self,
         path: &str,
-        synthetic: &Program,
+        synthetic: &'p dyn crate::ast::program_source::ProgramSource,
+        private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
+    ) -> Option<Result<SelectiveResolvedModule>> {
+        if !self.permits_borrowed_cold_source(path) {
+            return None;
+        }
+        // Preserve the exact checked-function limit even without a prior key.
+        if synthetic.functions().len() > MAX_PROJECT_CHECKED_FUNCTIONS {
+            return Some(Err(capacity(
+                "checked function inventory exceeds its bound",
+            )));
+        }
+        Some(
+            crate::hir::resolve_source(synthetic, private).map(|(resolved, work)| {
+                SelectiveResolvedModule {
+                    reused_functions: work.reused(),
+                    static_text: work.static_text(),
+                    function_costs: work.costs(),
+                    resolved,
+                }
+            }),
+        )
+    }
+
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "legacy unpaid selective route; workspace uses the explicit-owner sibling"
+        )
+    )]
+    pub(crate) fn resolve_functions<'p>(
+        &self,
+        path: &str,
+        synthetic: &'p Program,
+        private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
     ) -> Option<Result<SelectiveResolvedModule>> {
         if !self.semantic {
             return None;
@@ -470,61 +568,169 @@ impl FrontendPass {
         Some(
             crate::hir::resolve_with_function_reuse(
                 synthetic,
-                entry.map(|entry| &entry.synthetic),
+                entry.and_then(|entry| entry.synthetic.owned()),
                 entry.map(|entry| &entry.resolved),
                 entry.map(|entry| &entry.function_costs),
+                private,
             )
             .map(|(resolved, work)| SelectiveResolvedModule {
                 reused_functions: work.reused(),
+                static_text: work.static_text(),
                 function_costs: work.costs(),
                 resolved,
             }),
         )
     }
 
+    #[cfg(test)]
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn resolved_module(
         &mut self,
         path: &str,
         synthetic: Program,
-        resolved: &crate::hir::ResolvedProgram,
+        resolved: crate::hir::ResolvedProgram,
         resolver_bytes: usize,
         retained_loan_bytes: usize,
         function_costs: BTreeMap<String, usize>,
         reused_functions: usize,
-    ) {
+    ) -> ResolvedModuleInput {
         self.resolved += 1;
         self.functions_reused += reused_functions;
         self.functions_resolved += resolved.functions.len().saturating_sub(reused_functions);
         if self.semantic {
-            self.next_checked.insert(
-                path.to_owned(),
-                Arc::new(CheckedModule {
-                    synthetic,
-                    resolved: resolved.clone(),
-                    resolver_bytes,
-                    retained_loan_bytes,
-                    function_costs,
-                }),
-            );
+            let owner = Arc::new(CheckedModule {
+                synthetic: CheckedSource::Owned(synthetic),
+                resolved,
+                resolver_bytes,
+                retained_loan_bytes,
+                function_costs,
+            });
+            self.next_checked
+                .insert(path.to_owned(), Arc::clone(&owner));
+            ResolvedModuleInput::Checked(CheckedModuleLease::new(owner))
+        } else {
+            ResolvedModuleInput::Owned(resolved)
         }
     }
+    /// Obtain an owning key only for actual semantic publication. The producer
+    /// closure is dropped without execution for an AST-only receiving pass.
+    #[cfg(test)]
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn resolved_module_receiving(
+        &mut self,
+        path: &str,
+        key: impl FnOnce() -> Result<Program>,
+        resolved: crate::hir::ResolvedProgram,
+        resolver_bytes: usize,
+        retained_loan_bytes: usize,
+        function_costs: BTreeMap<String, usize>,
+        reused_functions: usize,
+    ) -> Result<ResolvedModuleInput> {
+        if self.semantic {
+            Ok(self.resolved_module(
+                path,
+                key()?,
+                resolved,
+                resolver_bytes,
+                retained_loan_bytes,
+                function_costs,
+                reused_functions,
+            ))
+        } else {
+            Ok(self.resolved_module_without_key(resolved, reused_functions))
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn resolved_module_split_key(
+        &mut self,
+        path: &str,
+        synthetic: CheckedSource,
+        resolved: crate::hir::ResolvedProgram,
+        resolver_bytes: usize,
+        retained_loan_bytes: usize,
+        function_costs: BTreeMap<String, usize>,
+        reused_functions: usize,
+    ) -> ResolvedModuleInput {
+        self.resolved += 1;
+        self.functions_reused += reused_functions;
+        self.functions_resolved += resolved.functions.len().saturating_sub(reused_functions);
+        if self.semantic {
+            let owner = Arc::new(CheckedModule {
+                synthetic,
+                resolved,
+                resolver_bytes,
+                retained_loan_bytes,
+                function_costs,
+            });
+            self.next_checked
+                .insert(path.to_owned(), Arc::clone(&owner));
+            ResolvedModuleInput::Checked(CheckedModuleLease::new(owner))
+        } else {
+            ResolvedModuleInput::Owned(resolved)
+        }
+    }
+    /// Obtain an owning key only for actual semantic publication. The producer
+    /// closure is dropped without execution for an AST-only receiving pass.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn resolved_module_split(
+        &mut self,
+        path: &str,
+        key: impl FnOnce() -> Result<CheckedSource>,
+        resolved: crate::hir::ResolvedProgram,
+        resolver_bytes: usize,
+        retained_loan_bytes: usize,
+        function_costs: BTreeMap<String, usize>,
+        reused_functions: usize,
+    ) -> Result<ResolvedModuleInput> {
+        if self.semantic {
+            Ok(self.resolved_module_split_key(
+                path,
+                key()?,
+                resolved,
+                resolver_bytes,
+                retained_loan_bytes,
+                function_costs,
+                reused_functions,
+            ))
+        } else {
+            Ok(self.resolved_module_without_key(resolved, reused_functions))
+        }
+    }
+
+    /// AST-only passes retain the resolved owner without constructing a cache
+    /// key which would immediately be discarded. Counters match resolved_module.
+    pub(crate) fn resolved_module_without_key(
+        &mut self,
+        resolved: crate::hir::ResolvedProgram,
+        reused_functions: usize,
+    ) -> ResolvedModuleInput {
+        assert!(
+            !self.semantic,
+            "semantic retention requires an owning checked key"
+        );
+        self.resolved += 1;
+        self.functions_reused += reused_functions;
+        self.functions_resolved += resolved.functions.len().saturating_sub(reused_functions);
+        ResolvedModuleInput::Owned(resolved)
+    }
+
     pub(crate) fn lookup(&mut self, path: &str, source: &str) -> Option<Program> {
         let entry = self.entries.get(path)?;
-        if entry.source != source || entry.program.path != path {
+        if entry.input().source != source || entry.program().path != path {
             return None;
         }
         self.reused += 1;
         self.reused_bytes += source.len();
-        Some(entry.program.as_ref().clone())
+        Some(entry.program().clone())
     }
     /// Borrow the exact compiler-created source AST retained by this pass.
     /// Unlike lookup, this post-admission use does not clone or count a cache hit.
     pub(crate) fn retained_source_program(&self, path: &str, source: &str) -> Result<&Program> {
         self.entries
             .get(path)
-            .filter(|entry| entry.source == source && entry.program.path == path)
-            .map(|entry| entry.program.as_ref())
+            .filter(|entry| entry.input().source == source && entry.program().path == path)
+            .map(|entry| entry.program())
             .ok_or_else(|| invalid("frontend retained source AST does not match Project source"))
     }
 
@@ -535,54 +741,68 @@ impl FrontendPass {
     pub(crate) fn canonicalized(&mut self) {
         self.canonicalizations += 1;
     }
-    pub(crate) fn retain(
+    pub(crate) fn retain_current(
         &mut self,
-        sources: &[WorkspaceSource],
-        programs: Vec<Program>,
+        custody: &crate::workspace_graph::custody::SourceCustody,
         ast_budget: usize,
     ) -> Result<()> {
-        if sources.len() != programs.len()
-            || programs.len() > MAX_PROJECT_FRONTEND_CACHE_MODULES
+        if custody.len() > MAX_PROJECT_FRONTEND_CACHE_MODULES
             || ast_budget > MAX_PROJECT_FRONTEND_CACHE_AST_BUDGET
         {
             return Err(capacity(
                 "frontend retained AST inventory exceeds its bound",
             ));
         }
-        let mut entries = BTreeMap::new();
         let mut bytes = 0usize;
-        for (source, program) in sources.iter().zip(programs) {
-            if source.path != program.path {
-                return Err(invalid("frontend AST source origin disagrees"));
-            }
+        for owner in custody.parsed().iter() {
             bytes = bytes
-                .checked_add(source.source.len())
+                .checked_add(owner.input().source.len())
                 .ok_or_else(|| capacity("frontend retained source accounting overflow"))?;
             if bytes > MAX_PROJECT_FRONTEND_CACHE_SOURCE_BYTES {
                 return Err(capacity(
                     "frontend retained source inventory exceeds its byte bound",
                 ));
             }
-            let entry = if let Some(existing) = self
-                .entries
-                .get(&source.path)
-                .filter(|entry| entry.source == source.source)
-            {
-                Arc::clone(existing)
-            } else {
-                Arc::new(CachedModule {
-                    source: source.source.clone(),
-                    program: Arc::new(program),
-                })
-            };
-            entries.insert(source.path.clone(), entry);
         }
-        if self.resolved + self.checked_reused != entries.len()
-            || (self.semantic && self.next_checked.len() != entries.len())
+        if self.resolved + self.checked_reused != custody.len()
+            || (self.semantic && self.next_checked.len() != custody.len())
         {
             return Err(invalid(
                 "frontend checked module inventory disagrees with admitted modules",
             ));
+        }
+        let entries = source_directory::SourceDirectory::current(custody.parsed())
+            .map_err(|()| invalid("current source directory order disagrees"))?;
+        if self.semantic && self.next_checked.keys().ne(entries.keys()) {
+            return Err(invalid(
+                "checked source directory does not match actual current source paths",
+            ));
+        }
+        // Unique sorted paths and every pending OnceLock precondition are
+        // checked before binding. The exclusive pass has no intervening call
+        // which can complete a key; old hits are already ready and skipped.
+        // Validate every association before completing or publishing a key.
+        for (slot, owner) in custody.parsed().iter().enumerate() {
+            if !owner.is_associated_with(&custody.metadata()[slot]) {
+                return Err(invalid("current source metadata association disagrees"));
+            }
+            if let Some(entry) = self.next_checked.get(&owner.input().path) {
+                if entry.synthetic.needs_current_owner() && !entry.synthetic.can_bind(slot, owner) {
+                    return Err(invalid(
+                        "checked key does not belong to the actual current parsed owner",
+                    ));
+                }
+            }
+        }
+        for (slot, owner) in custody.parsed().iter().enumerate() {
+            if let Some(entry) = self.next_checked.get(&owner.input().path) {
+                if entry.synthetic.needs_current_owner() {
+                    entry
+                        .synthetic
+                        .bind(slot, owner)
+                        .map_err(|()| invalid("checked key transfer was already completed"))?;
+                }
+            }
         }
         self.entries = entries;
         self.retained_source_bytes = bytes;
@@ -640,7 +860,7 @@ mod semantic_tests {
         let checked = BTreeMap::from([(
             "local.spx".to_owned(),
             Arc::new(CheckedModule {
-                synthetic: synthetic.clone(),
+                synthetic: CheckedSource::Owned(synthetic.clone()),
                 resolved,
                 resolver_bytes: 0,
                 retained_loan_bytes: 0,
@@ -651,11 +871,9 @@ mod semantic_tests {
             indexed_imports: Vec::new(),
             entries: BTreeMap::from([(
                 "local.spx".to_owned(),
-                Arc::new(CachedModule {
-                    source: source.to_owned(),
-                    program: Arc::new(synthetic.clone()),
-                }),
-            )]),
+                fixture_current_owner(source.to_owned(), synthetic.clone()),
+            )])
+            .into(),
             parsed: 0,
             reused: 0,
             canonicalizations: 0,
@@ -719,4 +937,74 @@ mod semantic_tests {
         assert!(pass.checked_module("local.spx", &identity).is_none());
         assert_eq!(pass.checked_reused, 1);
     }
+}
+
+#[cfg(test)]
+#[path = "incremental/cold_source_tests.rs"]
+mod cold_source_tests;
+
+// Complete owned Program equality expressed over the sealed two-slice source.
+// No fingerprint, provider hint or subject identity substitutes for a field.
+fn checked_source_matches(
+    current: &dyn crate::ast::program_source::ProgramSource,
+    previous: &dyn ProgramSource,
+) -> bool {
+    current.path() == previous.path()
+        && current.module() == previous.module()
+        && current.module_uses() == previous.module_uses()
+        && current.permits() == previous.permits()
+        && current.types().iter().eq(previous.types().iter())
+        && current.interfaces() == previous.interfaces()
+        && current.protocols() == previous.protocols()
+        && current.implementations() == previous.implementations()
+        && current.session_protocols() == previous.session_protocols()
+        && current.agents() == previous.agents()
+        && current.functions().iter().eq(previous.functions().iter())
+}
+
+mod source_directory;
+#[cfg(test)]
+mod source_receiver_original;
+
+#[cfg(test)]
+fn fixture_current_owner(
+    source: String,
+    program: Program,
+) -> Arc<crate::workspace_graph::current_source::CurrentParsedSource> {
+    let (owner, refused) =
+        crate::bounded_output::with_limit(MAX_PROJECT_FRONTEND_CACHE_AST_BUDGET, || {
+            decoded_current_owner(
+                source,
+                program,
+                &mut crate::bounded_output::reserve_active_required,
+            )
+        });
+    assert!(!refused);
+    owner.expect("complete fixture current-source owner")
+}
+fn decoded_current_owner(
+    source: String,
+    program: Program,
+    reserve: &mut dyn FnMut(usize) -> bool,
+) -> Result<Arc<crate::workspace_graph::current_source::CurrentParsedSource>> {
+    use crate::workspace_graph::current_source::{CurrentParsedSource, SourceMetadata};
+    if !reserve(program.path.len()) {
+        return Err(capacity("current source metadata path acquisition refused"));
+    }
+    let input = WorkspaceSource {
+        path: program.path.clone(),
+        source,
+    };
+    let mut carrier = |bytes| {
+        if reserve(bytes) {
+            Ok(())
+        } else {
+            Err(capacity(
+                "current parsed source carrier acquisition refused",
+            ))
+        }
+    };
+    let metadata = SourceMetadata::new(input, &mut carrier)?;
+    CurrentParsedSource::new(metadata, program, None, &mut carrier)
+        .map_err(|_| invalid("current parsed source origin disagrees"))
 }

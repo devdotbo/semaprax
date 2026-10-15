@@ -211,7 +211,7 @@ impl Resolver<'_> {
         let span = expression.span;
         let target = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.name == *name)?;
         if args.len() != target.params.len() {
@@ -262,6 +262,7 @@ impl Resolver<'_> {
             | ResolvedType::OnceFunctionI64Pair
             | ResolvedType::MutFunctionI64
             | ResolvedType::Function { .. }
+            | ResolvedType::Never
             | ResolvedType::Unit => None,
             ResolvedType::I64 => Some(Type::I64),
             ResolvedType::I32 => Some(Type::I32),
@@ -286,7 +287,7 @@ impl Resolver<'_> {
                 }
                 let function = self
                     .program
-                    .functions
+                    .functions()
                     .iter()
                     .find(|function| function.stable_id == caller.as_str())?;
                 Some(Type::Named {
@@ -319,7 +320,7 @@ impl Resolver<'_> {
             crate::prelude::BOX_ID => Some("Box"),
             _ => self
                 .program
-                .types
+                .types()
                 .iter()
                 .find(|item| item.stable_id == declaration.as_str())
                 .map(|item| item.name.as_str()),
@@ -426,9 +427,12 @@ mod tests {
     fn resolver(program: &crate::ast::Program) -> Resolver<'_> {
         Resolver {
             program,
+            byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(program),
             declarations: DeclarationIndex::from_verified(program).expect("declaration index"),
             reuse: None,
             function_work: super::super::FunctionResolutionWork::default(),
+            fused_producer: None,
+            partition_profile: false,
         }
     }
 
@@ -582,6 +586,7 @@ module test.hir_inference_bounds;
         bindings.insert(
             "value".to_owned(),
             Binding {
+                traversal_row: None,
                 id: ValueId::local(&caller, "test.value"),
                 ty: ResolvedType::TypeParameter {
                     owner: DeclarationId::new("app.outer"),

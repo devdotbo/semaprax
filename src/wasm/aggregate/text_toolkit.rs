@@ -2,7 +2,7 @@
 use super::*;
 use crate::string_ops::StringOp;
 
-const OPERATIONS: [StringOp; 7] = [
+const OPERATIONS: [StringOp; 8] = [
     StringOp::Slice,
     StringOp::Find,
     StringOp::ToI64,
@@ -10,20 +10,22 @@ const OPERATIONS: [StringOp; 7] = [
     StringOp::ByteAt,
     StringOp::FromStr,
     StringOp::FileReadText,
+    StringOp::FromUtf8,
 ];
 
 pub(super) fn admitted(operation: StringOp) -> bool {
     OPERATIONS.contains(&operation)
 }
 
-pub(in crate::wasm) fn selected(program: &ResolvedProgram) -> Vec<StringOp> {
+/// Inspect borrowed executable functions without copying their HIR or proofs.
+/// The caller owns closure selection; operations retain the canonical table order.
+pub(in crate::wasm) fn selected_functions<'a>(
+    functions: impl IntoIterator<Item = &'a ResolvedFunction>,
+) -> (Vec<StringOp>, bool) {
     let mut found = BTreeSet::new();
+    let mut byte_get = false;
     let mut pending = Vec::new();
-    for function in program
-        .functions
-        .iter()
-        .chain(program.function_instances.iter().map(|i| &i.function))
-    {
+    for function in functions {
         pending.push(&function.body);
         pending.extend(function.requires.iter().chain(&function.ensures));
     }
@@ -32,10 +34,27 @@ pub(in crate::wasm) fn selected(program: &ResolvedProgram) -> Vec<StringOp> {
             if let Some(index) = OPERATIONS.iter().position(|op| op.id() == callee.as_str()) {
                 found.insert(index);
             }
+            byte_get |= callee.as_str() == crate::byte_ops::GET_ID
+                || callee.as_str() == StringOp::FileReadText.id();
         }
         crate::hir::push_resolved_expression_children_in_authored_order(expr, &mut pending);
     }
-    found.into_iter().map(|index| OPERATIONS[index]).collect()
+    (
+        found.into_iter().map(|index| OPERATIONS[index]).collect(),
+        byte_get,
+    )
+}
+
+pub(in crate::wasm) fn selected(program: &ResolvedProgram) -> Vec<StringOp> {
+    selected_functions(
+        program.functions.iter().chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        ),
+    )
+    .0
 }
 
 pub(in crate::wasm) fn program_uses_toolkit(program: &ResolvedProgram) -> bool {
@@ -43,30 +62,15 @@ pub(in crate::wasm) fn program_uses_toolkit(program: &ResolvedProgram) -> bool {
 }
 
 pub(in crate::wasm) fn uses_byte_get(program: &ResolvedProgram) -> bool {
-    if selected(program).contains(&StringOp::FileReadText) {
-        return true;
-    }
-    let mut pending = Vec::new();
-    for function in program.functions.iter().chain(
-        program
-            .function_instances
-            .iter()
-            .map(|instance| &instance.function),
-    ) {
-        pending.push(&function.body);
-        pending.extend(function.requires.iter().chain(&function.ensures));
-    }
-    while let Some(expression) = pending.pop() {
-        if matches!(
-            &expression.kind,
-            ResolvedExprKind::Call { callee, .. }
-                if callee.as_str() == crate::byte_ops::GET_ID
-        ) {
-            return true;
-        }
-        crate::hir::push_resolved_expression_children_in_authored_order(expression, &mut pending);
-    }
-    false
+    selected_functions(
+        program.functions.iter().chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        ),
+    )
+    .1
 }
 
 pub(super) fn import_types(
@@ -100,6 +104,7 @@ pub(in crate::wasm) fn import_name(operation: StringOp) -> &'static str {
         StringOp::Trim => "spx_string_trim_v2",
         StringOp::ByteAt => "spx_string_byte_at_v2",
         StringOp::FromStr => "spx_string_from_str_v2",
+        StringOp::FromUtf8 => "spx_string_from_utf8_v1",
         StringOp::FileReadText => "spx_file_read_text_v2",
         _ => unreachable!("selected toolkit operation"),
     }
@@ -124,6 +129,9 @@ impl Emitter<'_> {
         for (argument, ty) in args.iter().zip(operation.param_types()) {
             let value = self.emit_expr(argument)?;
             require_type(value_type(&value), ty, "checked text argument")?;
+            if *ty == ResolvedType::SliceU8 {
+                self.validate_byte_slice(&value);
+            }
             values.push(value);
         }
         self.apply_call_commit(&expression.id)?;
@@ -158,6 +166,7 @@ impl Emitter<'_> {
             StringOp::Slice => &[0, 23, 24],
             StringOp::Find | StringOp::ByteAt => &[0, 23],
             StringOp::FromStr => &[0, 25],
+            StringOp::FromUtf8 => &[0, 21],
             StringOp::FileReadText => &[0, 25, 65, 66, 67, 68, 69, 70, 71],
             _ => &[0],
         };

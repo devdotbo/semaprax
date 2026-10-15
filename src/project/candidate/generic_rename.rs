@@ -219,6 +219,7 @@ fn normalize_expression_spans(expression: &mut ResolvedExpr) {
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
         ResolvedExprKind::ByteRange {
@@ -229,6 +230,9 @@ fn normalize_expression_spans(expression: &mut ResolvedExpr) {
             normalize_expression_spans(end);
         }
         ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. }
         | ResolvedExprKind::NativeRustImportCall(crate::hir::ResolvedNativeRustImportCall {
             args,
             ..
@@ -238,7 +242,11 @@ fn normalize_expression_spans(expression: &mut ResolvedExpr) {
                 normalize_expression_spans(argument);
             }
         }
-        ResolvedExprKind::Unary { value, .. }
+        ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Upcast { source: value }
         | ResolvedExprKind::Yield { request: value } => {
             normalize_expression_spans(value);
@@ -247,7 +255,10 @@ fn normalize_expression_spans(expression: &mut ResolvedExpr) {
             normalize_expression_spans(left);
             normalize_expression_spans(right);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 normalize_statement_spans(statement);
             }
@@ -312,6 +323,10 @@ fn normalize_statement_spans(statement: &mut ResolvedStatement) {
             *span = Span::default();
             normalize_expression_spans(value);
         }
+        ResolvedStatement::CopyDiscard { value, span } => {
+            *span = Span::default();
+            normalize_expression_spans(value);
+        }
         ResolvedStatement::Unsafe { body, span, .. } => {
             *span = Span::default();
             normalize_expression_spans(body);
@@ -320,6 +335,12 @@ fn normalize_statement_spans(statement: &mut ResolvedStatement) {
             condition,
             body,
             span,
+        }
+        | ResolvedStatement::LexicalWhile {
+            condition,
+            body,
+            span,
+            ..
         } => {
             *span = Span::default();
             normalize_expression_spans(condition);

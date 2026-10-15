@@ -1,0 +1,16 @@
+{
+  "qualification": "source-only; all exact controls unexecuted",
+  "harness": "semaprax::lib",
+  "selectors": [
+    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::constructors::complete_callable_nominal_identity_zero_one_seventeen_arguments_keep_paid_work_and_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::raw_inventory_classifier_keeps_complete_original_diagnostic_fields",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::original_raw_owner::raw_inventory_classifier_keeps_complete_original_diagnostic_fields",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::complete_prior_raw_and_zero_work_receivers_and_identity_formatter_remain_source_bound",
+    "cleanup_plan::replay::allocation::oracle::tests::account_type_probe_fast_receivers_match_original_without_production_ledger_touch",
+    "cleanup_plan::replay::allocation::oracle::tests::funded_type_probe_receivers_keep_exact_work_bytes_zero_short_sticky_and_complete_drop",
+    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::constructors::complete_inline_semantic_substitution_refusal_and_nested_argument_clone_keep_original",
+    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::constructors::complete_prior_key_substitution_and_storage_receivers_remain_independent_byte_exact",
+    "cleanup_plan::replay::paid_type_facts::inventory_encoded::tests::complete_original_logical_frontier_suppression_strict_and_raw_modes_stay_equal",
+    "cleanup_plan::replay::paid_type_facts::inventory_tests::raw_missing_cleanup_facts_refusal_keeps_message_without_replay_prefix"
+  ]
+}

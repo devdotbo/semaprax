@@ -626,6 +626,7 @@ fn assert_direct_child_contract() {
         include_str!("../../../src/project/npm/publication_plan.rs"),
         include_str!("../../../src/project/npm/publication.rs"),
         include_str!("../../../src/project/npm/semantic_recipe_v8.rs"),
+        include_str!("../../../src/project/npm/semantic_recipe_lexical_v1.rs"),
         include_str!("../../../src/project/npm/semantic_recipe_v8/type_names.rs"),
         include_str!("../../../src/project/npm/validation.rs"),
     ] {

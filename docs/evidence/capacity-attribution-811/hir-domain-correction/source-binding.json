@@ -1,0 +1,49 @@
+{
+  "status": "SOURCE_ONLY_DOMAIN_CORRECTION_NOT_A_GATE_PASS",
+  "base": "c828dbddb080b98f00a677bf1daccfd9315bedb2",
+  "files": {
+    "tests/hir_module_boundaries.rs": {
+      "whole_original_archive": "docs/evidence/capacity-attribution-811/hir-domain-correction/tests__hir_module_boundaries.rs.before.txt",
+      "original_sha256": "2dd739df78683738201afae62537dc9c296549e698a27fce28be1ad53af61241",
+      "receiving_sha256": "0bc5bb07d41a24a4bfeceebfdcd204c749e0709b3bb7b8176999af555f6f36d7",
+      "whole_inverse_edits": [
+        {
+          "original": "        concat!(\n            concat!(\n                include_str!(\"../src/hir/validation.rs\"),\n                include_str!(\"../src/cleanup_plan/build/capacity_observation/actual_attribution.rs\"),\n                include_str!(\"../src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs\"),\n                include_str!(\"../src/cleanup_plan/build/helper_index/original_plans.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n",
+          "receiving": "        concat!(\n            concat!(\n                include_str!(\"../src/hir/validation.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n"
+        }
+      ]
+    },
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": {
+      "whole_original_archive": "docs/evidence/capacity-attribution-811/hir-domain-correction/src__cleanup_plan__replay__live_oracle__source_custody__b.rs.before.txt",
+      "original_sha256": "fde14549c2858b8ab4112544d3f6ffe7c1aca50938dbeafe94295619faa38243",
+      "receiving_sha256": "fedbaee1e18471d394cb46f8542948cf4d522cf45223bbd4d97528956198f33c",
+      "whole_inverse_edits": [
+        {
+          "original": "    }\n    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, r###\"                include_str!(\"../src/cleanup_plan/build/capacity_observation/actual_attribution.rs\"),\n                include_str!(\"../src/cleanup_plan/build/capacity_observation/actual_attribution/tests.rs\"),\n                include_str!(\"../src/cleanup_plan/build/helper_index/original_plans.rs\"),\n\"###, \"\");\n        undo(&mut current, r###\"                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n",
+          "receiving": "    }\n    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, r###\"                include_str!(\"../src/hir/validation/held_profiles.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/tests.rs\"),\n                include_str!(\"../src/hir/validation/held_profiles/source_audit.rs\"),\n"
+        }
+      ]
+    }
+  },
+  "retained_hir_children": 11,
+  "retained_cleanup_children": 3,
+  "correct_cleanup_readers": [
+    "tests/workspace/semantic_graph/source_inventory.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"
+  ],
+  "additional_preexisting_test_oracle_scope_findings": [
+    {
+      "source": "src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs",
+      "line": 71
+    },
+    {
+      "source": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs",
+      "line": 5
+    },
+    {
+      "source": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs",
+      "line": 212
+    }
+  ],
+  "additional_finding_note": "These joined old-oracle test calls still contain the forbidden full-build spelling. No assertion whitelist, alias rewrite, deletion or extra domain removal is made in this requested correction."
+}

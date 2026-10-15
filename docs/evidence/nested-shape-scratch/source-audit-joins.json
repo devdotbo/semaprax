@@ -1,0 +1,9 @@
+{
+  "root_integration_owns_final_union": true,
+  "include_paths": [
+    "src/cleanup_plan/replay/nested_shape/paid/scratch.rs",
+    "src/cleanup_plan/replay/nested_shape/paid_before.rs",
+    "src/cleanup_plan/replay/ordinary_inventory/before.rs",
+    "src/cleanup_plan/replay/ordinary_inventory/tests/scratch_reuse.rs"
+  ]
+}

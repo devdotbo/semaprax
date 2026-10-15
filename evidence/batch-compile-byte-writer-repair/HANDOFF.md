@@ -1,0 +1,3 @@
+# Funded byte-writer compile repair
+
+The bbd consolidated owning build compiled production successfully, then found test receiver errors. This patch names the actual crate-private match classifier and represents scripted work refusals with the same existing PayerRefusal::Ordinal carrier as the physical payer. Original ordinal, first-error and immediate-stop assertions are retained. The complete original funded source is archived byte-for-byte; SHA256 a0556e1fab048115e27830151af6078383b597c83fa7a277a9107aa47ba75233. No admission limit, production path, work/byte conversion or receiver assertion changed. No tests were run for this patch; qualify with the combined corrective batch.

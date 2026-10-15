@@ -186,6 +186,12 @@ pub(in crate::implementation) fn hash_expr(
                         frame(hasher, ownership(binding.ownership));
                         actions.push(HirFingerprintAction::Expr(value, depth));
                     }
+                    ResolvedStatement::CopyDiscard { .. }
+                    | ResolvedStatement::LexicalWhile { .. } => {
+                        return Err(b107(
+                            "lexical control is outside the native Rust scalar profile",
+                        ));
+                    }
                     ResolvedStatement::Unsafe { audit, body, .. } => {
                         frame(hasher, b"unsafe");
                         frame(hasher, audit.as_bytes());
@@ -439,6 +445,19 @@ pub(in crate::implementation) fn hash_expr(
                 frame(hasher, identity.as_bytes());
                 frame(hasher, ownership(expression.ownership));
                 match &expression.kind {
+                    ResolvedExprKind::BorrowedUtf8Literal(value) => {
+                        if value.owned_allocation_bytes().is_none() {
+                            return Err(b107("static borrowed UTF-8 lacks its decoded backing"));
+                        }
+                        frame(hasher, b"borrowed-utf8-literal");
+                        frame(hasher, value.as_str().as_bytes());
+                    }
+                    ResolvedExprKind::VecConstructor { .. } => {
+                    return Err(b107("Vec constructors are outside the native Rust scalar profile"));
+                }
+                ResolvedExprKind::LexicalExit { .. } => {
+                        return Err(b107("lexical control is outside the native Rust scalar profile"));
+                    }
                     ResolvedExprKind::Closure { .. }
                     | ResolvedExprKind::FunctionReference { .. }
                     | ResolvedExprKind::Invoke { .. }
@@ -453,6 +472,9 @@ pub(in crate::implementation) fn hash_expr(
                     | ResolvedExprKind::String(_)
                     | ResolvedExprKind::BorrowPlace { .. }
                     | ResolvedExprKind::ByteRange { .. }
+                    | ResolvedExprKind::LiteralFormat { .. }
+                    | ResolvedExprKind::VecFieldRead { .. }
+                    | ResolvedExprKind::RowLoan { .. }
                     // Resumable Effects v1 (issue #204): a `yields`-declaring
                     // function is refused by `validate_selected_scalar_closure`
                     // before this ever runs, exactly like `Closure` and

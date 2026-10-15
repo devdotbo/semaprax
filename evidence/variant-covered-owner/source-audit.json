@@ -1,0 +1,16 @@
+{
+  "base": "fde751e20236152d581e31ce6bf2b1d3e11ede45",
+  "old_sha256": {
+    "src/hir/validation/variant_or.rs": "bdfba90863b8a1001bb919e08bd53958c6267d8f3b749311da8cd74cfd96a23d",
+    "src/hir/validation/owned_iterative_oracle.rs": "cdf318d4b28a914cecd51e68247959906f7823cb9b3f1256904a971e10444b65",
+    "src/hir/validation/owned_iterative_oracle/dispatch_0.rs": "08a89606c39156a5d9263488f56e77516b575ad9ebccd1e1a066f0d55f6d29b2",
+    "src/hir/validation/owned_iterative_oracle/dispatch_1.rs": "1b53d3ee59cf630af7d69bb1cff6498883b595b0b2ea9cbed6eb07675145be08",
+    "src/hir/validation/owned_iterative_oracle/dispatch_2.rs": "4efa2b64013dce1180ea6f9a023057890016d85e3973289e79428ac1e61eda01",
+    "src/hir/validation/owned_iterative_oracle/dispatch_3.rs": "14cfa942f87b784695deaa5977be6487584459e745463d331d25db024dd67c19"
+  },
+  "preservation": "Complete original Or helper retained compiled under cfg(test), old iterative/recursive dispatch and existing assertions unchanged; new helper repeats the same ordered conditions and uses literal-identical static diagnostic bytes.",
+  "ownership": "Sorted declaration IDs are borrowed from actual expression/pattern roots; carrier uses existing prepaid Storage for replacement growth and exact speculative clones. Prior-root checkpoint preserved on every refusal and guarded discard.",
+  "limits": "Carrier size equals complete original BTreeSet slot. No cap, frame budget, allowance, refund or case-order change.",
+  "qualification": "No Cargo/build/tests. Specific 28-byte cause and application cap fit remain unproven; ownership repair is source-qualified only.",
+  "graft_tokens_saved": 80340
+}

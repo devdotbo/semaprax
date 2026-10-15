@@ -1,0 +1,1235 @@
+Review DISTINCT new b2be954810d9cf1dce09ce91efa42ac699de73fe correction only. This is source-only, not runtime evidence; prior #799 review timed out with no verdict and is not being retried. Human explicitly authorized source sharing. No tools or execution. Focus concrete semantic/authentication/Rust typing mistakes. Primary original T220 and truly independent T224/T202/C101 must survive; only dependent follow-ons may disappear. The previous Recovery::signature remains complete and unchanged; exact authored/current pairing originates only in actual public producer. Current fixes add no funded storage claim: all scratch/recovery storage remains unpaid. No ABI claim. Evaluate full six-field authentication, foreign/stale subject/body fail closed, current binding equality, raw recheck environment, postcondition result identity and independent known-outer profiles. Return at most 5 concrete findings, severity and exact source lines; distinguish uncertainty. Do not spend response restating implementation or demand broad test expansions. Authored tests are unexecuted.
+
+
+=== CURRENT src/source_verify/declaration/functions/signature_refusal.rs:1-157 ===
+1: //! A generic profile cannot classify the shape of a missing type component.
+2: //! The ordinary declared-type owner still publishes the authoritative receipt
+3: //! in body preparation. This scratch result neither admits source nor erases
+4: //! independent profile errors on other parameters.
+5: use crate::ast::program_source::ProgramSource;
+6: use crate::ast::{Span, Type};
+7: use crate::source_verify::type_table::TypeTable;
+8: use std::collections::HashSet;
+9: 
+10: pub(super) fn unknown_component(
+11:     program: &dyn ProgramSource,
+12:     ty: &Type,
+13:     span: Span,
+14:     types: &TypeTable<'_>,
+15:     parameters: &HashSet<&str>,
+16: ) -> bool {
+17:     // A missing child cannot erase a profile failure of its known outer
+18:     // carrier (for example a by-value record or function-value signature).
+19:     // Only this slot's own unresolved root identity defers its shape check.
+20:     let Type::Named { name, .. } = ty else {
+21:         return false;
+22:     };
+23:     if parameters.contains(name.as_str()) || types.declaration(name).is_some() {
+24:         return false;
+25:     }
+26:     let mut scratch = Vec::new();
+27:     crate::source_verify::declared_type::check_declared_type(
+28:         program,
+29:         ty,
+30:         span,
+31:         types,
+32:         parameters,
+33:         &mut scratch,
+34:     );
+35:     scratch.iter().any(|diagnostic| {
+36:         diagnostic.code == "SPX-T001"
+37:             || diagnostic.code == "SPX-T220"
+38:                 && diagnostic
+39:                     .message
+40:                     .ends_with("` is not an in-scope type parameter")
+41:     })
+42: }
+43: 
+44: /// Borrowed origin issued only inside the public function-body producer.
+45: /// Its private fields bind the exact immutable source and specialization;
+46: /// equality of IDs or spans alone cannot construct a receiving origin.
+47: pub(in crate::source_verify) struct SignatureOrigin<'p> {
+48:     subject: crate::ast::program_source::Subject<'p>,
+49:     template: &'p crate::ast::Function,
+50:     current: &'p crate::ast::Function,
+51: }
+52: 
+53: pub(super) fn origin<'p>(
+54:     program: &'p dyn ProgramSource,
+55:     template: &'p crate::ast::Function,
+56:     current: &'p crate::ast::Function,
+57: ) -> Option<SignatureOrigin<'p>> {
+58:     // Ordinary, un-specialized bodies already use their own exact environment.
+59:     if std::ptr::eq(template, current) {
+60:         return None;
+61:     }
+62:     if !program
+63:         .functions()
+64:         .iter()
+65:         .any(|source| std::ptr::eq(source, template))
+66:         || !(1..=2).contains(&template.type_parameters.len())
+67:         || template
+68:             .type_parameters
+69:             .iter()
+70:             .any(|parameter| !crate::source_verify::diagnostics::source_identifier(&parameter.name))
+71:         || template.type_parameters.len() == 2
+72:             && template.type_parameters[0].name == template.type_parameters[1].name
+73:         || !current.type_parameters.is_empty()
+74:         || template.stable_id != current.stable_id
+75:         || template.name != current.name
+76:         || template.span != current.span
+77:         || template.name_span != current.name_span
+78:         || template.params.len() != current.params.len()
+79:         || !template
+80:             .params
+81:             .iter()
+82:             .zip(&current.params)
+83:             .all(|(raw, concrete)| {
+84:                 raw.name == concrete.name && raw.mode == concrete.mode && raw.span == concrete.span
+85:             })
+86:     {
+87:         return None;
+88:     }
+89:     Some(SignatureOrigin {
+90:         subject: program.subject(),
+91:         template,
+92:         current,
+93:     })
+94: }
+95: 
+96: impl<'p> SignatureOrigin<'p> {
+97:     pub(in crate::source_verify) fn return_refusal(
+98:         &self,
+99:         program: &dyn ProgramSource,
+100:         current: &crate::ast::Function,
+101:         types: &TypeTable<'_>,
+102:         diagnostics: &[crate::diagnostic::Diagnostic],
+103:     ) -> Option<usize> {
+104:         let template = self.template_for(program, current)?;
+105:         let Type::Named { name, .. } = &template.return_type else {
+106:             return None;
+107:         };
+108:         if template
+109:             .type_parameters
+110:             .iter()
+111:             .any(|parameter| parameter.name == *name)
+112:             || types.declaration(name).is_some()
+113:             || !diagnostics.iter().any(|diagnostic| {
+114:                 diagnostic.span == Some(template.span)
+115:                     && matches!(diagnostic.code, "SPX-T001" | "SPX-T220")
+116:             })
+117:         {
+118:             return None;
+119:         }
+120:         let parameters = template
+121:             .type_parameters
+122:             .iter()
+123:             .map(|parameter| parameter.name.as_str())
+124:             .collect();
+125:         let mut scratch = Vec::new();
+126:         crate::source_verify::declared_type::check_declared_type(
+127:             program,
+128:             &template.return_type,
+129:             template.span,
+130:             types,
+131:             &parameters,
+132:             &mut scratch,
+133:         );
+134:         scratch
+135:             .iter()
+136:             .filter(|refusal| {
+137:                 refusal.code == "SPX-T001"
+138:                     || refusal.code == "SPX-T220"
+139:                         && refusal
+140:                             .message
+141:                             .ends_with("` is not an in-scope type parameter")
+142:             })
+143:             .find_map(|refusal| diagnostics.iter().position(|original| original == refusal))
+144:     }
+145: 
+146:     pub(in crate::source_verify) fn template_for(
+147:         &self,
+148:         program: &dyn ProgramSource,
+149:         current: &crate::ast::Function,
+150:     ) -> Option<&'p crate::ast::Function> {
+151:         (self.subject.same(program.subject()) && std::ptr::eq(current, self.current))
+152:             .then_some(self.template)
+153:     }
+154: }
+155: 
+156: #[cfg(test)]
+157: mod tests;
+
+
+=== CURRENT src/source_verify/recovery.rs:1-209 ===
+1: //! Lexical missing-declaration recovery and separate annotation refusal views.
+2: //!
+3: //! Names borrow immutable authored source. This directory never supplies a type,
+4: //! binding, capture, ownership state, or backend admission. Ordinary source
+5: //! verifier storage has no physical payer; these error-only allocations remain
+6: //! ordinary storage, not paid replay authority.
+7: 
+8: use std::collections::BTreeMap;
+9: 
+10: use crate::ast::{Expr, ExprKind, Function, Type};
+11: use crate::diagnostic::Diagnostic;
+12: 
+13: #[derive(Default)]
+14: struct Scope<'p> {
+15:     parent: Option<usize>,
+16:     names: BTreeMap<&'p str, (usize, bool, Option<&'p Type>)>,
+17: }
+18: 
+19: /// A declaration refusal explains an expected-type failure; it never replaces
+20: /// the independently checked value or any binding/ownership metadata.
+21: #[derive(Clone, Copy)]
+22: pub(super) struct RefusalView<'p> {
+23:     pub(super) origin: usize,
+24:     pub(super) declared: &'p Type,
+25: }
+26: 
+27: #[derive(Clone, Copy)]
+28: pub(super) struct Checkpoint {
+29:     pub(super) diagnostics: usize,
+30:     reads: usize,
+31: }
+32: 
+33: #[derive(Default)]
+34: pub(super) struct Recovery<'p> {
+35:     unknown_declarations: bool,
+36:     scopes: Vec<Scope<'p>>,
+37:     last_read: Option<usize>,
+38:     reads: usize,
+39:     // Opaque borrowed expression identities are invocation-local lookup keys.
+40:     // They are never dereferenced, iterated to select diagnostics, or emitted.
+41:     // Only reads of real annotation-refused bindings acquire entries.
+42:     expressions: BTreeMap<*const Expr, RefusalView<'p>>,
+43:     #[cfg(test)]
+44:     pub(super) visited: usize,
+45: }
+46: 
+47: impl<'p> Recovery<'p> {
+48:     /// Recheck each affected declaration once in this invocation, only after an
+49:     /// existing unknown-type refusal. Equal byte spans alone are insufficient
+50:     /// for externally constructed source trees or duplicate parameters.
+51:     pub(super) fn signature(
+52:         program: &'p dyn crate::ast::program_source::ProgramSource,
+53:         current: &'p Function,
+54:         variables: &std::collections::HashMap<String, super::binding::Binding>,
+55:         types: &super::type_table::TypeTable<'_>,
+56:         diagnostics: &[Diagnostic],
+57:     ) -> Self {
+58:         let mut recovery = Self::default();
+59:         if !diagnostics
+60:             .iter()
+61:             .any(callee_components::unknown_component_receipt)
+62:         {
+63:             return recovery;
+64:         }
+65:         recovery.unknown_declarations = true;
+66:         let mut parameters = None;
+67:         let mut scratch = Vec::new();
+68:         for parameter in &current.params {
+69:             if types.needs_drop(&parameter.ty)
+70:                 || variables.get(&parameter.name).is_none_or(|binding| {
+71:                     binding.ty != parameter.ty || binding.mode != parameter.mode
+72:                 })
+73:                 || !diagnostics.iter().any(|diagnostic| {
+74:                     callee_components::unknown_component_receipt(diagnostic)
+75:                         && diagnostic.span == Some(parameter.span)
+76:                 })
+77:             {
+78:                 continue;
+79:             }
+80:             let parameters = parameters.get_or_insert_with(|| {
+81:                 current
+82:                     .type_parameters
+83:                     .iter()
+84:                     .map(|parameter| parameter.name.as_str())
+85:                     .collect()
+86:             });
+87:             scratch.clear();
+88:             super::declared_type::check_declared_type(
+89:                 program,
+90:                 &parameter.ty,
+91:                 parameter.span,
+92:                 types,
+93:                 parameters,
+94:                 &mut scratch,
+95:             );
+96:             if let Some(origin) = scratch
+97:                 .iter()
+98:                 .filter(|refusal| callee_components::unknown_component_receipt(refusal))
+99:                 .find_map(|refusal| {
+100:                     diagnostics.iter().position(|original| {
+101:                         original.code == refusal.code
+102:                             && original.severity == refusal.severity
+103:                             && original.message == refusal.message
+104:                             && original.path == refusal.path
+105:                             && original.span == refusal.span
+106:                             && original.help == refusal.help
+107:                     })
+108:                 })
+109:             {
+110:                 recovery.ensure(0);
+111:                 recovery.scopes[0]
+112:                     .names
+113:                     .insert(parameter.name.as_str(), (origin, true, None));
+114:             }
+115:         }
+116:         recovery
+117:     }
+118: 
+119:     // Begin exact producer-origin parameter receiver.
+120:     pub(super) fn signature_origin(
+121:         program: &'p dyn crate::ast::program_source::ProgramSource,
+122:         current: &'p Function,
+123:         variables: &std::collections::HashMap<String, super::binding::Binding>,
+124:         types: &super::type_table::TypeTable<'_>,
+125:         diagnostics: &[Diagnostic],
+126:         origin: &super::declaration::SignatureOrigin<'p>,
+127:         result_type: Option<&Type>,
+128:     ) -> Option<Self> {
+129:         let template = origin.template_for(program, current)?;
+130:         let mut recovery = Self::default();
+131:         if !diagnostics
+132:             .iter()
+133:             .any(callee_components::unknown_component_receipt)
+134:         {
+135:             return Some(recovery);
+136:         }
+137:         recovery.unknown_declarations = true;
+138:         let mut parameters = None;
+139:         let mut scratch = Vec::new();
+140:         for (parameter, actual) in template.params.iter().zip(&current.params) {
+141:             if types.needs_drop(&actual.ty)
+142:                 || variables
+143:                     .get(&parameter.name)
+144:                     .is_none_or(|binding| binding.ty != actual.ty || binding.mode != actual.mode)
+145:                 || !diagnostics.iter().any(|diagnostic| {
+146:                     callee_components::unknown_component_receipt(diagnostic)
+147:                         && diagnostic.span == Some(parameter.span)
+148:                 })
+149:             {
+150:                 continue;
+151:             }
+152:             let parameters = parameters.get_or_insert_with(|| {
+153:                 template
+154:                     .type_parameters
+155:                     .iter()
+156:                     .map(|parameter| parameter.name.as_str())
+157:                     .collect()
+158:             });
+159:             scratch.clear();
+160:             super::declared_type::check_declared_type(
+161:                 program,
+162:                 &parameter.ty,
+163:                 parameter.span,
+164:                 types,
+165:                 parameters,
+166:                 &mut scratch,
+167:             );
+168:             if let Some(origin) = scratch
+169:                 .iter()
+170:                 .filter(|refusal| callee_components::unknown_component_receipt(refusal))
+171:                 .find_map(|refusal| {
+172:                     diagnostics.iter().position(|original| {
+173:                         original.code == refusal.code
+174:                             && original.severity == refusal.severity
+175:                             && original.message == refusal.message
+176:                             && original.path == refusal.path
+177:                             && original.span == refusal.span
+178:                             && original.help == refusal.help
+179:                     })
+180:                 })
+181:             {
+182:                 recovery.ensure(0);
+183:                 recovery.scopes[0]
+184:                     .names
+185:                     .insert(parameter.name.as_str(), (origin, true, None));
+186:             }
+187:         }
+188:         // The reserved result name has its own actual postcondition carrier;
+189:         // it never becomes available in a requires clause or ordinary body.
+190:         if let Some(index) = result_type
+191:             .filter(|ty| std::ptr::eq(*ty, &current.return_type))
+192:             .and_then(|_| origin.return_refusal(program, current, types, diagnostics))
+193:         {
+194:             recovery.ensure(0);
+195:             recovery.scopes[0]
+196:                 .names
+197:                 .insert("result", (index, true, None));
+198:         }
+199:         Some(recovery)
+200:     }
+201:     // End exact producer-origin parameter receiver.
+202: 
+203:     pub(super) fn clear(&mut self, scope: usize, name: &str) {
+204:         if let Some(row) = self.scopes.get_mut(scope) {
+205:             row.names.remove(name);
+206:         }
+207:     }
+208: 
+209:     /// Scope ordinals are reused after a branch or block ends. Reset the row
+
+
+=== CURRENT src/source_verify/diagnostics.rs:164-297 ===
+164: pub(super) fn require_bool(
+165:     program: &dyn ProgramSource,
+166:     function: &Function,
+167:     contract: &Expr,
+168:     variables: &HashMap<String, Binding>,
+169:     functions: &HashMap<&str, &Function>,
+170:     types: &TypeTable<'_>,
+171:     result_type: Option<&Type>,
+172:     diagnostics: &mut Vec<Diagnostic>,
+173:     kind: &str,
+174: ) {
+175:     require_bool_with_signature(
+176:         program,
+177:         function,
+178:         contract,
+179:         variables,
+180:         functions,
+181:         types,
+182:         result_type,
+183:         diagnostics,
+184:         kind,
+185:         None,
+186:     );
+187: }
+188: 
+189: #[allow(clippy::too_many_arguments)]
+190: pub(super) fn require_bool_with_signature<'p>(
+191:     program: &'p dyn ProgramSource,
+192:     function: &'p Function,
+193:     contract: &'p Expr,
+194:     variables: &HashMap<String, Binding>,
+195:     functions: &'p HashMap<&'p str, &'p Function>,
+196:     types: &'p TypeTable<'p>,
+197:     result_type: Option<&'p Type>,
+198:     diagnostics: &mut Vec<Diagnostic>,
+199:     kind: &str,
+200:     signature: Option<super::declaration::SignatureOrigin<'p>>,
+201: ) {
+202:     contract.visit_calls(&mut |callee, span| {
+203:         if variables.contains_key(callee) { return; }
+204:         if let Some(target) = functions.get(callee) {
+205:             if !target.effects.is_empty() {
+206:                 diagnostics.push(
+207:                     error(
+208:                         program,
+209:                         "SPX-C102",
+210:                         format!(
+211:                             "{kind} on `{}` calls effectful function `{callee}` with effects {{{}}}",
+212:                             function.name,
+213:                             target.effects.join(", ")
+214:                         ),
+215:                         span,
+216:                     )
+217:                     .with_help("contracts must be deterministic and effect-free"),
+218:                 );
+219:             }
+220:         }
+221:     });
+222:     let mut contract_variables = variables.clone();
+223:     // No freshness from a body or previous clause enters this contract domain.
+224:     for binding in contract_variables.values_mut() {
+225:         binding.contract_local = false;
+226:     }
+227:     if let Some(ty) = result_type {
+228:         // A provisional owned result is readable only in this postcondition
+229:         // scope. It stays immutable and contract transfers still select O105.
+230:         if ty == &function.return_type
+231:             && (matches!(ty, Type::Bytes | Type::String)
+232:                 || matches!(ty, Type::Named { name, arguments }
+233:                 if name == "Result" && arguments.as_slice() == [Type::Bytes, Type::Bytes]))
+234:         {
+235:             contract_variables.insert(
+236:                 "result".to_owned(),
+237:                 Binding {
+238:                     contract_local: false,
+239:                     traversal_row: None,
+240:                     ty: ty.clone(),
+241:                     mode: ParamMode::Own,
+242:                     availability: Availability::Available,
+243:                     moved_places: HashMap::new(),
+244:                     definitely_partial: HashSet::new(),
+245:                     native_unit_discard: false,
+246:                     mutable: false,
+247:                     active_loans: BTreeSet::new(),
+248:                     borrow_origin: None,
+249:                 },
+250:             );
+251:         }
+252:     }
+253:     let (contract_value, refusal_view) = match signature {
+254:         Some(signature) => check_expr_with_signature_view(
+255:             program,
+256:             function,
+257:             contract,
+258:             &mut contract_variables,
+259:             functions,
+260:             types,
+261:             result_type,
+262:             false,
+263:             diagnostics,
+264:             None,
+265:             None,
+266:             Some(signature),
+267:         ),
+268:         None => check_expr_with_helpers_view(
+269:             program,
+270:             function,
+271:             contract,
+272:             &mut contract_variables,
+273:             functions,
+274:             types,
+275:             result_type,
+276:             false,
+277:             diagnostics,
+278:             None,
+279:             None,
+280:         ),
+281:     };
+282:     if let Some(value) = contract_value {
+283:         if value.native_unit {
+284:             reject_native_unit_value(program, contract, &value, diagnostics);
+285:         } else if value.ty != Type::Bool
+286:             && !refusal_view.is_some_and(|view| view.declared == &Type::Bool)
+287:         {
+288:             diagnostics.push(error(
+289:                 program,
+290:                 "SPX-C101",
+291:                 format!("{kind} on `{}` must be bool", function.name),
+292:                 contract.span,
+293:             ));
+294:         }
+295:     }
+296: }
+297: 
+
+
+=== CURRENT src/source_verify/iterative.rs:367-430 ===
+367: pub(super) fn check_expr_with_signature_view<'a, 'p>(
+368:     program: &'p dyn ProgramSource,
+369:     current: &'p Function,
+370:     expr: &'p Expr,
+371:     variables: &mut HashMap<String, Binding>,
+372:     functions: &'p HashMap<&'p str, &'p Function>,
+373:     types: &'p TypeTable<'p>,
+374:     result_type: Option<&'p Type>,
+375:     allow_moves: bool,
+376:     diagnostics: &'a mut Vec<Diagnostic>,
+377:     helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,
+378:     fused_producer: Option<&'p Expr>,
+379:     signature: Option<super::declaration::SignatureOrigin<'p>>,
+380: ) -> (
+381:     Option<CheckedValue>,
+382:     Option<super::recovery::RefusalView<'p>>,
+383: ) {
+384:     let initial = std::mem::take(variables);
+385:     let mut verifier = IterativeVerifier::new(
+386:         program,
+387:         current,
+388:         initial,
+389:         functions,
+390:         types,
+391:         result_type,
+392:         allow_moves,
+393:         diagnostics,
+394:     );
+395:     // The public body producer holds the exact authored template before its
+396:     // validation-only scalar substitutions clear the type-parameter names.
+397:     // Authenticate the original receipt against that environment and the real
+398:     // specialized bindings; no source lookup or span-only inference is used.
+399:     if let Some(recovery) = signature.as_ref().and_then(|origin| {
+400:         super::recovery::Recovery::signature_origin(
+401:             program,
+402:             current,
+403:             &verifier.scopes[0].bindings,
+404:             types,
+405:             verifier.diagnostics,
+406:             origin,
+407:             result_type,
+408:         )
+409:     }) {
+410:         verifier.recovery = recovery;
+411:     }
+412:     verifier.byte_helpers = helpers;
+413:     verifier.fused_producer = fused_producer;
+414:     let result = verifier.run(expr);
+415:     let refusal = verifier.recovery.view(expr);
+416:     *variables = verifier
+417:         .scopes
+418:         .first_mut()
+419:         .map(|scope| std::mem::take(&mut scope.bindings))
+420:         .unwrap_or_default();
+421:     drop(verifier);
+422:     match result {
+423:         Ok(value) => (value, refusal),
+424:         Err(diagnostic) => {
+425:             diagnostics.push(diagnostic.at_path(program.path()));
+426:             (None, None)
+427:         }
+428:     }
+429: }
+430: 
+
+
+=== CURRENT src/source_verify/iterative/enter.rs:134-159 ===
+134:             ExprKind::Var(name) if name == "result" => {
+135:                 if self.result_type.is_some() && self.recovery.reads_value(scope, name, expression)
+136:                 {
+137:                     self.values.push(None);
+138:                     return Ok(());
+139:                 }
+140:                 let value = self
+141:                     .result_type
+142:                     .map(|ty| CheckedValue::returned(ty.clone(), self.types.needs_drop(ty)));
+143:                 if value.is_none() {
+144:                     self.diagnostics.push(
+145:                         error(
+146:                             self.program,
+147:                             "SPX-T201",
+148:                             "`result` is only available in postconditions",
+149:                             expression.span,
+150:                         )
+151:                         .with_help(hints::RESULT_NAME_HELP),
+152:                     );
+153:                 }
+154:                 self.values.push(value);
+155:             }
+156:             ExprKind::Var(name) => {
+157:                 if self.scopes[scope]
+158:                     .bindings
+159:                     .get(name)
+
+
+=== CURRENT src/source_verify/declaration/functions.rs:335-397 ===
+335:                 crate::source_verify::declared_type::generic_variant::profile(function, types);
+336:             let owned_result = generic_result::profile(function);
+337:             let collection =
+338:                 crate::source_verify::declared_type::generic_collection::profile(function);
+339:             for param in &function.params {
+340:                 let owned_record = generic_function_owned_record_slot(function, &param.ty, types);
+341:                 if !((param.mode == ParamMode::Value
+342:                     && (generic_function_signature_slot(&param.ty, &parameter_names)
+343:                         || (collection
+344:                             && crate::source_verify::declared_type::generic_collection::callback(
+345:                                 function, &param.ty,
+346:                             ))
+347:                         || ((collection || variant)
+348:                             && crate::vec_ops::ast_element_is_admitted(&param.ty))))
+349:                     || (param.mode == ParamMode::Own
+350:                         && (owned_record
+351:                             || (variant
+352:                                 && crate::source_verify::declared_type::generic_variant::slot(
+353:                                     function, &param.ty, types,
+354:                                 ))
+355:                             || (collection
+356:                                 && crate::source_verify::declared_type::generic_collection::slot(
+357:                                     function, &param.ty,
+358:                                 ))
+359:                             || (owned_result && generic_result::slot(function, &param.ty)))))
+360:                     && !signature_refusal::unknown_component(
+361:                         program,
+362:                         &param.ty,
+363:                         param.span,
+364:                         types,
+365:                         &parameter_names,
+366:                     )
+367:                 {
+368:                     diagnostics.push(error(
+369:                         program,
+370:                         "SPX-T224",
+371:                         format!(
+372:                             "generic function `{}.{}` must use the direct-scalar profile by value or one admitted flat owned-record template by ownership",
+373:                             function.name, param.name
+374:                         ),
+375:                         param.span,
+376:                     ));
+377:                 }
+378:             }
+379:             if !owned_result
+380:                 && !variant
+381:                 && !collection
+382:                 && !generic_function_signature_slot(&function.return_type, &parameter_names)
+383:                 && !generic_function_owned_record_slot(function, &function.return_type, types)
+384:                 && !signature_refusal::unknown_component(
+385:                     program,
+386:                     &function.return_type,
+387:                     function.span,
+388:                     types,
+389:                     &parameter_names,
+390:                 )
+391:             {
+392:                 diagnostics.push(error(
+393:                     program,
+394:                     "SPX-T224",
+395:                     format!(
+396:                         "generic function `{}` must return the direct-scalar profile or one admitted flat owned-record template",
+397:                         function.name
+
+
+=== CURRENT src/source_verify/declaration/functions.rs:975-1088 ===
+975:     functions: &HashMap<&'p str, &'p Function>,
+976:     import_keys: &HashMap<&'p str, (&'p InterfaceDeclaration, &'p ImportDeclaration)>,
+977:     types: &TypeTable<'p>,
+978:     diagnostics: &mut Vec<Diagnostic>,
+979:     fused_producer: Option<&'p Expr>,
+980: ) {
+981:     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
+982:     let function_value_targets =
+983:         crate::source_verify::function_value_inventory::function_value_targets(program, functions);
+984:     for template in program.functions() {
+985:         reject_function(program, template, types, diagnostics);
+986:         let type_parameters = template
+987:             .type_parameters
+988:             .iter()
+989:             .map(|parameter| parameter.name.as_str())
+990:             .collect::<HashSet<_>>();
+991:         let return_frontier = diagnostics.len();
+992:         check_declared_type(
+993:             program,
+994:             &template.return_type,
+995:             template.span,
+996:             types,
+997:             &type_parameters,
+998:             diagnostics,
+999:         );
+1000:         let return_unknown = diagnostics[return_frontier..]
+1001:             .iter()
+1002:             .any(|diagnostic| diagnostic.code == "SPX-T001");
+1003:         for param in &template.params {
+1004:             check_declared_type(
+1005:                 program,
+1006:                 &param.ty,
+1007:                 param.span,
+1008:                 types,
+1009:                 &type_parameters,
+1010:                 diagnostics,
+1011:             );
+1012:         }
+1013:         if !template.type_parameters.is_empty()
+1014:             && !crate::source_verify::declared_type::generic_collection::profile(template)
+1015:             && (template
+1016:                 .params
+1017:                 .iter()
+1018:                 .any(|parameter| matches!(parameter.ty, Type::Function { .. }))
+1019:                 || matches!(template.return_type, Type::Function { .. }))
+1020:         {
+1021:             diagnostics.push(error(
+1022:                 program,
+1023:                 "SPX-T287",
+1024:                 "generic function signatures cannot contain function values",
+1025:                 template.span,
+1026:             ));
+1027:         }
+1028:         let generic_parameter_list_is_valid = (1..=2).contains(&template.type_parameters.len())
+1029:             && template
+1030:                 .type_parameters
+1031:                 .iter()
+1032:                 .all(|parameter| source_identifier(&parameter.name))
+1033:             && template
+1034:                 .type_parameters
+1035:                 .iter()
+1036:                 .map(|parameter| parameter.name.as_str())
+1037:                 .collect::<HashSet<_>>()
+1038:                 .len()
+1039:                 == template.type_parameters.len();
+1040:         let transparent_vec_wrapper = crate::vec_ops::source_wrapper(program, template);
+1041:         let transparent_box_wrapper = crate::box_ops::source_wrapper(program, template);
+1042:         let specializations: std::borrow::Cow<'_, [Function]> = if template
+1043:             .type_parameters
+1044:             .is_empty()
+1045:             || transparent_vec_wrapper.is_some()
+1046:             || transparent_box_wrapper.is_some()
+1047:         {
+1048:             std::borrow::Cow::Borrowed(std::slice::from_ref(template))
+1049:         } else if generic_parameter_list_is_valid {
+1050:             // These clones exist only to validate every admitted direct-scalar
+1051:             // substitution. Executable HIR instances are discovered separately
+1052:             // from reachable explicit calls and never originate here.
+1053:             let owned_record = template
+1054:                 .params
+1055:                 .iter()
+1056:                 .any(|param| generic_function_owned_record_slot(template, &param.ty, types))
+1057:                 || generic_function_owned_record_slot(template, &template.return_type, types);
+1058:             let substitutions = if generic_result::profile(template) {
+1059:                 generic_result::substitutions(template)
+1060:             } else if owned_record
+1061:                 || crate::source_verify::declared_type::generic_variant::profile(template, types)
+1062:                 || crate::source_verify::declared_type::generic_collection::profile(template)
+1063:             {
+1064:                 owned_record_function_substitutions(template.type_parameters.len())
+1065:             } else {
+1066:                 scalar_function_substitutions(template.type_parameters.len())
+1067:             };
+1068:             std::borrow::Cow::Owned(
+1069:                 substitutions
+1070:                     .iter()
+1071:                     .filter_map(|arguments| {
+1072:                         crate::source_verify::closure::specialize_checked(
+1073:                             program,
+1074:                             template,
+1075:                             arguments,
+1076:                             diagnostics,
+1077:                         )
+1078:                     })
+1079:                     .collect(),
+1080:             )
+1081:         } else {
+1082:             std::borrow::Cow::Owned(Vec::new())
+1083:         };
+1084:         let mut specialized_diagnostics = HashSet::new();
+1085:         for function in specializations.iter() {
+1086:             let return_unknown = return_unknown
+1087:                 || signature_refusal::origin(program, template, function)
+1088:                     .and_then(|origin| origin.return_refusal(program, function, types, diagnostics))
+
+
+=== CURRENT src/source_verify/declaration/functions.rs:1183-1248 ===
+1183:                             program,
+1184:                             "SPX-T270",
+1185:                             "command I/O operations are not admitted in contracts",
+1186:                             span,
+1187:                         ));
+1188:                     }
+1189:                 });
+1190:                 require_bool_with_signature(
+1191:                     program,
+1192:                     function,
+1193:                     contract,
+1194:                     &variables,
+1195:                     functions,
+1196:                     types,
+1197:                     None,
+1198:                     diagnostics,
+1199:                     "precondition",
+1200:                     signature_refusal::origin(program, template, function),
+1201:                 );
+1202:             }
+1203: 
+1204:             let (body_value, refusal_view) = check_expr_with_signature_view(
+1205:                 program,
+1206:                 function,
+1207:                 &function.body,
+1208:                 &mut variables,
+1209:                 functions,
+1210:                 types,
+1211:                 None,
+1212:                 true,
+1213:                 diagnostics,
+1214:                 Some(&byte_helpers),
+1215:                 fused_producer,
+1216:                 signature_refusal::origin(program, template, function),
+1217:             );
+1218:             if let Some(actual) = body_value {
+1219:                 if actual.native_unit {
+1220:                     reject_native_unit_value(program, &function.body, &actual, diagnostics);
+1221:                 }
+1222:                 if !actual.native_unit
+1223:                     && actual.ty != Type::Never
+1224:                     && actual.ty != function.return_type
+1225:                     && !return_unknown
+1226:                     && !refusal_view.is_some_and(|view| view.declared == &function.return_type)
+1227:                 {
+1228:                     diagnostics.push(error(
+1229:                         program,
+1230:                         "SPX-T103",
+1231:                         format!(
+1232:                             "function `{}` returns {}, but its signature declares {}",
+1233:                             function.name,
+1234:                             crate::source_verify::private_names::type_name(
+1235:                                 program, types, &actual.ty
+1236:                             ),
+1237:                             crate::source_verify::private_names::type_name(
+1238:                                 program,
+1239:                                 types,
+1240:                                 &function.return_type
+1241:                             )
+1242:                         ),
+1243:                         function.body.span,
+1244:                     ));
+1245:                 }
+1246:                 if actual.ty != Type::Never
+1247:                     && (actual.native_unit || actual.ty == function.return_type)
+1248:                     && types.needs_drop(&function.return_type)
+
+
+=== CURRENT src/source_verify/declaration/functions.rs:1287-1309 ===
+1287:                 });
+1288:                 require_bool_with_signature(
+1289:                     program,
+1290:                     function,
+1291:                     contract,
+1292:                     &variables,
+1293:                     functions,
+1294:                     types,
+1295:                     Some(&function.return_type),
+1296:                     diagnostics,
+1297:                     "postcondition",
+1298:                     signature_refusal::origin(program, template, function),
+1299:                 );
+1300:             }
+1301: 
+1302:             let declared: HashSet<_> = function.effects.iter().map(String::as_str).collect();
+1303:             let mut required_lifecycle_effects = BTreeSet::new();
+1304:             for param in &function.params {
+1305:                 if param.mode == ParamMode::Own {
+1306:                     required_lifecycle_effects
+1307:                         .extend(types.lifecycle_effects(&param.ty, import_keys));
+1308:                 }
+1309:             }
+
+
+=== CURRENT src/source_verify/declared_type.rs:844-864 ===
+844: pub(super) fn validation_specialize_function(
+845:     function: &Function,
+846:     arguments: &[Type],
+847: ) -> Option<Function> {
+848:     let mut specialized = function.clone();
+849:     for param in &mut specialized.params {
+850:         param.ty = substitute_function_type(function, arguments, &param.ty)?;
+851:     }
+852:     specialized.return_type = substitute_function_type(function, arguments, &function.return_type)?;
+853:     for expression in specialized
+854:         .requires
+855:         .iter_mut()
+856:         .chain(std::iter::once(&mut specialized.body))
+857:         .chain(&mut specialized.ensures)
+858:     {
+859:         substitute_forwarded_call_arguments(function, arguments, expression)?;
+860:     }
+861:     specialized.type_parameters.clear();
+862:     Some(specialized)
+863: }
+864: 
+
+
+=== CURRENT src/source_verify/declaration/functions/signature_refusal/tests.rs:477-627 ===
+477: #[test]
+478: fn actual_public_missing_generic_argument_keeps_all_primary_and_independent_contract_roots() {
+479:     let program = crate::parse(
+480:         &source("@id(\"t.f\") fn f<T>(b:Missing<T>)->i64 requires b requires missing_req ensures b ensures missing_post {b+missing_body}"),
+481:         Path::new("public-template-recovery.spx"),
+482:     ).unwrap();
+483:     let old = crate::source_verify::declaration::public_signature_before::verify(&program);
+484:     assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-T224"));
+485:     assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-T208"));
+486:     assert_eq!(
+487:         old.iter()
+488:             .filter(|diagnostic| diagnostic.code == "SPX-C101")
+489:             .count(),
+490:         2
+491:     );
+492:     let expected = old
+493:         .iter()
+494:         .filter(|diagnostic| matches!(diagnostic.code, "SPX-T220" | "SPX-T202"))
+495:         .cloned()
+496:         .collect::<Vec<_>>();
+497:     assert_eq!(
+498:         expected
+499:             .iter()
+500:             .filter(|diagnostic| diagnostic.code == "SPX-T220")
+501:             .count(),
+502:         1
+503:     );
+504:     assert_eq!(
+505:         expected
+506:             .iter()
+507:             .filter(|diagnostic| diagnostic.code == "SPX-T202")
+508:             .count(),
+509:         3
+510:     );
+511:     assert_eq!(crate::source_verify::verify(&program), expected);
+512: }
+513: 
+514: #[test]
+515: fn actual_public_generic_return_origin_removes_only_dependent_profile_body_and_result_failures() {
+516:     for result in ["Missing", "Missing<T>"] {
+517:         let program = crate::parse(
+518:             &source(&format!("@id(\"t.f\") fn f<T>()->{result} ensures result ensures 1 ensures missing_post {{1}}")),
+519:             Path::new("public-template-recovery.spx"),
+520:         ).unwrap();
+521:         let raw = &program.functions[0];
+522:         let old = crate::source_verify::declaration::public_signature_before::verify(&program);
+523:         assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-T224"));
+524:         assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-T103"));
+525:         assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-C101"
+526:             && diagnostic.span == Some(raw.ensures[0].span)));
+527:         let expected = old
+528:             .iter()
+529:             .filter(|diagnostic| {
+530:                 diagnostic.code != "SPX-T224"
+531:                     && diagnostic.code != "SPX-T103"
+532:                     && !(diagnostic.code == "SPX-C101"
+533:                         && diagnostic.span == Some(raw.ensures[0].span))
+534:             })
+535:             .cloned()
+536:             .collect::<Vec<_>>();
+537:         assert_eq!(codes(&expected), ["SPX-T220", "SPX-C101", "SPX-T202"]);
+538:         assert_eq!(crate::source_verify::verify(&program), expected);
+539:     }
+540:     let program = crate::parse(
+541:         &source("@id(\"t.pair\") record Pair<A>{@id(\"t.pair.value\") value:A,} @id(\"t.f\") fn f<T>()->Pair<Missing> ensures result {1}"),
+542:         Path::new("public-template-recovery.spx"),
+543:     ).unwrap();
+544:     let old = crate::source_verify::declaration::public_signature_before::verify(&program);
+545:     assert!(old.iter().any(|diagnostic| diagnostic.code == "SPX-T224"));
+546:     assert_eq!(crate::source_verify::verify(&program), old);
+547: }
+548: 
+549: #[test]
+550: fn paired_origin_requires_actual_binding_and_exact_return_receipt_including_foreign_and_stale_cases(
+551: ) {
+552:     let program = crate::parse(
+553:         &source("@id(\"t.f\") fn f<T>(b:Missing<T>)->Missing<T> ensures result {b}"),
+554:         Path::new("public-template-recovery.spx"),
+555:     )
+556:     .unwrap();
+557:     let raw = &program.functions[0];
+558:     let current =
+559:         crate::source_verify::declared_type::validation_specialize_function(raw, &[Type::I64])
+560:             .unwrap();
+561:     let types = TypeTable::new(&program);
+562:     let mut receipt = Vec::new();
+563:     crate::source_verify::declared_type::check_declared_type(
+564:         &program,
+565:         &raw.return_type,
+566:         raw.span,
+567:         &types,
+568:         &HashSet::from(["T"]),
+569:         &mut receipt,
+570:     );
+571:     assert_eq!(codes(&receipt), ["SPX-T220"]);
+572:     for field in 0..7 {
+573:         let mut forged = receipt.clone();
+574:         match field {
+575:             0 => forged[0].code = "SPX-T001",
+576:             1 => forged[0].severity = crate::diagnostic::Severity::Warning,
+577:             2 => forged[0].message = "forged".into(),
+578:             3 => forged[0].path = Some("foreign.spx".to_owned()),
+579:             4 => forged[0].span = None,
+580:             5 => forged[0].help = Some("forged".to_owned()),
+581:             6 => {}
+582:             _ => unreachable!(),
+583:         }
+584:         assert_eq!(
+585:             origin(&program, raw, &current)
+586:                 .unwrap()
+587:                 .return_refusal(&program, &current, &types, &forged)
+588:                 .is_some(),
+589:             field == 6
+590:         );
+591:     }
+592:     let foreign = program.clone();
+593:     let stale = current.clone();
+594:     let held = origin(&program, raw, &current).unwrap();
+595:     assert!(held
+596:         .return_refusal(&foreign, &current, &types, &receipt)
+597:         .is_none());
+598:     assert!(held
+599:         .return_refusal(&program, &stale, &types, &receipt)
+600:         .is_none());
+601:     let mut parameter_receipt = Vec::new();
+602:     crate::source_verify::declared_type::check_declared_type(
+603:         &program,
+604:         &raw.params[0].ty,
+605:         raw.params[0].span,
+606:         &types,
+607:         &HashSet::from(["T"]),
+608:         &mut parameter_receipt,
+609:     );
+610:     for altered in [false, true] {
+611:         let mut bindings = variables(&current);
+612:         if altered {
+613:             bindings.get_mut("b").unwrap().ty = Type::I64;
+614:         }
+615:         let mut recovery = crate::source_verify::recovery::Recovery::signature_origin(
+616:             &program,
+617:             &current,
+618:             &bindings,
+619:             &types,
+620:             &parameter_receipt,
+621:             &held,
+622:             None,
+623:         )
+624:         .unwrap();
+625:         assert_eq!(recovery.reads_known_refused(0, "b"), !altered);
+626:     }
+627: }
+
+
+=== COMPLETE ORIGINAL CONTRACT RECEIVER docs/evidence/public-template-recovery-799/src__source_verify__diagnostics.rs.before.txt:164-254 ===
+164: pub(super) fn require_bool(
+165:     program: &dyn ProgramSource,
+166:     function: &Function,
+167:     contract: &Expr,
+168:     variables: &HashMap<String, Binding>,
+169:     functions: &HashMap<&str, &Function>,
+170:     types: &TypeTable<'_>,
+171:     result_type: Option<&Type>,
+172:     diagnostics: &mut Vec<Diagnostic>,
+173:     kind: &str,
+174: ) {
+175:     contract.visit_calls(&mut |callee, span| {
+176:         if variables.contains_key(callee) { return; }
+177:         if let Some(target) = functions.get(callee) {
+178:             if !target.effects.is_empty() {
+179:                 diagnostics.push(
+180:                     error(
+181:                         program,
+182:                         "SPX-C102",
+183:                         format!(
+184:                             "{kind} on `{}` calls effectful function `{callee}` with effects {{{}}}",
+185:                             function.name,
+186:                             target.effects.join(", ")
+187:                         ),
+188:                         span,
+189:                     )
+190:                     .with_help("contracts must be deterministic and effect-free"),
+191:                 );
+192:             }
+193:         }
+194:     });
+195:     let mut contract_variables = variables.clone();
+196:     // No freshness from a body or previous clause enters this contract domain.
+197:     for binding in contract_variables.values_mut() {
+198:         binding.contract_local = false;
+199:     }
+200:     if let Some(ty) = result_type {
+201:         // A provisional owned result is readable only in this postcondition
+202:         // scope. It stays immutable and contract transfers still select O105.
+203:         if ty == &function.return_type
+204:             && (matches!(ty, Type::Bytes | Type::String)
+205:                 || matches!(ty, Type::Named { name, arguments }
+206:                 if name == "Result" && arguments.as_slice() == [Type::Bytes, Type::Bytes]))
+207:         {
+208:             contract_variables.insert(
+209:                 "result".to_owned(),
+210:                 Binding {
+211:                     contract_local: false,
+212:                     traversal_row: None,
+213:                     ty: ty.clone(),
+214:                     mode: ParamMode::Own,
+215:                     availability: Availability::Available,
+216:                     moved_places: HashMap::new(),
+217:                     definitely_partial: HashSet::new(),
+218:                     native_unit_discard: false,
+219:                     mutable: false,
+220:                     active_loans: BTreeSet::new(),
+221:                     borrow_origin: None,
+222:                 },
+223:             );
+224:         }
+225:     }
+226:     let (contract_value, refusal_view) = check_expr_with_helpers_view(
+227:         program,
+228:         function,
+229:         contract,
+230:         &mut contract_variables,
+231:         functions,
+232:         types,
+233:         result_type,
+234:         false,
+235:         diagnostics,
+236:         None,
+237:         None,
+238:     );
+239:     if let Some(value) = contract_value {
+240:         if value.native_unit {
+241:             reject_native_unit_value(program, contract, &value, diagnostics);
+242:         } else if value.ty != Type::Bool
+243:             && !refusal_view.is_some_and(|view| view.declared == &Type::Bool)
+244:         {
+245:             diagnostics.push(error(
+246:                 program,
+247:                 "SPX-C101",
+248:                 format!("{kind} on `{}` must be bool", function.name),
+249:                 contract.span,
+250:             ));
+251:         }
+252:     }
+253: }
+254: 
+
+
+=== CURRENT docs/SCOPED-DIAGNOSTIC-RECOVERY-V1.md:138-165 ===
+138: 
+139: Annotation refusal views are limited to immutable bindings. Mutable assignment
+140: flow keeps its full original diagnostics until a dependency join model exists.
+141: 
+142: The ordinary public generic producer retains its exact authored template
+143: while checking each validation-only scalar specialization. A private borrowed
+144: origin binds that ProgramSource subject, template pointer and specialized-body
+145: pointer. Body, requires and ensures entries pass this same origin. Receipt
+146: recovery rechecks a missing parameter in the template's real
+147: generic environment while retaining the actual specialized binding metadata;
+148: foreign subjects, stale bodies and all six-field receipt mismatches fail closed.
+149: The origin adds no function clone, owned backing or admission authority.
+150: A generic parameter profile does not issue a dependent shape refusal when the
+151: ordinary declared-type checker identifies an unresolved root identity. A known
+152: outer type with a missing nested component retains its independent profile
+153: refusal; known sibling profile errors remain independent. Declaration-recheck scratch, diagnostics and
+154: recovery directory storage remain ordinary unpaid verifier acquisitions; this
+155: change does not create physical funding or alter sticky budget receipts.
+156: 
+157: The specialized signature receiver pairs each authored parameter with the exact
+158: current parameter held by the producer origin. Binding equality uses the current
+159: type and mode; receipt rechecking uses the authored type and generic environment.
+160: This includes unresolved roots whose arguments contain substituted parameters.
+161: The same origin authenticates an unresolved root return through full diagnostic
+162: equality. Only the actual postcondition return carrier exposes that dependency
+163: through `result`; preconditions and bodies gain no result binding. Known outer
+164: return carriers retain independent profile failures. These paths add ordinary
+165: unpaid error scratch and directory storage, with no funding or layout claim.
+
+
+=== EXACT b2 PRODUCTION DIFF against f712 (old code complete in retained sources; compare changes) ===
+diff --git a/src/source_verify/declaration/functions.rs b/src/source_verify/declaration/functions.rs
+index 5962bfa50..eee8a3dee 100644
+--- a/src/source_verify/declaration/functions.rs
++++ b/src/source_verify/declaration/functions.rs
+@@ -381,6 +381,13 @@ pub(super) fn check_function_declarations<'p>(
+                 && !collection
+                 && !generic_function_signature_slot(&function.return_type, &parameter_names)
+                 && !generic_function_owned_record_slot(function, &function.return_type, types)
++                && !signature_refusal::unknown_component(
++                    program,
++                    &function.return_type,
++                    function.span,
++                    types,
++                    &parameter_names,
++                )
+             {
+                 diagnostics.push(error(
+                     program,
+@@ -1076,6 +1083,10 @@ pub(super) fn check_function_bodies<'p>(
+         };
+         let mut specialized_diagnostics = HashSet::new();
+         for function in specializations.iter() {
++            let return_unknown = return_unknown
++                || signature_refusal::origin(program, template, function)
++                    .and_then(|origin| origin.return_refusal(program, function, types, diagnostics))
++                    .is_some();
+             let specialized_diagnostic_start = diagnostics.len();
+             let mut variables = HashMap::new();
+             if function.return_type == Type::Str {
+diff --git a/src/source_verify/iterative/enter.rs b/src/source_verify/iterative/enter.rs
+index d3244d384..f3d6f065f 100644
+--- a/src/source_verify/iterative/enter.rs
++++ b/src/source_verify/iterative/enter.rs
+@@ -132,6 +132,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
+                     )?))
+             }
+             ExprKind::Var(name) if name == "result" => {
++                if self.result_type.is_some() && self.recovery.reads_value(scope, name, expression)
++                {
++                    self.values.push(None);
++                    return Ok(());
++                }
+                 let value = self
+                     .result_type
+                     .map(|ty| CheckedValue::returned(ty.clone(), self.types.needs_drop(ty)));

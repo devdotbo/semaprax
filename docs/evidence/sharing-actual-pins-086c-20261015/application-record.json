@@ -1,0 +1,11 @@
+{
+  "producer_source": "086c4f1ee917199424f06f37d0f943b693d7e776",
+  "application_head_before": "521e847358da243a16c4d7fa1f31d1ca5fdba11b",
+  "literal_edits": 11,
+  "all_target_old_bytes_preflighted": true,
+  "all_candidate_bytes_matched": true,
+  "producer_reexecuted_at_application_head": false,
+  "public_fixture_builder_delta": 744,
+  "application_recovery": false,
+  "exclusive_cause_or_efficiency_claim": false
+}

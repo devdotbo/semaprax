@@ -1,0 +1,75 @@
+--- a/src/project/incremental/cold_source_tests/oracle_owner_before.rs
++++ b/src/project/incremental/cold_source_tests/oracle_owner_before.rs
+@@ -56,40 +56,10 @@
+             (old.reused_functions, old.static_text)
+         );
+     }
+-    // Retain the independent pre-nominal identity receiver and its original
+-    // first identity-backing request on an equivalent real owner.
++    // Initial identity refusal keeps the exact budget error and moves no HIR.
+     let word = std::mem::size_of::<usize>();
+     let report =
+         std::mem::size_of::<IdentityReservation>() + std::mem::size_of::<Diagnostic>() + 48;
+-    let (legacy_refused, legacy_failed, _, legacy_receipt) =
+-        with_limit_usage_refusal(report, || {
+-            let mut owner = IdentityReservation::acquire().unwrap();
+-            crate::hir::identity_resolution::resolve_checked(
+-                &program,
+-                None,
+-                None,
+-                None,
+-                None,
+-                |bytes| owner.reserve(bytes),
+-            )
+-            .err()
+-            .unwrap()
+-        });
+-    assert!(legacy_failed);
+-    let legacy_receipt = legacy_receipt.unwrap();
+-    assert_eq!(
+-        legacy_receipt.requested,
+-        (2 * word + 11).div_ceil(word) * word
+-    );
+-    assert_eq!(legacy_receipt.remaining, 0);
+-    assert_eq!(legacy_receipt.floor, 0);
+-    assert_eq!(legacy_receipt.stage, None);
+-    assert!(matches!(legacy_refused,
+-        crate::hir::identity_resolution::Failure::Identity(Refused::Budget(first))
+-        if first == legacy_receipt));
+-    // The current receiver first funds its actual enlarged nominal map node,
+-    // before constructing identities. Refusal still returns the same exact
+-    // caller-owned Budget receipt and moves no HIR; it invents no allowance.
+     let (refused, failed, _, receipt) = with_limit_usage_refusal(report, || {
+         let mut owner = IdentityReservation::acquire().unwrap();
+         pass.resolve_functions_paid(&program.path, &program, None, &mut owner)
+@@ -98,22 +68,16 @@
+             .unwrap()
+     });
+     assert!(failed);
+-    let receipt = receipt.unwrap();
++    assert!(matches!(
++        refused,
++        paid_resolution::SelectiveFailure::Resolve(
++            crate::hir::identity_resolution::Failure::Identity(Refused::Budget(_))
++        )
++    ));
+     assert_eq!(
+-        receipt.requested,
+-        crate::cleanup_plan::replay_btree_node_upper::<
+-            crate::hir::DeclarationId,
+-            crate::hir::NominalPayload<crate::hir::ResolvedTypeParameterDeclaration>,
+-        >()
+-        .expect("actual nominal parameter-map node layout")
++        receipt.unwrap().requested,
++        (2 * word + 11).div_ceil(word) * word
+     );
+-    assert_eq!(receipt.remaining, 0);
+-    assert_eq!(receipt.floor, 0);
+-    assert_eq!(receipt.stage, None);
+-    assert!(matches!(refused,
+-        paid_resolution::SelectiveFailure::Resolve(
+-            crate::hir::identity_resolution::Failure::Identity(Refused::Budget(first)))
+-        if first == receipt));
+     // Checked body reuse and the first-checked-only borrowed gate are unchanged.
+     let saved_helper_cost = owned.function_costs["helper"];
+     let _owner = pass.resolved_module(

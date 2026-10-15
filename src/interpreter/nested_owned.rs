@@ -1,5 +1,10 @@
 //! Runtime-only support for the verifier-authenticated acyclic nested record profile.
 
+mod copy_record_match;
+pub(super) use copy_record_match::{
+    admitted as copy_record_scalar_match, bind as bind_copy_record_pattern,
+};
+
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
@@ -42,7 +47,8 @@ pub(super) fn record_update_is_admitted(
     else {
         return false;
     };
-    if declaration != record
+    if hir::owned_collection_record::admitted(result, declarations)
+        || declaration != record
         || !classify_record(declarations, result)
             .is_some_and(|profile| profile.has_bytes || profile.has_variant)
     {
@@ -218,6 +224,25 @@ fn validate_runtime_value(
             if crate::map_ops::is_collection(expected)
                 && &map.ty == expected
                 && (!require_unique || Arc::strong_count(map) == 1) =>
+        {
+            Ok(())
+        }
+        (ResolvedType::Nominal { arguments, .. }, Value::Vec(vector))
+            if hir::owned_collection_record::vector(declarations, expected)
+                && arguments.first() == Some(&vector.element)
+                && vector.generation != 0
+                && vector.values.len() <= vector.capacity
+                && vector.capacity
+                    <= hir::owned_leaf_collection::capacity(declarations, &vector.element)
+                        as usize
+                && (!require_unique || Arc::strong_count(vector) == 1)
+                && vector.values.iter().all(|value| {
+                    super::owned_vec::element_value_matches_type(
+                        declarations,
+                        value,
+                        &vector.element,
+                    )
+                }) =>
         {
             Ok(())
         }
@@ -555,6 +580,16 @@ fn classify_record(
                     return None;
                 }
             }
+            Frame::Enter(ty, _) if hir::owned_collection_record::vector(declarations, &ty) => {
+                if !hir::owned_collection_record::admitted(root, declarations) {
+                    return None;
+                }
+                profile.has_bytes = true;
+                owned_leaves = owned_leaves.checked_add(1)?;
+                if owned_leaves > crate::cleanup::MAX_CLEANUP_OWNED_LEAVES {
+                    return None;
+                }
+            }
             Frame::Enter(ty, _) if super::is_admitted_resolved_scalar(&ty) => {}
             Frame::Enter(ty, _) if super::is_admitted_fieldless_variant(declarations, &ty) => {
                 profile.has_variant = true;
@@ -613,6 +648,7 @@ fn pattern_is_exact(
     pattern: &hir::ResolvedMatchPattern,
     _active: &mut BTreeSet<hir::DeclarationId>,
 ) -> bool {
+    let expected_root = ty;
     enum Frame<'a> {
         Enter {
             ty: ResolvedType,
@@ -699,14 +735,23 @@ fn pattern_is_exact(
                 return false;
             };
             let owns = (matches!(declared_ty, ResolvedType::Bytes | ResolvedType::String)
-                || crate::map_ops::is_collection(&declared_ty))
+                || crate::map_ops::is_collection(&declared_ty)
+                || hir::owned_collection_record::vector(declarations, &declared_ty))
                 || classify_record(declarations, &declared_ty)
                     .is_some_and(|profile| profile.has_bytes);
             match &field.pattern {
                 hir::ResolvedRecordMatchFieldPattern::Binding(binding) => {
+                    let subtree = mode == hir::ResolvedMatchMode::Own
+                        && hir::owned_record_subtree::admitted(
+                            declarations,
+                            expected_root,
+                            &declared_ty,
+                        );
                     if owns
+                        && !subtree
                         && !(matches!(declared_ty, ResolvedType::Bytes | ResolvedType::String)
-                            || crate::map_ops::is_collection(&declared_ty))
+                            || crate::map_ops::is_collection(&declared_ty)
+                            || hir::owned_collection_record::vector(declarations, &declared_ty))
                     {
                         return false;
                     }
@@ -734,7 +779,8 @@ fn pattern_is_exact(
                     fields,
                 } => {
                     if (matches!(declared_ty, ResolvedType::Bytes | ResolvedType::String)
-                        || crate::map_ops::is_collection(&declared_ty))
+                        || crate::map_ops::is_collection(&declared_ty)
+                        || hir::owned_collection_record::vector(declarations, &declared_ty))
                         || classify_record(declarations, &declared_ty).is_none()
                     {
                         return false;
@@ -771,9 +817,11 @@ fn value_needs_drop(value: &Value) -> bool {
     let mut pending = vec![value];
     while let Some(value) = pending.pop() {
         match value {
-            Value::Bytes(_) | Value::String(_) | Value::Map(_) | Value::Collection(_) => {
-                return true
-            }
+            Value::Bytes(_)
+            | Value::String(_)
+            | Value::Map(_)
+            | Value::Collection(_)
+            | Value::Vec(_) => return true,
             Value::Record(record) => pending.extend(record.fields.values()),
             _ => {}
         }
@@ -791,16 +839,17 @@ fn borrow_alias(value: &Value) -> Result<Value, Flow> {
         Value::Float32(value) => Value::Float32(*value),
         Value::Float64(value) => Value::Float64(*value),
         Value::Bool(value) => Value::Bool(*value),
-        Value::Bytes(value) => Value::Bytes(value.clone()),
+        Value::Bytes(value) => Value::Bytes(value.borrow_alias()?),
         Value::String(value) => Value::String(value.clone()),
         Value::Map(value) => Value::Map(Arc::clone(value)),
         Value::Collection(value) => Value::Collection(Arc::clone(value)),
+        Value::Vec(value) => Value::Vec(Arc::clone(value)),
         Value::Record(value) => Value::Record(Arc::clone(value)),
         Value::Variant(value) if value.fields.is_empty() => Value::Variant(Arc::clone(value)),
         _ => {
             return Err(Flow::Guard(
                 "borrowed nested record contains a closed value kind",
-            ))
+            ));
         }
     })
 }
@@ -1066,5 +1115,33 @@ pub(super) fn arm_case_patterns(
             Some(alternatives)
         }
         _ => None,
+    }
+}
+
+impl Evaluator<'_> {
+    pub(super) fn borrow_nominal_call_argument(
+        &mut self,
+        environment: &Environment,
+        argument: &hir::ResolvedExpr,
+    ) -> Result<Value, Flow> {
+        let hir::ResolvedExprKind::Place(place) = &argument.kind else {
+            return Err(Flow::Guard(
+                "borrowed record call argument is not an exact place",
+            ));
+        };
+        if !place.projections.is_empty()
+            && !(hir::owned_collection_record::vector(self.declarations, &argument.ty)
+                && hir::owned_collection_record::projected_field(
+                    self.declarations,
+                    place,
+                    &argument.ty,
+                ))
+        {
+            return Err(Flow::Guard(
+                "borrowed vector call field path is unauthenticated",
+            ));
+        }
+        self.lookup_place(environment, place)?
+            .ok_or(Flow::Guard("borrowed record call owner is unavailable"))
     }
 }

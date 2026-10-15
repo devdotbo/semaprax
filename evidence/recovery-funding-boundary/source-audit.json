@@ -1,0 +1,220 @@
+{
+  "base_commit": "182482621259ce5ad6ed1538b641850956754ee5",
+  "result": "authorized precise-design plus executable-boundary fallback; recovery payment remains unimplemented",
+  "production_semantics_modified": false,
+  "no_cargo_build_tests_clippy_or_fullgate": true,
+  "no_frozen_primary_or_target_edits": true,
+  "independent_original_receivers_byte_exact": {
+    "src/source_verify/recovery_legacy/records.rs": "1877ed286aa2ecfb5d94b4233a6c3b7d9740fb8c41b43d8a043d99ae431da43a",
+    "src/source_verify/recovery_legacy/enter.rs": "097cd8de63fb4798d4ba64a166d74a6f8c8762d0e897285edf5cb4f4359a2ad6",
+    "src/source_verify/recovery_legacy/blocks.rs": "58b08e6ea668a08b32afe22cf0311c402bc50457c3e61474b8ed6bdcd8697eca",
+    "src/source_verify/recovery_legacy/operators.rs": "6089f5a212a04c7942327125dbac2e3e3738ff79594a4cbc7ed022c474b01ba2",
+    "src/source_verify/recovery_legacy/match_arms.rs": "75b17aa5ec28808c382d2c5bfa4ab6a91ddcbd804f1fc96f3092020bd409f7a4",
+    "src/source_verify/oracle/intrinsic_calls.rs": "600dbf30cec0f6ef63dbabd65cfddf24fb34727ae15249b3ced53f3df842cc10",
+    "src/source_verify/oracle/stdin_stream.rs": "23e4aacebc2779d8751c9462227e01189216c3b05e4caf8708f3dd2abe5568e4",
+    "src/source_verify/oracle/calls.rs": "d22054818db87790cae7dc7432bd3af9dc16d3d9f822c37cdb6e12e60d26b215",
+    "src/source_verify/oracle/while_oracle.rs": "bb18949b8bf93dbdfe07208364df7a4ff93a0849737372d4d21eea0ccd64d68e",
+    "src/source_verify/oracle/for_traversal.rs": "32d67e092d9876f4c5257c2c0016cc1217ff698816894b6321666fe0851ad934",
+    "src/source_verify/oracle/lexical_exit.rs": "df786885f1066bbf52549d597395deaffded312538c3f6b0d49a3df42a723df9",
+    "src/source_verify/oracle/matching.rs": "b74e37cbf3cba3158c85d83885c9053b4bef67b4c5c43567fc588409dbe7db65",
+    "src/source_verify/recovery_tests/boundaries.rs": "85c893651f965a4dbffd5c3d517380a1902735e94d29ae2e42db795ab759ed21",
+    "src/source_verify/recovery_tests/fixture_controls.rs": "0d636443bdc036960534bb14d64c35e30b9b7c8a1c6893cc9b37224470e0c7c2",
+    "src/source_verify/recovery_tests/intentional_wrong_field.rs": "9d521d2c61f70042e8112b51027867fa1bb5b8eac0eec30887a81c7cc4d49777",
+    "src/source_verify/recovery_tests/proposal_corpus.rs": "73c0721f74f438c7f8b28d03224f7c1c8644d80c41d379b8afd269a3dc6a6e00",
+    "src/source_verify/recovery_tests/refusal_dependency.rs": "8d9628a07dbddc55b72c18e84c5cbe08695f6a9e69e2fedeef3ea0dae681f791",
+    "src/source_verify/recovery.rs": "28749233eb88664b1bde9e3f0669d79a4235c3bf3bf72a1cc224274edc7b7c68",
+    "src/source_verify/recovery_legacy.rs": "c35a0515135481cecf071f650c4d0bfe79fa12294cf2b4ddda5aa26060c4ff40",
+    "src/source_verify/oracle.rs": "62161094697c8b86a2aa3b04ae03f2a3c9c26e8fa1b160dcbffb1b0bfcb67123",
+    "src/source_verify/declaration/old.rs": "e02437199273c46d949ab916f08c305a470bfe77750d67003f218b50308969d8",
+    "src/source_verify/declaration/functions/old.rs": "05ae0a4f9a612275189c7cdeaa377fb672fc6b7f241fb62dbd78ae682b3e56ac",
+    "src/source_verify/declared_type.rs": "49f7b8c7c1dddf800981e8f911647e979d276b6dec234fa0f80856f49975a720",
+    "src/source_verify/iterative.rs": "8bc16b846d6ce4b01d9bdbe73c15efca61b3d8c9b1ed13afc233f50ca748c241",
+    "src/source_verify.rs": "910729a79aa1d5d6e37e0dd8cbf8ec0656fdc6ce6a109390fe874e774e6d5aea"
+  },
+  "source_inventory": {
+    "actual_receiver": "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions",
+    "validation_missing_before": [
+      "src/hir/validation/owned_iterative_oracle.rs",
+      "src/hir/validation/contract_owners.rs",
+      "src/hir/validation/record_pattern.rs"
+    ],
+    "validation_missing_after": [],
+    "real_join_additions": [
+      "src/hir/validation/contract_owners.rs",
+      "src/hir/validation/contract_owners/tests.rs",
+      "src/hir/validation/contract_owners/tests/old.rs",
+      "src/hir/validation/owned_iterative_oracle.rs",
+      "src/hir/validation/owned_iterative_oracle/dispatch_0.rs",
+      "src/hir/validation/owned_iterative_oracle/dispatch_1.rs",
+      "src/hir/validation/owned_iterative_oracle/dispatch_2.rs",
+      "src/hir/validation/owned_iterative_oracle/dispatch_3.rs",
+      "src/hir/validation/record_pattern.rs",
+      "src/hir/validation/record_pattern/binding_path.rs",
+      "src/hir/validation/record_pattern/owned.rs",
+      "src/hir/validation/record_pattern/tests.rs",
+      "src/source_verify/recovery_tests/funding_boundary.rs"
+    ],
+    "original_includes_preserved": true,
+    "baseline_tsv_changed": false,
+    "acknowledgements_changed": false,
+    "joined_existing_bodies_byte_exact": {
+      "src/hir/validation/contract_owners.rs": "f39add68637dc98dc6571dff997e2c55f4a7e538601fa68a8ec695cc1093f85f",
+      "src/hir/validation/contract_owners/tests.rs": "40dfc584ee3b5b4fcf0015ac918d762560b3ff0f1143bdb4c29526d1b244f765",
+      "src/hir/validation/contract_owners/tests/old.rs": "15cfa7504925e9757e66285abec33f9e4f225066a7fffe2ce6a3a05d5849ce76",
+      "src/hir/validation/owned_iterative_oracle.rs": "cdf318d4b28a914cecd51e68247959906f7823cb9b3f1256904a971e10444b65",
+      "src/hir/validation/owned_iterative_oracle/dispatch_0.rs": "08a89606c39156a5d9263488f56e77516b575ad9ebccd1e1a066f0d55f6d29b2",
+      "src/hir/validation/owned_iterative_oracle/dispatch_1.rs": "1b53d3ee59cf630af7d69bb1cff6498883b595b0b2ea9cbed6eb07675145be08",
+      "src/hir/validation/owned_iterative_oracle/dispatch_2.rs": "4efa2b64013dce1180ea6f9a023057890016d85e3973289e79428ac1e61eda01",
+      "src/hir/validation/owned_iterative_oracle/dispatch_3.rs": "14cfa942f87b784695deaa5977be6487584459e745463d331d25db024dd67c19",
+      "src/hir/validation/record_pattern.rs": "280bc1133bcc4f8e5fb6ec3f7daf4a1f2a16022e3c676b14f923e89d629f12f3",
+      "src/hir/validation/record_pattern/binding_path.rs": "1b8a6a7f7a4ad560506afbabd3bf568ecbd37f5a220274ae2ea70f5c4d526e2a",
+      "src/hir/validation/record_pattern/owned.rs": "da485250697c4d23422df264e216efbedaf4e7947707be87966db617cbf3da71",
+      "src/hir/validation/record_pattern/tests.rs": "72b7b522b640f3fe8b4392412ab06c382b81bc3b4721f490924e68ee39efd765"
+    }
+  },
+  "claude": [
+    {
+      "lane": "/Volumes/Semaprax/lane-prompts/claude-recovery-funding-20261013",
+      "process": {
+        "exit_code": 0,
+        "wall_seconds": 101.37944137500017,
+        "tools_enabled": false,
+        "code_execution": false,
+        "peak_process_group_rss_bytes": 281083904,
+        "resource_refusal": null
+      },
+      "model_usage": {
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 14304,
+          "cacheReadInputTokens": 535,
+          "cacheCreationInputTokens": 86731,
+          "webSearchRequests": 0,
+          "costUSD": 0.4900215,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 7410,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 86731,
+        "cache_read_input_tokens": 535,
+        "output_tokens": 14304,
+        "output_tokens_details": {
+          "thinking_tokens": 7410
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 86731,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 14304,
+            "cache_read_input_tokens": 535,
+            "cache_creation_input_tokens": 86731,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 86731
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "list_price_cost_usd_not_invoice": 0.4900215,
+      "prompt_sha256": "04e3651fc3da6272e85184cec25bddd59e7cf079960890a07b89fa425e2d46f4",
+      "result_sha256": "7418fcbadbb5646c601bb84dbf24bb9820d856422c7544a400f6494cf4e0f7e1"
+    },
+    {
+      "lane": "/Volumes/Semaprax/lane-prompts/claude-recovery-funding-20261013-review",
+      "process": {
+        "exit_code": 0,
+        "wall_seconds": 182.4933727079988,
+        "tools_enabled": false,
+        "code_execution": false,
+        "peak_process_group_rss_bytes": 278740992,
+        "resource_refusal": null
+      },
+      "model_usage": {
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 25560,
+          "cacheReadInputTokens": 535,
+          "cacheCreationInputTokens": 28413,
+          "webSearchRequests": 0,
+          "costUSD": 0.36930949999999996,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 23847,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 28413,
+        "cache_read_input_tokens": 535,
+        "output_tokens": 25560,
+        "output_tokens_details": {
+          "thinking_tokens": 23847
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 28413,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 25560,
+            "cache_read_input_tokens": 535,
+            "cache_creation_input_tokens": 28413,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 28413
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "list_price_cost_usd_not_invoice": 0.36930949999999996,
+      "prompt_sha256": "3c2b7e4c05e30604fc86e2c9676b134d483c152eb5e0b4d5eb8f0cab8279f335",
+      "result_sha256": "68eb1c351b249dc3531a79ca41124de7b28ae6ba9a947a54633d1cd18f7a9f86"
+    }
+  ],
+  "combined_list_price_cost_usd_not_invoice": 0.859331,
+  "sol_repairs": [
+    "observer type Metrics; removed invalid IntoPair shim",
+    "known-refused signature lookup and valid probe/main fixture",
+    "all six diagnostic fields explicitly compared",
+    "complete receiving diagnostics Drop inside observation",
+    "actual baseline Metrics equality and both cumulative/peak exact-one-short probes",
+    "sticky first receipt preserved and no consultation overclaim"
+  ],
+  "changed_rust_line_counts": {
+    "src/source_verify/recovery_tests/funding_boundary.rs": 353,
+    "src/source_verify/recovery_tests.rs": 306,
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": 979
+  },
+  "graft": "Attempted first; private graph refresh blocked by EPERM; no wiring graph/hits, bounded exact-source fallback used. No graph edits."
+}

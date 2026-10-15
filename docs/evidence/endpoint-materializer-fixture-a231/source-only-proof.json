@@ -1,0 +1,8 @@
+{
+  "source_basis": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+  "rust_execution": false,
+  "current_caller_complete_projection_matches_unchanged_archive": true,
+  "archive_sha256": "47bec8003e7c5e7056edd1a3beeadddc355c9d422fdf184df71d1d3f0b9e7f0b",
+  "archive_bytes": 12556,
+  "old_materializer_unchanged": true
+}

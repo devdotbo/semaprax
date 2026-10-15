@@ -4,17 +4,9 @@ use super::*;
 use crate::hir::{ResolvedMatchMode, ResolvedMatchPattern};
 
 pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
-    let mut available = BTreeMap::new();
-    for declaration in &program.types {
-        if available
-            .insert(declaration.id.clone(), declaration.clone())
-            .is_some()
-        {
-            return Err(admission(
-                "Public Scalar Export Profile v1 internal record identity is duplicated",
-            ));
-        }
-    }
+    let available = hir::BorrowedTypeInventory::collect(&program.types).map_err(|_| {
+        admission("Public Scalar Export Profile v1 internal record identity is duplicated")
+    })?;
     let functions = program
         .functions
         .iter()
@@ -187,6 +179,7 @@ pub(super) fn validate_expression(
             return Err(body_error(function_id));
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { .. } => return Err(body_error(function_id)),
             ResolvedExprKind::Closure { .. }
             | ResolvedExprKind::FunctionReference { .. }
             | ResolvedExprKind::Invoke { .. } => {
@@ -202,7 +195,12 @@ pub(super) fn validate_expression(
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_) => {}
-            ResolvedExprKind::String(_) => return Err(body_error(function_id)),
+            ResolvedExprKind::VecConstructor { .. }
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
+            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::LiteralFormat { .. }
+            | ResolvedExprKind::VecFieldRead { .. }
+            | ResolvedExprKind::RowLoan { .. } => return Err(body_error(function_id)),
             ResolvedExprKind::Place(place) => {
                 if !place.projections.is_empty() {
                     return Err(body_error(function_id));
@@ -264,9 +262,13 @@ pub(super) fn validate_expression(
                             value,
                             ..
                         } if super::scalar_type(&binding.ty).is_some() => pending.push(value),
-                        ResolvedStatement::Assign { .. }
+                        ResolvedStatement::CopyDiscard { .. }
+                        | ResolvedStatement::Assign { .. }
                         | ResolvedStatement::Unsafe { .. }
-                        | ResolvedStatement::While { .. } => return Err(body_error(function_id)),
+                        | ResolvedStatement::While { .. }
+                        | ResolvedStatement::LexicalWhile { .. } => {
+                            return Err(body_error(function_id))
+                        }
                     }
                 }
                 pending.push(tail);

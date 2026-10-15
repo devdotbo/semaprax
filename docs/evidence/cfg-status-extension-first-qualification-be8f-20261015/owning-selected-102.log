@@ -1,0 +1,15 @@
+
+running 1 test
+test workspace_graph::identity_resolution::base::vector_tests::all_admitted_core_prefixes_keep_full_old_hir_wire_payload_owners_and_final_drop ... 
+thread 'workspace_graph::identity_resolution::base::vector_tests::all_admitted_core_prefixes_keep_full_old_hir_wire_payload_owners_and_final_drop' (3330276) panicked at src/workspace_graph/identity_resolution/base/vector_tests.rs:146:68:
+called `Result::unwrap()` on an `Err` value: [Diagnostic { code: "SPX-T001", severity: Error, message: "unknown type `Box`; declare it with `resource Box;`", path: Some("extension-prefix.spx"), span: Some(Span { start: 34, end: 35, line: 1, column: 35 }), help: None }, Diagnostic { code: "SPX-O002", severity: Error, message: "ownership mode `borrow` is only valid for resource types; `Box<i64>` is a value type", path: Some("extension-prefix.spx"), span: Some(Span { start: 34, end: 35, line: 1, column: 35 }), help: None }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    workspace_graph::identity_resolution::base::vector_tests::all_admitted_core_prefixes_keep_full_old_hir_wire_payload_owners_and_final_drop
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8788 filtered out; finished in 0.07s
+

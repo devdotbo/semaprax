@@ -66,7 +66,7 @@ impl Resolver<'_> {
             .monomorphic_declaration()
             .and_then(|id| {
                 self.program
-                    .functions
+                    .functions()
                     .iter()
                     .find(|f| f.stable_id == id.as_str())
             })
@@ -124,7 +124,7 @@ impl Resolver<'_> {
                     || (super::super::function_value::scalar(&captured.ty)
                         || super::super::generic_collection::parameter(
                             &captured.ty,
-                            &DeclarationId::new(source_function.stable_id.clone()),
+                            &self.declarations.held_identity(&source_function.stable_id),
                             source_function.type_parameters.len(),
                         )))
             {
@@ -142,6 +142,7 @@ impl Resolver<'_> {
             bindings.insert(
                 name,
                 Binding {
+                    traversal_row: None,
                     id: binding.id.clone(),
                     ty: binding.ty.clone(),
                     ownership,
@@ -175,6 +176,7 @@ impl Resolver<'_> {
             bindings.insert(
                 param.name.clone(),
                 Binding {
+                    traversal_row: None,
                     id: binding.id.clone(),
                     ty: binding.ty.clone(),
                     ownership: OwnershipMode::Value,
@@ -232,7 +234,7 @@ impl Resolver<'_> {
                     let ResolvedType::TypeParameter { owner, .. } = &binding.ty else {
                         continue;
                     };
-                    if let Some(function) = self.program.functions.iter().find(|function| {
+                    if let Some(function) = self.program.functions().iter().find(|function| {
                         function.stable_id == owner.as_str()
                             && function
                                 .type_parameters

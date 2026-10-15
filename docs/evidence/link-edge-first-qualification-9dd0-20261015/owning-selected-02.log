@@ -1,0 +1,16 @@
+
+running 1 test
+test workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core ... 
+thread 'workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core' (3125331) panicked at src/cleanup_plan/replay/factored.rs:826:9:
+factored skeleton comparison disagrees with enumeration for `proof.f22`: Err("cleanup plan for function `proof.f22` failed independent replay: cleanup replay physical reservation exhausted during typed HIR continuation stack")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+core-proof-active-receipt width=33 depth=32 consumed=67088599 refused=true first=Some(ReservationRefusal { requested: 70176, remaining: 20265, floor: 0, stage: None })
+FAILED
+
+failures:
+
+failures:
+    workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8765 filtered out; finished in 0.33s
+

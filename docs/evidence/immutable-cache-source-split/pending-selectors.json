@@ -1,0 +1,90 @@
+{
+  "executed": false,
+  "selectors": [
+    {
+      "harness": "lib",
+      "selector": "workspace_graph::custody::tests::actual_custody_receiving_backing_complete_drop_exact_short_and_zero_sticky",
+      "source_path": "src/workspace_graph/custody/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "workspace_graph::custody::tests::deferred_key_reads_only_after_exact_restored_custody_and_rejects_equal_clone",
+      "source_path": "src/workspace_graph/custody/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "workspace_graph::custody::tests::metadata_does_not_retain_ast_generations_and_deferred_receipt_keeps_original_payer",
+      "source_path": "src/workspace_graph/custody/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "project::incremental::source_receiver_original::complete_original_source_receivers_keep_owned_clone_and_same_source_retention",
+      "source_path": "src/project/incremental/source_receiver_original.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "project::incremental::source_receiver_original::full_original_source_receiver_bodies_are_exact_saved_text",
+      "source_path": "src/project/incremental/source_receiver_original.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "project::incremental::source_directory::tests::immutable_current_directory_keeps_full_order_lookup_and_receiving_identity",
+      "source_path": "src/project/incremental/source_directory.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::identity_resolution::previous_source::tests::full_source_checked_previous_receiver_is_exact_original_with_named_input_hooks",
+      "source_path": "src/hir/identity_resolution/previous_source.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "ast::program_source::decl_slices_original::tests::complete_contiguous_receiver_keeps_original_forward_reverse_suffix_and_index_order",
+      "source_path": "src/ast/program_source/decl_slices_original.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "ast::program_source::decl_slices_original::tests::selected_authored_ordinals_keep_full_values_and_generated_suffix_without_a_second_directory",
+      "source_path": "src/ast/program_source/decl_slices_original.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "workspace_graph::tests::cache_stage_debits::original_row_loan_checked_cold_and_warm_preserve_ordinary_graph_with_exact_stage_debits",
+      "source_path": "src/workspace_graph/tests/cache_stage_debits.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "workspace_graph::tests::cache_stage_debits::original_mixed_byte_traversal_checked_cold_and_warm_preserve_ordinary_graph_with_exact_stage_debits",
+      "source_path": "src/workspace_graph/tests/cache_stage_debits.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "project::incremental::snapshot::borrowed_encoding::tests::borrowed_snapshot_matches_independent_owned_wire_and_full_warm_replay",
+      "source_path": "src/project/incremental/snapshot/borrowed_encoding.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "project::incremental::checked_hir::tests::cold_and_warm_checked_owner_preserves_body_pointer_and_exact_source_guards",
+      "source_path": "src/project/incremental/checked_hir/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "project::incremental::cold_source_tests::checked_cold_source_preserves_limits_costs_current_key_and_body_reuse_fallback",
+      "source_path": "src/project/incremental/cold_source_tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "bounded_output::prepaid::tests::strict_foreign_payer_and_deferred_original_sticky_refusals_are_preserved",
+      "source_path": "src/bounded_output/prepaid.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "bounded_output::source_owner_scope::tests::source_owner_callback_restores_ambient_and_reports_complete_real_debits",
+      "source_path": "src/bounded_output/source_owner_scope.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "bounded_output::source_owner_scope::tests::source_owner_refusal_is_first_sticky_and_has_no_payer_substitution",
+      "source_path": "src/bounded_output/source_owner_scope.rs"
+    }
+  ]
+}

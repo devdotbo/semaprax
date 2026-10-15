@@ -1,0 +1,93 @@
+{
+  "commit": "d93d7613700eda77bc6d34714e91a4e4c4820bb9",
+  "source_sharing_authorized": true,
+  "tools": false,
+  "files": [
+    {
+      "source": "src/workspace_graph/constructor_failure.rs",
+      "first_line": 1,
+      "last_line": 79,
+      "selected_bytes": 2990,
+      "selected_sha256": "dbc0a8e8da3d168ad5b5bbe3ef9a950e36aad762e78a977e700995e8ad65f864"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/defaults/inline.rs",
+      "first_line": 1,
+      "last_line": 152,
+      "selected_bytes": 6285,
+      "selected_sha256": "b91f7cb165ac3806770aac15b7df941acaaf92c3fcd02d4fe04df7a69994cdec"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/defaults/inline_fields.rs",
+      "first_line": 1,
+      "last_line": 72,
+      "selected_bytes": 2881,
+      "selected_sha256": "959f964c2411a476a8e8e4aa6b7a1955e6e7606f2d160ae2990a3211b58b50f7"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/borrowed_imports/inline.rs",
+      "first_line": 1,
+      "last_line": 226,
+      "selected_bytes": 8646,
+      "selected_sha256": "2ec35500f7636cd17a12560f0da8d1a83f315f413fd95e241cbfd546aedf01cd"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/defaults/inline_tests.rs",
+      "first_line": 1,
+      "last_line": 373,
+      "selected_bytes": 15428,
+      "selected_sha256": "400913a814ca07438c851557d1a7551aec2a283ca88a63c3f08fb32baa8ef5e9"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/import_stub.rs",
+      "first_line": 145,
+      "last_line": 235,
+      "selected_bytes": 3602,
+      "selected_sha256": "0a8157f75166ace97d754c27f626e1b1aa700bea6689bce112da4b82675722fe"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/defaults/original.rs",
+      "first_line": 1,
+      "last_line": 170,
+      "selected_bytes": 7229,
+      "selected_sha256": "539308c67fb344df980802c872d7f9e22dbc2d1c159a69327465a9e59eee81f8"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/borrowed_imports.rs",
+      "first_line": 1,
+      "last_line": 393,
+      "selected_bytes": 15452,
+      "selected_sha256": "cbea3d04790517cf7584fe1163000314dbf514990b5cd5ed4429564e59f23675"
+    },
+    {
+      "source": "src/workspace_graph.rs",
+      "first_line": 4334,
+      "last_line": 4430,
+      "selected_bytes": 4164,
+      "selected_sha256": "05b61f4a33b9254d29dd8ab9a9609d2dccbe98af60e20e6f07850751fea4f52d"
+    },
+    {
+      "source": "src/workspace_graph/diagnostics.rs",
+      "first_line": 63,
+      "last_line": 105,
+      "selected_bytes": 1177,
+      "selected_sha256": "e656b4a17d43b7d70550580bfd09472557d447ad30315b8e056eb15fbd847e10"
+    },
+    {
+      "source": "src/bounded_output.rs",
+      "first_line": 250,
+      "last_line": 291,
+      "selected_bytes": 1284,
+      "selected_sha256": "6d9ccc66ecc0a4e1893fa9e7d3076b6abf53949977a35fb140cedbe07e8ab5ae"
+    },
+    {
+      "source": "src/test_allocation_observer.rs",
+      "first_line": 130,
+      "last_line": 175,
+      "selected_bytes": 1824,
+      "selected_sha256": "d72c7770d81bb693d662f3f3c5535e0b18c2103adb19d8f8d6510d5248d2ed9a"
+    }
+  ],
+  "payload_bytes": 72930,
+  "payload_sha256": "00341b389267516efaa2ba05bb9a6bf5f4d7f7efe0a1fc46bda524904ef46588"
+}

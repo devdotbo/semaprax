@@ -136,3 +136,8 @@ allocation-counting allocator that rejects duplicate and foreign frees and
 requires zero live allocations after every case (including arithmetic and
 contract failures inside the loop), and on the String-settling Wasm profile
 in Node with repeated calls. It also pins the still-refused shapes above.
+
+The additive [Owned String Transfer v1](OWNED-STRING-TRANSFER-V1.md) defines
+explicit named-owner `string_take` separately. Its source implementation and
+owning gates await qualification; it preserves this document's default clone
+behavior and does not imply general projected moves or public ABI promotion.

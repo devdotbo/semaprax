@@ -1,4 +1,5 @@
-use super::super::{Binding, ExpressionId, FunctionExecutionId, Place, Resolver};
+use super::super::resolve_expr::path_arena::Seg;
+use super::super::{Binding, ExprPath, FunctionExecutionId, Place, Resolver};
 use super::*;
 use crate::ast::{Expr, ExprKind, Type};
 use std::collections::BTreeMap;
@@ -44,22 +45,22 @@ pub(crate) fn source_type(ty: &Type) -> Option<ResolvedType> {
     })
 }
 impl Resolver<'_> {
-    pub(in crate::hir) fn finish_invocation(
+    pub(in crate::hir) fn finish_invocation<'p>(
         &self,
         function: &FunctionExecutionId,
-        path: &str,
+        path: impl Into<ExprPath<'p>>,
         span: crate::ast::Span,
         callable: ResolvedExpr,
         args: Vec<ResolvedExpr>,
     ) -> Result<ResolvedExpr, Diagnostic> {
         finish(self.program, function, path, span, callable, args)
     }
-    pub(in crate::hir) fn function_reference(
+    pub(in crate::hir) fn function_reference<'p>(
         &self,
         function: &FunctionExecutionId,
         expr: &Expr,
         bindings: &BTreeMap<String, Binding>,
-        path: &str,
+        path: impl Into<ExprPath<'p>>,
     ) -> Result<Option<ResolvedExpr>, Diagnostic> {
         let ExprKind::Var(name) = &expr.kind else {
             return Ok(None);
@@ -67,7 +68,7 @@ impl Resolver<'_> {
         if bindings.contains_key(name) {
             return Ok(None);
         }
-        let Some(target) = self.program.functions.iter().find(|f| f.name == *name) else {
+        let Some(target) = self.program.functions().iter().find(|f| f.name == *name) else {
             return Ok(None);
         };
         if !target.type_parameters.is_empty()
@@ -93,21 +94,21 @@ impl Resolver<'_> {
             ),
         };
         Ok(Some(ResolvedExpr {
-            id: ExpressionId::new(function, path),
+            id: path.into().expression_id(function),
             ty,
             ownership: OwnershipMode::Value,
             kind: ResolvedExprKind::FunctionReference {
-                target: DeclarationId::new(&target.stable_id),
+                target: self.declarations.held_identity(&target.stable_id),
             },
             span: expr.span,
         }))
     }
-    pub(in crate::hir) fn invocation_target(
+    pub(in crate::hir) fn invocation_target<'p>(
         &self,
         function: &FunctionExecutionId,
         name: &str,
         bindings: &BTreeMap<String, Binding>,
-        path: &str,
+        path: impl Into<ExprPath<'p>>,
         span: crate::ast::Span,
     ) -> Result<Option<ResolvedExpr>, Diagnostic> {
         let Some(binding) = bindings.get(name) else {
@@ -132,7 +133,9 @@ impl Resolver<'_> {
             return Err(error("called binding is not an admitted function value"));
         }
         Ok(Some(ResolvedExpr {
-            id: ExpressionId::new(function, &format!("{path}.callable")),
+            id: path
+                .into()
+                .expression_id_with(function, &[Seg::Callable.into()]),
             ty: binding.ty.clone(),
             ownership: binding.ownership,
             kind: ResolvedExprKind::Place(Place {
@@ -143,10 +146,10 @@ impl Resolver<'_> {
         }))
     }
 }
-pub(in crate::hir) fn finish(
-    program: &crate::ast::Program,
+pub(in crate::hir) fn finish<'p>(
+    program: &dyn crate::ast::program_source::ProgramSource,
     function: &FunctionExecutionId,
-    path: &str,
+    path: impl Into<ExprPath<'p>>,
     span: crate::ast::Span,
     callable: ResolvedExpr,
     args: Vec<ResolvedExpr>,
@@ -160,7 +163,7 @@ pub(in crate::hir) fn finish(
         _ => return Err(error("invalid callable")),
     };
     let expr = ResolvedExpr {
-        id: ExpressionId::new(function, path),
+        id: path.into().expression_id(function),
         ty: result.clone(),
         ownership: OwnershipMode::Value,
         kind: ResolvedExprKind::Invoke {
@@ -200,7 +203,7 @@ impl Resolver<'_> {
             && !((1..=2).contains(&function.type_parameters.len())
                 && super::super::generic_collection::callback(
                     &ty,
-                    &DeclarationId::new(&function.stable_id),
+                    &self.declarations.held_identity(&function.stable_id),
                     function.type_parameters.len(),
                 ))
         {

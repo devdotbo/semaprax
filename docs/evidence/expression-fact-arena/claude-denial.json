@@ -1,0 +1,7 @@
+{
+  "status": "rejected-before-launch",
+  "process_started": false,
+  "usage": null,
+  "retried": false,
+  "reason": "Automatic approval review rejected transmission of the newly selected eleven-file repository packet to Anthropic because trusted approval named another packet and assistant-copied standing authorization was not accepted. No retry or rerouting."
+}

@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import signal
@@ -26,6 +27,8 @@ import live_campaign as legacy
 import cli_typescript_bootstrap as ts_bootstrap
 import campaign_resources as resources
 import live_campaign_common as common
+import compiler_input_capture as compiler_capture
+import selected_file_setup
 
 BENCHMARK = Path(__file__).resolve().parent
 REPO = BENCHMARK.parents[1]
@@ -36,6 +39,9 @@ ARMS = legacy.ARMS
 MIN_TRIALS_PER_ARM = legacy.MIN_TRIALS_PER_ARM
 SEED_FILES = legacy.SEED_FILES
 ROUND = 6
+COMPILER_BUILD_RECEIPT_SCHEMA = "semaprax.loglens.compiler-build.v1"
+MAX_COMPILER_BUILD_RECEIPT_BYTES = 1_048_576
+HASH_CHUNK_BYTES = 64 * 1024
 HARNESS_SOURCE_FILES = (
     "benchmarks/cli-tokens-v1/boundary-audit-v1/audit.py",
     "benchmarks/cli-tokens-v1/boundary-audit-v1/corpus.json",
@@ -45,8 +51,11 @@ HARNESS_SOURCE_FILES = (
     "benchmarks/cli-tokens-v1/measurement_evidence.py",
     "benchmarks/cli-tokens-v1/oracle.py",
     "benchmarks/cli-tokens-v1/qualification.py",
+    "benchmarks/cli-tokens-v1/selected_file_setup.py",
     "benchmarks/live_campaign_common.py",
     "benchmarks/campaign_resources.py",
+    "benchmarks/compiler_input_capture.py",
+    "benchmarks/compiler_output_provenance.py",
 )
 PRICE_USD_PER_MTOK = {
     "input": 2.0, "cache_read": 0.1, "cache_write": 2.5, "output": 10.0,
@@ -106,6 +115,117 @@ def snapshot_harness_sources(repo: Path, artifacts: Path, expected: dict[str, st
     }
     (destination / "manifest.json").write_text(json.dumps(snapshot, indent=2, sort_keys=True) + "\n")
     return snapshot
+
+
+def _sha256(value: Any, label: str) -> str:
+    if (not isinstance(value, str) or len(value) != 64
+            or any(character not in "0123456789abcdef" for character in value)):
+        raise ValueError(f"{label} must be a lowercase SHA-256 digest")
+    return value
+
+
+def _regular_path(path: str | Path, label: str) -> Path:
+    """Return a lexical absolute regular path after rejecting every symlink."""
+    if not isinstance(path, (str, Path)):
+        raise ValueError(f"{label} path must be text")
+    absolute = Path(path).expanduser().absolute()
+    if any(component == ".." for component in absolute.parts):
+        raise ValueError(f"{label} path must not contain parent traversal")
+    current = Path(absolute.anchor)
+    for component in absolute.parts[1:]:
+        current /= component
+        if current.is_symlink():
+            raise ValueError(f"{label} must not be a symlink or have symlinked parents")
+    if not current.is_file():
+        raise ValueError(f"{label} must be a regular file")
+    return current
+
+
+def _bounded_regular_bytes(path: Path, label: str) -> bytes:
+    if path.stat().st_size > MAX_COMPILER_BUILD_RECEIPT_BYTES:
+        raise ValueError(f"{label} exceeds {MAX_COMPILER_BUILD_RECEIPT_BYTES} bytes")
+    with path.open("rb") as source:
+        contents = source.read(MAX_COMPILER_BUILD_RECEIPT_BYTES + 1)
+    if len(contents) > MAX_COMPILER_BUILD_RECEIPT_BYTES:
+        raise ValueError(f"{label} exceeds {MAX_COMPILER_BUILD_RECEIPT_BYTES} bytes")
+    return contents
+
+
+def _digest_regular(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(HASH_CHUNK_BYTES), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _compiler_build_receipt(path: str | Path, compiler_source_commit: str,
+                            compiler_binary_sha256: str) -> dict[str, Any]:
+    """Bind a planned binary to retained external build-log bytes.
+
+    A caller-supplied receipt establishes byte bindings only. It does not prove
+    that a hosted provider built or published the selected compiler.
+    """
+    if not isinstance(compiler_source_commit, str) or not re.fullmatch(r"[0-9a-f]{40}", compiler_source_commit):
+        raise ValueError("compiler build receipt requires an exact compiler source commit")
+    _sha256(compiler_binary_sha256, "compiler build receipt binary")
+    receipt_path = _regular_path(path, "compiler build receipt")
+    try:
+        receipt = json.loads(_bounded_regular_bytes(receipt_path, "compiler build receipt"))
+    except (UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError("compiler build receipt must be UTF-8 JSON") from error
+    required = {"schema", "compiler_source_commit", "compiler_binary_sha256", "build_command", "build_log"}
+    if not isinstance(receipt, dict) or set(receipt) != required or receipt.get("schema") != COMPILER_BUILD_RECEIPT_SCHEMA:
+        raise ValueError("compiler build receipt has an unsupported schema")
+    if receipt.get("compiler_source_commit") != compiler_source_commit:
+        raise ValueError("compiler build receipt source differs from --compiler-source-ref")
+    if receipt.get("compiler_binary_sha256") != compiler_binary_sha256:
+        raise ValueError("compiler build receipt binary differs from --semaprax-bin")
+    command = receipt.get("build_command")
+    if (not isinstance(command, list) or not command
+            or any(not isinstance(argument, str) or not argument.strip() or "\x00" in argument
+                   for argument in command)):
+        raise ValueError("compiler build receipt command must be a nonempty argument array")
+    build_log = receipt.get("build_log")
+    if not isinstance(build_log, dict) or set(build_log) != {"path", "sha256"}:
+        raise ValueError("compiler build receipt must bind one build log")
+    relative_log = build_log.get("path")
+    relative_log_path = Path(relative_log) if isinstance(relative_log, str) else None
+    if (relative_log_path is None or not relative_log_path.parts or relative_log_path.is_absolute()
+            or any(component in {".", ".."} for component in relative_log_path.parts)):
+        raise ValueError("compiler build receipt build log path must be relative")
+    log_path = _regular_path(receipt_path.parent / relative_log_path, "compiler build receipt build log")
+    log_sha256 = _sha256(build_log.get("sha256"), "compiler build receipt build log")
+    if _digest_regular(log_path) != log_sha256:
+        raise ValueError("compiler build receipt build log hash differs")
+    return {
+        "schema": COMPILER_BUILD_RECEIPT_SCHEMA,
+        "receipt_path": str(receipt_path),
+        "receipt_sha256": _digest_regular(receipt_path),
+        "compiler_source_commit": compiler_source_commit,
+        "compiler_binary_sha256": compiler_binary_sha256,
+        "build_command": command,
+        "build_log_path": str(log_path),
+        "build_log_sha256": log_sha256,
+        "provenance": "caller-supplied external build receipt; hosted build and publication provenance require operator verification",
+    }
+
+
+def require_compiler_build_receipt(settings: dict[str, Any], semaprax_bin: Path) -> None:
+    """Refuse dispatch when the retained external build binding has drifted."""
+    planned = settings.get("compiler_build_receipt")
+    if not isinstance(planned, dict):
+        raise ValueError("future LogLens campaign requires a compiler build receipt")
+    source = settings.get("compiler_source_commit")
+    binary_sha256 = settings.get("source_binary_sha256")
+    if not isinstance(source, str):
+        raise ValueError("campaign plan must bind the compiler source commit")
+    _sha256(binary_sha256, "campaign compiler binary")
+    actual = _compiler_build_receipt(planned.get("receipt_path", ""), source, binary_sha256)
+    if actual != planned:
+        raise ValueError("compiler build receipt differs from the immutable campaign plan")
+    if legacy.digest(semaprax_bin.expanduser().resolve(strict=True)) != binary_sha256:
+        raise ValueError("compiler binary differs from the immutable campaign plan")
 
 
 def _usage(value: Any) -> dict[str, int | None]:
@@ -275,10 +395,22 @@ def trace_usage(exec_usage: dict[str, Any], rollout: Path) -> dict[str, Any]:
     }
 
 
-def list_price_estimate(requests: list[dict[str, Any]]) -> dict[str, Any]:
+def list_price_estimate(requests: list[dict[str, Any]], price_book: dict[str, Any] | None = None) -> dict[str, Any]:
     """Conditional standard-price estimate; actual billing and cache-write amount remain unknown."""
+    # Compatibility calls use the explicitly dated historical card, never a
+    # claim about today's price. Live/recount routes pass their saved card.
+    card = ({"date": "2026-10-08", "standard_short_context_usd_per_million": PRICE_USD_PER_MTOK}
+            if price_book is None else price_book)
+    prices = card.get("standard_short_context_usd_per_million") if isinstance(card, dict) else None
+    date = card.get("date") if isinstance(card, dict) else None
+    card_valid = (isinstance(date, str) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", date) is not None
+        and isinstance(prices, dict) and set(prices) == set(PRICE_USD_PER_MTOK)
+        and all(isinstance(rate, (int, float)) and not isinstance(rate, bool)
+                and math.isfinite(rate) and rate >= 0 for rate in prices.values()))
     amount, writes = 0.0, 0
-    valid = bool(requests)
+    valid = bool(requests) and card_valid
+    if not card_valid:
+        requests = []
     for request in requests:
         known = _usage(request.get("usage"))
         if not all(known[key] is not None for key in ("input_tokens", "cached_input_tokens", "cache_write_input_tokens", "output_tokens")):
@@ -287,13 +419,15 @@ def list_price_estimate(requests: list[dict[str, Any]]) -> dict[str, Any]:
         if uncached < 0 or known["input_tokens"] > SHORT_CONTEXT_LIMIT:
             valid = False; break
         writes += known["cache_write_input_tokens"]
-        amount += (uncached * PRICE_USD_PER_MTOK["input"] + known["cached_input_tokens"] * PRICE_USD_PER_MTOK["cache_read"] + known["cache_write_input_tokens"] * PRICE_USD_PER_MTOK["cache_write"] + known["output_tokens"] * PRICE_USD_PER_MTOK["output"]) / 1_000_000
+        amount += (uncached * prices["input"] + known["cached_input_tokens"] * prices["cache_read"] + known["cache_write_input_tokens"] * prices["cache_write"] + known["output_tokens"] * prices["output"]) / 1_000_000
+        if not math.isfinite(amount):
+            valid = False; break
     return {
         "standard_short_context_api_equivalent_usd": round(amount, 6) if valid else None,
         "assumptions": "each request input <=272k; input/cache-read/cache-write/output use published standard rates",
         "actual_billed_usd": None, "cache_write_tokens": writes if valid else None,
-        "cache_write_cost_usd": round(writes * PRICE_USD_PER_MTOK["cache_write"] / 1_000_000, 6) if valid else None,
-        "reason": None if valid else "missing per-request usage, invalid bucket subset, or a request exceeds the short-context threshold",
+        "cache_write_cost_usd": round(writes * prices["cache_write"] / 1_000_000, 6) if valid else None,
+        "reason": None if valid else "missing/invalid dated rate card, per-request usage, bucket subset, or short-context threshold",
     }
 
 
@@ -340,6 +474,13 @@ def plan(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("matched campaign pins gpt-6.1-sol at medium effort")
     if args.trials_per_arm < MIN_TRIALS_PER_ARM or args.timeout_seconds != TIMEOUT_SECONDS:
         raise ValueError("matched campaign requires five trials per arm and a 1800-second timeout")
+    binary_sha256 = legacy.digest(Path(args.semaprax_bin).resolve(strict=True))
+    receipt_arg = getattr(args, "compiler_build_receipt", None)
+    if not receipt_arg:
+        raise ValueError("future LogLens campaign requires --compiler-build-receipt")
+    compiler_build_receipt = _compiler_build_receipt(
+        receipt_arg, compiler_source_commit, binary_sha256,
+    )
     tooling = None
     if getattr(args, "typescript_bootstrap_receipt", None):
         receipt_path = Path(args.typescript_bootstrap_receipt).expanduser()
@@ -358,7 +499,7 @@ def plan(args: argparse.Namespace) -> dict[str, Any]:
                    "dependency_helper_sha256": receipt["dependency_helper_sha256"],
                    "node_binary": args.node_binary,
                    "npm_binary": args.npm_binary}
-    return {
+    settings = {
         "adapter": "codex-matched-loglens-v1", "round": ROUND, "repository_commit": commit,
         "compiler_source_commit": compiler_source_commit,
         "seed_files_sha256": hashes, "artifacts": str(artifacts), "model_requested": args.model,
@@ -383,12 +524,17 @@ def plan(args: argparse.Namespace) -> dict[str, Any]:
         "price_book": {"date": "2026-10-08", "source": "https://developers.openai.com/api/docs/models/gpt-6.1-sol", "standard_short_context_usd_per_million": PRICE_USD_PER_MTOK, "conditional": True},
         "attempt_denominator": args.trials_per_arm * len(ARMS),
         "resource_policy": resources.policy(),
-        "source_binary_sha256": legacy.digest(Path(args.semaprax_bin).resolve(strict=True)),
+        "source_binary_sha256": binary_sha256,
+        "compiler_build_receipt": compiler_build_receipt,
         "calibration": {"prompt": CALIBRATION_PROMPT, "separate": True, "subtracted_from_trials": False},
         "measurement": {"stable_context_tokens": None, "legacy_net_input_tokens": None,
                         "model_request_count": "trace-backed only; never inferred from item counts"},
         "capabilities": capabilities(args.codex_binary),
     }
+
+    if getattr(args, "selected_file_resource_v1", False):
+        settings["selected_file_setup"] = selected_file_setup.capability(Path(args.semaprax_bin).resolve(strict=True))
+    return settings
 
 
 def copy_task_rollout(thread_ids: list[str], workspace: Path, destination: Path,
@@ -446,6 +592,7 @@ def cleanup_trial(repo: Path, workspace: Path, settings: dict[str, Any], row: di
 def launch_trial(repo: Path, artifacts: Path, commit: str, trial: dict[str, Any], settings: dict[str, Any], semaprax_bin: Path) -> dict[str, Any]:
     """Run one paid attempt. Every attempted trial remains in the result denominator."""
     common.require_compiler_binding(settings, semaprax_bin)
+    require_compiler_build_receipt(settings, semaprax_bin)
     arm, number = trial["arm"], trial["number"]
     legacy.qualification.require_settings(settings)
     label = f"{arm}-{number:02d}"
@@ -475,23 +622,30 @@ def launch_trial(repo: Path, artifacts: Path, commit: str, trial: dict[str, Any]
                                    "context_tokens": None}
         node_path = Path(shutil.which(tooling["node_binary"]) or tooling["node_binary"]).resolve(strict=True)
         env["PATH"] = os.pathsep.join((str(candidate / "node_modules/.bin"), str(node_path.parent), env.get("PATH", "")))
-    prompt = legacy.prompt_for(arm, candidate, semaprax_bin)
-    if tooling:
-        prompt += "\n\n" + ts_bootstrap.prompt_note(receipt)
-    (artifacts / "prompts").mkdir(parents=True, exist_ok=True)
-    (artifacts / "prompts" / f"{label}.txt").write_text(prompt, encoding="utf-8")
-    row["prompt_sha256"] = hashlib.sha256(prompt.encode()).hexdigest()
     transcript, stderr, trace = (artifacts / "transcripts" / f"{label}.{suffix}" for suffix in ("jsonl", "stderr.txt", "rollout.jsonl"))
     transcript.parent.mkdir(parents=True, exist_ok=True)
-    common.require_compiler_binding(settings, semaprax_bin)
-    process = run_codex(_command(settings, prompt), workspace, env, transcript, stderr, settings["timeout_seconds"])
+    with compiler_capture.authoring_compiler(arm, candidate, workspace, artifacts, label,
+                                             settings, semaprax_bin, row) as authoring_binary:
+        prompt = legacy.prompt_for(arm, candidate, authoring_binary)
+        selected_note = selected_file_setup.prompt_note(settings, arm, semaprax_bin)
+        if selected_note:
+            prompt += "\n\n" + selected_note
+        if tooling:
+            prompt += "\n\n" + ts_bootstrap.prompt_note(receipt)
+        (artifacts / "prompts").mkdir(parents=True, exist_ok=True)
+        (artifacts / "prompts" / f"{label}.txt").write_text(prompt, encoding="utf-8")
+        row["prompt_sha256"] = hashlib.sha256(prompt.encode()).hexdigest()
+        authoring_env = {**env, "SEMAPRAX_BIN": str(authoring_binary)} if arm == "semaprax" else env
+        common.require_compiler_binding(settings, semaprax_bin)
+        require_compiler_build_receipt(settings, semaprax_bin)
+        process = run_codex(_command(settings, prompt), workspace, authoring_env, transcript, stderr, settings["timeout_seconds"])
     row.update(process); row.update({"transcript": str(transcript), "stderr_path": str(stderr)})
     exec_usage = parse_exec_jsonl(transcript)
     copied = copy_task_rollout(exec_usage["thread_ids"], workspace, trace)
     trace_result = trace_usage(exec_usage, copied) if copied else {"reconciled": False, "model_request_count": None, "model_observed": None}
     row["observed"] = {**exec_usage, **trace_result, "stable_context_tokens": None}
     row["rollout_trace"] = str(copied) if copied else None
-    row["list_price"] = list_price_estimate(trace_result.get("model_requests", []))
+    row["list_price"] = list_price_estimate(trace_result.get("model_requests", []), settings.get("price_book", {}))
     row["provider_receipt_actual_usd"] = None
     if process["timed_out"]:
         row["failure"] = "trial hit wall-clock timeout"
@@ -507,8 +661,10 @@ def launch_trial(repo: Path, artifacts: Path, commit: str, trial: dict[str, Any]
         if guard_error:
             legacy.invalidate_trial_acceptance(row, guard_error)
         else:
+            acceptance_started = time.monotonic()
             row["acceptance"] = legacy.check_program_for_campaign(candidate, settings["timeout_seconds"],
                 env, settings, arm, artifacts / "qualification" / label)
+            row["acceptance_elapsed_seconds"] = time.monotonic() - acceptance_started
             row["status"] = "accepted" if row["acceptance"]["accepted"] else "not_accepted"
             if row["status"] != "accepted": row["failure"] = "candidate failed independent acceptance"
     if tooling:
@@ -547,6 +703,7 @@ def launch_trial(repo: Path, artifacts: Path, commit: str, trial: dict[str, Any]
 def launch_calibration(repo: Path, artifacts: Path, commit: str, settings: dict[str, Any], semaprax_bin: Path) -> dict[str, Any]:
     """One separately reported empty-task request; it is never subtracted from trials."""
     common.require_compiler_binding(settings, semaprax_bin)
+    require_compiler_build_receipt(settings, semaprax_bin)
     workspace = artifacts / "worktrees" / "calibration"
     row: dict[str, Any] = {"status": "failed", "separate_from_trials": True, "subtracted_from_trials": False}
     error = legacy.add_seed_worktree(repo, workspace, commit)
@@ -555,12 +712,13 @@ def launch_calibration(repo: Path, artifacts: Path, commit: str, settings: dict[
     transcript, stderr, trace = (artifacts / "transcripts" / f"calibration.{suffix}" for suffix in ("jsonl", "stderr.txt", "rollout.jsonl"))
     transcript.parent.mkdir(parents=True, exist_ok=True)
     common.require_compiler_binding(settings, semaprax_bin)
+    require_compiler_build_receipt(settings, semaprax_bin)
     row.update(run_codex(_command(settings, CALIBRATION_PROMPT), workspace, legacy.trial_environment(semaprax_bin), transcript, stderr, settings["timeout_seconds"]))
     usage = parse_exec_jsonl(transcript); copied = copy_task_rollout(usage["thread_ids"], workspace, trace)
     trace_result = trace_usage(usage, copied) if copied else {"reconciled": False}
     row["observed"] = {**usage, **trace_result, "stable_context_tokens": None}
     row["rollout_trace"] = str(copied) if copied else None
-    row["list_price"] = list_price_estimate(trace_result.get("model_requests", []))
+    row["list_price"] = list_price_estimate(trace_result.get("model_requests", []), settings.get("price_book", {}))
     messages = [json.loads(line).get("item", {}) for line in transcript.read_text().splitlines() if line]
     replies = [item.get("text", "").strip() for item in messages if item.get("type") == "agent_message"]
     counts = usage.get("tool_item_counts", {})
@@ -583,7 +741,11 @@ def main() -> int:
         current.add_argument("--artifacts", required=True); current.add_argument("--semaprax-bin", required=True)
         current.add_argument("--compiler-source-ref", required=True,
                              help="commit that produced --semaprax-bin; distinct from the docs-only seed ref")
+        current.add_argument("--compiler-build-receipt", required=True,
+                             help="external receipt binding selected compiler source, binary, command, and build log")
         current.add_argument("--tokenizer-dir", required=True)
+        current.add_argument("--selected-file-resource-v1", action="store_true",
+                             help="opt in to capability-authenticated selected-file guidance; keep frozen CLI49 and TypeScript task")
         current.add_argument("--typescript-bootstrap-receipt", default=None)
         current.add_argument("--node-binary", default="node"); current.add_argument("--npm-binary", default="npm")
         current.add_argument("--codex-binary", default="codex"); current.add_argument("--model", default=MODEL)
@@ -597,6 +759,7 @@ def main() -> int:
             if not args.acknowledge_paid_attempts:
                 raise ValueError("run requires --acknowledge-paid-attempts")
             common.require_compiler_binding(result, Path(args.semaprax_bin))
+            require_compiler_build_receipt(result, Path(args.semaprax_bin))
             ts_bootstrap.verify_plan(result.get("typescript_bootstrap"))
             if result["capabilities"]["status"] != "ready":
                 raise ValueError("installed Codex CLI lacks required isolated-execution controls")

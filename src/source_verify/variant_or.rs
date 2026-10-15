@@ -8,7 +8,8 @@
 //! diagnostics stay byte-identical.
 
 use super::diagnostics::error;
-use crate::ast::{MatchMode, MatchPattern, Program, Span, VariantCaseDeclaration};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{MatchMode, MatchPattern, Span, VariantCaseDeclaration};
 use crate::diagnostic::Diagnostic;
 
 /// Help attached to every refutable-construct rejection over a record or
@@ -30,7 +31,7 @@ pub(super) struct VariantOrContext<'a> {
 /// Checks one or-pattern arm of a variant match. `cover` records a case as
 /// covered and reports whether it was new.
 pub(super) fn check_variant_or_pattern<'p>(
-    program: &Program,
+    program: &dyn ProgramSource,
     alternatives: &'p [MatchPattern],
     span: Span,
     context: &VariantOrContext<'_>,

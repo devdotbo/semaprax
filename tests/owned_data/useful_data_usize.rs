@@ -59,7 +59,15 @@ fn expressions(root: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
     while let Some(expression) = pending.pop() {
         out.push(expression);
         match &expression.kind {
-            ResolvedExprKind::Call { args, .. } => pending.extend(args),
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    pending.push(value);
+                }
+            }
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args),
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push(callable);
                 pending.extend(args);
@@ -86,7 +94,10 @@ fn expressions(root: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
             } => {
                 pending.extend([source.as_ref(), start.as_ref(), end.as_ref()]);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            }
+            | ResolvedExprKind::Block { statements, tail } => {
                 pending.extend(statements.iter().map(|statement| statement.value()));
                 pending.push(tail);
             }
@@ -127,6 +138,7 @@ fn expressions(root: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
         }

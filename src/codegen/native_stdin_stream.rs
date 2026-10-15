@@ -44,6 +44,7 @@ pub fn emit_hir_c_with_stdin_stream(
     program: &ResolvedProgram,
     command_id: &str,
 ) -> Result<String, Diagnostic> {
+    reject_owned_leaf_in_frozen_profile(program)?;
     emit_profile(
         program,
         command_id,
@@ -55,6 +56,7 @@ pub fn emit_hir_c_with_stdin_stream_exit_status(
     program: &ResolvedProgram,
     command_id: &str,
 ) -> Result<String, Diagnostic> {
+    reject_owned_leaf_in_frozen_profile(program)?;
     emit_profile(
         program,
         command_id,
@@ -67,6 +69,7 @@ pub fn emit_hir_c_with_stdin_stream_text(
     program: &ResolvedProgram,
     command_id: &str,
 ) -> Result<String, Diagnostic> {
+    reject_owned_leaf_in_frozen_profile(program)?;
     emit_profile(
         program,
         command_id,
@@ -79,11 +82,97 @@ pub fn emit_hir_c_with_stdin_stream_data(
     program: &ResolvedProgram,
     command_id: &str,
 ) -> Result<String, Diagnostic> {
+    reject_owned_leaf_in_frozen_profile(program)?;
     emit_profile(
         program,
         command_id,
         NativeOutputProfile::StdinStreamDataCommandIo,
     )
+}
+
+/// Project v29 authenticates Copy-record closure before using the unchanged stream runtime.
+pub fn emit_hir_c_with_stdin_stream_records(
+    program: &ResolvedProgram,
+    command_id: &str,
+) -> Result<String, Diagnostic> {
+    crate::hir::validate_stream_record_program(
+        program,
+        Some(&hir::DeclarationId::new(command_id)),
+    )?;
+    emit_profile(
+        program,
+        command_id,
+        NativeOutputProfile::StdinStreamDataCommandIo,
+    )
+}
+
+/// Project v30 authenticates the complete owned-leaf runtime closure.
+pub fn emit_hir_c_with_stdin_stream_owned_data(
+    program: &ResolvedProgram,
+    command_id: &str,
+) -> Result<String, Diagnostic> {
+    crate::hir::validate_stream_owned_program(program, Some(&hir::DeclarationId::new(command_id)))?;
+    emit_profile(
+        program,
+        command_id,
+        NativeOutputProfile::StdinStreamDataCommandIo,
+    )
+}
+
+/// Explicit successor for authenticated nested collection-record carriers.
+pub fn emit_hir_c_with_stdin_stream_collection_records(
+    program: &ResolvedProgram,
+    command_id: &str,
+) -> Result<String, Diagnostic> {
+    crate::hir::validate_stream_collection_record_program(
+        program,
+        Some(&hir::DeclarationId::new(command_id)),
+    )?;
+    emit_profile(
+        program,
+        command_id,
+        NativeOutputProfile::StdinStreamDataCommandIo,
+    )
+}
+
+/// Explicit successor for properly tagged owning nested results.
+pub fn emit_hir_c_with_stdin_stream_nested_outcomes(
+    program: &ResolvedProgram,
+    command_id: &str,
+) -> Result<String, Diagnostic> {
+    crate::hir::validate_stream_nested_outcome_program(
+        program,
+        Some(&hir::DeclarationId::new(command_id)),
+    )?;
+    emit_profile(
+        program,
+        command_id,
+        NativeOutputProfile::StdinStreamDataCommandIo,
+    )
+}
+
+fn reject_owned_leaf_in_frozen_profile(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    if hir::collection_outcome::nested::program_requires_profile(program) {
+        return Err(backend_error(
+            "owning nested outcomes require the explicitly selected v32 native stream profile",
+        ));
+    }
+    if hir::owned_collection_record::program_requires_profile(program) {
+        return Err(backend_error(
+            "nested collection records require the explicitly selected v31 native stream profile",
+        ));
+    }
+    if program
+        .functions
+        .iter()
+        .chain(program.function_instances.iter().map(|i| &i.function))
+        .any(|f| hir::owned_leaf_collection::function_requires_profile(program, f))
+    {
+        return Err(backend_error(
+            "owned leaf collections require the explicitly selected v30 native stream profile",
+        ));
+    }
+    Ok(())
 }
 
 fn emit_profile(

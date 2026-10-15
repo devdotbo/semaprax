@@ -1,7 +1,8 @@
 //! Test-only recursive checking of `match` expressions: exhaustiveness,
 //! per-arm binding state, and the joins that produce the match's value.
 
-use crate::ast::{Expr, ExprKind, Function, MatchMode, MatchPattern, ParamMode, Program, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, MatchMode, MatchPattern, ParamMode, Type};
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::binding::{Availability, Binding, CheckedValue};
 use crate::source_verify::declared_type::{
@@ -66,7 +67,7 @@ pub(super) fn oracle_match(
     mode: &MatchMode,
     scrutinee: &Box<Expr>,
     arms: &Vec<crate::ast::MatchArm>,
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,
@@ -90,11 +91,15 @@ pub(super) fn oracle_match(
     if let Some(value) = &scrutinee_value {
         reject_native_unit_value(program, scrutinee, value, diagnostics);
         let exact_owned_record_item = value.mode == ParamMode::Own
-            && crate::source_verify::declared_type::owned_record_collection::
-                is_admitted_owned_record_collection_element(types, &value.ty)
+            && crate::source_verify::declared_type::owned_leaf_collection::runtime_element(
+                types, &value.ty,
+            )
             && matches!(&scrutinee.kind, ExprKind::Var(name)
                 if is_owned_iterator_item(name, &value.ty));
-        if LOOP_DEPTH.with(std::cell::Cell::get) != 0 && !exact_owned_record_item {
+        if LOOP_DEPTH.with(std::cell::Cell::get) != 0
+            && !exact_owned_record_item
+            && !crate::finite_owned_record_loop::source_permits(current, expr)
+        {
             reject_loop_match_scrutinee(program, types, scrutinee, value, diagnostics);
         }
     }
@@ -110,7 +115,11 @@ pub(super) fn oracle_match(
     if scalar_scrutinee {
         let scrutinee_value = scrutinee_value.expect("scalar checked above");
         let mut result = None::<CheckedValue>;
+        let baseline = variables.clone();
+        let outer_names = variables.keys().cloned().collect::<Vec<_>>();
+        let mut joined = baseline.clone();
         for arm in arms {
+            *variables = baseline.clone();
             match &arm.pattern {
                 MatchPattern::Wildcard { .. } => {}
                 MatchPattern::Binding { name, span } => {
@@ -125,6 +134,8 @@ pub(super) fn oracle_match(
                         variables.insert(
                             name.clone(),
                             Binding {
+                                contract_local: false,
+                                traversal_row: None,
                                 ty: scrutinee_value.ty.clone(),
                                 mode: ParamMode::Value,
                                 availability: Availability::Available,
@@ -262,9 +273,15 @@ pub(super) fn oracle_match(
                 reject_native_unit_value(program, &arm.value, value, diagnostics);
                 reject_aggregate_match_result(program, &arm.value, value, diagnostics);
             }
+            if !crate::ast::returns_only(&arm.value) {
+                merge_moved(&mut joined, variables, &outer_names);
+            }
             if let Some(arm_value) = arm_value {
                 if let Some(expected) = &result {
-                    if expected.ty != arm_value.ty || expected.mode != arm_value.mode {
+                    if expected.ty != Type::Never
+                        && arm_value.ty != Type::Never
+                        && (expected.ty != arm_value.ty || expected.mode != arm_value.mode)
+                    {
                         diagnostics.push(error(
                             program,
                             "SPX-T259",
@@ -275,7 +292,8 @@ pub(super) fn oracle_match(
                             arm.value.span,
                         ));
                     }
-                } else {
+                }
+                if result.as_ref().is_none_or(|v| v.ty == Type::Never) {
                     result = Some(arm_value);
                 }
             }
@@ -294,6 +312,7 @@ pub(super) fn oracle_match(
                 last.span,
             ));
         }
+        *variables = joined;
         return result;
     }
     if arms.iter().any(|arm| {
@@ -385,7 +404,11 @@ pub(super) fn oracle_match(
                 "SPX-M101",
                 format!(
                     "non-exhaustive match; missing record pattern for `{}`",
-                    scrutinee_value.ty
+                    crate::source_verify::private_names::type_name(
+                        program,
+                        types,
+                        &scrutinee_value.ty
+                    )
                 ),
                 expr.span,
             ));
@@ -467,12 +490,14 @@ pub(super) fn oracle_match(
         if let Some(value) = &result {
             reject_native_unit_value(program, &first.value, value, diagnostics);
         }
-        merge_moved(variables, &arm_variables, &outer_names);
+        if !result.as_ref().is_some_and(|v| v.ty == Type::Never) {
+            merge_moved(variables, &arm_variables, &outer_names);
+        }
         let generic_template = functions.get(current.name.as_str()).copied();
         let generic_owned_result = generic_template
             .is_some_and(|function| generic_function_has_owned_record_composition(function, types));
         if result.as_ref().is_some_and(|value| {
-            (!matches!(value.ty, Type::I64 | Type::Bool) || value.mode != ParamMode::Value)
+            value.ty != Type::Never && (!matches!(value.ty, Type::I64 | Type::Bool) || value.mode != ParamMode::Value)
                 && !(generic_template.is_some_and(|function| function.type_parameters.is_empty())
                     && (value.mode == ParamMode::Value
                         || (*mode == MatchMode::Own && scrutinee_value.mode == ParamMode::Own && types.is_nested_owned_byte_record(&scrutinee_value.ty)))
@@ -498,7 +523,8 @@ pub(super) fn oracle_match(
         Type::Named { name, arguments } if types.variant_cases(&value.ty).is_some() => {
             Some((name.clone(), arguments.clone()))
         }
-        Type::I64
+        Type::Never
+        | Type::I64
         | Type::I32
         | Type::Char
         | Type::U8
@@ -531,7 +557,9 @@ pub(super) fn oracle_match(
                 "match scrutinee must be a Copy variant, received {}",
                 scrutinee_value.as_ref().map_or_else(
                     || "an invalid value".to_owned(),
-                    |value| value.ty.to_string()
+                    |value| crate::source_verify::private_names::type_name(
+                        program, types, &value.ty
+                    )
                 )
             ),
             scrutinee.span,
@@ -552,7 +580,7 @@ pub(super) fn oracle_match(
             MatchMode::Own
                 if !variant_needs_drop
                     || !(types.is_flat_owned_byte_variant(&scrutinee_value.ty)
-                        || types.is_flat_owned_string_variant(&scrutinee_value.ty))
+                        || types.is_direct_owned_variant(&scrutinee_value.ty))
                     || scrutinee_value.mode != ParamMode::Own =>
             {
                 diagnostics.push(error(
@@ -574,7 +602,7 @@ pub(super) fn oracle_match(
             MatchMode::Borrow
                 if !variant_needs_drop
                     || !(types.is_flat_owned_byte_variant(&scrutinee_value.ty)
-                        || types.is_flat_owned_string_variant(&scrutinee_value.ty)
+                        || types.is_direct_owned_variant(&scrutinee_value.ty)
                         || crate::native_rust_binding::admitted_regex_result(
                             program,
                             &scrutinee_value.ty,
@@ -734,6 +762,8 @@ pub(super) fn oracle_match(
                         arm_variables.insert(
                             field.binding.clone(),
                             Binding {
+                                contract_local: false,
+                                traversal_row: None,
                                 ty: binding_ty,
                                 mode: binding_mode,
                                 availability: Availability::Available,
@@ -854,7 +884,11 @@ pub(super) fn oracle_match(
         );
         if let Some(value) = &arm_value {
             reject_native_unit_value(program, &arm.value, value, diagnostics);
-            if !crate::source_verify::declared_type::generic_variant::match_result(
+            if !scrutinee_value.as_ref().is_some_and(|input| {
+                crate::source_verify::declared_type::collection_outcome::match_result(
+                    types, &input.ty, *mode, &value.ty, value.mode,
+                )
+            }) && !crate::source_verify::declared_type::generic_variant::match_result(
                 functions.get(current.name.as_str()).copied(),
                 types,
                 *mode,
@@ -864,8 +898,19 @@ pub(super) fn oracle_match(
                 reject_aggregate_match_result(program, &arm.value, value, diagnostics);
             }
         }
+        let exits = crate::ast::returns_only(&arm.value);
         if let Some(arm_value) = arm_value {
-            if variant_needs_drop
+            if arm_value.ty != Type::Never
+                && variant_needs_drop
+                && !scrutinee_value.as_ref().is_some_and(|input| {
+                    crate::source_verify::declared_type::collection_outcome::match_result(
+                        types,
+                        &input.ty,
+                        *mode,
+                        &arm_value.ty,
+                        arm_value.mode,
+                    )
+                })
                 && !crate::source_verify::declared_type::generic_variant::match_result(
                     functions.get(current.name.as_str()).copied(),
                     types,
@@ -885,7 +930,10 @@ pub(super) fn oracle_match(
                 ));
             }
             if let Some(expected) = &result {
-                if expected.ty != arm_value.ty || expected.mode != arm_value.mode {
+                if expected.ty != Type::Never
+                    && arm_value.ty != Type::Never
+                    && (expected.ty != arm_value.ty || expected.mode != arm_value.mode)
+                {
                     diagnostics.push(error(
                         program,
                         "SPX-T216",
@@ -896,11 +944,14 @@ pub(super) fn oracle_match(
                         arm.value.span,
                     ));
                 }
-            } else {
+            }
+            if result.as_ref().is_none_or(|v| v.ty == Type::Never) {
                 result = Some(arm_value);
             }
         }
-        arm_states.push(arm_variables);
+        if !exits {
+            arm_states.push(arm_variables);
+        }
     }
     if !wildcard_seen {
         if let (Some(variant_name), Some(cases)) = (&variant_name, declared_cases) {
@@ -908,15 +959,12 @@ pub(super) fn oracle_match(
                 .iter()
                 .find(|case| !covered.contains(case.name.as_str()))
             {
-                let witness = if missing.fields.is_empty() {
-                    format!("{variant_name}::{} {{}}", missing.name)
-                } else {
-                    format!("{variant_name}::{} {{ .. }}", missing.name)
-                };
-                diagnostics.push(error(
+                diagnostics.push(crate::source_verify::private_names::missing_case(
                     program,
-                    "SPX-M101",
-                    format!("non-exhaustive match; missing case `{witness}`"),
+                    types,
+                    variant_name,
+                    &missing.name,
+                    !missing.fields.is_empty(),
                     expr.span,
                 ));
             }
@@ -940,4 +988,8 @@ pub(super) fn oracle_match(
         merge_moved(variables, &joined, &outer_names);
     }
     result
+}
+
+pub(super) fn in_loop_scope() -> bool {
+    LOOP_DEPTH.with(|depth| depth.get() != 0)
 }

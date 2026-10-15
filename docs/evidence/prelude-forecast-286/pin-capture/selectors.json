@@ -1,0 +1,53 @@
+{
+  "schema": "semaprax.prelude-forecast-pin-selectors.v1",
+  "normal_owners": [
+    {
+      "harness": "workspace",
+      "exact": "semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+      "outputs": [
+        "public-graph.json"
+      ]
+    },
+    {
+      "harness": "workspace",
+      "exact": "semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+      "outputs": [
+        "context.json",
+        "forward.json",
+        "capability-context.json",
+        "type-context.json",
+        "impact.json",
+        "custom-impact.json",
+        "review.json",
+        "capability-review.json"
+      ]
+    },
+    {
+      "harness": "lib",
+      "exact": "workspace_graph::type_proof_tests::projection_tests::rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+      "outputs": []
+    },
+    {
+      "harness": "wasm",
+      "exact": "scalar_browser_ci_contract::browser_known_answers_match_authenticated_baseline_and_rename_graphs",
+      "outputs": [
+        "calculator-baseline.json",
+        "calculator-renamed.json"
+      ],
+      "deferred": true,
+      "note": "Not needed for initial lib/workspace capture; do not build Wasm harness in this batch solely for capture."
+    }
+  ],
+  "existing_ignored_producer": {
+    "harness": "lib",
+    "exact": "workspace_graph::type_proof_tests::projection_tests::emit_projection_wire_pin_candidate",
+    "ignored": true,
+    "marker": "PROJECTION_WIRE_PIN_CANDIDATE ",
+    "outputs": [
+      "projection-wire.json"
+    ]
+  },
+  "capture_env": "SEMAPRAX_PRELUDE_PIN_CAPTURE_DIR",
+  "assertions_bypassed": false,
+  "producer_executed_in_source_lane": false
+}

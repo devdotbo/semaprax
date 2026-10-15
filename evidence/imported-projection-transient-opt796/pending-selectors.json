@@ -1,0 +1,11 @@
+{
+  "base": "fde751e20236152d581e31ce6bf2b1d3e11ede45",
+  "executed": false,
+  "exact_lib_selectors": [
+    "workspace_graph::expected_projection::borrowed_imports::tests::full::transient::actual_transient_import_constructor_removes_only_authored_cache_spare_and_pays_drop",
+    "workspace_graph::expected_projection::borrowed_imports::tests::full::transient::actual_transient_full_projection_and_resolution_match_complete_old_receivers",
+    "workspace_graph::expected_projection::borrowed_imports::tests::full::receiving::full_receiving_overlay_moves_exact_paid_directories_and_preserves_original_order",
+    "workspace_graph::expected_projection::borrowed_imports::tests::full::receiving::full_standalone_and_receiving_overlay_construction_retention_and_drop_tradeoffs",
+    "workspace_graph::expected_projection::borrowed_imports::tests::full::complete_recursive_owner_receivers_pay_drop_cache_and_short_refusal"
+  ]
+}

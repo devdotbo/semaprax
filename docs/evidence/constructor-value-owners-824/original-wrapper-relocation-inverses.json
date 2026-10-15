@@ -1,0 +1,36 @@
+[
+  {
+    "source": "src/vec_ops/wrappers/original.rs",
+    "archive": "vec-source-classifier.before.txt",
+    "sha256": "ebf16a6bf31d882b1e01554088fc5d26d56d9eb383a43496eb74af987d998199",
+    "edits": [
+      {
+        "name": "full-original-wrapper-module-import",
+        "before": "",
+        "after": "//! Complete original wrapper classifier and body receiver.\nuse super::*;\n\n"
+      },
+      {
+        "name": "unchanged-allocating-parameter-owner-relocation",
+        "before": "    let expected = super::ast_params(op, &parameter);",
+        "after": "    let expected = super::super::ast_params(op, &parameter);"
+      }
+    ]
+  },
+  {
+    "source": "src/box_ops/wrappers/original.rs",
+    "archive": "box-source-classifier.before.txt",
+    "sha256": "d3070460b9c454d2e09eb9deae2d9e1494cdd3b5a0deca56a1c578687f748dde",
+    "edits": [
+      {
+        "name": "full-original-wrapper-module-import",
+        "before": "",
+        "after": "//! Complete original wrapper classifier and body receiver.\nuse super::*;\n\n"
+      },
+      {
+        "name": "unchanged-allocating-parameter-owner-relocation",
+        "before": "    let expected = super::ast_params(op, &parameter);",
+        "after": "    let expected = super::super::ast_params(op, &parameter);"
+      }
+    ]
+  }
+]

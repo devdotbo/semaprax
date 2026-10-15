@@ -191,12 +191,15 @@ pub fn check_declaration_supported(function: &Function) -> Result<(), Unsupporte
 #[must_use]
 pub fn expr_reason(expr: &Expr) -> Option<UnsupportedReason> {
     let what = match &expr.kind {
+        ExprKind::VecConstructor { .. } => "typed Vec construction",
+        ExprKind::LexicalExit { .. } => "lexical exit",
         ExprKind::Closure { .. } => "closure",
         ExprKind::Char(_) => "char literal",
         ExprKind::ArrayU8(_) => "byte array literal",
         ExprKind::RepeatArrayU8 { .. } => "repeated byte array literal",
         ExprKind::Float32(_) | ExprKind::Float64(_) => "floating point",
         ExprKind::String(_) => "string literal",
+        ExprKind::BorrowedUtf8Literal(_) => "frontend-only borrowed UTF-8 literal",
         ExprKind::Call { .. } => "call",
         ExprKind::MethodCall { .. } => "method call",
         ExprKind::SuperMethod { .. } => "super method call",
@@ -258,7 +261,9 @@ pub fn statement_reason(statement: &Statement) -> Option<UnsupportedReason> {
         Statement::Assign { .. } => Some(UnsupportedReason::NonLetStatement { what: "assign" }),
         Statement::Unsafe { .. } => Some(UnsupportedReason::NonLetStatement { what: "unsafe" }),
         Statement::While { .. } => Some(UnsupportedReason::NonLetStatement { what: "while" }),
-        Statement::For { .. } => Some(UnsupportedReason::NonLetStatement { what: "for" }),
+        Statement::For { .. } | Statement::ForBorrow { .. } => {
+            Some(UnsupportedReason::NonLetStatement { what: "for" })
+        }
         // Any further statement variants this crate may add later are
         // conservatively unsupported until explicitly admitted.
         #[allow(unreachable_patterns)]

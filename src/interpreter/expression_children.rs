@@ -4,10 +4,16 @@ use crate::hir::{ResolvedExpr, ResolvedExprKind};
 
 pub(super) fn child_expressions(expression: &ResolvedExpr) -> Vec<&ResolvedExpr> {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.iter().map(|value| value.as_ref()).collect()
+        }
         ResolvedExprKind::Closure { captures, .. } => {
             captures.iter().map(|capture| &capture.value).collect()
         }
-        ResolvedExprKind::Call { args, .. } => args.iter().collect(),
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().collect(),
         ResolvedExprKind::Invoke { callable, args } => std::iter::once(callable.as_ref())
             .chain(args.iter())
             .collect(),
@@ -23,7 +29,10 @@ pub(super) fn child_expressions(expression: &ResolvedExpr) -> Vec<&ResolvedExpr>
         ResolvedExprKind::ByteRange {
             source, start, end, ..
         } => vec![source.as_ref(), start.as_ref(), end.as_ref()],
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut collected = Vec::new();
             for statement in statements {
                 for index in 0..statement.child_count() {
@@ -77,6 +86,7 @@ pub(super) fn child_expressions(expression: &ResolvedExpr) -> Vec<&ResolvedExpr>
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => Vec::new(),
     }

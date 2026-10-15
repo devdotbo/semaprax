@@ -55,13 +55,31 @@ pub(super) fn match_result_is_admitted(
     else {
         return false;
     };
+    // Completion is not an owning result carrier. Reconstruct the current
+    // function's lexical contour before admitting its terminal arm; the
+    // ordinary whole-program validator and child scan still run afterwards.
+    let terminal = expression.ty == ResolvedType::Never
+        && expression.ownership == OwnershipMode::Value
+        && arm.value.ty == ResolvedType::Never
+        && arm.value.ownership == OwnershipMode::Value
+        && hir::lexical_exit::owner(program, function)
+            .and_then(|owner| hir::lexical_exit::validate_function(program, function, &owner))
+            .is_ok();
+    let result_type = if terminal {
+        &function.return_type
+    } else {
+        &expression.ty
+    };
     let ordinary_shape = ordinary
         && (hir::is_admitted_nested_owned_byte_record(&program.declarations, &scrutinee.ty)
-            || hir::owned_text_record::admitted(&scrutinee.ty, &program.declarations))
-        && (matches!(expression.ty, ResolvedType::Bytes | ResolvedType::String)
-            || crate::map_ops::is_collection(&expression.ty)
-            || (hir::is_admitted_nested_owned_byte_record(&program.declarations, &expression.ty)
-                || hir::owned_text_record::admitted(&expression.ty, &program.declarations)))
+            || hir::owned_text_record::runtime_admitted(&scrutinee.ty, &program.declarations)
+            || hir::owned_collection_record::admitted(&scrutinee.ty, &program.declarations))
+        && (matches!(result_type, ResolvedType::Bytes | ResolvedType::String)
+            || crate::map_ops::is_collection(result_type)
+            || crate::hir::owned_collection_record::vector(&program.declarations, result_type)
+            || (hir::is_admitted_nested_owned_byte_record(&program.declarations, result_type)
+                || hir::owned_text_record::runtime_admitted(result_type, &program.declarations)
+                || hir::owned_collection_record::admitted(result_type, &program.declarations)))
         && arm.guard.is_none()
         && super::record_pattern_is_admitted(
             &program.declarations,
@@ -71,9 +89,9 @@ pub(super) fn match_result_is_admitted(
         );
     *mode == hir::ResolvedMatchMode::Own
         && expression.ty == arm.value.ty
-        && expression.ownership == OwnershipMode::Own
+        && (expression.ownership == OwnershipMode::Own || terminal)
         && scrutinee.ownership == OwnershipMode::Own
-        && arm.value.ownership == OwnershipMode::Own
+        && (arm.value.ownership == OwnershipMode::Own || terminal)
         && instance == &scrutinee.ty
         && matches!(&scrutinee.ty, ResolvedType::Nominal { declaration, .. }
             if declaration == record)
@@ -84,3 +102,6 @@ pub(super) fn match_result_is_admitted(
                     &expression.ty,
                 )))
 }
+
+#[cfg(test)]
+mod tests;

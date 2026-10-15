@@ -1,0 +1,280 @@
+{
+  "source_base": "4ec48420b6e78b1035a66cc406893c46c3028464",
+  "files": [
+    {
+      "path": "src/source_verify/declaration.rs",
+      "archive": "docs/evidence/public-template-recovery-799/src__source_verify__declaration.rs.before.txt",
+      "sha256": "5c4987a9e83eb0f80c7c3d6211910e3c1f62cb91e60b9cc3b9d8f87c8000351f",
+      "current_splices": [
+        {
+          "start": 412,
+          "before": "",
+          "after": "pub(super) use self::functions::SignatureOrigin;\n"
+        },
+        {
+          "start": 11471,
+          "before": "",
+          "after": "\n#[cfg(test)]\n#[rustfmt::skip]\npub(super) mod public_signature_before;\n"
+        }
+      ],
+      "compiled_old_path": "src/source_verify/declaration/public_signature_before.rs",
+      "compiled_old_splices": [
+        {
+          "start": 133,
+          "before": "use self::classes::{\n",
+          "after": "use super::classes::{\n"
+        },
+        {
+          "start": 247,
+          "before": "use self::declarations::{\n",
+          "after": "use super::declarations::{\n"
+        },
+        {
+          "start": 414,
+          "before": "use self::functions::{\n",
+          "after": "use super::functions::public_signature_before::{\n"
+        },
+        {
+          "start": 564,
+          "before": "use self::identity::{check_interface_identities, check_type_identities};\nuse super::capacity::{source_capacity_functions, verify_selected_capacity};\nuse super::diagnostics::error;\nuse super::type_table::TypeTable;\n",
+          "after": "use super::identity::{check_interface_identities, check_type_identities};\nuse super::fusion;\nuse crate::source_verify::capacity::{source_capacity_functions, verify_selected_capacity};\nuse crate::source_verify::diagnostics::error;\nuse crate::source_verify::type_table::TypeTable;\n"
+        },
+        {
+          "start": 998,
+          "before": "mod classes;\nmod declarations;\nmod functions;\npub(super) mod fusion;\nmod identity;\n",
+          "after": ""
+        },
+        {
+          "start": 3260,
+          "before": "            .with_help(super::hints::PROJECT_IMPORTS_HELP),\n",
+          "after": "            .with_help(crate::source_verify::hints::PROJECT_IMPORTS_HELP),\n"
+        },
+        {
+          "start": 3380,
+          "before": "    super::stdin_stream::check(program, &mut diagnostics);\n",
+          "after": "    crate::source_verify::stdin_stream::check(program, &mut diagnostics);\n"
+        },
+        {
+          "start": 8235,
+          "before": "    super::lexical_exit::validate(program, &mut diagnostics);\n",
+          "after": "    crate::source_verify::lexical_exit::validate(program, &mut diagnostics);\n"
+        },
+        {
+          "start": 9583,
+          "before": "            .with_help(super::hints::LIBRARY_MODULE_HELP),\n",
+          "after": "            .with_help(crate::source_verify::hints::LIBRARY_MODULE_HELP),\n"
+        },
+        {
+          "start": 11442,
+          "before": "#[cfg(test)]\n#[rustfmt::skip]\npub(super) mod old;\n",
+          "after": ""
+        }
+      ]
+    },
+    {
+      "path": "src/source_verify/declaration/functions.rs",
+      "archive": "docs/evidence/public-template-recovery-799/src__source_verify__declaration__functions.rs.before.txt",
+      "sha256": "f8de677d0ee06872c4ddae8415eb84ca145c8ecda961a5379714451f55e3e5f2",
+      "current_splices": [
+        {
+          "start": 1112,
+          "before": "    error, invalid_stable_id, reject_native_unit_value, reject_reserved_host_id, require_bool,\n    source_identifier,\n",
+          "after": "    error, invalid_stable_id, reject_native_unit_value, reject_reserved_host_id,\n    require_bool_with_signature, source_identifier,\n"
+        },
+        {
+          "start": 1248,
+          "before": "use crate::source_verify::iterative::check_expr_with_helpers_view;\n",
+          "after": "use crate::source_verify::iterative::check_expr_with_signature_view;\nmod signature_refusal;\n"
+        },
+        {
+          "start": 1389,
+          "before": "",
+          "after": "pub(in crate::source_verify) use signature_refusal::SignatureOrigin;\n"
+        },
+        {
+          "start": 14279,
+          "before": "",
+          "after": "                    && !signature_refusal::unknown_component(\n                        program,\n                        &param.ty,\n                        param.span,\n                        types,\n                        &parameter_names,\n                    )\n"
+        },
+        {
+          "start": 15309,
+          "before": "",
+          "after": "                && !signature_refusal::unknown_component(\n                    program,\n                    &function.return_type,\n                    function.span,\n                    types,\n                    &parameter_names,\n                )\n"
+        },
+        {
+          "start": 40743,
+          "before": "",
+          "after": "            let return_unknown = return_unknown\n                || signature_refusal::origin(program, template, function)\n                    .and_then(|origin| origin.return_refusal(program, function, types, diagnostics))\n                    .is_some();\n"
+        },
+        {
+          "start": 45328,
+          "before": "                require_bool(\n",
+          "after": "                require_bool_with_signature(\n"
+        },
+        {
+          "start": 45647,
+          "before": "",
+          "after": "                    signature_refusal::origin(program, template, function),\n"
+        },
+        {
+          "start": 45757,
+          "before": "            let (body_value, refusal_view) = check_expr_with_helpers_view(\n",
+          "after": "            let (body_value, refusal_view) = check_expr_with_signature_view(\n"
+        },
+        {
+          "start": 46141,
+          "before": "",
+          "after": "                signature_refusal::origin(program, template, function),\n"
+        },
+        {
+          "start": 49311,
+          "before": "                require_bool(\n",
+          "after": "                require_bool_with_signature(\n"
+        },
+        {
+          "start": 49654,
+          "before": "",
+          "after": "                    signature_refusal::origin(program, template, function),\n"
+        },
+        {
+          "start": 55004,
+          "before": "",
+          "after": "\n#[cfg(test)]\n#[rustfmt::skip]\npub(in crate::source_verify) mod public_signature_before;\n"
+        }
+      ],
+      "compiled_old_path": "src/source_verify/declaration/functions/public_signature_before.rs",
+      "compiled_old_splices": [
+        {
+          "start": 1401,
+          "before": "pub(super) fn check_function_declarations<'p>(\n",
+          "after": "pub(in crate::source_verify) fn check_function_declarations<'p>(\n"
+        },
+        {
+          "start": 3282,
+          "before": "        if super::super::vec_field::reserved_function(function) {\n",
+          "after": "        if crate::source_verify::vec_field::reserved_function(function) {\n"
+        },
+        {
+          "start": 17536,
+          "before": "pub(super) fn check_generic_function_cycles_with_types<'p>(\n",
+          "after": "pub(in crate::source_verify) fn check_generic_function_cycles_with_types<'p>(\n"
+        },
+        {
+          "start": 21213,
+          "before": "",
+          "after": "#[path = \"traversal_scope.rs\"]\n"
+        },
+        {
+          "start": 35367,
+          "before": "pub(super) fn check_function_bodies<'p>(\n",
+          "after": "pub(in crate::source_verify) fn check_function_bodies<'p>(\n"
+        },
+        {
+          "start": 40870,
+          "before": "            super::super::declared_type::string_record::reject(\n",
+          "after": "            crate::source_verify::declared_type::string_record::reject(\n"
+        },
+        {
+          "start": 53478,
+          "before": "#[cfg(test)]\nmod generic_inference_tests;\n\n#[cfg(test)]\n#[rustfmt::skip]\npub(super) mod old;\n\n#[cfg(test)]\npub(super) fn check_generic_function_cycles<'p>(\n    program: &'p dyn ProgramSource,\n    call_graph: &HashMap<String, Vec<String>>,\n    generic_functions: &HashSet<&'p str>,\n    diagnostics: &mut Vec<Diagnostic>,\n) {\n    check_generic_function_cycles_with_types(\n        program,\n        call_graph,\n        generic_functions,\n        &TypeTable::new(program),\n        diagnostics,\n    );\n}\n",
+          "after": ""
+        }
+      ]
+    },
+    {
+      "path": "src/source_verify/iterative.rs",
+      "archive": "docs/evidence/public-template-recovery-799/src__source_verify__iterative.rs.before.txt",
+      "sha256": "8bc16b846d6ce4b01d9bdbe73c15efca61b3d8c9b1ed13afc233f50ca748c241",
+      "current_splices": [
+        {
+          "start": 260,
+          "before": "use super::IterativeVerifier;\n",
+          "after": ""
+        },
+        {
+          "start": 442,
+          "before": "",
+          "after": "use super::IterativeVerifier;\n"
+        },
+        {
+          "start": 10490,
+          "before": "",
+          "after": "    check_expr_with_signature_view(\n        program,\n        current,\n        expr,\n        variables,\n        functions,\n        types,\n        result_type,\n        allow_moves,\n        diagnostics,\n        helpers,\n        fused_producer,\n        None,\n    )\n}\n\n#[allow(clippy::too_many_arguments)]\npub(super) fn check_expr_with_signature_view<'a, 'p>(\n    program: &'p dyn ProgramSource,\n    current: &'p Function,\n    expr: &'p Expr,\n    variables: &mut HashMap<String, Binding>,\n    functions: &'p HashMap<&'p str, &'p Function>,\n    types: &'p TypeTable<'p>,\n    result_type: Option<&'p Type>,\n    allow_moves: bool,\n    diagnostics: &'a mut Vec<Diagnostic>,\n    helpers: Option<&'a dyn crate::loop_calls::byte_writer::SourceHelpers>,\n    fused_producer: Option<&'p Expr>,\n    signature: Option<super::declaration::SignatureOrigin<'p>>,\n) -> (\n    Option<CheckedValue>,\n    Option<super::recovery::RefusalView<'p>>,\n) {\n"
+        },
+        {
+          "start": 11663,
+          "before": "",
+          "after": "    // The public body producer holds the exact authored template before its\n    // validation-only scalar substitutions clear the type-parameter names.\n    // Authenticate the original receipt against that environment and the real\n    // specialized bindings; no source lookup or span-only inference is used.\n    if let Some(recovery) = signature.as_ref().and_then(|origin| {\n        super::recovery::Recovery::signature_origin(\n            program,\n            current,\n            &verifier.scopes[0].bindings,\n            types,\n            verifier.diagnostics,\n            origin,\n            result_type,\n        )\n    }) {\n        verifier.recovery = recovery;\n    }\n"
+        }
+      ]
+    },
+    {
+      "path": "src/source_verify/diagnostics.rs",
+      "archive": "docs/evidence/public-template-recovery-799/src__source_verify__diagnostics.rs.before.txt",
+      "sha256": "8fccfc4e16d3296712735a71ea5811a0d555e542fbd8719c208a24222b8c240e",
+      "current_splices": [
+        {
+          "start": 206,
+          "before": "use super::iterative::check_expr_with_helpers_view;\n",
+          "after": "use super::iterative::{check_expr_with_helpers_view, check_expr_with_signature_view};\n"
+        },
+        {
+          "start": 5508,
+          "before": "",
+          "after": "    require_bool_with_signature(\n        program,\n        function,\n        contract,\n        variables,\n        functions,\n        types,\n        result_type,\n        diagnostics,\n        kind,\n        None,\n    );\n}\n\n#[allow(clippy::too_many_arguments)]\npub(super) fn require_bool_with_signature<'p>(\n    program: &'p dyn ProgramSource,\n    function: &'p Function,\n    contract: &'p Expr,\n    variables: &HashMap<String, Binding>,\n    functions: &'p HashMap<&'p str, &'p Function>,\n    types: &'p TypeTable<'p>,\n    result_type: Option<&'p Type>,\n    diagnostics: &mut Vec<Diagnostic>,\n    kind: &str,\n    signature: Option<super::declaration::SignatureOrigin<'p>>,\n) {\n"
+        },
+        {
+          "start": 8294,
+          "before": "    let (contract_value, refusal_view) = check_expr_with_helpers_view(\n        program,\n        function,\n        contract,\n        &mut contract_variables,\n        functions,\n        types,\n        result_type,\n        false,\n        diagnostics,\n        None,\n        None,\n    );\n",
+          "after": "    let (contract_value, refusal_view) = match signature {\n        Some(signature) => check_expr_with_signature_view(\n            program,\n            function,\n            contract,\n            &mut contract_variables,\n            functions,\n            types,\n            result_type,\n            false,\n            diagnostics,\n            None,\n            None,\n            Some(signature),\n        ),\n        None => check_expr_with_helpers_view(\n            program,\n            function,\n            contract,\n            &mut contract_variables,\n            functions,\n            types,\n            result_type,\n            false,\n            diagnostics,\n            None,\n            None,\n        ),\n    };\n"
+        }
+      ]
+    },
+    {
+      "path": "src/source_verify/recovery.rs",
+      "archive": "docs/evidence/public-template-recovery-799/src__source_verify__recovery.rs.before.txt",
+      "sha256": "0e31278d627351d403bd616a2592572f4fc8c27bb38fcf799a09163adc172c14",
+      "current_splices": [
+        {
+          "start": 4366,
+          "before": "",
+          "after": "\n    // Begin exact producer-origin parameter receiver.\n    pub(super) fn signature_origin(\n        program: &'p dyn crate::ast::program_source::ProgramSource,\n        current: &'p Function,\n        variables: &std::collections::HashMap<String, super::binding::Binding>,\n        types: &super::type_table::TypeTable<'_>,\n        diagnostics: &[Diagnostic],\n        origin: &super::declaration::SignatureOrigin<'p>,\n        result_type: Option<&Type>,\n    ) -> Option<Self> {\n        let template = origin.template_for(program, current)?;\n        let mut recovery = Self::default();\n        if !diagnostics\n            .iter()\n            .any(callee_components::unknown_component_receipt)\n        {\n            return Some(recovery);\n        }\n        recovery.unknown_declarations = true;\n        let mut parameters = None;\n        let mut scratch = Vec::new();\n        for (parameter, actual) in template.params.iter().zip(&current.params) {\n            if types.needs_drop(&actual.ty)\n                || variables\n                    .get(&parameter.name)\n                    .is_none_or(|binding| binding.ty != actual.ty || binding.mode != actual.mode)\n                || !diagnostics.iter().any(|diagnostic| {\n                    callee_components::unknown_component_receipt(diagnostic)\n                        && diagnostic.span == Some(parameter.span)\n                })\n            {\n                continue;\n            }\n            let parameters = parameters.get_or_insert_with(|| {\n                template\n                    .type_parameters\n                    .iter()\n                    .map(|parameter| parameter.name.as_str())\n                    .collect()\n            });\n            scratch.clear();\n            super::declared_type::check_declared_type(\n                program,\n                &parameter.ty,\n                parameter.span,\n                types,\n                parameters,\n                &mut scratch,\n            );\n            if let Some(origin) = scratch\n                .iter()\n                .filter(|refusal| callee_components::unknown_component_receipt(refusal))\n                .find_map(|refusal| {\n                    diagnostics.iter().position(|original| {\n                        original.code == refusal.code\n                            && original.severity == refusal.severity\n                            && original.message == refusal.message\n                            && original.path == refusal.path\n                            && original.span == refusal.span\n                            && original.help == refusal.help\n                    })\n                })\n            {\n                recovery.ensure(0);\n                recovery.scopes[0]\n                    .names\n                    .insert(parameter.name.as_str(), (origin, true, None));\n            }\n        }\n        // The reserved result name has its own actual postcondition carrier;\n        // it never becomes available in a requires clause or ordinary body.\n        if let Some(index) = result_type\n            .filter(|ty| std::ptr::eq(*ty, &current.return_type))\n            .and_then(|_| origin.return_refusal(program, current, types, diagnostics))\n        {\n            recovery.ensure(0);\n            recovery.scopes[0]\n                .names\n                .insert(\"result\", (index, true, None));\n        }\n        Some(recovery)\n    }\n    // End exact producer-origin parameter receiver.\n"
+        }
+      ]
+    },
+    {
+      "path": "src/source_verify/iterative/enter.rs",
+      "archive": "docs/evidence/public-template-recovery-799/src__source_verify__iterative__enter.rs.before.txt",
+      "sha256": "7566025fca09d0cec7839f7754a0d54ebbb3313b902617cc3a1d9d22b7516227",
+      "current_splices": [
+        {
+          "start": 6032,
+          "before": "",
+          "after": "                if self.result_type.is_some() && self.recovery.reads_value(scope, name, expression)\n                {\n                    self.values.push(None);\n                    return Ok(());\n                }\n"
+        }
+      ]
+    },
+    {
+      "path": "src/source_verify/recovery_tests/extended_components.rs",
+      "archive": "docs/evidence/public-template-recovery-799/src__source_verify__recovery_tests__extended_components.rs.before.txt",
+      "sha256": "b5dfa7ee66dd7d775b334184a0c6a570679641301d8687fbb2c1970d8c065c0a",
+      "current_splices": [
+        {
+          "start": 30158,
+          "before": "    assert_eq!(inverse.len(), 5);\n",
+          "after": "    assert_eq!(inverse.len(), 7);\n"
+        },
+        {
+          "start": 31351,
+          "before": "    let recovery = include_str!(\"../recovery.rs\").replace(\n",
+          "after": "    let recovery = include_str!(\"../recovery.rs\");\n    let begin = \"\\n    // Begin exact producer-origin parameter receiver.\\n\";\n    let end = \"    // End exact producer-origin parameter receiver.\\n\";\n    assert_eq!(recovery.matches(begin).count(), 1);\n    assert_eq!(recovery.matches(end).count(), 1);\n    let (prefix, added) = recovery.split_once(begin).unwrap();\n    let (_, suffix) = added.split_once(end).unwrap();\n    let recovery = format!(\"{prefix}{suffix}\").replace(\n"
+        },
+        {
+          "start": 32616,
+          "before": "",
+          "after": "        \"                if self.result_type.is_some() && self.recovery.reads_value(scope, name, expression)\\n                {\\n                    self.values.push(None);\\n                    return Ok(());\\n                }\\n\",\n        \"\",\n    ).replace(\n"
+        }
+      ]
+    }
+  ]
+}

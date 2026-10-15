@@ -52,11 +52,45 @@ fn output_carrier<T>(
     Ok(retained)
 }
 
+/// The input's live entries have already been charged by the core prebound.
+/// Moving its entire allocation creates no replacement. Charge every spare
+/// slot at the full physical T size, including sidecar headers in unused slots;
+/// the caller's legacy fixed-element allowance is only the replacement price.
+fn reuse_full_carrier<T>(
+    length: usize,
+    capacity: usize,
+    selected: usize,
+    replacement_element_bytes: usize,
+) -> Result<bool, Vec<Diagnostic>> {
+    if selected != length {
+        return Ok(false);
+    }
+    let spare = capacity.checked_sub(length).ok_or_else(limit_error)?;
+    if spare == 0 {
+        return Ok(true);
+    }
+    let bytes = spare
+        .checked_mul(std::mem::size_of::<T>())
+        .ok_or_else(limit_error)?;
+    let replacement = selected
+        .checked_mul(replacement_element_bytes)
+        .ok_or_else(limit_error)?;
+    if bytes >= replacement {
+        return Ok(false);
+    }
+    reserve_builder_structure(bytes)?;
+    Ok(true)
+}
+
 /// Move selected entries into a retained output carrier.
 ///
 /// Normal core attempts retain the established full-carrier receipt. The final
 /// uncached retry keeps the complete input carrier live and charged until this
-/// move finishes, then charges only the new output carrier. `keep` is an `Fn`:
+/// move finishes, then charges only the new output carrier. When every entry
+/// is selected and capacity is exact, move the already-charged carrier itself:
+/// no second allocation occurs. Small spare capacity may also retain that
+/// carrier when its complete physical slots are explicitly charged for less
+/// than a replacement. Unselected entries always compact. `keep` is an `Fn`:
 /// the final retry counts and moves the same selection without accepting a
 /// stateful predicate as accounting evidence.
 pub(super) fn filter_owned_vec<T>(
@@ -75,6 +109,14 @@ pub(super) fn filter_owned_vec<T>(
     }
 
     let selected = items.iter().filter(|item| keep(*item)).count();
+    if reuse_full_carrier::<T>(
+        items.len(),
+        items.capacity(),
+        selected,
+        std::mem::size_of::<T>(),
+    )? {
+        return Ok(items);
+    }
     let mut retained = output_carrier::<T>(selected, std::mem::size_of::<T>())?;
     for item in items {
         if keep(&item) {
@@ -85,26 +127,39 @@ pub(super) fn filter_owned_vec<T>(
     Ok(retained)
 }
 
+/// Legacy retention counter contract: every input fixed carrier and sidecar,
+/// including entries later filtered out. Sharing does not change this debit.
+/// The fixed amount can cover a smaller physical selection carrier in the same
+/// receiving call; it is not evidence that a second HIR allocation occurred.
+pub(super) fn reserve_full_input<T>(
+    items: &[T],
+    fixed_element_bytes: usize,
+    mut extra_owned_bytes: impl FnMut(&T) -> Result<usize, Vec<Diagnostic>>,
+) -> Result<usize, Vec<Diagnostic>> {
+    let fixed = items
+        .len()
+        .checked_mul(fixed_element_bytes)
+        .ok_or_else(limit_error)?;
+    let mut bytes = fixed;
+    for item in items {
+        bytes = bytes
+            .checked_add(extra_owned_bytes(item)?)
+            .ok_or_else(limit_error)?;
+    }
+    reserve_builder_structure(bytes)?;
+    Ok(fixed)
+}
+
 /// Move selected entries and account their loan-plan sidecars.
 pub(super) fn filter_owned_vec_accounted<T>(
     items: Vec<T>,
     fixed_element_bytes: usize,
-    extra_owned_bytes: impl Fn(&T) -> Result<usize, Vec<Diagnostic>>,
+    mut extra_owned_bytes: impl FnMut(&T) -> Result<usize, Vec<Diagnostic>>,
     keep: impl Fn(&T) -> bool,
     retained_output_only: bool,
 ) -> Result<Vec<T>, Vec<Diagnostic>> {
     if !retained_output_only {
-        let fixed = items
-            .len()
-            .checked_mul(fixed_element_bytes)
-            .ok_or_else(limit_error)?;
-        let mut bytes = fixed;
-        for item in &items {
-            bytes = bytes
-                .checked_add(extra_owned_bytes(item)?)
-                .ok_or_else(limit_error)?;
-        }
-        reserve_builder_structure(bytes)?;
+        reserve_full_input(&items, fixed_element_bytes, extra_owned_bytes)?;
         return Ok(items.into_iter().filter(|item| keep(item)).collect());
     }
 
@@ -118,7 +173,13 @@ pub(super) fn filter_owned_vec_accounted<T>(
                 .ok_or_else(limit_error)?;
         }
     }
-    reserve_builder_structure(sidecars)?;
+    crate::bounded_output::with_reservation_stage(
+        crate::bounded_output::ReservationStage::RetainedLoanSidecars,
+        || reserve_builder_structure(sidecars),
+    )?;
+    if reuse_full_carrier::<T>(items.len(), items.capacity(), selected, fixed_element_bytes)? {
+        return Ok(items);
+    }
     let mut retained = output_carrier::<T>(selected, fixed_element_bytes)?;
     for item in items {
         if keep(&item) {
@@ -271,3 +332,7 @@ mod agent_execution_tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "retained_vectors/carrier_tests.rs"]
+mod carrier_tests;

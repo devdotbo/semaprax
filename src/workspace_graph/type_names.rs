@@ -3,7 +3,8 @@ use super::*;
 
 pub(super) fn type_contains_name_from(ty: &Type, names: &BTreeSet<&str>) -> bool {
     match ty {
-        Type::I64
+        Type::Never
+        | Type::I64
         | Type::I32
         | Type::Char
         | Type::U8
@@ -49,7 +50,8 @@ pub(super) fn type_reference_is_admitted(
         | Type::Bool
         | Type::String
         | Type::Str => true,
-        Type::SliceU8
+        Type::Never
+        | Type::SliceU8
         | Type::StringMap
         | Type::ArrayU8(_)
         | Type::OnceFunction

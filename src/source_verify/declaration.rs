@@ -8,41 +8,124 @@ use self::declarations::{
     check_byte_data_declarations, check_declared_fields, check_native_rust_imports,
     check_record_layouts, check_resource_lifecycles,
 };
+pub(super) use self::functions::SignatureOrigin;
 use self::functions::{
-    check_function_bodies, check_function_declarations, check_generic_function_cycles,
+    check_function_bodies, check_function_declarations, check_generic_function_cycles_with_types,
 };
 use self::identity::{check_interface_identities, check_type_identities};
-use super::capacity::{source_capacity_functions, verify_byte_data_capacity};
+use super::capacity::{source_capacity_functions, verify_selected_capacity};
 use super::diagnostics::error;
 use super::type_table::TypeTable;
-use crate::ast::{Program, Span, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Span, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::{HashMap, HashSet};
 
 mod classes;
 mod declarations;
 mod functions;
+pub(super) mod fusion;
 mod identity;
 
-pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
+pub(crate) fn verify(program: &dyn ProgramSource) -> Vec<Diagnostic> {
+    verify_selected(program, None, None)
+}
+
+/// [`verify`] with a Workspace Graph private layout presentation bound to
+/// this exact `program`. It changes diagnostic text only.
+pub(crate) fn verify_presenting<'p>(
+    program: &'p dyn ProgramSource,
+    private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
+) -> Vec<Diagnostic> {
+    verify_selected(program, None, private)
+}
+
+/// Every ordinary source pass. A held `FusedConstructionV1` selection only
+/// changes the two places that would otherwise apply the legacy 32-event rule
+/// to its own loop: the while-body producer admission and that loop's capacity
+/// flow. Callers outside the private candidate route always pass `None`.
+pub(in crate::source_verify) fn verify_selected<'p>(
+    program: &'p dyn ProgramSource,
+    selected: Option<&crate::source_verify::fused_construction::SourceProof<'p>>,
+    private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
+) -> Vec<Diagnostic> {
+    verify_profile(program, selected, private, false)
+}
+
+/// Private factory only: all source passes, with the explicit partition
+/// availability guard removed. This does not grant HIR or runtime authority.
+#[cfg_attr(
+    not(test),
+    allow(
+        dead_code,
+        reason = "private partition source factory has no ordinary route"
+    )
+)]
+pub(crate) fn verify_partition(program: &dyn ProgramSource) -> Vec<Diagnostic> {
+    verify_profile(program, None, None, true)
+}
+
+fn verify_profile<'p>(
+    program: &'p dyn ProgramSource,
+    selected: Option<&crate::source_verify::fused_construction::SourceProof<'p>>,
+    private: Option<crate::source_verify::private_names::PrivateNames<'p>>,
+    partition: bool,
+) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
-    if let Err(diagnostic) = crate::static_protocol::validate(program) {
-        diagnostics.push(diagnostic.at_path(&program.path));
+    if let Err(diagnostic) = crate::static_protocol::validate_source(program) {
+        diagnostics.push(diagnostic.at_path(program.path()));
         return diagnostics;
     }
-    if !program.module_uses.is_empty() {
+    if !program.module_uses().is_empty() {
         diagnostics.push(
             Diagnostic::io(
                 "SPX-G172",
                 "source module imports require Workspace Semantic Graph resolution",
             )
-            .at_path(&program.path)
+            .at_path(program.path())
             .with_help(super::hints::PROJECT_IMPORTS_HELP),
         );
         return diagnostics;
     }
     super::stdin_stream::check(program, &mut diagnostics);
     let capacity_functions = source_capacity_functions(program);
+    if !partition {
+        let mut private_call = None;
+        for (_, function) in &capacity_functions {
+            for root in function
+                .requires
+                .iter()
+                .chain(std::iter::once(&function.body))
+                .chain(&function.ensures)
+            {
+                root.visit_calls(&mut |name, span| {
+                    if name == crate::construction_fusion::partition::NAME && private_call.is_none()
+                    {
+                        private_call = Some(span);
+                    }
+                });
+            }
+        }
+        for declaration in program.types() {
+            for invariant in declaration.invariants() {
+                invariant.visit_calls(&mut |name, span| {
+                    if name == crate::construction_fusion::partition::NAME && private_call.is_none()
+                    {
+                        private_call = Some(span);
+                    }
+                });
+            }
+        }
+        if let Some(span) = private_call {
+            diagnostics.push(error(
+                program,
+                "SPX-T263",
+                "byte partition requires the private checked source profile",
+                span,
+            ));
+            return diagnostics;
+        }
+    }
     if capacity_functions.len() > crate::byte_data_capacity::MAX_FUNCTIONS {
         let (_, function) = capacity_functions[crate::byte_data_capacity::MAX_FUNCTIONS];
         diagnostics.push(
@@ -77,7 +160,8 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
         &mut diagnostics,
     );
 
-    let types = TypeTable::new(program);
+    let mut types = TypeTable::new(program);
+    types.private = private;
     check_byte_data_declarations(program, &types, &mut diagnostics);
     let mut native_rust_names = HashSet::new();
     check_native_rust_imports(program, &types, &mut native_rust_names, &mut diagnostics);
@@ -86,7 +170,7 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
     let mut checked_layouts = HashSet::new();
     check_record_layouts(program, &types, &mut checked_layouts, &mut diagnostics);
 
-    check_function_declarations(program, &mut functions, &mut ids, &mut diagnostics);
+    check_function_declarations(program, &types, &mut functions, &mut ids, &mut diagnostics);
     diagnostics.extend(crate::session_protocol::source::check(program));
     diagnostics.extend(crate::session_protocol::typestate::check(program));
 
@@ -103,7 +187,7 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
     let function_value_targets =
         crate::source_verify::function_value_inventory::function_value_targets(program, &functions);
     let call_graph = program
-        .functions
+        .functions()
         .iter()
         .map(|function| {
             (
@@ -117,14 +201,28 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
         })
         .collect::<HashMap<_, _>>();
     let generic_functions = program
-        .functions
+        .functions()
         .iter()
         .filter(|function| !function.type_parameters.is_empty())
         .map(|function| function.name.as_str())
         .collect::<HashSet<_>>();
-    check_generic_function_cycles(program, &call_graph, &generic_functions, &mut diagnostics);
+    check_generic_function_cycles_with_types(
+        program,
+        &call_graph,
+        &generic_functions,
+        &types,
+        &mut diagnostics,
+    );
 
-    check_function_bodies(program, &functions, &import_keys, &types, &mut diagnostics);
+    super::lexical_exit::validate(program, &mut diagnostics);
+    check_function_bodies(
+        program,
+        &functions,
+        &import_keys,
+        &types,
+        &mut diagnostics,
+        selected.map(|proof| proof.producer().call),
+    );
     crate::source_verify::record_invariants::check_record_invariants(
         program,
         &functions,
@@ -153,15 +251,15 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
                 "SPX-T105",
                 "executable module must define `fn main() -> i64`",
                 program
-                    .functions
+                    .functions()
                     .first()
                     .map_or(Span::default(), |function| function.span),
             )
-            .at_path(&program.path)
+            .at_path(program.path())
             .with_help(super::hints::LIBRARY_MODULE_HELP),
         );
     }
-    if let Err(capacity) = verify_byte_data_capacity(program, &types) {
+    if let Err(capacity) = verify_selected_capacity(program, &types, selected) {
         if capacity.diagnostic != crate::byte_data_capacity::CapacityDiagnostic::Invariant
             || !diagnostics
                 .iter()
@@ -177,12 +275,19 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
                         .find(|(_, function)| function.stable_id == identity)
                 })
                 .map_or(Span::default(), |(_, function)| function.span);
-            diagnostics.push(error(
-                program,
-                capacity.diagnostic.code(),
-                capacity.detail,
-                span,
-            ));
+            let help = (capacity.diagnostic
+                == crate::byte_data_capacity::CapacityDiagnostic::Allocation)
+                .then(|| fusion::refusal_help(program))
+                .flatten();
+            let witness_help = capacity.witness_help;
+            let mut diagnostic = error(program, capacity.diagnostic.code(), capacity.detail, span);
+            if let Some(witness_help) = witness_help {
+                diagnostic = diagnostic.with_help(witness_help);
+            }
+            if let Some(help) = help {
+                diagnostic = diagnostic.with_help(help);
+            }
+            diagnostics.push(diagnostic);
         }
     }
     let mut native_interop_failures = HashSet::new();
@@ -198,3 +303,11 @@ pub(crate) fn verify(program: &Program) -> Vec<Diagnostic> {
     }
     diagnostics
 }
+
+#[cfg(test)]
+#[rustfmt::skip]
+pub(super) mod old;
+
+#[cfg(test)]
+#[rustfmt::skip]
+pub(super) mod public_signature_before;

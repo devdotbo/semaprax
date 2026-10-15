@@ -186,7 +186,7 @@ pub(super) fn emit_invoke<O: COutput>(
             arguments
         ));
     }
-    emitter.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+    emitter.emit_operation_failure_check()?;
     emitter.require_type(&expr.ty, result, "function invocation result")?;
     Ok(CValue {
         code: temporary,
@@ -198,6 +198,9 @@ pub(super) fn resolved_expr_children<'a>(
     expression: &'a ResolvedExpr,
 ) -> Box<dyn Iterator<Item = &'a ResolvedExpr> + 'a> {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            Box::new(value.iter().map(|value| value.as_ref()))
+        }
         ResolvedExprKind::Binary { left, right, .. } => {
             Box::new([left.as_ref(), right.as_ref()].into_iter())
         }
@@ -210,7 +213,10 @@ pub(super) fn resolved_expr_children<'a>(
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Upcast { source: value }
         | ResolvedExprKind::Yield { request: value } => Box::new(std::iter::once(value.as_ref())),
-        ResolvedExprKind::Block { statements, tail } => Box::new(
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => Box::new(
             statements
                 .iter()
                 .flat_map(|statement| {
@@ -230,7 +236,10 @@ pub(super) fn resolved_expr_children<'a>(
             ]
             .into_iter(),
         ),
-        ResolvedExprKind::Call { args, .. } => Box::new(args.iter()),
+        ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. }
+        | ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. } => Box::new(args.iter()),
         ResolvedExprKind::Closure { captures, .. } => {
             Box::new(captures.iter().map(|capture| &capture.value))
         }
@@ -266,6 +275,7 @@ pub(super) fn resolved_expr_children<'a>(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_) => Box::new(std::iter::empty()),

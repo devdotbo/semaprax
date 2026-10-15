@@ -1,0 +1,16 @@
+{
+  "status": "source-only; all selectors pending root execution",
+  "package": "semaprax",
+  "harness": "lib",
+  "selectors": [
+    "source_verify::recovery_tests::operators_799::refused_operators_keep_all_original_primary_fields_and_publish_no_checked_type",
+    "source_verify::recovery_tests::operators_799::nested_refusal_removes_only_dependent_condition_and_argument_classifications",
+    "source_verify::recovery_tests::operators_799::refused_initializer_keeps_real_duplicate_and_independent_sibling_errors",
+    "source_verify::recovery_tests::operators_799::admitted_operator_results_and_lazy_owned_call_joins_match_full_saved_receiver",
+    "source_verify::recovery_tests::operators_799::complete_original_operator_source_is_preserved_by_exact_named_inverse",
+    "source_verify::iterative_verifier_tests::scalar_frame_machine_matches_recursive_oracle",
+    "source_verify::iterative_verifier_tests::generic_inference_v2_frame_machine_matches_recursive_oracle",
+    "source_verify::recovery_tests::proposal_corpus::full_proposal_corpus_keeps_exact_old_verdicts_and_scoped_intentional_deltas",
+    "source_verify::constructor_tests::complete_saved_pass_sources_and_all_children_remain_joined_and_within_caps"
+  ]
+}

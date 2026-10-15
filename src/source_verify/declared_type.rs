@@ -7,8 +7,9 @@ use super::diagnostics::{error, source_identifier};
 use super::type_table::{
     effective_record_fields, owned_byte_prelude_instance_is_admitted, TypeTable,
 };
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
-    Expr, ExprKind, FieldDeclaration, Function, MatchMode, Param, ParamMode, Program,
+    Expr, ExprKind, FieldDeclaration, Function, MatchMode, Param, ParamMode,
     RecordMatchFieldPattern, RecordMatchPatternField, Span, Type, TypeDeclarationKind,
 };
 use crate::diagnostic::Diagnostic;
@@ -133,7 +134,7 @@ pub(super) fn record_layout_is_recursive(
 }
 
 pub(super) fn check_declared_type(
-    program: &Program,
+    program: &dyn ProgramSource,
     ty: &Type,
     span: Span,
     types: &TypeTable<'_>,
@@ -142,6 +143,15 @@ pub(super) fn check_declared_type(
 ) {
     let mut pending = vec![ty];
     while let Some(ty) = pending.pop() {
+        if *ty == Type::Never {
+            diagnostics.push(error(
+                program,
+                "SPX-T312",
+                "lexical completion marker cannot appear in a declaration or storage type",
+                span,
+            ));
+            continue;
+        }
         if *ty == Type::MutFunctionI64 {
             if !parameters.is_empty() {
                 diagnostics.push(error(
@@ -205,17 +215,20 @@ pub(super) fn check_declared_type(
             continue;
         };
         if arguments.len() != declaration.type_parameters.len() {
+            // Declaration checks also walk appended private layout copies.
+            let private = super::private_names::private_label(program, types, name);
             let mut diagnostic = error(
                 program,
                 "SPX-T221",
                 format!(
-                    "type `{name}` expects {} type arguments, received {}",
+                    "type `{}` expects {} type arguments, received {}",
+                    private.as_deref().unwrap_or(name),
                     declaration.type_parameters.len(),
                     arguments.len()
                 ),
                 span,
             );
-            if arguments.is_empty() {
+            if arguments.is_empty() && private.is_none() {
                 diagnostic = diagnostic.with_help(super::hints::type_arguments_help(
                     name,
                     declaration.type_parameters.len(),
@@ -261,22 +274,29 @@ pub(super) fn check_declared_type(
             continue;
         }
         let admitted_owned_record = types.is_nested_owned_byte_record(&instance)
-            || crate::source_verify::declared_type::string_record::admitted(&instance, types);
+            || crate::source_verify::declared_type::string_record::runtime_admitted(
+                &instance, types,
+            );
         let admitted_owned_record_template =
             types.is_nested_owned_byte_record_template(&instance, parameters);
         let admitted_owned_variant = (types.is_flat_owned_byte_variant(&instance)
-            || types.is_flat_owned_string_variant(&instance))
+            || types.is_direct_owned_variant(&instance))
             || generic_variant::parameter_slot(&instance, parameters, types);
         let admitted_result_template = name == "Result"
             && matches!(arguments.as_slice(), [Type::Bytes, Type::Named { name, arguments }] | [Type::Named { name, arguments }, Type::Bytes] if arguments.is_empty() && parameters.len() == 1 && parameters.contains(name.as_str()));
-        let admitted_vec = name == "Vec"
-            && arguments.len() == 1
-            && (crate::vec_ops::ast_vec_element_is_admitted(&arguments[0])
-                || owned_record_collection::is_admitted_owned_record_collection_element(
-                    types,
-                    &arguments[0],
-                )
-                || matches!(&arguments[0], Type::Named { name, arguments }
+        let admitted_vec = declared_collection::vector(types, &instance)
+            || name == "Vec"
+                && arguments.len() == 1
+                && (crate::vec_ops::ast_vec_element_is_admitted(&arguments[0])
+                    || crate::source_verify::declared_type::owned_leaf_collection::copy_or_leaf_admitted(
+                        types,
+                        &arguments[0],
+                    )
+                    || owned_record_collection::is_admitted_owned_record_collection_element(
+                        types,
+                        &arguments[0],
+                    )
+                    || matches!(&arguments[0], Type::Named { name, arguments }
                     if arguments.is_empty() && parameters.contains(name.as_str())));
         let admitted_box = declaration.stable_id == crate::prelude::BOX_ID
             && name == "Box"
@@ -321,11 +341,19 @@ pub(super) fn check_declared_type(
                 .iter()
                 .any(|argument| !matches!(argument, Type::I64 | Type::Bool)))
         {
-            diagnostics.push(error(
-                program,
-                "SPX-T223",
-                format!("generic copy type `{name}` accepts only direct `i64` or `bool` arguments"),
-                span,
+            diagnostics.push(super::hints::with_optional_help(
+                error(
+                    program,
+                    "SPX-T223",
+                    format!(
+                        "generic copy type `{}` accepts only direct `i64` or `bool` arguments",
+                        super::private_names::private_label(program, types, name)
+                            .as_deref()
+                            .unwrap_or(name)
+                    ),
+                    span,
+                ),
+                super::hints::generic_scalar_argument_help(name, arguments),
             ));
         }
         pending.extend(arguments.iter().rev());
@@ -370,6 +398,7 @@ pub(super) fn direct_function_type_argument(ty: &Type) -> bool {
 
 pub(super) fn generic_function_signature_slot(ty: &Type, parameters: &HashSet<&str>) -> bool {
     match ty {
+        Type::Never => false,
         Type::I64 | Type::Bool | Type::String => true,
         Type::I32
         | Type::Char
@@ -492,7 +521,7 @@ pub(super) fn generic_function_arguments_are_admitted(
             .all(|param| {
                 if nested {
                     types.is_nested_owned_byte_record(&param.ty)
-                        || crate::source_verify::declared_type::string_record::admitted(
+                        || crate::source_verify::declared_type::string_record::runtime_admitted(
                             &param.ty, types,
                         )
                 } else {
@@ -501,7 +530,7 @@ pub(super) fn generic_function_arguments_are_admitted(
             })
             && if nested {
                 types.is_nested_owned_byte_record(&specialized.return_type)
-                    || crate::source_verify::declared_type::string_record::admitted(
+                    || crate::source_verify::declared_type::string_record::runtime_admitted(
                         &specialized.return_type,
                         types,
                     )
@@ -554,6 +583,7 @@ pub(super) fn substitute_function_type(
     while let Some(frame) = frames.pop() {
         match frame {
             Frame::Enter(template) => match template {
+                Type::Never => return None,
                 Type::I64 => resolved.push(Type::I64),
                 Type::I32 => resolved.push(Type::I32),
                 Type::Char => resolved.push(Type::Char),
@@ -684,6 +714,7 @@ fn generic_function_expression_is_admitted(
     let mut pending = vec![expression];
     while let Some(expression) = pending.pop() {
         match &expression.kind {
+            ExprKind::LexicalExit { .. } => return false,
             ExprKind::Closure { body, .. } => {
                 if !closures {
                     return false;
@@ -699,10 +730,13 @@ fn generic_function_expression_is_admitted(
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => {}
             ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => return false,
             ExprKind::Call { args, .. } => pending.extend(args.iter().rev()),
-            ExprKind::Unary { value, .. } => pending.push(value),
+            ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                pending.push(value)
+            }
             ExprKind::Binary { left, right, .. } => {
                 pending.push(right);
                 pending.push(left);
@@ -834,6 +868,11 @@ fn substitute_forwarded_call_arguments(
     expression: &mut Expr,
 ) -> Option<()> {
     match &mut expression.kind {
+        ExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                substitute_forwarded_call_arguments(function, arguments, value)?;
+            }
+        }
         ExprKind::Closure {
             params,
             return_type,
@@ -869,7 +908,8 @@ fn substitute_forwarded_call_arguments(
                 substitute_forwarded_call_arguments(function, arguments, argument)?;
             }
         }
-        ExprKind::Unary { value, .. }
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }
         | ExprKind::Project { base: value, .. } => {
@@ -903,6 +943,7 @@ fn substitute_forwarded_call_arguments(
                         substitute_forwarded_call_arguments(function, arguments, body)?;
                     }
                     crate::ast::Statement::For { values, body, .. }
+                    | crate::ast::Statement::ForBorrow { values, body, .. }
                     | crate::ast::Statement::ForOwn { values, body, .. } => {
                         substitute_forwarded_call_arguments(function, arguments, values)?;
                         substitute_forwarded_call_arguments(function, arguments, body)?;
@@ -965,6 +1006,7 @@ fn substitute_forwarded_call_arguments(
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
     }
     Some(())
@@ -985,7 +1027,7 @@ pub(super) fn validation_specialize_signature(
 }
 
 pub(super) fn check_ownership_mode(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     param: &crate::ast::Param,
     types: &TypeTable<'_>,
@@ -1069,23 +1111,33 @@ pub(super) fn check_ownership_mode(
         }
         return;
     }
-    if types.is_flat_owned_string_variant(&param.ty) {
+    // Import stubs can declare parameters of appended private layout copies;
+    // such a type is presented by provenance and never offered as a spelling.
+    // Both are evaluated only while a diagnostic is constructed.
+    let private = || super::private_names::is_private(program, types, &param.ty);
+    let shown = || super::private_names::type_name(program, types, &param.ty);
+    if types.is_direct_owned_variant(&param.ty) {
         if !matches!(param.mode, ParamMode::Own | ParamMode::Borrow) {
-            diagnostics.push(
-                error(
-                    program,
-                    "SPX-T263",
-                    format!(
-                        "owned-string variant parameter `{}.{}` must use `own {}` or `borrow {}`",
-                        function.name, param.name, param.ty, param.ty
-                    ),
-                    param.span,
-                )
-                .with_help(format!(
+            let diagnostic = error(
+                program,
+                "SPX-T263",
+                format!(
+                    "owned-string variant parameter `{}.{}` must use `own {}` or `borrow {}`",
+                    function.name,
+                    param.name,
+                    shown(),
+                    shown()
+                ),
+                param.span,
+            );
+            diagnostics.push(if private() {
+                diagnostic
+            } else {
+                diagnostic.with_help(format!(
                     "use `{}: own {}` to transfer ownership, or `borrow {}` for a synchronous view",
                     param.name, param.ty, param.ty
-                )),
-            );
+                ))
+            });
         }
         return;
     }
@@ -1093,15 +1145,15 @@ pub(super) fn check_ownership_mode(
         return;
     }
     let requires_explicit_mode = crate::map_ops::ast_collection(&param.ty)
-        || string_record::admitted(&param.ty, types)
+        || string_record::runtime_admitted(&param.ty, types)
         || crate::stdin_stream_ops::ast_is_reader(&param.ty)
         || types.is_admitted_iterator(&param.ty)
         || types.contains_resource(&param.ty)
         || types.contains_owned_bytes(&param.ty)
         || matches!(&param.ty, Type::Named { name, arguments } if arguments.len() == 1 && types.declaration(name).is_some_and(|d| matches!(d.stable_id.as_str(), crate::prelude::BOX_ID | crate::prelude::VEC_ID)));
     match (requires_explicit_mode, param.mode) {
-        (true, ParamMode::Value) => diagnostics.push(
-            error(
+        (true, ParamMode::Value) => {
+            let diagnostic = error(
                 program,
                 "SPX-O001",
                 format!(
@@ -1109,12 +1161,16 @@ pub(super) fn check_ownership_mode(
                     function.name, param.name
                 ),
                 param.span,
-            )
-            .with_help(format!(
-                "use `{}: own {}` to transfer ownership",
-                param.name, param.ty
-            )),
-        ),
+            );
+            diagnostics.push(if private() {
+                diagnostic
+            } else {
+                diagnostic.with_help(format!(
+                    "use `{}: own {}` to transfer ownership",
+                    param.name, param.ty
+                ))
+            });
+        }
         (false, mode) if mode != ParamMode::Value && param.ty == Type::String => diagnostics.push(
             error(
                 program,
@@ -1133,7 +1189,7 @@ pub(super) fn check_ownership_mode(
             format!(
                 "ownership mode `{}` is only valid for resource types; `{}` is a value type",
                 mode.text(),
-                param.ty
+                shown()
             ),
             param.span,
         )),
@@ -1163,7 +1219,7 @@ pub(super) fn ordinary_option_argument(ty: &Type) -> Option<&Type> {
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_record_pattern(
-    program: &Program,
+    program: &dyn ProgramSource,
     pattern_type: &str,
     fields: &[RecordMatchPatternField],
     expected: &Type,
@@ -1173,9 +1229,10 @@ pub(super) fn check_record_pattern(
     span: Span,
     mode: MatchMode,
 ) {
+    let expected_root = expected;
     let exact_recursive = mode != MatchMode::Value
         && (types.is_nested_owned_byte_record(expected)
-            || string_record::admitted(expected, types))
+            || string_record::runtime_admitted(expected, types))
         && !types.is_flat_owned_byte_record(expected);
     enum Frame<'a, 't> {
         Enter {
@@ -1222,7 +1279,8 @@ pub(super) fn check_record_pattern(
                         program,
                         "SPX-M103",
                         format!(
-                            "record pattern `{pattern_type}` is incompatible with `{expected}`"
+                            "record pattern `{pattern_type}` is incompatible with `{}`",
+                            super::private_names::type_name(program, types, &expected)
                         ),
                         span,
                     ));
@@ -1302,8 +1360,12 @@ pub(super) fn check_record_pattern(
                 });
                 match &field.pattern {
                     RecordMatchFieldPattern::Binding { name, span } => {
+                        let subtree = mode == MatchMode::Own
+                            && subtree::admitted(expected_root, &field_ty, types);
                         if exact_recursive
+                            && !subtree
                             && !crate::map_ops::ast_collection(&field_ty)
+                            && !collection_record::vector(types, &field_ty)
                             && types.record_fields(&field_ty).is_some()
                         {
                             diagnostics.push(error(
@@ -1323,6 +1385,8 @@ pub(super) fn check_record_pattern(
                             variables.insert(
                                 name.clone(),
                                 Binding {
+                                    contract_local: false,
+                                    traversal_row: None,
                                     mode: if types.needs_drop(&field_ty) {
                                         match mode {
                                             MatchMode::Own => ParamMode::Own,
@@ -1380,9 +1444,14 @@ mod tests;
 pub(super) mod generic_collection;
 pub(super) mod generic_result;
 
+pub(super) mod collection_record;
 pub(super) mod generic_variant;
 pub(super) mod string_record;
 
+pub(crate) mod collection_outcome;
+pub(crate) mod copy_record_collection;
+pub(crate) mod declared_collection;
+pub(crate) mod owned_leaf_collection;
 pub(super) mod owned_record_collection;
 
 /// Ordinary resource-free record algebra may return a Copy value or transfer
@@ -1396,6 +1465,9 @@ pub(super) fn ordinary_record_match_result(
         || (mode == ParamMode::Own
             && (matches!(ty, Type::Bytes | Type::String)
                 || crate::map_ops::ast_collection(ty)
+                || collection_record::vector(types, ty)
                 || types.is_nested_owned_byte_record(ty)
-                || string_record::admitted(ty, types)))
+                || string_record::runtime_admitted(ty, types)))
 }
+
+mod subtree;

@@ -1,0 +1,1077 @@
+Review DISTINCT 33801deb384e912b059409b0ca408f41a54b3664 production compiler repair ONLY, not prior827/828 implementation review (earlier broader review timeout is not being retried). Human explicitly authorized source sharing. One tool-disabled source-only call: do not execute, browse, delegate or request broad new controls. Root owns a live compile; no result from it is supplied. Focus whether the2 borrowed renewal adapters preserve work charges, first errors and exact borrowed lifetime/values without cloning, and whether the trait reexport selects the IDENTICAL census implementation. Module #[path] repairs should only load actual existing children. Report concrete blockers only, or state none found; qualify missing evidence, under600words. Do not audit unrelated full allocation design or require a general rewrite. Full owning current3files, exact old3files, real504b compiler rendered errors and inverse proof context follow.
+
+
+=== COMPLETE CURRENT OWNING SOURCE 33801deb384e912b059409b0ca408f41a54b3664 src/hir/renewal_probes.rs:1-74 ===
+1: //! Work receivers for exact immutable declaration lookups; no new allowance.
+2: use super::DeclarationId;
+3: use std::collections::BTreeMap;
+4: pub(crate) type Work<'a> = dyn FnMut(usize) -> bool + 'a;
+5: pub(crate) fn units(work: &mut Work<'_>, count: usize) -> Result<(), ()> {
+6:     if work(count) {
+7:         Ok(())
+8:     } else {
+9:         Err(())
+10:     }
+11: }
+12: pub(crate) fn lookup<'a, V>(
+13:     map: &'a BTreeMap<DeclarationId, V>,
+14:     query: &DeclarationId,
+15:     work: &mut Work<'_>,
+16: ) -> Result<Option<&'a V>, ()> {
+17:     // Every possible search comparison is paid before the actual get. The
+18:     // borrowed key census itself receives one unit before visiting each key.
+19:     for key in map.keys() {
+20:         units(work, 1)?;
+21:         let bytes = key
+22:             .as_str()
+23:             .len()
+24:             .min(query.as_str().len())
+25:             .checked_add(1)
+26:             .ok_or(())?;
+27:         units(work, bytes)?;
+28:     }
+29:     Ok(map.get(query))
+30: }
+31: 
+32: /// Exact borrowed typed receivers; a paid phase inventory avoids repeated key censuses.
+33: pub(crate) trait Index {
+34:     fn declaration(
+35:         &self,
+36:         key: &DeclarationId,
+37:         work: &mut Work<'_>,
+38:     ) -> Result<Option<&super::Declaration>, ()>;
+39:     fn parameters(
+40:         &self,
+41:         key: &DeclarationId,
+42:         work: &mut Work<'_>,
+43:     ) -> Result<Option<&Vec<super::ResolvedTypeParameterDeclaration>>, ()>;
+44:     fn fields(
+45:         &self,
+46:         key: &DeclarationId,
+47:         work: &mut Work<'_>,
+48:     ) -> Result<Option<&Vec<super::ResolvedFieldDeclaration>>, ()>;
+49: }
+50: impl Index for super::DeclarationIndex {
+51:     fn declaration(
+52:         &self,
+53:         key: &DeclarationId,
+54:         work: &mut Work<'_>,
+55:     ) -> Result<Option<&super::Declaration>, ()> {
+56:         lookup(&self.declarations, key, work)
+57:     }
+58:     fn parameters(
+59:         &self,
+60:         key: &DeclarationId,
+61:         work: &mut Work<'_>,
+62:     ) -> Result<Option<&Vec<super::ResolvedTypeParameterDeclaration>>, ()> {
+63:         lookup(&self.type_parameters, key, work).map(|rows| rows.map(|values| &**values))
+64:     }
+65:     fn fields(
+66:         &self,
+67:         key: &DeclarationId,
+68:         work: &mut Work<'_>,
+69:     ) -> Result<Option<&Vec<super::ResolvedFieldDeclaration>>, ()> {
+70:         lookup(&self.record_fields, key, work).map(|rows| rows.map(|values| &**values))
+71:     }
+72: }
+73: 
+74: pub(crate) mod phase;
+
+
+=== COMPLETE CURRENT OWNING SOURCE 33801deb384e912b059409b0ca408f41a54b3664 src/hir/nominal_payload/elements.rs:1-104 ===
+1: //! Complete recursive-type census before shared acquisition.
+2: use super::*;
+3: use crate::cleanup_plan::ReplayClonePayload;
+4: fn capacity<E>(
+5:     root: &ResolvedType,
+6:     reserve: &mut impl FnMut(usize) -> Result<(), E>,
+7: ) -> Result<usize, E> {
+8:     fn push<'a, E>(
+9:         stack: &mut Vec<&'a ResolvedType>,
+10:         ty: &'a ResolvedType,
+11:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+12:     ) -> Result<(), E> {
+13:         if stack.len() == stack.capacity() {
+14:             let capacity = stack.capacity().saturating_mul(2).max(4);
+15:             reserve(
+16:                 size_of::<Vec<&ResolvedType>>()
+17:                     .saturating_add(capacity.saturating_mul(size_of::<&ResolvedType>())),
+18:             )?;
+19:             let mut next = Vec::with_capacity(capacity);
+20:             assert_eq!(next.capacity(), capacity);
+21:             next.extend(stack.drain(..));
+22:             *stack = next;
+23:         }
+24:         stack.push(ty);
+25:         Ok(())
+26:     }
+27:     // Leaves require neither a census heap nor last-owner Drop scratch.
+28:     if !matches!(root, ResolvedType::Nominal { arguments, .. } if !arguments.is_empty())
+29:         && !matches!(root, ResolvedType::Function { .. })
+30:     {
+31:         return Ok(0);
+32:     }
+33:     let mut stack = Vec::new();
+34:     push(&mut stack, root, reserve)?;
+35:     let mut highwater = 0;
+36:     while let Some(ty) = stack.pop() {
+37:         match ty {
+38:             ResolvedType::Nominal { arguments, .. } => {
+39:                 for child in arguments {
+40:                     push(&mut stack, child, reserve)?;
+41:                 }
+42:             }
+43:             ResolvedType::Function { parameters, result } => {
+44:                 for child in parameters {
+45:                     push(&mut stack, child, reserve)?;
+46:                 }
+47:                 push(&mut stack, result, reserve)?;
+48:             }
+49:             _ => {}
+50:         }
+51:         highwater = highwater.max(stack.len());
+52:     }
+53:     Ok(highwater)
+54: }
+55: impl NominalElement for ResolvedFieldDeclaration {
+56:     fn drop_capacity<E>(
+57:         &self,
+58:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+59:     ) -> Result<usize, E> {
+60:         capacity(&self.ty, reserve)
+61:     }
+62:     fn drain_types(&mut self, dispose: &mut impl FnMut(ResolvedType)) {
+63:         dispose(std::mem::replace(&mut self.ty, ResolvedType::Unit));
+64:     }
+65:     fn clone_bytes(&self) -> Option<usize> {
+66:         self.name.len().checked_add(self.ty.clone_payload_bytes()?)
+67:     }
+68: }
+69: impl NominalElement for ResolvedVariantCaseDeclaration {
+70:     fn drop_capacity<E>(
+71:         &self,
+72:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+73:     ) -> Result<usize, E> {
+74:         let mut n = 0;
+75:         for field in &self.fields {
+76:             n = n.max(field.drop_capacity(reserve)?);
+77:         }
+78:         Ok(n)
+79:     }
+80:     fn drain_types(&mut self, dispose: &mut impl FnMut(ResolvedType)) {
+81:         for field in &mut self.fields {
+82:             field.drain_types(dispose);
+83:         }
+84:     }
+85:     fn clone_bytes(&self) -> Option<usize> {
+86:         self.fields.iter().try_fold(
+87:             self.name.len().checked_add(
+88:                 self.fields
+89:                     .len()
+90:                     .checked_mul(size_of::<ResolvedFieldDeclaration>())?,
+91:             )?,
+92:             |n, f| n.checked_add(f.clone_bytes()?),
+93:         )
+94:     }
+95: }
+96: impl NominalElement for ResolvedTypeParameterDeclaration {
+97:     fn drop_capacity<E>(&self, _: &mut impl FnMut(usize) -> Result<(), E>) -> Result<usize, E> {
+98:         Ok(0)
+99:     }
+100:     fn drain_types(&mut self, _: &mut impl FnMut(ResolvedType)) {}
+101:     fn clone_bytes(&self) -> Option<usize> {
+102:         Some(self.name.len())
+103:     }
+104: }
+
+
+=== COMPLETE CURRENT OWNING SOURCE 33801deb384e912b059409b0ca408f41a54b3664 src/hir/prelude_bundle.rs:1-159 ===
+1: //! One paid immutable base-prelude owner, awaiting ordinary resolver integration.
+2: //! Metadata is borrowed from the existing checked producer. This module grants
+3: //! no source admission, cache authority, or right to remove the current forecast.
+4: use crate::ast::Span;
+5: use crate::hir::{
+6:     Declaration, DeclarationId, DeclarationKind, IdentityOrigin, NominalPayload,
+7:     ResolvedFieldDeclaration, ResolvedType, ResolvedTypeDeclaration, ResolvedTypeDeclarationKind,
+8:     ResolvedTypeParameterDeclaration, ResolvedVariantCaseDeclaration,
+9: };
+10: use crate::prelude::base_schema::{Variant, BASE};
+11: use std::sync::Arc;
+12: 
+13: #[path = "prelude_bundle/borrowed.rs"]
+14: mod borrowed;
+15: #[path = "prelude_bundle/fixed_work.rs"]
+16: mod fixed_work;
+17: #[path = "prelude_bundle/invocation.rs"]
+18: mod invocation;
+19: #[path = "prelude_bundle/materialize.rs"]
+20: mod materialize;
+21: #[path = "prelude_bundle/merge.rs"]
+22: mod merge;
+23: #[path = "prelude_bundle/overlay.rs"]
+24: mod overlay;
+25: #[path = "prelude_bundle/paid.rs"]
+26: mod paid;
+27: #[path = "prelude_bundle/producer.rs"]
+28: mod producer;
+29: #[path = "prelude_bundle/work_model.rs"]
+30: mod work_model;
+31: pub(crate) use fixed_work::{FixedFailure, FixedSchemaPayer, WorkReceipt, WorkRefusal};
+32: pub(crate) use invocation::{Invocation, InvocationFailure};
+33: pub(crate) use merge::merge_by_key;
+34: pub(crate) use overlay::Overlay;
+35: 
+36: /// The existing invocation supplies both accounts and retains its first sticky
+37: /// refusal. A zero-byte/work request must also observe an already failed account.
+38: pub(crate) trait Payer {
+39:     type Error;
+40:     fn bytes(&mut self, requested: usize) -> Result<(), Self::Error>;
+41:     fn work(&mut self, requested: usize) -> Result<(), Self::Error>;
+42: }
+43: 
+44: #[derive(Debug, Eq, PartialEq)]
+45: pub(crate) enum Failure<E> {
+46:     Payer(E),
+47:     Layout,
+48:     Allocation,
+49:     Capacity,
+50:     Schema,
+51: }
+52: 
+53: #[derive(Debug, Eq, PartialEq)]
+54: struct Contents {
+55:     // Unique sorted IDs. All names/IDs and every payload remain actually owned.
+56:     declarations: Vec<Declaration>,
+57:     // Producer order is Option, Result, independently of declaration lookup order.
+58:     types: Vec<ResolvedTypeDeclaration>,
+59: }
+60: 
+61: /// A real owner, never a process cache. Modules may borrow a view or retain one
+62: /// explicit lease. Only the producer can create the contents.
+63: #[derive(Debug, Eq, PartialEq)]
+64: pub(crate) struct BasePreludeBundle {
+65:     held: Arc<Contents>,
+66: }
+67: // Pure compatibility Clone for already-owned immutable index facts, matching
+68: // DeclarationId/NominalPayload Clone: no new backing, ambient ledger or source
+69: // authority. This does not pay a receiving Index carrier or authenticate a
+70: // sticky account. Qualified acquisition paths use retain with their payer.
+71: impl Clone for BasePreludeBundle {
+72:     fn clone(&self) -> Self {
+73:         Self {
+74:             held: Arc::clone(&self.held),
+75:         }
+76:     }
+77: }
+78: impl BasePreludeBundle {
+79:     pub(crate) fn acquire<P: Payer>(payer: &mut P) -> Result<Self, Failure<P::Error>> {
+80:         // The initializer and receiving carriers coexist with the paid shared
+81:         // owner. Acquire these actual layouts before constructing either.
+82:         let carriers = std::mem::size_of::<Contents>()
+83:             .checked_add(std::mem::size_of::<Self>())
+84:             .and_then(|n| n.checked_add(std::mem::size_of::<Result<Self, Failure<P::Error>>>()))
+85:             .ok_or(Failure::Layout)?;
+86:         payer.bytes(carriers).map_err(Failure::Payer)?;
+87:         let contents = producer::contents(payer)?;
+88:         payer
+89:             .bytes(paid::shared_bytes::<Contents>())
+90:             .map_err(Failure::Payer)?;
+91:         Ok(Self {
+92:             held: Arc::new(contents),
+93:         })
+94:     }
+95: 
+96:     pub(crate) fn retain<P: Payer>(&self, payer: &mut P) -> Result<Self, Failure<P::Error>> {
+97:         // No new heap/control block: the original paid owner remains alive.
+98:         payer.bytes(0).map_err(Failure::Payer)?;
+99:         payer.work(1).map_err(Failure::Payer)?;
+100:         Ok(Self {
+101:             held: Arc::clone(&self.held),
+102:         })
+103:     }
+104: 
+105:     pub(crate) fn types(&self) -> &[ResolvedTypeDeclaration] {
+106:         &self.held.types
+107:     }
+108: 
+109:     pub(crate) fn declarations(&self) -> &[Declaration] {
+110:         &self.held.declarations
+111:     }
+112: 
+113:     pub(crate) fn overlay<'a>(&'a self, local: &'a crate::hir::DeclarationIndex) -> Overlay<'a> {
+114:         Overlay::new(self, local)
+115:     }
+116: 
+117:     pub(super) fn declaration<P: Payer>(
+118:         &self,
+119:         text: &str,
+120:         payer: &mut P,
+121:     ) -> Result<Option<&Declaration>, Failure<P::Error>> {
+122:         for declaration in &self.held.declarations {
+123:             payer
+124:                 .work(
+125:                     text.len()
+126:                         .checked_add(declaration.id.as_str().len())
+127:                         .ok_or(Failure::Layout)?,
+128:                 )
+129:                 .map_err(Failure::Payer)?;
+130:             match declaration.id.as_str().cmp(text) {
+131:                 std::cmp::Ordering::Equal => return Ok(Some(declaration)),
+132:                 std::cmp::Ordering::Greater => break,
+133:                 std::cmp::Ordering::Less => {}
+134:             }
+135:         }
+136:         Ok(None)
+137:     }
+138: }
+139: 
+140: impl Drop for Contents {
+141:     fn drop(&mut self) {
+142:         // The outer owner never recursively drops an unbounded declaration list.
+143:         // Last shared nominal-payload owners use #827's iterative disposer; base
+144:         // schema leaves are only TypeParameter, never a nested nominal graph.
+145:         while let Some(ty) = self.types.pop() {
+146:             drop(ty);
+147:         }
+148:         while let Some(declaration) = self.declarations.pop() {
+149:             drop(declaration);
+150:         }
+151:     }
+152: }
+153: 
+154: #[cfg(test)]
+155: #[path = "prelude_bundle/original.rs"]
+156: mod original;
+157: #[cfg(test)]
+158: #[path = "prelude_bundle/tests.rs"]
+159: mod tests;
+
+
+=== COMPLETE FROZEN ORIGINAL 504b8381e28a1c4aab80d4d66c18e776dfe58def src/hir/renewal_probes.rs:1-74 ===
+1: //! Work receivers for exact immutable declaration lookups; no new allowance.
+2: use super::DeclarationId;
+3: use std::collections::BTreeMap;
+4: pub(crate) type Work<'a> = dyn FnMut(usize) -> bool + 'a;
+5: pub(crate) fn units(work: &mut Work<'_>, count: usize) -> Result<(), ()> {
+6:     if work(count) {
+7:         Ok(())
+8:     } else {
+9:         Err(())
+10:     }
+11: }
+12: pub(crate) fn lookup<'a, V>(
+13:     map: &'a BTreeMap<DeclarationId, V>,
+14:     query: &DeclarationId,
+15:     work: &mut Work<'_>,
+16: ) -> Result<Option<&'a V>, ()> {
+17:     // Every possible search comparison is paid before the actual get. The
+18:     // borrowed key census itself receives one unit before visiting each key.
+19:     for key in map.keys() {
+20:         units(work, 1)?;
+21:         let bytes = key
+22:             .as_str()
+23:             .len()
+24:             .min(query.as_str().len())
+25:             .checked_add(1)
+26:             .ok_or(())?;
+27:         units(work, bytes)?;
+28:     }
+29:     Ok(map.get(query))
+30: }
+31: 
+32: /// Exact borrowed typed receivers; a paid phase inventory avoids repeated key censuses.
+33: pub(crate) trait Index {
+34:     fn declaration(
+35:         &self,
+36:         key: &DeclarationId,
+37:         work: &mut Work<'_>,
+38:     ) -> Result<Option<&super::Declaration>, ()>;
+39:     fn parameters(
+40:         &self,
+41:         key: &DeclarationId,
+42:         work: &mut Work<'_>,
+43:     ) -> Result<Option<&Vec<super::ResolvedTypeParameterDeclaration>>, ()>;
+44:     fn fields(
+45:         &self,
+46:         key: &DeclarationId,
+47:         work: &mut Work<'_>,
+48:     ) -> Result<Option<&Vec<super::ResolvedFieldDeclaration>>, ()>;
+49: }
+50: impl Index for super::DeclarationIndex {
+51:     fn declaration(
+52:         &self,
+53:         key: &DeclarationId,
+54:         work: &mut Work<'_>,
+55:     ) -> Result<Option<&super::Declaration>, ()> {
+56:         lookup(&self.declarations, key, work)
+57:     }
+58:     fn parameters(
+59:         &self,
+60:         key: &DeclarationId,
+61:         work: &mut Work<'_>,
+62:     ) -> Result<Option<&Vec<super::ResolvedTypeParameterDeclaration>>, ()> {
+63:         lookup(&self.type_parameters, key, work)
+64:     }
+65:     fn fields(
+66:         &self,
+67:         key: &DeclarationId,
+68:         work: &mut Work<'_>,
+69:     ) -> Result<Option<&Vec<super::ResolvedFieldDeclaration>>, ()> {
+70:         lookup(&self.record_fields, key, work)
+71:     }
+72: }
+73: 
+74: pub(crate) mod phase;
+
+
+=== COMPLETE FROZEN ORIGINAL 504b8381e28a1c4aab80d4d66c18e776dfe58def src/hir/nominal_payload/elements.rs:1-104 ===
+1: //! Complete recursive-type census before shared acquisition.
+2: use super::*;
+3: use crate::cleanup_plan::replay::physical_clone::ClonePayload;
+4: fn capacity<E>(
+5:     root: &ResolvedType,
+6:     reserve: &mut impl FnMut(usize) -> Result<(), E>,
+7: ) -> Result<usize, E> {
+8:     fn push<'a, E>(
+9:         stack: &mut Vec<&'a ResolvedType>,
+10:         ty: &'a ResolvedType,
+11:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+12:     ) -> Result<(), E> {
+13:         if stack.len() == stack.capacity() {
+14:             let capacity = stack.capacity().saturating_mul(2).max(4);
+15:             reserve(
+16:                 size_of::<Vec<&ResolvedType>>()
+17:                     .saturating_add(capacity.saturating_mul(size_of::<&ResolvedType>())),
+18:             )?;
+19:             let mut next = Vec::with_capacity(capacity);
+20:             assert_eq!(next.capacity(), capacity);
+21:             next.extend(stack.drain(..));
+22:             *stack = next;
+23:         }
+24:         stack.push(ty);
+25:         Ok(())
+26:     }
+27:     // Leaves require neither a census heap nor last-owner Drop scratch.
+28:     if !matches!(root, ResolvedType::Nominal { arguments, .. } if !arguments.is_empty())
+29:         && !matches!(root, ResolvedType::Function { .. })
+30:     {
+31:         return Ok(0);
+32:     }
+33:     let mut stack = Vec::new();
+34:     push(&mut stack, root, reserve)?;
+35:     let mut highwater = 0;
+36:     while let Some(ty) = stack.pop() {
+37:         match ty {
+38:             ResolvedType::Nominal { arguments, .. } => {
+39:                 for child in arguments {
+40:                     push(&mut stack, child, reserve)?;
+41:                 }
+42:             }
+43:             ResolvedType::Function { parameters, result } => {
+44:                 for child in parameters {
+45:                     push(&mut stack, child, reserve)?;
+46:                 }
+47:                 push(&mut stack, result, reserve)?;
+48:             }
+49:             _ => {}
+50:         }
+51:         highwater = highwater.max(stack.len());
+52:     }
+53:     Ok(highwater)
+54: }
+55: impl NominalElement for ResolvedFieldDeclaration {
+56:     fn drop_capacity<E>(
+57:         &self,
+58:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+59:     ) -> Result<usize, E> {
+60:         capacity(&self.ty, reserve)
+61:     }
+62:     fn drain_types(&mut self, dispose: &mut impl FnMut(ResolvedType)) {
+63:         dispose(std::mem::replace(&mut self.ty, ResolvedType::Unit));
+64:     }
+65:     fn clone_bytes(&self) -> Option<usize> {
+66:         self.name.len().checked_add(self.ty.clone_payload_bytes()?)
+67:     }
+68: }
+69: impl NominalElement for ResolvedVariantCaseDeclaration {
+70:     fn drop_capacity<E>(
+71:         &self,
+72:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+73:     ) -> Result<usize, E> {
+74:         let mut n = 0;
+75:         for field in &self.fields {
+76:             n = n.max(field.drop_capacity(reserve)?);
+77:         }
+78:         Ok(n)
+79:     }
+80:     fn drain_types(&mut self, dispose: &mut impl FnMut(ResolvedType)) {
+81:         for field in &mut self.fields {
+82:             field.drain_types(dispose);
+83:         }
+84:     }
+85:     fn clone_bytes(&self) -> Option<usize> {
+86:         self.fields.iter().try_fold(
+87:             self.name.len().checked_add(
+88:                 self.fields
+89:                     .len()
+90:                     .checked_mul(size_of::<ResolvedFieldDeclaration>())?,
+91:             )?,
+92:             |n, f| n.checked_add(f.clone_bytes()?),
+93:         )
+94:     }
+95: }
+96: impl NominalElement for ResolvedTypeParameterDeclaration {
+97:     fn drop_capacity<E>(&self, _: &mut impl FnMut(usize) -> Result<(), E>) -> Result<usize, E> {
+98:         Ok(0)
+99:     }
+100:     fn drain_types(&mut self, _: &mut impl FnMut(ResolvedType)) {}
+101:     fn clone_bytes(&self) -> Option<usize> {
+102:         Some(self.name.len())
+103:     }
+104: }
+
+
+=== COMPLETE FROZEN ORIGINAL 504b8381e28a1c4aab80d4d66c18e776dfe58def src/hir/prelude_bundle.rs:1-148 ===
+1: //! One paid immutable base-prelude owner, awaiting ordinary resolver integration.
+2: //! Metadata is borrowed from the existing checked producer. This module grants
+3: //! no source admission, cache authority, or right to remove the current forecast.
+4: use crate::ast::Span;
+5: use crate::hir::{
+6:     Declaration, DeclarationId, DeclarationKind, IdentityOrigin, NominalPayload,
+7:     ResolvedFieldDeclaration, ResolvedType, ResolvedTypeDeclaration, ResolvedTypeDeclarationKind,
+8:     ResolvedTypeParameterDeclaration, ResolvedVariantCaseDeclaration,
+9: };
+10: use crate::prelude::base_schema::{Variant, BASE};
+11: use std::sync::Arc;
+12: 
+13: mod borrowed;
+14: mod fixed_work;
+15: mod invocation;
+16: mod materialize;
+17: mod merge;
+18: mod overlay;
+19: mod paid;
+20: mod producer;
+21: mod work_model;
+22: pub(crate) use invocation::{Invocation, InvocationFailure};
+23: pub(crate) use fixed_work::{FixedFailure, FixedSchemaPayer, WorkReceipt, WorkRefusal};
+24: pub(crate) use merge::merge_by_key;
+25: pub(crate) use overlay::Overlay;
+26: 
+27: /// The existing invocation supplies both accounts and retains its first sticky
+28: /// refusal. A zero-byte/work request must also observe an already failed account.
+29: pub(crate) trait Payer {
+30:     type Error;
+31:     fn bytes(&mut self, requested: usize) -> Result<(), Self::Error>;
+32:     fn work(&mut self, requested: usize) -> Result<(), Self::Error>;
+33: }
+34: 
+35: #[derive(Debug, Eq, PartialEq)]
+36: pub(crate) enum Failure<E> {
+37:     Payer(E),
+38:     Layout,
+39:     Allocation,
+40:     Capacity,
+41:     Schema,
+42: }
+43: 
+44: #[derive(Debug, Eq, PartialEq)]
+45: struct Contents {
+46:     // Unique sorted IDs. All names/IDs and every payload remain actually owned.
+47:     declarations: Vec<Declaration>,
+48:     // Producer order is Option, Result, independently of declaration lookup order.
+49:     types: Vec<ResolvedTypeDeclaration>,
+50: }
+51: 
+52: /// A real owner, never a process cache. Modules may borrow a view or retain one
+53: /// explicit lease. Only the producer can create the contents.
+54: #[derive(Debug, Eq, PartialEq)]
+55: pub(crate) struct BasePreludeBundle {
+56:     held: Arc<Contents>,
+57: }
+58: // Pure compatibility Clone for already-owned immutable index facts, matching
+59: // DeclarationId/NominalPayload Clone: no new backing, ambient ledger or source
+60: // authority. This does not pay a receiving Index carrier or authenticate a
+61: // sticky account. Qualified acquisition paths use retain with their payer.
+62: impl Clone for BasePreludeBundle {
+63:     fn clone(&self) -> Self {
+64:         Self {
+65:             held: Arc::clone(&self.held),
+66:         }
+67:     }
+68: }
+69: impl BasePreludeBundle {
+70:     pub(crate) fn acquire<P: Payer>(payer: &mut P) -> Result<Self, Failure<P::Error>> {
+71:         // The initializer and receiving carriers coexist with the paid shared
+72:         // owner. Acquire these actual layouts before constructing either.
+73:         let carriers = std::mem::size_of::<Contents>()
+74:             .checked_add(std::mem::size_of::<Self>())
+75:             .and_then(|n| n.checked_add(std::mem::size_of::<Result<Self, Failure<P::Error>>>()))
+76:             .ok_or(Failure::Layout)?;
+77:         payer.bytes(carriers).map_err(Failure::Payer)?;
+78:         let contents = producer::contents(payer)?;
+79:         payer
+80:             .bytes(paid::shared_bytes::<Contents>())
+81:             .map_err(Failure::Payer)?;
+82:         Ok(Self {
+83:             held: Arc::new(contents),
+84:         })
+85:     }
+86: 
+87:     pub(crate) fn retain<P: Payer>(&self, payer: &mut P) -> Result<Self, Failure<P::Error>> {
+88:         // No new heap/control block: the original paid owner remains alive.
+89:         payer.bytes(0).map_err(Failure::Payer)?;
+90:         payer.work(1).map_err(Failure::Payer)?;
+91:         Ok(Self {
+92:             held: Arc::clone(&self.held),
+93:         })
+94:     }
+95: 
+96:     pub(crate) fn types(&self) -> &[ResolvedTypeDeclaration] {
+97:         &self.held.types
+98:     }
+99: 
+100:     pub(crate) fn declarations(&self) -> &[Declaration] {
+101:         &self.held.declarations
+102:     }
+103: 
+104:     pub(crate) fn overlay<'a>(&'a self, local: &'a crate::hir::DeclarationIndex) -> Overlay<'a> {
+105:         Overlay::new(self, local)
+106:     }
+107: 
+108:     pub(super) fn declaration<P: Payer>(
+109:         &self,
+110:         text: &str,
+111:         payer: &mut P,
+112:     ) -> Result<Option<&Declaration>, Failure<P::Error>> {
+113:         for declaration in &self.held.declarations {
+114:             payer
+115:                 .work(
+116:                     text.len()
+117:                         .checked_add(declaration.id.as_str().len())
+118:                         .ok_or(Failure::Layout)?,
+119:                 )
+120:                 .map_err(Failure::Payer)?;
+121:             match declaration.id.as_str().cmp(text) {
+122:                 std::cmp::Ordering::Equal => return Ok(Some(declaration)),
+123:                 std::cmp::Ordering::Greater => break,
+124:                 std::cmp::Ordering::Less => {}
+125:             }
+126:         }
+127:         Ok(None)
+128:     }
+129: }
+130: 
+131: impl Drop for Contents {
+132:     fn drop(&mut self) {
+133:         // The outer owner never recursively drops an unbounded declaration list.
+134:         // Last shared nominal-payload owners use #827's iterative disposer; base
+135:         // schema leaves are only TypeParameter, never a nested nominal graph.
+136:         while let Some(ty) = self.types.pop() {
+137:             drop(ty);
+138:         }
+139:         while let Some(declaration) = self.declarations.pop() {
+140:             drop(declaration);
+141:         }
+142:     }
+143: }
+144: 
+145: #[cfg(test)]
+146: mod original;
+147: #[cfg(test)]
+148: mod tests;
+
+
+=== ACTUAL REEXPORT 33801deb384e912b059409b0ca408f41a54b3664 src/cleanup_plan.rs:30-42 ===
+30: pub(crate) mod renewal_profile;
+31: pub(crate) use renewal_profile::RenewalBindings as ReplayRenewalBindings;
+32: mod replay;
+33: mod row_loan;
+34: #[cfg(test)]
+35: pub(crate) use replay::validate_retained_lexical_with_reservation;
+36: pub(crate) use replay::{
+37:     replay_btree_node_upper, replay_reserve_vec, ClonePayload as ReplayClonePayload,
+38:     PhysicalReservation as ReplayPhysicalReservation, SelectedReplayPreparation,
+39:     SelectedReplayRefusal, SelectedReplayRefused, SelectedReplayReport, SelectedReplayReportForm,
+40:     SelectedReplayUnpaid,
+41: };
+42: #[cfg(test)]
+
+
+=== ACTUAL TRAIT 33801deb384e912b059409b0ca408f41a54b3664 src/cleanup_plan/replay/physical_clone.rs:1-16 ===
+1: //! Backing newly allocated by a selected Clone, rather than logical work units.
+2: //! Arc/Rc identity clones share held bytes; only their new collection slots are
+3: //! charged. Owned strings, type carriers, projections and flat tails allocate.
+4: use super::*;
+5: use std::mem::size_of;
+6: 
+7: pub(crate) trait ClonePayload {
+8:     fn clone_payload_bytes(&self) -> Option<usize>;
+9:     #[cfg(test)]
+10:     fn clone_payload_bytes_with_work(
+11:         &self,
+12:         _work: &mut impl FnMut(usize) -> bool,
+13:     ) -> Option<usize> {
+14:         None
+15:     }
+16: }
+
+
+=== ACTUAL ResolvedType IMPL 33801deb384e912b059409b0ca408f41a54b3664 src/cleanup_plan/replay/physical_clone.rs:168-186 ===
+168: impl ClonePayload for ResolvedType {
+169:     fn clone_payload_bytes(&self) -> Option<usize> {
+170:         // Selected setup and ordinary clone-census setup reserve this one
+171:         // reusable fixed cursor before preflight. Wide type lists retain one
+172:         // ancestor cursor.
+173:         let mut frames = [None; 514];
+174:         frames[0] = Some((self, 0usize));
+175:         let mut len = 1;
+176:         let mut bytes = 0usize;
+177:         let mut work = MAX_REPLAY_WORK_UNITS;
+178:         while len != 0 {
+179:             work = work.checked_sub(1)?;
+180:             let (ty, next) = frames[len - 1]?;
+181:             if next == 0 {
+182:                 let own = match ty {
+183:                     Self::TypeParameter { .. } => 0,
+184:                     Self::Nominal { arguments, .. } => {
+185:                         arguments.len().checked_mul(size_of::<Self>())?
+186:                     }
+
+
+=== ACTUAL IMMUTABLE DEREF 33801deb384e912b059409b0ca408f41a54b3664 src/hir/nominal_payload.rs:193-202 ===
+193: }
+194: impl<T: NominalElement> Deref for NominalPayload<T> {
+195:     type Target = Vec<T>;
+196:     fn deref(&self) -> &Vec<T> {
+197:         match &self.storage {
+198:             Storage::Owned(v) => v,
+199:             Storage::Shared(v) => &v.values,
+200:         }
+201:     }
+202: }
+
+
+=== ACTUAL MAP DEREF 33801deb384e912b059409b0ca408f41a54b3664 src/hir/nominal_payload/map.rs:21-26 ===
+21:     type Target = BTreeMap<DeclarationId, V>;
+22:     fn deref(&self) -> &Self::Target {
+23:         &self.0
+24:     }
+25: }
+26: impl<V> DerefMut for IndexMap<V> {
+
+
+=== ACTUAL MODULE REGISTRATION 33801deb384e912b059409b0ca408f41a54b3664 src/hir.rs:14-21 ===
+14: //! derivations layered over resolved HIR.
+15: 
+16: pub(crate) mod items;
+17: mod nominal_payload;
+18: #[path = "hir/prelude_bundle.rs"]
+19: pub(crate) mod prelude_bundle;
+20: pub use nominal_payload::{NominalPayload, NominalMutationError};
+21: use crate::ast::program_source::ProgramSource;
+
+
+=== EXACT PRODUCTION DIFF ===
+diff --git a/src/hir/nominal_payload/elements.rs b/src/hir/nominal_payload/elements.rs
+index 503560b20..78721c74a 100644
+--- a/src/hir/nominal_payload/elements.rs
++++ b/src/hir/nominal_payload/elements.rs
+@@ -1,6 +1,6 @@
+ //! Complete recursive-type census before shared acquisition.
+ use super::*;
+-use crate::cleanup_plan::replay::physical_clone::ClonePayload;
++use crate::cleanup_plan::ReplayClonePayload;
+ fn capacity<E>(
+     root: &ResolvedType,
+     reserve: &mut impl FnMut(usize) -> Result<(), E>,
+diff --git a/src/hir/prelude_bundle.rs b/src/hir/prelude_bundle.rs
+index 05911e1c1..487140380 100644
+--- a/src/hir/prelude_bundle.rs
++++ b/src/hir/prelude_bundle.rs
+@@ -10,17 +10,26 @@ use crate::hir::{
+ use crate::prelude::base_schema::{Variant, BASE};
+ use std::sync::Arc;
+ 
++#[path = "prelude_bundle/borrowed.rs"]
+ mod borrowed;
++#[path = "prelude_bundle/fixed_work.rs"]
+ mod fixed_work;
++#[path = "prelude_bundle/invocation.rs"]
+ mod invocation;
++#[path = "prelude_bundle/materialize.rs"]
+ mod materialize;
++#[path = "prelude_bundle/merge.rs"]
+ mod merge;
++#[path = "prelude_bundle/overlay.rs"]
+ mod overlay;
++#[path = "prelude_bundle/paid.rs"]
+ mod paid;
++#[path = "prelude_bundle/producer.rs"]
+ mod producer;
++#[path = "prelude_bundle/work_model.rs"]
+ mod work_model;
+-pub(crate) use invocation::{Invocation, InvocationFailure};
+ pub(crate) use fixed_work::{FixedFailure, FixedSchemaPayer, WorkReceipt, WorkRefusal};
++pub(crate) use invocation::{Invocation, InvocationFailure};
+ pub(crate) use merge::merge_by_key;
+ pub(crate) use overlay::Overlay;
+ 
+@@ -143,6 +152,8 @@ impl Drop for Contents {
+ }
+ 
+ #[cfg(test)]
++#[path = "prelude_bundle/original.rs"]
+ mod original;
+ #[cfg(test)]
++#[path = "prelude_bundle/tests.rs"]
+ mod tests;
+diff --git a/src/hir/renewal_probes.rs b/src/hir/renewal_probes.rs
+index 9ef063896..30712ab74 100644
+--- a/src/hir/renewal_probes.rs
++++ b/src/hir/renewal_probes.rs
+@@ -60,14 +60,14 @@ impl Index for super::DeclarationIndex {
+         key: &DeclarationId,
+         work: &mut Work<'_>,
+     ) -> Result<Option<&Vec<super::ResolvedTypeParameterDeclaration>>, ()> {
+-        lookup(&self.type_parameters, key, work)
++        lookup(&self.type_parameters, key, work).map(|rows| rows.map(|values| &**values))
+     }
+     fn fields(
+         &self,
+         key: &DeclarationId,
+         work: &mut Work<'_>,
+     ) -> Result<Option<&Vec<super::ResolvedFieldDeclaration>>, ()> {
+-        lookup(&self.record_fields, key, work)
++        lookup(&self.record_fields, key, work).map(|rows| rows.map(|values| &**values))
+     }
+ }
+ 
+
+
+=== ACTUAL504b COMPILER DIAGNOSTICS (full rendered errors from original JSON rows) ===
+error[E0583]: file not found for module `borrowed`
+  --> src/hir/prelude_bundle.rs:13:1
+   |
+13 | mod borrowed;
+   | ^^^^^^^^^^^^^
+   |
+   = help: to create the module `borrowed`, create file "src/hir/borrowed.rs" or "src/hir/borrowed/mod.rs"
+   = note: if there is a `mod borrowed` elsewhere in the crate already, import it with `use crate::...` instead
+
+
+error[E0583]: file not found for module `fixed_work`
+  --> src/hir/prelude_bundle.rs:14:1
+   |
+14 | mod fixed_work;
+   | ^^^^^^^^^^^^^^^
+   |
+   = help: to create the module `fixed_work`, create file "src/hir/fixed_work.rs" or "src/hir/fixed_work/mod.rs"
+   = note: if there is a `mod fixed_work` elsewhere in the crate already, import it with `use crate::...` instead
+
+
+error[E0583]: file not found for module `invocation`
+  --> src/hir/prelude_bundle.rs:15:1
+   |
+15 | mod invocation;
+   | ^^^^^^^^^^^^^^^
+   |
+   = help: to create the module `invocation`, create file "src/hir/invocation.rs" or "src/hir/invocation/mod.rs"
+   = note: if there is a `mod invocation` elsewhere in the crate already, import it with `use crate::...` instead
+
+
+error[E0583]: file not found for module `materialize`
+  --> src/hir/prelude_bundle.rs:16:1
+   |
+16 | mod materialize;
+   | ^^^^^^^^^^^^^^^^
+   |
+   = help: to create the module `materialize`, create file "src/hir/materialize.rs" or "src/hir/materialize/mod.rs"
+   = note: if there is a `mod materialize` elsewhere in the crate already, import it with `use crate::...` instead
+
+
+error[E0583]: file not found for module `merge`
+  --> src/hir/prelude_bundle.rs:17:1
+   |
+17 | mod merge;
+   | ^^^^^^^^^^
+   |
+   = help: to create the module `merge`, create file "src/hir/merge.rs" or "src/hir/merge/mod.rs"
+   = note: if there is a `mod merge` elsewhere in the crate already, import it with `use crate::...` instead
+
+
+error[E0583]: file not found for module `overlay`
+  --> src/hir/prelude_bundle.rs:18:1
+   |
+18 | mod overlay;
+   | ^^^^^^^^^^^^
+   |
+   = help: to create the module `overlay`, create file "src/hir/overlay.rs" or "src/hir/overlay/mod.rs"
+   = note: if there is a `mod overlay` elsewhere in the crate already, import it with `use crate::...` instead
+
+
+error[E0583]: file not found for module `paid`
+  --> src/hir/prelude_bundle.rs:19:1
+   |
+19 | mod paid;
+   | ^^^^^^^^^
+   |
+   = help: to create the module `paid`, create file "src/hir/paid.rs" or "src/hir/paid/mod.rs"
+   = note: if there is a `mod paid` elsewhere in the crate already, import it with `use crate::...` instead
+
+
+error[E0583]: file not found for module `producer`
+  --> src/hir/prelude_bundle.rs:20:1
+   |
+20 | mod producer;
+   | ^^^^^^^^^^^^^
+   |
+   = help: to create the module `producer`, create file "src/hir/producer.rs" or "src/hir/producer/mod.rs"
+   = note: if there is a `mod producer` elsewhere in the crate already, import it with `use crate::...` instead
+
+
+error[E0583]: file not found for module `work_model`
+  --> src/hir/prelude_bundle.rs:21:1
+   |
+21 | mod work_model;
+   | ^^^^^^^^^^^^^^^
+   |
+   = help: to create the module `work_model`, create file "src/hir/work_model.rs" or "src/hir/work_model/mod.rs"
+   = note: if there is a `mod work_model` elsewhere in the crate already, import it with `use crate::...` instead
+
+
+error[E0603]: module `replay` is private
+  --> src/hir/nominal_payload/elements.rs:3:26
+   |
+ 3 | use crate::cleanup_plan::replay::physical_clone::ClonePayload;
+   |                          ^^^^^^ private module   ------------ trait `ClonePayload` is not publicly re-exported
+   |
+note: the module `replay` is defined here
+  --> src/cleanup_plan.rs:32:1
+   |
+32 | mod replay;
+   | ^^^^^^^^^^^
+
+
+error[E0599]: no method named `clone_payload_bytes` found for enum `nodes::ResolvedType` in the current scope
+   --> src/hir/nominal_payload/elements.rs:66:45
+    |
+ 66 |         self.name.len().checked_add(self.ty.clone_payload_bytes()?)
+    |                                             ^^^^^^^^^^^^^^^^^^^ method not found in `nodes::ResolvedType`
+    |
+   ::: src/cleanup_plan/replay/physical_clone.rs:8:8
+    |
+  8 |     fn clone_payload_bytes(&self) -> Option<usize>;
+    |        ------------------- the method is available for `nodes::ResolvedType` here
+    |
+   ::: src/hir/nodes.rs:145:1
+    |
+145 | pub enum ResolvedType {
+    | --------------------- method `clone_payload_bytes` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: trait `ClonePayload` which provides `clone_payload_bytes` is implemented but not in scope; perhaps you want to import it
+    |
+  2 + use crate::cleanup_plan::replay::physical_clone::ClonePayload;
+    |
+
+
+error[E0599]: no method named `types_slice` found for reference `&BasePreludeBundle` in the current scope
+  --> src/hir/declaration_index/nominal_base.rs:21:14
+   |
+21 |         base.types_slice().get(ordinal)
+   |              ^^^^^^^^^^^
+   |
+help: there is a method `type_id` with a similar name
+   |
+21 -         base.types_slice().get(ordinal)
+21 +         base.type_id().get(ordinal)
+   |
+
+
+error[E0599]: no method named `declarations_slice` found for reference `&BasePreludeBundle` in the current scope
+  --> src/hir/declaration_index/nominal_base.rs:33:33
+   |
+33 |         for declaration in base.declarations_slice() {
+   |                                 ^^^^^^^^^^^^^^^^^^
+   |
+help: there is a method `declarations` with a similar name
+   |
+33 -         for declaration in base.declarations_slice() {
+33 +         for declaration in base.declarations() {
+   |
+
+
+error[E0599]: no method named `types_slice` found for reference `&BasePreludeBundle` in the current scope
+  --> src/hir/declaration_index/nominal_base.rs:44:23
+   |
+44 |         for _ in base.types_slice() {
+   |                       ^^^^^^^^^^^
+   |
+help: there is a method `type_id` with a similar name
+   |
+44 -         for _ in base.types_slice() {
+44 +         for _ in base.type_id() {
+   |
+
+
+error[E0308]: mismatched types
+  --> src/hir/renewal_probes.rs:63:16
+   |
+63 |         lookup(&self.type_parameters, key, work)
+   |         ------ ^^^^^^^^^^^^^^^^^^^^^ expected `&BTreeMap<DeclarationId, Vec<...>>`, found `&IndexMap<NominalPayload<...>>`
+   |         |
+   |         arguments to this function are incorrect
+   |
+   = note: expected reference `&std::collections::BTreeMap<ids::DeclarationId, Vec<nodes::ResolvedTypeParameterDeclaration>>`
+              found reference `&hir::nominal_payload::map::IndexMap<hir::nominal_payload::NominalPayload<nodes::ResolvedTypeParameterDeclaration>>`
+note: function defined here
+  --> src/hir/renewal_probes.rs:12:15
+   |
+12 | pub(crate) fn lookup<'a, V>(
+   |               ^^^^^^
+13 |     map: &'a BTreeMap<DeclarationId, V>,
+   |     -----------------------------------
+
+
+error[E0308]: mismatched types
+  --> src/hir/renewal_probes.rs:70:16
+   |
+70 |         lookup(&self.record_fields, key, work)
+   |         ------ ^^^^^^^^^^^^^^^^^^^ expected `&BTreeMap<DeclarationId, Vec<...>>`, found `&IndexMap<NominalPayload<...>>`
+   |         |
+   |         arguments to this function are incorrect
+   |
+   = note: expected reference `&std::collections::BTreeMap<ids::DeclarationId, Vec<nodes::ResolvedFieldDeclaration>>`
+              found reference `&hir::nominal_payload::map::IndexMap<hir::nominal_payload::NominalPayload<nodes::ResolvedFieldDeclaration>>`
+note: function defined here
+  --> src/hir/renewal_probes.rs:12:15
+   |
+12 | pub(crate) fn lookup<'a, V>(
+   |               ^^^^^^
+13 |     map: &'a BTreeMap<DeclarationId, V>,
+   |     -----------------------------------
+
+
+
+=== MECHANICAL FULL-SOURCE INVERSE CONTEXT ===
+{
+  "inverse_source": "33801deb384e912b059409b0ca408f41a54b3664:docs/evidence/nominal-compiler-repair-504b/exact-source-inverses.json",
+  "rows": [
+    {
+      "source": "src/hir/prelude_bundle.rs",
+      "complete_current_to_frozen_original_equal": true,
+      "original_sha256": "80fed7256a5b456c673fa18d97ab262e649e603eb08090f53ca46c49eac19b5a"
+    },
+    {
+      "source": "src/hir/nominal_payload/elements.rs",
+      "complete_current_to_frozen_original_equal": true,
+      "original_sha256": "d1104c96520fc87c6b636e857f389ac1eab3f9ec6a35f423f268463678151472"
+    },
+    {
+      "source": "src/hir/renewal_probes.rs",
+      "complete_current_to_frozen_original_equal": true,
+      "original_sha256": "7c1dcab1a20e7ce7f02c070738143812ccac3f93c5036e0097a65d5d6c8467d5"
+    }
+  ]
+}

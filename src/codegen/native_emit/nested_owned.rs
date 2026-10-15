@@ -9,6 +9,34 @@ use crate::variant_layout::{VariantFieldValueKind, VariantLayout, VariantLayoutC
 
 use super::{backend_error, c_case_symbol, c_field_symbol, variant_declaration_id, COutput};
 
+/// Hidden borrow arguments for a physically materialized, authenticated record.
+/// Use the same declaration-order inventory and leaf types as ordinary calls.
+pub(in crate::codegen) fn emit_materialized_record_borrow_arguments(
+    output: &mut impl COutput,
+    program: &ResolvedProgram,
+    record_layouts: &AggregateLayoutCache,
+    variant_layouts: &VariantLayoutCache,
+    ty: &ResolvedType,
+    carrier: &str,
+) -> Result<(), Diagnostic> {
+    if !is_exact_record(program, ty)? {
+        return Err(backend_error(
+            "materialized borrow adapter requires a record",
+        ));
+    }
+    for path in borrowed_aggregate_byte_paths(program, record_layouts, variant_layouts, ty)? {
+        borrowed_leaf_pointer_type(program, record_layouts, variant_layouts, ty, &path)?;
+        write!(output, ", &(({carrier})")
+            .expect("writing materialized record arguments cannot fail");
+        for field in &path {
+            write!(output, ".{}", c_field_symbol(field))
+                .expect("writing materialized record field cannot fail");
+        }
+        output.push_str(")");
+    }
+    Ok(())
+}
+
 pub(super) fn borrowed_aggregate_byte_paths(
     program: &ResolvedProgram,
     record_layouts: &AggregateLayoutCache,
@@ -23,16 +51,32 @@ pub(super) fn borrowed_aggregate_byte_paths(
     if variant_declaration_id(program, ty)?.is_some() {
         let layout = variant_layouts.layout(ty)?;
         layout.validate(program)?;
-        return Ok(layout
-            .cases
-            .iter()
-            .flat_map(|case| {
-                case.fields
-                    .iter()
-                    .filter(|field| matches!(field.ty, ResolvedType::Bytes))
-                    .map(|field| vec![case.case.clone(), field.field.clone()])
-            })
-            .collect());
+        let mut output = Vec::new();
+        for case in &layout.cases {
+            for field in &case.fields {
+                let prefix = vec![case.case.clone(), field.field.clone()];
+                if matches!(field.ty, ResolvedType::Bytes | ResolvedType::String)
+                    || crate::hir::owned_collection_record::vector(&program.declarations, &field.ty)
+                {
+                    output.push(prefix);
+                } else if crate::cleanup::variant_record_field(
+                    program,
+                    ty,
+                    &case.case,
+                    &field.field,
+                    &field.ty,
+                ) {
+                    let mut leaves = Vec::new();
+                    collect_record_paths(program, record_layouts, &field.ty, &mut leaves)?;
+                    output.extend(
+                        leaves
+                            .into_iter()
+                            .map(|path| [prefix.clone(), path].concat()),
+                    );
+                }
+            }
+        }
+        return Ok(output);
     }
     Ok(Vec::new())
 }
@@ -97,6 +141,10 @@ fn collect_record_paths(
                     path.push(field.field.clone());
                     if matches!(field.ty, ResolvedType::Bytes | ResolvedType::String)
                         || crate::map_ops::is_collection(&field.ty)
+                        || crate::hir::owned_collection_record::vector(
+                            &program.declarations,
+                            &field.ty,
+                        )
                     {
                         pending.push(Frame::Bytes(path));
                     } else if is_exact_record(program, &field.ty)? {
@@ -137,6 +185,7 @@ pub(super) fn emit_owned_record_shell(
         Record(String, String, ResolvedType, usize),
         Bytes(String),
         String(String),
+        Vec(String),
         Scalar(String, String),
         Leave(String),
     }
@@ -183,7 +232,11 @@ pub(super) fn emit_owned_record_shell(
                     let symbol = c_field_symbol(&field.field);
                     let destination = format!("({destination}).{symbol}");
                     let source = format!("({source}).{symbol}");
-                    if field.ty == ResolvedType::String || crate::map_ops::is_collection(&field.ty)
+                    if crate::hir::owned_collection_record::vector(&program.declarations, &field.ty)
+                    {
+                        pending.push(Frame::Vec(destination));
+                    } else if field.ty == ResolvedType::String
+                        || crate::map_ops::is_collection(&field.ty)
                     {
                         pending.push(Frame::String(destination));
                     } else if field.ty == ResolvedType::Bytes {
@@ -206,6 +259,10 @@ pub(super) fn emit_owned_record_shell(
             }
             Frame::String(destination) => {
                 writeln!(output, "    {destination} = NULL;").expect("writing to string");
+            }
+            Frame::Vec(destination) => {
+                writeln!(output, "    {destination} = (spx_vec_v1) {{0}};")
+                    .expect("writing to string");
             }
             Frame::Bytes(destination) => {
                 leaves = leaves
@@ -262,7 +319,9 @@ pub(super) fn emit_owned_variant_shell(
             if field.size == 0
                 || matches!(
                     field.value_kind,
-                    VariantFieldValueKind::OwnedBytes | VariantFieldValueKind::OwnedString
+                    VariantFieldValueKind::OwnedBytes
+                        | VariantFieldValueKind::OwnedString
+                        | VariantFieldValueKind::OwnedVec
                 )
             {
                 continue;
@@ -293,7 +352,9 @@ pub(super) fn emit_owned_variant_shell(
 }
 
 fn is_exact_record(program: &ResolvedProgram, ty: &ResolvedType) -> Result<bool, Diagnostic> {
-    if crate::map_ops::is_collection(ty) {
+    if crate::map_ops::is_collection(ty)
+        || crate::hir::owned_collection_record::vector(&program.declarations, ty)
+    {
         return Ok(false);
     }
     let ResolvedType::Nominal {
@@ -324,8 +385,8 @@ pub(super) fn borrowed_leaf_pointer_type(
     path: &[DeclarationId],
 ) -> Result<&'static str, Diagnostic> {
     let mut ty = root.clone();
-    if variant_declaration_id(program, &ty)?.is_some() {
-        let [case, field] = path else {
+    let remainder = if variant_declaration_id(program, &ty)?.is_some() {
+        let [case, field, remainder @ ..] = path else {
             return Err(backend_error("invalid borrowed variant leaf path"));
         };
         ty = variants
@@ -335,21 +396,26 @@ pub(super) fn borrowed_leaf_pointer_type(
             .ok_or_else(|| backend_error("borrowed variant leaf is absent"))?
             .ty
             .clone();
+        remainder
     } else {
-        for field in path {
-            ty = layouts
-                .layout(&ty)?
-                .field(field)
-                .ok_or_else(|| backend_error("borrowed record leaf is absent"))?
-                .ty
-                .clone();
-        }
+        path
+    };
+    for field in remainder {
+        ty = layouts
+            .layout(&ty)?
+            .field(field)
+            .ok_or_else(|| backend_error("borrowed record leaf is absent"))?
+            .ty
+            .clone();
     }
     match ty {
         ResolvedType::Bytes => Ok("const spx_bytes_v1 *"),
         ResolvedType::String => Ok("char * const *"),
         ResolvedType::StringMap => Ok("spx_map_v1 * const *"),
         ref ty if crate::map_ops::is_typed_collection(ty) => Ok("spx_map_v2 * const *"),
+        ref ty if crate::hir::owned_collection_record::vector(&program.declarations, ty) => {
+            Ok("const spx_vec_v1 *")
+        }
         _ => Err(backend_error(
             "borrowed aggregate path is not an owning leaf",
         )),

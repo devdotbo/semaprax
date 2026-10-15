@@ -16,12 +16,13 @@ const SOURCE: &str =
     "module host.demo;\n\n@id(\"host.demo.main\")\nfn main() -> i64\n{\n    42\n}\n";
 
 fn main() {
-    assert!(EMBEDDING_API_VERSION.is_compatible_with(2));
+    assert!(EMBEDDING_API_VERSION.is_compatible_with(3));
     assert!(!EMBEDDING_API_VERSION.is_compatible_with(0));
     assert!(!EMBEDDING_API_VERSION.is_compatible_with(1));
+    assert!(!EMBEDDING_API_VERSION.is_compatible_with(2));
     EMBEDDING_API_VERSION
-        .require_compatible(2)
-        .expect("the example is written for embedding API v2");
+        .require_compatible(3)
+        .expect("the example is written for embedding API v3");
 
     negotiate_features(
         2,

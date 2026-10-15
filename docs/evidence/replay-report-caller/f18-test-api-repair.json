@@ -1,0 +1,25 @@
+{
+  "source_base": "f18f5a4ace2d7e4786f54f1fccbbfb77465e44e8",
+  "status": "source-only; unexecuted",
+  "repairs": [
+    {
+      "file": "src/workspace/semantic_read/tests.rs",
+      "change": "Bring existing ReplayContext trait into the owning function scope; same functions() view/get(0), paid pointer/ledger/Drop assertions unchanged."
+    },
+    {
+      "file": "src/semantic_workspace_structural_change/tests.rs",
+      "change": "Existing From<SourceBytes> for String at explicit public legacy fixture boundary, byte-lossless; no allocation/funding/admission assertion changed."
+    }
+  ],
+  "current_hashes": {
+    "src/workspace/semantic_read/tests.rs": "3871ca1e385c556602d0bb0a9335c4c4435b6f2e375836d993e7854eb3eb3697",
+    "src/semantic_workspace_structural_change/tests.rs": "42ff71bbde8261c5637e58defa52c9905ddda2dc86211c5e505c7de8ac3de435"
+  },
+  "protected_original_archives": "all existing replay-report-caller archive digests verified unchanged",
+  "verification": [
+    "leaf rustfmt",
+    "diff --check",
+    "protected archive hashes"
+  ],
+  "executed_bodies": 0
+}

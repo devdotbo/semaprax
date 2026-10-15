@@ -21,6 +21,8 @@ use std::process::{Command, ExitCode};
 mod cli;
 #[path = "cli_driver/context_dispatch.rs"]
 mod context_dispatch;
+#[path = "cli_driver/help_dispatch.rs"]
+mod help_dispatch;
 #[path = "cli_driver/hot_reload.rs"]
 mod hot_reload;
 #[path = "native_scratch.rs"]
@@ -43,6 +45,7 @@ mod supply_chain;
 #[cfg(test)]
 #[path = "cli/native_output_tests.rs"]
 mod native_output_tests;
+use help_dispatch::{print_help, print_scoped_help};
 use options::*;
 use report_options::*;
 use source_execution::*;
@@ -407,9 +410,8 @@ fn run(args: Vec<String>, host: Option<&PrivateHost>) -> Result<(), u8> {
             println!("{output}");
             Ok(())
         }
-        CommandId::Doc => {
-            let options = cli::doc::parse(&args[1..])?;
-            cli::doc::run(options, |errors| report(errors, false))
+        CommandId::Doc | CommandId::JsonCodec => {
+            cli::json_codec::dispatch(command_id, &args[1..], |errors| report(errors, false))
         }
         CommandId::Verify => {
             let options = cli::verify::parse(&args[1..])?;
@@ -742,6 +744,9 @@ fn run(args: Vec<String>, host: Option<&PrivateHost>) -> Result<(), u8> {
         CommandId::Run => {
             let options = cli::execution::parse_run(&args[1..])?;
             match &options.input {
+                cli::execution::ExecutionInput::Source(path) if options.fused_account.is_some() => {
+                    run_fused_source(path, &options)
+                }
                 cli::execution::ExecutionInput::Source(path) if options.native => {
                     run_native_source(path, &options.arguments)
                 }
@@ -1477,24 +1482,5 @@ fn run(args: Vec<String>, host: Option<&PrivateHost>) -> Result<(), u8> {
                 Err(2)
             }
         }
-    }
-}
-
-fn print_help(has_private_host: bool) {
-    print!("{}", cli::help::global(has_private_host));
-}
-
-fn print_scoped_help(command: &str, has_private_host: bool) -> Result<(), u8> {
-    let help = cli::help::global(has_private_host);
-    if let Some(scoped) = cli::help::scoped(command, has_private_host) {
-        print!("{scoped}");
-        Ok(())
-    } else {
-        eprint!(
-            "{}",
-            cli::help::unknown_diagnostic(command, has_private_host)
-        );
-        print!("{help}");
-        Err(2)
     }
 }

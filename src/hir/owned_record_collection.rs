@@ -71,6 +71,54 @@ pub(crate) fn is_admitted_owned_record_collection_element(
     admits_field_shape(fields)
 }
 
+pub(crate) fn element_with_work(
+    declarations: &dyn super::renewal_probes::Index,
+    ty: &ResolvedType,
+    work: &mut super::renewal_probes::Work<'_>,
+) -> Result<bool, ()> {
+    let ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = ty
+    else {
+        return Ok(false);
+    };
+    if !arguments.is_empty() {
+        return Ok(false);
+    }
+    let Some(item) = declarations.declaration(declaration, work)? else {
+        return Ok(false);
+    };
+    if item.kind != DeclarationKind::Record || item.identity_origin != IdentityOrigin::Explicit {
+        return Ok(false);
+    }
+    let Some(parameters) = declarations.parameters(declaration, work)? else {
+        return Ok(false);
+    };
+    if !parameters.is_empty() {
+        return Ok(false);
+    }
+    let Some(fields) = declarations.fields(declaration, work)? else {
+        return Ok(false);
+    };
+    if fields.len() != 3 {
+        return Ok(false);
+    }
+    let mut bytes_fields = 0;
+    let mut copy_fields = 0;
+    for field in fields {
+        super::renewal_probes::units(work, 2)?;
+        if field.ty == ResolvedType::Bytes {
+            bytes_fields += 1;
+        } else if crate::vec_ops::resolved_element_is_admitted(&field.ty) {
+            copy_fields += 1;
+        } else {
+            return Ok(false);
+        }
+    }
+    Ok(bytes_fields == 2 && copy_fields == 1)
+}
+
 /// The exact structural rule shared by the resolved and source classifiers:
 /// exactly two `Bytes` fields and exactly one admitted Copy-scalar field, and
 /// nothing else.

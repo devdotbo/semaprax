@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "wall_seconds": 66.72723204200156,
+  "tools_enabled": false,
+  "code_execution": false,
+  "peak_process_group_rss_bytes": 321667072,
+  "resource_refusal": null,
+  "actual_billing": "unknown",
+  "payload_binding": {
+    "source_head": "346690b8cdf82da5c21416ecd5792204ea762da0",
+    "prompt_sha256": "1897c5333b0e36985b864b97d9e3dc8ebb5f75e6638a433966ac3ee89ca4589a",
+    "files": {
+      "src/loan_plan/paid_cfg.rs": "5a1995e3ae65126afa9a1f78b2c901d3f921b17a2d567055baf7a4a2995d0dea",
+      "src/loan_plan/paid_children.rs": "2d4dbf70b4e0555e3a95bf9a1abe19990d0239d5f34ffe5cdc140f68aa5be141",
+      "src/loan_plan/storage.rs": "ad0d110526038c1f07228668323d2ec123ef934dcece68d6713dff8f679017a6",
+      "src/loan_plan/cfg_directory.rs": "61865270ed45b2c58501e962ad2fffc01dddfd77063f8dc9195193b85223f007",
+      "src/loan_plan/paid_cursor.rs": "98b959f27238e7dd340cac7761a3c91d3fd9a5326e82439aacbeafb99ac8e513",
+      "src/loan_plan/saved_planner/cfg_build.rs": "a6cc00aac578f71f6c5b00b68384538b5fce55fd525e0d1e86408831851c4de6"
+    }
+  },
+  "provider_list_cost_usd": 0.1661015,
+  "review_scope": "Pre-edit exact scratch design; lazy-acquisition ordering concern corrected in authored source. No actual tests."
+}

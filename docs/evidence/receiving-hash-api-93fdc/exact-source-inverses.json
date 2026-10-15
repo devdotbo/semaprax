@@ -1,0 +1,44 @@
+[
+  {
+    "path": "src/cleanup_plan/replay/expression_facts/receiving/regions_entry/tests.rs",
+    "archive": "src__cleanup_plan__replay__expression_facts__receiving__regions_entry__tests.rs.before.txt",
+    "sha256": "29b16e331e6de6529519fcbcfd3e6e50f287610a7cdd0a8bbc5fa58fccbdfd5c",
+    "edits": [
+      {
+        "before": "            Sha256::digest(include_str!(\"../regions_entry.rs\").as_bytes())\n",
+        "after": "            crate::digest_hex::LowerHex(Sha256::digest(\n                include_str!(\"../regions_entry.rs\").as_bytes()\n            ))\n"
+      },
+      {
+        "before": "    for (record, (current, original)) in records.as_array().unwrap().iter().zip(sources) {\n        assert_eq!(\n            format!(\"{:x}\", Sha256::digest(original.as_bytes())),\n            record[\"sha256\"].as_str().unwrap()\n        );\n",
+        "after": "    for (record, (current, original)) in records.as_array().unwrap().iter().zip(sources) {\n        assert_eq!(\n            format!(\n                \"{:x}\",\n                crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))\n            ),\n            record[\"sha256\"].as_str().unwrap()\n        );\n"
+      },
+      {
+        "before": "    for (record, original) in records.as_array().unwrap().iter().zip(originals) {\n        assert_eq!(\n            format!(\"{:x}\", Sha256::digest(original.as_bytes())),\n            record[\"sha256\"].as_str().unwrap()\n        );\n",
+        "after": "    for (record, original) in records.as_array().unwrap().iter().zip(originals) {\n        assert_eq!(\n            format!(\n                \"{:x}\",\n                crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))\n            ),\n            record[\"sha256\"].as_str().unwrap()\n        );\n"
+      }
+    ]
+  },
+  {
+    "path": "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs",
+    "archive": "src__cleanup_plan__replay__expression_facts__receiving__remaining__tests.rs.before.txt",
+    "sha256": "7d846542f21406063ffb96ae726d248731d33dbbe0eab573b74fa5d33c4fe30d",
+    "edits": [
+      {
+        "before": "        format!(\"{:x}\", Sha256::digest(include_bytes!(\"selected.rs\"))),\n",
+        "after": "        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(include_bytes!(\"selected.rs\")))\n        ),\n"
+      },
+      {
+        "before": "        format!(\"{:x}\", Sha256::digest(current.as_bytes())),\n",
+        "after": "        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))\n        ),\n"
+      },
+      {
+        "before": "    for (record, (current, original)) in records.as_array().unwrap().iter().zip(sources) {\n        assert_eq!(\n            format!(\"{:x}\", Sha256::digest(original.as_bytes())),\n            record[\"sha256\"].as_str().unwrap()\n        );\n",
+        "after": "    for (record, (current, original)) in records.as_array().unwrap().iter().zip(sources) {\n        assert_eq!(\n            format!(\n                \"{:x}\",\n                crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))\n            ),\n            record[\"sha256\"].as_str().unwrap()\n        );\n"
+      },
+      {
+        "before": "    for (record, original) in projections.as_array().unwrap().iter().zip(originals) {\n        assert_eq!(\n            format!(\"{:x}\", Sha256::digest(original.as_bytes())),\n            record[\"sha256\"].as_str().unwrap()\n        );\n",
+        "after": "    for (record, original) in projections.as_array().unwrap().iter().zip(originals) {\n        assert_eq!(\n            format!(\n                \"{:x}\",\n                crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))\n            ),\n            record[\"sha256\"].as_str().unwrap()\n        );\n"
+      }
+    ]
+  }
+]

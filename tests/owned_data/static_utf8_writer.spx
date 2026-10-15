@@ -1,0 +1,29 @@
+module static.writer;
+@id("static.write")
+fn write(output:own Bytes,text:borrow str,start:usize)->Bytes
+requires start+byte_len(str_as_bytes(text))<=byte_len(bytes_as_slice(output)) {
+ let input=str_as_bytes(text); let mut next=output; let mut at=0usize;
+ while at<byte_len(input) {
+  let byte=match byte_get(input,at) {Option::Some{value}=>value,Option::None{}=>0u8,};
+  next=bytes_set(next,start+at,byte); at=at+1usize; 0
+ }
+ next
+}
+@id("static.writer")
+fn run()->i64 {
+ let first=str"aé\u{0}"; let alias=first; let first_view=str_as_bytes(alias);
+ let mut output=bytes_zeroed(6usize); output=write(output,alias,0usize);
+ let mut at=0usize;
+ while at<2usize {
+  let key=str"\"\\"; output=write(output,key,4usize); at=at+1usize; 0
+ }
+ let view=bytes_as_slice(output);
+ let a=match byte_get(view,0usize) {Option::Some{value}=>value,Option::None{}=>0u8,};
+ let b=match byte_get(view,1usize) {Option::Some{value}=>value,Option::None{}=>0u8,};
+ let c=match byte_get(view,2usize) {Option::Some{value}=>value,Option::None{}=>0u8,};
+ let d=match byte_get(view,3usize) {Option::Some{value}=>value,Option::None{}=>1u8,};
+ let e=match byte_get(view,4usize) {Option::Some{value}=>value,Option::None{}=>0u8,};
+ let f=match byte_get(view,5usize) {Option::Some{value}=>value,Option::None{}=>0u8,};
+ if byte_len(first_view)==4usize && a==97u8 && b==195u8 && c==169u8 && d==0u8 && e==34u8 && f==92u8 {42}else{0}
+}
+@id("app.main") fn main()->i64 {run()}

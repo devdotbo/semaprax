@@ -68,6 +68,10 @@ root.
 and `stderr`. Captured byte streams are represented as lossy UTF-8 strings.
 Authentication, compilation, or host failures before case results are
 collected retain the command's diagnostic reporting path.
+A per-case host refusal publishes no result, including when a successful child
+exit was observed before its output readers finish. The captured exit code and
+first selected timeout/output/read failure remain visible; neither result
+carrier can turn that refusal into a successful reported value.
 
 ## Process bounds and cleanup
 
@@ -105,3 +109,42 @@ The focused integration selectors are:
 cargo test --locked -p semaprax --test project source_command::source_command_native_tests_
 cargo test --locked -p semaprax --test project_cli_v1 native_test::
 ```
+
+## Opt-in diagnostic timings
+
+`semaprax test --target native --native-timing --json` adds a per-case
+`diagnostic_timings` object with schema
+`semaprax.native-test-diagnostic-timing.v1`. Without this flag, the existing
+v1 output shape is unchanged. The flag requires native target and JSON.
+
+Monotonic observations relative to host `run_case` entry record spawn return,
+existing deadline timer start, first wait, terminal exit/deadline/output/wait
+observation, both reader settlements, and observation completion. Missing stages
+are null, including stages unavailable after spawn failure. Setup time precedes
+the existing deadline interval; reader settlement follows its terminal
+observation. Compilation, sealing, scratch cleanup, and JSON serialization are
+outside this observation. Loader and OS scheduling time remain inside the
+original process deadline; the instrumentation neither isolates those costs
+nor changes timeout, output refusal, result publication, or settlement.
+The same opt-in object also records wait and pending observation counts, last
+wait/pending timestamps, the maximum gap between observed waits, and terminal
+deadline overshoot. These fixed-size observations distinguish repeated pending
+checks from long parent polling gaps. They do not measure child CPU or identify
+loader/scheduler causes. No polling counter or timestamp is sampled when the
+flag is absent; the existing wait order and five-millisecond sleep are unchanged.
+Timing values are diagnostic observations, not deterministic pins or acceptance
+criteria. The original 100 ms recovery control remains unchanged and unqualified
+until its owning executable gate actually passes.
+
+
+The owning test harness alone accepts an explicit
+`SEMAPRAX_NATIVE_TEST_DIAGNOSTICS=<directory>` output directory. It uses a local
+compiler wrapper to snapshot C, compiler arguments and the linked executable
+before entry, then retains only deadline-failed cases with source/command hashes
+and the existing timing object. Each fresh attempt allows at most 64 capture
+bundles (192 files) and 64 MiB of artifact bytes. Read-only receipts are diagnostic
+data; they grant no execution or source authority. Compiler environment changes
+and copying occur outside the deadline, so captured runs support no performance
+comparison or loader-cost conclusion. The helper runs each program once and
+leaves CLI scratch cleanup, the 100 ms control, and acceptance assertions intact.
+Without the variable, the original harness path is unchanged.

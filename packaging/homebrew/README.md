@@ -1,9 +1,9 @@
 # Homebrew channel
 
-Status: tooling only. The channel is **pending** until
-[`../channels.json`](../channels.json) says `"homebrew": {"status": "published"}`;
-no document may advertise `brew install` before then
-(`scripts/release-reconcile.py` fails if one does).
+Status: the canonical `wavect/tap` channel serves v0.9.0 on Apple Silicon and
+Intel macOS. The generated recipe is retained under
+[`../releases/v0.9.0/homebrew`](../releases/v0.9.0/homebrew).
+[`../channels.json`](../channels.json) records the last publicly verified version.
 
 The package is a binary formula, `semaprax`, in the tap `wavect/tap`
 (repository `wavect/homebrew-tap`, formula `Formula/semaprax.rb`). It installs the
@@ -17,8 +17,8 @@ Only from a release that is already published, with its own `SHA256SUMS` and
 aggregate `release-manifest.json`:
 
 ```sh
-gh release download v0.8.0 -R wavect/semaprax -p SHA256SUMS -p release-manifest.json
-python3 scripts/channel-manifests.py homebrew --tag v0.8.0 \
+gh release download v0.9.0 -R wavect/semaprax -p SHA256SUMS -p release-manifest.json
+python3 scripts/channel-manifests.py homebrew --tag v0.9.0 \
   --sums SHA256SUMS --manifest release-manifest.json --out out
 # out/homebrew/semaprax.rb
 ```
@@ -45,7 +45,7 @@ host at the archive's glibc baseline.
    brew install --formula wavect/semaprax-localtest/semaprax
    brew test wavect/semaprax-localtest/semaprax
    brew audit --strict wavect/semaprax-localtest/semaprax
-   brew uninstall semaprax && brew untap wavect/semaprax-localtest
+   brew uninstall --force semaprax && brew untap wavect/semaprax-localtest
    ```
 
    `brew audit` needs `homebrew/core` available locally; untap it again if you did
@@ -58,7 +58,11 @@ host at the archive's glibc baseline.
    rejected tap update leaves the previous formula installable and the docs
    unchanged.
 
-Locally validated for v0.8.0 on macOS 26 arm64 with Homebrew 7.0.8: install,
-`brew test` (the beginner journey printing `42`, `semapraxd` present, both
-executables from the same archive) and `brew audit --strict` all pass. Upgrade
-between two releases and the public tap command are not yet exercised.
+The public v0.9.0 formula passed native installation, `brew test` (starter
+printing `42`, both executables present), `brew audit --strict` and removal on
+macOS 15 arm64 and x86-64 in [run 38156173827](https://github.com/wavect/semaprax/actions/runs/38156173827),
+after the tap update at `360054d96abbf684d9b31f0e657a88f6b1eaf4da`.
+The preceding [run 38155570863](https://github.com/wavect/semaprax/actions/runs/38155570863)
+also upgraded the real Apple Silicon v0.8.0 formula to the v0.9.0 proposal.
+The Package channels workflow retains deterministic proposals from published,
+attested bytes; publishing the reviewed tap update is a separate operation.

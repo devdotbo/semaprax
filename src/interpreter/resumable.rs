@@ -1012,7 +1012,7 @@ fn settle_step(
         Err(Flow::Exhausted) => EvaluatedStep::FuelExhausted,
         Err(Flow::DepthExceeded) => EvaluatedStep::CallDepthExceeded,
         Err(Flow::Guard(detail)) => EvaluatedStep::GuardError(detail.to_owned()),
-        Err(Flow::Residual(_)) => EvaluatedStep::GuardError(
+        Err(Flow::Residual(_) | Flow::Lexical(_)) => EvaluatedStep::GuardError(
             "owned postfix `?` residual escaped its function frame".to_owned(),
         ),
         Err(Flow::Cancelled { .. }) => {
@@ -1163,7 +1163,7 @@ fn snapshot_environment(environment: &Environment) -> Vec<(ValueId, Value)> {
 
 fn clone_environment_value(value: &Value) -> Option<Value> {
     match value {
-        Value::Bytes(inner) => Some(Value::Bytes(inner.clone())),
+        Value::Bytes(inner) => inner.borrow_alias().ok().map(Value::Bytes),
         other => clone_scalar(other),
     }
 }

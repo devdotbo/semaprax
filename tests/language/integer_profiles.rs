@@ -98,11 +98,25 @@ fn checked_program(source: &str) -> semaprax::ast::Program {
 }
 
 fn parity_cases(source: &str, cases: &[(&str, &str)], public_exports: bool) {
+    parity_cases_with_internal_strings(source, cases, public_exports, false);
+}
+
+fn parity_cases_with_internal_strings(
+    source: &str,
+    cases: &[(&str, &str)],
+    public_exports: bool,
+    internal_strings: bool,
+) {
     let program = checked_program(source);
     let mut fixture = Fixture::new(source);
     let mut expected = String::new();
     for (id, observation) in cases {
-        let result = interpreter::interpret(
+        let interpret = if internal_strings {
+            interpreter::internal_strings::interpret
+        } else {
+            interpreter::interpret
+        };
+        let result = interpret(
             &fixture.source,
             id,
             &[],
@@ -152,6 +166,40 @@ else {{ if(value!=INT64_MAX) return 92; const struct spx_normalized_status *stat
                 "{prefix}@id(\"app.main\") fn main() -> i64 {{ {name}() }}"
             ));
             let web = fixture.root.join("web");
+            if internal_strings {
+                // The same owning source contains Bytes and private String
+                // helpers: it belongs to the explicit private HIR route, not
+                // the nominal-free standalone String/public Web profiles.
+                assert_eq!(
+                    wasm::build_web(&selected, &web).unwrap_err().code,
+                    "SPX-W116"
+                );
+                assert!(!web.exists());
+                let resolved = semaprax::hir::resolve(&selected).unwrap();
+                let bytes = wasm::emit_resolved_module(&resolved).unwrap();
+                wasmparser::Validator::new().validate_all(&bytes).unwrap();
+                let path = fixture.write("private-strings.wasm", bytes);
+                let (domain, code, value) = if let Some(value) = observation.strip_prefix("ok|") {
+                    ("ok", "0", value)
+                } else {
+                    let (domain, code) = observation.split_once('|').unwrap();
+                    (domain, code, "0")
+                };
+                let host = Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("tests/owned_data/owned_leaf_vec/host.js");
+                let output = Command::new("node")
+                    .arg(host)
+                    .arg(path)
+                    .args([code, value, "scalar-view", domain])
+                    .output()
+                    .unwrap();
+                assert!(
+                    output.status.success(),
+                    "{id}: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                );
+                continue;
+            }
             wasm::build_web(&selected, &web).unwrap();
             std::fs::write(web.join("package.json"), "{\"type\":\"module\"}").unwrap();
             let runner = fixture.write("runner.mjs", format!(r#"import {{ readFile }} from 'node:fs/promises';
@@ -355,3 +403,6 @@ fn integer_profile_types_and_forged_results_fail_closed() {
     value.ty = hir::ResolvedType::U8;
     assert!(hir::validate(&forged_remainder).is_err());
 }
+
+#[path = "integer_profiles/unicode_scalar.rs"]
+mod unicode_scalar;

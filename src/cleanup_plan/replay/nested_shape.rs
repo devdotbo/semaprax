@@ -1,15 +1,17 @@
+#[cfg(test)]
+use super::{allocation, MAX_REPLAY_WORK_UNITS};
+use super::{selected_profile, ReplayBudget};
 use crate::cleanup::{FieldLiveness, FieldLivenessShape, LivenessFlagId};
 use crate::diagnostic::Diagnostic;
-use crate::hir::{
-    DeclarationId, ResolvedFunction, ResolvedProgram, ResolvedType, ResolvedTypeDeclarationKind,
-};
+use crate::hir::{DeclarationId, ResolvedFunction, ResolvedType, ResolvedTypeDeclarationKind};
 
 use super::replay_error;
 use crate::cleanup_plan::{
     CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11, CLEANUP_PLAN_SCHEMA_V12,
     CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14, CLEANUP_PLAN_SCHEMA_V15,
-    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V7,
-    CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
+    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18,
+    CLEANUP_PLAN_SCHEMA_V19, CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8,
+    CLEANUP_PLAN_SCHEMA_V9,
 };
 
 fn nested_schema(schema: &str) -> bool {
@@ -25,6 +27,8 @@ fn nested_schema(schema: &str) -> bool {
             | CLEANUP_PLAN_SCHEMA_V15
             | CLEANUP_PLAN_SCHEMA_V16
             | CLEANUP_PLAN_SCHEMA_V17
+            | CLEANUP_PLAN_SCHEMA_V18
+            | CLEANUP_PLAN_SCHEMA_V19
             | CLEANUP_PLAN_SCHEMA_V14
     )
 }
@@ -35,13 +39,97 @@ struct Budget {
     visited_fields: usize,
 }
 
+#[cfg(test)]
 pub(super) fn expected_shape_for_type(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     ty: &ResolvedType,
     next_flag: &mut u32,
 ) -> Result<FieldLivenessShape, Diagnostic> {
     derive(program, function, ty, next_flag, 0, &mut Budget::default())
+}
+
+mod paid;
+pub(super) fn expected_shape_for_type_paid(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    ty: &ResolvedType,
+    next_flag: &mut u32,
+    physical: &mut ReplayBudget,
+) -> Result<FieldLivenessShape, Diagnostic> {
+    paid::derive(
+        program,
+        function,
+        ty,
+        next_flag,
+        0,
+        &mut Budget::default(),
+        physical,
+    )
+}
+
+#[cfg(test)]
+mod paid_before;
+/// Scratch and its sole payer remain owned through the complete receiving call.
+/// No address, cache key or retained observation can confer payer authority.
+pub(super) struct PaidShapeReceiver<'a> {
+    scratch: paid::Scratch,
+    physical: &'a mut ReplayBudget,
+}
+impl<'a> PaidShapeReceiver<'a> {
+    pub(super) fn new(physical: &'a mut ReplayBudget) -> Self {
+        Self {
+            scratch: paid::Scratch::default(),
+            physical,
+        }
+    }
+    pub(super) fn derive(
+        &mut self,
+        program: &dyn crate::cleanup::ReplayContext,
+        function: &ResolvedFunction,
+        ty: &ResolvedType,
+        next_flag: &mut u32,
+    ) -> Result<FieldLivenessShape, Diagnostic> {
+        paid::derive_reusing(
+            program,
+            function,
+            ty,
+            next_flag,
+            (0, &mut Budget::default()),
+            self.physical,
+            &mut self.scratch,
+        )
+    }
+    pub(super) fn budget(&mut self) -> &mut ReplayBudget {
+        self.physical
+    }
+    #[cfg(test)]
+    pub(super) fn capacities(&self) -> (usize, usize) {
+        self.scratch.capacities()
+    }
+    #[cfg(test)]
+    pub(super) fn settled(&self) -> bool {
+        self.scratch.settled()
+    }
+}
+
+#[cfg(test)]
+pub(super) fn expected_shape_for_type_paid_before(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    ty: &ResolvedType,
+    next_flag: &mut u32,
+    physical: &mut ReplayBudget,
+) -> Result<FieldLivenessShape, Diagnostic> {
+    paid_before::derive(
+        program,
+        function,
+        ty,
+        next_flag,
+        0,
+        &mut Budget::default(),
+        physical,
+    )
 }
 
 /// Depth-first shape derivation over an explicit work stack.
@@ -53,8 +141,9 @@ pub(super) fn expected_shape_for_type(
 /// parent charges its fields before any child is entered, children are entered
 /// left to right, and liveness flags are therefore still allocated in
 /// depth-first order.
+#[cfg(test)]
 fn derive(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     root: &ResolvedType,
     next_flag: &mut u32,
@@ -98,7 +187,11 @@ fn derive(
                 }
                 if crate::cleanup::is_owned_bounded_vec_type(&ty)
                     || crate::hir::owned_record_collection::is_owned_record_vec_type(
-                        &program.declarations,
+                        program.declarations(),
+                        &ty,
+                    )
+                    || crate::hir::owned_leaf_collection::is_copy_or_leaf_vec(
+                        program.declarations(),
                         &ty,
                     )
                 {
@@ -119,6 +212,8 @@ fn derive(
                             | CLEANUP_PLAN_SCHEMA_V15
                             | CLEANUP_PLAN_SCHEMA_V16
                             | CLEANUP_PLAN_SCHEMA_V17
+                            | CLEANUP_PLAN_SCHEMA_V18
+                            | CLEANUP_PLAN_SCHEMA_V19
                             | CLEANUP_PLAN_SCHEMA_V14
                     ) {
                         return Err(replay_error(
@@ -152,11 +247,14 @@ fn derive(
                     ));
                 };
                 let item = program
-                    .types
+                    .types()
                     .iter()
                     .find(|item| item.id == *declaration)
                     .ok_or_else(|| {
-                        replay_error(function, format!("unknown cleanup type `{declaration}`"))
+                        replay_error(
+                            function,
+                            format_args!("unknown cleanup type `{declaration}`"),
+                        )
                     })?;
                 match &item.kind {
                     ResolvedTypeDeclarationKind::Resource { drop } => {
@@ -190,7 +288,7 @@ fn derive(
                         {
                             return Err(replay_error(
                                 function,
-                                format!(
+                                format_args!(
                                     "cleanup shape exceeds the {} record-depth limit",
                                     crate::cleanup::MAX_CLEANUP_SHAPE_DEPTH
                                 ),
@@ -353,7 +451,7 @@ fn charge_leaf(function: &ResolvedFunction, budget: &mut Budget) -> Result<(), D
     {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup shape exceeds the {} owned-leaf limit",
                 crate::cleanup::MAX_CLEANUP_OWNED_LEAVES
             ),
@@ -376,7 +474,7 @@ fn charge_fields(
     {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup shape exceeds the {} visited-field limit",
                 crate::cleanup::MAX_CLEANUP_VISITED_FIELDS
             ),
@@ -386,10 +484,95 @@ fn charge_fields(
 }
 
 pub(super) fn type_needs_drop(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     ty: &ResolvedType,
 ) -> Result<bool, Diagnostic> {
+    #[cfg(test)]
+    match allocation::authority(program, function) {
+        Ok(Some(lease)) => {
+            if program.selected_flat_records() {
+                lease.fail_physical("selected inventory is outside the ordinary oracle receiver");
+                return Err(Diagnostic::io_static(
+                    "SPX-H006",
+                    "ordinary oracle receiver refused selected inventory admission",
+                ));
+            }
+            // A new helper budget owns no allowance: every byte is debited from
+            // the same cumulative account, with the existing Ordinary ceilings.
+            let mut budget = ReplayBudget::with_skeleton_limit_oracle(MAX_REPLAY_WORK_UNITS, lease);
+            return super::paid_type_facts::needs_drop(program, function, ty, &mut budget);
+        }
+        Ok(None) => {}
+        Err(_) => {
+            return Err(Diagnostic::io_static(
+                "SPX-H006",
+                "oracle invocation authority refused a type probe",
+            ))
+        }
+    }
+    if program.selected_flat_records() {
+        return crate::cleanup::selected_inventory_needs_drop_in(program, ty);
+    }
     crate::cleanup::type_needs_resource_cleanup(program, ty)
         .map_err(|message| replay_error(function, message))
+}
+
+/// The guarded helper receiver authenticates every nominal probe on the same
+/// ledger; ordinary replay retains its original classification and diagnostics.
+pub(super) fn type_needs_drop_with_budget(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    ty: &ResolvedType,
+    budget: &mut ReplayBudget,
+) -> Result<bool, Diagnostic> {
+    #[cfg(test)]
+    if let Some(lease) = program.borrowed_helper_lease(function) {
+        return lease.no_drop(program, function, ty, budget);
+    }
+    if program.selected_flat_records() && matches!(ty, ResolvedType::Nominal { .. }) {
+        selected_profile::collections::prepay(
+            program,
+            function,
+            selected_profile::collections::type_key_bytes(ty)?,
+            budget,
+        )?;
+    }
+    if program.selected_flat_records() {
+        return type_needs_drop(program, function, ty);
+    }
+    super::paid_type_facts::needs_drop(program, function, ty, budget)
+}
+
+/// Authenticate the unbudgeted caller before any substitution acquisition. A
+/// helper budget owns no allowance: its payer is the same cumulative account.
+pub(super) fn substitute_type_current(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    template: &ResolvedType,
+    owner: &DeclarationId,
+    arguments: &[ResolvedType],
+) -> Result<ResolvedType, Diagnostic> {
+    #[cfg(test)]
+    match allocation::authority(program, function) {
+        Ok(Some(lease)) => {
+            let mut budget = ReplayBudget::with_skeleton_limit_oracle(MAX_REPLAY_WORK_UNITS, lease);
+            return super::ordinary_inventory::substitute::substitute_type(
+                template,
+                owner,
+                arguments,
+                function,
+                &mut budget,
+            );
+        }
+        Ok(None) => {}
+        Err(_) => {
+            return Err(Diagnostic::io_static(
+                "SPX-H006",
+                "oracle invocation authority refused field substitution",
+            ))
+        }
+    }
+    let _ = (program, function);
+    crate::hir::substitute_type(template, owner, arguments)
 }

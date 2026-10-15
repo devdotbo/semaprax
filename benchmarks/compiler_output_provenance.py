@@ -2,14 +2,169 @@
 from __future__ import annotations
 import hashlib
 import json
+import os
+import shutil
+import stat
 from pathlib import Path
 from typing import Any
 
 SCHEMA = "semaprax.compiler-output-provenance.v1"
+INPUT_SNAPSHOT_SCHEMA = "semaprax.compiler-input-snapshot.v1"
+MAX_INPUT_RECEIPT_BYTES = 1024 * 1024
+
+
+def _snapshot_read(root_fd: int, relative: str, limit: int) -> bytes:
+    """Read only a regular file through no-follow, directory-relative handles."""
+    parent_fd = os.dup(root_fd)
+    try:
+        parts = Path(relative).parts
+        for component in parts[:-1]:
+            next_fd = os.open(component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent_fd)
+            os.close(parent_fd)
+            parent_fd = next_fd
+        fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent_fd)
+        try:
+            stream = os.fdopen(fd, "rb")
+        except BaseException:
+            os.close(fd)
+            raise
+        with stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise ValueError("snapshot input is not a regular file")
+            return stream.read(limit + 1)
+    except OSError as error:
+        raise ValueError("snapshot input cannot be opened without following symlinks") from error
+    finally:
+        os.close(parent_fd)
+
+
+def capture_inputs(candidate: Path, destination: Path, paths: list[str],
+                   max_bytes: int = 8 * 1024 * 1024, *,
+                   authorized_directory_fd: int | None = None) -> tuple[Path, str]:
+    """Retain pre-generation bytes in a new runner-owned evidence directory.
+
+    The runner supplies the input closure. This does not establish its
+    completeness, compiler execution, generated-file authorship, or billing.
+    Run the compiler against the retained snapshot when exact input binding is
+    required; a collection of independently read live files is not a lock.
+
+    A runner that has already authorized a directory through no-follow handles
+    may supply its FD instead of reopening a mutable pathname. That caller must
+    establish the handle's authority and keep destination outside its namespace;
+    the FD is not inferred from an untrusted request. Path mode is unchanged.
+    """
+    if authorized_directory_fd is None:
+        if candidate.is_symlink() or not candidate.is_dir():
+            raise ValueError("candidate must be a real directory")
+        inside = destination.resolve().is_relative_to(candidate.resolve())
+    else:
+        if (isinstance(authorized_directory_fd, bool) or not isinstance(authorized_directory_fd, int)
+                or not stat.S_ISDIR(os.fstat(authorized_directory_fd).st_mode)):
+            raise ValueError("authorized snapshot handle must name a directory")
+        inside = Path(os.path.abspath(destination)).is_relative_to(Path(os.path.abspath(candidate)))
+    if inside:
+        raise ValueError("input snapshot must be outside the candidate")
+    if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes < 0:
+        raise ValueError("snapshot byte budget must be nonnegative")
+    if not isinstance(paths, list) or not paths:
+        raise ValueError("snapshot input selection must be nonempty")
+    selected = [_relative(path, "snapshot input path") for path in paths]
+    if len(set(selected)) != len(selected):
+        raise ValueError("snapshot input selection has duplicate paths")
+    if not all(hasattr(os, flag) for flag in ("O_DIRECTORY", "O_NOFOLLOW", "O_NONBLOCK")):
+        raise ValueError("safe input snapshot capture requires no-follow directory handles")
+    # Exclusive creation protects earlier retained evidence from replacement.
+    destination.mkdir()
+    try:
+        inputs = destination / "inputs"
+        inputs.mkdir()
+        rows = []
+        total = 0
+        root_fd = (os.open(candidate, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+                   if authorized_directory_fd is None else os.dup(authorized_directory_fd))
+        try:
+            for relative in sorted(selected):
+                if authorized_directory_fd is None:
+                    _regular_under(candidate, relative)
+                data = _snapshot_read(root_fd, relative, max_bytes - total)
+                if len(data) > max_bytes - total:
+                    raise ValueError("snapshot input selection exceeds byte budget")
+                target = inputs / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with target.open("xb") as stream:
+                    stream.write(data)
+                total += len(data)
+                rows.append({"path": relative, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)})
+        finally:
+            os.close(root_fd)
+        receipt = destination / "snapshot.json"
+        encoded = (json.dumps({"schema": INPUT_SNAPSHOT_SCHEMA,
+            "input_root": "inputs", "input_files": rows, "total_bytes": total},
+            sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+        if len(encoded) > MAX_INPUT_RECEIPT_BYTES:
+            raise ValueError("input snapshot receipt exceeds byte budget")
+        receipt.write_bytes(encoded)
+        return receipt, digest(receipt)
+    except BaseException:
+        shutil.rmtree(destination)
+        raise
+
+
+def validate_input_snapshot(receipt: Path, expected_sha256: str) -> list[dict[str, Any]]:
+    """Validate historical bytes in isolated, runner-owned retained evidence.
+
+    The expected digest must come from immutable runner provenance outside the
+    candidate. This validator assumes the evidence directory is isolated from
+    concurrent writers; it does not grant a lock or freeze a mutable directory.
+    """
+    if receipt.is_symlink() or not receipt.is_file():
+        raise ValueError("input snapshot receipt must be a regular file")
+    with receipt.open("rb") as stream:
+        encoded = stream.read(MAX_INPUT_RECEIPT_BYTES + 1)
+    if len(encoded) > MAX_INPUT_RECEIPT_BYTES:
+        raise ValueError("input snapshot receipt exceeds byte budget")
+    if hashlib.sha256(encoded).hexdigest() != _hex(expected_sha256, 64, "expected input snapshot"):
+        raise ValueError("input snapshot differs from immutable runner provenance")
+    value = json.loads(encoded)
+    if encoded != (json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8"):
+        raise ValueError("input snapshot receipt is not canonical")
+    if (not isinstance(value, dict) or set(value) != {"schema", "input_root", "input_files", "total_bytes"}
+            or value["schema"] != INPUT_SNAPSHOT_SCHEMA or value["input_root"] != "inputs"):
+        raise ValueError("input snapshot schema differs")
+    rows = value["input_files"]
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("input snapshot selection differs")
+    seen = set()
+    total = 0
+    previous = ""
+    for row in rows:
+        if not isinstance(row, dict) or set(row) != {"path", "sha256", "bytes"}:
+            raise ValueError("input snapshot row differs")
+        relative = _relative(row["path"], "snapshot input path")
+        if relative in seen:
+            raise ValueError("input snapshot duplicates an input path")
+        if relative < previous:
+            raise ValueError("input snapshot input order is not canonical")
+        previous = relative
+        seen.add(relative)
+        count = row["bytes"]
+        target = _regular_under(receipt.parent, "inputs/" + relative)
+        if (isinstance(count, bool) or not isinstance(count, int) or count < 0
+                or target.stat().st_size != count or digest(target) != _hex(row["sha256"], 64, "snapshot input")):
+            raise ValueError("input snapshot bytes differ from retained evidence")
+        total += count
+    if (isinstance(value["total_bytes"], bool) or not isinstance(value["total_bytes"], int)
+            or value["total_bytes"] != total):
+        raise ValueError("input snapshot total differs")
+    return rows
 
 def digest(path: Path) -> str:
     if path.is_symlink() or not path.is_file(): raise ValueError(f"expected regular file: {path}")
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    value = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(65536), b""):
+            value.update(chunk)
+    return value.hexdigest()
 
 def _relative(value: Any, label: str) -> str:
     if not isinstance(value,str) or not value: raise ValueError(f"{label} must be a nonempty relative path")
@@ -75,6 +230,9 @@ def validate(receipt_path: Path, expected_receipt_sha256: str, candidate: Path,
     for row in rows:
         if not isinstance(row,dict) or set(row)!={'raw_path','final_path','sha256'}: raise ValueError("compiler receipt raw output row differs")
         raw=_relative(row['raw_path'],'raw output path'); final=_relative(row['final_path'],'final output path'); sha=_hex(row['sha256'],64,'raw output')
+        # v1 proves whole-file generated outputs, not mixed source projections.
+        # A compiler copying an input into its output cannot erase authorship.
+        if final in seen: raise ValueError("compiler output overlaps authored input closure")
         if raw in raw_seen or final in final_seen: raise ValueError("compiler receipt output mapping is not one-to-one")
         raw_seen.add(raw); final_seen.add(final); target=_regular_under(raw_root, raw)
         try: target.resolve(strict=True).relative_to(raw_root)

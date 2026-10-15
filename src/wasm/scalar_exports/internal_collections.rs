@@ -38,6 +38,7 @@ pub(super) fn validate_expression(
             return Err(refuse());
         }
         match &expression.kind {
+            ResolvedExprKind::VecConstructor { .. } => return Err(refuse()),
             ResolvedExprKind::Int(_)
             | ResolvedExprKind::Int32(_)
             | ResolvedExprKind::Char(_)
@@ -47,6 +48,7 @@ pub(super) fn validate_expression(
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Unary { .. }
             | ResolvedExprKind::Binary { .. }
             | ResolvedExprKind::If { .. } => {}
@@ -104,7 +106,8 @@ pub(super) fn validate_expression(
                             field: None,
                             ..
                         } if internal_type(program, &binding.ty, binding.ownership) => {}
-                        ResolvedStatement::While { .. } => {}
+                        ResolvedStatement::While { .. }
+                        | ResolvedStatement::LexicalWhile { .. } => {}
                         _ => return Err(refuse()),
                     }
                 }

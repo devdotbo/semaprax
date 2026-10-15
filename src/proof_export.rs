@@ -140,7 +140,8 @@ pub trait LeanKernel {
 /// them, so a bound artifact is never one this compiler itself would
 /// reject. Mirrors the SMT certificate module's identical step.
 fn compile_wasm_core_module(resolved: &ResolvedProgram) -> Result<Vec<u8>, String> {
-    let bytes = crate::wasm::emit_resolved_module(resolved).map_err(|error| error.message)?;
+    let bytes =
+        crate::wasm::emit_resolved_module(resolved).map_err(|error| error.message.into_owned())?;
     wasmparser::Validator::new_with_features(wasmparser::WasmFeatures::all())
         .validate_all(&bytes)
         .map_err(|error| {

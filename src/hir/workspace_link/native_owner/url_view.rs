@@ -1,8 +1,8 @@
 //! Exact Url resource reachability, including its imported finalizer.
 use super::*;
-pub(super) fn admitted_resource(
+pub(super) fn admitted_resource<'a>(
     declaration: &ResolvedTypeDeclaration,
-    interfaces: &[ResolvedInterface],
+    interfaces: impl Iterator<Item = &'a ResolvedInterface> + Clone,
 ) -> bool {
     let ResolvedTypeDeclarationKind::Resource { drop } = &declaration.kind else {
         return false;
@@ -21,7 +21,7 @@ pub(super) fn admitted_resource(
         declaration: declaration.id.clone(),
         arguments: Vec::new(),
     };
-    let imports = || interfaces.iter().flat_map(|interface| &interface.imports);
+    let imports = || interfaces.clone().flat_map(|interface| &interface.imports);
     let destructor = imports().any(|import| {
         &import.id == finalizer
             && &import.import_key == import_key

@@ -6,8 +6,8 @@ use std::collections::{BTreeMap, VecDeque};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
     DeclarationId, OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedFunction,
-    ResolvedMatchArm, ResolvedMatchMode, ResolvedMatchPattern, ResolvedProgram,
-    ResolvedRecordMatchFieldPattern, ResolvedRecordMatchPatternField, ResolvedType, ValueId,
+    ResolvedMatchArm, ResolvedMatchMode, ResolvedMatchPattern, ResolvedRecordMatchFieldPattern,
+    ResolvedRecordMatchPatternField, ResolvedType, ValueId,
 };
 
 pub(super) mod update;
@@ -17,7 +17,7 @@ const OWNED_LEAF_LIMIT: usize = 256;
 const FIELD_WORK_LIMIT: usize = 4_096;
 
 pub(super) fn admits_owned_match_result(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     scrutinee: &ResolvedExpr,
@@ -30,6 +30,9 @@ pub(super) fn admits_owned_match_result(
             && arms.iter().all(|arm| {
                 arm.value.ty == ResolvedType::String && arm.value.ownership == OwnershipMode::Own
             });
+    }
+    if crate::hir::collection_outcome::match_join(program.declarations(), expression) {
+        return expression.ownership == OwnershipMode::Own;
     }
     if let ResolvedExprKind::Match { mode, .. } = expression.kind {
         if crate::hir::generic_variant::match_result(
@@ -48,7 +51,10 @@ pub(super) fn admits_owned_match_result(
     }
     let generic =
         crate::hir::bounded_owned_record_template_for_function(program, function).is_some();
-    let ordinary = program.functions.iter().any(|item| item.id == function.id);
+    let ordinary = program
+        .functions()
+        .iter()
+        .any(|item| item.id == function.id);
     if !generic && !ordinary {
         return false;
     }
@@ -63,15 +69,24 @@ pub(super) fn admits_owned_match_result(
         return false;
     };
     let ordinary_shape = ordinary
-        && (crate::hir::is_admitted_nested_owned_byte_record(&program.declarations, &scrutinee.ty)
-            || crate::hir::owned_text_record::admitted(&scrutinee.ty, &program.declarations))
+        && (crate::hir::is_admitted_nested_owned_byte_record(
+            program.declarations(),
+            &scrutinee.ty,
+        ) || crate::hir::owned_text_record::runtime_admitted(
+            &scrutinee.ty,
+            program.declarations(),
+        ))
         && (matches!(expression.ty, ResolvedType::Bytes | ResolvedType::String)
             || crate::map_ops::is_collection(&expression.ty)
+            || crate::hir::owned_collection_record::vector(program.declarations(), &expression.ty)
             || crate::hir::is_admitted_nested_owned_byte_record(
-                &program.declarations,
+                program.declarations(),
                 &expression.ty,
             )
-            || crate::hir::owned_text_record::admitted(&expression.ty, &program.declarations));
+            || crate::hir::owned_text_record::runtime_admitted(
+                &expression.ty,
+                program.declarations(),
+            ));
     *mode == ResolvedMatchMode::Own
         && expression.ty == arm.value.ty
         && expression.ownership == OwnershipMode::Own
@@ -83,13 +98,13 @@ pub(super) fn admits_owned_match_result(
         && (ordinary_shape
             || (generic
                 && crate::hir::is_admitted_nested_owned_byte_record(
-                    &program.declarations,
+                    program.declarations(),
                     &expression.ty,
                 )))
 }
 
 pub(super) fn finish_owned_match_result(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     arm_value: &ResolvedExpr,
@@ -124,27 +139,34 @@ pub(super) struct ExpectedDestructure {
     pub(super) bindings: Vec<ExpectedBinding>,
 }
 
-pub(super) fn contains_nested(fields: &[ResolvedRecordMatchPatternField]) -> bool {
-    let mut pending = fields.iter().collect::<Vec<_>>();
-    while let Some(field) = pending.pop() {
-        if let ResolvedRecordMatchFieldPattern::Record { fields, .. } = &field.pattern {
-            pending.extend(fields);
-            return true;
+pub(super) fn contains_nested(
+    index: &crate::hir::DeclarationIndex,
+    root: &ResolvedType,
+    fields: &[ResolvedRecordMatchPatternField],
+) -> bool {
+    fields.iter().any(|field| match &field.pattern {
+        ResolvedRecordMatchFieldPattern::Record { .. } => true,
+        ResolvedRecordMatchFieldPattern::Binding(binding) => {
+            crate::hir::owned_record_subtree::candidate(binding)
+                && crate::hir::owned_record_subtree::admitted(index, root, &binding.ty)
         }
-    }
-    false
+        ResolvedRecordMatchFieldPattern::Wildcard => false,
+    })
 }
 
-pub(super) fn function_contains(function: &crate::hir::ResolvedFunction) -> bool {
+pub(super) fn function_contains(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &crate::hir::ResolvedFunction,
+) -> bool {
     function
         .requires
         .iter()
-        .any(super::expression_has_nested_record_destructure)
+        .any(|expr| super::expression_has_nested_record_destructure(program, expr))
         || function
             .ensures
             .iter()
-            .any(super::expression_has_nested_record_destructure)
-        || super::expression_has_nested_record_destructure(&function.body)
+            .any(|expr| super::expression_has_nested_record_destructure(program, expr))
+        || super::expression_has_nested_record_destructure(program, &function.body)
 }
 
 struct Pending<'a> {
@@ -157,13 +179,17 @@ struct Pending<'a> {
 }
 
 pub(super) fn replay(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &crate::hir::ResolvedFunction,
     record: &DeclarationId,
     instance: &ResolvedType,
     fields: &[ResolvedRecordMatchPatternField],
     mode: ResolvedMatchMode,
 ) -> Result<ExpectedDestructure, Diagnostic> {
+    #[cfg(test)]
+    if let Some(result) = funded::replay(program, function, record, instance, fields, mode) {
+        return result;
+    }
     let mut queue = VecDeque::from([Pending {
         record,
         instance,
@@ -201,7 +227,7 @@ pub(super) fn replay(
             ));
         }
         let declarations = program
-            .declarations
+            .declarations()
             .record_fields(pending.record)
             .ok_or_else(|| {
                 super::replay_error(function, "nested record destructure has no declaration")
@@ -259,8 +285,21 @@ pub(super) fn replay(
                             "nested record destructure replay binding is not canonical",
                         ));
                     }
-                    non_byte_owned_terminal |=
-                        needs_drop && !matches!(ty, ResolvedType::Bytes | ResolvedType::String);
+                    let subtree = needs_drop
+                        && mode == ResolvedMatchMode::Own
+                        && crate::hir::owned_record_subtree::admitted(
+                            program.declarations(),
+                            instance,
+                            &ty,
+                        );
+                    nested |= subtree;
+                    non_byte_owned_terminal |= needs_drop
+                        && !subtree
+                        && !matches!(ty, ResolvedType::Bytes | ResolvedType::String)
+                        && !crate::hir::owned_collection_record::vector(
+                            program.declarations(),
+                            &ty,
+                        );
                     if needs_drop
                         && mode == ResolvedMatchMode::Own
                         && (bindings.len() >= OWNED_LEAF_LIMIT
@@ -320,3 +359,6 @@ pub(super) fn replay(
             .collect(),
     })
 }
+
+#[cfg(test)]
+mod funded;

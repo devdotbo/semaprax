@@ -21,12 +21,18 @@
 //! `mod` in a test crate root resolves against `tests/`, so each module names
 //! its file explicitly.
 
+#[path = "language/borrowed_str_equality.rs"]
+mod borrowed_str_equality;
 #[path = "language/borrowed_text_byte_at.rs"]
 mod borrowed_text_byte_at;
+#[path = "language/byte_slice_for_traversal.rs"]
+mod byte_slice_for_traversal;
 #[path = "language/byte_widening.rs"]
 mod byte_widening;
 #[path = "language/character_scalars.rs"]
 mod character_scalars;
+#[path = "language/checked_literal_format.rs"]
+mod checked_literal_format;
 #[path = "language/class_declarations.rs"]
 mod class_declarations;
 #[path = "language/class_inheritance.rs"]
@@ -103,6 +109,8 @@ mod property_widen;
 mod record_invariants;
 #[path = "language/record_patterns.rs"]
 mod record_patterns;
+#[path = "language/record_vec_traversal.rs"]
+mod record_vec_traversal;
 #[path = "language/records_semantics.rs"]
 mod records_semantics;
 #[path = "language/records_syntax.rs"]
@@ -198,3 +206,9 @@ mod wasm_text_toolkit_v1;
 
 #[path = "language/wasm_map_collections_v2.rs"]
 mod wasm_map_collections_v2;
+
+#[path = "language/lexical_structured_exits.rs"]
+mod lexical_structured_exits;
+
+#[path = "language/owned_string_transfer.rs"]
+mod owned_string_transfer;

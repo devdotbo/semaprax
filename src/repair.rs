@@ -1,13 +1,7 @@
 //! Read-only, targeted diagnostic repair discovery and instantiation.
-
 mod call_closure;
-use call_closure::{call_graph, has_call_cycle};
-
-use std::collections::{BTreeMap, BTreeSet};
-use std::path::Path;
-
-use sha2::{Digest, Sha256};
-
+mod discard_boundary;
+mod scoped_vec_field;
 use crate::ast::{Expr, ExprKind, ParamMode, Program, Type};
 use crate::diagnostic::{quote_json, Diagnostic};
 use crate::hir::{
@@ -15,7 +9,11 @@ use crate::hir::{
     ResolvedExprKind, ResolvedFunction, ResolvedStatement, ValueId,
 };
 use crate::{format, graph, parse, patch};
-
+use call_closure::{call_graph, has_call_cycle};
+use discard_boundary::rebase_mismatch;
+use sha2::{Digest, Sha256};
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::Path;
 const REPORT_SCHEMA: &str = "semaprax.diagnostic-repair.v1";
 const PREVIEW_SCHEMA: &str = "semaprax.diagnostic-repair-preview.v1";
 const PATCH_SCHEMA: &str = "semaprax.semantic-patch.v3";
@@ -39,12 +37,10 @@ const RESERVED_ID_PREFIXES: [&str; 7] = [
     "nominal:",
 ];
 const RESERVED_ID_VALUES: [&str; 2] = ["bool", "i64"];
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DiagnosticRepairQuery {
     automatic_function_id: String,
 }
-
 impl DiagnosticRepairQuery {
     pub fn assign_function_id(
         automatic_function_id: impl Into<String>,
@@ -468,6 +464,7 @@ pub(crate) fn precheck_program(program: &Program) -> Result<(), Vec<Diagnostic>>
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::ArrayU8(_)
             | ExprKind::RepeatArrayU8 { .. }
             | ExprKind::Var(_) => {}
@@ -480,7 +477,10 @@ pub(crate) fn precheck_program(program: &Program) -> Result<(), Vec<Diagnostic>>
                 }
                 expressions.extend(args);
             }
-            ExprKind::Unary { value, .. } => expressions.push(value),
+            ExprKind::LexicalExit { value, .. } => expressions.extend(value.as_deref()),
+            ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                expressions.push(value)
+            }
             ExprKind::Binary { left, right, .. } => {
                 expressions.push(right);
                 expressions.push(left);
@@ -606,6 +606,7 @@ fn scalar_type(ty: &Type) -> bool {
 
 fn scalar_expr(expression: &Expr) -> bool {
     match &expression.kind {
+        ExprKind::LexicalExit { .. } => false,
         ExprKind::Closure { .. } => false,
         ExprKind::Int(_)
         | ExprKind::Int32(_)
@@ -616,6 +617,7 @@ fn scalar_expr(expression: &Expr) -> bool {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => true,
         ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => false,
         ExprKind::Call {
@@ -623,7 +625,9 @@ fn scalar_expr(expression: &Expr) -> bool {
             args,
             ..
         } => type_arguments.is_empty() && args.iter().all(scalar_expr),
-        ExprKind::Unary { value, .. } => scalar_expr(value),
+        ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+            scalar_expr(value)
+        }
         ExprKind::Binary { left, right, .. } => scalar_expr(left) && scalar_expr(right),
         ExprKind::Block { statements, tail } => {
             statements.iter().all(|statement| {
@@ -975,6 +979,23 @@ impl StructuralRebase<'_> {
                 self.compare_value_reference(&left.root, &right.root)?;
             }
             (
+                ResolvedExprKind::LiteralFormat {
+                    template: left_template,
+                    args: left_args,
+                },
+                ResolvedExprKind::LiteralFormat {
+                    template: right_template,
+                    args: right_args,
+                },
+            ) if left_template == right_template && left_args.len() == right_args.len() => {
+                for (left, right) in left_args.iter().zip(right_args) {
+                    self.compare_expr(left, right)?;
+                }
+            }
+            (ResolvedExprKind::VecFieldRead { .. }, ResolvedExprKind::VecFieldRead { .. }) => {
+                self.compare_vec_field(&before.kind, &after.kind)?;
+            }
+            (
                 ResolvedExprKind::Call {
                     callee: left_callee,
                     type_arguments: left_types,
@@ -1094,6 +1115,10 @@ impl StructuralRebase<'_> {
                             self.compare_expr(left_value, right_value)?;
                         }
                         (
+                            ResolvedStatement::CopyDiscard { value: left, .. },
+                            ResolvedStatement::CopyDiscard { value: right, .. },
+                        ) => self.compare_expr(left, right)?,
+                        (
                             ResolvedStatement::Unsafe {
                                 audit: left_audit,
                                 body: left_body,
@@ -1192,12 +1217,6 @@ fn identity_string_field(field: Option<&str>) -> bool {
                 | "projections"
         )
     )
-}
-
-fn rebase_mismatch() -> Vec<Diagnostic> {
-    vec![repair_delta_error(
-        "candidate HIR exceeds the selected function identity rebase",
-    )]
 }
 
 fn render_report(

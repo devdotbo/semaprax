@@ -80,14 +80,27 @@
 //! A value the target type cannot hold selects the checked
 //! `semaprax.convert.v1` status: code 1 for out of range, code 2 for NaN.
 
+#[cfg(test)]
+mod concat_funded;
 pub(crate) mod conditions;
+#[cfg(test)]
+pub(crate) use concat_funded::{
+    is_same_owner_concat_hir_funded, same_owner_concat_appends_funded,
+    same_owner_concat_operands_funded,
+};
+pub(crate) mod take;
 
+#[cfg(test)]
+mod bulk_utf8_tests;
 pub(crate) mod replacement;
+#[cfg(test)]
+mod unicode_scalar_tests;
 use crate::ast::{Param, ParamMode, Span, Type};
 use crate::hir::{OwnershipMode, ResolvedParam, ResolvedType, ValueId};
 
 pub(crate) const LEN_NAME: &str = "string_len";
 pub(crate) const CONCAT_NAME: &str = "string_concat";
+pub(crate) const TAKE_NAME: &str = "string_take";
 pub(crate) const IS_EMPTY_NAME: &str = "string_is_empty";
 pub(crate) const STARTS_WITH_NAME: &str = "string_starts_with";
 pub(crate) const CONTAINS_NAME: &str = "string_contains";
@@ -111,6 +124,9 @@ pub(crate) const MAP_LEN_NAME: &str = "map_len";
 pub(crate) const MAP_KEY_AT_NAME: &str = "map_key_at";
 pub(crate) const MAP_VALUE_AT_NAME: &str = "map_value_at";
 pub(crate) const MAP_REMOVE_NAME: &str = "map_remove";
+pub(crate) const FROM_UTF8_NAME: &str = "string_from_utf8";
+pub(crate) const FROM_UTF8_ID: &str = "core.string.from_utf8";
+
 pub(crate) const FROM_STR_NAME: &str = "string_from_str";
 pub(crate) const F64_FROM_I64_NAME: &str = "f64_from_i64";
 pub(crate) const I64_FROM_F64_NAME: &str = "i64_from_f64";
@@ -163,6 +179,9 @@ pub(crate) const U8_FROM_I64_ID: &str = "core.num.u8_from_i64";
 pub(crate) const CHAR_FROM_U8_NAME: &str = "char_from_u8";
 pub(crate) const CHAR_FROM_U8_ID: &str = "core.num.char_from_u8";
 
+pub(crate) const CHAR_FROM_I64_NAME: &str = "char_from_i64";
+pub(crate) const CHAR_FROM_I64_ID: &str = "core.num.char_from_i64";
+
 /// The checked status domain of Conversions v1.
 pub(crate) const CONVERT_STATUS_DOMAIN: &str = "semaprax.convert.v1";
 /// The value lies outside the target type's range.
@@ -203,6 +222,8 @@ pub(crate) const MAX_FILE_TEXT_BYTES: u64 = 65_536;
 /// One admitted string operation intrinsic.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum StringOp {
+    /// Explicit identity transfer of one named whole String owner.
+    Take,
     /// Borrowed byte-length read.
     Len,
     /// Consuming concatenation of two owned strings.
@@ -255,6 +276,8 @@ pub(crate) enum StringOp {
     MapRemove,
     /// Copy of a borrowed `str` view into a new owned string.
     FromStr,
+    /// Checked, exact copy of a borrowed UTF-8 byte slice into one String.
+    FromUtf8,
     /// `i64` to the nearest `f64`, ties to even.
     F64FromI64,
     /// Checked `f64` to `i64`, truncating toward zero.
@@ -273,9 +296,20 @@ pub(crate) enum StringOp {
     U8FromI64,
     /// Exact conversion of one byte to the same Unicode scalar value.
     CharFromU8,
+    /// Checked conversion to a Unicode scalar, excluding surrogate code points.
+    CharFromI64,
 }
 
 impl StringOp {
+    /// Preserve the closed compiler identity for the transfer intrinsic.
+    pub(crate) fn resolved_id(self) -> crate::hir::DeclarationId {
+        if self == Self::Take {
+            crate::hir::DeclarationId::compiler(crate::hir::CompilerDeclaration::StringTake)
+        } else {
+            crate::hir::DeclarationId::new(self.id())
+        }
+    }
+
     /// The first three waves. Frozen Project candidate schemas enumerate
     /// exactly these operations, so Text Toolkit v1 is listed separately.
     pub(crate) const ALL: [Self; 9] = [
@@ -327,6 +361,7 @@ impl StringOp {
     pub(crate) fn name(self) -> &'static str {
         match self {
             StringOp::Len => LEN_NAME,
+            StringOp::Take => TAKE_NAME,
             StringOp::Concat => CONCAT_NAME,
             StringOp::IsEmpty => IS_EMPTY_NAME,
             StringOp::StartsWith => STARTS_WITH_NAME,
@@ -352,6 +387,7 @@ impl StringOp {
             StringOp::MapValueAt => MAP_VALUE_AT_NAME,
             StringOp::MapRemove => MAP_REMOVE_NAME,
             StringOp::FromStr => FROM_STR_NAME,
+            StringOp::FromUtf8 => FROM_UTF8_NAME,
             StringOp::F64FromI64 => F64_FROM_I64_NAME,
             StringOp::I64FromF64 => I64_FROM_F64_NAME,
             StringOp::UsizeFromI64 => USIZE_FROM_I64_NAME,
@@ -360,6 +396,7 @@ impl StringOp {
             StringOp::UsizeFromU8 => USIZE_FROM_U8_NAME,
             StringOp::U8FromI64 => U8_FROM_I64_NAME,
             StringOp::CharFromU8 => CHAR_FROM_U8_NAME,
+            StringOp::CharFromI64 => CHAR_FROM_I64_NAME,
             StringOp::I64FromUsize => I64_FROM_USIZE_NAME,
         }
     }
@@ -367,6 +404,7 @@ impl StringOp {
     pub(crate) fn id(self) -> &'static str {
         match self {
             StringOp::Len => LEN_ID,
+            StringOp::Take => take::ID,
             StringOp::Concat => CONCAT_ID,
             StringOp::IsEmpty => IS_EMPTY_ID,
             StringOp::StartsWith => STARTS_WITH_ID,
@@ -392,6 +430,7 @@ impl StringOp {
             StringOp::MapValueAt => MAP_VALUE_AT_ID,
             StringOp::MapRemove => MAP_REMOVE_ID,
             StringOp::FromStr => FROM_STR_ID,
+            StringOp::FromUtf8 => FROM_UTF8_ID,
             StringOp::F64FromI64 => F64_FROM_I64_ID,
             StringOp::I64FromF64 => I64_FROM_F64_ID,
             StringOp::UsizeFromI64 => USIZE_FROM_I64_ID,
@@ -400,6 +439,7 @@ impl StringOp {
             StringOp::UsizeFromU8 => USIZE_FROM_U8_ID,
             StringOp::U8FromI64 => U8_FROM_I64_ID,
             StringOp::CharFromU8 => CHAR_FROM_U8_ID,
+            StringOp::CharFromI64 => CHAR_FROM_I64_ID,
             StringOp::I64FromUsize => I64_FROM_USIZE_ID,
         }
     }
@@ -415,6 +455,7 @@ impl StringOp {
             StringOp::Len | StringOp::IsEmpty | StringOp::LenChars => &["s"],
             StringOp::FromChar => &["c"],
             StringOp::FromI64 | StringOp::FromUsize => &["value"],
+            StringOp::Take => &["value"],
             StringOp::Concat => &["a", "b"],
             StringOp::StartsWith => &["s", "prefix"],
             StringOp::Contains => &["s", "needle"],
@@ -432,6 +473,7 @@ impl StringOp {
             StringOp::MapLen => &["map"],
             StringOp::MapKeyAt | StringOp::MapValueAt => &["map", "index"],
             StringOp::FromStr => &["s"],
+            StringOp::FromUtf8 => &["input"],
             StringOp::F64FromI64
             | StringOp::I64FromF64
             | StringOp::UsizeFromI64
@@ -440,6 +482,7 @@ impl StringOp {
             | StringOp::UsizeFromU8
             | StringOp::U8FromI64
             | StringOp::CharFromU8
+            | StringOp::CharFromI64
             | StringOp::I64FromUsize => &["value"],
         }
     }
@@ -448,7 +491,9 @@ impl StringOp {
     /// `string` operands except the copied-scalar constructors.
     pub(crate) fn param_types(self) -> &'static [ResolvedType] {
         match self {
-            StringOp::Len | StringOp::IsEmpty | StringOp::LenChars => &[ResolvedType::String],
+            StringOp::Take | StringOp::Len | StringOp::IsEmpty | StringOp::LenChars => {
+                &[ResolvedType::String]
+            }
             StringOp::FromChar => &[ResolvedType::Char],
             StringOp::FromI64 => &[ResolvedType::I64],
             StringOp::FromUsize => &[ResolvedType::Usize],
@@ -479,6 +524,7 @@ impl StringOp {
                 &[ResolvedType::StringMap, ResolvedType::Usize]
             }
             StringOp::FromStr => &[ResolvedType::Str],
+            StringOp::FromUtf8 => &[ResolvedType::SliceU8],
             StringOp::F64FromI64 | StringOp::UsizeFromI64 => &[ResolvedType::I64],
             StringOp::I64FromF64 => &[ResolvedType::F64],
             StringOp::I64FromU8 => &[ResolvedType::U8],
@@ -486,13 +532,14 @@ impl StringOp {
             StringOp::UsizeFromU8 => &[ResolvedType::U8],
             StringOp::U8FromI64 => &[ResolvedType::I64],
             StringOp::CharFromU8 => &[ResolvedType::U8],
+            StringOp::CharFromI64 => &[ResolvedType::I64],
             StringOp::I64FromUsize => &[ResolvedType::Usize],
         }
     }
 
-    /// Whether every non-scalar operand is consumed (only `string_concat`).
+    /// Whether every non-scalar operand is consumed (concat and explicit take).
     pub(crate) fn consumes_arguments(self) -> bool {
-        matches!(self, StringOp::Concat)
+        matches!(self, StringOp::Concat | StringOp::Take)
     }
 
     /// The ownership mode of one parameter. `string_concat` consumes both
@@ -532,7 +579,7 @@ impl StringOp {
 
     /// Conversions v1 forms a sixth optional backend group.
     pub(crate) fn is_conversion(self) -> bool {
-        Self::CONVERSIONS.contains(&self) || self.is_integer_conversion()
+        Self::CONVERSIONS.contains(&self) || self.is_integer_conversion() || self == Self::FromUtf8
     }
 
     /// Additive integer conversion profile, with direct extension and checked ranges.
@@ -544,6 +591,7 @@ impl StringOp {
                 | Self::UsizeFromU8
                 | Self::U8FromI64
                 | Self::CharFromU8
+                | Self::CharFromI64
                 | Self::I64FromUsize
                 | Self::UsizeFromI64
         )
@@ -562,6 +610,7 @@ impl StringOp {
                 | StringOp::UsizeFromU8
                 | StringOp::U8FromI64
                 | StringOp::CharFromU8
+                | StringOp::CharFromI64
                 | StringOp::I64FromUsize
         )
     }
@@ -569,7 +618,8 @@ impl StringOp {
     /// Operations no Core Wasm lane lowers: Text Toolkit v1, String
     /// Collections v1, and Conversions v1.
     pub(crate) fn is_wasm_refused(self) -> bool {
-        self.is_text_toolkit()
+        self == Self::Take
+            || self.is_text_toolkit()
             || self.is_collection()
             || (self.is_conversion() && !self.is_integer_conversion())
     }
@@ -615,7 +665,7 @@ impl StringOp {
             StringOp::I64FromI32 => ResolvedType::I64,
             StringOp::UsizeFromU8 => ResolvedType::Usize,
             StringOp::U8FromI64 => ResolvedType::U8,
-            StringOp::CharFromU8 => ResolvedType::Char,
+            StringOp::CharFromU8 | StringOp::CharFromI64 => ResolvedType::Char,
             StringOp::F64FromI64 => ResolvedType::F64,
             StringOp::UsizeFromI64 => ResolvedType::Usize,
             StringOp::MapNew | StringOp::MapAdd | StringOp::MapSet | StringOp::MapRemove => {
@@ -624,14 +674,16 @@ impl StringOp {
             StringOp::MapLen => ResolvedType::Usize,
             StringOp::MapHas => ResolvedType::Bool,
             StringOp::MapKeyAt => ResolvedType::String,
-            StringOp::Concat
+            StringOp::Take
+            | StringOp::Concat
             | StringOp::FromChar
             | StringOp::FromI64
             | StringOp::FromUsize
             | StringOp::Slice
             | StringOp::Trim
             | StringOp::FileReadText
-            | StringOp::FromStr => ResolvedType::String,
+            | StringOp::FromStr
+            | StringOp::FromUtf8 => ResolvedType::String,
             StringOp::IsEmpty | StringOp::StartsWith | StringOp::Contains => ResolvedType::Bool,
             StringOp::ToI64 => option_i64(),
         }
@@ -652,7 +704,7 @@ impl StringOp {
             StringOp::I64FromI32 => Type::I64,
             StringOp::UsizeFromU8 => Type::Usize,
             StringOp::U8FromI64 => Type::U8,
-            StringOp::CharFromU8 => Type::Char,
+            StringOp::CharFromU8 | StringOp::CharFromI64 => Type::Char,
             StringOp::F64FromI64 => Type::F64,
             StringOp::UsizeFromI64 => Type::Usize,
             StringOp::MapNew | StringOp::MapAdd | StringOp::MapSet | StringOp::MapRemove => {
@@ -661,14 +713,16 @@ impl StringOp {
             StringOp::MapLen => Type::Usize,
             StringOp::MapHas => Type::Bool,
             StringOp::MapKeyAt => Type::String,
-            StringOp::Concat
+            StringOp::Take
+            | StringOp::Concat
             | StringOp::FromChar
             | StringOp::FromI64
             | StringOp::FromUsize
             | StringOp::Slice
             | StringOp::Trim
             | StringOp::FileReadText
-            | StringOp::FromStr => Type::String,
+            | StringOp::FromStr
+            | StringOp::FromUtf8 => Type::String,
             StringOp::IsEmpty | StringOp::StartsWith | StringOp::Contains => Type::Bool,
             StringOp::ToI64 => Type::Named {
                 name: "Option".to_owned(),
@@ -681,7 +735,7 @@ impl StringOp {
 /// The compiler-owned `Option<i64>` that `string_to_i64` produces.
 pub(crate) fn option_i64() -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: crate::hir::DeclarationId::new(crate::prelude::OPTION_ID),
+        declaration: crate::hir::DeclarationId::compiler(crate::hir::CompilerDeclaration::Option),
         arguments: vec![ResolvedType::I64],
     }
 }
@@ -703,6 +757,7 @@ pub(crate) fn is_to_i64_call_hir(scrutinee: &crate::hir::ResolvedExpr) -> bool {
 /// Resolve a source-level call name to its intrinsic operation.
 pub(crate) fn by_name(name: &str) -> Option<StringOp> {
     match name {
+        TAKE_NAME => Some(StringOp::Take),
         LEN_NAME => Some(StringOp::Len),
         CONCAT_NAME => Some(StringOp::Concat),
         IS_EMPTY_NAME => Some(StringOp::IsEmpty),
@@ -729,6 +784,7 @@ pub(crate) fn by_name(name: &str) -> Option<StringOp> {
         MAP_VALUE_AT_NAME => Some(StringOp::MapValueAt),
         MAP_REMOVE_NAME => Some(StringOp::MapRemove),
         FROM_STR_NAME => Some(StringOp::FromStr),
+        FROM_UTF8_NAME => Some(StringOp::FromUtf8),
         F64_FROM_I64_NAME => Some(StringOp::F64FromI64),
         I64_FROM_F64_NAME => Some(StringOp::I64FromF64),
         USIZE_FROM_I64_NAME => Some(StringOp::UsizeFromI64),
@@ -737,6 +793,7 @@ pub(crate) fn by_name(name: &str) -> Option<StringOp> {
         USIZE_FROM_U8_NAME => Some(StringOp::UsizeFromU8),
         U8_FROM_I64_NAME => Some(StringOp::U8FromI64),
         CHAR_FROM_U8_NAME => Some(StringOp::CharFromU8),
+        CHAR_FROM_I64_NAME => Some(StringOp::CharFromI64),
         I64_FROM_USIZE_NAME => Some(StringOp::I64FromUsize),
         _ => None,
     }
@@ -745,6 +802,7 @@ pub(crate) fn by_name(name: &str) -> Option<StringOp> {
 /// Resolve a resolved-callee identity to its intrinsic operation.
 pub(crate) fn by_id(id: &str) -> Option<StringOp> {
     match id {
+        take::ID => Some(StringOp::Take),
         LEN_ID => Some(StringOp::Len),
         CONCAT_ID => Some(StringOp::Concat),
         IS_EMPTY_ID => Some(StringOp::IsEmpty),
@@ -771,6 +829,7 @@ pub(crate) fn by_id(id: &str) -> Option<StringOp> {
         MAP_VALUE_AT_ID => Some(StringOp::MapValueAt),
         MAP_REMOVE_ID => Some(StringOp::MapRemove),
         FROM_STR_ID => Some(StringOp::FromStr),
+        FROM_UTF8_ID => Some(StringOp::FromUtf8),
         F64_FROM_I64_ID => Some(StringOp::F64FromI64),
         I64_FROM_F64_ID => Some(StringOp::I64FromF64),
         USIZE_FROM_I64_ID => Some(StringOp::UsizeFromI64),
@@ -779,6 +838,7 @@ pub(crate) fn by_id(id: &str) -> Option<StringOp> {
         USIZE_FROM_U8_ID => Some(StringOp::UsizeFromU8),
         U8_FROM_I64_ID => Some(StringOp::U8FromI64),
         CHAR_FROM_U8_ID => Some(StringOp::CharFromU8),
+        CHAR_FROM_I64_ID => Some(StringOp::CharFromI64),
         I64_FROM_USIZE_ID => Some(StringOp::I64FromUsize),
         _ => None,
     }
@@ -813,7 +873,7 @@ pub(crate) fn ast_params(op: StringOp) -> Vec<Param> {
         .enumerate()
         .map(|(index, (name, ty))| Param {
             name: (*name).to_owned(),
-            mode: if *ty == ResolvedType::Str {
+            mode: if matches!(ty, ResolvedType::Str | ResolvedType::SliceU8) {
                 ParamMode::Borrow
             } else if op.param_ownership(index) == OwnershipMode::Own {
                 ParamMode::Own
@@ -828,6 +888,7 @@ pub(crate) fn ast_params(op: StringOp) -> Vec<Param> {
                 ResolvedType::Usize => Type::Usize,
                 ResolvedType::F64 => Type::F64,
                 ResolvedType::Str => Type::Str,
+                ResolvedType::SliceU8 => Type::SliceU8,
                 ResolvedType::StringMap => Type::StringMap,
                 _ => Type::String,
             },
@@ -947,7 +1008,9 @@ pub(crate) fn same_owner_concat_appends(
     let mut appends = std::collections::BTreeMap::new();
     let mut pending = vec![&function.body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Assign {
                     binding,
@@ -1161,4 +1224,65 @@ pub(crate) fn program_uses_operation(
         crate::hir::push_resolved_expression_children_in_authored_order(expression, &mut pending);
     }
     false
+}
+
+#[cfg(test)]
+pub(crate) use concat_funded::work::{
+    is_same_owner_concat_hir_funded_with_work, same_owner_concat_appends_funded_with_work,
+    same_owner_concat_operands_funded_with_work,
+};
+
+#[cfg(test)]
+pub(crate) fn by_id_with_work<E>(
+    id: &str,
+    work: crate::hir::funded::work::Work<'_, E>,
+) -> Result<Option<StringOp>, crate::hir::funded::FundedError<E>> {
+    use crate::hir::funded::work as paid;
+    const KEYS: &[(&str, StringOp)] = &[
+        (take::ID, StringOp::Take),
+        (LEN_ID, StringOp::Len),
+        (CONCAT_ID, StringOp::Concat),
+        (IS_EMPTY_ID, StringOp::IsEmpty),
+        (STARTS_WITH_ID, StringOp::StartsWith),
+        (CONTAINS_ID, StringOp::Contains),
+        (LEN_CHARS_ID, StringOp::LenChars),
+        (FROM_CHAR_ID, StringOp::FromChar),
+        (FROM_I64_ID, StringOp::FromI64),
+        (FROM_USIZE_ID, StringOp::FromUsize),
+        (SLICE_ID, StringOp::Slice),
+        (FIND_ID, StringOp::Find),
+        (TO_I64_ID, StringOp::ToI64),
+        (TRIM_ID, StringOp::Trim),
+        (BYTE_AT_ID, StringOp::ByteAt),
+        (FILE_READ_TEXT_ID, StringOp::FileReadText),
+        (COMPARE_ID, StringOp::Compare),
+        (MAP_NEW_ID, StringOp::MapNew),
+        (MAP_ADD_ID, StringOp::MapAdd),
+        (MAP_SET_ID, StringOp::MapSet),
+        (MAP_GET_OR_ID, StringOp::MapGetOr),
+        (MAP_HAS_ID, StringOp::MapHas),
+        (MAP_LEN_ID, StringOp::MapLen),
+        (MAP_KEY_AT_ID, StringOp::MapKeyAt),
+        (MAP_VALUE_AT_ID, StringOp::MapValueAt),
+        (MAP_REMOVE_ID, StringOp::MapRemove),
+        (FROM_STR_ID, StringOp::FromStr),
+        (FROM_UTF8_ID, StringOp::FromUtf8),
+        (F64_FROM_I64_ID, StringOp::F64FromI64),
+        (I64_FROM_F64_ID, StringOp::I64FromF64),
+        (USIZE_FROM_I64_ID, StringOp::UsizeFromI64),
+        (I64_FROM_U8_ID, StringOp::I64FromU8),
+        (I64_FROM_I32_ID, StringOp::I64FromI32),
+        (USIZE_FROM_U8_ID, StringOp::UsizeFromU8),
+        (U8_FROM_I64_ID, StringOp::U8FromI64),
+        (CHAR_FROM_U8_ID, StringOp::CharFromU8),
+        (CHAR_FROM_I64_ID, StringOp::CharFromI64),
+        (I64_FROM_USIZE_ID, StringOp::I64FromUsize),
+    ];
+    for (key, op) in KEYS {
+        paid::tick(work, paid::str_units(key, id))?;
+        if *key == id {
+            return Ok(Some(*op));
+        }
+    }
+    Ok(None)
 }

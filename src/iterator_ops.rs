@@ -1,6 +1,9 @@
 //! Exact consuming scalar iterator protocol. Runtime adapters receive no ambient authority.
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{Param, ParamMode, Span, Type};
-use crate::hir::{DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId};
+use crate::hir::{
+    CompilerDeclaration, DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId,
+};
 #[cfg(test)]
 mod lazy_adapter_tests;
 mod owned;
@@ -60,9 +63,9 @@ impl IteratorOp {
     pub(crate) fn resolved_param_type(self, element: &ResolvedType) -> ResolvedType {
         resolved(
             if self == Self::VecIntoIter {
-                crate::prelude::VEC_ID
+                CompilerDeclaration::Vec
             } else {
-                ITER_ID
+                CompilerDeclaration::Iter
             },
             element.clone(),
         )
@@ -70,9 +73,9 @@ impl IteratorOp {
     pub(crate) fn resolved_return_type(self, element: &ResolvedType) -> ResolvedType {
         resolved(
             if self == Self::VecIntoIter {
-                ITER_ID
+                CompilerDeclaration::Iter
             } else {
-                STEP_ID
+                CompilerDeclaration::IterStep
             },
             element.clone(),
         )
@@ -95,10 +98,7 @@ pub(crate) fn resolved_element_is_admitted_in(
     ty: &ResolvedType,
 ) -> bool {
     resolved_element_is_admitted(ty)
-        || crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
-            declarations,
-            ty,
-        )
+        || crate::hir::owned_leaf_collection::runtime_element(declarations, ty)
 }
 fn nominal(name: &str, element: Type) -> Type {
     Type::Named {
@@ -106,17 +106,17 @@ fn nominal(name: &str, element: Type) -> Type {
         arguments: vec![element],
     }
 }
-fn resolved(id: &str, element: ResolvedType) -> ResolvedType {
+fn resolved(id: CompilerDeclaration, element: ResolvedType) -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: DeclarationId::new(id),
+        declaration: DeclarationId::compiler(id),
         arguments: vec![element],
     }
 }
 pub(crate) fn resolved_iter(element: ResolvedType) -> ResolvedType {
-    resolved(ITER_ID, element)
+    resolved(CompilerDeclaration::Iter, element)
 }
 pub(crate) fn resolved_iter_step(element: ResolvedType) -> ResolvedType {
-    resolved(STEP_ID, element)
+    resolved(CompilerDeclaration::IterStep, element)
 }
 pub(crate) fn element(ty: &ResolvedType) -> Option<&ResolvedType> {
     match ty {
@@ -158,7 +158,7 @@ pub(crate) fn resolved_params(op: IteratorOp, element: &ResolvedType) -> Vec<Res
         span: Span::default(),
     }]
 }
-pub(crate) fn program_uses_iterator(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses_iterator(program: &dyn ProgramSource) -> bool {
     fn uses_function(function: &crate::ast::Function) -> bool {
         ast_type_uses_iterator(&function.return_type)
             || function
@@ -172,8 +172,8 @@ pub(crate) fn program_uses_iterator(program: &crate::ast::Program) -> bool {
                 .chain(&function.ensures)
                 .any(ast_expression_uses_iterator)
     }
-    program.functions.iter().any(uses_function)
-        || program.types.iter().any(|declaration| {
+    program.functions().iter().any(uses_function)
+        || program.types().iter().any(|declaration| {
             matches!(&declaration.kind, crate::ast::TypeDeclarationKind::Class { methods, .. }
                 if methods.iter().any(uses_function))
         })
@@ -382,6 +382,10 @@ pub(crate) fn type_facts(
                 &arguments[0],
             ) {
                 "record-v3"
+            } else if crate::hir::owned_leaf_collection::layout(declarations, &arguments[0])
+                .is_some()
+            {
+                "owned-leaf-v4"
             } else if arguments[0] == ResolvedType::Bytes {
                 "v2"
             } else {
@@ -400,25 +404,36 @@ pub(crate) fn step_shape(index: &crate::hir::DeclarationIndex, ty: &ResolvedType
     {
         return false;
     }
-    let owner = DeclarationId::new(STEP_ID);
+    canonical_step_shape(index)
+}
+
+fn canonical_step_shape(index: &crate::hir::DeclarationIndex) -> bool {
+    let owner = DeclarationId::compiler(CompilerDeclaration::IterStep);
     let Some(cases) = index.variant_cases(&owner) else {
         return false;
     };
-    let parameter = ResolvedType::TypeParameter {
-        owner: owner.clone(),
-        index: 0,
-    };
     matches!(cases,[done,yielded] if done.id.as_str()==DONE_ID&&done.name=="Done"&&done.index==0&&done.fields.is_empty()
  &&yielded.id.as_str()==YIELD_ID&&yielded.name=="Yield"&&yielded.index==1
- &&matches!(yielded.fields.as_slice(),[item,rest] if item.id.as_str()==ITEM_ID&&item.name=="item"&&item.index==0&&item.ty==parameter
- &&rest.id.as_str()==REST_ID&&rest.name=="rest"&&rest.index==1&&rest.ty==resolved_iter(parameter)))
+ &&matches!(yielded.fields.as_slice(),[item,rest] if item.id.as_str()==ITEM_ID&&item.name=="item"&&item.index==0&&is_step_parameter(&item.ty)
+ &&rest.id.as_str()==REST_ID&&rest.name=="rest"&&rest.index==1&&is_iter_of_step_parameter(&rest.ty)))
+}
+
+fn is_step_parameter(ty: &ResolvedType) -> bool {
+    matches!(ty, ResolvedType::TypeParameter { owner, index: 0 }
+        if owner.as_str() == STEP_ID)
+}
+
+fn is_iter_of_step_parameter(ty: &ResolvedType) -> bool {
+    matches!(ty, ResolvedType::Nominal { declaration, arguments }
+        if declaration.as_str() == ITER_ID
+        && matches!(arguments.as_slice(), [argument] if is_step_parameter(argument)))
 }
 pub(crate) fn validate_declarations(
     program: &crate::hir::ResolvedProgram,
 ) -> Result<(), crate::diagnostic::Diagnostic> {
     use crate::hir::DeclarationKind;
-    for id in [ITER_ID, STEP_ID] {
-        let id = DeclarationId::new(id);
+    for id in [CompilerDeclaration::Iter, CompilerDeclaration::IterStep] {
+        let id = DeclarationId::compiler(id);
         let Some(declaration) = program.declarations.declaration(&id) else {
             continue;
         };
@@ -436,10 +451,8 @@ pub(crate) fn validate_declarations(
             } else {
                 declaration.kind == DeclarationKind::Variant
                     && declaration.name == "IterStep"
-                    && step_shape(
-                        &program.declarations,
-                        &resolved_iter_step(ResolvedType::I64),
-                    )
+                    && resolved_element_is_admitted_in(&program.declarations, &ResolvedType::I64)
+                    && canonical_step_shape(&program.declarations)
             };
         if !valid {
             return Err(crate::diagnostic::Diagnostic::io(
@@ -510,7 +523,7 @@ mod tests {
                 .any(|diagnostic| diagnostic.code == "SPX-O111"),
             "{diagnostics:?}"
         );
-        let source="module test.invalid_iter; @id(\"it.main\") fn main()->i64{let values=vec_with_capacity<Bytes>(1usize);let iterator=vec_into_iter<String>(values);0}";
+        let source = "module test.invalid_iter; @id(\"it.main\") fn main()->i64{let values=vec_with_capacity<Bytes>(1usize);let iterator=vec_into_iter<String>(values);0}";
         let diagnostics = crate::check(source, "iterator-owned.spx").unwrap_err();
         assert!(
             diagnostics
@@ -520,3 +533,6 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+pub(crate) mod original_constructor;

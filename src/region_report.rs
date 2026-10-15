@@ -62,6 +62,7 @@ use crate::diagnostic::{quote_json, Diagnostic};
 use crate::hir::{
     OwnershipMode, ResolvedBinding, ResolvedExpr, ResolvedExprKind, ResolvedFunction,
     ResolvedMatchPattern, ResolvedProgram, ResolvedRecordMatchFieldPattern, ResolvedStatement,
+    ResolvedType,
 };
 use crate::{graph, hir, parse, patch, verify};
 
@@ -228,6 +229,13 @@ pub fn generate(
     }
     let revision = graph::revision(&program);
     let resolved = hir::resolve(&program)?;
+    for function in &resolved.functions {
+        if hir::lexical_exit::requires(function).map_err(|d| vec![d])? {
+            return Err(vec![consistency_error(
+                "lexical control flow is outside region-report v1".to_owned(),
+            )]);
+        }
+    }
 
     let mut sorted = program.functions.iter().collect::<Vec<_>>();
     sorted.sort_by(|left, right| left.stable_id.as_bytes().cmp(right.stable_id.as_bytes()));
@@ -442,6 +450,21 @@ fn collect_expr(
             collect_expr(start, scope_end, resolved, facts);
             collect_expr(end, scope_end, resolved, facts);
         }
+        ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
+            for argument in args {
+                collect_expr(argument, scope_end, resolved, facts);
+                if argument.ty == ResolvedType::String {
+                    if let ResolvedExprKind::Place(place) = &argument.kind {
+                        facts.consumption_sites.push(ConsumptionSite {
+                            binding: place.root.as_str().to_owned(),
+                            offset: argument.span.start,
+                        });
+                    }
+                }
+            }
+        }
         ResolvedExprKind::Call {
             callee,
             instance,
@@ -476,14 +499,21 @@ fn collect_expr(
                 collect_expr(argument, scope_end, resolved, facts);
             }
         }
-        ResolvedExprKind::Unary { value, .. } => {
+        ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ResolvedExprKind::Unary { value, .. } => {
             collect_expr(value, scope_end, resolved, facts);
         }
         ResolvedExprKind::Binary { left, right, .. } => {
             collect_expr(left, scope_end, resolved, facts);
             collect_expr(right, scope_end, resolved, facts);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 match statement {
                     ResolvedStatement::Let {
@@ -514,10 +544,16 @@ fn collect_expr(
                         collect_expr(value, span.end, resolved, facts);
                         facts.uses.push((binding.id.as_str().to_owned(), span.end));
                     }
+                    ResolvedStatement::CopyDiscard { value, span } => {
+                        collect_expr(value, span.end, resolved, facts);
+                    }
                     ResolvedStatement::Unsafe { body, span, .. } => {
                         collect_expr(body, span.end, resolved, facts);
                     }
                     ResolvedStatement::While {
+                        condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
                         condition, body, ..
                     } => {
                         // The loop re-evaluates its condition and body every
@@ -578,6 +614,7 @@ fn collect_expr(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. } => {}
     }

@@ -114,17 +114,24 @@ and hidden-command refusal are otherwise unchanged in bytes and status.
 case-sensitive `SPX-*` code returns only the common failed form and correction
 rows indexed for that code. `codes` and bare `help diagnostic` return a
 common-code shortlist with commands for exact-code advice and the complete
-`help language mistakes-index` table. The shortlist ranks codes by the number
-of indexed failed forms, descending, then by exact code; this is advice
-coverage, not measured diagnostic frequency. It includes at most twelve whole
-codes, reserving space for both navigation commands within the byte bound.
+`help language mistakes-index` table. Ordinary diagnostic advice precedes
+`SPX-F130`, which belongs to the explicit `fused-construction-v1` source profile.
+Within each group the shortlist ranks codes by the number of indexed failed
+forms, descending, then by exact code; this is advice coverage, not measured
+diagnostic frequency. Adding that opt-in profile's advice does not displace
+ordinary builder-budget advice (`SPX-G171`) from the common list. Exact
+`SPX-F130` help and the complete diagnostic inventory retain every indexed row.
+The shortlist includes at most twelve whole codes, reserving space for both navigation commands within the byte bound.
 Adding an indexed code does not require it to fit this shortlist: every code
 remains available through exact lookup and the complete table.
 The response is derived from the diagnostic-index table in the compiler-checked
 [agent quick reference](AGENT-QUICK-REFERENCE.md) through the pinned
 `semaprax.agent-diagnostic-help.v1`
 [JSON companion](AGENT-DIAGNOSTIC-HELP.json); the CLI does not maintain a second
-copy of the advice. The documentation gate also requires every marked failing
+copy of the advice. Typed Vec constructors add exact P220 shape/type/bound
+corrections and T318 forged-expansion/generated-owner corrections through that
+same table; neither code grants constructor or intermediate-owner authority.
+The documentation gate also requires every marked failing
 example in the card to have an indexed correction.
 
 No match exits two, emits no stdout, and reports the literal diagnostic
@@ -132,9 +139,10 @@ No match exits two, emits no stdout, and reports the literal diagnostic
 and case-folded matching are not admitted. The default shortlist is capped at
 256 bytes and 100 repository lexical units. Every exact response is capped at
 1,024 bytes and 300 units. The
-guarded `SPX-T208` response is 111 bytes and 32 units, more than twenty times
-smaller in both measures than the 2,513-byte, 916-unit complete diagnostic
-index. Even the nine-row `SPX-P106` response is only 773 bytes.
+guarded `SPX-T208` response remains more than twenty times smaller in both
+measures than the complete diagnostic table. Earlier wording measured 111
+bytes/32 units for that response and 773 bytes for the nine-row `SPX-P106`
+response; these are prior-representation observations, not current-byte claims.
 
 ## Language card
 
@@ -271,3 +279,11 @@ This surface is still not shell completion, dynamic discovery, a plugin
 registry, a machine-readable command schema, or proof that a documented command
 is published. A guided shape is not a grammar. Local tests are not hosted,
 cross-platform, release, or support evidence.
+
+
+Exact topic slices expand their referenced Markdown links to inline targets;
+footer definitions are omitted from isolated slices. Missing or duplicate
+reference definitions refuse instead of emitting a dangling link. Full-card
+`all` bytes remain unchanged. Diagnostic-table cells use inline links so the
+pinned JSON companion is independently readable. Existing byte/unit bounds
+remain mandatory.

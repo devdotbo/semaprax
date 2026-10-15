@@ -666,12 +666,12 @@ fn validation_rejects_a_whole_nested_record_field_binding() {
     let diagnostic = HirValidator::new(&program)
         .expect("hostile identities remain indexed")
         .validate_function(&function, &execution)
-        .expect_err("whole nested record binding must fail closed");
+        .expect_err("forged subtree binding identity must fail closed");
     assert_eq!(diagnostic.code, "SPX-H006");
     assert!(
         diagnostic
             .message
-            .contains("resolved nested owned-record field lacks a recursive record pattern"),
+            .contains("resolved record pattern binding is not canonical"),
         "{diagnostic:?}"
     );
 }

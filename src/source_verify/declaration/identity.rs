@@ -1,9 +1,9 @@
 //! Declaration and interface identity checks: reserved and duplicate names,
 //! duplicate stable identities, and the logical import key table.
 
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
-    ImportDeclaration, InterfaceDeclaration, Program, ResourceLifecycleKind, Type,
-    TypeDeclarationKind,
+    ImportDeclaration, InterfaceDeclaration, ResourceLifecycleKind, Type, TypeDeclarationKind,
 };
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::diagnostics::{
@@ -12,12 +12,12 @@ use crate::source_verify::diagnostics::{
 use std::collections::{HashMap, HashSet};
 
 pub(super) fn check_type_identities<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     ids: &mut HashSet<&'p str>,
     type_names: &mut HashSet<&'p str>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for declaration in &program.types {
+    for declaration in program.types() {
         if declaration.name == "Box" && crate::prelude::program_uses_box(program) {
             diagnostics.push(error(
                 program,
@@ -146,7 +146,7 @@ pub(super) fn check_type_identities<'p>(
                     ),
                     declaration.name_span,
                 )
-                .at_path(&program.path)
+                .at_path(program.path())
                 .with_help(format!("add @id(\"{help}\") before the declaration")),
             );
         }
@@ -312,7 +312,7 @@ pub(super) fn check_type_identities<'p>(
                             ),
                             field.name_span,
                         )
-                        .at_path(&program.path)
+                        .at_path(program.path())
                         .with_help("add @id(\"your.namespace.record.field\") before the field"),
                     );
                 }
@@ -386,7 +386,7 @@ pub(super) fn check_type_identities<'p>(
                             ),
                             case.name_span,
                         )
-                        .at_path(&program.path)
+                        .at_path(program.path())
                         .with_help("add @id(\"your.namespace.variant.case\") before the case"),
                     );
                 }
@@ -482,7 +482,7 @@ pub(super) fn check_type_identities<'p>(
                                 ),
                                 field.name_span,
                             )
-                            .at_path(&program.path)
+                            .at_path(program.path())
                             .with_help(
                                 "add @id(\"your.namespace.variant.case.field\") before the field",
                             ),
@@ -495,13 +495,13 @@ pub(super) fn check_type_identities<'p>(
 }
 
 pub(super) fn check_interface_identities<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     ids: &mut HashSet<&'p str>,
     interface_names: &mut HashSet<&'p str>,
     import_keys: &mut HashMap<&'p str, (&'p InterfaceDeclaration, &'p ImportDeclaration)>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for interface in &program.interfaces {
+    for interface in program.interfaces() {
         if !source_identifier(&interface.name) {
             diagnostics.push(error(
                 program,

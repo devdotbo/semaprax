@@ -1,0 +1,34 @@
+{
+  "execution": "not run; source-only candidate",
+  "new": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::paid_live::dense::tests::dense_live_keys_keep_full_u16_order_growth_and_each_receiving_refusal_through_drop",
+      "source": "src/loan_plan/paid_live/dense/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::paid_live::dense::tests::dense_live_foreign_then_restored_owner_cannot_publish_or_allocate",
+      "source": "src/loan_plan/paid_live/dense/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::paid_live::dense::tests::dense_liveness_preserves_full_old_rows_edges_and_every_checked_work_frontier",
+      "source": "src/loan_plan/paid_live/dense/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::paid_live::dense::tests::dense_complete_plans_and_late_full_diagnostics_keep_old_constructor_and_last_drop",
+      "source": "src/loan_plan/paid_live/dense/tests.rs"
+    }
+  ],
+  "required_existing": [
+    "loan_plan::paid_live::reuse_tests::complete_original_and_reused_liveness_planners_keep_all_fields_actual_payment_and_drop",
+    "loan_plan::paid_live::tests::paid_full_plan_late_overlap_and_first_work_error_equal_saved_btree_receiver",
+    "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap"
+  ]
+}

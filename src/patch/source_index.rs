@@ -32,6 +32,7 @@ pub(super) struct SemanticSourceIndex {
     pub cases: BTreeMap<(String, String), Vec<Span>>,
     pub calls: BTreeMap<String, CallSite>,
     member_owners: BTreeMap<String, String>,
+    member_names: BTreeMap<String, String>,
     /// Field names declared by more than one owner. A folded place
     /// projection (`p.x`) carries no base type, so its field cannot be
     /// attributed to a record when the name is ambiguous; such sites must
@@ -47,6 +48,9 @@ impl SemanticSourceIndex {
                 TypeDeclarationKind::Record { fields }
                 | TypeDeclarationKind::Class { fields, .. } => {
                     for field in fields {
+                        index
+                            .member_names
+                            .insert(field.stable_id.clone(), field.name.clone());
                         index.member(
                             &declaration.stable_id,
                             &field.stable_id,
@@ -64,6 +68,43 @@ impl SemanticSourceIndex {
                     }
                 }
                 TypeDeclarationKind::Resource { .. } => {}
+            }
+        }
+
+        // Imported row declarations still authenticate their literal selectors;
+        // this inventory grants no source edit site for an absent declaration.
+        for declaration in &resolved.types {
+            let element = ResolvedType::Nominal {
+                declaration: declaration.id.clone(),
+                arguments: Vec::new(),
+            };
+            let Some(fields) = resolved.declarations.record_fields(&declaration.id) else {
+                continue;
+            };
+            for field in fields {
+                if crate::hir::vec_field::field(&resolved.declarations, &element, &field.id)
+                    .is_none()
+                {
+                    continue;
+                }
+                if index
+                    .member_names
+                    .get(field.id.as_str())
+                    .is_some_and(|name| name != &field.name)
+                    || index
+                        .member_owners
+                        .get(field.id.as_str())
+                        .is_some_and(|owner| owner != declaration.id.as_str())
+                {
+                    return None;
+                }
+                index
+                    .member_names
+                    .insert(field.id.as_str().to_owned(), field.name.clone());
+                index.member_owners.insert(
+                    field.id.as_str().to_owned(),
+                    declaration.id.as_str().to_owned(),
+                );
             }
         }
 
@@ -126,6 +167,108 @@ impl SemanticSourceIndex {
     fn expr(&mut self, source: &Expr, resolved: &ResolvedExpr, tokens: &[Token]) -> Option<()> {
         match (&source.kind, &resolved.kind) {
             (
+                _,
+                ResolvedExprKind::VecFieldRead {
+                    origin: crate::hir::VecFieldReadOrigin::Explicit,
+                    element,
+                    field,
+                    bytes,
+                    args: resolved_args,
+                },
+            ) => {
+                let call = if *bytes {
+                    let ExprKind::Call {
+                        name,
+                        type_arguments,
+                        args,
+                    } = &source.kind
+                    else {
+                        return None;
+                    };
+                    if name != "str_as_bytes" || !type_arguments.is_empty() || args.len() != 1 {
+                        return None;
+                    }
+                    &args[0]
+                } else {
+                    source
+                };
+                let ExprKind::Call {
+                    name,
+                    type_arguments,
+                    args,
+                } = &call.kind
+                else {
+                    return None;
+                };
+                if name != crate::vec_field::NAME
+                    || type_arguments.len() != 1
+                    || args.len() != 3
+                    || resolved_args.len() != 2
+                {
+                    return None;
+                }
+                let ExprKind::String(selector) = &args[2].kind else {
+                    return None;
+                };
+                let ResolvedType::Nominal {
+                    declaration,
+                    arguments,
+                } = element
+                else {
+                    return None;
+                };
+                if !arguments.is_empty()
+                    || self.member_names.get(field.as_str())? != selector
+                    || self.member_owners.get(field.as_str())? != declaration.as_str()
+                {
+                    return None;
+                }
+                let literal = args[2].span;
+                if literal.end < literal.start + 2 {
+                    return None;
+                }
+                self.member(
+                    declaration.as_str(),
+                    field.as_str(),
+                    Span {
+                        start: literal.start + 1,
+                        end: literal.end - 1,
+                        line: literal.line,
+                        column: literal.column + 1,
+                    },
+                    None,
+                );
+                for (authored, resolved) in args[..2].iter().zip(resolved_args) {
+                    if authored.span != resolved.span {
+                        return None;
+                    }
+                    self.expr(authored, resolved, tokens)?;
+                }
+            }
+            (
+                ExprKind::Call {
+                    name,
+                    type_arguments,
+                    args,
+                },
+                ResolvedExprKind::LiteralFormat {
+                    template,
+                    args: resolved_args,
+                },
+            ) => {
+                if name != crate::literal_format::NAME
+                    || !type_arguments.is_empty()
+                    || !matches!(args.first().map(|arg| &arg.kind), Some(ExprKind::String(value)) if value == template)
+                    || args.len() != resolved_args.len() + 1
+                {
+                    return None;
+                }
+                for (argument, resolved_argument) in args.iter().skip(1).zip(resolved_args) {
+                    self.expr(argument, resolved_argument, tokens)?;
+                }
+            }
+
+            (
                 ExprKind::Call {
                     type_arguments,
                     args,
@@ -160,7 +303,7 @@ impl SemanticSourceIndex {
                 self.expr_pairs(args, resolved_args, tokens)?;
             }
             (
-                ExprKind::Unary { value, .. },
+                ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. },
                 ResolvedExprKind::Unary {
                     value: resolved_value,
                     ..
@@ -362,8 +505,11 @@ impl SemanticSourceIndex {
             }
             (ExprKind::Int(_), ResolvedExprKind::Int(_))
             | (ExprKind::String(_), ResolvedExprKind::String(_))
+            | (ExprKind::BorrowedUtf8Literal(_), ResolvedExprKind::BorrowedUtf8Literal(_))
             | (ExprKind::Bool(_), ResolvedExprKind::Bool(_))
-            | (ExprKind::Var(_), ResolvedExprKind::Place(_)) => {}
+            | (ExprKind::Var(_), ResolvedExprKind::Place(_))
+            // A lent row name references no declaration; its call carries the callee.
+            | (ExprKind::Var(_), ResolvedExprKind::RowLoan { .. }) => {}
             _ => return None,
         }
         Some(())
@@ -501,3 +647,7 @@ fn call_type_argument_spans(span: Span, count: usize, tokens: &[Token]) -> Optio
     }
     (spans.len() == count).then_some(spans)
 }
+
+#[cfg(test)]
+#[path = "source_index/scoped_vec_field_tests.rs"]
+mod scoped_vec_field_tests;

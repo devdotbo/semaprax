@@ -515,6 +515,9 @@ fn walk_for_edges(root: &ResolvedExpr, walked: &mut usize, node: &mut NodeFacts)
                 node.edges.insert(callee.as_str().to_owned());
                 pending.extend(args.iter());
             }
+            ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter()),
             ResolvedExprKind::NativeRustImportCall(call) => {
                 node.edges.insert(call.import.as_str().to_owned());
                 pending.extend(call.args.iter());
@@ -543,6 +546,7 @@ fn walk_for_edges(root: &ResolvedExpr, walked: &mut usize, node: &mut NodeFacts)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
             ResolvedExprKind::ByteRange {
@@ -552,6 +556,11 @@ fn walk_for_edges(root: &ResolvedExpr, walked: &mut usize, node: &mut NodeFacts)
                 pending.push(start);
                 pending.push(end);
             }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    pending.push(value);
+                }
+            }
             ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Project { base: value, .. }
             | ResolvedExprKind::Upcast { source: value }
@@ -560,7 +569,10 @@ fn walk_for_edges(root: &ResolvedExpr, walked: &mut usize, node: &mut NodeFacts)
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(tail);
                 for statement in statements {
                     for index in 0..statement.child_count() {

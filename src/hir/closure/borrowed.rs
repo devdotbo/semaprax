@@ -113,11 +113,13 @@ pub(crate) fn validate_uses(program: &ResolvedProgram) -> Result<(), Diagnostic>
         let mut sites = BTreeSet::new();
         let mut bindings = BTreeMap::new();
         let mut invalid = false;
-        super::super::function_value::walk(function, |expression| {
+        super::super::function_value::try_walk(function, |expression| {
             if is_borrowed(expression) {
                 sites.insert(expression.id.clone());
             }
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let ResolvedStatement::Let {
                         binding,
@@ -147,7 +149,7 @@ pub(crate) fn validate_uses(program: &ResolvedProgram) -> Result<(), Diagnostic>
                     }
                 }
             }
-        });
+        })?;
         if sites.is_empty() {
             continue;
         }
@@ -167,15 +169,15 @@ pub(crate) fn validate_uses(program: &ResolvedProgram) -> Result<(), Diagnostic>
             );
         }
         let mut direct_invocations = BTreeSet::new();
-        super::super::function_value::walk(function, |expression| {
+        super::super::function_value::try_walk(function, |expression| {
             if let ResolvedExprKind::Invoke { callable, .. } = &expression.kind {
                 if matches!(&callable.kind, ResolvedExprKind::Place(place) if bindings.contains_key(&place.root) && place.projections.is_empty())
                 {
                     direct_invocations.insert(callable.id.clone());
                 }
             }
-        });
-        super::super::function_value::walk(function, |expression| {
+        })?;
+        super::super::function_value::try_walk(function, |expression| {
             if let ResolvedExprKind::Place(place) = &expression.kind {
                 if bindings.contains_key(&place.root)
                     && !direct_invocations.contains(&expression.id)
@@ -183,7 +185,7 @@ pub(crate) fn validate_uses(program: &ResolvedProgram) -> Result<(), Diagnostic>
                     invalid = true;
                 }
             }
-        });
+        })?;
         // Generic instances cannot acquire this profile by forged substitution.
         invalid |= program
             .function_instances

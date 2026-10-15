@@ -318,7 +318,10 @@ impl Lowerer {
                     else_branch: Box::new(else_branch),
                 }
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 let mut lets = Vec::with_capacity(statements.len());
                 for statement in statements {
                     let ResolvedStatement::Let {

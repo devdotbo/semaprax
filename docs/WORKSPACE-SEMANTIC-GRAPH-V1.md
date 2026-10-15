@@ -66,6 +66,14 @@ declarations have null path/module. Synthetic declarations and stubs are never
 emitted. Edges retain only closure-owned emitted facts and use the exact
 Workspace edge tuple order.
 
+Independent per-module Vec selection follows exact authored imported function
+signatures and imported record/variant field paths, including nested type aliases.
+Unrelated provider declarations or bodies, missing persistent IDs, wrong modules
+and retained HIR metadata do not select Vec. The source-only cursor uses 514 fixed
+pending/visited slots, 4,096 visited fields and 1,000,000 work units; its full
+backing is charged before use. Exhaustion supplies no declaration authority.
+This selection reconciles the compiler-owned inventory and admits no new type.
+
 ## Canonical wire
 
 The schema is `semaprax.workspace-semantic-graph.v1`; the manifest schema is
@@ -173,6 +181,46 @@ reserved against the same `builder_bytes` budget. Either overflow produces
 `SPX-G171`. A looser estimate rejects earlier and a tighter one later; neither
 removes the retained-memory bound.
 
+Independent edge replay compares the complete current source/HIR occurrence,
+type-reference, effect and capability projections directly. It does not allocate
+a second text rendering of those edges and discard it. Real replay scratch keeps
+the sticky `workspace edge proof` reservation stage; removing the unused text
+carrier neither refunds preceding reservations nor changes edge/output limits.
+Owning executable qualification of this reduction is pending.
+
+Authored expression-site reconstruction reuses one UTF-8 path buffer per root.
+Its inline carrier and each complete replacement backing are charged before
+allocation, including overlap with the previous backing; child return truncates
+the buffer without refunding the cumulative debit. Callback path bytes, order,
+lowered traversal suffixes, and separately charged owned edge copies stay exact.
+This changes scratch construction, not parsed depth/call quotas or authority.
+
+A final live resolved-core budget refusal may include additive help with the
+first sticky reservation's requested bytes, remaining bytes, and reserved
+floor, captured from that exact attempt before its budget is restored. Optional
+floor refusals remain non-sticky and are not recorded. Failed earlier retries
+and nested child phases cannot supply the final attempt's evidence. A scoped,
+compiler-owned internal stage may identify the enclosing prebound, synthetic
+module construction, cached HIR validation, fresh HIR resolution, or resolved
+module retention operation. An unlabelled reservation reports stage `unknown`;
+the stage never comes from source and does not identify the exact inner call.
+Resolved-core construction provides an enclosing fallback label; compact
+validation inventory, uncached synthetic AST peak reservations, authored module
+signature validation, frontend lookup/resolution/retention and imported Vec
+instance inventory have narrower operation labels. These labels neither alter
+the cumulative ledger nor attribute a prior unlabelled refusal retrospectively.
+Canonical shared-loan storage preparation installs its enclosing production
+stage before capturing the existing CFG reservation owner. This fixed label
+covers the preparation scope, including owner acquisition, plan rebuilding,
+append and sealing; it does not identify a particular inner request. The same
+budget, numeric first-sticky receipt, quota/work, restoration and paid help
+omission rules remain authoritative. Test-only operation traces are not
+production attribution, and the exact inner operation remains unknown.
+These quantities describe the cumulative reservation ledger, not a retained
+peak forecast, allocator measurement, or process RSS. The SPX-G171 code,
+message, source immutability, and ceiling are unchanged. Missing evidence is
+reported as unknown, never synthesized from the static forecast.
+
 The legacy estimate uses the longest authored identity in the whole workspace.
 If that estimate would exceed the builder limit, an additive fallback repeats
 the same arithmetic with each module's own transitive dependency closure and
@@ -234,6 +282,28 @@ all ten fields from authenticated AST occurrences, rejects missing, extra and
 duplicate occurrences, then checks retained HIR and capability projections.
 Every allocation still consumes the live ledger; the 64 MiB cap is unchanged.
 
+[Prelude forecast accounting v1](WORKSPACE-GRAPH-PRELUDE-FORECAST-V1.md)
+corrects the missing unconditional Option/Result retained-declaration term in
+all private forecast modes. For that term only it supersedes the historical
+fitting-receipt preservation clauses above and below. The complete original
+forecaster and receipts remain historical controls; graph schemas, quotas,
+expression discounts and live allocation charges are unchanged. Qualification
+of the source correction is pending.
+
+A present frontend has a separate mode-seven exact fallback after every older
+fitting receipt has been considered. It sums the synthetic AST and runtime cost
+of every module; it never selects the mode-five sequential peak or mode-six
+filtered output lifetime. A parsed-only frontend retains one complete HIR bundle.
+A semantic frontend stages a checked-cache HIR clone while core construction
+retains the original, so this forecast charges two complete expression/cleanup
+bundles. The original eight bookkeeping footprints remain charged once;
+only the fixed HIR expression/cleanup bundle is doubled. Shared ExpressionId
+Arc backing is charged by actual constructor occurrence, not twice merely for
+a clone. Other string-copy, declaration, generic/default/import and identity
+ceilings remain charged. The same live builder ledger and checked-module cache
+limit still apply; an exact forecast is not evidence of physical allocation or
+of an application fitting the unchanged limits.
+
 Only an uncached core may use this final sequential-AST peak. The builder
 receipt begins after the authored source programs have been parsed and retained,
 and covers the core's synthetic AST/HIR construction; it does not re-charge
@@ -258,6 +328,93 @@ modules by descending full-minus-retained HIR overhead, with a path tie-break;
 the forecast and resolver use the same order. Completed outputs are restored
 to canonical path order before validation and publication.
 
+Exact authored declaration collections now lend a sealed compiler-only
+`ProgramSource`; local presentations own only an optional scalar `main`.
+A concrete presentation identity distinguishes overlays of the same source.
+Imported presentations borrow the authored slices and own explicit aliases,
+independently derived private layouts, rewritten signatures/checking defaults,
+and a missing scalar main. Ordinary Vec/Box wrapper classifiers retain the same
+complete imported body, including generic materialization. Class methods keep
+the same exact copied imported declaration. Every ordinary import, ownership,
+byte-helper, source, prelude and declaration-index check still runs.
+
+Generated directories and the complete borrowed type-name index are paid before
+allocation. Recursive generated roots retain the existing iterative `Program`
+teardown owner on success, construction errors and refusal. Before roots are
+copied, the producer pays each teardown worklist's minimum backing and a
+fourfold undiscounted inline AST census, covering cumulative geometric worklist
+requests; this is real new teardown allowance, with no cap increase or forecast
+refund. Plain scalar/default overlays keep their allocation-free teardown.
+The standalone cache-key receiver still pays both replacement directories
+while recursive roots remain under their owner. The actual resolved-core import
+producer instead acquires each real combined directory at its original
+construction frontier: types before copying types, functions only after the
+complete type-name verdict. It pays the affine owner and requested backing
+before `try_reserve_exact`, settles any actual excess capacity before refusal,
+and keeps only generated declarations in the borrowed view's logical length.
+The structurally affine owner contains the actual Vec and immutable authored
+slice plus the current payer. It lends element slices and bounded push only,
+never a mutable Vec or detachable pointer ticket. Allocator address reuse cannot
+transplant backing authority; this is ownership, not admission authority.
+Semantic publication validates both owners and sticky state before cloning
+payloads, appends authored roots into the paid spare backing, then rotates to
+canonical authored-before-generated order and moves the same Vec once.
+Original raw payload forecasts, counters and caps remain unchanged. Ordinary
+and warm import construction retain additional spare capacity/control storage;
+cold retention avoids a second overlapping directory allocation. This is an
+explicit storage tradeoff, not an established efficiency or fit improvement.
+AST-only frontend passes receive resolved HIR without constructing a discarded
+cache key; original counters and the explicit legacy owning receiver remain.
+No shared authored AST cache or forecast-based allocation credit is created.
+
+Source-authored controls retain all original standalone and raw-graph gates.
+`key_directory::tests` covers real zero/exact/short/sticky allocation/Drop,
+source/detached-owner refusal, bounded no-growth mutation and terminal transfer; `borrowed_imports::tests::full::receiving`
+covers complete old/current projections and full constructor/retention/Drop
+costs separately, without subtracting the ordinary/warm spare storage. These
+controls require executable qualification; semantic diagnostic materialization
+and whole application funding remain separate residuals.
+
+One actual resolved-core invocation may retain byte-helper proof Vec/cursor
+backing across its sequential forecast and constructor phases. Reuse is bound
+to the exact immutable program slice, authored map and captured live budget Rc,
+with sticky required-zero checks before clearing or lending storage. Each new
+logical phase clears all memo verdicts and cursor frames and repeats the full
+original source/provider/body proof and original per-phase work allowance.
+Failed or incomplete scopes poison the owner; ordinary Drop returns storage
+without restoring allowance or replacing the first refusal. Additional owner
+and simultaneous phase controls are prepaid, and growth still pays the full
+original replacement acquisition. Pre-core/standalone proofs and every new
+resolved-core attempt stay independent. Original forecasts, HIR bounds and
+caps remain unchanged. The complete old receivers and focused physical/Drop
+controls require executable qualification; this is no application-fit claim.
+
+Record invariants run ordinary source verification first, then the same clause
+inventory and desugaring passes. Writable AST is copied at those genuine
+transformation boundaries; lookup no longer needs an owning synthesis copy.
+The original owning transformation functions and full synthetic producer remain
+independent saved oracles. Authored pointers, alias/default bytes, complete
+canonical/graph/HIR diagnostics, real directory replacement layouts, and
+constructor/resolver/cache-publication/Drop lifetimes have source-authored
+owners, including generic wrappers, class methods and invariant negatives.
+These owners are unexecuted at authoring time. No full #776 release qualification,
+application-fit, reduced HIR forecast, or performance result is claimed here.
+All original application inputs, fuel, caps and profile admission remain fixed.
+
+Within one resolved-core validation attempt, private type authority retains one
+borrowed owner bound to the exact immutable Program slice and authored map.
+Its lazy complete top-level proof is charged to the first caller's existing
+work allowance; callers retain their original independent work/depth ceilings
+for import, root, contains and current-HIR signature checks. The owner reuses
+one precharged DFS frame allocation and, where class methods require the old
+lookup universe, one precharged legacy function/type map. Roots remain fresh
+per caller and charged to the same cumulative builder account. Every caller
+and map binding is checked again, failed acquisition/traversal is sticky, and
+scratch frames are cleared on failure. No source or HIR verdict, allocation
+credit or mutable cache survives the attempt. Source-only controls require
+saved-old roots/verdicts, exact and one-short repeated backing through Drop;
+application recovery and performance remain subject to execution.
+
 At the production default builder limit, an unnested core phase that exceeds
 its budget after accepting an earlier estimate may retry with the raw-AST
 estimate, then with the final transient-peak estimate, only when each is
@@ -268,6 +425,59 @@ attempt state is rolled back before each retry. The recorded sequential-phase
 debit is the maximum of all attempts; no enclosing budget is reset or refunded.
 Explicit smaller-limit invocations and nested budgets retain their original
 core-refusal behavior, and a successful earlier attempt retains its receipt.
+
+The resolver allocates the ordinary-function carrier at the exact count of
+nongeneric source functions and class methods. In final uncached retention, a
+fully selected carrier with capacity equal to that count moves directly into
+the retained module. Resolution already covers that physical allocation; no
+second output allocation or output-carrier charge is invented. Nonempty loan
+sidecars still receive their full charge. Partial selections and carriers with
+spare capacity keep the existing compact-copy path and its complete reservation,
+and earlier attempts retain their established receipts. No source prebound,
+capacity factor or retained-closure forecast is reduced.
+
+In that final uncached retention attempt, the sharing census starts with
+distinct loan-plan identity backing keys. An allocation-free comparison census
+counts the exact distinct candidates before reserving either carrier. It sorts
+those candidates, then walks
+and validates every retained HIR identity and marks only exact backing-key
+matches. The final uncached census reuses these same carriers to visit every
+proof backing: state 1 records HIR sharing, state 0 identifies independent
+storage and state 2 records its complete physical debit once. Every proof key
+must occur in the sorted candidate inventory, and every backing is validated.
+The independent debit includes the full String capacity and Arc carrier; equal
+text never establishes sharing. Only state 1 keys survive the final compaction.
+This eliminates the second unmatched-reference vector in this final attempt.
+Earlier attempts and standalone capacity APIs retain their original reference
+inventory and exact reservations. Unreferenced HIR identities consume no entry.
+
+One key vector and one byte-per-candidate match vector are reused across
+functions and modules. Before consuming a module, both carriers reserve the
+largest selected ordinary-function candidate census once, avoiding intermediate
+replacement allocations. Before consuming selected generic instances, this
+attempt also reserves the largest selected instance census once; authored
+templates and exactly authenticated imported Vec/Box wrappers use the same
+selector for census and retention. Unselected instances grant no census
+authority. Earlier attempt receipts remain unchanged. Every replacement reserves both entire requested
+capacities before allocation and charges any allocator capacity excess; earlier
+allocations remain charged in the cumulative ledger. Both vectors are cleared
+before each function, so a previous function's keys cannot exclude independent
+or foreign proof storage. Missing HIR or proof backing refuses before scratch
+allocation. The successor HIR walk retains the existing depth bound and uses
+the existing one-million expression-work bound, rather than the 4096 loan
+endpoint bound: HIR-only nodes are not loan points. The optional distinct-key
+census uses a fixed 4096-bit stack bitmap to skip a prior-key scan only when
+that bucket has never been set. Every bitmap hit, including collisions, uses
+exact prior-key comparison; the bitmap grants no sharing or exclusion authority.
+It allocates no heap storage and cannot change the distinct-key count. The
+census still falls back after 64 million actual key comparisons. A refused
+uncovered-proof reference inventory names the authenticated internal stage
+`loan identity inventory`; this is the actual enclosing reservation operation,
+not an inference from requested bytes or a change to the sticky refusal. Full-census fallbacks, proof carriers, unmatched
+identities and earlier-attempt per-HIR-key receipts are unchanged. Reuse and
+candidate intersection remove actual temporary storage; they do not discount
+any allocation that still occurs or raise the builder limit. The full pattern
+bundle and exact-limit/one-short hostile inventory gates remain required.
 
 Cross-file edge reconstruction does not traverse an import-free module to
 materialize paths whose output set is necessarily empty. Capability edges
@@ -425,6 +635,14 @@ import, source-repair, or filesystem authority.
 Non-executable import prototypes for exact one-Bytes-plus-usize owner renewal
 forward their existing owning parameter when the remaining operands are the
 admitted scalar values, borrowed records, or borrowed `Slice<u8>`/`str` views.
+The same internal source lane admits a monomorphic, effect-free Bytes writer
+with exactly one `own Bytes` parameter, a Bytes result, and only scalar value
+or borrowed `str`/`Slice<u8>` companions. Import validation independently proves
+the actual current provider's nonallocating transitive body before admission;
+the projection repeats that proof before forwarding the existing owner. A
+matching signature alone is insufficient. Allocating, generic, ambiguous or
+foreign-origin providers retain the ordinary refusal, and public scalar/host
+export roots gain no Bytes result authority.
 Factories retain their bounded default prototypes. Linked execution replaces
 every prototype with the real provider body and independently revalidates
 allocation reachability, ownership, loans and canonical cleanup. Forwarding
@@ -463,3 +681,82 @@ scalar relations have no function dependency. Both arrays are derived from
 authenticated Project bytes and included in the graph digest. A Project
 without native laws keeps its previous graph schema and bytes. These rows are
 declarations, not proof or publication authority.
+
+### Nested fresh-resolution attribution (OPT778 diagnostic tranche)
+
+Fresh resolution now holds a fixed compiler-owned lowering label and nests labels
+for function and instance loan plans, function and instance cleanup inventories,
+canonical cleanup plans, yield profiles and final HIR validation. Instance discovery,
+type/expression lowering and provenance construction remain within lowering. The
+first refused reservation keeps its innermost label after return or unwind. Nested
+budgets retain their existing independent unlabelled start and parent restoration.
+
+Stage handles retain the existing budget Rc without allocating another control
+block. Labels are enum values and static strings; there are no per-node formatted
+labels, source-controlled names or hot-path logs. Staging changes neither budget
+layout, debits, floors, ceilings nor failure selection. It identifies the operation
+enclosing a refusal; it does not identify an allocator call or establish retained
+heap/RSS, application recovery or a path-arena saving. OPT778 path representation
+and accounting changes remain outside this diagnostic-only tranche.
+
+### Fixed-arity lowering result extraction
+
+Binary and conditional lowering retain their existing continuation scheduling.
+Their finishing receivers precheck that every child result exists, then move a
+pair or triple directly from the result stack into authored order. They allocate
+no temporary result Vec and clone no child. Short stacks refuse before mutation
+with the existing continuation invariant diagnostic. Variable-arity splicing and
+all final HIR/identity, loan, cleanup and status construction remain unchanged.
+Existing conservative forecasts remain unchanged. The saved split-off test oracle
+compares full HIR/wire, canonical plans and reference outcomes, while a separate
+requested-layout control isolates the eliminated two/three-element buffer. This
+does not attribute any existing application reservation refusal to that buffer.
+
+### Resolver path arena (OPT778 representation tranche)
+
+Iterative expression lowering no longer owns or copies a complete path string per
+continuation. Each frame retains a four-byte private coordinate into a per-call
+arena. A node retains only its parent, its own edge (a static segment from one
+closed spelling table and/or one checked decimal index), its checked accumulated
+UTF-8 length and its creation height; no node repeats an ancestor prefix. Root,
+contract, generic and synthesized spellings are borrowed unchanged. Coordinates
+are construction state only: they are never source-membership evidence, never
+intern or hash a public identity and never skip source, HIR, loan or cleanup
+validation.
+
+Final `ExpressionId` and local `ValueId` text is streamed back to front into one
+buffer of the exact `scoped_identity` length: the same owner (including the
+generic execution spelling), domain, decimal length and path bytes. The identity
+bytes are charged with the formatting route's non-required reservation before
+allocation, the shared carrier keeps its existing required charge, and the exact
+buffer needs no capacity normalization. A refusal leaves the empty text the
+formatting route left. The parent walk uses no scratch and visits at most one
+node per path byte. `scoped_identity` remains the construction route elsewhere
+and the independent oracle; the test-only recursive reference keeps text paths
+through that encoder. Closure lowering, record-pattern traversal and synthesized
+`for`/`for own` lowering are the receivers that require owned text; each
+materializes once with an exact pre-allocation charge.
+
+Node backing is required work: every allocation is debited before it is made, so
+the cumulative debit covers the old/new overlap of growth; a refusal is sticky
+and later coordinates spell empty text. Nodes above the frame-stack height are
+released at each pop. Every edge is created after its event's first push and is
+pushed at once, so at most one node is live per frame-stack slot and the backing
+never exceeds the frame vector capacity. `RESOLVER_FRAME_BYTES` is therefore the
+physical frame size plus one 20-byte node: a per-slot bound for frame and arena
+storage together. Forecast formulas, budgets, floors, ceilings, the 64 MiB cap
+and failure selection are unchanged; this constant is the only forecast input
+that moves, by the node size minus the removed inline `String` slot. Its exact
+numeric value, and every pinned builder phase peak derived from it, must be
+re-derived from a compiled build before they are re-pinned; this source-only
+tranche asserts neither. No retained HIR identity storage is removed and no
+application recovery, token, runtime, memory or RSS gain is claimed; Catalog23
+and Shift15/MAX evidence requires actual owning execution.
+
+The unchanged literal 1 MiB identity receiver keeps all three invocations and
+full old HIR/work/static parity on success; physical refusal timing follows
+actual requested backing. Each owned and borrowed receiver additionally has
+measured full payment exact/one-short controls with first receipt, sticky zero
+and one probes, allocation-free retry, unchanged debits and complete Drop.
+`identity_resolution/tests/refusal_reference.rs` preserves the full historical
+threshold body verbatim as source provenance, not a current execution claim.

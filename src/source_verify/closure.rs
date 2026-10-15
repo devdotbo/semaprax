@@ -1,15 +1,16 @@
 //! Closed scalar snapshot capture analysis shared with HIR source lowering.
+use super::IterativeVerifier;
 use super::binding::{Availability, Binding, CheckedValue};
 use super::declared_type::{function_value_scalar_type, function_value_signature};
 use super::diagnostics::{error, source_identifier};
 use super::scope::{VerifierFrame, VerifierScope};
-use super::IterativeVerifier;
-use crate::ast::{ClosureParam, Expr, ExprKind, ParamMode, Program, Statement, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{ClosureParam, Expr, ExprKind, ParamMode, Statement, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 pub(crate) fn capture_names_scoped(
-    program: &Program,
+    program: &dyn ProgramSource,
     params: &[ClosureParam],
     return_type: &Type,
     body: &Expr,
@@ -114,7 +115,9 @@ pub(crate) fn capture_names_scoped(
                         ));
                     }
                 }
-                ExprKind::Unary { value, .. } => pending.push(Item::Expr(value, locals)),
+                ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                    pending.push(Item::Expr(value, locals))
+                }
                 ExprKind::Binary { left, right, .. } => {
                     pending.push(Item::Expr(right, locals.clone()));
                     pending.push(Item::Expr(left, locals));
@@ -140,7 +143,7 @@ pub(crate) fn capture_names_scoped(
                         || outer.contains_key(name.as_str())
                         || !type_arguments.is_empty()
                         || program
-                            .functions
+                            .functions()
                             .iter()
                             .find(|f| f.name == *name)
                             .and_then(function_value_signature)
@@ -165,6 +168,8 @@ pub(crate) fn capture_names_scoped(
 
 fn scalar_binding(ty: Type) -> Binding {
     Binding {
+        contract_local: false,
+        traversal_row: None,
         ty,
         mode: ParamMode::Value,
         availability: Availability::Available,
@@ -266,6 +271,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             bindings.insert(param.name.clone(), scalar_binding(param.ty.clone()));
         }
         let scope = self.scopes.len();
+        self.recovery.fork(None, scope);
         self.scopes.push(VerifierScope {
             bindings,
             local_borrow_count: 0,
@@ -293,6 +299,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         let ExprKind::Closure {
             params,
             return_type,
+            body,
             ..
         } = &expression.kind
         else {
@@ -308,12 +315,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 result: Box::new(return_type.clone()),
             })));
         } else {
-            self.diagnostics.push(error(
-                self.program,
-                "SPX-T288",
-                "closure result does not match its scalar signature",
-                expression.span,
-            ));
+            if !value.as_ref().is_some_and(|value| {
+                !value.native_unit
+                    && value.mode == ParamMode::Value
+                    && self.recovery.explains(body, return_type)
+            }) {
+                self.diagnostics.push(error(
+                    self.program,
+                    "SPX-T288",
+                    "closure result does not match its scalar signature",
+                    expression.span,
+                ));
+            }
             self.values.push(None);
         }
         Ok(())
@@ -323,7 +336,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
 #[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(super) fn oracle(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &crate::ast::Function,
     expression: &Expr,
     outer: &HashMap<String, Binding>,
@@ -447,7 +460,7 @@ pub(super) fn source_signature(params: &[ClosureParam], result: &Type) -> Type {
 /// This check carries no capture/type authority; normal source checking still
 /// checks each scalar substitution and its lexical snapshot inventory.
 pub(super) fn validate_generic_syntax(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &crate::ast::Function,
 ) -> Result<(), Diagnostic> {
     if function.type_parameters.is_empty() {
@@ -513,7 +526,7 @@ pub(super) fn validate_generic_syntax(
                     ..
                 } if type_arguments.is_empty()
                     && program
-                        .functions
+                        .functions()
                         .iter()
                         .find(|candidate| candidate.name == *name)
                         .and_then(function_value_signature)
@@ -524,7 +537,7 @@ pub(super) fn validate_generic_syntax(
                         "SPX-T288",
                         "generic closure bodies require ordinary scalar expressions and calls",
                         expression.span,
-                    ))
+                    ));
                 }
             }
         }
@@ -540,7 +553,7 @@ pub(super) fn validate_generic_syntax(
 /// Every admitted collection substitution must be checked, including unused
 /// templates. Unsupported specialization must never erase validation work.
 pub(super) fn specialize_checked(
-    program: &Program,
+    program: &dyn ProgramSource,
     template: &crate::ast::Function,
     arguments: &[Type],
     diagnostics: &mut Vec<Diagnostic>,

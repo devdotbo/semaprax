@@ -1,14 +1,14 @@
 # Release process
 
-Status: tag-release procedure and historical evidence; v0.8.0 is a source candidate.
+Status: tag-release procedure and historical evidence; v0.9.0 is published.
 
 Audience: maintainers and release reviewers.
 
 Only the repository CI workflow can publish a tag release, and only after the
 exact tag commit passes every job in `release-gate`. A local archive can test
 packaging, but cannot certify a release. This page combines the procedure with
-historical v0.4.x evidence; use [v0.8.0 status](RELEASE-0.8.0-STATUS.md) for
-the current candidate. The [v0.6.0 gate record](RELEASE-0.6.0-STATUS.md)
+historical v0.4.x evidence and the [v0.9.0 publication record](#090-hosted-release-evidence).
+The [v0.8.0 candidate status](RELEASE-0.8.0-STATUS.md) remains dated history. The [v0.6.0 gate record](RELEASE-0.6.0-STATUS.md)
 remains historical evidence.
 
 For a new release:
@@ -363,6 +363,54 @@ This older retained local artifact is distinct from the later v0.2.0 tag and
 published archives recorded above. Its local acceptance results must not be
 relabeled as evidence from the tag commit; changes to either require separate
 evidence.
+
+## 0.9.0 hosted release evidence
+
+The stable [v0.9.0 release](https://github.com/wavect/semaprax/releases/tag/v0.9.0)
+was published at `2026-10-11T15:07:29Z` from exact commit
+`933196b9ef3cb611343f1401e9eb0b08fa404d0a`.
+[CI run 38131350918](https://github.com/wavect/semaprax/actions/runs/38131350918)
+completed successfully, including the five native target packages and six
+installed-distribution cells (Windows PowerShell 5.1 and 7 both execute the
+Windows archive). GNU/Linux packages use the glibc 2.35 baseline; macOS
+arm64/x86-64 and Linux arm64/x86-64 are separate native archives.
+
+The published inventory includes both installers, all five CLI/daemon archives,
+`SHA256SUMS`, the aggregate `release-manifest.json`, five per-target attestations,
+provenance and its verification material. The installed CLI identifies the
+release commit above. [Run 38156173827](https://github.com/wavect/semaprax/actions/runs/38156173827)
+subsequently qualified the Install implementation at `0c9c2a2fe8e55733fddfa3fd8dba1682a93cc5aa`
+against those published bytes, with previous-release upgrades, hostile-artifact
+controls, native public Homebrew installation and local WinGet upgrades/removal.
+That later distribution evidence does not replace the original exact-tag gate
+or claim that the v0.10 source branch passed its full compiler quality profile.
+
+
+### v0.10 integration verification
+
+The Install integration branch is based on `wavect/v0-10-0`, rather than
+the released `main`. After repairing mutable interpreter leased-byte reads
+and stale test walkers, the complete workspace passed
+`cargo check --locked --workspace --all-targets --all-features`, formatting
+and patch checks. All 26 construction-fusion/registry regressions passed,
+including authenticated paired reads and cleanup retaining selected failure.
+
+The full profile is **not green**: its documentation advisory binary reported
+78 passed, five failed and one ignored. The five failures are unchanged from
+the v0.10 base: typed JSON authoring guidance lacks the pinned bootstrap
+instruction; the quick reference's constructor block is not canonical; the
+agent authoring guide lacks its required audience header; editor grammar lacks
+`at`; and the primitive String/Vec views specification links to absent
+`RFC-0003.md`. Later full-profile stages did not execute. A separately selected
+Rust interoperability depth regression also failed at its existing unary
+fixture with `SPX-H006` (`lexical control scan exceeds admitted expression
+depth`). No cap, diagnostic, fixture expectation or test was relaxed.
+
+These v0.10 source qualification failures do not alter the exact released
+v0.9.0 native installation evidence above. Install tickets #552, #553, #554,
+#555, #556, #557 and #560 are closed against that evidence. WinGet #558 remains
+open until Microsoft accepts/indexes the submitted v0.9.0 manifests and the
+public exact-ID lifecycle is verified.
 
 ## 0.4.0 hosted release evidence
 

@@ -1,0 +1,1317 @@
+//! Byte-data capacity inputs derived from resolved HIR.
+//!
+//! Walks resolved expressions in authored order to build the bounded
+//! capacity facts the byte-data analysis consumes.
+
+use crate::diagnostic::Diagnostic;
+
+use super::expr_nodes::{
+    ResolvedExpr, ResolvedExprKind, ResolvedMatchPattern, ResolvedRecordMatchFieldPattern,
+    ResolvedStatement,
+};
+use super::hir_error;
+use super::ids::{DeclarationId, FunctionInstanceId, ValueId};
+use super::monomorphize::substitute_type;
+use super::nodes::{
+    ByteSliceExtent, ByteSliceRootKind, ResolvedFunction, ResolvedHostCommandCall,
+    ResolvedHostCommandOperation, ResolvedProgram, ResolvedType, ResolvedTypeDeclarationKind,
+};
+
+impl ResolvedProgram {
+    pub fn resolve_call_target(
+        &self,
+        callee: &DeclarationId,
+        instance: Option<&FunctionInstanceId>,
+    ) -> Option<&ResolvedFunction> {
+        match instance {
+            None => self
+                .functions
+                .iter()
+                .find(|function| function.id == *callee),
+            Some(instance) => self
+                .function_instances
+                .iter()
+                .find(|candidate| candidate.id == *instance && candidate.template == *callee)
+                .map(|candidate| &candidate.function),
+        }
+    }
+}
+
+pub(super) fn inline_array_payload_bytes(
+    program: &ResolvedProgram,
+    ty: &ResolvedType,
+) -> Result<u32, Diagnostic> {
+    let mut total = 0_u32;
+    let mut pending = vec![ty.clone()];
+    let mut expanded = 0_usize;
+    while let Some(ty) = pending.pop() {
+        expanded = expanded
+            .checked_add(1)
+            .ok_or_else(|| hir_error("inline-array type traversal overflowed"))?;
+        if expanded > 65_536 {
+            return Err(hir_error(
+                "inline-array type traversal exceeds the compiler bound",
+            ));
+        }
+        match ty {
+            ResolvedType::OnceFunction
+            | ResolvedType::OnceFunctionI64
+            | ResolvedType::OnceFunctionI64Pair
+            | ResolvedType::MutFunctionI64
+            | ResolvedType::Function { .. } => {}
+            ResolvedType::ArrayU8(length) => {
+                total = total
+                    .checked_add(length)
+                    .ok_or_else(|| hir_error("inline-array payload calculation overflowed"))?;
+            }
+            ResolvedType::Nominal {
+                declaration,
+                arguments,
+            } => {
+                let declaration = program
+                    .types
+                    .iter()
+                    .find(|candidate| candidate.id == declaration)
+                    .ok_or_else(|| hir_error("inline-array slot references an unknown type"))?;
+                let fields = match &declaration.kind {
+                    ResolvedTypeDeclarationKind::Record { fields }
+                    | ResolvedTypeDeclarationKind::Class { fields, .. } => fields.as_slice(),
+                    ResolvedTypeDeclarationKind::Variant { .. }
+                    | ResolvedTypeDeclarationKind::Resource { .. } => &[],
+                };
+                for field in fields.iter().rev() {
+                    pending.push(substitute_type(&field.ty, &declaration.id, &arguments)?);
+                }
+            }
+            ResolvedType::Never
+            | ResolvedType::Unit
+            | ResolvedType::I64
+            | ResolvedType::I32
+            | ResolvedType::Char
+            | ResolvedType::U8
+            | ResolvedType::Usize
+            | ResolvedType::F32
+            | ResolvedType::F64
+            | ResolvedType::Bool
+            | ResolvedType::String
+            | ResolvedType::Bytes
+            | ResolvedType::Str
+            | ResolvedType::SliceU8
+            | ResolvedType::StringMap => {}
+            ResolvedType::TypeParameter { .. } => {
+                return Err(hir_error(
+                    "inline-array capacity cannot inspect an unresolved type parameter",
+                ));
+            }
+        }
+    }
+    Ok(total)
+}
+
+#[cfg(test)]
+fn push_array_slot(
+    program: &ResolvedProgram,
+    slots: &mut Vec<crate::byte_data_capacity::ArrayStorageSlot>,
+    identity: String,
+    kind: crate::byte_data_capacity::ArrayStorageKind,
+    ty: &ResolvedType,
+) -> Result<(), Diagnostic> {
+    push_array_slot_lazy(program, slots, || identity, kind, ty)
+}
+
+fn push_array_slot_lazy(
+    program: &ResolvedProgram,
+    slots: &mut Vec<crate::byte_data_capacity::ArrayStorageSlot>,
+    identity: impl FnOnce() -> String,
+    kind: crate::byte_data_capacity::ArrayStorageKind,
+    ty: &ResolvedType,
+) -> Result<(), Diagnostic> {
+    let length = inline_array_payload_bytes(program, ty)?;
+    if length != 0 || matches!(ty, ResolvedType::ArrayU8(0)) {
+        slots.push(crate::byte_data_capacity::ArrayStorageSlot {
+            identity: identity(),
+            kind,
+            length,
+        });
+    }
+    Ok(())
+}
+
+pub(super) fn push_array_pattern_slots(
+    program: &ResolvedProgram,
+    pattern: &ResolvedMatchPattern,
+    slots: &mut Vec<crate::byte_data_capacity::ArrayStorageSlot>,
+) -> Result<(), Diagnostic> {
+    match pattern {
+        ResolvedMatchPattern::Binding(binding) => push_array_slot_lazy(
+            program,
+            slots,
+            || crate::bounded_output::budgeted_clone(binding.id.as_str()),
+            crate::byte_data_capacity::ArrayStorageKind::Binding,
+            &binding.ty,
+        ),
+        ResolvedMatchPattern::Variant { fields, .. } => {
+            for field in fields {
+                push_array_slot_lazy(
+                    program,
+                    slots,
+                    || crate::bounded_output::budgeted_clone(field.binding.id.as_str()),
+                    crate::byte_data_capacity::ArrayStorageKind::Binding,
+                    &field.binding.ty,
+                )?;
+            }
+            Ok(())
+        }
+        ResolvedMatchPattern::Record { fields, .. } => {
+            let mut pending = fields
+                .iter()
+                .rev()
+                .map(|field| &field.pattern)
+                .collect::<Vec<_>>();
+            while let Some(pattern) = pending.pop() {
+                match pattern {
+                    ResolvedRecordMatchFieldPattern::Binding(binding) => push_array_slot_lazy(
+                        program,
+                        slots,
+                        || crate::bounded_output::budgeted_clone(binding.id.as_str()),
+                        crate::byte_data_capacity::ArrayStorageKind::Binding,
+                        &binding.ty,
+                    )?,
+                    ResolvedRecordMatchFieldPattern::Record { fields, .. } => {
+                        pending.extend(fields.iter().rev().map(|field| &field.pattern));
+                    }
+                    ResolvedRecordMatchFieldPattern::Wildcard => {}
+                }
+            }
+            Ok(())
+        }
+        ResolvedMatchPattern::Wildcard
+        | ResolvedMatchPattern::Literal(_)
+        | ResolvedMatchPattern::Or(_) => Ok(()),
+    }
+}
+
+pub(super) fn byte_slice_transcript_source(
+    facts: &ValueFactIndex<'_>,
+    expression: &ResolvedExpr,
+) -> crate::byte_data_capacity::TranscriptSource {
+    let program = facts.program;
+    use crate::byte_data_capacity::TranscriptSource;
+    enum Frame<'a> {
+        Visit(&'a ResolvedExpr),
+        If,
+    }
+    let mut frames = vec![Frame::Visit(expression)];
+    let mut results = Vec::new();
+    while let Some(frame) = frames.pop() {
+        match frame {
+            Frame::Visit(expression) => match &expression.kind {
+                ResolvedExprKind::Place(place) | ResolvedExprKind::BorrowPlace { place, .. } => {
+                    if let Some(fact) = program.declarations.byte_slice_provenance(&place.root) {
+                        results.push(match fact.root_kind {
+                            ByteSliceRootKind::CommandArguments => {
+                                TranscriptSource::CommandArguments
+                            }
+                            ByteSliceRootKind::FixedArray | ByteSliceRootKind::SourceExprStatic => {
+                                match fact.length {
+                                    ByteSliceExtent::Constant(length) => {
+                                        TranscriptSource::Fixed(length)
+                                    }
+                                    ByteSliceExtent::ParameterLength
+                                    | ByteSliceExtent::ValueLength => TranscriptSource::Unknown,
+                                }
+                            }
+                            ByteSliceRootKind::OwnedBytes if facts.is_stdin(&fact.root) => {
+                                TranscriptSource::Stdin
+                            }
+                            ByteSliceRootKind::FunctionParameter
+                            | ByteSliceRootKind::OwnedBytes
+                            | ByteSliceRootKind::OwnedVectorField
+                            | ByteSliceRootKind::OwnedVectorStringSlot
+                            | ByteSliceRootKind::OwnedString
+                            | ByteSliceRootKind::BorrowedStr
+                            | ByteSliceRootKind::StdinStreamReader => TranscriptSource::Unknown,
+                        });
+                    } else {
+                        results.push(facts.value_type(&place.root).map_or(
+                            TranscriptSource::Unknown,
+                            |ty| match ty {
+                                ResolvedType::ArrayU8(length) => {
+                                    TranscriptSource::Fixed(u64::from(length))
+                                }
+                                _ => TranscriptSource::Unknown,
+                            },
+                        ));
+                    }
+                }
+                ResolvedExprKind::Call { callee, args, .. }
+                    if callee.as_str() == crate::byte_ops::ARRAY_AS_SLICE_ID =>
+                {
+                    results.push(args.first().map_or(TranscriptSource::Unknown, |argument| {
+                        match argument.ty {
+                            ResolvedType::ArrayU8(length) => {
+                                TranscriptSource::Fixed(u64::from(length))
+                            }
+                            _ => TranscriptSource::Unknown,
+                        }
+                    }));
+                }
+                ResolvedExprKind::If {
+                    then_branch,
+                    else_branch,
+                    ..
+                } => {
+                    frames.push(Frame::If);
+                    frames.push(Frame::Visit(else_branch));
+                    frames.push(Frame::Visit(then_branch));
+                }
+                ResolvedExprKind::Block { tail, .. }
+                | ResolvedExprKind::VecConstructor { tail, .. } => frames.push(Frame::Visit(tail)),
+                _ => results.push(TranscriptSource::Unknown),
+            },
+            Frame::If => {
+                let else_source = results.pop().unwrap_or(TranscriptSource::Unknown);
+                let then_source = results.pop().unwrap_or(TranscriptSource::Unknown);
+                results.push(if then_source == else_source {
+                    then_source
+                } else {
+                    TranscriptSource::Unknown
+                });
+            }
+        }
+    }
+    results.pop().unwrap_or(TranscriptSource::Unknown)
+}
+
+pub(crate) fn push_resolved_expression_children_in_authored_order<'a>(
+    expression: &'a ResolvedExpr,
+    pending: &mut Vec<&'a ResolvedExpr>,
+) {
+    match &expression.kind {
+        ResolvedExprKind::Closure { captures, .. } => {
+            pending.extend(captures.iter().rev().map(|capture| &capture.value))
+        }
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
+            pending.push(tail);
+            for statement in statements.iter().rev() {
+                for index in (0..statement.child_count()).rev() {
+                    if let Some(child) = statement.child(index) {
+                        pending.push(child);
+                    }
+                }
+            }
+        }
+        ResolvedExprKind::FunctionReference { .. } => {}
+        ResolvedExprKind::Invoke { callable, args } => {
+            pending.extend(args.iter().rev());
+            pending.push(callable);
+        }
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter().rev()),
+        ResolvedExprKind::NativeRustImportCall(call) => pending.extend(call.args.iter().rev()),
+        ResolvedExprKind::HostCommandCall(call) => pending.extend(call.args.iter().rev()),
+        ResolvedExprKind::ByteRange {
+            source, start, end, ..
+        } => {
+            pending.push(end);
+            pending.push(start);
+            pending.push(source);
+        }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                pending.push(value);
+            }
+        }
+        ResolvedExprKind::Unary { value, .. }
+        | ResolvedExprKind::Try { operand: value, .. }
+        | ResolvedExprKind::TryOption { operand: value, .. }
+        | ResolvedExprKind::Project { base: value, .. }
+        | ResolvedExprKind::Upcast { source: value }
+        | ResolvedExprKind::Yield { request: value } => pending.push(value),
+        ResolvedExprKind::Binary { left, right, .. } => {
+            pending.push(right);
+            pending.push(left);
+        }
+        ResolvedExprKind::If {
+            condition,
+            then_branch,
+            else_branch,
+        } => {
+            pending.push(else_branch);
+            pending.push(then_branch);
+            pending.push(condition);
+        }
+        ResolvedExprKind::ConstructRecord { fields, .. }
+        | ResolvedExprKind::ConstructVariant { fields, .. } => {
+            pending.extend(fields.iter().rev().map(|field| &field.value));
+        }
+        ResolvedExprKind::Match {
+            scrutinee, arms, ..
+        } => {
+            for arm in arms.iter().rev() {
+                pending.push(&arm.value);
+                if let Some(guard) = &arm.guard {
+                    pending.push(guard);
+                }
+            }
+            pending.push(scrutinee);
+        }
+        ResolvedExprKind::UpdateRecord { base, fields, .. } => {
+            pending.extend(fields.iter().rev().map(|field| &field.value));
+            pending.push(base);
+        }
+        ResolvedExprKind::Int(_)
+        | ResolvedExprKind::Int32(_)
+        | ResolvedExprKind::Char(_)
+        | ResolvedExprKind::Uint8(_)
+        | ResolvedExprKind::Usize(_)
+        | ResolvedExprKind::ArrayU8(_)
+        | ResolvedExprKind::RepeatArrayU8 { .. }
+        | ResolvedExprKind::Float32(_)
+        | ResolvedExprKind::Float64(_)
+        | ResolvedExprKind::Bool(_)
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
+        | ResolvedExprKind::Place(_)
+        | ResolvedExprKind::BorrowPlace { .. } => {}
+    }
+}
+
+/// Whole-program search the per-analysis index replaced; kept as the
+/// baseline oracle for the index's corpus comparison.
+#[cfg(test)]
+pub(super) fn resolved_value_is_stdin(program: &ResolvedProgram, value: &ValueId) -> bool {
+    value_index_counters::BASELINE_SEARCHES.with(|count| count.set(count.get() + 1));
+    let in_expression = |root: &ResolvedExpr| {
+        let mut pending = vec![root];
+        while let Some(expression) = pending.pop() {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
+                for statement in statements {
+                    if let ResolvedStatement::Let {
+                        binding,
+                        value: initializer,
+                        ..
+                    } = statement
+                    {
+                        if binding.id == *value {
+                            return matches!(
+                                &initializer.kind,
+                                ResolvedExprKind::HostCommandCall(ResolvedHostCommandCall {
+                                    operation: ResolvedHostCommandOperation::StdinRead,
+                                    ..
+                                })
+                            );
+                        }
+                    }
+                }
+            }
+            push_resolved_expression_children_in_authored_order(expression, &mut pending);
+        }
+        false
+    };
+    program
+        .functions
+        .iter()
+        .any(|function| in_expression(&function.body))
+        || program
+            .function_instances
+            .iter()
+            .any(|instance| in_expression(&instance.function.body))
+}
+
+pub(super) fn resolved_value_type(
+    program: &ResolvedProgram,
+    value: &ValueId,
+) -> Option<ResolvedType> {
+    #[cfg(test)]
+    value_index_counters::BASELINE_SEARCHES.with(|count| count.set(count.get() + 1));
+    let in_expression = |root: &ResolvedExpr| {
+        let mut pending = vec![root];
+        while let Some(expression) = pending.pop() {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
+                for statement in statements {
+                    if let ResolvedStatement::Let { binding, .. }
+                    | ResolvedStatement::Assign { binding, .. } = statement
+                    {
+                        if binding.id == *value {
+                            return Some(binding.ty.clone());
+                        }
+                    }
+                }
+            }
+            push_resolved_expression_children_in_authored_order(expression, &mut pending);
+        }
+        None
+    };
+
+    program
+        .functions
+        .iter()
+        .chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        )
+        .find_map(|function| {
+            function
+                .params
+                .iter()
+                .find(|parameter| parameter.id == *value)
+                .map(|parameter| parameter.ty.clone())
+                .or_else(|| in_expression(&function.body))
+        })
+}
+/// Value facts the transcript classifier needs, indexed once per analysis.
+///
+/// This is a read-only projection of one exact `ResolvedProgram`: it borrows
+/// that program and is dropped with the analysis, so a different program or
+/// revision always gets fresh facts. It records only what the two former
+/// whole-program searches answered, with their precedence:
+///
+/// - `value_type`: ordinary functions, then concrete instances; within each,
+///   parameters, then body `let`/`assign` bindings in authored traversal
+///   order. The first fact wins; a later binding of the same identity (a
+///   normal repeated `assign`) never overwrites it and is not an error.
+/// - `is_stdin`: some function or instance whose first `let` of the identity
+///   is initialized directly by `stdin_read`.
+///
+/// Like the searches it replaces, the walk uses
+/// `push_resolved_expression_children_in_authored_order`, so closure bodies
+/// stay outside the index, and lookups are keyed by binding identity, never
+/// by authored name.
+pub(super) struct ValueFactIndex<'a> {
+    program: &'a ResolvedProgram,
+    facts: std::cell::OnceCell<ValueFacts<'a>>,
+    #[cfg(test)]
+    baseline: bool,
+    /// The joined `FusedConstructionV1` loop, `None` on every ordinary path.
+    selected: Option<crate::hir::fused_construction::join::SelectedFlow<'a>>,
+    /// How many loops this walk projected as the selected construction.
+    matched: std::cell::Cell<usize>,
+}
+
+struct ValueFacts<'a> {
+    types: std::collections::BTreeMap<&'a ValueId, &'a ResolvedType>,
+    stdin: std::collections::BTreeSet<&'a ValueId>,
+}
+
+impl<'a> ValueFactIndex<'a> {
+    pub(super) fn new(program: &'a ResolvedProgram) -> Self {
+        Self {
+            program,
+            facts: std::cell::OnceCell::new(),
+            #[cfg(test)]
+            baseline: value_index_counters::USE_BASELINE.with(std::cell::Cell::get),
+            selected: None,
+            matched: std::cell::Cell::new(0),
+        }
+    }
+
+    fn facts(&self) -> &ValueFacts<'a> {
+        self.facts.get_or_init(|| ValueFacts::build(self.program))
+    }
+
+    fn is_stdin(&self, value: &ValueId) -> bool {
+        #[cfg(test)]
+        if self.baseline {
+            return resolved_value_is_stdin(self.program, value);
+        }
+        self.facts().stdin.contains(value)
+    }
+
+    fn value_type(&self, value: &ValueId) -> Option<ResolvedType> {
+        #[cfg(test)]
+        if self.baseline {
+            return resolved_value_type(self.program, value);
+        }
+        self.facts().types.get(value).map(|ty| (*ty).clone())
+    }
+}
+
+impl<'a> ValueFacts<'a> {
+    fn build(program: &'a ResolvedProgram) -> Self {
+        #[cfg(test)]
+        value_index_counters::BUILDS.with(|count| count.set(count.get() + 1));
+        let mut facts = Self {
+            types: std::collections::BTreeMap::new(),
+            stdin: std::collections::BTreeSet::new(),
+        };
+        let functions = program.functions.iter().chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        );
+        let mut first_let = std::collections::BTreeSet::new();
+        for function in functions {
+            for parameter in &function.params {
+                facts.types.entry(&parameter.id).or_insert(&parameter.ty);
+            }
+            first_let.clear();
+            let mut pending = vec![&function.body];
+            while let Some(expression) = pending.pop() {
+                #[cfg(test)]
+                value_index_counters::VISITS.with(|count| count.set(count.get() + 1));
+                if let ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+                {
+                    for statement in statements {
+                        match statement {
+                            ResolvedStatement::Let {
+                                binding,
+                                value: initializer,
+                                ..
+                            } => {
+                                facts.types.entry(&binding.id).or_insert(&binding.ty);
+                                if first_let.insert(&binding.id)
+                                    && matches!(
+                                        &initializer.kind,
+                                        ResolvedExprKind::HostCommandCall(
+                                            ResolvedHostCommandCall {
+                                                operation: ResolvedHostCommandOperation::StdinRead,
+                                                ..
+                                            }
+                                        )
+                                    )
+                                {
+                                    facts.stdin.insert(&binding.id);
+                                }
+                            }
+                            ResolvedStatement::Assign { binding, .. } => {
+                                facts.types.entry(&binding.id).or_insert(&binding.ty);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                push_resolved_expression_children_in_authored_order(expression, &mut pending);
+            }
+        }
+        facts
+    }
+}
+
+/// Deterministic, thread-scoped instrumentation for the value-fact index.
+#[cfg(test)]
+pub(super) mod value_index_counters {
+    use std::cell::Cell;
+
+    thread_local! {
+        pub(in crate::hir) static BUILDS: Cell<usize> = const { Cell::new(0) };
+        pub(in crate::hir) static VISITS: Cell<usize> = const { Cell::new(0) };
+        pub(in crate::hir) static BASELINE_SEARCHES: Cell<usize> = const { Cell::new(0) };
+        pub(in crate::hir) static USE_BASELINE: Cell<bool> = const { Cell::new(false) };
+    }
+}
+
+mod static_extent;
+use static_extent::static_array_slice_length;
+#[cfg(test)]
+use static_extent::visit_extent_body;
+
+#[cfg(test)]
+fn byte_capacity_expression(
+    facts: &ValueFactIndex<'_>,
+    expression: &ResolvedExpr,
+    slots: &mut Vec<crate::byte_data_capacity::ArrayStorageSlot>,
+    direct_destination: bool,
+) -> Result<crate::byte_data_capacity::CapacityFlow, Diagnostic> {
+    byte_capacity_expression_in(facts, None, expression, slots, direct_destination)
+}
+fn byte_capacity_expression_in(
+    facts: &ValueFactIndex<'_>,
+    function: Option<&ResolvedFunction>,
+    expression: &ResolvedExpr,
+    slots: &mut Vec<crate::byte_data_capacity::ArrayStorageSlot>,
+    direct_destination: bool,
+) -> Result<crate::byte_data_capacity::CapacityFlow, Diagnostic> {
+    use crate::byte_data_capacity::{ArrayStorageKind, CapacityFlow};
+
+    let program = facts.program;
+    enum SlotIdentity<'a> {
+        Binding(&'a str),
+        Argument(&'a str, usize),
+    }
+    enum Frame<'a> {
+        Visit(&'a ResolvedExpr, bool),
+        Argument(
+            &'a ResolvedExpr,
+            Option<(SlotIdentity<'a>, ArrayStorageKind, &'a ResolvedType)>,
+            bool,
+        ),
+        Sequence(usize),
+        Alternative(usize),
+        Loop(Option<u32>),
+        FusedConstruction,
+        Match(usize),
+        Emit(CapacityFlow),
+    }
+    fn sequence(children: Vec<CapacityFlow>) -> CapacityFlow {
+        if children.is_empty() {
+            CapacityFlow::Empty
+        } else {
+            CapacityFlow::Sequence(children)
+        }
+    }
+
+    let mut frames = vec![Frame::Visit(expression, direct_destination)];
+    let mut results = Vec::new();
+    while let Some(frame) = frames.pop() {
+        match frame {
+            Frame::Visit(expression, direct_destination) => {
+                let payload = inline_array_payload_bytes(program, &expression.ty)?;
+                if payload != 0 || matches!(expression.ty, ResolvedType::ArrayU8(0)) {
+                    let kind = match &expression.kind {
+                        ResolvedExprKind::Call { .. } => Some(ArrayStorageKind::CallStaging),
+                        ResolvedExprKind::ArrayU8(_) | ResolvedExprKind::RepeatArrayU8 { .. }
+                            if direct_destination =>
+                        {
+                            None
+                        }
+                        ResolvedExprKind::Place(_) | ResolvedExprKind::BorrowPlace { .. } => None,
+                        ResolvedExprKind::ByteRange { .. } => None,
+                        ResolvedExprKind::Block { .. }
+                        | ResolvedExprKind::VecConstructor { .. }
+                        | ResolvedExprKind::If { .. }
+                        | ResolvedExprKind::Match { .. } => None,
+                        _ => Some(ArrayStorageKind::Temporary),
+                    };
+                    if let Some(kind) = kind {
+                        slots.push(crate::byte_data_capacity::ArrayStorageSlot {
+                            identity: expression.id.as_str().to_owned(),
+                            kind,
+                            length: payload,
+                        });
+                    }
+                }
+                match &expression.kind {
+                    ResolvedExprKind::Closure { .. }
+                    | ResolvedExprKind::FunctionReference { .. } => {
+                        frames.push(Frame::Emit(CapacityFlow::Empty))
+                    }
+                    ResolvedExprKind::Invoke { callable, args } => {
+                        let alternatives =
+                            super::function_value::compatible_targets(program, &callable.ty)
+                                .into_iter()
+                                .map(|f| CapacityFlow::Call {
+                                    site: format!(
+                                        "{}:candidate:{}:{}",
+                                        expression.id.as_str(),
+                                        f.id.as_str().len(),
+                                        f.id.as_str()
+                                    ),
+                                    callee: f.id.as_str().to_owned(),
+                                })
+                                .chain(
+                                    super::closure::inventory(program)
+                                        .into_iter()
+                                        .filter(|closure| closure.ty == callable.ty)
+                                        .map(|closure| {
+                                            let id = super::closure::closure_id(&closure.id);
+                                            CapacityFlow::Call {
+                                                site: format!(
+                                                    "{}:candidate:{}:{}",
+                                                    expression.id.as_str(),
+                                                    id.as_str().len(),
+                                                    id.as_str()
+                                                ),
+                                                callee: id.as_str().to_owned(),
+                                            }
+                                        }),
+                                )
+                                .collect();
+                        frames.push(Frame::Sequence(args.len() + 2));
+                        frames.push(Frame::Emit(CapacityFlow::Alternative(alternatives)));
+                        for arg in args.iter().rev() {
+                            frames.push(Frame::Visit(arg, false));
+                        }
+                        frames.push(Frame::Visit(callable, false));
+                    }
+                    ResolvedExprKind::Call {
+                        callee,
+                        instance,
+                        args,
+                        ..
+                    } => {
+                        let effect = if function.is_some_and(|function| {
+                            super::vec_loop_renewal::consuming::empty_clone::refused(
+                                program, function, expression,
+                            )
+                        }) {
+                            Some(CapacityFlow::Empty)
+                        } else if let Some(flow) =
+                            super::owned_leaf_collection::clone_capacity_flow(program, expression)
+                        {
+                            Some(flow)
+                        } else if callee.as_str() == crate::byte_ops::COPY_ID {
+                            Some(CapacityFlow::BytesCopy {
+                                site: expression.id.as_str().to_owned(),
+                                conservative_payload_bytes: function
+                                    .and_then(|function| {
+                                        args.first().and_then(|argument| {
+                                            static_array_slice_length(program, function, argument)
+                                        })
+                                    })
+                                    .unwrap_or(crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES),
+                            })
+                        } else if callee.as_str() == crate::byte_ops::ZEROED_BOUNDED_ID {
+                            let conservative_payload_bytes = args
+                                .get(1)
+                                .and_then(|arg| match &arg.kind {
+                                    ResolvedExprKind::Usize(bound) => Some(*bound),
+                                    _ => None,
+                                })
+                                .unwrap_or(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES)
+                                .min(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES);
+                            Some(CapacityFlow::BytesCopy {
+                                site: expression.id.as_str().to_owned(),
+                                conservative_payload_bytes,
+                            })
+                        } else if callee.as_str() == crate::byte_ops::ZEROED_ID {
+                            let conservative_payload_bytes = args
+                                .first()
+                                .and_then(|argument| match &argument.kind {
+                                    ResolvedExprKind::Usize(capacity) => Some(*capacity),
+                                    _ => None,
+                                })
+                                .unwrap_or(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES)
+                                .min(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES);
+                            Some(CapacityFlow::BytesCopy {
+                                site: expression.id.as_str().to_owned(),
+                                conservative_payload_bytes,
+                            })
+                        } else if callee.as_str() == crate::host_io_ops::STDOUT_WRITE_ID {
+                            Some(CapacityFlow::StdoutWrite {
+                                site: expression.id.as_str().to_owned(),
+                                source: byte_slice_transcript_source(facts, &args[0]),
+                            })
+                        } else if program
+                            .resolve_call_target(callee, instance.as_ref())
+                            .is_some()
+                        {
+                            Some(CapacityFlow::Call {
+                                site: expression.id.as_str().to_owned(),
+                                callee: instance
+                                    .as_ref()
+                                    .map_or_else(|| callee.as_str(), FunctionInstanceId::as_str)
+                                    .to_owned(),
+                            })
+                        } else {
+                            None
+                        };
+                        frames.push(Frame::Sequence(args.len() + usize::from(effect.is_some())));
+                        if let Some(effect) = effect {
+                            frames.push(Frame::Emit(effect));
+                        }
+                        for (index, argument) in args.iter().enumerate().rev() {
+                            frames.push(Frame::Argument(
+                                argument,
+                                Some((
+                                    SlotIdentity::Argument(expression.id.as_str(), index),
+                                    ArrayStorageKind::CallStaging,
+                                    &argument.ty,
+                                )),
+                                false,
+                            ));
+                        }
+                    }
+                    ResolvedExprKind::LiteralFormat { args, .. }
+                    | ResolvedExprKind::VecFieldRead { args, .. }
+                    | ResolvedExprKind::RowLoan { args, .. } => {
+                        frames.push(Frame::Sequence(args.len()));
+                        for argument in args.iter().rev() {
+                            frames.push(Frame::Visit(argument, false));
+                        }
+                    }
+                    ResolvedExprKind::NativeRustImportCall(call) => {
+                        frames.push(Frame::Sequence(call.args.len()));
+                        for argument in call.args.iter().rev() {
+                            frames.push(Frame::Visit(argument, false));
+                        }
+                    }
+                    ResolvedExprKind::HostCommandCall(call) => {
+                        let effect = if call.operation == ResolvedHostCommandOperation::ProcessRun {
+                            Some(CapacityFlow::BytesCopy {
+                                site: expression.id.as_str().to_owned(),
+                                conservative_payload_bytes: crate::process_ops::output_capacity(
+                                    call.args.get(6).and_then(|e| {
+                                        if let ResolvedExprKind::Usize(v) = &e.kind {
+                                            Some(*v)
+                                        } else {
+                                            None
+                                        }
+                                    }),
+                                    call.args.get(7).and_then(|e| {
+                                        if let ResolvedExprKind::Usize(v) = &e.kind {
+                                            Some(*v)
+                                        } else {
+                                            None
+                                        }
+                                    }),
+                                ),
+                            })
+                        } else if call.operation == ResolvedHostCommandOperation::StdinStreamOpen {
+                            Some(CapacityFlow::StdinRead {
+                                site: expression.id.as_str().to_owned(),
+                                conservative_payload_bytes: crate::stdin_stream_ops::CHUNK_BYTES,
+                            })
+                        } else if call.operation == ResolvedHostCommandOperation::StdinRead {
+                            Some(CapacityFlow::StdinRead {
+                                site: expression.id.as_str().to_owned(),
+                                conservative_payload_bytes: crate::command_io_ops::MAX_INPUT_BYTES,
+                            })
+                        } else if call.operation == ResolvedHostCommandOperation::StderrWrite {
+                            Some(CapacityFlow::StderrWrite {
+                                site: expression.id.as_str().to_owned(),
+                                source: byte_slice_transcript_source(facts, &call.args[0]),
+                            })
+                        } else if matches!(
+                            call.operation,
+                            ResolvedHostCommandOperation::FileRead
+                                | ResolvedHostCommandOperation::FileList
+                        ) {
+                            Some(CapacityFlow::BytesCopy {
+                                site: expression.id.as_str().to_owned(),
+                                conservative_payload_bytes: crate::filesystem_ops::MAX_FILE_BYTES,
+                            })
+                        } else if call.operation == ResolvedHostCommandOperation::NetRecv {
+                            // One bounded network read is an owned-byte
+                            // allocation site with the conservative chunk
+                            // payload; it is not a stdin read.
+                            Some(CapacityFlow::BytesCopy {
+                                site: expression.id.as_str().to_owned(),
+                                conservative_payload_bytes: crate::network_io_ops::MAX_CHUNK_BYTES,
+                            })
+                        } else {
+                            None
+                        };
+                        frames.push(Frame::Sequence(
+                            call.args.len() + usize::from(effect.is_some()),
+                        ));
+                        if let Some(effect) = effect {
+                            frames.push(Frame::Emit(effect));
+                        }
+                        for argument in call.args.iter().rev() {
+                            frames.push(Frame::Visit(argument, false));
+                        }
+                    }
+                    ResolvedExprKind::ByteRange {
+                        source, start, end, ..
+                    } => {
+                        frames.push(Frame::Sequence(3));
+                        frames.push(Frame::Visit(end, false));
+                        frames.push(Frame::Visit(start, false));
+                        frames.push(Frame::Visit(source, false));
+                    }
+                    ResolvedExprKind::LexicalExit { value, .. } => {
+                        if let Some(value) = value {
+                            frames.push(Frame::Visit(value, false));
+                        } else {
+                            results.push(CapacityFlow::Empty);
+                        }
+                    }
+                    ResolvedExprKind::Unary { value, .. }
+                    | ResolvedExprKind::Try { operand: value, .. }
+                    | ResolvedExprKind::TryOption { operand: value, .. }
+                    | ResolvedExprKind::Project { base: value, .. }
+                    | ResolvedExprKind::Upcast { source: value }
+                    | ResolvedExprKind::Yield { request: value } => {
+                        frames.push(Frame::Visit(value, false));
+                    }
+                    ResolvedExprKind::Binary { left, right, .. } => {
+                        frames.push(Frame::Sequence(2));
+                        frames.push(Frame::Visit(right, false));
+                        frames.push(Frame::Visit(left, false));
+                    }
+                    ResolvedExprKind::Block { statements, tail }
+                    | ResolvedExprKind::VecConstructor {
+                        statements, tail, ..
+                    } => {
+                        frames.push(Frame::Sequence(statements.len() + 1));
+                        frames.push(Frame::Visit(tail, direct_destination));
+                        for statement in statements.iter().rev() {
+                            match statement {
+                                ResolvedStatement::Let { binding, value, .. } => {
+                                    frames.push(Frame::Argument(
+                                        value,
+                                        Some((
+                                            SlotIdentity::Binding(binding.id.as_str()),
+                                            ArrayStorageKind::Binding,
+                                            &binding.ty,
+                                        )),
+                                        true,
+                                    ));
+                                }
+                                ResolvedStatement::Assign { value, .. }
+                                | ResolvedStatement::CopyDiscard { value, .. } => {
+                                    frames.push(Frame::Visit(value, true));
+                                }
+                                ResolvedStatement::Unsafe { body, .. } => {
+                                    frames.push(Frame::Visit(body, true));
+                                }
+                                ResolvedStatement::While {
+                                    condition, body, ..
+                                }
+                                | ResolvedStatement::LexicalWhile {
+                                    condition, body, ..
+                                } => {
+                                    let finite = crate::finite_byte_scratch::resolved(
+                                        program, condition, body,
+                                    )
+                                    .map(|proof| proof.iterations)
+                                    .or_else(|| {
+                                        crate::finite_row_construction::resolved(
+                                            program, condition, body,
+                                        )
+                                    })
+                                    .or_else(|| {
+                                        crate::finite_owned_record_loop::resolved(
+                                            program, condition, body,
+                                        )
+                                    });
+                                    frames.push(
+                                        if fused_selection::selects(facts, condition, body) {
+                                            Frame::FusedConstruction
+                                        } else {
+                                            Frame::Loop(finite)
+                                        },
+                                    );
+                                    frames.push(Frame::Visit(body, false));
+                                    frames.push(Frame::Visit(condition, false));
+                                }
+                            }
+                        }
+                    }
+                    ResolvedExprKind::If {
+                        condition,
+                        then_branch,
+                        else_branch,
+                    } => {
+                        frames.push(Frame::Sequence(2));
+                        frames.push(Frame::Alternative(2));
+                        frames.push(Frame::Visit(else_branch, direct_destination));
+                        frames.push(Frame::Visit(then_branch, direct_destination));
+                        frames.push(Frame::Visit(condition, false));
+                    }
+                    ResolvedExprKind::ConstructRecord { fields, .. }
+                    | ResolvedExprKind::ConstructVariant { fields, .. } => {
+                        frames.push(Frame::Sequence(fields.len()));
+                        for field in fields.iter().rev() {
+                            frames.push(Frame::Visit(&field.value, false));
+                        }
+                    }
+                    ResolvedExprKind::Match {
+                        scrutinee, arms, ..
+                    } => {
+                        for arm in arms {
+                            push_array_pattern_slots(program, &arm.pattern, slots)?;
+                        }
+                        frames.push(Frame::Match(arms.len()));
+                        frames.push(Frame::Visit(scrutinee, false));
+                        for arm in arms.iter().rev() {
+                            frames.push(Frame::Sequence(1 + usize::from(arm.guard.is_some())));
+                            frames.push(Frame::Visit(&arm.value, direct_destination));
+                            if let Some(guard) = &arm.guard {
+                                frames.push(Frame::Visit(guard, false));
+                            }
+                        }
+                    }
+                    ResolvedExprKind::UpdateRecord { base, fields, .. } => {
+                        frames.push(Frame::Sequence(1 + fields.len()));
+                        for field in fields.iter().rev() {
+                            frames.push(Frame::Visit(&field.value, false));
+                        }
+                        frames.push(Frame::Visit(base, false));
+                    }
+                    ResolvedExprKind::Int(_)
+                    | ResolvedExprKind::Int32(_)
+                    | ResolvedExprKind::Char(_)
+                    | ResolvedExprKind::Uint8(_)
+                    | ResolvedExprKind::Usize(_)
+                    | ResolvedExprKind::ArrayU8(_)
+                    | ResolvedExprKind::RepeatArrayU8 { .. }
+                    | ResolvedExprKind::Float32(_)
+                    | ResolvedExprKind::Float64(_)
+                    | ResolvedExprKind::Bool(_)
+                    | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::BorrowedUtf8Literal(_)
+                    | ResolvedExprKind::Place(_)
+                    | ResolvedExprKind::BorrowPlace { .. } => results.push(CapacityFlow::Empty),
+                }
+            }
+            Frame::Argument(expression, slot, direct_destination) => {
+                if let Some((identity, kind, ty)) = slot {
+                    // Scalar/view slots retain no identity. Borrow the source
+                    // metadata while queued, then allocate only after the same
+                    // recursive payload check proves a real slot is required.
+                    push_array_slot_lazy(
+                        program,
+                        slots,
+                        || match identity {
+                            SlotIdentity::Binding(binding) => {
+                                crate::bounded_output::budgeted_clone(binding)
+                            }
+                            SlotIdentity::Argument(expression, index) => {
+                                format!("{expression}.arg.{index}")
+                            }
+                        },
+                        kind,
+                        ty,
+                    )?;
+                }
+                frames.push(Frame::Visit(expression, direct_destination));
+            }
+            Frame::Sequence(count) => {
+                let start = results
+                    .len()
+                    .checked_sub(count)
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                let children = results.drain(start..).collect::<Vec<_>>();
+                results.push(sequence(children));
+            }
+            Frame::Alternative(count) => {
+                let start = results
+                    .len()
+                    .checked_sub(count)
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                let children = results.drain(start..).collect::<Vec<_>>();
+                results.push(CapacityFlow::Alternative(children));
+            }
+            Frame::Loop(finite) => {
+                let body = results
+                    .pop()
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                let condition = results
+                    .pop()
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                results.push(match finite {
+                    Some(iterations) => CapacityFlow::FiniteOwnedLoop {
+                        iterations,
+                        condition: Box::new(condition),
+                        body: Box::new(body),
+                    },
+                    None => CapacityFlow::Loop {
+                        condition: Box::new(condition),
+                        body: Box::new(body),
+                    },
+                });
+            }
+            Frame::FusedConstruction => {
+                let body = results
+                    .pop()
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                let condition = results
+                    .pop()
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                results.push(fused_selection::flow(facts, condition, body)?);
+            }
+            Frame::Match(arm_count) => {
+                let scrutinee = results
+                    .pop()
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                let start = results
+                    .len()
+                    .checked_sub(arm_count)
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                let alternatives = results.drain(start..).collect::<Vec<_>>();
+                results.push(sequence(vec![
+                    scrutinee,
+                    CapacityFlow::Alternative(alternatives),
+                ]));
+            }
+            Frame::Emit(flow) => results.push(flow),
+        }
+    }
+    if results.len() == 1 {
+        results
+            .pop()
+            .ok_or_else(|| hir_error("byte-capacity traversal produced no result"))
+    } else {
+        Err(hir_error(
+            "byte-capacity traversal produced an invalid result stack",
+        ))
+    }
+}
+
+pub(crate) fn byte_data_capacity_inputs(
+    program: &ResolvedProgram,
+) -> Result<Vec<crate::byte_data_capacity::FunctionCapacityInput>, Diagnostic> {
+    // One value-fact index per analysis, built on the first transcript lookup.
+    byte_data_capacity_inputs_with(program, &ValueFactIndex::new(program))
+}
+
+fn byte_data_capacity_inputs_with(
+    program: &ResolvedProgram,
+    facts: &ValueFactIndex<'_>,
+) -> Result<Vec<crate::byte_data_capacity::FunctionCapacityInput>, Diagnostic> {
+    use crate::byte_data_capacity::{ArrayStorageKind, CapacityFlow, FunctionCapacityInput};
+
+    let closure_functions = super::closure::inventory(program)
+        .into_iter()
+        .map(|expression| super::closure::closure_function(program, expression))
+        .collect::<Result<Vec<_>, _>>()?;
+    let functions = program
+        .functions
+        .iter()
+        .chain(&closure_functions)
+        .map(|function| (function.id.as_str(), function))
+        .chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| (instance.id.as_str(), &instance.function)),
+        );
+    functions
+        .map(|(identity, function)| {
+            let mut slots = Vec::new();
+            for parameter in &function.params {
+                push_array_slot_lazy(
+                    program,
+                    &mut slots,
+                    || crate::bounded_output::budgeted_clone(parameter.id.as_str()),
+                    ArrayStorageKind::Parameter,
+                    &parameter.ty,
+                )?;
+            }
+            push_array_slot_lazy(
+                program,
+                &mut slots,
+                || crate::bounded_output::budgeted_clone(function.result_id.as_str()),
+                ArrayStorageKind::ProvisionalResult,
+                &function.return_type,
+            )?;
+            let mut execution = function
+                .requires
+                .iter()
+                .map(|expression| {
+                    byte_capacity_expression_in(
+                        facts,
+                        Some(function),
+                        expression,
+                        &mut slots,
+                        false,
+                    )
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            execution.push(byte_capacity_expression_in(
+                facts,
+                Some(function),
+                &function.body,
+                &mut slots,
+                true,
+            )?);
+            execution.extend(
+                function
+                    .ensures
+                    .iter()
+                    .map(|expression| {
+                        byte_capacity_expression_in(
+                            facts,
+                            Some(function),
+                            expression,
+                            &mut slots,
+                            false,
+                        )
+                    })
+                    .collect::<Result<Vec<_>, _>>()?,
+            );
+            Ok(FunctionCapacityInput {
+                function: identity.to_owned(),
+                array_slots: slots,
+                execution: CapacityFlow::Sequence(execution),
+            })
+        })
+        .collect()
+}
+
+pub(crate) fn analyze_byte_data_capacity(
+    program: &ResolvedProgram,
+) -> Result<crate::byte_data_capacity::ProgramCapacitySummary, Diagnostic> {
+    let inputs = byte_data_capacity_inputs(program)?;
+    crate::byte_data_capacity::analyze(&inputs).map_err(|error| {
+        let diagnostic = Diagnostic::io(error.diagnostic.code(), error.to_string());
+        match error.witness_help {
+            Some(help) => diagnostic.with_help(help),
+            None => diagnostic,
+        }
+    })
+}
+
+mod fused_selection;
+pub(crate) use fused_selection::analyze_selected_byte_data_capacity;
+#[cfg(test)]
+pub(crate) use fused_selection::selected_inputs_for_test;
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(test)]
+mod literal_format_capacity_tests {
+    use super::*;
+
+    #[test]
+    fn literal_format_capacity_visits_argument_calls_in_authored_order() {
+        let source = r#"
+module test.format_capacity;
+@id("format.left") fn left() -> usize {
+    let bytes = bytes_zeroed(3usize);
+    byte_len(bytes_as_slice(bytes))
+}
+@id("format.right") fn right() -> usize {
+    let bytes = bytes_zeroed(5usize);
+    byte_len(bytes_as_slice(bytes))
+}
+@id("format.render") fn render() -> string {
+    string_format("{}:{}", left(), right())
+}
+@id("format.main") fn main() -> i64 { string_len(render()) }
+"#;
+        let parsed = crate::check(source, "format-capacity.spx").unwrap();
+        let program = crate::hir::resolve(&parsed).unwrap();
+        let function = program
+            .functions
+            .iter()
+            .find(|function| function.id.as_str() == "format.render")
+            .unwrap();
+        let ResolvedExprKind::Block { tail, .. } = &function.body.kind else {
+            panic!("render retains its authored block")
+        };
+        let ResolvedExprKind::LiteralFormat { args, .. } = &tail.kind else {
+            panic!("render retains its checked format operation")
+        };
+        let facts = ValueFactIndex::new(&program);
+        let mut slots = Vec::new();
+        let flow = byte_capacity_expression(&facts, tail, &mut slots, false).unwrap();
+        let expected = args
+            .iter()
+            .map(|argument| {
+                byte_capacity_expression(&facts, argument, &mut Vec::new(), false).unwrap()
+            })
+            .collect();
+        assert_eq!(
+            flow,
+            crate::byte_data_capacity::CapacityFlow::Sequence(expected)
+        );
+        assert!(
+            slots.is_empty(),
+            "String/scalar staging has no inline arrays"
+        );
+        let summary = analyze_byte_data_capacity(&program).unwrap();
+        let render = summary.function("format.render").unwrap();
+        assert_eq!(render.bytes_copy_sites, 2);
+        assert_eq!(render.owned_byte_payload_bytes, 8);
+    }
+}
+
+#[cfg(test)]
+mod static_extent_tests;

@@ -279,3 +279,77 @@ impl PlanBuilder<'_> {
         Ok(())
     }
 }
+
+impl PlanBuilder<'_> {
+    /// A postfix residual remains reachable even when the success arm ends in
+    /// an explicit Return. Keep its existing ordinary epilogue; never discard
+    /// it merely because the source body has no normal value tail.
+    pub(super) fn finish_terminal_try_paths(&mut self) -> Result<(), Diagnostic> {
+        if self.pending_try_residuals.is_empty() {
+            return Ok(());
+        }
+        if self.lexical.is_none() {
+            return Err(plan_error(
+                "terminal postfix residual outside lexical profile",
+            ));
+        }
+        let residuals = std::mem::take(&mut self.pending_try_residuals);
+        let owned = self.result_needs_drop()?;
+        let mut state = residuals[0].state.clone();
+        if owned {
+            self.merge_owned_try_residual_states(&mut state, &residuals[1..])?;
+        } else if residuals.iter().any(|residual| {
+            !residual.state.live_order.is_empty()
+                || !residual.state.conditional_variants.is_empty()
+                || !residual.state.renewals.is_empty()
+        }) {
+            return Err(plan_error(
+                "postfix residual carries inconsistent terminal owner state",
+            ));
+        }
+        let root = CleanupRegionId(0);
+        let epilogue = self.new_block(root)?;
+        for residual in residuals {
+            let edge = self.new_edge(residual.block, epilogue, EdgeCondition::Always)?;
+            let leaves_regions: Vec<_> = self
+                .region_chain(residual.region)
+                .into_iter()
+                .take_while(|region| *region != root)
+                .collect();
+            if leaves_regions.is_empty() {
+                self.terminate(residual.block, CleanupTerminator::Goto(edge))?;
+            } else {
+                self.emit_exit(
+                    residual.block,
+                    leaves_regions,
+                    Vec::new(),
+                    ExitContinuation::Continue(edge),
+                )?;
+            }
+        }
+        let mut current = epilogue;
+        for (ordinal, contract) in self.function.ensures.iter().enumerate() {
+            (current, state) = self.lower_contract_expression(
+                contract,
+                current,
+                state,
+                root,
+                ContractPhase::Ensures,
+                ordinal,
+            )?;
+        }
+        if !self.pending_try_residuals.is_empty() {
+            return Err(plan_error("postfix `?` is invalid in a postcondition"));
+        }
+        let result = if owned {
+            CleanupResultSource::Owned {
+                storage: CleanupPlace::whole(StorageId::ProvisionalResult),
+            }
+        } else {
+            CleanupResultSource::Scalar {
+                expression: self.function.body.id.clone(),
+            }
+        };
+        self.finish_success(current, state, root, result)
+    }
+}

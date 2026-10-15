@@ -1,0 +1,6 @@
+
+running 1 test
+test owned_string_transfer::explicit_transfer_preserves_native_carriers_clone_baseline_and_failure_settlement ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 867 filtered out; finished in 1.11s
+

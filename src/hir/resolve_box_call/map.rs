@@ -8,8 +8,8 @@ pub(super) fn schedule<'expr>(
     frames: &mut Vec<Frame<'expr>>,
     type_arguments: &[Type],
     args: &'expr [Expr],
-    bindings: Rc<BTreeMap<String, Binding>>,
-    path: String,
+    bindings: Scope<'expr>,
+    path: PathId,
     span: Span,
     op: MapOp,
 ) -> Result<(), Diagnostic> {
@@ -28,7 +28,7 @@ pub(super) fn schedule<'expr>(
     }
     frames.push(Frame::FinishOwnedGenericOp {
         span,
-        path: path.clone(),
+        path,
         op: OwnedGenericCallSite::Map(op),
         element: collection,
         argument_count: args.len(),
@@ -38,13 +38,13 @@ pub(super) fn schedule<'expr>(
         index: 0,
         bindings,
         path,
-        segment: "arg",
+        segment: Seg::Arg,
     });
     Ok(())
 }
-pub(super) fn finish(
+pub(super) fn finish<'p>(
     function: &FunctionExecutionId,
-    path: &str,
+    path: impl Into<ExprPath<'p>>,
     span: Span,
     op: MapOp,
     collection: ResolvedType,
@@ -73,12 +73,12 @@ pub(super) fn finish(
         OwnershipMode::Value
     };
     Ok(ResolvedExpr {
-        id: ExpressionId::new(function, path),
+        id: path.into().expression_id(function),
         ownership,
         ty,
         span,
         kind: ResolvedExprKind::Call {
-            callee: DeclarationId::new(op.id()),
+            callee: DeclarationId::compiler(crate::hir::CompilerDeclaration::MapOperation(op)),
             type_arguments,
             instance: None,
             args,
@@ -107,3 +107,7 @@ pub(super) fn reference(
     }
     finish(function, call.path, call.span, op, collection, args)
 }
+
+#[cfg(test)]
+#[path = "map/identity_tests.rs"]
+mod identity_tests;

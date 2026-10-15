@@ -1,0 +1,19 @@
+{
+  "execution": "not run; source-only",
+  "exact_selectors": [
+    "cleanup_plan::build::capacity_observation::tests::repeated_construction_does_not_feed_previous_aggregate_back_into_builder",
+    "cleanup_plan::build::capacity_observation::tests::large_then_small_retains_persistent_max_but_reports_local_components",
+    "cleanup_plan::build::capacity_observation::tests::scope_restores_on_success_refusal_and_nested_construction_without_prior_input",
+    "cleanup_plan::build::capacity_observation::tests::ownership_census_adds_missing_ordinary_conditional_and_string_move_terms",
+    "cleanup_plan::build::capacity_observation::tests::helper_empty_builder_counts_held_ordinary_directory_and_receiving_drop",
+    "cleanup_plan::build::capacity_observation::tests::checked_owned_variant_builder_attributes_real_conditional_state_through_drop",
+    "cleanup_plan::build::helper_index::tests::construction_index_reuses_exact_sites_and_preserves_independent_plan_bytes",
+    "cleanup_plan::build::helper_index::tests::construction_exact_one_short_and_zero_budget_leave_attached_plans_unchanged",
+    "cleanup_plan::build::tests::inventory_and_cleanup_capacity_cover_owned_hostile_families",
+    "implementation::tests::ledger_capacity::hir_capacity_layout_constants_are_bound_to_root_const_assertions"
+  ],
+  "libraries": [
+    "semaprax",
+    "semaprax-native-rust-interop-builder"
+  ]
+}

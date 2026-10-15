@@ -10,7 +10,7 @@ fn root(ids: &[u32]) -> Value {
                     hir::DeclarationId::new(format!("field.{i}")),
                     Value::Bytes(OwnedBytesValue {
                         allocation: *id,
-                        bytes: Arc::from(vec![0u8]),
+                        bytes: Arc::<[u8]>::from(vec![0u8]).into(),
                     }),
                 )
             })
@@ -129,7 +129,7 @@ fn owned_frame_v2_accepted_result_mints_after_dead_ids_and_refuses_before_alloca
     };
     assert_eq!(bytes.allocation, 3);
     assert_eq!(bytes.bytes.as_ref(), &[0, 1, 0]);
-    assert_eq!(Arc::strong_count(&bytes.bytes), 1);
+    assert_eq!(Arc::strong_count(bytes.bytes.ordinary()), 1);
     assert!(
         token.seed(&[&state, &outcome]).is_err(),
         "a Bytes leaf alone is not a retained root"

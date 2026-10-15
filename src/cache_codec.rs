@@ -23,6 +23,8 @@ use crate::diagnostic::Diagnostic;
 use std::collections::{BTreeMap, BTreeSet};
 
 mod carriers;
+mod checked_allocation;
+mod lexical_cleanup;
 
 pub(crate) const MAX_BYTES: usize = 128 * 1024 * 1024;
 pub(crate) const MAX_ALLOCATION: usize = 128 * 1024 * 1024;
@@ -123,12 +125,12 @@ impl Encoder {
         self.bytes.extend_from_slice(bytes);
         Ok(())
     }
-    fn length(&mut self, length: usize) -> Result<()> {
+    pub(crate) fn length(&mut self, length: usize) -> Result<()> {
         u32::try_from(length)
             .map_err(|_| capacity("cache codec sequence length exceeds u32"))?
             .encode(self)
     }
-    fn text(&mut self, text: &str) -> Result<()> {
+    pub(crate) fn text(&mut self, text: &str) -> Result<()> {
         self.nested(|encoder| {
             encoder.length(text.len())?;
             encoder.raw(text.as_bytes())
@@ -197,7 +199,8 @@ impl<'a> Decoder<'a> {
     fn length(&mut self) -> Result<usize> {
         Ok(u32::decode(self)? as usize)
     }
-    fn text(&mut self) -> Result<&'a str> {
+    /// Borrowed text from the input; nothing is allocated or charged here.
+    pub(crate) fn text(&mut self) -> Result<&'a str> {
         self.nested(|decoder| {
             let length = decoder.length()?;
             std::str::from_utf8(decoder.take(length)?)
@@ -286,7 +289,13 @@ fn static_token(value: &str) -> Result<&'static str> {
         "semaprax.cleanup-plan.v15" => Ok("semaprax.cleanup-plan.v15"),
         "semaprax.cleanup-plan.v16" => Ok("semaprax.cleanup-plan.v16"),
         "semaprax.cleanup-plan.v17" => Ok("semaprax.cleanup-plan.v17"),
+        "semaprax.cleanup-plan.v18" => Ok("semaprax.cleanup-plan.v18"),
+        "semaprax.cleanup-plan.v19" => Ok("semaprax.cleanup-plan.v19"),
+        "semaprax.cleanup-plan.v20" => Ok("semaprax.cleanup-plan.v20"),
+        "semaprax.lexical-control-flow.v1" => Ok("semaprax.lexical-control-flow.v1"),
         "semaprax.loan-plan.v1" => Ok("semaprax.loan-plan.v1"),
+        "semaprax.loan-plan.v2" => Ok("semaprax.loan-plan.v2"),
+        "semaprax.loan-plan.v3" => Ok("semaprax.loan-plan.v3"),
         "callee" => Ok("callee"),
         "success_only" => Ok("success_only"),
         "final_zero_status_commit" => Ok("final_zero_status_commit"),
@@ -317,6 +326,32 @@ impl<T: Codec> Codec for Vec<T> {
             }
             Ok(result)
         })
+    }
+}
+// Immutable slices use precisely the existing vector wire and nesting shape.
+impl<T: Codec> Codec for Box<[T]> {
+    fn encode(&self, encoder: &mut Encoder) -> Result<()> {
+        encoder.nested(|encoder| {
+            encoder.length(self.len())?;
+            for item in self {
+                item.encode(encoder)?;
+            }
+            Ok(())
+        })
+    }
+
+    fn decode(decoder: &mut Decoder<'_>) -> Result<Self> {
+        let values = Vec::<T>::decode(decoder)?;
+        if !values.is_empty() && values.capacity() != values.len() {
+            // Shrinking can allocate while the decoded vector is still live.
+            decoder.allocate(
+                values
+                    .len()
+                    .checked_mul(std::mem::size_of::<T>())
+                    .ok_or_else(|| capacity("cache codec slice allocation accounting overflow"))?,
+            )?;
+        }
+        Ok(values.into_boxed_slice())
     }
 }
 impl<T: Codec> Codec for Option<T> {

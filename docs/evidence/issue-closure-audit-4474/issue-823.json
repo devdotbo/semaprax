@@ -1,0 +1,24 @@
+{
+  "url": "https://github.com/wavect/semaprax/issues/823",
+  "title": "(OPT) Prefer bounded library discovery over truncated full-catalog retrieval",
+  "issue_number": 823,
+  "body": "Completed matched ShiftSim round at e045527a611a048515349ab2f970043a5d33b185 shows all five SEMAPRAX attempts requesting `help library all` early after the matched prompt points to `help language projects`. Projects guidance explicitly advertised full catalog before exact lookup. Each raw catalog was 252,331 bytes; retained combined tool results were about 40,154 bytes, truncated before JSON scan/query and collections, followed by separate relevant help retrievals.\n\nImplement bounded default guidance in the existing quick-reference workflow and Projects topic, plus consistent global CLI guide: existing compact module index, exact module/name/stable-ID selectors and existing paged language find. Preserve explicit full catalog output, command admission, matched prompts, acceptance checks and baseline.\n\nQualification: exact owning help contracts; actual diagnostic-help producer before rebuilding consumers; installed capsule/source-digest owning checks where affected. No full suite. No claimed net-token or billed-cost gain: retained bytes and temporal exposure do not establish retransmission or billing. Rebenchmark only after the larger compiler implementation batch is qualified.\n\nSHA-bound discovery packet: `/Volumes/Semaprax/provenance/astra-shiftsim-help-exposure-e045-20261013.json`, SHA256 163def9cbec53cb286ba06325d216d84d38d13d9a2e11f99d071e364de02a4cd\n",
+  "state": "open",
+  "user": {
+    "login": "wsdt",
+    "name": "wsdt",
+    "email": null,
+    "avatar_url": "https://avatars.githubusercontent.com/u/28724551?v=4",
+    "id": 28724551
+  },
+  "assignees": null,
+  "labels": null,
+  "milestone": null,
+  "state_reason": null,
+  "comments": 0,
+  "created_at": "2026-10-13T20:24:02Z",
+  "updated_at": "2026-10-13T20:24:02Z",
+  "closed_at": null,
+  "display_url": "https://github.com/wavect/semaprax/issues/823",
+  "display_title": "(OPT) Prefer bounded library discovery over truncated full-catalog retrieval"
+}

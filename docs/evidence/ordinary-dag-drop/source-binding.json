@@ -1,0 +1,46 @@
+{
+  "schema": "semaprax.source-binding.v1",
+  "issue": 819,
+  "base_head": "9df9a15c53d87ed8f2e56eb522a128c26cde44be",
+  "state": "source-only-unexecuted",
+  "source_hashes": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "daf6c198625949e542904e15e578cbd7c4f494769a5b0ed37ed021cc0a77b49a",
+    "src/cleanup_plan/replay/skeleton_work.rs": "f6163b3cc48322bf40549c18cccf8ea412a52a450daadd82d7f93e5daa6b8716",
+    "src/cleanup_plan/replay/skeleton_work/dag_storage.rs": "500a40cbfbbef50ff44a26f237f2b93cea7358a64ccb1105293ade4fa078f6bb",
+    "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs": "6f3aeb448ee3b4bb202d027c93eebbcec8a5c0854496792d53a66206525871f8",
+    "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs": "7ee5d27f2ae13fa859875cfdc9715b88ad6137996a1362840254a667b3d34f68",
+    "src/cleanup_plan/replay/skeleton_work/oracle_entry.rs": "9ccc81b3f79c93b7330f3cbe8013c05424e95b2808b51dc06bbb18f9bfa6f7b7",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs": "3d1a9ab1fd584910af3044e44a19e4c429263778cc611fa44c4a3df6250e2ab5",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs": "d8564be6acde2c6def66fc5ec06b3890545609f198f34e225773f78cfc42ae0c",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs": "fd8afd796f7f05555b304fed01cdf92fd1fafa069f99c6b20f371fd3ffc43223",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs": "d17dae8c6c00c034c06092531c4a45c97347c88fdd351fb7d7e11c6be09bb2ab",
+    "src/test_allocation_observer.rs": "f3ab093d0bec8e84d98baedfb88e26ec97c1a66022638bd1bf5301ff25844fac",
+    "src/test_allocation_observer/free_order.rs": "f3b372a2eedde6d0e238580a57e5fbcb1ca14144a479e052a0f37be009e6fc48",
+    "tests/hir_module_boundaries.rs": "4eb4a53ed30ddb137a8a3e23f051c7e9506b89b99f3dbebe92245bc98ac1e151",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs": "cd6cbb50e3d362456d3f032e0bbdb3887c8ef388e3bc08a15a43b185fa5d9d6f"
+  },
+  "original_snapshot_hashes": {
+    "original-dag-storage-tests.txt": "23e881c2747e87a7ce410a1d74ab3e66f8334e47cd9bcb5a3a9ce75d8cc3c910",
+    "original-ordinary-dag-tests.txt": "160e8e95338eaf2c2b554138c1dcc21d1037497be7fefcdf2d20e62588353200",
+    "original-ordinary-dag.txt": "114c8c07b89ba6a40d51dcf068b921e4a87df97e56b95e07f4e5c0556aa007b9",
+    "original-skeleton-work.txt": "2d92df6e549b06a5f0667e1060f46d38edbb045079c522ef21588c8ff2da2bd4",
+    "original-tail-moves.txt": "d99e422bef75525fc6796899ba82ba10230bfaaa1e7ea22fed680998dd5c1f98"
+  },
+  "complete_original_receivers": {
+    "node_kind_drop": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+    "ordinary_constructors": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+    "old_empty_union": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs"
+  },
+  "limits_changed": false,
+  "ordinary_existing_budget_work_admission_changed": true,
+  "selected_session_policy_changed": false,
+  "legacy_refusal_allocation_remaining": true,
+  "compiled_original_receiver": {
+    "frozen_archive": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs",
+    "frozen_bytes": 14172,
+    "frozen_sha256": "fd8afd796f7f05555b304fed01cdf92fd1fafa069f99c6b20f371fd3ffc43223",
+    "compiled_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs",
+    "bridge_only_suffix_byte_locked": true
+  }
+}

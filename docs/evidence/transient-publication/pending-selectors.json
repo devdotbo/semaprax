@@ -1,0 +1,11 @@
+{
+  "status": "authored, unexecuted",
+  "package": "semaprax",
+  "harness": "lib",
+  "selectors": [
+    "workspace_graph::expected_projection::borrowed_imports::tests::full::publication::last_alias_and_synthetic_main_refusal_never_publish_partial_generated_roots",
+    "workspace_graph::expected_projection::borrowed_imports::tests::full::publication::full_original_constructor_and_only_sticky_publication_changes_stay_source_bound",
+    "workspace_graph::expected_projection::borrowed_imports::tests::full::transient::actual_transient_import_constructor_removes_only_authored_cache_spare_and_pays_drop",
+    "workspace_graph::expected_projection::borrowed_imports::tests::full::transient::actual_transient_full_projection_and_resolution_match_complete_old_receivers"
+  ]
+}

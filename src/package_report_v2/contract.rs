@@ -67,12 +67,15 @@ fn expression_json(
         quote_json(ownership_text(expression.ownership))
     );
     let output = match &expression.kind {
+        ResolvedExprKind::LexicalExit { .. } => return Err(projection_error("lexical exits are outside package report v2 contracts")),
         ResolvedExprKind::Closure { .. }
         | ResolvedExprKind::FunctionReference { .. }
-        | ResolvedExprKind::Invoke { .. } => return Err(projection_error("function values are outside package report v2 contracts")),
-        ResolvedExprKind::Int(value) => bf!(
-            "{{{header},\"kind\":\"int\",\"value\":\"{value}\"}}"
-        ),
+        | ResolvedExprKind::Invoke { .. } => {
+            return Err(projection_error(
+                "function values are outside package report v2 contracts",
+            ));
+        }
+        ResolvedExprKind::Int(value) => bf!("{{{header},\"kind\":\"int\",\"value\":\"{value}\"}}"),
         ResolvedExprKind::Int32(value) => {
             bf!("{{{header},\"kind\":\"int32\",\"value\":{value}}}")
         }
@@ -82,9 +85,9 @@ fn expression_json(
         ResolvedExprKind::Uint8(value) => {
             bf!("{{{header},\"kind\":\"uint8\",\"value\":{value}}}")
         }
-        ResolvedExprKind::Usize(value) => bf!(
-            "{{{header},\"kind\":\"usize\",\"value\":\"{value}\"}}"
-        ),
+        ResolvedExprKind::Usize(value) => {
+            bf!("{{{header},\"kind\":\"usize\",\"value\":\"{value}\"}}")
+        }
         ResolvedExprKind::ArrayU8(values) => bf!(
             "{{{header},\"kind\":\"array_u8\",\"values\":[{}]}}",
             values
@@ -93,9 +96,9 @@ fn expression_json(
                 .collect::<Vec<_>>()
                 .budgeted_join(",")
         ),
-        ResolvedExprKind::RepeatArrayU8 { value, count } => bf!(
-            "{{{header},\"kind\":\"repeat_array_u8\",\"value\":{value},\"count\":{count}}}"
-        ),
+        ResolvedExprKind::RepeatArrayU8 { value, count } => {
+            bf!("{{{header},\"kind\":\"repeat_array_u8\",\"value\":{value},\"count\":{count}}}")
+        }
         ResolvedExprKind::Float32(bits) => bf!(
             "{{{header},\"kind\":\"float32\",\"bits\":{}}}",
             quote_json(&bf!("{bits:08x}"))
@@ -107,6 +110,7 @@ fn expression_json(
         ResolvedExprKind::Bool(value) => {
             bf!("{{{header},\"kind\":\"bool\",\"value\":{value}}}")
         }
+        ResolvedExprKind::BorrowedUtf8Literal(_) => return Err(projection_error("static borrowed literals are outside package contract v2")),
         ResolvedExprKind::String(value) => bf!(
             "{{{header},\"kind\":\"string\",\"value\":{}}}",
             quote_json(value)
@@ -132,6 +136,22 @@ fn expression_json(
             expression_json(start, roots)?,
             expression_json(end, roots)?
         ),
+        ResolvedExprKind::VecFieldRead {
+            origin: crate::hir::VecFieldReadOrigin::Explicit,
+            element,
+            field,
+            bytes,
+            args,
+        } => bf!(
+            "{{{header},\"kind\":\"vec_field_read\",\"element_type\":{},\"field\":{},\"bytes\":{bytes},\"args\":[{}]}}",
+            type_json(element),
+            quote_json(field.as_str()),
+            args.iter()
+                .map(|argument| expression_json(argument, roots))
+                .collect::<Result<Vec<_>, _>>()?
+                .budgeted_join(",")
+        ),
+        ResolvedExprKind::VecFieldRead { .. } => return Err(projection_error("row-derived field source form is outside package report v2 contracts")),
         ResolvedExprKind::Call {
             callee,
             type_arguments,
@@ -144,8 +164,23 @@ fn expression_json(
                 || bounded_output::budgeted_clone("\"none\""),
                 |value| quote_json(value.as_str())
             ),
-            type_arguments.iter().map(type_json).collect::<Vec<_>>().budgeted_join(","),
-            args.iter().map(|argument| expression_json(argument, roots)).collect::<Result<Vec<_>, _>>()?.budgeted_join(",")
+            type_arguments
+                .iter()
+                .map(type_json)
+                .collect::<Vec<_>>()
+                .budgeted_join(","),
+            args.iter()
+                .map(|argument| expression_json(argument, roots))
+                .collect::<Result<Vec<_>, _>>()?
+                .budgeted_join(",")
+        ),
+        ResolvedExprKind::LiteralFormat { template, args } => bf!(
+            "{{{header},\"kind\":\"literal_format\",\"template\":{},\"args\":[{}]}}",
+            quote_json(template),
+            args.iter()
+                .map(|argument| expression_json(argument, roots))
+                .collect::<Result<Vec<_>, _>>()?
+                .budgeted_join(",")
         ),
         ResolvedExprKind::Unary { op, value } => bf!(
             "{{{header},\"kind\":\"unary\",\"op\":{},\"value\":{}}}",
@@ -171,7 +206,15 @@ fn expression_json(
         ResolvedExprKind::ConstructRecord { record, fields } => bf!(
             "{{{header},\"kind\":\"construct_record\",\"record\":{},\"fields\":[{}]}}",
             quote_json(record.as_str()),
-            fields.iter().map(|field| Ok(bf!("{{\"field\":{},\"value\":{}}}", quote_json(field.field.as_str()), expression_json(&field.value, roots)?))).collect::<Result<Vec<_>, crate::diagnostic::Diagnostic>>()?.budgeted_join(",")
+            fields
+                .iter()
+                .map(|field| Ok(bf!(
+                    "{{\"field\":{},\"value\":{}}}",
+                    quote_json(field.field.as_str()),
+                    expression_json(&field.value, roots)?
+                )))
+                .collect::<Result<Vec<_>, crate::diagnostic::Diagnostic>>()?
+                .budgeted_join(",")
         ),
         ResolvedExprKind::ConstructVariant {
             variant,
@@ -181,7 +224,15 @@ fn expression_json(
             "{{{header},\"kind\":\"construct_variant\",\"variant\":{},\"case\":{},\"fields\":[{}]}}",
             quote_json(variant.as_str()),
             quote_json(case.as_str()),
-            fields.iter().map(|field| Ok(bf!("{{\"field\":{},\"value\":{}}}", quote_json(field.field.as_str()), expression_json(&field.value, roots)?))).collect::<Result<Vec<_>, crate::diagnostic::Diagnostic>>()?.budgeted_join(",")
+            fields
+                .iter()
+                .map(|field| Ok(bf!(
+                    "{{\"field\":{},\"value\":{}}}",
+                    quote_json(field.field.as_str()),
+                    expression_json(&field.value, roots)?
+                )))
+                .collect::<Result<Vec<_>, crate::diagnostic::Diagnostic>>()?
+                .budgeted_join(",")
         ),
         ResolvedExprKind::UpdateRecord {
             base,
@@ -191,7 +242,15 @@ fn expression_json(
             "{{{header},\"kind\":\"update_record\",\"base\":{},\"record\":{},\"fields\":[{}]}}",
             expression_json(base, roots)?,
             quote_json(record.as_str()),
-            fields.iter().map(|field| Ok(bf!("{{\"field\":{},\"value\":{}}}", quote_json(field.field.as_str()), expression_json(&field.value, roots)?))).collect::<Result<Vec<_>, crate::diagnostic::Diagnostic>>()?.budgeted_join(",")
+            fields
+                .iter()
+                .map(|field| Ok(bf!(
+                    "{{\"field\":{},\"value\":{}}}",
+                    quote_json(field.field.as_str()),
+                    expression_json(&field.value, roots)?
+                )))
+                .collect::<Result<Vec<_>, crate::diagnostic::Diagnostic>>()?
+                .budgeted_join(",")
         ),
         ResolvedExprKind::Project { base, field } => bf!(
             "{{{header},\"kind\":\"project\",\"base\":{},\"field\":{}}}",
@@ -204,7 +263,8 @@ fn expression_json(
         ),
         ResolvedExprKind::NativeRustImportCall(_)
         | ResolvedExprKind::HostCommandCall(_)
-        | ResolvedExprKind::Block { .. }
+        | ResolvedExprKind::RowLoan { .. }
+        | ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. }
         | ResolvedExprKind::Match { .. }
         | ResolvedExprKind::Try { .. }
         | ResolvedExprKind::TryOption { .. }

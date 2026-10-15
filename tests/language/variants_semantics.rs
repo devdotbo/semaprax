@@ -294,7 +294,10 @@ fn patterns_and_arm_results_are_checked_independently() {
         "        Choice::Number { value: number } => number,",
         "        Other::Number { value: number } => number,",
     );
-    assert_eq!(codes(&incompatible), ["SPX-M103", "SPX-T202", "SPX-M101"]);
+    // The refused arm supplies no payload binding; its independent missing
+    // case remains an exhaustiveness error. The complete prior verdict is
+    // retained by source_verify::recovery_tests against the saved receiver.
+    assert_eq!(codes(&incompatible), ["SPX-M103", "SPX-M101"]);
 
     let fields = VARIANTS.replace(
         "Choice::Number { value: number } => number,",

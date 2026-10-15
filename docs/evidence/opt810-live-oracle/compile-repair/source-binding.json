@@ -1,0 +1,57 @@
+{
+  "status": "SOURCE_ONLY_COMPILATION_REPAIR_PENDING_ACTUAL_BUILD",
+  "base": "9c5c20bafa73aedeae6ff6fc7d1a60268bcb6b48",
+  "frozen_failure_source": "d8df12a3b0283c9a8c3947021b4dcd3faf8565a0",
+  "actual_log": "/Volumes/Semaprax/lane-prompts/large-source-custody-report-oracle-d8df12-20261014/owning-build.jsonl",
+  "files": {
+    "src/cleanup_plan/replay.rs": {
+      "whole_original_archive": "docs/evidence/opt810-live-oracle/compile-repair/src__cleanup_plan__replay.rs.before",
+      "original_sha256": "94f3f61ce4958cef4ead0c3d596aa422d0f0e7725a46436f6a80bb54233be068",
+      "original_bytes": 298126,
+      "receiving_sha256": "470e45827fd36635d7f39380ac86f430617ada2dbfda801fd8c2a460f0ab1bf0",
+      "receiving_bytes": 298126
+    },
+    "src/cleanup_plan/replay/allocation/tests/accounting_scope.rs": {
+      "whole_original_archive": "docs/evidence/opt810-live-oracle/compile-repair/src__cleanup_plan__replay__allocation__tests__accounting_scope.rs.before",
+      "original_sha256": "fa2d552a710d3066e9c64f5085f17fe084ac66d2824ddf49418e71e57cb16f39",
+      "original_bytes": 6209,
+      "receiving_sha256": "4dcea841d42fbdf44590635dfbf122b0d2f29cf63dbf1017c908a38bca28afc0",
+      "receiving_bytes": 6227
+    },
+    "src/cleanup_plan/replay/live_oracle.rs": {
+      "whole_original_archive": "docs/evidence/opt810-live-oracle/compile-repair/src__cleanup_plan__replay__live_oracle.rs.before",
+      "original_sha256": "e570b107872ce869f8db97278855dda2164015d9982526d22172213570d514a4",
+      "original_bytes": 1132,
+      "receiving_sha256": "524c75328de107e63cf7ef469ab6b0da1769f5fece8d76f4227db0da838a2dc6",
+      "receiving_bytes": 1132
+    },
+    "src/cleanup_plan/replay/live_oracle/source_custody/a.rs": {
+      "whole_original_archive": "docs/evidence/opt810-live-oracle/compile-repair/src__cleanup_plan__replay__live_oracle__source_custody__a.rs.before",
+      "original_sha256": "881697dc33b57afc589ab6b51abb0f3a6807c44221e21283a7d6500b85faf695",
+      "original_bytes": 31795,
+      "receiving_sha256": "9ee0d573a144b8d6d515d25c99cdee7d9018990d097ab895a68b2cd5668e4607",
+      "receiving_bytes": 31941
+    },
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": {
+      "whole_original_archive": "docs/evidence/opt810-live-oracle/compile-repair/src__cleanup_plan__replay__live_oracle__source_custody__b.rs.before",
+      "original_sha256": "e39bc5f8153c82a69e9a0e94c86a9a732159859cd66032d40cc263f891aa3178",
+      "original_bytes": 20899,
+      "receiving_sha256": "06ca566f42507aea8c93b453b996deb0436a157673ae1a44bc3b57b8d97d42d0",
+      "receiving_bytes": 20991
+    },
+    "src/cleanup_plan/replay/nested_shape/paid/oracle.rs": {
+      "whole_original_archive": "docs/evidence/opt810-live-oracle/compile-repair/src__cleanup_plan__replay__nested_shape__paid__oracle.rs.before",
+      "original_sha256": "628ddd16cef7d24ca89d09a46a130822a609c806ebda14ffb21cdcc1a47a9466",
+      "original_bytes": 20120,
+      "receiving_sha256": "1bd5d7d79ed4ff71e0b386838e237ebf2fe9b77ac7934b18beeacd5ab1a12ecd",
+      "receiving_bytes": 20170
+    },
+    "src/project/incremental/cold_source_tests.rs": {
+      "whole_original_archive": "docs/evidence/opt810-live-oracle/compile-repair/src__project__incremental__cold_source_tests.rs.before",
+      "original_sha256": "374df83f8481010e2cf40cfa6227f8abfe02b14fd2851ff742197e75c7f2bf60",
+      "original_bytes": 11729,
+      "receiving_sha256": "eeed29868ca4871d23e660d9c800cbbcd1b484415596d4294fa29b29d3ab96f8",
+      "receiving_bytes": 11782
+    }
+  }
+}

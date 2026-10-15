@@ -600,7 +600,7 @@ fn main() -> i64 {
     assert_eq!(
         report
             .iter()
-            .map(|item| (item.code, item.message.as_str()))
+            .map(|item| (item.code, item.message.as_ref()))
             .collect::<Vec<_>>(),
         vec![
             (
@@ -1184,7 +1184,7 @@ fn record_owner_renewal_named_views_refuse_aliases_and_temporary_operands() {
     ] {
         let source = RECORD_BORROW_RENEWAL.replace("let input = bytes_as_slice(source);\n    let input_alias = input;", setup);
         let report = verify_diagnostics(&source);
-        assert_eq!(report.iter().map(|d| (d.code, d.message.as_str())).collect::<Vec<_>>(), vec![
+        assert_eq!(report.iter().map(|d| (d.code, d.message.as_ref())).collect::<Vec<_>>(), vec![
             ("SPX-T265", "move or call transfer would invalidate a lexical byte view"),
             ("SPX-T265", "assignment would replace storage held by a lexical byte view"),
             ("SPX-T265", "move or transfer would invalidate an active shared loan"),
@@ -1210,3 +1210,6 @@ fn record_owner_renewal_named_views_refuse_aliases_and_temporary_operands() {
 
 #[path = "while_loops/ascii_pattern_source.rs"]
 mod ascii_pattern_source;
+
+#[path = "while_loops/lexical_exits.rs"]
+mod lexical_exits;

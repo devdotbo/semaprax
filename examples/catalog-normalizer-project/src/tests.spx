@@ -9,6 +9,8 @@ use function @id("catalog_normalizer.app.normalizes-enriched-to") from catalog_n
 use function @id("catalog_normalizer.batch.record-count") from catalog_normalizer.batch as record_count;
 use function @id("catalog_normalizer.batch.line-start") from catalog_normalizer.batch as line_start;
 use function @id("catalog_normalizer.batch.line-end") from catalog_normalizer.batch as line_end;
+use function @id("catalog_normalizer.batch.record-basic-failure") from catalog_normalizer.batch as record_basic_failure;
+use function @id("catalog_normalizer.batch.pack-failure") from catalog_normalizer.batch as pack_failure;
 use function @id("catalog_normalizer.batch.body-too-long") from catalog_normalizer.batch as body_too_long;
 use function @id("catalog_normalizer.batch.too-many-records") from catalog_normalizer.batch as too_many_records;
 use function @id("catalog_normalizer.batch.line-too-long") from catalog_normalizer.batch as line_too_long;
@@ -177,7 +179,7 @@ fn test_batch_boundaries() -> i64
     let two_lf_view = str_as_bytes(two_lf_text);
     let two_text = string_as_str(two);
     let two_view = str_as_bytes(two_text);
-    if record_count(zero) == 0usize && record_count(one_lf_view) == 0usize && record_count(two_lf_view) == 2usize && line_empty(two_lf_view, 0usize) && record_count(two_view) == 2usize && line_start(two_view, 1usize) == 2usize && line_end(two_view, 2usize) == 3usize && !line_empty(two_view, 1usize) && !line_too_long(two_view, 1usize) && !body_too_long(two_view) && !too_many_records(two_view) { 0 } else { 1 }
+    if record_count(zero) == 0usize && record_count(one_lf_view) == 0usize && record_count(two_lf_view) == 2usize && line_empty(two_lf_view, 0usize) && record_count(two_view) == 2usize && line_start(two_view, 1usize) == 2usize && line_end(two_view, 2usize) == 3usize && line_end(two_view, 18446744073709551615usize) == 18446744073709551615usize && record_basic_failure(zero, 256usize, 0usize, 0usize) == pack_failure(3usize, 257usize, 0usize) && !line_empty(two_view, 1usize) && !line_too_long(two_view, 1usize) && !body_too_long(two_view) && !too_many_records(two_view) { 0 } else { 1 }
 }
 
 @id("catalog_normalizer.tests.test-batch-limits")

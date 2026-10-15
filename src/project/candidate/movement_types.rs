@@ -280,7 +280,7 @@ impl TypeMovePlan {
                 _ => {
                     return Err(invalid(
                         "movement destination has multiple bindings for one nominal type",
-                    ))
+                    ));
                 }
             };
             occupied.insert(name.clone());
@@ -368,7 +368,7 @@ fn signature(
             _ => {
                 return Err(invalid(
                     "movement signature does not admit borrowed or shared parameters",
-                ))
+                ));
             }
         };
         if resolved.ownership != expected_ownership
@@ -418,7 +418,9 @@ fn checked_type(module: &WorkspaceGraphProjectionModule, ty: &ResolvedType) -> R
                 || facts.contains_resource
                 || facts.copy == facts.needs_drop
             {
-                return Err(invalid("movement nominal values require sized resource-free Copy or owning records or variants"));
+                return Err(invalid(
+                    "movement nominal values require sized resource-free Copy or owning records or variants",
+                ));
             }
             Ok(())
         }
@@ -760,6 +762,25 @@ impl<'a> Node<'a> {
                         a == b
                     }
                     (
+                        E::LiteralFormat { template: a, .. },
+                        E::LiteralFormat { template: b, .. },
+                    ) => a == b,
+                    (
+                        E::VecFieldRead {
+                            element: a,
+                            field: af,
+                            bytes: ab,
+                            ..
+                        },
+                        E::VecFieldRead {
+                            element: b,
+                            field: bf,
+                            bytes: bb,
+                            ..
+                        },
+                    ) => a == b && af == bf && ab == bb,
+                    (E::RowLoan { loan: a, .. }, E::RowLoan { loan: b, .. }) => a == b,
+                    (
                         E::Call {
                             callee: a,
                             type_arguments: aa,
@@ -839,7 +860,10 @@ impl<'a> Node<'a> {
                         .get(index)
                         .copied()
                 }
-                S::Unsafe { .. } | S::While { .. } => s.child(index).map(Self::Expression),
+                S::CopyDiscard { .. }
+                | S::Unsafe { .. }
+                | S::While { .. }
+                | S::LexicalWhile { .. } => s.child(index).map(Self::Expression),
             },
             Self::Arm(a) => match index {
                 0 => Some(Self::Pattern(&a.pattern)),
@@ -860,6 +884,10 @@ impl<'a> Node<'a> {
                 F::Wildcard => None,
             },
             Self::Expression(e) => match &e.kind {
+                E::LexicalExit { value, .. } => (index == 0)
+                    .then_some(value.as_deref())
+                    .flatten()
+                    .map(Self::Expression),
                 E::Closure { captures, .. } => captures
                     .get(index)
                     .map(|capture| Self::Expression(&capture.value)),
@@ -868,7 +896,10 @@ impl<'a> Node<'a> {
                     .chain(args.iter())
                     .nth(index)
                     .map(Self::Expression),
-                E::Call { args, .. } => args.get(index).map(Self::Expression),
+                E::Call { args, .. }
+                | E::LiteralFormat { args, .. }
+                | E::VecFieldRead { args, .. }
+                | E::RowLoan { args, .. } => args.get(index).map(Self::Expression),
                 E::NativeRustImportCall(c) => c.args.get(index).map(Self::Expression),
                 E::HostCommandCall(c) => c.args.get(index).map(Self::Expression),
                 E::Unary { value, .. }
@@ -897,7 +928,10 @@ impl<'a> Node<'a> {
                     .get(index)
                     .copied()
                     .map(Self::Expression),
-                E::Block { statements, tail } => {
+                E::Block { statements, tail }
+                | E::VecConstructor {
+                    statements, tail, ..
+                } => {
                     if index < statements.len() {
                         statements.get(index).map(Self::Statement)
                     } else {
@@ -944,6 +978,7 @@ impl<'a> Node<'a> {
                 | E::Float64(_)
                 | E::Bool(_)
                 | E::String(_)
+                | E::BorrowedUtf8Literal(_)
                 | E::ArrayU8(_)
                 | E::RepeatArrayU8 { .. }
                 | E::BorrowPlace { .. }
@@ -991,5 +1026,51 @@ impl<'a> Nodes<'a> {
         }
         self.visits += 1;
         Ok(node)
+    }
+}
+
+#[cfg(test)]
+mod literal_format_movement_tests {
+    use super::*;
+
+    fn scalar(index: usize) -> hir::ResolvedExpr {
+        hir::ResolvedExpr {
+            id: hir::ExpressionId::from_owned(format!("arg.{index}")),
+            ty: ResolvedType::I64,
+            ownership: OwnershipMode::Value,
+            kind: hir::ResolvedExprKind::Int(index as i64),
+            span: Span {
+                start: index,
+                end: index + 1,
+                line: 1,
+                column: index + 1,
+            },
+        }
+    }
+
+    fn formatted(template: &str) -> hir::ResolvedExpr {
+        hir::ResolvedExpr {
+            id: hir::ExpressionId::from_owned("format".to_owned()),
+            ty: ResolvedType::String,
+            ownership: OwnershipMode::Own,
+            kind: hir::ResolvedExprKind::LiteralFormat {
+                template: template.to_owned(),
+                args: vec![scalar(0), scalar(1)],
+            },
+            span: Span::default(),
+        }
+    }
+
+    #[test]
+    fn template_is_semantic_identity_and_children_are_dynamic_arguments_only() {
+        let before = formatted("{}:{}");
+        let same = formatted("{}:{}");
+        let changed = formatted("{}-{}");
+        assert!(Node::Expression(&before).same_identity(Node::Expression(&same)));
+        assert!(!Node::Expression(&before).same_identity(Node::Expression(&changed)));
+        let node = Node::Expression(&before);
+        assert!(matches!(node.child(0), Some(Node::Expression(arg)) if arg.span.start == 0));
+        assert!(matches!(node.child(1), Some(Node::Expression(arg)) if arg.span.start == 1));
+        assert!(node.child(2).is_none());
     }
 }

@@ -1,0 +1,86 @@
+{
+  "root_contract_commit": "a184d4406f241aa11df5c297102609b4c35ec1b3",
+  "private_updater": "/Volumes/Semaprax/worktrees/sol-prelude-forecast-286-resume/scripts/update-prelude-forecast-pins.py",
+  "private_updater_sha256": "362391782ab604c8f57785c39216ec4655599870f01972732396151a77d84369",
+  "source_sharing_authorized": true,
+  "tools": false,
+  "files": [
+    {
+      "source": "/Volumes/Semaprax/worktrees/sol-prelude-forecast-286-resume/scripts/update-prelude-forecast-pins.py",
+      "whole_file_sha256": "362391782ab604c8f57785c39216ec4655599870f01972732396151a77d84369",
+      "bytes": 7793
+    },
+    {
+      "source": "scripts/capture-prelude-forecast-pins.sh",
+      "first_line": 1,
+      "last_line": 74,
+      "selected_bytes": 4101,
+      "selected_sha256": "3f1d90d759632fe95864d272e4aae1e15028d3797daf0feab28243bf5522d871"
+    },
+    {
+      "source": "src/workspace_graph.rs",
+      "first_line": 94,
+      "last_line": 102,
+      "selected_bytes": 656,
+      "selected_sha256": "9d477035b552216e120a79c1c23dba3564dcaa4e3ac1393ce47643303090baba"
+    },
+    {
+      "source": "src/workspace_graph.rs",
+      "first_line": 3333,
+      "last_line": 3394,
+      "selected_bytes": 2141,
+      "selected_sha256": "4a9a3cc8a426a04eeb02577324bac0d9da7802907eb99e02c7d77630c63b08a1"
+    },
+    {
+      "source": "src/workspace_graph.rs",
+      "first_line": 3567,
+      "last_line": 3580,
+      "selected_bytes": 597,
+      "selected_sha256": "b970ae3eaa2dda1bdfbc1a78ef1e3f9baaa0515844c77843af62bbd9436a9001"
+    },
+    {
+      "source": "src/workspace_graph.rs",
+      "first_line": 3793,
+      "last_line": 3804,
+      "selected_bytes": 380,
+      "selected_sha256": "7206df6e2395532905139e3ab6443b5564534fb0fb2524e0e62a06b59a4ba76d"
+    },
+    {
+      "source": "tests/workspace/semantic_graph.rs",
+      "first_line": 168,
+      "last_line": 188,
+      "selected_bytes": 630,
+      "selected_sha256": "907a20b1c8857a3ad2a0fbe35cf3f96612035ed2b0e8fbdb04b4a3abf97e98d1"
+    },
+    {
+      "source": "tests/workspace/semantic_graph.rs",
+      "first_line": 570,
+      "last_line": 611,
+      "selected_bytes": 1604,
+      "selected_sha256": "d63c388304f93d6fb689149f6587f15ce24b8c3cf8d9cfc0893a719e7e158281"
+    },
+    {
+      "source": "tests/workspace/semantic_graph.rs",
+      "first_line": 999,
+      "last_line": 1053,
+      "selected_bytes": 2300,
+      "selected_sha256": "661d67baddff4d9a53ebf5aa52a8f98837215d46871b0aafd89d765403b99b90"
+    },
+    {
+      "source": "src/workspace_graph/type_proof_tests.rs",
+      "first_line": 817,
+      "last_line": 840,
+      "selected_bytes": 993,
+      "selected_sha256": "abcd404f078d46878f6c9ce661c354b973c9dc5945e8c5ffe7da1339c7367e17"
+    },
+    {
+      "source": "src/workspace_graph/type_proof_tests.rs",
+      "first_line": 938,
+      "last_line": 948,
+      "selected_bytes": 538,
+      "selected_sha256": "e692e1bf9be2ed4784e58080400838e373b081bb8614fb84353830c0ffd73790"
+    }
+  ],
+  "payload_bytes": 24055,
+  "payload_sha256": "699cdbbc238c6fcbeccdf1b9382dc7767ae0d5090124a1bbb1bfb119eff24c0b"
+}

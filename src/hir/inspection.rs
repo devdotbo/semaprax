@@ -1,24 +1,80 @@
 //! Validation and read-only inspection over resolved HIR.
 
 use super::*;
+mod audit_pending;
+pub(super) mod calls;
+use audit_pending::Pending;
+mod paid_nul;
 
-/// Validate an identity-resolved program before a semantic consumer uses it.
-///
-/// Resolved HIR is intentionally public for agent and compiler integrations,
-/// so callers can inspect or transform HIR produced by [`resolve`]. Every
-/// backend calls this function and therefore fails closed when a transformation
-/// breaks identities, lexical scope, or current type rules. A versioned wire
-/// schema for constructing HIR outside the compiler is future work.
-pub fn validate(program: &ResolvedProgram) -> Result<(), Diagnostic> {
-    validate_core(program)?;
-    super::function_value::validate_program(program)?;
-    validate_attached_identity_references(program)?;
-    crate::cleanup::validate_program(program)?;
-    crate::cleanup_plan::validate_program(program)?;
-    Ok(())
+#[cfg(test)]
+pub(super) fn validate_with_static_text(
+    program: &ResolvedProgram,
+    fused: Option<super::selected_fused_candidate::Selected<'_>>,
+) -> Result<bool, Diagnostic> {
+    validate_with_loan_comparison(program, fused).map(|(selected, _)| selected)
+}
+
+pub(super) fn validate_with_loan_comparison<'a>(
+    program: &'a ResolvedProgram,
+    fused: Option<super::selected_fused_candidate::Selected<'a>>,
+) -> Result<(bool, super::canonical_loan_storage::Deferred<'a>), Diagnostic> {
+    let directory = super::function_directory::caller::prepare(program)
+        .map_err(|_| Diagnostic::io("SPX-H006", String::new()))?;
+    let (selected, deferred) = super::canonical_loan_storage::caller::validate_with_comparison(
+        program,
+        fused,
+        Some(&directory),
+    )?;
+    {
+        #[cfg(test)]
+        let _operation = crate::bounded_output::stage_debits::operation_guard(
+            crate::bounded_output::stage_debits::Operation::FunctionValues,
+        );
+        super::function_value::validate_program(program)?;
+    }
+    {
+        #[cfg(test)]
+        let _operation = crate::bounded_output::stage_debits::operation_guard(
+            crate::bounded_output::stage_debits::Operation::AttachedIdentities,
+        );
+        validate_attached_identity_references(program)?;
+    }
+    {
+        #[cfg(test)]
+        let _operation = crate::bounded_output::stage_debits::operation_guard(
+            crate::bounded_output::stage_debits::Operation::CleanupInventory,
+        );
+        crate::cleanup::validate_program(program)?;
+    }
+    {
+        #[cfg(test)]
+        let _operation = crate::bounded_output::stage_debits::operation_guard(
+            crate::bounded_output::stage_debits::Operation::CleanupReplay,
+        );
+        crate::cleanup_plan::validate_program(program)?;
+    }
+    Ok((selected, deferred))
+}
+
+/// The same independent core verdict, with caller-owned function storage.
+/// Other validator scratch/semantic diagnostics remain separate open payers.
+pub(crate) fn validate_core_with_storage(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    let directory = super::function_directory::caller::prepare(program)
+        .map_err(|_| Diagnostic::io("SPX-H006", String::new()))?;
+    super::canonical_loan_storage::caller::validate(program, None, Some(&directory)).map(|_| ())
 }
 
 pub(super) fn validate_nul_free_identities(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    if crate::bounded_output::active_remaining().is_some() {
+        paid_nul::validate_nul_free_identities(program)
+    } else {
+        validate_nul_free_identities_original(program)
+    }
+}
+
+pub(super) fn validate_nul_free_identities_original(
+    program: &ResolvedProgram,
+) -> Result<(), Diagnostic> {
     reject_nul_identity("resolved entry point", program.entrypoint.as_str())?;
 
     for (key, declaration) in &program.declarations.declarations {
@@ -147,6 +203,16 @@ pub(super) fn validate_nul_free_identities(program: &ResolvedProgram) -> Result<
 pub(crate) fn validate_attached_identity_references(
     program: &ResolvedProgram,
 ) -> Result<(), Diagnostic> {
+    if crate::bounded_output::active_remaining().is_some() {
+        paid_nul::validate_attached_identity_references(program)
+    } else {
+        validate_attached_identity_references_original(program)
+    }
+}
+
+pub(crate) fn validate_attached_identity_references_original(
+    program: &ResolvedProgram,
+) -> Result<(), Diagnostic> {
     for function in &program.functions {
         audit_cleanup_inventory(&function.cleanup)?;
         audit_cleanup_plan(&function.cleanup_plan)?;
@@ -155,7 +221,41 @@ pub(crate) fn validate_attached_identity_references(
 }
 
 fn audit_resolved_type(root: &ResolvedType) -> Result<(), Diagnostic> {
-    let mut pending = vec![root];
+    // These exact leaves contain neither declaration identities nor child
+    // types. The original walk allocated one worklist only to pop the root.
+    match root {
+        ResolvedType::OnceFunction
+        | ResolvedType::OnceFunctionI64
+        | ResolvedType::OnceFunctionI64Pair
+        | ResolvedType::MutFunctionI64
+        | ResolvedType::Never
+        | ResolvedType::Unit
+        | ResolvedType::I64
+        | ResolvedType::I32
+        | ResolvedType::Char
+        | ResolvedType::U8
+        | ResolvedType::Usize
+        | ResolvedType::ArrayU8(_)
+        | ResolvedType::F32
+        | ResolvedType::F64
+        | ResolvedType::Bool
+        | ResolvedType::String
+        | ResolvedType::Bytes
+        | ResolvedType::Str
+        | ResolvedType::SliceU8
+        | ResolvedType::StringMap => return Ok(()),
+        ResolvedType::Nominal {
+            declaration,
+            arguments,
+        } if arguments.is_empty() => {
+            return reject_nul_identity("resolved nominal type", declaration.as_str());
+        }
+        ResolvedType::TypeParameter { owner, .. } => {
+            return reject_nul_identity("resolved type-parameter owner", owner.as_str());
+        }
+        ResolvedType::Function { .. } | ResolvedType::Nominal { .. } => {}
+    }
+    let mut pending = Pending::new(root);
     while let Some(ty) = pending.pop() {
         match ty {
             ResolvedType::Function { parameters, result } => {
@@ -166,6 +266,7 @@ fn audit_resolved_type(root: &ResolvedType) -> Result<(), Diagnostic> {
             | ResolvedType::OnceFunctionI64
             | ResolvedType::OnceFunctionI64Pair
             | ResolvedType::MutFunctionI64
+            | ResolvedType::Never
             | ResolvedType::Unit
             | ResolvedType::I64
             | ResolvedType::I32
@@ -222,7 +323,7 @@ fn audit_resolved_record_match_pattern(
 }
 
 fn audit_resolved_expression(root: &ResolvedExpr) -> Result<(), Diagnostic> {
-    let mut pending = vec![root];
+    let mut pending = Pending::new(root);
     while let Some(expression) = pending.pop() {
         reject_nul_identity("resolved expression", expression.id.as_str())?;
         audit_resolved_type(&expression.ty)?;
@@ -260,7 +361,8 @@ fn audit_resolved_expression(root: &ResolvedExpr) -> Result<(), Diagnostic> {
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) => {}
+            | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
             ResolvedExprKind::Place(place) => audit_hir_place(place)?,
             ResolvedExprKind::BorrowPlace { operation, place } => {
                 reject_nul_identity("resolved byte-view operation", operation.as_str())?;
@@ -279,6 +381,25 @@ fn audit_resolved_expression(root: &ResolvedExpr) -> Result<(), Diagnostic> {
             }
             ResolvedExprKind::Call { callee, args, .. } => {
                 reject_nul_identity("resolved call target", callee.as_str())?;
+                pending.extend(args);
+            }
+            ResolvedExprKind::LiteralFormat { args, .. } => pending.extend(args),
+            ResolvedExprKind::VecFieldRead {
+                element,
+                field,
+                args,
+                ..
+            } => {
+                audit_resolved_type(element)?;
+                reject_nul_identity("scoped vector field", field.as_str())?;
+                pending.extend(args);
+            }
+            ResolvedExprKind::RowLoan { loan, args } => {
+                audit_resolved_type(&loan.element)?;
+                reject_nul_identity("row loan traversal", loan.traversal.as_str())?;
+                reject_nul_identity("row loan bound", loan.bound.as_str())?;
+                reject_nul_identity("row loan callee", loan.callee.as_str())?;
+                reject_nul_identity("row loan parameter", loan.parameter.as_str())?;
                 pending.extend(args);
             }
             ResolvedExprKind::Upcast { source } | ResolvedExprKind::Yield { request: source } => {
@@ -301,12 +422,16 @@ fn audit_resolved_expression(root: &ResolvedExpr) -> Result<(), Diagnostic> {
                 }
                 pending.extend(&call.args);
             }
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Unary { value, .. } => pending.push(value),
             ResolvedExprKind::Binary { left, right, .. } => {
                 pending.push(right);
                 pending.push(left);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(tail);
                 for statement in statements.iter().rev() {
                     if let ResolvedStatement::Let { binding, .. }
@@ -462,7 +587,16 @@ fn audit_hir_place(place: &Place) -> Result<(), Diagnostic> {
 }
 
 fn audit_field_liveness_shape(root: &crate::cleanup::FieldLivenessShape) -> Result<(), Diagnostic> {
-    let mut pending = vec![root];
+    // These terminal shapes have precisely the same verdict as popping only
+    // the root in the full walker. No inventory normalization is implied.
+    match root {
+        crate::cleanup::FieldLivenessShape::NoDrop => return Ok(()),
+        crate::cleanup::FieldLivenessShape::Leaf { lifecycle, .. } => {
+            return reject_nul_identity("cleanup lifecycle", lifecycle.as_str());
+        }
+        _ => {}
+    }
+    let mut pending = Pending::new(root);
     while let Some(shape) = pending.pop() {
         match shape {
             crate::cleanup::FieldLivenessShape::NoDrop => {}
@@ -779,6 +913,14 @@ fn audit_cleanup_plan(plan: &CleanupPlan) -> Result<(), Diagnostic> {
             )?;
         }
         match &exit.continuation {
+            crate::cleanup_plan::ExitContinuation::LoopLatch { target }
+            | crate::cleanup_plan::ExitContinuation::LoopBreak { target, .. } => {
+                audit_control_target(target)?;
+            }
+            crate::cleanup_plan::ExitContinuation::FunctionReturn { target, source, .. } => {
+                audit_control_target(target)?;
+                audit_result_source(source)?;
+            }
             crate::cleanup_plan::ExitContinuation::Continue(_)
             | crate::cleanup_plan::ExitContinuation::ReturnUnit => {}
             crate::cleanup_plan::ExitContinuation::CommitResult { source } => {
@@ -820,10 +962,22 @@ pub(super) fn path_is_prefix<T: PartialEq>(prefix: &[T], path: &[T]) -> bool {
     prefix.len() <= path.len() && prefix.iter().zip(path).all(|(left, right)| left == right)
 }
 
+#[cfg(test)]
 pub(super) fn resolved_lifecycle_effects(
     program: &ResolvedProgram,
     ty: &ResolvedType,
 ) -> Result<BTreeSet<String>, Diagnostic> {
+    let mut effects = BTreeSet::new();
+    extend_resolved_lifecycle_effects(program, ty, &mut effects)?;
+    Ok(effects)
+}
+
+#[cfg(test)]
+pub(super) fn extend_resolved_lifecycle_effects(
+    program: &ResolvedProgram,
+    ty: &ResolvedType,
+    effects: &mut BTreeSet<String>,
+) -> Result<(), Diagnostic> {
     fn collect(
         program: &ResolvedProgram,
         ty: &ResolvedType,
@@ -875,129 +1029,20 @@ pub(super) fn resolved_lifecycle_effects(
         Ok(())
     }
 
-    let mut effects = BTreeSet::new();
-    collect(program, ty, &mut BTreeSet::new(), &mut effects)?;
-    Ok(effects)
+    collect(program, ty, &mut BTreeSet::new(), effects)
 }
 
-pub(crate) fn visit_resolved_calls(
-    expression: &ResolvedExpr,
-    visit: &mut impl FnMut(&DeclarationId, Option<&FunctionInstanceId>, &[ResolvedType]),
+pub(crate) fn visit_resolved_calls<'e>(
+    expression: &'e ResolvedExpr,
+    visit: &mut impl FnMut(&'e DeclarationId, Option<&'e FunctionInstanceId>, &'e [ResolvedType]),
 ) {
-    match &expression.kind {
-        ResolvedExprKind::ByteRange {
-            source, start, end, ..
-        } => {
-            visit_resolved_calls(source, visit);
-            visit_resolved_calls(start, visit);
-            visit_resolved_calls(end, visit);
-        }
-        ResolvedExprKind::Closure { body, captures, .. } => {
-            visit_resolved_calls(body, visit);
-            for capture in captures {
-                visit_resolved_calls(&capture.value, visit);
-            }
-        }
-        ResolvedExprKind::FunctionReference { target } => visit(target, None, &[]),
-        ResolvedExprKind::Invoke { callable, args } => {
-            visit_resolved_calls(callable, visit);
-            for arg in args {
-                visit_resolved_calls(arg, visit);
-            }
-        }
-        ResolvedExprKind::Call {
-            callee,
-            instance,
-            type_arguments,
-            args,
-        } => {
-            visit(callee, instance.as_ref(), type_arguments);
-            for arg in args {
-                visit_resolved_calls(arg, visit);
-            }
-        }
-        ResolvedExprKind::NativeRustImportCall(call) => {
-            for arg in &call.args {
-                visit_resolved_calls(arg, visit);
-            }
-        }
-        ResolvedExprKind::HostCommandCall(call) => {
-            for arg in &call.args {
-                visit_resolved_calls(arg, visit);
-            }
-        }
-        ResolvedExprKind::Unary { value, .. }
-        | ResolvedExprKind::Try { operand: value, .. }
-        | ResolvedExprKind::TryOption { operand: value, .. }
-        | ResolvedExprKind::Project { base: value, .. }
-        | ResolvedExprKind::Upcast { source: value }
-        | ResolvedExprKind::Yield { request: value } => visit_resolved_calls(value, visit),
-        ResolvedExprKind::Binary { left, right, .. } => {
-            visit_resolved_calls(left, visit);
-            visit_resolved_calls(right, visit);
-        }
-        ResolvedExprKind::Block { statements, tail } => {
-            for statement in statements {
-                for index in 0..statement.child_count() {
-                    if let Some(child) = statement.child(index) {
-                        visit_resolved_calls(child, visit);
-                    }
-                }
-            }
-            visit_resolved_calls(tail, visit);
-        }
-        ResolvedExprKind::If {
-            condition,
-            then_branch,
-            else_branch,
-        } => {
-            visit_resolved_calls(condition, visit);
-            visit_resolved_calls(then_branch, visit);
-            visit_resolved_calls(else_branch, visit);
-        }
-        ResolvedExprKind::ConstructRecord { fields, .. } => {
-            for field in fields {
-                visit_resolved_calls(&field.value, visit);
-            }
-        }
-        ResolvedExprKind::ConstructVariant { fields, .. } => {
-            for field in fields {
-                visit_resolved_calls(&field.value, visit);
-            }
-        }
-        ResolvedExprKind::Match {
-            scrutinee, arms, ..
-        } => {
-            visit_resolved_calls(scrutinee, visit);
-            for arm in arms {
-                // A guard is authored before the arm value and, under left to
-                // right evaluation, runs before it. Skipping it would hide a
-                // callee reached only from a guard.
-                if let Some(guard) = &arm.guard {
-                    visit_resolved_calls(guard, visit);
-                }
-                visit_resolved_calls(&arm.value, visit);
-            }
-        }
-        ResolvedExprKind::UpdateRecord { base, fields, .. } => {
-            visit_resolved_calls(base, visit);
-            for field in fields {
-                visit_resolved_calls(&field.value, visit);
-            }
-        }
-        ResolvedExprKind::Int(_)
-        | ResolvedExprKind::Int32(_)
-        | ResolvedExprKind::Char(_)
-        | ResolvedExprKind::Uint8(_)
-        | ResolvedExprKind::Usize(_)
-        | ResolvedExprKind::ArrayU8(_)
-        | ResolvedExprKind::RepeatArrayU8 { .. }
-        | ResolvedExprKind::Float32(_)
-        | ResolvedExprKind::Float64(_)
-        | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
-        | ResolvedExprKind::Place(_)
-        | ResolvedExprKind::BorrowPlace { .. } => {}
+    let result = calls::try_visit_resolved_calls(expression, &mut |callee, instance, arguments| {
+        visit(callee, instance, arguments);
+        Ok::<(), std::convert::Infallible>(())
+    });
+    match result {
+        Ok(()) => {}
+        Err(never) => match never {},
     }
 }
 
@@ -1025,6 +1070,22 @@ pub(crate) fn workspace_expression_identity(owner: &DeclarationId, path: &str) -
     ExpressionId::new(&FunctionExecutionId::Monomorphic(owner.clone()), path)
         .as_str()
         .to_owned()
+}
+
+/// Same monomorphic workspace identity without uncharged temporary owner/Arc
+/// reconstruction. Each append is reserved before its backing grows.
+pub(crate) fn budgeted_workspace_expression_identity(owner: &DeclarationId, path: &str) -> String {
+    budgeted_workspace_expression_identity_text(owner.as_str(), path)
+}
+
+pub(crate) fn budgeted_workspace_expression_identity_text(owner: &str, path: &str) -> String {
+    crate::bounded_output::budgeted_format(format_args!(
+        "declaration:{}:{}:expression:{}:{}",
+        owner.len(),
+        owner,
+        path.len(),
+        path
+    ))
 }
 
 /// Visit every call site in authored order without copying retained identities.
@@ -1068,6 +1129,13 @@ pub(crate) fn visit_workspace_call_sites<'a, E>(
                     walk(owner, argument, visit)?;
                 }
             }
+            ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
+                for argument in args {
+                    walk(owner, argument, visit)?;
+                }
+            }
             ResolvedExprKind::NativeRustImportCall(call) => {
                 for argument in &call.args {
                     walk(owner, argument, visit)?;
@@ -1076,6 +1144,11 @@ pub(crate) fn visit_workspace_call_sites<'a, E>(
             ResolvedExprKind::HostCommandCall(call) => {
                 for argument in &call.args {
                     walk(owner, argument, visit)?;
+                }
+            }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    walk(owner, value, visit)?;
                 }
             }
             ResolvedExprKind::Unary { value, .. }
@@ -1088,7 +1161,10 @@ pub(crate) fn visit_workspace_call_sites<'a, E>(
                 walk(owner, left, visit)?;
                 walk(owner, right, visit)?;
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -1144,6 +1220,7 @@ pub(crate) fn visit_workspace_call_sites<'a, E>(
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
         }
@@ -1190,3 +1267,15 @@ pub(crate) fn workspace_call_sites(
 
 #[cfg(test)]
 mod tests;
+
+fn audit_control_target(target: &super::ControlTarget) -> Result<(), Diagnostic> {
+    match target {
+        super::ControlTarget::Function(owner) => {
+            reject_nul_identity("lexical target execution", &owner.identity_key())
+        }
+        super::ControlTarget::Loop { owner, site } => {
+            reject_nul_identity("lexical target execution", &owner.identity_key())?;
+            reject_nul_identity("lexical target loop", site.as_str())
+        }
+    }
+}

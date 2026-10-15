@@ -1,0 +1,8 @@
+{
+  "status": "uncommitted_source_only",
+  "files": {
+    "src/cleanup_plan/replay/factored/canonical_shared/memo.rs": "bb95b8bff8959042a9dd6df5d0eba692934573dfe43030f0a75710aa7dadf005",
+    "src/cleanup_plan/replay/factored/canonical_shared.rs": "f7ddbd4899f6728fe8b23d80580c383a42e8fabae0d2971e2e4a79838b3c56d2"
+  },
+  "bytes": 8404
+}

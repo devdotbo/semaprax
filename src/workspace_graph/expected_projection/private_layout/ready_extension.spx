@@ -1,0 +1,36 @@
+
+@id("decoded")
+variant Decoded {
+    @id("decoded.ready")
+    Ready { @id("decoded.ready.value") value: Report, },
+    @id("decoded.error")
+    Error {
+        @id("decoded.error.code") code: i64,
+        @id("decoded.error.offset") offset: usize,
+        @id("decoded.error.field") field: i64,
+    },
+}
+
+@id("decode")
+fn decode(input: borrow Slice<u8>) -> Decoded
+{
+    if byte_len(input) == 0usize {
+        Decoded::Error { code: 7, offset: 0usize, field: 0 }
+    } else {
+        Decoded::Ready { value: make() }
+    }
+}
+
+@id("encode")
+fn encode(value: borrow Report) -> string
+{
+    let row_view = vec_field<Row>(value.rows, 0usize, "text");
+    let row_text = string_from_utf8(str_as_bytes(row_view));
+    let prefix = string_concat(string_from_utf8(str_as_bytes(string_as_str(value.config.text))), "|");
+    let joined = string_concat(prefix, row_text);
+    if value.config.n == 21 && vec_field<Row>(value.rows, 0usize, "n") == 21 {
+        string_concat(joined, "|21")
+    } else {
+        string_concat(joined, "|invalid")
+    }
+}

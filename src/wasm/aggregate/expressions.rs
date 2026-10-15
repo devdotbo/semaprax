@@ -12,6 +12,7 @@ impl Emitter<'_> {
         scrutinee: &ResolvedType,
     ) -> bool {
         generic_record::match_result_is_admitted(self.program, self.function, expression)
+            || hir::collection_outcome::match_join(&self.program.declarations, expression)
             || hir::generic_variant::match_result(
                 self.program,
                 self.function,
@@ -36,7 +37,15 @@ impl Emitter<'_> {
 
     pub(super) fn emit_expr_inner(&mut self, expr: &ResolvedExpr) -> Result<Value, Diagnostic> {
         match &expr.kind {
-            ResolvedExprKind::Block { statements, tail } => self.emit_block(expr, statements, tail),
+            ResolvedExprKind::LexicalExit {
+                kind,
+                target,
+                value,
+            } => self.emit_lexical_exit(expr, *kind, target, value.as_deref()),
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => self.emit_block(expr, statements, tail),
             ResolvedExprKind::Unary { op, value } => self.emit_unary(expr, *op, value),
             ResolvedExprKind::Binary { op, left, right } => {
                 self.emit_binary(expr, *op, left, right)
@@ -52,6 +61,16 @@ impl Emitter<'_> {
                 type_arguments,
                 args,
             } => self.emit_call(expr, callee, instance.as_ref(), type_arguments, args),
+            ResolvedExprKind::VecFieldRead {
+                origin: _,
+                element,
+                field,
+                bytes,
+                args,
+            } => self.emit_vec_field_read(expr, element, field, *bytes, args),
+            ResolvedExprKind::LiteralFormat { template, args } => {
+                self.emit_literal_format(expr, template, args)
+            }
             ResolvedExprKind::Match {
                 mode: crate::hir::ResolvedMatchMode::Value,
                 scrutinee,
@@ -77,16 +96,31 @@ impl Emitter<'_> {
     ) -> Result<Value, Diagnostic> {
         let saved = self.bindings.clone();
         for statement in statements {
-            self.emit_block_statement(statement)?;
+            if !self.emit_block_statement(statement)? {
+                self.bindings = saved;
+                return Ok(Value::Bottom);
+            }
         }
         let tail = self.emit_expr(tail)?;
+        if matches!(tail, Value::Bottom) {
+            self.bindings = saved;
+            return Ok(Value::Bottom);
+        }
         let result = self.materialize(expr, &tail)?;
+        if self.cleanup_plan.lexical_control.is_some() {
+            self.apply_post_transitions_storage(
+                &expr.id,
+                &result,
+                &crate::cleanup_plan::StorageId::Temporary(expr.id.clone()),
+                true,
+            )?;
+        }
         self.emit_block_scope_cleanup(expr)?;
         self.bindings = saved;
         Ok(result)
     }
 
-    fn emit_block_statement(&mut self, statement: &ResolvedStatement) -> Result<(), Diagnostic> {
+    fn emit_block_statement(&mut self, statement: &ResolvedStatement) -> Result<bool, Diagnostic> {
         if self.owned_utf8_literals.is_some()
             && matches!(statement, ResolvedStatement::Unsafe { body, .. } if body.ty == ResolvedType::String)
         {
@@ -112,6 +146,9 @@ impl Emitter<'_> {
         } = statement
         {
             let value = self.emit_expr(statement.value())?;
+            if matches!(value, Value::Bottom) {
+                return Ok(false);
+            }
             let offset = self
                 .plan
                 .aggregate_bindings
@@ -136,7 +173,7 @@ impl Emitter<'_> {
                 self.program,
             )?;
             self.copy_value(&destination, &value, "field assignment")?;
-            return Ok(());
+            return Ok(true);
         }
         // Lets declare and store; assignments re-store into the same slot.
         // Unsafe boundaries emit their body transparently and bind nothing.
@@ -145,15 +182,29 @@ impl Emitter<'_> {
         else {
             if let ResolvedStatement::While {
                 condition, body, ..
+            }
+            | ResolvedStatement::LexicalWhile {
+                condition, body, ..
             } = statement
             {
-                self.emit_while(condition, body)?;
+                self.emit_while(
+                    condition,
+                    body,
+                    matches!(statement, ResolvedStatement::LexicalWhile { .. }),
+                )?;
             } else {
-                self.emit_expr(statement.value())?;
+                return Ok(!matches!(self.emit_expr(statement.value())?, Value::Bottom));
             }
-            return Ok(());
+            return Ok(true);
         };
         let value = self.emit_expr(statement.value())?;
+        if matches!(value, Value::Bottom) {
+            // The emitted certified exit has no normal continuation.
+            return Ok(false);
+        }
+        if binding.ty == ResolvedType::Never {
+            return Err(error("bottom binding initializer produced a normal value"));
+        }
         let destination = if is_aggregate(self.program, &binding.ty)? {
             let offset = self
                 .plan
@@ -182,15 +233,21 @@ impl Emitter<'_> {
         };
         self.copy_value(&destination, &value, "local binding")?;
         self.bindings.insert(binding.id.clone(), destination);
-        Ok(())
+        Ok(true)
     }
 }
 
 /// Whether an aggregate expression may select the existing try status lane.
 pub(super) fn expression_has_try(expression: &ResolvedExpr) -> bool {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_try)
+        }
         ResolvedExprKind::Try { .. } | ResolvedExprKind::TryOption { .. } => true,
-        ResolvedExprKind::Call { args, .. } => args.iter().any(expression_has_try),
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_try),
         ResolvedExprKind::Invoke { callable, args } => {
             expression_has_try(callable) || args.iter().any(expression_has_try)
         }
@@ -206,7 +263,10 @@ pub(super) fn expression_has_try(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Binary { left, right, .. } => {
             expression_has_try(left) || expression_has_try(right)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     expression_has_try(
@@ -247,6 +307,7 @@ pub(super) fn expression_has_try(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. }
         | ResolvedExprKind::FunctionReference { .. } => false,
@@ -288,6 +349,7 @@ impl Emitter<'_> {
         &mut self,
         condition: &ResolvedExpr,
         body: &ResolvedExpr,
+        lexical: bool,
     ) -> Result<(), Diagnostic> {
         if self.owned_utf8_literals.is_some() && body.ty == ResolvedType::String {
             return Err(error(
@@ -297,14 +359,34 @@ impl Emitter<'_> {
         self.output.extend([0x02, 0x40]); // block (empty) $exit
         self.output.extend([0x03, 0x40]); // loop (empty) $top
         self.control_depth += 2;
+        if lexical {
+            self.bind_lexical_loop(condition)?;
+        }
         let condition_value = self.emit_expr(condition)?;
         self.require_scalar(&condition_value, &ResolvedType::Bool, "while condition")?;
         self.emit_scalar_match_guard_cleanup(condition, condition)?;
         self.get_scalar(&condition_value);
         self.output.push(0x45); // i32.eqz
         self.output.extend([0x0d, 0x01]); // br_if 1 -> $exit on false
-        self.semantic_charge()?; // stage semantic work v1: metered builds only
-        let _body_value = self.emit_expr(body)?;
+        self.semantic_charge_at(
+            crate::cleanup_plan::ExecutionBoundaryKind::LoopIteration,
+            &condition.id,
+        )?; // stage semantic work v1: metered builds only
+        let previous = self.iterator_true_match.take();
+        self.iterator_true_match = self
+            .lexical_loops
+            .last()
+            .filter(|_| lexical)
+            .and_then(|label| {
+                crate::hir::iterator_loop::true_body_match(condition, body, label.latch())
+            })
+            .map(|value| value.id.clone());
+        let body_result = self.emit_expr(body);
+        self.iterator_true_match = previous;
+        let _body_value = body_result?;
+        if lexical {
+            self.lexical_loops.pop();
+        }
         self.control_depth -= 2;
         self.output.extend([0x0c, 0x00]); // br 0 -> $top
         self.output.push(0x0b); // end loop
@@ -321,7 +403,11 @@ pub(super) fn block_direct_anchors(
     expression: &ResolvedExpr,
 ) -> std::collections::BTreeSet<crate::cleanup_plan::StorageId> {
     use crate::cleanup_plan::StorageId;
-    let ResolvedExprKind::Block { statements, tail } = &expression.kind else {
+    let (ResolvedExprKind::Block { statements, tail }
+    | ResolvedExprKind::VecConstructor {
+        statements, tail, ..
+    }) = &expression.kind
+    else {
         return std::collections::BTreeSet::new();
     };
     let mut anchors = std::collections::BTreeSet::new();
@@ -337,8 +423,9 @@ pub(super) fn block_direct_anchors(
                 anchors.insert(storage);
             }
         }
-        if let ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } =
-            statement
+        if let ResolvedStatement::Let { value, .. }
+        | ResolvedStatement::Assign { value, .. }
+        | ResolvedStatement::CopyDiscard { value, .. } = statement
         {
             let storage = StorageId::Temporary(value.id.clone());
             if slots.contains_key(&storage) {
@@ -356,7 +443,11 @@ pub(super) fn block_scope_anchors(
     expression: &ResolvedExpr,
 ) -> std::collections::BTreeSet<crate::cleanup_plan::StorageId> {
     use crate::cleanup_plan::StorageId;
-    let ResolvedExprKind::Block { statements, tail } = &expression.kind else {
+    let (ResolvedExprKind::Block { statements, tail }
+    | ResolvedExprKind::VecConstructor {
+        statements, tail, ..
+    }) = &expression.kind
+    else {
         return std::collections::BTreeSet::new();
     };
     let mut anchors = std::collections::BTreeSet::new();
@@ -369,11 +460,11 @@ pub(super) fn block_scope_anchors(
             }
         }
         match statement {
-            ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => {
-                pending.push(value)
-            }
+            ResolvedStatement::Let { value, .. }
+            | ResolvedStatement::Assign { value, .. }
+            | ResolvedStatement::CopyDiscard { value, .. } => pending.push(value),
             ResolvedStatement::Unsafe { body, .. } => pending.push(body),
-            ResolvedStatement::While { .. } => {}
+            ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => {}
         }
     }
     while let Some(expression) = pending.pop() {
@@ -382,7 +473,9 @@ pub(super) fn block_scope_anchors(
             anchors.insert(storage);
         }
         match &expression.kind {
-            ResolvedExprKind::Block { .. } | ResolvedExprKind::Closure { .. } => {}
+            ResolvedExprKind::Block { .. }
+            | ResolvedExprKind::VecConstructor { .. }
+            | ResolvedExprKind::Closure { .. } => {}
             ResolvedExprKind::Match { scrutinee, .. } => pending.push(scrutinee),
             _ => pending.extend(crate::interpreter::trace_child_expressions(expression)),
         }

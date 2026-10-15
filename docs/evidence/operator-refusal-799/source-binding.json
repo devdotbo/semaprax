@@ -1,0 +1,49 @@
+{
+  "base": "f1f48d5a74e80037b805deff0db5cb69f45697c7",
+  "original_sources": {
+    "src/source_verify.rs": "910729a79aa1d5d6e37e0dd8cbf8ec0656fdc6ce6a109390fe874e774e6d5aea",
+    "src/source_verify/iterative/operators.rs": "ec4715b548d41361e7798adfa3c5fd64cb8a105fe4a963422852cc1547a86174",
+    "src/source_verify/iterative/blocks.rs": "4957376058ccc29bd74df746f7b9f97ffaf5bfd74992b541c7e10b64d56341f9",
+    "src/source_verify/iterative_verifier_tests.rs": "22785ad0b954a4c9e66835ee636d0648334ee7a272e14b8d3258434a24f4ad66"
+  },
+  "current_sources": {
+    "src/source_verify.rs": {
+      "sha256": "76861a50727adc8ec919d63bf8665873d99fb8cc1e119f5cbab7e1fb299d6954",
+      "lines": 323
+    },
+    "src/source_verify/iterative/operators.rs": {
+      "sha256": "e1a53409191261e40e13c144ebca52b5e8fa887921e40246e697e91b9df256fc",
+      "lines": 693
+    },
+    "src/source_verify/iterative/operators/before_799.rs": {
+      "sha256": "171a831d8f4b0b1c9e2ad8598a98ceff43e21947a9183b26549314842945bddd",
+      "lines": 603
+    },
+    "src/source_verify/iterative/blocks.rs": {
+      "sha256": "d1d3e19a3b9f4d11c3a833b4f0aa396d8b415fafbf1c633c76883ce9e9a095ca",
+      "lines": 1161
+    },
+    "src/source_verify/iterative_verifier_tests.rs": {
+      "sha256": "440964db34c01c13db5cba33230082dab167be2e69a78383ef7c81251f64604a",
+      "lines": 998
+    },
+    "src/source_verify/recovery_tests.rs": {
+      "sha256": "ed763eb3a77915ae6cd57688d780bc9fd20931d865059ff10e3c6a9e0830197d",
+      "lines": 318
+    },
+    "src/source_verify/recovery_tests/operators_799.rs": {
+      "sha256": "6cba006a2731ebd4a1c90a5d89c1b4d02e020007470ad71968eacdf15c0b079b",
+      "lines": 125
+    },
+    "src/source_verify/constructor_tests.rs": {
+      "sha256": "a47d52960691d9ca39896dc938a4c8ad320eddaf37d406da7e67eddaeeac2cc0",
+      "lines": 415
+    },
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
+      "sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "lines": 1234,
+      "bytes": 98424
+    }
+  },
+  "execution": "none; root qualification pending"
+}

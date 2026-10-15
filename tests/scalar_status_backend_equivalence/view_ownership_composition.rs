@@ -905,6 +905,26 @@ fn fused_owned_string_byte_view_agrees_across_interpreter_native_and_core_wasm()
 
     let native_o0 = run_native(&generated, &root, "-O0", &FUSED_OWNED_STRING_VIEW_CASES);
     let native_o2 = run_native(&generated, &root, "-O2", &FUSED_OWNED_STRING_VIEW_CASES);
+    // The strict private host checks repeated ownership settlement in addition
+    // to the Toolkit runtime cases below.
+    let resolved = semaprax::hir::resolve(&program).unwrap();
+    let private = wasm::emit_resolved_module(&resolved).unwrap();
+    wasmparser::Validator::new().validate_all(&private).unwrap();
+    let path = root.join("private-string-view.wasm");
+    fs::write(&path, private).unwrap();
+    let host =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/owned_data/owned_leaf_vec/host.js");
+    let output = Command::new("node")
+        .arg(host)
+        .arg(path)
+        .args(["0", "2", "scalar-view", "ok"])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     let interpreter_path = root.join("interpret-fused-owned-string-view.spx");
     fs::write(&interpreter_path, FUSED_OWNED_STRING_VIEW_SOURCE).unwrap();
     // The full owned-String SliceView belongs to the explicitly selected

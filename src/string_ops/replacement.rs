@@ -19,7 +19,9 @@ pub(crate) fn bindings(function: &ResolvedFunction) -> BTreeMap<ExpressionId, &R
         if matches!(expression.kind, ResolvedExprKind::Closure { .. }) {
             continue;
         }
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 match statement {
                     ResolvedStatement::Let {
@@ -59,3 +61,8 @@ pub(crate) fn binding<'a>(
 pub(crate) fn requires(function: &ResolvedFunction) -> bool {
     !bindings(function).is_empty()
 }
+
+#[cfg(test)]
+mod funded;
+#[cfg(test)]
+pub(crate) use funded::bindings_funded;

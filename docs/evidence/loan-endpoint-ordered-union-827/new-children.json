@@ -1,0 +1,14 @@
+[
+  {
+    "source": "src/loan_plan/paid_materialize/before.rs",
+    "sha256": "067caf9b8d99c0f20a7de31467f3aca3a20ea46529734fd3f4d78b8c609a80ae"
+  },
+  {
+    "source": "src/loan_plan/paid_materialize/ordered_union.rs",
+    "sha256": "34f9fd8d5e9e6365a0412f53245274b37dedc253b60a5ca9acb151ce111a21fe"
+  },
+  {
+    "source": "src/loan_plan/paid_materialize/tests.rs",
+    "sha256": "a108b314c1e14dde6f3bfb393aaf4cc8681b8677bcfe455a40a5b2e5227b1d7f"
+  }
+]

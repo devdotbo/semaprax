@@ -6,6 +6,8 @@ pub enum LetSyntax {
     StatementIf(StatementIfSyntax),
     /// Parser-generated discard of a nonliteral statement branch tail.
     BranchTail,
+    /// Parser-minted scalar expression statement, normalized to an immutable let.
+    ExpressionStatement,
 }
 
 /// Only the parser mints this marker. It carries no alternate expression tree.

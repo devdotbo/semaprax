@@ -103,6 +103,9 @@ pub(in crate::implementation) fn ast_child<'a>(
         Some((path_index, child))
     };
     match &expression.kind {
+        crate::ast::ExprKind::LexicalExit { value, .. } => {
+            (index == 0).then(|| value.as_deref().and_then(|value| advance(1, 0, value)))?
+        }
         crate::ast::ExprKind::Closure { body, .. } => {
             (index == 0).then(|| advance(1, 0, body.as_ref()))?
         }
@@ -120,7 +123,8 @@ pub(in crate::implementation) fn ast_child<'a>(
         crate::ast::ExprKind::SuperMethod { args, .. } => {
             advance(index.checked_add(1)?, index, args.get(index)?)
         }
-        crate::ast::ExprKind::Unary { value, .. }
+        crate::ast::ExprKind::VecConstructor { value, .. }
+        | crate::ast::ExprKind::Unary { value, .. }
         | crate::ast::ExprKind::Try { operand: value }
         | crate::ast::ExprKind::Yield { request: value }
         | crate::ast::ExprKind::Project { base: value, .. } => {
@@ -239,6 +243,7 @@ pub(in crate::implementation) fn ast_child<'a>(
         | crate::ast::ExprKind::Float64(_)
         | crate::ast::ExprKind::Bool(_)
         | crate::ast::ExprKind::String(_)
+        | crate::ast::ExprKind::BorrowedUtf8Literal(_)
         | crate::ast::ExprKind::Var(_) => None,
     }
 }
@@ -265,7 +270,12 @@ pub(super) fn ast_child_identity_path_increment(
         crate::ast::ExprKind::MethodCall { .. } | crate::ast::ExprKind::SuperMethod { .. } => {
             ".arg.".len() + decimal_digits(child_index)
         }
-        crate::ast::ExprKind::Unary { .. } => ".value".len(),
+        // The authenticated constructor marker and its ordinary Block use
+        // the same result/site path. Visit the Block once, without `.value`.
+        crate::ast::ExprKind::VecConstructor { .. } => 0,
+        crate::ast::ExprKind::Unary { .. } | crate::ast::ExprKind::LexicalExit { .. } => {
+            ".value".len()
+        }
         crate::ast::ExprKind::Binary { .. } => {
             if child_index == 0 { ".left" } else { ".right" }.len()
         }
@@ -282,8 +292,14 @@ pub(super) fn ast_child_identity_path_increment(
                     complex && child_index % 2 == 1,
                 ) {
                     (crate::ast::Statement::While { .. }, false) => ".condition",
-                    (crate::ast::Statement::For { .. }, false) => ".values",
-                    (crate::ast::Statement::For { .. }, true) => ".value.s2.body.s1.value",
+                    (
+                        crate::ast::Statement::For { .. } | crate::ast::Statement::ForBorrow { .. },
+                        false,
+                    ) => ".values",
+                    (
+                        crate::ast::Statement::For { .. } | crate::ast::Statement::ForBorrow { .. },
+                        true,
+                    ) => ".value.s2.body.s1.value",
                     (crate::ast::Statement::ForOwn { .. }, false) => ".value.s0.value.arg.0",
                     (crate::ast::Statement::ForOwn { .. }, true) => {
                         ".value.s1.body.s0.value.arm.1.value.s0.value"
@@ -340,6 +356,7 @@ pub(super) fn ast_child_identity_path_increment(
         | crate::ast::ExprKind::Float64(_)
         | crate::ast::ExprKind::Bool(_)
         | crate::ast::ExprKind::String(_)
+        | crate::ast::ExprKind::BorrowedUtf8Literal(_)
         | crate::ast::ExprKind::Var(_) => 0,
     }
 }
@@ -372,6 +389,10 @@ fn ast_type_identity_key_len(program: &Program, root: &crate::ast::Type) -> Opti
     while frame_len != 0 {
         frame_len -= 1;
         match frames[frame_len].take()? {
+            Frame::Enter(crate::ast::Type::Never) => {
+                results[result_len] = "never".len();
+                result_len = result_len.checked_add(1)?;
+            }
             Frame::Enter(crate::ast::Type::I64) => {
                 results[result_len] = "i64".len();
                 result_len = result_len.checked_add(1)?;

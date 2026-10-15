@@ -153,6 +153,8 @@ pub(crate) fn evaluate_resolved_network_command(
         budget: max_steps,
         next_byte_allocation: 0,
         allocated_byte_payload: 0,
+        partition: None,
+        fused: Default::default(),
         box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         utf8_materialization_budget: Utf8MaterializationBudget::UnlimitedLegacy,
         stdout_transcript: Some(Vec::new()),
@@ -169,6 +171,7 @@ pub(crate) fn evaluate_resolved_network_command(
         resumption: crate::interpreter::resumable::Resumption::Refused,
         semantic: Default::default(),
         string_condition_reads: Default::default(),
+        checked_allocation: None,
     };
     let evaluated = evaluator.call_frame(entry, Vec::new(), 0);
     // Settlement releases every provider connection before anything is
@@ -196,7 +199,7 @@ pub(crate) fn evaluate_resolved_network_command(
                 .to_owned(),
         ),
         Err(Flow::Guard(detail)) => CommandEvaluationOutcome::GuardError(detail.to_owned()),
-        Err(Flow::Residual(_)) => CommandEvaluationOutcome::GuardError(
+        Err(Flow::Residual(_) | Flow::Lexical(_)) => CommandEvaluationOutcome::GuardError(
             "owned postfix `?` residual escaped its function frame".to_owned(),
         ),
     };

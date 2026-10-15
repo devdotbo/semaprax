@@ -1,7 +1,10 @@
 //! Graph v69 composes bounded owned String records with authenticated loans.
 use super::*;
 
-fn string_record_slot(function: &ResolvedFunction, types: &[hir::ResolvedTypeDeclaration]) -> bool {
+fn string_record_slot(
+    function: &ResolvedFunction,
+    types: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+) -> bool {
     if function.loan_plan.loans.is_empty() {
         return false;
     }
@@ -42,7 +45,7 @@ fn string_record_slot(function: &ResolvedFunction, types: &[hir::ResolvedTypeDec
                             | crate::string_ops::MAP_DROP_LIFECYCLE_ID
                     ) =>
                 {
-                    return true
+                    return true;
                 }
                 crate::cleanup::FieldLivenessShape::Record { fields, .. } => {
                     pending.extend(fields.iter().map(|field| &field.shape))
@@ -80,10 +83,23 @@ pub(crate) fn graph_schema(program: &ResolvedProgram) -> Result<&'static str, Di
 
 pub(crate) fn graph_schema_from_parts_and_instances(
     interfaces: &[hir::ResolvedInterface],
-    types: &[hir::ResolvedTypeDeclaration],
-    functions: &[ResolvedFunction],
-    templates: &[hir::ResolvedFunctionTemplate],
+    types: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    templates: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
     instances: &[hir::ResolvedFunctionInstance],
+) -> Result<&'static str, Diagnostic> {
+    graph_schema_from_parts_and_instances_with_renewal_authority(
+        interfaces, types, functions, templates, instances, None,
+    )
+}
+
+pub(crate) fn graph_schema_from_parts_and_instances_with_renewal_authority(
+    interfaces: &[hir::ResolvedInterface],
+    types: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    templates: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
+    instances: &[hir::ResolvedFunctionInstance],
+    renewal_authority: Option<&dyn Fn(&ResolvedFunction) -> bool>,
 ) -> Result<&'static str, Diagnostic> {
     // This metadata selector has no independent execution authority. The
     // ordinary workspace boundary validates every retained complete program.
@@ -95,9 +111,7 @@ pub(crate) fn graph_schema_from_parts_and_instances(
     {
         Ok("semaprax.graph.v69")
     } else {
-        super::string_replacement::graph_schema_from_parts_and_instances(
-            interfaces, types, functions, templates, instances,
-        )
+        match renewal_authority { None => super::string_replacement::graph_schema_from_parts_and_instances(interfaces, types, functions, templates, instances), Some(_) => super::string_replacement::graph_schema_from_parts_and_instances_with_renewal_authority(interfaces, types, functions, templates, instances, renewal_authority), }
     }
 }
 

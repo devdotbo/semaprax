@@ -126,7 +126,9 @@ fn scan_top_level_statement(
             forbid_nested_yield(condition, path)?;
             scan_block(body, Level::Nested, found, path)
         }
-        Statement::For { values, body, .. } | Statement::ForOwn { values, body, .. } => {
+        Statement::For { values, body, .. }
+        | Statement::ForBorrow { values, body, .. }
+        | Statement::ForOwn { values, body, .. } => {
             forbid_nested_yield(values, path)?;
             forbid_nested_yield(body, path)
         }
@@ -192,6 +194,7 @@ fn forbid_nested_yield(expr: &Expr, path: &str) -> Result<(), Diagnostic> {
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => Ok(()),
         ExprKind::Closure { body, .. } => forbid_nested_yield(body, path),
         ExprKind::Call { args, .. } => args
@@ -205,7 +208,15 @@ fn forbid_nested_yield(expr: &Expr, path: &str) -> Result<(), Diagnostic> {
         ExprKind::SuperMethod { args, .. } => args
             .iter()
             .try_for_each(|arg| forbid_nested_yield(arg, path)),
-        ExprKind::Unary { value, .. } => forbid_nested_yield(value, path),
+        ExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                forbid_nested_yield(value, path)?;
+            }
+            Ok(())
+        }
+        ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+            forbid_nested_yield(value, path)
+        }
         ExprKind::Binary { left, right, .. } => {
             forbid_nested_yield(left, path)?;
             forbid_nested_yield(right, path)
@@ -269,7 +280,9 @@ fn forbid_nested_yield_statement(statement: &Statement, path: &str) -> Result<()
             forbid_nested_yield(condition, path)?;
             forbid_nested_yield(body, path)
         }
-        Statement::For { values, body, .. } | Statement::ForOwn { values, body, .. } => {
+        Statement::For { values, body, .. }
+        | Statement::ForBorrow { values, body, .. }
+        | Statement::ForOwn { values, body, .. } => {
             forbid_nested_yield(values, path)?;
             forbid_nested_yield(body, path)
         }

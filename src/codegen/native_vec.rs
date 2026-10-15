@@ -1,5 +1,7 @@
 //! Reachability-gated C11 runtime for the internal Owned Bounded Vec v1 lane.
 
+mod copy_record;
+pub(super) mod owned_leaf;
 mod owned_payload;
 mod sort;
 
@@ -7,13 +9,26 @@ pub(super) fn emit_runtime(
     output: &mut impl super::COutput,
     program: &crate::hir::ResolvedProgram,
 ) {
-    if crate::vec_ops::resolved_program_uses_owned_payload(program)
+    let sort_keys = crate::vec_ops::sort_keys::uses(program);
+    if sort_keys {
+        output.push_str(include_str!("native_vec/sort_keys_check.c"));
+    }
+    let owned_leaf = program_uses_owned_leaf(program);
+    if owned_leaf
+        || crate::vec_ops::resolved_program_uses_owned_payload(program)
         || crate::hir::owned_record_collection::program_uses_profile(program)
     {
-        owned_payload::emit_runtime(output);
+        owned_payload::emit_runtime_for_owned_leaf(output, owned_leaf);
+        if owned_leaf {
+            owned_leaf::emit_runtime(output, program);
+        }
         if crate::vec_ops::resolved_program_uses_sort(program) {
             sort::emit_runtime(output);
         }
+        if crate::hir::copy_record_collection::program_uses(program) {
+            copy_record::emit_runtime(output, sort_keys);
+        }
+        emit_field_unique_runtime(output, program, owned_leaf);
         return;
     }
     output.push_str(NATIVE_VEC_RUNTIME_C);
@@ -24,24 +39,130 @@ pub(super) fn emit_runtime(
     if program_uses_extended_ops(program) {
         output.push_str(NATIVE_VEC_EXTENDED_RUNTIME_C);
     }
+    if crate::hir::copy_record_collection::program_uses(program) {
+        copy_record::emit_runtime(output, sort_keys);
+    }
+    emit_field_unique_runtime(output, program, false);
+}
+
+/// Borrowed Record-Field Uniqueness v1 helpers follow their family runtimes;
+/// programs without the operation keep their exact prior runtime text.
+fn emit_field_unique_runtime(
+    output: &mut impl super::COutput,
+    program: &crate::hir::ResolvedProgram,
+    owned_leaf: bool,
+) {
+    if !crate::vec_ops::field_unique::uses(program) {
+        return;
+    }
+    output.push_str(include_str!("native_vec/field_unique.c"));
+    if crate::hir::copy_record_collection::program_uses(program) {
+        output.push_str(include_str!("native_vec/copy_field_unique.c"));
+    }
+    if owned_leaf {
+        output.push_str(include_str!("native_vec/owned_field_unique.c"));
+    }
+}
+
+/// New carriers or additive operations select this runtime; frozen legacy
+/// constructors and signatures alone preserve the original emitted bytes.
+pub(super) fn program_uses_owned_leaf(program: &crate::hir::ResolvedProgram) -> bool {
+    use crate::hir::ResolvedType;
+    let new_element = |element: &ResolvedType| {
+        crate::hir::owned_leaf_collection::layout(&program.declarations, element).is_some()
+            && !crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
+                &program.declarations,
+                element,
+            )
+    };
+    let new_carrier = |ty: &ResolvedType| {
+        crate::hir::collection_outcome::owned_admitted(&program.declarations, ty)
+            || matches!(ty, ResolvedType::Nominal { declaration, arguments }
+        if matches!(declaration.as_str(), crate::prelude::VEC_ID
+            | crate::iterator_ops::ITER_ID | crate::iterator_ops::STEP_ID)
+        && matches!(arguments.as_slice(), [element] if new_element(element)))
+    };
+    crate::hir::collection_outcome::nested::program_requires_profile(program)
+        || crate::hir::owned_collection_record::program_requires_profile(program)
+        || program
+            .functions
+            .iter()
+            .chain(program.function_instances.iter().map(|i| &i.function))
+            .any(|f| {
+                if new_carrier(&f.return_type) || f.params.iter().any(|p| new_carrier(&p.ty)) {
+                    return true;
+                }
+                std::iter::once(&f.body)
+                    .chain(f.requires.iter())
+                    .chain(f.ensures.iter())
+                    .any(|root| {
+                        let mut pending = vec![root];
+                        while let Some(expression) = pending.pop() {
+                            if matches!(
+                                expression.kind,
+                                crate::hir::ResolvedExprKind::VecFieldRead { .. }
+                            ) || new_carrier(&expression.ty)
+                            {
+                                return true;
+                            }
+                            crate::hir::push_resolved_expression_children_in_authored_order(
+                                expression,
+                                &mut pending,
+                            );
+                        }
+                        let mut found = false;
+                        crate::hir::visit_resolved_calls(
+                            root,
+                            &mut |callee, instance, arguments| {
+                                if instance.is_none() {
+                                    if let (Some(op), [element]) =
+                                        (crate::vec_ops::by_id(callee.as_str()), arguments)
+                                    {
+                                        found |= new_element(element)
+                                            || matches!(
+                                                op,
+                                                crate::vec_ops::VecOp::CloneAt
+                                                    | crate::vec_ops::VecOp::Replace
+                                                    | crate::vec_ops::VecOp::ReserveOwned
+                                                    | crate::vec_ops::VecOp::SortOwned
+                                            )
+                                            || (matches!(
+                                                op,
+                                                crate::vec_ops::VecOp::SortBy
+                                                    | crate::vec_ops::VecOp::UniqueBy
+                                            ) && crate::hir::owned_leaf_collection::layout(
+                                                &program.declarations,
+                                                element,
+                                            )
+                                            .is_some());
+                                    }
+                                }
+                            },
+                        );
+                        found
+                    })
+            })
 }
 
 pub(super) fn program_uses_vec(program: &crate::hir::ResolvedProgram) -> bool {
-    program
-        .functions
-        .iter()
-        .chain(
-            program
-                .function_instances
-                .iter()
-                .map(|instance| &instance.function),
-        )
-        .any(|function| {
-            crate::codegen::native_emit::is_native_owned_vec_type(program, &function.return_type)
-                || function.params.iter().any(|param| {
+    program_uses_owned_leaf(program)
+        || crate::hir::copy_record_collection::program_uses(program)
+        || program
+            .functions
+            .iter()
+            .chain(
+                program
+                    .function_instances
+                    .iter()
+                    .map(|instance| &instance.function),
+            )
+            .any(|function| {
+                crate::codegen::native_emit::is_native_owned_vec_type(
+                    program,
+                    &function.return_type,
+                ) || function.params.iter().any(|param| {
                     crate::codegen::native_emit::is_native_owned_vec_type(program, &param.ty)
-                })
-                || std::iter::once(&function.body)
+                }) || std::iter::once(&function.body)
                     .chain(function.requires.iter())
                     .chain(function.ensures.iter())
                     .any(|root| {
@@ -56,7 +177,7 @@ pub(super) fn program_uses_vec(program: &crate::hir::ResolvedProgram) -> bool {
                         );
                         found
                     })
-        })
+            })
 }
 
 fn program_uses_extended_ops(program: &crate::hir::ResolvedProgram) -> bool {

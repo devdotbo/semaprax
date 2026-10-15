@@ -1,0 +1,849 @@
+{
+  "schema": "semaprax.consolidated-successor.v1",
+  "status": "FROZEN_BOUND_UNEXECUTED_ROOT_AUTHORIZED",
+  "freeze_required": false,
+  "source_subject": "27ae259515501fc23085d519ff56d0c8328cf6cd",
+  "source_tree": "faf60002cfcad248be822fbbe7a8f424b2eb5853",
+  "draft_observed_source_subject": "27ae259515501fc23085d519ff56d0c8328cf6cd",
+  "draft_observed_source_tree": "faf60002cfcad248be822fbbe7a8f424b2eb5853",
+  "draft_source_status": "",
+  "draft_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+  "expected_groups_authored": 5,
+  "expected_bodies_authored": 5,
+  "checks": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "workspace_graph::type_proof_tests::projection_tests::rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "semaprax",
+        "--lib",
+        "workspace_graph::type_proof_tests::projection_tests::rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+        "--",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "source_binding": {
+        "source_path": "src/workspace_graph/type_proof_tests.rs",
+        "line": 829,
+        "name": "rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+        "attributes": [
+          "#[test]"
+        ],
+        "registration_chain": [
+          {
+            "source_path": "src/lib.rs",
+            "line": 528,
+            "module": "workspace_graph",
+            "attributes": [],
+            "sha256": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc"
+          },
+          {
+            "source_path": "src/workspace_graph.rs",
+            "line": 5958,
+            "module": "type_proof_tests",
+            "attributes": [
+              "#[cfg(test)]",
+              "#[path = \"workspace_graph/type_proof_tests.rs\"]"
+            ],
+            "sha256": "c82d3bb6176c847fd9ff171f02d9c5aedd113e72b1eb9b1739ffee062319c11b"
+          },
+          {
+            "source_path": "src/workspace_graph/type_proof_tests.rs",
+            "line": 30,
+            "module": "projection_tests",
+            "attributes": [
+              "#[cfg(test)]"
+            ],
+            "sha256": "5c3223f7ecac32ed29d90a0c796ed79b1a9f91556afaf3074c5a63a3945c4ab5"
+          }
+        ],
+        "sha256": "5c3223f7ecac32ed29d90a0c796ed79b1a9f91556afaf3074c5a63a3945c4ab5",
+        "ignored": false
+      },
+      "selected_bodies": [
+        {
+          "source_path": "src/workspace_graph/type_proof_tests.rs",
+          "line": 829,
+          "name": "rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+          "attributes": [
+            "#[test]"
+          ],
+          "registration_chain": [
+            {
+              "source_path": "src/lib.rs",
+              "line": 528,
+              "module": "workspace_graph",
+              "attributes": [],
+              "sha256": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc"
+            },
+            {
+              "source_path": "src/workspace_graph.rs",
+              "line": 5958,
+              "module": "type_proof_tests",
+              "attributes": [
+                "#[cfg(test)]",
+                "#[path = \"workspace_graph/type_proof_tests.rs\"]"
+              ],
+              "sha256": "c82d3bb6176c847fd9ff171f02d9c5aedd113e72b1eb9b1739ffee062319c11b"
+            },
+            {
+              "source_path": "src/workspace_graph/type_proof_tests.rs",
+              "line": 30,
+              "module": "projection_tests",
+              "attributes": [
+                "#[cfg(test)]"
+              ],
+              "sha256": "5c3223f7ecac32ed29d90a0c796ed79b1a9f91556afaf3074c5a63a3945c4ab5"
+            }
+          ],
+          "sha256": "5c3223f7ecac32ed29d90a0c796ed79b1a9f91556afaf3074c5a63a3945c4ab5",
+          "ignored": false
+        }
+      ],
+      "ignored_bodies_not_executed": [],
+      "expected_selected": 1,
+      "status": "UNEXECUTED_SOURCE_AUTHORED",
+      "reasons": [
+        "minimal actual pin-consumer or whole-original-source owner after11actual literal updates; production execution code unchanged",
+        "minimal actual pin-consumer or whole-original-source owner after11actual literal updates; production execution code unchanged"
+      ],
+      "prior_actual_failure": {
+        "source_subject": "a41774c0b3522ea7e13798f1a337b0aa5f35714e",
+        "receipt": "/Volumes/Semaprax/lane-prompts/final-legacy-card-a417-20261015/owning-selected-results.json",
+        "receipt_sha256": "3e5b219c7076133895eaee7e8752f577056d82c36a49a5aea7d55538f3ae70f9",
+        "selector": "workspace_graph::type_proof_tests::projection_tests::rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+        "log": "/Volumes/Semaprax/lane-prompts/final-legacy-card-a417-20261015/owning-selected-04.log",
+        "log_sha256": "fa78120949405e4fba3fb065c258f88db041dd21a7ba9b498b58980f4d260f49",
+        "exit_code": 101
+      }
+    },
+    {
+      "package": "semaprax",
+      "harness": "test:workspace",
+      "selector": "semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "semaprax",
+        "--test",
+        "workspace",
+        "semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+        "--",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "source_binding": {
+        "source_path": "tests/workspace/semantic_graph.rs",
+        "line": 589,
+        "name": "public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+        "attributes": [
+          "#[test]"
+        ],
+        "registration_chain": [
+          {
+            "source_path": "tests/workspace.rs",
+            "line": 68,
+            "module": "semantic_graph",
+            "attributes": [
+              "#[path = \"workspace/semantic_graph.rs\"]"
+            ],
+            "sha256": "2722662e4c54895e22dbffa8fb72f1ace5b93b99c4d58335f3948f6d73d5505f"
+          }
+        ],
+        "sha256": "4af44d68c4988c4b042a6e7b08ad5aa6f6e6f726953c0858a9e4e65ca35b497a",
+        "ignored": false
+      },
+      "selected_bodies": [
+        {
+          "source_path": "tests/workspace/semantic_graph.rs",
+          "line": 589,
+          "name": "public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+          "attributes": [
+            "#[test]"
+          ],
+          "registration_chain": [
+            {
+              "source_path": "tests/workspace.rs",
+              "line": 68,
+              "module": "semantic_graph",
+              "attributes": [
+                "#[path = \"workspace/semantic_graph.rs\"]"
+              ],
+              "sha256": "2722662e4c54895e22dbffa8fb72f1ace5b93b99c4d58335f3948f6d73d5505f"
+            }
+          ],
+          "sha256": "4af44d68c4988c4b042a6e7b08ad5aa6f6e6f726953c0858a9e4e65ca35b497a",
+          "ignored": false
+        }
+      ],
+      "ignored_bodies_not_executed": [],
+      "expected_selected": 1,
+      "status": "UNEXECUTED_SOURCE_AUTHORED",
+      "reasons": [
+        "minimal actual pin-consumer or whole-original-source owner after11actual literal updates; production execution code unchanged",
+        "minimal actual pin-consumer or whole-original-source owner after11actual literal updates; production execution code unchanged"
+      ],
+      "prior_actual_failure": {
+        "source_subject": "a41774c0b3522ea7e13798f1a337b0aa5f35714e",
+        "receipt": "/Volumes/Semaprax/lane-prompts/final-legacy-card-a417-20261015/owning-selected-results.json",
+        "receipt_sha256": "3e5b219c7076133895eaee7e8752f577056d82c36a49a5aea7d55538f3ae70f9",
+        "selector": "semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+        "log": "/Volumes/Semaprax/lane-prompts/final-legacy-card-a417-20261015/owning-selected-05.log",
+        "log_sha256": "192d9d5fe837029de4decf249aba41a548a8b31d42d1ed3895f9cf98c10edb55",
+        "exit_code": 101
+      }
+    },
+    {
+      "package": "semaprax",
+      "harness": "test:workspace",
+      "selector": "semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "semaprax",
+        "--test",
+        "workspace",
+        "semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+        "--",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "source_binding": {
+        "source_path": "tests/workspace/semantic_graph.rs",
+        "line": 833,
+        "name": "public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+        "attributes": [
+          "#[test]"
+        ],
+        "registration_chain": [
+          {
+            "source_path": "tests/workspace.rs",
+            "line": 68,
+            "module": "semantic_graph",
+            "attributes": [
+              "#[path = \"workspace/semantic_graph.rs\"]"
+            ],
+            "sha256": "2722662e4c54895e22dbffa8fb72f1ace5b93b99c4d58335f3948f6d73d5505f"
+          }
+        ],
+        "sha256": "4af44d68c4988c4b042a6e7b08ad5aa6f6e6f726953c0858a9e4e65ca35b497a",
+        "ignored": false
+      },
+      "selected_bodies": [
+        {
+          "source_path": "tests/workspace/semantic_graph.rs",
+          "line": 833,
+          "name": "public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+          "attributes": [
+            "#[test]"
+          ],
+          "registration_chain": [
+            {
+              "source_path": "tests/workspace.rs",
+              "line": 68,
+              "module": "semantic_graph",
+              "attributes": [
+                "#[path = \"workspace/semantic_graph.rs\"]"
+              ],
+              "sha256": "2722662e4c54895e22dbffa8fb72f1ace5b93b99c4d58335f3948f6d73d5505f"
+            }
+          ],
+          "sha256": "4af44d68c4988c4b042a6e7b08ad5aa6f6e6f726953c0858a9e4e65ca35b497a",
+          "ignored": false
+        }
+      ],
+      "ignored_bodies_not_executed": [],
+      "expected_selected": 1,
+      "status": "UNEXECUTED_SOURCE_AUTHORED",
+      "reasons": [
+        "minimal actual pin-consumer or whole-original-source owner after11actual literal updates; production execution code unchanged",
+        "minimal actual pin-consumer or whole-original-source owner after11actual literal updates; production execution code unchanged"
+      ],
+      "prior_actual_failure": {
+        "source_subject": "a41774c0b3522ea7e13798f1a337b0aa5f35714e",
+        "receipt": "/Volumes/Semaprax/lane-prompts/final-legacy-card-a417-20261015/owning-selected-results.json",
+        "receipt_sha256": "3e5b219c7076133895eaee7e8752f577056d82c36a49a5aea7d55538f3ae70f9",
+        "selector": "semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+        "log": "/Volumes/Semaprax/lane-prompts/final-legacy-card-a417-20261015/owning-selected-06.log",
+        "log_sha256": "5f10090a10731784a403ba24fcbb12d076d89e6c40bcbda1d055fddf36230bb8",
+        "exit_code": 101
+      }
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::live_oracle::source_custody::a::complete_original_sources_and_compiled_owning_receivers_remain_exact",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "semaprax",
+        "--lib",
+        "cleanup_plan::replay::live_oracle::source_custody::a::complete_original_sources_and_compiled_owning_receivers_remain_exact",
+        "--",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "source_binding": {
+        "source_path": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+        "line": 3,
+        "name": "complete_original_sources_and_compiled_owning_receivers_remain_exact",
+        "attributes": [
+          "#[test]"
+        ],
+        "registration_chain": [
+          {
+            "source_path": "src/lib.rs",
+            "line": 114,
+            "module": "cleanup_plan",
+            "attributes": [
+              "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+            ],
+            "sha256": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc"
+          },
+          {
+            "source_path": "src/cleanup_plan.rs",
+            "line": 32,
+            "module": "replay",
+            "attributes": [],
+            "sha256": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8"
+          },
+          {
+            "source_path": "src/cleanup_plan/replay.rs",
+            "line": 7289,
+            "module": "live_oracle",
+            "attributes": [
+              "#[cfg(test)]"
+            ],
+            "sha256": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4"
+          },
+          {
+            "source_path": "src/cleanup_plan/replay/live_oracle.rs",
+            "line": 29,
+            "module": "source_custody",
+            "attributes": [],
+            "sha256": "524c75328de107e63cf7ef469ab6b0da1769f5fece8d76f4227db0da838a2dc6"
+          },
+          {
+            "source_path": "src/cleanup_plan/replay/live_oracle/source_custody.rs",
+            "line": 10,
+            "module": "a",
+            "attributes": [],
+            "sha256": "691711d598899d5d5c84b0aea28203e2dd7071f5c111998b00ab51e82ed84777"
+          }
+        ],
+        "sha256": "6e7a09cd9689cee7a778cb92b078bc37e37eb5bfa4dfd930f915ba0979cf216b",
+        "ignored": false
+      },
+      "selected_bodies": [
+        {
+          "source_path": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+          "line": 3,
+          "name": "complete_original_sources_and_compiled_owning_receivers_remain_exact",
+          "attributes": [
+            "#[test]"
+          ],
+          "registration_chain": [
+            {
+              "source_path": "src/lib.rs",
+              "line": 114,
+              "module": "cleanup_plan",
+              "attributes": [
+                "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+              ],
+              "sha256": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc"
+            },
+            {
+              "source_path": "src/cleanup_plan.rs",
+              "line": 32,
+              "module": "replay",
+              "attributes": [],
+              "sha256": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8"
+            },
+            {
+              "source_path": "src/cleanup_plan/replay.rs",
+              "line": 7289,
+              "module": "live_oracle",
+              "attributes": [
+                "#[cfg(test)]"
+              ],
+              "sha256": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4"
+            },
+            {
+              "source_path": "src/cleanup_plan/replay/live_oracle.rs",
+              "line": 29,
+              "module": "source_custody",
+              "attributes": [],
+              "sha256": "524c75328de107e63cf7ef469ab6b0da1769f5fece8d76f4227db0da838a2dc6"
+            },
+            {
+              "source_path": "src/cleanup_plan/replay/live_oracle/source_custody.rs",
+              "line": 10,
+              "module": "a",
+              "attributes": [],
+              "sha256": "691711d598899d5d5c84b0aea28203e2dd7071f5c111998b00ab51e82ed84777"
+            }
+          ],
+          "sha256": "6e7a09cd9689cee7a778cb92b078bc37e37eb5bfa4dfd930f915ba0979cf216b",
+          "ignored": false
+        }
+      ],
+      "ignored_bodies_not_executed": [],
+      "expected_selected": 1,
+      "status": "UNEXECUTED_SOURCE_AUTHORED",
+      "reasons": [
+        "minimal actual pin-consumer or whole-original-source owner after11actual literal updates; production execution code unchanged",
+        "minimal actual pin-consumer or whole-original-source owner after11actual literal updates; production execution code unchanged"
+      ]
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::live_oracle::source_custody::b::complete_original_sources_and_compiled_owning_receivers_remain_exact",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "semaprax",
+        "--lib",
+        "cleanup_plan::replay::live_oracle::source_custody::b::complete_original_sources_and_compiled_owning_receivers_remain_exact",
+        "--",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "source_binding": {
+        "source_path": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+        "line": 3,
+        "name": "complete_original_sources_and_compiled_owning_receivers_remain_exact",
+        "attributes": [
+          "#[test]"
+        ],
+        "registration_chain": [
+          {
+            "source_path": "src/lib.rs",
+            "line": 114,
+            "module": "cleanup_plan",
+            "attributes": [
+              "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+            ],
+            "sha256": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc"
+          },
+          {
+            "source_path": "src/cleanup_plan.rs",
+            "line": 32,
+            "module": "replay",
+            "attributes": [],
+            "sha256": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8"
+          },
+          {
+            "source_path": "src/cleanup_plan/replay.rs",
+            "line": 7289,
+            "module": "live_oracle",
+            "attributes": [
+              "#[cfg(test)]"
+            ],
+            "sha256": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4"
+          },
+          {
+            "source_path": "src/cleanup_plan/replay/live_oracle.rs",
+            "line": 29,
+            "module": "source_custody",
+            "attributes": [],
+            "sha256": "524c75328de107e63cf7ef469ab6b0da1769f5fece8d76f4227db0da838a2dc6"
+          },
+          {
+            "source_path": "src/cleanup_plan/replay/live_oracle/source_custody.rs",
+            "line": 11,
+            "module": "b",
+            "attributes": [],
+            "sha256": "691711d598899d5d5c84b0aea28203e2dd7071f5c111998b00ab51e82ed84777"
+          }
+        ],
+        "sha256": "2785bc334d50566ec779367de94d90c8629332c696aff5869ea1993cb48f01a3",
+        "ignored": false
+      },
+      "selected_bodies": [
+        {
+          "source_path": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+          "line": 3,
+          "name": "complete_original_sources_and_compiled_owning_receivers_remain_exact",
+          "attributes": [
+            "#[test]"
+          ],
+          "registration_chain": [
+            {
+              "source_path": "src/lib.rs",
+              "line": 114,
+              "module": "cleanup_plan",
+              "attributes": [
+                "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+              ],
+              "sha256": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc"
+            },
+            {
+              "source_path": "src/cleanup_plan.rs",
+              "line": 32,
+              "module": "replay",
+              "attributes": [],
+              "sha256": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8"
+            },
+            {
+              "source_path": "src/cleanup_plan/replay.rs",
+              "line": 7289,
+              "module": "live_oracle",
+              "attributes": [
+                "#[cfg(test)]"
+              ],
+              "sha256": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4"
+            },
+            {
+              "source_path": "src/cleanup_plan/replay/live_oracle.rs",
+              "line": 29,
+              "module": "source_custody",
+              "attributes": [],
+              "sha256": "524c75328de107e63cf7ef469ab6b0da1769f5fece8d76f4227db0da838a2dc6"
+            },
+            {
+              "source_path": "src/cleanup_plan/replay/live_oracle/source_custody.rs",
+              "line": 11,
+              "module": "b",
+              "attributes": [],
+              "sha256": "691711d598899d5d5c84b0aea28203e2dd7071f5c111998b00ab51e82ed84777"
+            }
+          ],
+          "sha256": "2785bc334d50566ec779367de94d90c8629332c696aff5869ea1993cb48f01a3",
+          "ignored": false
+        }
+      ],
+      "ignored_bodies_not_executed": [],
+      "expected_selected": 1,
+      "status": "UNEXECUTED_SOURCE_AUTHORED",
+      "reasons": [
+        "minimal actual pin-consumer or whole-original-source owner after11actual literal updates; production execution code unchanged",
+        "minimal actual pin-consumer or whole-original-source owner after11actual literal updates; production execution code unchanged"
+      ]
+    }
+  ],
+  "source_file_sha256": {
+    "src/workspace_graph/type_proof_tests.rs": "5c3223f7ecac32ed29d90a0c796ed79b1a9f91556afaf3074c5a63a3945c4ab5",
+    "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+    "src/workspace_graph.rs": "c82d3bb6176c847fd9ff171f02d9c5aedd113e72b1eb9b1739ffee062319c11b",
+    "tests/workspace/semantic_graph.rs": "4af44d68c4988c4b042a6e7b08ad5aa6f6e6f726953c0858a9e4e65ca35b497a",
+    "tests/workspace.rs": "2722662e4c54895e22dbffa8fb72f1ace5b93b99c4d58335f3948f6d73d5505f",
+    "src/cleanup_plan/replay/live_oracle/source_custody/a.rs": "6e7a09cd9689cee7a778cb92b078bc37e37eb5bfa4dfd930f915ba0979cf216b",
+    "src/cleanup_plan.rs": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8",
+    "src/cleanup_plan/replay.rs": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4",
+    "src/cleanup_plan/replay/live_oracle.rs": "524c75328de107e63cf7ef469ab6b0da1769f5fece8d76f4227db0da838a2dc6",
+    "src/cleanup_plan/replay/live_oracle/source_custody.rs": "691711d598899d5d5c84b0aea28203e2dd7071f5c111998b00ab51e82ed84777",
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs": "2785bc334d50566ec779367de94d90c8629332c696aff5869ea1993cb48f01a3",
+    "docs/evidence/actual-pin-update-a417-20261015/APPLICATION.md": "341c35f606c7ed19193c7ceba9b99f571cfb9cbd17c2a14921bef36bb3c5b9e9",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/analysis.log": "f7ae3a2586d81645641b360f371ead792a06e4c45219c9fe60bf2c7759bdbf9c",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/binaries.json": "c860b02032d464262aa5ff143d32e1329f11c4485fb63f3556533a5569b19233",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/candidates.json": "98554cc91fd48c643294cdef29e2813f51972068cc5a80b33e7be54ebf8f1915",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/projection-wire.log": "187e2219aaecd8bbeeef5c7499be11d66f3ec10657ca13de8f22635bf06037cf",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/public-graph.log": "c251de31358c0981ecc0a1e1c86aa3090c0aaf554b6f774b06d65af0000eef72",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/source-head.txt": "26d8ebf49fe3a4b191f5e02b3fef053431d72054872e14a2434933700878e6d6",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/source-local.patch": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/status.tsv": "9f8f9fa10d0b9ba8a4a7c969209dd37a2e83661e777cb617ae1fd0b1633ccd0a",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/wires/capability-context.json": "52b7f0a8f754cacfffe82f7cdbdb851641fdc1ef86f9ee188590436a5bf77896",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/wires/capability-review.json": "6d503a367d03d11fa4cb37e50f579bc16f0e22c3469f47dbbbd05647c93f1eca",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/wires/context.json": "71855c0574be5fd10adb3b71de33afb4cbae905cc7110a8da68fbe5d09b808f9",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/wires/custom-impact.json": "c1d4b519315729c71b590be9926de416136cb0e4bca007c3fb2a90d2996213dc",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/wires/forward.json": "4b0d89b424ac9058c44093ccbe4a60a0eb3ec584ce5c85bc1378d31dfd0d9080",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/wires/impact.json": "ffb6cb3247de03e4409c67f267bc4a77e20949171e79d5a80b40cad9a861ead1",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/wires/projection-wire.json": "9215b8decf168cc7692058f59ca949d41e0bc455b7594f5b749b5d544f5b857a",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/wires/public-graph.json": "ac4f8cf345ec9b214109e8932a10a6d733408bc7f5d6dd2b68df24d42d811fd6",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/wires/review.json": "b14145b8e6975212415b282b2f67e5e38d1e43bea2c8a5f689c003a9883a21ac",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-a417-capture/wires/type-context.json": "387c789cb5f6a014ab377ea97138ed9e9869ece09068db7c3889f6acc058bc5a",
+    "docs/evidence/actual-pin-update-a417-20261015/actual-literals-and-inverse-composition.patch": "becb1b2e6f6027fd3bfcbe446a6e9f85a196a3fe6f95d8bc08a0057f46d14c56",
+    "docs/evidence/actual-pin-update-a417-20261015/candidate-source-after/docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json": "3a5350d8871817a733965e88d7db81823a77abd03257d854ff445837b209774a",
+    "docs/evidence/actual-pin-update-a417-20261015/candidate-source-after/src/workspace_graph/type_proof_tests.rs": "5c3223f7ecac32ed29d90a0c796ed79b1a9f91556afaf3074c5a63a3945c4ab5",
+    "docs/evidence/actual-pin-update-a417-20261015/candidate-source-after/tests/workspace/semantic_graph.rs": "4af44d68c4988c4b042a6e7b08ad5aa6f6e6f726953c0858a9e4e65ca35b497a",
+    "docs/evidence/actual-pin-update-a417-20261015/complete-source.inverse.patch": "cdb6da0b6549bc2814abe43643e591b9c7297dc8fd9bc427cf06514b655fcba7",
+    "docs/evidence/actual-pin-update-a417-20261015/expected-counts.json": "6308506b8c8d31d80e997a1600e9356f3ca220ee44212f67c7eef77818271b0d",
+    "docs/evidence/actual-pin-update-a417-20261015/owning-build-result.json": "9157d5aa2db1ab293c4b61dd10d8e8e4b5e3c7ba017cca0666d73695c1a936ef",
+    "docs/evidence/actual-pin-update-a417-20261015/prelude-pin-producers-result.json": "6605a8d1e9c87c102290bdb9025cf5cab129f217d6f08cf06f1c7a672453f962",
+    "docs/evidence/actual-pin-update-a417-20261015/prepared-patch-record.json": "1e30927f1e15f7eaeb4f9cb1ed60cf151e97b46a467ac55c388f95ef35b7d37c",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/analysis.log": "a53a5a49d340e143eedb09e8b3d90f76c3a7f73d8d8c27b159a07936afb2dfe3",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/binaries.json": "35c56e144558b1f54b6c468f7c7aec3137e819c97feec1fcc1b8cc5766cdad2b",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/candidates.json": "c9bd850d9ea9a0fe4b88070dd107302d5a2911122a36139fe2fd4358f9174a9c",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/projection-wire.log": "18d8a2c6231f3cf7ca57a9d2cc331727d54b708f44099501d4f3941bfd2615db",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/public-graph.log": "1876c0d9d9f97b88897b4aa74d604fdaaf396ea25704ac4a62b565a4b5e944d7",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/source-head.txt": "3490dcaf805b922e7960ee8e53691bba3163e9d61e93138fe4899d33a048a575",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/source-local.patch": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/status.tsv": "9f8f9fa10d0b9ba8a4a7c969209dd37a2e83661e777cb617ae1fd0b1633ccd0a",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/wires/capability-context.json": "3ebfda039e661f99baeeef67860402d416d1d595d2127f2c1585773b0722ce28",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/wires/capability-review.json": "6e5f004daf959bd2dbc61bee9079325e7c0112b91eb711077b8c7f95e33bf588",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/wires/context.json": "7c8b2afe522ce9f24a2404aa78b8b373052acd0ee382f642627ab762b5ba5d4c",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/wires/custom-impact.json": "1475273c495bb4344580715480f75805f94a34be91ea4c0f80653cb594050879",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/wires/forward.json": "0d77ba200b9cd679facc63a5ce52eafd8b316c4c4ca236daa04bd8bbd56d0e51",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/wires/impact.json": "ffcfa4c3f3d4ee3d0854db9c67586ab34b0ebbac1a5c9e7804aa3a5e5f98e171",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/wires/projection-wire.json": "17520815fb5e69c8f1ba2773ffdbe442cb05d0a27219652047ccc7c6d5fd8a90",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/wires/public-graph.json": "bf16ffea2d2269c7e4948c6f8fdab431939a081ac5fcac106d183877c8ea5a07",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/wires/review.json": "1fdb6acbc9ba9c899d2a73e06d0dd33029f06d2e1e901cd67f59aab165a3664e",
+    "docs/evidence/actual-pin-update-a417-20261015/previous-actual-5b56-capture/wires/type-context.json": "468c6b307910e82107de083151d2f62c36c39ea282f05982d2762710f5c9c4e8",
+    "docs/evidence/actual-pin-update-a417-20261015/readonly-command.json": "6db8e90be66eb9d5faa3c34de8b36df6ac2e5469075d417acd977568f0e924f7",
+    "docs/evidence/actual-pin-update-a417-20261015/readonly-plan.json": "02b8e0383ec07210e210e3167ab87f51692cd3f2f8fe95418216d83baf1bb3e4",
+    "docs/evidence/actual-pin-update-a417-20261015/readonly.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/evidence/actual-pin-update-a417-20261015/source-before/docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json": "e32359eac0a6d74c1c556a6b37421aacfc0f7b2c0182a13742dc9a7e44188e33",
+    "docs/evidence/actual-pin-update-a417-20261015/source-before/src/workspace_graph/type_proof_tests.rs": "039c00833cd3b67497c439bc2284d67877565f394fbc1a0ed20b7ddded70906a",
+    "docs/evidence/actual-pin-update-a417-20261015/source-before/tests/workspace/semantic_graph.rs": "a83fa422281a964c49993a046de3ad7e20bccee6c2b64d7edbe838c5048f3987",
+    "docs/evidence/actual-pin-update-a417-20261015/trusted-inputs.json": "ee9bedbe0585502433bc1042cfa76c0d77b6bd0c9269036a09f2692210e5e8e9",
+    "docs/evidence/actual-pin-update-a417-20261015/whole-wire-exact-inverses.json": "e4555851c95874d75929632b02a79afb0e62b62f2042e4faefb604f12412a757",
+    "docs/evidence/combined-pin-custody-a417-20261015/combined-source-proof.json": "a0cbf173b685b75bc515bb2188042f7814320a07223b88e42cce69f9ceb07bd4",
+    "docs/evidence/combined-pin-custody-a417-20261015/compose.py": "3b7cecaf44b694bf64324d712d010cccfd4a709aaa2216a08a06daf415190bb3",
+    "docs/evidence/final-large-qualification-a417-20261015/clippy-production-memory-samples.jsonl": "edfc1114380b9e79277f9a5ecf0e1426a866934e527f97052ad5b918ad0bd6d5",
+    "docs/evidence/final-large-qualification-a417-20261015/clippy-production-result.json": "5e6e2a19b1952e2c2b44d5211501b8892230f34edd0a538a8c8a18a3b2bb1789",
+    "docs/evidence/final-large-qualification-a417-20261015/clippy-production.log": "a380ccb7298575cb24c797709373b9761024f889caf2f7aebbbdcf8b8e472ed9",
+    "docs/evidence/final-large-qualification-a417-20261015/expected-counts.json": "6308506b8c8d31d80e997a1600e9356f3ca220ee44212f67c7eef77818271b0d",
+    "docs/evidence/final-large-qualification-a417-20261015/memory-samples.jsonl": "74188d8ec98c4caafd45034cc7f832e32e2cf2594e11d0b9ad1f31e923cafac2",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-build-result.json": "9157d5aa2db1ab293c4b61dd10d8e8e4b5e3c7ba017cca0666d73695c1a936ef",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-build.jsonl": "eb63838fb68f9ded93a873df625bab0148037d8e11027e4a2f71894280914ba3",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-build.log": "f2e4ccd25c361506f6e1c3752a500337471b0844d37bb3bbde237b1acd8d270d",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-00.log": "def261264c201a09055490c5ac9c222f746baa5ada84e2d9251525f6f8d92894",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-01.log": "1ecd4235cd4ca657891d11bf81857d18ec4c81a692e2854d398b7ffb4aab16f2",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-02.log": "5de54e4a172b60523b4e6d81326d67cab3c75c75ba3ae239cdc035fca7371bff",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-03.log": "d54125a1361479a7fedf95bc1f6e2c3ba08d6ba0a960b861c093c0ac59adf8e2",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-04.log": "fa78120949405e4fba3fb065c258f88db041dd21a7ba9b498b58980f4d260f49",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-05.log": "192d9d5fe837029de4decf249aba41a548a8b31d42d1ed3895f9cf98c10edb55",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-06.log": "5f10090a10731784a403ba24fcbb12d076d89e6c40bcbda1d055fddf36230bb8",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-07.log": "087b60c0b1e2271faf2149961ede39f32337a6b283cba27f80199511d31887d7",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-08.log": "b828fc4b6d696026a611e7238d08e025c5690f9019898561d7fa29f175d587df",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-09.log": "000633326c4eae21a048147e3cd6e5d95a2a505b0691a5ab920b5438020ea941",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-10.log": "b2212427102e7a32a2af3b141e8c02e70fc4511529ca529185dc4ac5e29fd548",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-100.log": "68865e67931eec3b7cf5c59c917593678df727e392c431629d6def9de1a8271f",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-101.log": "af58aa47ca81337e1fb1c0c8a0ec535767207d694346d21bf0e233ecfea55605",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-102.log": "9c9927d73d9d8a52e4d67ef3dc35e45e55b3630be2802d69750bee6e1a65a4d6",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-103.log": "b4e9657cf2f2d5194cdbb4a84e0536d13e9cf0aca86ff02aa0703dd100bfd017",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-104.log": "dab454f8720bbbd516c70450e476c9f052acd908d313812440e3c8f84a47caaf",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-105.log": "b8b3f34236c450de9d58896f77bad8f0d8b5d9bd052473a46700b8718cb29b7f",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-106.log": "7ab74aa4f3bc36ec7e257b343a05c832ed3441b9a2222891b1197db2fb46d906",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-107.log": "f2d87c8e3b1bdbcc1157521cf554fac8dc74c15f0ff7e70b8ccb3546add1bd95",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-108.log": "1a6f19e1d0745fc76c4822b73448873836f28c6108bdabbd77463405b8b7e102",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-109.log": "db1f78746d38f3f29fb5a72a3a9b31069b1cb55d632facad9646450569c0165d",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-11.log": "a0b35306678a824f8c2ed16e7e34cdcc6e21cafc0cc0acd6fc43e9cd456a3c28",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-110.log": "9196dbbf7b4a07fb121019fa8f367b8ef4699c04bb6d214b5977ae77f7caf747",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-111.log": "18ff2fe204b1bd97a789ca163811534338cb2fdc2fee17384d6ea184a1fab4b8",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-112.log": "8a11701711226c2f6b22b6c43b1be160595d9c32c324552b35fc38097f17ac5c",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-113.log": "b815d7ca3018db4adf1ae01d2d2866e1b9317f3872783a5448cb65e7b74d542d",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-114.log": "1f6120f6ac721568e38b13515e5ae2a6f3a7b30a44840ba7d6bd3905bb8970dd",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-115.log": "3115fc51725be9b8d224ab62c8e1f2eb4cfd6f5744f30c8dca307cca11c9b986",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-116.log": "ccd6014604fd00068855f25ceff569090131602cb192c53e6025d684b00e1f39",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-117.log": "256d40eee0769ab8769090aa968e6047bb2170ecacaefee1b30dc8d0f9e61487",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-118.log": "b64a6cd93b032622cefa4e530ee541022ccf840aa015b3debbb7e1c6d2dd0533",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-119.log": "db0a1f7d9103306c37fe9ebf8f76962ed35a09a333244aa53fd4a100f8e4d7da",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-12.log": "13b7980be1af59d2056d4659943a5fbd806ac280aadc1f1c03f82047b728a939",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-120.log": "3fcb99acf5e92b8a3906bb67d5bf93abb1f9f80e7878cb5a0a5ee768e1463b35",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-121.log": "62c3c69b3e2c99d0b7aeae6550a44c55b093b18ffa185276ce75c78ae3bf6621",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-122.log": "e74001aeddc371247849cbb8e04855ef71cec895defd43c9cf5a5962f5bb40cb",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-123.log": "0103f09cde3c8aad42049e1cc4018b457c9648a9df0bd2fdb562b970cc05fea9",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-124.log": "61cc6cea0809c0011082ced03ea404b1b73ad353621169f1e0037012f24cd49a",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-125.log": "52a29a16332d594d1382e643d5dfaaa153a2ee29d5580a49a4118faee8574b73",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-126.log": "7c786ba36af9ae3839438e0bbec0c77ea22a348480f4b1c1a4d6bde17e77f1f8",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-127.log": "109663b31752e65bd48d91912aae977d833fe5740332e2a7422e959f589d8ed7",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-128.log": "08ffc33962d55c5360378b18372e65661548f53cdfada0d4a64d56cb253d3c23",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-129.log": "fbf7460c603751f0d562b02c6a04e7e48613aa2678144340aa59b0e97d896edd",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-13.log": "ae06118543f198678b6bdd8dbb6ac5cefb93feb8b59800a38dbebd7cc0129b03",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-130.log": "9fd2ed4729e340761ec983631fdd6849f2c444e0e66955b14ec3716fa4288c69",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-131.log": "f9d497a062afa8d0ad82a23418cacbdb76f14e3f4fc61addf70030aa635e1772",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-132.log": "77f8fdd221ec261b54db21f214c2d103a35248fb167ce2cea6edb6b82785ce12",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-133.log": "22476bb9c177677c8243a039e6ff2643be491ef50322a1434532744b49a80462",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-134.log": "4911dea5db61a3f054feca4dc18230e1132f2fbd927da5db43615e75e29fdc57",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-135.log": "1f23ea3bf9f9abccd8f855463643c78163ccc68e00788ed4a7175142f883d388",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-136.log": "e56c74b3eaf0d44c5dcf479f2265cce61463e5d5e60609209112feb2ecd30a04",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-137.log": "1d8c8114a7c3ec26912c921a28f9c43fa051c0bc91467a09eb0c490947904292",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-138.log": "15be881cca790933aa8275264cd977be1a3a7b2fe96752c0ab1f3e2bc46ab3e2",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-139.log": "1f38ba515840798b6157d6ac94e26094307f1221998b0a919e93dbee3c87b4c9",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-14.log": "cb59298a172d0418f7d4f49b089150138afcd9280cf0774d35771d9654aa2d3c",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-140.log": "af9fab35593b3747ee7477f66b4b1c3976e3f1e8b921e36b7ff29a006bb72257",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-141.log": "9a69849a0a5288eff0b305b8d102b66866f5d52ef6938a98d580a4e6857766db",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-15.log": "49906004a76c1df0ff1dcd381a3d5d42be5b261f76c2ebe1a27abc93b8106ea7",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-16.log": "001ecd6849fafd783c3b8063860a7c6ec7377bba581a879abba7de0d742665da",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-17.log": "2ba2c96cdeb36e6d681242081112f40fee2d0d4526219919cc8f780412fcda54",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-18.log": "f12437dd520e55b5992cdbeddcd9f31b4aabc26969743653f575ec4252346f7b",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-19.log": "6cb3aed980a062953f03ddd417446685fe4876e056ead3d407140a5fa8687026",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-20.log": "dd4390cab2c4f4edf9ab1372c504a4961e6620aa649c516ab5d14640324ad2ba",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-21.log": "f21b31360f670c5c8bb68eb52e0028b8835fff97e86b7f3d10498981b9b1c15b",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-22.log": "752e8a8cc47fddbab7d9a48ec80b69b0049afd5ea9afba07aecc49d353f47933",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-23.log": "0e5840fbfcc9c36e71cc9af5f00ae0a2a9d9e220ee92917d3744fe03c9bdd76c",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-24.log": "c2ce8ad58056cbd4feccce3bf53ec68190ab535a5716dd691d9d5d36e5fb0e88",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-25.log": "f338dc42219729482f484457696b844d030395a7d6e110f53a83581b3948db1e",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-26.log": "756812035af8da4d1f2475e83e94d8ca14eb123caf89601b98e54e81472344a4",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-27.log": "94f4c694219300cdc8acc53653b254029e4ef4eff1c648611b3282f1dbaf4e06",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-28.log": "c696549ef0c5aee277e828eed9aa20ce02ca46a5b4747f3a618843b707423f33",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-29.log": "e57e794c33dcb49329eaed7e220e094cf692530b181d01e66f1b66299fb53e35",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-30.log": "b0f56bfa55e7a63b35098e96879bcb35befd13b37c22b5e1ac76a092def246c6",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-31.log": "607a43d3a1d4194703a7104c006091a58f2ce4826fdde2b8d36b47378d75f12d",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-32.log": "ecdd9031b39dc04ea4fe6a073f5336186a90935d66a874efa58ff7c28c5613aa",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-33.log": "e2974521231a53bd0477d7a94c01dbbdb240b517602e8e05d13ae027207384c2",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-34.log": "ec719795508c29af7c92643a4c6cfd3eaf471a0f007efcc461a9814a3879a765",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-35.log": "63cacd50527fb704a785c562d65e045d8e177ebe257a0c2e0187f1a09d83b35d",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-36.log": "2fdc7c2360686826098059c70de09386d7064e95d142edad90dbcea95f514d11",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-37.log": "014905c2ecd40fe2afe6feef1414fe7dd4151da1451afc3fa9d15f1d32367915",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-38.log": "9c32f6d403514b1d900715511b5553b2c395913dc64d61f07ee1615cacac06c4",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-39.log": "05793fb828a9a0bf8f0769c2a78d78317d47bbac5e75744b69c83b5c2071e385",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-40.log": "710a3260e60b3087500d603c5a2c81a1a82d184909161b3832ee66752e32d746",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-41.log": "cdb51d20d18af8ad3ad21b7c8f974faacd6ae186d1b17e0b169046445c300197",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-42.log": "9440917e1f520c7a77f5945ca18409abdfcad16dfc9c519c9a34cf7bdc0fe91b",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-43.log": "3b497cd073bdf3122dd426278575a325195279884b1b50e92bacf8d51fdefde7",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-44.log": "c54401190d34a3483cea810698acd55aa1d9ec6b70e71276d10f0326453578bc",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-45.log": "2753820cca5add0599d354f7307a531fc66b11b1bde5e9cd3fb67fa7573d7021",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-46.log": "90c39859c5f394fd9cc0c058d04387b9c81dec25ada5f8c6050c3585a03aa4d0",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-47.log": "f1593ae78a853d51ae3f237ee7aa093ae4f275e5ab6191834fde97e0e6df0e8d",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-48.log": "b6ad04d351f132b996b0fefe66c841d2497f50d579d534a1613ac494deed80c2",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-49.log": "496ef03fb2a68acecea736e9b79f520d719fed5b89447afd6413727697b64e97",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-50.log": "6709649022f98b3b3779588ff50e997d8839bf601e3ee3ab39aa528faf5a6f9a",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-51.log": "5929348f0fd896143a755de319989ec887d5f68768c450924032cc301ce36680",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-52.log": "343a3dcffaf5183c2c132fea5f933cc4fbec6993f0aa4a95823554e91de7fd75",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-53.log": "177dea9ee3378d22c50bd5180621d7d1db90c57a521600a728e4706129cd5095",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-54.log": "5c3077d7cfa38a7c8fa361f6030548de21db3b5d50d7d4bae30e912a468e428c",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-55.log": "a711d22190dbfa97c8452c9f93bcaac51077c26d3c9b91977b810a2dab8b258b",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-56.log": "646833a2edb35194faf2389b2df39d694e769a7832223a87de9bb04b8e270afe",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-57.log": "a95c70f4dfa9b70c7c41a34b90da645dd83c2d26035aca7da59edc5441b3c777",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-58.log": "bf6afd214f5e914e1b029d64002b07b346f71f0e6e14a1b273dfc37ab27f013f",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-59.log": "04de0eeac6a00e32db4f16d4075d602700f325ad3c4805fc2aaaaae554ad6178",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-60.log": "6ac466d644d84f5cda5043c6af587d2dcc3122ad8d0bac68a080cd09d2a43954",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-61.log": "b0cea575ced8070ddcd1b53fce780c9e88cd5bcc6ae23a0d3db47627f7975ecc",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-62.log": "c38ceb5dcb8c0b27f04a8bc5616e2016439323e339bffa75e81cbbf2ad3006ee",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-63.log": "b2bd7d6fdc0027c9f7c70261042751a16c42a43aa476ee5d55f82ac15dcc5371",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-64.log": "23552fab7ffaccc1adb09389ccbca8e68eb73c1c64406a6cf5a8257f6fd55d95",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-65.log": "bd7c7c7029321054f3ca21b51bbbb68f701a72e8b6416684ee384ee60682da87",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-66.log": "c0181c31e6ed4a14255741b52477e0d736012bbfc27708b9942f08233b3cdc2f",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-67.log": "b7a56ca2327ea959da223c993bf1411eb781ca898c1110bfd0646ed025f9e19e",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-68.log": "348bd434501c1d31007523010e9a816c16ba234aa70dc4b0513e4bc447587689",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-69.log": "1acb2830a5b60181604721587324c0615b0057e70f6f7c57b7e3d51e82aa16cf",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-70.log": "b68bbccba27caa012afbe5606b53c57f6a3691970869221b42bb5684ea3978f9",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-71.log": "01f8c453014ebd49f8a2536d3f77075dbd5b6ac7c63cc38e97d3e031b87c4b9e",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-72.log": "666e39724a96136859836662e4a17d058d0bc21b199fc8251172697487a6a8b2",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-73.log": "1529a89f97b1efe222b89252479dce0639b9a96f49f3c5da36e15200ba2cb7f6",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-74.log": "987cac8f49808729a74a02403d05359d8e322cc4bb4ac9ee1229dda66ee75f9e",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-75.log": "d12794c6829cd573b44737f131c7aaeba6c7e56cdec116521d593353eca39bbf",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-76.log": "5d11ed6ce6452b15a632c2d8a299ed7b1bb7550ff113fb4e3bfb5783157582aa",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-77.log": "a54e7669921158fd5b00f36fe76963ae920167cabab7b48d7d8f2f51885233e8",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-78.log": "2aba5fbbf480a865d937961236f2b7e8e5a5b86ca2fefccb28af5c2585397da8",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-79.log": "f49d31543facf9674bc88038efa9bcf46fccaaa021ab9312e4de53e8ea6215b9",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-80.log": "5e7c67ec62b19eddbf34896dcc2110ca4a95d80cd39216653ee15d3ab1bb7643",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-81.log": "883b463a880b637a373c538b0792ef79664e25391a2ebef971a4756a81a653b7",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-82.log": "26abb980b7febd0eb206970b3b30ac4f86707ab8900b774ed05647ed5f4a42fc",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-83.log": "834b4f8550933edc7edc6133cf018e85232252f27cd0252770b1b63b63d41dee",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-84.log": "2bdb2749096bebc1a78c544a3c77b7c0008b02c286d84aeb0286a5e8f4bc1304",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-85.log": "728207e8f552b760b2d2da2a6c3433a2230e2848e043c9a66da20e8215d28803",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-86.log": "975385d658af1896aaca7f898277b151790a9c3572bd18fcb4f59b89e5de6e39",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-87.log": "7e54a7ad744fa74531e890ca6596324a3447ad3113900125e073ec9f5f1f9f25",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-88.log": "b05f0fff2c46f4f79dfc8781b666238305cdf4c890f69192a23459d1e0f3f501",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-89.log": "b8ba6f6e8ccba17d919629d1c6eda1d05b6ee835c9d4beb76e75548bc412997e",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-90.log": "564e62dfcfd48b36db15e8e84579ea6e8844667fcba11f7dde0c036e96a213c8",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-91.log": "dd04d32a8be70d32555be2d64c9fb92804dbc6453a576b59d4b35fa0b7334e56",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-92.log": "c537c936012758feb2c9b8d4b8d0845c950008cccd79e3031d6dc8050dcb62e3",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-93.log": "98723709798681b1d90ff65e2fa5971eb3f22345e27c788206e606820662398f",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-94.log": "1c52235f230e421c0ea1e5f254e4ecb95e305ba914f690e17b90344f19bf0812",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-95.log": "672574f6fb13cabf437dabe5c632446b8a22a9cb7672e4331f5b5249185cbdf4",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-96.log": "5e0c4bca5486440816167d67aef67ea9f95eafceed8edf38289dbad53ed62f6b",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-97.log": "298da549ded8390c453c0f38c537067d7be9ebb42b77b99bec4d556b6d1ea962",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-98.log": "a3f8dbe59d5283ba761815bcce6ed82b62259b77b4af92fc127c186d9dcc0bdb",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-99.log": "ac8ec063bb5af7521ca16c044bb4cab60027147d729fb732e44f156e3ae59595",
+    "docs/evidence/final-large-qualification-a417-20261015/owning-selected-results.json": "3e5b219c7076133895eaee7e8752f577056d82c36a49a5aea7d55538f3ae70f9",
+    "docs/evidence/final-large-qualification-a417-20261015/prelude-pin-producers-result.json": "6605a8d1e9c87c102290bdb9025cf5cab129f217d6f08cf06f1c7a672453f962",
+    "docs/evidence/final-large-qualification-a417-20261015/prelude-pin-producers.log": "0f8d618f712b8daaf2b6818db904159bb289a1f7135603da93b8875692edf944",
+    "docs/evidence/final-large-qualification-a417-20261015/preparation-receipt.json": "e500360e29d4ee2059efcd8abb00d4e0ca076a584048b55b84b5ed12cc2d164e",
+    "docs/evidence/final-large-qualification-a417-20261015/summary.json": "a7e006a493ec74ebebcf96a0486d1995d066220ad1e57c7970a73857d4e5fe78",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/drivers/build-owning.py": "f959d5fdcd243fe9a624cf60506918a5c1125e799de8cefa41eed3493bbcc3cb",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/drivers/draft_contract.py": "c3ab46afbf6c62485c5c4b3389a579d0744d889622051f1eb7f6c48d2b0745e1",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/drivers/observed_phase.py": "36d75093b66bdb07e059a9255e9b7decebf4a2a2c10a531543b202b24b302867",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/drivers/run-owning-selected.py": "67355be98a0473de60fb79a50b3ca4b39db216568ae78980a7b88cd988be4f10",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/drivers/run-production-lib-cli-clippy.py": "e94eca5f0b9aa73193e1065a944b1681a459bdeba7b45e984f477a55268f4077",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/drivers/semaprax_pressure_observation_v3.py": "5f1d756491ccc5dd662afe6e7ed744b7e65e8e0a45bc7e420b358ec531cec90b",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/expected-counts.json": "585264550cdd4e3b3b2ae980450b311add98e6c71695867a03e6219dff7b6b95",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-00-memory-samples.jsonl": "2b8371fa4b2f4aa9c185434720b630fbf8427a22ba1042a6000f367e7ed37b43",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-00.log": "8eb6e5b3fe0af45107021ee9a51f4eaf56c9a40ac41485a66b69f570d0aea7a8",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-01-memory-samples.jsonl": "cb2d472c17a68e04144cf778931f0321934f558af4b3f2b682709a6bccc2b550",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-01.log": "0877a548776943ec482c72901ddc9d6d6eec6cae980137a64557561a63d81af3",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-02-memory-samples.jsonl": "46e6c261303f3514ede0bc182052d43327ab13e0220b19dd22415b83526b04c6",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-02.log": "b00f8c9fd169a04e8248a1617fddcd7fd1768a22d8bd21a68376bc792d663cf3",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-03-memory-samples.jsonl": "409cb1a536b7fe16aebd8d92bb15686b35e94cd50ae7419b03568ee949d2ac03",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-03.log": "8dadb922276f07e3a44eb00f8bb3fcc9ed47f559db22efba93669fb10767a445",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-04-memory-samples.jsonl": "c335e1e65c4bc584e88b4e2a4fe45d47ff817730aebd5de9fee4fb3899f77b7e",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-04.log": "3a1cd731a1da929b33f4d2c2a0336ceb15c48c456e4d33d613036312b902f1ef",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-05-memory-samples.jsonl": "29a37f58929e5d3f19e88fa45f7cb3deb7bedb1e95258512545606450afcbad8",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-05.log": "b038d94edaa4c171cdd57785f6f956169cbcc101e5eae7c6352dd879c2241f70",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/owning-selected-results.json": "6ab6824f00d247bf42563ddec361a36e781405818a5fc8849fd72cd0652b1140",
+    "docs/evidence/final-large-qualification-a417-20261015/supplement-six/preparation-receipt.json": "c72a38c779ce12a5433896d766f8c6d900122d425f76e58ca87a46584618ad62",
+    "docs/evidence/nominal-payload-827/source-inventory-activation-v14.json": "d64773fd19ce52519b1336cff502de160f00419de5d4c5102df66dc72089a4cb",
+    "docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json": "3a5350d8871817a733965e88d7db81823a77abd03257d854ff445837b209774a",
+    "Cargo.lock": "7549892c22d2e25ecd2d7c2082456b5b1e80e300c4ee8d10fb988f5534da2046"
+  },
+  "source_registration_problems": [],
+  "inputs_sha256": {
+    "/Volumes/Semaprax/provenance/pin-only-27ae-five-registration-20261015/registration.json": "5f323cce2118277e54b99f68fc5e2049483e950fd207871ca25fdc4b60d8e894"
+  },
+  "prepared_driver_sha256": {
+    "run-owning-selected.py": "fb7459b6e44a336e44f779de6aff9fbf7921d986f86a8157aedb2c810eed6450",
+    "draft_contract.py": "c3ab46afbf6c62485c5c4b3389a579d0744d889622051f1eb7f6c48d2b0745e1",
+    "semaprax_pressure_observation_v3.py": "5f1d756491ccc5dd662afe6e7ed744b7e65e8e0a45bc7e420b358ec531cec90b",
+    "run-production-lib-cli-clippy.py": "e94eca5f0b9aa73193e1065a944b1681a459bdeba7b45e984f477a55268f4077",
+    "build-owning.py": "f959d5fdcd243fe9a624cf60506918a5c1125e799de8cefa41eed3493bbcc3cb",
+    "observed_phase.py": "36d75093b66bdb07e059a9255e9b7decebf4a2a2c10a531543b202b24b302867"
+  },
+  "execution_performed": false,
+  "discovery_performed": false,
+  "original_failures_retained": 3,
+  "prior_round_source": "a41774c0b3522ea7e13798f1a337b0aa5f35714e",
+  "prior_failed_compilation_attempts": [
+    {
+      "source_subject": "a33c16996b4f095ffa2cf631bc39db4589e28302",
+      "compiler_errors": 5,
+      "executed_test_bodies": 0
+    },
+    {
+      "source_subject": "8795285cc9f2de1113f9f34b66af6ee11ad75ff7",
+      "compiler_errors": 4,
+      "executed_test_bodies": 0
+    }
+  ],
+  "compile_only_harnesses": [],
+  "pending_private_patches": [],
+  "separate_regeneration": [],
+  "environment": {
+    "node_major": 24,
+    "private_target": "target/final-cgu64-20261012",
+    "cargo_build_jobs": 1,
+    "production_clippy_jobs": 1,
+    "overflow_checks": true,
+    "debug_assertions": true
+  },
+  "scope_note": "Pin-only correction: exactly3pinconsumers+2fullsourceowners, unchanged production execution source since a417; no fullsuite/repeat148.",
+  "root_freeze_authorization": "Explicit root authorization for 27ae259515501fc23085d519ff56d0c8328cf6cd",
+  "production_clippy_evidence": {
+    "source_subject": "a41774c0b3522ea7e13798f1a337b0aa5f35714e",
+    "receipt_path": "/Volumes/Semaprax/lane-prompts/final-legacy-card-a417-20261015/clippy-production-result.json",
+    "receipt_sha256": "5e6e2a19b1952e2c2b44d5211501b8892230f34edd0a538a8c8a18a3b2bb1789",
+    "exit_code": 0,
+    "reason_no_repeat": "Only two cfg(test)/integration test source pins and documentary evidence changed since qualified production; no production execution source, manifests, Cargo.lock or toolchain changes.",
+    "actual_nondoc_changed_paths": [
+      "src/workspace_graph/type_proof_tests.rs",
+      "tests/workspace/semantic_graph.rs"
+    ]
+  },
+  "qualification_phase": "PIN_ONLY_FIVE_NO_PRODUCTION_CHANGE"
+}

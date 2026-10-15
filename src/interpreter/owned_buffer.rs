@@ -57,7 +57,7 @@ pub(super) fn zeroed(
     *allocated_byte_payload = next_payload;
     Ok(OwnedBytesValue {
         allocation: next_count,
-        bytes: Arc::from(vec![0u8; length].as_slice()),
+        bytes: Arc::<[u8]>::from(vec![0u8; length].as_slice()).into(),
     })
 }
 
@@ -81,7 +81,7 @@ pub(super) fn set(
             crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE,
         )));
     };
-    let filled = Arc::make_mut(&mut buffer.bytes);
+    let filled = buffer.bytes.write_bytes();
     filled[slot] = byte;
     Ok(buffer)
 }
@@ -108,7 +108,7 @@ pub(super) fn set5(
             crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE,
         )));
     };
-    let filled = Arc::make_mut(&mut buffer.bytes);
+    let filled = buffer.bytes.write_bytes();
     filled[slot..slot + 5].copy_from_slice(&bytes);
     Ok(buffer)
 }
@@ -138,7 +138,7 @@ pub(super) fn set1_or5(
             crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE,
         )));
     };
-    let filled = Arc::make_mut(&mut buffer.bytes);
+    let filled = buffer.bytes.write_bytes();
     if wide {
         let start = usize::try_from(source_start).ok();
         for offset in 0..5 {
@@ -186,7 +186,7 @@ pub(super) fn set1_or6_or48(
             crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE,
         )));
     };
-    let filled = Arc::make_mut(&mut buffer.bytes);
+    let filled = buffer.bytes.write_bytes();
     if copy {
         let start = usize::try_from(source_start).ok();
         for offset in 0..width {
@@ -207,12 +207,30 @@ pub(super) fn set1_or6_or48(
 impl Evaluator<'_> {
     pub(super) fn evaluate_owned_buffer_operation(
         &mut self,
+        expression: &crate::hir::ResolvedExpr,
         op: crate::byte_ops::ByteOp,
         mut values: Vec<Value>,
     ) -> Result<Value, Flow> {
+        if self.partition.is_none() {
+            if let (crate::byte_ops::ByteOp::Zeroed, [Value::Usize(capacity)]) =
+                (op, values.as_slice())
+            {
+                if let Some(owner) = self.fused.produce(
+                    expression,
+                    *capacity,
+                    &mut self.next_byte_allocation,
+                    &mut self.allocated_byte_payload,
+                )? {
+                    return Ok(Value::Bytes(owner));
+                }
+            }
+        }
         // Remove the transferred owner only after all operands have evaluated.
         // No extra strong reference is retained on the unique store path.
-        let owner = if op != crate::byte_ops::ByteOp::Zeroed {
+        let owner = if !matches!(
+            op,
+            crate::byte_ops::ByteOp::Zeroed | crate::byte_ops::ByteOp::ZeroedBounded
+        ) {
             match values.first_mut() {
                 Some(value @ Value::Bytes(_)) => Some(std::mem::replace(value, Value::Moved)),
                 _ => None,
@@ -220,13 +238,109 @@ impl Evaluator<'_> {
         } else {
             None
         };
+        if let Some(Value::Bytes(buffer)) = owner.as_ref() {
+            if self.partition.is_some() {
+                // Interior children require their actual loan/root store adapter;
+                // no ordinary raw-slice store may receive a private receipt.
+                self.preflight_accounted_store(buffer)?;
+            }
+            if matches!(buffer.bytes, super::construction_fusion::Backing::Leased(_)) {
+                let mut buffer = take_buffer(owner)?;
+                let mut staged = [0u8; 48];
+                let (index, width) = match (op, values.as_slice()) {
+                    (
+                        crate::byte_ops::ByteOp::Set,
+                        [Value::Moved, Value::Usize(index), Value::Uint8(byte)],
+                    ) => {
+                        staged[0] = *byte;
+                        (*index, 1)
+                    }
+                    (
+                        crate::byte_ops::ByteOp::Set5,
+                        [Value::Moved, Value::Usize(index), Value::Uint8(a), Value::Uint8(b), Value::Uint8(c), Value::Uint8(d), Value::Uint8(e)],
+                    ) => {
+                        staged[..5].copy_from_slice(&[*a, *b, *c, *d, *e]);
+                        (*index, 5)
+                    }
+                    (
+                        kind,
+                        [Value::Moved, Value::Usize(index), Value::Uint8(one), Value::BorrowedSlice(source), Value::Usize(selector)],
+                    ) if matches!(
+                        kind,
+                        crate::byte_ops::ByteOp::Set1Or5 | crate::byte_ops::ByteOp::Set1Or6Or48
+                    ) =>
+                    {
+                        let (copy, width, offset) = if kind == crate::byte_ops::ByteOp::Set1Or5 {
+                            let copy = selector & crate::byte_ops::SET1_OR5_WIDE_TAG != 0;
+                            (
+                                copy,
+                                if copy { 5 } else { 1 },
+                                selector & !crate::byte_ops::SET1_OR5_WIDE_TAG,
+                            )
+                        } else {
+                            let copy = selector & crate::byte_ops::SET1_OR6_OR48_COPY_TAG != 0;
+                            (
+                                copy,
+                                if copy {
+                                    if selector & crate::byte_ops::SET1_OR6_OR48_WIDE48_TAG != 0 {
+                                        48
+                                    } else {
+                                        6
+                                    }
+                                } else {
+                                    1
+                                },
+                                selector & crate::byte_ops::SET1_OR6_OR48_OFFSET_MASK,
+                            )
+                        };
+                        staged[0] = *one;
+                        if copy {
+                            source.read(&mut self.fused, |bytes| {
+                                for (at, byte) in staged[..width].iter_mut().enumerate() {
+                                    *byte = usize::try_from(offset)
+                                        .ok()
+                                        .and_then(|start| start.checked_add(at))
+                                        .and_then(|at| bytes.get(at))
+                                        .copied()
+                                        .unwrap_or(0);
+                                }
+                            })?;
+                        }
+                        (*index, width)
+                    }
+                    _ => return Err(Flow::Guard("ill-typed leased byte store")),
+                };
+                let super::construction_fusion::Backing::Leased(lease) = &mut buffer.bytes else {
+                    unreachable!()
+                };
+                let length = self.fused.len(lease)?;
+                let index = usize::try_from(index)
+                    .ok()
+                    .filter(|index| length.checked_sub(*index).is_some_and(|left| left >= width))
+                    .ok_or_else(|| {
+                        Flow::Failure(normalize_byte_buffer(
+                            crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE,
+                        ))
+                    })?;
+                self.fused.store(lease, index, &staged[..width])?;
+                return Ok(Value::Bytes(buffer));
+            }
+        }
         match (op, values.as_slice()) {
-            (crate::byte_ops::ByteOp::Zeroed, [Value::Usize(capacity)]) => zeroed(
-                *capacity,
-                &mut self.next_byte_allocation,
-                &mut self.allocated_byte_payload,
-            )
-            .map(Value::Bytes),
+            (
+                crate::byte_ops::ByteOp::ZeroedBounded,
+                [Value::Usize(requested), Value::Usize(bound)],
+            ) => {
+                if requested > bound {
+                    return Err(Flow::Failure(normalize_byte_buffer(
+                        crate::byte_ops::CAPACITY_EXCEEDED_CODE,
+                    )));
+                }
+                self.zeroed_bytes(*requested).map(Value::Bytes)
+            }
+            (crate::byte_ops::ByteOp::Zeroed, [Value::Usize(capacity)]) => {
+                self.zeroed_bytes(*capacity).map(Value::Bytes)
+            }
             (
                 crate::byte_ops::ByteOp::Set,
                 [Value::Moved, Value::Usize(index), Value::Uint8(byte)],
@@ -271,7 +385,7 @@ mod tests {
     fn buffer(capacity: usize) -> OwnedBytesValue {
         OwnedBytesValue {
             allocation: 1,
-            bytes: Arc::from(vec![0; capacity]),
+            bytes: Arc::<[u8]>::from(vec![0; capacity]).into(),
         }
     }
 
@@ -309,12 +423,12 @@ mod tests {
         assert_eq!(&owner.bytes[..5], &[1, 2, 3, 4, 5]);
         assert_eq!(&owner.bytes[5..10], &[6; 5]);
         assert_eq!(&owner.bytes[10..58], &[7; 48]);
-        let snapshot = owner.bytes.clone();
+        let snapshot = owner.bytes.borrow_alias().unwrap();
         owner = set(owner, 0, 99).unwrap();
         assert_eq!(snapshot[0], 1);
         assert_eq!(owner.bytes[0], 99);
         assert_ne!(owner.bytes.as_ptr(), snapshot.as_ptr());
-        let snapshot = owner.bytes.clone();
+        let snapshot = owner.bytes.borrow_alias().unwrap();
         assert!(matches!(set5(owner, 63, [0; 5]), Err(Flow::Failure(_))));
         assert_eq!(snapshot[63], 0);
     }

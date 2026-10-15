@@ -7,6 +7,17 @@ pub(in crate::hir) fn admitted_resource(
     declaration: &ResolvedTypeDeclaration,
     interfaces: &[ResolvedInterface],
 ) -> bool {
+    admitted_resource_in(declaration, interfaces.iter())
+}
+
+/// Borrowed-inventory form of [`admitted_resource`]. Imports are examined in
+/// the exact flattening order of `interfaces`, so a caller chaining several
+/// module slices observes the same first constructor a concatenated owned
+/// vector would; nothing is cloned or retained.
+pub(in crate::hir) fn admitted_resource_in<'a>(
+    declaration: &ResolvedTypeDeclaration,
+    interfaces: impl Iterator<Item = &'a ResolvedInterface> + Clone,
+) -> bool {
     let ResolvedTypeDeclarationKind::Resource { drop } = &declaration.kind else {
         return false;
     };
@@ -24,7 +35,7 @@ pub(in crate::hir) fn admitted_resource(
         declaration: declaration.id.clone(),
         arguments: Vec::new(),
     };
-    let imports = || interfaces.iter().flat_map(|i| &i.imports);
+    let imports = || interfaces.clone().flat_map(|i| &i.imports);
     let destructor = imports().any(|i| {
         &i.id == finalizer
             && &i.import_key == import_key
@@ -79,7 +90,16 @@ pub(crate) fn admitted_ri06_regex_resource(
     declaration: &ResolvedTypeDeclaration,
     interfaces: &[ResolvedInterface],
 ) -> bool {
-    if url_view::admitted_resource(declaration, interfaces) {
+    admitted_ri06_regex_resource_in(declaration, interfaces.iter())
+}
+
+/// Borrowed-inventory form of [`admitted_ri06_regex_resource`] with the same
+/// flattening-order import scan; it confers no admission beyond that rule.
+pub(crate) fn admitted_ri06_regex_resource_in<'a>(
+    declaration: &ResolvedTypeDeclaration,
+    interfaces: impl Iterator<Item = &'a ResolvedInterface> + Clone,
+) -> bool {
+    if url_view::admitted_resource(declaration, interfaces.clone()) {
         return true;
     }
     let ResolvedTypeDeclarationKind::Resource { drop } = &declaration.kind else {
@@ -99,7 +119,7 @@ pub(crate) fn admitted_ri06_regex_resource(
         declaration: declaration.id.clone(),
         arguments: Vec::new(),
     };
-    let imports = || interfaces.iter().flat_map(|interface| &interface.imports);
+    let imports = || interfaces.clone().flat_map(|interface| &interface.imports);
     let destructor = imports().any(|import| {
         &import.id == finalizer
             && &import.import_key == import_key
@@ -159,7 +179,7 @@ pub(super) fn admitted_finalizer(
 /// The public scalar entry remains scalar, and every nominal signature type
 /// must be the resource authenticated by the same selected Rust import pair.
 pub(crate) fn admitted_helper(
-    types: &[ResolvedTypeDeclaration],
+    types: &(impl crate::hir::items::ItemSource<ResolvedTypeDeclaration> + ?Sized),
     interfaces: &[ResolvedInterface],
     function: &ResolvedFunction,
 ) -> bool {
@@ -206,25 +226,28 @@ fn regex_result_resource(ty: &ResolvedType) -> Option<&DeclarationId> {
         .then_some(resource)
 }
 
-pub(crate) fn admitted_ri06_regex_result(program: &ResolvedProgram, ty: &ResolvedType) -> bool {
+pub(crate) fn admitted_ri06_regex_result(
+    program: &dyn crate::cleanup::ReplayContext,
+    ty: &ResolvedType,
+) -> bool {
     let Some(resource) = regex_result_resource(ty) else {
         return false;
     };
     program
-        .types
+        .types()
         .iter()
-        .any(|d| &d.id == resource && admitted_ri06_regex_resource(d, &program.interfaces))
+        .any(|d| &d.id == resource && admitted_ri06_regex_resource(d, program.interfaces()))
 }
 
 pub(in crate::hir) fn resolver_ri06_regex_result(
-    program: &crate::ast::Program,
+    program: &dyn crate::ast::program_source::ProgramSource,
     ty: &ResolvedType,
 ) -> bool {
     let Some(resource) = regex_result_resource(ty) else {
         return false;
     };
     let Some(declaration) = program
-        .types
+        .types()
         .iter()
         .find(|d| d.stable_id == resource.as_str())
     else {

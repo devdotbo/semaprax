@@ -8,13 +8,15 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use crate::ast::{
     ImportFailure, ParamMode, ResourceLifecycleKind, Span, Type, TypeDeclarationKind,
 };
+use crate::bounded_output::{reservation_stage_guard, staged, ReservationStage};
 use crate::cleanup::CleanupInventory;
 use crate::cleanup_plan::CleanupPlan;
 use crate::diagnostic::Diagnostic;
 use crate::loan_plan::LoanPlan;
 
-use super::byte_capacity::analyze_byte_data_capacity;
+use self::agent_identity::AgentIdentityFailure;
 use super::byte_slice_provenance::derive_byte_slice_provenance;
+use super::hir_error;
 use super::ids::{DeclarationId, FunctionExecutionId, FunctionInstanceId, ValueId};
 use super::monomorphize::materialize_function_template;
 use super::nodes::{
@@ -34,7 +36,7 @@ impl Resolver<'_> {
         span: Span,
     ) -> Result<ResolvedType, Diagnostic> {
         if let FunctionExecutionId::Monomorphic(caller_id) = caller {
-            if let Some(template) = self.program.functions.iter().find(|candidate| {
+            if let Some(template) = self.program.functions().iter().find(|candidate| {
                 candidate.stable_id == caller_id.as_str() && !candidate.type_parameters.is_empty()
             }) {
                 return self.resolve_function_type(template, argument, span);
@@ -60,7 +62,7 @@ impl Resolver<'_> {
         function: &FunctionExecutionId,
         span: Span,
     ) -> Result<ResolvedType, Diagnostic> {
-        let target = self.program.functions.iter().find(|candidate| matches!(function, FunctionExecutionId::Monomorphic(declaration) if candidate.stable_id == declaration.as_str()))
+        let target = self.program.functions().iter().find(|candidate| matches!(function, FunctionExecutionId::Monomorphic(declaration) if candidate.stable_id == declaration.as_str()))
             .ok_or_else(|| self.error("SPX-H006", format!("resolved `?` has unknown enclosing function `{function}`"), span))?;
         self.resolve_function_type(target, &target.return_type, target.span)
     }
@@ -90,7 +92,7 @@ impl Resolver<'_> {
         };
         let caller_parameter_count = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|candidate| candidate.stable_id == caller_id.as_str())
             .map_or(0, |candidate| candidate.type_parameters.len());
@@ -112,7 +114,7 @@ impl Resolver<'_> {
             self.resolve_function_type(function, &function.return_type, function.span)?;
         if super::generic_result::slot(
             &result_type,
-            &DeclarationId::new(function.stable_id.clone()),
+            &self.declarations.held_identity(&function.stable_id),
             function.type_parameters.len(),
         ) {
             return Ok(super::generic_result::arguments(&result_type, arguments));
@@ -122,7 +124,7 @@ impl Resolver<'_> {
         }) {
             return Ok(false);
         }
-        let owner = DeclarationId::new(function.stable_id.clone());
+        let owner = self.declarations.held_identity(&function.stable_id);
         let return_type =
             self.resolve_function_type(function, &function.return_type, function.span)?;
         let owned_return = super::type_reachability::is_nested_owned_byte_record_template(
@@ -190,14 +192,28 @@ impl Resolver<'_> {
     }
 
     pub(super) fn resolve(
-        mut self,
+        self,
     ) -> Result<(ResolvedProgram, super::FunctionResolutionWork), Diagnostic> {
+        match self.resolve_with_agent_identities(|text| {
+            Ok::<_, std::convert::Infallible>(DeclarationId::new(text))
+        }) {
+            Ok(resolved) => Ok(resolved),
+            Err(AgentIdentityFailure::Semantic(error)) => Err(error),
+            Err(AgentIdentityFailure::Identity(never)) => match never {},
+        }
+    }
+
+    pub(super) fn resolve_with_agent_identities<E>(
+        mut self,
+        mut identity: impl FnMut(&str) -> Result<DeclarationId, E>,
+    ) -> Result<(ResolvedProgram, super::FunctionResolutionWork), AgentIdentityFailure<E>> {
+        let _lowering_stage = reservation_stage_guard(ReservationStage::HirLowering);
         let entrypoint = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.name == "main")
-            .map(|function| DeclarationId::new(function.stable_id.clone()))
+            .map(|function| self.declarations.held_identity(&function.stable_id))
             .ok_or_else(|| {
                 self.error(
                     "SPX-H005",
@@ -206,13 +222,11 @@ impl Resolver<'_> {
                 )
             })?;
         self.validate_record_layouts()?;
-        let types = self
-            .program
-            .types
+        let types = self.program.types()
             .iter()
             .chain(crate::prelude::declarations_for_program(self.program))
             .map(|declaration| {
-                let id = DeclarationId::new(declaration.stable_id.clone());
+                let id = self.declarations.held_identity(&declaration.stable_id);
                 let kind = match &declaration.kind {
                     TypeDeclarationKind::Resource { lifecycles } => {
                         let lifecycle = lifecycles.first().ok_or_else(|| {
@@ -222,8 +236,8 @@ impl Resolver<'_> {
                                 declaration.span,
                             )
                         })?;
-                        let lifecycle_id = DeclarationId::new(
-                            lifecycle.stable_id.clone().ok_or_else(|| {
+                        let lifecycle_id = self.declarations.held_identity(
+                            lifecycle.stable_id.as_deref().ok_or_else(|| {
                                 self.error(
                                     "SPX-H006",
                                     format!("resource `{id}` lifecycle has no identity"),
@@ -263,7 +277,7 @@ impl Resolver<'_> {
                     TypeDeclarationKind::Record { .. } => {
                         let fields = self
                             .declarations
-                            .record_fields(&id)
+                            .record_payload(&id)
                             .ok_or_else(|| {
                                 self.error(
                                     "SPX-H006",
@@ -271,13 +285,13 @@ impl Resolver<'_> {
                                     declaration.span,
                                 )
                             })?
-                            .to_vec();
+                            .clone();
                         ResolvedTypeDeclarationKind::Record { fields }
                     }
                     TypeDeclarationKind::Class { methods, .. } => {
                         let fields = self
                             .declarations
-                            .record_fields(&id)
+                            .record_payload(&id)
                             .ok_or_else(|| {
                                 self.error(
                                     "SPX-H006",
@@ -285,17 +299,17 @@ impl Resolver<'_> {
                                     declaration.span,
                                 )
                             })?
-                            .to_vec();
+                            .clone();
                         let methods = methods
                             .iter()
-                            .map(|method| DeclarationId::new(method.stable_id.clone()))
+                            .map(|method| self.declarations.held_identity(&method.stable_id))
                             .collect();
                         ResolvedTypeDeclarationKind::Class { fields, methods }
                     }
                     TypeDeclarationKind::Variant { .. } => {
                         let cases = self
                             .declarations
-                            .variant_cases(&id)
+                            .case_payload(&id)
                             .ok_or_else(|| {
                                 self.error(
                                     "SPX-H006",
@@ -303,14 +317,14 @@ impl Resolver<'_> {
                                     declaration.span,
                                 )
                             })?
-                            .to_vec();
+                            .clone();
                         ResolvedTypeDeclarationKind::Variant { cases }
                     }
                 };
                 Ok(ResolvedTypeDeclaration {
                     type_parameters: self
                         .declarations
-                        .type_parameters(&id)
+                        .parameter_payload(&id)
                         .ok_or_else(|| {
                             self.error(
                                 "SPX-H006",
@@ -318,7 +332,7 @@ impl Resolver<'_> {
                                 declaration.span,
                             )
                         })?
-                        .to_vec(),
+                        .clone(),
                     id,
                     name: declaration.name.clone(),
                     kind,
@@ -328,10 +342,10 @@ impl Resolver<'_> {
             .collect::<Result<Vec<_>, Diagnostic>>()?;
         let interfaces = self
             .program
-            .interfaces
+            .interfaces()
             .iter()
             .map(|interface| {
-                let interface_id = DeclarationId::new(interface.stable_id.clone());
+                let interface_id = self.declarations.held_identity(&interface.stable_id);
                 let imports = interface
                     .imports
                     .iter()
@@ -368,7 +382,7 @@ impl Resolver<'_> {
                             },
                         };
                         Ok(ResolvedImport {
-                            id: DeclarationId::new(import.stable_id.clone()),
+                            id: self.declarations.held_identity(&import.stable_id),
                             name: import.name.clone(),
                             interface: interface_id.clone(),
                             import_key: import.stable_id.clone(),
@@ -409,10 +423,24 @@ impl Resolver<'_> {
                 })
             })
             .collect::<Result<Vec<_>, Diagnostic>>()?;
-        let mut functions = Vec::new();
+        // Retention can move this exact carrier without creating a second Vec
+        // when the synthetic module contains only authored local functions.
+        let function_count =
+            self.program
+                .functions()
+                .iter()
+                .chain(self.program.types().iter().flat_map(
+                    |declaration| match &declaration.kind {
+                        TypeDeclarationKind::Class { methods, .. } => methods.as_slice(),
+                        _ => &[],
+                    },
+                ))
+                .filter(|function| function.type_parameters.is_empty())
+                .count();
+        let mut functions = Vec::with_capacity(function_count);
         for function in self
             .program
-            .functions
+            .functions()
             .iter()
             .filter(|function| function.type_parameters.is_empty())
         {
@@ -425,7 +453,7 @@ impl Resolver<'_> {
                 .insert(function.stable_id.clone(), cost);
             functions.push(resolved);
         }
-        for decl in &self.program.types {
+        for decl in self.program.types() {
             if let TypeDeclarationKind::Class { methods, .. } = &decl.kind {
                 for method in methods {
                     if method.type_parameters.is_empty() {
@@ -437,32 +465,46 @@ impl Resolver<'_> {
                 }
             }
         }
+        if let Some(error) = self.byte_helpers.failure() {
+            return Err(error.into());
+        }
+        // The exact signature environment permits monomorphic body reuse in
+        // generic modules, but grants no previous template/instance authority.
+        // Every template is resolved from the current source before calls in
+        // either fresh or reused functions seed the current reachable closure.
         let function_templates = self
             .program
-            .functions
+            .functions()
             .iter()
             .filter(|function| !function.type_parameters.is_empty())
             .map(|function| self.resolve_function_template(function))
             .collect::<Result<Vec<_>, _>>()?;
         let function_instances =
             self.discover_function_instances(&functions, &function_templates)?;
-        for agent in &self.program.agents {
+        for agent in self.program.agents() {
             agent
                 .validate_execution_metadata(self.program)
                 .map_err(|message| Diagnostic::io("SPX-G559", message))?;
         }
         let agents = self
             .program
-            .agents
+            .agents()
             .iter()
-            .map(|declaration| resolve_agent_declaration(declaration, &self.program.module))
-            .collect();
+            .map(|declaration| {
+                agent_identity::resolve_agent_declaration_with(
+                    declaration,
+                    self.program.module(),
+                    &mut identity,
+                )
+            })
+            .collect::<Result<Vec<_>, E>>()
+            .map_err(AgentIdentityFailure::Identity)?;
         let byte_slice_roots = derive_byte_slice_provenance(&functions, &self.declarations)?;
         let mut declarations = self.declarations;
         declarations.byte_slice_roots = byte_slice_roots;
         let mut resolved = ResolvedProgram {
-            module: self.program.module.clone(),
-            permits: self.program.permits.clone(),
+            module: self.program.module().to_owned(),
+            permits: self.program.permits().to_vec(),
             agents,
             entrypoint,
             declarations,
@@ -472,40 +514,34 @@ impl Resolver<'_> {
             functions,
             function_instances,
         };
-        analyze_byte_data_capacity(&resolved)?;
-        let loan_plans = resolved
-            .functions
-            .iter()
-            .map(|function| crate::loan_plan::build_plan(&resolved, function))
-            .collect::<Result<Vec<_>, _>>()?;
-        for (function, loan_plan) in resolved.functions.iter_mut().zip(loan_plans) {
-            function.loan_plan = loan_plan;
+        if let Some(error) = self.byte_helpers.failure() {
+            return Err(error.into());
         }
-        let instance_loan_plans = resolved
-            .function_instances
-            .iter()
-            .map(|instance| crate::loan_plan::build_plan(&resolved, &instance.function))
-            .collect::<Result<Vec<_>, _>>()?;
-        for (instance, loan_plan) in resolved
-            .function_instances
-            .iter_mut()
-            .zip(instance_loan_plans)
-        {
-            instance.function.loan_plan = loan_plan;
-        }
-        let inventories = resolved
-            .functions
-            .iter()
-            .map(|function| crate::cleanup::build_inventory(&resolved, function))
-            .collect::<Result<Vec<_>, _>>()?;
+        super::selected_fused_candidate::resolution::capacity(
+            self.program,
+            self.fused_producer,
+            &resolved,
+        )?;
+        initial_loan_plans::attach(&mut resolved)?;
+        let inventories = staged!(
+            HirCleanupInventories,
+            resolved
+                .functions
+                .iter()
+                .map(|function| crate::cleanup::build_inventory(&resolved, function))
+                .collect::<Result<Vec<_>, _>>()
+        )?;
         for (function, inventory) in resolved.functions.iter_mut().zip(inventories) {
             function.cleanup = inventory;
         }
-        let instance_inventories = resolved
-            .function_instances
-            .iter()
-            .map(|instance| crate::cleanup::build_inventory(&resolved, &instance.function))
-            .collect::<Result<Vec<_>, _>>()?;
+        let instance_inventories = staged!(
+            HirInstanceCleanupInventories,
+            resolved
+                .function_instances
+                .iter()
+                .map(|instance| crate::cleanup::build_inventory(&resolved, &instance.function))
+                .collect::<Result<Vec<_>, _>>()
+        )?;
         for (instance, inventory) in resolved
             .function_instances
             .iter_mut()
@@ -513,53 +549,62 @@ impl Resolver<'_> {
         {
             instance.function.cleanup = inventory;
         }
-        let cleanup_plans = resolved
-            .functions
-            .iter()
-            .map(|function| crate::cleanup_plan::build_plan(&resolved, function))
-            .collect::<Result<Vec<_>, _>>()?;
-        for (function, cleanup_plan) in resolved.functions.iter_mut().zip(cleanup_plans) {
-            function.cleanup_plan = cleanup_plan;
-        }
-        let instance_cleanup_plans = resolved
-            .function_instances
-            .iter()
-            .map(|instance| crate::cleanup_plan::build_plan(&resolved, &instance.function))
-            .collect::<Result<Vec<_>, _>>()?;
-        for (instance, cleanup_plan) in resolved
-            .function_instances
-            .iter_mut()
-            .zip(instance_cleanup_plans)
-        {
-            instance.function.cleanup_plan = cleanup_plan;
-        }
-        for function in &resolved.functions {
-            if let Some(yields) = &function.yields {
-                if crate::cleanup_plan::owned_frame_parameter(
-                    &resolved.declarations,
-                    &function.params,
-                ) {
-                    crate::cleanup_plan::owned_frame_liveness(&resolved.declarations, function)?;
-                } else if crate::cleanup_plan::owned_frame_v2_parameter(
-                    &resolved.declarations,
-                    &function.params,
-                ) {
-                    crate::cleanup_plan::owned_frame_v2_liveness(&resolved.declarations, function)?;
-                } else {
-                    crate::cleanup_plan::admit_owned_bytes_profile(function)?;
+        staged!(
+            HirCleanupPlans,
+            crate::cleanup_plan::attach_program_plans(&mut resolved)
+        )?;
+        staged!(
+            HirYieldProfiles,
+            (|| {
+                for function in &resolved.functions {
+                    if let Some(yields) = &function.yields {
+                        if crate::cleanup_plan::owned_frame_parameter(
+                            &resolved.declarations,
+                            &function.params,
+                        ) {
+                            crate::cleanup_plan::owned_frame_liveness(
+                                &resolved.declarations,
+                                function,
+                            )?;
+                        } else if crate::cleanup_plan::owned_frame_v2_parameter(
+                            &resolved.declarations,
+                            &function.params,
+                        ) {
+                            crate::cleanup_plan::owned_frame_v2_liveness(
+                                &resolved.declarations,
+                                function,
+                            )?;
+                        } else {
+                            crate::cleanup_plan::admit_owned_bytes_profile(function)?;
+                        }
+                        if crate::hir::yield_aggregate::has_bytes_leaf(
+                            &resolved.declarations,
+                            &yields.request_type,
+                        ) || crate::hir::yield_aggregate::has_bytes_leaf(
+                            &resolved.declarations,
+                            &yields.response_type,
+                        ) {
+                            crate::cleanup_plan::admit_sequential_aggregate_bytes_profile(
+                                function,
+                            )?;
+                        }
+                    }
                 }
-                if crate::hir::yield_aggregate::has_bytes_leaf(
-                    &resolved.declarations,
-                    &yields.request_type,
-                ) || crate::hir::yield_aggregate::has_bytes_leaf(
-                    &resolved.declarations,
-                    &yields.response_type,
-                ) {
-                    crate::cleanup_plan::admit_sequential_aggregate_bytes_profile(function)?;
-                }
+                Ok::<(), Diagnostic>(())
+            })()
+        )?;
+        self.function_work.static_text = staged!(
+            HirValidation,
+            if self.partition_profile {
+                super::byte_partition::validate_private(&resolved)
+            } else {
+                super::selected_fused_candidate::resolution::validation(
+                    self.program,
+                    self.fused_producer,
+                    &resolved,
+                )
             }
-        }
-        validate(&resolved)?;
+        )?;
         Ok((resolved, self.function_work))
     }
 
@@ -567,10 +612,14 @@ impl Resolver<'_> {
         &self,
         function: &crate::ast::Function,
     ) -> Result<(ResolvedFunction, usize, bool), Diagnostic> {
-        if let Some(reuse) = &self.reuse {
+        if let Some(reuse) = self.reuse.as_ref().filter(|reuse| {
+            // Compare data addresses: trait vtables can be duplicated between
+            // codegen units. Equal-text detached source is not this capability.
+            std::ptr::addr_eq(reuse.current, self.program)
+        }) {
             let previous = reuse
                 .program
-                .functions
+                .functions()
                 .iter()
                 .find(|previous| previous.stable_id == function.stable_id);
             let resolved = reuse
@@ -580,7 +629,12 @@ impl Resolver<'_> {
                 .find(|previous| previous.id.as_str() == function.stable_id);
             let cost = reuse.costs.get(&function.stable_id).copied();
             if let (Some(previous), Some(resolved), Some(cost)) = (previous, resolved, cost) {
-                if previous == function {
+                if previous == function
+                    && !super::function_requires_current_byte_helper_resolution(
+                        self.program,
+                        resolved,
+                    )
+                {
                     if !crate::bounded_output::reserve_active(cost) {
                         return Err(self.error(
                             "SPX-H006",
@@ -588,7 +642,7 @@ impl Resolver<'_> {
                             function.span,
                         ));
                     }
-                    return Ok((resolved.clone(), cost, true));
+                    return Ok((reuse_lowered::clone_for_rebuild(resolved), cost, true));
                 }
             }
         }
@@ -601,7 +655,7 @@ impl Resolver<'_> {
     }
 
     pub(super) fn validate_record_layouts(&self) -> Result<(), Diagnostic> {
-        for declaration in &self.program.types {
+        for declaration in self.program.types() {
             if !matches!(
                 &declaration.kind,
                 TypeDeclarationKind::Record { .. } | TypeDeclarationKind::Class { .. }
@@ -612,7 +666,7 @@ impl Resolver<'_> {
                 continue;
             }
             let ty = ResolvedType::Nominal {
-                declaration: DeclarationId::new(declaration.stable_id.clone()),
+                declaration: self.declarations.held_identity(&declaration.stable_id),
                 arguments: Vec::new(),
             };
             if self.declarations.type_facts(&ty).is_none() {
@@ -633,7 +687,7 @@ impl Resolver<'_> {
         &self,
         function: &crate::ast::Function,
     ) -> Result<ResolvedFunction, Diagnostic> {
-        let template_id = DeclarationId::new(function.stable_id.clone());
+        let template_id = self.declarations.held_identity(&function.stable_id);
         let function_scope = FunctionExecutionId::Monomorphic(template_id.clone());
         self.resolve_function_in_scope(function, &function_scope, template_id)
     }
@@ -644,7 +698,7 @@ impl Resolver<'_> {
     ) -> Result<ResolvedFunctionTemplate, Diagnostic> {
         let transparent_vec_wrapper = crate::vec_ops::source_wrapper(self.program, function);
         let transparent_box_wrapper = crate::box_ops::source_wrapper(self.program, function);
-        let function_id = DeclarationId::new(function.stable_id.clone());
+        let function_id = self.declarations.held_identity(&function.stable_id);
         let function_scope = FunctionExecutionId::Monomorphic(function_id.clone());
         let type_parameters = function
             .type_parameters
@@ -704,6 +758,7 @@ impl Resolver<'_> {
                 bindings.insert(
                     param.name.clone(),
                     Binding {
+                        traversal_row: None,
                         id: id.clone(),
                         ty: ty.clone(),
                         ownership,
@@ -740,6 +795,7 @@ impl Resolver<'_> {
         ensures_bindings.insert(
             "result".to_owned(),
             Binding {
+                traversal_row: None,
                 id: result_id.clone(),
                 ty: return_type.clone(),
                 ownership: if (transparent_vec_wrapper.is_some() && return_type.is_uniquely_owned())
@@ -824,6 +880,11 @@ impl Resolver<'_> {
             }
         }
 
+        // This is the current generic-call binding frontier for reused bodies
+        // too: derive the full template/argument identity, select only a fresh
+        // current template, materialize it, then discover its nested calls.
+        // Final HIR validation independently reconstructs this exact sequence,
+        // substitutions and bodies before cleanup/loan authority is published.
         let mut seen = BTreeSet::new();
         let mut instances = Vec::new();
         while let Some((template_id, type_arguments, id)) = calls.pop_front() {
@@ -907,6 +968,7 @@ impl Resolver<'_> {
                 bindings.insert(
                     param.name.clone(),
                     Binding {
+                        traversal_row: None,
                         id: id.clone(),
                         ty: ty.clone(),
                         ownership,
@@ -968,6 +1030,7 @@ impl Resolver<'_> {
         ensures_bindings.insert(
             "result".to_owned(),
             Binding {
+                traversal_row: None,
                 id: result_id.clone(),
                 ty: return_type.clone(),
                 ownership: self.expression_ownership(
@@ -1024,6 +1087,11 @@ impl Resolver<'_> {
         let mut result = None;
         while let Some(frame) = frames.pop() {
             match frame {
+                Frame::Enter(Type::Never) => {
+                    return Err(hir_error(
+                        "compiler-only completion marker cannot be declared",
+                    ));
+                }
                 Frame::Enter(ty @ Type::Function { .. }) => {
                     result = Some(super::function_value::resolve::source_type(ty).ok_or_else(
                         || super::function_value::error("invalid callable signature"),
@@ -1098,6 +1166,7 @@ impl Resolver<'_> {
                         let admitted_vec = declaration.as_str() == crate::prelude::VEC_ID
                             && matches!(resolved.as_slice(), [argument]
                             if crate::vec_ops::resolved_vec_element_is_admitted(argument)
+                                || crate::hir::owned_leaf_collection::copy_or_leaf_admitted(&self.declarations, argument)
                                 || crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
                                     &self.declarations,
                                     argument,
@@ -1156,7 +1225,7 @@ impl Resolver<'_> {
         if let FunctionExecutionId::Monomorphic(owner) = execution {
             if let Some(function) = self
                 .program
-                .functions
+                .functions()
                 .iter()
                 .find(|candidate| candidate.stable_id == owner.as_str())
             {
@@ -1185,7 +1254,7 @@ impl Resolver<'_> {
                 .position(|parameter| parameter.name == *name)
             {
                 return Ok(ResolvedType::TypeParameter {
-                    owner: DeclarationId::new(function.stable_id.clone()),
+                    owner: self.declarations.held_identity(&function.stable_id),
                     index: u32::try_from(index).map_err(|_| {
                         self.error(
                             "SPX-H006",
@@ -1212,7 +1281,7 @@ impl Resolver<'_> {
             declaration: declaration.clone(),
             arguments: resolved.clone(),
         };
-        let owner = DeclarationId::new(function.stable_id.clone());
+        let owner = self.declarations.held_identity(&function.stable_id);
         let transparent_vec = crate::vec_ops::source_wrapper(self.program, function).is_some()
             && declaration.as_str() == crate::prelude::VEC_ID
             && matches!(resolved.as_slice(),
@@ -1239,6 +1308,10 @@ impl Resolver<'_> {
             || (!crate::iterator_ops::is_iter(&instance)
                 && !crate::iterator_ops::is_step(&instance)
                 && !owned_record_vec
+                && !super::owned_leaf_collection::is_copy_or_leaf_vec(
+                    &self.declarations,
+                    &instance,
+                )
                 && !transparent_vec
                 && !specialized_vec_wrapper
                 && !transparent_box
@@ -1290,81 +1363,11 @@ impl Resolver<'_> {
     }
 }
 
-fn resolve_agent_declaration(
-    declaration: &crate::ast::AgentDeclaration,
-    module: &str,
-) -> super::ResolvedAgentDeclaration {
-    super::ResolvedAgentDeclaration {
-        stable_id: DeclarationId::new(declaration.stable_id.clone()),
-        name: declaration.name.clone(),
-        types: declaration
-            .types
-            .iter()
-            .map(|role| super::ResolvedAgentTypeRole {
-                role: match role.role {
-                    crate::ast::AgentTypeRole::Task => super::ResolvedAgentTypeRoleKind::Task,
-                    crate::ast::AgentTypeRole::State => super::ResolvedAgentTypeRoleKind::State,
-                    crate::ast::AgentTypeRole::Observation => {
-                        super::ResolvedAgentTypeRoleKind::Observation
-                    }
-                    crate::ast::AgentTypeRole::Proposal => {
-                        super::ResolvedAgentTypeRoleKind::Proposal
-                    }
-                    crate::ast::AgentTypeRole::Outcome => super::ResolvedAgentTypeRoleKind::Outcome,
-                    crate::ast::AgentTypeRole::Result => super::ResolvedAgentTypeRoleKind::Result,
-                },
-                stable_id: DeclarationId::new(role.stable_id.clone()),
-            })
-            .collect(),
-        operations: declaration
-            .operations
-            .iter()
-            .map(|operation| super::ResolvedAgentOperationRole {
-                role: match operation.role {
-                    crate::ast::AgentOperationRole::Initialize => {
-                        super::ResolvedAgentOperationRoleKind::Initialize
-                    }
-                    crate::ast::AgentOperationRole::Observe => {
-                        super::ResolvedAgentOperationRoleKind::Observe
-                    }
-                    crate::ast::AgentOperationRole::Propose => {
-                        super::ResolvedAgentOperationRoleKind::Propose
-                    }
-                    crate::ast::AgentOperationRole::Authorize => {
-                        super::ResolvedAgentOperationRoleKind::Authorize
-                    }
-                    crate::ast::AgentOperationRole::Execute => {
-                        super::ResolvedAgentOperationRoleKind::Execute
-                    }
-                    crate::ast::AgentOperationRole::Reduce => {
-                        super::ResolvedAgentOperationRoleKind::Reduce
-                    }
-                },
-                kind: match operation.kind {
-                    crate::ast::AgentOperationKind::Deterministic => {
-                        super::ResolvedAgentOperationKind::Deterministic
-                    }
-                    crate::ast::AgentOperationKind::Model => {
-                        super::ResolvedAgentOperationKind::Model
-                    }
-                    crate::ast::AgentOperationKind::Effect => {
-                        super::ResolvedAgentOperationKind::Effect
-                    }
-                },
-                stable_id: DeclarationId::new(operation.stable_id.clone()),
-                embedded: operation.embedded_function_index.is_some(),
-            })
-            .collect(),
-        source_association: None,
-        runtime_v1_json: declaration.runtime_v1_json.clone(),
-        model_wait: declaration.model_wait.as_ref().map(|binding| {
-            Box::new(super::ResolvedAgentModelWaitBinding {
-                helper_id: super::DeclarationId::new(binding.helper_id.clone()),
-            })
-        }),
-    }
-    .bind_source_association(module)
-}
-
 #[cfg(test)]
 mod tests;
+
+pub(in crate::hir) mod agent_identity;
+#[cfg(test)]
+pub(in crate::hir) mod agent_identity_original;
+pub(super) mod initial_loan_plans;
+mod reuse_lowered;

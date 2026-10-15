@@ -1,0 +1,42 @@
+[
+  {
+    "current": "    #[cfg(test)]\n    capacity_observation::actual_attribution::index_start();\n    let index = ModuleIndex::new(program)?;",
+    "original": "    let index = ModuleIndex::new(program)?;",
+    "count": 1
+  },
+  {
+    "current": "    #[cfg(test)]\n    capacity_observation::actual_attribution::index_end();\n    let count = program\n",
+    "original": "    let count = program\n",
+    "count": 1
+  },
+  {
+    "current": "        plans.push(observe_finished_plan(lexical_control::build_with_index(\n            program, function, &execution, &index,\n        )?));",
+    "original": "        plans.push(lexical_control::build_with_index(\n            program, function, &execution, &index,\n        )?);",
+    "count": 1
+  },
+  {
+    "current": "        plans.push(observe_finished_plan(lexical_control::build_with_index(\n            program,\n            &instance.function,\n            &execution,\n            &index,\n        )?));",
+    "original": "        plans.push(lexical_control::build_with_index(\n            program,\n            &instance.function,\n            &execution,\n            &index,\n        )?);",
+    "count": 1
+  },
+  {
+    "current": "        capacity_observation::staged(&plans);\n        #[cfg(test)]\n        capacity_observation::actual_attribution::staging_after_push();",
+    "original": "        capacity_observation::staged(&plans);",
+    "count": 2
+  },
+  {
+    "current": "    #[cfg(test)]\n    capacity_observation::actual_attribution::returning();\n    Ok(plans)\n}",
+    "original": "    Ok(plans)\n}",
+    "count": 1
+  },
+  {
+    "current": "    debug_assert!(plans.next().is_none());\n    #[cfg(test)]\n    capacity_observation::actual_attribution::published();\n    Ok(())",
+    "original": "    debug_assert!(plans.next().is_none());\n    Ok(())",
+    "count": 1
+  },
+  {
+    "current": "\n// Production is the standard identity move; test instrumentation copies raw\n// observer counters only, after the complete plan and before the original push.\n#[cfg(not(test))]\nuse std::convert::identity as observe_finished_plan;\n#[cfg(test)]\nfn observe_finished_plan(plan: CleanupPlan) -> CleanupPlan {\n    capacity_observation::actual_attribution::staging_before_push();\n    plan\n}\n#[cfg(test)]\npub(super) mod original_plans;\n",
+    "original": "",
+    "count": 1
+  }
+]

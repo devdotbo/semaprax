@@ -17,6 +17,15 @@ use semaprax::interpreter::{self, InterpreterOptions};
 use semaprax::{format, graph, hir, parse, verify};
 use serde_json::Value;
 
+#[path = "statement_if/scalar_expression.rs"]
+mod scalar_expression;
+
+#[path = "statement_if/guard_return.rs"]
+mod guard_return;
+
+#[path = "statement_if/exit_guard_semicolon.rs"]
+mod exit_guard_semicolon;
+
 static NEXT_ID: AtomicU64 = AtomicU64::new(0);
 
 /// Copy-scalar statement `if`s in straight-line code and `while` bodies; the
@@ -391,11 +400,17 @@ fn statement_if_keeps_the_statement_rules_inside_its_branches() {
         "module t;\n@id(\"main\")\nfn main() -> i64\n{\n    let x = 0;\n    if x == 0 { string_len(\"a\"); }\n    x\n}\n",
     );
     assert_eq!(diagnostic.code, "SPX-P106");
-    // A valued `if` followed by `;` stays an expression statement.
-    let diagnostic = rejection(
-        "module t;\n@id(\"main\")\nfn main() -> i64\n{\n    let x = 0;\n    if x == 0 { true } else { false };\n    x\n}\n",
+    // An intermediate valued scalar if is a checked scalar discard.
+    let program = semaprax::check(
+        "module t; @id(\"main\") fn main()->i64 { let x=0; if x==0 { true } else { false }; x }",
+        "statement-if.spx",
+    )
+    .unwrap();
+    let canonical = format::canonical(&program);
+    assert_eq!(
+        canonical,
+        format::canonical(&parse(&canonical, "statement-if.spx").unwrap())
     );
-    assert_eq!(diagnostic.code, "SPX-P106");
     // The branches of a statement `if` are checked like any value `if`.
     let program = parse(
         "module t;\n@id(\"main\")\nfn main() -> i64\n{\n    let x = 0;\n    if x { }\n    x\n}\n",

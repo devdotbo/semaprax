@@ -1,0 +1,9 @@
+{
+  "basis": "c7a3ddad0",
+  "actual_build_log": "/Volumes/Semaprax/lane-prompts/sharing-focused-c7a3-20261015/owning-build.jsonl",
+  "actual_build_log_sha256": "ffdd514b2f5636da8728b339b04baf463facb948f588e26880e7339e76ecbf70",
+  "actual_errors": 4,
+  "post_repair_rust_execution": false,
+  "full_inverse_count": 65,
+  "host_mutator_full_originals_equal": 5
+}

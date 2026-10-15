@@ -1,0 +1,24 @@
+{
+  "url": "https://github.com/wavect/semaprax/issues/826",
+  "title": "(OPT) Pay exact small weighted-successor vector backing before allocation",
+  "issue_number": 826,
+  "body": "A bounded Claude source review of the weighted canonical receiver at 93fdc103c89fda0230538e568b3f8f661c55f399 identified a probable inherited backing-accounting gap: successors charges targets.len() times the weighted-entry layout, then collects a BTreeSet iterator into Vec. Rust may allocate its minimum capacity of four entries for lengths one to three. Both independently preserved old and current receivers have this shape; this is not established as a new regression or application failure cause. No runtime/token gain is claimed.\n\nUse explicitly sized Vec backing under the existing payer before allocation, then extend in unchanged ordered iteration. Preserve the complete original receiver, values, ordering, multiplicity, work debits, first-sticky failure, and Drop. Do not hide a backing mismatch behind unrelated conservative B-tree slack or raise limits.\n\nAcceptance: actual small successor lengths zero through four with capacity/backing observations; exact/one-short/zero/sticky refusal before allocation; complete old/current canonical map and verdict parity; no cap or work discounts. Run only these owning controls in the next combined qualification. Publish to wavect/v0-10-0 / PR #761 and close after verified push. A private implementation lane is already assigned.\n",
+  "state": "open",
+  "user": {
+    "login": "wsdt",
+    "name": "wsdt",
+    "email": null,
+    "avatar_url": "https://avatars.githubusercontent.com/u/28724551?v=4",
+    "id": 28724551
+  },
+  "assignees": null,
+  "labels": null,
+  "milestone": null,
+  "state_reason": null,
+  "comments": 0,
+  "created_at": "2026-10-14T21:44:21Z",
+  "updated_at": "2026-10-14T21:44:21Z",
+  "closed_at": null,
+  "display_url": "https://github.com/wavect/semaprax/issues/826",
+  "display_title": "(OPT) Pay exact small weighted-successor vector backing before allocation"
+}

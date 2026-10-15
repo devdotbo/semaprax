@@ -1,0 +1,16 @@
+module collection_match;
+@id("report") record Report {@id("report.words") words:Vec<string>,}
+@id("wrapped") record Wrapped {@id("wrapped.report") report:Report,@id("wrapped.good") good:bool,}
+@id("convert") fn convert(value:own Report)->Wrapped {
+ match own value {Report{words}=>Wrapped{report:Report{words:words},good:true},}
+}
+@id("terminal") fn terminal(value:own Report, early:bool)->Wrapped {
+ match own value {Report{words}=>{let outcome=Wrapped{report:Report{words:words},good:true};let mut tick=0usize;while tick<1usize {tick=tick+1usize;if early {return outcome;} else {0} 0} return outcome;},}
+}
+@id("inspect") fn inspect(value:borrow Wrapped)->bool {value.good && vec_len<string>(value.report.words)==1usize}
+@id("app.main") fn main()->i64 {
+ let first=convert(Report{words:vec_push<string>(vec_with_capacity<string>(1usize),"x")});
+ let second=terminal(Report{words:vec_push<string>(vec_with_capacity<string>(1usize),"y")},false);
+ let third=terminal(Report{words:vec_push<string>(vec_with_capacity<string>(1usize),"z")},true);
+ if inspect(first) && inspect(second) && inspect(third) {42}else{0}
+}

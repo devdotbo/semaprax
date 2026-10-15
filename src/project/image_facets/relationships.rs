@@ -157,6 +157,14 @@ pub(super) fn items(
                             },
                         ));
                     }
+                    Statement::CopyDiscard { value, .. } => pending.push(Task::Expression(
+                        value,
+                        Context {
+                            access: Access::from_mode(crate::hir::OwnershipMode::Value),
+                            depth: context.depth + 1,
+                            ..context
+                        },
+                    )),
                     Statement::Unsafe {
                         audit,
                         body,
@@ -176,6 +184,9 @@ pub(super) fn items(
                         ));
                     }
                     Statement::While {
+                        condition, body, ..
+                    }
+                    | Statement::LexicalWhile {
                         condition, body, ..
                     } => {
                         let child = Context {

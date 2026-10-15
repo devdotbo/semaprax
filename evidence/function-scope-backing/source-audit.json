@@ -1,0 +1,213 @@
+{
+  "source_subject": "7a488688b34e72edd3442a3ad669862d0400f560",
+  "status": "source-authored; combined exact focused qualification pending",
+  "cargo_build_test_runs_in_lane": 0,
+  "caps_and_observer_unchanged": true,
+  "actual_claude_authored_rounds": [
+    {
+      "receipt_path": "/Volumes/Semaprax/lane-prompts/claude-function-scope-backing-20261013/implementation-receipt.json",
+      "receipt_sha256": "be73452c8e739255292b4b8f0fa4754f5e5a87d7f0961f6ae7d28266cd429611",
+      "prompt_sha256": "347a61d240f0bf51f25b69227e3017a00a1e5ee062a1221d13c9937f482b7fc5",
+      "implementation_patch_sha256": "4b94ff791ed8e12a9f80ef3cdb3ef6132b5e0159e12ef6d84ba1187c95b8ddac",
+      "receipt": {
+        "exit_code": 0,
+        "wall_seconds": 387.29031437499907,
+        "tools_enabled": false,
+        "code_execution": false,
+        "peak_process_group_rss_bytes": 362872832,
+        "resource_refusal": null,
+        "duration_ms": 384789,
+        "duration_api_ms": 384521,
+        "num_turns": 1,
+        "total_cost_usd": 0.8048935,
+        "usage": {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 47504,
+          "cache_read_input_tokens": 535,
+          "output_tokens": 61482,
+          "output_tokens_details": {
+            "thinking_tokens": 49483
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 47504,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 61482,
+              "cache_read_input_tokens": 535,
+              "cache_creation_input_tokens": 47504,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 47504
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        },
+        "modelUsage": {
+          "claude-sonnet-5-5": {
+            "inputTokens": 2,
+            "outputTokens": 61482,
+            "cacheReadInputTokens": 535,
+            "cacheCreationInputTokens": 47504,
+            "webSearchRequests": 0,
+            "costUSD": 0.8048935,
+            "contextWindow": 1000000,
+            "maxOutputTokens": 128000,
+            "thinkingTokens": 49483,
+            "canonicalModel": "claude-sonnet-5-5",
+            "provider": "firstParty",
+            "costBasis": "list"
+          }
+        },
+        "cost_scope": "CLI list-price estimate, not invoice"
+      }
+    },
+    {
+      "receipt_path": "/Volumes/Semaprax/lane-prompts/claude-function-scope-backing-20261013-round2/implementation-receipt.json",
+      "receipt_sha256": "95660f8ad7b4670a4b5e89445a33bcf8410a5c9fd028917e4669bfe9a55ab583",
+      "prompt_sha256": "4da3ae586b95b91587dbf89d2eded6a9de6bea19b7c2c02a23e09be9ed97f51b",
+      "implementation_patch_sha256": "2a026c3051b636a4fdafab1902893877642aab34343df60be60521be94ca1061",
+      "receipt": {
+        "exit_code": 0,
+        "wall_seconds": 395.26403324999956,
+        "tools_enabled": false,
+        "code_execution": false,
+        "peak_process_group_rss_bytes": 366428160,
+        "resource_refusal": null,
+        "duration_ms": 392673,
+        "duration_api_ms": 392290,
+        "num_turns": 1,
+        "total_cost_usd": 1.0280274999999999,
+        "usage": {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 96855,
+          "cache_read_input_tokens": 535,
+          "output_tokens": 64055,
+          "output_tokens_details": {
+            "thinking_tokens": 49737
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 96855,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 64055,
+              "cache_read_input_tokens": 535,
+              "cache_creation_input_tokens": 96855,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 96855
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        },
+        "modelUsage": {
+          "claude-sonnet-5-5": {
+            "inputTokens": 2,
+            "outputTokens": 64055,
+            "cacheReadInputTokens": 535,
+            "cacheCreationInputTokens": 96855,
+            "webSearchRequests": 0,
+            "costUSD": 1.0280274999999999,
+            "contextWindow": 1000000,
+            "maxOutputTokens": 128000,
+            "thinkingTokens": 49737,
+            "canonicalModel": "claude-sonnet-5-5",
+            "provider": "firstParty",
+            "costBasis": "list"
+          }
+        },
+        "cost_scope": "CLI list-price estimate, not invoice"
+      }
+    }
+  ],
+  "aggregate_cli_list_cost_usd_not_invoice": 1.832921,
+  "original_collection_sha256": "a0577d08a3ab8b3b1b7f289720ae0faf9d5ba0457c0181f2663dc5b38cf801fc",
+  "original_map_function_file_sha256": "b712e23fef515940e7202d3321d98a9bbb1ff16a3b52f6935c01cdad8f4b1799",
+  "prior_paid_function_prefix_sha256": "833b60ff7dde03cd0578c620e053c58733bcdb8958336fc66969f9f62205a986",
+  "prior_paid_normalization": "Only entry/helper identifiers, rustfmt skip attribute and one terminal blank line; full body remains compiled. Provenance test restores exact original bytes.",
+  "source_files": {
+    "src/hir/declared_collection.rs": {
+      "sha256": "3ffc01f96d94b99e9083477fd322b5c05a4f80e680821e5ca5cdecc66eb6cfc7",
+      "lines": 151
+    },
+    "src/hir/declared_collection/paid.rs": {
+      "sha256": "eae7f2007f0532f871526acc8514b32d937b5547638422326f4fb0f49ac67acb",
+      "lines": 242
+    },
+    "src/hir/declared_collection/paid/early.rs": {
+      "sha256": "d35bc20706516b81fba307e880def3dea1c508874ecc3b7e22fb4a068f677cd9",
+      "lines": 206
+    },
+    "src/hir/validation/function_scope.rs": {
+      "sha256": "d4a6b7e8f4ec7a9a886ec69943ead6fbd57cd91317dc49818c0f0cf5d5a8d88c",
+      "lines": 272
+    },
+    "src/hir/validation/function_scope/backing_saved.rs": {
+      "sha256": "78e6a7bd6cad8f1768b5bf072198325992173976e0cc47fc0d083357080d1318",
+      "lines": 266
+    },
+    "src/hir/validation/function_scope/lifecycle.rs": {
+      "sha256": "8f82fffd295fa7e63a45c56779e6c6d1749d08fee2460ecaa44a922ec375172c",
+      "lines": 99
+    },
+    "src/hir/validation/function_scope/collection_tests.rs": {
+      "sha256": "677099399f2fc12bd13e7da395c56af4747adf0554db7407fc535970f5d9c872",
+      "lines": 331
+    },
+    "src/hir/validation/function_scope/collection_tests/funded_early.rs": {
+      "sha256": "e60405e874fd802508a90eaefe44b808dadccedda45d9f79d9db7808ed18c8de",
+      "lines": 364
+    }
+  },
+  "source_join_owners": [
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "tests/hir_module_boundaries.rs"
+  ],
+  "existing_allocation_assertions_unchanged": true,
+  "pending_exact_selectors": [
+    "hir::validation::function_scope::collection_tests::funded_scan_matches_owned_contains_with_exact_short_sticky_and_complete_drop",
+    "hir::validation::function_scope::collection_tests::trivial_resource_signature_constructs_no_scan_backing",
+    "hir::validation::function_scope::collection_tests::funded_chain_scan_is_exact_short_sticky_and_drop_complete_for_every_function",
+    "hir::validation::function_scope::collection_tests::funded_function_scan_preserves_owned_reference_diagnostics_and_refusal_order",
+    "hir::validation::function_scope::collection_tests::funded_scan_keeps_positive_transitive_refusal_and_full_diagnostic_bytes",
+    "hir::validation::function_scope::collection_tests::complete_original_function_and_collection_receivers_keep_source_provenance",
+    "hir::validation::function_scope::collection_tests::allocation_free_retries_preserve_same_owner_first_refusal",
+    "hir::validation::function_scope::collection_tests::complete_seven_a_function_receiver_matches_current_and_drops_actual_backing",
+    "hir::validation::function_scope::collection_tests::complete_seven_a_function_receiver_keeps_full_source_provenance",
+    "hir::validation::function_scope::collection_tests::funded_early::funded_early_profiles_match_original_receivers_and_pay_each_constructor",
+    "hir::validation::function_scope::collection_tests::funded_early::early_profile_constructors_are_actually_paid_before_construction",
+    "hir::validation::function_scope::collection_tests::funded_early::funded_lifecycle_collector_matches_original_cycles_errors_and_pays_nodes",
+    "hir::validation::function_scope::collection_tests::funded_early::funded_declared_effect_keys_match_borrowed_collect_and_pay_each_new_node",
+    "hir::validation::function_scope::collection_tests::funded_early::imported_lifecycle_effect_payloads_are_funded_deduplicated_and_drop_complete",
+    "hir::validation::function_scope::collection_tests::funded_early::funded_early_profiles_preserve_exact_depth_leaf_and_field_limits",
+    "hir::validation::function_scope::tests::production_chain_observes_actual_backing_debits_complete_drop_and_exact_short_sticky",
+    "hir::validation::function_scope::tests::production_chain_matches_complete_saved_map_function_and_full_iterative_corpus",
+    "hir::validation::function_scope::tests::production_chain_preserves_parameter_requires_body_result_and_ensures_first_errors",
+    "hir::validation::function_scope::tests::production_chain_validator_drop_is_complete_on_postvalidation_unwind",
+    "hir::validation::function_scope::tests::persistent_requires_and_ensures_keep_hostile_flags_and_full_outer_metadata_isolated"
+  ],
+  "residual_scope": "Other preflight walkers and generic proof return trees retain their existing owners. No complete final-validation physical funding, application-fit or historical G171 claim."
+}

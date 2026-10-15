@@ -1,8 +1,9 @@
 //! Exact transparent generic wrappers admitted only for `std.collections`.
 
+use crate::ast::program_source::ProgramSource;
 use std::cell::Cell;
 
-use crate::ast::{Expr, ExprKind, Function, Program, Type};
+use crate::ast::{Expr, ExprKind, Function, Type};
 use crate::hir::{
     OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedFunctionTemplate, ResolvedProgram,
     ResolvedType,
@@ -29,12 +30,12 @@ pub(crate) fn with_authenticated_linked_source<T>(operation: impl FnOnce() -> T)
     result
 }
 
-pub(crate) fn source_module_is_authenticated(program: &Program) -> bool {
-    program.module == MODULE || AUTHENTICATED_LINKED_SOURCE.with(Cell::get)
+pub(crate) fn source_module_is_authenticated(program: &dyn ProgramSource) -> bool {
+    program.module() == MODULE || AUTHENTICATED_LINKED_SOURCE.with(Cell::get)
 }
 
-pub(crate) fn wrapper_id(op: VecOp) -> &'static str {
-    match op {
+pub(crate) fn wrapper_id(op: VecOp) -> Option<&'static str> {
+    Some(match op {
         VecOp::WithCapacity => "std.collections.vec.with-capacity",
         VecOp::Push => "std.collections.vec.push",
         VecOp::Len => "std.collections.vec.len",
@@ -44,11 +45,18 @@ pub(crate) fn wrapper_id(op: VecOp) -> &'static str {
         VecOp::Set => "std.collections.vec.set",
         VecOp::Clear => "std.collections.vec.clear",
         VecOp::Sort => "std.collections.vec.sort",
-    }
+        VecOp::CloneAt
+        | VecOp::Replace
+        | VecOp::ReserveOwned
+        | VecOp::SortOwned
+        | VecOp::SortBy
+        | VecOp::StrAt
+        | VecOp::UniqueBy => return None,
+    })
 }
 
-pub(crate) fn wrapper_name(op: VecOp) -> &'static str {
-    match op {
+pub(crate) fn wrapper_name(op: VecOp) -> Option<&'static str> {
+    Some(match op {
         VecOp::WithCapacity => "with_capacity",
         VecOp::Push => "push",
         VecOp::Len => "len",
@@ -58,22 +66,31 @@ pub(crate) fn wrapper_name(op: VecOp) -> &'static str {
         VecOp::Set => "set",
         VecOp::Clear => "clear",
         VecOp::Sort => "sort",
-    }
+        VecOp::CloneAt
+        | VecOp::Replace
+        | VecOp::ReserveOwned
+        | VecOp::SortOwned
+        | VecOp::SortBy
+        | VecOp::StrAt
+        | VecOp::UniqueBy => return None,
+    })
 }
 
 pub(crate) fn wrapper_by_id(id: &str) -> Option<VecOp> {
-    super::ALL.into_iter().find(|op| wrapper_id(*op) == id)
+    super::ALL
+        .into_iter()
+        .find(|op| wrapper_id(*op) == Some(id))
 }
 
-pub(crate) fn is_source_candidate(program: &Program, function: &Function) -> bool {
-    program.module == MODULE
+pub(crate) fn is_source_candidate(program: &dyn ProgramSource, function: &Function) -> bool {
+    program.module() == MODULE
         && (wrapper_by_id(&function.stable_id).is_some()
             || super::ALL
                 .into_iter()
-                .any(|op| wrapper_name(op) == function.name))
+                .any(|op| wrapper_name(op) == Some(function.name.as_str())))
 }
 
-pub(crate) fn source_wrapper(program: &Program, function: &Function) -> Option<VecOp> {
+pub(crate) fn source_wrapper(program: &dyn ProgramSource, function: &Function) -> Option<VecOp> {
     if !source_module_is_authenticated(program)
         || !function.explicit_id
         || function.type_parameters.len() != 1
@@ -85,14 +102,9 @@ pub(crate) fn source_wrapper(program: &Program, function: &Function) -> Option<V
         return None;
     }
     let op = wrapper_by_id(&function.stable_id)?;
-    if function.name != wrapper_name(op) {
+    if function.name != wrapper_name(op)? {
         return None;
     }
-    let parameter = Type::Named {
-        name: "T".to_owned(),
-        arguments: Vec::new(),
-    };
-    let expected = super::ast_params(op, &parameter);
     let expected_names: &[&str] = match op {
         VecOp::WithCapacity => &["capacity"],
         VecOp::Push => &["values", "value"],
@@ -101,16 +113,31 @@ pub(crate) fn source_wrapper(program: &Program, function: &Function) -> Option<V
         VecOp::ReserveExact => &["values", "additional"],
         VecOp::Set => &["values", "index", "value"],
         VecOp::Clear | VecOp::Sort => &["values"],
+        VecOp::CloneAt
+        | VecOp::Replace
+        | VecOp::ReserveOwned
+        | VecOp::SortOwned
+        | VecOp::SortBy
+        | VecOp::StrAt
+        | VecOp::UniqueBy => return None,
     };
-    if function.params.len() != expected.len()
+    if function.params.len() != expected_names.len()
         || function
             .params
             .iter()
-            .zip(expected.iter().zip(expected_names))
-            .any(|(actual, (expected, name))| {
-                actual.name != *name || actual.mode != expected.mode || actual.ty != expected.ty
+            .zip(expected_names)
+            .enumerate()
+            .any(|(index, (actual, name))| {
+                let mode = match op.param_ownership(index) {
+                    OwnershipMode::Own => crate::ast::ParamMode::Own,
+                    OwnershipMode::Borrow => crate::ast::ParamMode::Borrow,
+                    _ => crate::ast::ParamMode::Value,
+                };
+                actual.name != *name
+                    || actual.mode != mode
+                    || !parameter_type(op, index, &actual.ty)
             })
-        || function.return_type != op.ast_return_type(&parameter)
+        || !return_type(op, &function.return_type)
     {
         return None;
     }
@@ -133,19 +160,41 @@ fn exact_source_body(body: &Expr, op: VecOp, params: &[crate::ast::Param]) -> bo
         return false;
     };
     name == op.name()
-        && type_arguments
-            == &[Type::Named {
-                name: "T".to_owned(),
-                arguments: Vec::new(),
-            }]
+        && matches!(type_arguments.as_slice(), [argument] if generic_parameter(argument))
         && args.len() == params.len()
         && args.iter().zip(params).all(
             |(argument, parameter)| matches!(&argument.kind, ExprKind::Var(name) if name == &parameter.name),
         )
 }
 
+fn generic_parameter(ty: &Type) -> bool {
+    matches!(ty, Type::Named { name, arguments } if name == "T" && arguments.is_empty())
+}
+fn generic_vec(ty: &Type) -> bool {
+    matches!(ty, Type::Named { name, arguments } if name == "Vec" && matches!(arguments.as_slice(), [element] if generic_parameter(element)))
+}
+fn parameter_type(op: VecOp, index: usize, ty: &Type) -> bool {
+    match (op, index) {
+        (VecOp::WithCapacity, 0) | (VecOp::Get | VecOp::ReserveExact | VecOp::Set, 1) => {
+            *ty == Type::Usize
+        }
+        (VecOp::Push, 1) | (VecOp::Set, 2) => generic_parameter(ty),
+        (_, 0) => generic_vec(ty),
+        _ => false,
+    }
+}
+fn return_type(op: VecOp, ty: &Type) -> bool {
+    if op.returns_owner() {
+        generic_vec(ty)
+    } else if matches!(op, VecOp::Len | VecOp::Capacity) {
+        *ty == Type::Usize
+    } else {
+        generic_parameter(ty)
+    }
+}
+
 pub(crate) fn source_parameter_is_admitted(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     op: VecOp,
     ty: &Type,
@@ -155,7 +204,7 @@ pub(crate) fn source_parameter_is_admitted(
 }
 
 pub(crate) fn source_arguments_are_admitted(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     arguments: &[Type],
 ) -> bool {
@@ -174,7 +223,7 @@ pub(crate) fn hir_wrapper(template: &ResolvedFunctionTemplate) -> Option<VecOp> 
         return None;
     }
     let op = wrapper_by_id(template.id.as_str())?;
-    if template.name != wrapper_name(op) {
+    if template.name != wrapper_name(op)? {
         return None;
     }
     let parameter = ResolvedType::TypeParameter {
@@ -190,6 +239,13 @@ pub(crate) fn hir_wrapper(template: &ResolvedFunctionTemplate) -> Option<VecOp> 
         VecOp::ReserveExact => &["values", "additional"],
         VecOp::Set => &["values", "index", "value"],
         VecOp::Clear | VecOp::Sort => &["values"],
+        VecOp::CloneAt
+        | VecOp::Replace
+        | VecOp::ReserveOwned
+        | VecOp::SortOwned
+        | VecOp::SortBy
+        | VecOp::StrAt
+        | VecOp::UniqueBy => return None,
     };
     if template.params.len() != expected.len()
         || template
@@ -304,5 +360,27 @@ pub(crate) fn template_ownership(
             | VecOp::Clear
             | VecOp::Sort => OwnershipMode::Own,
             VecOp::Len | VecOp::Capacity | VecOp::Get => OwnershipMode::Borrow,
+            // These intrinsic operations have no transparent std.collections wrapper.
+            VecOp::CloneAt
+            | VecOp::Replace
+            | VecOp::ReserveOwned
+            | VecOp::SortOwned
+            | VecOp::SortBy
+            | VecOp::StrAt
+            | VecOp::UniqueBy => {
+                return None;
+            }
         })
+}
+
+#[cfg(test)]
+mod original;
+#[cfg(test)]
+mod source_view_tests;
+#[cfg(test)]
+pub(crate) fn source_wrapper_original(
+    program: &dyn ProgramSource,
+    function: &Function,
+) -> Option<VecOp> {
+    original::source_wrapper(program, function)
 }

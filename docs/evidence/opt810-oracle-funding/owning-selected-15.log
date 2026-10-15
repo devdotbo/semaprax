@@ -1,0 +1,15 @@
+
+running 1 test
+test project::incremental::cold_source_tests::explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse ... 
+thread 'project::incremental::cold_source_tests::explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse' (179776) panicked at src/cleanup_plan/replay/factored.rs:1069:9:
+factored skeleton comparison disagrees with enumeration for `helper`: Err("cleanup plan for function `helper` failed independent replay: cleanup replay physical reservation exhausted during factored canonical state memo node")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    project::incremental::cold_source_tests::explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7871 filtered out; finished in 0.08s
+

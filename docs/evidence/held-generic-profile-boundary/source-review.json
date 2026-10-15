@@ -1,0 +1,115 @@
+{
+  "schema": "semaprax.source-design-review.v1",
+  "issue": "https://github.com/wavect/semaprax/issues/812",
+  "source_head": "a22f86140b9e28f22058de289a0abdeedf475da0",
+  "source_tree": "80013cbbed4cb56f5394d0ccc2976591a4b3431b",
+  "status": "design-only; rejected proposal not integrated",
+  "executed_rust_tests": 0,
+  "claimed_g171_improvement": false,
+  "claude": {
+    "directory": "/Volumes/Semaprax/lane-prompts/claude-opt812-held-review-20261013",
+    "process": {
+      "exit_code": 0,
+      "wall_seconds": 101.67203229200095,
+      "tools_enabled": false,
+      "code_execution": false,
+      "peak_process_group_rss_bytes": 306888704,
+      "resource_refusal": null
+    },
+    "model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 11925,
+        "cacheReadInputTokens": 535,
+        "cacheCreationInputTokens": 23483,
+        "webSearchRequests": 0,
+        "costUSD": 0.2132395,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 8724,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 23483,
+      "cache_read_input_tokens": 535,
+      "output_tokens": 11925,
+      "output_tokens_details": {
+        "thinking_tokens": 8724
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 23483,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 11925,
+          "cache_read_input_tokens": 535,
+          "cache_creation_input_tokens": 23483,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 23483
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "reported_list_cost_usd_not_invoice": 0.2132395,
+    "payload_sha256": "14c7d7f2a8b08e637643995a758a0840ab547eddb82fd8ee6195a6baaf731247",
+    "result_sha256": "6b60971c72a755248f9ec534d8cbd3bdaae620215e27df72795aabbecd4d0597",
+    "whitelist_sha256": "0645724c9f064d48aefb379030a9cff2ef7c3657b0cf90520b1ef35ffef99a82",
+    "prior_approval_rejection": "Specific source payload egress authorization required; no process started. Subsequent explicit human authorization: YES YOU CAN SEND EVERYHTING OVER ALWAYS."
+  },
+  "sources": [
+    {
+      "path": "src/hir/validation.rs",
+      "sha256": "fea755e947c03080e4567d27313afddfc85c6f85a5daf9a0fff3b7082636b638"
+    },
+    {
+      "path": "src/hir/validation/call_parameters.rs",
+      "sha256": "3be63c3a568b23436a6e5897669266202ea71033003b963891de196094b9b4aa"
+    },
+    {
+      "path": "src/hir/validation/executable_profiles.rs",
+      "sha256": "1ba0afaa5014c0d349b48fe45e657856cb49c1d5ed3c6ea786000a66df54cc1d"
+    },
+    {
+      "path": "src/hir/validation/executable_profiles/tests.rs",
+      "sha256": "3f4963b7afd20dc36907645ee6c19755eb01b705c698d119f091434ede46f039"
+    },
+    {
+      "path": "src/hir/validation/callable_types.rs",
+      "sha256": "7ab6fc5f9414044186cf5c25dffd0ed4a10d18fcfebf085a9aee1e385ebfee83"
+    },
+    {
+      "path": "src/hir/validation/type_requirement.rs",
+      "sha256": "012dbf9343e9874b81c92e5b8da907cb0bb2733d50d62fd6ca7f22d94790b890"
+    },
+    {
+      "path": "src/hir/validation/nominal_facts.rs",
+      "sha256": "f85363333cd6d13d361f1e41c967d7033d2934627d30758d8188b66ff6a9a873"
+    },
+    {
+      "path": "src/hir/owned_text_record/paid.rs",
+      "sha256": "89f2f38bf09f9bad28953300fc59d8850d197b2680a79283ea154e36a8e67910"
+    },
+    {
+      "path": "src/hir/declared_collection/paid/early.rs",
+      "sha256": "b2402eab3c82b1edda4bc7e10a80eb51d8476474c7bcf249b8aae8581fdba37b"
+    }
+  ],
+  "proposed_rust_changes_retained": false,
+  "new_executable_selectors": []
+}

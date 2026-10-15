@@ -1,0 +1,79 @@
+{
+  "source_subject": "a93c11777d1309f4a67c3c7e83c5204f42a7a58b",
+  "correction_checks": 18,
+  "passed": 16,
+  "failed": 2,
+  "new_failed_selectors": [
+    "cleanup_plan::replay::factored::continuation_receiver::tests::current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic",
+    "cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop"
+  ],
+  "prior_round_source": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+  "prior_round_results_sha256": "d56504b7af53cea91017fdda8daccd981b7a8f26bbaf910a7ff6a4f815e4cea1",
+  "prior_selected": 137,
+  "prior_passed": 126,
+  "prior_failed": 11,
+  "production_implementation_changed": false,
+  "scoped_clippy_reused_from_prior_source": {
+    "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+    "receipt": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/clippy-production-result.json",
+    "receipt_sha256": "94c2dfe2820ed7c9d870bd4b24c3d5a12a0ca645e503efe008ca89829363423f",
+    "production_implementation_changes": false,
+    "new_execution_claim": false
+  },
+  "full_137_rerun_performed": false,
+  "remaining_known_failures_with_latest_available_receipts": [
+    {
+      "selector": "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+      "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+      "exit_code": 101,
+      "log_sha256": "1b4bad3bca511f1a71b1371f63a1dc668f5d36de71ee7518a49a49174fb335cf"
+    },
+    {
+      "selector": "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+      "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+      "exit_code": 101,
+      "log_sha256": "c9e3f8b193927e69ac543b7eb32be1f84dc19ec79eb190d9c4bb6736c6babc04"
+    },
+    {
+      "selector": "cleanup_plan::replay::factored::continuation_receiver::tests::current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic",
+      "source_subject": "a93c11777d1309f4a67c3c7e83c5204f42a7a58b",
+      "exit_code": 101,
+      "log_sha256": "ed35146f5949070feab8a95ececf58a61701f547172635d2ac7a84e18ff00d94"
+    },
+    {
+      "selector": "cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop",
+      "source_subject": "a93c11777d1309f4a67c3c7e83c5204f42a7a58b",
+      "exit_code": 101,
+      "log_sha256": "15dcbf8b1e815d4d778fd2ce43843fa7e71501ef2445b279b6049c7f8cd474a6"
+    }
+  ],
+  "full_suite": false,
+  "application_recovery": false,
+  "new_live_benchmark": false,
+  "no_token_cost_gain_claim": true,
+  "copied_files_sha256": {
+    "owning-build.log": "334d1d6c66f7583963fc124b39fb4b7948a48272837c59f9ef21f2b26b76de72",
+    "owning-selected-09.log": "21ee3d69e8cfaa0b63b59110b7e4d15cb5c0d1c1d8cd96ce420f6d35e78ae376",
+    "expected-counts.json": "2bc43e68ec4c484a7191139c45a3a39ef7926364c8d9603100d119aa47f7e277",
+    "owning-selected-08.log": "15dcbf8b1e815d4d778fd2ce43843fa7e71501ef2445b279b6049c7f8cd474a6",
+    "owning-build-result.json": "9e3bea7b1a6ac7af37d271ecceacd677f7fc306330b2ceb26cb8c08bf09888c3",
+    "owning-selected-11.log": "0831de8ddc5c14ffe9db8b43f68658243cfe9ac72a39bfd6f7fabd9dc968f753",
+    "owning-selected-05.log": "04e1e3f98e395dfbe96246ad306f257c13646139edcad60872040833eeb38ee4",
+    "owning-selected-04.log": "b048d3b57b0e9224b7d108b5688d7e68746ff0d1a1180ddca69771f08602ca2e",
+    "owning-selected-10.log": "142280d3dcc739d84b037cbdfbcc7dc8984b582c17b4ef7acc27d1ed6910a9f7",
+    "owning-selected-06.log": "ed35146f5949070feab8a95ececf58a61701f547172635d2ac7a84e18ff00d94",
+    "owning-selected-12.log": "829255b99cf90ac0fd5d58f574b92fb3e3a4f9e764c8b1050131292ed550d81a",
+    "owning-selected-13.log": "f05bc142630a1868058a2d4ca07a21b160361f2cbb32632b31c24e1f2d586d1e",
+    "owning-selected-07.log": "f81cce6c34ad01157d204d20307ff3b0eb373de9093f8854d7bf92344a04c371",
+    "owning-selected-03.log": "e66a111843c32da240c4d96c70488de6136f29fda325701a9ef00bee41dfa95e",
+    "owning-selected-17.log": "e33f325292306dde29e109ed0eeadd2e92d56329820f48cdabd4567aa81810c2",
+    "owning-selected-16.log": "5b2488d97a3af711eebb0cea37530e5439ce22a02eeef1e9f64fdbeca32f962e",
+    "owning-selected-02.log": "11b917d35e6d19bd4068b0b401ce026d166ab00b5e127066adb338631ac02f52",
+    "owning-selected-14.log": "f5dfc5997746e6e7710a06b9ce8de1a995da19c77e83eee469864a2a516a940a",
+    "owning-selected-00.log": "71259ac79957621d1d0a6ab81ac0256b9c31e1f41c140bd986a58d1452e9a169",
+    "owning-selected-01.log": "ff608762049ec5fb6f61debde2d187712d42f5e4c1fcff1f94b4a788cd9518ad",
+    "owning-selected-15.log": "854878ce549f5e3126e33c9b82744b2533d31ffc4fbed786ae967e5d85826843",
+    "preparation-receipt.json": "5d07e7c9e6a58cd986b67f4b6f944d62f20ad9680f08a2627cce5276052d0d5d",
+    "owning-selected-results.json": "9e0f9a5da23aa588e244985421e992f27855dbac6837f7a716597ed080092779"
+  }
+}

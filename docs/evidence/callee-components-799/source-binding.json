@@ -1,0 +1,52 @@
+{
+  "base": "aa874284462305be40ac00323b8a75c3190d5074",
+  "original_archives": {
+    "iterative__calls.rs.before": "20eb85127fa3e6cc787510dcd3b4aa15457ff1e984f066dcfa0f7b0eff0c5ebf",
+    "recovery.rs.before": "51ac7d9ec344c51bc42959279094f414da7c1c940611f0ebd12eb35c0b1bad99",
+    "iterative__enter.rs.before": "f35764de40ce8f8b3fc1a61a10ec2b3dae58a9d6da82a66dbcab88ce329a46f9"
+  },
+  "current_sources": {
+    "src/source_verify/recovery.rs": {
+      "sha256": "f495c1148b3d69fe353e88cf057b9c0e10e350605cb38c6d77dcb1c43d186b93",
+      "lines": 311
+    },
+    "src/source_verify/recovery/callee_components.rs": {
+      "sha256": "d388750a6e15cd25914cfa7f9393ef4abdd4775b7dacea27f067327ba9986551",
+      "lines": 64
+    },
+    "src/source_verify/iterative/enter.rs": {
+      "sha256": "a70c388c53646820a86e45f10031017ffd24523c3bb6f575119ee6b5401dbfb5",
+      "lines": 1481
+    },
+    "src/source_verify/iterative/enter/enter_before_components.rs": {
+      "sha256": "ce0c043f94beba2e658e35931ad2fda7c07c4b5daa5a5712dd2fac2bce7a165f",
+      "lines": 1470
+    },
+    "src/source_verify/iterative/calls.rs": {
+      "sha256": "291a96a8250be42cbbd817660ba8c70e9a7d1d6b5b1e2dcf78157a40828227df",
+      "lines": 834
+    },
+    "src/source_verify/iterative/calls/calls_before_components.rs": {
+      "sha256": "dc13235a22d94c36bbb726fad0fa93c4993ced6f25ef943f14e1562093d824ef",
+      "lines": 741
+    },
+    "src/source_verify/recovery_tests/callee_components.rs": {
+      "sha256": "c1b5ad16742567e2611e64e620016f3ebe30c2e16754e8dfdebf3f55855e6149",
+      "lines": 349
+    },
+    "src/source_verify/recovery_tests.rs": {
+      "sha256": "ed763eb3a77915ae6cd57688d780bc9fd20931d865059ff10e3c6a9e0830197d",
+      "lines": 318
+    },
+    "src/source_verify/constructor_tests.rs": {
+      "sha256": "a47d52960691d9ca39896dc938a4c8ad320eddaf37d406da7e67eddaeeac2cc0",
+      "lines": 415
+    },
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
+      "sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "lines": 1234,
+      "bytes": 98424
+    }
+  },
+  "execution": "none"
+}

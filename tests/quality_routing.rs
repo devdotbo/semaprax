@@ -16,7 +16,9 @@ fn profiles_are_deterministic_and_broad_dispatch_files_force_full() {
     repository.write("src/graph.rs", "pub fn graph() { /* changed */ }\n");
     let plan = repository.changed_plan(&[]).unwrap();
     assert!(plan.contains("effective\tfull\n"));
-    assert!(plan.contains("path\tsrc/graph.rs\tbroad-compiler-or-graph-dispatch\tfull-workspace\n"));
+    assert!(
+        plan.contains("path\tsrc/graph.rs\tbroad-compiler-or-graph-dispatch\tfull-workspace\n")
+    );
     assert!(plan.contains("gate\ttest-workspace\n"));
     assert!(!plan.contains("gate\ttest-cli\n"));
 
@@ -67,6 +69,22 @@ fn profiles_are_deterministic_and_broad_dispatch_files_force_full() {
     repository.write("src/graph/nested_owned.rs", "pub fn nested_owned() {}\n");
     repository.write("src/graph/work_counter.rs", "pub fn work_counter() {}\n");
     let additive_graph_modules = [
+        "src/graph/generic_instances.rs",
+        "src/graph/generic_mapping.rs",
+        "src/graph/owned_collection_records.rs",
+        "src/graph/owned_nested_outcome.rs",
+        "src/graph/projected_string_view.rs",
+        "src/graph/scoped_vec_field.rs",
+        "src/graph/byte_helper_renewal.rs",
+        "src/graph/finite_byte_scratch.rs",
+        "src/graph/consuming_vec_renewal.rs",
+        "src/graph/static_text.rs",
+        "src/graph/view_render.rs",
+        "src/graph/native_import.rs",
+        "src/graph/revision_digest.rs",
+        "src/graph/evidence_schema.rs",
+        "src/graph/lexical_exit.rs",
+        "src/graph/operator_text.rs",
         "src/graph/byte_buffer_renewal.rs",
         "src/graph/filesystem_outcome.rs",
         "src/graph/owned_text_record_loans.rs",
@@ -81,8 +99,11 @@ fn profiles_are_deterministic_and_broad_dispatch_files_force_full() {
     assert!(plan.contains(
         "path\tsrc/graph/prelude_binding.rs\tbroad-compiler-or-graph-dispatch\tfull-workspace\n"
     ));
-    assert!(plan
-        .contains("path\tsrc/graph/affine.rs\tbroad-compiler-or-graph-dispatch\tfull-workspace\n"));
+    assert!(
+        plan.contains(
+            "path\tsrc/graph/affine.rs\tbroad-compiler-or-graph-dispatch\tfull-workspace\n"
+        )
+    );
     assert!(plan.contains(
         "path\tsrc/graph/vec_loop_renewal.rs\tbroad-compiler-or-graph-dispatch\tfull-workspace\n"
     ));
@@ -116,6 +137,7 @@ fn cli_and_editor_surfaces_route_changed_with_their_own_gates_in_fixed_order() {
     repository.write("src/cli/help.rs", "pub fn help() { /* changed */ }\n");
     repository.write("src/cli/help/library.rs", "pub fn library() {}\n");
     repository.write("src/cli/help/shapes.rs", "pub fn shapes() {}\n");
+    repository.write("src/cli/help/authoring.rs", "pub fn scoped() {}\n");
     repository.write(
         "src/cli/help/diagnostic_index.rs",
         "pub fn response() { /* changed */ }\n",
@@ -126,12 +148,17 @@ fn cli_and_editor_surfaces_route_changed_with_their_own_gates_in_fixed_order() {
     );
     repository.write("src/main.rs", "fn main() { println!(\"cli\"); }\n");
     let plan = repository.changed_plan(&[]).unwrap();
+    assert!(plan.contains(
+        "path\tsrc/cli/help/authoring.rs\tcli-surface\tcli-harnesses,documentation,rustdoc\n"
+    ));
     assert!(plan.contains("effective\tchanged\n"));
     assert!(plan.contains("reason\tcomplete-git-state-has-narrow-mappings\n"));
     assert!(
         plan.contains("path\tsrc/cli/help.rs\tcli-surface\tcli-harnesses,documentation,rustdoc\n")
     );
-    assert!(plan.contains("path\tsrc/cli/help/diagnostic_index.rs\tcli-surface\tcli-harnesses,documentation,rustdoc\n"));
+    assert!(plan.contains(
+        "path\tsrc/cli/help/diagnostic_index.rs\tcli-surface\tcli-harnesses,documentation,rustdoc\n"
+    ));
     assert!(plan.contains(
         "path\tsrc/cli/help/library.rs\tcli-surface\tcli-harnesses,documentation,rustdoc\n"
     ));
@@ -674,8 +701,132 @@ impl Repository {
         fs::write(directory.join("docs/deleted.md"), "baseline\n").unwrap();
         fs::write(directory.join("docs/renamed-old.md"), "baseline\n").unwrap();
         fs::write(directory.join("src/main.rs"), "fn main() {}\n").unwrap();
-        fs::write(directory.join("src/graph.rs"), "pub fn graph() {}\n").unwrap();
-        fs::write(directory.join("src/cli/help.rs"), "pub fn help() {}\n").unwrap();
+        fs::write(
+            directory.join("src/graph.rs"),
+            concat!(
+                include_str!("../src/graph.rs"),
+                "\n",
+                include_str!("../src/graph/agent_block.rs"),
+                "\n",
+                include_str!("../src/graph/call_inventory.rs"),
+                "\n",
+                include_str!("../src/graph/affine.rs"),
+                "\n",
+                include_str!("../src/graph/agent_execution.rs"),
+                "\n",
+                include_str!("../src/graph/agent_instances.rs"),
+                "\n",
+                include_str!("../src/graph/agent_query.rs"),
+                "\n",
+                include_str!("../src/graph/byte_buffer_renewal.rs"),
+                "\n",
+                include_str!("../src/graph/environment.rs"),
+                "\n",
+                include_str!("../src/graph/expression.rs"),
+                "\n",
+                include_str!("../src/graph/lexical_exit.rs"),
+                "\n",
+                include_str!("../src/graph/operator_text.rs"),
+                "\n",
+                include_str!("../src/graph/filesystem.rs"),
+                "\n",
+                include_str!("../src/graph/filesystem_outcome.rs"),
+                "\n",
+                include_str!("../src/graph/function_facts.rs"),
+                "\n",
+                include_str!("../src/graph/function_values.rs"),
+                "\n",
+                include_str!("../src/graph/owned_iterator.rs"),
+                "\n",
+                include_str!("../src/graph/owned_text_record_loans.rs"),
+                "\n",
+                include_str!("../src/graph/process.rs"),
+                "\n",
+                include_str!("../src/graph/session_protocol_decl.rs"),
+                "\n",
+                include_str!("../src/graph/session_protocol_facet.rs"),
+                "\n",
+                include_str!("../src/graph/session_protocol_follows.rs"),
+                "\n",
+                include_str!("../src/graph/stdin_stream.rs"),
+                "\n",
+                include_str!("../src/graph/string_replacement.rs"),
+                "\n",
+                include_str!("../src/graph/vec_loop_renewal.rs"),
+                "\n",
+                include_str!("../src/graph/work_counter.rs"),
+                "\n",
+                include_str!("../src/graph/generic_instances.rs"),
+                "\n",
+                include_str!("../src/graph/generic_mapping.rs"),
+                "\n",
+                include_str!("../src/graph/owned_collection_records.rs"),
+                "\n",
+                include_str!("../src/graph/owned_nested_outcome.rs"),
+                "\n",
+                include_str!("../src/graph/owned_string_byte_view.rs"),
+                "\n",
+                include_str!("../src/graph/projected_string_view.rs"),
+                "\n",
+                include_str!("../src/graph/scoped_vec_field.rs"),
+                "\n",
+                include_str!("../src/graph/base_lattice.rs"),
+                "\n",
+                include_str!("../src/graph/byte_helper_renewal.rs"),
+                "\n",
+                include_str!("../src/graph/byte_traversal.rs"),
+                "\n",
+                include_str!("../src/graph/consuming_vec_renewal.rs"),
+                "\n",
+                include_str!("../src/graph/facts_object.rs"),
+                "\n",
+                include_str!("../src/graph/string_slots.rs"),
+                "\n",
+                include_str!("../src/graph/vec_constructor.rs"),
+                "\n",
+                include_str!("../src/graph/copy_discard.rs"),
+                "\n",
+                include_str!("../src/graph/copy_discard/finite_composition.rs"),
+                "\n",
+                include_str!("../src/graph/finite_byte_scratch.rs"),
+                "\n",
+                include_str!("../src/graph/row_loan.rs"),
+                "\n",
+                include_str!("../src/graph/static_text.rs"),
+                "\n",
+                include_str!("../src/graph/view_render.rs"),
+                "\n",
+                include_str!("../src/graph/native_import.rs"),
+                "\n",
+                include_str!("../src/graph/nested_owned.rs"),
+                "\n",
+                include_str!("../src/graph/prelude_binding.rs"),
+                "\n",
+                include_str!("../src/graph/revision_digest.rs"),
+                "\n",
+                include_str!("../src/graph/evidence_schema.rs")
+            ),
+        )
+        .unwrap();
+        fs::write(
+            directory.join("src/cli/help.rs"),
+            concat!(
+                include_str!("../src/cli/help.rs"),
+                "\n",
+                include_str!("../src/cli/help/authoring.rs"),
+                "\n",
+                include_str!("../src/cli/help/diagnostic_index.rs"),
+                "\n",
+                include_str!("../src/cli/help/language_details.rs"),
+                "\n",
+                include_str!("../src/cli/help/library.rs"),
+                "\n",
+                include_str!("../src/cli/help/reference_links.rs"),
+                "\n",
+                include_str!("../src/cli/help/shapes.rs")
+            ),
+        )
+        .unwrap();
         fs::write(
             directory.join("editors/vscode/extension.js"),
             "'use strict';\n",

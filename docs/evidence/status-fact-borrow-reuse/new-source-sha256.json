@@ -1,0 +1,16 @@
+{
+  "source_base": "c2ca00a9e5a999343d32f57372d128fe681dcf7b",
+  "sources": {
+    "src/cleanup_plan/replay/expression_facts/receiving/retained.rs": "222853f211323dde7b91b7e5ba0dfebf0aeee26a4383174075718c662386bbe7",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs": "761a64c6430173bf2da4717f65882b29fca71c36b1b066aac9054c6b5031c0f5",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs": "e07f7830266edc2a686123a392ba9ad4e5a7aac3e2662df9675b7348dc2115d9",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs": "cafdcaa7f02aa44fc441a9498167d4869eb14d3e4758a8ce2092dcafb150e789"
+  },
+  "binding_history": [
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs",
+      "sha256": "a7666b48a1c06ce0ec08aada15d0410ce8eeb657ccc56d8b51552cfb0f4e57c4",
+      "disposition": "prior runtime-read-only custody draft; replaced by complete closed compile-time byte inventory with identical hashes/hooks/assertions"
+    }
+  ]
+}

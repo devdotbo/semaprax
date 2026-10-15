@@ -8,6 +8,14 @@ API, persistence, and a browser UI. It measures how many tokens an AI agent
 spends building it in TypeScript/React and in SEMAPRAX with
 [Web Application Projection v2](../../docs/WEBAPP-PROJECTION-V2.md).
 
+The transcript cost calculator reports its archived Sonnet 5.5 rate card separately
+from request models and actual billing. It applies that card only when every
+observed request has one resolved matching model. Unmatched, mixed or unresolved
+models have unavailable monetary estimates; requests without usage counters stay
+in the request census and make affected aggregate counters unavailable. Split
+transcript events merge counters by request identity. These accounting controls
+do not qualify an application or establish an agent efficiency improvement.
+
 ## Independent full-SPEC qualification
 
 The additive [acceptance contract](acceptance/CONTRACT.md) and external API/Chromium
@@ -112,6 +120,14 @@ null and no context baseline is subtracted. Final-file token counts are an
 unverified inventory proxy, not verified authored tokens or cumulative work;
 the recount explicitly disallows an authored-source ratio. Model-request
 counts are distinct from outer CLI turns and tool calls.
+
+Current campaign summaries retain separate arm denominators and totals. A clean
+comparison requires at least five attempts in each named arm and clean resource
+receipts for every attempt. Missing attempt timing or usage stays unavailable;
+failed-attempt cost and measured wall time remain in the accepted-task numerator.
+Outer CLI turns and reconciled model requests have separate totals. The legacy
+net-input proxy never substitutes for raw input or measured fixed context, and
+actual provider billing remains unavailable without a billing receipt.
 
 ## Historical Claude Code campaigns (rounds 3–6)
 

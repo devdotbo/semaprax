@@ -1,0 +1,10 @@
+{
+  "scope": "source-only exact tiny correction; no updater invocation or capture access",
+  "reviewed_private_commit": "d5c5f366f1bfe2800839fd5aa9d99528280bc987",
+  "reviewed_private_sha256": "362391782ab604c8f57785c39216ec4655599870f01972732396151a77d84369",
+  "corrective_commit": "4276269fc2225c0c0fdc8aef839961e16b90006c",
+  "corrective_sha256": "2030a172f109578b20bfe426c135f9ceff93c4e2dd653aa7ea3df46dee55f076",
+  "exact_named_delta_verified": true,
+  "B1": "Source corrected: internal graph digest uses exact existing domain + u64 LE length + payload. Full-document pin SHAs remain raw full wire SHA256. Corrected source was not reviewed by Claude.",
+  "remaining_findings": "B2/B3/B4 and apply concerns forwarded to prelude owner per root instruction; no new source or capture claim by this review lane."
+}

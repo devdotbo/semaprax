@@ -75,6 +75,28 @@ pub(super) fn emit_imports(imports: &mut Vec<u8>, byte_unary: u32, types: &Impor
 }
 
 impl<'a> Emitter<'a> {
+    pub(super) fn emit_owned_buffer_capacity_failure(
+        &mut self,
+        expression: &ExpressionId,
+        requested: &Value,
+        bound: &Value,
+    ) -> Result<(), Diagnostic> {
+        self.get_scalar(requested);
+        self.get_scalar(bound);
+        self.output.extend([0x56, 0x04, 0x40, 0x41]); // i64.gt_u; if; i32.const
+        write_i64(self.output, i64::from(STATUS_BYTE_BUFFER_CAPACITY_EXCEEDED));
+        self.output.push(0x21);
+        write_u32(self.output, self.plan.status);
+        self.emit_failure_cleanup(expression, StatusLane::OperationFailure)?;
+        self.output.push(0x0c);
+        write_u32(
+            self.output,
+            self.control_depth + self.status_exit_extra_depth,
+        );
+        self.output.push(0x0b);
+        Ok(())
+    }
+
     pub(super) fn emit_owned_buffer_set5(
         &mut self,
         expr: &ResolvedExpr,

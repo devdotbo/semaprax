@@ -1,0 +1,6 @@
+
+running 1 test
+test cleanup_plan::replay::schema::paid_summary::tests::full_unfunded_compatibility_and_selected_reservation_receiver_stay_original ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 0.03s
+

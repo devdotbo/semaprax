@@ -1,0 +1,275 @@
+Review distinct #827 Legacy COW extension, tools disabled/source only, no execution. Public struct/private Storage unchanged. Legacy formerly Owned mutable; paid Shared still requires explicit paid mutation. No new authority/payer. Legacy postpass runs only AFTER full old canonical_nominals=false validation, including inheritance/layout/errors. Paid owner sizeof/Arc initializer fees include new mode; no discount/cap change. Look for concrete COW/Drop/provenance/borrow/type bugs; don't infer runtime success. Full old constructors stay independently compiled.
+
+FILE Owner/storage + paid constructor
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum OwnerMode {
+    Funded,
+    LegacyUnfunded,
+}
+struct Owner<T: NominalElement> {
+    mode: OwnerMode,
+    values: Vec<T>,
+    scratch: Vec<ResolvedType>,
+}
+impl<T: NominalElement> Owner<T> {
+    fn drain(&mut self, dispose: &mut impl FnMut(ResolvedType)) {
+        for value in &mut self.values {
+            value.drain_types(dispose);
+        }
+    }
+}
+impl<T: NominalElement> Drop for Owner<T> {
+    fn drop(&mut self) {
+        let scratch = &mut self.scratch;
+        for value in &mut self.values {
+            value.drain_types(&mut |ty| dispose(ty, scratch));
+        }
+    }
+}
+enum Storage<T: NominalElement> {
+    Owned(Vec<T>),
+    Shared(Arc<Owner<T>>),
+}
+
+FILE payload drain/provenance
+    /// Moves recursive roots only from the last owner into an already-paid
+    /// external disposal machine. Other immutable owners keep the full value.
+    #[doc(hidden)]
+    pub fn drain_recursive_types(mut self, mut dispose: impl FnMut(ResolvedType)) {
+        match &mut self.storage {
+            Storage::Owned(values) => {
+                for value in values {
+                    value.drain_types(&mut dispose);
+                }
+            }
+            Storage::Shared(owner) => {
+                if let Some(owner) = Arc::get_mut(owner) {
+                    owner.drain(&mut dispose);
+                }
+            }
+        }
+    }
+    /// Paid provenance only. Physical legacy sharing never satisfies this.
+    pub(crate) fn is_shared(&self) -> bool {
+        matches!(&self.storage, Storage::Shared(owner) if owner.mode == OwnerMode::Funded)
+    }
+    pub(crate) fn is_legacy_shared(&self) -> bool {
+        matches!(&self.storage, Storage::Shared(owner) if owner.mode == OwnerMode::LegacyUnfunded)
+    }
+    pub(crate) fn has_shared_owner(&self) -> bool {
+        matches!(&self.storage, Storage::Shared(_))
+    }
+    #[cfg(test)]
+    pub(crate) fn same_owner(&self, other: &Self) -> bool {
+        matches!((&self.storage, &other.storage), (Storage::Shared(a), Storage::Shared(b)) if Arc::ptr_eq(a,b))
+    }
+}
+
+FILE Clone/Deref/DerefMut
+impl<T: NominalElement> Clone for NominalPayload<T> {
+    fn clone(&self) -> Self {
+        match &self.storage {
+            Storage::Owned(v) => v.clone().into(),
+            Storage::Shared(v) => Self {
+                storage: Storage::Shared(v.clone()),
+            },
+        }
+    }
+}
+impl<T: NominalElement> Deref for NominalPayload<T> {
+    type Target = Vec<T>;
+    fn deref(&self) -> &Vec<T> {
+        match &self.storage {
+            Storage::Owned(v) => v,
+            Storage::Shared(v) => &v.values,
+        }
+    }
+}
+impl<T: NominalElement> DerefMut for NominalPayload<T> {
+    fn deref_mut(&mut self) -> &mut Vec<T> {
+        // A legacy mutation always leaves shared precomputed disposal scratch.
+        // The detached Owned Vec uses its original iterative fallback instead.
+        if self.is_legacy_shared() {
+            let values = self.deref().clone();
+            self.storage = Storage::Owned(values);
+        }
+        match &mut self.storage {
+            Storage::Owned(v) => v,
+            Storage::Shared(_) => panic!("shared nominal mutation requires try_make_mut"),
+        }
+    }
+}
+Owned fallback Drop remains verbatim: it drains every element type, queues Nominal arguments and Function parameters/result, and iteratively pops both kinds. Shared Owner Drop above uses unchanged dispose(ty,scratch), which recursively queues the same children into preacquired capacity without allocation. Legacy mode adds no different disposal algorithm.
+
+FILE explicit legacy acquisition
+//! Explicit unfunded compatibility acquisition. No ambient payer is queried.
+use super::*;
+impl<T: NominalElement> NominalPayload<T> {
+    pub(crate) fn from_legacy_vec_unfunded(values: &mut Vec<T>) -> Self {
+        let mut capacity = 0;
+        for value in values.iter() {
+            let required = value.drop_capacity(&mut |_| Ok::<_, std::convert::Infallible>(()));
+            let required = match required {
+                Ok(n) => n,
+                Err(impossible) => match impossible {},
+            };
+            capacity = capacity.max(required);
+        }
+        // These are ordinary infallible legacy allocations, not a controlled
+        // budget acquisition. In particular an existing active account pays 0.
+        let scratch = Vec::with_capacity(capacity);
+        Self {
+            storage: Storage::Shared(Arc::new(Owner {
+                mode: OwnerMode::LegacyUnfunded,
+                values: std::mem::take(values),
+                scratch,
+            })),
+        }
+    }
+}
+#[cfg(test)]
+mod tests;
+
+FILE CaseFields complete
+ retains the same canonical outer cases owner. It allocates
+/// no per-case Arc or field Vec; legacy hostile/decoded indexes keep full Vecs.
+#[derive(Clone)]
+pub(crate) struct CaseFields {
+    storage: CaseStorage,
+}
+#[derive(Clone)]
+enum CaseStorage {
+    Owned(NominalPayload<ResolvedFieldDeclaration>),
+    Case {
+        owner: NominalPayload<ResolvedVariantCaseDeclaration>,
+        ordinal: usize,
+    },
+}
+impl CaseFields {
+    pub(crate) fn canonical(
+        owner: NominalPayload<ResolvedVariantCaseDeclaration>,
+        ordinal: usize,
+    ) -> Self {
+        assert!(owner.is_shared());
+        assert!(ordinal < owner.len());
+        Self {
+            storage: CaseStorage::Case { owner, ordinal },
+        }
+    }
+    /// Actual immutable storage only; this grants no paid provenance.
+    pub(crate) fn legacy_unfunded(
+        owner: NominalPayload<ResolvedVariantCaseDeclaration>,
+        ordinal: usize,
+    ) -> Self {
+        assert!(owner.is_legacy_shared());
+        assert!(ordinal < owner.len());
+        Self {
+            storage: CaseStorage::Case { owner, ordinal },
+        }
+    }
+    pub(crate) fn drain(self, dispose: &mut impl FnMut(ResolvedType)) {
+        if let CaseStorage::Owned(fields) = self.storage {
+            fields.drain_recursive_types(dispose);
+        }
+    }
+}
+impl From<Vec<ResolvedFieldDeclaration>> for CaseFields {
+    fn from(v: Vec<ResolvedFieldDeclaration>) -> Self {
+        Self {
+            storage: CaseStorage::Owned(v.into()),
+        }
+    }
+}
+impl Deref for CaseFields {
+    type Target = Vec<ResolvedFieldDeclaration>;
+    fn deref(&self) -> &Self::Target {
+        match &self.storage {
+            CaseStorage::Owned(v) => v,
+            CaseStorage::Case { owner, ordinal } => &owner[*ordinal].fields,
+        }
+    }
+}
+impl DerefMut for CaseFields {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        if let CaseStorage::Case { owner, ordinal } = &self.storage {
+            if owner.is_legacy_shared() {
+                let fields = owner[*ordinal].fields.clone();
+                self.storage = CaseStorage::Owned(fields.into());
+            }
+        }
+        match &mut self.storage {
+            CaseStorage::Owned(values) => values,
+            CaseStorage::Case { .. } => {
+                panic!("shared case-field mutation requires explicit paid materialization")
+            }
+        }
+    }
+}
+
+FILE legacy postpass
+//! Post-validation legacy storage reuse. Original checking/error order precedes this.
+use super::*;
+fn share<T: nominal_payload::NominalElement>(values: &mut NominalPayload<T>) {
+    if !values.is_empty() && !values.has_shared_owner() {
+        *values = NominalPayload::from_legacy_vec_unfunded(&mut **values);
+    }
+}
+impl DeclarationIndex {
+    pub(in super::super) fn share_legacy_nominal_payloads_unfunded(&mut self) {
+        for values in self.type_parameters.values_mut() {
+            share(values);
+        }
+        for values in self.record_fields.values_mut() {
+            share(values);
+        }
+        for values in self.variant_cases.values_mut() {
+            share(values);
+        }
+        for cases in self.variant_cases.values() {
+            for (ordinal, case) in cases.iter().enumerate() {
+                self.case_fields.insert(
+                    case.id.clone(),
+                    CaseFields::legacy_unfunded(cases.clone(), ordinal),
+                );
+            }
+        }
+    }
+}
+
+FILE index fallback drain policy
+    pub(super) fn drain_legacy_type_roots(&mut self, mut dispose: impl FnMut(ResolvedType)) {
+        for (_, fields) in std::mem::take(&mut self.case_fields) {
+            fields.drain(&mut dispose);
+        }
+        for (_, fields) in std::mem::take(&mut self.record_fields) {
+            if !fields.has_shared_owner() {
+                fields.drain_recursive_types(&mut dispose);
+            }
+        }
+        for (_, cases) in std::mem::take(&mut self.variant_cases) {
+            if !cases.has_shared_owner() {
+                cases.drain_recursive_types(&mut dispose);
+            }
+        }
+    }
+
+
+FILE actual Legacy entry
+    pub(super) fn from_verified_with_identity_payer<E>(
+        program: &dyn ProgramSource,
+        prelude: &[crate::ast::TypeDeclaration],
+        identity: &mut dyn FnMut(&str) -> Result<DeclarationId, E>,
+    ) -> Result<Self, IdentityIndexError<E>> {
+        let mut index = Self::build_nominal_index(
+            program,
+            prelude,
+            &mut Payer::Legacy(identity),
+            false,
+            super::nominal_rollback::Workspace::default(),
+            None,
+            None,
+        )?;
+        index.share_legacy_nominal_payloads_unfunded();
+        Ok(index)
+    }
+

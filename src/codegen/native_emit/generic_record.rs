@@ -1,5 +1,6 @@
 //! Independent native admission for fully substituted generic record storage.
 
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 use std::collections::BTreeSet;
 
 use crate::diagnostic::Diagnostic;
@@ -43,11 +44,15 @@ pub(super) fn match_result_is_admitted(
     };
     let ordinary_shape = ordinary
         && (hir::is_admitted_nested_owned_byte_record(&program.declarations, &scrutinee.ty)
-            || hir::owned_text_record::admitted(&scrutinee.ty, &program.declarations))
+            || hir::owned_text_record::runtime_admitted(&scrutinee.ty, &program.declarations))
         && (matches!(expression.ty, ResolvedType::Bytes | ResolvedType::String)
             || crate::map_ops::is_collection(&expression.ty)
+            || crate::hir::owned_collection_record::vector(&program.declarations, &expression.ty)
             || (hir::is_admitted_nested_owned_byte_record(&program.declarations, &expression.ty)
-                || hir::owned_text_record::admitted(&expression.ty, &program.declarations)));
+                || hir::owned_text_record::runtime_admitted(
+                    &expression.ty,
+                    &program.declarations,
+                )));
     *mode == hir::ResolvedMatchMode::Own
         && expression.ty == arm.value.ty
         && expression.ownership == OwnershipMode::Own
@@ -63,7 +68,11 @@ impl<'a, O: COutput> CEmitter<'a, O> {
     pub(super) fn mark_unused_parameter_aliases(&mut self) -> Result<(), Diagnostic> {
         for (index, parameter) in self.function.params.iter().enumerate() {
             self.line(&format!("(void)spx_param_{index};"));
-            if parameter.ownership == OwnershipMode::Borrow {
+            // Lent parameters declare only the versioned row carrier; their
+            // ordinary hidden leaf aliases do not exist in this signature.
+            if parameter.ownership == OwnershipMode::Borrow
+                && self.lent_parameter(&parameter.id).is_none()
+            {
                 for path in super::borrowed_aggregate_byte_paths(
                     self.program,
                     self.record_layouts,
@@ -94,6 +103,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         }
         if matches!(expression.ty, ResolvedType::Bytes | ResolvedType::String)
             || crate::map_ops::is_collection(&expression.ty)
+            || hir::owned_collection_record::vector(&self.program.declarations, &expression.ty)
         {
             if let Some(result) = plan.result_at(&expression.id) {
                 value.code = result.to_owned();
@@ -130,6 +140,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         }
         if matches!(expression.ty, ResolvedType::Bytes | ResolvedType::String)
             || crate::map_ops::is_collection(&expression.ty)
+            || hir::owned_collection_record::vector(&self.program.declarations, &expression.ty)
         {
             let plan = self.bytes_plan.expect("owned match plan checked above");
             // Own String place reads are producers: their clone already

@@ -1,16 +1,29 @@
 //! Structural authentication of the consuming iterator loop's retained lowering.
 use super::*;
 mod renewal;
+#[cfg(test)]
+pub(crate) use renewal::function_has_record_renewal_outside_loop;
+mod paid;
+pub(crate) use paid::validate_function_paid;
 pub(crate) use renewal::{
-    function_has_record_renewal_outside_loop, function_may_require_record_renewal,
+    function_has_record_renewal_outside_loop_paid, function_may_require_record_renewal,
     function_requires_record_renewal, function_requires_renewal, is_owner_renewal_record,
     is_record_owner_renewal, renewal_binding, renewal_bindings, template_requires_renewal,
 };
+#[cfg(test)]
+pub(crate) use renewal::{renewal_binding_funded, renewal_bindings_funded};
 
 pub(crate) struct IteratorLoop<'a> {
     pub(crate) step: &'a ResolvedBinding,
     pub(crate) authored_body: &'a ResolvedExpr,
     pub(crate) owned_item: Option<&'a ResolvedBinding>,
+}
+// The former owned expected type contained exactly this compiler ID and one
+// cloned argument. Borrowing those operands preserves complete type equality.
+fn iter_matches(ty: &ResolvedType, element: &ResolvedType) -> bool {
+    matches!(ty, ResolvedType::Nominal { declaration, arguments }
+        if declaration.as_str() == crate::iterator_ops::ITER_ID
+            && arguments.as_slice() == std::slice::from_ref(element))
 }
 fn zero(value: &ResolvedExpr) -> bool {
     value.ownership == OwnershipMode::Value
@@ -64,7 +77,7 @@ fn replacement<'a>(
     let element = step_element(&value.ty, owner)?;
     if fields[0].binding.ty != *element
         || fields[0].binding.ownership != crate::iterator_ops::item_ownership(element, false)
-        || fields[1].binding.ty != crate::iterator_ops::resolved_iter(element.clone())
+        || !iter_matches(&fields[1].binding.ty, element)
         || fields[1].binding.ownership != OwnershipMode::Own
     {
         return None;
@@ -82,7 +95,8 @@ fn replacement<'a>(
         return None;
     };
     if discard.ownership != OwnershipMode::Value
-        || !(is_scalar_resolved_type(&discard.ty)
+        || !(discard.ty == ResolvedType::Never
+            || is_scalar_resolved_type(&discard.ty)
             || owner.is_some_and(|(owner, count)| {
                 generic_collection::parameter(&discard.ty, owner, count)
             }))
@@ -92,7 +106,7 @@ fn replacement<'a>(
         return None;
     }
     if !matches!(&tail.kind, ResolvedExprKind::Call { callee, type_arguments, instance: None, args }
-        if callee.as_str() == crate::iterator_ops::NEXT_ID && type_arguments.as_slice() == [element.clone()]
+        if callee.as_str() == crate::iterator_ops::NEXT_ID && type_arguments.as_slice() == std::slice::from_ref(element)
         && matches!(args.as_slice(), [argument] if place(argument, &fields[1].binding.id) && argument.ty == fields[1].binding.ty && argument.ownership == OwnershipMode::Own))
         || tail.ty != value.ty
         || tail.ownership != OwnershipMode::Own
@@ -155,7 +169,7 @@ fn recognize_scoped<'a>(
     };
     if fields[0].binding.ty != *element
         || fields[0].binding.ownership != crate::iterator_ops::item_ownership(element, true)
-        || fields[1].binding.ty != crate::iterator_ops::resolved_iter(element.clone())
+        || !iter_matches(&fields[1].binding.ty, element)
         || fields[1].binding.ownership != OwnershipMode::Borrow
     {
         return None;
@@ -177,11 +191,79 @@ fn recognize_scoped<'a>(
         owned_item,
     })
 }
+/// Runtime feasibility only; full HIR validation and structural inventories
+/// continue to scan both arms. No certificate or case liveness grants selection.
+pub(crate) fn true_body_match<'a>(
+    condition: &'a ResolvedExpr,
+    body: &'a ResolvedExpr,
+    latch: &crate::hir::LoopLatchKind,
+) -> Option<&'a ResolvedExpr> {
+    if !matches!(latch, crate::hir::LoopLatchKind::OwnedIteratorStep { .. })
+        || crate::hir::lexical_exit::validate_latch(condition, body, latch).is_err()
+    {
+        return None;
+    }
+    let proof = recognize(condition, body)?;
+    let ResolvedExprKind::Match {
+        scrutinee: predicate,
+        arms: conditions,
+        ..
+    } = &condition.kind
+    else {
+        return None;
+    };
+    let [negative, positive] = conditions.as_slice() else {
+        return None;
+    };
+    if predicate.ty != proof.step.ty
+        || predicate.ownership != proof.step.ownership
+        || negative.value.ty != ResolvedType::Bool
+        || positive.value.ty != ResolvedType::Bool
+        || negative.value.ownership != OwnershipMode::Value
+        || positive.value.ownership != OwnershipMode::Value
+        || !matches!(negative.value.kind, ResolvedExprKind::Bool(false))
+        || !matches!(positive.value.kind, ResolvedExprKind::Bool(true))
+    {
+        return None;
+    }
+    let ResolvedExprKind::Block { statements, .. } = &body.kind else {
+        return None;
+    };
+    let [ResolvedStatement::Assign { value, .. }] = statements.as_slice() else {
+        return None;
+    };
+    let ResolvedExprKind::Match {
+        scrutinee, arms, ..
+    } = &value.kind
+    else {
+        return None;
+    };
+    let [done, _yielded] = arms.as_slice() else {
+        return None;
+    };
+    if scrutinee.ty != proof.step.ty
+        || scrutinee.ownership != OwnershipMode::Own
+        || done.value.ty != proof.step.ty
+        || done.value.ownership != OwnershipMode::Own
+        || !matches!(&done.value.kind, ResolvedExprKind::ConstructVariant { variant, case, fields }
+            if variant.as_str() == crate::iterator_ops::STEP_ID
+            && case.as_str() == crate::iterator_ops::DONE_ID && fields.is_empty())
+    {
+        return None;
+    }
+    // recognize and validate_latch independently authenticate both guardless
+    // pattern inventories, typed Yield fields, exact Next operand and all latch
+    // identities. Done is the entire childless constructor authenticated above.
+    Some(value)
+}
+
 pub(crate) fn function_contains(function: &ResolvedFunction) -> bool {
     let mut pending = vec![&function.body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
-            if statements.iter().any(|statement| matches!(statement, ResolvedStatement::While { condition, body, .. } if recognize(condition, body).is_some())) { return true; }
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
+            if statements.iter().any(|statement| matches!(statement, ResolvedStatement::While { condition, body, .. } | ResolvedStatement::LexicalWhile { condition, body, .. } if recognize(condition, body).is_some())) { return true; }
         }
         push_resolved_expression_children_in_authored_order(expression, &mut pending);
     }
@@ -189,6 +271,7 @@ pub(crate) fn function_contains(function: &ResolvedFunction) -> bool {
 }
 
 /// Authenticate the owning seed and mutable slot independently of display names.
+#[cfg(test)]
 pub(crate) fn validate_function(
     function: &ResolvedFunction,
 ) -> Result<(), crate::diagnostic::Diagnostic> {
@@ -205,6 +288,9 @@ pub(crate) fn validate_function(
                 }
                 if let ResolvedStatement::While {
                     condition, body, ..
+                }
+                | ResolvedStatement::LexicalWhile {
+                    condition, body, ..
                 } = statement
                 {
                     if let Some(protocol) = recognize(condition, body) {
@@ -213,7 +299,8 @@ pub(crate) fn validate_function(
                             mutable: true,
                             value: seed,
                             ..
-                        }, ResolvedStatement::While { .. }] = statements.as_slice()
+                        }, ResolvedStatement::While { .. }
+                        | ResolvedStatement::LexicalWhile { .. }] = statements.as_slice()
                         else {
                             return Err(crate::diagnostic::Diagnostic::io(
                                 "SPX-H006",
@@ -271,6 +358,7 @@ fn step_element<'a>(
     };
     (declaration.as_str() == crate::iterator_ops::STEP_ID
         && (crate::iterator_ops::resolved_element_is_admitted(element)
+            || *element == ResolvedType::String
             || matches!(element, ResolvedType::Nominal { arguments, .. } if arguments.is_empty())
             || owner.is_some_and(|(owner, count)| {
                 generic_collection::parameter(element, owner, count)
@@ -319,3 +407,6 @@ pub(crate) fn template_contains(template: &ResolvedFunctionTemplate) -> bool {
     }
     false
 }
+
+#[cfg(test)]
+mod feasibility_tests;

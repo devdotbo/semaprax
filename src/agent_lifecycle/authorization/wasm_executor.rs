@@ -1138,7 +1138,14 @@ fn build_and_drive(
             "0.1.0",
             40 * 1024 * 1024,
         )
-        .map_err(|_| invariant("wasm_executor.npm_build"))?;
+        .map_err(|error| {
+            // This is pathless checked package construction, not an npm process.
+            // Keep the stable stage invariant while retaining the owning refusal
+            // so recipe/profile admission cannot be mistaken for host discovery.
+            let mut failure = invariant("wasm_executor.npm_build");
+            failure.help = Some(format!("{}: {}", error.code, error.message));
+            failure
+        })?;
         artifact.verify_build(&build, &descriptor)?;
         Ok(build)
     };

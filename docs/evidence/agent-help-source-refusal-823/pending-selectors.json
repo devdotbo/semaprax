@@ -1,0 +1,28 @@
+{
+  "status": "source-only; owning producer pending",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "documentation",
+      "selectors": [
+        "agent_quick_reference::diagnostic_help_is_pinned_and_covers_compiler_checked_examples",
+        "agent_quick_reference::unmarked_blocks_verify_cleanly_and_are_canonical",
+        "agent_quick_reference::marked_blocks_produce_exactly_the_named_diagnostic"
+      ]
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selectors": [
+        "installed_guidance::tests::selectors_are_closed_and_every_skill_is_canonical_bounded_and_deterministic",
+        "installed_guidance::tests::embedded_source_rows_bind_the_exact_installed_bytes"
+      ]
+    }
+  ],
+  "required_producer": {
+    "package": "semaprax",
+    "harness": "documentation",
+    "selector": "agent_quick_reference::regenerate_diagnostic_help",
+    "ignored": true
+  }
+}

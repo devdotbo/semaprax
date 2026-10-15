@@ -4,7 +4,11 @@ use super::*;
 use crate::cache_codec::{self, codec_struct};
 use std::collections::BTreeSet;
 
+mod borrowed_encoding;
+mod field_unique;
+mod literal_format;
 mod loan_replay;
+mod vec_field;
 
 struct Snapshot {
     context: String,
@@ -128,32 +132,16 @@ pub(crate) fn encode_snapshot(cache: &ProjectFrontendCache) -> Result<Vec<u8>> {
     let sources = cache
         .entries
         .iter()
-        .map(|(path, entry)| ProjectFrontendSource::new(path, &entry.source))
+        .map(|(path, entry)| ProjectFrontendSource::new(path, &entry.input().source))
         .collect::<Result<Vec<_>>>()?;
     let mut replay = cache.fork();
     let built = replay.build(&manifest, &sources)?;
     require_warm(&built)?;
-    let entries = cache
-        .entries
-        .iter()
-        .map(|(path, entry)| {
-            let checked = &cache.checked[path];
-            Entry {
-                path: path.clone(),
-                source: entry.source.clone(),
-                synthetic: checked.synthetic.clone(),
-                resolved: checked.resolved.clone(),
-                resolver_bytes: checked.resolver_bytes,
-                retained_loan_bytes: checked.retained_loan_bytes,
-            }
-        })
-        .collect();
-    cache_codec::encode(&Snapshot {
-        context: cache.context.clone(),
-        project_revision: built.revision().project_revision().to_owned(),
-        workspace_revision: built.revision().workspace_revision().to_owned(),
-        graph_json: built.revision().semantic_graph().to_owned(),
-        entries,
+    // Borrow the exact current checked owner directly into the bounded encoder.
+    // The wire remains owned; no temporary AST/HIR snapshot tree is copied.
+    cache_codec::encode(&borrowed_encoding::SnapshotView {
+        cache,
+        built: &built,
     })
 }
 
@@ -201,28 +189,39 @@ pub(crate) fn decode_snapshot(bytes: &[u8]) -> Result<ProjectFrontendCache> {
         // input before permitting any decoded checked-module hit.
         let (program, comments) =
             crate::parse_with_comments(&entry.source, &entry.path).map_err(|error| vec![error])?;
-        let (canonical, overflowed) =
-            crate::bounded_output::with_limit(MAX_TOTAL_SOURCE_BYTES, || {
-                crate::format::comments::canonical_with_comments(&program, &comments)
-            });
-        if overflowed || canonical != entry.source {
+        let (owner, overflowed, _) = crate::bounded_output::source_owner_scope(
+            MAX_TOTAL_SOURCE_BYTES,
+            || {
+                let canonical =
+                    crate::format::comments::canonical_with_comments(&program, &comments);
+                (canonical, program)
+            },
+            |(canonical, program), formatting_refused, reserve| {
+                if formatting_refused || canonical != entry.source {
+                    return Err(invalid("semantic snapshot source is not canonical"));
+                }
+                crate::hir::replay_agent_source_associations(&program, &entry.resolved.agents)
+                    .map_err(|error| vec![error])?;
+                literal_format::replay_source(&entry.source, &entry.synthetic, &entry.resolved)?;
+                vec_field::replay_source(&entry.source, &entry.synthetic, &entry.resolved)?;
+                field_unique::replay_source(&entry.source, &entry.synthetic, &entry.resolved)?;
+                loan_replay::reconstruct(&mut entry.resolved)?;
+                decoded_current_owner(std::mem::take(&mut entry.source), program, reserve)
+            },
+        );
+        let owner = owner?;
+        if overflowed {
             return Err(invalid("semantic snapshot source is not canonical"));
         }
-        crate::hir::replay_agent_source_associations(&program, &entry.resolved.agents)
-            .map_err(|error| vec![error])?;
-        loan_replay::reconstruct(&mut entry.resolved)?;
-        sources.push(ProjectFrontendSource::new(&entry.path, &entry.source)?);
-        cache.entries.insert(
-            entry.path.clone(),
-            Arc::new(CachedModule {
-                source: entry.source,
-                program: Arc::new(program),
-            }),
-        );
+        sources.push(ProjectFrontendSource::new(
+            &entry.path,
+            &owner.input().source,
+        )?);
+        cache.entries.insert(entry.path.clone(), owner);
         cache.checked.insert(
             entry.path,
             Arc::new(CheckedModule {
-                synthetic: entry.synthetic,
+                synthetic: CheckedSource::Owned(entry.synthetic),
                 resolved: entry.resolved,
                 resolver_bytes: entry.resolver_bytes,
                 retained_loan_bytes: entry.retained_loan_bytes,

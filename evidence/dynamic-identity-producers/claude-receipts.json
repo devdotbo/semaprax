@@ -1,0 +1,134 @@
+[
+  {
+    "role": "author",
+    "receipt": {
+      "exit_code": 0,
+      "wall_seconds": 462.1594280419995,
+      "tools_enabled": false,
+      "code_execution": false,
+      "peak_process_group_rss_bytes": 314834944,
+      "resource_refusal": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 74847,
+        "cacheReadInputTokens": 535,
+        "cacheCreationInputTokens": 98269,
+        "webSearchRequests": 0,
+        "costUSD": 1.1416035,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 55730,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 98269,
+      "cache_read_input_tokens": 535,
+      "output_tokens": 74847,
+      "output_tokens_details": {
+        "thinking_tokens": 55730
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 98269,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 74847,
+          "cache_read_input_tokens": 535,
+          "cache_creation_input_tokens": 98269,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 98269
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "total_cost_usd": 1.1416035,
+    "cost_is_invoice": false,
+    "result_path": "/Volumes/Semaprax/lane-prompts/claude-dynamic-identity-producers-5ff-20261013/result.json",
+    "source_sharing": "user-authorized source/log transfer",
+    "tools_disabled": true
+  },
+  {
+    "role": "review",
+    "receipt": {
+      "exit_code": 0,
+      "wall_seconds": 208.99113041700184,
+      "tools_enabled": false,
+      "code_execution": false,
+      "peak_process_group_rss_bytes": 302088192,
+      "resource_refusal": null
+    },
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 29445,
+        "cacheReadInputTokens": 1981,
+        "cacheCreationInputTokens": 114313,
+        "webSearchRequests": 0,
+        "costUSD": 0.7519041,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 26680,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 114313,
+      "cache_read_input_tokens": 1981,
+      "output_tokens": 29445,
+      "output_tokens_details": {
+        "thinking_tokens": 26680
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 114313,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 29445,
+          "cache_read_input_tokens": 1981,
+          "cache_creation_input_tokens": 114313,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 114313
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "total_cost_usd": 0.7519041,
+    "cost_is_invoice": false,
+    "result_path": "/Volumes/Semaprax/lane-prompts/claude-dynamic-identity-producers-5ff-20261013/review-result.json",
+    "source_sharing": "user-authorized source/log transfer",
+    "tools_disabled": true
+  }
+]

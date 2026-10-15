@@ -1,0 +1,20 @@
+{
+  "qualification": "authored; unexecuted",
+  "owners": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::owned_text_record::paid::tests::funded_text_classifiers_preserve_limits_cycles_and_substitution_errors"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::collection_tests::funded_early::funded_early_profiles_preserve_exact_depth_leaf_and_field_limits"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "hir::owned_text_record::paid::tests::explicit_collect_types_preserve_complete_prior_text_and_early_profile_controls"
+    }
+  ]
+}

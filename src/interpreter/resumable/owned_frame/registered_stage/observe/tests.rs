@@ -67,7 +67,7 @@ fn weak(root: &Value) -> Vec<Weak<[u8]>> {
             let Value::Bytes(b) = &r.fields[&DeclarationId::new(*id)] else {
                 panic!()
             };
-            Arc::downgrade(&b.bytes)
+            Arc::downgrade(b.bytes.ordinary())
         })
         .collect()
 }

@@ -1,0 +1,26 @@
+{
+  "qualification": "source-only; no Cargo/build/runtime/test execution",
+  "private_base": "5816a091a",
+  "whole_source_inverse_paths": [
+    "src/hir/validation/function_scope/lifecycle/completed.rs",
+    "tests/hir_module_boundaries.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "src/loan_plan/paid_live.rs",
+    "src/loan_plan/paid_plan.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "src/prelude.rs",
+    "src/workspace_graph/expected_projection.rs",
+    "src/workspace_graph/expected_projection/held_projection.rs",
+    "src/source_verify/constructor_tests.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs",
+    "src/source_verify/declaration.rs",
+    "src/source_verify/declaration/public_signature_before.rs",
+    "src/source_verify/declaration/functions.rs",
+    "src/source_verify/declaration/functions/public_signature_before.rs",
+    "src/source_verify/iterative.rs",
+    "src/source_verify/diagnostics.rs"
+  ],
+  "complete_sealed_original_sha256": "86872491c35cb785ed81356bd181eaad9c337127754ee0b2e20ab6c7d10d29f8",
+  "new_pending_owners": 4,
+  "runtime_remaining": "root directed build and owners required"
+}

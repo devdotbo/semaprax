@@ -1,0 +1,18 @@
+{
+  "status": "source-only; not executed",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selectors": [
+        "vec_ops::wrappers::source_view_tests::all_exact_std_source_wrappers_keep_original_body_signature_and_module_gates_without_backing",
+        "vec_ops::wrappers::source_view_tests::pure_wrapper_observation_is_not_funding_authority_and_does_not_clear_sticky_refusal",
+        "box_ops::wrappers::source_view_tests::all_exact_std_source_wrappers_keep_original_body_signature_and_module_gates_without_backing",
+        "box_ops::wrappers::source_view_tests::pure_wrapper_observation_is_not_funding_authority_and_does_not_clear_sticky_refusal",
+        "workspace_graph::expected_projection::defaults::field_directory::tests::full_record_class_and_first_variant_defaults_keep_complete_original_fields_and_errors",
+        "workspace_graph::expected_projection::defaults::field_directory::tests::successful_complete_default_acquisitions_are_observed_through_drop_at_exact_and_short_limits",
+        "workspace_graph::expected_projection::defaults::field_directory::tests::complete_current_value_owner_sources_restore_every_original_byte"
+      ]
+    }
+  ]
+}

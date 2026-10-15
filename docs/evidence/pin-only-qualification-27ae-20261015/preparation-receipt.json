@@ -1,0 +1,65 @@
+{
+  "source_subject": "27ae259515501fc23085d519ff56d0c8328cf6cd",
+  "source_tree": "faf60002cfcad248be822fbbe7a8f424b2eb5853",
+  "frozen": true,
+  "source_only": true,
+  "execution_performed": false,
+  "selected_bodies": 5,
+  "previous_actual_failed_owners_retained": 3,
+  "scope": "Exactly3actualpinconsumers+2fullsourceowners; no repeat148/fullsuite. ProductionClippy alreadypassed at a417; only cfg(test)/integration pins+evidence changed.",
+  "ordered_build_commands": [
+    [
+      "/Users/kevin/.cargo/bin/rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "-p",
+      "semaprax",
+      "--lib",
+      "--jobs",
+      "1",
+      "--message-format=json"
+    ],
+    [
+      "/Users/kevin/.cargo/bin/rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "-p",
+      "semaprax",
+      "--lib",
+      "--test",
+      "workspace",
+      "--no-run",
+      "--jobs",
+      "1",
+      "--message-format=json"
+    ]
+  ],
+  "manifest_sha256": "2141241df0ff2223eb31528f7dd69be4973a104d120705818e59d114bfaa4ae2",
+  "driver_sha256": {
+    "run-owning-selected.py": "fb7459b6e44a336e44f779de6aff9fbf7921d986f86a8157aedb2c810eed6450",
+    "draft_contract.py": "c3ab46afbf6c62485c5c4b3389a579d0744d889622051f1eb7f6c48d2b0745e1",
+    "semaprax_pressure_observation_v3.py": "5f1d756491ccc5dd662afe6e7ed744b7e65e8e0a45bc7e420b358ec531cec90b",
+    "run-production-lib-cli-clippy.py": "e94eca5f0b9aa73193e1065a944b1681a459bdeba7b45e984f477a55268f4077",
+    "build-owning.py": "f959d5fdcd243fe9a624cf60506918a5c1125e799de8cefa41eed3493bbcc3cb",
+    "observed_phase.py": "36d75093b66bdb07e059a9255e9b7decebf4a2a2c10a531543b202b24b302867"
+  },
+  "production_clippy_evidence": {
+    "source_subject": "a41774c0b3522ea7e13798f1a337b0aa5f35714e",
+    "receipt_path": "/Volumes/Semaprax/lane-prompts/final-legacy-card-a417-20261015/clippy-production-result.json",
+    "receipt_sha256": "5e6e2a19b1952e2c2b44d5211501b8892230f34edd0a538a8c8a18a3b2bb1789",
+    "exit_code": 0,
+    "reason_no_repeat": "Only two cfg(test)/integration test source pins and documentary evidence changed since qualified production; no production execution source, manifests, Cargo.lock or toolchain changes.",
+    "actual_nondoc_changed_paths": [
+      "src/workspace_graph/type_proof_tests.rs",
+      "tests/workspace/semantic_graph.rs"
+    ]
+  }
+}

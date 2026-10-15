@@ -1,7 +1,8 @@
 //! Class Inheritance v1 checks: method declarations, declared parents,
 //! inheritance cycles, and member collision and override validation.
 
-use crate::ast::{Program, Type, TypeDeclarationKind};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::declared_type::check_declared_type;
 use crate::source_verify::diagnostics::{
@@ -11,12 +12,12 @@ use crate::source_verify::type_table::TypeTable;
 use std::collections::{HashMap, HashSet};
 
 pub(super) fn check_class_methods<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     types: &TypeTable<'p>,
     ids: &mut HashSet<&'p str>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for declaration in &program.types {
+    for declaration in program.types() {
         let TypeDeclarationKind::Class { fields: _, methods } = &declaration.kind else {
             continue;
         };
@@ -73,7 +74,7 @@ pub(super) fn check_class_methods<'p>(
                         ),
                         method.name_span,
                     )
-                    .at_path(&program.path)
+                    .at_path(program.path())
                     .with_help("add @id(\"your.namespace.class.method\") before the method"),
                 );
             }
@@ -119,12 +120,12 @@ pub(super) fn check_class_methods<'p>(
 }
 
 pub(super) fn check_class_parents<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     types: &TypeTable<'p>,
     class_parents: &mut HashMap<&'p str, &'p str>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for declaration in &program.types {
+    for declaration in program.types() {
         let TypeDeclarationKind::Class { .. } = &declaration.kind else {
             continue;
         };
@@ -191,11 +192,11 @@ pub(super) fn check_class_parents<'p>(
 }
 
 pub(super) fn check_class_cycles<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     class_parents: &HashMap<&'p str, &'p str>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for declaration in &program.types {
+    for declaration in program.types() {
         if !matches!(declaration.kind, TypeDeclarationKind::Class { .. }) {
             continue;
         }
@@ -220,12 +221,12 @@ pub(super) fn check_class_cycles<'p>(
 }
 
 pub(super) fn check_class_overrides<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     types: &TypeTable<'p>,
     class_parents: &HashMap<&'p str, &'p str>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for declaration in &program.types {
+    for declaration in program.types() {
         let TypeDeclarationKind::Class {
             fields: own_fields,
             methods: own_methods,

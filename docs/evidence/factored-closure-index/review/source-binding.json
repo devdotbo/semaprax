@@ -1,0 +1,10 @@
+{
+  "basis": "5647a8fd49a1fc9cc8a2b13cee847bf569b38693",
+  "uncommitted_draft": true,
+  "files": {
+    "src/cleanup_plan/replay/factored/canonical_shared/memo.rs": "bb3e57a9f1bb955298ffb96c200ec1dd9adca86c0e4881479cdcf836d61b58e0",
+    "src/cleanup_plan/replay/factored/canonical_shared.rs": "595b17fc194dd1313b1fd714d5c071b0318c731b1b40a4053efc0c24e9ec1a34",
+    "src/cleanup_plan/replay/physical_budget.rs": "d38a39372c110f102af2d4d7c0b503112aa219bdc1f8616bfe636aeb2d8a011e"
+  },
+  "payload_bytes": 19096
+}

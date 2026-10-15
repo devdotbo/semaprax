@@ -1,0 +1,36 @@
+[
+  {
+    "source": "src/hir/prelude_bundle/extension_work.rs",
+    "sha256": "d7525b89905bb7adcfd62ed93c58ce89f6e746652bf2bc779b0ef4bdc496fad6",
+    "ranges": [
+      [
+        1,
+        200
+      ]
+    ]
+  },
+  {
+    "source": "src/hir/prelude_bundle/vector_extension.rs",
+    "sha256": "af2160552b5211affe9c92eb55a9d3f3f299de0f891f5adcd9a0fff45d576696",
+    "ranges": [
+      [
+        1,
+        100
+      ]
+    ]
+  },
+  {
+    "source": "src/hir/prelude_bundle/invocation.rs",
+    "sha256": "a8557c9fdeae300c947582c6475315bc3930bf94ecd9591428c4d4b0d417931b",
+    "ranges": [
+      [
+        106,
+        139
+      ],
+      [
+        153,
+        163
+      ]
+    ]
+  }
+]

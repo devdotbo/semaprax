@@ -1,0 +1,89 @@
+{
+  "requested_model": "sonnet",
+  "actual_model_usage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 19792,
+      "cacheReadInputTokens": 535,
+      "cacheCreationInputTokens": 33325,
+      "webSearchRequests": 0,
+      "costUSD": 0.3312775,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 17196,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 33325,
+    "cache_read_input_tokens": 535,
+    "output_tokens": 19792,
+    "output_tokens_details": {
+      "thinking_tokens": 17196
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 33325,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 19792,
+        "cache_read_input_tokens": 535,
+        "cache_creation_input_tokens": 33325,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 33325
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "cli_total_cost_usd": 0.3312775,
+  "actual_billing": "unknown",
+  "tools_enabled": false,
+  "completed": true,
+  "duration_ms": 147890,
+  "packet_paths": [
+    {
+      "path": "examples/shiftsim-typed-record-successor/src/schedule.spx",
+      "sha256": "3df2774e0564a1e210a984e8e1bfa8f87b9fbac387d76969f64d306b296f9d31"
+    },
+    {
+      "path": "examples/catalog-scoped-record-successor/src/order.spx",
+      "sha256": "fc50cc469dc468973dcb7ff5b4fd3c8c110b3350c73df8efb3baa9f0375a3282"
+    },
+    {
+      "path": "src/project/json_codec/plan.rs",
+      "sha256": "0a85ce06e0010668bdc2fdce33365a3b45b6d93937f15e5e34ae171b33c4f4fc"
+    },
+    {
+      "path": "benchmarks/typed_application_setup.py",
+      "sha256": "53a4373ac613c65632196aac6cc04b1ef1fe001ffdf6c41d98db42f8fe8078d2"
+    },
+    {
+      "path": "benchmarks/typed_application_setup_support/installation.py",
+      "sha256": "64d35a44d0f53ba526e5a8ab8d3b5f411d3d2fdde9b9f4266e9c5403e7fe4a6b"
+    },
+    {
+      "path": "docs/SCOPED-RECORD-VEC-TRAVERSAL-V2.md",
+      "sha256": "d09d3ff0206bd1b7d74248d355dfbaad6dd9a31a31f6c3f12515ecc46717e140"
+    },
+    {
+      "path": "docs/APPLICATION-JSON-CODEC-PLAN-V1.md",
+      "sha256": "738927bf10f1cba72696c1266c3c7a1b82f6e0f17619ed51bdd2e4bab52fd10e"
+    }
+  ],
+  "scope_limit": "Exact seven-file packet excluded new paired.py; its checklist was inspected locally, not independently reviewed by Claude."
+}

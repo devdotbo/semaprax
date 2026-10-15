@@ -1,0 +1,24 @@
+fn validate_entry(
+    function: &ResolvedFunction,
+    storage: &BTreeSet<StorageId>,
+    leaves: &Leaves,
+) -> Result<(), Diagnostic> {
+    let plan = &function.cleanup_plan;
+    if usize::try_from(plan.entry.0)
+        .ok()
+        .is_none_or(|entry| entry >= plan.blocks.len())
+    {
+        return Err(replay_error(function, "cleanup entry block is unknown"));
+    }
+    let mut flags = BTreeSet::new();
+    for place in &plan.entry_state.live_owned_parameters {
+        let under = validate_place(function, place, storage, leaves)?;
+        if under.iter().any(|flag| !flags.insert(*flag)) {
+            return Err(replay_error(
+                function,
+                "cleanup entry places overlap or repeat liveness flags",
+            ));
+        }
+    }
+    Ok(())
+}

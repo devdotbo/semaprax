@@ -81,15 +81,20 @@ pub(super) fn emit_runtime(output: &mut impl COutput, metering: &NativeSemanticM
 
 impl<O: COutput> CEmitter<'_, O> {
     /// Charge one semantic unit at the current point of a metered function.
-    pub(super) fn semantic_charge(&mut self) {
+    pub(super) fn semantic_charge(
+        &mut self,
+        kind: crate::cleanup_plan::ExecutionBoundaryKind,
+        site: &crate::hir::ExpressionId,
+    ) -> Result<(), crate::diagnostic::Diagnostic> {
         if !self.semantic_metered {
-            return;
+            return Ok(());
         }
         self.line("if (!spx_semantic_charge()) {");
         self.indent += 1;
         self.line("spx_status = spx_rt_semantic_fuel_failure(spx_ctx);");
-        self.line("goto spx_epilogue;");
+        self.emit_execution_boundary_failure(kind, site)?;
         self.indent -= 1;
         self.line("}");
+        Ok(())
     }
 }

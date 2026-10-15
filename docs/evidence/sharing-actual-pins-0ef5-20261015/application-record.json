@@ -1,0 +1,25 @@
+{
+  "producer_source": "0ef52c381ed4615da7c6b124df7fafa420a71902",
+  "application_head_before": "a1b749d65e61736e9098db545af813e86b6350b8",
+  "producer_reexecuted_at_application_head": false,
+  "literal_edits": 11,
+  "all_target_old_bytes_preflighted": true,
+  "complete_historical_semantic_graph_inverse_verified": true,
+  "public_budget_delta": 128,
+  "application_recovery": false,
+  "efficiency_claim": false,
+  "sources": {
+    "tests/workspace/semantic_graph.rs": {
+      "before_sha256": "00786b21cf8e3d6a23ef90e4ca042ac5a5b2a57842916675c78ffed0b1b6347e",
+      "after_sha256": "72ef20a30c5044d3b3bb3815f4767a2288bbd60640c8e2a371bd346a6485b9c8"
+    },
+    "src/workspace_graph/type_proof_tests.rs": {
+      "before_sha256": "5151cceb4b99db3470a01f7ed5d192de9e5c212610aa774e11a4079c17d27c92",
+      "after_sha256": "ce1446da9052dd08ab0b00a1fdb0e9ada8832b9bcd9f8ca7e6902e13272af928"
+    },
+    "docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json": {
+      "before_sha256": "88e9e3316e5e68ebbe4cfb7b9e985e4c1d17a1b48cc32c86cd89b9510ba76a55",
+      "after_sha256": "cd859fe68ea82a56a27fc5e19d4413e76c7822228e08d9cd45ecd99ce8bfcba5"
+    }
+  }
+}

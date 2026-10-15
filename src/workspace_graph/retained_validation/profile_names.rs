@@ -8,6 +8,10 @@ pub(in crate::workspace_graph) fn project_linker_name(
         P::EnvironmentIoV1 => "Environment I/O v1 linker",
         P::ProcessIoV1 => "Process I/O v1 linker",
         P::SourceCommandV1 => "SourceCommand v1 owned linker",
+        P::SourceCommandSelectedFileResourceV1 => {
+            "SourceCommand selected-file resource-output v1 owned linker"
+        }
+        P::SourceCommandSelectedFileV1 => "SourceCommand selected-file v1 owned linker",
         P::SourceCommandResourceOutputV1 => "SourceCommand resource-output v1 owned linker",
         P::FilesystemIoV1 | P::FilesystemIoV2 | P::FilesystemIoV3 => "Filesystem I/O v1 linker",
         P::ScalarV1 => "pure scalar linker",
@@ -20,6 +24,12 @@ pub(in crate::workspace_graph) fn project_linker_name(
         P::StdinStreamCommandIoV2 => "Streaming Command I/O v2 linker",
         P::StdinStreamTextCommandIoV1 => "Streaming Text Command I/O v1 linker",
         P::StdinStreamDataCommandIoV1 => "Streaming Data Command I/O v1 linker",
+        P::StdinStreamDataCommandIoV2 => "Streaming Data Command I/O v2 linker",
+        P::StdinStreamOwnedDataCommandIoV1 => "Streaming Owned Data Command I/O v1 linker",
+        P::StdinStreamCollectionRecordCommandIoV1 => {
+            "Streaming Collection Record Command I/O v1 linker"
+        }
+        P::StdinStreamNestedOutcomeCommandIoV1 => "Streaming Nested Outcome Command I/O v1 linker",
         P::LineCommandIoV1 => "Line Command I/O v1 linker",
         P::NetworkCommandIoV1 => "Network Command I/O v1 linker",
         P::HttpsCommandIoV1 => "HTTPS Command I/O v1 linker",

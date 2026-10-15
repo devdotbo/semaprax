@@ -24,6 +24,11 @@ checked HIR across processes under authenticated source/HIR validation. It is
 not full incremental compilation. Private profiles remain private even when
 their bounded tests pass.
 
+The proposed [owned Bytes partition contract](OWNED-BYTE-PARTITION-V1.md)
+separates disjoint lease ownership from backing allocation. Implement and qualify
+its complete selected owner domain before admission; a general construction-fusion
+contract remains a separate obligation for the unchanged maximum-row fixture.
+
 ## Unified semantic program implementation sequence
 
 Source, ProgramRoot, graph, Agent, deployment, checkpoints, target artifacts,

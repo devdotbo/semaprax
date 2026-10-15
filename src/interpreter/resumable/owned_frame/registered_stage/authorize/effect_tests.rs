@@ -54,7 +54,7 @@ pub(in crate::interpreter::resumable::owned_frame::registered_stage) fn ready(
     else {
         panic!()
     };
-    let state_backing = Arc::downgrade(&bytes.bytes);
+    let state_backing = Arc::downgrade(bytes.bytes.ordinary());
     let prepared = prepare_owned_copy_wait_v2(
         state,
         ResumableChannelValue::Record {
@@ -103,7 +103,7 @@ pub(in crate::interpreter::resumable::owned_frame::registered_stage) fn ready(
     let Value::Bytes(seal) = &decision.fields[b.authorize().seal()] else {
         panic!()
     };
-    let seal_backing = Arc::downgrade(&seal.bytes);
+    let seal_backing = Arc::downgrade(seal.bytes.ordinary());
     let OwnedAuthorizeSettledV2::Ready(ready) =
         settle_owned_authorize_v2(staged, || true, |_| panic!("empty authorize completion"))
             .unwrap_or_else(|e| panic!("{:?}", e.diagnostic))

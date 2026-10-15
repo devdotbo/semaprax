@@ -28,6 +28,13 @@ mod execution;
 mod external_dependencies;
 mod filesystem;
 mod flat_owned_record;
+mod json_codec;
+pub use json_codec::{
+    derive_json_codec_plan, derive_json_codec_source, derive_json_codec_source_with_profile,
+    explain_json_codec_suitability, verify_json_codec_plan, verify_json_codec_source,
+    verify_json_codec_source_with_profile, JsonCodecBundle, JsonCodecBundleSource,
+    JsonCodecEntryReceipt, JsonCodecPlanEntry, JsonCodecProfile, JsonCodecSuitabilityOptions,
+};
 pub(crate) mod host_policy;
 mod hot_reload;
 mod hot_reload_watcher;
@@ -426,8 +433,8 @@ pub use manifest::{
     PROJECT_SCHEMA_V18, PROJECT_SCHEMA_V19, PROJECT_SCHEMA_V2, PROJECT_SCHEMA_V20,
     PROJECT_SCHEMA_V21, PROJECT_SCHEMA_V22, PROJECT_SCHEMA_V23, PROJECT_SCHEMA_V24,
     PROJECT_SCHEMA_V25, PROJECT_SCHEMA_V26, PROJECT_SCHEMA_V27, PROJECT_SCHEMA_V28,
-    PROJECT_SCHEMA_V3, PROJECT_SCHEMA_V4, PROJECT_SCHEMA_V5, PROJECT_SCHEMA_V6, PROJECT_SCHEMA_V7,
-    PROJECT_SCHEMA_V8, PROJECT_SCHEMA_V9,
+    PROJECT_SCHEMA_V29, PROJECT_SCHEMA_V3, PROJECT_SCHEMA_V30, PROJECT_SCHEMA_V4,
+    PROJECT_SCHEMA_V5, PROJECT_SCHEMA_V6, PROJECT_SCHEMA_V7, PROJECT_SCHEMA_V8, PROJECT_SCHEMA_V9,
 };
 pub use native_sdk::{
     with_native_owned_data_sdk_subject, ProjectNativeRustPackage, ProjectNativeRustPackageMode,
@@ -587,13 +594,22 @@ pub use profile::{
     PROJECT_PROFILE_NETWORK_COMMAND_IO_V1, PROJECT_PROFILE_OWNED_DATA_API_V1,
     PROJECT_PROFILE_OWNED_UTF8_API_V1, PROJECT_PROFILE_PROCESS_IO_V1,
     PROJECT_PROFILE_PUBLIC_GENERIC_WASM_PROVIDER_V1,
-    PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1, PROJECT_PROFILE_SOURCE_COMMAND_V1,
-    PROJECT_PROFILE_SOURCE_LOCAL_FUTURE_V1, PROJECT_PROFILE_STDIN_STREAM_COMMAND_IO_V1,
-    PROJECT_PROFILE_STDIN_STREAM_COMMAND_IO_V2, PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V1,
+    PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1,
+    PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1,
+    PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1, PROJECT_PROFILE_SOURCE_COMMAND_V1,
+    PROJECT_PROFILE_SOURCE_LOCAL_FUTURE_V1,
+    PROJECT_PROFILE_STDIN_STREAM_COLLECTION_RECORD_COMMAND_IO_V1,
+    PROJECT_PROFILE_STDIN_STREAM_COMMAND_IO_V1, PROJECT_PROFILE_STDIN_STREAM_COMMAND_IO_V2,
+    PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V1,
+    PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V2,
+    PROJECT_PROFILE_STDIN_STREAM_NESTED_OUTCOME_COMMAND_IO_V1,
+    PROJECT_PROFILE_STDIN_STREAM_OWNED_DATA_COMMAND_IO_V1,
     PROJECT_PROFILE_STDIN_STREAM_TEXT_COMMAND_IO_V1, PROJECT_PROFILE_USEFUL_DATA_COMMAND_V1,
     PROJECT_PROFILE_USEFUL_DATA_COMMAND_V2, PROJECT_PROFILE_USEFUL_DATA_V1,
-    PROJECT_PROFILE_USEFUL_DATA_V2, PROJECT_PROFILE_USEFUL_TEXT_CONSUMER_V1,
-    PROJECT_SOURCE_COMMAND_INPUT_V1,
+    PROJECT_PROFILE_USEFUL_DATA_V2, PROJECT_PROFILE_USEFUL_TEXT_CONSUMER_V1, PROJECT_SCHEMA_V31,
+    PROJECT_SCHEMA_V32, PROJECT_SCHEMA_V33, PROJECT_SCHEMA_V34, PROJECT_SOURCE_COMMAND_INPUT_V1,
+    PROJECT_SOURCE_COMMAND_SELECTED_FILE_INPUT_V1,
+    PROJECT_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_INPUT_V1,
 };
 pub use public_api::{
     derive_public_api_descriptor, replay_public_api_descriptor, PublicApiDescriptor,
@@ -613,14 +629,17 @@ pub use scaffold::{
     MAX_PROJECT_SCAFFOLD_NAME_BYTES, PROJECT_SCAFFOLD_FILE_COUNT, PROJECT_SCAFFOLD_INVENTORY,
     PROJECT_SCAFFOLD_LIBRARY_FILE_COUNT, PROJECT_SCAFFOLD_LIBRARY_INVENTORY,
     PROJECT_SCAFFOLD_SCHEMA, PROJECT_SCAFFOLD_SCHEMA_V3, PROJECT_SCAFFOLD_SCHEMA_V4,
-    PROJECT_SCAFFOLD_SCHEMA_V5, PROJECT_SCAFFOLD_SCHEMA_V6,
-    PROJECT_SCAFFOLD_SOURCE_COMMAND_FILE_TEXT_FILE_COUNT,
+    PROJECT_SCAFFOLD_SCHEMA_V5, PROJECT_SCAFFOLD_SCHEMA_V6, PROJECT_SCAFFOLD_SCHEMA_V7,
+    PROJECT_SCAFFOLD_SCHEMA_V8, PROJECT_SCAFFOLD_SOURCE_COMMAND_FILE_TEXT_FILE_COUNT,
     PROJECT_SCAFFOLD_SOURCE_COMMAND_FILE_TEXT_INVENTORY,
+    PROJECT_SCAFFOLD_STDIN_STREAM_COLLECTION_RECORD_FILE_COUNT,
+    PROJECT_SCAFFOLD_STDIN_STREAM_COLLECTION_RECORD_INVENTORY,
     PROJECT_SCAFFOLD_STDIN_STREAM_DATA_FILE_COUNT, PROJECT_SCAFFOLD_STDIN_STREAM_DATA_INVENTORY,
     PROJECT_SCAFFOLD_TABLES_FILE_COUNT, PROJECT_SCAFFOLD_TABLES_INVENTORY,
     PROJECT_SCAFFOLD_TEMPLATES, PROJECT_SCAFFOLD_TEMPLATE_CALCULATOR,
     PROJECT_SCAFFOLD_TEMPLATE_LIBRARY, PROJECT_SCAFFOLD_TEMPLATE_SERVICE,
     PROJECT_SCAFFOLD_TEMPLATE_SOURCE_COMMAND_FILE_TEXT,
+    PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD,
     PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_DATA, PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_TEXT,
 };
 pub use scalar_wit::{
@@ -631,7 +650,7 @@ pub use scalar_wit::{
 pub(crate) fn validate_owned_utf8_closure_function(
     function: &crate::hir::ResolvedFunction,
 ) -> Result<(), String> {
-    public_api::validate_closure_function(function).map_err(|error| error.message)?;
+    public_api::validate_closure_function(function).map_err(|error| error.message.into_owned())?;
     public_utf8_api::validate_closure_shape(function)
 }
 pub(crate) use rename::{PreparedProjectRename, ProjectRenameDerivation};
@@ -666,7 +685,7 @@ pub struct ProjectSource {
     source_graph_schema: String,
     source_revision: String,
     source_digest: String,
-    source: String,
+    source: crate::workspace_graph::current_source::SourceBytes,
 }
 
 impl ProjectSource {
@@ -1152,6 +1171,12 @@ impl ProjectSnapshot {
             native_publication::NativeOutput::prepare(output).map_err(|error| vec![error])?;
         let profile = self.manifest.project_profile();
         let prepared = match profile {
+            ProjectProfile::SourceCommandSelectedFileV1 => {
+                crate::codegen::emit_hir_c_with_selected_file_command(&self.entry_program)
+            }
+            ProjectProfile::SourceCommandSelectedFileResourceV1 => {
+                crate::codegen::emit_hir_c_with_selected_file_resource_command(&self.entry_program)
+            }
             ProjectProfile::SourceCommandV1 => {
                 crate::codegen::emit_hir_c_with_source_command(&self.entry_program)
             }
@@ -1190,6 +1215,30 @@ impl ProjectSnapshot {
                     self.manifest.command().unwrap_or(""),
                 )
             }
+            ProjectProfile::StdinStreamDataCommandIoV2 => {
+                crate::codegen::emit_hir_c_with_stdin_stream_records(
+                    &self.public_api_program,
+                    self.manifest.command().unwrap_or(""),
+                )
+            }
+            ProjectProfile::StdinStreamOwnedDataCommandIoV1 => {
+                crate::codegen::emit_hir_c_with_stdin_stream_owned_data(
+                    &self.public_api_program,
+                    self.manifest.command().unwrap_or(""),
+                )
+            }
+            ProjectProfile::StdinStreamCollectionRecordCommandIoV1 => {
+                crate::codegen::emit_hir_c_with_stdin_stream_collection_records(
+                    &self.public_api_program,
+                    self.manifest.command().unwrap_or(""),
+                )
+            }
+            ProjectProfile::StdinStreamNestedOutcomeCommandIoV1 => {
+                crate::codegen::emit_hir_c_with_stdin_stream_nested_outcomes(
+                    &self.public_api_program,
+                    self.manifest.command().unwrap_or(""),
+                )
+            }
             ProjectProfile::LineCommandIoV1 => crate::codegen::emit_hir_c_with_line_command_io(
                 &self.public_api_program,
                 self.manifest.command().unwrap_or(""),
@@ -1214,6 +1263,10 @@ impl ProjectSnapshot {
                 | ProjectProfile::StdinStreamCommandIoV2
                 | ProjectProfile::StdinStreamTextCommandIoV1
                 | ProjectProfile::StdinStreamDataCommandIoV1
+                | ProjectProfile::StdinStreamDataCommandIoV2
+                | ProjectProfile::StdinStreamOwnedDataCommandIoV1
+                | ProjectProfile::StdinStreamCollectionRecordCommandIoV1
+                | ProjectProfile::StdinStreamNestedOutcomeCommandIoV1
                 | ProjectProfile::LineCommandIoV1
                 | ProjectProfile::NetworkCommandIoV1
                 | ProjectProfile::HttpsCommandIoV1

@@ -18,24 +18,9 @@ pub(super) fn write_block_statement(
         return;
     }
     match statement {
-        Statement::Let {
-            name,
-            mutable,
-            declared,
-            value,
-            ..
-        } => {
+        Statement::Let { value, .. } => {
             write_indent(output, depth);
-            if *mutable {
-                write!(output, "let mut {name}").unwrap();
-            } else {
-                write!(output, "let {name}").unwrap();
-            }
-            if let Some(ty) = declared {
-                write!(output, ": ").unwrap();
-                write_type(output, ty);
-            }
-            write!(output, " = ").unwrap();
+            expression_statement::write_let_prefix(output, statement);
             write_expr(output, value, 0);
             writeln!(output, ";").unwrap();
         }
@@ -81,16 +66,14 @@ pub(super) fn write_block_statement(
         Statement::For {
             item, values, body, ..
         }
+        | Statement::ForBorrow {
+            item, values, body, ..
+        }
         | Statement::ForOwn {
             item, values, body, ..
         } => {
             write_indent(output, depth);
-            let prefix = if matches!(statement, Statement::ForOwn { .. }) {
-                "for own"
-            } else {
-                "for"
-            };
-            write!(output, "{prefix} {item} in ").unwrap();
+            write_traversal_header(output, statement, item);
             write_expr(output, values, 0);
             writeln!(output, " {{").unwrap();
             let ExprKind::Block { statements, tail } = &body.kind else {
@@ -102,4 +85,24 @@ pub(super) fn write_block_statement(
             writeln!(output, "}}").unwrap();
         }
     }
+}
+
+pub(super) fn write_traversal_header(
+    output: &mut impl std::fmt::Write,
+    statement: &Statement,
+    item: &str,
+) {
+    let prefix = match statement {
+        Statement::ForOwn { .. } => "for own",
+        Statement::ForBorrow { .. } => "for borrow",
+        _ => "for",
+    };
+    write!(output, "{prefix} {item}").unwrap();
+    if let Statement::ForBorrow {
+        index: Some(index), ..
+    } = statement
+    {
+        write!(output, " at {}", index.name).unwrap();
+    }
+    write!(output, " in ").unwrap();
 }

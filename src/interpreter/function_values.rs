@@ -16,7 +16,12 @@ impl Evaluator<'_> {
             Value::Float64(value) => Value::Float64(*value),
             Value::Bool(value) => Value::Bool(*value),
             Value::ArrayU8(value) => Value::ArrayU8(Arc::clone(value)),
-            Value::Bytes(value) => Value::Bytes(value.clone()),
+            Value::Bytes(value) => Value::Bytes(value.borrow_alias()?),
+            Value::PartitionVec(_) | Value::PartitionIter(_) => {
+                return Err(Flow::Guard(
+                    "affine partition container requires a checked borrow receiver",
+                ));
+            }
             Value::Vec(value) => Value::Vec(Arc::clone(value)),
             Value::Iter(value) => Value::Iter(Arc::clone(value)),
             Value::List(value) => Value::List(value.clone()),
@@ -25,6 +30,9 @@ impl Evaluator<'_> {
             Value::Map(value) => Value::Map(Arc::clone(value)),
             Value::Collection(value) => Value::Collection(Arc::clone(value)),
             Value::String(value) => Value::String(self.materialize_utf8_copy(value)?),
+            Value::CheckedString(value) => {
+                Value::CheckedString(self.checked_utf8(&[value.as_str()])?)
+            }
             Value::BorrowedStr(value) => Value::BorrowedStr(value.clone()),
             Value::BorrowedSlice(value) => Value::BorrowedSlice(value.clone()),
             Value::OptionU8(value) => Value::OptionU8(*value),
@@ -35,7 +43,7 @@ impl Evaluator<'_> {
             Value::Variant(value) => Value::Variant(Arc::clone(value)),
             Value::Function(target) => Value::Function(target.clone()),
             Value::Closure(value) if value.mutable.is_some() => {
-                return Err(Flow::Guard("mutable callback cannot be copied"))
+                return Err(Flow::Guard("mutable callback cannot be copied"));
             }
             Value::Closure(value) => Value::Closure(Arc::clone(value)),
             Value::OnceClosure(_) => return Err(Flow::Guard("affine callable cannot be copied")),
@@ -203,7 +211,7 @@ pub(super) fn evaluate_resolved_entry_with_utf8_budget<'a>(
                 0,
                 Vec::new(),
                 (0, 0),
-            )
+            );
         }
     };
     let mut evaluator = Evaluator {
@@ -214,6 +222,8 @@ pub(super) fn evaluate_resolved_entry_with_utf8_budget<'a>(
         budget,
         next_byte_allocation: 0,
         allocated_byte_payload: 0,
+        partition: None,
+        fused: Default::default(),
         box_live_allocations: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         utf8_materialization_budget,
         stdout_transcript: host_stdout.then(Vec::new),
@@ -230,6 +240,7 @@ pub(super) fn evaluate_resolved_entry_with_utf8_budget<'a>(
         resumption: crate::interpreter::resumable::Resumption::Refused,
         semantic: Default::default(),
         string_condition_reads: Default::default(),
+        checked_allocation: None,
     };
     let outcome = evaluator.evaluate_entry(entry, arguments);
     let utf8_usage = evaluator.utf8_materialization_budget.usage();

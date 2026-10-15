@@ -1,0 +1,19 @@
+{
+  "base_head": "81e5faf9979ad4e5e7b28c3d2c8f652eacc05353",
+  "current_source_hashes": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "daf6c198625949e542904e15e578cbd7c4f494769a5b0ed37ed021cc0a77b49a",
+    "src/hir/validation/scope_checkpoint/merge.rs": "49243f15af65b1327ead8a8d1b53368d15e15b341eaf8eadc9051029caff6c8a",
+    "tests/hir_module_boundaries.rs": "4eb4a53ed30ddb137a8a3e23f051c7e9506b89b99f3dbebe92245bc98ac1e151",
+    "src/hir/validation/scope_checkpoint/merge/saved.rs": "39d9ba109cb3fd06dec17019527d8511d240061612b0e5e50413c90f2752d754",
+    "src/hir/validation/scope_checkpoint/merge/tests.rs": "409fd2e769e6f1e42f6dcd63dd128b11bcd2161987a179d9ab0e335a3803ba39"
+  },
+  "original_archive_sha256": "d66d812ac31f60643e7495c92c18e6b8cff022203f5a313d4170dff2ef4cae3a",
+  "source_only_static_checks": [
+    "whole saved producer method-name inverse equals actual81e5 Git source",
+    "actual module registrations and reader concatenations include both new children",
+    "all changed/new Rust files below1500"
+  ],
+  "new_authored_test_count": 8,
+  "tests_executed": false,
+  "reviewed_payload_sha256": "acd4ed39d3a02c291ce52c2cf255291b5a1cd7559f1d2f9c263f5881b29ffdd6"
+}

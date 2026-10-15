@@ -96,7 +96,7 @@ fn field_value(ty: &ResolvedType, field: &ChannelField, allocation: &mut u32) ->
             *allocation = allocation.checked_add(1)?;
             Some(Value::Bytes(OwnedBytesValue {
                 allocation: *allocation,
-                bytes: Arc::from(bytes.as_slice()),
+                bytes: Arc::<[u8]>::from(bytes.as_slice()).into(),
             }))
         }
         (_, ChannelField::Scalar(value)) => super::scalar_of(ty, value),

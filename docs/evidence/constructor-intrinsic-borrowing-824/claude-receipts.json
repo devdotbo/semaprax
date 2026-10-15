@@ -1,0 +1,168 @@
+[
+  {
+    "role": "constructor-residual-824-review",
+    "exit_code": 0,
+    "wall_seconds": 56.70397612500528,
+    "tools_enabled": false,
+    "code_execution": false,
+    "resource_refusal": null,
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 7811,
+        "cacheReadInputTokens": 535,
+        "cacheCreationInputTokens": 9228,
+        "webSearchRequests": 0,
+        "costUSD": 0.1150795,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 4354,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "reported_list_cost_usd": 0.1150795,
+    "actual_billing": "unknown",
+    "packet_sha256": "31e2e199cb08de801e5de64980444a9e5ee558d0cc76e07ca0ff6c0f1c65fbcb",
+    "source_whitelist": [
+      {
+        "path": "src/hir/validation/constructor_seed.rs",
+        "start": 1,
+        "end": 91,
+        "sha256": "52c886c27a00527cca2468b308102608224fe80aa2a3e36ea5e20470b7ccf855"
+      },
+      {
+        "path": "src/hir/validation/generic_template.rs",
+        "start": 503,
+        "end": 551,
+        "sha256": "e10f391d931b3b9b9142618b54589eccb7317fabc1c08fda827f5564e9dffeeb"
+      },
+      {
+        "path": "src/list_ops.rs",
+        "start": 125,
+        "end": 213,
+        "sha256": "0abc67a67c5c22b175b81e2ef82e46206421f6a974fa772ea40de40181467dd2"
+      },
+      {
+        "path": "src/iterator_ops.rs",
+        "start": 119,
+        "end": 144,
+        "sha256": "8541bd6ab7e58bd7a39eae3eef770e6ac29f104a6ea6923aa73287d2b6a8ed44"
+      },
+      {
+        "path": "src/iterator_ops.rs",
+        "start": 395,
+        "end": 462,
+        "sha256": "8541bd6ab7e58bd7a39eae3eef770e6ac29f104a6ea6923aa73287d2b6a8ed44"
+      },
+      {
+        "path": "src/hir/validation/box_intrinsic.rs",
+        "start": 1,
+        "end": 47,
+        "sha256": "ae74763572e1f1447e3bbc9c15445bf6bfb9014529350287bff4ee7bc685b07d"
+      },
+      {
+        "path": "src/hir/inspection.rs",
+        "start": 202,
+        "end": 237,
+        "sha256": "6af9ee1f630c86ce48a7e8f8020883f82780be36edfe2c14cbadb3ced3fc5870"
+      },
+      {
+        "path": "src/hir.rs",
+        "start": 772,
+        "end": 779,
+        "sha256": "a5efa3f9d058c37538b9f08a17f3286fad4b2342b54943d64f3a4ca69e6459e0"
+      }
+    ]
+  },
+  {
+    "role": "constructor-intrinsic-824-final-review",
+    "exit_code": 0,
+    "wall_seconds": 134.79254487500293,
+    "tools_enabled": false,
+    "code_execution": false,
+    "resource_refusal": null,
+    "modelUsage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 17893,
+        "cacheReadInputTokens": 535,
+        "cacheCreationInputTokens": 16394,
+        "webSearchRequests": 0,
+        "costUSD": 0.2445635,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 15787,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "reported_list_cost_usd": 0.2445635,
+    "actual_billing": "unknown",
+    "packet_sha256": "17e1446334a397567e6cabbdf2019d316d472fe7591aefd4ccd5fa8ce366948d",
+    "source_whitelist": [
+      {
+        "path": "src/list_ops.rs",
+        "start": 130,
+        "end": 226,
+        "sha256": "7d4f64eec5df314812d064f9a14dfaad3f85dca579a7d4f4941c16028ad746fe"
+      },
+      {
+        "path": "src/iterator_ops.rs",
+        "start": 395,
+        "end": 463,
+        "sha256": "6a9bd6dfb76df8707e5cd21ddd4e0ec85b0248cfc1834645c14824d11d775b16"
+      },
+      {
+        "path": "src/list_ops/original_constructor.rs",
+        "start": 1,
+        "end": 300,
+        "sha256": "912f323e1b3d93558b5690110fe43a5a00d12a88cd4fd8a7a73a31a8d316b504"
+      },
+      {
+        "path": "src/iterator_ops/original_constructor.rs",
+        "start": 1,
+        "end": 300,
+        "sha256": "7ed5edf89d9ebd69019c37ef659bffede70ff2c975ebcb1aa163090a1d8b8747"
+      },
+      {
+        "path": "src/hir/validation/constructor_seed/original_intrinsics.rs",
+        "start": 1,
+        "end": 300,
+        "sha256": "68f522899feb21fa7d0e0db389ce2d7cc5742dcd360b7b4f9ec57d49efc866e0"
+      },
+      {
+        "path": "src/hir/validation/constructor_seed/original.rs",
+        "start": 1,
+        "end": 100,
+        "sha256": "b6ead6ed6c5bc33a27f3dafefe009e822f51e5d36934ceafd484c0441cbdb10e"
+      },
+      {
+        "path": "src/hir/validation/constructor_seed/intrinsic_tests.rs",
+        "start": 1,
+        "end": 400,
+        "sha256": "f2f9c65009e75d67fa1e50f1c97d045f3f2c695a68d624751790a52fc6b2b3a7"
+      },
+      {
+        "path": "src/hir/declaration_index.rs",
+        "start": 1,
+        "end": 42,
+        "sha256": "586684b48f58eea49ca017a4f1b8ab54fee3a874366d9ef0e10c2e31b8cd46c3"
+      },
+      {
+        "path": "src/hir/ids.rs",
+        "start": 153,
+        "end": 184,
+        "sha256": "afbbd5de9f56e15dc761c6b01ae591db9472efc4664effcb5c5093833dcfa569"
+      },
+      {
+        "path": "src/iterator_ops.rs",
+        "start": 94,
+        "end": 120,
+        "sha256": "6a9bd6dfb76df8707e5cd21ddd4e0ec85b0248cfc1834645c14824d11d775b16"
+      }
+    ]
+  }
+]

@@ -9,6 +9,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         &mut self,
         ty: &ResolvedType,
     ) -> Result<String, Diagnostic> {
+        if *ty == ResolvedType::Never {
+            return Ok(String::new());
+        }
         if matches!(ty, ResolvedType::ArrayU8(0)) {
             return Ok("UINT8_C(0)".to_owned());
         }
@@ -89,85 +92,93 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         } else {
             self.temporary(&op.return_type())?
         };
-        match op {
-            crate::string_ops::StringOp::Len => {
-                let input = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_len({input});"));
-            }
-            crate::string_ops::StringOp::IsEmpty => {
-                let input = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_is_empty({input});"));
-            }
-            crate::string_ops::StringOp::Concat => {
-                let left = &arguments[0].code;
-                let right = &arguments[1].code;
-                self.line(&format!(
-                    "{temporary} = spx_string_concat({left}, {right});"
-                ));
-                self.string_drop(left);
-                self.string_drop(right);
-            }
-            crate::string_ops::StringOp::StartsWith => {
-                let value = &arguments[0].code;
-                let prefix = &arguments[1].code;
-                self.line(&format!(
-                    "{temporary} = spx_string_starts_with({value}, {prefix});"
-                ));
-            }
-            crate::string_ops::StringOp::Contains => {
-                let value = &arguments[0].code;
-                let needle = &arguments[1].code;
-                self.line(&format!(
-                    "{temporary} = spx_string_contains({value}, {needle});"
-                ));
-            }
-            crate::string_ops::StringOp::LenChars => {
-                let input = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_len_chars({input});"));
-            }
-            crate::string_ops::StringOp::FromChar => {
-                let scalar = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_from_char({scalar});"));
-            }
-            crate::string_ops::StringOp::FromI64 => {
-                let value = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_from_i64({value});"));
-            }
-            crate::string_ops::StringOp::FromUsize => {
-                let value = &arguments[0].code;
-                self.line(&format!("{temporary} = spx_string_from_usize({value});"));
-            }
-            crate::string_ops::StringOp::Slice
-            | crate::string_ops::StringOp::Find
-            | crate::string_ops::StringOp::ToI64
-            | crate::string_ops::StringOp::Trim
-            | crate::string_ops::StringOp::ByteAt
-            | crate::string_ops::StringOp::FileReadText => {
-                self.emit_text_toolkit_op(op, &arguments, &temporary)?;
-            }
-            crate::string_ops::StringOp::Compare
-            | crate::string_ops::StringOp::MapNew
-            | crate::string_ops::StringOp::MapAdd
-            | crate::string_ops::StringOp::MapSet
-            | crate::string_ops::StringOp::MapGetOr
-            | crate::string_ops::StringOp::MapHas
-            | crate::string_ops::StringOp::MapLen
-            | crate::string_ops::StringOp::MapKeyAt
-            | crate::string_ops::StringOp::MapValueAt
-            | crate::string_ops::StringOp::MapRemove => {
-                self.emit_collection_op(op, &arguments, &temporary, expression)?;
-            }
-            crate::string_ops::StringOp::FromStr
-            | crate::string_ops::StringOp::F64FromI64
-            | crate::string_ops::StringOp::I64FromF64
-            | crate::string_ops::StringOp::UsizeFromI64
-            | crate::string_ops::StringOp::I64FromU8
-            | crate::string_ops::StringOp::I64FromI32
-            | crate::string_ops::StringOp::UsizeFromU8
-            | crate::string_ops::StringOp::U8FromI64
-            | crate::string_ops::StringOp::CharFromU8
-            | crate::string_ops::StringOp::I64FromUsize => {
-                self.emit_conversion_op(op, &arguments[0].code, &temporary)?;
+        if !self.emit_checked_string_operation(op, &arguments, &temporary, expression)? {
+            match op {
+                crate::string_ops::StringOp::Take => {
+                    let input = &arguments[0].code;
+                    self.line(&format!("{temporary} = {input};"));
+                }
+                crate::string_ops::StringOp::Len => {
+                    let input = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_len({input});"));
+                }
+                crate::string_ops::StringOp::IsEmpty => {
+                    let input = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_is_empty({input});"));
+                }
+                crate::string_ops::StringOp::Concat => {
+                    let left = &arguments[0].code;
+                    let right = &arguments[1].code;
+                    self.line(&format!(
+                        "{temporary} = spx_string_concat({left}, {right});"
+                    ));
+                    self.string_drop(left);
+                    self.string_drop(right);
+                }
+                crate::string_ops::StringOp::StartsWith => {
+                    let value = &arguments[0].code;
+                    let prefix = &arguments[1].code;
+                    self.line(&format!(
+                        "{temporary} = spx_string_starts_with({value}, {prefix});"
+                    ));
+                }
+                crate::string_ops::StringOp::Contains => {
+                    let value = &arguments[0].code;
+                    let needle = &arguments[1].code;
+                    self.line(&format!(
+                        "{temporary} = spx_string_contains({value}, {needle});"
+                    ));
+                }
+                crate::string_ops::StringOp::LenChars => {
+                    let input = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_len_chars({input});"));
+                }
+                crate::string_ops::StringOp::FromChar => {
+                    let scalar = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_from_char({scalar});"));
+                }
+                crate::string_ops::StringOp::FromI64 => {
+                    let value = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_from_i64({value});"));
+                }
+                crate::string_ops::StringOp::FromUsize => {
+                    let value = &arguments[0].code;
+                    self.line(&format!("{temporary} = spx_string_from_usize({value});"));
+                }
+                crate::string_ops::StringOp::Slice
+                | crate::string_ops::StringOp::Find
+                | crate::string_ops::StringOp::ToI64
+                | crate::string_ops::StringOp::Trim
+                | crate::string_ops::StringOp::ByteAt
+                | crate::string_ops::StringOp::FileReadText => {
+                    self.emit_text_toolkit_op(op, &arguments, &temporary)?;
+                }
+                crate::string_ops::StringOp::Compare
+                | crate::string_ops::StringOp::MapNew
+                | crate::string_ops::StringOp::MapAdd
+                | crate::string_ops::StringOp::MapSet
+                | crate::string_ops::StringOp::MapGetOr
+                | crate::string_ops::StringOp::MapHas
+                | crate::string_ops::StringOp::MapLen
+                | crate::string_ops::StringOp::MapKeyAt
+                | crate::string_ops::StringOp::MapValueAt
+                | crate::string_ops::StringOp::MapRemove => {
+                    self.emit_collection_op(op, &arguments, &temporary, expression)?;
+                }
+                crate::string_ops::StringOp::FromStr
+                | crate::string_ops::StringOp::FromUtf8
+                | crate::string_ops::StringOp::F64FromI64
+                | crate::string_ops::StringOp::I64FromF64
+                | crate::string_ops::StringOp::UsizeFromI64
+                | crate::string_ops::StringOp::I64FromU8
+                | crate::string_ops::StringOp::I64FromI32
+                | crate::string_ops::StringOp::UsizeFromU8
+                | crate::string_ops::StringOp::U8FromI64
+                | crate::string_ops::StringOp::CharFromU8
+                | crate::string_ops::StringOp::CharFromI64
+                | crate::string_ops::StringOp::I64FromUsize => {
+                    self.emit_conversion_op(op, &arguments[0].code, &temporary)?;
+                }
             }
         }
         let code = if is_direct_plan_owned(self.program, &op.return_type()) {
@@ -205,6 +216,35 @@ impl<'a, O: COutput> CEmitter<'a, O> {
     ) -> Result<(), Diagnostic> {
         use crate::string_ops::{StringOp, CONVERT_NAN_CODE, CONVERT_OUT_OF_RANGE_CODE};
         let (input_type, target) = match op {
+            StringOp::FromUtf8 => {
+                if self.output_profile == super::NativeOutputProfile::SelectedFinalUtf8 {
+                    let jump = self.operation_failure_jump()?;
+                    self.line(&format!("spx_status = spx_final_utf8_construct(spx_ctx, (const uint8_t *)({operand}).ptr, ({operand}).len, &{temporary});"));
+                    self.line(&format!(
+                        "if (spx_status != SPX_STATUS_SUCCESS) {{ {jump} }}"
+                    ));
+                    return Ok(());
+                }
+                if !self.output_profile.string_runtime().length_delimited {
+                    return Err(backend_error(
+                        "string_from_utf8 requires a length-delimited native String profile",
+                    ));
+                }
+                // Slice authority/range came from ordinary argument replay; do
+                // not reapply a foreign-root byte limit to an internal view.
+                // Stream places retain their descriptor, so authenticate its
+                // current epoch and owned-view shape before any pointed read.
+                if self.output_profile.string_runtime().stream_epochs {
+                    self.line(&format!(
+                        "spx_slice_u8_require_owned_view_valid({operand});"
+                    ));
+                }
+                self.line(&format!("if (({operand}).len > (uint64_t)SIZE_MAX || (({operand}).len != UINT64_C(0) && ({operand}).ptr == NULL)) spx_runtime_invariant_failure(\"invalid UTF-8 input slice\");"));
+                let jump = self.operation_failure_jump()?;
+                self.line(&format!("if (!spx_status_domain_is_utf8((const char *)({operand}).ptr, (size_t)({operand}).len)) {{ if (!spx_status_record_adapter(spx_ctx, \"{}\", UINT32_C(1), SPX_STATUS_CLASS_ADAPTER, SPX_RETRYABILITY_FALSE, &spx_status)) spx_runtime_invariant_failure(\"conversion status could not be recorded\"); {jump} }}", crate::string_ops::CONVERT_STATUS_DOMAIN));
+                self.line(&format!("{temporary} = spx_string_from_literal((const char *)({operand}).ptr, ({operand}).len);"));
+                return Ok(());
+            }
             StringOp::FromStr => {
                 self.line(&format!(
                     "{temporary} = spx_string_from_literal((const char *)({operand}).data, ({operand}).len);"
@@ -234,6 +274,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             StringOp::UsizeFromI64 => (ResolvedType::I64, "uint64_t"),
             StringOp::I64FromUsize => (ResolvedType::Usize, "int64_t"),
             StringOp::U8FromI64 => (ResolvedType::I64, "uint8_t"),
+            StringOp::CharFromI64 => (ResolvedType::I64, "uint32_t"),
             _ => {
                 return Err(super::backend_error(
                     "operation is not a Conversions v1 call",
@@ -259,14 +300,19 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 format!("{input} < INT64_C(0) || {input} > INT64_C(255)"),
                 CONVERT_OUT_OF_RANGE_CODE,
             )],
+            StringOp::CharFromI64 => vec![(
+                format!("{input} < INT64_C(0) || {input} > INT64_C(1114111) || ({input} >= INT64_C(55296) && {input} <= INT64_C(57343))"),
+                CONVERT_OUT_OF_RANGE_CODE,
+            )],
             _ => vec![(
                 format!("{input} > (uint64_t)INT64_MAX"),
                 CONVERT_OUT_OF_RANGE_CODE,
             )],
         };
         for (condition, code) in failures {
+            let jump = self.operation_failure_jump()?;
             self.line(&format!(
-                "if ({condition}) {{ if (!spx_status_record_adapter(spx_ctx, \"{}\", UINT32_C({code}), SPX_STATUS_CLASS_ADAPTER, SPX_RETRYABILITY_FALSE, &spx_status)) spx_runtime_invariant_failure(\"conversion status could not be recorded\"); goto spx_epilogue; }}",
+                "if ({condition}) {{ if (!spx_status_record_adapter(spx_ctx, \"{}\", UINT32_C({code}), SPX_STATUS_CLASS_ADAPTER, SPX_RETRYABILITY_FALSE, &spx_status)) spx_runtime_invariant_failure(\"conversion status could not be recorded\"); {jump} }}",
                 crate::string_ops::CONVERT_STATUS_DOMAIN
             ));
         }

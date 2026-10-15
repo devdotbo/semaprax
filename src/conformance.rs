@@ -660,6 +660,7 @@ fn status_lane_text(lane: StatusLane) -> &'static str {
     match lane {
         StatusLane::OwnerAdmission => "owner_admission",
         StatusLane::OperationFailure => "operation_failure",
+        StatusLane::AllocationFailure => "allocation_failure",
         StatusLane::ContractFalse => "contract_false",
     }
 }

@@ -1,0 +1,50 @@
+{
+  "base": "31dd9324",
+  "qualification": "source only; not built or executed",
+  "selectors": [
+    {
+      "harness": "lib",
+      "selector": "hir::owned_text_record::paid::tests::funded_text_classifiers_preserve_limits_cycles_and_substitution_errors",
+      "source": "src/hir/owned_text_record/paid/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::owned_text_record::paid::tests::funded_text_classifiers_match_saved_receivers_and_pay_exactly",
+      "source": "src/hir/owned_text_record/paid/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::owned_text_record::paid::tests::substitution_refusal_is_never_swallowed_as_a_skipped_field",
+      "source": "src/hir/owned_text_record/paid/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::owned_text_record::paid::tests::funded_text_classifiers_zero_debit_and_sticky_refusal",
+      "source": "src/hir/owned_text_record/paid/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::owned_text_record::paid::tests::original_uppercase_string_selection_fixture_keeps_full_unknown_type_refusal",
+      "source": "src/hir/owned_text_record/paid/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::owned_text_record::paid::tests::full_saved_receiver_sources_remain_byte_identical_and_program_selection_matches",
+      "source": "src/hir/owned_text_record/paid/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::owned_text_record::paid::tests::borrowed_scalar_record_reduces_full_original_allocation_through_drop",
+      "source": "src/hir/owned_text_record/paid/tests.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::owned_text_record::paid::tests::inline_scalar_children_and_paid_spills_keep_full_saved_receiver_and_drop",
+      "source": "src/hir/owned_text_record/paid/tests.rs"
+    }
+  ],
+  "saved_sources": {
+    "src/hir/owned_text_record/saved.rs": "84528240afefb008d37eb14ec040f92017d56e1c404e563e4ec9147d7f445cbb",
+    "src/hir/owned_collection_record/saved.rs": "60dc4fbe4f8610edf46d111a9b187e2fc039d81fb50706fc9c77e49461a52114"
+  }
+}

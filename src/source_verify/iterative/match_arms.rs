@@ -10,6 +10,7 @@ use crate::source_verify::diagnostics::{
 };
 use crate::source_verify::loans::merge_moved;
 use crate::source_verify::place::{join_definitely_partial, join_moved_places};
+use crate::source_verify::private_names::{missing_case, type_name};
 use crate::source_verify::scope::{
     ScalarMatchState, VariantMatchState, VerifierFrame, VerifierScope,
 };
@@ -20,6 +21,10 @@ use crate::source_verify::variant_or::{
 use crate::source_verify::IterativeVerifier;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
+#[cfg(test)]
+mod arms_before_799;
+mod refused_patterns;
+
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     pub(super) fn frame_resume_record_match_arm(
         &mut self,
@@ -29,6 +34,16 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         outer_names: Vec<String>,
         owns_record_input: bool,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 {
+            return self.before_match_799_frame_resume_record_match_arm(
+                arm,
+                parent_scope,
+                arm_scope,
+                outer_names,
+                owns_record_input,
+            );
+        }
         if arm_scope + 1 != self.scopes.len() {
             return Err(Diagnostic::io(
                 "SPX-H006",
@@ -54,12 +69,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             generic_function_has_owned_record_composition(function, self.types)
         });
         if result.as_ref().is_some_and(|value| {
-            (!matches!(value.ty, Type::I64 | Type::Bool) || value.mode != ParamMode::Value)
+            value.ty!=Type::Never && (!matches!(value.ty, Type::I64 | Type::Bool) || value.mode != ParamMode::Value)
                 && !(generic_template.is_some_and(|function| function.type_parameters.is_empty())
                     && (value.mode == ParamMode::Value || owns_record_input)
                     && crate::source_verify::declared_type::ordinary_record_match_result(&value.ty, value.mode, self.types))
                 && !(generic_owned_result
-                    && (((value.ty == self.current.return_type || (self.types.is_nested_owned_byte_record(&value.ty) || crate::source_verify::declared_type::string_record::admitted(&value.ty, self.types))) && value.mode == ParamMode::Own)
+                    && (((value.ty == self.current.return_type || (self.types.is_nested_owned_byte_record(&value.ty) || crate::source_verify::declared_type::string_record::runtime_admitted(&value.ty, self.types))) && value.mode == ParamMode::Own)
                         || (value.mode == ParamMode::Value
                             && (crate::source_verify::type_table::owned_byte_record_copy_field_is_admitted(&value.ty)
                                 || matches!(&value.ty, Type::Named { name, arguments }
@@ -82,24 +97,29 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         &mut self,
         mut state: VariantMatchState<'p>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 {
+            return self.before_match_799_frame_prepare_variant_match_arm(state);
+        }
+        #[cfg(test)]
+        if self.recovery_legacy {
+            return self.recovery_old_frame_prepare_variant_match_arm(state);
+        }
         if state.index >= state.arms.len() {
             if !state.wildcard_seen {
                 if let (Some(variant_name), Some(cases)) =
-                    (&state.variant_name, state.declared_cases)
+                    (state.variant_name.as_ref(), state.declared_cases)
                 {
                     if let Some(missing) = cases
                         .iter()
                         .find(|case| !state.covered.contains(&case.name))
                     {
-                        let witness = if missing.fields.is_empty() {
-                            format!("{variant_name}::{} {{}}", missing.name)
-                        } else {
-                            format!("{variant_name}::{} {{ .. }}", missing.name)
-                        };
-                        self.diagnostics.push(error(
+                        self.diagnostics.push(missing_case(
                             self.program,
-                            "SPX-M101",
-                            format!("non-exhaustive match; missing case `{witness}`"),
+                            self.types,
+                            variant_name,
+                            &missing.name,
+                            !missing.fields.is_empty(),
                             state.expression.span,
                         ));
                     }
@@ -128,11 +148,17 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     &state.outer_names,
                 );
             }
-            self.values.push(state.result);
+            self.values
+                .push(if state.variant_name.refused_input().is_some() {
+                    None
+                } else {
+                    state.result
+                });
             return Ok(());
         }
         let arm = &state.arms[state.index];
         let arm_scope = self.scopes.len();
+        self.recovery.fork(Some(state.parent_scope), arm_scope);
         self.scopes.push(VerifierScope {
             bindings: state.baseline.clone(),
             local_borrow_count: state
@@ -141,191 +167,224 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 .filter(|binding| binding.borrow_origin.is_some())
                 .count(),
         });
-        match &arm.pattern {
-            MatchPattern::Wildcard { span } => {
-                if state.mode != MatchMode::Value {
-                    self.diagnostics.push(error(
-                        self.program,
-                        "SPX-O117",
-                        "explicit ownership variant match requires every case pattern",
-                        *span,
-                    ));
-                }
-                if state.wildcard_seen
-                    || state
-                        .declared_cases
-                        .is_some_and(|cases| state.covered.len() == cases.len())
-                {
-                    self.diagnostics.push(error(
-                        self.program,
-                        "SPX-M102",
-                        "unreachable wildcard match arm",
-                        *span,
-                    ));
-                }
-                state.wildcard_seen = arm.guard.is_none();
+        if let Some(origin) = state.variant_name.refused_input() {
+            self.prepare_refused_match_pattern(
+                &arm.pattern,
+                arm_scope,
+                origin,
+                &mut state.covered,
+                state.wildcard_seen,
+                arm.guard.is_none(),
+            );
+            if matches!(
+                arm.pattern,
+                MatchPattern::Wildcard { .. } | MatchPattern::Binding { .. }
+            ) && arm.guard.is_none()
+            {
+                state.wildcard_seen = true;
             }
-            MatchPattern::Variant {
-                type_name,
-                case_name,
-                fields,
-                span,
-                ..
-            } => {
-                let compatible = state.variant_name.as_deref() == Some(type_name);
-                let declared_case = compatible
-                    .then_some(state.declared_cases)
-                    .flatten()
-                    .and_then(|cases| cases.iter().find(|case| case.name == *case_name));
-                if declared_case.is_none() {
-                    let diagnostic = error(
-                        self.program,
-                        "SPX-M103",
-                        format!("pattern `{type_name}::{case_name}` is incompatible with the match scrutinee"),
-                        *span,
-                    );
-                    self.diagnostics.push(
-                        match compatible
-                            .then_some(state.declared_cases)
-                            .flatten()
-                            .and_then(|cases| {
-                                crate::source_verify::hints::nearest_variant_case_name(
-                                    case_name, cases,
-                                )
-                            }) {
-                            Some(nearest) => diagnostic.with_help(format!(
-                                "did you mean `{type_name}::{nearest} {{ ... }}`?"
-                            )),
-                            None => diagnostic,
-                        },
-                    );
-                } else if state.wildcard_seen
-                    || state.covered.contains(case_name)
-                    || (arm.guard.is_none() && !state.covered.insert(case_name.clone()))
-                {
-                    self.diagnostics.push(error(
-                        self.program,
-                        "SPX-M102",
-                        format!("unreachable duplicate case `{type_name}::{case_name}`"),
-                        *span,
-                    ));
-                }
-                let mut supplied = HashSet::new();
-                let mut bindings = HashSet::new();
-                for field in fields {
-                    let declared_field = declared_case.and_then(|case| {
-                        case.fields
-                            .iter()
-                            .find(|candidate| candidate.name == field.name)
-                    });
-                    if !supplied.insert(field.name.as_str())
-                        || (declared_case.is_some() && declared_field.is_none())
-                    {
-                        self.diagnostics.push(error(self.program, "SPX-M104", format!("unknown or duplicate pattern field `{}` in `{type_name}::{case_name}`", field.name), field.span));
+        } else {
+            match &arm.pattern {
+                MatchPattern::Wildcard { span } => {
+                    if state.mode != MatchMode::Value {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-O117",
+                            "explicit ownership variant match requires every case pattern",
+                            *span,
+                        ));
                     }
-                    if !source_identifier(&field.binding)
-                        || !bindings.insert(field.binding.as_str())
-                        || self.scopes[arm_scope].bindings.contains_key(&field.binding)
+                    if state.wildcard_seen
+                        || state
+                            .declared_cases
+                            .is_some_and(|cases| state.covered.len() == cases.len())
                     {
                         self.diagnostics.push(error(
                             self.program,
-                            "SPX-M104",
-                            format!("invalid or duplicate pattern binding `{}`", field.binding),
-                            field.binding_span,
+                            "SPX-M102",
+                            "unreachable wildcard match arm",
+                            *span,
                         ));
-                        continue;
                     }
-                    if let Some(declared_field) = declared_field {
-                        let binding_ty = state
-                            .variant_name
-                            .as_ref()
-                            .and_then(|name| {
-                                self.types.declaration(name).and_then(|declaration| {
-                                    TypeTable::substitute_variant_type(
-                                        declaration,
-                                        &state.variant_arguments,
-                                        &declared_field.ty,
+                    state.wildcard_seen = arm.guard.is_none();
+                }
+                MatchPattern::Variant {
+                    type_name,
+                    case_name,
+                    fields,
+                    span,
+                    ..
+                } => {
+                    let checkpoint = self.recovery.checkpoint(self.diagnostics);
+                    let compatible = state.variant_name.as_deref() == Some(type_name);
+                    let declared_case = compatible
+                        .then_some(state.declared_cases)
+                        .flatten()
+                        .and_then(|cases| cases.iter().find(|case| case.name == *case_name));
+                    if declared_case.is_none() {
+                        let diagnostic = error(
+                        self.program,
+                        "SPX-M103",
+                        format!(
+                            "pattern `{type_name}::{case_name}` is incompatible with the match scrutinee"
+                        ),
+                        *span,
+                    );
+                        self.diagnostics.push(
+                            match compatible
+                                .then_some(state.declared_cases)
+                                .flatten()
+                                .and_then(|cases| {
+                                    crate::source_verify::hints::nearest_variant_case_name(
+                                        case_name, cases,
                                     )
-                                })
-                            })
-                            .unwrap_or_else(|| declared_field.ty.clone());
-                        let binding_mode = if self.types.needs_drop(&binding_ty) {
-                            match state.mode {
-                                MatchMode::Own => ParamMode::Own,
-                                MatchMode::Borrow => ParamMode::Borrow,
-                                MatchMode::Value => ParamMode::Value,
-                            }
-                        } else {
-                            ParamMode::Value
-                        };
-                        self.scopes[arm_scope].bindings.insert(
-                            field.binding.clone(),
-                            Binding {
-                                ty: binding_ty,
-                                mode: binding_mode,
-                                availability: Availability::Available,
-                                moved_places: HashMap::new(),
-                                definitely_partial: HashSet::new(),
-                                native_unit_discard: false,
-                                mutable: false,
-                                active_loans: BTreeSet::new(),
-                                borrow_origin: None,
+                                }) {
+                                Some(nearest) => diagnostic.with_help(format!(
+                                    "did you mean `{type_name}::{nearest} {{ ... }}`?"
+                                )),
+                                None => diagnostic,
                             },
                         );
+                    } else if state.wildcard_seen
+                        || state.covered.contains(case_name)
+                        || (arm.guard.is_none() && !state.covered.insert(case_name.clone()))
+                    {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-M102",
+                            format!("unreachable duplicate case `{type_name}::{case_name}`"),
+                            *span,
+                        ));
                     }
-                }
-                if let Some(declared_case) = declared_case {
-                    for field in &declared_case.fields {
-                        if !supplied.contains(field.name.as_str()) {
-                            self.diagnostics.push(error(self.program, "SPX-M104", format!("pattern `{type_name}::{case_name}` is missing payload field `{}`", field.name), *span));
+                    let mut supplied = HashSet::new();
+                    let mut bindings = HashSet::new();
+                    for field in fields {
+                        let declared_field = declared_case.and_then(|case| {
+                            case.fields
+                                .iter()
+                                .find(|candidate| candidate.name == field.name)
+                        });
+                        if !supplied.insert(field.name.as_str())
+                            || (declared_case.is_some() && declared_field.is_none())
+                        {
+                            self.diagnostics.push(error(self.program, "SPX-M104", format!("unknown or duplicate pattern field `{}` in `{type_name}::{case_name}`", field.name), field.span));
+                        }
+                        if !source_identifier(&field.binding)
+                            || !bindings.insert(field.binding.as_str())
+                            || self.scopes[arm_scope].bindings.contains_key(&field.binding)
+                            || self.recovery.reads_refused(arm_scope, &field.binding)
+                        {
+                            self.diagnostics.push(error(
+                                self.program,
+                                "SPX-M104",
+                                format!("invalid or duplicate pattern binding `{}`", field.binding),
+                                field.binding_span,
+                            ));
+                            continue;
+                        }
+                        if let Some(declared_field) = declared_field {
+                            let binding_ty = state
+                                .variant_name
+                                .as_ref()
+                                .and_then(|name| {
+                                    self.types.declaration(name).and_then(|declaration| {
+                                        TypeTable::substitute_variant_type(
+                                            declaration,
+                                            &state.variant_arguments,
+                                            &declared_field.ty,
+                                        )
+                                    })
+                                })
+                                .unwrap_or_else(|| declared_field.ty.clone());
+                            let binding_mode = if self.types.needs_drop(&binding_ty) {
+                                match state.mode {
+                                    MatchMode::Own => ParamMode::Own,
+                                    MatchMode::Borrow => ParamMode::Borrow,
+                                    MatchMode::Value => ParamMode::Value,
+                                }
+                            } else {
+                                ParamMode::Value
+                            };
+                            self.scopes[arm_scope].bindings.insert(
+                                field.binding.clone(),
+                                Binding {
+                                    contract_local: false,
+                                    traversal_row: None,
+                                    ty: binding_ty,
+                                    mode: binding_mode,
+                                    availability: Availability::Available,
+                                    moved_places: HashMap::new(),
+                                    definitely_partial: HashSet::new(),
+                                    native_unit_discard: false,
+                                    mutable: false,
+                                    active_loans: BTreeSet::new(),
+                                    borrow_origin: None,
+                                },
+                            );
+                        } else {
+                            self.recovery.refused_let(
+                                arm_scope,
+                                &field.binding,
+                                checkpoint,
+                                self.diagnostics,
+                            );
+                        }
+                    }
+                    if let Some(declared_case) = declared_case {
+                        for field in &declared_case.fields {
+                            if !supplied.contains(field.name.as_str()) {
+                                self.diagnostics.push(error(self.program, "SPX-M104", format!("pattern `{type_name}::{case_name}` is missing payload field `{}`", field.name), *span));
+                            }
                         }
                     }
                 }
-            }
-            MatchPattern::Record { span, .. } => self.diagnostics.push(error(
-                self.program,
-                "SPX-M103",
-                "record pattern is incompatible with a variant scrutinee",
-                *span,
-            )),
-            MatchPattern::Or { alternatives, span } => {
-                let context = VariantOrContext {
-                    variant_name: state.variant_name.as_deref(),
-                    declared_cases: state.declared_cases,
-                    mode: state.mode,
-                    wildcard_seen: state.wildcard_seen,
-                };
-                let mut covered = state.covered.clone();
-                check_variant_or_pattern(
+                MatchPattern::Record { span, .. } => self.diagnostics.push(error(
                     self.program,
-                    alternatives,
+                    "SPX-M103",
+                    "record pattern is incompatible with a variant scrutinee",
                     *span,
-                    &context,
-                    &mut |case| covered.insert(case.to_owned()),
-                    self.diagnostics,
-                );
-                if arm.guard.is_none() {
-                    state.covered = covered;
-                }
-            }
-            MatchPattern::Literal { span, .. } | MatchPattern::Binding { span, .. } => {
-                self.diagnostics.push(
-                    error(
+                )),
+                MatchPattern::Or { alternatives, span } => {
+                    let context = VariantOrContext {
+                        variant_name: state.variant_name.as_deref(),
+                        declared_cases: state.declared_cases,
+                        mode: state.mode,
+                        wildcard_seen: state.wildcard_seen,
+                    };
+                    let mut covered = state.covered.clone();
+                    check_variant_or_pattern(
                         self.program,
-                        "SPX-T254",
-                        "refutable patterns are incompatible with an aggregate variant \
-                         scrutinee",
+                        alternatives,
                         *span,
-                    )
-                    .with_help(AGGREGATE_REFUTABLE_HELP),
-                );
+                        &context,
+                        &mut |case| covered.insert(case.to_owned()),
+                        self.diagnostics,
+                    );
+                    if arm.guard.is_none() {
+                        state.covered = covered;
+                    }
+                }
+                MatchPattern::Literal { span, .. } | MatchPattern::Binding { span, .. } => {
+                    self.diagnostics.push(
+                        error(
+                            self.program,
+                            "SPX-T254",
+                            "refutable patterns are incompatible with an aggregate variant \
+                         scrutinee",
+                            *span,
+                        )
+                        .with_help(AGGREGATE_REFUTABLE_HELP),
+                    );
+                }
             }
         }
         let next = if let Some(guard) = &arm.guard {
-            if !crate::source_verify::variant_guards::guard_shape(
-                guard,
-                &self.scopes[arm_scope].bindings,
-            ) {
+            if state.variant_name.refused_input().is_none()
+                && !crate::source_verify::variant_guards::guard_shape(
+                    guard,
+                    &self.scopes[arm_scope].bindings,
+                )
+            {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T254",
@@ -352,6 +411,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         mut state: VariantMatchState<'p>,
         arm_scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 {
+            return self.before_match_799_frame_resume_variant_match_arm(state, arm_scope);
+        }
         if arm_scope + 1 != self.scopes.len() {
             return Err(Diagnostic::io(
                 "SPX-H006",
@@ -362,7 +425,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         if state.guard_pending {
             let guard_value = self.values.pop().unwrap_or(None);
             if let Some(value) = guard_value {
-                if value.ty != Type::Bool || value.mode != ParamMode::Value {
+                if (value.ty != Type::Bool
+                    && !self
+                        .recovery
+                        .explains(arm.guard.as_ref().expect("guard retained"), &Type::Bool))
+                    || value.mode != ParamMode::Value
+                {
                     self.diagnostics.push(error(
                         self.program,
                         "SPX-T256",
@@ -371,10 +439,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     ));
                 }
             }
-            if !crate::source_verify::variant_guards::ownership_unchanged(
-                &state.baseline,
-                &self.scopes[arm_scope].bindings,
-            ) {
+            if state.variant_name.refused_input().is_none()
+                && !crate::source_verify::variant_guards::ownership_unchanged(
+                    &state.baseline,
+                    &self.scopes[arm_scope].bindings,
+                )
+            {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T254",
@@ -392,20 +462,56 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             return Ok(());
         }
         let arm_value = self.values.pop().unwrap_or(None);
+        let exits = arm_value
+            .as_ref()
+            .is_some_and(|value| value.ty == Type::Never)
+            && crate::ast::returns_only(&arm.value);
+        let collection_result = |ty: &Type, mode: ParamMode| {
+            state.variant_name.as_ref().is_some_and(|name| {
+                crate::source_verify::declared_type::collection_outcome::match_result(
+                    self.types,
+                    &Type::Named {
+                        name: name.clone(),
+                        arguments: state.variant_arguments.clone(),
+                    },
+                    state.mode,
+                    ty,
+                    mode,
+                )
+            })
+        };
         if let Some(value) = &arm_value {
             reject_native_unit_value(self.program, &arm.value, value, self.diagnostics);
-            if !crate::source_verify::declared_type::generic_variant::match_result(
-                self.functions.get(self.current.name.as_str()).copied(),
-                self.types,
-                state.mode,
-                &value.ty,
-                value.mode,
-            ) {
-                reject_aggregate_match_result(self.program, &arm.value, value, self.diagnostics);
+        }
+        if state.variant_name.refused_input().is_none()
+            || arm_value
+                .as_ref()
+                .is_some_and(|value| !matches!(value.ty, Type::Named { .. }))
+        {
+            if let Some(value) = &arm_value {
+                if value.ty != Type::Never
+                    && !collection_result(&value.ty, value.mode)
+                    && !crate::source_verify::declared_type::generic_variant::match_result(
+                        self.functions.get(self.current.name.as_str()).copied(),
+                        self.types,
+                        state.mode,
+                        &value.ty,
+                        value.mode,
+                    )
+                {
+                    reject_aggregate_match_result(
+                        self.program,
+                        &arm.value,
+                        value,
+                        self.diagnostics,
+                    );
+                }
             }
         }
         if let Some(arm_value) = arm_value {
-            if state.needs_drop
+            if arm_value.ty != Type::Never
+                && state.needs_drop
+                && !collection_result(&arm_value.ty, arm_value.mode)
                 && !crate::source_verify::declared_type::generic_variant::match_result(
                     self.functions.get(self.current.name.as_str()).copied(),
                     self.types,
@@ -425,27 +531,38 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 ));
             }
             if let Some(expected) = &state.result {
-                if expected.ty != arm_value.ty || expected.mode != arm_value.mode {
+                if expected.ty != Type::Never
+                    && arm_value.ty != Type::Never
+                    && (expected.ty != arm_value.ty || expected.mode != arm_value.mode)
+                {
                     self.diagnostics.push(error(
                         self.program,
                         "SPX-T216",
                         format!(
                             "match arms return incompatible values: {} and {}",
-                            expected.ty, arm_value.ty
+                            type_name(self.program, self.types, &expected.ty),
+                            type_name(self.program, self.types, &arm_value.ty)
                         ),
                         arm.value.span,
                     ));
                 }
-            } else {
+            }
+            if state
+                .result
+                .as_ref()
+                .is_none_or(|value| value.ty == Type::Never)
+            {
                 state.result = Some(arm_value);
             }
         }
-        state.arm_states.push(
-            self.scopes
-                .pop()
-                .expect("variant arm scope is active")
-                .bindings,
-        );
+        let bindings = self
+            .scopes
+            .pop()
+            .expect("variant arm scope is active")
+            .bindings;
+        if !exits {
+            state.arm_states.push(bindings);
+        }
         state.index += 1;
         self.frames
             .push(VerifierFrame::PrepareVariantMatchArm(state));
@@ -456,6 +573,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         &mut self,
         state: ScalarMatchState<'p>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 {
+            return self.before_match_799_frame_prepare_scalar_match_arm(state);
+        }
         if state.index >= state.arms.len() {
             if let Some((first, rest)) = state.arm_states.split_first() {
                 let mut joined = first.clone();
@@ -485,6 +606,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         }
         let arm = &state.arms[state.index];
         let arm_scope = self.scopes.len();
+        self.recovery.fork(Some(state.parent_scope), arm_scope);
         self.scopes.push(VerifierScope {
             bindings: state.baseline.clone(),
             local_borrow_count: state
@@ -507,6 +629,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     self.scopes[arm_scope].bindings.insert(
                         name.clone(),
                         Binding {
+                            contract_local: false,
+                            traversal_row: None,
                             ty: state.scrutinee_ty.clone(),
                             mode: ParamMode::Value,
                             availability: Availability::Available,
@@ -551,6 +675,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         state: ScalarMatchState<'p>,
         arm_scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 {
+            return self.before_match_799_frame_resume_scalar_match_guard(state, arm_scope);
+        }
         if arm_scope + 1 != self.scopes.len() {
             return Err(Diagnostic::io(
                 "SPX-H006",
@@ -560,7 +688,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         let guard_value = self.values.pop().unwrap_or(None);
         let arm = &state.arms[state.index];
         if let Some(value) = &guard_value {
-            if value.ty != Type::Bool || value.mode != ParamMode::Value {
+            if (value.ty != Type::Bool
+                && !arm
+                    .guard
+                    .as_ref()
+                    .is_some_and(|guard| self.recovery.explains(guard, &Type::Bool)))
+                || value.mode != ParamMode::Value
+            {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T256",
@@ -585,6 +719,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         mut state: ScalarMatchState<'p>,
         arm_scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 {
+            return self.before_match_799_frame_resume_scalar_match_arm(state, arm_scope);
+        }
         if arm_scope + 1 != self.scopes.len() {
             return Err(Diagnostic::io(
                 "SPX-H006",
@@ -593,33 +731,48 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         }
         let arm = &state.arms[state.index];
         let arm_value = self.values.pop().unwrap_or(None);
+        let exits = arm_value
+            .as_ref()
+            .is_some_and(|value| value.ty == Type::Never)
+            && crate::ast::returns_only(&arm.value);
         if let Some(value) = &arm_value {
             reject_native_unit_value(self.program, &arm.value, value, self.diagnostics);
             reject_aggregate_match_result(self.program, &arm.value, value, self.diagnostics);
         }
         if let Some(arm_value) = arm_value {
             if let Some(expected) = &state.result {
-                if expected.ty != arm_value.ty || expected.mode != arm_value.mode {
+                if expected.ty != Type::Never
+                    && arm_value.ty != Type::Never
+                    && (expected.ty != arm_value.ty || expected.mode != arm_value.mode)
+                {
                     self.diagnostics.push(error(
                         self.program,
                         "SPX-T259",
                         format!(
                             "match arms return incompatible values: {} and {}",
-                            expected.ty, arm_value.ty
+                            type_name(self.program, self.types, &expected.ty),
+                            type_name(self.program, self.types, &arm_value.ty)
                         ),
                         arm.value.span,
                     ));
                 }
-            } else {
+            }
+            if state
+                .result
+                .as_ref()
+                .is_none_or(|value| value.ty == Type::Never)
+            {
                 state.result = Some(arm_value);
             }
         }
-        state.arm_states.push(
-            self.scopes
-                .pop()
-                .expect("scalar arm scope is active")
-                .bindings,
-        );
+        let bindings = self
+            .scopes
+            .pop()
+            .expect("scalar arm scope is active")
+            .bindings;
+        if !exits {
+            state.arm_states.push(bindings);
+        }
         state.index += 1;
         self.frames
             .push(VerifierFrame::PrepareScalarMatchArm(state));

@@ -1,0 +1,38 @@
+{
+  "review_folder": "/Volumes/Semaprax/lane-prompts/borrowed-generic-rewrite-review-141387-20261014",
+  "result_sha256": "9e63956f65eeeb1ffe930f31253c181e4ce366567eeb5fd400e46cca7872289a",
+  "process_receipt": {
+    "exit_code": 0,
+    "wall_seconds": 124.26107016600145,
+    "tools_enabled": false,
+    "code_execution": false,
+    "peak_process_group_rss_bytes": 309723136,
+    "resource_refusal": null,
+    "actual_billing": "unknown"
+  },
+  "reported_list_cost_usd": 0.2526955,
+  "production_definite_blockers": 0,
+  "dispositions": [
+    {
+      "finding": "cost child visibility",
+      "action": "Already pub(in crate::workspace_graph) with cfg(test); no constructor visibility widening."
+    },
+    {
+      "finding": "real workspace route could be vacuous",
+      "action": "Added admitted generic Box<T> import and allocation-free old-receiver invocation counters. Actual template, cost-with-layout and rewrite-with-layout calls must all be reached; unchanged current calls must not select old receiver."
+    },
+    {
+      "finding": "include_str relative path uncertainty",
+      "action": "source_inventory is macro text included by tests/workspace/semantic_graph.rs, so ../../src literals are existing correct call-site paths; explicit literal membership retained."
+    },
+    {
+      "finding": "Some(layout) branch coverage",
+      "action": "Unchanged branch is exercised by the real workspace owner and retained full borrowed-import/private layout owners; None delegation additionally compared directly."
+    },
+    {
+      "finding": "unseen fixture/bridge API premises",
+      "action": "Checked exact AST, observer, budget, graph and cost declarations with bounded source reads; actual compilation remains pending."
+    }
+  ],
+  "source_only": true
+}

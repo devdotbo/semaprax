@@ -59,7 +59,8 @@ pub(super) fn is_admitted_owned_variant(
     declarations: &hir::DeclarationIndex,
     ty: &ResolvedType,
 ) -> bool {
-    is_admitted_owned_byte_variant(declarations, ty)
+    hir::collection_outcome::runtime_admitted(declarations, ty)
+        || is_admitted_owned_byte_variant(declarations, ty)
         || hir::is_admitted_owned_string_variant(declarations, ty)
         || is_admitted_copy_aggregate_variant(declarations, ty)
 }
@@ -182,3 +183,25 @@ fn option_pattern_is_admitted(
             && fields[0].field.as_str() == crate::prelude::OPTION_SOME_VALUE_ID
             && fields[0].binding.ty == *payload)
 }
+
+/// Ownership of a payload in an independently admitted variant or iterator
+/// step. Reconstruct the new record/Vec cases instead of treating every
+/// non-primitive field as Copy or trusting cached type facts.
+pub(super) fn field_is_owned(
+    declarations: &hir::DeclarationIndex,
+    variant: &ResolvedType,
+    case: &hir::DeclarationId,
+    field: &hir::DeclarationId,
+    ty: &ResolvedType,
+) -> bool {
+    matches!(ty, ResolvedType::Bytes | ResolvedType::String)
+        || crate::iterator_ops::is_iter(ty)
+        || (hir::collection_outcome::runtime_admitted(declarations, variant)
+            && hir::collection_outcome::field_admitted(declarations, ty))
+        || hir::collection_outcome::nested::record_field(declarations, variant, case, field, ty)
+        || (crate::iterator_ops::step_shape(declarations, variant)
+            && hir::owned_leaf_collection::runtime_element(declarations, ty))
+}
+
+#[cfg(test)]
+mod collection_match_tests;

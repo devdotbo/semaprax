@@ -1,0 +1,50 @@
+{
+  "issue": 781,
+  "status": "authored/static registration inspected; unexecuted; no closure claim",
+  "groups": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selectors": [
+        "workspace_report::tests::caller::legacy_unlock_precedence_moves_override_and_retains_paid_primary_through_drop",
+        "workspace_report::tests::caller::typed_mapping_never_replaces_zero_or_exact_short_selected_owner",
+        "workspace_report::tests::caller::complete_prior_report_receiver_and_legacy_move_are_independent",
+        "workspace_report::tests::caller::all_original_filesystem_preparers_remain_complete_independent_receivers",
+        "workspace_report::tests::initial_zero_exact_short_sticky_typed_transfer_display_and_drop_allocate_nothing",
+        "workspace_report::tests::exact_paid_setup_refusal_transfers_original_slot_text_and_ledger_through_drop",
+        "workspace_report::tests::constructor_receipt_and_same_ledger_survive_typed_owner_and_no_paid_form_remap",
+        "workspace_report::tests::explicit_legacy_materialization_preserves_full_owned_report_and_original_pass_through",
+        "workspace_report::tests::actual_schema_receiving_caller_keeps_zero_short_exact_paid_owner_until_final_drop",
+        "workspace_report::tests::actual_source_drift_keeps_full_prior_literal_and_whole_receiving_debit_drop",
+        "workspace_report::tests::prepaid_first_budget_receipt_moves_with_affine_typed_owner_without_reformatting",
+        "workspace::semantic_read::tests::source_first_extraction_returns_the_snapshot_once",
+        "workspace::semantic_read::tests::graph_first_extraction_keeps_both_single_use",
+        "workspace::semantic_read::tests::a_double_extraction_failure_unlocks_and_leaves_the_workspace_unchanged",
+        "workspace::semantic_read::tests::typed_finish_unlocks_once_and_moves_original_failure_without_publication",
+        "workspace::semantic_read::tests::actual_authority_finish_moves_exact_paid_setup_refusal_through_unlock_and_drop"
+      ]
+    },
+    {
+      "package": "semaprax",
+      "harness": "workspace",
+      "selectors": [
+        "semantic_change::reporting::typed_public_generation_verification_and_application_keep_full_legacy_bytes",
+        "semantic_change::reporting::typed_public_evidence_refusal_keeps_complete_original_diagnostics",
+        "semantic_structural_change::reporting::typed_public_generation_verification_and_application_keep_full_legacy_bytes",
+        "semantic_structural_change::reporting::typed_public_evidence_refusal_keeps_complete_original_diagnostics",
+        "semantic_operations::reporting::typed_public_generation_verification_and_application_keep_full_legacy_bytes",
+        "semantic_operations::reporting::typed_public_evidence_refusal_keeps_complete_original_diagnostics",
+        "semantic_change::public_api_cli_kat_parity_and_opaque_getters",
+        "semantic_structural_change::public_api_getters_cli_and_whole_document_kats_are_exact",
+        "semantic_graph::expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root"
+      ]
+    },
+    {
+      "package": "semaprax",
+      "harness": "module_size",
+      "selectors": [
+        "no_module_exceeds_its_recorded_size"
+      ]
+    }
+  ]
+}

@@ -19,6 +19,21 @@ acceptance. Native and interpreter routes remain eligible. All paid failures
 remain in the attempted-task and cost denominators; calibration stays separate.
 No expanded acceptance is assigned retroactively to an older result.
 
+Fresh Codex plans also require `--compiler-build-receipt /absolute/build/receipt.json`
+in addition to `--compiler-source-ref` and `--semaprax-bin`. The receipt uses
+`semaprax.loglens.compiler-build.v1` and has exactly these fields:
+`schema`, `compiler_source_commit` (resolved 40-character Git commit),
+`compiler_binary_sha256`, `build_command` (the actual argument array), and
+`build_log` (`path`, relative to the receipt directory, plus `sha256`). Retain the
+actual build log alongside the receipt. The plan binds those exact bytes and
+rechecks them and the binary before calibration and each paid dispatch.
+
+This caller-supplied receipt binds bytes; it does not authenticate a hosted
+build or publication. Independently retain and verify the hosted run, checked
+source, build command, downloaded artifact and binary hash before attributing
+that compiler to the source. Existing saved rounds and offline recounts remain
+unchanged; a new compiler requires fresh full 49-case qualification.
+
 Offline gates (no provider calls):
 
 ```sh
@@ -193,3 +208,17 @@ It stages only a verified `node_modules` tree before the prompt; the candidate
 must author its manifest, configuration, scripts, tests, and application.
 Setup context is reported as unknown. The dependency tree is hash-checked before
 source accounting and archiving, so changed dependency bytes fail closed.
+
+## Future selected-file resource setup
+
+The opt-in Codex `plan`/`run` flag `--selected-file-resource-v1` checks the
+selected compiler's exact `author:selected-file-resource` help capability,
+binds its binary/help/helper/note hashes in the plan, and adds only SEMAPRAX
+native capability guidance. It does not change the frozen SPEC, public sample,
+independent historical33-plus16 qualification, TypeScript prompt, trial ordering,
+price book, accounting, timeout, or acceptance denominator. Unsupported compiler
+help and stale setup fail before the prompt. Default and historical prompts
+retain their original bytes. The new native profile keeps all raw app options
+in their original order; checked source validates usage before lazy file read.
+The host prefix selects a file argument without a handwritten path resolver.
+This is authored setup, not a started cohort or evidence of savings.

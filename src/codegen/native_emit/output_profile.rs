@@ -11,6 +11,12 @@ use super::function_uses_strings;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum NativeOutputProfile {
     Legacy,
+    /// Private original-source allocation owner; no raw-HIR caller can select it.
+    CheckedAllocation,
+    /// Private sealed partition source unit.
+    SelectedPartition,
+    /// Exact rederived native-only final constructor and opaque lease boundary.
+    SelectedFinalUtf8,
     OwnedDataProvider,
     OwnedUtf8Provider,
     /// Private checked Bytes body with a bridge-owned invocation reservation.
@@ -21,6 +27,8 @@ pub(crate) enum NativeOutputProfile {
     /// two staged output channels, and `file_read_text` below the invocation
     /// directory, all supplied by the generated process adapter.
     SourceCommand,
+    SourceSelectedFileCommand,
+    SourceSelectedFileResourceCommand,
     /// Project v28 source command with additive heap-backed String and output
     /// capacities. The v26 SourceCommand projection remains frozen.
     SourceResourceCommand,
@@ -61,6 +69,7 @@ pub(super) struct StringRuntimeSelection {
     /// slices, which its argument and output adapters use.
     pub(super) command_carriers: bool,
     pub(super) resource_strings: bool,
+    pub(super) selected_final_utf8: bool,
 }
 
 impl StringRuntimeSelection {
@@ -72,6 +81,7 @@ impl StringRuntimeSelection {
         stream_epochs: false,
         command_carriers: false,
         resource_strings: false,
+        selected_final_utf8: false,
     };
 }
 
@@ -81,6 +91,9 @@ impl NativeOutputProfile {
         op: crate::byte_ops::ByteOp,
     ) -> (&'static str, &'static str) {
         match (self, op) {
+            (Self::SelectedPartition, crate::byte_ops::ByteOp::Zeroed) => {
+                ("spx_partition_zeroed", "spx_ctx, ")
+            }
             (Self::ReservedBytesProvider, crate::byte_ops::ByteOp::Copy) => {
                 ("spx_bytes_copy_in", "spx_ctx, ")
             }
@@ -95,18 +108,27 @@ impl NativeOutputProfile {
 
     pub(super) const fn string_runtime(self) -> StringRuntimeSelection {
         match self {
-            Self::Legacy | Self::StdoutTranscript | Self::OwnedDataProvider => {
-                StringRuntimeSelection {
-                    length_delimited: true,
-                    provider_carriers: false,
-                    include_instances: true,
-                    reserved_bytes: false,
-                    stream_epochs: false,
-                    command_carriers: false,
-                    resource_strings: false,
-                }
-            }
-            Self::SourceCommand => StringRuntimeSelection {
+            Self::SelectedFinalUtf8 => StringRuntimeSelection {
+                length_delimited: true,
+                include_instances: false,
+                selected_final_utf8: true,
+                ..StringRuntimeSelection::FROZEN
+            },
+            Self::Legacy
+            | Self::CheckedAllocation
+            | Self::SelectedPartition
+            | Self::StdoutTranscript
+            | Self::OwnedDataProvider => StringRuntimeSelection {
+                length_delimited: true,
+                provider_carriers: false,
+                include_instances: true,
+                reserved_bytes: false,
+                stream_epochs: false,
+                command_carriers: false,
+                resource_strings: false,
+                selected_final_utf8: false,
+            },
+            Self::SourceCommand | Self::SourceSelectedFileCommand => StringRuntimeSelection {
                 length_delimited: true,
                 provider_carriers: false,
                 include_instances: true,
@@ -114,16 +136,20 @@ impl NativeOutputProfile {
                 stream_epochs: false,
                 command_carriers: true,
                 resource_strings: false,
+                selected_final_utf8: false,
             },
-            Self::SourceResourceCommand => StringRuntimeSelection {
-                length_delimited: true,
-                provider_carriers: false,
-                include_instances: true,
-                reserved_bytes: false,
-                stream_epochs: false,
-                command_carriers: true,
-                resource_strings: true,
-            },
+            Self::SourceResourceCommand | Self::SourceSelectedFileResourceCommand => {
+                StringRuntimeSelection {
+                    length_delimited: true,
+                    provider_carriers: false,
+                    include_instances: true,
+                    reserved_bytes: false,
+                    stream_epochs: false,
+                    command_carriers: true,
+                    resource_strings: true,
+                    selected_final_utf8: false,
+                }
+            }
             Self::OwnedUtf8Provider => StringRuntimeSelection {
                 length_delimited: true,
                 provider_carriers: true,
@@ -132,6 +158,7 @@ impl NativeOutputProfile {
                 stream_epochs: false,
                 command_carriers: false,
                 resource_strings: false,
+                selected_final_utf8: false,
             },
             Self::ReservedBytesProvider => StringRuntimeSelection {
                 length_delimited: true,
@@ -141,6 +168,7 @@ impl NativeOutputProfile {
                 stream_epochs: false,
                 command_carriers: false,
                 resource_strings: false,
+                selected_final_utf8: false,
             },
             Self::StdinStreamTextCommandIo | Self::StdinStreamDataCommandIo => {
                 StringRuntimeSelection {
@@ -183,8 +211,12 @@ impl NativeOutputProfile {
         matches!(
             self,
             Self::Legacy
+                | Self::CheckedAllocation
+                | Self::SelectedFinalUtf8
                 | Self::StdoutTranscript
                 | Self::SourceCommand
+                | Self::SourceSelectedFileCommand
+                | Self::SourceSelectedFileResourceCommand
                 | Self::SourceResourceCommand
                 | Self::OwnedDataProvider
                 | Self::StdinStreamTextCommandIo
@@ -202,6 +234,8 @@ impl NativeOutputProfile {
             self,
             Self::StdoutTranscript
                 | Self::SourceCommand
+                | Self::SourceSelectedFileCommand
+                | Self::SourceSelectedFileResourceCommand
                 | Self::SourceResourceCommand
                 | Self::UsefulDataCommand
                 | Self::LanguageCommandIo
@@ -241,6 +275,13 @@ impl NativeOutputProfile {
 
     /// Profiles whose semantic functions see the Language Command I/O v1
     /// context (argument, stdin, and two-channel output carriers).
+    pub(super) const fn is_source_resource(self) -> bool {
+        matches!(
+            self,
+            Self::SourceResourceCommand | Self::SourceSelectedFileResourceCommand
+        )
+    }
+
     pub(super) const fn is_language_command(self) -> bool {
         matches!(
             self,
@@ -255,6 +296,8 @@ impl NativeOutputProfile {
                 | Self::EnvironmentCommandIo
                 | Self::ProcessCommandIo
                 | Self::SourceCommand
+                | Self::SourceSelectedFileCommand
+                | Self::SourceSelectedFileResourceCommand
                 | Self::SourceResourceCommand
         )
     }
@@ -273,6 +316,7 @@ mod tests {
         assert_eq!(
             StringRuntimeSelection {
                 resource_strings: false,
+                selected_final_utf8: false,
                 ..resource
             },
             frozen

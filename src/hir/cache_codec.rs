@@ -3,7 +3,40 @@
 use super::*;
 use crate::cache_codec::{codec_enum, codec_struct, codec_tuple, Codec, Decoder, Encoder};
 
-codec_tuple!(DeclarationId(0));
+// Same wire as the former owned-String tuple: one nested node around text.
+// Every identity is valid, so encoding has no refusal case of its own.
+impl Codec for DeclarationId {
+    fn encode(&self, encoder: &mut Encoder) -> crate::cache_codec::Result<()> {
+        encoder.nested(|encoder| encoder.text(self.as_str()))
+    }
+
+    /// Decodes borrowed wire text straight into the shared backing; no
+    /// temporary `String` is made. The backing is charged to two independent
+    /// ledgers: the decoder's own allocation cap, and the decode caller's
+    /// active output budget, passed explicitly as the construction payer. A
+    /// refusal by either returns an error and constructs nothing.
+    fn decode(decoder: &mut Decoder<'_>) -> crate::cache_codec::Result<Self> {
+        decoder.nested(|decoder| {
+            let text = decoder.text()?;
+            let refused = || {
+                crate::cache_codec::capacity(
+                    "cache codec declaration identity backing allocation was refused",
+                )
+            };
+            let Some(backing) = DeclarationId::shared_backing_bytes(text.len()) else {
+                return Err(refused());
+            };
+            decoder.allocate(backing)?;
+            DeclarationId::paid_borrowed(text, |bytes| {
+                if crate::bounded_output::reserve_active_required(bytes) {
+                    Ok(())
+                } else {
+                    Err(refused())
+                }
+            })
+        })
+    }
+}
 codec_tuple!(FunctionInstanceId(0));
 impl Codec for ValueId {
     fn encode(&self, encoder: &mut Encoder) -> crate::cache_codec::Result<()> {
@@ -39,6 +72,9 @@ impl Codec for ExpressionId {
     }
 }
 codec_enum!(FunctionExecutionId {0=>Monomorphic(value),1=>Generic(value)});
+codec_enum!(ControlTarget {0=>Function(value),1=>Loop{owner,site}});
+codec_enum!(SourceForKind {0=>Copy,1=>BorrowRecord,2=>OwnedIterator,3=>BorrowBytes});
+codec_enum!(LoopLatchKind {0=>Condition,1=>SourceForStep{kind,step},2=>OwnedIteratorStep{next,assignment,step,remainder}});
 codec_enum!(DeclarationKind {0=>Resource,1=>ResourceDrop,2=>Record,3=>Field,4=>Class,5=>Variant,6=>VariantCase,7=>CaseField,8=>Interface,9=>Import,10=>Function});
 codec_enum!(IdentityOrigin {0=>Explicit,1=>Automatic,2=>CompilerOwned});
 codec_struct!(Declaration {
@@ -48,7 +84,7 @@ codec_struct!(Declaration {
     identity_origin,
     owner
 });
-codec_enum!(ByteSliceRootKind {0=>FunctionParameter,1=>OwnedBytes,2=>FixedArray,3=>BorrowedStr,4=>CommandArguments,5=>StdinStreamReader,6=>OwnedString});
+codec_enum!(ByteSliceRootKind {0=>FunctionParameter,1=>OwnedBytes,2=>FixedArray,3=>BorrowedStr,4=>CommandArguments,5=>StdinStreamReader,6=>OwnedString,7=>OwnedVectorField,8=>SourceExprStatic,9=>OwnedVectorStringSlot});
 codec_enum!(ByteSliceExtent {0=>Constant(value),1=>ParameterLength,2=>ValueLength});
 codec_struct!(ByteSliceRangeStep {
     source,
@@ -56,7 +92,13 @@ codec_struct!(ByteSliceRangeStep {
     start,
     end
 });
+codec_struct!(VectorFieldProvenance {
+    element,
+    field,
+    index
+});
 codec_struct!(ByteSliceProvenance {
+    vector_field,
     root,
     projections,
     projected_type,
@@ -67,7 +109,7 @@ codec_struct!(ByteSliceProvenance {
     producer,
     ranges
 });
-codec_enum!(ResolvedType {0=>Unit,1=>I64,2=>I32,3=>Char,4=>U8,5=>Usize,6=>ArrayU8(length),7=>F32,8=>F64,9=>Bool,10=>String,11=>Bytes,12=>Str,13=>SliceU8,14=>TypeParameter{owner,index},15=>Nominal{declaration,arguments},16=>Function{parameters,result},17=>OnceFunction,18=>OnceFunctionI64,19=>OnceFunctionI64Pair,20=>MutFunctionI64,21=>StringMap});
+codec_enum!(ResolvedType {0=>Unit,1=>I64,2=>I32,3=>Char,4=>U8,5=>Usize,6=>ArrayU8(length),7=>F32,8=>F64,9=>Bool,10=>String,11=>Bytes,12=>Str,13=>SliceU8,14=>TypeParameter{owner,index},15=>Nominal{declaration,arguments},16=>Function{parameters,result},17=>OnceFunction,18=>OnceFunctionI64,19=>OnceFunctionI64Pair,20=>MutFunctionI64,21=>StringMap,22=>Never});
 codec_struct!(TypeFacts {
     copy,
     contains_resource,
@@ -106,22 +148,49 @@ codec_struct!(ResolvedAgentDeclaration {
 
 // Every lookup map is part of the complete HIR value, including native import,
 // inheritance, generic identity, and byte-slice provenance sidecars.
-codec_struct!(DeclarationIndex {
-    declarations,
-    types_by_name,
-    functions_by_name,
-    fields_by_owner_name,
-    record_fields,
-    cases_by_owner_name,
-    variant_cases,
-    case_fields,
-    type_parameters,
-    imports_by_key,
-    native_rust_imports_by_name,
-    type_facts_by_id,
-    class_parents,
-    byte_slice_roots
-});
+impl Codec for DeclarationIndex {
+    fn encode(&self, encoder: &mut Encoder) -> crate::cache_codec::Result<()> {
+        encoder.nested(|encoder| {
+            self.declarations.encode(encoder)?;
+            self.types_by_name.encode(encoder)?;
+            self.functions_by_name.encode(encoder)?;
+            self.fields_by_owner_name.encode(encoder)?;
+            self.record_fields.encode(encoder)?;
+            self.cases_by_owner_name.encode(encoder)?;
+            self.variant_cases.encode(encoder)?;
+            self.case_fields.encode(encoder)?;
+            self.type_parameters.encode(encoder)?;
+            self.imports_by_key.encode(encoder)?;
+            self.native_rust_imports_by_name.encode(encoder)?;
+            self.type_facts_by_id.encode(encoder)?;
+            self.class_parents.encode(encoder)?;
+            self.byte_slice_roots.encode(encoder)?;
+            Ok(())
+        })
+    }
+    fn decode(decoder: &mut Decoder<'_>) -> crate::cache_codec::Result<Self> {
+        decoder.nested(|decoder| {
+            Ok(Self {
+                nominal_drop_workspace: Default::default(),
+                declarations: Codec::decode(decoder)?,
+                types_by_name: Codec::decode(decoder)?,
+                functions_by_name: Codec::decode(decoder)?,
+                fields_by_owner_name: Codec::decode(decoder)?,
+                record_fields: Codec::decode(decoder)?,
+                cases_by_owner_name: Codec::decode(decoder)?,
+                variant_cases: Codec::decode(decoder)?,
+                case_fields: Codec::decode(decoder)?,
+                type_parameters: Codec::decode(decoder)?,
+                imports_by_key: Codec::decode(decoder)?,
+                native_rust_imports_by_name: Codec::decode(decoder)?,
+                type_facts_by_id: Codec::decode(decoder)?,
+                class_parents: Codec::decode(decoder)?,
+                byte_slice_roots: Codec::decode(decoder)?,
+            })
+        })
+    }
+}
+
 codec_struct!(ResolvedProgram {
     module,
     permits,
@@ -282,7 +351,20 @@ codec_enum!(ResolvedExprKind {
     24=>Try{operand,result,ok_case,ok_field,err_case,err_field,residual_type},
     25=>TryOption{operand,option,some_case,some_field,none_case,residual_type},
     26=>UpdateRecord{base,record,fields},27=>Project{base,field},28=>Upcast{source},29=>FunctionReference{target},30=>Invoke{callable,args},31=>Closure{parameters,captures,body},
-    32=>Yield{request}
+    32=>Yield{request},33=>LiteralFormat{template,args},34=>VecFieldRead{origin,element,field,bytes,args},35=>LexicalExit{kind,target,value},36=>BorrowedUtf8Literal(value),37=>VecConstructor{element,count,statements,tail},
+    38=>RowLoan{loan,args}
+});
+codec_enum!(VecFieldReadOrigin { 0=>Explicit,1=>Traversal });
+// Row Loan v1: decoded descriptors carry no authority until complete HIR
+// validation replays their call slot, traversal region and callee proof.
+codec_enum!(RowLoanVersion { 0=>V1 });
+codec_struct!(RowLoan {
+    version,
+    element,
+    traversal,
+    bound,
+    callee,
+    parameter
 });
 codec_struct!(ResolvedMatchArm {
     pattern,
@@ -296,9 +378,39 @@ codec_struct!(ResolvedMatchPatternField { field, binding });
 codec_struct!(ResolvedRecordMatchPatternField { field, pattern });
 codec_enum!(ResolvedRecordMatchFieldPattern {0=>Binding(binding),1=>Wildcard,2=>Record{record,instance,fields}});
 codec_struct!(ResolvedFieldInitializer { field, value });
-codec_enum!(ResolvedStatement {0=>Let{binding,mutable,value,span},1=>Assign{binding,field,value,span},2=>Unsafe{audit,body,span},3=>While{condition,body,span}});
+codec_enum!(ResolvedStatement {0=>Let{binding,mutable,value,span},1=>Assign{binding,field,value,span},2=>Unsafe{audit,body,span},3=>While{condition,body,span},4=>LexicalWhile{condition,body,latch,span},5=>CopyDiscard{value,span}});
 codec_struct!(Place { root, projections });
 codec_enum!(PlaceProjection {0=>Field(field),1=>VariantField{case,field}});
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod record_traversal_tests;
+
+#[cfg(test)]
+mod byte_traversal_tests;
+
+impl Codec for super::StaticUtf8 {
+    fn encode(&self, encoder: &mut Encoder) -> crate::cache_codec::Result<()> {
+        encoder.nested(|encoder| match self.cached_text() {
+            Some(text) => text.encode(encoder),
+            None => Err(crate::cache_codec::capacity(
+                "static text backing allocation was refused",
+            )),
+        })
+    }
+    fn decode(decoder: &mut Decoder<'_>) -> crate::cache_codec::Result<Self> {
+        decoder.nested(|decoder| {
+            let text = String::decode(decoder)?;
+            decoder.allocate(Self::OWNED_ALLOCATION_CARRIER_BYTES)?;
+            let value = Self::from_owned(text);
+            if !value.is_backed() {
+                return Err(crate::cache_codec::capacity(
+                    "static text backing allocation was refused",
+                ));
+            }
+            Ok(value)
+        })
+    }
+}

@@ -1,0 +1,26 @@
+{
+  "source_only": true,
+  "actual_model_usage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 5806,
+      "cacheReadInputTokens": 535,
+      "cacheCreationInputTokens": 9509,
+      "webSearchRequests": 0,
+      "costUSD": 0.0961535,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 3988,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "provider_list_cost_usd": 0.0961535,
+  "actual_billing": "unknown",
+  "wall_seconds": 48.66038929200295,
+  "exit_code": 0,
+  "tools_enabled": false,
+  "packet_sha256": "d75d21abfc0575a7685a13531ba2a4c4bec21f51185aa23738d22e45ba3960dc",
+  "finding": "No definite blocker in supplied source. Optional preserving reservation protects existing floor; no source verifier-specific future diagnostic floor is established. Never allocate before payment to follow reviewer suggestion. Allocation failure retains cumulative debit without refund by contract; primary fields unchanged. M104 actual emitter and reserved result confirmed."
+}

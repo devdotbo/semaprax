@@ -1,0 +1,42 @@
+[
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_scope::collection_tests::original_collection_carrier_is_runtime_admitted_and_not_logically_refused",
+    "expected": 1,
+    "ignored": 0,
+    "source": "src/hir/validation/function_scope/collection_tests.rs",
+    "source_sha256": "fb827ced2088e8b9a0cba17112796d9822cd72cb459e412f1fc7e430bbb4188e"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_scope::collection_tests::funded_scan_keeps_positive_transitive_refusal_and_full_diagnostic_bytes",
+    "expected": 1,
+    "ignored": 0,
+    "source": "src/hir/validation/function_scope/collection_tests.rs",
+    "source_sha256": "fb827ced2088e8b9a0cba17112796d9822cd72cb459e412f1fc7e430bbb4188e"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_scope::collection_tests::generic_collection_positive_keeps_exact_short_sticky_and_whole_drop",
+    "expected": 1,
+    "ignored": 0,
+    "source": "src/hir/validation/function_scope/collection_tests.rs",
+    "source_sha256": "fb827ced2088e8b9a0cba17112796d9822cd72cb459e412f1fc7e430bbb4188e"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_scope::collection_tests::original_resource_with_forged_collection_fields_has_no_record_authority",
+    "expected": 1,
+    "ignored": 0,
+    "source": "src/hir/validation/function_scope/collection_tests.rs",
+    "source_sha256": "fb827ced2088e8b9a0cba17112796d9822cd72cb459e412f1fc7e430bbb4188e"
+  },
+  {
+    "harness": "semaprax::lib",
+    "selector": "hir::validation::function_scope::collection_tests::complete_original_function_and_collection_receivers_keep_source_provenance",
+    "expected": 1,
+    "ignored": 0,
+    "source": "src/hir/validation/function_scope/collection_tests.rs",
+    "source_sha256": "fb827ced2088e8b9a0cba17112796d9822cd72cb459e412f1fc7e430bbb4188e"
+  }
+]

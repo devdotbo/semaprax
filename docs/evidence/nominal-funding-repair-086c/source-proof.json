@@ -1,0 +1,35 @@
+{
+  "source_basis": "086c4f1ee",
+  "rust_execution": false,
+  "toolchain_sources": [
+    {
+      "path": "/Users/kevin/.rustup/toolchains/nightly-2026-10-02-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/sys/sync/mutex/mod.rs",
+      "sha256": "a58c3f5605de2ec78f6b621fa1138042cc40088cf43e21694ab08129b47b1470",
+      "archive": "docs/evidence/nominal-funding-repair-086c/exact-toolchain-source/sync/mutex/mod.rs"
+    },
+    {
+      "path": "/Users/kevin/.rustup/toolchains/nightly-2026-10-02-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/sys/sync/mutex/pthread.rs",
+      "sha256": "1aa80435780abe34a365179635e92fb5935894fb9b4f615eb45b336958c28035",
+      "archive": "docs/evidence/nominal-funding-repair-086c/exact-toolchain-source/sync/mutex/pthread.rs"
+    },
+    {
+      "path": "/Users/kevin/.rustup/toolchains/nightly-2026-10-02-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/sys/sync/mutex/futex.rs",
+      "sha256": "ad217728f14b7385f923f6471336ee772ea739baa78f7633a9d564433227b20c",
+      "archive": "docs/evidence/nominal-funding-repair-086c/exact-toolchain-source/sync/mutex/futex.rs"
+    },
+    {
+      "path": "/Users/kevin/.rustup/toolchains/nightly-2026-10-02-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/sys/pal/unix/sync/mutex.rs",
+      "sha256": "0217d2829ceb8b09a950d505154b5aa0e4ac931807c97d64f2a16d0060e1a613",
+      "archive": "docs/evidence/nominal-funding-repair-086c/exact-toolchain-source/pal/unix/sync/mutex.rs"
+    },
+    {
+      "path": "/Users/kevin/.rustup/toolchains/nightly-2026-10-02-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/sys/helpers/c_opaque.rs",
+      "sha256": "a45221677abe8b0dbd2ecfee6515f65f8cc1deffd9022fb6a4d721c2e9b43368",
+      "archive": "docs/evidence/nominal-funding-repair-086c/exact-toolchain-source/helpers/c_opaque.rs"
+    }
+  ],
+  "actual_post_refusal_delta": 64,
+  "actual_backing_total": 27765,
+  "actual_paid_total": 18621,
+  "full_constructor_underfunding": "OPEN; mutex fix does not close missing old producer acquisitions"
+}

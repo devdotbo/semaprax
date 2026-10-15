@@ -2,14 +2,15 @@
 //! predicates that decide whether an identifier or scalar type is admitted.
 
 use super::binding::{Availability, Binding, CheckedValue};
-use super::iterative::check_expr_iterative;
+use super::iterative::{check_expr_with_helpers_view, check_expr_with_signature_view};
 use super::type_table::TypeTable;
-use crate::ast::{Expr, ExprKind, Function, ParamMode, Program, Span, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, ParamMode, Span, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 pub(super) fn reject_native_unit_value(
-    program: &Program,
+    program: &dyn ProgramSource,
     expression: &Expr,
     value: &CheckedValue,
     diagnostics: &mut Vec<Diagnostic>,
@@ -25,7 +26,7 @@ pub(super) fn reject_native_unit_value(
 }
 
 pub(super) fn reject_aggregate_match_result(
-    program: &Program,
+    program: &dyn ProgramSource,
     expression: &Expr,
     value: &CheckedValue,
     diagnostics: &mut Vec<Diagnostic>,
@@ -35,7 +36,8 @@ pub(super) fn reject_aggregate_match_result(
     }
     if !matches!(
         value.ty,
-        Type::I64
+        Type::Never
+            | Type::I64
             | Type::I32
             | Type::U8
             | Type::Usize
@@ -63,7 +65,7 @@ pub(super) fn reject_aggregate_match_result(
 /// Copy scalar scrutinee or a variant whose every payload is a Copy scalar.
 /// HIR validation re-checks the same rule on resolved types.
 pub(super) fn reject_loop_match_scrutinee(
-    program: &Program,
+    program: &dyn ProgramSource,
     types: &TypeTable<'_>,
     scrutinee: &Expr,
     value: &CheckedValue,
@@ -82,7 +84,10 @@ pub(super) fn reject_loop_match_scrutinee(
                     .and_then(|declaration| {
                         TypeTable::substitute_variant_type(declaration, arguments, &field.ty)
                     })
-                    .is_some_and(|ty| is_scalar_source_type(&ty))
+                    .is_some_and(|ty| {
+                        is_scalar_source_type(&ty)
+                            || super::declared_type::copy_record_collection::admitted(types, &ty)
+                    })
             })
         }) {
             return;
@@ -97,7 +102,7 @@ pub(super) fn reject_loop_match_scrutinee(
 }
 
 pub(super) fn reject_aggregate_equality(
-    program: &Program,
+    program: &dyn ProgramSource,
     types: &TypeTable<'_>,
     expression: &Expr,
     value: &CheckedValue,
@@ -157,7 +162,7 @@ pub(super) fn reject_aggregate_equality(
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn require_bool(
-    program: &Program,
+    program: &dyn ProgramSource,
     function: &Function,
     contract: &Expr,
     variables: &HashMap<String, Binding>,
@@ -166,6 +171,33 @@ pub(super) fn require_bool(
     result_type: Option<&Type>,
     diagnostics: &mut Vec<Diagnostic>,
     kind: &str,
+) {
+    require_bool_with_signature(
+        program,
+        function,
+        contract,
+        variables,
+        functions,
+        types,
+        result_type,
+        diagnostics,
+        kind,
+        None,
+    );
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn require_bool_with_signature<'p>(
+    program: &'p dyn ProgramSource,
+    function: &'p Function,
+    contract: &'p Expr,
+    variables: &HashMap<String, Binding>,
+    functions: &'p HashMap<&'p str, &'p Function>,
+    types: &'p TypeTable<'p>,
+    result_type: Option<&'p Type>,
+    diagnostics: &mut Vec<Diagnostic>,
+    kind: &str,
+    signature: Option<super::declaration::SignatureOrigin<'p>>,
 ) {
     contract.visit_calls(&mut |callee, span| {
         if variables.contains_key(callee) { return; }
@@ -188,11 +220,23 @@ pub(super) fn require_bool(
         }
     });
     let mut contract_variables = variables.clone();
-    if let Some(ty @ Type::Named { name, arguments }) = result_type {
-        if name == "Result" && arguments.as_slice() == [Type::Bytes, Type::Bytes] {
+    // No freshness from a body or previous clause enters this contract domain.
+    for binding in contract_variables.values_mut() {
+        binding.contract_local = false;
+    }
+    if let Some(ty) = result_type {
+        // A provisional owned result is readable only in this postcondition
+        // scope. It stays immutable and contract transfers still select O105.
+        if ty == &function.return_type
+            && (matches!(ty, Type::Bytes | Type::String)
+                || matches!(ty, Type::Named { name, arguments }
+                if name == "Result" && arguments.as_slice() == [Type::Bytes, Type::Bytes]))
+        {
             contract_variables.insert(
                 "result".to_owned(),
                 Binding {
+                    contract_local: false,
+                    traversal_row: None,
                     ty: ty.clone(),
                     mode: ParamMode::Own,
                     availability: Availability::Available,
@@ -206,20 +250,41 @@ pub(super) fn require_bool(
             );
         }
     }
-    if let Some(value) = check_expr_iterative(
-        program,
-        function,
-        contract,
-        &mut contract_variables,
-        functions,
-        types,
-        result_type,
-        false,
-        diagnostics,
-    ) {
+    let (contract_value, refusal_view) = match signature {
+        Some(signature) => check_expr_with_signature_view(
+            program,
+            function,
+            contract,
+            &mut contract_variables,
+            functions,
+            types,
+            result_type,
+            false,
+            diagnostics,
+            None,
+            None,
+            Some(signature),
+        ),
+        None => check_expr_with_helpers_view(
+            program,
+            function,
+            contract,
+            &mut contract_variables,
+            functions,
+            types,
+            result_type,
+            false,
+            diagnostics,
+            None,
+            None,
+        ),
+    };
+    if let Some(value) = contract_value {
         if value.native_unit {
             reject_native_unit_value(program, contract, &value, diagnostics);
-        } else if value.ty != Type::Bool {
+        } else if value.ty != Type::Bool
+            && !refusal_view.is_some_and(|view| view.declared == &Type::Bool)
+        {
             diagnostics.push(error(
                 program,
                 "SPX-C101",
@@ -231,16 +296,17 @@ pub(super) fn require_bool(
 }
 
 pub(super) fn error(
-    program: &Program,
+    program: &dyn ProgramSource,
     code: &'static str,
     message: impl Into<String>,
     span: Span,
 ) -> Diagnostic {
-    Diagnostic::error(code, message, span).at_path(&program.path)
+    let diagnostic = Diagnostic::error(code, message, span).at_path(program.path());
+    super::hints::with_authoring_repair_help(diagnostic)
 }
 
 pub(super) fn invalid_stable_id(
-    program: &Program,
+    program: &dyn ProgramSource,
     code: &'static str,
     subject: impl Into<String>,
     span: Span,
@@ -257,18 +323,27 @@ pub(super) fn invalid_stable_id(
 }
 
 pub(super) fn reject_reserved_host_id(
-    program: &Program,
+    program: &dyn ProgramSource,
     stable_id: &str,
     kind: &str,
     span: Span,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    if crate::vec_ops::by_id(stable_id).is_some() {
+    if crate::vec_ops::by_id(stable_id).is_some() || stable_id == crate::vec_field::ID {
         diagnostics.push(error(
             program,
             "SPX-S113",
             format!(
                 "authored {kind} uses stable ID `{stable_id}`, which is reserved by the compiler-owned vector operations"
+            ),
+            span,
+        ));
+    } else if crate::string_ops::by_id(stable_id).is_some() {
+        diagnostics.push(error(
+            program,
+            "SPX-S113",
+            format!(
+                "authored {kind} uses stable ID `{stable_id}`, which is reserved by the compiler-owned string operations"
             ),
             span,
         ));
@@ -294,6 +369,7 @@ pub(super) fn source_identifier(value: &str) -> bool {
         && !matches!(
             value,
             "module"
+                | "vec_of"
                 | "permit"
                 | "resource"
                 | "fn"

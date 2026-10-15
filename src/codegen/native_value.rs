@@ -170,6 +170,7 @@ pub(crate) fn plan(
     let body_value = planner.lower_body_tail(tail)?;
 
     let result = match &function.return_type {
+        ResolvedType::Never => return Err(value_error("Never is not an ordinary native result")),
         ResolvedType::OnceFunction
         | ResolvedType::OnceFunctionI64
         | ResolvedType::OnceFunctionI64Pair
@@ -985,6 +986,9 @@ fn validate_signature(
     }
     for parameter in &function.params {
         match &parameter.ty {
+            ResolvedType::Never => {
+                return Err(value_error("Never is not an ordinary native parameter"))
+            }
             ResolvedType::OnceFunction
             | ResolvedType::OnceFunctionI64
             | ResolvedType::OnceFunctionI64Pair
@@ -1040,6 +1044,7 @@ fn validate_signature(
         }
     }
     match &function.return_type {
+        ResolvedType::Never => Err(value_error("Never is not an ordinary native result")),
         ResolvedType::OnceFunction
         | ResolvedType::OnceFunctionI64
         | ResolvedType::OnceFunctionI64Pair

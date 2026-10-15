@@ -1,21 +1,87 @@
-//! Exact same-cell scalar Vec renewal in ordinary while bodies (not iterator lowering).
+//! Exact same-cell admitted Vec renewal in ordinary while bodies (not iterator lowering).
 use super::*;
 use std::collections::{BTreeMap, BTreeSet};
+pub(crate) mod consuming;
+#[cfg(test)]
+mod funded;
+#[cfg(test)]
+pub(crate) use funded::bindings_in_funded;
 
 pub(crate) fn requires(function: &ResolvedFunction) -> bool {
     !bindings(function).is_empty()
 }
-pub(crate) fn binding<'a>(
+pub(crate) fn bindings(function: &ResolvedFunction) -> BTreeMap<ExpressionId, &ResolvedBinding> {
+    collect(function, None)
+}
+/// Existing Copy and owned-element collection admission composes the same-cell
+/// protocol. Element shape and call ownership are re-derived from declarations.
+pub(crate) fn bindings_in<'a>(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &'a ResolvedFunction,
+) -> BTreeMap<ExpressionId, &'a ResolvedBinding> {
+    let mut found = collect(
+        function,
+        Some(&|op, element| element_mode(program.declarations(), op, element)),
+    );
+    consuming::append_bindings(program, function, &mut found);
+    found
+}
+pub(crate) fn requires_in(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+) -> bool {
+    !bindings_in(program, function).is_empty()
+}
+pub(crate) fn binding_in<'a>(
+    program: &dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
     at: &ExpressionId,
 ) -> Option<&'a ResolvedBinding> {
-    bindings(function).remove(at)
+    bindings_in(program, function).remove(at)
 }
-pub(crate) fn bindings(function: &ResolvedFunction) -> BTreeMap<ExpressionId, &ResolvedBinding> {
+type ElementAdmission<'a> =
+    dyn Fn(crate::vec_ops::VecOp, &ResolvedType) -> Option<OwnershipMode> + 'a;
+
+/// Borrowed source-authenticated declaration authority for graph selection.
+/// This only selects metadata; cleanup construction and replay authenticate
+/// their own resolved declaration index independently.
+pub(crate) fn requires_with_admission(
+    function: &ResolvedFunction,
+    admitted: impl Fn(crate::vec_ops::VecOp, &ResolvedType) -> Option<OwnershipMode>,
+) -> bool {
+    !collect(function, Some(&admitted)).is_empty()
+        || consuming::requires_with_admission(function, admitted)
+}
+
+fn element_mode(
+    index: &DeclarationIndex,
+    op: crate::vec_ops::VecOp,
+    element: &ResolvedType,
+) -> Option<OwnershipMode> {
+    if !super::owned_leaf_collection::vec_operation_admitted(index, op, element) {
+        return None;
+    }
+    Some(
+        if *element == ResolvedType::Bytes
+            || super::owned_leaf_collection::runtime_element(index, element)
+        {
+            OwnershipMode::Own
+        } else {
+            OwnershipMode::Value
+        },
+    )
+}
+
+fn collect<'a>(
+    function: &'a ResolvedFunction,
+    admission: Option<&ElementAdmission>,
+) -> BTreeMap<ExpressionId, &'a ResolvedBinding> {
     let mut mutable = BTreeSet::new();
     let mut pending = vec![&function.body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Let {
                     binding,
@@ -44,11 +110,17 @@ pub(crate) fn bindings(function: &ResolvedFunction) -> BTreeMap<ExpressionId, &R
                         field: None,
                         value,
                         ..
-                    } if in_loop && mutable.contains(&binding.id) && same_cell(binding, value) => {
+                    } if in_loop
+                        && mutable.contains(&binding.id)
+                        && same_cell(binding, value, admission) =>
+                    {
                         found.insert(value.id.clone(), binding);
                         pending.push((value, in_loop));
                     }
                     ResolvedStatement::While {
+                        condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
                         condition, body, ..
                     } => {
                         // Source for-own lowers to a while with an authenticated protocol.
@@ -58,7 +130,10 @@ pub(crate) fn bindings(function: &ResolvedFunction) -> BTreeMap<ExpressionId, &R
                         pending.push((condition, false));
                     }
                     ResolvedStatement::Let { value, .. }
-                    | ResolvedStatement::Assign { value, .. } => pending.push((value, in_loop)),
+                    | ResolvedStatement::Assign { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. } => {
+                        pending.push((value, in_loop))
+                    }
                     _ => {}
                 }
             }
@@ -70,7 +145,11 @@ pub(crate) fn bindings(function: &ResolvedFunction) -> BTreeMap<ExpressionId, &R
     }
     found
 }
-fn same_cell(binding: &ResolvedBinding, value: &ResolvedExpr) -> bool {
+fn same_cell(
+    binding: &ResolvedBinding,
+    value: &ResolvedExpr,
+    admission: Option<&ElementAdmission>,
+) -> bool {
     let ResolvedType::Nominal {
         declaration,
         arguments,
@@ -82,7 +161,6 @@ fn same_cell(binding: &ResolvedBinding, value: &ResolvedExpr) -> bool {
         return false;
     };
     if declaration.as_str() != crate::prelude::VEC_ID
-        || !super::generic_collection::scalar(element)
         || binding.ownership != OwnershipMode::Own
         || value.ownership != OwnershipMode::Own
         || value.ty != binding.ty
@@ -102,7 +180,15 @@ fn same_cell(binding: &ResolvedBinding, value: &ResolvedExpr) -> bool {
     else {
         return false;
     };
-    type_arguments.as_slice() == std::slice::from_ref(element)
+    // Admission remains operation-specific; ownership comes from the exact
+    // independently authenticated element family, never a cached Copy bit.
+    let mode = if super::generic_collection::scalar(element) {
+        Some(OwnershipMode::Value)
+    } else {
+        admission.and_then(|admit| admit(op, element))
+    };
+    matches!(mode, Some(OwnershipMode::Value | OwnershipMode::Own))
+        && type_arguments.as_slice() == std::slice::from_ref(element)
         && args.len() == op.arity()
         && args.first().is_some_and(|arg| {
             arg.ty == binding.ty
@@ -112,6 +198,29 @@ fn same_cell(binding: &ResolvedBinding, value: &ResolvedExpr) -> bool {
         })
         && args.iter().enumerate().all(|(index, arg)| {
             op.accepts_resolved(index, &arg.ty, element)
-                && (index == 0 || arg.ownership == OwnershipMode::Value)
+                && arg.ownership
+                    == if mode == Some(OwnershipMode::Own) {
+                        op.param_ownership_for(index, element)
+                    } else {
+                        op.param_ownership(index)
+                    }
         })
 }
+
+/// Forge cached field drift for independent renewal-replay hostile controls.
+#[cfg(test)]
+pub(crate) fn forge_record_field_for_test(
+    declarations: &mut DeclarationIndex,
+    record: &DeclarationId,
+    ty: ResolvedType,
+) {
+    declarations
+        .record_fields
+        .get_mut(record)
+        .expect("fixture record")[0]
+        .ty = ty;
+}
+
+#[cfg(test)]
+#[path = "vec_loop_renewal/tests.rs"]
+mod tests;

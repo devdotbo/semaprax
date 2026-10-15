@@ -1,8 +1,9 @@
 //! Builder ledger proofs: cumulative limits, the post-HIR reservation
 //! envelopes, and the named scratch bounds they may not exceed.
-
 use super::*;
-
+#[path = "ledger_capacity/scope_projection.rs"]
+mod scope_projection;
+include!("ledger_capacity/source_inventory.rs");
 #[test]
 fn cumulative_builder_limit_is_exact_and_cannot_be_widened() {
     let (program, spec) = fixture();
@@ -31,7 +32,6 @@ fn cumulative_builder_limit_is_exact_and_cannot_be_widened() {
         error[0].message,
         "Native Rust Interop max_builder_bytes exceeds 33554432"
     );
-
     let widened = std::panic::catch_unwind(|| {
         let _ = prepare_native_rust_interop_with_test_limit(
             &program,
@@ -41,7 +41,6 @@ fn cumulative_builder_limit_is_exact_and_cannot_be_widened() {
     });
     assert!(widened.is_err());
 }
-
 #[test]
 fn full_bundle_builder_limit_is_cumulative_exact_and_cannot_be_widened() {
     let (program, spec) = fixture();
@@ -66,7 +65,6 @@ fn full_bundle_builder_limit_is_cumulative_exact_and_cannot_be_widened() {
         std::fs::remove_dir_all(&root).unwrap();
         result.map(|_| ())
     };
-
     let (mut low, mut high) = (0_usize, MAX_BUILDER_BYTES);
     while low < high {
         let middle = low + (high - low) / 2;
@@ -94,7 +92,6 @@ fn full_bundle_builder_limit_is_cumulative_exact_and_cannot_be_widened() {
         "Native Rust Interop max_builder_bytes exceeds 33554432"
     );
     build_probe(minimum).unwrap();
-
     let root = std::fs::canonicalize(std::env::temp_dir())
         .unwrap()
         .join(format!(
@@ -114,159 +111,36 @@ fn full_bundle_builder_limit_is_cumulative_exact_and_cannot_be_widened() {
     std::fs::remove_dir_all(&root).unwrap();
     assert!(widened.is_err());
 }
-
 #[test]
 fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
     // The resolver is split across submodules; its layout pins live beside the
     // frame machinery they describe, so bind the root and the resolver files.
-    let hir_resolver = concat!(
-        include_str!("../../../../../src/hir.rs"),
-        include_str!("../../../../../src/hir/owned_text_record.rs"),
-        include_str!("../../../../../src/stdin_stream_ops.rs"),
-        include_str!("../../../../../src/stdin_stream_ops/analysis.rs"),
-        include_str!("../../../../../src/hir/generic_collection.rs"),
-        include_str!("../../../../../src/hir/generic_inference.rs"),
-        include_str!("../../../../../src/hir/closure.rs"),
-        include_str!("../../../../../src/hir/closure/resolve.rs"),
-        include_str!("../../../../../src/hir/closure/validation.rs"),
-        include_str!("../../../../../src/hir/closure/mutable.rs"),
-        include_str!("../../../../../src/hir/closure/borrowed.rs"),
-        include_str!("../../../../../src/hir/closure/once.rs"),
-        include_str!("../../../../../src/hir/closure/materialize.rs"),
-        include_str!("../../../../../src/hir/closure/owning_desugar.rs"),
-        include_str!("../../../../../src/hir/function_value.rs"),
-        include_str!("../../../../../src/hir/function_value/resolve.rs"),
-        include_str!("../../../../../src/hir/generic_result.rs"),
-        include_str!("../../../../../src/hir/generic_variant.rs"),
-        include_str!("../../../../../src/hir/agent_nodes.rs"),
-        include_str!("../../../../../src/hir/agent_validation.rs"),
-        include_str!("../../../../../src/hir/agent_validation/embedded.rs"),
-        include_str!("../../../../../src/hir/owned_result_try.rs"),
-        include_str!("../../../../../src/hir/resolve_class.rs"),
-        include_str!("../../../../../src/hir/resolve_expr.rs"),
-        include_str!("../../../../../src/hir/resolve_stdin_stream.rs"),
-        include_str!("../../../../../src/hir/workspace_link/stdin_stream.rs"),
-        include_str!("../../../../../src/hir/resolve_expr/capacity.rs"),
-        include_str!("../../../../../src/hir/resolve_box_call.rs"),
-        include_str!("../../../../../src/hir/resolve_box_call/map.rs"),
-        include_str!("../../../../../src/hir/resolve_box_call/iterator.rs"),
-        include_str!("../../../../../src/hir/resolve_box_call/list.rs"),
-        include_str!("../../../../../src/hir/resolve_vec_call.rs"),
-        include_str!("../../../../../src/hir/resolve_yield.rs"),
-        include_str!("../../../../../src/hir/yield_aggregate.rs"),
-        include_str!("../../../../../src/hir/resolve_expr_frame.rs"),
-        include_str!("../../../../../src/hir/resolve_expr_reference.rs"),
-        include_str!("../../../../../src/hir/resolve_for.rs"),
-        include_str!("../../../../../src/hir/resolve_for_own.rs"),
-        include_str!("../../../../../src/hir/iterator_loop.rs"),
-        include_str!("../../../../../src/hir/iterator_loop/renewal.rs"),
-        include_str!("../../../../../src/hir/resolve_pattern.rs"),
-        include_str!("../../../../../src/hir/resolve_program.rs"),
-        include_str!("../../../../../src/hir/resolve_statement.rs"),
-        include_str!("../../../../../src/hir/resolve_variant_or.rs"),
-        include_str!("../../../../../src/hir/variant_equality.rs"),
-        include_str!("../../../../../src/hir/record_invariants.rs"),
-        include_str!("../../../../../src/hir/byte_capacity.rs"),
-        include_str!("../../../../../src/hir/byte_slice_provenance.rs"),
-        include_str!("../../../../../src/hir/capacity_probe.rs"),
-        include_str!("../../../../../src/hir/expr_nodes.rs"),
-        include_str!("../../../../../src/hir/ids.rs"),
-        include_str!("../../../../../src/hir/inspection.rs"),
-        include_str!("../../../../../src/hir/monomorphize.rs"),
-        include_str!("../../../../../src/hir/record_evolution.rs"),
-        include_str!("../../../../../src/hir/resolve_native_rust_result.rs"),
-        include_str!("../../../../../src/hir/type_reachability.rs"),
-        include_str!("../../../../../src/hir/workspace_link.rs"),
-        include_str!("../../../../../src/hir/cache_codec.rs"),
-        include_str!("../../../../../src/hir/declaration_index.rs"),
-        include_str!("../../../../../src/hir/owned_record_collection.rs"),
-        include_str!("../../../../../src/hir/vec_loop_renewal.rs"),
-        include_str!("../../../../../src/hir/generic_mapping.rs"),
-        include_str!("../../../../../src/hir/nodes.rs"),
-        include_str!("../../../../../src/hir/declaration_index/linked_owned_data.rs"),
-        include_str!("../../../../../src/hir/declaration_index/owned_builtin.rs"),
-        include_str!("../../../../../src/hir/declaration_index/projection.rs"),
-        include_str!("../../../../../src/hir/type_reachability/nested_generic_function.rs"),
-        include_str!("../../../../../src/hir/workspace_link/compiler_prelude.rs"),
-        include_str!("../../../../../src/hir/workspace_link/profile_diagnostics.rs"),
-        include_str!("../../../../../src/hir/workspace_link/native_owner.rs"),
-        include_str!("../../../../../src/hir/workspace_link/native_owner/url_view.rs"),
-    );
-    let hir_validator = concat!(
-        include_str!("../../../../../src/hir/validation.rs"),
-        include_str!("../../../../../src/hir/validation/call_parameters.rs"),
-        include_str!("../../../../../src/hir/validation/nominal_facts.rs"),
-        include_str!("../../../../../src/hir/validation/variant_guard_state.rs"),
-        include_str!("../../../../../src/hir/validation/string_replacement.rs"),
-        include_str!("../../../../../src/hir/validation/borrowed_argument.rs"),
-        include_str!("../../../../../src/hir/validation/borrowed_bytes_call_tests.rs"),
-        include_str!("../../../../../src/hir/validation/iterator_loops.rs"),
-        include_str!("../../../../../src/hir/validation/callable_types.rs"),
-        include_str!("../../../../../src/hir/validation/closure.rs"),
-        include_str!("../../../../../src/hir/validation/generic_variant.rs"),
-        include_str!("../../../../../src/hir/validation/box_intrinsic.rs"),
-        include_str!("../../../../../src/hir/validation/stdin_stream.rs"),
-        include_str!("../../../../../src/hir/validation/branch_merge.rs"),
-        include_str!("../../../../../src/hir/validation/vec_intrinsic.rs"),
-        include_str!("../../../../../src/hir/validation/borrowed_str.rs"),
-        include_str!("../../../../../src/hir/validation/generic_template.rs"),
-        include_str!("../../../../../src/hir/validation/host_command.rs"),
-        include_str!("../../../../../src/hir/validation/owned_buffer.rs"),
-        include_str!("../../../../../src/hir/validation/owned_result_try.rs"),
-        include_str!("../../../../../src/hir/validation/owner_renewal.rs"),
-        include_str!("../../../../../src/hir/validation/type_profiles.rs"),
-        include_str!("../../../../../src/hir/validation/unsafe_scan.rs"),
-        include_str!("../../../../../src/hir/validation/generic_record_composition.rs"),
-        include_str!("../../../../../src/hir/validation/native_borrow.rs"),
-        include_str!("../../../../../src/hir/validation/proof_return.rs"),
-        include_str!("../../../../../src/hir/validation/variant_or.rs"),
-        include_str!("../../../../../src/hir/validation/iterative_while_admission_tests.rs"),
-    );
-    let verifier = concat!(
-        include_str!("../../../../../src/source_verify.rs"),
-        include_str!("../../../../../src/source_verify/variant_guards.rs"),
-        include_str!("../../../../../src/source_verify/generic_inference.rs"),
-        include_str!("../../../../../src/source_verify/closure.rs"),
-        include_str!("../../../../../src/source_verify/mutable_closure.rs"),
-        include_str!("../../../../../src/source_verify/borrowed_closure.rs"),
-        include_str!("../../../../../src/source_verify/function_value_inventory.rs"),
-        include_str!("../../../../../src/source_verify/hints.rs"),
-        include_str!("../../../../../src/source_verify/stdin_stream.rs"),
-        include_str!("../../../../../src/source_verify/owned_buffer.rs"),
-        include_str!("../../../../../src/source_verify/variant_or.rs"),
-        include_str!("../../../../../src/source_verify/record_invariants.rs"),
-    );
+    let hir_resolver = hir_resolver_source_inventory!();
+    let hir_validator = [hir_validator_source_inventory!(), scope_projection::TEXT].concat();
+    let verifier = verifier_source_inventory!();
     let cleanup = concat!(
         include_str!("../../../../../src/cleanup.rs"),
+        include_str!("../../../../../src/cleanup/replay_context.rs"),
+        include_str!("../../../../../src/cleanup/inventory_builder.rs"),
+        include_str!("../../../../../src/cleanup/inventory_builder/selected.rs"),
+        include_str!("../../../../../src/cleanup/inventory_builder/selected/flat_record.rs"),
+        include_str!("../../../../../src/cleanup/inventory_builder/selected/vector.rs"),
         include_str!("../../../../../src/cleanup/generic_record.rs"),
         include_str!("../../../../../src/cleanup/iterator.rs"),
         include_str!("../../../../../src/cleanup/owned_capacity.rs"),
     );
-    let lower = concat!(
-        include_str!("../../../../../src/cleanup_plan/build.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/while_condition.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/transfer.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/string_replacement.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/owned_frame_finalizers.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/call_reference.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/generic_variant.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/bounded_box.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/bounded_vec.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/iterator.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/renewal.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/owned_try.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/record_destructure.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/record_destructure/update.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/schema.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/type_shape.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/finish_call.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/strings.rs"),
-        include_str!("../../../../../src/cleanup_plan/build/guarded_variant.rs"),
-    );
+    let lower = lower_source_inventory!();
     let calls = include_str!("../../../../../src/call_index.rs");
     for (source, expected) in [
         (hir_resolver, "size_of::<Frame<'static>>() <= 592"),
-        (hir_validator, "size_of::<Frame<'static>>() == 288"),
+        (
+            hir_validator.as_str(),
+            "size_of::<Frame<'static>>() == super::VALIDATOR_FRAME_BYTES",
+        ),
+        (
+            hir_validator.as_str(),
+            "pub const VALIDATOR_FRAME_BYTES: usize = 248;",
+        ),
         (verifier, "size_of::<VerifierFrame<'static>>() == 320"),
         (verifier, "size_of::<VariantMatchState<'static>>() == 312"),
         (cleanup, "size_of::<Frame<'static>>() == 40"),
@@ -280,7 +154,6 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         );
     }
 }
-
 #[test]
 fn hir_complete_reservation_is_exact_and_one_less_prevents_resolution() {
     let (program, _) = fixture();
@@ -294,20 +167,12 @@ fn hir_complete_reservation_is_exact_and_one_less_prevents_resolution() {
         capacity.phase_peaks(),
         capacity.complete().unwrap(),
     );
-    // `retained_upper` and `complete()` moved by exactly 256 bytes when
-    // 24c1d166 ("admit a minimal `yield` slice") added `yields:
-    // Option<ResolvedYieldsClause>` to `ResolvedFunction`
-    // (src/hir/nodes.rs). `ResolvedYieldsClause` is two `ResolvedType`
-    // (48 bytes each) plus a `Span` (32 bytes) = 128 bytes, and the
-    // `Option` wrapper finds a spare niche and costs nothing extra, so
-    // `size_of::<ResolvedFunction>()` grew from 952 to 1080 bytes (+128).
-    // `hir_pre_resolve.rs`'s `resolved_function_headers` term multiplies
-    // that size by `program.functions.len() + reachable_generic_calls`;
-    // this fixture has exactly 2 top-level functions (`add`, `main`) and
-    // no generics, so `retained_upper` grew by `2 * 128 == 256`
-    // (50_035 -> 50_291). `scratch_upper` and `phase_peaks()` are
-    // unaffected: none of the pre-resolve phases read
-    // `size_of::<ResolvedFunction>()`.
+    // The scalar fixture has no resource leaves, hence cleanup_path_copies=0.
+    // Each cleanup occurrence retains one identity backing, independently of
+    // the three possible HIR backings per expression. Correcting that factor
+    // removes 2 * (204 + 5 * 214 + 206) = 2960 bytes from the prior 56694 pin:
+    // add.body, its five Add status occurrences, and main.body respectively.
+    // Keep the exact envelope and one-byte-short refusal independently below.
     assert_eq!(capacity.retained_upper, 53_734);
     assert_eq!(capacity.scratch_upper, 16_170);
     assert_eq!(
@@ -338,7 +203,6 @@ fn hir_complete_reservation_is_exact_and_one_less_prevents_resolution() {
     HIR_RESOLVE_PASS_COUNT.with(|count| assert_eq!(count.get(), 0));
     HIR_POST_RESOLVE_PHASE_COUNT.with(|counts| assert_eq!(counts.get(), [0; 4]));
     HIR_POST_RESOLVE_CAPACITY_HIGH_WATER.with(|water| assert_eq!(water.get(), [0; 3]));
-
     HIR_RESOLVE_PASS_COUNT.with(|count| count.set(0));
     HIR_POST_RESOLVE_PHASE_COUNT.with(|counts| counts.set([0; 4]));
     HIR_POST_RESOLVE_CAPACITY_HIGH_WATER.with(|water| water.set([0; 3]));
@@ -363,7 +227,6 @@ fn hir_complete_reservation_is_exact_and_one_less_prevents_resolution() {
         assert!(water.get().into_iter().all(|bytes| bytes > 0));
     });
 }
-
 #[test]
 fn post_hir_nontransfer_reservation_precedes_all_fact_and_render_work() {
     let (program, canonical_spec) = fixture();
@@ -383,7 +246,6 @@ fn post_hir_nontransfer_reservation_precedes_all_fact_and_render_work() {
     let complete = capacity.complete().unwrap();
     let transfer = prepared_spec_transfer_capacity(&spec).unwrap();
     let reservation = complete.checked_sub(transfer).unwrap();
-
     POST_HIR_FACTS_ENTRY_COUNT.with(|count| count.set(0));
     POST_HIR_FACTS_CAPACITY_HIGH_WATER.with(|water| water.set(0));
     POST_HIR_FACTS_SCRATCH_HIGH_WATER.with(|water| water.set(0));
@@ -398,7 +260,6 @@ fn post_hir_nontransfer_reservation_precedes_all_fact_and_render_work() {
     assert_eq!(consumed, 0);
     POST_HIR_FACTS_ENTRY_COUNT.with(|count| assert_eq!(count.get(), 0));
     POST_HIR_FACTS_CAPACITY_HIGH_WATER.with(|water| assert_eq!(water.get(), 0));
-
     POST_HIR_FACTS_ENTRY_COUNT.with(|count| count.set(0));
     let (result, overflowed, consumed) =
         crate::bounded_output::with_limit_usage(reservation, || {
@@ -412,7 +273,6 @@ fn post_hir_nontransfer_reservation_precedes_all_fact_and_render_work() {
     assert_eq!(consumed, 0);
     POST_HIR_FACTS_ENTRY_COUNT.with(|count| assert_eq!(count.get(), 1));
 }
-
 #[test]
 fn post_hir_spec_transfer_is_single_charged_across_target_triple_lengths() {
     fn terms(triple: &str) -> [usize; 5] {
@@ -432,7 +292,6 @@ fn post_hir_spec_transfer_is_single_charged_across_target_triple_lengths() {
             },
         )
     }
-
     // [complete formula, moved Spec ownership, net facts reservation,
     //  new persistent facts, total persistent Prepared ownership]
     let apple = terms("aarch64-apple-darwin");
@@ -448,7 +307,6 @@ fn post_hir_spec_transfer_is_single_charged_across_target_triple_lengths() {
     assert_eq!(linux[3], apple[3]);
     assert_eq!(linux[4] - apple[4], 4);
 }
-
 #[test]
 fn windows_target_phase_a_preparation_stays_inside_the_builder_ledger() {
     with_test_target(
@@ -473,7 +331,6 @@ fn windows_target_phase_a_preparation_stays_inside_the_builder_ledger() {
         },
     );
 }
-
 #[test]
 fn post_hir_spec_transfer_capacity_slack_does_not_consume_scratch_authority() {
     let (program, canonical_spec) = fixture();
@@ -482,7 +339,6 @@ fn post_hir_spec_transfer_capacity_slack_does_not_consume_scratch_authority() {
         parse_spec_with_source(&program, canonical_spec.as_bytes(), &canonical_source).unwrap();
     let resolved = hir::resolve(&program).unwrap();
     let (closure, _) = selected_closure(&resolved, &spec.exports).unwrap();
-
     let base = post_hir_facts_capacity(
         canonical_source.len(),
         canonical_spec.len(),
@@ -498,7 +354,6 @@ fn post_hir_spec_transfer_capacity_slack_does_not_consume_scratch_authority() {
     over_capacity_digest.push_str(&digest);
     assert!(over_capacity_digest.capacity() > over_capacity_digest.len());
     spec.source_revision = Some(over_capacity_digest);
-
     let hostile = post_hir_facts_capacity(
         canonical_source.len(),
         canonical_spec.len(),
@@ -519,7 +374,6 @@ fn post_hir_spec_transfer_capacity_slack_does_not_consume_scratch_authority() {
         base.complete().unwrap() - base_transfer,
     );
 }
-
 #[test]
 fn final_artifact_sinks_reject_one_less_before_output_allocation() {
     let (program, canonical_spec) = fixture();
@@ -536,7 +390,6 @@ fn final_artifact_sinks_reject_one_less_before_output_allocation() {
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect::<Vec<_>>();
-
     EXACT_ARTIFACT_OUTPUT_ALLOCATION_COUNT.with(|count| count.set(0));
     let descriptor = render_descriptor_with_limit(
         &spec,
@@ -588,7 +441,6 @@ fn final_artifact_sinks_reject_one_less_before_output_allocation() {
         assert_eq!(diagnostic.code, "SPX-B109");
     }
     EXACT_ARTIFACT_OUTPUT_ALLOCATION_COUNT.with(|count| assert_eq!(count.get(), 0));
-
     assert_eq!(
         render_descriptor_with_limit(
             &spec,
@@ -630,7 +482,6 @@ fn final_artifact_sinks_reject_one_less_before_output_allocation() {
     assert_eq!(exact_rust.1, prepared.private_ffi_source);
     EXACT_ARTIFACT_OUTPUT_ALLOCATION_COUNT.with(|count| assert_eq!(count.get(), 5));
 }
-
 #[test]
 fn post_hir_named_phase_envelopes_cover_representative_and_depth_512_c() {
     fn measure(program: &Program, spec: &Spec) -> ([usize; 4], [usize; 3]) {
@@ -685,7 +536,6 @@ fn post_hir_named_phase_envelopes_cover_representative_and_depth_512_c() {
         drop(resolved);
         measured
     }
-
     // This historical evidence tuple was authorized for the Apple-arm
     // target. Freeze that target explicitly so host triple length cannot
     // silently repin a target-specific retained-allocation census.
@@ -704,7 +554,6 @@ fn post_hir_named_phase_envelopes_cover_representative_and_depth_512_c() {
                 parse_spec_with_source(&program, canonical_spec.as_bytes(), &canonical_source)
                     .unwrap();
             let representative = measure(&program, &spec);
-
             let mut deep = program;
             let function = deep
                 .functions
@@ -738,7 +587,6 @@ fn post_hir_named_phase_envelopes_cover_representative_and_depth_512_c() {
                 capabilities: vec!["host.math".to_owned()],
             };
             let deep = measure(&deep, &deep_spec);
-
             assert_eq!(
                 [representative, deep],
                 [
@@ -756,7 +604,6 @@ fn post_hir_named_phase_envelopes_cover_representative_and_depth_512_c() {
         },
     );
 }
-
 #[test]
 fn post_hir_facts_cross_product_maxima_stay_inside_named_scratch() {
     let capabilities = (0..MAX_IMPORTS)
@@ -877,7 +724,6 @@ fn post_hir_facts_cross_product_maxima_stay_inside_named_scratch() {
         capacity.replay_scratch_upper
     );
 }
-
 #[test]
 fn post_hir_facts_zero_entry_collections_have_zero_backing_and_stay_bounded() {
     let empty_strings = Vec::<String>::new();
@@ -940,7 +786,6 @@ fn post_hir_facts_zero_entry_collections_have_zero_backing_and_stay_bounded() {
     );
     assert!(near_max_source.complete().unwrap() <= MAX_BUILDER_BYTES);
 }
-
 #[test]
 fn post_hir_dense_fan_in_duplicates_and_all_interface_imports_stay_bounded() {
     let mut source = String::from(
@@ -994,7 +839,6 @@ fn post_hir_dense_fan_in_duplicates_and_all_interface_imports_stay_bounded() {
     assert!(total <= capacity.retained_upper + capacity.facts_scratch_upper);
     assert!(scratch <= capacity.facts_scratch_upper);
 }
-
 #[test]
 fn serde_json_lock_and_near_max_escaped_payload_match_parser_contract() {
     assert!(include_str!("../../../Cargo.toml").contains("serde_json = \"=1.0.151\""));

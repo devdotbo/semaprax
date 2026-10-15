@@ -1,0 +1,15 @@
+{
+  "base": "fde751e20236152d581e31ce6bf2b1d3e11ede45",
+  "execution": "not run; source-only",
+  "exact_lib_selectors": [
+    "hir::validation::variant_or::covered::tests::borrowed_covered_sorted_membership_matches_full_original_equal_id_and_duplicate_set",
+    "hir::validation::variant_or::covered::tests::covered_growth_checkpoint_and_receiving_drop_pay_exact_short_zero_and_sticky",
+    "hir::validation::variant_or::covered::tests::or_checkpoint_preserves_full_original_partial_candidate_diagnostics_and_guarded_discard",
+    "hir::validation::variant_or::covered::tests::failed_checkpoint_keeps_complete_prior_sorted_root_and_receiving_drop",
+    "hir::validation::variant_or::covered::tests::actual_variant_match_receiver_matches_complete_old_dispatch_and_auxiliary_state",
+    "hir::validation::variant_or::covered::tests::actual_or_candidate_success_duplicate_and_late_refusal_pay_all_receiving_backing",
+    "hir::validation::variant_or::covered::tests::complete_original_or_helper_is_preserved_with_exact_frozen_digest",
+    "hir::validation::function_scope::tests::production_chain_observes_actual_backing_debits_complete_drop_and_exact_short_sticky",
+    "hir::validation::function_scope::tests::production_chain_matches_complete_saved_map_function_and_full_iterative_corpus"
+  ]
+}

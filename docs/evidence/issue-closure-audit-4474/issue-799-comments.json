@@ -1,0 +1,68 @@
+[
+  {
+    "url": "https://github.com/wavect/semaprax/issues/799#issuecomment-6132209714",
+    "body": "@wsdt could you check whether this is a valid finding from your side? In particular whether case 14 (`[\"SPX-M103\", \"SPX-T202\", \"SPX-M101\"]`, pinned in `tests/language/variants_semantics.rs`) is intended.\n\nThe fix for A, B, C, D, E and G is open as #800. One thing I could not do locally: run the library unit tests (the `--lib` test binary does not fit in my machine's memory), so the oracle parity cases there are compiled but not executed. If you can run `cargo test --locked -p semaprax --lib source_verify::` on that branch, I will fix anything it turns up.",
+    "user": {
+      "login": "yashsoni369",
+      "name": "yashsoni369",
+      "email": null,
+      "avatar_url": "https://avatars.githubusercontent.com/u/37664594?v=4",
+      "id": 37664594
+    },
+    "id": 6132209714,
+    "pull_request_review_id": null,
+    "in_reply_to_id": null,
+    "created_at": null,
+    "updated_at": null,
+    "review": null,
+    "side": null,
+    "line": null,
+    "start_line": null,
+    "path": null,
+    "body_html": "<p dir=\"auto\"><a class=\"user-mention notranslate\" data-hovercard-type=\"user\" data-hovercard-url=\"/users/wsdt/hovercard\" data-octo-click=\"hovercard-link-click\" data-octo-dimensions=\"link_type:self\" href=\"https://github.com/wsdt\">@wsdt</a> could you check whether this is a valid finding from your side? In particular whether case 14 (<code class=\"notranslate\">[\"SPX-M103\", \"SPX-T202\", \"SPX-M101\"]</code>, pinned in <code class=\"notranslate\">tests/language/variants_semantics.rs</code>) is intended.</p>\n<p dir=\"auto\">The fix for A, B, C, D, E and G is open as <a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"5820061693\" data-permission-text=\"Title is private\" data-url=\"https://github.com/wavect/semaprax/issues/800\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/wavect/semaprax/pull/800/hovercard\" href=\"https://github.com/wavect/semaprax/pull/800\">#800</a>. One thing I could not do locally: run the library unit tests (the <code class=\"notranslate\">--lib</code> test binary does not fit in my machine's memory), so the oracle parity cases there are compiled but not executed. If you can run <code class=\"notranslate\">cargo test --locked -p semaprax --lib source_verify::</code> on that branch, I will fix anything it turns up.</p>"
+  },
+  {
+    "url": "https://github.com/wavect/semaprax/issues/799#issuecomment-6141282495",
+    "body": "This is a useful finding. In case 14, `SPX-T202` for `w` follows from the refused pattern, so I agree that it should not send an author off to fix a second, unrelated problem. The pinned triple is a regression baseline, not a requirement to keep every cascade forever.\n\nThe independent coverage check still matters: a malformed arm must not disable a genuine missing-case error. Please retain a control with a refused pattern plus an independently missing valid case; blanket suppression of `SPX-M101` after any bad pattern would lose coverage.\n\nI reviewed #800/#804 and am implementing bounded lexical-scope recovery in #806 rather than rescanning the whole function at each absent-name read. It must preserve read-before-declaration, self-initializer, sibling-scope and independent closure errors, and must not invent a type or binding after refusal. The complete existing receiver and corpus are being retained for comparison.\n\nI will run only the exact affected owners in the consolidated batch, including the relevant oracle parity cases. I have not yet reproduced your whole 60-case result on the current integrated source, so I am not claiming that result or a token gain. #803's conversion hint has also been incorporated locally, with a clarification that the `usize` round trip requires a value no greater than `i64::MAX`.\n",
+    "user": {
+      "login": "wsdt",
+      "name": "wsdt",
+      "email": null,
+      "avatar_url": "https://avatars.githubusercontent.com/u/28724551?v=4",
+      "id": 28724551
+    },
+    "id": 6141282495,
+    "pull_request_review_id": null,
+    "in_reply_to_id": null,
+    "created_at": null,
+    "updated_at": null,
+    "review": null,
+    "side": null,
+    "line": null,
+    "start_line": null,
+    "path": null,
+    "body_html": "<p dir=\"auto\">This is a useful finding. In case 14, <code class=\"notranslate\">SPX-T202</code> for <code class=\"notranslate\">w</code> follows from the refused pattern, so I agree that it should not send an author off to fix a second, unrelated problem. The pinned triple is a regression baseline, not a requirement to keep every cascade forever.</p>\n<p dir=\"auto\">The independent coverage check still matters: a malformed arm must not disable a genuine missing-case error. Please retain a control with a refused pattern plus an independently missing valid case; blanket suppression of <code class=\"notranslate\">SPX-M101</code> after any bad pattern would lose coverage.</p>\n<p dir=\"auto\">I reviewed <a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"5820061693\" data-permission-text=\"Title is private\" data-url=\"https://github.com/wavect/semaprax/issues/800\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/wavect/semaprax/pull/800/hovercard\" href=\"https://github.com/wavect/semaprax/pull/800\">#800</a>/<a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"5821041158\" data-permission-text=\"Title is private\" data-url=\"https://github.com/wavect/semaprax/issues/804\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/wavect/semaprax/pull/804/hovercard\" href=\"https://github.com/wavect/semaprax/pull/804\">#804</a> and am implementing bounded lexical-scope recovery in <a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"5821531124\" data-permission-text=\"Title is private\" data-url=\"https://github.com/wavect/semaprax/issues/806\" data-hovercard-type=\"issue\" data-hovercard-url=\"/wavect/semaprax/issues/806/hovercard\" href=\"https://github.com/wavect/semaprax/issues/806\">#806</a> rather than rescanning the whole function at each absent-name read. It must preserve read-before-declaration, self-initializer, sibling-scope and independent closure errors, and must not invent a type or binding after refusal. The complete existing receiver and corpus are being retained for comparison.</p>\n<p dir=\"auto\">I will run only the exact affected owners in the consolidated batch, including the relevant oracle parity cases. I have not yet reproduced your whole 60-case result on the current integrated source, so I am not claiming that result or a token gain. <a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"5820675258\" data-permission-text=\"Title is private\" data-url=\"https://github.com/wavect/semaprax/issues/803\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/wavect/semaprax/pull/803/hovercard\" href=\"https://github.com/wavect/semaprax/pull/803\">#803</a>'s conversion hint has also been incorporated locally, with a clarification that the <code class=\"notranslate\">usize</code> round trip requires a value no greater than <code class=\"notranslate\">i64::MAX</code>.</p>"
+  },
+  {
+    "url": "https://github.com/wavect/semaprax/issues/799#issuecomment-6155882512",
+    "body": "Update: #800 and #804 are merged into `wavect/v0-10-0` and pushed. The scoped refused-binding recovery in #806 is also completed and closed. Thank you for retaining the independent-error controls; those remain required.\n\nThe current consolidated focused run compiled the library harness and executed the selected bodies rather than relying on compile-only evidence. I am keeping the remaining compiler-budget and cache failures open while fixing them; this is not a claim that the full suite or every probe in this issue has passed.\n",
+    "user": {
+      "login": "wsdt",
+      "name": "wsdt",
+      "email": null,
+      "avatar_url": "https://avatars.githubusercontent.com/u/28724551?v=4",
+      "id": 28724551
+    },
+    "id": 6155882512,
+    "pull_request_review_id": null,
+    "in_reply_to_id": null,
+    "created_at": null,
+    "updated_at": null,
+    "review": null,
+    "side": null,
+    "line": null,
+    "start_line": null,
+    "path": null,
+    "body_html": "<p dir=\"auto\">Update: <a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"5820061693\" data-permission-text=\"Title is private\" data-url=\"https://github.com/wavect/semaprax/issues/800\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/wavect/semaprax/pull/800/hovercard\" href=\"https://github.com/wavect/semaprax/pull/800\">#800</a> and <a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"5821041158\" data-permission-text=\"Title is private\" data-url=\"https://github.com/wavect/semaprax/issues/804\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/wavect/semaprax/pull/804/hovercard\" href=\"https://github.com/wavect/semaprax/pull/804\">#804</a> are merged into <code class=\"notranslate\">wavect/v0-10-0</code> and pushed. The scoped refused-binding recovery in <a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"5821531124\" data-permission-text=\"Title is private\" data-url=\"https://github.com/wavect/semaprax/issues/806\" data-hovercard-type=\"issue\" data-hovercard-url=\"/wavect/semaprax/issues/806/hovercard\" href=\"https://github.com/wavect/semaprax/issues/806\">#806</a> is also completed and closed. Thank you for retaining the independent-error controls; those remain required.</p>\n<p dir=\"auto\">The current consolidated focused run compiled the library harness and executed the selected bodies rather than relying on compile-only evidence. I am keeping the remaining compiler-budget and cache failures open while fixing them; this is not a claim that the full suite or every probe in this issue has passed.</p>"
+  }
+]

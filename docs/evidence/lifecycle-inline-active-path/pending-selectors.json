@@ -1,0 +1,15 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "selectors": [
+    "hir::validation::function_scope::lifecycle::completed::inline_path::tests::complete_before_collector_matches_depths_spill_cycles_arguments_and_errors",
+    "hir::validation::function_scope::lifecycle::completed::inline_path::tests::record_class_variant_and_partial_first_diagnostics_keep_full_original_order",
+    "hir::validation::function_scope::lifecycle::completed::inline_path::tests::inline_and_paid_tree_spill_have_independent_exact_short_zero_and_full_drop_controls",
+    "hir::validation::function_scope::lifecycle::completed::inline_path::tests::borrowed_equal_keys_and_sticky_inline_or_spill_insertion_preserve_membership",
+    "hir::validation::function_scope::lifecycle::completed::inline_path::tests::complete_original_and_all_source_audit_receivers_are_byte_exact"
+  ],
+  "retained_module": "hir::validation::function_scope::lifecycle::completed::tests",
+  "other_gates": [
+    "hir_module_boundaries",
+    "cleanup_plan::replay::live_oracle::source_custody"
+  ]
+}

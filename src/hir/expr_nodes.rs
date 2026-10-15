@@ -31,6 +31,19 @@ pub struct ResolvedClosureCapture {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResolvedExprKind {
+    /// Authenticated source constructor; the value executes an ordinary block.
+    VecConstructor {
+        element: ResolvedType,
+        count: u32,
+        statements: Vec<ResolvedStatement>,
+        tail: Box<ResolvedExpr>,
+    },
+    /// A typed terminal flow, independently bound to its exact lexical target.
+    LexicalExit {
+        kind: crate::ast::LexicalExitKind,
+        target: super::lexical_exit::ControlTarget,
+        value: Option<Box<ResolvedExpr>>,
+    },
     Closure {
         parameters: Vec<ResolvedBinding>,
         captures: Vec<ResolvedClosureCapture>,
@@ -64,6 +77,8 @@ pub enum ResolvedExprKind {
     Bool(bool),
     /// A string literal held as its exact owned UTF-8 contents.
     String(String),
+    /// Immutable decoded module bytes; a nonescaping view, never an owner.
+    BorrowedUtf8Literal(super::StaticUtf8),
     Place(Place),
     /// A compiler-owned, non-consuming view of one exact authenticated place.
     BorrowPlace {
@@ -83,6 +98,32 @@ pub enum ResolvedExprKind {
         callee: DeclarationId,
         type_arguments: Vec<ResolvedType>,
         instance: Option<FunctionInstanceId>,
+        args: Vec<ResolvedExpr>,
+    },
+    /// Compiler-owned literal rendering. The template is the decoded source
+    /// literal; the children are dynamic arguments only, in evaluation order.
+    LiteralFormat {
+        template: String,
+        args: Vec<ResolvedExpr>,
+    },
+    /// Nonallocating read of one explicit field in a borrowed Vec generation.
+    /// `args` are exactly [named Vec place, usize index], in authored order.
+    /// The literal selector is resolved into `field`, never a runtime String.
+    /// `bytes` denotes only the exact fused str_as_bytes(String-field) form.
+    VecFieldRead {
+        origin: super::VecFieldReadOrigin,
+        element: ResolvedType,
+        field: DeclarationId,
+        bytes: bool,
+        args: Vec<ResolvedExpr>,
+    },
+    /// Row Loan v1: a call-only borrow of one frozen owned-leaf Vec row. It
+    /// appears only as a direct argument of an ordinary monomorphic call whose
+    /// matching parameter is the descriptor's exact `borrow R` parameter.
+    /// `args` are exactly [named Vec place, row index place], authored order.
+    /// No record value is materialized; see `hir::row_loan`.
+    RowLoan {
+        loan: Box<super::row_loan::RowLoan>,
         args: Vec<ResolvedExpr>,
     },
     NativeRustImportCall(ResolvedNativeRustImportCall),
@@ -218,7 +259,52 @@ pub enum ResolvedMatchPattern {
     Binding(ResolvedBinding),
 }
 
+/// Borrowed authored case traversal. Duplicate alternatives remain distinct.
+pub(crate) struct VariantCaseIter<'a> {
+    single: Option<&'a DeclarationId>,
+    alternatives: std::slice::Iter<'a, ResolvedMatchPattern>,
+}
+impl<'a> Iterator for VariantCaseIter<'a> {
+    type Item = &'a DeclarationId;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.single.take().or_else(|| {
+            self.alternatives.next().map(|pattern| {
+                let ResolvedMatchPattern::Variant { case, .. } = pattern else {
+                    unreachable!("borrowed variant alternatives were validated");
+                };
+                case
+            })
+        })
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let count = self.alternatives.len() + usize::from(self.single.is_some());
+        (count, Some(count))
+    }
+}
+impl ExactSizeIterator for VariantCaseIter<'_> {}
+
 impl ResolvedMatchPattern {
+    /// Same case domain as variant_cases, without allocating a temporary Vec.
+    pub(crate) fn case_iter(&self) -> Option<VariantCaseIter<'_>> {
+        match self {
+            Self::Variant { case, .. } => Some(VariantCaseIter {
+                single: Some(case),
+                alternatives: [].iter(),
+            }),
+            Self::Or(alternatives)
+                if alternatives.iter().all(|pattern| {
+                    matches!(pattern,
+                    Self::Variant { fields, .. } if fields.is_empty())
+                }) =>
+            {
+                Some(VariantCaseIter {
+                    single: None,
+                    alternatives: alternatives.iter(),
+                })
+            }
+            _ => None,
+        }
+    }
     /// The cases a variant-match arm tests, in authored order: the one case
     /// of a case pattern, or every alternative of an or-pattern over
     /// payload-free cases. `None` for every other pattern.
@@ -304,6 +390,11 @@ pub struct ResolvedFieldInitializer {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResolvedStatement {
+    /// Authenticated expression-statement boundary. The scalar value is
+    /// evaluated and discarded; this declares no binding or storage owner.
+    /// Lexical completion is independently checked against the current target.
+    /// An ordinary Let initializer never acquires this boundary implicitly.
+    CopyDiscard { value: ResolvedExpr, span: Span },
     Let {
         binding: ResolvedBinding,
         /// Explicit Mutation v1: `true` when the source declared `let mut`.
@@ -332,6 +423,12 @@ pub enum ResolvedStatement {
     /// Bounded While-Loops v1: `while <condition> { <body> }`. The condition
     /// must be exactly `bool` and the body is an ordinary checked block whose
     /// value is discarded. The statement produces no value.
+    LexicalWhile {
+        condition: Box<ResolvedExpr>,
+        body: Box<ResolvedExpr>,
+        latch: super::lexical_exit::LoopLatchKind,
+        span: Span,
+    },
     While {
         condition: Box<ResolvedExpr>,
         body: Box<ResolvedExpr>,
@@ -345,9 +442,11 @@ impl ResolvedStatement {
     /// [`ResolvedStatement::child`] instead.
     pub fn value(&self) -> &ResolvedExpr {
         match self {
-            Self::Let { value, .. } | Self::Assign { value, .. } => value,
+            Self::Let { value, .. }
+            | Self::Assign { value, .. }
+            | Self::CopyDiscard { value, .. } => value,
             Self::Unsafe { body, .. } => body,
-            Self::While { .. } => {
+            Self::While { .. } | Self::LexicalWhile { .. } => {
                 panic!("while statements expose condition and body children")
             }
         }
@@ -356,9 +455,11 @@ impl ResolvedStatement {
     /// Mutable access to the statement's evaluated expression.
     pub fn value_mut(&mut self) -> &mut ResolvedExpr {
         match self {
-            Self::Let { value, .. } | Self::Assign { value, .. } => value,
+            Self::Let { value, .. }
+            | Self::Assign { value, .. }
+            | Self::CopyDiscard { value, .. } => value,
             Self::Unsafe { body, .. } => body,
-            Self::While { .. } => {
+            Self::While { .. } | Self::LexicalWhile { .. } => {
                 panic!("while statements expose condition and body children")
             }
         }
@@ -369,7 +470,10 @@ impl ResolvedStatement {
     pub fn binding(&self) -> &ResolvedBinding {
         match self {
             Self::Let { binding, .. } | Self::Assign { binding, .. } => binding,
-            Self::Unsafe { .. } | Self::While { .. } => {
+            Self::Unsafe { .. }
+            | Self::While { .. }
+            | Self::LexicalWhile { .. }
+            | Self::CopyDiscard { .. } => {
                 panic!("only let and assignment statements declare a binding")
             }
         }
@@ -393,19 +497,69 @@ impl ResolvedStatement {
     /// condition then its body, in evaluation order.
     pub fn child_count(&self) -> usize {
         match self {
-            Self::Let { .. } | Self::Assign { .. } | Self::Unsafe { .. } => 1,
-            Self::While { .. } => 2,
+            Self::Let { .. }
+            | Self::Assign { .. }
+            | Self::Unsafe { .. }
+            | Self::CopyDiscard { .. } => 1,
+            Self::While { .. } | Self::LexicalWhile { .. } => 2,
         }
     }
 
     /// One directly nested evaluated expression in left-to-right order.
     pub fn child(&self, index: usize) -> Option<&ResolvedExpr> {
         match self {
-            Self::Let { value, .. } | Self::Assign { value, .. } => (index == 0).then_some(value),
+            Self::Let { value, .. }
+            | Self::Assign { value, .. }
+            | Self::CopyDiscard { value, .. } => (index == 0).then_some(value),
             Self::Unsafe { body, .. } => (index == 0).then_some(body.as_ref()),
             Self::While {
                 condition, body, ..
+            }
+            | Self::LexicalWhile {
+                condition, body, ..
             } => [condition.as_ref(), body.as_ref()].get(index).copied(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod borrowed_variant_case_tests {
+    use super::*;
+    fn case(id: &str) -> ResolvedMatchPattern {
+        ResolvedMatchPattern::Variant {
+            variant: DeclarationId::new("variant"),
+            case: DeclarationId::new(id),
+            fields: Vec::new(),
+        }
+    }
+    #[test]
+    fn borrowed_case_domain_matches_allocating_oracle_order_duplicates_and_refusal() {
+        for pattern in [
+            case("some"),
+            ResolvedMatchPattern::Or(vec![case("none"), case("some"), case("none")]),
+            ResolvedMatchPattern::Or(Vec::new()),
+            ResolvedMatchPattern::Or(vec![case("none"), ResolvedMatchPattern::Wildcard]),
+            ResolvedMatchPattern::Wildcard,
+        ] {
+            let oracle = pattern.variant_cases();
+            let (answer, allocation) =
+                crate::test_allocation_observer::measure(|| match (pattern.case_iter(), &oracle) {
+                    (Some(mut actual), Some(expected)) => {
+                        let count = expected.len();
+                        assert_eq!(actual.len(), count);
+                        for (index, expected) in expected.iter().enumerate() {
+                            assert_eq!(actual.len(), count - index);
+                            assert!(std::ptr::eq(actual.next().unwrap(), *expected));
+                        }
+                        assert_eq!(actual.len(), 0);
+                        assert!(actual.next().is_none());
+                        true
+                    }
+                    (None, None) => true,
+                    _ => false,
+                });
+            assert!(answer);
+            assert!(!allocation.invalid && allocation.allocated == 0 && allocation.live == 0);
         }
     }
 }

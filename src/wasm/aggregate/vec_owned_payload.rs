@@ -7,6 +7,7 @@ use super::*;
 pub(super) fn import_names(program: &ResolvedProgram) -> [&'static str; 9] {
     if crate::vec_ops::resolved_program_uses_owned_payload(program)
         || super::super::vec_ops::program_uses_record_vec(program)
+        || super::super::vec_ops::program_uses_owned_leaf_vec(program)
     {
         [
             "spx_vec_with_capacity_v2",
@@ -102,7 +103,7 @@ impl Emitter<'_> {
         }
         let offset = match op {
             crate::vec_ops::VecOp::Sort => {
-                return Err(error("owned Vec payload sorting is not admitted"))
+                return Err(error("owned Vec payload sorting is not admitted"));
             }
             VecOp::WithCapacity => 0,
             VecOp::Push => 1,
@@ -112,6 +113,17 @@ impl Emitter<'_> {
             VecOp::Set => VEC_IMPORT_COUNT + 1,
             VecOp::Clear => VEC_IMPORT_COUNT + 2,
             VecOp::Get => unreachable!(),
+            VecOp::StrAt
+            | VecOp::CloneAt
+            | VecOp::Replace
+            | VecOp::ReserveOwned
+            | VecOp::SortOwned
+            | VecOp::SortBy
+            | VecOp::UniqueBy => {
+                return Err(error(
+                    "owned Vec payload new operation requires an admitted leaf layout",
+                ));
+            }
         };
         self.output.push(0x10);
         write_u32(self.output, vec_import_base(self.program) + offset);

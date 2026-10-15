@@ -285,7 +285,9 @@ pub fn is_control_dependent(function: &ResolvedFunction) -> bool {
     let direct = statements
         .iter()
         .filter(|statement| match statement {
-            ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => {
+            ResolvedStatement::Let { value, .. }
+            | ResolvedStatement::Assign { value, .. }
+            | ResolvedStatement::CopyDiscard { value, .. } => {
                 matches!(value.kind, ResolvedExprKind::Yield { .. })
             }
             _ => false,
@@ -325,14 +327,19 @@ fn collect_sites<'a>(
             collect_sites(then_branch, false, false, sites);
             collect_sites(else_branch, false, false, sites);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 match statement {
                     ResolvedStatement::Let { value, .. }
-                    | ResolvedStatement::Assign { value, .. } => {
+                    | ResolvedStatement::Assign { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. } => {
                         collect_sites(value, true, false, sites)
                     }
-                    ResolvedStatement::While { body, .. } => {
+                    ResolvedStatement::While { body, .. }
+                    | ResolvedStatement::LexicalWhile { body, .. } => {
                         collect_sites(body, false, false, sites)
                     }
                     ResolvedStatement::Unsafe { .. } => {}

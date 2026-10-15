@@ -528,9 +528,16 @@ fn locate_direct_yields(function: &ResolvedFunction) -> Result<Vec<YieldSite<'_>
     let execution = FunctionExecutionId::Monomorphic(function.id.clone());
     for (index, statement) in statements.iter().enumerate() {
         let (value, kind) = match statement {
+            ResolvedStatement::LexicalWhile { .. } => {
+                return Err(invalid(
+                    "lexical control is outside the resumable replay profile",
+                ))
+            }
             ResolvedStatement::Let { value, .. } => (value, ResumableStatementKind::Let),
             ResolvedStatement::Assign { value, .. } => (value, ResumableStatementKind::Assign),
-            ResolvedStatement::Unsafe { .. } | ResolvedStatement::While { .. } => continue,
+            ResolvedStatement::CopyDiscard { .. }
+            | ResolvedStatement::Unsafe { .. }
+            | ResolvedStatement::While { .. } => continue,
         };
         if let ResolvedExprKind::Yield { request } = &value.kind {
             let index = u32::try_from(index)
@@ -630,6 +637,11 @@ fn relocate_expression(
     expression.id = ExpressionId::new(execution, path);
     let expression_id = expression.id.clone();
     match &mut expression.kind {
+        ResolvedExprKind::LexicalExit { .. } => {
+            return Err(invalid(
+                "resumable projection cannot relocate a lexical exit",
+            ))
+        }
         ResolvedExprKind::Closure { .. } => {
             return Err(invalid(
                 "resumable projection cannot relocate a closure expression",
@@ -646,7 +658,8 @@ fn relocate_expression(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) => {}
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
         ResolvedExprKind::Invoke { callable, args } => {
             relocate_expression(callable, execution, &format!("{path}.callable"), values)?;
             relocate_arguments(args, execution, path, "arg", values)?;
@@ -661,8 +674,20 @@ fn relocate_expression(
             relocate_expression(start, execution, &format!("{path}.arg.1"), values)?;
             relocate_expression(end, execution, &format!("{path}.arg.2"), values)?;
         }
-        ResolvedExprKind::Call { args, .. } => {
+        ResolvedExprKind::Call { args, .. } | ResolvedExprKind::LiteralFormat { args, .. } => {
             relocate_arguments(args, execution, path, "arg", values)?;
+        }
+        // A row loan names its traversal region; relocation would forge it.
+        ResolvedExprKind::RowLoan { .. } => {
+            return Err(invalid("resumable projection cannot relocate a row loan"))
+        }
+        ResolvedExprKind::VecFieldRead { args, bytes, .. } => {
+            let call_path = if *bytes {
+                format!("{path}.arg.0")
+            } else {
+                path.to_owned()
+            };
+            relocate_arguments(args, execution, &call_path, "arg", values)?;
         }
         ResolvedExprKind::NativeRustImportCall(call) => {
             call.expression = expression_id;
@@ -679,11 +704,19 @@ fn relocate_expression(
             relocate_expression(left, execution, &format!("{path}.left"), values)?;
             relocate_expression(right, execution, &format!("{path}.right"), values)?;
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut block_values = values.clone();
             for (index, statement) in statements.iter_mut().enumerate() {
                 let statement_path = format!("{path}.s{index}");
                 match statement {
+                    ResolvedStatement::LexicalWhile { .. } => {
+                        return Err(invalid(
+                            "resumable projection cannot relocate a lexical loop",
+                        ))
+                    }
                     ResolvedStatement::Let { binding, value, .. } => {
                         relocate_expression(
                             value,
@@ -704,6 +737,12 @@ fn relocate_expression(
                             &block_values,
                         )?;
                     }
+                    ResolvedStatement::CopyDiscard { value, .. } => relocate_expression(
+                        value,
+                        execution,
+                        &format!("{statement_path}.value"),
+                        &block_values,
+                    )?,
                     ResolvedStatement::Unsafe { body, .. } => relocate_expression(
                         body,
                         execution,

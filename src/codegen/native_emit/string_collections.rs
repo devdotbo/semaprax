@@ -181,7 +181,7 @@ impl<O: COutput> CEmitter<'_, O> {
                         "false"
                     }
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 // The call consumed the staged generation; the result slot now
                 // owns the same carrier.
                 self.line(&format!("{source_flag} = false;"));
@@ -195,7 +195,7 @@ impl<O: COutput> CEmitter<'_, O> {
             }
         };
         self.line(&format!("spx_status = {fallible};"));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         Ok(())
     }
 }

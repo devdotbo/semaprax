@@ -5,7 +5,8 @@ use super::*;
 
 fn hir_type_owned_capacity(ty: &ResolvedType) -> Option<usize> {
     match ty {
-        ResolvedType::Unit
+        ResolvedType::Never
+        | ResolvedType::Unit
         | ResolvedType::I64
         | ResolvedType::I32
         | ResolvedType::Char
@@ -201,6 +202,17 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
                 }
                 pending.push(body);
             }
+            ResolvedExprKind::LexicalExit { target, value, .. } => {
+                total = total
+                    .checked_add(
+                        crate::private_capacity_contract::control_target_owned_capacity(target)
+                            .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?,
+                    )
+                    .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                if let Some(value) = value {
+                    pending.push(value);
+                }
+            }
             ResolvedExprKind::FunctionReference { .. } => {}
             ResolvedExprKind::Invoke { callable, args } => {
                 pending.push(callable.as_ref());
@@ -251,6 +263,53 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
                         .checked_add(ty_bytes)
                         .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
                 }
+                add_capacity(
+                    &mut total,
+                    args.capacity(),
+                    std::mem::size_of::<ResolvedExpr>(),
+                )?;
+                pending.extend(args);
+            }
+            ResolvedExprKind::RowLoan { loan, args } => {
+                total = total
+                    .checked_add(std::mem::size_of::<hir::RowLoan>())
+                    .and_then(|bytes| bytes.checked_add(hir_type_owned_capacity(&loan.element)?))
+                    .and_then(|bytes| bytes.checked_add(loan.traversal.owned_allocation_bytes()?))
+                    .and_then(|bytes| bytes.checked_add(loan.bound.as_str().len()))
+                    .and_then(|bytes| bytes.checked_add(loan.callee.as_str().len()))
+                    .and_then(|bytes| bytes.checked_add(loan.parameter.as_str().len()))
+                    .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                add_capacity(
+                    &mut total,
+                    args.capacity(),
+                    std::mem::size_of::<ResolvedExpr>(),
+                )?;
+                pending.extend(args);
+            }
+            ResolvedExprKind::LiteralFormat { template, args } => {
+                total = total
+                    .checked_add(template.capacity())
+                    .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                add_capacity(
+                    &mut total,
+                    args.capacity(),
+                    std::mem::size_of::<ResolvedExpr>(),
+                )?;
+                pending.extend(args);
+            }
+            ResolvedExprKind::VecFieldRead {
+                element,
+                field,
+                args,
+                ..
+            } => {
+                total = total
+                    .checked_add(
+                        hir_type_owned_capacity(element)
+                            .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?,
+                    )
+                    .and_then(|bytes| bytes.checked_add(field.as_str().len()))
+                    .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
                 add_capacity(
                     &mut total,
                     args.capacity(),
@@ -340,7 +399,18 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
+                if let ResolvedExprKind::VecConstructor { element, .. } = &expression.kind {
+                    total = total
+                        .checked_add(
+                            hir_type_owned_capacity(element)
+                                .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?,
+                        )
+                        .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                }
                 add_capacity(
                     &mut total,
                     statements.capacity(),
@@ -348,6 +418,7 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
                 )?;
                 for statement in statements {
                     match statement {
+                        ResolvedStatement::CopyDiscard { value, .. } => pending.push(value),
                         ResolvedStatement::Let { binding, value, .. }
                         | ResolvedStatement::Assign { binding, value, .. } => {
                             total = total
@@ -363,6 +434,26 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
                             total = total
                                 .checked_add(audit.capacity())
                                 .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                            pending.push(body);
+                        }
+                        ResolvedStatement::LexicalWhile {
+                            condition,
+                            body,
+                            latch,
+                            ..
+                        } => {
+                            total =
+                                total
+                                    .checked_add(
+                                        crate::private_capacity_contract::latch_owned_capacity(
+                                            latch,
+                                        )
+                                        .ok_or_else(
+                                            || b109("max_builder_bytes", MAX_BUILDER_BYTES),
+                                        )?,
+                                    )
+                                    .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+                            pending.push(condition);
                             pending.push(body);
                         }
                         ResolvedStatement::While {
@@ -497,6 +588,15 @@ pub(in crate::implementation) fn hir_expr_owned_capacity(
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_) => {}
+            ResolvedExprKind::BorrowedUtf8Literal(contents) => {
+                total = total
+                    .checked_add(
+                        contents
+                            .owned_allocation_bytes()
+                            .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?,
+                    )
+                    .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
+            }
             ResolvedExprKind::String(contents) => {
                 total = total
                     .checked_add(contents.capacity())
@@ -578,7 +678,7 @@ pub(in crate::implementation) fn hir_loan_plan_owned_capacity(
             &endpoint.live_after,
         ] {
             total = total.checked_add(
-                ids.capacity()
+                ids.len()
                     .checked_mul(std::mem::size_of::<semaprax::loan_plan::LoanId>())?,
             )?;
         }
@@ -586,7 +686,7 @@ pub(in crate::implementation) fn hir_loan_plan_owned_capacity(
     for edge in &plan.edges {
         total = total.checked_add(
             edge.live
-                .capacity()
+                .len()
                 .checked_mul(std::mem::size_of::<semaprax::loan_plan::LoanId>())?,
         )?;
     }

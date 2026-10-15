@@ -1,0 +1,10 @@
+{
+  "exit_code": 0,
+  "wall_seconds": 41.009155541003565,
+  "tools_enabled": false,
+  "code_execution": false,
+  "peak_process_group_rss_bytes": 321290240,
+  "resource_refusal": null,
+  "session_id": "323140b5-e508-411e-93a7-67bd99ed42c4",
+  "result_sha256": "42d9a464623367b131a6569b589de58853c2184e0af4018876fd71006b4f624e"
+}

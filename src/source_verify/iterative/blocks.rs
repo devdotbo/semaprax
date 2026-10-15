@@ -13,7 +13,11 @@ use crate::source_verify::IterativeVerifier;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
-    pub(super) fn check_string_replacement_entry(&mut self, statement: &Statement, scope: usize) {
+    pub(in crate::source_verify) fn check_string_replacement_entry(
+        &mut self,
+        statement: &Statement,
+        scope: usize,
+    ) {
         if let Statement::Assign {
             name,
             name_span,
@@ -43,7 +47,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         block_scope: usize,
         index: usize,
         outer_names: Vec<String>,
+        recovery_checkpoint: crate::source_verify::recovery::Checkpoint,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.recovery_legacy {
+            return self.recovery_old_frame_resume_block_statement(
+                expression,
+                statements,
+                tail,
+                parent_scope,
+                block_scope,
+                index,
+                outer_names,
+            );
+        }
+
         let actual = self.values.pop().unwrap_or(None);
         match &statements[index] {
             Statement::Let {
@@ -54,7 +72,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 value,
                 ..
             } => {
-                if self.scopes[block_scope].bindings.contains_key(name) {
+                #[cfg(test)]
+                let check_refused_name = !self.operators_before_799;
+                #[cfg(not(test))]
+                let check_refused_name = true;
+                let refused_name =
+                    check_refused_name && self.recovery.reads_refused(block_scope, name);
+                if self.scopes[block_scope].bindings.contains_key(name) || refused_name {
                     self.diagnostics.push(
                         error(
                             self.program,
@@ -65,7 +89,14 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         .with_help(crate::source_verify::hints::SHADOW_HELP),
                     );
                 } else if let Some(actual) = actual {
-                    if actual.ty == Type::SliceU8 && *mutable {
+                    if let Some(diagnostic) = crate::source_verify::expression_statement::check(
+                        self.program,
+                        &statements[index],
+                        &actual,
+                    ) {
+                        self.diagnostics.push(diagnostic);
+                    }
+                    if matches!(actual.ty, Type::SliceU8 | Type::Str) && *mutable {
                         self.diagnostics.push(error(
                             self.program,
                             "SPX-T264",
@@ -79,6 +110,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     // the value's exact type or an ancestor class
                     // whose prefix consumes the value cleanly; the
                     // binding carries the declared type.
+                    let mut annotation_refused = false;
+                    let mut annotation_origin = None;
                     let mut binding_ty = actual.ty.clone();
                     let mut binding_mode = actual.mode;
                     if let Some(declared_ty) = declared {
@@ -107,7 +140,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         }
                         if exact || upcast {
                             binding_ty = declared_ty.clone();
-                            binding_mode = if *declared_ty == Type::SliceU8 {
+                            binding_mode = if matches!(declared_ty, Type::SliceU8 | Type::Str) {
                                 ParamMode::Borrow
                             } else if self.types.needs_drop(declared_ty)
                                 || declared_ty.is_uniquely_owned()
@@ -117,6 +150,20 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                 ParamMode::Value
                             };
                         } else {
+                            annotation_refused = match declared_ty {
+                                Type::Named { name, .. } => self.types.declaration(name).is_some(),
+                                Type::I64
+                                | Type::I32
+                                | Type::Char
+                                | Type::U8
+                                | Type::Usize
+                                | Type::F32
+                                | Type::F64
+                                | Type::Bool
+                                | Type::String
+                                | Type::Bytes => true,
+                                _ => false,
+                            };
                             let diagnostic = if matches!(
                                 (&actual.ty, declared_ty),
                                 (Type::ArrayU8(_), Type::ArrayU8(_))
@@ -133,22 +180,46 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                     )
                                 })
                                 .flatten();
-                            self.diagnostics.push(crate::source_verify::hints::with_optional_help(
+                            if !self.recovery.explains(value, declared_ty) {
+                                if annotation_refused {
+                                    annotation_origin = Some(self.diagnostics.len());
+                                }
+                                self.diagnostics.push(crate::source_verify::hints::with_optional_help(
                                 error(
                                     self.program,
                                     diagnostic,
                                     format!(
-                                        "declared binding type `{declared_ty}` does not accept value type `{}`",
-                                        actual.ty
+                                        "declared binding type `{}` does not accept value type `{}`",
+                                        // Generic validation specialization
+                                        // substitutes `let` annotations, so a
+                                        // declared type can carry a private copy.
+                                        crate::source_verify::private_names::type_name(
+                                            self.program,
+                                            self.types,
+                                            declared_ty
+                                        ),
+                                        crate::source_verify::private_names::type_name(
+                                            self.program,
+                                            self.types,
+                                            &actual.ty
+                                        )
                                     ),
                                     value.span,
                                 ),
                                 help,
                             ));
+                            }
                         }
                     }
+                    let contract_local = !self.allow_moves
+                        && actual.mode == ParamMode::Own
+                        && crate::source_verify::contract_owners::fresh(
+                            value,
+                            &actual.ty,
+                            &self.scopes[block_scope].bindings,
+                        );
                     if self.types.needs_drop(&actual.ty) && actual.mode == ParamMode::Own {
-                        if self.allow_moves {
+                        if self.allow_moves || contract_local {
                             mark_value_sources_moved(
                                 self.program,
                                 value,
@@ -181,9 +252,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         activate_local_loan(&mut self.scopes[block_scope].bindings, origin);
                         self.scopes[block_scope].local_borrow_count += 1;
                     }
+                    self.recovery.clear(block_scope, name);
                     self.scopes[block_scope].bindings.insert(
                         name.clone(),
                         Binding {
+                            contract_local,
+                            traversal_row: None,
                             ty: binding_ty,
                             mode: binding_mode,
                             availability: Availability::Available,
@@ -194,6 +268,35 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             active_loans: BTreeSet::new(),
                             borrow_origin,
                         },
+                    );
+                    // The refusal view is independent of the actual type,
+                    // mode, place state, move effects and activated loan above.
+                    // A successful explicit annotation provides a fresh type
+                    // obligation; an unannotated alias retains the old view.
+                    if !actual.native_unit && !*mutable {
+                        match (declared, annotation_origin) {
+                            (Some(declared), Some(origin)) => self.recovery.refused_annotation(
+                                block_scope,
+                                name,
+                                declared,
+                                origin,
+                            ),
+                            (None, _) => self.recovery.inherit_binding(block_scope, name, value),
+                            (Some(declared), None)
+                                if annotation_refused
+                                    && self.recovery.explains(value, declared) =>
+                            {
+                                self.recovery.inherit_binding(block_scope, name, value);
+                            }
+                            _ => {}
+                        }
+                    }
+                } else {
+                    self.recovery.refused_let(
+                        block_scope,
+                        name,
+                        recovery_checkpoint,
+                        self.diagnostics,
                     );
                 }
             }
@@ -334,10 +437,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             // admitted owned reopen shapes. The right-hand side
                             // evaluates before publication, so exactly one
                             // generation of the owner is ever live.
-                            let owned_reopen = (binding_ty == crate::ast::Type::String
-                                && actual.as_ref().is_some_and(|v| {
-                                    v.ty == crate::ast::Type::String && v.mode == ParamMode::Own
-                                }))
+                            let owned_reopen = (binding_ty == crate::ast::Type::Bytes
+                                && self.byte_helper_assignment(name, value))
+                                || (binding_ty == crate::ast::Type::String
+                                    && actual.as_ref().is_some_and(|v| {
+                                        v.ty == crate::ast::Type::String && v.mode == ParamMode::Own
+                                    }))
                                 || crate::vec_ops::is_same_owner_reassignment_source(
                                     self.program,
                                     value,
@@ -452,7 +557,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         *span,
                     ));
                 } else {
-                    if !self.program.permits.iter().any(|permit| permit == "unsafe") {
+                    if !self
+                        .program
+                        .permits()
+                        .iter()
+                        .any(|permit| permit == "unsafe")
+                    {
                         self.diagnostics.push(error(
                             self.program,
                             "SPX-N101",
@@ -474,7 +584,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }
             // While statements never route through this frame:
             // they complete through ResumeWhileBody instead.
-            Statement::While { .. } | Statement::For { .. } | Statement::ForOwn { .. } => {}
+            Statement::While { .. }
+            | Statement::For { .. }
+            | Statement::ForBorrow { .. }
+            | Statement::ForOwn { .. } => {}
         }
         // Most blocks have no borrowed local at all. Avoid rescanning every
         // accumulated scalar binding after each statement in that common
@@ -513,7 +626,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         if let Some(value) = condition_value {
             if value.native_unit {
                 reject_native_unit_value(self.program, condition, &value, self.diagnostics);
-            } else if value.ty != Type::Bool {
+            } else if value.ty != Type::Bool && !self.recovery.explains(condition, &Type::Bool) {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T251",
@@ -570,7 +683,20 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         // loop, every outer binding must be exactly as available
         // as it was on entry; any drift means a move happened
         // inside the loop and is rejected fail-closed.
-        let _ = self.values.pop();
+        let exits = self
+            .values
+            .pop()
+            .flatten()
+            .is_some_and(|value| value.ty == Type::Never);
+        if exits && crate::ast::returns_only(statements[index].child(1).expect("while body")) {
+            for name in &baseline_names {
+                if let Some(before) = baseline_bindings.get(name) {
+                    self.scopes[block_scope]
+                        .bindings
+                        .insert(name.clone(), before.clone());
+                }
+            }
+        }
         self.loop_depth = self.loop_depth.saturating_sub(1);
         for name in &baseline_names {
             let drifted = match (
@@ -631,17 +757,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
     ) -> Result<(), Diagnostic> {
         let actual = self.values.pop().unwrap_or(None);
         let consuming = matches!(statements[index], Statement::ForOwn { .. });
+        let borrowing = matches!(statements[index], Statement::ForBorrow { .. });
         let source = match &values.kind {
             crate::ast::ExprKind::Var(name) if !consuming => Some(name.as_str()),
             _ => None,
         };
         let element = actual.as_ref().and_then(|actual| match &actual.ty {
+            ty @ Type::SliceU8 if !consuming && !borrowing => {
+                crate::source_verify::byte_traversal::element(ty)
+            }
             Type::Named { name, arguments }
                 if name == (if consuming { "Iter" } else { "Vec" })
-                    && matches!(arguments.as_slice(), [ty] if crate::vec_ops::ast_element_is_admitted(ty)
+                    && matches!(arguments.as_slice(), [ty] if crate::vec_ops::ast_element_is_admitted(ty) && !borrowing
+                        || (borrowing && crate::source_verify::record_traversal::admitted(self.types, ty))
                         || (consuming && (*ty == Type::Bytes
-                            || crate::source_verify::declared_type::owned_record_collection::
-                                is_admitted_owned_record_collection_element(self.types, ty)
+                            || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(self.types, ty)
                             || crate::source_verify::declared_type::generic_collection::slot(self.current, &actual.ty))))
                     && (!consuming || actual.mode == ParamMode::Own) => Some(arguments[0].clone()),
             _ => None,
@@ -669,6 +799,14 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 );
             }
         }
+        let byte_entry_scope = self.byte_body_entry_scope(
+            block_scope,
+            actual
+                .as_ref()
+                .is_some_and(|value| value.ty == Type::SliceU8)
+                && !consuming
+                && !borrowing,
+        );
         if let Some(source) = source {
             if self.scopes[block_scope]
                 .bindings
@@ -685,16 +823,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     .with_help(crate::source_verify::hints::IMMUTABLE_TRAVERSAL_HELP),
                 );
             }
-            let _ = self.reject_for_body_disallowed(body, source);
+            let _ = self.reject_for_body_in_scope(body, source, byte_entry_scope);
         }
         let baseline = consuming.then(|| self.scopes[block_scope].bindings.clone());
         let owned_record_item = element.as_ref().is_some_and(|element| {
-            crate::source_verify::declared_type::owned_record_collection::
-                is_admitted_owned_record_collection_element(self.types, element)
+            crate::source_verify::declared_type::owned_leaf_collection::runtime_element(
+                self.types, element,
+            )
         });
-        let _ = self.reject_iterator_body(
+        let _ = self.reject_iterator_body_in_scope(
             body,
             (consuming && (element == Some(Type::Bytes) || owned_record_item)).then_some(item),
+            byte_entry_scope,
         );
         let item_inserted = !self.scopes[block_scope].bindings.contains_key(item);
         if !item_inserted {
@@ -709,11 +849,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             if let Some(element) = element {
                 self.scopes[block_scope].bindings.insert(
                     item.to_owned(),
-                    Binding {
+                    Binding { contract_local: false, traversal_row: None,
                         mode: if consuming
                             && (element == Type::Bytes
-                                || crate::source_verify::declared_type::owned_record_collection::
-                                    is_admitted_owned_record_collection_element(
+                                || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(
                                         self.types,
                                         &element,
                                     ))
@@ -733,6 +872,123 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     },
                 );
             }
+        }
+        if borrowing && item_inserted {
+            if let Some(source) = source {
+                let selected_index = match &statements[index] {
+                    Statement::ForBorrow {
+                        index: Some(selected),
+                        ..
+                    } => Some(selected.name.as_str()),
+                    _ => None,
+                };
+                match crate::source_verify::record_traversal::body_binding_conflict(
+                    body,
+                    source,
+                    item,
+                    selected_index,
+                ) {
+                    Ok(Some(span)) => {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T284",
+                            "record traversal cannot shadow its carrier, row or index binding",
+                            span,
+                        ));
+                    }
+                    Ok(None) => {}
+                    Err(()) => self.diagnostics.push(error(
+                        self.program,
+                        "SPX-T284",
+                        "record traversal binding scan exceeds its source scratch, depth or work budget",
+                        body.span,
+                    )),
+                }
+
+                if let Some(binding) = self.scopes[block_scope].bindings.get_mut(item) {
+                    binding.mode = ParamMode::Borrow;
+                    binding.traversal_row =
+                        Some(Box::new(crate::source_verify::record_traversal::Row {
+                            root: source.to_owned(),
+                            element: binding.ty.clone(),
+                            index_inserted: false,
+                            freeze: crate::source_verify::binding::SourceLoanId {
+                                borrower: item.to_owned(),
+                                start: values.span.start,
+                                end: body.span.end,
+                            },
+                        }));
+                }
+            }
+            if let Some(row) = self.scopes[block_scope]
+                .bindings
+                .get(item)
+                .and_then(|binding| binding.traversal_row.as_deref())
+                .cloned()
+            {
+                if let Some(owner) = self.scopes[block_scope].bindings.get_mut(&row.root) {
+                    owner
+                        .active_loans
+                        .insert(crate::source_verify::binding::SourceLoan {
+                            id: row.freeze,
+                            projections: Vec::new(),
+                        });
+                }
+            }
+            if let Statement::ForBorrow {
+                index: Some(selected),
+                ..
+            } = &statements[index]
+            {
+                if selected.name == item
+                    || self.scopes[block_scope]
+                        .bindings
+                        .contains_key(&selected.name)
+                {
+                    self.diagnostics.push(error(
+                        self.program,
+                        "SPX-T209",
+                        "record traversal index must be a fresh distinct binding",
+                        selected.span,
+                    ));
+                } else {
+                    self.scopes[block_scope].bindings.insert(
+                        selected.name.clone(),
+                        Binding {
+                            contract_local: false,
+                            ty: Type::Usize,
+                            mode: ParamMode::Value,
+                            availability: Availability::Available,
+                            moved_places: HashMap::new(),
+                            definitely_partial: HashSet::new(),
+                            native_unit_discard: false,
+                            mutable: false,
+                            active_loans: BTreeSet::new(),
+                            borrow_origin: None,
+                            traversal_row: None,
+                        },
+                    );
+                    if let Some(row) = self.scopes[block_scope]
+                        .bindings
+                        .get_mut(item)
+                        .and_then(|binding| binding.traversal_row.as_deref_mut())
+                    {
+                        row.index_inserted = true;
+                    }
+                }
+            }
+        }
+        let byte_source = actual
+            .as_ref()
+            .is_some_and(|actual| actual.ty == Type::SliceU8)
+            && !consuming
+            && !borrowing;
+        if let (true, Some(source)) = (byte_source && item_inserted, source) {
+            crate::source_verify::byte_traversal::freeze(
+                &mut self.scopes[block_scope].bindings,
+                source,
+                &crate::source_verify::byte_traversal::freeze_id(item, values.span, body.span),
+            );
         }
         self.frames
             .push(crate::source_verify::scope::VerifierFrame::ResumeForBody {
@@ -785,10 +1041,53 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         {
             self.owned_iterator_items.pop();
         }
+        if let Some(row) = self.scopes[block_scope]
+            .bindings
+            .get(item)
+            .and_then(|binding| binding.traversal_row.as_deref())
+            .cloned()
+        {
+            if let Some(owner) = self.scopes[block_scope].bindings.get_mut(&row.root) {
+                owner.active_loans.retain(|loan| loan.id != row.freeze);
+            }
+        }
+        if let Statement::For { values, body, .. } = &statements[index] {
+            crate::source_verify::byte_traversal::release(
+                &mut self.scopes[block_scope].bindings,
+                &crate::source_verify::byte_traversal::freeze_id(item, values.span, body.span),
+            );
+        }
+        let index_inserted = self.scopes[block_scope]
+            .bindings
+            .get(item)
+            .and_then(|binding| binding.traversal_row.as_deref())
+            .is_some_and(|row| row.index_inserted);
         if item_inserted {
             self.scopes[block_scope].bindings.remove(item);
         }
+        if let Statement::ForBorrow {
+            index: Some(selected),
+            ..
+        } = &statements[index]
+        {
+            // Remove only a successfully inserted index. A hostile collision
+            // leaves the authoritative outer binding in place.
+            if index_inserted {
+                self.scopes[block_scope].bindings.remove(&selected.name);
+            }
+        }
         if let Some(baseline) = baseline {
+            if statements[index]
+                .child(1)
+                .is_some_and(crate::ast::returns_only)
+            {
+                for (name, binding) in &baseline {
+                    self.scopes[block_scope]
+                        .bindings
+                        .insert(name.clone(), binding.clone());
+                }
+            }
+
             let mut names = baseline.keys().collect::<Vec<_>>();
             names.sort();
             for name in names {

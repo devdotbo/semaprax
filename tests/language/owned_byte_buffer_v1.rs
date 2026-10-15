@@ -1432,3 +1432,6 @@ mod cleanup_renewal;
 mod computed_indices;
 #[path = "owned_byte_buffer_v1/tagged_source.rs"]
 mod tagged_source;
+
+#[path = "owned_byte_buffer_v1/bounded_allocation.rs"]
+mod bounded_allocation;

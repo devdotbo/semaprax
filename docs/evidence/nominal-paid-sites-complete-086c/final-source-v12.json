@@ -1,0 +1,12 @@
+{
+  "source_only": true,
+  "runtime_qualification": "pending",
+  "inventory": "docs/evidence/nominal-payload-827/source-inventory-activation-v12.json",
+  "complete_original_inverse_rows": 72,
+  "existing_source_only_inverse_proofs": 36,
+  "provider_full_originals": 17,
+  "selector": "hir::identity_resolution::nominal_invalid_layout_tests::nominal_invalid_recursive_layout_keeps_old_report_and_funds_every_refusal_and_drop",
+  "new_child_lines": 169,
+  "canonical_diagnostics": "All canonical-reachable identity_payer Diagnostic builders use the same raw paid diagnostic producer; legacy path and complete originals retained.",
+  "execution": "No Cargo, Rust tests or build executed."
+}

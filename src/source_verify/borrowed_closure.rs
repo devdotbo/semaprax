@@ -1,12 +1,13 @@
 //! Exact synchronous parameter-rooted borrowed-text capture profile.
 use super::binding::{Availability, Binding, CheckedValue};
 use super::diagnostics::error;
-use crate::ast::{Expr, ExprKind, Function, ParamMode, Program, Statement, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, Function, ParamMode, Statement, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::{BTreeMap, HashMap};
 
 pub(crate) fn profile(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     outer: &BTreeMap<&str, &Type>,
@@ -86,7 +87,7 @@ pub(crate) fn profile(
         ));
     }
     let target = program
-        .functions
+        .functions()
         .iter()
         .find(|f| f.name == *name)
         .ok_or_else(|| reject("borrowed closure transition must be an ordinary local function"))?;
@@ -151,7 +152,7 @@ pub(crate) fn profile(
 }
 
 pub(super) fn construction(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     variables: &HashMap<String, Binding>,

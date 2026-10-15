@@ -185,7 +185,10 @@ fn expr_reifies(
                 && expr_reifies(program, then_branch, visiting)
                 && expr_reifies(program, else_branch, visiting)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements
                 .iter()
                 .all(|statement| statement_reifies(program, statement, visiting))

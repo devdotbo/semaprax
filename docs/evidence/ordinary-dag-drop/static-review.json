@@ -1,0 +1,127 @@
+{
+  "schema": "semaprax.static-source-review.v1",
+  "executed_test_bodies": 0,
+  "cargo_invocations": 0,
+  "exact_authored_selectors": 16,
+  "registrations": [
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::actual_empty_union_prepays_literal_frontier_node_backing_and_complete_work_drop",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "definition_line": 75,
+      "source_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::actual_weak_headers_and_nonempty_sequence_tails_keep_independent_original_drop_order",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "definition_line": 247,
+      "source_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::duplicate_deep_dag_frontier_is_linear_and_all_publication_failures_drop_paid_children",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "definition_line": 305,
+      "source_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::complete_cat_alt_owned_tails_duplicate_and_external_owner_keep_saved_values",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "definition_line": 369,
+      "source_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::foreign_work_and_ledger_children_need_only_immutable_structural_bounds",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "definition_line": 440,
+      "source_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::successful_paid_parent_drains_legacy_children_but_zero_refusal_preserves_legacy_boundary",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "definition_line": 474,
+      "source_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::checked_bound_overflow_refuses_before_node_publication_and_preserves_sticky_payer",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "definition_line": 518,
+      "source_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::independent_original_type_drop_builders_and_complete_receiver_are_byte_locked",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "definition_line": 549,
+      "source_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::foreign_selected_conservative_bound_is_paid_in_full_without_new_session_policy",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "definition_line": 672,
+      "source_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::cat_alt_actual_member_backing_and_rc_release_order_pin_the_physical_frontier_difference",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "definition_line": 739,
+      "source_sha256": "61dd73730715d6ebbfa39d4e40ed895d8b4814a05272ab5bbc36524c30c29ad8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::tests::ordinary_empty_union_preserves_saved_multiset_and_literal_node_storage_through_drop",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs",
+      "definition_line": 15,
+      "source_sha256": "d17dae8c6c00c034c06092531c4a45c97347c88fdd351fb7d7e11c6be09bb2ab"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::deep_shared_dag_creation_and_drop_fit_the_precharged_frontier",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs",
+      "definition_line": 95,
+      "source_sha256": "6f3aeb448ee3b4bb202d027c93eebbcec8a5c0854496792d53a66206525871f8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::owned_extension_literal_clone_removal_survives_receiving_exact_short_and_drop",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs",
+      "definition_line": 743,
+      "source_sha256": "7ee5d27f2ae13fa859875cfdc9715b88ad6137996a1362840254a667b3d34f68"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::selected_4096_nonempty_event_tails_keep_literal_old_current_removed_through_receiver_drop",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs",
+      "definition_line": 855,
+      "source_sha256": "7ee5d27f2ae13fa859875cfdc9715b88ad6137996a1362840254a667b3d34f68"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::shared_prefix_creation_through_drop_has_exact_work_and_backing_limits",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs",
+      "definition_line": 307,
+      "source_sha256": "6f3aeb448ee3b4bb202d027c93eebbcec8a5c0854496792d53a66206525871f8"
+    },
+    {
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::owned_union_literal_clone_request_delta_and_exact_one_short_drop_receivers",
+      "definition_source": "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs",
+      "definition_line": 255,
+      "source_sha256": "7ee5d27f2ae13fa859875cfdc9715b88ad6137996a1362840254a667b3d34f68"
+    }
+  ],
+  "actual_module_declarations": {
+    "cleanup_plan::replay": "src/cleanup_plan/replay.rs",
+    "skeleton_work": "src/cleanup_plan/replay/skeleton_work.rs",
+    "ordinary_dag": "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs",
+    "dag_storage": "src/cleanup_plan/replay/skeleton_work/dag_storage.rs",
+    "dag_storage::tests": "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs",
+    "ordinary_dag::saved": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved_receiver.rs"
+  },
+  "checks": [
+    "complete original NODE/KIND/Drop and constructors substring equality",
+    "full old ordinary receiver exact equality after saved import and precisely two lexical bridge call spellings",
+    "production Drop byte equality to original",
+    "two/four exact strengthened receiving Work scratch release insertions only",
+    "literal include_str paths including macro invocation owner resolved",
+    "all changed Rust files below1500 lines",
+    "git diff whitespace check",
+    "whole compiled original receiver prefix equals full frozen archive and exact two bridge suffix; boundary gate joins compiled receiver"
+  ],
+  "physical_boundaries": [
+    "original root member Vec realloc/free differs; semantic tail and Rc/Weak controls retained",
+    "legacy incoming-kind refusal destructor remains allocating"
+  ],
+  "runtime_status": "pending-root-grouped-qualification"
+}

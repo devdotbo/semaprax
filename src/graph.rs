@@ -2,6 +2,8 @@
 //!
 //! Human source supplies the revision. Resolved HIR supplies every semantic
 //! identity and fact in graph v10-v14; spans and display names are metadata only.
+mod agent_block;
+mod call_inventory;
 use crate::ast::{BinaryOp, Program, UnaryOp};
 use crate::bounded_output::BudgetedJoin as _;
 use crate::call_index::PersistentCallIndex;
@@ -13,6 +15,7 @@ use crate::hir::{
     ResolvedResourceDropKind, ResolvedStatement, ResolvedType, ResolvedTypeDeclarationKind,
     TypeFacts, ValueId,
 };
+use call_inventory::{agent_call_instances_json, function_calls, template_calls};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::fmt::Write;
 macro_rules! format {
@@ -20,7 +23,6 @@ macro_rules! format {
         crate::bounded_output::budgeted_format(format_args!($($argument)*))
     };
 }
-
 mod affine;
 mod agent_execution;
 mod agent_instances;
@@ -28,6 +30,9 @@ mod agent_query;
 mod byte_buffer_renewal;
 mod environment;
 mod expression;
+mod lexical_exit;
+mod operator_text;
+use operator_text::{binary_text, explicit_match_mode_json, unary_text};
 mod filesystem;
 mod filesystem_outcome;
 mod function_facts;
@@ -46,14 +51,37 @@ pub(crate) use agent_execution::facts as agent_execution_facts;
 use expression::expr_json;
 mod generic_instances;
 mod generic_mapping;
+mod owned_collection_records;
+mod owned_nested_outcome;
 mod owned_string_byte_view;
+mod projected_string_view;
+mod scoped_vec_field;
 use filesystem::string_array;
 use generic_instances::legacy_graph_json;
 pub(crate) use generic_instances::to_legacy_hir_json;
 pub use generic_instances::{legacy_context_json, to_legacy_json, verify_json};
 pub(crate) use generic_mapping::requires_v35;
-use owned_string_byte_view::graph_json;
-
+mod base_lattice;
+pub(crate) use base_lattice::scalar_base_lattice;
+mod byte_helper_renewal;
+mod byte_traversal;
+mod consuming_vec_renewal;
+mod facts_object;
+mod string_slots;
+mod vec_constructor;
+use facts_object::facts_object;
+mod copy_discard; mod vec_field_origin;
+mod finite_byte_scratch;
+pub(crate) mod row_loan;
+mod static_text;
+mod view_render;
+use vec_field_origin::graph_json;
+pub(crate) use vec_field_origin::{graph_schema, legacy_graph_schema};
+#[cfg(test)]
+pub(crate) use vec_field_origin::SCHEMA as VEC_FIELD_GRAPH_SCHEMA;
+#[cfg(test)]
+pub(crate) use static_text::SCHEMA as STATIC_TEXT_GRAPH_SCHEMA;
+use view_render::view_json;
 #[path = "graph/native_import.rs"]
 mod native_import;
 #[path = "graph/nested_owned.rs"]
@@ -62,18 +90,17 @@ mod nested_owned;
 mod prelude_binding;
 #[path = "graph/revision_digest.rs"]
 mod revision_digest;
-use nested_owned::{
-    graph_schema_includes_loans, graph_schema_includes_modern_composite_facts,
-    graph_schema_includes_projected_provenance, rejected_evidence_schema,
-};
-pub(crate) use prelude_binding::revision_from_canonical_program;
-
 pub(crate) use native_import::view_relation as native_view_relation;
 pub(crate) use native_import::{reject_native_rust_imports, reject_source_native_rust_imports};
-pub(crate) use owned_string_byte_view::{
-    graph_schema, graph_schema_from_parts_and_instances, legacy_graph_schema,
+use nested_owned::{
+    graph_schema_includes_loans, graph_schema_includes_modern_composite_facts,
+    graph_schema_includes_projected_provenance,
 };
-
+pub(crate) use prelude_binding::revision_from_canonical_program;
+pub(crate) use scoped_vec_field::{
+    graph_schema_from_parts_and_instances,
+    graph_schema_from_parts_and_instances_with_renewal_authority,
+};
 /// Hash the canonical human-readable source projection and implicit prelude.
 ///
 /// This revision intentionally does not depend on HIR spans, display metadata,
@@ -492,6 +519,7 @@ struct AgentRenderSelection<'a> {
 struct SourceGraphIdentity<'a> {
     schema: &'a str,
     revision: &'a str,
+    static_text: bool,
 }
 
 fn agent_context_hir_json(
@@ -505,6 +533,7 @@ fn agent_context_hir_json(
     let source_identity = SourceGraphIdentity {
         schema: source_graph_schema,
         revision: source_revision,
+        static_text: false,
     };
     let Some(root) = find_context_root(program, symbol) else {
         return Ok(None);
@@ -616,11 +645,12 @@ fn agent_context_v2_hir_json(
     symbol: &str,
     options: &AgentContextV2Options,
 ) -> Result<Option<String>, Diagnostic> {
-    hir::validate(program)?;
-    let source_graph_schema = graph_schema(program)?;
+    let static_text = hir::validate_with_static_text(program)?;
+    let source_graph_schema = static_text::graph_schema_validated(program, static_text)?;
     let source_identity = SourceGraphIdentity {
         schema: source_graph_schema,
         revision: source_revision,
+        static_text,
     };
     let Some(root) = find_context_root(program, symbol) else {
         return Ok(None);
@@ -898,61 +928,8 @@ fn find_context_root(program: &ResolvedProgram, symbol: &str) -> Option<Declarat
         .or_else(|| program.declarations.function_id(symbol).cloned())
 }
 
-fn function_calls(function: &ResolvedFunction) -> BTreeSet<DeclarationId> {
-    work_counter::record(work_counter::Work::CallSetComputation, 1);
-    let mut calls = BTreeSet::new();
-    visit_function_calls(function, &mut |callee| {
-        calls.insert(callee.clone());
-    });
-    calls
-}
-
-fn template_calls(template: &crate::hir::ResolvedFunctionTemplate) -> BTreeSet<DeclarationId> {
-    work_counter::record(work_counter::Work::CallSetComputation, 1);
-    let mut calls = BTreeSet::new();
-    for expression in template
-        .requires
-        .iter()
-        .chain(std::iter::once(&template.body))
-        .chain(&template.ensures)
-    {
-        visit_expr_calls(expression, &mut |callee| {
-            calls.insert(callee.clone());
-        });
-    }
-    calls
-}
-
 #[cfg(test)]
 use function_facts::agent_function_json;
-
-fn agent_call_instances_json(function: &ResolvedFunction) -> String {
-    let mut calls = Vec::new();
-    for expression in function
-        .requires
-        .iter()
-        .chain(std::iter::once(&function.body))
-        .chain(&function.ensures)
-    {
-        visit_expr_call_instances(
-            expression,
-            &mut |expression, callee, type_arguments, instance| {
-                calls.push(format!(
-                    "{{\"expression\":{},\"template\":{},\"instance\":{},\"type_arguments\":[{}]}}",
-                    quote_json(expression.id.as_str()),
-                    quote_json(callee.as_str()),
-                    quote_json(instance.as_str()),
-                    type_arguments
-                        .iter()
-                        .map(type_json)
-                        .collect::<Vec<_>>()
-                        .budgeted_join(",")
-                ));
-            },
-        );
-    }
-    calls.budgeted_join(",")
-}
 
 fn agent_template_json(
     program: &ResolvedProgram,
@@ -1055,7 +1032,10 @@ fn collect_result_propagations<'a>(
             propagations.push(expression);
             collect_result_propagations(operand, propagations);
         }
-        ResolvedExprKind::Call { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 collect_result_propagations(argument, propagations);
             }
@@ -1077,6 +1057,11 @@ fn collect_result_propagations<'a>(
             collect_result_propagations(start, propagations);
             collect_result_propagations(end, propagations);
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_result_propagations(value, propagations);
+            }
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Upcast { source: value }
@@ -1087,7 +1072,10 @@ fn collect_result_propagations<'a>(
             collect_result_propagations(left, propagations);
             collect_result_propagations(right, propagations);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {
@@ -1138,6 +1126,7 @@ fn collect_result_propagations<'a>(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -1202,93 +1191,8 @@ pub fn reject_evidence_schema(schema: &str) -> Result<(), Diagnostic> {
     reject_while_loop_evidence_schema(schema)
 }
 
-pub(crate) fn reject_while_loop_evidence_schema(schema: &str) -> Result<(), Diagnostic> {
-    if matches!(
-        schema,
-        "semaprax.graph.v34"
-            | "semaprax.graph.v35"
-            | "semaprax.graph.v36"
-            | "semaprax.graph.v37"
-            | "semaprax.graph.v38"
-            | "semaprax.graph.v39"
-            | "semaprax.graph.v40"
-            | "semaprax.graph.v41"
-            | "semaprax.graph.v42"
-            | "semaprax.graph.v43"
-            | "semaprax.graph.v44"
-            | "semaprax.graph.v45"
-            | "semaprax.graph.v46"
-            | "semaprax.graph.v65"
-            | "semaprax.graph.v66"
-            | "semaprax.graph.v67"
-            | "semaprax.graph.v68"
-            | "semaprax.graph.v69"
-            | "semaprax.graph.v70"
-            | "semaprax.graph.v71"
-    ) {
-        return Err(Diagnostic::io(
-            "SPX-G410",
-            "Graph v34 is outside frozen evidence admission",
-        ));
-    }
-    if let Some(error) = rejected_evidence_schema(schema) {
-        Err(error)
-    } else if schema == "semaprax.graph.v24" {
-        Err(Diagnostic::io(
-            "SPX-G410",
-            "projected shared-loan programs select `semaprax.graph.v24`, which is outside this evidence flow's admission",
-        ))
-    } else if schema == "semaprax.graph.v23" {
-        Err(Diagnostic::io(
-            "SPX-G410",
-            "shared-loan programs select `semaprax.graph.v23`, which is outside this evidence flow's admission",
-        ))
-    } else if schema == "semaprax.graph.v22" {
-        Err(Diagnostic::io(
-            "SPX-G410",
-            "owned variant programs select `semaprax.graph.v22`, which is outside this evidence flow's admission",
-        ))
-    } else if schema == "semaprax.graph.v21" {
-        Err(Diagnostic::io(
-            "SPX-G410",
-            "ownership-aware match programs select `semaprax.graph.v21`, which is outside this evidence flow's admission",
-        ))
-    } else if schema == "semaprax.graph.v20" {
-        Err(Diagnostic::io(
-            "SPX-G410",
-            "dynamic byte-range programs select `semaprax.graph.v20`, which is outside this evidence flow's admission",
-        ))
-    } else if schema == "semaprax.graph.v19" {
-        Err(Diagnostic::io(
-            "SPX-G410",
-            "bounded language-command I/O programs select `semaprax.graph.v19`, which is outside this evidence flow's admission",
-        ))
-    } else if schema == "semaprax.graph.v18" {
-        Err(Diagnostic::io(
-            "SPX-G410",
-            "bounded-stdout-transcript programs select `semaprax.graph.v18`, which is outside this evidence flow's admission",
-        ))
-    } else if schema == "semaprax.graph.v17" {
-        Err(Diagnostic::io(
-            "SPX-G410",
-            "portable-indexed-byte-data programs select `semaprax.graph.v17`, which is outside this evidence flow's admission",
-        ))
-    } else if let Some(error) = native_import::evidence_refusal(schema) {
-        Err(error)
-    } else if schema == "semaprax.graph.v15" {
-        Err(Diagnostic::io(
-            "SPX-G410",
-            "while-loop programs select `semaprax.graph.v15`, which is outside this evidence flow's admission",
-        ))
-    } else if schema == "semaprax.graph.v16" {
-        Err(Diagnostic::io(
-            "SPX-G410",
-            "refutable-match programs select `semaprax.graph.v16`, which is outside this evidence flow's admission",
-        ))
-    } else {
-        Ok(())
-    }
-}
+mod evidence_schema;
+pub(crate) use evidence_schema::reject_while_loop_evidence_schema;
 
 fn expression_has_byte_range(expression: &ResolvedExpr) -> bool {
     let mut pending = vec![expression];
@@ -1304,9 +1208,13 @@ fn expression_has_byte_range(expression: &ResolvedExpr) -> bool {
                 pending.extend(args);
             }
             ResolvedExprKind::ByteRange { .. } => return true,
-            ResolvedExprKind::Call { args, .. } => pending.extend(args),
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args),
             ResolvedExprKind::NativeRustImportCall(call) => pending.extend(&call.args),
             ResolvedExprKind::HostCommandCall(call) => pending.extend(&call.args),
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Try { operand: value, .. }
             | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1317,7 +1225,10 @@ fn expression_has_byte_range(expression: &ResolvedExpr) -> bool {
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(tail);
                 for statement in statements {
                     for index in 0..statement.child_count() {
@@ -1366,6 +1277,7 @@ fn expression_has_byte_range(expression: &ResolvedExpr) -> bool {
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
         }
@@ -1403,7 +1315,12 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
                         || expression_has_explicit_match_mode(&arm.value)
                 })
         }
-        ResolvedExprKind::Call { args, .. } => args.iter().any(expression_has_explicit_match_mode),
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
+            args.iter().any(expression_has_explicit_match_mode)
+        }
         ResolvedExprKind::NativeRustImportCall(call) => {
             call.args.iter().any(expression_has_explicit_match_mode)
         }
@@ -1417,6 +1334,9 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
                 || expression_has_explicit_match_mode(start)
                 || expression_has_explicit_match_mode(end)
         }
+        ResolvedExprKind::LexicalExit { value, .. } => value
+            .as_deref()
+            .is_some_and(expression_has_explicit_match_mode),
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
@@ -1426,7 +1346,10 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Binary { left, right, .. } => {
             expression_has_explicit_match_mode(left) || expression_has_explicit_match_mode(right)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     statement
@@ -1465,6 +1388,7 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => false,
     }
@@ -1472,9 +1396,9 @@ fn expression_has_explicit_match_mode(expression: &ResolvedExpr) -> bool {
 
 pub(crate) fn graph_schema_from_parts_without_loans(
     interfaces: &[hir::ResolvedInterface],
-    types: &[hir::ResolvedTypeDeclaration],
-    functions: &[ResolvedFunction],
-    function_templates: &[hir::ResolvedFunctionTemplate],
+    types: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    function_templates: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
 ) -> Result<&'static str, Diagnostic> {
     let has_v10_iterator_cleanup = functions.iter().any(nested_owned::has_iterator_cleanup);
     let has_nested_cleanup = functions.iter().any(nested_owned::has_nested_cleanup);
@@ -1578,87 +1502,73 @@ pub(crate) fn graph_schema_from_parts_without_loans(
     }) {
         return Ok("semaprax.graph.v18");
     }
-    // Portable Indexed Byte Data v1 selects v17 above the existing v16/v15
-    // schemas whenever the authenticated program carries target-independent
-    // usize meaning or a borrowed byte view.
-    // Programs without the new scalar retain byte-identical v10-v16 output.
-    if types.iter().any(type_declaration_has_usize)
-        || functions.iter().any(function_has_usize)
-        || function_templates.iter().any(|template| {
-            template
-                .params
+    // The ordered v17..v10 tail is the shared base-lattice mapping; these are
+    // this classifier's own predicates, evaluated lazily in the same order.
+    Ok(base_lattice::scalar_base_lattice(
+        || {
+            types.iter().any(type_declaration_has_usize)
+                || functions.iter().any(function_has_usize)
+                || function_templates.iter().any(|template| {
+                    template
+                        .params
+                        .iter()
+                        .any(|param| type_has_usize(&param.ty))
+                        || type_has_usize(&template.return_type)
+                        || template
+                            .requires
+                            .iter()
+                            .chain(std::iter::once(&template.body))
+                            .chain(&template.ensures)
+                            .any(expression_has_usize)
+                })
+        },
+        || {
+            functions
                 .iter()
-                .any(|param| type_has_usize(&param.ty))
-                || type_has_usize(&template.return_type)
-                || template
+                .any(|function| expression_has_refutable_match(&function.body))
+        },
+        || {
+            functions
+                .iter()
+                .any(|function| expression_has_while(&function.body))
+        },
+        !function_templates.is_empty(),
+        || {
+            functions.iter().any(|function| {
+                function
                     .requires
                     .iter()
-                    .chain(std::iter::once(&template.body))
-                    .chain(&template.ensures)
-                    .any(expression_has_usize)
-        })
-    {
-        return Ok("semaprax.graph.v17");
-    }
-    // Refutable Match v1 selects v16 above the whole lower lattice (including
-    // the v15 while extension) only when an authenticated refutable node
-    // exists; programs without refutable-match syntax keep their exact
-    // pre-existing schema and bytes.
-    if functions
-        .iter()
-        .any(|function| expression_has_refutable_match(&function.body))
-    {
-        return Ok("semaprax.graph.v16");
-    }
-    // Bounded While-Loops v1 selects v15 above the whole lower lattice only
-    // when an authenticated while node exists; programs without while syntax
-    // keep their exact pre-existing schema and bytes.
-    if functions
-        .iter()
-        .any(|function| expression_has_while(&function.body))
-    {
-        return Ok("semaprax.graph.v15");
-    }
-    if !function_templates.is_empty() {
-        return Ok("semaprax.graph.v14");
-    }
-    if functions.iter().any(|function| {
-        function
-            .requires
-            .iter()
-            .chain(std::iter::once(&function.body))
-            .chain(&function.ensures)
-            .any(expression_has_record_pattern)
-    }) {
-        return Ok("semaprax.graph.v13");
-    }
-    if types.iter().any(|declaration| {
-        matches!(
-            declaration.kind,
-            ResolvedTypeDeclarationKind::Record { .. } | ResolvedTypeDeclarationKind::Class { .. }
-        ) && !declaration.type_parameters.is_empty()
-    }) {
-        return Ok("semaprax.graph.v12");
-    }
-    let has_option_try = functions.iter().any(|function| {
-        function
-            .requires
-            .iter()
-            .chain(std::iter::once(&function.body))
-            .chain(&function.ensures)
-            .any(|expression| {
-                let mut propagations = Vec::new();
-                collect_result_propagations(expression, &mut propagations);
-                propagations
-                    .iter()
-                    .any(|candidate| matches!(candidate.kind, ResolvedExprKind::TryOption { .. }))
+                    .chain(std::iter::once(&function.body))
+                    .chain(&function.ensures)
+                    .any(expression_has_record_pattern)
             })
-    });
-    if has_option_try {
-        Ok("semaprax.graph.v11")
-    } else {
-        Ok("semaprax.graph.v10")
-    }
+        },
+        || {
+            types.iter().any(|declaration| {
+                matches!(
+                    declaration.kind,
+                    ResolvedTypeDeclarationKind::Record { .. }
+                        | ResolvedTypeDeclarationKind::Class { .. }
+                ) && !declaration.type_parameters.is_empty()
+            })
+        },
+        || {
+            functions.iter().any(|function| {
+                function
+                    .requires
+                    .iter()
+                    .chain(std::iter::once(&function.body))
+                    .chain(&function.ensures)
+                    .any(|expression| {
+                        let mut propagations = Vec::new();
+                        collect_result_propagations(expression, &mut propagations);
+                        propagations.iter().any(|candidate| {
+                            matches!(candidate.kind, ResolvedExprKind::TryOption { .. })
+                        })
+                    })
+            })
+        },
+    ))
 }
 
 use function_values::type_has_usize;
@@ -1707,19 +1617,28 @@ fn expression_has_usize(expression: &ResolvedExpr) -> bool {
             expression_has_usize(callable) || args.iter().any(expression_has_usize)
         }
         ResolvedExprKind::Usize(_) => true,
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count())
                     .any(|index| statement.child(index).is_some_and(expression_has_usize))
             }) || expression_has_usize(tail)
         }
-        ResolvedExprKind::Call { args, .. } => args.iter().any(expression_has_usize),
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_usize),
         ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().any(expression_has_usize),
         ResolvedExprKind::HostCommandCall(call) => call.args.iter().any(expression_has_usize),
         ResolvedExprKind::ByteRange {
             source, start, end, ..
         } => {
             expression_has_usize(source) || expression_has_usize(start) || expression_has_usize(end)
+        }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_usize)
         }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
@@ -1766,6 +1685,7 @@ fn expression_has_usize(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -1792,16 +1712,25 @@ fn expression_has_while(expression: &ResolvedExpr) -> bool {
         } => {
             expression_has_while(source) || expression_has_while(start) || expression_has_while(end)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| match statement {
-                ResolvedStatement::While { .. } => true,
+                ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => true,
                 _ => (0..statement.child_count())
                     .any(|index| statement.child(index).is_some_and(expression_has_while)),
             }) || expression_has_while(tail)
         }
-        ResolvedExprKind::Call { args, .. } => args.iter().any(expression_has_while),
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_while),
         ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().any(expression_has_while),
         ResolvedExprKind::HostCommandCall(call) => call.args.iter().any(expression_has_while),
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_while)
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1845,6 +1774,7 @@ fn expression_has_while(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -1854,6 +1784,11 @@ fn expression_has_while(expression: &ResolvedExpr) -> bool {
 
 fn expression_has_stdout_write(expression: &ResolvedExpr) -> bool {
     match &expression.kind {
+        ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. } => {
+            args.iter().any(expression_has_stdout_write)
+        }
         ResolvedExprKind::Call { callee, args, .. } => {
             callee.as_str() == crate::host_io_ops::STDOUT_WRITE_ID
                 || args.iter().any(expression_has_stdout_write)
@@ -1864,6 +1799,9 @@ fn expression_has_stdout_write(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::HostCommandCall(call) => {
             call.args.iter().any(expression_has_stdout_write)
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_stdout_write)
+        }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
@@ -1873,7 +1811,10 @@ fn expression_has_stdout_write(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Binary { left, right, .. } => {
             expression_has_stdout_write(left) || expression_has_stdout_write(right)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     statement
@@ -1936,9 +1877,15 @@ fn expression_has_command_io(expression: &ResolvedExpr) -> bool {
                 || expression_has_command_io(start)
                 || expression_has_command_io(end)
         }
-        ResolvedExprKind::Call { args, .. } => args.iter().any(expression_has_command_io),
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_command_io),
         ResolvedExprKind::NativeRustImportCall(call) => {
             call.args.iter().any(expression_has_command_io)
+        }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_command_io)
         }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
@@ -1949,7 +1896,10 @@ fn expression_has_command_io(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Binary { left, right, .. } => {
             expression_has_command_io(left) || expression_has_command_io(right)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     statement
@@ -1995,6 +1945,7 @@ fn expression_has_command_io(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -2041,12 +1992,18 @@ fn expression_has_record_pattern(expression: &ResolvedExpr) -> bool {
                 || expression_has_record_pattern(start)
                 || expression_has_record_pattern(end)
         }
-        ResolvedExprKind::Call { args, .. } => args.iter().any(expression_has_record_pattern),
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_record_pattern),
         ResolvedExprKind::NativeRustImportCall(call) => {
             call.args.iter().any(expression_has_record_pattern)
         }
         ResolvedExprKind::HostCommandCall(call) => {
             call.args.iter().any(expression_has_record_pattern)
+        }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_record_pattern)
         }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
@@ -2057,7 +2014,10 @@ fn expression_has_record_pattern(expression: &ResolvedExpr) -> bool {
         ResolvedExprKind::Binary { left, right, .. } => {
             expression_has_record_pattern(left) || expression_has_record_pattern(right)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     statement
@@ -2107,6 +2067,7 @@ fn expression_has_record_pattern(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -2137,7 +2098,10 @@ fn expression_has_refutable_match(expression: &ResolvedExpr) -> bool {
                 || expression_has_refutable_match(start)
                 || expression_has_refutable_match(end)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements.iter().any(|statement| {
                 (0..statement.child_count()).any(|index| {
                     statement
@@ -2146,12 +2110,18 @@ fn expression_has_refutable_match(expression: &ResolvedExpr) -> bool {
                 })
             }) || expression_has_refutable_match(tail)
         }
-        ResolvedExprKind::Call { args, .. } => args.iter().any(expression_has_refutable_match),
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.iter().any(expression_has_refutable_match),
         ResolvedExprKind::NativeRustImportCall(call) => {
             call.args.iter().any(expression_has_refutable_match)
         }
         ResolvedExprKind::HostCommandCall(call) => {
             call.args.iter().any(expression_has_refutable_match)
+        }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            value.as_deref().is_some_and(expression_has_refutable_match)
         }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
@@ -2203,6 +2173,7 @@ fn expression_has_refutable_match(expression: &ResolvedExpr) -> bool {
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
@@ -2296,6 +2267,7 @@ fn collect_agent_contract_values(expression: &ResolvedExpr, values: &mut BTreeSe
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. } => {}
         ResolvedExprKind::Place(place) => {
@@ -2304,7 +2276,10 @@ fn collect_agent_contract_values(expression: &ResolvedExpr, values: &mut BTreeSe
         ResolvedExprKind::BorrowPlace { place, .. } => {
             values.insert(place.root.clone());
         }
-        ResolvedExprKind::Call { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 collect_agent_contract_values(argument, values);
             }
@@ -2319,12 +2294,20 @@ fn collect_agent_contract_values(expression: &ResolvedExpr, values: &mut BTreeSe
                 collect_agent_contract_values(argument, values);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_agent_contract_values(value, values);
+            }
+        }
         ResolvedExprKind::Unary { value, .. } => collect_agent_contract_values(value, values),
         ResolvedExprKind::Binary { left, right, .. } => {
             collect_agent_contract_values(left, values);
             collect_agent_contract_values(right, values);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, .. } = statement {
                     values.insert(binding.id.clone());
@@ -2401,6 +2384,8 @@ fn collect_agent_contract_values(expression: &ResolvedExpr, values: &mut BTreeSe
 
 pub(crate) fn agent_contract_expr_json(expression: &ResolvedExpr) -> Result<String, Diagnostic> {
     Ok(match &expression.kind {
+        ResolvedExprKind::LexicalExit { .. } => return Err(Diagnostic::io("SPX-H006", "lexical exits are not contract expressions")),
+
         ResolvedExprKind::Closure {..} | ResolvedExprKind::FunctionReference {..} | ResolvedExprKind::Invoke {..} => return Err(Diagnostic::io("SPX-G411","function values require Graph v36")),
         ResolvedExprKind::Int(value) => format!(
             "{{\"kind\":\"int\",\"value\":{}}}",
@@ -2437,6 +2422,7 @@ pub(crate) fn agent_contract_expr_json(expression: &ResolvedExpr) -> Result<Stri
             quote_json(&crate::format::canonical_f64_bits(*bits))
         ),
         ResolvedExprKind::Bool(value) => format!("{{\"kind\":\"bool\",\"value\":{value}}}"),
+        ResolvedExprKind::BorrowedUtf8Literal(value) => static_text::literal_json(value),
         ResolvedExprKind::String(value) => format!(
             "{{\"kind\":\"string\",\"value\":{},\"display\":{}}}",
             quote_json(value),
@@ -2458,6 +2444,8 @@ pub(crate) fn agent_contract_expr_json(expression: &ResolvedExpr) -> Result<Stri
             crate::byte_ops::RANGE_START_AFTER_END_CODE,
             crate::byte_ops::RANGE_END_OUT_OF_BOUNDS_CODE,
         ),
+        ResolvedExprKind::VecFieldRead { origin, element, field, bytes, args } => scoped_vec_field::contract_json(*origin, element, field, *bytes, args)?,
+        ResolvedExprKind::RowLoan { .. } => return Err(Diagnostic::io("SPX-G410", "record row loans are outside agent contract projection")),
         ResolvedExprKind::Call {
             callee,
             type_arguments,
@@ -2485,6 +2473,11 @@ pub(crate) fn agent_contract_expr_json(expression: &ResolvedExpr) -> Result<Stri
                 )
             }
         }
+        ResolvedExprKind::LiteralFormat { template, args } => {
+            let args = args.iter().map(agent_contract_expr_json)
+                .collect::<Result<Vec<_>, _>>()?.budgeted_join(",");
+            format!("{{\"kind\":\"literal_format\",\"template\":{},\"args\":[{}]}}", quote_json(template), args)
+        }
         ResolvedExprKind::NativeRustImportCall(_) => {
             return Err(Diagnostic::io(
                 "SPX-G218",
@@ -2508,49 +2501,7 @@ pub(crate) fn agent_contract_expr_json(expression: &ResolvedExpr) -> Result<Stri
             agent_contract_expr_json(left)?,
             agent_contract_expr_json(right)?
         ),
-        ResolvedExprKind::Block { statements, tail } => format!(
-            "{{\"kind\":\"block\",\"statements\":[{}],\"tail\":{}}}",
-            statements
-                .iter()
-                .map(|statement| {
-                    Ok(match statement {
-                        ResolvedStatement::Let { binding, value, .. } => format!(
-                            "{{\"kind\":\"let\",\"binding\":{},\"value\":{}}}",
-                            quote_json(binding.id.as_str()),
-                            agent_contract_expr_json(value)?
-                        ),
-                        ResolvedStatement::Assign {
-                            binding,
-                            field,
-                            value,
-                            ..
-                        } => format!(
-                            "{{\"kind\":\"assign\",\"target\":{},\"value\":{}{}}}",
-                            quote_json(binding.id.as_str()),
-                            agent_contract_expr_json(value)?,
-                            field
-                                .as_ref()
-                                .map(|field| format!(",\"field\":{}", quote_json(field.as_str())))
-                                .unwrap_or_default()
-                        ),
-                        ResolvedStatement::Unsafe { audit, body, .. } => format!(
-                            "{{\"kind\":\"unsafe\",\"audit\":{},\"body\":{}}}",
-                            quote_json(audit),
-                            agent_contract_expr_json(body)?
-                        ),
-                        ResolvedStatement::While {
-                            condition, body, ..
-                        } => format!(
-                            "{{\"kind\":\"while\",\"condition\":{},\"body\":{}}}",
-                            agent_contract_expr_json(condition)?,
-                            agent_contract_expr_json(body)?
-                        ),
-                    })
-                })
-                .collect::<Result<Vec<_>, Diagnostic>>()?
-                .budgeted_join(","),
-            agent_contract_expr_json(tail)?
-        ),
+        ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. } => agent_block::json(expression)?,
         ResolvedExprKind::If {
             condition,
             then_branch,
@@ -3171,8 +3122,8 @@ fn render_agent_context(
             "{{\"schema\":\"semaprax.agent-context.v1\",\"source_graph_schema\":{},\"revision\":{},\"prelude\":{{\"schema\":{},\"digest\":{}}},\"module\":{},\"root\":{},\"query\":{{\"depth\":{},\"max_bytes\":{},\"max_nodes\":{},\"filters\":[{}]}},\"filter_support\":{{\"included\":[{}],\"unavailable\":[{}]}},\"budget\":{{\"used_bytes\":{},\"used_nodes\":{},\"max_depth_used\":{}}},\"truncation\":{{\"truncated\":{},\"reasons\":[{}],\"omitted_known_nodes\":{},\"deferred_known_nodes\":{},\"omitted_fact_bytes\":{},\"unavailable_filter_count\":{}}},\"resume_contract\":{{\"depth\":\"query.depth\",\"max_nodes\":\"query.max_nodes\",\"filters\":\"query.filters\",\"max_bytes\":\"frontier.resume.min_bytes\"}}{},\"frontier\":[{}],\"facts\":[{}]}}",
             quote_json(source_identity.schema),
             quote_json(source_identity.revision),
-            quote_json(prelude_binding::schema(program)),
-            quote_json(&prelude_binding::digest(program)),
+            quote_json(prelude_binding::schema_selected(program, source_identity.static_text)),
+            quote_json(&prelude_binding::digest_selected(program, source_identity.static_text)),
             quote_json(&program.module),
             quote_json(root.as_str()),
             options.depth,
@@ -3412,8 +3363,8 @@ fn render_agent_context_v2(
             "{{\"schema\":\"semaprax.agent-context.v2\",\"source_graph_schema\":{},\"revision\":{},\"prelude\":{{\"schema\":{},\"digest\":{}}},\"module\":{},\"root\":{},\"query\":{{\"direction\":{},\"depth\":{},\"max_bytes\":{},\"max_nodes\":{},\"filters\":[{}]}},\"filter_support\":{{\"included\":[{}],\"unavailable\":[{}]}},\"budget\":{{\"used_bytes\":{},\"used_nodes\":{},\"max_depth_used\":{}}},\"truncation\":{{\"truncated\":{},\"reasons\":[{}],\"omitted_known_nodes\":{},\"deferred_known_nodes\":{},\"omitted_fact_bytes\":{},\"unavailable_filter_count\":{}}},\"reference_closure\":{{\"referenced_unselected_nodes\":{}}},\"resume_contract\":{{\"direction\":\"query.direction\",\"depth\":\"query.depth\",\"max_nodes\":\"query.max_nodes\",\"filters\":\"query.filters\",\"max_bytes\":{{\"traversal\":\"frontier.resume.min_bytes\",\"reference\":\"reference_frontier.resume.min_bytes\"}}}}{},\"frontier\":[{}],\"reference_frontier\":[{}],\"facts\":[{}]}}",
             quote_json(source_identity.schema),
             quote_json(source_identity.revision),
-            quote_json(prelude_binding::schema(program)),
-            quote_json(&prelude_binding::digest(program)),
+            quote_json(prelude_binding::schema_selected(program, source_identity.static_text)),
+            quote_json(&prelude_binding::digest_selected(program, source_identity.static_text)),
             quote_json(&program.module),
             quote_json(root.as_str()),
             quote_json(options.direction().name()),
@@ -3501,7 +3452,7 @@ pub(crate) fn to_hir_json(
     program: &ResolvedProgram,
     source_revision: &str,
 ) -> Result<String, Diagnostic> {
-    hir::validate(program)?;
+    let static_text = hir::validate_with_static_text(program)?;
     let selected_functions = program
         .functions
         .iter()
@@ -3523,7 +3474,7 @@ pub(crate) fn to_hir_json(
         source_revision,
         &selected_functions,
         &selected_types,
-        &GraphView::Module,
+        &GraphView::Module { static_text },
     )
 }
 
@@ -3534,7 +3485,13 @@ fn context_hir_json(
     depth: usize,
     legacy: bool,
 ) -> Result<Option<String>, Diagnostic> {
-    hir::validate(program)?;
+    let static_text = hir::validate_with_static_text(program)?;
+    if legacy && static_text {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "static text requires current Graph authority",
+        ));
+    }
 
     // Exact declaration identity is authoritative if another function or
     // template's display name happens to contain the same text.
@@ -3627,6 +3584,7 @@ fn context_hir_json(
         &selected,
         &selected_types,
         &GraphView::Context {
+            static_text,
             root: &root,
             depth,
             frontier: &frontier,
@@ -3636,8 +3594,11 @@ fn context_hir_json(
 }
 
 enum GraphView<'a> {
-    Module,
+    Module {
+        static_text: bool,
+    },
     Context {
+        static_text: bool,
         root: &'a DeclarationId,
         depth: usize,
         frontier: &'a BTreeSet<DeclarationId>,
@@ -3659,15 +3620,7 @@ fn byte_slice_fact_json(
     value: &ValueId,
     provenance: &hir::ByteSliceProvenance,
 ) -> String {
-    let root_kind = match provenance.root_kind {
-        ByteSliceRootKind::FunctionParameter => "function_parameter",
-        ByteSliceRootKind::OwnedBytes => "owned_bytes",
-        ByteSliceRootKind::OwnedString => "owned_string",
-        ByteSliceRootKind::FixedArray => "fixed_array",
-        ByteSliceRootKind::BorrowedStr => "borrowed_str",
-        ByteSliceRootKind::CommandArguments => "command_arguments",
-        ByteSliceRootKind::StdinStreamReader => "stdin_stream_reader",
-    };
+    let root_kind = string_slots::root_kind_json(provenance.root_kind);
     let mut base = format!(
         "{{\"value\":{},\"root\":{},\"root_kind\":{},\"root_length\":{},\"offset\":{},\"length\":{},\"producer\":{}}}",
         quote_json(value.as_str()),
@@ -3702,6 +3655,7 @@ fn byte_slice_fact_json(
             type_json(&provenance.projected_type)
         );
     }
+    base = scoped_vec_field::attach_provenance(base, provenance);
     if schema != "semaprax.graph.v20"
         && !(graph_schema_includes_modern_composite_facts(schema) && !provenance.ranges.is_empty())
     {
@@ -3945,22 +3899,24 @@ fn render_graph_json(
     concrete_ownership: bool,
 ) -> Result<String, Diagnostic> {
     let mut selected_types = selected_types.clone();
+    // Borrowed-text removals: the set is keyed by identity bytes, so no
+    // temporary lookup identity is constructed.
     if !prelude_binding::uses_vec(program) {
-        selected_types.remove(&DeclarationId::new(crate::prelude::VEC_ID));
+        selected_types.remove(crate::prelude::VEC_ID);
     }
     if !prelude_binding::uses_box(program) {
-        selected_types.remove(&DeclarationId::new(crate::prelude::BOX_ID));
+        selected_types.remove(crate::prelude::BOX_ID);
     }
     if !prelude_binding::uses_iterator(program) {
-        selected_types.remove(&DeclarationId::new(crate::iterator_ops::ITER_ID));
-        selected_types.remove(&DeclarationId::new(crate::iterator_ops::STEP_ID));
+        selected_types.remove(crate::iterator_ops::ITER_ID);
+        selected_types.remove(crate::iterator_ops::STEP_ID);
     }
     if !prelude_binding::uses_list(program) {
-        selected_types.remove(&DeclarationId::new(crate::list_ops::LIST_ID));
-        selected_types.remove(&DeclarationId::new(crate::list_ops::STEP_ID));
+        selected_types.remove(crate::list_ops::LIST_ID);
+        selected_types.remove(crate::list_ops::STEP_ID);
     }
     let mut selected_interfaces = match view {
-        GraphView::Module => program
+        GraphView::Module { .. } => program
             .interfaces
             .iter()
             .map(|interface| interface.id.clone())
@@ -4014,7 +3970,14 @@ fn render_graph_json(
     let schema = if concrete_ownership {
         nested_owned::generic_payload_schema(program)?
     } else {
-        legacy_graph_schema(program)?
+        // Row loans exist only in Graph v82; no legacy projection admits them.
+        if row_loan::requires(program) {
+            return Err(Diagnostic::io(
+                "SPX-G410",
+                "record row loans require Graph v82",
+            ));
+        }
+        scoped_vec_field::legacy_graph_schema(program)?
     };
     let mut output = crate::bounded_output::CappedString::new();
     write!(
@@ -4022,8 +3985,8 @@ fn render_graph_json(
         "{{\"schema\":{},\"revision\":{},\"prelude\":{{\"schema\":{},\"digest\":{}}},\"view\":{},\"identity\":{{\"declarations\":\"explicit-persistent-or-automatic-unstable\",\"values\":\"revision-scoped-structural\",\"expressions\":\"revision-scoped-structural\",\"match_arms\":\"revision-scoped-structural\",\"patterns\":\"revision-scoped-structural\",\"type_parameters\":\"owner-and-index-stable\"}}{},\"module\":{},\"permits\":{},\"entrypoint\":{},\"type_facts\":[{}],\"nodes\":[",
         quote_json(schema),
         quote_json(source_revision),
-        quote_json(prelude_binding::schema(program)),
-        quote_json(&prelude_binding::digest(program)),
+        quote_json(prelude_binding::schema_selected(program, view.static_text())),
+        quote_json(&prelude_binding::digest_selected(program, view.static_text())),
         view_json(view),
         portable_indexed_byte_data_json(schema, program)?,
         quote_json(&program.module),
@@ -4688,26 +4651,6 @@ fn result_ownership(
         })
 }
 
-fn view_json(view: &GraphView<'_>) -> String {
-    match view {
-        GraphView::Module => "{\"kind\":\"module\"}".to_owned(),
-        GraphView::Context {
-            root,
-            depth,
-            frontier,
-        } => format!(
-            "{{\"kind\":\"context\",\"root\":{},\"depth\":{depth},\"truncated\":{},\"frontier\":[{}]}}",
-            quote_json(root.as_str()),
-            !frontier.is_empty(),
-            frontier
-                .iter()
-                .map(|id| quote_json(id.as_str()))
-                .collect::<Vec<_>>()
-                .budgeted_join(",")
-        ),
-    }
-}
-
 fn identity_origin(
     program: &ResolvedProgram,
     id: &DeclarationId,
@@ -4783,11 +4726,15 @@ fn visit_expr_call_instances(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
-        ResolvedExprKind::Call { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 visit_expr_call_instances(argument, visit);
             }
@@ -4802,6 +4749,11 @@ fn visit_expr_call_instances(
                 visit_expr_call_instances(argument, visit);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                visit_expr_call_instances(value, visit);
+            }
+        }
         ResolvedExprKind::Unary { value, .. } | ResolvedExprKind::Project { base: value, .. } => {
             visit_expr_call_instances(value, visit);
         }
@@ -4812,7 +4764,10 @@ fn visit_expr_call_instances(
             visit_expr_call_instances(left, visit);
             visit_expr_call_instances(right, visit);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {
@@ -4887,12 +4842,20 @@ fn visit_expr_calls(expression: &ResolvedExpr, visit: &mut impl FnMut(&Declarati
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
         ResolvedExprKind::Call { callee, args, .. } => {
             visit(callee);
+            for argument in args {
+                visit_expr_calls(argument, visit);
+            }
+        }
+        ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. } => {
             for argument in args {
                 visit_expr_calls(argument, visit);
             }
@@ -4907,6 +4870,11 @@ fn visit_expr_calls(expression: &ResolvedExpr, visit: &mut impl FnMut(&Declarati
                 visit_expr_calls(argument, visit);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                visit_expr_calls(value, visit);
+            }
+        }
         ResolvedExprKind::Unary { value, .. } => visit_expr_calls(value, visit),
         ResolvedExprKind::Upcast { source: value } | ResolvedExprKind::Yield { request: value } => {
             visit_expr_calls(value, visit)
@@ -4915,7 +4883,10 @@ fn visit_expr_calls(expression: &ResolvedExpr, visit: &mut impl FnMut(&Declarati
             visit_expr_calls(left, visit);
             visit_expr_calls(right, visit);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {
@@ -5017,11 +4988,15 @@ fn collect_expr_type_declarations(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
-        ResolvedExprKind::Call { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 collect_expr_type_declarations(argument, declarations);
             }
@@ -5036,6 +5011,11 @@ fn collect_expr_type_declarations(
                 collect_expr_type_declarations(argument, declarations);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_expr_type_declarations(value, declarations);
+            }
+        }
         ResolvedExprKind::Unary { value, .. } => {
             collect_expr_type_declarations(value, declarations);
         }
@@ -5046,7 +5026,10 @@ fn collect_expr_type_declarations(
             collect_expr_type_declarations(left, declarations);
             collect_expr_type_declarations(right, declarations);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, .. } = statement {
                     collect_nominal_declarations(&binding.ty, declarations);
@@ -5300,11 +5283,15 @@ fn collect_expr_types(expression: &ResolvedExpr, types: &mut BTreeMap<String, Re
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
-        ResolvedExprKind::Call { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             for argument in args {
                 collect_expr_types(argument, types);
             }
@@ -5319,6 +5306,11 @@ fn collect_expr_types(expression: &ResolvedExpr, types: &mut BTreeMap<String, Re
                 collect_expr_types(argument, types);
             }
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                collect_expr_types(value, types);
+            }
+        }
         ResolvedExprKind::Unary { value, .. } => collect_expr_types(value, types),
         ResolvedExprKind::Upcast { source: value } | ResolvedExprKind::Yield { request: value } => {
             collect_expr_types(value, types)
@@ -5327,7 +5319,10 @@ fn collect_expr_types(expression: &ResolvedExpr, types: &mut BTreeMap<String, Re
             collect_expr_types(left, types);
             collect_expr_types(right, types);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, .. } = statement {
                     collect_type(&binding.ty, types);
@@ -5431,6 +5426,9 @@ fn collect_record_pattern_types(
 }
 
 fn collect_type(ty: &ResolvedType, types: &mut BTreeMap<String, ResolvedType>) {
+    if matches!(ty, ResolvedType::Never) {
+        return;
+    }
     if let ResolvedType::Function { parameters, result } = ty {
         for p in parameters {
             collect_type(p, types);
@@ -5462,6 +5460,7 @@ fn type_json(ty: &ResolvedType) -> String {
         ResolvedType::Function { parameters, result } => {
             function_values::type_json(parameters, result)
         }
+        ResolvedType::Never => "{\"kind\":\"completion\",\"name\":\"never\"}".to_owned(),
         ResolvedType::Unit => "{\"kind\":\"primitive\",\"name\":\"unit\"}".to_owned(),
         ResolvedType::I64 => "{\"kind\":\"primitive\",\"name\":\"i64\"}".to_owned(),
         ResolvedType::I32 => "{\"kind\":\"primitive\",\"name\":\"i32\"}".to_owned(),
@@ -5540,17 +5539,6 @@ fn facts_json(program: &ResolvedProgram, ty: &ResolvedType) -> Result<String, Di
         })
 }
 
-fn facts_object(facts: &TypeFacts) -> String {
-    format!(
-        "{{\"copy\":{},\"contains_resource\":{},\"sized\":{},\"needs_drop\":{},\"layout_key\":{}}}",
-        facts.copy,
-        facts.contains_resource,
-        facts.sized,
-        facts.needs_drop,
-        quote_json(&facts.layout_key)
-    )
-}
-
 fn ownership_text(ownership: OwnershipMode) -> &'static str {
     match ownership {
         OwnershipMode::Value => "value",
@@ -5560,35 +5548,12 @@ fn ownership_text(ownership: OwnershipMode) -> &'static str {
     }
 }
 
-/// Additive match-mode projection. Value is intentionally absent because it
-/// was implicit in every graph through v20; emitting it would change legacy
-/// module, context, and agent-context bytes.
-fn explicit_match_mode_json(mode: ResolvedMatchMode) -> &'static str {
-    match mode {
-        ResolvedMatchMode::Value => "",
-        ResolvedMatchMode::Own => ",\"ownership_mode\":\"own\"",
-        ResolvedMatchMode::Borrow => ",\"ownership_mode\":\"borrow\"",
-    }
-}
-
-fn unary_text(op: UnaryOp) -> &'static str {
-    match op {
-        UnaryOp::Neg => "-",
-        UnaryOp::Not => "!",
-    }
-}
-
-fn binary_text(op: BinaryOp) -> &'static str {
-    op.text()
-}
-
-#[cfg(test)]
-#[path = "graph/tests.rs"]
-mod tests;
-
 #[cfg(test)]
 #[path = "graph/nested_owned_records_tests.rs"]
 mod nested_owned_records_tests;
+#[cfg(test)]
+#[path = "graph/tests.rs"]
+mod tests;
 
 #[cfg(test)]
 #[path = "graph/iterator_loop_tests.rs"]

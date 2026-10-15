@@ -128,7 +128,9 @@ impl Emitter<'_> {
             BinaryOp::Div => self.emit_checked_div_rem(&left, &right, destination, false)?,
             BinaryOp::Rem => self.emit_checked_div_rem(&left, &right, destination, true)?,
             BinaryOp::Eq | BinaryOp::Ne => {
-                if value_type(&left) == &ResolvedType::String {
+                if value_type(&left) == &ResolvedType::Str {
+                    self.emit_borrowed_str_equality(op, &left, &right, destination)?;
+                } else if value_type(&left) == &ResolvedType::String {
                     self.emit_aggregate_string_equality(op, &left, &right, destination)?;
                 } else if self.program.is_payload_free_variant(value_type(&left)) {
                     self.emit_case_equality(op, &left, &right, destination)?;

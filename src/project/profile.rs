@@ -1,3 +1,13 @@
+/// Selected held file with v28 resources and 256 raw application arguments.
+pub const PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1: &str =
+    "source-command.selected-file.resource-output.v1";
+pub const PROJECT_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_INPUT_V1: &str =
+    "argv-utf8-256+selected-file.follow.v1";
+pub const PROJECT_SCHEMA_V34: &str = "semaprax.project.v34";
+/// Invocation-selected held file with lazy acquisition and explicit follow policy.
+pub const PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1: &str = "source-command.selected-file.v1";
+pub const PROJECT_SOURCE_COMMAND_SELECTED_FILE_INPUT_V1: &str = "argv-utf8+selected-file.follow.v1";
+pub const PROJECT_SCHEMA_V33: &str = "semaprax.project.v33";
 pub const PROJECT_PROFILE_ENVIRONMENT_IO_V1: &str = "environment-io.v1";
 pub const PROJECT_PROFILE_PROCESS_IO_V1: &str = "process-io.v1";
 /// Native argv and read-only text-file command with linked source dependencies.
@@ -53,6 +63,20 @@ pub const PROJECT_PROFILE_STDIN_STREAM_TEXT_COMMAND_IO_V1: &str =
 /// compiler-owned vectors of Copy scalars.
 pub const PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V1: &str =
     "language-command-io.stream-data.v1";
+pub const PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V2: &str =
+    "language-command-io.stream-data.v2";
+pub const PROJECT_PROFILE_STDIN_STREAM_OWNED_DATA_COMMAND_IO_V1: &str =
+    "language-command-io.owned-data.v1";
+/// Successor native command profile for bounded nested collection records.
+pub const PROJECT_PROFILE_STDIN_STREAM_COLLECTION_RECORD_COMMAND_IO_V1: &str =
+    "language-command-io.collection-record.v1";
+/// Semantic Project schema selected by the collection-record command profile.
+pub const PROJECT_SCHEMA_V31: &str = "semaprax.project.v31";
+/// Successor native command profile for bounded nested outcomes.
+pub const PROJECT_PROFILE_STDIN_STREAM_NESTED_OUTCOME_COMMAND_IO_V1: &str =
+    "language-command-io.nested-outcome.v1";
+/// Semantic Project schema selected by the nested-outcome command profile.
+pub const PROJECT_SCHEMA_V32: &str = "semaprax.project.v32";
 pub const PROJECT_PROFILE_STDIN_STREAM_COMMAND_IO_V2: &str = "language-command-io.stream.v2";
 pub const PROJECT_PROFILE_LINE_COMMAND_IO_V1: &str = "line-command-io.v1";
 pub const PROJECT_PROFILE_NETWORK_COMMAND_IO_V1: &str = "network-command-io.v1";
@@ -135,6 +159,10 @@ pub enum ProjectProfile {
     StdinStreamCommandIoV2,
     StdinStreamTextCommandIoV1,
     StdinStreamDataCommandIoV1,
+    StdinStreamDataCommandIoV2,
+    StdinStreamOwnedDataCommandIoV1,
+    StdinStreamCollectionRecordCommandIoV1,
+    StdinStreamNestedOutcomeCommandIoV1,
     LineCommandIoV1,
     NetworkCommandIoV1,
     HttpsCommandIoV1,
@@ -144,6 +172,8 @@ pub enum ProjectProfile {
     EnvironmentIoV1,
     ProcessIoV1,
     SourceCommandV1,
+    SourceCommandSelectedFileV1,
+    SourceCommandSelectedFileResourceV1,
     SourceCommandResourceOutputV1,
     OwnedDataApiV1,
     FlatOwnedRecordApiV1,
@@ -162,6 +192,10 @@ impl ProjectProfile {
                 | Self::StdinStreamCommandIoV2
                 | Self::StdinStreamTextCommandIoV1
                 | Self::StdinStreamDataCommandIoV1
+                | Self::StdinStreamDataCommandIoV2
+                | Self::StdinStreamOwnedDataCommandIoV1
+                | Self::StdinStreamCollectionRecordCommandIoV1
+                | Self::StdinStreamNestedOutcomeCommandIoV1
         )
     }
     pub(crate) const fn is_filesystem(self) -> bool {
@@ -183,6 +217,8 @@ impl ProjectProfile {
                 | Self::EnvironmentIoV1
                 | Self::ProcessIoV1
                 | Self::SourceCommandV1
+                | Self::SourceCommandSelectedFileV1
+                | Self::SourceCommandSelectedFileResourceV1
                 | Self::SourceCommandResourceOutputV1
                 | Self::OwnedDataApiV1
                 | Self::FlatOwnedRecordApiV1
@@ -204,7 +240,10 @@ impl ProjectProfile {
     pub(crate) const fn is_source_command(self) -> bool {
         matches!(
             self,
-            Self::SourceCommandV1 | Self::SourceCommandResourceOutputV1
+            Self::SourceCommandV1
+                | Self::SourceCommandSelectedFileV1
+                | Self::SourceCommandSelectedFileResourceV1
+                | Self::SourceCommandResourceOutputV1
         )
     }
 
@@ -225,11 +264,29 @@ impl ProjectProfile {
             Self::StdinStreamDataCommandIoV1 => {
                 Some(PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V1)
             }
+            Self::StdinStreamDataCommandIoV2 => {
+                Some(PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V2)
+            }
+            Self::StdinStreamOwnedDataCommandIoV1 => {
+                Some(PROJECT_PROFILE_STDIN_STREAM_OWNED_DATA_COMMAND_IO_V1)
+            }
+            Self::StdinStreamCollectionRecordCommandIoV1 => {
+                Some(PROJECT_PROFILE_STDIN_STREAM_COLLECTION_RECORD_COMMAND_IO_V1)
+            }
+            Self::StdinStreamNestedOutcomeCommandIoV1 => {
+                Some(PROJECT_PROFILE_STDIN_STREAM_NESTED_OUTCOME_COMMAND_IO_V1)
+            }
             Self::LineCommandIoV1 => Some(PROJECT_PROFILE_LINE_COMMAND_IO_V1),
             Self::NetworkCommandIoV1 => Some(PROJECT_PROFILE_NETWORK_COMMAND_IO_V1),
             Self::EnvironmentIoV1 => Some(PROJECT_PROFILE_ENVIRONMENT_IO_V1),
             Self::ProcessIoV1 => Some(PROJECT_PROFILE_PROCESS_IO_V1),
             Self::SourceCommandV1 => Some(PROJECT_PROFILE_SOURCE_COMMAND_V1),
+            Self::SourceCommandSelectedFileResourceV1 => {
+                Some(PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1)
+            }
+            Self::SourceCommandSelectedFileV1 => {
+                Some(PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1)
+            }
             Self::SourceCommandResourceOutputV1 => {
                 Some(PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1)
             }

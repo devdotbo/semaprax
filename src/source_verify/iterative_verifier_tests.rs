@@ -185,7 +185,7 @@ fn diagnostics_key(
             (
                 diagnostic.code,
                 diagnostic.severity,
-                diagnostic.message.as_str(),
+                diagnostic.message.as_ref(),
                 diagnostic.path.as_deref(),
                 diagnostic.span,
                 diagnostic.help.as_deref(),
@@ -194,7 +194,7 @@ fn diagnostics_key(
         .collect()
 }
 
-fn compare_scalar_body(source: &str) {
+fn compare_scalar_receivers(source: &str, intentional: bool) {
     let program = crate::parse(source, Path::new("iterative-verifier.spx")).unwrap();
     let current = program
         .functions
@@ -216,6 +216,8 @@ fn compare_scalar_body(source: &str) {
         oracle_scope.insert(
             parameter.name.clone(),
             Binding {
+                contract_local: false,
+                traversal_row: None,
                 ty: parameter.ty.clone(),
                 mode: parameter.mode,
                 availability: Availability::Available,
@@ -229,6 +231,7 @@ fn compare_scalar_body(source: &str) {
         );
     }
     let iterative_scope = oracle_scope.clone();
+    let live_entry_scope = iterative_scope.clone();
     let mut oracle_diagnostics = Vec::new();
     let oracle = check_expr(
         &program,
@@ -252,6 +255,7 @@ fn compare_scalar_body(source: &str) {
         true,
         &mut iterative_diagnostics,
     );
+    iterative.operators_before_799 = true;
     let actual = iterative.run(expression).unwrap();
     assert_eq!(
         oracle
@@ -271,11 +275,51 @@ fn compare_scalar_body(source: &str) {
         assert_eq!(expected.definitely_partial, actual.definitely_partial);
         assert_eq!(expected.native_unit_discard, actual.native_unit_discard);
     }
+    let saved_bindings = iterative.scopes[0].bindings.clone();
     drop(iterative);
-    assert_eq!(
-        diagnostics_key(&oracle_diagnostics),
-        diagnostics_key(&iterative_diagnostics)
+    let mut live_diagnostics = Vec::new();
+    let mut live = IterativeVerifier::new(
+        &program, current, live_entry_scope, &functions, &types,
+        None, true, &mut live_diagnostics,
     );
+    let live_value = live.run(expression).unwrap();
+    // Success keeps the complete original value; error-only type withdrawal
+    // is separately pinned against the complete saved receiver in operators_799.
+    if iterative_diagnostics.is_empty() {
+        assert_eq!(actual.as_ref().map(|value| (&value.ty, value.mode, value.native_unit)),
+                   live_value.as_ref().map(|value| (&value.ty, value.mode, value.native_unit)));
+        assert_eq!(saved_bindings.len(), live.scopes[0].bindings.len());
+        for (name, expected) in &saved_bindings {
+            let actual = &live.scopes[0].bindings[name];
+            assert_eq!(expected.ty, actual.ty);
+            assert_eq!(expected.mode, actual.mode);
+            assert_eq!(expected.availability, actual.availability);
+            assert_eq!(expected.moved_places, actual.moved_places);
+            assert_eq!(expected.definitely_partial, actual.definitely_partial);
+            assert_eq!(expected.native_unit_discard, actual.native_unit_discard);
+        }
+    }
+    drop(live);
+    assert_eq!(live_diagnostics, iterative_diagnostics);
+
+    if intentional {
+        // Only the exact pinned wrong-field fixture reaches this branch; it
+        // asserts full old/current diagnostics instead of equality.
+        crate::source_verify::recovery_tests::intentional_wrong_field::assert_scalar(
+            source,
+            &oracle_diagnostics,
+            &iterative_diagnostics,
+        );
+    } else {
+        assert_eq!(
+            diagnostics_key(&oracle_diagnostics),
+            diagnostics_key(&iterative_diagnostics)
+        );
+    }
+}
+
+fn compare_scalar_body(source: &str) {
+    compare_scalar_receivers(source, false);
 }
 
 #[test]
@@ -738,9 +782,11 @@ fn source_type_inference_mutates_one_owned_scope_for_many_inferred_lets() {
         })
         .collect();
     let context = SourceCapacityContext {
+        program: &program,
         types: &types,
         ordinary: &ordinary,
         enclosing_class: None,
+        fused: None,
     };
     let bindings = wide
         .params
@@ -874,7 +920,9 @@ fn borrowed_text_byte_at_matches_recursive_oracle() {
         "module t; fn main(text:borrow str)->Option<u8> { str_byte_at(text,1) }",
         "module t; fn main(text:borrow str)->Option<u8> { str_byte_at(text) }",
         "module t; fn main(text:borrow str)->Option<u8> { str_byte_at<u8>(text,0usize) }",
-    ] { compare_scalar_body(source); }
+    ] {
+        compare_scalar_body(source);
+    }
 }
 
 #[test]
@@ -885,7 +933,9 @@ fn loop_copy_construction_matches_recursive_oracle() {
         "let x=Option<string>::None {}; 0",
         "match (Option<i64>::Some { value: 1 }) { Option::Some { wrong: n } => n, Option::None {} => 0, }",
     ] {
-        compare_scalar_body(&format!("module t; @id(\"t.main\") fn main()->i64 {{ while false {{ {body} }} 0 }}"));
+        let source = format!("module t; @id(\"t.main\") fn main()->i64 {{ while false {{ {body} }} 0 }}");
+        let pinned = crate::source_verify::recovery_tests::intentional_wrong_field::is_pinned(&source);
+        compare_scalar_receivers(&source, pinned);
     }
 }
 
@@ -903,4 +953,46 @@ fn general_loop_match_guards_match_recursive_oracle() {
         compare_scalar_body(&format!("{prefix}@id(\"t.main\") fn main()->i64 {{ while false {{ let selected=choose(1); let ignored=read(selected); match selected {{ {arms} }} }} 0 }}"));
     }
     compare_scalar_body("module t; @id(\"t.inspect\") fn inspect(text:own string)->bool {string_len(text)>0} @id(\"t.main\") fn main()->i64 { let held=\"x\"; let selected=Option<i64>::Some {value:1}; match selected { _ if inspect(held) => 1, _ => 0, } }");
+}
+
+#[test]
+fn unicode_scalar_conversion_matches_recursive_oracle() {
+    for source in [
+        "module t; fn main(value:i64)->char { char_from_i64(value) }",
+        "module t; fn main()->char { char_from_i64(1114111) }",
+        "module t; fn main()->char { char_from_i64(-1) }",
+        "module t; fn main()->char { char_from_i64(55296) }",
+        "module t; fn main()->char { char_from_i64(65u8) }",
+        "module t; fn main()->char { char_from_i64() }",
+        "module t; fn main()->char { char_from_i64(1,2) }",
+        "module t; fn main()->char { char_from_i64<i64>(1) }",
+    ] {
+        compare_scalar_body(source);
+    }
+}
+
+#[test]
+fn normalized_input_flat_aggregate_join_matches_recursive_oracle() {
+    let source = include_str!("../../tests/fixtures/normalized-input-flat-outcome.spx")
+        .replace("fn main()", "fn probe()")
+        .replace("fn join(", "fn main(")
+        .replace("join(Input::", "main(Input::");
+    compare_scalar_body(&source);
+    let copy = source
+        .replace("label: string", "label: bool")
+        .replace("label: \"ok\"", "label: true")
+        .replace("label == \"ok\"", "label")
+        .replace("match own first", "match first")
+        .replace(
+            "vec_clone_at<Row>(rows, 0usize)",
+            "vec_get<Row>(rows, 0usize)",
+        );
+    compare_scalar_body(&copy);
+    for source in [
+        "module t; fn main(value: own Bytes)->Slice<u8> {bytes_as_slice<i64>(value)}",
+        "module t; fn main()->Slice<u8> {bytes_as_slice(1)}",
+        "module t; fn main(value: borrow Slice<u8>)->Slice<u8> {byte_range(value,0,1usize)}",
+    ] {
+        compare_scalar_body(source);
+    }
 }

@@ -32,14 +32,37 @@ pub(crate) fn graph_schema(program: &ResolvedProgram) -> Result<&'static str, Di
 }
 pub(crate) fn graph_schema_from_parts_and_instances(
     interfaces: &[hir::ResolvedInterface],
-    types: &[hir::ResolvedTypeDeclaration],
-    functions: &[ResolvedFunction],
-    templates: &[hir::ResolvedFunctionTemplate],
+    types: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    templates: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
     instances: &[hir::ResolvedFunctionInstance],
 ) -> Result<&'static str, Diagnostic> {
-    let previous = super::filesystem::graph_schema_from_parts_and_instances(
-        interfaces, types, functions, templates, instances,
-    )?;
+    graph_schema_from_parts_and_instances_with_renewal_authority(
+        interfaces, types, functions, templates, instances, None,
+    )
+}
+
+pub(crate) fn graph_schema_from_parts_and_instances_with_renewal_authority(
+    interfaces: &[hir::ResolvedInterface],
+    types: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    templates: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
+    instances: &[hir::ResolvedFunctionInstance],
+    renewal_authority: Option<&dyn Fn(&ResolvedFunction) -> bool>,
+) -> Result<&'static str, Diagnostic> {
+    let previous = match renewal_authority {
+        None => super::filesystem::graph_schema_from_parts_and_instances(
+            interfaces, types, functions, templates, instances,
+        ),
+        Some(_) => super::filesystem::graph_schema_from_parts_and_instances_with_renewal_authority(
+            interfaces,
+            types,
+            functions,
+            templates,
+            instances,
+            renewal_authority,
+        ),
+    }?;
     Ok(
         if functions
             .iter()
@@ -146,7 +169,9 @@ permit { process.environment.read, process.stdout.write }
             .unwrap();
         let mut checked_root = false;
         hir::function_value::walk(function, |expression| {
-            if let hir::ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let hir::ResolvedExprKind::Block { statements, .. }
+            | hir::ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let hir::ResolvedStatement::Let { binding, .. } = statement {
                         if binding.name == "bytes" {

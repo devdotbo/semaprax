@@ -1,0 +1,24 @@
+{
+  "exit_code": 0,
+  "wall_seconds": 271.69857508299174,
+  "tools_enabled": false,
+  "code_execution": false,
+  "peak_process_group_rss_bytes": 357122048,
+  "resource_refusal": null,
+  "actual_billing": "unknown",
+  "process_group_settlement": "driver terminal exit 0; no live review child",
+  "list_cost_usd": 0.5058775,
+  "actual_invoice": "unknown",
+  "kind": "bounded tool-free source author/review of pre-implementation design",
+  "input_source_base": "71417722e",
+  "implementation_qualification": "SOURCE_ONLY_UNEXECUTED",
+  "disposition": [
+    "Accepted exact source/Rc binding, clear rows/fixed cursor frames, fresh original per-phase WORK, fallible failure poison and ordinary Drop custody.",
+    "Rejected subtracting moved SourceBacking header: the empty owner still holds simultaneous initialized header storage. Entire owner plus additional phase control is prepaid.",
+    "Failed backing carries a sticky bit and cannot become a fresh scope.",
+    "Standalone and pre-core paths keep their original fresh proof behavior."
+  ],
+  "result_sha256": "45f6970eb81b192882ae4efe7e9286f58b2a12d20ec65ebc156085c5de0a9364",
+  "receipt_sha256": "beeba2fb716ca482e28e6e0e6e2f56ac84f51b766290831299652d06fe222756",
+  "external_review_folder": "/Volumes/Semaprax/lane-prompts/provider-proof-backing-author-714177-20261014"
+}

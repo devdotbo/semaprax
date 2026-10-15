@@ -43,6 +43,7 @@ impl NativeResourceAbi {
         ty: &ResolvedType,
     ) -> Result<&'a str, Diagnostic> {
         match ty {
+            ResolvedType::Never => Err(resource_error("Never has no native resource ABI")),
             ResolvedType::Unit => Err(resource_error(
                 "unit has no ordinary native value representation",
             )),
@@ -173,7 +174,42 @@ pub(super) fn build_resource_abi(
     program: &ResolvedProgram,
 ) -> Result<NativeResourceAbi, Diagnostic> {
     hir::validate(program)?;
+    build_validated_resource_abi(program)
+}
 
+/// Selected fused owner receiving. Ordinary validation necessarily refuses
+/// the joined selected loop (`SPX-H006`), so the owner's complete current
+/// selected revalidation runs in its place: full HIR validation with only
+/// that loop's shape check replaced by pointer identity, then the joined
+/// selection and selected capacity. Nothing is skipped, and no raw program
+/// can reach this entry.
+pub(super) fn build_selected_resource_abi(
+    owner: &hir::selected_fused_candidate::ValidatedFusedSelection<'_>,
+) -> Result<NativeResourceAbi, Diagnostic> {
+    owner
+        .revalidate_current()
+        .map_err(|_| super::backend_error("current validated fused owner refused"))?;
+    build_validated_resource_abi(owner.program())
+}
+
+pub(super) fn build_partition_resource_abi(
+    owner: &hir::byte_partition::ValidatedPartitionProgram<'_>,
+) -> Result<NativeResourceAbi, Diagnostic> {
+    owner.revalidate_compiler()?;
+    build_validated_resource_abi(owner.program())
+}
+
+/// No raw v20 attachment can reach this exact original-source receiver.
+pub(super) fn build_checked_allocation_resource_abi(
+    owner: &crate::cleanup_plan::checked_allocation::Validated<'_>,
+) -> Result<NativeResourceAbi, Diagnostic> {
+    owner.replay()?;
+    build_validated_resource_abi(owner.program())
+}
+
+fn build_validated_resource_abi(
+    program: &ResolvedProgram,
+) -> Result<NativeResourceAbi, Diagnostic> {
     if (!program.function_templates.is_empty() || !program.function_instances.is_empty())
         && program.types.iter().any(|declaration| {
             matches!(
@@ -454,3 +490,7 @@ fn resource_error(message: impl Into<String>) -> Diagnostic {
 #[cfg(test)]
 #[path = "native_resource/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "native_resource/selected_tests.rs"]
+mod selected_tests;

@@ -1,0 +1,78 @@
+{
+  "source": "086c4f1ee917199424f06f37d0f943b693d7e776",
+  "selected": 71,
+  "passed": 59,
+  "failed": [
+    {
+      "selector": "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-00.log",
+      "log_sha256": "b0dde27e8649db6290f69cbb790c687f7e5d08e993ac5ec2a303a80cd3cf4255"
+    },
+    {
+      "selector": "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-01.log",
+      "log_sha256": "02d4142351164c055e175a4e920ecbf2cc935699e0b2b20b75410eb189b10886"
+    },
+    {
+      "selector": "workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-02.log",
+      "log_sha256": "3db7001d025e0800c9b56dcdda05ab298865c9b79ae29f48ef978f1ff966e6a4"
+    },
+    {
+      "selector": "hir::identity_resolution::nominal_tests::nominal_full_constructor_refuses_at_every_actual_acquisition_and_releases_all_partial_owners",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-03.log",
+      "log_sha256": "3c9f7dcd22d01973b8f71ea4f6cce21cfaaf902fb34366d2c62c6aa566f5cf48"
+    },
+    {
+      "selector": "hir::identity_resolution::nominal_tests::nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-04.log",
+      "log_sha256": "ce3a536d80305e0fb1e42e60a898334f8fbb711f3745da66b952293fcdef0a2e"
+    },
+    {
+      "selector": "workspace_graph::type_proof_tests::projection_tests::rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-10.log",
+      "log_sha256": "3b91cfc2e16d0a6514d3ebcec0a3d5898723cbf41a2a972158ac404747510123"
+    },
+    {
+      "selector": "semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-11.log",
+      "log_sha256": "c107bf4ea8fb82925dd32fe324026f52df86ab1a97dde8485ecf6f1416099e8a"
+    },
+    {
+      "selector": "semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-12.log",
+      "log_sha256": "2332a1a32b8003e0e8ad5b815d47754a24dc301ec55f09fa878da09516f1296b"
+    },
+    {
+      "selector": "cleanup_plan::replay::allocation::tests::accounting_scope::complete_ordinary_tree_receiver_original_owner_and_current_accounting_scope_stay_source_bound",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-50.log",
+      "log_sha256": "3e602c53e3efb8e8d4199aada5431a4fbd1a9d9d909fcaa13820eb641f998dc6"
+    },
+    {
+      "selector": "cleanup_plan::replay::schema::paid_summary::tests::complete_schema_original_and_receiving_body_remain_byte_exact",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-51.log",
+      "log_sha256": "ef7774820054303177c1930de395a7846592933714e21321316c103d505dcae8"
+    },
+    {
+      "selector": "workspace_graph::source_schema::tests::explicit_host_materialization_preserves_complete_original_hostile_controls",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-64.log",
+      "log_sha256": "16e1d720bd1c9b71119f8f944e6ecc331f2566ec48a69a3a965223c8a04b2c8b"
+    },
+    {
+      "selector": "workspace_graph::expected_projection::prelude_forecast::tests::complete_receiving_sources_reconstruct_pinned_originals",
+      "log": "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015/owning-selected-65.log",
+      "log_sha256": "0235311e03f24c86bb2f094cd909815dc812674d90eb9a6426f8e66accfad304"
+    }
+  ],
+  "receipt_sha256": "9d3a89fa0f3bae61de89e011809bb1655bbb5084b228a6d52873b14e1edbc6a5",
+  "application_recovery": false,
+  "new_benchmark": false,
+  "build_exit": 0,
+  "clippy_exit": 101,
+  "clippy_log_sha256": "06e5e0b628d871814c5954872bfb715a525044eb27df8b4f9bbd65169c2112a0",
+  "clippy_scope": "production lib and CLI only",
+  "clippy_diagnostics": "Four Diagnostic identity conversions and one eight-argument retained receiver; repairs pending.",
+  "actual_pin_capture": "public/analysis only stale pins; projection producer passed; new current wires retained",
+  "new_issue_closures": [],
+  "qualification_scope": "71 exact affected bodies; no full suite/full gate"
+}

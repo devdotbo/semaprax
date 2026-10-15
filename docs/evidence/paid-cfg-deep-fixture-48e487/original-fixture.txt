@@ -1,0 +1,13 @@
+fn fixture(width: usize, depth: usize) -> ResolvedProgram {
+    let mut source = String::from("module cfg.scratch; @id(\"cfg.main\") fn main()->i64 {");
+    for index in 0..width {
+        source.push_str(&format!("let value{index} = 1;"));
+    }
+    // Alternating leaf/binary widths exercises retained spare capacity.
+    source.push_str("1");
+    for _ in 0..depth {
+        source.push_str("+1");
+    }
+    source.push('}');
+    crate::hir::resolve(&crate::check(&source, "cfg-scratch.spx").unwrap()).unwrap()
+}

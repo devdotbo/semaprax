@@ -30,9 +30,10 @@ fn string_end(input: borrow Slice<u8>, start: usize) -> usize
     let mut bad = !at_in(input, start, 34u8, 34u8);
     let mut running = !bad;
     while running {
-        let closed = at_in(input, index, 34u8, 34u8);
-        let escape = at_in(input, index, 92u8, 92u8);
-        let plain = at_in(input, index, 32u8, 255u8);
+        let current_byte = match byte_get(input, index) { Option::Some { value } => i64_from_u8(value), Option::None {} => -1, };
+        let closed = current_byte == 34;
+        let escape = current_byte == 92;
+        let plain = current_byte >= 32;
         let step = if closed { index } else { if escape { index + 2usize } else { if plain { index + 1usize } else { byte_len(input) + 1usize + index } } };
         bad = step > byte_len(input);
         fault = if bad { index } else { fault };

@@ -12,6 +12,12 @@ use function @id("std.data.json.dec.decoded_eq") from std.data.json.dec as decod
 use function @id("std.data.json.dec.decoded_len") from std.data.json.dec as decoded_len;
 use function @id("std.data.json.dec.decoded_size") from std.data.json.dec as decoded_size;
 use function @id("std.data.json.dec.decoded_token_eq") from std.data.json.dec as decoded_token_eq;
+use function @id("std.data.json.dec.decoded_byte_at") from std.data.json.dec as decoded_byte_at;
+use function @id("std.data.json.dec.decoded_fingerprint") from std.data.json.dec as decoded_fingerprint;
+use function @id("std.data.json.dec.fingerprint_entry") from std.data.json.dec as fingerprint_entry;
+use function @id("std.data.json.dec.entry_opening") from std.data.json.dec as entry_opening;
+use function @id("std.data.json.dec.entry_fingerprint") from std.data.json.dec as entry_fingerprint;
+use function @id("std.data.json.dec.fingerprint_match") from std.data.json.dec as fingerprint_match;
 use function @id("std.data.json.dec.emit_at") from std.data.json.dec as emit_at;
 use function @id("std.data.json.dec.emit_len") from std.data.json.dec as emit_len;
 use function @id("std.data.json.dec.escape_end") from std.data.json.dec as escape_end;
@@ -78,7 +84,16 @@ fn encoding() -> bool
 @id("std.data.json.dec.tests.conversion")
 fn conversion() -> bool
 {
-    byte_code(0u8) == 0 && byte_code(65u8) == 65 && byte_code(255u8) == 255 && code_byte(0) == 0u8 && code_byte(65) == 65u8 && code_byte(255) == 255u8
+    let mut byte = 0u8;
+    let mut expected = 0;
+    let mut valid = true;
+    while expected < 255 {
+        valid = valid && byte_code(byte) == expected && code_byte(expected) == byte;
+        byte = byte + 1u8;
+        expected = expected + 1;
+        0
+    }
+    valid && byte_code(0u8) == 0 && byte_code(65u8) == 65 && byte_code(255u8) == 255 && code_byte(0) == 0u8 && code_byte(65) == 65u8 && code_byte(255) == 255u8 && code_byte(-1) == 0u8 && code_byte(-9223372036854775808) == 0u8 && code_byte(256) == 255u8 && code_byte(9223372036854775807) == 255u8
 }
 
 @id("std.data.json.dec.tests.tokens")
@@ -139,8 +154,98 @@ fn token_equality() -> bool
     decoded_token_eq(source, 0usize, 3usize) && decoded_token_eq(source, 6usize, 10usize) && decoded_token_eq(source, 14usize, 18usize) && !decoded_token_eq(source, 6usize, 26usize) && !decoded_token_eq(source, 0usize, 6usize)
 }
 
+// Tokens at 0, 5, 10: "BAA", "ACO", "BAA". At 20, 26, 32: raw
+// U+00C1 U+0410, raw U+00C0 U+049E, "ÁА". At 46, 56: "\u0000CO",
+// "\u0001AA". At 66, 80: "😀" and raw U+1F600. Each unequal pair
+// is a deliberate hash collision; only exact decoded comparison separates it.
+@id("std.data.json.dec.tests.fingerprints")
+fn fingerprints() -> bool
+{
+    let raw = [34u8, 66u8, 65u8, 65u8, 34u8, 34u8, 65u8, 67u8, 79u8, 34u8, 34u8, 92u8, 117u8, 48u8, 48u8, 52u8, 50u8, 65u8, 65u8, 34u8, 34u8, 195u8, 129u8, 208u8, 144u8, 34u8, 34u8, 195u8, 128u8, 210u8, 158u8, 34u8, 34u8, 92u8, 117u8, 48u8, 48u8, 99u8, 49u8, 92u8, 117u8, 48u8, 52u8, 49u8, 48u8, 34u8, 34u8, 92u8, 117u8, 48u8, 48u8, 48u8, 48u8, 67u8, 79u8, 34u8, 34u8, 92u8, 117u8, 48u8, 48u8, 48u8, 49u8, 65u8, 65u8, 34u8, 34u8, 92u8, 117u8, 68u8, 56u8, 51u8, 68u8, 92u8, 117u8, 68u8, 69u8, 48u8, 48u8, 34u8, 34u8, 240u8, 159u8, 152u8, 128u8, 34u8];
+    let source = array_as_slice(raw);
+    let ascii = decoded_fingerprint(source, 0usize, 64usize);
+    let wide = decoded_fingerprint(source, 20usize, 64usize);
+    let nul = decoded_fingerprint(source, 46usize, 64usize);
+    let emoji = decoded_fingerprint(source, 66usize, 64usize);
+    let bytes = decoded_byte_at(source, 1usize, 0usize) == 66usize && decoded_byte_at(source, 11usize, 0usize) == 66usize && decoded_byte_at(source, 21usize, 0usize) == 195usize && decoded_byte_at(source, 47usize, 0usize) == 0usize && decoded_byte_at(source, 67usize, 1usize) == 159usize && decoded_byte_at(source, 1usize, 1usize) == 256usize && decoded_byte_at(source, 86usize, 0usize) == 256usize;
+    let values = ascii == 248226usize && decoded_fingerprint(source, 5usize, 64usize) == ascii && decoded_fingerprint(source, 10usize, 64usize) == ascii && wide == 308571usize && decoded_fingerprint(source, 26usize, 64usize) == wide && decoded_fingerprint(source, 32usize, 64usize) == wide && nul == 213906usize && decoded_fingerprint(source, 56usize, 64usize) == nul && emoji >= 262144usize && decoded_fingerprint(source, 80usize, 64usize) == emoji;
+    let bounds = decoded_fingerprint(source, 0usize, 2usize) == 0usize && decoded_fingerprint(source, 0usize, 3usize) == ascii && decoded_fingerprint(source, 1usize, 64usize) == 0usize && decoded_fingerprint(source, 86usize, 64usize) == 0usize && decoded_fingerprint(source, 18446744073709551615usize, 64usize) == 0usize;
+    // Independent two-byte polynomial: 32 * 257 + 127 = 8351.
+    let endpoints = [34u8, 32u8, 127u8, 34u8];
+    let escaped_endpoint = [34u8, 32u8, 92u8, 117u8, 48u8, 48u8, 55u8, 102u8, 34u8];
+    let control = [34u8, 0u8, 34u8];
+    let unclosed = [34u8, 65u8];
+    let empty = [34u8, 34u8];
+    let fast = decoded_fingerprint(array_as_slice(endpoints), 0usize, 2usize) == 139423usize && decoded_fingerprint(array_as_slice(endpoints), 0usize, 1usize) == 0usize && decoded_fingerprint(array_as_slice(escaped_endpoint), 0usize, 2usize) == 139423usize && decoded_fingerprint(array_as_slice(control), 0usize, 2usize) == 0usize && decoded_fingerprint(array_as_slice(unclosed), 0usize, 2usize) == 0usize && decoded_fingerprint(array_as_slice(empty), 0usize, 2usize) == 0usize;
+    let entry = fingerprint_entry(46usize, nul);
+    let packed = entry_opening(entry) == 46usize && entry_fingerprint(entry) == nul;
+    let matches = !fingerprint_match(source, fingerprint_entry(0usize, ascii), 5usize, ascii) && fingerprint_match(source, fingerprint_entry(0usize, ascii), 10usize, ascii) && !fingerprint_match(source, fingerprint_entry(0usize, ascii), 10usize, ascii + 1usize) && !fingerprint_match(source, fingerprint_entry(20usize, wide), 26usize, wide) && fingerprint_match(source, fingerprint_entry(20usize, wide), 32usize, wide) && !fingerprint_match(source, entry, 56usize, nul) && fingerprint_match(source, fingerprint_entry(66usize, emoji), 80usize, emoji);
+    let old = frozen_fingerprint(source, 0usize, 64usize) == ascii && frozen_fingerprint(source, 20usize, 64usize) == wide && frozen_fingerprint(source, 46usize, 64usize) == nul && frozen_fingerprint(source, 66usize, 64usize) == emoji && frozen_fingerprint(source, 80usize, 64usize) == emoji && frozen_fingerprint(source, 0usize, 2usize) == 0usize && frozen_fingerprint(source, 1usize, 64usize) == 0usize && frozen_fingerprint(source, 86usize, 64usize) == 0usize && frozen_fingerprint(source, 18446744073709551615usize, 64usize) == 0usize;
+    bytes && values && bounds && fast && packed && matches && old
+}
+
+// Saved pre-generalized raw-byte shortcut. The fallback remains independent
+// of the changed production branch, including decoded escape/cursor semantics.
+@id("std.data.json.dec.tests.frozen-fingerprint")
+fn frozen_fingerprint(input: borrow Slice<u8>, start: usize, limit: usize) -> usize
+    requires limit >= 1usize && limit <= 256usize
+    ensures result < 16842752usize
+{
+    let mut valid = start < byte_len(input) && at_is(input, start, 34u8);
+    let mut index = if valid { start + 1usize } else { start };
+    let mut part = 0usize;
+    let mut count = 0usize;
+    let mut hash = 0usize;
+    let mut running = valid && !at_is(input, index, 34u8);
+    while running {
+        // Plain ASCII emits one byte. Classify it once rather than repeating
+        // emit-width, decoded-byte and token-end probes for the same cursor.
+        // Escaped/control/non-ASCII tokens retain the original path.
+        let raw = match byte_get(input, index) { Option::Some { value: byte } => usize_from_u8(byte), Option::None {} => 256usize, };
+        if part == 0usize && raw >= 32usize && raw <= 127usize && raw != 34usize && raw != 92usize { valid = count < limit; hash = if valid { (hash * 257usize + raw) % 65521usize } else { hash }; count = if valid { count + 1usize } else { count }; index = if valid { index + 1usize } else { index }; part = 0usize; 0 } else { let width = emit_len(input, index); let value = decoded_byte_at(input, index, part); let last = part + 1usize >= width; let next = if last { token_end(input, index) } else { index }; valid = width > 0usize && value < 256usize && count < limit && !is_failure(input, next); hash = if valid { (hash * 257usize + value) % 65521usize } else { hash }; count = if valid { count + 1usize } else { count }; index = if valid { next } else { index }; part = if valid && !last { part + 1usize } else { 0usize }; 0 }
+        running = valid && !at_is(input, index, 34u8);
+        running
+    }
+    if valid && count > 0usize { count * 65536usize + hash } else { 0usize }
+}
+
+@id("std.data.json.dec.tests.raw-fingerprint-equivalence")
+fn raw_fingerprint_equivalence() -> bool
+{
+    let mut value = 0usize;
+    let mut equal = true;
+    // Every literal token is stored before the loop; only named slice ranges
+    // are constructed inside it. The independent expected values and frozen
+    // pull implementation still cover all 256 closed and unclosed tokens.
+    let closed_tokens = [34u8, 0u8, 34u8, 34u8, 1u8, 34u8, 34u8, 2u8, 34u8, 34u8, 3u8, 34u8, 34u8, 4u8, 34u8, 34u8, 5u8, 34u8, 34u8, 6u8, 34u8, 34u8, 7u8, 34u8, 34u8, 8u8, 34u8, 34u8, 9u8, 34u8, 34u8, 10u8, 34u8, 34u8, 11u8, 34u8, 34u8, 12u8, 34u8, 34u8, 13u8, 34u8, 34u8, 14u8, 34u8, 34u8, 15u8, 34u8, 34u8, 16u8, 34u8, 34u8, 17u8, 34u8, 34u8, 18u8, 34u8, 34u8, 19u8, 34u8, 34u8, 20u8, 34u8, 34u8, 21u8, 34u8, 34u8, 22u8, 34u8, 34u8, 23u8, 34u8, 34u8, 24u8, 34u8, 34u8, 25u8, 34u8, 34u8, 26u8, 34u8, 34u8, 27u8, 34u8, 34u8, 28u8, 34u8, 34u8, 29u8, 34u8, 34u8, 30u8, 34u8, 34u8, 31u8, 34u8, 34u8, 32u8, 34u8, 34u8, 33u8, 34u8, 34u8, 34u8, 34u8, 34u8, 35u8, 34u8, 34u8, 36u8, 34u8, 34u8, 37u8, 34u8, 34u8, 38u8, 34u8, 34u8, 39u8, 34u8, 34u8, 40u8, 34u8, 34u8, 41u8, 34u8, 34u8, 42u8, 34u8, 34u8, 43u8, 34u8, 34u8, 44u8, 34u8, 34u8, 45u8, 34u8, 34u8, 46u8, 34u8, 34u8, 47u8, 34u8, 34u8, 48u8, 34u8, 34u8, 49u8, 34u8, 34u8, 50u8, 34u8, 34u8, 51u8, 34u8, 34u8, 52u8, 34u8, 34u8, 53u8, 34u8, 34u8, 54u8, 34u8, 34u8, 55u8, 34u8, 34u8, 56u8, 34u8, 34u8, 57u8, 34u8, 34u8, 58u8, 34u8, 34u8, 59u8, 34u8, 34u8, 60u8, 34u8, 34u8, 61u8, 34u8, 34u8, 62u8, 34u8, 34u8, 63u8, 34u8, 34u8, 64u8, 34u8, 34u8, 65u8, 34u8, 34u8, 66u8, 34u8, 34u8, 67u8, 34u8, 34u8, 68u8, 34u8, 34u8, 69u8, 34u8, 34u8, 70u8, 34u8, 34u8, 71u8, 34u8, 34u8, 72u8, 34u8, 34u8, 73u8, 34u8, 34u8, 74u8, 34u8, 34u8, 75u8, 34u8, 34u8, 76u8, 34u8, 34u8, 77u8, 34u8, 34u8, 78u8, 34u8, 34u8, 79u8, 34u8, 34u8, 80u8, 34u8, 34u8, 81u8, 34u8, 34u8, 82u8, 34u8, 34u8, 83u8, 34u8, 34u8, 84u8, 34u8, 34u8, 85u8, 34u8, 34u8, 86u8, 34u8, 34u8, 87u8, 34u8, 34u8, 88u8, 34u8, 34u8, 89u8, 34u8, 34u8, 90u8, 34u8, 34u8, 91u8, 34u8, 34u8, 92u8, 34u8, 34u8, 93u8, 34u8, 34u8, 94u8, 34u8, 34u8, 95u8, 34u8, 34u8, 96u8, 34u8, 34u8, 97u8, 34u8, 34u8, 98u8, 34u8, 34u8, 99u8, 34u8, 34u8, 100u8, 34u8, 34u8, 101u8, 34u8, 34u8, 102u8, 34u8, 34u8, 103u8, 34u8, 34u8, 104u8, 34u8, 34u8, 105u8, 34u8, 34u8, 106u8, 34u8, 34u8, 107u8, 34u8, 34u8, 108u8, 34u8, 34u8, 109u8, 34u8, 34u8, 110u8, 34u8, 34u8, 111u8, 34u8, 34u8, 112u8, 34u8, 34u8, 113u8, 34u8, 34u8, 114u8, 34u8, 34u8, 115u8, 34u8, 34u8, 116u8, 34u8, 34u8, 117u8, 34u8, 34u8, 118u8, 34u8, 34u8, 119u8, 34u8, 34u8, 120u8, 34u8, 34u8, 121u8, 34u8, 34u8, 122u8, 34u8, 34u8, 123u8, 34u8, 34u8, 124u8, 34u8, 34u8, 125u8, 34u8, 34u8, 126u8, 34u8, 34u8, 127u8, 34u8, 34u8, 128u8, 34u8, 34u8, 129u8, 34u8, 34u8, 130u8, 34u8, 34u8, 131u8, 34u8, 34u8, 132u8, 34u8, 34u8, 133u8, 34u8, 34u8, 134u8, 34u8, 34u8, 135u8, 34u8, 34u8, 136u8, 34u8, 34u8, 137u8, 34u8, 34u8, 138u8, 34u8, 34u8, 139u8, 34u8, 34u8, 140u8, 34u8, 34u8, 141u8, 34u8, 34u8, 142u8, 34u8, 34u8, 143u8, 34u8, 34u8, 144u8, 34u8, 34u8, 145u8, 34u8, 34u8, 146u8, 34u8, 34u8, 147u8, 34u8, 34u8, 148u8, 34u8, 34u8, 149u8, 34u8, 34u8, 150u8, 34u8, 34u8, 151u8, 34u8, 34u8, 152u8, 34u8, 34u8, 153u8, 34u8, 34u8, 154u8, 34u8, 34u8, 155u8, 34u8, 34u8, 156u8, 34u8, 34u8, 157u8, 34u8, 34u8, 158u8, 34u8, 34u8, 159u8, 34u8, 34u8, 160u8, 34u8, 34u8, 161u8, 34u8, 34u8, 162u8, 34u8, 34u8, 163u8, 34u8, 34u8, 164u8, 34u8, 34u8, 165u8, 34u8, 34u8, 166u8, 34u8, 34u8, 167u8, 34u8, 34u8, 168u8, 34u8, 34u8, 169u8, 34u8, 34u8, 170u8, 34u8, 34u8, 171u8, 34u8, 34u8, 172u8, 34u8, 34u8, 173u8, 34u8, 34u8, 174u8, 34u8, 34u8, 175u8, 34u8, 34u8, 176u8, 34u8, 34u8, 177u8, 34u8, 34u8, 178u8, 34u8, 34u8, 179u8, 34u8, 34u8, 180u8, 34u8, 34u8, 181u8, 34u8, 34u8, 182u8, 34u8, 34u8, 183u8, 34u8, 34u8, 184u8, 34u8, 34u8, 185u8, 34u8, 34u8, 186u8, 34u8, 34u8, 187u8, 34u8, 34u8, 188u8, 34u8, 34u8, 189u8, 34u8, 34u8, 190u8, 34u8, 34u8, 191u8, 34u8, 34u8, 192u8, 34u8, 34u8, 193u8, 34u8, 34u8, 194u8, 34u8, 34u8, 195u8, 34u8, 34u8, 196u8, 34u8, 34u8, 197u8, 34u8, 34u8, 198u8, 34u8, 34u8, 199u8, 34u8, 34u8, 200u8, 34u8, 34u8, 201u8, 34u8, 34u8, 202u8, 34u8, 34u8, 203u8, 34u8, 34u8, 204u8, 34u8, 34u8, 205u8, 34u8, 34u8, 206u8, 34u8, 34u8, 207u8, 34u8, 34u8, 208u8, 34u8, 34u8, 209u8, 34u8, 34u8, 210u8, 34u8, 34u8, 211u8, 34u8, 34u8, 212u8, 34u8, 34u8, 213u8, 34u8, 34u8, 214u8, 34u8, 34u8, 215u8, 34u8, 34u8, 216u8, 34u8, 34u8, 217u8, 34u8, 34u8, 218u8, 34u8, 34u8, 219u8, 34u8, 34u8, 220u8, 34u8, 34u8, 221u8, 34u8, 34u8, 222u8, 34u8, 34u8, 223u8, 34u8, 34u8, 224u8, 34u8, 34u8, 225u8, 34u8, 34u8, 226u8, 34u8, 34u8, 227u8, 34u8, 34u8, 228u8, 34u8, 34u8, 229u8, 34u8, 34u8, 230u8, 34u8, 34u8, 231u8, 34u8, 34u8, 232u8, 34u8, 34u8, 233u8, 34u8, 34u8, 234u8, 34u8, 34u8, 235u8, 34u8, 34u8, 236u8, 34u8, 34u8, 237u8, 34u8, 34u8, 238u8, 34u8, 34u8, 239u8, 34u8, 34u8, 240u8, 34u8, 34u8, 241u8, 34u8, 34u8, 242u8, 34u8, 34u8, 243u8, 34u8, 34u8, 244u8, 34u8, 34u8, 245u8, 34u8, 34u8, 246u8, 34u8, 34u8, 247u8, 34u8, 34u8, 248u8, 34u8, 34u8, 249u8, 34u8, 34u8, 250u8, 34u8, 34u8, 251u8, 34u8, 34u8, 252u8, 34u8, 34u8, 253u8, 34u8, 34u8, 254u8, 34u8, 34u8, 255u8, 34u8];
+    let unclosed_tokens = [34u8, 0u8, 34u8, 1u8, 34u8, 2u8, 34u8, 3u8, 34u8, 4u8, 34u8, 5u8, 34u8, 6u8, 34u8, 7u8, 34u8, 8u8, 34u8, 9u8, 34u8, 10u8, 34u8, 11u8, 34u8, 12u8, 34u8, 13u8, 34u8, 14u8, 34u8, 15u8, 34u8, 16u8, 34u8, 17u8, 34u8, 18u8, 34u8, 19u8, 34u8, 20u8, 34u8, 21u8, 34u8, 22u8, 34u8, 23u8, 34u8, 24u8, 34u8, 25u8, 34u8, 26u8, 34u8, 27u8, 34u8, 28u8, 34u8, 29u8, 34u8, 30u8, 34u8, 31u8, 34u8, 32u8, 34u8, 33u8, 34u8, 34u8, 34u8, 35u8, 34u8, 36u8, 34u8, 37u8, 34u8, 38u8, 34u8, 39u8, 34u8, 40u8, 34u8, 41u8, 34u8, 42u8, 34u8, 43u8, 34u8, 44u8, 34u8, 45u8, 34u8, 46u8, 34u8, 47u8, 34u8, 48u8, 34u8, 49u8, 34u8, 50u8, 34u8, 51u8, 34u8, 52u8, 34u8, 53u8, 34u8, 54u8, 34u8, 55u8, 34u8, 56u8, 34u8, 57u8, 34u8, 58u8, 34u8, 59u8, 34u8, 60u8, 34u8, 61u8, 34u8, 62u8, 34u8, 63u8, 34u8, 64u8, 34u8, 65u8, 34u8, 66u8, 34u8, 67u8, 34u8, 68u8, 34u8, 69u8, 34u8, 70u8, 34u8, 71u8, 34u8, 72u8, 34u8, 73u8, 34u8, 74u8, 34u8, 75u8, 34u8, 76u8, 34u8, 77u8, 34u8, 78u8, 34u8, 79u8, 34u8, 80u8, 34u8, 81u8, 34u8, 82u8, 34u8, 83u8, 34u8, 84u8, 34u8, 85u8, 34u8, 86u8, 34u8, 87u8, 34u8, 88u8, 34u8, 89u8, 34u8, 90u8, 34u8, 91u8, 34u8, 92u8, 34u8, 93u8, 34u8, 94u8, 34u8, 95u8, 34u8, 96u8, 34u8, 97u8, 34u8, 98u8, 34u8, 99u8, 34u8, 100u8, 34u8, 101u8, 34u8, 102u8, 34u8, 103u8, 34u8, 104u8, 34u8, 105u8, 34u8, 106u8, 34u8, 107u8, 34u8, 108u8, 34u8, 109u8, 34u8, 110u8, 34u8, 111u8, 34u8, 112u8, 34u8, 113u8, 34u8, 114u8, 34u8, 115u8, 34u8, 116u8, 34u8, 117u8, 34u8, 118u8, 34u8, 119u8, 34u8, 120u8, 34u8, 121u8, 34u8, 122u8, 34u8, 123u8, 34u8, 124u8, 34u8, 125u8, 34u8, 126u8, 34u8, 127u8, 34u8, 128u8, 34u8, 129u8, 34u8, 130u8, 34u8, 131u8, 34u8, 132u8, 34u8, 133u8, 34u8, 134u8, 34u8, 135u8, 34u8, 136u8, 34u8, 137u8, 34u8, 138u8, 34u8, 139u8, 34u8, 140u8, 34u8, 141u8, 34u8, 142u8, 34u8, 143u8, 34u8, 144u8, 34u8, 145u8, 34u8, 146u8, 34u8, 147u8, 34u8, 148u8, 34u8, 149u8, 34u8, 150u8, 34u8, 151u8, 34u8, 152u8, 34u8, 153u8, 34u8, 154u8, 34u8, 155u8, 34u8, 156u8, 34u8, 157u8, 34u8, 158u8, 34u8, 159u8, 34u8, 160u8, 34u8, 161u8, 34u8, 162u8, 34u8, 163u8, 34u8, 164u8, 34u8, 165u8, 34u8, 166u8, 34u8, 167u8, 34u8, 168u8, 34u8, 169u8, 34u8, 170u8, 34u8, 171u8, 34u8, 172u8, 34u8, 173u8, 34u8, 174u8, 34u8, 175u8, 34u8, 176u8, 34u8, 177u8, 34u8, 178u8, 34u8, 179u8, 34u8, 180u8, 34u8, 181u8, 34u8, 182u8, 34u8, 183u8, 34u8, 184u8, 34u8, 185u8, 34u8, 186u8, 34u8, 187u8, 34u8, 188u8, 34u8, 189u8, 34u8, 190u8, 34u8, 191u8, 34u8, 192u8, 34u8, 193u8, 34u8, 194u8, 34u8, 195u8, 34u8, 196u8, 34u8, 197u8, 34u8, 198u8, 34u8, 199u8, 34u8, 200u8, 34u8, 201u8, 34u8, 202u8, 34u8, 203u8, 34u8, 204u8, 34u8, 205u8, 34u8, 206u8, 34u8, 207u8, 34u8, 208u8, 34u8, 209u8, 34u8, 210u8, 34u8, 211u8, 34u8, 212u8, 34u8, 213u8, 34u8, 214u8, 34u8, 215u8, 34u8, 216u8, 34u8, 217u8, 34u8, 218u8, 34u8, 219u8, 34u8, 220u8, 34u8, 221u8, 34u8, 222u8, 34u8, 223u8, 34u8, 224u8, 34u8, 225u8, 34u8, 226u8, 34u8, 227u8, 34u8, 228u8, 34u8, 229u8, 34u8, 230u8, 34u8, 231u8, 34u8, 232u8, 34u8, 233u8, 34u8, 234u8, 34u8, 235u8, 34u8, 236u8, 34u8, 237u8, 34u8, 238u8, 34u8, 239u8, 34u8, 240u8, 34u8, 241u8, 34u8, 242u8, 34u8, 243u8, 34u8, 244u8, 34u8, 245u8, 34u8, 246u8, 34u8, 247u8, 34u8, 248u8, 34u8, 249u8, 34u8, 250u8, 34u8, 251u8, 34u8, 252u8, 34u8, 253u8, 34u8, 254u8, 34u8, 255u8];
+    let closed_base = array_as_slice(closed_tokens);
+    let unclosed_base = array_as_slice(unclosed_tokens);
+    while value < 256usize {
+        let view = byte_range(closed_base, value * 3usize, value * 3usize + 3usize);
+        let expected = if value >= 32usize && value != 34usize && value != 92usize { 65536usize + value } else { 0usize };
+        equal = equal && decoded_fingerprint(view, 0usize, 1usize) == expected && frozen_fingerprint(view, 0usize, 1usize) == expected;
+        let unclosed_view = byte_range(unclosed_base, value * 2usize, value * 2usize + 2usize);
+        equal = equal && decoded_fingerprint(unclosed_view, 0usize, 1usize) == 0usize && frozen_fingerprint(unclosed_view, 0usize, 1usize) == 0usize;
+        value = value + 1usize;
+        0
+    }
+    // Valid raw UTF-8 versus escaped spelling, and independently folded bytes.
+    // Fold 195/169/240/159/152/128 independently of either pull implementation.
+    let raw = [34u8, 195u8, 169u8, 240u8, 159u8, 152u8, 128u8, 34u8];
+    let escaped = [34u8, 92u8, 117u8, 48u8, 48u8, 101u8, 57u8, 92u8, 117u8, 68u8, 56u8, 51u8, 68u8, 92u8, 117u8, 68u8, 69u8, 48u8, 48u8, 34u8];
+    let raw_view = array_as_slice(raw);
+    let escaped_view = array_as_slice(escaped);
+    let first = (195usize * 257usize + 169usize) % 65521usize;
+    let second = (first * 257usize + 240usize) % 65521usize;
+    let third = (second * 257usize + 159usize) % 65521usize;
+    let fourth = (third * 257usize + 152usize) % 65521usize;
+    let expected = 6usize * 65536usize + (fourth * 257usize + 128usize) % 65521usize;
+    equal && decoded_fingerprint(raw_view, 0usize, 6usize) == expected && frozen_fingerprint(raw_view, 0usize, 6usize) == expected && decoded_fingerprint(escaped_view, 0usize, 6usize) == expected && frozen_fingerprint(escaped_view, 0usize, 6usize) == expected && decoded_fingerprint(raw_view, 0usize, 5usize) == 0usize && frozen_fingerprint(raw_view, 0usize, 5usize) == 0usize && decoded_fingerprint(escaped_view, 0usize, 5usize) == 0usize && frozen_fingerprint(escaped_view, 0usize, 5usize) == 0usize
+}
+
 @id("std.data.json.dec.tests.main")
 fn main() -> i64
 {
-    if primitives() && hex() && escapes() && surrogates() && lone_surrogate() && encoding() && conversion() && tokens() && lengths() && emission_dispatch() && buffer() && buffer_unicode() && token_equality() { 0 } else { 1 }
+    if primitives() && hex() && escapes() && surrogates() && lone_surrogate() && encoding() && conversion() && tokens() && lengths() && emission_dispatch() && buffer() && buffer_unicode() && token_equality() && fingerprints() && raw_fingerprint_equivalence() { 0 } else { 1 }
 }

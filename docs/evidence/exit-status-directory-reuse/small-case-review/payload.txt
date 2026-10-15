@@ -1,0 +1,116 @@
+Review this DISTINCT correction to a false universal performance assertion. No tools/execution. Source-only, under650words. Full original old/current receiver and all original small/hostile inputs remain unchanged; only accounting assertions/additional representative change. Actual a231 owner135 assertion failed, rawlog had NO tuplevalues. Parent authorizes exact smallcase regression plus separate representative saving. No production fee/quota/cap/workunits changes.
+PRODUCTION CONTRACT: both old/current execute SAME actual status producer, retaining token through full exits+Drop. Old thenconstructs empty Directory<&StatusSourceId> and inserts every statusid in sourceorder. Current authenticates samefunction,budget,ACTIVE+sticky and borrows producer Directory populated in exactly same order. Rest complete exiting body byteequal except&statuses→statuses. Old Directory::new authenticates0. Firstinsert empty has growcharge len+1=1, then insertionVISIT3, no comparison/rebalance because parentNIL. New borrow bookkeeping7; full actual BORROW_BYTES=2tokenrefs+2Optionreceiverrefs+Optionborrowreturn+receivingref+bool (49on64bit). Old allocator/nodeDir backing held until receiverDrop. Bytecharges cumulative, no refunds, same first producer bootstrap. New guard/fees allocate noheap. Each Directory grow uses reserve_vec which prepays full replacement capacity and actual backing held; each comparison charges minopaqueUTF8len+1 pluslane andVISIT3, rebalancing/rotations existingunitsunchanged.
+QUESTION: are exact whole cost equations and+3 one-status regression proved, ratherthan fitted to observation? Does independent removed Directory exercise genuine sameoperations/bootstrap? Is strict win on separateactual multi-status public caller honest without changing baseline? Find real flaws or missingauthority/Drop/accounting beforewe send this correction; do not invent actualtuplevalues.
+ACTUAL COMPLETE PHASE OBSERVER:
+fn observe(program: &ResolvedProgram, function: &ResolvedFunction, current: bool,
+    work_limit: usize, byte_limit: usize, expected: Option<&Result<(), Diagnostic>>)
+    -> (bool, usize, usize, bool, Option<ReservationRefusal>, usize)
+{
+    let mut preparation = ReplayBudget::unobserved();
+    let facts = Facts::Arena(arena::build::<errors::Legacy>(function,
+        capacity::Payer::Selected(&mut physical_storage::PhysicalReservation::new(usize::MAX)),
+        &mut preparation).unwrap());
+    let storage = validate_slots(function).unwrap();
+    let leaves = collect_leaves(function).unwrap();
+    let ((value, allocation), refused, debit, first) = with_limit_usage_refusal(byte_limit, || measure(|| {
+        let mut budget = ReplayBudget::new();
+        budget.remaining = work_limit;
+        let result = receive(program, function, &facts, &storage, &leaves, &mut budget, current);
+        if let Some(expected) = expected { assert_eq!(&result, expected); }
+        let success = result.is_ok();
+        if !success && work_limit < MAX_REPLAY_WORK_UNITS && byte_limit == 1 << 26 {
+            assert_eq!(result.as_ref().unwrap_err().code, "SPX-H006");
+            assert_eq!(budget.remaining, 0);
+        }
+        let used = work_limit - budget.remaining;
+        drop(result);
+        if !success && (work_limit < MAX_REPLAY_WORK_UNITS || byte_limit < 1 << 26) {
+            let remaining = budget.remaining;
+            let bytes = crate::bounded_output::active_remaining();
+            let retry = receive(program, function, &facts, &storage, &leaves, &mut budget, current);
+            assert!(retry.is_err());
+            assert_eq!(budget.remaining, remaining);
+            assert_eq!(crate::bounded_output::active_remaining(), bytes);
+            drop(retry);
+        }
+        drop(budget);
+        (success, used)
+    }));
+    assert!(!allocation.invalid);
+    assert_eq!(allocation.live, 0);
+    assert_eq!(allocation.allocated, allocation.freed);
+    (value.0, value.1, debit, refused, first, allocation.allocated)
+}
+
+ACTUAL INDEPENDENT COST HELPER, EQUATIONS, NEW REPRESENTATIVE:
+// The removed operation is executed independently after the same actual status
+// producer/bootstrap, while its retained token remains live through full Drop.
+fn removed_directory_cost(function: &ResolvedFunction) -> (usize, usize, usize) {
+    let mut preparation = ReplayBudget::unobserved();
+    let facts = Facts::Arena(arena::build::<errors::Legacy>(function,
+        capacity::Payer::Selected(&mut physical_storage::PhysicalReservation::new(usize::MAX)),
+        &mut preparation).unwrap());
+    let ((cost, allocation), refused, _, first) = with_limit_usage_refusal(1 << 26, || measure(|| {
+        let mut budget = ReplayBudget::new();
+        let held = validate_status_sources_retained(function, &facts, &mut budget).unwrap();
+        let work = budget.remaining;
+        let bytes = crate::bounded_output::active_remaining().unwrap();
+        let before = crate::test_allocation_observer::current_metrics();
+        let mut directory = Directory::new(function, &mut budget, "cleanup exit status directory").unwrap();
+        for source in &function.cleanup_plan.status_sources {
+            directory.insert(function, &source.id, &mut budget).unwrap();
+        }
+        let after = crate::test_allocation_observer::current_metrics();
+        let cost = (work-budget.remaining,
+            bytes-crate::bounded_output::active_remaining().unwrap(), after.allocated-before.allocated);
+        drop(directory); drop(held); drop(budget); cost
+    }));
+    assert!(!refused && first.is_none() && !allocation.invalid);
+    assert_eq!(allocation.live,0); assert_eq!(allocation.allocated,allocation.freed);
+    cost
+}
+
+fn exact_accounting(function: &ResolvedFunction,
+    old: &(bool, usize, usize, bool, Option<ReservationRefusal>, usize),
+    new: &(bool, usize, usize, bool, Option<ReservationRefusal>, usize)) {
+    let removed = removed_directory_cost(function);
+    eprintln!("exit-status-cost function={} statuses={} old={old:?} current={new:?} removed={removed:?} borrow=({BORROW_UNITS},{BORROW_BYTES})",
+        function.id, function.cleanup_plan.status_sources.len());
+    assert_eq!(old.1.checked_add(BORROW_UNITS).unwrap(), new.1.checked_add(removed.0).unwrap());
+    assert_eq!(old.2.checked_add(BORROW_BYTES).unwrap(), new.2.checked_add(removed.1).unwrap());
+    assert_eq!(old.5, new.5.checked_add(removed.2).unwrap());
+    match function.cleanup_plan.status_sources.len() {
+        0 => { assert_eq!(removed.0,0); assert_eq!(new.1,old.1+BORROW_UNITS); }
+        1 => {
+            // The actual old first insertion performs relocation1 + VISIT3;
+            // it has no key comparison, rotation or parent rebalance.
+            assert_eq!(removed.0,4); assert_eq!(BORROW_UNITS,7);
+            assert_eq!(new.1,old.1+3);
+        }
+        _ => {}
+    }
+}
+
+// A separate real public caller with three ordinary borrowed reads. The old
+// receiver is unchanged and builds its original duplicate status directory.
+fn representative() -> ResolvedProgram {
+    crate::hir::resolve(&crate::check(r#"module replay.retained_exit_many;
+@id("many.read") fn read(input:borrow Bytes)->usize {
+ let view=bytes_as_slice(input); let range=byte_range(view,0usize,1usize); byte_len(range)
+}
+@id("many.main") fn main()->i64 {
+ let data=bytes_zeroed(1usize);
+ if read(data)==1usize {if read(data)==1usize {if read(data)==1usize {42}else{0}}else{0}}else{0}
+}"#, "retained-exit-many.spx").unwrap()).unwrap()
+}
+
+OLD UNCHANGED PROGRAM:
+fn program() -> ResolvedProgram {
+    crate::hir::resolve(&crate::check(r#"module replay.retained_exit;
+@id("exit.read") fn read(input:borrow Bytes)->usize {
+ let view=bytes_as_slice(input); let range=byte_range(view,0usize,1usize); byte_len(range)
+}
+@id("exit.main") fn main()->i64 {
+ let data=bytes_zeroed(1usize); if read(data)==1usize {42}else{0}
+}"#, "retained-exit.spx").unwrap()).unwrap()
+}

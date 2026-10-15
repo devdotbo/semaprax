@@ -1,9 +1,27 @@
 use std::{fmt, mem};
 
+#[path = "ast/drop_method_roots.rs"]
+mod drop_method_roots;
+#[cfg(test)]
+#[path = "ast/drop_method_original.rs"]
+mod drop_method_original;
+
+pub(crate) mod program_source;
+
+#[path = "ast/drop_frontier.rs"]
+mod drop_frontier;
+#[cfg(test)]
+#[path = "ast/drop_original.rs"]
+mod drop_original;
+
+#[doc(hidden)]
+pub mod expression_statement;
 #[path = "ast/session_protocol.rs"]
 mod session_protocol;
 #[path = "ast/statement_if.rs"]
 mod statement_if;
+#[doc(hidden)]
+pub mod vec_constructor;
 pub use session_protocol::{
     SessionProtocolDeclaration, SessionProtocolFollowsClause, SessionProtocolKind,
     SessionProtocolName, SessionProtocolNext, SessionProtocolTerminal, SessionProtocolTransition,
@@ -31,6 +49,8 @@ impl Span {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Type {
+    /// Compiler-only no-normal-completion marker, never authored storage or ABI.
+    Never,
     I64,
     I32,
     Char,
@@ -46,7 +66,8 @@ pub enum Type {
     /// One uniquely owned immutable byte buffer.
     Bytes,
     /// A borrowed UTF-8 view. Source functions may receive it only through
-    /// an explicit `borrow str` parameter; it has no literal or owned form.
+    /// an explicit `borrow str` parameter or an immutable static UTF-8 literal.
+    /// It has no owned form.
     Str,
     /// A non-escaping immutable byte view rooted in one external invocation
     /// input. It is written exactly `Slice<u8>` and has no owned form.
@@ -154,12 +175,13 @@ impl Drop for Program {
         // Accepted source trees may reach the compiler's exact depth limit.
         // Take every recursive root before field drop glue runs, then replace
         // each node with a leaf before releasing its children from worklists.
-        let mut functions = mem::take(&mut self.functions);
+        let functions = mem::take(&mut self.functions);
+        let mut method_roots = drop_method_roots::MethodRoots::new();
         let _agents = mem::take(&mut self.agents);
-        let mut types = Vec::new();
-        let mut expressions = Vec::new();
-        let mut patterns = Vec::new();
-        let mut record_patterns = Vec::new();
+        let mut types = drop_frontier::Stack::new();
+        let mut expressions = drop_frontier::Stack::new();
+        let mut patterns = drop_frontier::Stack::new();
+        let mut record_patterns = drop_frontier::Stack::new();
 
         for declaration in mem::take(&mut self.types) {
             if let Some(parent) = declaration.extends {
@@ -183,7 +205,7 @@ impl Drop for Program {
                 }
                 TypeDeclarationKind::Class { fields, methods } => {
                     types.extend(fields.into_iter().map(|field| field.ty));
-                    functions.extend(methods);
+                    method_roots.push(methods);
                 }
             }
         }
@@ -199,7 +221,7 @@ impl Drop for Program {
                 types.push(method.return_type);
             }
         }
-        for function in functions {
+        for function in functions.into_iter().chain(method_roots.into_iter()) {
             types.extend(function.params.into_iter().map(|param| param.ty));
             types.push(function.return_type);
             if let Some(yields) = function.yields {
@@ -213,6 +235,10 @@ impl Drop for Program {
 
         while let Some(mut expression) = expressions.pop() {
             match mem::replace(&mut expression.kind, ExprKind::Int(0)) {
+                ExprKind::VecConstructor { element, value, .. } => {
+                    types.push(element);
+                    expressions.push(*value);
+                }
                 ExprKind::Closure {
                     params,
                     return_type,
@@ -248,6 +274,7 @@ impl Drop for Program {
                 | ExprKind::Try { operand: value }
                 | ExprKind::Project { base: value, .. }
                 | ExprKind::Yield { request: value } => expressions.push(*value),
+                ExprKind::LexicalExit { value, .. } => expressions.extend(value.map(|v| *v)),
                 ExprKind::Binary { left, right, .. } => {
                     expressions.push(*left);
                     expressions.push(*right);
@@ -271,6 +298,7 @@ impl Drop for Program {
                                 expressions.push(*body);
                             }
                             Statement::For { values, body, .. }
+                            | Statement::ForBorrow { values, body, .. }
                             | Statement::ForOwn { values, body, .. } => {
                                 expressions.push(*values);
                                 expressions.push(*body);
@@ -325,6 +353,7 @@ impl Drop for Program {
                 | ExprKind::Float64(_)
                 | ExprKind::Bool(_)
                 | ExprKind::String(_)
+                | ExprKind::BorrowedUtf8Literal(_)
                 | ExprKind::Var(_) => {}
             }
         }
@@ -361,6 +390,7 @@ impl Drop for Program {
 
         while let Some(mut ty) = types.pop() {
             match mem::replace(&mut ty, Type::I64) {
+                Type::Never => {}
                 Type::Named { arguments, .. } => types.extend(arguments),
                 Type::Function { parameters, result } => {
                     types.extend(parameters);
@@ -501,7 +531,7 @@ impl AgentDeclaration {
     /// Source admission checks only opted-in Agents; legacy role references stay inert.
     pub(crate) fn validate_execution_metadata(
         &self,
-        program: &Program,
+        program: &dyn program_source::ProgramSource,
     ) -> Result<(), &'static str> {
         if !self.has_execution_metadata() {
             return Ok(());
@@ -514,7 +544,7 @@ impl AgentDeclaration {
                 continue;
             }
             let mut matches = program
-                .functions
+                .functions()
                 .iter()
                 .filter(|f| f.stable_id == operation.stable_id);
             let function = matches
@@ -525,7 +555,7 @@ impl AgentDeclaration {
             }
             if operation.embedded_function_index.is_some()
                 && (self
-                    .embedded_function(operation, &program.functions)
+                    .embedded_function_in(operation, program.functions())
                     .is_none()
                     || self.operations[..index].iter().any(|prior| {
                         prior.embedded_function_index == operation.embedded_function_index
@@ -556,7 +586,7 @@ impl AgentDeclaration {
                 return Err("Agent model wait helper identity is invalid or aliases a role");
             }
             let mut matches = program
-                .functions
+                .functions()
                 .iter()
                 .filter(|f| f.stable_id == binding.helper_id);
             let function = matches
@@ -565,10 +595,10 @@ impl AgentDeclaration {
             if matches.next().is_some()
                 || !function.explicit_id
                 || !function.type_parameters.is_empty()
-                || program.agents.iter().any(|agent| {
+                || program.agents().iter().any(|agent| {
                     agent.operations.iter().any(|op| {
                         agent
-                            .embedded_function(op, &program.functions)
+                            .embedded_function_in(op, program.functions())
                             .is_some_and(|f| std::ptr::eq(f, function))
                     })
                 })
@@ -582,12 +612,27 @@ impl AgentDeclaration {
     }
 
     /// A formatter may hide only the actual validated parser-origin entry.
+    pub(crate) fn embedded_function_in<'a>(
+        &self,
+        operation: &AgentOperationDeclaration,
+        functions: program_source::DeclSlices<'a, Function>,
+    ) -> Option<&'a Function> {
+        let function = functions.get(operation.embedded_function_index?)?;
+        self.authenticated_embedded_function(operation, function)
+    }
     pub fn embedded_function<'a>(
         &self,
         operation: &AgentOperationDeclaration,
         functions: &'a [Function],
     ) -> Option<&'a Function> {
         let function = functions.get(operation.embedded_function_index?)?;
+        self.authenticated_embedded_function(operation, function)
+    }
+    fn authenticated_embedded_function<'a>(
+        &self,
+        operation: &AgentOperationDeclaration,
+        function: &'a Function,
+    ) -> Option<&'a Function> {
         (operation.kind == AgentOperationKind::Deterministic
             && function.stable_id == operation.stable_id
             && function.name == operation.role.source_name()
@@ -851,6 +896,17 @@ pub struct ClosureParam {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExprKind {
+    /// Source constructor provenance around sequential ordinary Vec calls.
+    VecConstructor {
+        element: Type,
+        count: u32,
+        value: Box<Expr>,
+    },
+    /// Terminal source control flow: no normal value and no authored target.
+    LexicalExit {
+        kind: LexicalExitKind,
+        value: Option<Box<Expr>>,
+    },
     Closure {
         params: Vec<ClosureParam>,
         return_type: Type,
@@ -890,6 +946,8 @@ pub enum ExprKind {
     Float64(u64),
     Bool(bool),
     String(String),
+    /// Explicit borrowed UTF-8 spelling; frontend-only until static-root admission.
+    BorrowedUtf8Literal(String),
     Var(String),
     Call {
         name: String,
@@ -1130,144 +1188,11 @@ pub struct FieldTarget {
     pub span: Span,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Statement {
-    Let {
-        /// Authored syntax provenance; it grants no semantic authority.
-        syntax: LetSyntax,
-        name: String,
-        name_span: Span,
-        /// Explicit Mutation v1: `true` when the source declared `let mut`.
-        mutable: bool,
-        /// Class Inheritance v1: optional declared type annotation
-        /// `let name: T = value;`. `None` when the source omitted `: T`.
-        declared: Option<Type>,
-        value: Expr,
-        span: Span,
-    },
-    /// Explicit Mutation v1: `<binding> = <expr>;` over a simple local
-    /// binding. Statement-only; there is no assignment expression.
-    /// Field Mutation v1 extends the target with one direct scalar field:
-    /// `<binding>.<field> = <expr>;`.
-    Assign {
-        name: String,
-        name_span: Span,
-        field: Option<FieldTarget>,
-        value: Expr,
-        span: Span,
-    },
-    /// Unsafe Boundary Mechanics v1: `@audit("...") unsafe { ... }`. The body
-    /// is an ordinary safe block expression; no raw pointers or memory
-    /// operations exist inside. The audit summary is recorded verbatim.
-    Unsafe {
-        audit: String,
-        audit_span: Span,
-        body: Box<Expr>,
-        span: Span,
-    },
-    /// Bounded While-Loops v1: `while <condition> { <body> }`. The condition
-    /// must be exactly `bool` and the body is an ordinary block whose value is
-    /// discarded; the statement itself produces no value.
-    While {
-        condition: Box<Expr>,
-        body: Box<Expr>,
-        span: Span,
-    },
-    /// Bounded Vec traversal: `for item in values { body }`.
-    For {
-        item: String,
-        item_span: Span,
-        values: Box<Expr>,
-        body: Box<Expr>,
-        span: Span,
-    },
-    /// Consuming iterator traversal: `for own item in iterator { body }`.
-    ///
-    /// This stays distinct from [`Statement::For`] so the older Vec traversal
-    /// retains its exact syntax and cache codec representation.
-    ForOwn {
-        item: String,
-        item_span: Span,
-        values: Box<Expr>,
-        body: Box<Expr>,
-        span: Span,
-    },
-}
-
-impl Statement {
-    /// The statement's evaluated expression: the initializer of a `let`, the
-    /// assigned value of an assignment, or the ordinary block body of an
-    /// unsafe boundary statement. While statements carry two evaluated
-    /// expressions and must be traversed with [`Statement::child`] instead.
-    pub fn value(&self) -> &Expr {
-        match self {
-            Self::Let { value, .. } | Self::Assign { value, .. } => value,
-            Self::Unsafe { body, .. } => body,
-            Self::While { .. } | Self::For { .. } | Self::ForOwn { .. } => {
-                panic!("loop statements expose source/condition and body children")
-            }
-        }
-    }
-
-    /// Mutable access to the statement's evaluated expression.
-    pub fn value_mut(&mut self) -> &mut Expr {
-        match self {
-            Self::Let { value, .. } | Self::Assign { value, .. } => value,
-            Self::Unsafe { body, .. } => body,
-            Self::While { .. } | Self::For { .. } | Self::ForOwn { .. } => {
-                panic!("loop statements expose source/condition and body children")
-            }
-        }
-    }
-
-    /// The statement's source-level binding name. Only `let` and assignment
-    /// statements bind or target a name.
-    pub fn name(&self) -> &str {
-        match self {
-            Self::Let { name, .. } | Self::Assign { name, .. } => name,
-            Self::Unsafe { .. } | Self::While { .. } | Self::For { .. } | Self::ForOwn { .. } => {
-                panic!("only let and assignment statements declare a binding")
-            }
-        }
-    }
-
-    /// The verbatim audit summary of an unsafe boundary statement.
-    pub fn audit(&self) -> Option<&str> {
-        match self {
-            Self::Unsafe { audit, .. } => Some(audit),
-            _ => None,
-        }
-    }
-
-    /// `true` for assignment statements.
-    pub fn is_assign(&self) -> bool {
-        matches!(self, Self::Assign { .. })
-    }
-
-    /// Number of directly nested evaluated expressions. `let`, assignment,
-    /// and unsafe statements contribute one; while statements contribute its
-    /// condition then its body, in evaluation order.
-    pub fn child_count(&self) -> usize {
-        match self {
-            Self::Let { .. } | Self::Assign { .. } | Self::Unsafe { .. } => 1,
-            Self::While { .. } | Self::For { .. } | Self::ForOwn { .. } => 2,
-        }
-    }
-
-    /// One directly nested evaluated expression in left-to-right order.
-    pub fn child(&self, index: usize) -> Option<&Expr> {
-        match self {
-            Self::Let { value, .. } | Self::Assign { value, .. } => (index == 0).then_some(value),
-            Self::Unsafe { body, .. } => (index == 0).then_some(body.as_ref()),
-            Self::While {
-                condition, body, ..
-            } => [condition.as_ref(), body.as_ref()].get(index).copied(),
-            Self::For { values, body, .. } | Self::ForOwn { values, body, .. } => {
-                [values.as_ref(), body.as_ref()].get(index).copied()
-            }
-        }
-    }
-}
+mod lexical_exit;
+pub(crate) use lexical_exit::returns_only;
+pub use lexical_exit::{has_no_normal_completion, LexicalExitKind};
+mod statement;
+pub use statement::{Statement, TraversalIndex};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum UnaryOp {
@@ -1324,7 +1249,20 @@ impl BinaryOp {
 }
 
 impl Expr {
-    fn visit_call_nodes(&self, mut visit: impl FnMut(&Expr)) {
+    /// Presence only: reuse the exhaustive structural visitor, including its
+    /// existing overflow route, without imposing the selective contour bound
+    /// on legacy source. This is not type, ownership or exit-target authority.
+    pub(crate) fn contains_lexical_exit(&self) -> bool {
+        let mut found = false;
+        self.visit_call_nodes(&mut |expression| {
+            found |= matches!(expression.kind, ExprKind::LexicalExit { .. });
+        });
+        found
+    }
+
+    // Keep the full traversal shared across caller closure types. The callback
+    // is borrowed only during this walk and never stored or allocated.
+    fn visit_call_nodes(&self, visit: &mut dyn FnMut(&Expr)) {
         const FIXED_DEPTH: usize = 513;
         let mut stack = [None; FIXED_DEPTH];
         stack[0] = Some((self, 0usize));
@@ -1363,13 +1301,17 @@ impl Expr {
 
     pub(crate) fn child(&self, index: usize) -> Option<&Expr> {
         match &self.kind {
+            ExprKind::LexicalExit { value, .. } => {
+                (index == 0).then_some(value.as_deref()).flatten()
+            }
             ExprKind::Closure { body, .. } => (index == 0).then_some(body),
             ExprKind::Call { args, .. } => args.get(index),
             ExprKind::MethodCall { receiver, args, .. } => (index == 0)
                 .then_some(receiver.as_ref())
                 .or_else(|| args.get(index - 1)),
             ExprKind::SuperMethod { args, .. } => args.get(index),
-            ExprKind::Unary { value, .. }
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Project { base: value, .. }
             | ExprKind::Yield { request: value } => (index == 0).then_some(value),
@@ -1428,12 +1370,13 @@ impl Expr {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => None,
         }
     }
 
     pub fn visit_calls(&self, visit: &mut impl FnMut(&str, Span)) {
-        self.visit_call_nodes(|expression| {
+        self.visit_call_nodes(&mut |expression| {
             if let ExprKind::Call { name, .. } = &expression.kind {
                 visit(name, expression.span);
             }
@@ -1441,7 +1384,7 @@ impl Expr {
     }
 
     pub fn visit_call_instances(&self, visit: &mut impl FnMut(&str, &[Type], Span)) {
-        self.visit_call_nodes(|expression| {
+        self.visit_call_nodes(&mut |expression| {
             if let ExprKind::Call {
                 name,
                 type_arguments,
@@ -1460,7 +1403,7 @@ impl Expr {
     /// maintains rather than a second hand-written `ExprKind` match that
     /// could silently drift from it.
     pub(crate) fn visit_all_nodes(&self, visit: &mut impl FnMut(&Expr)) {
-        self.visit_call_nodes(|expression| visit(expression));
+        self.visit_call_nodes(&mut |expression| visit(expression));
     }
 }
 

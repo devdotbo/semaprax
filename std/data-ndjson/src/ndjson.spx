@@ -1,0 +1,119 @@
+module std.data.ndjson;
+use function @id("std.io.lines.line-end") from std.io.lines as lf_end;
+use function @id("std.data.json.utf8.utf8_end") from std.data.json.utf8 as utf8_end;
+
+// Copy observations only: neither record contains a borrowed carrier or owner token.
+@id("std.data.ndjson.frame")
+record Frame {
+    @id("std.data.ndjson.frame.ordinal")
+    ordinal: usize,
+    @id("std.data.ndjson.frame.start")
+    start: usize,
+    @id("std.data.ndjson.frame.end")
+    end: usize,
+    @id("std.data.ndjson.frame.next")
+    next: usize,
+}
+
+@id("std.data.ndjson.fault")
+record Fault {
+    @id("std.data.ndjson.fault.category")
+    category: i64,
+    @id("std.data.ndjson.fault.record-index")
+    record_index: i64,
+    @id("std.data.ndjson.fault.byte-offset")
+    byte_offset: usize,
+}
+
+@id("std.data.ndjson.record-count")
+fn record_count(body: borrow Slice<u8>) -> usize
+{
+    let length = byte_len(body);
+    let mut index = 0usize;
+    let mut count = 0usize;
+    let mut at_start = true;
+    while index < length {
+        let byte = match byte_get(body, index) { Option::Some { value } => value, Option::None {} => 0u8, };
+        count = if at_start { count + 1usize } else { count };
+        at_start = byte == 10u8;
+        index = index + 1usize;
+        index < length
+    }
+    let lone = length == 1usize && match byte_get(body, 0usize) { Option::Some { value } => value == 10u8, Option::None {} => false, };
+    if lone { 0usize } else { count }
+}
+
+@id("std.data.ndjson.line-start")
+fn line_start(body: borrow Slice<u8>, ordinal: usize) -> usize
+{
+    let length = byte_len(body);
+    let mut index = 0usize;
+    let mut seen = 0usize;
+    let mut found = ordinal == 0usize;
+    while index < length && !found {
+        let byte = match byte_get(body, index) { Option::Some { value } => value, Option::None {} => 0u8, };
+        seen = if byte == 10u8 { seen + 1usize } else { seen };
+        index = index + 1usize;
+        found = seen == ordinal;
+        index < length && !found
+    }
+    index
+}
+
+@id("std.data.ndjson.line-end")
+fn line_end(body: borrow Slice<u8>, start: usize) -> usize
+    requires start <= byte_len(body)
+{
+    lf_end(body, start)
+}
+// Global size and count priority precedes all record content inspection.
+
+@id("std.data.ndjson.global-fault")
+fn global_fault(body: borrow Slice<u8>) -> Fault
+{
+    let whole = byte_len(body) > 65536usize;
+    let many = if whole { false } else { record_count(body) > 256usize };
+    Fault { category: if whole || many { 1 } else { 0 }, record_index: if whole { -1 } else { if many { 256 } else { -1 } }, byte_offset: if whole { 65536usize } else { 0usize } }
+}
+
+@id("std.data.ndjson.frame-at")
+fn frame_at(body: borrow Slice<u8>, ordinal: usize) -> Frame
+    requires byte_len(body) <= 65536usize && ordinal < 256usize && ordinal < record_count(body)
+{
+    let start = line_start(body, ordinal);
+    let end = line_end(body, start);
+    Frame { ordinal: ordinal, start: start, end: end, next: if end < byte_len(body) { end + 1usize } else { end } }
+}
+// Reconstruct numeric cuts from CURRENT bytes. This does not authenticate an owner/generation.
+
+@id("std.data.ndjson.frame-matches")
+fn frame_matches(body: borrow Slice<u8>, frame: Frame) -> bool
+{
+    let bounded = byte_len(body) <= 65536usize && frame.ordinal < 256usize && frame.ordinal < record_count(body);
+    let start = if bounded { line_start(body, frame.ordinal) } else { byte_len(body) };
+    let end = if bounded { line_end(body, start) } else { byte_len(body) };
+    let next = if end < byte_len(body) { end + 1usize } else { end };
+    bounded && frame.start == start && frame.end == end && frame.next == next
+}
+
+// Receives an ACTUAL current borrowed view, whose existing byte-range loan is replayed independently.
+@id("std.data.ndjson.basic-line-fault")
+fn basic_line_fault(line: borrow Slice<u8>, ordinal: usize) -> Fault
+    requires ordinal < 256usize
+{
+    let length = byte_len(line);
+    let long = length > 512usize;
+    let marker = if long { length } else { utf8_end(line, 0usize) };
+    let invalid = marker > length;
+    let empty = length == 0usize;
+    Fault { category: if long { 1 } else { if invalid { 2 } else { if empty { 3 } else { 0 } } }, record_index: i64_from_usize(ordinal), byte_offset: if long { 512usize } else { if invalid { marker - length - 1usize } else { 0usize } } }
+}
+
+@id("std.data.ndjson.basic-fault")
+fn basic_fault(body: borrow Slice<u8>, frame: Frame) -> Fault
+    requires frame_matches(body, frame)
+{
+    // Numeric validation is distinct from owner/generation authority at this producer.
+    let line = byte_range(body, frame.start, frame.end);
+    basic_line_fault(line, frame.ordinal)
+}

@@ -1,9 +1,9 @@
 use super::execution::termination_from_diagnostic;
 use super::*;
 
-pub(super) fn boundary_termination<H: AgentHost>(
+pub(super) fn boundary_termination(
     profile: &Profile,
-    host: &H,
+    host: &dyn AgentHost,
     cancellation: &AgentCancellation,
     policy_epoch: u64,
 ) -> Option<Termination> {
@@ -25,9 +25,9 @@ pub(super) fn boundary_termination<H: AgentHost>(
     None
 }
 
-pub(super) fn remaining_deadline_ms<H: AgentHost>(
+pub(super) fn remaining_deadline_ms(
     profile: &Profile,
-    host: &H,
+    host: &dyn AgentHost,
     cancellation: &AgentCancellation,
     policy_epoch: u64,
 ) -> Result<u64, Termination> {

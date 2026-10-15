@@ -1,0 +1,83 @@
+{
+  "source_commit": "b2be954810d9cf1dce09ce91efa42ac699de73fe",
+  "sources": [
+    {
+      "path": "src/source_verify/declaration/functions/signature_refusal.rs",
+      "start": 1,
+      "end": 157,
+      "sha256": "0388955e5a2175e99a9094196bf9cc06b90e48a6647cd52e137b2821699aa57b"
+    },
+    {
+      "path": "src/source_verify/recovery.rs",
+      "start": 1,
+      "end": 209,
+      "sha256": "262bb0030111b4f31e939117f6c7144feabaa922c28b20ef94bbfa4d97f5d5e8"
+    },
+    {
+      "path": "src/source_verify/diagnostics.rs",
+      "start": 164,
+      "end": 297,
+      "sha256": "95bd8721029021074f39f5c76e4e0183771831112f591143e4a42bd90ce670d9"
+    },
+    {
+      "path": "src/source_verify/iterative.rs",
+      "start": 367,
+      "end": 430,
+      "sha256": "ab396db1af79d103ff988289513111d8ee8c902378320bcde9c04bce98b7e3c8"
+    },
+    {
+      "path": "src/source_verify/iterative/enter.rs",
+      "start": 134,
+      "end": 159,
+      "sha256": "3a03b4c4773e2d72e87077031cf1b68fd19f678a24ae7cab33934ad7403a0405"
+    },
+    {
+      "path": "src/source_verify/declaration/functions.rs",
+      "start": 335,
+      "end": 397,
+      "sha256": "66c5704c3d423fb73c790c34bf273b30ed21e835790e6034b42e299f0a71a474"
+    },
+    {
+      "path": "src/source_verify/declaration/functions.rs",
+      "start": 975,
+      "end": 1088,
+      "sha256": "66c5704c3d423fb73c790c34bf273b30ed21e835790e6034b42e299f0a71a474"
+    },
+    {
+      "path": "src/source_verify/declaration/functions.rs",
+      "start": 1183,
+      "end": 1248,
+      "sha256": "66c5704c3d423fb73c790c34bf273b30ed21e835790e6034b42e299f0a71a474"
+    },
+    {
+      "path": "src/source_verify/declaration/functions.rs",
+      "start": 1287,
+      "end": 1309,
+      "sha256": "66c5704c3d423fb73c790c34bf273b30ed21e835790e6034b42e299f0a71a474"
+    },
+    {
+      "path": "src/source_verify/declared_type.rs",
+      "start": 844,
+      "end": 864,
+      "sha256": "49f7b8c7c1dddf800981e8f911647e979d276b6dec234fa0f80856f49975a720"
+    },
+    {
+      "path": "src/source_verify/declaration/functions/signature_refusal/tests.rs",
+      "start": 477,
+      "end": 627,
+      "sha256": "8f3d2b544de29be9989aadf9cbe686b75e7ad49ba4512357d73155d8614d3065"
+    },
+    {
+      "path": "docs/evidence/public-template-recovery-799/src__source_verify__diagnostics.rs.before.txt",
+      "start": 164,
+      "end": 254,
+      "sha256": "8fccfc4e16d3296712735a71ea5811a0d555e542fbd8719c208a24222b8c240e"
+    },
+    {
+      "path": "docs/SCOPED-DIAGNOSTIC-RECOVERY-V1.md",
+      "start": 138,
+      "end": 165,
+      "sha256": "88dd5db5ec695681a36cf99820a8aa8b849dc5335f81180c0a164fcadf831a3c"
+    }
+  ]
+}

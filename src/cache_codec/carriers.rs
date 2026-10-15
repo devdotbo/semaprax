@@ -17,8 +17,9 @@ mod ast {
         5 => ArrayU8(length), 6 => F32, 7 => F64, 8 => Bool,
         9 => String, 10 => Bytes, 11 => Str, 12 => SliceU8,
         13 => Named { name, arguments }, 14 => Function { parameters, result }, 15 => OnceFunction, 16 => OnceFunctionI64, 17 => OnceFunctionI64Pair, 18 => MutFunctionI64,
-        19 => StringMap
+        19 => StringMap, 20 => Never
     });
+    codec_enum!(LexicalExitKind { 0 => Break, 1 => Continue, 2 => Return });
     codec_enum!(ParamMode { 0 => Value, 1 => Own, 2 => Borrow, 3 => Shared });
     codec_enum!(MatchMode { 0 => Value, 1 => Own, 2 => Borrow });
     codec_enum!(AgentTypeRole {
@@ -253,7 +254,9 @@ mod ast {
         21 => Match { mode, scrutinee, arms }, 22 => Try { operand },
         23 => UpdateRecord { base, fields }, 24 => Project { base, field, field_span },
         25 => Closure { params, return_type, body, owning, retained, mutable },
-        26 => Yield { request }
+        26 => Yield { request },
+        27 => LexicalExit { kind, value }, 28 => BorrowedUtf8Literal(value),
+        29 => VecConstructor { element, count, value }
     });
     codec_struct!(MatchArm {
         pattern,
@@ -292,20 +295,22 @@ mod ast {
     });
     codec_struct!(FieldTarget { name, span });
     codec_enum!(LetSyntax {
-        0 => Authored, 1 => StatementIf(syntax), 2 => BranchTail
+        0 => Authored, 1 => StatementIf(syntax), 2 => BranchTail, 3 => ExpressionStatement
     });
     codec_struct!(StatementIfSyntax {
         branches,
         alternative
     });
     codec_enum!(BranchTail { 0 => Absent, 1 => Retained, 2 => Discarded });
+    codec_struct!(TraversalIndex { name, span });
     codec_enum!(Statement {
         0 => Let { name, name_span, mutable, declared, value, span, syntax },
         1 => Assign { name, name_span, field, value, span },
         2 => Unsafe { audit, audit_span, body, span },
         3 => While { condition, body, span },
         4 => For { item, item_span, values, body, span },
-        5 => ForOwn { item, item_span, values, body, span }
+        5 => ForOwn { item, item_span, values, body, span },
+        6 => ForBorrow { item, item_span, index, values, body, span }
     });
     codec_enum!(UnaryOp { 0 => Neg, 1 => Not });
     codec_enum!(BinaryOp {
@@ -381,7 +386,7 @@ mod plan {
     codec_tuple!(CleanupRegionId(0));
     codec_tuple!(ExitTargetId(0));
     codec_tuple!(CleanupSlotId(0));
-    codec_enum!(StatusLane { 0 => OperationFailure, 1 => ContractFalse, 2 => OwnerAdmission });
+    codec_enum!(StatusLane { 0 => OperationFailure, 1 => ContractFalse, 2 => OwnerAdmission, 3 => AllocationFailure });
     codec_struct!(StatusSourceId { expression, lane });
     codec_enum!(StorageId {
         0 => Value(value), 1 => Temporary(expression),
@@ -433,7 +438,8 @@ mod plan {
     codec_enum!(ContractPhase { 0 => Requires, 1 => Ensures });
     codec_enum!(StatusProducer {
         0 => PropagatedCall { callee }, 1 => CheckedArithmetic { operation, normalized_cases },
-        2 => ContractFalse { phase, ordinal }
+        2 => ContractFalse { phase, ordinal },
+        3 => CheckedAllocation { operation, normalized_cases }
     });
     codec_struct!(StatusSource { id, producer });
     codec_enum!(CleanupTerminator { 0 => Goto(edge), 1 => Branch(edges), 2 => Exit(target) });
@@ -473,7 +479,9 @@ mod plan {
         case
     });
     codec_enum!(ExitContinuation {
-        0 => Continue(edge), 1 => CommitResult { source }, 2 => ReturnFailure { source }, 3 => ReturnUnit
+        0 => Continue(edge), 1 => CommitResult { source }, 2 => ReturnFailure { source }, 3 => ReturnUnit,
+        4 => LoopLatch { target }, 5 => LoopBreak { target, edge },
+        6 => FunctionReturn { target, edge, source }
     });
     codec_enum!(CleanupResultSource { 0 => Scalar { expression }, 1 => Owned { storage } });
     codec_struct!(ExitTarget {
@@ -482,17 +490,6 @@ mod plan {
         leaves_regions,
         finalize_in_order,
         continuation
-    });
-    codec_struct!(CleanupPlan {
-        schema,
-        entry,
-        entry_state,
-        slots,
-        status_sources,
-        blocks,
-        edges,
-        regions,
-        exits
     });
 }
 
@@ -503,7 +500,7 @@ mod loan {
     codec_tuple!(LoanId(0));
     codec_enum!(LoanPointPhase { 0 => Before, 1 => After });
     codec_struct!(LoanProgramPoint { expression, phase });
-    codec_enum!(LoanCause { 0 => SliceView, 1 => BorrowedCall { argument }, 2 => MatchBorrow { arm }, 3 => StrView });
+    codec_enum!(LoanCause { 0 => SliceView, 1 => BorrowedCall { argument }, 2 => MatchBorrow { arm }, 3 => StrView, 4 => TraversalFreeze });
     codec_struct!(Loan {
         id,
         site,
@@ -548,6 +545,7 @@ mod tests {
         use crate::ast::{BranchTail, LetSyntax, StatementIfSyntax};
         roundtrip(&LetSyntax::Authored);
         roundtrip(&LetSyntax::BranchTail);
+        roundtrip(&LetSyntax::ExpressionStatement);
         roundtrip(&LetSyntax::StatementIf(StatementIfSyntax {
             branches: vec![
                 BranchTail::Absent,

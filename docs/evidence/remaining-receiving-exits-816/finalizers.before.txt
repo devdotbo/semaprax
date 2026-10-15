@@ -1,0 +1,52 @@
+fn validate_finalizer_actions(
+    function: &ResolvedFunction,
+    actions: &[super::FinalizeAction],
+    storage: &BTreeSet<StorageId>,
+    leaves: &Leaves,
+) -> Result<(), Diagnostic> {
+    let mut finalized = BTreeSet::new();
+    for action in actions {
+        let under = validate_place(function, &action.source, storage, leaves)?;
+        if under.len() != 1
+            || under[0] != action.guard_flag
+            || leaves[&action.guard_flag].place != action.source
+        {
+            return Err(replay_error(
+                function,
+                "finalizer guard does not name its exact cleanup leaf",
+            ));
+        }
+        let leaf = leaves
+            .get(&action.guard_flag)
+            .expect("validated cleanup flag");
+        if leaf.lifecycle != action.lifecycle_id || !finalized.insert(action.guard_flag) {
+            return Err(replay_error(
+                function,
+                "finalizer lifecycle or guard is invalid or repeated",
+            ));
+        }
+        if let Some(condition) = &action.active_case {
+            if condition.storage != action.source.storage
+                || action.source.projections.first() != Some(&condition.case)
+                || function
+                    .cleanup_plan
+                    .slots
+                    .iter()
+                    .find(|slot| slot.storage == condition.storage)
+                    .is_none_or(|slot| {
+                        !matches!(
+                            &slot.ty,
+                            ResolvedType::Nominal { declaration, .. }
+                                if declaration == &condition.variant
+                        )
+                    })
+            {
+                return Err(replay_error(
+                    function,
+                    "conditional finalizer does not bind its exact variant case path",
+                ));
+            }
+        }
+    }
+    Ok(())
+}

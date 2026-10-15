@@ -11,7 +11,7 @@ pub(super) fn render(name: &str) -> Vec<TemplateFile> {
     semaprax::project::derive_project_scaffold_v1_with_layout(
         name,
         semaprax::project::PROJECT_SCAFFOLD_TEMPLATE_CALCULATOR,
-        semaprax::project::ScaffoldLayout::Tables,
+        semaprax::project::ScaffoldLayout::Current,
     )
     .expect("built-in test scaffold must derive")
     .files()

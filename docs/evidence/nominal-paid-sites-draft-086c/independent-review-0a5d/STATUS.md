@@ -1,0 +1,1 @@
+One tool-disabled Sonnet process timed out at120.0352s, exit-9, peak297238528B<768MiB. No completed review text or approval. No retry. Actual rawreceipt/payload/sourcebindings retained; source subject0a5d, earlier than subsequent helper/carrier/custody changes. Billing unknown. This is not executable qualification.

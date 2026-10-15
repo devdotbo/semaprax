@@ -1,8 +1,10 @@
 //! Supplemental call-argument storage replay.
 use super::*;
+pub(super) mod receiving;
 
+#[cfg(test)]
 pub(super) fn collect_supplemental_slots(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     next_flag: &mut u32,
@@ -24,12 +26,18 @@ pub(super) fn collect_supplemental_slots(
                     type_arguments,
                 }) = parts(expression, function)?
                 {
-                    let params =
-                        resolved_call_params(program, function, callee, instance, type_arguments)?;
+                    let params = resolved_call_params(
+                        program,
+                        function,
+                        expression,
+                        callee,
+                        instance,
+                        type_arguments,
+                    )?;
                     if params.len() != args.len() {
                         return Err(replay_error(
                             function,
-                            format!("cleanup call `{}` has inconsistent arity", expression.id),
+                            format_args!("cleanup call `{}` has inconsistent arity", expression.id),
                         ));
                     }
                     if let Some(argument) = args.get(next) {
@@ -64,8 +72,14 @@ pub(super) fn collect_supplemental_slots(
                 else {
                     unreachable!("call-argument continuation retains a call");
                 };
-                let params =
-                    resolved_call_params(program, function, callee, instance, type_arguments)?;
+                let params = resolved_call_params(
+                    program,
+                    function,
+                    expression,
+                    callee,
+                    instance,
+                    type_arguments,
+                )?;
                 let argument = &args[index];
                 let parameter = &params[index];
                 if parameter.ownership == OwnershipMode::Own
@@ -115,8 +129,11 @@ fn parts<'a>(
                     "streaming advancement has a noncanonical owned signature",
                 ));
             }
-            static NEXT: std::sync::LazyLock<DeclarationId> =
-                std::sync::LazyLock::new(|| DeclarationId::new(crate::stdin_stream_ops::NEXT_ID));
+            static NEXT: std::sync::LazyLock<DeclarationId> = std::sync::LazyLock::new(|| {
+                DeclarationId::compiler(crate::hir::CompilerDeclaration::Command(
+                    crate::hir::ResolvedHostCommandOperation::StdinStreamNext,
+                ))
+            });
             return Ok(Some(super::super::native_rust::CallParts {
                 callee: &NEXT,
                 instance: None,

@@ -5,9 +5,18 @@
 //! cleanup from syntax.  Construction and validation are pure and
 //! deterministic.  This module deliberately does not enable resource lowering.
 
+mod allocation;
+pub use allocation::{AllocationCase, AllocationOperation, ALLOCATION_DOMAIN_V1};
 mod build;
+pub(crate) mod checked_allocation;
 mod deferred_commit;
 mod execute;
+mod execution_boundary;
+pub use execution_boundary::{ExecutionBoundaryCertificate, ExecutionBoundaryKind};
+mod lexical_control;
+pub use lexical_control::{
+    LexicalControlPlan, LexicalExitCertificate, LoopCertificate, ResumeCertificate,
+};
 mod native_rust;
 mod owner_admission;
 // Owned-value-across-a-yield liveness query (issue #296, spec section 11.6).
@@ -17,13 +26,29 @@ mod owner_admission;
 // leave the Copy-scalar profile; every other owned or aggregate value still
 // keeps its existing SPX-T303/T305/T306 refusal.
 mod owned_liveness;
-mod renewal_profile;
+mod renewal_history;
+pub(crate) mod renewal_profile;
+pub(crate) use renewal_profile::RenewalBindings as ReplayRenewalBindings;
 mod replay;
-pub(crate) use renewal_profile::binding as renewal_binding;
-pub(crate) use renewal_profile::bindings as renewal_bindings;
+mod row_loan;
+#[cfg(test)]
+pub(crate) use replay::validate_retained_lexical_with_reservation;
+pub(crate) use replay::{
+    replay_btree_node_upper, replay_reserve_vec, ClonePayload as ReplayClonePayload,
+    PhysicalReservation as ReplayPhysicalReservation, SelectedReplayPreparation,
+    SelectedReplayRefusal, SelectedReplayRefused, SelectedReplayReport, SelectedReplayReportForm,
+    SelectedReplayUnpaid,
+};
+#[cfg(test)]
+pub(crate) use replay::{
+    ReplayBorrowedIdentity, ReplayBorrowedLease, ReplayPhysicalRefusal, SelectedReplayCause,
+    SelectedReplaySession, SelectedReplayUnpaidReason,
+};
 mod validate;
 
 pub(crate) use build::build_plan;
+pub(crate) use build::helper_index::attach_program_plans;
+pub(crate) use build::lexical_control::build_plan_for_execution;
 pub use execute::{execute_for_conformance, CleanupExecutionError, CleanupScenario};
 pub(crate) use owned_liveness::{
     admit_owned_bytes_profile, admit_sequential_aggregate_bytes_profile, carried_locals_at,
@@ -61,6 +86,12 @@ pub const CLEANUP_PLAN_SCHEMA_V15: &str = "semaprax.cleanup-plan.v15";
 pub const CLEANUP_PLAN_SCHEMA_V16: &str = "semaprax.cleanup-plan.v16";
 /// Same-owner byte-buffer updates preserve their reserved cleanup position.
 pub const CLEANUP_PLAN_SCHEMA_V17: &str = "semaprax.cleanup-plan.v17";
+/// Independently reconstructed lexical exits and finite loop certificates.
+pub const CLEANUP_PLAN_SCHEMA_V18: &str = "semaprax.cleanup-plan.v18";
+/// Transitive nonallocating ordinary Bytes helper renewal, with optional lexical control.
+pub const CLEANUP_PLAN_SCHEMA_V19: &str = "semaprax.cleanup-plan.v19";
+/// Additive checked-allocation projection; ordinary production never selects it.
+pub const CLEANUP_PLAN_SCHEMA_V20: &str = "semaprax.cleanup-plan.v20";
 
 macro_rules! numeric_id {
     ($name:ident) => {
@@ -80,6 +111,8 @@ pub enum StatusLane {
     /// Callee-scoped owner validation before atomic argument commitment.
     OwnerAdmission,
     OperationFailure,
+    /// Physical materialization refusal in an exact checked allocation closure.
+    AllocationFailure,
     ContractFalse,
 }
 
@@ -310,6 +343,12 @@ pub enum ContractPhase {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum StatusProducer {
+    /// Fixed allocation domain/class/retryability. The exact cases and operation
+    /// remain independently checked proof data, never allocator permission.
+    CheckedAllocation {
+        operation: AllocationOperation,
+        normalized_cases: [AllocationCase; 2],
+    },
     PropagatedCall {
         callee: DeclarationId,
     },
@@ -399,8 +438,26 @@ pub struct VariantCaseGuard {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExitContinuation {
     Continue(EdgeId),
-    CommitResult { source: CleanupResultSource },
-    ReturnFailure { source: StatusSourceId },
+    /// A finite iteration witness hands off to its authenticated runtime latch.
+    LoopLatch {
+        target: crate::hir::ControlTarget,
+    },
+    LoopBreak {
+        target: crate::hir::ControlTarget,
+        edge: EdgeId,
+    },
+    /// Nested scopes settle before entering the ordinary postcondition route.
+    FunctionReturn {
+        target: crate::hir::ControlTarget,
+        edge: EdgeId,
+        source: CleanupResultSource,
+    },
+    CommitResult {
+        source: CleanupResultSource,
+    },
+    ReturnFailure {
+        source: StatusSourceId,
+    },
     ReturnUnit,
 }
 
@@ -434,6 +491,8 @@ pub struct CleanupPlan {
     pub edges: Vec<CleanupEdge>,
     pub regions: Vec<CleanupRegion>,
     pub exits: Vec<ExitTarget>,
+    /// Absent on legacy functions; never inferred from a schema prefix.
+    pub lexical_control: Option<Box<LexicalControlPlan>>,
 }
 
 impl CleanupPlan {
@@ -454,12 +513,18 @@ impl CleanupPlan {
             edges: Vec::new(),
             regions: Vec::new(),
             exits: Vec::new(),
+            lexical_control: None,
         }
     }
 
     #[cfg(test)]
     #[allow(dead_code)]
     fn owned_capacity_bytes(&self) -> Option<usize> {
+        // Preserve the historical test receipt for legacy metadata; the new
+        // selective profile uses the complete physical backing census.
+        if self.lexical_control.is_some() {
+            return crate::private_capacity_contract::cleanup_plan_owned_capacity(self);
+        }
         fn storage_bytes(storage: &StorageId) -> usize {
             match storage {
                 StorageId::Value(value) => value.as_str().len(),
@@ -540,7 +605,8 @@ impl CleanupPlan {
                         normalized_cases.capacity() * std::mem::size_of::<StatusCase>(),
                     )?;
                 }
-                StatusProducer::ContractFalse { .. } => {}
+                StatusProducer::ContractFalse { .. } | StatusProducer::CheckedAllocation { .. } => {
+                }
             }
         }
         for block in &self.blocks {
@@ -674,6 +740,11 @@ impl CleanupPlan {
                     CleanupResultSource::Owned { storage } => place_bytes(storage)?,
                 },
                 ExitContinuation::ReturnFailure { source } => status_id_bytes(source),
+                ExitContinuation::LoopLatch { .. }
+                | ExitContinuation::LoopBreak { .. }
+                | ExitContinuation::FunctionReturn { .. } => {
+                    return crate::private_capacity_contract::cleanup_plan_owned_capacity(self);
+                }
             })?;
         }
         Some(total)
@@ -695,6 +766,7 @@ fn resolved_type_owned_capacity(ty: &ResolvedType) -> Option<usize> {
         | ResolvedType::OnceFunctionI64
         | ResolvedType::OnceFunctionI64Pair
         | ResolvedType::MutFunctionI64
+        | ResolvedType::Never
         | ResolvedType::Unit
         | ResolvedType::I64
         | ResolvedType::I32
@@ -822,3 +894,12 @@ fn staged_result_bytes(source: &StagedCopyResultSource) -> Option<usize> {
 
 pub(crate) use owned_liveness::{owned_record_transfer_plan, OwnedRecordTransferPlan};
 pub(crate) use owned_liveness::{owned_step_transfer_plan, OwnedStepTransferPlan};
+
+#[cfg(test)]
+mod phase_measurement;
+
+// Shared pinned compiler container layout, not cleanup authority.
+pub(crate) use replay::replay_btree_node_upper as compiler_btree_node_upper;
+
+#[cfg(test)]
+pub(crate) use replay::with_financed_test_oracles;

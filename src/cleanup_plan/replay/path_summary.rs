@@ -103,7 +103,12 @@ pub(super) fn validate_replay_size_budget(function: &ResolvedFunction) -> Result
     }
     // The factored skeleton comparison grows with distinct cleanup states,
     // not with the product of independent decisions, and charges its own work.
-    if super::factored::selected(function, cfg.terminal_paths, semantic_paths) {
+    if super::factored::selected_paid(
+        function,
+        cfg.terminal_paths,
+        semantic_paths,
+        &mut ReplayBudget::new(),
+    )? {
         return Ok(());
     }
     path_budget_errors(function, cfg.terminal_paths, semantic_paths)?;
@@ -126,7 +131,7 @@ pub(super) fn path_budget_errors(
     if cfg_paths > MAX_REPLAY_PATHS {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup replay found {} terminal control-flow paths, exceeding the {} path \
                  budget: path count multiplies combinatorially (2^N) when N branch outcomes are \
                  combined independently within one function, not additively with branch count, \
@@ -141,7 +146,7 @@ pub(super) fn path_budget_errors(
     if semantic_paths > MAX_REPLAY_PATHS {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup replay found {semantic_paths} semantic terminal paths, exceeding the \
                  {MAX_REPLAY_PATHS} path budget: path count multiplies combinatorially (2^N) \
                  when N branch outcomes are combined independently within one function, not \
@@ -172,7 +177,7 @@ pub(super) fn or_arm_path_counts(
     let alternatives = child_index
         .checked_sub(1)
         .and_then(|arm| arms.get(arm))
-        .and_then(|arm| arm.pattern.variant_cases())
+        .and_then(|arm| arm.pattern.case_iter())
         .map_or(1, |cases| cases.len());
     HirPathCounts {
         normal: result.normal.saturating_mul(alternatives),

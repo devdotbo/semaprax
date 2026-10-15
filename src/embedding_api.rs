@@ -1,4 +1,4 @@
-//! Embedding API v1: small, versioned Rust entry points for analyzing one
+//! Embedding API v3: small, versioned Rust entry points for analyzing one
 //! caller-supplied SEMAPRAX compilation unit, built for issue #203 ("publish
 //! a small stable Semaprax embedding API with explicit host capabilities").
 //!
@@ -46,7 +46,7 @@
 //! multi-file Project handle, [`open_project_session`] owns only an in-memory
 //! [`ProjectSession`] backed by the existing semantic service; it accepts no
 //! ambient source provider and exposes no compiler internals. It is not a C
-//! ABI. See `docs/EMBEDDING-API-V2.md` for the complete scope statement and
+//! ABI. See `docs/EMBEDDING-API-V3.md` for the complete scope statement and
 //! nonclaims this module is honestly bounded by.
 //!
 //! # Panic normalization
@@ -133,9 +133,9 @@ impl EmbeddingCancellation {
 
 /// This embedding surface's own compatibility version — unrelated to any
 /// checked program's semantics. See "Compatibility policy" in
-/// `docs/EMBEDDING-API-V2.md`.
+/// `docs/EMBEDDING-API-V3.md`.
 pub const EMBEDDING_API_VERSION: EmbeddingApiVersion = EmbeddingApiVersion {
-    major: 2,
+    major: 3,
     minor: 0,
     patch: 0,
 };
@@ -155,7 +155,7 @@ impl EmbeddingApiVersion {
     /// this build's `check_source` contract. Only the major version is
     /// checked: `minor`/`patch` differences never change accepted inputs or
     /// [`CheckOutcome`]'s shape (see the compatibility policy in
-    /// `docs/EMBEDDING-API-V2.md`), while a differing major version is
+    /// `docs/EMBEDDING-API-V3.md`), while a differing major version is
     /// explicitly refused rather than silently assumed compatible.
     pub fn is_compatible_with(&self, requested_major: u16) -> bool {
         self.major == requested_major
@@ -262,11 +262,11 @@ fn check_with(checker: &dyn SourceChecker, unit_name: &str, source: &str) -> Che
             diagnostics: vec![Diagnostic {
                 code: PANIC_NORMALIZED_DIAGNOSTIC_CODE,
                 severity: Severity::Error,
-                message: format!(
+                message: std::borrow::Cow::Owned(format!(
                     "the embedding check boundary caught a panic while analyzing {unit_name:?} \
                      and normalized it to this diagnostic instead of letting the unwind cross \
                      the embedding API boundary"
-                ),
+                )),
                 path: Some(unit_name.to_owned()),
                 span: None,
                 help: Some(
@@ -356,11 +356,11 @@ fn format_with(formatter: &dyn SourceFormatter, unit_name: &str, source: &str) -
             diagnostics: vec![Diagnostic {
                 code: PANIC_NORMALIZED_DIAGNOSTIC_CODE,
                 severity: Severity::Error,
-                message: format!(
+                message: std::borrow::Cow::Owned(format!(
                     "the embedding format boundary caught a panic while formatting {unit_name:?} \
                      and normalized it to this diagnostic instead of letting the unwind cross \
                      the embedding API boundary"
-                ),
+                )),
                 path: Some(unit_name.to_owned()),
                 span: None,
                 help: Some(
@@ -464,11 +464,11 @@ fn graph_with(grapher: &dyn SourceGrapher, unit_name: &str, source: &str) -> Gra
             diagnostics: vec![Diagnostic {
                 code: PANIC_NORMALIZED_DIAGNOSTIC_CODE,
                 severity: Severity::Error,
-                message: format!(
+                message: std::borrow::Cow::Owned(format!(
                     "the embedding graph boundary caught a panic while rendering the semantic \
                      graph for {unit_name:?} and normalized it to this diagnostic instead of \
                      letting the unwind cross the embedding API boundary"
-                ),
+                )),
                 path: Some(unit_name.to_owned()),
                 span: None,
                 help: Some(
@@ -691,11 +691,11 @@ fn context_with(
             diagnostics: vec![Diagnostic {
                 code: PANIC_NORMALIZED_DIAGNOSTIC_CODE,
                 severity: Severity::Error,
-                message: format!(
+                message: std::borrow::Cow::Owned(format!(
                     "the embedding context boundary caught a panic while querying {symbol:?} \
                      in {unit_name:?} and normalized it to this diagnostic instead of letting \
                      the unwind cross the embedding API boundary"
-                ),
+                )),
                 path: Some(unit_name.to_owned()),
                 span: None,
                 help: Some(
@@ -899,11 +899,11 @@ fn context_v2_with(
             diagnostics: vec![Diagnostic {
                 code: PANIC_NORMALIZED_DIAGNOSTIC_CODE,
                 severity: Severity::Error,
-                message: format!(
+                message: std::borrow::Cow::Owned(format!(
                     "the embedding v2 context boundary caught a panic while querying {symbol:?} \
                      in {unit_name:?} and normalized it to this diagnostic instead of letting \
                      the unwind cross the embedding API boundary"
-                ),
+                )),
                 path: Some(unit_name.to_owned()),
                 span: None,
                 help: Some(
@@ -1032,10 +1032,28 @@ mod tests {
 
     #[test]
     fn version_negotiation_accepts_matching_major_and_refuses_a_different_one() {
-        assert!(EMBEDDING_API_VERSION.is_compatible_with(2));
+        assert!(EMBEDDING_API_VERSION.is_compatible_with(3));
+        assert!(!EMBEDDING_API_VERSION.is_compatible_with(2));
         assert!(!EMBEDDING_API_VERSION.is_compatible_with(1));
         assert!(!EMBEDDING_API_VERSION.is_compatible_with(0));
-        assert!(EMBEDDING_API_VERSION.require_compatible(2).is_ok());
+        assert!(EMBEDDING_API_VERSION.require_compatible(3).is_ok());
+        assert_eq!(
+            EMBEDDING_API_VERSION
+                .require_compatible(2)
+                .unwrap_err()
+                .code,
+            VERSION_MISMATCH_DIAGNOSTIC_CODE
+        );
+        let legacy = EmbeddingApiVersion {
+            major: 2,
+            minor: 0,
+            patch: 0,
+        };
+        assert!(legacy.is_compatible_with(2));
+        assert!(!legacy.is_compatible_with(1));
+        assert!(!legacy.is_compatible_with(0));
+        assert!(legacy.require_compatible(2).is_ok());
+        assert!(!legacy.is_compatible_with(3));
         let refusal = EMBEDDING_API_VERSION.require_compatible(1).unwrap_err();
         assert_eq!(refusal.code, VERSION_MISMATCH_DIAGNOSTIC_CODE);
     }

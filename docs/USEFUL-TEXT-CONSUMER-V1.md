@@ -27,7 +27,11 @@ invocation-root view internally adds no second charge.
 For `contains`, native C and Wasm use fixed-capacity Knuth-Morris-Pratt prefix
 search. The interpreter uses the same byte-KMP semantics. Even on hostile
 periodic inputs, search time is linear in the combined value and needle length,
-not quadratic.
+not quadratic. Native programs that reach authenticated owned String views
+select the constant-space Two-Way successor described in
+[Owned String Borrowed View v1](OWNED-STRING-BORROWED-VIEW-V1.md#native-owned-extent-and-foreign-ingress-repair);
+this preserves linear matching without imposing the foreign-input bound on an
+internal owned extent. Owning executable qualification of that repair is pending.
 
 The interpreter retains an invocation-root provenance identity with shared
 borrow evidence rather than manufacturing an owned `String`. Native C uses a

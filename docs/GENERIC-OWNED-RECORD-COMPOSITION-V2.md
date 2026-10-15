@@ -79,7 +79,13 @@ types when deciding whether a value moves.
 
 `hir/validation/generic_record_composition.rs` authenticates symbolic record
 fields, recursive patterns, binding identities, scopes and expression result
-types. `generic_template.rs` and `type_profiles.rs` select the owning profile
+types. The symbolic environment borrows exact current signature and binding
+types after complete independent substitution/type equality. Ordered map
+snapshots and all scope/error boundaries remain unchanged; real projected field
+substitutions retain owned outputs. Saved owned-map controls compare the full
+symbolic walk and observe removed type-vector copies through Drop. This is
+source-only pending qualification, not a whole-validator funding or application
+fit claim. `generic_template.rs` and `type_profiles.rs` select the owning profile
 and retain exhaustive materialized validation. `hir/monomorphize.rs` recursively
 substitutes pattern types and remints each binding at its structural path.
 `hir.rs` authenticates a concrete function against its complete materialized

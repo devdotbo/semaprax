@@ -310,3 +310,50 @@ fn main() -> i64 { 0 }
         .message
         .contains("copy-result staging is outside the direct-resource slice"));
 }
+
+#[test]
+fn checked_allocation_stays_outside_single_frame_dictionary_and_cases_have_inline_capacity() {
+    use crate::cleanup_plan::{AllocationCase, AllocationOperation};
+    let program = program();
+    let function = function(&program, "token.checked");
+    for operation in [
+        AllocationOperation::StringLiteral,
+        AllocationOperation::StringConcat,
+        AllocationOperation::BytesCopy,
+        AllocationOperation::VecBacking,
+    ] {
+        let producer = StatusProducer::CheckedAllocation {
+            operation,
+            normalized_cases: [AllocationCase::PayloadRefused, AllocationCase::SizeOverflow],
+        };
+        let error = fixed_status(&producer, function).unwrap_err();
+        assert_eq!(error.code, "SPX-B104");
+        assert_eq!(error.message, "native/Wasm semantic event dictionary: checked allocation is outside the single-frame slice");
+    }
+    // The retained StatusSource directory already prices the inline enum and
+    // its two cases. Only the old arithmetic Vec has a separate allocation.
+    let mut plan = function.cleanup_plan.clone();
+    let before = crate::private_capacity_contract::cleanup_plan_owned_capacity(&plan).unwrap();
+    let row = plan
+        .status_sources
+        .iter_mut()
+        .find(|row| matches!(row.producer, StatusProducer::CheckedArithmetic { .. }))
+        .unwrap();
+    let StatusProducer::CheckedArithmetic {
+        normalized_cases, ..
+    } = &row.producer
+    else {
+        unreachable!()
+    };
+    let removed =
+        normalized_cases.capacity() * std::mem::size_of::<crate::cleanup_plan::StatusCase>();
+    assert!(removed > 0);
+    row.producer = StatusProducer::CheckedAllocation {
+        operation: AllocationOperation::StringClone,
+        normalized_cases: [AllocationCase::PayloadRefused, AllocationCase::SizeOverflow],
+    };
+    assert_eq!(
+        crate::private_capacity_contract::cleanup_plan_owned_capacity(&plan).unwrap(),
+        before - removed
+    );
+}

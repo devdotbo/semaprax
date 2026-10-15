@@ -3,7 +3,6 @@
 //! Rendering is authority-neutral: callers provide authenticated Wasm bytes
 //! and the already-admitted public ABI. This module neither reads nor writes a
 //! path and never launches npm, Node, or another process.
-
 mod carrier;
 mod command;
 mod command_v2;
@@ -20,6 +19,7 @@ mod publication_plan;
 pub use publication_plan::ProjectNpmPublication;
 #[cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))]
 mod publication;
+mod semantic_recipe_lexical_v1;
 mod semantic_recipe_v8;
 mod validation;
 
@@ -462,14 +462,14 @@ pub(super) fn render_semantic_recipe(
 pub(crate) fn render_owned_data_semantic_recipe(
     program: &crate::hir::ResolvedProgram,
 ) -> Result<String, Diagnostic> {
-    semantic_recipe_v8::render(program)
+    semantic_recipe_lexical_v1::render(program)
 }
 
 pub(crate) fn replay_owned_data_semantic_recipe(
     linked: &crate::hir::ResolvedProgram,
     recipe: &str,
 ) -> Result<crate::hir::ResolvedProgram, Diagnostic> {
-    semantic_recipe_v8::replay_against(linked, recipe)
+    semantic_recipe_lexical_v1::replay_against(linked, recipe)
 }
 
 fn render_semantic_recipe_profile(
@@ -653,7 +653,7 @@ fn render_recipe_expr(
     values: &mut std::collections::BTreeMap<String, String>,
     local_index: &mut usize,
 ) -> Result<String, Diagnostic> {
-    use crate::hir::{ResolvedExprKind, ResolvedMatchPattern, ResolvedStatement};
+    use crate::hir::{ResolvedExprKind, ResolvedMatchPattern, ResolvedStatement as S};
 
     match &expression.kind {
         ResolvedExprKind::Int(value) => Ok(value.to_string()),
@@ -805,11 +805,19 @@ fn render_recipe_expr(
                 recipe_type(&expression.ty)?
             ))
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let mut rendered = String::from("{ ");
             for statement in statements {
                 match statement {
-                    ResolvedStatement::Let {
+                    S::CopyDiscard { .. } | S::LexicalWhile { .. } => {
+                        return Err(package_error(
+                            "lexical control is outside the npm semantic recipe profile",
+                        ))
+                    }
+                    S::Let {
                         binding,
                         mutable,
                         value,
@@ -824,7 +832,7 @@ fn render_recipe_expr(
                             if *mutable { "mut " } else { "" }
                         ));
                     }
-                    ResolvedStatement::Assign {
+                    S::Assign {
                         binding,
                         field: None,
                         value,
@@ -836,13 +844,13 @@ fn render_recipe_expr(
                         })?;
                         rendered.push_str(&format!("{name} = {value}; "));
                     }
-                    ResolvedStatement::Unsafe { body, .. } => {
+                    S::Unsafe { body, .. } => {
                         let body = render_recipe_expr(body, functions, values, local_index)?;
                         rendered.push_str(&format!(
                             "@audit(\"canonical npm semantic replay\") unsafe {body}; "
                         ));
                     }
-                    ResolvedStatement::While {
+                    S::While {
                         condition, body, ..
                     } => {
                         let condition =
@@ -850,7 +858,7 @@ fn render_recipe_expr(
                         let body = render_recipe_expr(body, functions, values, local_index)?;
                         rendered.push_str(&format!("while {condition} {body} "));
                     }
-                    ResolvedStatement::Assign { field: Some(_), .. } => {
+                    S::Assign { field: Some(_), .. } => {
                         return Err(package_error(
                             "npm semantic recipe statement is unsupported",
                         ))

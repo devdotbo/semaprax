@@ -19,10 +19,34 @@ pub(crate) fn owned_capacity_bytes_excluding(
     clone_capacity_bytes(plan)?.checked_add(shared_identity_bytes(plan, covered_hir_keys)?)
 }
 
-/// Capacity that can shrink when cloning a plan. ExpressionId backing is
-/// immutable and shared by Clone, so its physical debit cancels in a clone
-/// difference. This census allocates no scratch and never changes the full
-/// physical-storage census used for retained proofs or snapshot reconstruction.
+/// Final uncached retention reuses its charged candidate-key and state vectors.
+/// State 1 proves live HIR backing; state 0 must be charged independently. State
+/// 2 records a charged proof backing, never HIR sharing authority.
+pub(crate) fn owned_capacity_bytes_partitioned(
+    plan: &LoanPlan,
+    candidate_keys: &[usize],
+    states: &mut [u8],
+) -> Option<usize> {
+    if candidate_keys.len() != states.len()
+        || candidate_keys.windows(2).any(|pair| pair[0] >= pair[1])
+        || states.iter().any(|state| *state > 1)
+    {
+        return None;
+    }
+    let mut shared_bytes = 0usize;
+    for identity in proof_identities(plan) {
+        let key = identity.shared_allocation_key()?;
+        let bytes = identity.shared_allocation_bytes()?;
+        let index = candidate_keys.binary_search(&key).ok()?;
+        if states[index] == 0 {
+            shared_bytes = shared_bytes.checked_add(bytes)?;
+            states[index] = 2;
+        }
+    }
+    clone_capacity_bytes(plan)?.checked_add(shared_bytes)
+}
+
+/// Capacity that can shrink on clone; immutable identity backing is charged separately.
 pub(crate) fn clone_capacity_bytes(plan: &LoanPlan) -> Option<usize> {
     fn add(total: &mut usize, bytes: usize) -> Option<()> {
         *total = total.checked_add(bytes)?;
@@ -89,16 +113,14 @@ pub(crate) fn clone_capacity_bytes(plan: &LoanPlan) -> Option<usize> {
         ] {
             add(
                 &mut bytes,
-                ids.capacity().checked_mul(std::mem::size_of::<LoanId>())?,
+                ids.len().checked_mul(std::mem::size_of::<LoanId>())?,
             )?;
         }
     }
     for edge in &plan.edges {
         add(
             &mut bytes,
-            edge.live
-                .capacity()
-                .checked_mul(std::mem::size_of::<LoanId>())?,
+            edge.live.len().checked_mul(std::mem::size_of::<LoanId>())?,
         )?;
     }
     Some(bytes)
@@ -108,6 +130,13 @@ pub(crate) fn clone_capacity_bytes(plan: &LoanPlan) -> Option<usize> {
 /// moved String carrier. Separate allocations with equal bytes remain distinct.
 /// The temporary inventory is charged before allocation and is not refunded.
 fn shared_identity_bytes(plan: &LoanPlan, covered_hir_keys: &[usize]) -> Option<usize> {
+    crate::bounded_output::with_reservation_stage(
+        crate::bounded_output::ReservationStage::LoanIdentityInventory,
+        || shared_identity_inventory_bytes(plan, covered_hir_keys),
+    )
+}
+
+fn shared_identity_inventory_bytes(plan: &LoanPlan, covered_hir_keys: &[usize]) -> Option<usize> {
     let mut count = 0usize;
     // Validate every physical backing before allocating scratch. The caller
     // already owns and charged its sorted HIR keys; covered references need
@@ -157,7 +186,7 @@ fn shared_identity_bytes(plan: &LoanPlan, covered_hir_keys: &[usize]) -> Option<
     Some(bytes)
 }
 
-fn proof_identities(plan: &LoanPlan) -> impl Iterator<Item = &ExpressionId> {
+pub(crate) fn proof_identities(plan: &LoanPlan) -> impl Iterator<Item = &ExpressionId> {
     plan.loans
         .iter()
         .flat_map(|loan| {

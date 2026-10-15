@@ -167,8 +167,40 @@ pub(super) fn run_examples_and_conformance(selected: Vec<PackageMetadata>) {
                             // Individual typed-Path observation cases allocate via copy
                             // without importing the buffer-writing operations.
                             if package.module != "std.path.value" && !cursor_case {
+                                // NDJSON's boundary fixtures construct two zeroed
+                                // buffers but never write bytes. Core Wasm still
+                                // imports owned-buffer operations as one fixed
+                                // five-entry family whenever any member, including
+                                // `bytes_zeroed`, is called, so the never-called
+                                // `spx_bytes_set` is imported too. Require every
+                                // member as an exact `env` import entry, so a fused
+                                // `spx_bytes_set5` prefix cannot satisfy the plain
+                                // `spx_bytes_set` name.
+                                let expected = if package.module == "std.data.ndjson" {
+                                    for member in [
+                                        "spx_bytes_zeroed",
+                                        "spx_bytes_set",
+                                        "spx_bytes_set5",
+                                        "spx_bytes_set1_or5",
+                                        "spx_bytes_set1_or6_or48",
+                                    ] {
+                                        let mut entry = b"\x03env".to_vec();
+                                        entry.push(u8::try_from(member.len()).unwrap());
+                                        entry.extend_from_slice(member.as_bytes());
+                                        assert!(
+                                            module_bytes
+                                                .windows(entry.len())
+                                                .any(|w| w == entry.as_slice()),
+                                            "{}: owned-buffer import family lacks `{member}`",
+                                            package.directory
+                                        );
+                                    }
+                                    true
+                                } else {
+                                    arena
+                                };
                                 assert_eq!(
-                                    present, arena,
+                                    present, expected,
                                     "{}: `{name}` import",
                                     package.directory
                                 );
@@ -194,7 +226,10 @@ pub(super) fn run_examples_and_conformance(selected: Vec<PackageMetadata>) {
                     } else if package.module == "std.path.normalize" {
                         path_normalize::live_byte_bound(&manifest)
                     } else if cursor_case
-                        || matches!(package.module.as_str(), "std.format" | "std.data.csv")
+                        || matches!(
+                            package.module.as_str(),
+                            "std.format" | "std.data.csv" | "std.data.ndjson"
+                        )
                     {
                         2
                     } else if package.module == "std.path.value"

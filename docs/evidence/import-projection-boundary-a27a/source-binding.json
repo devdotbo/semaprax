@@ -1,0 +1,208 @@
+{
+  "status": "SOURCE_ONLY_PENDING_ACTUAL_EXECUTION",
+  "base": "a27a0e3b6fdf42903fd970693e6a48f045d825d1",
+  "actual_failure_evidence": "/Volumes/Semaprax/provenance/frozen-f8d390-selected-failures-20261014.json",
+  "actual_failure_index": 181,
+  "scope": "Only five explicit import adapters; no body or audit-inventory edits.",
+  "complete_current_projection_members": {
+    "src/ast/program_source.rs": "44b737fe9a3eae9437a956c6f9ef7f454bd9e6a9fe2c776e91628ff1175935f1",
+    "src/ast/program_source/checked_key.rs": "d8823d89a6e967d1ec6d4c45887aa25075eea32d648ee177bdcd9120589367c2",
+    "src/ast/program_source/checked_key/encode.rs": "04284868282b2dc99a25490bd6f1106216498d3406b12579b753d627149235ee",
+    "src/ast/program_source/decl_slices.rs": "2dbd704d16e38656ccd8b7aa035a1b2e2ddf6b5bfaf74ab7fe572cff858f7681",
+    "src/ast/program_source/decl_slices_original.rs": "2eef00bc4197488d860b8176d4c223d0f747cd6a6f8a670c1ad12758980b9ced",
+    "src/ast/program_source/generated_roots.rs": "3a0e1d16057f700dc0babe5a8e9751b8e58cecd2c2247020082b8579d21356ea",
+    "src/ast/program_source/receiving_roots.rs": "5fcc2c44173ae171f7b9746db52c376d8045aeccf195f492e09a6a8a60f4f2ff",
+    "src/bounded_output/key_directory.rs": "524be62afd97f136779521a24a9fa9cbd67c2f70be6863e5ecba9f49a28fbe64",
+    "src/bounded_output/key_directory/tests.rs": "7e89ba70b1a79f9b4fce7629caca44dc0c3c289345ede02d713adf7b1ff3bdbc",
+    "src/workspace_graph/expected_projection.rs": "61e43e67ae8308f04e745bda1db8cddcd90e1dba2f865f8f1cd9a24bf630fb71",
+    "src/workspace_graph/expected_projection/borrowed_imports.rs": "54599fda2371ac9e76b897812e8d717828d542db25dceffa2d1161b403a2bc38",
+    "src/workspace_graph/expected_projection/borrowed_imports/alias_clone.rs": "b0459d75aafc04ae2d83b59e3683874e0949b9988742bcbc34cc8abeb799c4e3",
+    "src/workspace_graph/expected_projection/borrowed_imports/receiving.rs": "175a32cb294f72f01fd465d21bd18b43ad93a06cbe209b51283f4ff6ca33c09b",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests.rs": "bbe1b8e1f84704a72b4c32bae7f806e82581fb8ca0d7391dfa2f6f25b63d6631",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/alias_helpers.rs": "15d9906bec6769fd96adc9c17d81fcfec5d05b2c6b4bd497fa6e9da3d7ba4067",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/full.rs": "f7ada2db950526d26e0c8e91ef90548c3a5154216b42d61e8c30a89beb978ef2",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/full/original_construct.rs": "addbd5fc75f95d405bcb82b7efa519b75a1a2eba9e93d1fd609ee3ab8f19947b",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs": "2338bddf38ef3e6bbf2543ad8ab0d52c1ab68ddda8c01325895ffa2b723b6fe0",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/full/receiving.rs": "b17f58e7c4a6e45b67deb0e685bcea5655cfac22f34d6667daf458df989975f0",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/full/transient.rs": "e2b5471e9834d97e7009da9f4b10e780a214c1b4d927c9f9b65d0b98460aebb2",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/initialization.rs": "f2609c5d3880aa06992de4b92657912fbb579eaa00e7b44e19bfbad96a2eafa9",
+    "src/workspace_graph/expected_projection/borrowed_imports/tests/old.rs": "157ba720a1292c5ffbf36823a1654e6bda84b9b61de8740baeaa0e146915a943",
+    "src/workspace_graph/expected_projection/borrowed_leaf.rs": "84207cdd985a765401872579baf89bec60471e8c877cdcfb825952adb812fb9a",
+    "src/workspace_graph/expected_projection/borrowed_leaf/checked_key.rs": "b4beba2c92fa9107b10e7083561f83243827da7e8a5edc4df035b571b608bc62",
+    "src/workspace_graph/expected_projection/borrowed_leaf/checked_key/tests.rs": "a57ca67affeb834a92f1fe46faee17f14107ad79961b9ef65939da03574464d3",
+    "src/workspace_graph/expected_projection/borrowed_leaf/tests.rs": "5558256fbfa1461e510b4387a586bfa631c65578488db91f473913ad97983b82",
+    "src/workspace_graph/expected_projection/cached_exact.rs": "87bc7acce809a8ebec546c21fe26852015878db32dee3004ab8b6df5ce91e45e",
+    "src/workspace_graph/expected_projection/call_identity.rs": "34f8455aaaa614ac9ad748a422967b2ab0554cbdb489fb1decde6b80f8f92a20",
+    "src/workspace_graph/expected_projection/call_sites.rs": "f5373c1a3f2061b2556b218860d520281d6ab1cb7338d3def2ad4e1ad85abfa0",
+    "src/workspace_graph/expected_projection/cost.rs": "dc82998ecf0fc9660069c46c67de574ced77a7c33a2a1013aaaa70f15a0f4dc5",
+    "src/workspace_graph/expected_projection/declaration_cost.rs": "7c3b8df7c9e08d6e0468edd5e3a81278cc02c441962fb89d0a11fe0221f6eee3",
+    "src/workspace_graph/expected_projection/defaults.rs": "2f30f734f6966e04ba6b71c1edba94a4627b30435505e5287a9ee0f187e594e3",
+    "src/workspace_graph/expected_projection/field_unique.rs": "4b25e6ec34d271633cc693b416a509ecd2ef5667a0fa0fa3f04acedb471eead1",
+    "src/workspace_graph/expected_projection/held_projection.rs": "64b694567f2881244476cfe66f7088d01061f7ee8b07f86a7f4756a831fc2f7d",
+    "src/workspace_graph/expected_projection/identity_slots.rs": "1f550de3dfeff0a28dab8cd9d00839f26dab6643e982f15613c91b175a304102",
+    "src/workspace_graph/expected_projection/import_stub.rs": "5c8e8a2c6662eb0017553a4d378a4877afd68986214102a3ce3d0a8cf3af190d",
+    "src/workspace_graph/expected_projection/import_stub/byte_helper.rs": "c7a61f589cbb7da23a25516d1063fe04a3458189ea9071655fd1558181a2b2a9",
+    "src/workspace_graph/expected_projection/local_identity.rs": "e0438519ef446ded9a8a7a86ca4b21a58e4f1ffb83070f652c1d4ff718bda821",
+    "src/workspace_graph/expected_projection/private_layout.rs": "292d6b24b974e6ee3c4575a389f67faa48dcf61e95783a70ed467b9acaa1c5f2",
+    "src/workspace_graph/expected_projection/private_layout/authority.rs": "9a66a7bb422c27e3528e7d17aaf44ef96ca868017df31d21a44e9a1abdb375fe",
+    "src/workspace_graph/expected_projection/private_layout/authority_invocation.rs": "8948b8bad000ab56b794525678ab709218675f42b9772b0e1a0499e04e7a0fd5",
+    "src/workspace_graph/expected_projection/private_layout/authority_invocation/tests.rs": "481d906a657a599afb0faadba2a362ee410f47c52709086b70d7eb0edf11fd27",
+    "src/workspace_graph/expected_projection/private_layout/authority_oracle.rs": "2025c1ba5ee0e56e09748ea5c0a6a25321a22e7e2ef47e330a1a6414e4daf813",
+    "src/workspace_graph/expected_projection/private_layout/authority_tests.rs": "86e1536f42748775fb622dbeca26ace1ec21994524db0912c21d32167a9c9ed2",
+    "src/workspace_graph/expected_projection/private_layout/authority_view.rs": "b46f22a0c2b30f5c6260a3076a66e2331f444529e937662ce5199b183bb5fe8e",
+    "src/workspace_graph/expected_projection/private_layout/authority_view_tests.rs": "0d112762340027edda07e878462597d24a79164aa9b44cf116e0b21253b9d493",
+    "src/workspace_graph/expected_projection/private_layout/function_runtime.rs": "2ec6d9d895dc37db00271d3edf21314942650a28c0ee27ef6e3ee2c756fa673f",
+    "src/workspace_graph/expected_projection/private_layout/function_tests.rs": "fbf09403d77f7cdc6d72b20c0b7cab9ef74fb482cc888780412cd32b66f86756",
+    "src/workspace_graph/expected_projection/private_layout/ledger.rs": "e3af56276c6dff6c6ed1e7d90142b1b69b262f01058633fb7f18d6a76bdb1fc1",
+    "src/workspace_graph/expected_projection/private_layout/names.rs": "3f434af06f500aacfccf578d871ef67845e597b0fa9a6834c3790c8346ffda59",
+    "src/workspace_graph/expected_projection/private_layout/owner_index.rs": "8aca443af867d3b213fbbabfc526e92a2e045a4447ab0a1cf16d8bb0b44b8cee",
+    "src/workspace_graph/expected_projection/private_layout/owner_index/tests.rs": "fc4afd3416636ba47ae589c3c3947b7aa17d4d749345ffb5b787fb4f4e917bce",
+    "src/workspace_graph/expected_projection/private_layout/registry.rs": "92280049b79e12704d73359c34bebaadbcc0ebac37f435b710f88487c0cb8a44",
+    "src/workspace_graph/expected_projection/private_layout/registry/tests.rs": "4c48bb7dbd4c6cebdffc15de7bfafcdf0121cb8bca2928a80bfc30a34d10e1be",
+    "src/workspace_graph/expected_projection/private_layout/roots.rs": "d42b4ecfeb89bb91cb89bfde0058e755e7e20bbb1b7c353da9ba0489721e72cf",
+    "src/workspace_graph/expected_projection/private_layout/shape.rs": "c1c155d08666d6e32ae66188a1d5c4ac3affd0e04b77b992f680c9dd69ff4245",
+    "src/workspace_graph/expected_projection/private_layout/sorting.rs": "59b6a600927fba5dbb8d2e67360b2e5dc889e2d672b8d33b86efb73b4c2e5df5",
+    "src/workspace_graph/expected_projection/private_layout/tests.rs": "67213837559d73c7f8d945dc83b9c8002e9b3e21c1201c17b0613ce55a6b490e",
+    "src/workspace_graph/expected_projection/record_traversal.rs": "6056465c93261dd5c9c99940e1f011da0816395bf0b2dfe7100afed683a2b61e",
+    "src/workspace_graph/expected_projection/retention.rs": "678bfa36692f84cec3cedffaa5511d98f795a04a3fed6f5723a397152c688a78",
+    "src/workspace_graph/expected_projection/sort_keys.rs": "9cea0d3c3425766255f7e0bc0b158e42d0613f480ab4a53b72654396de266649",
+    "src/workspace_graph/expected_projection/statement_segment.rs": "a27cfb95f3434656e48e65adcf9df5089de5ae3de83854abf5d3e5e0ebb2b555",
+    "src/workspace_graph/expected_projection/string_slots.rs": "a559edbb1b9f1e54671e3e2f52fc911c96c16ce620580c272c4093dec7c405f4",
+    "src/workspace_graph/expected_projection/type_rewrite.rs": "8358c61056ec2e5f0cd2ab244ebbd53c35a8c15706e1d96f91715cc15b92a806",
+    "src/workspace_graph/expected_projection/uncached_absence_tests.rs": "5bf7f1b3590b48cdf481bc4a486d4689ed659b0740016d8a92ca9b334aa022de",
+    "src/workspace_graph/expected_projection/uncached_peak.rs": "2156e41020aeb1cbf47b0fdaf29788ce90dbdb431109b63957f3b727d244bbf4",
+    "src/workspace_graph/expected_projection/vec_constructor.rs": "4831e29cce4d39b5c263ffd3743d3cb2227ffc9c57f94e28763994cd78721e10",
+    "tests/workspace/semantic_graph/source_inventory.rs": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122"
+  },
+  "unchanged_full_source_inventory_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
+  "whole_inverse_hooks": [
+    {
+      "source": "src/ast/program_source/checked_key.rs",
+      "archive": "docs/evidence/import-projection-boundary-a27a/src__ast__program_source__checked_key.rs.before",
+      "before_sha256": "ecfe7e37e1d29d76753ae60c093ad5a4e84e08802a4eb6a802fbb3874093f920",
+      "receiving_sha256": "d8823d89a6e967d1ec6d4c45887aa25075eea32d648ee177bdcd9120589367c2",
+      "unique_new_imports": "use super::{DeclSlices, OverlayIdentity, ProgramSource, Subject};\nuse crate::ast::{\n    AgentDeclaration, Function, InterfaceDeclaration, ModuleUse, Program, ProtocolDeclaration,\n    ProtocolImplementation, SessionProtocolDeclaration, TypeDeclaration,\n};\n",
+      "original_import": "use super::*;\n",
+      "complete_inverse_equal": true
+    },
+    {
+      "source": "src/ast/program_source/checked_key/encode.rs",
+      "archive": "docs/evidence/import-projection-boundary-a27a/src__ast__program_source__checked_key__encode.rs.before",
+      "before_sha256": "1f4716159fb61ab28311cee13d9ed2c1071fe1d80b03cc9e0b8d5916543e8ae0",
+      "receiving_sha256": "04284868282b2dc99a25490bd6f1106216498d3406b12579b753d627149235ee",
+      "unique_new_imports": "use super::CheckedSource;\nuse crate::ast::program_source::ProgramSource;\nuse crate::ast::Program;\n",
+      "original_import": "use super::*;\n",
+      "complete_inverse_equal": true
+    },
+    {
+      "source": "src/ast/program_source/decl_slices_original.rs",
+      "archive": "docs/evidence/import-projection-boundary-a27a/src__ast__program_source__decl_slices_original.rs.before",
+      "before_sha256": "82dffcebf4eddc1c4a3e20b28b68a2b36006049bf49632f1da5f0d3940d8d23b",
+      "receiving_sha256": "2eef00bc4197488d860b8176d4c223d0f747cd6a6f8a670c1ad12758980b9ced",
+      "unique_new_imports": "    use super::DeclSlices;\n",
+      "original_import": "    use super::*;\n",
+      "complete_inverse_equal": true
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs",
+      "archive": "docs/evidence/import-projection-boundary-a27a/src__workspace_graph__expected_projection__borrowed_imports__tests__full__publication.rs.before",
+      "before_sha256": "f6a706c366ef49018561f1dd33f22699c68e57710c343bddb5203c29c4e37abb",
+      "receiving_sha256": "2338bddf38ef3e6bbf2543ad8ab0d52c1ab68ddda8c01325895ffa2b723b6fe0",
+      "unique_new_imports": "use super::{sources, BOX_CALLER, BOX_PROVIDER, VEC_CALLER, VEC_PROVIDER};\nuse crate::ast::program_source::ProgramSource;\nuse crate::bounded_output::with_limit_usage_refusal;\nuse crate::test_allocation_observer::measure;\nuse crate::workspace_graph::expected_projection::borrowed_imports::{construct, LayoutRegistry};\nuse crate::workspace_graph::index_authored;\n",
+      "original_import": "use super::*;\n",
+      "complete_inverse_equal": true
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/borrowed_imports/tests/full/transient.rs",
+      "archive": "docs/evidence/import-projection-boundary-a27a/src__workspace_graph__expected_projection__borrowed_imports__tests__full__transient.rs.before",
+      "before_sha256": "d59b583633d6d16152925233fc232abcbcdc667c7739d1248b92e67fc7952baa",
+      "receiving_sha256": "e2b5471e9834d97e7009da9f4b10e780a214c1b4d927c9f9b65d0b98460aebb2",
+      "unique_new_imports": "use super::{\n    linked, old, sources, BOX_CALLER, BOX_PROVIDER, CLASS_CALLER, CLASS_PROVIDER,\n    INVARIANT_CALLER, INVARIANT_PROVIDER, VEC_CALLER, VEC_PROVIDER,\n};\nuse crate::ast::program_source::ProgramSource;\nuse crate::bounded_output::with_limit_usage_refusal;\nuse crate::diagnostic::Diagnostic;\nuse crate::hir;\nuse crate::test_allocation_observer::measure;\nuse crate::workspace_graph::expected_projection::borrowed_imports::LayoutRegistry;\nuse crate::workspace_graph::{index_authored, reserve_builder_structure};\n",
+      "original_import": "use super::*;\n",
+      "complete_inverse_equal": true,
+      "additional_receiving_inverses": [
+        {
+          "name": "strict allocation assertion diagnostic context only",
+          "after": "        assert_eq!(\n            old.allocated, current.allocated + removed,\n            \"module={} expected_authored_spare_slots=(functions:{}, types:{}) expected_removed_bytes={removed}; current_route=construct_transient current={current:?} current_paid={paid}; old_route=construct_receiving old={old:?} old_paid={old_paid}\",\n            programs[0].module, programs[0].functions.len(), programs[0].types.len()\n        );\n",
+          "before": "        assert_eq!(old.allocated, current.allocated + removed);\n"
+        }
+      ]
+    }
+  ],
+  "exact_pending_selectors": [
+    {
+      "harness": "semaprax::workspace",
+      "selector": "semantic_graph::expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "ast::program_source::decl_slices_original::tests::complete_contiguous_receiver_keeps_original_forward_reverse_suffix_and_index_order"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "ast::program_source::decl_slices_original::tests::selected_authored_ordinals_keep_full_values_and_generated_suffix_without_a_second_directory"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "workspace_graph::expected_projection::borrowed_imports::tests::full::transient::actual_transient_import_constructor_removes_only_authored_cache_spare_and_pays_drop"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "workspace_graph::expected_projection::borrowed_imports::tests::full::transient::actual_transient_full_projection_and_resolution_match_complete_old_receivers"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "workspace_graph::expected_projection::borrowed_imports::tests::full::publication::last_alias_and_synthetic_main_refusal_never_publish_partial_generated_roots"
+    },
+    {
+      "harness": "semaprax::lib",
+      "selector": "workspace_graph::expected_projection::borrowed_imports::tests::full::publication::full_original_constructor_and_only_sticky_publication_changes_stay_source_bound"
+    }
+  ],
+  "verification": {
+    "projection_members": 68,
+    "remaining_wildcard_occurrences": 0,
+    "complete_original_files_reconstructed": 5,
+    "rustfmt_parse_stdout": "PASS_SOURCE_ONLY_NO_REWRITE",
+    "git_diff_check": "PASS",
+    "cargo_or_tests": false,
+    "original_archives_changed": false,
+    "transient_allocation_assertion_changed": false
+  },
+  "prior_owning_guard_sha256": "883db471a7279f88856c2ca9a67eed0c50e7636c70fd513dc8892fd515748b85",
+  "current_owning_guard_sha256": "ae0cbe842d6f44a002d1cb3914cb3ab7a18972e9680b1a9f61000c1379686835",
+  "owning_guard_integration_inverse": {
+    "unique_remove": "        // These two constructors are private to ast::program_source; the joined\n        // source keeps their exact facades without granting workspace authority.\n        \"pub(super) fn append(authored: &'a [T], generated: &'a [T]) -> Option<Self> {\",\n        \"pub(super) fn selected(\",\n",
+    "original_whole_guard_proof": "docs/evidence/projection-private-decl-facades-346690/source-binding.json",
+    "scope": "Only two observed existing private AST declaration facade entries; all original guard bytes reconstructed, full source inventory unchanged."
+  },
+  "source_inventory_additive_join_inverse": {
+    "after": "concat!(include_str!(\"../../src/workspace_graph.rs\"), include_str!(\"../../src/list_ops/original_constructor.rs\"), include_str!(\"../../src/iterator_ops/original_constructor.rs\"), include_str!(\"../../src/hir/validation/constructor_seed/original_intrinsics.rs\"), include_str!(\"../../src/hir/validation/constructor_seed/intrinsic_tests.rs\"))",
+    "before": "include_str!(\"../../src/workspace_graph.rs\")",
+    "prior_full_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829"
+  },
+  "source_inventory_additive_join_inverses": [
+    {
+      "before": "            include_str!(\"../../src/workspace_graph/generic_type_import/borrowed_tests.rs\"),\n",
+      "after": "            include_str!(\"../../src/workspace_graph/generic_type_import/borrowed_tests.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/parameter_names.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/parameter_names/tests.rs\"),\n",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "reason": "Complete paid generic membership children remain in source union"
+    },
+    {
+      "after": "concat!(include_str!(\"../../src/workspace_graph.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/ordered.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/original.rs\"), include_str!(\"../../src/hir/validation/generic_template/call_graph/tests.rs\"))",
+      "before": "include_str!(\"../../src/workspace_graph.rs\")"
+    },
+    {
+      "after": "        include_str!(\"../../src/workspace_graph/diagnostics/invocation/tests.rs\"),\n        concat!(\n            include_str!(\"../../src/workspace_graph/generic_type_import.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/original.rs\"),\n            include_str!(\"../../src/workspace_graph/generic_type_import/borrowed_tests.rs\"),\n        ),\n        concat!(\n",
+      "before": "        include_str!(\"../../src/workspace_graph/diagnostics/invocation/tests.rs\"),\n        include_str!(\"../../src/workspace_graph/generic_type_import.rs\"),\n        concat!(\n"
+    },
+    {
+      "after": "            include_str!(\"../../src/workspace_graph/expected_projection/cost.rs\"),\n            include_str!(\n                \"../../src/workspace_graph/expected_projection/cost/generic_rewrite_test_bridge.rs\"\n            ),\n            include_str!(\"../../src/workspace_graph/expected_projection/uncached_absence_tests.rs\"),\n",
+      "before": "            include_str!(\"../../src/workspace_graph/expected_projection/cost.rs\"),\n            include_str!(\"../../src/workspace_graph/expected_projection/uncached_absence_tests.rs\"),\n"
+    },
+    {
+      "after": "concat!(include_str!(\"../../src/workspace_graph.rs\"), include_str!(\"../../src/list_ops/original_constructor.rs\"), include_str!(\"../../src/iterator_ops/original_constructor.rs\"), include_str!(\"../../src/hir/validation/constructor_seed/original_intrinsics.rs\"), include_str!(\"../../src/hir/validation/constructor_seed/intrinsic_tests.rs\"))",
+      "before": "include_str!(\"../../src/workspace_graph.rs\")"
+    }
+  ]
+}

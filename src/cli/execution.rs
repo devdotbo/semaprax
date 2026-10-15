@@ -17,6 +17,7 @@ pub(crate) struct ExecutionOptions {
     pub(crate) max_steps: Option<usize>,
     pub(crate) max_bytes: Option<usize>,
     pub(crate) native: bool,
+    pub(crate) fused_account: Option<semaprax::fused_source::RuntimeAccount>,
     pub(crate) native_test: Option<NativeTestLimits>,
     /// Program arguments after `--`, passed to a single-file command-line
     /// program (`docs/TEXT-TOOLKIT-V1.md`).
@@ -25,6 +26,7 @@ pub(crate) struct ExecutionOptions {
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub(crate) struct NativeTestLimits {
+    pub(crate) diagnostic_timing: bool,
     pub(crate) timeout_ms: u64,
     pub(crate) max_output_bytes: usize,
 }
@@ -144,7 +146,10 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
     let mut max_steps = None;
     let mut max_bytes = None;
     let mut native = false;
+    let mut profile = None::<String>;
+    let mut managed = None;
     let mut target = None;
+    let mut native_timing = false;
     let mut native_timeout_ms = None;
     let mut native_max_output_bytes = None;
     let mut arguments = Vec::new();
@@ -205,6 +210,10 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
                 target = Some(value.to_owned());
                 index += 2;
             }
+            "--native-timing" if command == "test" && !native_timing => {
+                native_timing = true;
+                index += 1;
+            }
             "--native-timeout-ms" if command == "test" && native_timeout_ms.is_none() => {
                 native_timeout_ms = Some(positive_number(
                     command,
@@ -221,6 +230,16 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
                     argument,
                     number_option_value(args, index, command, argument)?,
                 )?);
+                index += 2;
+            }
+            "--profile" if allow_source && profile.is_none() => {
+                profile = Some(option_value(args, index, command, argument)?.to_owned());
+                index += 2;
+            }
+            "--managed-bytes" if allow_source && managed.is_none() => {
+                managed = Some(super::fused_profile::account(option_value(
+                    args, index, command, argument,
+                )?)?);
                 index += 2;
             }
             "--native" if allow_source && !native => {
@@ -263,6 +282,29 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
         },
         (Some(_), Some(_)) => unreachable!("ambiguity rejected above"),
     };
+    let fused_account = match profile.as_deref() {
+        Some(semaprax::fused_source::PROFILE)
+            if matches!(input, ExecutionInput::Source(_))
+                && arguments.is_empty()
+                && max_bytes.is_none() =>
+        {
+            Some(managed.ok_or_else(|| {
+                eprintln!(
+                    "fused-construction-v1 requires explicit --managed-bytes <1..=1073741824>"
+                );
+                2
+            })?)
+        }
+        Some(_) => {
+            eprintln!("run profile requires fused-construction-v1, one source file, no arguments and no --max-bytes");
+            return Err(2);
+        }
+        None if managed.is_some() => {
+            eprintln!("--managed-bytes requires --profile fused-construction-v1");
+            return Err(2);
+        }
+        None => None,
+    };
     if native && !matches!(input, ExecutionInput::Source(_)) {
         eprintln!("run option `--native` requires a single .spx source file");
         return Err(2);
@@ -273,7 +315,7 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
         );
         return Err(2);
     }
-    if native && (json || max_steps.is_some() || max_bytes.is_some()) {
+    if native && ((json && fused_account.is_none()) || max_steps.is_some() || max_bytes.is_some()) {
         eprintln!(
             "native single-file run cannot combine `--native` with interpreter output or capacity options"
         );
@@ -284,6 +326,10 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
             eprintln!("native test cannot use interpreter --max-steps or --max-bytes");
             return Err(2);
         }
+        if native_timing && !json {
+            eprintln!("native diagnostic timing requires `--json`");
+            return Err(2);
+        }
         let timeout_ms = native_timeout_ms.unwrap_or(10_000);
         let max_output_bytes = native_max_output_bytes.unwrap_or(65_536);
         if timeout_ms > 600_000 || max_output_bytes > 1_048_576 {
@@ -291,11 +337,12 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
             return Err(2);
         }
         Some(NativeTestLimits {
+            diagnostic_timing: native_timing,
             timeout_ms,
             max_output_bytes,
         })
     } else {
-        if native_timeout_ms.is_some() || native_max_output_bytes.is_some() {
+        if native_timing || native_timeout_ms.is_some() || native_max_output_bytes.is_some() {
             eprintln!("native test limits require `--target native`");
             return Err(2);
         }
@@ -307,6 +354,7 @@ fn parse(args: &[String], command: &str, allow_source: bool) -> Result<Execution
         max_steps,
         max_bytes,
         native,
+        fused_account,
         native_test,
         arguments,
     })
@@ -380,6 +428,7 @@ mod tests {
                 max_steps: None,
                 max_bytes: None,
                 native: false,
+                fused_account: None,
                 native_test: None,
                 arguments: Vec::new(),
             }
@@ -392,6 +441,7 @@ mod tests {
                 max_steps: None,
                 max_bytes: None,
                 native: false,
+                fused_account: None,
                 native_test: None,
                 arguments: Vec::new(),
             }
@@ -415,6 +465,7 @@ mod tests {
                 max_steps: Some(4096),
                 max_bytes: Some(65536),
                 native: false,
+                fused_account: None,
                 native_test: None,
                 arguments: Vec::new(),
             }
@@ -435,6 +486,7 @@ mod tests {
                 max_steps: Some(4096),
                 max_bytes: Some(65536),
                 native: false,
+                fused_account: None,
                 native_test: None,
                 arguments: Vec::new(),
             }
@@ -474,6 +526,7 @@ mod tests {
                 json: false,
                 max_steps: Some(1),
                 native: false,
+                fused_account: None,
                 native_test: None,
                 max_bytes: None,
                 arguments: Vec::new(),
@@ -530,6 +583,7 @@ mod tests {
         assert_eq!(
             options.native_test,
             Some(NativeTestLimits {
+                diagnostic_timing: false,
                 timeout_ms: 25,
                 max_output_bytes: 1024,
             })
@@ -539,6 +593,7 @@ mod tests {
                 .unwrap()
                 .native_test,
             Some(NativeTestLimits {
+                diagnostic_timing: false,
                 timeout_ms: 10_000,
                 max_output_bytes: 65_536
             })
@@ -556,5 +611,35 @@ mod tests {
             assert!(parse_test(&strings(arguments)).is_err());
         }
         assert!(parse_run(&strings(&["--target", "native"])).is_err());
+    }
+    #[test]
+    fn native_diagnostic_timing_requires_explicit_native_json_selection() {
+        let options = parse_test(&strings(&[
+            "--target",
+            "native",
+            "--json",
+            "--native-timing",
+            "--native-timeout-ms",
+            "100",
+        ]))
+        .unwrap();
+        let limits = options.native_test.unwrap();
+        assert!(limits.diagnostic_timing);
+        assert_eq!(limits.timeout_ms, 100);
+        for arguments in [
+            &["--native-timing", "--json"][..],
+            &["--target", "native", "--native-timing"][..],
+            &["--target", "interpreter", "--json", "--native-timing"][..],
+            &[
+                "--target",
+                "native",
+                "--json",
+                "--native-timing",
+                "--native-timing",
+            ][..],
+        ] {
+            assert!(parse_test(&strings(arguments)).is_err());
+        }
+        assert!(parse_run(&strings(&["--json", "--native-timing"])).is_err());
     }
 }

@@ -1,0 +1,76 @@
+{
+  "source_base": "4ec48420b6e78b1035a66cc406893c46c3028464",
+  "qualification": "source-only; no Cargo/build/runtime/test execution",
+  "current_sources": [
+    {
+      "path": "src/bounded_output.rs",
+      "sha256": "5d219122473aa7d959bcaf94deac28661d1ed14d7bd0107a446f3f48bf6eb8bb"
+    },
+    {
+      "path": "src/bounded_output/canonical_stage_tests.rs",
+      "sha256": "72a10f8320f21718cc149790c80a488296fa908588dd40be75037db601e65a63"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller.rs",
+      "sha256": "86546a62bea117a0df58767a472d56825114a700966594acf91a65e354f3ef56"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller/stage_tests.rs",
+      "sha256": "f992883991be9beaa3e1bbe11986bb37b58f532b173797dd79bc7ca8ab68e4e8"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "sha256": "ddb347ae3c429a12e9037a2523bff4040a1793b8e9785d9ec8ba91a82f2f0789"
+    },
+    {
+      "path": "src/workspace_graph/diagnostics/refusal_tests.rs",
+      "sha256": "b37be444f630670c19ccff335f22903630362901e1f27e5c6e25ff0abf1baa47"
+    },
+    {
+      "path": "docs/WORKSPACE-SEMANTIC-GRAPH-V1.md",
+      "sha256": "9458bcb704d17c7ddeea350fbe2963008a48c023276c90193bcf894a9249cf18"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller/sealed_before_stage.rs",
+      "sha256": "e0e407c6d67b7bd0c38a2fa081144d27323f5addb9528ce487a71172c5c17475"
+    },
+    {
+      "path": "src/workspace_graph/tests/builder_limits.rs",
+      "sha256": "6ccadd41c2a5e782fd666fb02f9a599d3645ddf9d1f6888b99677b028a726821"
+    },
+    {
+      "path": "src/bounded_output/loan_inner_stage_tests.rs",
+      "sha256": "f5203dc9850b2f2a99a83e1eefaf07894c7a5098914a134ebccb78b1a28cd7eb"
+    }
+  ],
+  "unchanged_production_and_complete_old_sources": [
+    {
+      "path": "src/bounded_output/cfg_reservation.rs",
+      "sha256": "ecf425709b8c13b438cabeda37b2c7e11683ba0c17521b0ffcea2ee33aaff3f1"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller/owned_before.rs",
+      "sha256": "f119db223c35acd6e975e2825f5a6e4806508a49698989d94500ba8601fb456f"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller_before.rs",
+      "sha256": "44874e9c35637d2c926287d92385cb85bcd565eb51dae789d2692adf49464b71"
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller/shared.rs",
+      "sha256": "ca16eccd943f2ae14971c372f66a2a27d907c2a6605348cd52d48252b1e762b3"
+    },
+    {
+      "path": "src/workspace_graph/diagnostics.rs",
+      "sha256": "fc3c1ccaccd725e8440883ab47e9eda3c0618983a5d40a28ef213f6a56e6b083"
+    },
+    {
+      "path": "src/workspace_graph.rs",
+      "sha256": "fe644b87c264e23b9afa0660d4bcd8149583f19438146734d258025c27087771"
+    }
+  ],
+  "literal_whole_current_caller_inverse_to_base": true,
+  "complete_original_caller_inverse_including_named_shared_adapter": true,
+  "production_delta": "one fixed enum variant/static label and existing stage guard before acquisition; no new fields, Rc backing, quota or work",
+  "runtime_status": "authored controls unexecuted; unchanged normalizer owner and complete gates pending next combined batch"
+}

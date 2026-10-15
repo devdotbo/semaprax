@@ -206,3 +206,33 @@ fn expected_default(name: &str) -> Vec<u8> {
         .unwrap()
         .canonical_bytes()
 }
+
+#[test]
+fn public_cli_current_guidance_is_exact_replayable_and_inert() {
+    let (output, root) = invoke(&[
+        "project-scaffold",
+        "--name",
+        "current-guide",
+        "--layout",
+        "current",
+    ]);
+    assert!(output.status.success());
+    assert!(output.stderr.is_empty());
+    let expected = derive_project_scaffold_v1_with_layout(
+        "current-guide",
+        "calculator",
+        ScaffoldLayout::Current,
+    )
+    .unwrap();
+    assert_eq!(output.stdout, expected.canonical_bytes());
+    let replayed = semaprax::project::replay_project_scaffold_v1(
+        "current-guide",
+        "calculator",
+        &output.stdout,
+        expected.digest(),
+    )
+    .unwrap();
+    assert_eq!(replayed.canonical_bytes(), output.stdout);
+    assert_eq!(std::fs::read_dir(&root).unwrap().count(), 0);
+    std::fs::remove_dir(root).unwrap();
+}

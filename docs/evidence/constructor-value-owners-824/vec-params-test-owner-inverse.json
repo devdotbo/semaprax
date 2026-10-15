@@ -1,0 +1,14 @@
+{
+  "source": "src/vec_ops.rs",
+  "base": "4474b004bcd8b70aa5ad2f4fe6740dc8b1136c36",
+  "original_source_sha256": "1ea8b0a485bf9920740ecc40d4dbab0cd55f7825d83be06d6cbdfea4a312e925",
+  "complete_original_helper": "pub(crate) fn ast_params(op: VecOp, element: &Type) -> Vec<Param> {\n    ast_params_with_owned_element(op, element, matches!(element, Type::Bytes | Type::String))\n}",
+  "original_helper_sha256": "7986f11325067316af0fce02009f5dd168496757798e02c6ea007d11b28a01f6",
+  "edits": [
+    {
+      "before": "pub(crate) fn ast_params(op: VecOp, element: &Type) -> Vec<Param> {\n    ast_params_with_owned_element(op, element, matches!(element, Type::Bytes | Type::String))\n}",
+      "after": "#[cfg(test)]\npub(crate) fn ast_params(op: VecOp, element: &Type) -> Vec<Param> {\n    ast_params_with_owned_element(op, element, matches!(element, Type::Bytes | Type::String))\n}"
+    }
+  ],
+  "reason": "Only live caller is the complete saved wrapper receiver under cfg(test); production uses ast_params_with_owned_element. Complete helper body unchanged."
+}

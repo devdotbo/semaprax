@@ -125,7 +125,7 @@ impl Invocation<'_> {
             Err(Flow::Utf8MaterializationLimitExceeded { .. }) => RetainedCallOutcome::GuardError(
                 "unexpected UTF-8 materialization limit in retained call evaluation".to_owned(),
             ),
-            Err(Flow::Residual(_)) => RetainedCallOutcome::GuardError(
+            Err(Flow::Residual(_) | Flow::Lexical(_)) => RetainedCallOutcome::GuardError(
                 super::super::owned_try::ESCAPED_RESIDUAL_GUARD.to_owned(),
             ),
             Err(Flow::Guard(detail)) => RetainedCallOutcome::GuardError(detail.to_owned()),

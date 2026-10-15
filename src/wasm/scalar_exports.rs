@@ -474,6 +474,13 @@ fn validate_expression_profile(
     while let Some(expression) = pending.pop() {
         if expression.ownership != OwnershipMode::Value
             || (!internal_scalar_type(&expression.ty, integer_profile)
+                // prepare() has independently validated the full HIR first.
+                // Completion is expression-only: never a scalar ABI/storage type.
+                && !(expression.ty == ResolvedType::Never
+                    && matches!(expression.kind,
+                        ResolvedExprKind::LexicalExit { .. }
+                        | ResolvedExprKind::Block { .. }
+                        | ResolvedExprKind::If { .. }))
                 && !hir::function_value::is_signature(&expression.ty)
                 && !expression.ty.is_mut_function())
         {
@@ -482,6 +489,7 @@ fn validate_expression_profile(
             )));
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Closure { captures, body, .. } => {
                 pending.push(body);
                 pending.extend(captures.iter().map(|capture| &capture.value));
@@ -508,8 +516,10 @@ fn validate_expression_profile(
             | ResolvedExprKind::Float32(_)
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_) => {}
-            ResolvedExprKind::ArrayU8(_)
+            | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
+            ResolvedExprKind::VecConstructor { .. }
+            | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::ByteRange { .. } => {
@@ -583,6 +593,9 @@ fn validate_expression_profile(
                 pending.push(else_branch);
             }
             ResolvedExprKind::ConstructRecord { .. }
+            | ResolvedExprKind::LiteralFormat { .. }
+            | ResolvedExprKind::VecFieldRead { .. }
+            | ResolvedExprKind::RowLoan { .. }
             | ResolvedExprKind::ConstructVariant { .. }
             | ResolvedExprKind::Match { .. }
             | ResolvedExprKind::Try { .. }
@@ -626,6 +639,7 @@ fn scalar_type(ty: &ResolvedType) -> Option<ScalarType> {
         | ResolvedType::StringMap
         | ResolvedType::ArrayU8(_)
         | ResolvedType::Bytes
+        | ResolvedType::Never
         | ResolvedType::TypeParameter { .. }
         | ResolvedType::Nominal { .. }
         | ResolvedType::OnceFunction
@@ -860,3 +874,7 @@ fn evaluate() -> i64 {
             .contains("does not admit authored resource, record, or variant"));
     }
 }
+
+#[cfg(test)]
+#[path = "scalar_exports/completion_tests.rs"]
+mod completion_tests;

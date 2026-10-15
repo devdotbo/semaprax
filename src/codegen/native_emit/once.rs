@@ -174,7 +174,7 @@ pub(super) fn invoke<O: COutput>(
         "spx_status = {receiver}.entry(spx_ctx, spx_bytes_move(&{receiver}.capture){scalar}, &{result});"
     ));
     emitter.line(&format!("{receiver}.entry = NULL;"));
-    emitter.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+    emitter.emit_operation_failure_check()?;
     Ok(CValue {
         code: result,
         ty: ResolvedType::I64,

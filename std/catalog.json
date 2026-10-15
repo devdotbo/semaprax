@@ -2738,6 +2738,99 @@
           "kind": "function",
           "name": "decoded_token_eq",
           "requires": 0
+        },
+        {
+          "description": [
+            "One canonical decoded byte at a pull cursor, or 256 when the cursor emits",
+            "none. An admitted raw byte is its own decoded value; an escape uses",
+            "`emit_at`. Unlike `emit_at`, a raw byte needs no `byte_code` probe."
+          ],
+          "effects": [],
+          "ensures": 1,
+          "head": [
+            "fn decoded_byte_at(input: borrow Slice<u8>, index: usize, part: usize) -> usize",
+            "    ensures result <= 256usize"
+          ],
+          "id": "std.data.json.dec.decoded_byte_at",
+          "kind": "function",
+          "name": "decoded_byte_at",
+          "requires": 0
+        },
+        {
+          "description": [
+            "A bounded decoded-key fingerprint `length * 65536 + hash`. The hash folds",
+            "the token's canonical decoded bytes as `(hash * 257 + byte) % 65521`, and",
+            "`length` is its decoded byte count in 1..=limit. Zero means the token is",
+            "not a complete JSON string of that size; the walk stops at the first",
+            "decoded byte past `limit`. Equal fingerprints never prove equal keys."
+          ],
+          "effects": [],
+          "ensures": 1,
+          "head": [
+            "fn decoded_fingerprint(input: borrow Slice<u8>, start: usize, limit: usize) -> usize",
+            "    requires limit >= 1usize && limit <= 256usize",
+            "    ensures result < 16842752usize"
+          ],
+          "id": "std.data.json.dec.decoded_fingerprint",
+          "kind": "function",
+          "name": "decoded_fingerprint",
+          "requires": 1
+        },
+        {
+          "description": [
+            "One bounded Copy index entry: a token's opening offset and fingerprint.",
+            "Offsets admit the 131,072-byte internal owned-view bound."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn fingerprint_entry(opening: usize, fingerprint: usize) -> usize",
+            "    requires opening <= 131072usize && fingerprint < 16842752usize"
+          ],
+          "id": "std.data.json.dec.fingerprint_entry",
+          "kind": "function",
+          "name": "fingerprint_entry",
+          "requires": 1
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn entry_opening(entry: usize) -> usize"
+          ],
+          "id": "std.data.json.dec.entry_opening",
+          "kind": "function",
+          "name": "entry_opening",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 1,
+          "head": [
+            "fn entry_fingerprint(entry: usize) -> usize",
+            "    ensures result < 16842752usize"
+          ],
+          "id": "std.data.json.dec.entry_fingerprint",
+          "kind": "function",
+          "name": "entry_fingerprint",
+          "requires": 0
+        },
+        {
+          "description": [
+            "A fingerprint only rejects. Every equal fingerprint, including every hash",
+            "collision, is decided by the exact decoded comparison `decoded_token_eq`."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn fingerprint_match(input: borrow Slice<u8>, entry: usize, current: usize, fingerprint: usize) -> bool"
+          ],
+          "id": "std.data.json.dec.fingerprint_match",
+          "kind": "function",
+          "name": "fingerprint_match",
+          "requires": 0
         }
       ],
       "dependency": "std.data.json.dec = \"^0.1.0\"",
@@ -3443,6 +3536,21 @@
           "kind": "function",
           "name": "decimal_end",
           "requires": 0
+        },
+        {
+          "description": [
+            "Validate one exact JSON text token after ordinary whole-document grammar.",
+            "The bound is an explicit decoded-byte policy, not an input capability."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn utf8_text_valid(input: borrow Slice<u8>, start: usize, end: usize, max_bytes: usize) -> bool"
+          ],
+          "id": "std.data.json.scan.utf8_text_valid",
+          "kind": "function",
+          "name": "utf8_text_valid",
+          "requires": 0
         }
       ],
       "dependency": "std.data.json.scan = \"^0.1.0\"",
@@ -3768,6 +3876,32 @@
           "kind": "function",
           "name": "is_utf8",
           "requires": 0
+        },
+        {
+          "description": [
+            "Bounded JSON text kernels borrow bytes and never construct String owners."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn bounded_valid(input: borrow Slice<u8>, max_bytes: usize) -> bool"
+          ],
+          "id": "std.data.json.utf8.bounded_valid",
+          "kind": "function",
+          "name": "bounded_valid",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn quoted_len(input: borrow Slice<u8>, max_bytes: usize) -> usize"
+          ],
+          "id": "std.data.json.utf8.quoted_len",
+          "kind": "function",
+          "name": "quoted_len",
+          "requires": 0
         }
       ],
       "dependency": "std.data.json.utf8 = \"^0.1.0\"",
@@ -3997,6 +4131,158 @@
       "module": "std.data.json.write",
       "package": "std/data-json-write",
       "required_profile": "useful-data.v2",
+      "status": "partial",
+      "targets": [
+        "interpreter",
+        "native-c11",
+        "core-wasm"
+      ],
+      "tier": "portable"
+    },
+    {
+      "declarations": [
+        {
+          "description": [
+            "Copy observations only: neither record contains a borrowed carrier or owner token."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "record Frame {",
+            "    ordinal: usize,",
+            "    start: usize,",
+            "    end: usize,",
+            "    next: usize,",
+            "}"
+          ],
+          "id": "std.data.ndjson.frame",
+          "kind": "record",
+          "name": "Frame",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "record Fault {",
+            "    category: i64,",
+            "    record_index: i64,",
+            "    byte_offset: usize,",
+            "}"
+          ],
+          "id": "std.data.ndjson.fault",
+          "kind": "record",
+          "name": "Fault",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn record_count(body: borrow Slice<u8>) -> usize"
+          ],
+          "id": "std.data.ndjson.record-count",
+          "kind": "function",
+          "name": "record_count",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn line_start(body: borrow Slice<u8>, ordinal: usize) -> usize"
+          ],
+          "id": "std.data.ndjson.line-start",
+          "kind": "function",
+          "name": "line_start",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn line_end(body: borrow Slice<u8>, start: usize) -> usize",
+            "    requires start <= byte_len(body)"
+          ],
+          "id": "std.data.ndjson.line-end",
+          "kind": "function",
+          "name": "line_end",
+          "requires": 1
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn global_fault(body: borrow Slice<u8>) -> Fault"
+          ],
+          "id": "std.data.ndjson.global-fault",
+          "kind": "function",
+          "name": "global_fault",
+          "requires": 0
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn frame_at(body: borrow Slice<u8>, ordinal: usize) -> Frame",
+            "    requires byte_len(body) <= 65536usize && ordinal < 256usize && ordinal < record_count(body)"
+          ],
+          "id": "std.data.ndjson.frame-at",
+          "kind": "function",
+          "name": "frame_at",
+          "requires": 1
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn frame_matches(body: borrow Slice<u8>, frame: Frame) -> bool"
+          ],
+          "id": "std.data.ndjson.frame-matches",
+          "kind": "function",
+          "name": "frame_matches",
+          "requires": 0
+        },
+        {
+          "description": [
+            "Receives an ACTUAL current borrowed view, whose existing byte-range loan is replayed independently."
+          ],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn basic_line_fault(line: borrow Slice<u8>, ordinal: usize) -> Fault",
+            "    requires ordinal < 256usize"
+          ],
+          "id": "std.data.ndjson.basic-line-fault",
+          "kind": "function",
+          "name": "basic_line_fault",
+          "requires": 1
+        },
+        {
+          "description": [],
+          "effects": [],
+          "ensures": 0,
+          "head": [
+            "fn basic_fault(body: borrow Slice<u8>, frame: Frame) -> Fault",
+            "    requires frame_matches(body, frame)"
+          ],
+          "id": "std.data.ndjson.basic-fault",
+          "kind": "function",
+          "name": "basic_fault",
+          "requires": 1
+        }
+      ],
+      "dependency": "std.data.ndjson = \"^0.1.0\"",
+      "module": "std.data.ndjson",
+      "package": "std/data-ndjson",
+      "required_profile": "owned-data-api.v1",
       "status": "partial",
       "targets": [
         "interpreter",

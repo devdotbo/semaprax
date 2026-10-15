@@ -352,6 +352,7 @@ fn plan(revision: &ProjectRevision, programs: &[Program], target: &str) -> Resul
             | ExprKind::Usize(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::ArrayU8(_)
             | ExprKind::RepeatArrayU8 { .. }
             | ExprKind::Var(_)
@@ -375,6 +376,7 @@ fn plan(revision: &ProjectRevision, programs: &[Program], target: &str) -> Resul
                         Statement::Assign { field: None, .. }
                         | Statement::While { .. }
                         | Statement::For { .. }
+                        | Statement::ForBorrow { .. }
                         | Statement::ForOwn { .. } => {}
                         Statement::Assign { field: Some(_), .. } | Statement::Unsafe { .. } => {
                             return Err(invalid(

@@ -1,0 +1,14 @@
+{
+  "base": "fde751e20236152d581e31ce6bf2b1d3e11ede45",
+  "original_sha256": {
+    "src/workspace_graph/expected_projection/borrowed_leaf.rs": "6bb8a0b553f3c82444b7b4110899ada049f559ca5a1caf6721785efecf339c8f",
+    "src/workspace_graph/expected_projection/borrowed_imports/receiving.rs": "175a32cb294f72f01fd465d21bd18b43ad93a06cbe209b51283f4ff6ca33c09b",
+    "src/workspace_graph/expected_projection/borrowed_leaf/checked_key.rs": "b4beba2c92fa9107b10e7083561f83243827da7e8a5edc4df035b571b608bc62"
+  },
+  "production": "workspace_graph resolved-core chooses transient only with frontend=None; all cache-enabled invocations retain full receiving constructor/key materialization.",
+  "footprint": "Receiving Vec capacity = authored+generated; transient Vec capacity=generated. Removes exactly authored function/type header backing, including one zero-generated allocation where applicable; payloads and generated roots unchanged.",
+  "preservation": "Original receiving.rs and checked_key.rs byte-identical to base; complete old imported synthetic constructor compiled in tests/old.rs; all existing full-funding assertions unchanged.",
+  "blocker": "Frozen full oracle current=false retain=false exceeds funding in resolution and validation before key publication: allocator5483435 required4374737. This disjoint source optimization does not prove full receiver paid or close OPT796/#776.",
+  "verification": "Leaf rustfmt/static diff and source-join checks only; no Cargo/build/tests/cap or forecast changes.",
+  "graft_tokens_saved": 21888
+}

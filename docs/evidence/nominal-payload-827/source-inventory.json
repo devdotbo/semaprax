@@ -1,0 +1,175 @@
+{
+  "schema": "semaprax.nominal-payload-source-checkpoint.v1",
+  "basis": "4ec48420b6e78b1035a66cc406893c46c3028464",
+  "status": "unfinished-private-not-integration-ready",
+  "rows": [
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/disposal.rs",
+      "sha256": "d32d415437e3521fcd918b2022546c52646759cd88819ff2010ced9357b532a4",
+      "original": "docs/evidence/nominal-payload-827/original/crates/semaprax-native-rust-interop-builder/src/implementation/disposal.rs",
+      "original_sha256": "1f4964fe254338c2e4e0b8cad7fc9ea633da9fd7416332a49a4d3b72556e9d2a"
+    },
+    {
+      "source": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/tests/native.rs",
+      "sha256": "75bbf0311c224b1a9dd6998d496698719fcdd55f151f0b1e698c5ba5b8dbb82c",
+      "original": "docs/evidence/nominal-payload-827/original/src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/tests/native.rs",
+      "original_sha256": "2f4fe70f7d814c4ff0892e52e879b858765bdfb83fa5d9f46df866d939fe04ad"
+    },
+    {
+      "source": "src/hir.rs",
+      "sha256": "9f1c947f813ef6a5e6f063767f8483d7765a04e85ec2a2ce67343169970edfec",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir.rs",
+      "original_sha256": "a5efa3f9d058c37538b9f08a17f3286fad4b2342b54943d64f3a4ca69e6459e0"
+    },
+    {
+      "source": "src/hir/cache_codec.rs",
+      "sha256": "94b6c209bd11e5c6912c1b6da5f90c606b6d3d771c849c6813e3c96c81e65d7c",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/cache_codec.rs",
+      "original_sha256": "4fcead7c2ea48eb73ae2d55d62343e277afb4acc233b059c945c3cfadb73bf1e"
+    },
+    {
+      "source": "src/hir/declaration_index.rs",
+      "sha256": "64d8eeb5276489b64059c2c434a0a96b060714cac5c3ba8db85bc202c463aa4f",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/declaration_index.rs",
+      "original_sha256": "586684b48f58eea49ca017a4f1b8ab54fee3a874366d9ef0e10c2e31b8cd46c3"
+    },
+    {
+      "source": "src/hir/declaration_index/identity_payer.rs",
+      "sha256": "a293906281f8e5de573955f2f5ff8578c469403d2da1f3f3fc46c6bbb9240ba7",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/declaration_index/identity_payer.rs",
+      "original_sha256": "a385fe6aa95cf870d35f92b12bd9a07eeeff103a60a22903d8d61c952c52915d"
+    },
+    {
+      "source": "src/hir/declaration_index/inventory_lookup.rs",
+      "sha256": "88092c0f54c9ef13001aa33cc7464361b568b205008d5413c5c956f9784a331e",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/declaration_index/inventory_lookup.rs",
+      "original_sha256": "718c7c9ca23f86dc08b0b61d265db12abc78ce17fc80f209d7508c5586b2b911"
+    },
+    {
+      "source": "src/hir/declaration_index/leaf_drop_tests.rs",
+      "sha256": "3ee21dff87932511910fb328367e4cb6d09c6ca2bc5400cda0668c46c71dbf42",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/declaration_index/leaf_drop_tests.rs",
+      "original_sha256": "abd2cc7eb9eb8bf41a7dfcfbf969e5f2e1e0e12faa29b5af474c37ae4a3c74ec"
+    },
+    {
+      "source": "src/hir/declaration_index/nominal.rs",
+      "sha256": "c859b20ce83e1b526fdbc8afb2f3e27f1983f618814247db085efe143e2c0c82",
+      "original": null,
+      "original_sha256": null
+    },
+    {
+      "source": "src/hir/declaration_index/nominal_original.rs",
+      "sha256": "b32d6859aed3aff02acdb87a4b5a969cf1c6ae73d388fba9c823711776c70f69",
+      "original": null,
+      "original_sha256": null
+    },
+    {
+      "source": "src/hir/declaration_index/nominal_rollback.rs",
+      "sha256": "db050cdca9dc70919088fe02da39494c00f5ea39ba7fcefcace79c89aae11719",
+      "original": null,
+      "original_sha256": null
+    },
+    {
+      "source": "src/hir/identity_resolution.rs",
+      "sha256": "86dc91d19adeaba6df5287046bc5b461b572a95ff225ca21d017e0e669bf71b0",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/identity_resolution.rs",
+      "original_sha256": "dd295809fbc859040caafd6bf5f4bb3863c64392747b539717547c0cad3c1700"
+    },
+    {
+      "source": "src/hir/identity_resolution/nominal.rs",
+      "sha256": "93f73ce90a717759838370db7f339ab7fa30e3c95de23c91b907923313f920ce",
+      "original": null,
+      "original_sha256": null
+    },
+    {
+      "source": "src/hir/nodes.rs",
+      "sha256": "1a01f59f27eb760c8b2d84da47ed9f09130d0e7f02dab42943e49488d2a0ee18",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/nodes.rs",
+      "original_sha256": "f2495bc08a6ef60986eee5cc2ee290922c26744edcd18ace299241b78924bf1d"
+    },
+    {
+      "source": "src/hir/nominal_payload.rs",
+      "sha256": "79d44870a0d8fd29f67b0fe89feb1e59839710380ba68638cfda90269ebc11bc",
+      "original": null,
+      "original_sha256": null
+    },
+    {
+      "source": "src/hir/nominal_payload/codec.rs",
+      "sha256": "e18a9605347e9b162d74017073549b2a5ccb0abc7fa14f1d791fbf85d3a0cdea",
+      "original": null,
+      "original_sha256": null
+    },
+    {
+      "source": "src/hir/nominal_payload/elements.rs",
+      "sha256": "d1104c96520fc87c6b636e857f389ac1eab3f9ec6a35f423f268463678151472",
+      "original": null,
+      "original_sha256": null
+    },
+    {
+      "source": "src/hir/nominal_payload/map.rs",
+      "sha256": "fd5b74beb8ea72dcbc9c6967cd0acb5d4e759b2610444188e1ba8bc286118710",
+      "original": null,
+      "original_sha256": null
+    },
+    {
+      "source": "src/hir/nominal_payload/tests.rs",
+      "sha256": "9d906a4ae6cdfa27218fc2f34ff0f0d570e0052eaebde4bee6ca49e93e4f9533",
+      "original": null,
+      "original_sha256": null
+    },
+    {
+      "source": "src/hir/resolve_program.rs",
+      "sha256": "227090a0a9b557473a8a92822a165c65813b3c5a575ac7aa2ba7fc76c7b2f8bb",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/resolve_program.rs",
+      "original_sha256": "607c703f5e9215b5fc78e24e247dfb190f26ab35ba6053ea24526d342e1a100f"
+    },
+    {
+      "source": "src/hir/resolve_program/agent_identity_original.rs",
+      "sha256": "e12b9f4d7a7a115cfd6537ebca61610736a6f63971ea6ab2dd294261ec631108",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/resolve_program/agent_identity_original.rs",
+      "original_sha256": "9a6abc2e657ab88eb7536a0bd60717fa0c8b49486d30253cd08675cd5e1f941c"
+    },
+    {
+      "source": "src/hir/type_reachability/owned_oracle.rs",
+      "sha256": "a3d5f7b0d9fac0087eebd7812c44a258a1044232d6d6e89629f75a774f1d5a50",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/type_reachability/owned_oracle.rs",
+      "original_sha256": "0c6a8d39c46df931f2e83f446e62df73f17919a416f807b0bc16542827eb2729"
+    },
+    {
+      "source": "src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs",
+      "sha256": "b9012f7d816ec1c50ec5e62a9e718ac574ed3b02ce2aff2599a584da5b2ec8c5",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs",
+      "original_sha256": "46762047636feb00bd85bf0da82a4fca991662879e600488dd94aaa339d22cd7"
+    },
+    {
+      "source": "src/hir/workspace_link/compiler_prelude.rs",
+      "sha256": "7c90d1c3946e898e059327affe656ac179b7a746bee6a775cf0f886e0fab6509",
+      "original": "docs/evidence/nominal-payload-827/original/src/hir/workspace_link/compiler_prelude.rs",
+      "original_sha256": "e55b2eacd7b8398d648d8ac4c291104c20d88c176b7465631ad5386f4e60ddfa"
+    },
+    {
+      "source": "src/project/incremental/paid_resolution.rs",
+      "sha256": "8cad05b0d518523464b7d61274d75634aab62fe7de40285d79df812f32e75b8c",
+      "original": "docs/evidence/nominal-payload-827/original/src/project/incremental/paid_resolution.rs",
+      "original_sha256": "8272123050c3e6c46630bd5be9375bf1965f095486935b590d6ba310d5ca1d8f"
+    },
+    {
+      "source": "src/public_generic_abi/classifier/tests.rs",
+      "sha256": "ce622eedec060b3ad8559efada4625ad8a649d16a772f8c105c211fea5acf955",
+      "original": "docs/evidence/nominal-payload-827/original/src/public_generic_abi/classifier/tests.rs",
+      "original_sha256": "ceab4d1af9c63596e50e4362352f09f08d04ef12caa963e31bdb317d7a0af7b1"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/borrowed_leaf.rs",
+      "sha256": "fb8a9c1c9624a9c9ead6a79907652fbbabc552885a716c5dee25376ba9c5e791",
+      "original": "docs/evidence/nominal-payload-827/original/src/workspace_graph/expected_projection/borrowed_leaf.rs",
+      "original_sha256": "635a606f173659862c09c8d0d44b2e20e25b3278b7b3a44802e9eea9d565fa7e"
+    },
+    {
+      "source": "src/workspace_graph/source_schema/static_text/primitive/records/prepared.rs",
+      "sha256": "d71ee4470089896eb3090b7b78a2b0676dd88e5ee696ed483c3fd8c67e06ba18",
+      "original": "docs/evidence/nominal-payload-827/original/src/workspace_graph/source_schema/static_text/primitive/records/prepared.rs",
+      "original_sha256": "7fd1f333ee0eb36b28498a378e1b477d406ed49287e77ac3198c1b57233c2d78"
+    }
+  ]
+}

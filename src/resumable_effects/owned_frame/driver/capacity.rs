@@ -83,6 +83,7 @@ pub(super) fn remaining(
     let mut language = Value::Null;
     for source in &plan.function().cleanup_plan.status_sources {
         let statuses = match &source.producer {
+            StatusProducer::CheckedAllocation { .. } => return Err(Error::Binding),
             StatusProducer::ContractFalse { phase, .. } => vec![NormalizedStatus::contract(*phase)],
             StatusProducer::CheckedArithmetic {
                 normalized_cases, ..

@@ -123,7 +123,12 @@ fn result_source(function: &ResolvedFunction) -> CleanupResultSource {
         .iter()
         .find_map(|exit| match &exit.continuation {
             ExitContinuation::CommitResult { source } => Some(source.clone()),
+            // Lexical transfers remain internal control contours. Publication
+            // is authenticated by the root CommitResult after postconditions.
             ExitContinuation::Continue(_)
+            | ExitContinuation::LoopLatch { .. }
+            | ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. }
             | ExitContinuation::ReturnFailure { .. }
             | ExitContinuation::ReturnUnit => None,
         })
@@ -140,6 +145,7 @@ fn operation_source(function: &ResolvedFunction, callee: &str) -> StatusSourceId
                 Some(source.id.clone())
             }
             StatusProducer::CheckedArithmetic { .. }
+            | StatusProducer::CheckedAllocation { .. }
             | StatusProducer::ContractFalse { .. }
             | StatusProducer::PropagatedCall { .. } => None,
         })
@@ -168,6 +174,7 @@ fn callee_for_call(
                 Some(callee.clone())
             }
             StatusProducer::CheckedArithmetic { .. }
+            | StatusProducer::CheckedAllocation { .. }
             | StatusProducer::ContractFalse { .. }
             | StatusProducer::PropagatedCall { .. } => None,
         })
@@ -722,6 +729,7 @@ fn ensures_failure_finalizes_the_provisional_owned_result_without_publication() 
                 ..
             } => Some(source.id.clone()),
             StatusProducer::CheckedArithmetic { .. }
+            | StatusProducer::CheckedAllocation { .. }
             | StatusProducer::ContractFalse { .. }
             | StatusProducer::PropagatedCall { .. } => None,
         })

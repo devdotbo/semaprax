@@ -181,6 +181,10 @@ fn validate_function(
                 ))
             }
             ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
+            | ResolvedExprKind::LiteralFormat { .. }
+            | ResolvedExprKind::VecFieldRead { .. }
+            | ResolvedExprKind::RowLoan { .. }
             | ResolvedExprKind::NativeRustImportCall(_)
             | ResolvedExprKind::HostCommandCall(_) => {
                 return Err(admission(format!(
@@ -222,12 +226,20 @@ fn validate_function(
                     callees.push(callee.clone());
                 }
             }
+            ResolvedExprKind::LexicalExit { .. } => {
+                return Err(admission(
+                    "lexical exits are outside Useful Data Command v2",
+                ))
+            }
             ResolvedExprKind::Unary { value, .. } => pending.push(value),
             ResolvedExprKind::Binary { left, right, .. } => {
                 pending.push(left);
                 pending.push(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     if matches!(statement, ResolvedStatement::Unsafe { .. }) {
                         return Err(admission(format!(

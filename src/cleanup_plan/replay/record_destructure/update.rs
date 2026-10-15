@@ -34,7 +34,7 @@ pub(in crate::cleanup_plan::replay) fn concrete_arguments<'a>(
 }
 
 pub(in crate::cleanup_plan::replay) fn function_contains(
-    program: &crate::hir::ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<bool, Diagnostic> {
     let mut pending = function
@@ -56,7 +56,7 @@ pub(in crate::cleanup_plan::replay) fn function_contains(
 }
 
 fn authenticate(
-    program: &crate::hir::ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
 ) -> Result<bool, Diagnostic> {
@@ -89,12 +89,12 @@ fn authenticate(
     }
     let nested = is_nested_owned_bytes(program, function, &base.ty)?;
     let generic_flat = !arguments.is_empty()
-        && crate::hir::is_flat_owned_byte_record(&program.declarations, &base.ty);
+        && crate::hir::is_flat_owned_byte_record(program.declarations(), &base.ty);
     if !nested && !generic_flat {
         return Ok(false);
     }
     let declared = program
-        .declarations
+        .declarations()
         .record_fields(record)
         .ok_or_else(|| super::super::replay_error(function, "nested update has no inventory"))?;
     let mut seen = BTreeSet::new();
@@ -128,7 +128,7 @@ fn authenticate(
 }
 
 fn is_nested_owned_bytes(
-    program: &crate::hir::ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     root: &ResolvedType,
 ) -> Result<bool, Diagnostic> {
@@ -164,7 +164,7 @@ fn is_nested_owned_bytes(
         if ancestors.contains(&declaration) {
             return Ok(false);
         }
-        let Some(declared) = program.declarations.record_fields(&declaration) else {
+        let Some(declared) = program.declarations().record_fields(&declaration) else {
             continue;
         };
         fields = fields

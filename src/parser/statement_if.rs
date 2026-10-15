@@ -18,8 +18,10 @@
 //! A chain in which every branch ends with a value and a final `else` exists
 //! is an ordinary value `if`: it stays the block's final expression when `}`,
 //! `;`, or an operator follows it, and is discarded as a statement only when
-//! another statement follows. The `if` is parsed once; no input that parsed
-//! before changes meaning.
+//! another statement follows. One exception: a chain containing a parsed
+//! lexical exit, followed directly by `;` and another item, is that same
+//! statement discard; canonical text drops the `;`. The `if` is parsed once;
+//! no input that parsed before changes meaning.
 
 use std::collections::BTreeSet;
 
@@ -27,6 +29,7 @@ use crate::ast::{BranchTail, Expr, ExprKind, LetSyntax, Span, Statement, Stateme
 use crate::diagnostic::Diagnostic;
 use crate::lexer::TokenKind;
 
+use super::expression_statement::BlockContents;
 use super::Parser;
 
 /// The `_if<n>` discard names handed out while parsing one file.
@@ -35,6 +38,35 @@ pub(super) struct DiscardNames {
     next: usize,
     /// Every identifier the file spells, gathered on first use.
     taken: Option<BTreeSet<String>>,
+    /// Only provisional names from a selective legacy-first parse attempt.
+    provisional: Vec<usize>,
+    recording: bool,
+}
+
+impl DiscardNames {
+    pub(super) fn needs_inventory(&self) -> bool {
+        self.taken.is_none()
+    }
+    pub(super) fn constructor_provisional_target(&self, additional: usize) -> Option<usize> {
+        if !self.recording
+            || self
+                .provisional
+                .capacity()
+                .saturating_sub(self.provisional.len())
+                >= additional
+        {
+            return Some(0);
+        }
+        self.provisional.len().checked_add(additional)
+    }
+    pub(super) fn prepare_constructor_provisional(&mut self, target: usize) -> bool {
+        target == 0
+            || (self
+                .provisional
+                .try_reserve_exact(target - self.provisional.len())
+                .is_ok()
+                && self.provisional.capacity() <= target)
+    }
 }
 
 /// What an `if` at the start of a block item turned out to be.
@@ -58,38 +90,113 @@ struct Arm {
     body: Branch,
 }
 
+/// A statement `if` chain suspended while the block of one of its branches is
+/// parsed. Branch blocks are explicit frames (`Parser::block_contents`), not
+/// native recursion, so nested statement `if`s hold their pending arms on the
+/// heap until the source nesting bound refuses them.
+pub(super) struct OpenChain {
+    start: Span,
+    arms: Vec<Arm>,
+    arm_start: Span,
+    /// The condition of the open branch's arm; `None` while `else` is open.
+    condition: Option<Expr>,
+    branch_start: Span,
+}
+
 impl Parser {
-    pub(super) fn statement_if(&mut self) -> Result<IfItem, Diagnostic> {
+    /// The `if` keyword and condition of a block item, through the `{` of its
+    /// first branch.
+    pub(super) fn statement_if_open(&mut self) -> Result<OpenChain, Diagnostic> {
         let start = self.keyword("if")?.span;
-        let mut arms = Vec::new();
-        let mut otherwise = None;
-        let mut arm_start = start;
-        loop {
-            let condition = self.expression_with_record_literals(0, false)?;
-            let body = self.branch("`if` condition")?;
-            arms.push(Arm {
-                start: arm_start,
-                condition,
-                body,
-            });
-            if !self.at_keyword("else") {
-                break;
-            }
-            self.bump();
-            if self.at_keyword("if") {
-                arm_start = self.bump().span;
-                continue;
-            }
-            otherwise = Some(self.branch("`else`")?);
-            break;
+        let condition = self.expression_with_record_literals(0, false)?;
+        self.open_chain(start, condition)
+    }
+
+    pub(super) fn statement_if_after_condition(
+        &mut self,
+        start: Span,
+        condition: Expr,
+    ) -> Result<IfItem, Diagnostic> {
+        let chain = self.open_chain(start, condition)?;
+        self.settle_statement_if(chain)
+    }
+
+    fn open_chain(&mut self, start: Span, condition: Expr) -> Result<OpenChain, Diagnostic> {
+        let branch_start = self.open_branch("`if` condition")?;
+        Ok(OpenChain {
+            start,
+            arms: Vec::new(),
+            arm_start: start,
+            condition: Some(condition),
+            branch_start,
+        })
+    }
+
+    /// Resume a chain with the contents of the branch block it opened. `None`
+    /// means the `{` of the next `else if` or `else` branch was consumed and
+    /// its block contents come next; otherwise the whole chain is finished.
+    pub(super) fn statement_if_resume(
+        &mut self,
+        chain: &mut OpenChain,
+        contents: Result<BlockContents, Diagnostic>,
+    ) -> Result<Option<IfItem>, Diagnostic> {
+        let description = if chain.condition.is_some() {
+            "`if` condition"
+        } else {
+            "`else`"
+        };
+        let (statements, tail, end) =
+            contents.map_err(|diagnostic| Self::attach_block_help(diagnostic, description))?;
+        let body = Branch {
+            statements,
+            tail,
+            span: chain.branch_start.merge(end),
+        };
+        let Some(condition) = chain.condition.take() else {
+            let arms = std::mem::take(&mut chain.arms);
+            return self
+                .statement_if_finish(chain.start, arms, Some(body))
+                .map(Some);
+        };
+        chain.arms.push(Arm {
+            start: chain.arm_start,
+            condition,
+            body,
+        });
+        if !self.at_keyword("else") {
+            let arms = std::mem::take(&mut chain.arms);
+            return self.statement_if_finish(chain.start, arms, None).map(Some);
         }
+        self.bump();
+        if self.at_keyword("if") {
+            chain.arm_start = self.bump().span;
+            chain.condition = Some(self.expression_with_record_literals(0, false)?);
+            chain.branch_start = self.open_branch("`if` condition")?;
+        } else {
+            chain.branch_start = self.open_branch("`else`")?;
+        }
+        Ok(None)
+    }
+
+    fn statement_if_finish(
+        &mut self,
+        start: Span,
+        arms: Vec<Arm>,
+        otherwise: Option<Branch>,
+    ) -> Result<IfItem, Diagnostic> {
         let valued = otherwise
             .as_ref()
             .is_some_and(|branch| branch.tail.is_some())
             && arms.iter().all(|arm| arm.body.tail.is_some());
         let tail_kind = |branch: &Branch| match &branch.tail {
             None => BranchTail::Absent,
-            Some(value) if valued || matches!(value.kind, ExprKind::Int(_)) => BranchTail::Retained,
+            Some(value)
+                if valued
+                    || matches!(value.kind, ExprKind::Int(_))
+                    || crate::ast::has_no_normal_completion(value) =>
+            {
+                BranchTail::Retained
+            }
             Some(_) => BranchTail::Discarded,
         };
         let syntax = LetSyntax::StatementIf(StatementIfSyntax {
@@ -97,10 +204,28 @@ impl Parser {
             alternative: otherwise.as_ref().map(tail_kind),
         });
         let expression = self.assemble(arms, otherwise, valued);
+        if valued && crate::ast::has_no_normal_completion(&expression) {
+            if !self.at(&TokenKind::RBrace) {
+                return Err(self.error_here(
+                    "SPX-P209",
+                    "code after an unconditional lexical exit is unreachable",
+                ));
+            }
+            return Ok(IfItem::Value(expression));
+        }
         if valued {
             let before = self.cursor;
             let expression = self.postfix(expression, true)?;
             let expression = self.binary_continuation(expression, 0, true)?;
+            if self.cursor == before && self.at_exit_guard_terminator(&expression) {
+                let end = self.bump().span;
+                return Ok(IfItem::Statement(self.discard(
+                    start,
+                    expression,
+                    Some(end),
+                    syntax,
+                )));
+            }
             if self.cursor != before
                 || self.at(&TokenKind::RBrace)
                 || self.at(&TokenKind::Semicolon)
@@ -119,18 +244,35 @@ impl Parser {
         ))
     }
 
-    fn branch(&mut self, description: &str) -> Result<Branch, Diagnostic> {
-        let start = self
+    /// A bare valued exit guard may close with `;` when another block item
+    /// follows. Only a parsed exit selects this; ordinary valued `if`s keep the
+    /// scalar expression statement, and a final `;` keeps `SPX-P106`. Canonical
+    /// text omits the `;`, so an item that could continue this value `if`
+    /// (`-x;`, `(x);`) keeps the generic discard rather than change meaning.
+    fn at_exit_guard_terminator(&mut self, expression: &Expr) -> bool {
+        if !self.at(&TokenKind::Semicolon) {
+            return false;
+        }
+        let terminator = self.cursor;
+        self.cursor += 1;
+        let separate = !matches!(
+            self.current().kind,
+            TokenKind::RBrace
+                | TokenKind::Eof
+                | TokenKind::LParen
+                | TokenKind::Dot
+                | TokenKind::Question
+                | TokenKind::ColonColon
+        ) && self.binary_op().is_none()
+            && !self.at_keyword("with");
+        self.cursor = terminator;
+        separate && expression.contains_lexical_exit()
+    }
+
+    fn open_branch(&mut self, description: &str) -> Result<Span, Diagnostic> {
+        Ok(self
             .expect(&TokenKind::LBrace, &format!("`{{` before {description}"))?
-            .span;
-        let (statements, tail, end) = self
-            .block_contents(true)
-            .map_err(|diagnostic| Self::attach_block_help(diagnostic, description))?;
-        Ok(Branch {
-            statements,
-            tail,
-            span: start.merge(end),
-        })
+            .span)
     }
 
     /// A statement `if` is the last item of a block that needs a value. The
@@ -196,7 +338,13 @@ impl Parser {
         } = branch;
         let end = point(span);
         let tail = match tail {
-            Some(tail) if valued || matches!(tail.kind, ExprKind::Int(_)) => tail,
+            Some(tail)
+                if valued
+                    || matches!(tail.kind, ExprKind::Int(_))
+                    || crate::ast::has_no_normal_completion(&tail) =>
+            {
+                tail
+            }
             Some(value) => {
                 statements.push(self.discard(value.span, value, None, LetSyntax::BranchTail));
                 zero(end)
@@ -231,7 +379,7 @@ impl Parser {
         }
     }
 
-    fn discard_name(&mut self) -> String {
+    pub(super) fn discard_name(&mut self) -> String {
         let tokens = &self.tokens;
         let taken = self.discards.taken.get_or_insert_with(|| {
             tokens
@@ -246,6 +394,9 @@ impl Parser {
             self.discards.next += 1;
             let name = format!("_if{}", self.discards.next);
             if taken.insert(name.clone()) {
+                if self.discards.recording {
+                    self.discards.provisional.push(self.discards.next);
+                }
                 return name;
             }
         }
@@ -265,5 +416,118 @@ fn point(span: Span) -> Span {
     Span {
         start: span.end.saturating_sub(1).max(span.start),
         ..span
+    }
+}
+
+/// An index-only undo log: authored names and successful prior names are never cloned.
+pub(super) struct DiscardCheckpoint {
+    next: usize,
+    length: usize,
+    recording: bool,
+}
+impl DiscardNames {
+    pub(super) fn checkpoint(&mut self) -> DiscardCheckpoint {
+        let checkpoint = DiscardCheckpoint {
+            next: self.next,
+            length: self.provisional.len(),
+            recording: self.recording,
+        };
+        self.recording = true;
+        checkpoint
+    }
+    pub(super) fn finish(&mut self, checkpoint: DiscardCheckpoint, rollback: bool) {
+        if rollback {
+            while self.provisional.len() > checkpoint.length {
+                let index = self.provisional.pop().expect("provisional discard index");
+                if let Some(taken) = &mut self.taken {
+                    taken.remove(&format!("_if{index}"));
+                }
+            }
+            self.next = checkpoint.next;
+        } else if !checkpoint.recording {
+            self.provisional.truncate(checkpoint.length);
+        }
+        self.recording = checkpoint.recording;
+        if !self.recording {
+            self.provisional = Vec::new();
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ast::{ExprKind, LetSyntax, Program, Statement};
+    use crate::cache_codec::{decode, encode};
+
+    fn source(terminator: &str) -> String {
+        format!(
+            "module exit.guard; @id(\"main\") fn main()->i64 {{ let mut i=0; while i<3 {{ i=i+1; if i==2 {{continue;}} else {{0}}{terminator} i=i+0; 0 }} i }}"
+        )
+    }
+
+    fn guard(program: &Program) -> &Statement {
+        let ExprKind::Block { statements, .. } = &program.functions[0].body.kind else {
+            panic!("function block")
+        };
+        let Statement::While { body, .. } = &statements[1] else {
+            panic!("authored loop")
+        };
+        let ExprKind::Block { statements, .. } = &body.kind else {
+            panic!("loop block")
+        };
+        &statements[1]
+    }
+
+    #[test]
+    fn terminated_exit_guard_reuses_the_statement_if_and_roundtrips_the_cache() {
+        let old = crate::parse(&source(""), "exit-guard.spx").unwrap();
+        let new = crate::parse(&source(";"), "exit-guard.spx").unwrap();
+        let (
+            Statement::Let {
+                syntax: old_syntax,
+                name: old_name,
+                value: old_value,
+                span: old_span,
+                ..
+            },
+            Statement::Let {
+                syntax,
+                name,
+                mutable: false,
+                declared: None,
+                value,
+                span,
+                ..
+            },
+        ) = (guard(&old), guard(&new))
+        else {
+            panic!("normalized discards")
+        };
+        assert!(matches!(syntax, LetSyntax::StatementIf(_)));
+        assert_eq!(syntax, old_syntax);
+        assert_eq!(name, old_name);
+        // The value tree, its spans and its hidden name are those of the old
+        // spelling; only the statement span additionally covers the `;`.
+        assert_eq!(value, old_value);
+        assert_eq!((span.start, span.end), (old_span.start, old_span.end + 1));
+        let canonical = crate::format::canonical(&old);
+        assert_eq!(crate::format::canonical(&new), canonical);
+        assert!(!canonical.contains("let _if"), "{canonical}");
+        let bytes = encode(&new).unwrap();
+        let restored: Program = decode(&bytes).unwrap();
+        assert_eq!(restored.functions, new.functions);
+        assert_eq!(encode(&restored).unwrap(), bytes);
+        assert!(decode::<Program>(&bytes[..bytes.len() - 1]).is_err());
+        assert_eq!(crate::format::canonical(&restored), canonical);
+        let reparsed = crate::parse(&canonical, "exit-guard.spx").unwrap();
+        let Statement::Let {
+            syntax: reparsed_syntax,
+            name: reparsed_name,
+            ..
+        } = guard(&reparsed)
+        else {
+            panic!("canonical discard")
+        };
+        assert_eq!((reparsed_syntax, reparsed_name), (old_syntax, old_name));
     }
 }

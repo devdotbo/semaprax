@@ -1,0 +1,119 @@
+{
+  "schema": "semaprax.pending-exact-selectors.v1",
+  "issue": 819,
+  "executed": false,
+  "selectors": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::actual_empty_union_prepays_literal_frontier_node_backing_and_complete_work_drop",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "status": "source-authored-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::actual_weak_headers_and_nonempty_sequence_tails_keep_independent_original_drop_order",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "status": "source-authored-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::duplicate_deep_dag_frontier_is_linear_and_all_publication_failures_drop_paid_children",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "status": "source-authored-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::complete_cat_alt_owned_tails_duplicate_and_external_owner_keep_saved_values",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "status": "source-authored-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::foreign_work_and_ledger_children_need_only_immutable_structural_bounds",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "status": "source-authored-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::successful_paid_parent_drains_legacy_children_but_zero_refusal_preserves_legacy_boundary",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "status": "source-authored-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::checked_bound_overflow_refuses_before_node_publication_and_preserves_sticky_payer",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "status": "source-authored-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::independent_original_type_drop_builders_and_complete_receiver_are_byte_locked",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "status": "source-authored-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::foreign_selected_conservative_bound_is_paid_in_full_without_new_session_policy",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "status": "source-authored-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::frontier_tests::cat_alt_actual_member_backing_and_rc_release_order_pin_the_physical_frontier_difference",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier_tests.rs",
+      "status": "source-authored-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::ordinary_dag::tests::ordinary_empty_union_preserves_saved_multiset_and_literal_node_storage_through_drop",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs",
+      "status": "complete-original-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::deep_shared_dag_creation_and_drop_fit_the_precharged_frontier",
+      "source": "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs",
+      "status": "changed-receiving-drop-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::owned_extension_literal_clone_removal_survives_receiving_exact_short_and_drop",
+      "source": "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs",
+      "status": "changed-receiving-drop-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::selected_4096_nonempty_event_tails_keep_literal_old_current_removed_through_receiver_drop",
+      "source": "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs",
+      "status": "changed-receiving-drop-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::shared_prefix_creation_through_drop_has_exact_work_and_backing_limits",
+      "source": "src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs",
+      "status": "changed-receiving-drop-unexecuted"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::skeleton_work::dag_storage::tests::tail_moves::owned_union_literal_clone_request_delta_and_exact_one_short_drop_receivers",
+      "source": "src/cleanup_plan/replay/skeleton_work/dag_storage/tests/tail_moves.rs",
+      "status": "changed-receiving-drop-unexecuted"
+    }
+  ]
+}

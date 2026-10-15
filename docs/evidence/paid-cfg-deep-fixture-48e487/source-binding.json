@@ -1,0 +1,9 @@
+{
+  "status": "SOURCE_ONLY_PENDING_EXACT_QUALIFICATION",
+  "base": "48e487749370553dc1ddfc5b29989a288297879b",
+  "original_complete_test_source_sha256": "03ab7851f94fda9b07816454e004c42bf413b91027e0a180557ed256fd7e5bb2",
+  "current_test_source_sha256": "c4e0f468fdc040fbeff7b64341decd8a01d6b18e8103781e502b33f7ee241595",
+  "unchanged_owner": "loan_plan::paid_cfg::tests::complete_cfg_child_scratch_reuse_pays_actual_acquisition_exact_short_sticky_and_drop",
+  "scope": "Original depth128 source retained as exact P207 negative; distinct existing resolved shallow binary nodes moved into128level HIR positive. Width/depth cases, complete independent original CFG receiver and every accounting/work/refusal/Drop assertion unchanged. No parser production or cap change.",
+  "source_only": true
+}

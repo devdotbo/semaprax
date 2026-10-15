@@ -1,0 +1,17 @@
+
+running 1 test
+test workspace_graph::expected_projection::prelude_forecast::tests::independent_prelude_term_has_exact_short_zero_and_sticky_refusal_controls ... 
+thread 'workspace_graph::expected_projection::prelude_forecast::tests::independent_prelude_term_has_exact_short_zero_and_sticky_refusal_controls' (1497346) panicked at src/workspace_graph/expected_projection/prelude_forecast_tests.rs:99:9:
+assertion `left == right` failed
+  left: [Diagnostic { code: "SPX-G171", severity: Error, message: "", path: None, span: None, help: None }]
+ right: [Diagnostic { code: "SPX-G171", severity: Error, message: "Workspace Semantic Graph `builder_bytes` exceeds 72479", path: None, span: None, help: Some("live graph construction, not the static admission pre-charge, exceeded the 72479-byte budget while allocating workspace graph structure.") }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    workspace_graph::expected_projection::prelude_forecast::tests::independent_prelude_term_has_exact_short_zero_and_sticky_refusal_controls
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8696 filtered out; finished in 0.04s
+

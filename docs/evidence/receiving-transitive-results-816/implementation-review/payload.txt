@@ -1,0 +1,158 @@
+Review DISTINCT concrete implementation of new caller-paid ordinary place result (source-only). No tools/execution. Identify real Rust/semantic/accounting bugs; under700words. Parent requires FULL initialized/return/receiving carriers; no old-header credits/fee exemptions/cap changes. Old Leaves::under and old root validate_place stay independently compiled; ordinary paying sites choose new helper, unobserved branch old. Existing same ReplayBudget bootstrap reserve0 authenticates ACTIVE/sticky, positive reserve charges fullheldinvocation; workcharge is sticky. Old helpers used no internal workcharges; new walking/projection/relocation/control work must honestlycharge actualoperations, no negative credit. FullDiagnostic semantic equality atamplebudget; actual first byte/work refusal naturallychanges. Caller owns immutable HIR/storage/leaves throughout; all new owned result/backing/diagnostics drop insideobserver. Every reserve_vec call precedes push; function below verifies resulting capacityexactlybeforepush. Map comparisons in original leaf index are inherited, not claimed newly paid by these fees. No mallocbuffer mayescape observation. Are new full carrier fees sufficient? Any correctness/errorpriority change?
+OLD UNDER:
+    /// The leaves at or below `place`, in liveness-flag order.
+    pub(super) fn under(&self, place: &CleanupPlace) -> Vec<LivenessFlagId> {
+        self.by_storage
+            .get(&place.storage)
+            .into_iter()
+            .flatten()
+            .filter(|flag| {
+                self.by_flag[*flag]
+                    .place
+                    .projections
+                    .starts_with(&place.projections)
+            })
+            .copied()
+            .collect()
+    }
+NEW LEAF IMPLEMENTATION:
+//! Fallible full backing for the original ordered place-leaf result.
+use super::*;
+
+struct Under<'a> {
+    flags: &'a [LivenessFlagId],
+    output: Vec<LivenessFlagId>,
+    next: usize,
+}
+
+impl Leaves {
+    pub(in crate::cleanup_plan::replay) fn under_with_budget(
+        &self,
+        function: &ResolvedFunction,
+        place: &CleanupPlace,
+        budget: &mut ReplayBudget,
+    ) -> Result<Vec<LivenessFlagId>, Diagnostic> {
+        const PHASE: &str = "cleanup place leaf result";
+        budget.reserve_bytes(function, 0, PHASE)?;
+        budget.charge(function, 0, PHASE)?;
+        budget.reserve_bytes(function,
+            std::mem::size_of::<Under<'static>>()
+                + std::mem::size_of::<Option<&Vec<LivenessFlagId>>>()
+                + std::mem::size_of::<Result<Vec<LivenessFlagId>, Diagnostic>>()
+                + std::mem::size_of::<Vec<LivenessFlagId>>()
+                + std::mem::size_of::<bool>(), PHASE)?;
+        budget.charge(function, 5, PHASE)?;
+        let mut state = Under {
+            flags: self.by_storage.get(&place.storage).map_or(&[] as &[LivenessFlagId], Vec::as_slice),
+            output: Vec::new(), next: 0,
+        };
+        while state.next < state.flags.len() {
+            budget.charge(function, 3, PHASE)?;
+            let flag = state.flags[state.next];
+            state.next += 1;
+            let projections = &self.by_flag[&flag].place.projections;
+            budget.charge(function, 1, PHASE)?;
+            if place.projections.len() > projections.len() { continue; }
+            let mut matches = true;
+            for (left, right) in projections.iter().zip(&place.projections) {
+                let units = left.as_str().len().min(right.as_str().len()).checked_add(1)
+                    .ok_or_else(|| budget.budget_refusal(function, "place projection work overflow", ""))?;
+                budget.charge(function, units, PHASE)?;
+                if left != right { matches = false; break; }
+            }
+            if matches {
+                if state.output.len() == state.output.capacity() {
+                    let units = state.output.len().checked_add(1).ok_or_else(||
+                        budget.budget_refusal(function, "place result relocation work overflow", ""))?;
+                    budget.charge(function, units, PHASE)?;
+                }
+                budget.reserve_vec(function, &mut state.output, 1, PHASE)?;
+                state.output.push(flag);
+            }
+        }
+        Ok(state.output)
+    }
+}
+
+NEW RECEIVING FACADE:
+//! Complete paid transitive receiving results; original root helpers stay compiled.
+use super::*;
+mod regions;
+pub(super) use regions::expected_exit_regions;
+
+pub(super) fn validate_place(
+    function: &ResolvedFunction,
+    place: &CleanupPlace,
+    storage: &BTreeSet<StorageId>,
+    leaves: &Leaves,
+    budget: &mut ReplayBudget,
+) -> Result<Vec<LivenessFlagId>, Diagnostic> {
+    if !budget.pays_allocations() {
+        return crate::cleanup_plan::replay::validate_place(function, place, storage, leaves);
+    }
+    budget.reserve_bytes(function, 0, "cleanup place receiving")?;
+    budget.charge(function, 0, "cleanup place receiving")?;
+    if !storage.contains(&place.storage) {
+        return Err(replay_error(function, "cleanup place references unknown storage"));
+    }
+    // Nested helper return and this helper's initialized/receiving result overlap.
+    budget.reserve_bytes(function,
+        std::mem::size_of::<Result<Vec<LivenessFlagId>, Diagnostic>>()
+            + std::mem::size_of::<Vec<LivenessFlagId>>(), "cleanup place receiving")?;
+    budget.charge(function, 2, "cleanup place receiving")?;
+    let under = leaves.under_with_budget(function, place, budget)?;
+    if under.is_empty() {
+        return Err(replay_error(function, "cleanup place has no droppable leaf"));
+    }
+    Ok(under)
+}
+
+ACTUAL EXISTING BACKING PRIMITIVE:
+    pub(super) fn reserve_vec<T>(
+        &mut self,
+        function: &ResolvedFunction,
+        values: &mut Vec<T>,
+        additional: usize,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if !self.pays_allocations() {
+            return Ok(());
+        }
+        self.reserve_bytes(function, 0, phase)?;
+        let required = values.len().checked_add(additional).ok_or_else(|| {
+            self.budget_refusal(
+                function,
+                "cleanup replay physical vector length overflowed",
+                "",
+            )
+        })?;
+        if required <= values.capacity() {
+            return Ok(());
+        }
+        let target = physical_storage::replay_growth_capacity(values.capacity(), required)
+            .ok_or_else(|| {
+                self.budget_refusal(
+                    function,
+                    "cleanup replay physical vector capacity overflowed",
+                    "",
+                )
+            })?;
+        self.reserve_array::<T>(function, target, phase)?;
+        values
+            .try_reserve_exact(target - values.len())
+            .map_err(|_| {
+                self.budget_refusal(
+                    function,
+                    "cleanup replay physical vector allocation failed",
+                    "",
+                )
+            })?;
+        if values.capacity() != target {
+            return Err(self.budget_refusal(
+                function,
+                "cleanup replay physical vector capacity disagrees with its reservation",
+                "",
+            ));
+        }
+        Ok(())
+    }

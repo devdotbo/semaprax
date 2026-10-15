@@ -673,3 +673,34 @@ fn hostile_projections_are_refused_as_compiler_invariants() {
     );
     assert!(error.function.is_none());
 }
+
+#[test]
+fn finite_owned_iteration_counts_allocations_and_rejects_condition_scratch() {
+    let finite = |iterations, condition, body| CapacityFlow::FiniteOwnedLoop {
+        iterations,
+        condition: Box::new(condition),
+        body: Box::new(body),
+    };
+    for iterations in [0, 1, MAX_BYTES_COPY_SITES] {
+        let summary = summarize(
+            &[body(
+                "f",
+                finite(iterations, CapacityFlow::Empty, copy("scratch", 8)),
+            )],
+            "f",
+        );
+        assert_eq!(summary.bytes_copy_sites, iterations);
+        assert_eq!(summary.owned_byte_payload_bytes, u64::from(iterations) * 8);
+    }
+    for flow in [
+        finite(1, copy("condition", 1), CapacityFlow::Empty),
+        finite(1, CapacityFlow::Empty, stdin("body", 1)),
+        finite(1, stdin("condition", 1), CapacityFlow::Empty),
+    ] {
+        rejects(
+            &[body("f", flow)],
+            CapacityDiagnostic::Allocation,
+            "finite iterator allocation is outside the iteration-local scratch domain",
+        );
+    }
+}

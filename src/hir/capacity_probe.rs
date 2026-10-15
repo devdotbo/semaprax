@@ -107,6 +107,7 @@ pub(super) fn resolved_type_owned_capacity(ty: &ResolvedType) -> usize {
         | ResolvedType::OnceFunctionI64
         | ResolvedType::OnceFunctionI64Pair
         | ResolvedType::MutFunctionI64
+        | ResolvedType::Never
         | ResolvedType::Unit
         | ResolvedType::I64
         | ResolvedType::I32
@@ -200,6 +201,9 @@ pub(super) fn resolved_expr_owned_capacity(expression: &ResolvedExpr) -> usize {
             bytes += operation.as_str().len() + child(source) + child(start) + child(end);
         }
         ResolvedExprKind::ArrayU8(values) => bytes += values.capacity(),
+        ResolvedExprKind::LexicalExit { target, value, .. } => {
+            bytes += lexical_target_capacity(target) + value.as_deref().map_or(0, child);
+        }
         ResolvedExprKind::Unary { value: operand, .. } => bytes += child(operand),
         ResolvedExprKind::Upcast { source } | ResolvedExprKind::Yield { request: source } => {
             bytes += child(source)
@@ -228,6 +232,31 @@ pub(super) fn resolved_expr_owned_capacity(expression: &ResolvedExpr) -> usize {
                 .iter()
                 .map(resolved_type_owned_capacity)
                 .sum::<usize>();
+        }
+        ResolvedExprKind::VecFieldRead {
+            element,
+            field,
+            args,
+            ..
+        } => {
+            bytes += resolved_type_owned_capacity(element)
+                + field.as_str().len()
+                + args.capacity() * std::mem::size_of::<ResolvedExpr>();
+            bytes += args.iter().map(resolved_expr_owned_capacity).sum::<usize>();
+        }
+        ResolvedExprKind::RowLoan { loan, args } => {
+            bytes += std::mem::size_of::<super::RowLoan>()
+                + resolved_type_owned_capacity(&loan.element)
+                + loan.traversal.as_str().len()
+                + loan.bound.as_str().len()
+                + loan.callee.as_str().len()
+                + loan.parameter.as_str().len()
+                + args.capacity() * std::mem::size_of::<ResolvedExpr>();
+            bytes += args.iter().map(resolved_expr_owned_capacity).sum::<usize>();
+        }
+        ResolvedExprKind::LiteralFormat { template, args } => {
+            bytes += template.capacity() + args.capacity() * std::mem::size_of::<ResolvedExpr>();
+            bytes += args.iter().map(resolved_expr_owned_capacity).sum::<usize>();
         }
         ResolvedExprKind::NativeRustImportCall(call) => {
             bytes += call.expression.as_str().len() + call.import.as_str().len();
@@ -279,7 +308,13 @@ pub(super) fn resolved_expr_owned_capacity(expression: &ResolvedExpr) -> usize {
                 + none_case.as_str().len()
                 + resolved_type_owned_capacity(residual_type);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
+            if let ResolvedExprKind::VecConstructor { element, .. } = &expression.kind {
+                bytes += resolved_type_owned_capacity(element);
+            }
             bytes += statements.capacity() * std::mem::size_of::<ResolvedStatement>();
             for statement in statements {
                 if let ResolvedStatement::Let { binding, value, .. } = statement {
@@ -359,6 +394,9 @@ pub(super) fn resolved_expr_owned_capacity(expression: &ResolvedExpr) -> usize {
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_) => {}
+        ResolvedExprKind::BorrowedUtf8Literal(value) => {
+            bytes = bytes.saturating_add(value.owned_allocation_bytes().unwrap_or(usize::MAX));
+        }
     }
     bytes
 }
@@ -445,10 +483,22 @@ pub(super) fn resolved_statement_owned_capacity(statement: &ResolvedStatement) -
             resolved_binding_owned_capacity(statement.binding())
                 + resolved_expr_owned_capacity(statement.value())
         }
+        // CopyDiscard carries only its evaluated value and declares no binding.
+        ResolvedStatement::CopyDiscard { value, .. } => resolved_expr_owned_capacity(value),
         // Unsafe boundaries carry only the verbatim audit summary plus their
         // ordinary block body.
         ResolvedStatement::Unsafe { audit, body, .. } => {
             audit.capacity() + resolved_expr_owned_capacity(body)
+        }
+        ResolvedStatement::LexicalWhile {
+            condition,
+            body,
+            latch,
+            ..
+        } => {
+            resolved_expr_owned_capacity(condition)
+                + resolved_expr_owned_capacity(body)
+                + lexical_latch_capacity(latch)
         }
         // While loops carry their condition plus their ordinary block body.
         ResolvedStatement::While {
@@ -507,4 +557,44 @@ pub(super) fn resolver_scope_owned_capacity(scope: &BTreeMap<String, Binding>) -
                 })
                 .sum::<usize>(),
         )
+}
+
+#[cfg(test)]
+pub(super) fn vector_field_owned_capacity(provenance: &super::ByteSliceProvenance) -> usize {
+    provenance.vector_field.as_ref().map_or(0, |value| {
+        std::mem::size_of::<super::VectorFieldProvenance>()
+            + resolved_type_owned_capacity(&value.element)
+            + value.field.as_str().len()
+            + value.index.as_str().len()
+    })
+}
+
+#[cfg(test)]
+pub(super) fn lexical_target_capacity(target: &super::ControlTarget) -> usize {
+    let (owner, site) = match target {
+        super::ControlTarget::Function(owner) => (owner, 0),
+        super::ControlTarget::Loop { owner, site } => (owner, site.as_str().len()),
+    };
+    site + match owner {
+        super::FunctionExecutionId::Monomorphic(id) => id.as_str().len(),
+        super::FunctionExecutionId::Generic(id) => id.as_str().len(),
+    }
+}
+#[cfg(test)]
+fn lexical_latch_capacity(latch: &super::LoopLatchKind) -> usize {
+    match latch {
+        super::LoopLatchKind::Condition => 0,
+        super::LoopLatchKind::SourceForStep { step, .. } => step.as_str().len(),
+        super::LoopLatchKind::OwnedIteratorStep {
+            next,
+            assignment,
+            step,
+            remainder,
+        } => {
+            next.as_str().len()
+                + assignment.as_str().len()
+                + step.as_str().len()
+                + remainder.as_str().len()
+        }
+    }
 }

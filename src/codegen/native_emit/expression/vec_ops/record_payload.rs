@@ -8,6 +8,7 @@
 //! the runtime's one canonical element slot. Nothing here reinterprets or
 //! reorders a cleanup vector; the plan's own transitions are emitted verbatim.
 use super::*;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 
 impl<O: COutput> CEmitter<'_, O> {
     pub(super) fn emit_vec_record_op(
@@ -52,16 +53,39 @@ impl<O: COutput> CEmitter<'_, O> {
             String::new()
         };
         match op {
+            crate::vec_ops::VecOp::StrAt
+            | crate::vec_ops::VecOp::CloneAt
+            | crate::vec_ops::VecOp::Replace
+            | crate::vec_ops::VecOp::ReserveOwned
+            | crate::vec_ops::VecOp::SortOwned
+            | crate::vec_ops::VecOp::SortBy
+            | crate::vec_ops::VecOp::UniqueBy => {
+                return Err(backend_error(
+                    "additive owned operation reached frozen Vec lowering",
+                ));
+            }
             crate::vec_ops::VecOp::Sort => {
-                return Err(backend_error("owned Vec payload sorting is not admitted"))
+                return Err(backend_error("owned Vec payload sorting is not admitted"));
             }
             crate::vec_ops::VecOp::WithCapacity => {
                 self.require_type(&values[0].ty, &ResolvedType::Usize, "Vec capacity")?;
-                self.line(&format!(
-                    "spx_status = spx_vec_record_with_capacity(spx_ctx, {}, &{destination});",
-                    values[0].code
-                ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                if crate::codegen::native_vec::owned_leaf::program_uses_field_reads(self.program) {
+                    let layout =
+                        crate::codegen::native_vec::owned_leaf::layout(self.program, element)
+                            .ok_or_else(|| {
+                                backend_error("legacy Vec constructor lacks nominal descriptor")
+                            })?;
+                    self.line(&format!(
+                        "spx_status = spx_leaf_legacy_new(spx_ctx, &{}, {}, &{destination});",
+                        layout.symbol, values[0].code
+                    ));
+                } else {
+                    self.line(&format!(
+                        "spx_status = spx_vec_record_with_capacity(spx_ctx, {}, &{destination});",
+                        values[0].code
+                    ));
+                }
+                self.emit_operation_failure_check()?;
             }
             crate::vec_ops::VecOp::Push => {
                 self.require_type(&values[0].ty, &carrier, "Vec push owner")?;
@@ -71,7 +95,7 @@ impl<O: COutput> CEmitter<'_, O> {
                 self.line(&format!(
                     "spx_status = spx_vec_record_push(spx_ctx, &{source}, &{element_slot}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_operation_failure_check()?;
                 self.line(&format!("{source_flag} = false;"));
             }
             crate::vec_ops::VecOp::Clear => {
@@ -80,10 +104,11 @@ impl<O: COutput> CEmitter<'_, O> {
                 self.line(&format!(
                     "spx_status = spx_vec_record_clear(spx_ctx, &{source}, &{destination});"
                 ));
-                self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+                self.emit_plan_infallible_vec_status(expr, op)?;
                 self.line(&format!("{source_flag} = false;"));
             }
             crate::vec_ops::VecOp::Len | crate::vec_ops::VecOp::Capacity => {
+                self.validate_plan_infallible_vec_operation(expr, op)?;
                 self.require_type(&values[0].ty, &carrier, "Vec borrow")?;
                 let temporary = self.temporary(&ResolvedType::Usize)?;
                 let helper = if op == crate::vec_ops::VecOp::Len {
@@ -105,7 +130,7 @@ impl<O: COutput> CEmitter<'_, O> {
             | crate::vec_ops::VecOp::ReserveExact => {
                 return Err(backend_error(
                     "owned record Vec operation is outside the admitted profile",
-                ))
+                ));
             }
         }
         for line in plan.apply_at(&expr.id)?.lines() {

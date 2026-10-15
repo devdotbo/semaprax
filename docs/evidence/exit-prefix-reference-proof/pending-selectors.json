@@ -1,0 +1,9 @@
+{
+  "harness": "semaprax --lib",
+  "selectors": [
+    "cleanup_plan::replay::expression_facts::receiving::retained::exit_tests::complete_exit_receivers_preserve_prior_owner_repeated_and_competing_six_field_errors",
+    "cleanup_plan::replay::expression_facts::receiving::retained::exit_tests::actual_exit_receivers_keep_full_work_bytes_exact_short_zero_and_sticky_drop",
+    "cleanup_plan::replay::expression_facts::receiving::retained::exit_tests::complete_before_exit_receiver_and_full_source_inverses_remain_exact"
+  ],
+  "execution": "pending"
+}

@@ -8,7 +8,7 @@ use super::*;
 use crate::cleanup_plan::{CleanupBlock, CleanupPlan};
 
 pub(super) fn constructor_work_upper(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     fields: &[crate::hir::ResolvedFieldInitializer],
 ) -> Result<usize, Diagnostic> {
@@ -34,7 +34,7 @@ pub(super) fn constructor_work_upper(
 }
 
 pub(super) fn update_work_upper(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     record: &DeclarationId,
@@ -71,7 +71,7 @@ pub(super) fn update_work_upper(
 }
 
 fn untouched_update_field_work_upper(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     record: &DeclarationId,
@@ -82,12 +82,15 @@ fn untouched_update_field_work_upper(
     {
         return Ok(0);
     }
-    let declarations = program.declarations.record_fields(record).ok_or_else(|| {
-        replay_error(
-            function,
-            format!("record update has unknown record `{record}`"),
-        )
-    })?;
+    let declarations = program
+        .declarations()
+        .record_fields(record)
+        .ok_or_else(|| {
+            replay_error(
+                function,
+                format_args!("record update has unknown record `{record}`"),
+            )
+        })?;
     let arguments = record_destructure::update::concrete_arguments(function, expression, record)?;
     let mut untouched_droppable = 0usize;
     for field in declarations {
@@ -147,7 +150,13 @@ pub(super) fn plan_skeleton_block_weight(plan: &CleanupPlan, block: &CleanupBloc
             // Condition clones, history clone, observation push, queue push.
             sum.saturating_add(edge_weight(*edge) + 3)
         }),
-        CleanupTerminator::Exit(_) => 1, // Continue queues; terminal exits push.
+        CleanupTerminator::Exit(exit) => match &plan.exits[exit.0 as usize].continuation {
+            // Marker clones and push, then a queued continuation or terminal path.
+            ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. }
+            | ExitContinuation::LoopLatch { .. } => 5,
+            _ => 1, // Continue queues; terminal exits push.
+        },
     };
     weight.saturating_add(terminator)
 }
@@ -187,7 +196,7 @@ mod tests {
     fn per_transition_cfg_weight_covers_materialized_branch_and_call() {
         let program = program();
         let function = program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.id.as_str() == "weight.choose")
             .unwrap();
@@ -222,7 +231,7 @@ mod tests {
         let repeated = arguments[0].clone();
         arguments.extend(std::iter::repeat_n(repeated, 64));
         let function = program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.id.as_str() == "weight.choose")
             .unwrap();
@@ -235,11 +244,8 @@ mod tests {
 
         let bound = skeleton_work_upper(&program, function).unwrap();
         reset_skeleton_materializations();
-        let mut insufficient = ReplayBudget {
-            remaining: bound - 1,
-            skeleton_remaining: 0,
-            merge_paths: false,
-        };
+        let mut insufficient = ReplayBudget::new();
+        insufficient.remaining = bound - 1;
         let error =
             reserve_program_skeleton_work(&program, std::iter::once(function), &mut insufficient)
                 .unwrap_err();

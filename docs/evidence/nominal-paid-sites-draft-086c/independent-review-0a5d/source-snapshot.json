@@ -1,0 +1,71 @@
+{
+  "source_commit": "0a5d2a195",
+  "files": [
+    {
+      "source": "src/hir/declaration_index/identity_payer.rs",
+      "start": 1,
+      "end": 616,
+      "whole_sha256": "a5a0185a1bf8ba55d57c10fce5412a55424583386dcb2abb62bf16ab1b5552bc"
+    },
+    {
+      "source": "src/hir/declaration_index/nominal_construction.rs",
+      "start": 1,
+      "end": 143,
+      "whole_sha256": "989e1f397fca097c2e8706a8732edcb98337dab9a4b702484986be815837ff41"
+    },
+    {
+      "source": "src/hir/declaration_index/nominal_construction/types.rs",
+      "start": 1,
+      "end": 121,
+      "whole_sha256": "933e1781239f31d57318ad9268dfb2265ad4c8571449a7982b33c8815291ebfb"
+    },
+    {
+      "source": "src/hir/declaration_index/nominal_rollback.rs",
+      "start": 75,
+      "end": 200,
+      "whole_sha256": "2e6542dd33e5bc9edb95149fdae6fc96fd111b6002e05b6f8bcaea800cc23c06"
+    },
+    {
+      "source": "src/hir/declaration_index/nominal_rollback.rs",
+      "start": 235,
+      "end": 302,
+      "whole_sha256": "2e6542dd33e5bc9edb95149fdae6fc96fd111b6002e05b6f8bcaea800cc23c06"
+    },
+    {
+      "source": "src/hir/declaration_index.rs",
+      "start": 50,
+      "end": 73,
+      "whole_sha256": "45d36dcbc7ef769a508a195f525604c29239fb7219a3e1b67a410112ebd36688"
+    },
+    {
+      "source": "src/hir/declaration_index.rs",
+      "start": 1158,
+      "end": 1182,
+      "whole_sha256": "45d36dcbc7ef769a508a195f525604c29239fb7219a3e1b67a410112ebd36688"
+    },
+    {
+      "source": "src/hir/function_value/resolve.rs",
+      "start": 8,
+      "end": 52,
+      "whole_sha256": "22370180296207253ab2a43210b86a499d890d325bf9942bd37f3a5823d49256"
+    },
+    {
+      "source": "docs/evidence/nominal-funding-repair-086c/actual-failure-03.log",
+      "start": 1,
+      "end": 17,
+      "whole_sha256": "3c9f7dcd22d01973b8f71ea4f6cce21cfaaf902fb34366d2c62c6aa566f5cf48"
+    },
+    {
+      "source": "docs/evidence/nominal-funding-repair-086c/actual-failure-04.log",
+      "start": 1,
+      "end": 15,
+      "whole_sha256": "ce3a536d80305e0fb1e42e60a898334f8fbb711f3745da66b952293fcdef0a2e"
+    },
+    {
+      "source": "src/hir/identity_resolution/nominal_tests.rs",
+      "start": 95,
+      "end": 245,
+      "whole_sha256": "041ba82c66c03d3e0e651f2d7474f32fb4559a3b99742f847385601a4129066c"
+    }
+  ]
+}

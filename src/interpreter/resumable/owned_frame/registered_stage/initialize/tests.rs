@@ -70,7 +70,7 @@ fn weak(task: &OwnedTaskArgumentV2) -> Vec<Weak<[u8]>> {
             let Value::Bytes(b) = &r.fields[&DeclarationId::new(*id)] else {
                 panic!()
             };
-            Arc::downgrade(&b.bytes)
+            Arc::downgrade(b.bytes.ordinary())
         })
         .collect()
 }
@@ -103,8 +103,14 @@ fn owned_frame_v2_initialize_actual_transfer_identity_charges_and_observe() {
         let Value::Bytes(second) = &r.fields[&DeclarationId::new("state.a")] else {
             panic!()
         };
-        assert!(Arc::ptr_eq(&roots[0].upgrade().unwrap(), &first.bytes));
-        assert!(Arc::ptr_eq(&roots[1].upgrade().unwrap(), &second.bytes));
+        assert!(Arc::ptr_eq(
+            &roots[0].upgrade().unwrap(),
+            first.bytes.ordinary()
+        ));
+        assert!(Arc::ptr_eq(
+            &roots[1].upgrade().unwrap(),
+            second.bytes.ordinary()
+        ));
         assert_eq!((first.allocation, second.allocation), (1, 2));
         assert_eq!(
             r.fields[&DeclarationId::new("state.budget")],

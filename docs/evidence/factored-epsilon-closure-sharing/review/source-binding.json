@@ -1,0 +1,10 @@
+{
+  "basis": "a33c16996b4f095ffa2cf631bc39db4589e28302",
+  "uncommitted_source_only": true,
+  "payload_bytes": 7696,
+  "files": {
+    "src/cleanup_plan/replay/factored/canonical_shared.rs": "b55215aabaea2198feff1107e7800bb539ebde4940036dee1def58fd0293c3aa",
+    "src/cleanup_plan/replay/factored/canonical_shared/memo.rs": "4792dc2020bdf1e08c55b80d295adecc3eaa8eb1f2089f1d9656a75350ab95cd",
+    "src/cleanup_plan/replay/factored/canonical_shared/epsilon_alias.rs": "a9f56643acc5441d3de0e83c3e40116ded199e767c7eca763310d3b44a133b48"
+  }
+}

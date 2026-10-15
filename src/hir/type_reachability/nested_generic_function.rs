@@ -87,7 +87,8 @@ pub(super) fn is_admitted(
                 frames.push(Frame::Fields(declaration, fields, arguments, 0, depth));
             }
             Frame::Type(
-                ResolvedType::Unit
+                ResolvedType::Never
+                | ResolvedType::Unit
                 | ResolvedType::ArrayU8(_)
                 | ResolvedType::String
                 | ResolvedType::Str

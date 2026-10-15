@@ -14,12 +14,14 @@ mod source_agent_hot_reload;
 mod source_fixture;
 const SHAPES_CATALOG_PATH: &str = "../../docs/LANGUAGE-SHAPES-CATALOG.md";
 const DOCTOR_LINE: &str = "semaprax doctor [--profile <id>] [--target native|web|all] [--json]\n";
-const NEW_LINE: &str = "semaprax new <destination> [--name project-name] [--template calculator|library|service|stdin-stream-text|stdin-stream-data|source-command-file-text]\n";
-const PROJECT_SCAFFOLD_LINE: &str = "semaprax project-scaffold --name project-name [--template calculator|library|service|stdin-stream-text|stdin-stream-data|source-command-file-text] [--layout frozen|tables]\n";
+const NEW_LINE: &str = "semaprax new <destination> [--name project-name] [--template calculator|library|service|stdin-stream-text|stdin-stream-data|stdin-stream-collection-record|source-command-file-text]\n";
+const PROJECT_SCAFFOLD_LINE: &str = "semaprax project-scaffold --name project-name [--template calculator|library|service|stdin-stream-text|stdin-stream-data|stdin-stream-collection-record|source-command-file-text] [--layout frozen|tables]\n";
 const BUILD_SOURCE_LINE: &str =
     "semaprax build <file> [--target native] [-o|--output path] [--json]\n";
 const BUILD_PROJECT_LINE: &str = "semaprax build [<dir>|semaprax.toml|--manifest-path path] [--target native|web|wasm|npm|oci|rust] [-o|--output path] [--json]\n";
 const BANNER: &str = "SEMAPRAX — Meaning in. Verified machine code out.\n";
+const JSON_CODEC_HELP: &str = "Derives checked ordinary source for explicit scalar records; opt-in identifier-views.v1, request-views.v1 and stream-request-views.v1 add bounded identifier/array views; owned-request.v1 and stream-owned-request.v1 materialize bounded identifier String/record collections under an owning runtime profile. UTF-8 owned request profiles bound each decoded string with --max-string-bytes (1..64 UTF-8 bytes). bounded-collection-response.v1 selects an encode-only nested collection view and also requires that bound. bounded-nested-request.v1 requires both --max-string-bytes (1..64) and --max-array-items (1..256); direct decoding only, under the independently admitted caller Project profile. bounded-stream-nested-request.v1 uses the same bounds, original schema stdin permit and a computed normalized spelling envelope; it adds no raw-input or whitespace cap. bounded-nested-response.v1 requires the same two bounds and derives encode-only borrowed finite nested records; primitive Vec<string> refuses. Contract: docs/APPLICATION-JSON-NESTED-RESPONSE-V1.md. bounded-nested-response.v2 adds named borrowed Vec<string> slot reads with the same caps and distinct generated identities. Contract: docs/APPLICATION-JSON-NESTED-RESPONSE-V2.md.\nRequires declared std.data.json scan/token/digits/write dependencies. Publishes a new complete module replacement; never overwrites source.\nAdd --plan <plan-json> --output <new-bundle> instead of single-codec selectors to derive 1..8 distinct replacements against one immutable revision and validate the complete candidate. The deterministic JSON bundle preserves authored schema bytes, complete candidate sources and exact per-entry evidence; no authority to install it. Existing destinations refuse. Plan contract: docs/APPLICATION-JSON-CODEC-PLAN-V1.md.\nRead-only shape discovery: json-codec <project> --explain --type <stable-id> [--source <path>] [--target native64|wasm32] [--max-string-bytes N] [--max-array-items N] [--max-bytes N] [--revision <digest>] [--offset N]. Reports actual shape predicates and explicit unmet policy; candidate/backend admission remains unperformed. Continuations require the returned project revision. Contract: docs/JSON-CODEC-SUITABILITY-V1.md\nContract and typed failure codes: docs/APPLICATION-JSON-CODECS-V1.md\n";
+
 const GUIDE_MAX_BYTES: usize = 2048;
 const LANGUAGE_TOPICS: &str = concat!(
     "Language topics:\n",
@@ -43,7 +45,7 @@ const LANGUAGE_TOPICS: &str = concat!(
 );
 const DIAGNOSTIC_CODES: &str = concat!(
     "Common diagnostic codes:\n",
-    "  SPX-P106 SPX-H006 SPX-T252 SPX-T203 SPX-G170 SPX-P003 SPX-P201 SPX-T205 SPX-T266 SPX-B104 SPX-F102 SPX-G172\n",
+    "  SPX-P106 SPX-H006 SPX-T252 SPX-T203 SPX-G170 SPX-P003 SPX-P201 SPX-T205 SPX-T266 SPX-B104 SPX-F102 SPX-G171\n",
     "Fix: semaprax help diagnostic <code>\n",
     "All: semaprax help language mistakes-index\n",
 );
@@ -51,6 +53,11 @@ const DIAGNOSTIC_T208: &str = concat!(
     "SPX-T208\n",
     "wrote: index + 1 when index: usize\n",
     "fix: Default i64; index + 1usize\n",
+);
+const DIAGNOSTIC_G171: &str = concat!(
+    "SPX-G171\n",
+    "wrote: resolved-core builder ledger refusal\n",
+    "fix: Preserve behavior/caps; record source, requested/remaining/floor and compiler stage. Reduce source or optimize its compiler owner. Ledger bytes are not RSS/peak; do not infer unknowns.\n",
 );
 
 fn guide_commands(guide: &str) -> Vec<&str> {
@@ -185,7 +192,14 @@ fn full_scoped_help_is_exhaustive_exact_capability_aware_and_inert() {
                 .then(|| format!("  {line}\n"))
             })
             .collect();
-        let expected = format!("Usage:\n{expected}");
+        let expected = format!(
+            "Usage:\n{expected}{}",
+            if command == "json-codec" {
+                JSON_CODEC_HELP
+            } else {
+                ""
+            }
+        );
         for arguments in [
             vec!["help", command],
             vec![command, "--help"],
@@ -202,14 +216,50 @@ fn full_scoped_help_is_exhaustive_exact_capability_aware_and_inert() {
     let (language, language_dir) = invoke(&["help", "language"]);
     assert!(language.status.success());
     assert!(language.stderr.is_empty());
+    let guide = std::fs::read(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../docs/AGENT-AUTHORING-GUIDE.md"),
+    )
+    .unwrap();
+    assert_eq!(language.stdout, guide);
+    assert!(language.stdout.len() <= 2_048);
+    std::fs::remove_dir(language_dir).unwrap();
+    for selector in [
+        "author:routes",
+        "author:stdin-json",
+        "author:nested-outcomes",
+        "author:record-field-views",
+        "author:string-from-utf8",
+        "author:json-nested-response",
+        "author:file-text",
+        "author:source-web",
+        "find:json:0",
+    ] {
+        let (page, directory) = invoke(&["help", "language", selector]);
+        assert!(page.status.success(), "{selector}: {page:?}");
+        assert!(page.stderr.is_empty());
+        assert!(page.stdout.len() <= 2_048);
+        std::fs::remove_dir(directory).unwrap();
+    }
+    for selector in ["author:unknown", "find:json:00", "find:json:0:extra"] {
+        let (page, directory) = invoke(&["help", "language", selector]);
+        assert_eq!(page.status.code(), Some(2));
+        assert!(page.stdout.is_empty());
+        std::fs::remove_dir(directory).unwrap();
+    }
+    let (language_all, language_all_dir) = invoke(&["help", "language", "all"]);
+    assert!(language_all.status.success());
+    assert!(language_all.stderr.is_empty());
     let card = std::fs::read(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../docs/AGENT-QUICK-REFERENCE.md"),
     )
     .unwrap();
-    assert_eq!(language.stdout, card);
-    assert!(language.stdout.starts_with(b"# Agent quick reference\n"));
-    std::fs::remove_dir(language_dir).unwrap();
+    assert_eq!(language_all.stdout, card);
+    assert!(language_all
+        .stdout
+        .starts_with(b"# Agent quick reference\n"));
+    std::fs::remove_dir(language_all_dir).unwrap();
     let (topics, topics_dir) = invoke(&["help", "language", "topics"]);
     assert!(topics.status.success());
     assert!(topics.stderr.is_empty());
@@ -256,16 +306,38 @@ fn full_scoped_help_is_exhaustive_exact_capability_aware_and_inert() {
     assert!(diagnostic.stderr.is_empty());
     assert_eq!(diagnostic.stdout, DIAGNOSTIC_T208.as_bytes());
     assert!(diagnostic.stdout.len() <= 256);
-    let mistakes = invoke(&["help", "language", "mistakes-index"]);
-    assert!(diagnostic.stdout.len() * 20 < mistakes.0.stdout.len());
+    let (mistakes, mistakes_dir) = invoke(&["help", "language", "mistakes-index"]);
+    assert!(mistakes.status.success());
+    assert!(mistakes.stderr.is_empty());
+    assert!(mistakes
+        .stdout
+        .starts_with(b"## Habits from other languages: diagnostic index\n"));
+    let (reference, reference_dir) = invoke(&["help", "language", "all"]);
+    assert!(reference.status.success());
+    assert!(reference.stderr.is_empty());
+    let reference = std::str::from_utf8(&reference.stdout).unwrap();
+    let marker = "## Habits from other languages: diagnostic index\n";
+    let index = reference
+        .split_once(marker)
+        .unwrap()
+        .1
+        .split("\n## ")
+        .next()
+        .unwrap();
+    assert!(diagnostic.stdout.len() * 20 < index.len());
     assert!(
         semaprax::agent_economics::lexical_tokens(DIAGNOSTIC_T208) * 20
-            < semaprax::agent_economics::lexical_tokens(
-                std::str::from_utf8(&mistakes.0.stdout).unwrap()
-            )
+            < semaprax::agent_economics::lexical_tokens(index)
     );
-    std::fs::remove_dir(mistakes.1).unwrap();
+    std::fs::remove_dir(reference_dir).unwrap();
+    std::fs::remove_dir(mistakes_dir).unwrap();
     std::fs::remove_dir(diagnostic_dir).unwrap();
+    let (g171, g171_dir) = invoke(&["help", "diagnostic", "SPX-G171"]);
+    assert!(g171.status.success());
+    assert!(g171.stderr.is_empty());
+    assert_eq!(g171.stdout, DIAGNOSTIC_G171.as_bytes());
+    assert!(g171.stdout.len() <= 256);
+    std::fs::remove_dir(g171_dir).unwrap();
     let (p106, p106_dir) = invoke(&["help", "diagnostic", "SPX-P106"]);
     assert!(p106.status.success());
     assert!(p106.stderr.is_empty());
@@ -513,7 +585,10 @@ fn full_scoped_help_is_exhaustive_exact_capability_aware_and_inert() {
                 "  semaprax help all\n",
                 "  semaprax help diagnostic <SPX-code|codes>\n",
                 "  semaprax help language\n",
+                "  semaprax help language all\n",
                 "  semaprax help language <topic|topics>\n",
+                "  semaprax help language author:<route>\n",
+                "  semaprax help language find:<word>:<offset>\n",
                 "  semaprax help library\n",
                 "  semaprax help library all\n",
                 "  semaprax help library <module|name|stable-id>\n",

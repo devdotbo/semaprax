@@ -1,4 +1,6 @@
 use super::*;
+#[cfg(test)]
+mod join_trace;
 impl PlanBuilder<'_> {
     pub(super) fn merge_states(
         &self,
@@ -53,9 +55,10 @@ impl PlanBuilder<'_> {
             }
         }
         if live_order.len() != flags.len() {
-            return Err(plan_error(
-                "branch join has conflicting cleanup initialization histories",
-            ));
+            let error = plan_error("branch join has conflicting cleanup initialization histories");
+            #[cfg(test)]
+            let error = error.with_help(join_trace::describe(self, left, right));
+            return Err(error);
         }
         let left_variants = left
             .conditional_variants
@@ -167,8 +170,9 @@ impl PlanBuilder<'_> {
                 | super::super::CLEANUP_PLAN_SCHEMA_V15
                 | super::super::CLEANUP_PLAN_SCHEMA_V16
                 | super::super::CLEANUP_PLAN_SCHEMA_V17
-        ) || crate::cleanup_plan::renewal_binding(self.program, self.function, &value.id)
-            .is_none()
+                | super::super::CLEANUP_PLAN_SCHEMA_V19
+                | super::super::CLEANUP_PLAN_SCHEMA_V18
+        ) || self.renewal_binding(&value.id).is_none()
         {
             return Ok(());
         }
@@ -181,16 +185,23 @@ impl PlanBuilder<'_> {
             || state.renewals.contains_key(&value.id)
             || (!matches!(
                 self.schema,
-                super::super::CLEANUP_PLAN_SCHEMA_V16 | super::super::CLEANUP_PLAN_SCHEMA_V17
+                super::super::CLEANUP_PLAN_SCHEMA_V16
+                    | super::super::CLEANUP_PLAN_SCHEMA_V17
+                    | super::super::CLEANUP_PLAN_SCHEMA_V19
+                    | super::super::CLEANUP_PLAN_SCHEMA_V18
             ) && !state.renewals.is_empty())
         {
             return Err(plan_error(
                 "renewal reservation requires one live unreserved owner leaf",
             ));
         }
-        state
-            .renewals
-            .insert(value.id.clone(), state.live_order.clone());
+        state.renewals.insert(
+            value.id.clone(),
+            super::super::renewal_history::RenewalHistory::new(
+                state.live_order.clone(),
+                super::super::renewal_profile::owned_rhs_provenance(value).then_some(flags[0]),
+            ),
+        );
         self.push_transition(
             block,
             CleanupTransition::ReserveRenewal {

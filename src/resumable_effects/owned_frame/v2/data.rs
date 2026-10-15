@@ -188,6 +188,7 @@ pub(crate) fn validate_owned_wait_failure_v8(
     for source in &f.cleanup_plan.status_sources {
         use crate::cleanup_plan::StatusProducer;
         let values = match &source.producer {
+            StatusProducer::CheckedAllocation { .. } => return Err(Error::Binding),
             StatusProducer::ContractFalse { phase, .. } => {
                 vec![crate::conformance::NormalizedStatus::contract(*phase)]
             }

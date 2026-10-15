@@ -1,0 +1,15 @@
+
+running 1 test
+test workspace_graph::identity_resolution::tests::one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries ... 
+thread 'workspace_graph::identity_resolution::tests::one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries' (194142) panicked at src/cleanup_plan/replay/factored.rs:1069:9:
+factored skeleton comparison disagrees with enumeration for `helper`: Err("cleanup plan for function `helper` failed independent replay: cleanup replay physical reservation exhausted during factored canonical state memo node")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    workspace_graph::identity_resolution::tests::one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7871 filtered out; finished in 0.14s
+

@@ -5,16 +5,7 @@ use type @id("std.io.writer") from std.io as Writer;
 fn byte(value: i64) -> u8
     requires value >= 0 && value <= 255
 {
-    let mut converted = 0u8;
-    let mut step = 0;
-    let mut scanning = step < value && step < 255;
-    while scanning {
-        converted = converted + 1u8;
-        step = step + 1;
-        scanning = step < value && step < 255;
-        scanning
-    }
-    converted
+    u8_from_i64(value)
 }
 
 @id("std.format.usize-len")
@@ -55,16 +46,7 @@ fn usize_byte(value: usize, index: usize) -> u8
 fn digit_byte(value: usize) -> u8
     requires value <= 9usize
 {
-    let mut converted = 48u8;
-    let mut step = 0usize;
-    let mut scanning = step < value && step < 9usize;
-    while scanning {
-        converted = converted + 1u8;
-        step = step + 1usize;
-        scanning = step < value && step < 9usize;
-        scanning
-    }
-    converted
+    u8_from_i64(48 + i64_from_usize(value))
 }
 
 @id("std.format.i64-len")

@@ -1,0 +1,238 @@
+Review exact 6be3bb0de91a876f2ae58001980903f3798a7edd authority/units/refusal/Drop only; no tools/execution. Separate finite Vec work, base2 unchanged. Core owner binding and source verification precede this. ensure authenticates reserve0 and caches first failure. Omitted error mapping retains Bytes/ExtensionWork/Producer. Other extensions still run fully; no whole-prefix optimization claim.
+
+src/hir/prelude_bundle/extension_work.rs:1..95
+//! New explicit finite extension work owner; base-two work is unchanged.
+//! Borrows the existing byte owner and cannot lend credit to replay or callers.
+use super::fixed_work::{FixedFailure, WorkReceipt, WorkRefusal};
+use super::Payer;
+
+// Exact actual work sites in vector_extension::acquire: entry, kind and
+// parameter-shape branches, parameter initializer, identity copy, and two
+// UTF-8/name byte passes for each of the type and parameter names.
+pub(super) const VECTOR_WORK: usize =
+    4 + crate::prelude::VEC_ID.len() + 2 * "Vec".len() + 2 * "T".len();
+
+/// One borrowed same-byte-owner account for one selected Vec extension producer. It owns no
+/// heap and no authored/replay work allowance. Keep it through construction and
+/// refusal; creating a new invocation is not a retry on this failed account.
+pub(super) struct ExtensionPayer<'a, E: Copy> {
+    reserve: &'a mut dyn FnMut(usize) -> Result<(), E>,
+    limit: usize,
+    remaining: usize,
+    first: Option<FixedFailure<E>>,
+}
+impl<'a, E: Copy> ExtensionPayer<'a, E> {
+    pub(super) fn acquire(reserve: &'a mut dyn FnMut(usize) -> Result<(), E>) -> Result<Self, E> {
+        let carriers = std::mem::size_of::<Self>()
+            .checked_add(std::mem::size_of::<Result<Self, E>>())
+            .and_then(|n| n.checked_add(std::mem::size_of::<WorkReceipt>()))
+            .expect("fixed producer counter has addressable receiving layouts");
+        reserve(carriers)?;
+        Ok(Self {
+            reserve,
+            limit: VECTOR_WORK,
+            remaining: VECTOR_WORK,
+            first: None,
+        })
+    }
+    pub(super) fn receipt(&self) -> WorkReceipt {
+        WorkReceipt {
+            limit: self.limit,
+            used: self.limit - self.remaining,
+            remaining: self.remaining,
+            first: match self.first.as_ref() {
+                Some(FixedFailure::Work(first)) => Some(*first),
+                _ => None,
+            },
+        }
+    }
+    /// Copy the retained inline payload; no Clone requirement, formatting or
+    /// callback requery can change an already selected byte/work error.
+    pub(super) fn first_failure(&self) -> Option<FixedFailure<E>> {
+        self.first.as_ref().map(|first| match first {
+            FixedFailure::Bytes(error) => FixedFailure::Bytes(*error),
+            FixedFailure::Work(receipt) => FixedFailure::Work(*receipt),
+        })
+    }
+    #[cfg(test)]
+    pub(super) fn restrict_for_test(&mut self, limit: usize) {
+        assert!(limit <= VECTOR_WORK);
+        assert_eq!(self.limit, self.remaining);
+        assert!(self.first.is_none());
+        self.limit = limit;
+        self.remaining = limit;
+    }
+}
+impl<E: Copy> Payer for ExtensionPayer<'_, E> {
+    type Error = FixedFailure<E>;
+    fn bytes(&mut self, requested: usize) -> Result<(), Self::Error> {
+        if let Some(first) = self.first_failure() {
+            return Err(first);
+        }
+        match (self.reserve)(requested) {
+            Ok(()) => Ok(()),
+            Err(error) => {
+                self.first = Some(FixedFailure::Bytes(error));
+                Err(FixedFailure::Bytes(error))
+            }
+        }
+    }
+    fn work(&mut self, requested: usize) -> Result<(), Self::Error> {
+        if let Some(first) = self.first_failure() {
+            return Err(first);
+        }
+        // Authenticate the original byte owner before selecting work failure,
+        // retaining its exact inline E even if its later callback taxonomy changes.
+        self.bytes(0)?;
+        if requested > self.remaining {
+            let first = WorkRefusal {
+                requested,
+                remaining: self.remaining,
+            };
+            self.first = Some(FixedFailure::Work(first));
+            return Err(FixedFailure::Work(first));
+        }
+        self.remaining -= requested;
+        Ok(())
+    }
+}
+
+src/hir/prelude_bundle/vector_extension.rs:1..89
+//! Exact first extension prototype: one actual compiler Vec parameter owner.
+//! No authored schema, process cache, inferred lookup authority, or base work.
+use super::*;
+use crate::ast::TypeDeclarationKind;
+use std::mem::size_of;
+
+#[derive(Debug)]
+pub(crate) struct VectorExtension {
+    pub(crate) ty: ResolvedTypeDeclaration,
+}
+impl VectorExtension {
+    fn text<P: Payer>(value: &str, payer: &mut P) -> Result<String, Failure<P::Error>> {
+        // Separate actual helper initializer/conversion/receiving carriers;
+        // String backing and its copy/validation work stay with paid::string.
+        payer
+            .bytes(
+                size_of::<String>()
+                    + size_of::<Vec<u8>>()
+                    + size_of::<Result<String, std::string::FromUtf8Error>>()
+                    + size_of::<Result<String, Failure<P::Error>>>(),
+            )
+            .map_err(Failure::Payer)?;
+        paid::string(value, payer)
+    }
+    pub(super) fn acquire<P: Payer>(payer: &mut P) -> Result<Self, Failure<P::Error>> {
+        payer
+            .bytes(
+                2 * size_of::<Self>()
+                    + size_of::<Option<Self>>()
+                    + size_of::<Result<Self, Failure<P::Error>>>()
+                    + size_of::<ResolvedTypeParameterDeclaration>()
+                    + size_of::<Vec<ResolvedTypeParameterDeclaration>>()
+                    + size_of::<Result<Vec<ResolvedTypeParameterDeclaration>, Failure<P::Error>>>()
+                    + 2 * size_of::<DeclarationId>()
+                    + size_of::<Result<DeclarationId, P::Error>>(),
+            )
+            .map_err(Failure::Payer)?;
+        payer.work(1).map_err(Failure::Payer)?;
+        let source = &crate::prelude::declarations()[2];
+        payer.work(1).map_err(Failure::Payer)?;
+        if !matches!(&source.kind, TypeDeclarationKind::Record { fields } if fields.is_empty()) {
+            return Err(Failure::Schema);
+        }
+        payer.work(1).map_err(Failure::Payer)?;
+        let [parameter] = source.type_parameters.as_slice() else {
+            return Err(Failure::Schema);
+        };
+        let id = paid::identity(&source.stable_id, payer)?;
+        let name = Self::text(&source.name, payer)?;
+        let mut parameters = paid::vector(1, payer)?;
+        payer.work(1).map_err(Failure::Payer)?;
+        parameters.push(ResolvedTypeParameterDeclaration {
+            name: Self::text(&parameter.name, payer)?,
+            index: 0,
+            span: parameter.span,
+        });
+        let type_parameters = NominalPayload::from_funded_vec(&mut parameters, |n| payer.bytes(n))
+            .map_err(Failure::Payer)?;
+        Ok(Self {
+            ty: ResolvedTypeDeclaration {
+                id,
+                name,
+                type_parameters,
+                kind: ResolvedTypeDeclarationKind::Record {
+                    fields: Vec::new().into(),
+                },
+                span: source.span,
+            },
+        })
+    }
+    pub(crate) fn for_source<'a>(
+        value: Option<&'a Self>,
+        prelude: &[crate::ast::TypeDeclaration],
+        source: &crate::ast::TypeDeclaration,
+    ) -> Option<&'a ResolvedTypeDeclaration> {
+        let current = crate::prelude::declarations();
+        if !matches!(prelude.len(), 3 | 4 | 6 | 8 | 9 | 11)
+            || !std::ptr::eq(prelude, &current[..prelude.len()])
+            || !std::ptr::eq(source, &current[2])
+        {
+            return None;
+        }
+        Some(&value?.ty)
+    }
+}
+
+#[cfg(test)]
+#[path = "vector_extension/tests.rs"]
+mod tests;
+
+src/hir/prelude_bundle/invocation.rs:106..139
+impl<E: Copy> Invocation<E> {
+    pub(crate) fn ensure_selected(
+        &mut self,
+        prelude: &[crate::ast::TypeDeclaration],
+        reserve: &mut impl FnMut(usize) -> Result<(), E>,
+    ) -> Result<(&BasePreludeBundle, Option<&VectorExtension>), InvocationFailure<E>> {
+        if let Some(first) = self.first {
+            return Err(first);
+        }
+        let source = crate::prelude::declarations();
+        if !matches!(prelude.len(), 2 | 3 | 4 | 6 | 8 | 9 | 11)
+            || !std::ptr::eq(prelude, &source[..prelude.len()])
+        {
+            let first = InvocationFailure::Producer(ProducerFailure::Schema);
+            self.first = Some(first);
+            return Err(first);
+        }
+        self.ensure(reserve)?;
+        let result = (|| {
+            reserve(
+                std::mem::size_of::<
+                    Result<(&BasePreludeBundle, Option<&VectorExtension>), InvocationFailure<E>>,
+                >() + std::mem::size_of::<Option<&VectorExtension>>(),
+            )
+            .map_err(InvocationFailure::Bytes)?;
+            if prelude.len() > 2 && self.vector.is_none() {
+                let mut payer = super::extension_work::ExtensionPayer::acquire(reserve)
+                    .map_err(InvocationFailure::Bytes)?;
+                #[cfg(test)]
+                if let Some(limit) = self.extension_limit {
+                    payer.restrict_for_test(limit);
+                }
+                let produced = VectorExtension::acquire(&mut payer);
+                self.extension_receipt = Some(payer.receipt());
+
+src/hir/prelude_bundle/invocation.rs:153..163
+        if let Err(first) = result {
+            self.first = Some(first);
+            return Err(first);
+        }
+        Ok((
+            self.bundle.as_ref().expect("successful base acquisition"),
+            (prelude.len() > 2)
+                .then_some(self.vector.as_ref())
+                .flatten(),
+        ))
+    }

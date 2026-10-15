@@ -1,0 +1,38 @@
+{
+  "source_subject": "160460a5b700a93a112c8a984bb594afa9708256",
+  "selected": 91,
+  "passed": 87,
+  "failures": [
+    {
+      "selector": "source_verify::declaration::functions::signature_refusal::tests::public_error_receipts_and_complete_drop_keep_zero_and_sticky_unpaid_boundary_explicit",
+      "log": "/Volumes/Semaprax/lane-prompts/combined-799-829-826-16046-20261015/owning-selected-05.log",
+      "log_sha256": "5ce9972966f630c2223b7916782837737d0473e18ce74e9dd272bd410601eb07"
+    },
+    {
+      "selector": "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+      "log": "/Volumes/Semaprax/lane-prompts/combined-799-829-826-16046-20261015/owning-selected-16.log",
+      "log_sha256": "d8a85a1a56236a9b0c70c955e20c6c9ce09c315bded12a98ddd61e8b28238ec2"
+    },
+    {
+      "selector": "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+      "log": "/Volumes/Semaprax/lane-prompts/combined-799-829-826-16046-20261015/owning-selected-17.log",
+      "log_sha256": "498ede081446a99d123a2075dc063a354e0539847bd6b414c748279cd5f6606f"
+    },
+    {
+      "selector": "workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core",
+      "log": "/Volumes/Semaprax/lane-prompts/combined-799-829-826-16046-20261015/owning-selected-84.log",
+      "log_sha256": "1f279734212fe64caf32ca30bc362ad7383a034ce2d594de7ec2c042776897d1"
+    }
+  ],
+  "runtime_receipt_sha256": "8e9d8032cd3e527adfdc8b8f956ef45c26f715365aed771fa6b2d5174aaaca84",
+  "scope": "91 exact focused bodies; no full suite or quality gate",
+  "build_exit": 0,
+  "build_receipt_sha256": "aa358bbab8a29fa71e8b008903dfb55b9babcea4f8369702b8c72c70e906885c",
+  "production_lib_cli_clippy_exit": 0,
+  "clippy_receipt_sha256": "b09756e202ecb44fa99706ea1904c0107243c0fb56d48fc2d4a0de7429d577cd",
+  "qualified_issue": 826,
+  "other_issue_closures": [],
+  "new_live_benchmark": false,
+  "application_recovery": false,
+  "qualification_note": "Four failures remain explicitly recorded. #799 and #829 remain open. #826 all eight exact owners and full log hashes verified; close only after remote publication verification."
+}

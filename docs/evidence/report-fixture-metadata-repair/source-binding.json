@@ -1,0 +1,50 @@
+{
+  "status": "SOURCE_ONLY_PENDING_BUILD_TEST",
+  "base": "f18f5a4ace2d7e4786f54f1fccbbfb77465e44e8",
+  "files": {
+    "src/workspace_graph/source_schema/scalar_lexical/tests.rs": {
+      "whole_original_archive": "docs/evidence/report-fixture-metadata-repair/src__workspace_graph__source_schema__scalar_lexical__tests.rs.before.txt",
+      "original_bytes": 35146,
+      "original_sha256": "bc4d3c0560485ad44dafc3a847450cc55b4ada9cb1c7c045ba34be258faf0263",
+      "receiving_bytes": 35496,
+      "receiving_sha256": "2e900680fbe74e0502e12d549cdd929b9316c4836106158bf3c65c0c10b7be61",
+      "whole_inverse_edits": [
+        {
+          "receiving": "    let text = canonical(&source(BODY));\n    let drift = canonical(&source(&BODY.replace(\"total+i\", \"total+i+1\")));\n    for attack in 0..10 {\n        let (mut build, sources) = build(&text);\n        assert!(\n            received(&build, PATH, &sources)\n                .unwrap_or_else(|_| panic!(\"paid source receipt required\"))\n                .is_some(),\n            \"{attack}\"\n        );\n        // Preserve the original owned hostile source mutations after genuine\n        // metadata-backed positive admission, without mutating shared custody.\n        let mut sources: Vec<WorkspaceSource> =\n            sources.iter().map(|source| source.input().clone()).collect();\n        let at = sources.iter().position(|s| s.path == PATH).unwrap();\n        // Record exact current membership before corrupting the path. A lookup\n        // by the stale authored path would panic before the paid receiver.\n",
+          "original": "    let text = canonical(&source(BODY));\n    let drift = canonical(&source(&BODY.replace(\"total+i\", \"total+i+1\")));\n    for attack in 0..10 {\n        let (mut build, mut sources) = build(&text);\n        assert!(\n            received(&build, PATH, &sources)\n                .unwrap_or_else(|_| panic!(\"paid source receipt required\"))\n                .is_some(),\n            \"{attack}\"\n        );\n        let at = sources.iter().position(|s| s.path == PATH).unwrap();\n        // Record exact current membership before corrupting the path. A lookup\n        // by the stale authored path would panic before the paid receiver.\n"
+        },
+        {
+          "receiving": "fn try_build_with(\n    app: &str,\n    extra: &[(&str, &str)],\n) -> Result<\n    (WorkspaceGraphBuild, crate::workspace_graph::current_source::SourceFacts),\n    Vec<Diagnostic>,\n> {\n    build_owned_retaining_sources_for_change(sources_with(app, extra), MAX_CHANGE_BUILDER_BYTES)\n}\nfn build(app: &str) -> (WorkspaceGraphBuild, crate::workspace_graph::current_source::SourceFacts) {\n    try_build_with(app, &[]).unwrap()\n}\nfn module<'a>(build: &'a WorkspaceGraphBuild, path: &str) -> &'a WorkspaceResolvedModule {\n",
+          "original": "fn try_build_with(\n    app: &str,\n    extra: &[(&str, &str)],\n) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {\n    build_owned_retaining_sources_for_change(sources_with(app, extra), MAX_CHANGE_BUILDER_BYTES)\n}\nfn build(app: &str) -> (WorkspaceGraphBuild, Vec<WorkspaceSource>) {\n    try_build_with(app, &[]).unwrap()\n}\nfn module<'a>(build: &'a WorkspaceGraphBuild, path: &str) -> &'a WorkspaceResolvedModule {\n"
+        }
+      ]
+    },
+    "src/workspace_report/tests.rs": {
+      "whole_original_archive": "docs/evidence/report-fixture-metadata-repair/src__workspace_report__tests.rs.before.txt",
+      "original_bytes": 15243,
+      "original_sha256": "d2003ec930cc4f15f076e74d546ff866aaad83a472b24d2bac25e301ca0a7091",
+      "receiving_bytes": 15522,
+      "receiving_sha256": "c453565bdada04c82302d55c226324e334e325fc29ecb489855531d8a00cd652",
+      "whole_inverse_edits": [
+        {
+          "receiving": "            .unwrap(),\n        old_success\n    );\n    // Independent owned hostile proposal; the actual retained metadata\n    // already passed both original receiving comparisons above.\n    let mut sources: Vec<crate::workspace_graph::WorkspaceSource> =\n        sources.iter().map(|source| source.input().clone()).collect();\n    let before = sources[0].source.clone();\n    let drift = \"module calculator.app; @id(\\\"calculator.app.main\\\") fn main()->i64 { let mut i=0; let mut total=0; while i<3 { i=i+1; if i==2 {continue;} else {0}; total=total+i+1; 0 } total }\";\n    sources[0].source = crate::format::canonical(\n",
+          "original": "            .unwrap(),\n        old_success\n    );\n    let before = sources[0].source.clone();\n    let drift = \"module calculator.app; @id(\\\"calculator.app.main\\\") fn main()->i64 { let mut i=0; let mut total=0; while i<3 { i=i+1; if i==2 {continue;} else {0}; total=total+i+1; 0 } total }\";\n    sources[0].source = crate::format::canonical(\n"
+        },
+        {
+          "receiving": "}\n#[test]\nfn actual_source_drift_keeps_full_prior_literal_and_whole_receiving_debit_drop() {\n    let (build, sources) = scalar_build();\n    let old_success = build.source_graph_schemas_receiving(&sources).unwrap();\n    assert_eq!(\n        build\n",
+          "original": "}\n#[test]\nfn actual_source_drift_keeps_full_prior_literal_and_whole_receiving_debit_drop() {\n    let (build, mut sources) = scalar_build();\n    let old_success = build.source_graph_schemas_receiving(&sources).unwrap();\n    assert_eq!(\n        build\n"
+        },
+        {
+          "receiving": "\nfn scalar_build() -> (\n    crate::workspace_graph::WorkspaceGraphBuild,\n    crate::workspace_graph::current_source::SourceFacts,\n) {\n    // Exact persisted terminated-guard body from the independent scalar owner.\n    const BODY: &str = \"let mut i=0; let mut total=0; while i<3 { i=i+1; if i==2 {continue;} else {0}; total=total+i; 0 } total\";\n",
+          "original": "\nfn scalar_build() -> (\n    crate::workspace_graph::WorkspaceGraphBuild,\n    Vec<crate::workspace_graph::WorkspaceSource>,\n) {\n    // Exact persisted terminated-guard body from the independent scalar owner.\n    const BODY: &str = \"let mut i=0; let mut total=0; while i<3 { i=i+1; if i==2 {continue;} else {0}; total=total+i; 0 } total\";\n"
+        }
+      ]
+    }
+  },
+  "rebind_required": [
+    "Both actual owning fixture source hashes/registration rows",
+    "tests/workspace/semantic_graph/source_inventory.rs joined source digest",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs diagnostic joined source digest"
+  ],
+  "no_numerical_pin_changes": true
+}

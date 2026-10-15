@@ -13,12 +13,20 @@ use crate::ast::{
 use crate::diagnostic::Diagnostic;
 use std::collections::{HashMap, HashSet};
 
+#[cfg(test)]
+mod layout_original;
+
 pub(super) struct VerifierScope {
     pub(super) bindings: HashMap<String, Binding>,
     pub(super) local_borrow_count: usize,
 }
 
 pub(super) enum VerifierFrame<'a> {
+    ResumeLexicalReturn {
+        expression: &'a Expr,
+        operand: &'a Expr,
+        scope: usize,
+    },
     ResumeClosure {
         expression: &'a Expr,
         scope: usize,
@@ -54,6 +62,7 @@ pub(super) enum VerifierFrame<'a> {
         scope: usize,
     },
     ResumeIfThen {
+        condition_admitted: bool,
         expression: &'a Expr,
         else_branch: &'a Expr,
         scope: usize,
@@ -61,11 +70,13 @@ pub(super) enum VerifierFrame<'a> {
         baseline_names: Vec<String>,
     },
     ResumeLiteralIf {
+        condition_admitted: bool,
         expression: &'a Expr,
         then_branch: &'a Expr,
         else_branch: &'a Expr,
     },
     ResumeIfElse {
+        condition_admitted: bool,
         expression: &'a Expr,
         then_branch: &'a Expr,
         else_branch: &'a Expr,
@@ -83,6 +94,7 @@ pub(super) enum VerifierFrame<'a> {
         block_scope: usize,
         index: usize,
         outer_names: Vec<String>,
+        recovery_checkpoint: super::recovery::Checkpoint,
     },
     ResumeWhileCondition {
         condition: &'a Expr,
@@ -239,6 +251,7 @@ pub(super) enum VerifierFrame<'a> {
         supplied: HashSet<&'a str>,
     },
     ResumeMatchScrutinee {
+        checkpoint: super::recovery::Checkpoint,
         expression: &'a Expr,
         scrutinee: &'a Expr,
         arms: &'a [crate::ast::MatchArm],
@@ -294,6 +307,44 @@ pub(super) fn pattern_literal_type(value: crate::ast::PatternLiteral) -> Type {
     }
 }
 
+/// The known owned name and unknown-input provenance are mutually exclusive.
+/// Retain the original String allocation on known inputs; unknown inputs carry
+/// only the frozen diagnostic ordinal, never a fabricated name or checked type.
+const _: () =
+    assert!(std::mem::size_of::<VariantMatchName>() == std::mem::size_of::<Option<String>>());
+
+pub(super) enum VariantMatchName {
+    Known(String),
+    Unknown(Option<usize>),
+}
+
+impl VariantMatchName {
+    pub(super) fn as_ref(&self) -> Option<&String> {
+        match self {
+            Self::Known(name) => Some(name),
+            Self::Unknown(_) => None,
+        }
+    }
+    pub(super) fn as_deref(&self) -> Option<&str> {
+        self.as_ref().map(String::as_str)
+    }
+    pub(super) fn refused_input(&self) -> Option<usize> {
+        match self {
+            Self::Known(_) => None,
+            Self::Unknown(origin) => *origin,
+        }
+    }
+}
+
+impl From<Option<String>> for VariantMatchName {
+    fn from(name: Option<String>) -> Self {
+        match name {
+            Some(name) => Self::Known(name),
+            None => Self::Unknown(None),
+        }
+    }
+}
+
 pub(super) struct VariantMatchState<'a> {
     pub(super) expression: &'a Expr,
     pub(super) arms: &'a [crate::ast::MatchArm],
@@ -305,7 +356,7 @@ pub(super) struct VariantMatchState<'a> {
     pub(super) covered: HashSet<String>,
     pub(super) wildcard_seen: bool,
     pub(super) result: Option<CheckedValue>,
-    pub(super) variant_name: Option<String>,
+    pub(super) variant_name: VariantMatchName,
     pub(super) variant_arguments: Vec<Type>,
     pub(super) declared_cases: Option<&'a [VariantCaseDeclaration]>,
     pub(super) guard_pending: bool,
@@ -314,6 +365,7 @@ pub(super) struct VariantMatchState<'a> {
 }
 
 pub(super) enum VerifierCallTarget<'a> {
+    LiteralFormat,
     Native(&'a ImportDeclaration),
     Byte(crate::byte_ops::ByteOp),
     HostIo(crate::host_io_ops::HostIoOp),
@@ -328,6 +380,11 @@ pub(super) enum VerifierFunctionSignature<'a> {
         return_type: Type,
         implicit_unique_ownership: bool,
     },
+    SourceSpecialized {
+        function: &'a Function,
+        params: Vec<Param>,
+        return_type: Type,
+    },
 }
 
 #[cfg(test)]
@@ -337,6 +394,11 @@ pub(super) fn verifier_signature_owned_capacity(
     match signature {
         VerifierFunctionSignature::Borrowed(_) => 0,
         VerifierFunctionSignature::Specialized {
+            params,
+            return_type,
+            ..
+        }
+        | VerifierFunctionSignature::SourceSpecialized {
             params,
             return_type,
             ..
@@ -444,7 +506,7 @@ pub(super) fn diagnostics_owned_capacity(diagnostics: &Vec<Diagnostic>) -> usize
         + diagnostics
             .iter()
             .map(|diagnostic| {
-                diagnostic.message.capacity()
+                diagnostic.message_owned_capacity()
                     + diagnostic.path.as_ref().map_or(0, String::capacity)
                     + diagnostic.help.as_ref().map_or(0, String::capacity)
             })
@@ -535,6 +597,7 @@ pub(super) fn verifier_frame_owned_capacity(frame: &VerifierFrame<'_>) -> usize 
                 .saturating_mul(std::mem::size_of::<&str>()),
         ),
         VerifierFrame::ResumeCallArgument { target, .. } => match target {
+            VerifierCallTarget::LiteralFormat => 0,
             VerifierCallTarget::Native(_) => 0,
             VerifierCallTarget::Byte(_)
             | VerifierCallTarget::HostIo(_)
@@ -552,24 +615,33 @@ pub(super) fn verifier_frame_owned_capacity(frame: &VerifierFrame<'_>) -> usize 
     }
 }
 
-impl VerifierFunctionSignature<'_> {
+impl<'p> VerifierFunctionSignature<'p> {
+    pub(super) fn source_function(&self) -> Option<&'p Function> {
+        match self {
+            Self::Borrowed(function) | Self::SourceSpecialized { function, .. } => Some(*function),
+            Self::Specialized { .. } => None,
+        }
+    }
+
     pub(super) fn params(&self) -> &[Param] {
         match self {
             Self::Borrowed(function) => &function.params,
-            Self::Specialized { params, .. } => params,
+            Self::Specialized { params, .. } | Self::SourceSpecialized { params, .. } => params,
         }
     }
 
     pub(super) fn return_type(&self) -> &Type {
         match self {
             Self::Borrowed(function) => &function.return_type,
-            Self::Specialized { return_type, .. } => return_type,
+            Self::Specialized { return_type, .. } | Self::SourceSpecialized { return_type, .. } => {
+                return_type
+            }
         }
     }
 
     pub(super) fn implicit_unique_ownership(&self) -> bool {
         match self {
-            Self::Borrowed(_) => true,
+            Self::Borrowed(_) | Self::SourceSpecialized { .. } => true,
             Self::Specialized {
                 implicit_unique_ownership,
                 ..

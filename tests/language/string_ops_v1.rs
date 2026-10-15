@@ -120,7 +120,10 @@ fn hir_children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
     match &expression.kind {
         hir::ResolvedExprKind::Unary { value, .. } => vec![value.as_ref()],
         hir::ResolvedExprKind::Binary { left, right, .. } => vec![left.as_ref(), right.as_ref()],
-        hir::ResolvedExprKind::Block { statements, tail } => statements
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => statements
             .iter()
             .map(|statement| statement.value())
             .chain(std::iter::once(tail.as_ref()))
@@ -134,6 +137,10 @@ fn hir_children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
             then_branch.as_ref(),
             else_branch.as_ref(),
         ],
+        hir::ResolvedExprKind::Call { args, .. }
+        | hir::ResolvedExprKind::LiteralFormat { args, .. }
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args.iter().collect(),
         _ => Vec::new(),
     }
 }

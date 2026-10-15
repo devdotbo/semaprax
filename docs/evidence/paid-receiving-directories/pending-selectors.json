@@ -1,0 +1,160 @@
+{
+  "qualification": "source-only; not executed",
+  "new_source_audit_children": [
+    "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving_before.rs"
+  ],
+  "selectors": [
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::tests::indexed_directories_keep_full_opaque_keys_sorted_rotations_duplicates_hits_and_misses",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/tests.rs",
+      "line": 20,
+      "sha256": "65a91f7add1b3b54b85cdd9c2275324629089cf66769544f9e2053ec23511288",
+      "role": "new receiving owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::tests::full_compiled_btree_receiver_keeps_every_field_and_first_diagnostic_against_current",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/tests.rs",
+      "line": 109,
+      "sha256": "65a91f7add1b3b54b85cdd9c2275324629089cf66769544f9e2053ec23511288",
+      "role": "new receiving owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::tests::every_directory_acquisition_exact_short_zero_and_sticky_is_paid_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/tests.rs",
+      "line": 202,
+      "sha256": "65a91f7add1b3b54b85cdd9c2275324629089cf66769544f9e2053ec23511288",
+      "role": "new receiving owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::tests::full_key_search_insert_relocation_rotation_and_iteration_keep_same_work_payer",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/tests.rs",
+      "line": 253,
+      "sha256": "65a91f7add1b3b54b85cdd9c2275324629089cf66769544f9e2053ec23511288",
+      "role": "new receiving owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::tests::status_lane_and_copied_numeric_keys_keep_complete_original_order_and_disjointness",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/tests.rs",
+      "line": 307,
+      "sha256": "65a91f7add1b3b54b85cdd9c2275324629089cf66769544f9e2053ec23511288",
+      "role": "new receiving owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::tests::complete_current_and_archived_receiving_boundaries_retain_all_raw_costs_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/tests.rs",
+      "line": 371,
+      "sha256": "65a91f7add1b3b54b85cdd9c2275324629089cf66769544f9e2053ec23511288",
+      "role": "new receiving owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::tests::full_original_receiving_and_helpers_are_byte_exact_and_all_current_hooks_bound",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/tests.rs",
+      "line": 446,
+      "sha256": "65a91f7add1b3b54b85cdd9c2275324629089cf66769544f9e2053ec23511288",
+      "role": "new receiving owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::tests::post_link_work_refusal_drops_partial_avl_and_cannot_reuse_its_paid_owner",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/tests.rs",
+      "line": 537,
+      "sha256": "65a91f7add1b3b54b85cdd9c2275324629089cf66769544f9e2053ec23511288",
+      "role": "new receiving owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::tests::full_original_corpora_keep_arithmetic_cases_and_transfer_failure_priority",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/tests.rs",
+      "line": 591,
+      "sha256": "65a91f7add1b3b54b85cdd9c2275324629089cf66769544f9e2053ec23511288",
+      "role": "new receiving owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::tests::arena::arena_full_tree_receiving_preserves_all_fields_and_first_diagnostic",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/tests/arena.rs",
+      "line": 37,
+      "sha256": "2885db6402ef58382423cde7bb1ad3dfd0706ac7c6ba76146d34d9765b722609",
+      "role": "unchanged complete original arena owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::tests::arena::arena_exact_backing_work_short_sticky_and_receiving_drop_are_independent",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/tests/arena.rs",
+      "line": 88,
+      "sha256": "2885db6402ef58382423cde7bb1ad3dfd0706ac7c6ba76146d34d9765b722609",
+      "role": "unchanged complete original arena owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::tests::arena::arena_duplicate_precedes_later_descendant_and_keeps_complete_diagnostic",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/tests/arena.rs",
+      "line": 171,
+      "sha256": "2885db6402ef58382423cde7bb1ad3dfd0706ac7c6ba76146d34d9765b722609",
+      "role": "unchanged complete original arena owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::tests::arena::arena_rotations_equal_text_keys_and_order_match_full_tree",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/tests/arena.rs",
+      "line": 210,
+      "sha256": "2885db6402ef58382423cde7bb1ad3dfd0706ac7c6ba76146d34d9765b722609",
+      "role": "unchanged complete original arena owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::tests::arena::complete_original_producers_receivers_and_full_arena_dispatch_are_source_locked",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/tests/arena.rs",
+      "line": 244,
+      "sha256": "2885db6402ef58382423cde7bb1ad3dfd0706ac7c6ba76146d34d9765b722609",
+      "role": "unchanged complete original arena owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::tests::arena::arena_actual_builder_and_complete_saved_builder_are_independent_through_drop",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/cleanup_plan/replay/expression_facts/tests/arena.rs",
+      "line": 306,
+      "sha256": "2885db6402ef58382423cde7bb1ad3dfd0706ac7c6ba76146d34d9765b722609",
+      "role": "unchanged complete original arena owner"
+    }
+  ]
+}

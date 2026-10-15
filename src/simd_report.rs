@@ -33,6 +33,7 @@
 //! no target, and changes no source.
 
 mod expression_render;
+mod lexical_control;
 use expression_render::*;
 
 use std::collections::BTreeMap;
@@ -256,6 +257,7 @@ pub fn generate(
             .collect()
     })?;
 
+    lexical_control::reject(&resolved)?;
     let mut sorted = program.functions.iter().collect::<Vec<_>>();
     sorted.sort_by(|left, right| left.stable_id.as_bytes().cmp(right.stable_id.as_bytes()));
     let functions_total = sorted.len();
@@ -607,7 +609,7 @@ impl Walker<'_> {
             ResolvedExprKind::Bool(_) => {
                 self.push_ineligible(expr, REASON_BOOL_MIXING);
             }
-            ResolvedExprKind::String(_) => {
+            ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {
                 self.push_ineligible(expr, REASON_SCALAR_LEAF);
             }
             ResolvedExprKind::ArrayU8(_)
@@ -654,7 +656,10 @@ impl Walker<'_> {
                     self.scan_expr(arg);
                 }
             }
-            ResolvedExprKind::Call { args, .. } => {
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
                 self.record_call();
                 self.push_ineligible(expr, REASON_CALL);
                 for argument in args {
@@ -674,6 +679,9 @@ impl Walker<'_> {
                 for argument in &call.args {
                     self.scan_expr(argument);
                 }
+            }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                lexical_control::scan(self, expr, value.as_deref())
             }
             ResolvedExprKind::Unary { op, value } => {
                 let reason = match op {
@@ -695,7 +703,10 @@ impl Walker<'_> {
                 self.scan_expr(left);
                 self.scan_expr(right);
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     self.scan_statement(statement);
                 }
@@ -771,10 +782,14 @@ impl Walker<'_> {
                 self.scan.assignment_count += 1;
                 self.push_ineligible(value, REASON_MUTATION_TARGET);
             }
+            ResolvedStatement::CopyDiscard { value, .. } => self.scan_expr(value),
             ResolvedStatement::Unsafe { body, .. } => {
                 self.scan_expr(body);
             }
             ResolvedStatement::While {
+                condition, body, ..
+            }
+            | ResolvedStatement::LexicalWhile {
                 condition, body, ..
             } => {
                 // Loop-carried iteration is control flow that defeats

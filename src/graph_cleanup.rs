@@ -22,6 +22,7 @@ macro_rules! format {
         crate::bounded_output::budgeted_format(format_args!($($argument)*))
     };
 }
+mod lexical_control;
 
 /// Serialize one already-validated cleanup plan for embedding in Graph v10.
 ///
@@ -31,7 +32,7 @@ macro_rules! format {
 /// plan.
 pub(crate) fn cleanup_plan_json(plan: &CleanupPlan) -> String {
     format!(
-        "{{\"kind\":\"cleanup_plan\",\"schema\":{},\"entry\":{},\"entry_state\":{},\"slots\":{},\"status_sources\":{},\"blocks\":{},\"edges\":{},\"regions\":{},\"exits\":{}}}",
+        "{{\"kind\":\"cleanup_plan\",\"schema\":{},\"entry\":{},\"entry_state\":{},\"slots\":{},\"status_sources\":{},\"blocks\":{},\"edges\":{},\"regions\":{},\"exits\":{}{}}}",
         quote_json(plan.schema),
         plan.entry.0,
         entry_state_json(&plan.entry_state),
@@ -41,6 +42,7 @@ pub(crate) fn cleanup_plan_json(plan: &CleanupPlan) -> String {
         array_json(&plan.edges, edge_json),
         array_json(&plan.regions, region_json),
         array_json(&plan.exits, exit_json),
+        plan.lexical_control.as_deref().map(lexical_control::member_json).unwrap_or_default(),
     )
 }
 
@@ -174,6 +176,10 @@ fn status_source_json(source: &StatusSource) -> String {
 
 fn status_producer_json(producer: &StatusProducer) -> String {
     match producer {
+        StatusProducer::CheckedAllocation { operation, normalized_cases } => format!(
+            "{{\"kind\":\"checked_allocation\",\"operation\":{},\"domain\":\"semaprax.allocation.v1\",\"class\":\"adapter\",\"retryable\":false,\"normalized_cases\":{}}}",
+            quote_json(operation.name()), array_json(normalized_cases, |case| case.code().to_string())
+        ),
         StatusProducer::PropagatedCall { callee } => format!(
             "{{\"kind\":\"propagated_call\",\"callee\":{}}}",
             quote_json(callee.as_str())
@@ -473,6 +479,25 @@ fn exit_continuation_json(continuation: &ExitContinuation) -> String {
             status_source_id_json(source)
         ),
         ExitContinuation::ReturnUnit => "{\"kind\":\"return_unit\"}".to_owned(),
+        ExitContinuation::LoopLatch { target } => format!(
+            "{{\"kind\":\"loop_latch\",\"target\":{}}}",
+            lexical_control::target_json(target)
+        ),
+        ExitContinuation::LoopBreak { target, edge } => format!(
+            "{{\"kind\":\"loop_break\",\"target\":{},\"edge\":{}}}",
+            lexical_control::target_json(target),
+            edge.0
+        ),
+        ExitContinuation::FunctionReturn {
+            target,
+            edge,
+            source,
+        } => format!(
+            "{{\"kind\":\"function_return\",\"target\":{},\"edge\":{},\"source\":{}}}",
+            lexical_control::target_json(target),
+            edge.0,
+            result_source_json(source)
+        ),
     }
 }
 
@@ -490,6 +515,7 @@ fn result_source_json(source: &CleanupResultSource) -> String {
 
 fn type_json(ty: &ResolvedType) -> String {
     match ty {
+        ResolvedType::Never => "{\"kind\":\"no_normal_completion\"}".to_owned(),
         ResolvedType::OnceFunction => {
             "{\"kind\":\"affine_function\",\"profile\":\"bytes-to-i64.v1\"}".to_owned()
         }
@@ -551,6 +577,7 @@ fn status_lane_text(lane: StatusLane) -> &'static str {
     match lane {
         StatusLane::OwnerAdmission => "owner_admission",
         StatusLane::OperationFailure => "operation_failure",
+        StatusLane::AllocationFailure => "allocation_failure",
         StatusLane::ContractFalse => "contract_false",
     }
 }

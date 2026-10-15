@@ -1,0 +1,49 @@
+@id("__ID__.writer.bytes")
+fn __PREFIX___writer_bytes(value:borrow Slice<u8>,position:usize,output:own Bytes)->Bytes
+requires position<=byte_len(bytes_as_slice(output)) && byte_len(value)<=byte_len(bytes_as_slice(output))-position {
+let mut next=output;let mut at=0usize;while at<byte_len(value){let byte=match byte_get(value,at){Option::Some{value:item}=>item,Option::None{}=>0u8,};next=bytes_set(next,position+at,byte);at=at+1usize;at<byte_len(value)}next
+}
+@id("__ID__.writer.digit")
+fn __PREFIX___writer_digit(value:usize)->u8 requires value<=9usize {
+if value==0usize{48u8}else{if value==1usize{49u8}else{if value==2usize{50u8}else{if value==3usize{51u8}else{if value==4usize{52u8}else{if value==5usize{53u8}else{if value==6usize{54u8}else{if value==7usize{55u8}else{if value==8usize{56u8}else{57u8}}}}}}}}}
+}
+@id("__ID__.writer.hex")
+fn __PREFIX___writer_hex(value:usize)->u8 requires value<=15usize {
+if value<10usize{__PREFIX___writer_digit(value)}else{if value==10usize{97u8}else{if value==11usize{98u8}else{if value==12usize{99u8}else{if value==13usize{100u8}else{if value==14usize{101u8}else{102u8}}}}}}
+}
+@id("__ID__.writer.usize")
+fn __PREFIX___writer_usize(value:usize,position:usize,output:own Bytes)->Bytes
+requires position<=byte_len(bytes_as_slice(output)) && jv_usize_len(value)<=byte_len(bytes_as_slice(output))-position {
+let length=jv_usize_len(value);let mut next=output;let mut at=0usize;
+while at<length{let mut remaining=value;let mut step=0usize;while step<length-at-1usize{remaining=remaining/10usize;step=step+1usize;step<length-at-1usize}
+next=bytes_set(next,position+at,__PREFIX___writer_digit(remaining%10usize));at=at+1usize;at<length}next
+}
+@id("__ID__.writer.i64")
+fn __PREFIX___writer_i64(value:i64,position:usize,output:own Bytes)->Bytes
+requires position<=byte_len(bytes_as_slice(output)) && usize_from_i64(jv_i64_len(value))<=byte_len(bytes_as_slice(output))-position {
+let length=usize_from_i64(jv_i64_len(value));let sign=if value<0{1usize}else{0usize};let mut next=output;let mut at=0usize;
+while at<length{let byte=if at<sign{45u8}else{let mut remaining=if value>0{0-value}else{value};let mut step=0usize;
+while step<length-at-1usize{remaining=remaining/10;step=step+1usize;step<length-at-1usize}
+__PREFIX___writer_digit(usize_from_i64(0-remaining%10))};next=bytes_set(next,position+at,byte);at=at+1usize;at<length}next
+}
+@id("__ID__.writer.bool")
+fn __PREFIX___writer_bool(value:bool,position:usize,output:own Bytes)->Bytes
+requires position<=byte_len(bytes_as_slice(output)) && (if value{4usize}else{5usize})<=byte_len(bytes_as_slice(output))-position {
+let mut next=output;next=bytes_set(next,position,if value{116u8}else{102u8});next=bytes_set(next,position+1usize,if value{114u8}else{97u8});
+next=bytes_set(next,position+2usize,if value{117u8}else{108u8});next=bytes_set(next,position+3usize,if value{101u8}else{115u8});
+let _=if !value{next=bytes_set(next,position+4usize,101u8);true}else{true};next
+}
+@id("__ID__.writer.quote")
+fn __PREFIX___writer_quote(text:borrow str,position:usize,output:own Bytes)->Bytes
+requires __PREFIX___owned_valid(text) && position<=byte_len(bytes_as_slice(output)) && __PREFIX___utf8_quoted_len(text)<=byte_len(bytes_as_slice(output))-position {
+let bytes=str_as_bytes(text);let mut next=output;let mut cursor=position;next=bytes_set(next,cursor,34u8);cursor=cursor+1usize;let mut at=0usize;
+while at<byte_len(bytes){let byte=match byte_get(bytes,at){Option::Some{value:item}=>item,Option::None{}=>0u8,};
+let _=if byte==34u8 || byte==92u8 || byte==8u8 || byte==12u8 || byte==10u8 || byte==13u8 || byte==9u8{
+next=bytes_set(next,cursor,92u8);cursor=cursor+1usize;
+let escaped=if byte==34u8{34u8}else{if byte==92u8{92u8}else{if byte==8u8{98u8}else{if byte==12u8{102u8}else{if byte==10u8{110u8}else{if byte==13u8{114u8}else{116u8}}}}}};
+next=bytes_set(next,cursor,escaped);cursor=cursor+1usize;true
+}else{if byte<32u8{next=bytes_set(next,cursor,92u8);next=bytes_set(next,cursor+1usize,117u8);next=bytes_set(next,cursor+2usize,48u8);next=bytes_set(next,cursor+3usize,48u8);
+let scalar=usize_from_i64(i64_from_u8(byte));next=bytes_set(next,cursor+4usize,__PREFIX___writer_hex(scalar/16usize));next=bytes_set(next,cursor+5usize,__PREFIX___writer_hex(scalar%16usize));cursor=cursor+6usize;true
+}else{next=bytes_set(next,cursor,byte);cursor=cursor+1usize;true}};
+at=at+1usize;at<byte_len(bytes)}next=bytes_set(next,cursor,34u8);next
+}

@@ -1,0 +1,24 @@
+module helper.bytes;
+@id("helper.leaf") fn leaf(output:own Bytes,index:usize,value:u8)->Bytes
+requires index<byte_len(bytes_as_slice(output)) {
+ let mut next=output; next=bytes_set(next,index,value); next
+}
+@id("helper.relay") fn relay(output:own Bytes,input:borrow Slice<u8>)->Bytes
+requires byte_len(input)<=byte_len(bytes_as_slice(output)) {
+ let mut next=output; let mut at=0usize;
+ while at<byte_len(input) {
+  let byte=match byte_get(input,at) {Option::Some{value}=>value,Option::None{}=>0u8,};
+  next=leaf(next,at,byte); at=at+1usize; 0
+ }
+ next
+}
+@id("app.main") fn main()->i64 {
+ let input=[11u8,22u8]; let untouched=bytes_zeroed(1usize);
+ let mut output=bytes_zeroed(2usize);
+ output=relay(output,array_as_slice(input));
+ let mut at=0usize;
+ while at<2usize { output=leaf(output,at,33u8); at=at+1usize; 0 }
+ let view=bytes_as_slice(output);
+ let byte=match byte_get(view,1usize) {Option::Some{value}=>value,Option::None{}=>0u8,};
+ if byte==33u8 && byte_len(bytes_as_slice(untouched))==1usize {42}else{0}
+}

@@ -1,0 +1,12 @@
+@id("std.data.json.query.scalar_at")
+fn scalar_at(input: borrow Slice<u8>, start: usize) -> i64
+    ensures result >= -1 && result <= 1114111
+{
+    let kind = escape_kind(input, start);
+    let mapped = match byte_get(input, start + 1usize) { Option::Some { value: byte } => match byte { 34u8 => 34, 92u8 => 92, 47u8 => 47, 98u8 => 8, 102u8 => 12, 110u8 => 10, 114u8 => 13, 116u8 => 9, _ => -1, }, Option::None {} => -1, };
+    let lead = code_unit(input, start + 2usize);
+    let marked = at_is(input, start + 6usize, 92u8) && at_is(input, start + 7usize, 117u8);
+    let trailing = if kind == 3 && marked { code_unit(input, start + 8usize) } else { -1 };
+    let paired = trailing >= 56320 && trailing <= 57343;
+    if kind == 1 { mapped } else { if kind == 2 { lead } else { if paired { 65536 + (lead - 55296) * 1024 + trailing - 56320 } else { -1 } } }
+}

@@ -1,4 +1,5 @@
 use super::*;
+mod field_scope;
 
 impl HirValidator<'_> {
     /// Bounded While-Loops v1 plus Indexed Byte Loop v2 admission re-check at
@@ -11,7 +12,7 @@ impl HirValidator<'_> {
         &self,
         expression: &ResolvedExpr,
     ) -> Result<(), Diagnostic> {
-        self.validate_iterator_body(expression, None)
+        self.validate_iterator_body(expression, None, None)
     }
     fn is_owned_iterator_record_item(
         &self,
@@ -22,7 +23,7 @@ impl HirValidator<'_> {
             item.ownership == OwnershipMode::Own
                 && expression.ownership == OwnershipMode::Own
                 && expression.ty == item.ty
-                && crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
+                && crate::hir::owned_leaf_collection::runtime_element(
                     &self.program.declarations,
                     &item.ty,
                 )
@@ -34,10 +35,31 @@ impl HirValidator<'_> {
         &self,
         expression: &ResolvedExpr,
         owned_item: Option<&ResolvedBinding>,
+        finite_scratch: Option<&crate::finite_byte_scratch::ResolvedScratch<'_>>,
     ) -> Result<(), Diagnostic> {
-        let mut pending = vec![expression];
+        let mut pending = field_scope::Pending::new(expression, owned_item.is_some());
         while let Some(expression) = pending.pop() {
             match &expression.kind {
+                ResolvedExprKind::LexicalExit {
+                    kind: crate::ast::LexicalExitKind::Return,
+                    value,
+                    ..
+                } => {
+                    if let Some(value) = value {
+                        // Only the direct whole-owner handoff belongs to the
+                        // once-only function result domain. Calls and every
+                        // other operand retain independent loop admission.
+                        if !crate::hir::lexical_exit::return_operand::resolved_owner_handoff(value)
+                        {
+                            pending.push(value);
+                        }
+                    }
+                }
+                ResolvedExprKind::LexicalExit { value, .. } => {
+                    if let Some(value) = value {
+                        pending.push(value);
+                    }
+                }
                 ResolvedExprKind::Closure { captures, .. } => {
                     pending.extend(captures.iter().rev().map(|capture| &capture.value));
                 }
@@ -61,7 +83,10 @@ impl HirValidator<'_> {
                     // Owned String Loops v2: a whole Copy-payload variant
                     // place may be a match scrutinee; moving an outer one
                     // still fails the loop-entry state equality.
-                    let whole_string = (matches!(
+                    let whole_string = (crate::hir::owned_leaf_collection::copy_or_leaf_admitted(
+                        &self.program.declarations,
+                        &expression.ty,
+                    ) || matches!(
                         expression.ty,
                         ResolvedType::String | ResolvedType::StringMap
                     ) || crate::map_ops::is_collection(&expression.ty)
@@ -80,10 +105,23 @@ impl HirValidator<'_> {
                             &self.program.declarations,
                             &expression.ty,
                         );
+                    let projected_text = expression.ty == ResolvedType::String
+                        && crate::hir::owned_leaf_collection::projected_leaf_admitted(
+                            &self.program.declarations,
+                            place,
+                            &expression.ty,
+                        );
                     if !whole_string
+                        && !projected_text
+                        && !crate::hir::owned_collection_record::projected_field(
+                            &self.program.declarations,
+                            place,
+                            &expression.ty,
+                        )
                         && !named_str
                         && !cursor_borrow
                         && !self.is_owned_iterator_record_item(expression, owned_item)
+                        && !pending.admits(expression)
                         && (!crate::hir::is_scalar_resolved_type(&expression.ty)
                             || expression.ownership != OwnershipMode::Value)
                     {
@@ -94,22 +132,45 @@ impl HirValidator<'_> {
                 }
                 // Owned String Loops v1: a literal allocates one owned String
                 // in the per-iteration body region.
-                ResolvedExprKind::String(_) => {}
+                ResolvedExprKind::String(_) | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
+                ResolvedExprKind::VecFieldRead { args, .. }
+                | ResolvedExprKind::RowLoan { args, .. } => {
+                    let [_, index] = args.as_slice() else {
+                        return Err(hir_error("scoped vector read loop shape is invalid"));
+                    };
+                    pending.push(index);
+                }
+                ResolvedExprKind::LiteralFormat { args, .. } => pending.extend(args.iter().rev()),
                 ResolvedExprKind::ArrayU8(_) | ResolvedExprKind::RepeatArrayU8 { .. } => {
                     return Err(hir_error("while loops cannot contain fixed-array literals"));
                 }
                 ResolvedExprKind::BorrowPlace { operation, place } => {
                     // Ordinary expression replay independently authenticates
                     // the live String owner and its canonical shared loan.
-                    let exact_view = (operation.as_str() == crate::byte_ops::STRING_AS_STR_ID
-                        && expression.ty == ResolvedType::Str)
+                    let exact_byte = owned_buffer::iterator_byte_view_is_admitted(
+                        expression,
+                        owned_item,
+                        finite_scratch,
+                    );
+                    let exact_view = owned_buffer::fixed_array_view(self, expression)
+                        || exact_byte
+                        || (operation.as_str() == crate::byte_ops::STRING_AS_STR_ID
+                            && expression.ty == ResolvedType::Str)
                         || (operation.as_str() == crate::byte_ops::STR_AS_BYTES_ID
                             && expression.ty == ResolvedType::SliceU8)
                         || (operation.as_str() == crate::stdin_stream_ops::CHUNK_ID
                             && expression.ty == ResolvedType::SliceU8);
                     if !exact_view
                         || expression.ownership != OwnershipMode::Borrow
-                        || !place.projections.is_empty()
+                        || (!place.projections.is_empty()
+                            && !(matches!(
+                                operation.as_str(),
+                                crate::byte_ops::STRING_AS_STR_ID
+                                    | crate::byte_ops::STR_AS_BYTES_ID
+                            ) && crate::hir::projected_string_view::path_admitted(
+                                &self.program.declarations,
+                                &place.projections,
+                            )))
                     {
                         return Err(hir_error("while loops cannot construct byte views"));
                     }
@@ -158,7 +219,10 @@ impl HirValidator<'_> {
                     pending.push(then_branch);
                     pending.push(condition);
                 }
-                ResolvedExprKind::Block { statements, tail } => {
+                ResolvedExprKind::Block { statements, tail }
+                | ResolvedExprKind::VecConstructor {
+                    statements, tail, ..
+                } => {
                     pending.push(tail);
                     for statement in statements.iter().rev() {
                         let renewal = if let ResolvedStatement::Assign {
@@ -168,11 +232,20 @@ impl HirValidator<'_> {
                             ..
                         } = statement
                         {
-                            crate::hir::iterator_loop::is_record_owner_renewal(
+                            (self.byte_helpers.map_or_else(
+                                || {
+                                    crate::loop_calls::byte_writer::assignment(
+                                        self.program,
+                                        binding,
+                                        value,
+                                    )
+                                },
+                                |helpers| helpers.admits(binding, value),
+                            ) || crate::hir::iterator_loop::is_record_owner_renewal(
                                 self.program,
                                 binding,
                                 value,
-                            )
+                            ))
                             .then_some(value)
                         } else {
                             None
@@ -238,12 +311,17 @@ impl HirValidator<'_> {
                     if let Some(operation) = vec_operation {
                         if !operation.admitted_in_while()
                             || type_arguments.len() != 1
-                            || !crate::vec_ops::resolved_element_is_admitted(&type_arguments[0])
+                            || !(crate::vec_ops::resolved_element_is_admitted(&type_arguments[0])
+                                || crate::hir::owned_leaf_collection::copy_or_leaf_admitted(
+                                    &self.program.declarations,
+                                    &type_arguments[0],
+                                ))
                             || args.len() != operation.arity()
                             || args.iter().enumerate().any(|(index, argument)| {
                                 !operation.accepts_resolved(index, &argument.ty, &type_arguments[0])
                             })
-                            || expression.ty != operation.resolved_return_type(&type_arguments[0])
+                            || (expression.ty != operation.resolved_return_type(&type_arguments[0])
+                                && crate::vec_ops::string_slot::inspect(expression).is_none())
                         {
                             return Err(hir_error(
                                 "while loop vector operation is outside Owned Bounded Vec v1",
@@ -259,7 +337,15 @@ impl HirValidator<'_> {
                             || args.iter().zip(operation.param_types()).any(|(argument, ty)| {
                                 argument.ty != *ty || if *ty == ResolvedType::Str {
                                     argument.ownership != OwnershipMode::Borrow
-                                    || !matches!(&argument.kind, ResolvedExprKind::Place(place) if place.projections.is_empty())
+                                    || !(matches!(&argument.kind, ResolvedExprKind::Place(place) if place.projections.is_empty())
+                                        || matches!(&argument.kind, ResolvedExprKind::BorrowPlace { operation, place }
+                                            if operation.as_str() == crate::byte_ops::STRING_AS_STR_ID
+                                                && (place.projections.is_empty()
+                                                    || crate::hir::projected_string_view::path_admitted(
+                                                        &self.program.declarations, &place.projections)))
+                                        || matches!(&argument.kind, ResolvedExprKind::VecFieldRead { element, field, bytes: false, .. }
+                                            if crate::hir::vec_field::field(&self.program.declarations, element, field)
+                                                .is_some_and(|selected| selected.result_type(false) == Some(ResolvedType::Str))))
                                 } else { argument.ownership != OwnershipMode::Value }
                             })
                         {
@@ -268,10 +354,14 @@ impl HirValidator<'_> {
                         // Full expression replay authenticates each binding and
                         // immutable borrowed-str origin; these closed readers
                         // return only Copy data and cannot retain their inputs.
-                        pending.extend(
-                            args.iter()
-                                .filter(|argument| argument.ty != ResolvedType::Str),
-                        );
+                        pending.extend(args.iter().filter(|argument| {
+                            argument.ty != ResolvedType::Str
+                                || matches!(
+                                    argument.kind,
+                                    ResolvedExprKind::VecFieldRead { .. }
+                                        | ResolvedExprKind::BorrowPlace { .. }
+                                )
+                        }));
                         continue;
                     }
                     if let Some(operation) = crate::map_ops::by_id(callee.as_str()) {
@@ -302,25 +392,58 @@ impl HirValidator<'_> {
                                 "while loop string operation is outside Owned String Loops v1",
                             ));
                         }
+                        if operation == crate::string_ops::StringOp::FromUtf8
+                            && matches!(&args[0].kind, ResolvedExprKind::Place(_))
+                        {
+                            // A named Slice is an existing immutable loan. Full
+                            // replay authenticates its root, extent and lifetime;
+                            // the copy cannot retain it across loop iterations.
+                            if args[0].ownership != OwnershipMode::Borrow
+                                || !matches!(&args[0].kind, ResolvedExprKind::Place(place) if place.projections.is_empty())
+                            {
+                                return Err(hir_error(
+                                    "loop string_from_utf8 requires an authenticated borrowed slice",
+                                ));
+                            }
+                            continue;
+                        }
                         if operation == crate::string_ops::StringOp::FromStr {
                             // The conversion only copies an existing view; full
                             // expression replay authenticates its immutable loan.
                             // It cannot retain the borrowed input across iterations.
-                            if args[0].ownership != OwnershipMode::Borrow
-                                || !matches!(&args[0].kind, ResolvedExprKind::Place(place) if place.projections.is_empty())
+                            let input = &args[0];
+                            let named_view = matches!(&input.kind, ResolvedExprKind::Place(place) if place.projections.is_empty());
+                            let owner_view = matches!(&input.kind, ResolvedExprKind::BorrowPlace { operation, place }
+                                if operation.as_str() == crate::byte_ops::STRING_AS_STR_ID && place.projections.is_empty());
+                            if input.ty != ResolvedType::Str
+                                || input.ownership != OwnershipMode::Borrow
+                                || !(named_view || owner_view)
                             {
                                 return Err(hir_error(
                                     "loop string_from_str requires a named borrowed-str input",
                                 ));
                             }
+                            // Do not skip the inline view: ordinary loop/view
+                            // replay still authenticates its exact live owner.
+                            pending.push(input);
                             continue;
                         }
                         pending.extend(args.iter().rev());
                         continue;
                     }
                     if let Some(operation) = crate::byte_ops::by_id(callee.as_str()) {
+                        if finite_scratch.is_some_and(|proof| proof.permits(expression)) {
+                            pending.extend(args.iter().rev());
+                            continue;
+                        }
                         owned_buffer::require_admitted_while_operation(
-                            self, expression, callee, operation, args,
+                            self,
+                            expression,
+                            callee,
+                            operation,
+                            args,
+                            owned_item,
+                            finite_scratch,
                         )?;
                         // Owned-buffer admission authenticates the moved owner
                         // and, for the one-or-five store, its distinct borrowed
@@ -361,11 +484,11 @@ impl HirValidator<'_> {
                                     _ => {
                                         return Err(hir_error(
                                             "forwarding helper requires a named reader",
-                                        ))
+                                        ));
                                     }
                                 },
                                 _ => {
-                                    return Err(hir_error("forwarding helper requires one reader"))
+                                    return Err(hir_error("forwarding helper requires one reader"));
                                 }
                             },
                         ) {
@@ -373,7 +496,12 @@ impl HirValidator<'_> {
                         }
                         continue;
                     }
-                    let scalar_signature = crate::loop_calls::effects_admitted(&target.effects)
+                    let byte_helper = self.byte_helpers.map_or_else(
+                        || crate::loop_calls::byte_writer::resolved_target(self.program, target),
+                        |helpers| helpers.target(target),
+                    );
+                    let scalar_signature = byte_helper
+                        || crate::loop_calls::effects_admitted(&target.effects)
                         && crate::loop_calls::resolved_result_admitted(&self.program.declarations, &target.return_type)
                         && target.params.iter().zip(args).all(|(param, argument)| {
                             crate::loop_calls::resolved_param_admitted(&self.program.declarations, param.ownership, &param.ty)
@@ -395,6 +523,10 @@ impl HirValidator<'_> {
                         )));
                     }
                     for (argument, parameter) in args.iter().zip(&target.params).rev() {
+                        if byte_helper {
+                            pending.push(argument);
+                            continue;
+                        }
                         if parameter.ty == ResolvedType::SliceU8 {
                             let ResolvedExprKind::Place(place) = &argument.kind else {
                                 return Err(hir_error(
@@ -411,34 +543,44 @@ impl HirValidator<'_> {
                                         .byte_slice_provenance(&place.root)
                                         .is_none())
                             {
-                                return Err(hir_error(
-                                    format!(
-                                        "while loop bounded-read call slice `{}` lacks authenticated provenance",
-                                        place.root
-                                    ),
-                                ));
+                                return Err(hir_error(format!(
+                                    "while loop bounded-read call slice `{}` lacks authenticated provenance",
+                                    place.root
+                                )));
                             }
                         } else if parameter.ownership == OwnershipMode::Borrow
-                            && crate::hir::iterator_loop::is_owner_renewal_record(
+                            && (crate::hir::iterator_loop::is_owner_renewal_record(
+                                &self.program.declarations,
+                                &parameter.ty,
+                            ) || crate::hir::owned_leaf_collection::layout(
                                 &self.program.declarations,
                                 &parameter.ty,
                             )
+                            .is_some())
                         {
+                            // Row Loan v1 descriptors are replayed against their
+                            // exact traversal and proven callee by `hir::row_loan`.
                             if !matches!(&argument.kind, ResolvedExprKind::Place(place)
                                 if place.projections.is_empty()
                                     && matches!(argument.ownership,
                                         OwnershipMode::Own | OwnershipMode::Borrow))
+                                && !matches!(&argument.kind, ResolvedExprKind::RowLoan { .. })
                             {
                                 return Err(hir_error(
                                     "while loop owner observer requires a whole named cursor",
                                 ));
                             }
                         } else if parameter.ownership == OwnershipMode::Borrow
-                            && crate::vec_ops::resolved_copy_vec(&parameter.ty)
+                            && (crate::vec_ops::resolved_copy_vec(&parameter.ty)
+                                || crate::hir::owned_leaf_collection::is_copy_or_leaf_vec(
+                                    &self.program.declarations,
+                                    &parameter.ty,
+                                ))
                         {
                             if parameter.ty != argument.ty
                                 || !matches!(&argument.kind, ResolvedExprKind::Place(place)
-                                    if place.projections.is_empty()
+                                    if (place.projections.is_empty()
+                                        || crate::hir::owned_collection_record::projected_field(&self.program.declarations, place, &argument.ty))
                                         && matches!(argument.ownership,
                                             OwnershipMode::Own | OwnershipMode::Borrow))
                             {
@@ -448,6 +590,11 @@ impl HirValidator<'_> {
                             }
                         } else if parameter.ownership != OwnershipMode::Own
                             || parameter.ty == ResolvedType::String
+                            || crate::hir::owned_leaf_collection::layout(
+                                &self.program.declarations,
+                                &parameter.ty,
+                            )
+                            .is_some()
                         {
                             // Loop Calls v1: a consumed String argument is an
                             // ordinary body operand; replay authenticates the
@@ -464,11 +611,26 @@ impl HirValidator<'_> {
                 ResolvedExprKind::Upcast { .. } => {
                     return Err(hir_error("while loops cannot contain inheritance upcasts"));
                 }
-                ResolvedExprKind::Project { .. } => {
-                    return Err(hir_error("while loops cannot project record fields"));
+                ResolvedExprKind::Project { base, .. } => {
+                    if !crate::hir::owned_leaf_collection::copy_or_leaf_admitted(
+                        &self.program.declarations,
+                        &base.ty,
+                    ) && !crate::hir::owned_collection_record::admitted(
+                        &base.ty,
+                        &self.program.declarations,
+                    ) {
+                        return Err(hir_error("while loops cannot project record fields"));
+                    }
+                    pending.push(base);
                 }
-                ResolvedExprKind::ConstructRecord { .. } => {
-                    return Err(hir_error("while loops cannot construct records"));
+                ResolvedExprKind::ConstructRecord { fields, .. } => {
+                    if !crate::hir::owned_leaf_collection::copy_or_leaf_admitted(
+                        &self.program.declarations,
+                        &expression.ty,
+                    ) {
+                        return Err(hir_error("while loops cannot construct records"));
+                    }
+                    pending.extend(fields.iter().rev().map(|field| &field.value));
                 }
                 ResolvedExprKind::ConstructVariant { fields, .. } => {
                     if expression.ownership != OwnershipMode::Value
@@ -516,7 +678,16 @@ impl HirValidator<'_> {
                         ));
                     }
                     for arm in arms.iter().rev() {
-                        pending.push(&arm.value);
+                        if owned_record {
+                            let fields = field_scope::fields(
+                                &self.program.declarations,
+                                owned_item.expect("authenticated owned item"),
+                                arm,
+                            )?;
+                            pending.push_scoped(&arm.value, Some(fields));
+                        } else {
+                            pending.push(&arm.value);
+                        }
                         if let Some(guard) = &arm.guard {
                             pending.push(guard);
                         }
@@ -535,7 +706,7 @@ impl HirValidator<'_> {
                 ResolvedExprKind::Yield { request } => pending.push(request),
             }
         }
-        Ok(())
+        pending.finish()
     }
 
     pub(super) fn validate_loop_pair(
@@ -543,11 +714,30 @@ impl HirValidator<'_> {
         condition: &ResolvedExpr,
         body: &ResolvedExpr,
     ) -> Result<(), Diagnostic> {
+        if self.selected_loop(condition, body) {
+            // The joined source/HIR selection replaces only this loop-shape check.
+            return Ok(());
+        }
+        if crate::finite_row_construction::resolved(self.program, condition, body).is_some() {
+            // The independent exact constructor proof replaces only this loop-shape check.
+            // Every node still passes ordinary type/ownership/loan/cleanup validation.
+            return Ok(());
+        }
+        if crate::finite_owned_record_loop::resolved(self.program, condition, body).is_some() {
+            // Capacity-only shape fact. Ordinary type, ownership, loan and cleanup
+            // checks still visit every node and every lexical exit.
+            return Ok(());
+        }
         if let Some(protocol) = crate::hir::iterator_loop::recognize(condition, body) {
             if !crate::iterator_ops::step_shape(&self.program.declarations, &protocol.step.ty) {
                 return Err(hir_error("iterator loop has unauthenticated Step metadata"));
             }
-            self.validate_iterator_body(protocol.authored_body, protocol.owned_item)
+            let finite = crate::finite_byte_scratch::resolved(self.program, condition, body);
+            self.validate_iterator_body(
+                protocol.authored_body,
+                protocol.owned_item,
+                finite.as_ref(),
+            )
         } else {
             self.validate_while_admission(condition)?;
             self.validate_while_admission(body)
@@ -557,12 +747,9 @@ impl HirValidator<'_> {
 /// Owned String Loops v1: `text = string_concat(text, …)` consumed the
 /// unique current generation of `text` as its first argument; the assignment
 /// publishes the next generation into the same binding.
-pub(super) fn reopen_string(
-    scope: &mut BTreeMap<ValueId, ValidationBinding>,
-    id: &ValueId,
-) -> Result<(), Diagnostic> {
+pub(super) fn reopen_string(scope: &mut dyn ScopeWrite, id: &ValueId) -> Result<(), Diagnostic> {
     let target = scope
-        .get_mut(id)
+        .get_mut(id)?
         .ok_or_else(|| hir_error("string append target is missing"))?;
     if target.availability != Availability::Moved
         || !target.active_loans.is_empty()
@@ -580,12 +767,9 @@ pub(super) fn reopen_string(
     Ok(())
 }
 
-pub(super) fn reopen_step(
-    scope: &mut BTreeMap<ValueId, ValidationBinding>,
-    id: &ValueId,
-) -> Result<(), Diagnostic> {
+pub(super) fn reopen_step(scope: &mut dyn ScopeWrite, id: &ValueId) -> Result<(), Diagnostic> {
     let target = scope
-        .get_mut(id)
+        .get_mut(id)?
         .ok_or_else(|| hir_error("iterator replacement target is missing"))?;
     if target.availability != Availability::Moved
         || !target.active_loans.is_empty()

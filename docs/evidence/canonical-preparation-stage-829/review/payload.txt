@@ -1,0 +1,1596 @@
+Independent source-only review of OPT829 production enclosing-stage attribution. Source-sharing authorized; no tools, execution, delegation or runtime claims. Source commit 5dc34d3eff30e66b21a7c4e14949f3713c343491. Review only this distinct packet; no retry or continuation of799. Intended minimal production delta: fixed compiler-owned ReservationStage +static label, existing production guard at prepare_sealed entry before CfgReservation acquisition. No new fields/Rc backing/quota/work. Numeric/full Diagnostic parity except enclosing stage label, exact inner operation unknown; paid help omission and current budget identity/sticky/floor/final-attempt rules unchanged. Critically inspect actual Rust typing/privacy, before/current observed acquisition+Drop controls, old independent preparation, layout mirrors/niche checks, source guard inverse correctness. Distinguish actual blockers from speculation; under900words. No tests have run.
+
+FILE src/bounded_output.rs:1-225
+pub(crate) mod cfg_reservation;
+pub(crate) mod identity_reservation;
+pub(crate) mod key_directory;
+pub(crate) mod prepaid;
+#[cfg(test)]
+pub(crate) mod stage_debits;
+use std::cell::{Cell, RefCell};
+use std::fmt::{self, Write as _};
+use std::ops::Deref;
+use std::rc::Rc;
+
+/// First sticky refusal in one bounded phase. This is ledger evidence, not RSS.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct ReservationRefusal {
+    pub(crate) requested: usize,
+    pub(crate) remaining: usize,
+    pub(crate) floor: usize,
+    pub(crate) stage: Option<ReservationStage>,
+}
+
+/// Compiler-owned labels for the operation enclosing a required reservation.
+/// They never derive from source or from a forecast.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ReservationStage {
+    ResolvedCore,
+    CompactValidation,
+    UncachedSyntheticPeak,
+    AuthoredModuleValidation,
+    FrontendLookup,
+    SelectiveResolution,
+    FrontendRetention,
+    ImportedVecInstances,
+    CorePrebound,
+    ExpectedEdges,
+    ResolvedCallEdges,
+    StubSignatures,
+    DeclarationFacts,
+    RetainedFacts,
+    CoreDirectories,
+    EdgeProof,
+    SyntheticModule,
+    CachedValidation,
+    FreshResolution,
+    HirLowering,
+    HirLoanPlans,
+    HirInstanceLoanPlans,
+    HirCleanupInventories,
+    HirInstanceCleanupInventories,
+    HirCleanupPlans,
+    HirYieldProfiles,
+    HirValidation,
+    CanonicalLoanStorage,
+
+    RetainedModule,
+    LoanIdentityInventory,
+    RetainedLoanScratch,
+    RetainedLoanSidecars,
+}
+
+impl ReservationStage {
+    pub(crate) fn label(self) -> &'static str {
+        match self {
+            Self::ResolvedCore => "resolved core construction",
+            Self::CompactValidation => "compact validation inventory construction",
+            Self::UncachedSyntheticPeak => "uncached synthetic AST peak reservation",
+            Self::AuthoredModuleValidation => "authored module signature validation",
+            Self::FrontendLookup => "frontend checked module lookup",
+            Self::SelectiveResolution => "frontend selective function resolution",
+            Self::FrontendRetention => "frontend resolved module retention",
+            Self::ImportedVecInstances => "imported Vec instance inventory",
+            Self::CorePrebound => "resolved-core prebound",
+            Self::ExpectedEdges => "expected workspace edges",
+            Self::ResolvedCallEdges => "resolved call edges",
+            Self::StubSignatures => "workspace stub signatures",
+            Self::DeclarationFacts => "workspace declaration facts",
+            Self::RetainedFacts => "retained workspace facts",
+            Self::CoreDirectories => "resolved module directories",
+            Self::EdgeProof => "workspace edge proof",
+            Self::SyntheticModule => "synthetic module construction",
+            Self::CachedValidation => "cached HIR validation",
+            Self::FreshResolution => "fresh HIR resolution",
+            Self::HirLowering => "HIR expression and type lowering",
+            Self::HirLoanPlans => "HIR function loan plans",
+            Self::HirInstanceLoanPlans => "HIR instance loan plans",
+            Self::HirCleanupInventories => "HIR function cleanup inventories",
+            Self::HirInstanceCleanupInventories => "HIR instance cleanup inventories",
+            Self::HirCleanupPlans => "HIR canonical cleanup plans",
+            Self::HirYieldProfiles => "HIR yield profile validation",
+            Self::HirValidation => "HIR final validation",
+            Self::CanonicalLoanStorage => "canonical shared-loan storage preparation",
+
+            Self::RetainedModule => "resolved module retention",
+            Self::LoanIdentityInventory => "loan identity inventory",
+            Self::RetainedLoanScratch => "retained loan scratch allocation",
+            Self::RetainedLoanSidecars => "retained loan sidecar capacity",
+        }
+    }
+}
+
+struct Budget {
+    initial: usize,
+    remaining: Cell<usize>,
+    floor: Cell<usize>,
+    overflowed: Cell<bool>,
+    first_refusal: Cell<Option<ReservationRefusal>>,
+    stage: Cell<Option<ReservationStage>>,
+}
+
+thread_local! {
+    static ACTIVE: RefCell<Option<Rc<Budget>>> = const { RefCell::new(None) };
+}
+
+pub(crate) fn with_limit<T>(limit: usize, operation: impl FnOnce() -> T) -> (T, bool) {
+    let (value, overflowed, _) = with_limit_usage(limit, operation);
+    (value, overflowed)
+}
+
+pub(crate) fn with_limit_usage<T>(limit: usize, operation: impl FnOnce() -> T) -> (T, bool, usize) {
+    let (value, overflowed, consumed, _) = with_limit_usage_refusal(limit, operation);
+    (value, overflowed, consumed)
+}
+
+pub(crate) fn with_limit_usage_refusal<T>(
+    limit: usize,
+    operation: impl FnOnce() -> T,
+) -> (T, bool, usize, Option<ReservationRefusal>) {
+    struct Restore {
+        previous: Option<Rc<Budget>>,
+        current: Rc<Budget>,
+        initial: usize,
+    }
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            let consumed = self.initial.saturating_sub(self.current.remaining.get());
+            let previous = self.previous.take();
+            ACTIVE.with(|active| {
+                active.replace(previous.clone());
+            });
+            if let Some(parent) = previous {
+                if !reserve(Some(&parent), consumed) {
+                    record_refusal(&parent, consumed);
+                    // A refused reservation normally means nothing was
+                    // written, but here the child already emitted the bytes:
+                    // they cannot be un-spent. Charge the parent anyway, so
+                    // `consumed` and `active_remaining` stay truthful, and
+                    // report the refusal.
+                    let remaining = parent.remaining.get();
+                    parent.remaining.set(remaining.saturating_sub(consumed));
+                    #[cfg(test)]
+                    stage_debits::debit(&parent, remaining.min(consumed));
+                    parent.overflowed.set(true);
+                }
+            }
+        }
+    }
+    let parent = active();
+    let effective_limit = parent
+        .as_ref()
+        .map_or(limit, |budget| limit.min(budget.remaining.get()));
+    let budget = Rc::new(Budget {
+        initial: effective_limit,
+        remaining: Cell::new(effective_limit),
+        floor: Cell::new(0),
+        overflowed: Cell::new(false),
+        first_refusal: Cell::new(None),
+        stage: Cell::new(None),
+    });
+    let previous = ACTIVE.with(|active| active.replace(Some(Rc::clone(&budget))));
+    let restore = Restore {
+        previous,
+        current: Rc::clone(&budget),
+        initial: effective_limit,
+    };
+    let value = operation();
+    let overflowed = budget.overflowed.get();
+    let consumed = effective_limit.saturating_sub(budget.remaining.get());
+    let refusal = budget.first_refusal.get();
+    drop(restore);
+    (value, overflowed, consumed, refusal)
+}
+
+fn active() -> Option<Rc<Budget>> {
+    ACTIVE.with(|active| active.borrow().clone())
+}
+
+fn record_refusal(budget: &Budget, length: usize) {
+    if budget.first_refusal.get().is_none() {
+        #[cfg(test)]
+        stage_debits::refusal(budget, length);
+        budget.first_refusal.set(Some(ReservationRefusal {
+            requested: length,
+            remaining: budget.remaining.get(),
+            floor: budget.floor.get(),
+            stage: budget.stage.get(),
+        }));
+    }
+}
+
+/// A stage belongs to the current budget only. Nested budgets start unlabelled,
+/// and unwind restores the previous stage before the next reservation.
+pub(crate) fn with_reservation_stage<T>(
+    stage: ReservationStage,
+    operation: impl FnOnce() -> T,
+) -> T {
+    let restore = reservation_stage_guard(stage);
+    let value = operation();
+    drop(restore);
+    value
+}
+
+/// Fixed-size restoration handle. Cloning the existing budget Rc allocates no
+/// backing, and the handle never changes budget ownership or refusal selection.
+pub(crate) struct ReservationStageGuard(Option<(Rc<Budget>, Option<ReservationStage>)>);
+impl Drop for ReservationStageGuard {
+    fn drop(&mut self) {
+        if let Some((budget, previous)) = self.0.take() {
+            budget.stage.set(previous);
+        }
+    }
+}
+pub(crate) fn reservation_stage_guard(stage: ReservationStage) -> ReservationStageGuard {
+    ReservationStageGuard(active().map(|budget| {
+        let previous = budget.stage.replace(Some(stage));
+        (budget, previous)
+    }))
+
+
+FILE src/bounded_output/cfg_reservation.rs:1-129
+//! One actual caller ledger and its dedicated allocation-refusal text.
+//! Acquisition creates no allowance; this affine owner never proves admission.
+use super::*;
+use crate::diagnostic::Diagnostic;
+use std::alloc::Layout;
+use std::mem::size_of;
+
+const MESSAGE: &str = "canonical loan CFG storage reservation refused";
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum Refused {
+    NoOwner,
+    Budget(ReservationRefusal),
+    Allocation,
+    Capacity,
+    Detached,
+    Arithmetic,
+}
+
+pub(crate) struct CfgReservation {
+    budget: Rc<Budget>,
+    text: String,
+    first: Cell<Option<Refused>>,
+}
+
+impl CfgReservation {
+    pub(crate) fn acquire() -> Result<Self, Refused> {
+        let budget = active().ok_or(Refused::NoOwner)?;
+        let bytes = size_of::<Self>()
+            .checked_add(MESSAGE.len())
+            .ok_or_else(|| {
+                poison(&budget, usize::MAX);
+                Refused::Arithmetic
+            })?;
+        required(&budget, bytes)?;
+        let mut text = String::new();
+        if text.try_reserve_exact(MESSAGE.len()).is_err() {
+            poison(&budget, 0);
+            return Err(Refused::Allocation);
+        }
+        if text.capacity() != MESSAGE.len() {
+            required(&budget, text.capacity().saturating_sub(MESSAGE.len()))?;
+            poison(&budget, 0);
+            return Err(Refused::Capacity);
+        }
+        Ok(Self {
+            budget,
+            text,
+            first: Cell::new(None),
+        })
+    }
+
+    pub(crate) fn reserve(&self, bytes: usize) -> Result<(), Refused> {
+        // Identity is checked even for zero bytes and spare-capacity requests.
+        if !active().is_some_and(|current| Rc::ptr_eq(&current, &self.budget)) {
+            return self.fail(Refused::Detached, bytes);
+        }
+        if let Some(first) = self.first.get() {
+            return Err(first);
+        }
+        required(&self.budget, bytes).inspect_err(|&reason| {
+            self.first.set(Some(reason));
+        })
+    }
+
+    pub(crate) fn array<T>(&self, count: usize) -> Result<(), Refused> {
+        self.reserve(0)?;
+        match Layout::array::<T>(count) {
+            Ok(layout) => self.reserve(layout.size()),
+            Err(_) => self.fail(Refused::Arithmetic, usize::MAX),
+        }
+    }
+
+    pub(crate) fn capacity(&self, requested: usize, excess: usize) -> Result<(), Refused> {
+        self.reserve(excess)?;
+        self.fail(Refused::Capacity, requested)
+    }
+
+    pub(crate) fn allocation(&self, requested: usize) -> Refused {
+        self.fail(Refused::Allocation, requested).unwrap_err()
+    }
+
+    pub(crate) fn arithmetic(&self) -> Refused {
+        self.fail(Refused::Arithmetic, usize::MAX).unwrap_err()
+    }
+
+    pub(crate) fn first(&self) -> Option<Refused> {
+        self.first.get()
+    }
+
+    fn fail(&self, reason: Refused, requested: usize) -> Result<(), Refused> {
+        let first = self.first.get().unwrap_or(reason);
+        self.first.set(Some(first));
+        poison(&self.budget, requested);
+        Err(first)
+    }
+
+    /// Consumes this exact owner; no new String or formatting after refusal.
+    pub(crate) fn diagnostic(mut self) -> Diagnostic {
+        debug_assert!(self.first.get().is_some());
+        self.text.push_str(MESSAGE);
+        Diagnostic::io("SPX-H006", self.text)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn text_pointer(&self) -> *const u8 {
+        self.text.as_ptr()
+    }
+}
+
+fn poison(budget: &Budget, requested: usize) {
+    record_refusal(budget, requested);
+    budget.overflowed.set(true);
+}
+fn required(budget: &Budget, bytes: usize) -> Result<(), Refused> {
+    if reserve(Some(budget), bytes) {
+        return Ok(());
+    }
+    poison(budget, bytes);
+    Err(Refused::Budget(
+        budget
+            .first_refusal
+            .get()
+            .expect("required refusal recorded"),
+    ))
+}
+
+#[cfg(test)]
+mod tests;
+
+
+FILE src/bounded_output/canonical_stage_tests.rs:1-249
+use super::*;
+use crate::bounded_output::cfg_reservation::{CfgReservation, Refused};
+use crate::test_allocation_observer::measure;
+use std::mem::{align_of, size_of};
+use std::panic::{catch_unwind, AssertUnwindSafe};
+
+#[test]
+fn canonical_stage_preserves_actual_budget_receipt_guard_and_paid_carrier_layouts() {
+    // Frozen pre-change field types, independent of the current declarations.
+    // The old and new stage enums both fit the same one-byte/niche layout.
+    #[derive(Clone, Copy)]
+    enum BeforeStage {
+        ResolvedCore,
+        CompactValidation,
+        UncachedSyntheticPeak,
+        AuthoredModuleValidation,
+        FrontendLookup,
+        SelectiveResolution,
+        FrontendRetention,
+        ImportedVecInstances,
+        CorePrebound,
+        ExpectedEdges,
+        ResolvedCallEdges,
+        StubSignatures,
+        DeclarationFacts,
+        RetainedFacts,
+        CoreDirectories,
+        EdgeProof,
+        SyntheticModule,
+        CachedValidation,
+        FreshResolution,
+        HirLowering,
+        HirLoanPlans,
+        HirInstanceLoanPlans,
+        HirCleanupInventories,
+        HirInstanceCleanupInventories,
+        HirCleanupPlans,
+        HirYieldProfiles,
+        HirValidation,
+        RetainedModule,
+        LoanIdentityInventory,
+        RetainedLoanScratch,
+        RetainedLoanSidecars,
+    }
+    let _all_old_stages = [
+        BeforeStage::ResolvedCore,
+        BeforeStage::CompactValidation,
+        BeforeStage::UncachedSyntheticPeak,
+        BeforeStage::AuthoredModuleValidation,
+        BeforeStage::FrontendLookup,
+        BeforeStage::SelectiveResolution,
+        BeforeStage::FrontendRetention,
+        BeforeStage::ImportedVecInstances,
+        BeforeStage::CorePrebound,
+        BeforeStage::ExpectedEdges,
+        BeforeStage::ResolvedCallEdges,
+        BeforeStage::StubSignatures,
+        BeforeStage::DeclarationFacts,
+        BeforeStage::RetainedFacts,
+        BeforeStage::CoreDirectories,
+        BeforeStage::EdgeProof,
+        BeforeStage::SyntheticModule,
+        BeforeStage::CachedValidation,
+        BeforeStage::FreshResolution,
+        BeforeStage::HirLowering,
+        BeforeStage::HirLoanPlans,
+        BeforeStage::HirInstanceLoanPlans,
+        BeforeStage::HirCleanupInventories,
+        BeforeStage::HirInstanceCleanupInventories,
+        BeforeStage::HirCleanupPlans,
+        BeforeStage::HirYieldProfiles,
+        BeforeStage::HirValidation,
+        BeforeStage::RetainedModule,
+        BeforeStage::LoanIdentityInventory,
+        BeforeStage::RetainedLoanScratch,
+        BeforeStage::RetainedLoanSidecars,
+    ];
+    struct BeforeBudget {
+        _initial: usize,
+        _remaining: Cell<usize>,
+        _floor: Cell<usize>,
+        _overflowed: Cell<bool>,
+        _first_refusal: Cell<Option<BeforeReceipt>>,
+        _stage: Cell<Option<BeforeStage>>,
+    }
+    #[derive(Clone, Copy)]
+    struct BeforeReceipt {
+        _requested: usize,
+        _remaining: usize,
+        _floor: usize,
+        _stage: Option<BeforeStage>,
+    }
+    struct BeforeGuard {
+        _held: Option<(Rc<BeforeBudget>, Option<BeforeStage>)>,
+    }
+    #[derive(Clone, Copy)]
+    enum BeforeRefused {
+        NoOwner,
+        Budget { _receipt: BeforeReceipt },
+        Allocation,
+        Capacity,
+        Detached,
+        Arithmetic,
+    }
+    let _all_old_reasons = [
+        BeforeRefused::NoOwner,
+        BeforeRefused::Budget {
+            _receipt: BeforeReceipt {
+                _requested: 0,
+                _remaining: 0,
+                _floor: 0,
+                _stage: None,
+            },
+        },
+        BeforeRefused::Allocation,
+        BeforeRefused::Capacity,
+        BeforeRefused::Detached,
+        BeforeRefused::Arithmetic,
+    ];
+    struct BeforePaidCarrier {
+        _budget: Rc<BeforeBudget>,
+        _text: String,
+        _first: Cell<Option<BeforeRefused>>,
+    }
+    assert_eq!(size_of::<ReservationStage>(), 1);
+    assert_eq!(size_of::<Option<ReservationStage>>(), 1);
+    macro_rules! same_layout {
+        ($actual:ty, $before:ty) => {
+            assert_eq!(size_of::<$actual>(), size_of::<$before>());
+            assert_eq!(align_of::<$actual>(), align_of::<$before>());
+        };
+    }
+    same_layout!(ReservationStage, BeforeStage);
+    same_layout!(Option<ReservationStage>, Option<BeforeStage>);
+    same_layout!(Refused, BeforeRefused);
+    same_layout!(Option<Refused>, Option<BeforeRefused>);
+    same_layout!(Budget, BeforeBudget);
+    same_layout!(ReservationRefusal, BeforeReceipt);
+    same_layout!(ReservationStageGuard, BeforeGuard);
+    same_layout!(CfgReservation, BeforePaidCarrier);
+}
+
+#[test]
+fn canonical_stage_entry_exit_has_no_allocation_or_debit_and_keeps_outer_identity() {
+    let (((), metrics), overflow, used, first) = with_limit_usage_refusal(3, || {
+        measure(|| {
+            let budget = active().unwrap();
+            let count = Rc::strong_count(&budget);
+            let _outer = reservation_stage_guard(ReservationStage::FreshResolution);
+            {
+                let _inner = reservation_stage_guard(ReservationStage::CanonicalLoanStorage);
+                assert!(Rc::ptr_eq(&active().unwrap(), &budget));
+                assert_eq!(Rc::strong_count(&budget), count + 2);
+                assert_eq!(
+                    budget.stage.get(),
+                    Some(ReservationStage::CanonicalLoanStorage)
+                );
+                assert!(reserve_active_required(3));
+            }
+            assert_eq!(Rc::strong_count(&budget), count + 1);
+            assert_eq!(budget.stage.get(), Some(ReservationStage::FreshResolution));
+        })
+    });
+    assert_eq!((overflow, used, first), (false, 3, None));
+    assert!(!metrics.invalid);
+    assert_eq!(metrics.allocations, 0);
+    assert_eq!(metrics.reallocations, 0);
+    assert_eq!(
+        (
+            metrics.allocated,
+            metrics.freed,
+            metrics.highwater,
+            metrics.live
+        ),
+        (0, 0, 0, 0)
+    );
+    let (_, metrics) = measure(|| {
+        drop(reservation_stage_guard(
+            ReservationStage::CanonicalLoanStorage,
+        ))
+    });
+    assert!(!metrics.invalid);
+    assert_eq!(metrics.allocations, 0);
+    assert!(active().is_none());
+}
+
+#[test]
+fn canonical_stage_nested_foreign_detached_unwind_floor_and_sticky_receipts_stay_local() {
+    let (escaped, overflow, used, first) = with_limit_usage_refusal(5, || {
+        let _outer = reservation_stage_guard(ReservationStage::FreshResolution);
+        let parent = active().unwrap();
+        let escaped = reservation_stage_guard(ReservationStage::CanonicalLoanStorage);
+        let child = with_limit_usage_refusal(2, || {
+            assert_eq!(active().unwrap().stage.get(), None);
+            let _child = reservation_stage_guard(ReservationStage::HirValidation);
+            assert!(reserve_active_required(1));
+            // Parent guard belongs to parent even while the child is active.
+            drop(escaped);
+            assert_eq!(
+                active().unwrap().stage.get(),
+                Some(ReservationStage::HirValidation)
+            );
+            assert_eq!(parent.stage.get(), Some(ReservationStage::FreshResolution));
+        });
+        assert_eq!((child.1, child.2, child.3), (false, 1, None));
+        let caught = catch_unwind(AssertUnwindSafe(|| {
+            let _stage = reservation_stage_guard(ReservationStage::CanonicalLoanStorage);
+            panic!("stage restoration witness");
+        }));
+        assert!(caught.is_err());
+        assert_eq!(parent.stage.get(), Some(ReservationStage::FreshResolution));
+        parent.floor.set(2);
+        let caught = catch_unwind(AssertUnwindSafe(|| {
+            let _stage = reservation_stage_guard(ReservationStage::CanonicalLoanStorage);
+            assert!(!reserve_active_required(3));
+            panic!("first sticky stage survives unwind");
+        }));
+        assert!(caught.is_err());
+        assert!(!reserve_active_required(0));
+        assert!(!reserve_active_required(1));
+        reservation_stage_guard(ReservationStage::CanonicalLoanStorage)
+    });
+    assert!(overflow);
+    assert_eq!(used, 1);
+    assert_eq!(
+        first,
+        Some(ReservationRefusal {
+            requested: 3,
+            remaining: 4,
+            floor: 2,
+            stage: Some(ReservationStage::CanonicalLoanStorage),
+        })
+    );
+    // Dropping a detached guard while another budget is current restores only
+    // its original owner, never the foreign active budget or its first receipt.
+    let (_, overflow, used, first) = with_limit_usage_refusal(1, || {
+        let _foreign = reservation_stage_guard(ReservationStage::HirValidation);
+        drop(escaped);
+        assert_eq!(
+            active().unwrap().stage.get(),
+            Some(ReservationStage::HirValidation)
+        );
+        assert!(!reserve_active_required(2));
+    });
+    assert!(overflow);
+    assert_eq!(used, 0);
+    assert_eq!(first.unwrap().stage, Some(ReservationStage::HirValidation));
+    assert!(active().is_none());
+}
+
+
+FILE src/hir/canonical_loan_storage/caller.rs:1-432
+//! Allocation frontier outside pure validation. No new quota or attached-plan
+//! sizing authority. Active callers fund planner scratch and append through one
+//! captured owner; upstream preflight and legacy semantic diagnostic text remain open.
+use super::*;
+use crate::bounded_output::cfg_reservation::CfgReservation;
+use crate::hir::validation::{constructor_seed::ConstructorSeed, HirValidator};
+use crate::hir::{function_directory::Directory, hir_error};
+use crate::loan_plan::LoanPlan;
+
+#[derive(Clone, Copy)]
+enum Payer<'payer> {
+    Captured(&'payer CfgReservation),
+    ActiveBuilder,
+    LegacyUnobserved,
+}
+impl Payer<'_> {
+    fn current() -> Self {
+        if crate::bounded_output::active_remaining().is_some() {
+            Self::ActiveBuilder
+        } else {
+            Self::LegacyUnobserved
+        }
+    }
+    fn reserve(self, bytes: usize) -> Result<(), Diagnostic> {
+        if let Self::Captured(owner) = self {
+            return owner.reserve(bytes).map_err(|_| refused());
+        }
+        if matches!(self, Self::ActiveBuilder)
+            && !crate::bounded_output::reserve_active_required(bytes)
+        {
+            return Err(refused());
+        }
+        Ok(())
+    }
+    fn capacity(self, requested: usize, excess: usize) -> Diagnostic {
+        if let Self::Captured(owner) = self {
+            let _ = owner.capacity(requested, excess);
+            return refused();
+        }
+        if matches!(self, Self::ActiveBuilder) {
+            if excess != 0 {
+                crate::bounded_output::reserve_active_required(excess);
+            }
+            crate::bounded_output::refuse_active_required(requested);
+        }
+        refused()
+    }
+}
+fn refused() -> Diagnostic {
+    Diagnostic::io("SPX-H006", String::new())
+}
+
+fn backing<T>(items: usize, payer: Payer<'_>) -> Result<usize, Diagnostic> {
+    std::alloc::Layout::array::<T>(items)
+        .map(|layout| layout.size())
+        .map_err(|_| payer.capacity(usize::MAX, 0))
+}
+fn ensure<T>(values: &mut Vec<T>, needed: usize, payer: Payer<'_>) -> Result<(), Diagnostic> {
+    // Even spare-capacity and zero requests preserve the selected first refusal.
+    payer.reserve(0)?;
+    if needed <= values.capacity() {
+        return Ok(());
+    }
+    let capacity = needed.max(
+        values
+            .capacity()
+            .checked_mul(2)
+            .ok_or_else(|| payer.capacity(usize::MAX, 0))?,
+    );
+    let bytes = backing::<T>(capacity, payer)?;
+    payer.reserve(bytes)?;
+    if values.try_reserve_exact(capacity - values.len()).is_err() {
+        return Err(payer.capacity(bytes, 0));
+    }
+    if values.capacity() != capacity {
+        let excess =
+            backing::<T>(values.capacity().saturating_sub(capacity), payer).unwrap_or(usize::MAX);
+        return Err(payer.capacity(bytes, excess));
+    }
+    Ok(())
+}
+fn ensure_probe<T>(values: &mut Vec<T>, needed: usize, payer: Payer<'_>) -> Result<(), Diagnostic> {
+    // Even spare-capacity and zero requests preserve the selected first refusal.
+    payer.reserve(0)?;
+    if needed <= values.capacity() {
+        return Ok(());
+    }
+    // Probe entries are drained every append. Exact replacement avoids
+    // doubling beyond the next complete plan while retaining prepaid backing.
+    let capacity = needed;
+    let bytes = backing::<T>(capacity, payer)?;
+    payer.reserve(bytes)?;
+    if values.try_reserve_exact(capacity - values.len()).is_err() {
+        return Err(payer.capacity(bytes, 0));
+    }
+    if values.capacity() != capacity {
+        let excess =
+            backing::<T>(values.capacity().saturating_sub(capacity), payer).unwrap_or(usize::MAX);
+        return Err(payer.capacity(bytes, excess));
+    }
+    Ok(())
+}
+fn count(current: usize, added: usize, payer: Payer<'_>) -> Result<usize, Diagnostic> {
+    current
+        .checked_add(added)
+        .ok_or_else(|| payer.capacity(usize::MAX, 0))
+}
+
+pub(in crate::hir) fn validate<'a>(
+    program: &'a ResolvedProgram,
+    fused: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
+    directory: Option<&'a Directory<'a>>,
+) -> Result<bool, Diagnostic> {
+    validate_with_comparison(program, fused, directory).map(|(selected, _)| selected)
+}
+
+pub(in crate::hir) fn validate_with_comparison<'a>(
+    program: &'a ResolvedProgram,
+    fused: Option<crate::hir::selected_fused_candidate::Selected<'a>>,
+    directory: Option<&Directory<'a>>,
+) -> Result<(bool, Deferred<'a>), Diagnostic> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::CoreValidation,
+    );
+    // Preserve ModuleIndex before the complete constructor preflight, and the
+    // preflight before every independent canonical-plan rebuild/allocation.
+    let observation = crate::hir::validation::owner_renewal::Observation::default();
+    let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
+    let seed = ConstructorSeed::authenticate(program, directory)?;
+    let (storage, deferred) = prepare_with_comparison(&seed, program)?;
+    let validator = {
+        #[cfg(test)]
+        let _operation = crate::bounded_output::stage_debits::operation_guard(
+            crate::bounded_output::stage_debits::Operation::ValidatorConstructor,
+        );
+        HirValidator::with_storage(seed, &storage)?
+    };
+    let selected = crate::hir::validation::owner_renewal::validate_prepared(
+        program,
+        fused,
+        &helpers,
+        validator,
+        &observation,
+    )?;
+    Ok((selected, deferred))
+}
+
+#[cfg(test)]
+pub(in crate::hir) fn prepare<'a>(seed: &ConstructorSeed<'a>) -> Result<Storage<'a>, Diagnostic> {
+    prepare_with_comparison(seed, seed.program()).map(|(storage, _)| storage)
+}
+
+fn prepare_with_comparison<'a>(
+    seed: &ConstructorSeed<'_>,
+    program: &'a ResolvedProgram,
+) -> Result<(Storage<'a>, Deferred<'a>), Diagnostic> {
+    prepare_sealed(seed, program, |storage, _| Ok(storage))
+}
+
+pub(in crate::hir) fn prepare_shared<'a>(
+    seed: &ConstructorSeed<'a>,
+) -> Result<std::rc::Rc<Storage<'a>>, Diagnostic> {
+    // Compatibility construction never finishes Deferred: attached plan
+    // mismatch remains selected by the complete ordinary validator afterward.
+    prepare_sealed(seed, seed.program(), shared::seal).map(|(storage, _)| storage)
+}
+
+#[cfg(test)]
+mod owned_before;
+mod shared;
+
+fn prepare_sealed<'a, T>(
+    seed: &ConstructorSeed<'_>,
+    program: &'a ResolvedProgram,
+    seal: impl FnOnce(Storage<'a>, Payer<'_>) -> Result<T, Diagnostic>,
+) -> Result<(T, Deferred<'a>), Diagnostic> {
+    let _stage = crate::bounded_output::reservation_stage_guard(
+        crate::bounded_output::ReservationStage::CanonicalLoanStorage,
+    );
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::CanonicalLoanStorage,
+    );
+    if !std::ptr::eq(seed.program(), program) {
+        return Err(hir_error(
+            "canonical shared-loan constructor belongs to another program",
+        ));
+    }
+    // Acquisition follows the unchanged ModuleIndex and ConstructorSeed
+    // phases. One report/ledger is held across ALL plans and their append; a
+    // storage-only test injection keeps its separate legacy payer below.
+    let captured = if crate::bounded_output::active_remaining().is_some() {
+        Some(CfgReservation::acquire().map_err(|_| refused())?)
+    } else {
+        None
+    };
+    let payer = captured
+        .as_ref()
+        .map_or_else(Payer::current, Payer::Captured);
+    let result = (|| {
+        payer.reserve(0)?;
+        let mut deferred = Deferred::new(program);
+        let mut storage = Storage {
+            program,
+            ids: Vec::new(),
+            liveness: Vec::new(),
+            origins: Vec::new(),
+            _scratch: Scratch::default(),
+        };
+        for function in program
+            .functions
+            .iter()
+            .chain(program.function_instances.iter().map(|i| &i.function))
+        {
+            let plan = match captured.as_ref() {
+                Some(owner) => {
+                    match crate::loan_plan::build_plan_with_reservation(program, function, owner) {
+                        Ok(plan) => plan,
+                        Err(crate::loan_plan::FundedError::Physical(reason)) => {
+                            // The tag is copied from this exact owner's first failure.
+                            debug_assert_eq!(owner.first(), Some(reason));
+                            return Err(refused());
+                        }
+                        Err(crate::loan_plan::FundedError::Semantic(error)) => return Err(error),
+                    }
+                }
+                None => crate::loan_plan::build_plan(program, function)?,
+            };
+            // Compare the COMPLETE plan before append consumes it. An
+            // attached plan is never a sizing/admission source.
+            deferred.compare(function, &plan);
+            append(&mut storage, plan, payer)?;
+        }
+        Ok((seal(storage, payer)?, deferred))
+    })();
+    // Only this exact affine owner can mark physical failure. Never infer
+    // payment from H006 text, and never reserve/render after semantic error.
+    if let Some(owner) = captured {
+        if owner.first().is_some() {
+            return Err(owner.diagnostic());
+        }
+    }
+    result
+}
+
+fn append(storage: &mut Storage<'_>, plan: LoanPlan, payer: Payer<'_>) -> Result<(), Diagnostic> {
+    payer.reserve(0)?;
+    // Detaching only owned backing lets the original complete receiver read
+    // persistent directories without holding a mutable borrow of their owner.
+    let mut scratch = std::mem::take(&mut storage._scratch);
+    let result = append_reusing(storage, plan, payer, &mut scratch);
+    scratch.local.clear();
+    scratch.liveness.clear();
+    scratch.ids.clear();
+    // Success and refusal retain the same backing through receiving Drop.
+    storage._scratch = scratch;
+    result
+}
+
+fn append_reusing(
+    storage: &mut Storage<'_>,
+    plan: LoanPlan,
+    payer: Payer<'_>,
+    scratch: &mut Scratch,
+) -> Result<(), Diagnostic> {
+    let base = storage.origins.len();
+    scratch.local.clear();
+    let local = &mut scratch.local;
+    ensure_probe(local, plan.loans.len(), payer)?;
+    for (offset, loan) in plan.loans.iter().enumerate() {
+        local.push((
+            loan.id,
+            base.checked_add(offset)
+                .ok_or_else(|| hir_error("canonical shared-loan origin directory overflows"))?,
+        ));
+    }
+    local.sort_unstable();
+    let origin = |id: &LoanId| {
+        // Complete original collect semantics: the final local occurrence wins.
+        let end = local.partition_point(|entry| entry.0 <= *id);
+        end.checked_sub(1)
+            .and_then(|i| local.get(i))
+            .filter(|entry| entry.0 == *id)
+            .map(|entry| entry.1)
+    };
+    let mut live_count = 0usize;
+    for endpoint in &plan.endpoints {
+        let live = match endpoint.point.phase {
+            LoanPointPhase::Before => &endpoint.live_before,
+            LoanPointPhase::After => &endpoint.live_after,
+        };
+        live_count = count(live_count, live.len(), payer)?;
+    }
+    scratch.liveness.clear();
+    let live_probe = &mut scratch.liveness;
+    ensure_probe(live_probe, live_count, payer)?;
+    for endpoint in &plan.endpoints {
+        let live = match endpoint.point.phase {
+            LoanPointPhase::Before => &endpoint.live_before,
+            LoanPointPhase::After => &endpoint.live_after,
+        };
+        for loan in live {
+            let source = live_probe.len();
+            live_probe.push((
+                (
+                    endpoint.point.expression.clone(),
+                    endpoint.point.phase,
+                    *loan,
+                ),
+                origin(loan),
+                source,
+            ));
+        }
+    }
+    // This private ordering indexes first source occurrences, not canonical
+    // endpoint/loan vectors or error selection. It requires no sort scratch.
+    live_probe.sort_unstable_by(|a, b| a.0.cmp(&b.0).then(a.2.cmp(&b.2)));
+    let mut source = 0usize;
+    for endpoint in &plan.endpoints {
+        let live = match endpoint.point.phase {
+            LoanPointPhase::Before => &endpoint.live_before,
+            LoanPointPhase::After => &endpoint.live_after,
+        };
+        for loan in live {
+            origin(loan)
+                .ok_or_else(|| hir_error("canonical shared-loan endpoint names an unknown loan"))?;
+            let key = (
+                endpoint.point.expression.clone(),
+                endpoint.point.phase,
+                *loan,
+            );
+            let first = live_probe.partition_point(|entry| entry.0 < key);
+            if storage.live(&key).is_some() || live_probe[first].2 < source {
+                return Err(hir_error("canonical shared-loan liveness is duplicated"));
+            }
+            source += 1;
+        }
+    }
+    scratch.ids.clear();
+    let id_probe = &mut scratch.ids;
+    ensure_probe(id_probe, plan.loans.len(), payer)?;
+    id_probe.extend(
+        plan.loans
+            .iter()
+            .enumerate()
+            .map(|(source, loan)| ((loan.site.clone(), loan.cause.clone()), loan.id, source)),
+    );
+    id_probe.sort_unstable_by(|a, b| a.0.cmp(&b.0).then(a.2.cmp(&b.2)));
+    for (source, loan) in plan.loans.iter().enumerate() {
+        let key = (loan.site.clone(), loan.cause.clone());
+        let first = id_probe.partition_point(|entry| entry.0 < key);
+        if loan.start.phase != LoanPointPhase::Before
+            || storage.id(&key).is_some()
+            || id_probe[first].2 < source
+        {
+            return Err(hir_error(
+                "canonical shared-loan identity is ambiguous or malformed",
+            ));
+        }
+    }
+    // No partial plan directory is published. Growth prepays full replacement
+    // capacities while old backing is still live, never a delta or refund.
+    let id_needed = count(storage.ids.len(), id_probe.len(), payer)?;
+    let live_needed = count(storage.liveness.len(), live_probe.len(), payer)?;
+    let origin_needed = count(storage.origins.len(), plan.loans.len(), payer)?;
+    ensure(&mut storage.ids, id_needed, payer)?;
+    ensure(&mut storage.liveness, live_needed, payer)?;
+    ensure(&mut storage.origins, origin_needed, payer)?;
+    storage
+        .ids
+        .extend(id_probe.drain(..).map(|(key, id, _)| (key, id)));
+    storage.liveness.extend(
+        live_probe
+            .drain(..)
+            .map(|(key, ordinal, _)| (key, ordinal.expect("checked every source endpoint"))),
+    );
+    storage
+        .origins
+        .extend(plan.loans.into_iter().map(|loan| loan.origin));
+    storage.ids.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+    storage.liveness.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+    Ok(())
+}
+
+#[cfg(test)]
+pub(super) fn capacity_failure(requested: usize, excess: usize) -> Diagnostic {
+    Payer::current().capacity(requested, excess)
+}
+
+// Saved raw receiver preserves the complete original literal paid controls.
+// Production preparation always uses append above, never this compatibility seam.
+#[cfg(test)]
+pub(super) fn from_plans<'a>(
+    program: &'a ResolvedProgram,
+    plans: Vec<LoanPlan>,
+) -> Result<Storage<'a>, Diagnostic> {
+    super::caller_before::from_plans(program, plans)
+}
+
+// Raw plan injection exists only for independent receiver/error-priority tests.
+// Production acquisition requires the unconstructible current ConstructorSeed.
+#[cfg(test)]
+pub(super) fn from_plans_reused<'a>(
+    program: &'a ResolvedProgram,
+    plans: Vec<LoanPlan>,
+) -> Result<Storage<'a>, Diagnostic> {
+    let mut storage = Storage {
+        program,
+        ids: Vec::new(),
+        liveness: Vec::new(),
+        origins: Vec::new(),
+        _scratch: Scratch::default(),
+    };
+    let payer = Payer::current();
+    payer.reserve(0)?;
+    for plan in plans {
+        append(&mut storage, plan, payer)?;
+    }
+    Ok(storage)
+}
+
+#[cfg(test)]
+pub(super) fn append_for_receiving(
+    storage: &mut Storage<'_>,
+    plan: LoanPlan,
+) -> Result<(), Diagnostic> {
+    append(storage, plan, Payer::current())
+}
+
+#[cfg(test)]
+mod stage_tests;
+
+
+FILE src/hir/canonical_loan_storage/caller/owned_before.rs:1-71
+//! Complete original paid preparation receiver, independently compiled.
+use super::*;
+pub(super) fn prepare_original<'a>(
+    seed: &ConstructorSeed<'_>,
+    program: &'a ResolvedProgram,
+) -> Result<(Storage<'a>, Deferred<'a>), Diagnostic> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::CanonicalLoanStorage,
+    );
+    if !std::ptr::eq(seed.program(), program) {
+        return Err(hir_error(
+            "canonical shared-loan constructor belongs to another program",
+        ));
+    }
+    // Acquisition follows the unchanged ModuleIndex and ConstructorSeed
+    // phases. One report/ledger is held across ALL plans and their append; a
+    // storage-only test injection keeps its separate legacy payer below.
+    let captured = if crate::bounded_output::active_remaining().is_some() {
+        Some(CfgReservation::acquire().map_err(|_| refused())?)
+    } else {
+        None
+    };
+    let payer = captured
+        .as_ref()
+        .map_or_else(Payer::current, Payer::Captured);
+    let result = (|| {
+        payer.reserve(0)?;
+        let mut deferred = Deferred::new(program);
+        let mut storage = Storage {
+            program,
+            ids: Vec::new(),
+            liveness: Vec::new(),
+            origins: Vec::new(),
+            _scratch: Scratch::default(),
+        };
+        for function in program
+            .functions
+            .iter()
+            .chain(program.function_instances.iter().map(|i| &i.function))
+        {
+            let plan = match captured.as_ref() {
+                Some(owner) => {
+                    match crate::loan_plan::build_plan_with_reservation(program, function, owner) {
+                        Ok(plan) => plan,
+                        Err(crate::loan_plan::FundedError::Physical(reason)) => {
+                            // The tag is copied from this exact owner's first failure.
+                            debug_assert_eq!(owner.first(), Some(reason));
+                            return Err(refused());
+                        }
+                        Err(crate::loan_plan::FundedError::Semantic(error)) => return Err(error),
+                    }
+                }
+                None => crate::loan_plan::build_plan(program, function)?,
+            };
+            // Compare the COMPLETE plan before append consumes it. An
+            // attached plan is never a sizing/admission source.
+            deferred.compare(function, &plan);
+            append(&mut storage, plan, payer)?;
+        }
+        Ok((storage, deferred))
+    })();
+    // Only this exact affine owner can mark physical failure. Never infer
+    // payment from H006 text, and never reserve/render after semantic error.
+    if let Some(owner) = captured {
+        if owner.first().is_some() {
+            return Err(owner.diagnostic());
+        }
+    }
+    result
+}
+
+
+FILE src/hir/canonical_loan_storage/caller/stage_tests.rs:1-85
+use super::*;
+use crate::bounded_output::{self, ReservationStage};
+use crate::test_allocation_observer::measure;
+
+#[test]
+fn actual_prepare_stage_keeps_full_old_storage_diagnostics_numeric_receipts_and_drop() {
+    let program = super::super::tests::fixture();
+    let seed = ConstructorSeed::authenticate(&program, None).unwrap();
+    let (expected, deferred) = owned_before::prepare_original(&seed, &program).unwrap();
+    drop(deferred);
+    let run = |saved, limit| {
+        bounded_output::with_limit_usage_refusal(limit, || {
+            bounded_output::with_reservation_stage(ReservationStage::FreshResolution, || {
+                measure(|| {
+                    let result = if saved {
+                        owned_before::prepare_original(&seed, &program)
+                    } else {
+                        prepare_with_comparison(&seed, &program)
+                    };
+                    let diagnostic = match result {
+                        Ok((storage, deferred)) => {
+                            assert_eq!(storage.ids, expected.ids);
+                            assert_eq!(storage.liveness, expected.liveness);
+                            assert_eq!(storage.origins, expected.origins);
+                            drop(deferred);
+                            drop(storage);
+                            None
+                        }
+                        Err(error) => {
+                            assert!(!bounded_output::reserve_active_required(0));
+                            let retry = if saved {
+                                owned_before::prepare_original(&seed, &program)
+                            } else {
+                                prepare_with_comparison(&seed, &program)
+                            }
+                            .err()
+                            .unwrap();
+                            assert_eq!(retry.code, "SPX-H006");
+                            assert!(retry.message.is_empty());
+                            drop(retry);
+                            Some(error)
+                        }
+                    };
+                    // Retain only fixed diagnostic equality coordinates outside
+                    // the observer; owned error backing is freed inside it.
+                    let failed = diagnostic.is_some();
+                    if let Some(error) = diagnostic {
+                        let expected = if limit == 0 {
+                            ""
+                        } else {
+                            "canonical loan CFG storage reservation refused"
+                        };
+                        assert_eq!(error.code, "SPX-H006");
+                        assert_eq!(error.severity, crate::diagnostic::Severity::Error);
+                        assert_eq!(error.message, expected);
+                        assert!(
+                            error.path.is_none() && error.span.is_none() && error.help.is_none()
+                        );
+                        drop(error);
+                    }
+                    failed
+                })
+            })
+        })
+    };
+    let (_, overflow, exact, first) = run(false, usize::MAX);
+    assert!(!overflow && first.is_none());
+    for limit in [usize::MAX, exact, exact - 1, 0] {
+        let old = run(true, limit);
+        let current = run(false, limit);
+        assert_eq!(current.0, old.0);
+        assert_eq!((current.1, current.2), (old.1, old.2));
+        let mut normalized = current.3;
+        if let Some(receipt) = &mut normalized {
+            assert_eq!(receipt.stage, Some(ReservationStage::CanonicalLoanStorage));
+            receipt.stage = Some(ReservationStage::FreshResolution);
+        }
+        assert_eq!(normalized, old.3);
+        let metrics = current.0 .1;
+        assert!(!metrics.invalid);
+        assert_eq!(metrics.allocated, metrics.freed);
+        assert_eq!(metrics.live, 0);
+        assert!(metrics.allocated <= current.2 && metrics.highwater <= current.2);
+    }
+}
+
+
+FILE src/hir/canonical_loan_storage/tests/reuse.rs:255-350
+fn complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are_bound() {
+    use sha2::{Digest, Sha256};
+    let digest = |text: &str| {
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(text.as_bytes()))
+        )
+    };
+    let old = include_str!("../../../../docs/evidence/canonical-loan-scratch/caller_before.txt");
+    assert_eq!(
+        digest(old),
+        "47bec8003e7c5e7056edd1a3beeadddc355c9d422fdf184df71d1d3f0b9e7f0b"
+    );
+    let hooks = include_str!("../../../../docs/evidence/canonical-loan-scratch/caller-hooks.json");
+    assert_eq!(
+        digest(hooks),
+        "e368abf524b313f744b7ae4d7b8aeacae3e3d0079cc67a0af300b036c95a6b13"
+    );
+    let hooks: serde_json::Value = serde_json::from_str(hooks).unwrap();
+    let mut projected = include_str!("../caller.rs").to_owned();
+    // Exact additive production stage and test registration only; preserve
+    // every byte of the complete original preparation receiver below.
+    for addition in [
+        "    let _stage = crate::bounded_output::reservation_stage_guard(\n        crate::bounded_output::ReservationStage::CanonicalLoanStorage,\n    );\n",
+        "\n#[cfg(test)]\nmod stage_tests;\n",
+    ] {
+        assert_eq!(projected.matches(addition).count(), 1);
+        projected = projected.replacen(addition, "", 1);
+    }
+    // The prior shared publication factored this exact complete body into
+    // prepare_sealed. Undo only that named namespace/result adapter as well.
+    for (current, original) in [
+        ("fn prepare_with_comparison<'a>(\n    seed: &ConstructorSeed<'_>,\n    program: &'a ResolvedProgram,\n) -> Result<(Storage<'a>, Deferred<'a>), Diagnostic> {\n    prepare_sealed(seed, program, |storage, _| Ok(storage))\n}\n\npub(in crate::hir) fn prepare_shared<'a>(\n    seed: &ConstructorSeed<'a>,\n) -> Result<std::rc::Rc<Storage<'a>>, Diagnostic> {\n    // Compatibility construction never finishes Deferred: attached plan\n    // mismatch remains selected by the complete ordinary validator afterward.\n    prepare_sealed(seed, seed.program(), shared::seal).map(|(storage, _)| storage)\n}\n\n#[cfg(test)]\nmod owned_before;\nmod shared;\n\nfn prepare_sealed<'a, T>(\n    seed: &ConstructorSeed<'_>,\n    program: &'a ResolvedProgram,\n    seal: impl FnOnce(Storage<'a>, Payer<'_>) -> Result<T, Diagnostic>,\n) -> Result<(T, Deferred<'a>), Diagnostic> {\n", "fn prepare_with_comparison<'a>(\n    seed: &ConstructorSeed<'_>,\n    program: &'a ResolvedProgram,\n) -> Result<(Storage<'a>, Deferred<'a>), Diagnostic> {\n"),
+        ("        Ok((seal(storage, payer)?, deferred))", "        Ok((storage, deferred))"),
+    ] {
+        assert_eq!(projected.matches(current).count(), 1);
+        projected = projected.replacen(current, original, 1);
+    }
+    for hook in hooks["hooks"].as_array().unwrap() {
+        let current = hook["current"].as_str().unwrap();
+        assert_eq!(projected.matches(current).count(), 1, "{}", hook["name"]);
+        projected = projected.replacen(current, hook["original"].as_str().unwrap(), 1);
+    }
+    // Independent saved source predates allocation-free test attribution.
+    // Remove only the three exact guarded hooks; every old body byte still
+    // participates in the final equality below.
+    for hook in [
+        "    #[cfg(test)]\n    let _operation = crate::bounded_output::stage_debits::operation_guard(\n        crate::bounded_output::stage_debits::Operation::CoreValidation,\n    );\n",
+        "    #[cfg(test)]\n    let _operation = crate::bounded_output::stage_debits::operation_guard(\n        crate::bounded_output::stage_debits::Operation::CanonicalLoanStorage,\n    );\n",
+    ] {
+        assert_eq!(projected.matches(hook).count(), 1);
+        projected = projected.replacen(hook, "", 1);
+    }
+    let guarded_constructor = "    let validator = {\n        #[cfg(test)]\n        let _operation = crate::bounded_output::stage_debits::operation_guard(\n            crate::bounded_output::stage_debits::Operation::ValidatorConstructor,\n        );\n        HirValidator::with_storage(seed, &storage)?\n    };";
+    assert_eq!(projected.matches(guarded_constructor).count(), 1);
+    projected = projected.replacen(
+        guarded_constructor,
+        "    let validator = HirValidator::with_storage(seed, &storage)?;",
+        1,
+    );
+    assert_eq!(projected, old);
+    let mut compiled_old = include_str!("../caller_before.rs").to_owned();
+    // Remove the longer indentation first: the shorter line is its substring.
+    for field in [
+        "            _scratch: Scratch::default(),\n",
+        "        _scratch: Scratch::default(),\n",
+    ] {
+        assert_eq!(compiled_old.matches(field).count(), 1);
+        compiled_old = compiled_old.replacen(field, "", 1);
+    }
+    assert_eq!(compiled_old, old);
+    let old_storage =
+        include_str!("../../../../docs/evidence/canonical-loan-scratch/storage_before.txt");
+    assert_eq!(
+        digest(old_storage),
+        "088a2d91895c12065ada643e98c96f1a1f261aa78923d24b19662cd27795e0bc"
+    );
+    let mut current_storage = include_str!("../../canonical_loan_storage.rs").to_owned();
+    for addition in ["#[cfg(test)]\nmod caller_before;\nmod scratch;\nuse scratch::Scratch;\n", "    // Retain reusable paid append backing with this exact receiving owner.\n    _scratch: Scratch,\n"] {
+        assert_eq!(current_storage.matches(addition).count(), 1);
+        current_storage = current_storage.replacen(addition, "", 1);
+    }
+    assert_eq!(current_storage, old_storage);
+    let old_tests =
+        include_str!("../../../../docs/evidence/canonical-loan-scratch/tests_before.txt");
+    assert_eq!(
+        digest(old_tests),
+        "2db71a1312772f847fe19c934ee47c54a685a6562fd59cb4090f99879a15a8e7"
+    );
+    let registration = "mod reuse;\n// The existing literal from_plans controls below retain the complete saved\n// allocation receiver. reuse tests exercise the actual production append path.\n";
+    let tests = include_str!("../tests.rs");
+    assert_eq!(tests.matches(registration).count(), 1);
+    assert_eq!(tests.replacen(registration, "", 1), old_tests);
+}
+
+#[test]
+
+
+FILE src/workspace_graph/diagnostics.rs:265-295
+pub(super) fn live_builder_refusal(
+    maximum: usize,
+    refusal: Option<crate::bounded_output::ReservationRefusal>,
+) -> Diagnostic {
+    let diagnostic = limit_error("builder_bytes", maximum);
+    let evidence = match refusal {
+        Some(refusal) => crate::bounded_output::budgeted_format(format_args!(
+            "resolved-core phase first sticky ledger refusal: requested {} bytes with {} remaining and {} reserved floor. Authenticated internal stage: {}. These are cumulative reservation bytes, not a retained-memory forecast or process RSS; the exact inner operation is unknown.",
+            refusal.requested, refusal.remaining, refusal.floor, refusal.stage.map_or("unknown", |stage| stage.label()),
+        )),
+        None => crate::bounded_output::budgeted_format(format_args!(
+            "resolved-core phase refused; the first reservation and exact inner operation are unknown."
+        )),
+    };
+    if evidence.is_empty() {
+        return diagnostic;
+    }
+    let help = match diagnostic.help.as_deref() {
+        Some(help) => crate::bounded_output::budgeted_format(format_args!("{help} {evidence}")),
+        None => evidence,
+    };
+    if help.is_empty() {
+        diagnostic
+    } else {
+        diagnostic.with_help(help)
+    }
+}
+
+#[cfg(test)]
+mod refusal_tests;
+
+
+
+FILE src/workspace_graph/diagnostics/refusal_tests.rs:87-154
+    };
+    let current = ReservationRefusal {
+        stage: Some(ReservationStage::CanonicalLoanStorage),
+        ..legacy
+    };
+    let old = live_builder_refusal(1024, Some(legacy));
+    let mut new = live_builder_refusal(1024, Some(current));
+    let help = new.help.as_ref().unwrap();
+    assert!(help.contains("requested 64 bytes with 32 remaining and 8 reserved floor"));
+    assert!(
+        help.contains("Authenticated internal stage: canonical shared-loan storage preparation.")
+    );
+    assert!(help.contains("exact inner operation is unknown"));
+    new.help = new.help.map(|help| {
+        help.replace(
+            "Authenticated internal stage: canonical shared-loan storage preparation.",
+            "Authenticated internal stage: unknown.",
+        )
+    });
+    assert_eq!(new, old); // all six Diagnostic fields, not just primary text
+
+    let (_, overflow, base_paid) = bounded_output::with_limit_usage(usize::MAX, || {
+        drop(limit_error("builder_bytes", 1024));
+    });
+    assert!(!overflow && base_paid > 0);
+    for limit in [base_paid, base_paid - 1, 0] {
+        let baseline =
+            bounded_output::with_limit_usage_refusal(limit, || limit_error("builder_bytes", 1024));
+        let rendered = bounded_output::with_limit_usage_refusal(limit, || {
+            live_builder_refusal(1024, Some(current))
+        });
+        assert_eq!(rendered.0, baseline.0);
+        assert_eq!(rendered.2, baseline.2);
+        assert!(rendered.1);
+    }
+    let (((), metrics), _, _) = bounded_output::with_limit_usage(usize::MAX, || {
+        crate::test_allocation_observer::measure(|| {
+            drop(live_builder_refusal(1024, Some(current)));
+        })
+    });
+    assert!(!metrics.invalid);
+    assert_eq!(metrics.allocated, metrics.freed);
+    assert_eq!(metrics.live, 0);
+}
+
+#[test]
+fn final_attempt_help_never_imports_canonical_label_from_an_earlier_refused_attempt() {
+    use crate::bounded_output::{self, ReservationStage};
+    let earlier = bounded_output::with_limit_usage_refusal(1, || {
+        bounded_output::with_reservation_stage(ReservationStage::CanonicalLoanStorage, || {
+            assert!(!bounded_output::reserve_active_required(2));
+        });
+    });
+    assert_eq!(
+        earlier.3.unwrap().stage,
+        Some(ReservationStage::CanonicalLoanStorage)
+    );
+    let final_attempt = bounded_output::with_limit_usage_refusal(3, || {
+        assert!(bounded_output::reserve_active_required(1));
+        assert!(!bounded_output::reserve_active_required(4));
+    });
+    assert_eq!((final_attempt.1, final_attempt.2), (true, 1));
+    let help = live_builder_refusal(3, final_attempt.3).help.unwrap();
+    assert!(help.contains("requested 4 bytes with 2 remaining and 0 reserved floor"));
+    assert!(help.contains("Authenticated internal stage: unknown."));
+    assert!(help.contains("exact inner operation is unknown"));
+    assert!(!help.contains("canonical shared-loan storage preparation"));
+}
+
+
+EXACT ISSUE829 SOURCE DIFF
+diff --git a/docs/WORKSPACE-SEMANTIC-GRAPH-V1.md b/docs/WORKSPACE-SEMANTIC-GRAPH-V1.md
+index ec785adfc..9f987104e 100644
+--- a/docs/WORKSPACE-SEMANTIC-GRAPH-V1.md
++++ b/docs/WORKSPACE-SEMANTIC-GRAPH-V1.md
+@@ -209,6 +209,13 @@ validation inventory, uncached synthetic AST peak reservations, authored module
+ signature validation, frontend lookup/resolution/retention and imported Vec
+ instance inventory have narrower operation labels. These labels neither alter
+ the cumulative ledger nor attribute a prior unlabelled refusal retrospectively.
++Canonical shared-loan storage preparation installs its enclosing production
++stage before capturing the existing CFG reservation owner. This fixed label
++covers the preparation scope, including owner acquisition, plan rebuilding,
++append and sealing; it does not identify a particular inner request. The same
++budget, numeric first-sticky receipt, quota/work, restoration and paid help
++omission rules remain authoritative. Test-only operation traces are not
++production attribution, and the exact inner operation remains unknown.
+ These quantities describe the cumulative reservation ledger, not a retained
+ peak forecast, allocator measurement, or process RSS. The SPX-G171 code,
+ message, source immutability, and ceiling are unchanged. Missing evidence is
+diff --git a/src/bounded_output.rs b/src/bounded_output.rs
+index f96c0c236..929b8451b 100644
+--- a/src/bounded_output.rs
++++ b/src/bounded_output.rs
+@@ -49,6 +49,7 @@ pub(crate) enum ReservationStage {
+     HirCleanupPlans,
+     HirYieldProfiles,
+     HirValidation,
++    CanonicalLoanStorage,
+ 
+     RetainedModule,
+     LoanIdentityInventory,
+@@ -86,6 +87,7 @@ impl ReservationStage {
+             Self::HirCleanupPlans => "HIR canonical cleanup plans",
+             Self::HirYieldProfiles => "HIR yield profile validation",
+             Self::HirValidation => "HIR final validation",
++            Self::CanonicalLoanStorage => "canonical shared-loan storage preparation",
+ 
+             Self::RetainedModule => "resolved module retention",
+             Self::LoanIdentityInventory => "loan identity inventory",
+@@ -1227,3 +1229,6 @@ mod resolution_stage_tests;
+ 
+ mod source_owner_scope;
+ pub(crate) use source_owner_scope::source_owner_scope;
++
++#[cfg(test)]
++mod canonical_stage_tests;
+diff --git a/src/hir/canonical_loan_storage/caller.rs b/src/hir/canonical_loan_storage/caller.rs
+index e395bfca0..8fdc2cf28 100644
+--- a/src/hir/canonical_loan_storage/caller.rs
++++ b/src/hir/canonical_loan_storage/caller.rs
+@@ -175,6 +175,9 @@ fn prepare_sealed<'a, T>(
+     program: &'a ResolvedProgram,
+     seal: impl FnOnce(Storage<'a>, Payer<'_>) -> Result<T, Diagnostic>,
+ ) -> Result<(T, Deferred<'a>), Diagnostic> {
++    let _stage = crate::bounded_output::reservation_stage_guard(
++        crate::bounded_output::ReservationStage::CanonicalLoanStorage,
++    );
+     #[cfg(test)]
+     let _operation = crate::bounded_output::stage_debits::operation_guard(
+         crate::bounded_output::stage_debits::Operation::CanonicalLoanStorage,
+@@ -424,3 +427,6 @@ pub(super) fn append_for_receiving(
+ ) -> Result<(), Diagnostic> {
+     append(storage, plan, Payer::current())
+ }
++
++#[cfg(test)]
++mod stage_tests;
+diff --git a/src/hir/canonical_loan_storage/tests/reuse.rs b/src/hir/canonical_loan_storage/tests/reuse.rs
+index 1f41b55f6..57f82f85f 100644
+--- a/src/hir/canonical_loan_storage/tests/reuse.rs
++++ b/src/hir/canonical_loan_storage/tests/reuse.rs
+@@ -272,6 +272,24 @@ fn complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are
+     );
+     let hooks: serde_json::Value = serde_json::from_str(hooks).unwrap();
+     let mut projected = include_str!("../caller.rs").to_owned();
++    // Exact additive production stage and test registration only; preserve
++    // every byte of the complete original preparation receiver below.
++    for addition in [
++        "    let _stage = crate::bounded_output::reservation_stage_guard(\n        crate::bounded_output::ReservationStage::CanonicalLoanStorage,\n    );\n",
++        "\n#[cfg(test)]\nmod stage_tests;\n",
++    ] {
++        assert_eq!(projected.matches(addition).count(), 1);
++        projected = projected.replacen(addition, "", 1);
++    }
++    // The prior shared publication factored this exact complete body into
++    // prepare_sealed. Undo only that named namespace/result adapter as well.
++    for (current, original) in [
++        ("fn prepare_with_comparison<'a>(\n    seed: &ConstructorSeed<'_>,\n    program: &'a ResolvedProgram,\n) -> Result<(Storage<'a>, Deferred<'a>), Diagnostic> {\n    prepare_sealed(seed, program, |storage, _| Ok(storage))\n}\n\npub(in crate::hir) fn prepare_shared<'a>(\n    seed: &ConstructorSeed<'a>,\n) -> Result<std::rc::Rc<Storage<'a>>, Diagnostic> {\n    // Compatibility construction never finishes Deferred: attached plan\n    // mismatch remains selected by the complete ordinary validator afterward.\n    prepare_sealed(seed, seed.program(), shared::seal).map(|(storage, _)| storage)\n}\n\n#[cfg(test)]\nmod owned_before;\nmod shared;\n\nfn prepare_sealed<'a, T>(\n    seed: &ConstructorSeed<'_>,\n    program: &'a ResolvedProgram,\n    seal: impl FnOnce(Storage<'a>, Payer<'_>) -> Result<T, Diagnostic>,\n) -> Result<(T, Deferred<'a>), Diagnostic> {\n", "fn prepare_with_comparison<'a>(\n    seed: &ConstructorSeed<'_>,\n    program: &'a ResolvedProgram,\n) -> Result<(Storage<'a>, Deferred<'a>), Diagnostic> {\n"),
++        ("        Ok((seal(storage, payer)?, deferred))", "        Ok((storage, deferred))"),
++    ] {
++        assert_eq!(projected.matches(current).count(), 1);
++        projected = projected.replacen(current, original, 1);
++    }
+     for hook in hooks["hooks"].as_array().unwrap() {
+         let current = hook["current"].as_str().unwrap();
+         assert_eq!(projected.matches(current).count(), 1, "{}", hook["name"]);
+diff --git a/src/workspace_graph/diagnostics/refusal_tests.rs b/src/workspace_graph/diagnostics/refusal_tests.rs
+index 470439c6d..fe341cc1e 100644
+--- a/src/workspace_graph/diagnostics/refusal_tests.rs
++++ b/src/workspace_graph/diagnostics/refusal_tests.rs
+@@ -75,3 +75,80 @@ fn live_core_stage_receipts_retain_the_actual_request_and_residual() {
+         assert!(help.len() < 4096);
+     }
+ }
++
++#[test]
++fn canonical_prepare_help_changes_only_stage_keeps_inner_unknown_and_paid_omission() {
++    use crate::bounded_output::{self, ReservationRefusal, ReservationStage};
++    let legacy = ReservationRefusal {
++        requested: 64,
++        remaining: 32,
++        floor: 8,
++        stage: None,
++    };
++    let current = ReservationRefusal {
++        stage: Some(ReservationStage::CanonicalLoanStorage),
++        ..legacy
++    };
++    let old = live_builder_refusal(1024, Some(legacy));
++    let mut new = live_builder_refusal(1024, Some(current));
++    let help = new.help.as_ref().unwrap();
++    assert!(help.contains("requested 64 bytes with 32 remaining and 8 reserved floor"));
++    assert!(
++        help.contains("Authenticated internal stage: canonical shared-loan storage preparation.")
++    );
++    assert!(help.contains("exact inner operation is unknown"));
++    new.help = new.help.map(|help| {
++        help.replace(
++            "Authenticated internal stage: canonical shared-loan storage preparation.",
++            "Authenticated internal stage: unknown.",
++        )
++    });
++    assert_eq!(new, old); // all six Diagnostic fields, not just primary text
++
++    let (_, overflow, base_paid) = bounded_output::with_limit_usage(usize::MAX, || {
++        drop(limit_error("builder_bytes", 1024));
++    });
++    assert!(!overflow && base_paid > 0);
++    for limit in [base_paid, base_paid - 1, 0] {
++        let baseline =
++            bounded_output::with_limit_usage_refusal(limit, || limit_error("builder_bytes", 1024));
++        let rendered = bounded_output::with_limit_usage_refusal(limit, || {
++            live_builder_refusal(1024, Some(current))
++        });
++        assert_eq!(rendered.0, baseline.0);
++        assert_eq!(rendered.2, baseline.2);
++        assert!(rendered.1);
++    }
++    let (((), metrics), _, _) = bounded_output::with_limit_usage(usize::MAX, || {
++        crate::test_allocation_observer::measure(|| {
++            drop(live_builder_refusal(1024, Some(current)));
++        })
++    });
++    assert!(!metrics.invalid);
++    assert_eq!(metrics.allocated, metrics.freed);
++    assert_eq!(metrics.live, 0);
++}
++
++#[test]
++fn final_attempt_help_never_imports_canonical_label_from_an_earlier_refused_attempt() {
++    use crate::bounded_output::{self, ReservationStage};
++    let earlier = bounded_output::with_limit_usage_refusal(1, || {
++        bounded_output::with_reservation_stage(ReservationStage::CanonicalLoanStorage, || {
++            assert!(!bounded_output::reserve_active_required(2));
++        });
++    });
++    assert_eq!(
++        earlier.3.unwrap().stage,
++        Some(ReservationStage::CanonicalLoanStorage)
++    );
++    let final_attempt = bounded_output::with_limit_usage_refusal(3, || {
++        assert!(bounded_output::reserve_active_required(1));
++        assert!(!bounded_output::reserve_active_required(4));
++    });
++    assert_eq!((final_attempt.1, final_attempt.2), (true, 1));
++    let help = live_builder_refusal(3, final_attempt.3).help.unwrap();
++    assert!(help.contains("requested 4 bytes with 2 remaining and 0 reserved floor"));
++    assert!(help.contains("Authenticated internal stage: unknown."));
++    assert!(help.contains("exact inner operation is unknown"));
++    assert!(!help.contains("canonical shared-loan storage preparation"));
++}

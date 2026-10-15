@@ -45,6 +45,17 @@ semantic-workspace-init requires exactly <root> <path-set.json>
 Domain failures exit 1 through the common diagnostic renderer and write no
 stdout.
 
+## Additive typed source-only preflight
+
+The source-authored `semantic_workspace::reporting::preflight` accepts a
+canonical path set and `Vec<SemanticWorkspaceSource>` without filesystem access.
+It returns opaque checked facts or the affine `WorkspaceReportFailure` defined
+in [Workspace report owner v1](WORKSPACE-REPORT-OWNER-V1.md). Both selected-replay
+receiving passes preserve their original same-invocation owner on refusal.
+Ordinary directory/source/output reports remain explicitly allocating legacy
+boundaries. This does not change the initializer, lock, CLI, generation schema
+or ACTIVE publication protocol; executable qualification is pending.
+
 ## Canonical control documents
 
 Every document in this section is compact UTF-8 JSON with exactly one terminal
@@ -78,9 +89,13 @@ The selected generation manifest has schema
 path,source_graph_schema,source_revision,source_digest,bytes
 ```
 
-Manifest files retain path order. `source_graph_schema` is exactly one of
-`semaprax.graph.v10` through `semaprax.graph.v14` selected by the authenticated
-per-file HIR. `source_revision` is the existing Graph revision of that file's
+Manifest files retain path order. The base v1 source graph schemas are
+`semaprax.graph.v10` through `semaprax.graph.v14`. Admitted additive language
+profiles register exact additional spellings, including `semaprax.graph.v81`
+for typed Vec constructors, `semaprax.graph.v82` for record row loans, and
+`semaprax.graph.v83` for borrowed `Slice<u8>` traversal (including row loans).
+Every tag is selected by authenticated per-file HIR;
+unknown, padded, suffixed and combined schema spellings remain refused. `source_revision` is the existing Graph revision of that file's
 canonical AST. `source_digest` is
 `sha256("semaprax.semantic-review.source-digest.v1\0" ||
 u64_le(source_byte_length) || exact_canonical_source_bytes)`. There is no
@@ -173,3 +188,12 @@ exact literal path-set/manifest/`ACTIVE` replay test pins workspace revision
 `sha256:88181393a052db1605145236cd3fd2e7f3f24256ce0c90d7968d939fc6a4c4ef`.
 The implemented release regression corpus is HOSTED GREEN. The full
 workspace/product objective remains separately gated.
+
+Graph v84 adds the explicit lexical CopyDiscard statement described in
+[Finite owned-record discard loops v1](FINITE-OWNED-RECORD-DISCARD-LOOPS-V1.md).
+No-feature graph selection remains unchanged.
+
+Graph v85 retains the checked Explicit/Traversal form of scoped Vec field reads,
+as specified in [Scoped Vec Field Source Forms v1](SCOPED-VEC-FIELD-SOURCE-FORMS-V1.md).
+It preserves every admitted inner fact; malformed aliases and frozen evidence
+routes remain closed. Source-only qualification is pending.

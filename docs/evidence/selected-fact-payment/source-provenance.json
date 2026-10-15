@@ -1,0 +1,33 @@
+{
+  "base": "d32d0c5751a608f4eda85b462104173e26d6f8b6",
+  "frozen_failure_subject": "bf29fd8dd3df354df0b055686fc3f4f48e3cfb92",
+  "log": "/Volumes/Semaprax/lane-prompts/large-arena-loan-scratch-817818-bf29-20261013/owning-selected-119.log",
+  "log_sha256": "1996f4d3d4797e4a9846bdce8fd2d54efca4fb659277f02dc3474fbcc2003d06",
+  "original_test_sha256": "1436760b3ed5d4a3b1612092f7d36df62dd6f3e9285af26fa03ab3e56f692228",
+  "current_test_sha256": "725fbcf0b55db270de67a019d45f08259cf731721483da5fb598c7ff3d0f25e2",
+  "full_original_projection_equality": true,
+  "routes": [
+    {
+      "path": "src/cleanup_plan/replay/expression_facts.rs",
+      "bf29_blob": "a5c2b792156dffb61b43dc163d3322b4677b38db",
+      "current_blob": "23a32f53aa4d9348273c2aae19bbe4e8caee1cef",
+      "unchanged_from_failure": false,
+      "sha256": "4a376604a03dbe2d90db4cc322092b25ec926f4ee716dba3c3c1f8676ad1a038"
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/capacity.rs",
+      "bf29_blob": "7c5f8f4276309ab6070a2a5cd2cf2e0b1edcf1a6",
+      "current_blob": "7c5f8f4276309ab6070a2a5cd2cf2e0b1edcf1a6",
+      "unchanged_from_failure": true,
+      "sha256": "ee3bbd81a54e829a6859f5636ed272bc8a9f28177f4f8f4cf99b590243c967bd"
+    },
+    {
+      "path": "src/cleanup_plan/replay/allocation/oracle.rs",
+      "bf29_blob": "6b9e7d14084cb0c819b0f4e0ca33a93c1704c473",
+      "current_blob": "6b9e7d14084cb0c819b0f4e0ca33a93c1704c473",
+      "unchanged_from_failure": true,
+      "sha256": "219b4975a03ce4b8d7afff389e6578012cb2ebade04260477a3f92bd5b781e65"
+    }
+  ],
+  "execution": "source-only; no Cargo/build/tests"
+}

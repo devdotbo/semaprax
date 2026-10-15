@@ -1,5 +1,7 @@
 use semaprax::{codegen, graph, hir, interpreter, parse, verify, wasm};
 use std::process::Command;
+#[path = "vec_sort/lexical_context.rs"]
+mod lexical_context;
 
 fn source() -> String {
     let mut source = String::from("module sort.test; @id(\"sort.main\") fn main()->i64 { ");

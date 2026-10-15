@@ -200,9 +200,11 @@ pub fn execute_entry_source(
                 vec![Diagnostic {
                     code: PANIC_NORMALIZED_DIAGNOSTIC_CODE,
                     severity: Severity::Error,
-                    message: "the embedding execution worker panicked after HIR validation and \
+                    message: std::borrow::Cow::Owned(
+                        "the embedding execution worker panicked after HIR validation and \
                               was normalized before it could cross the embedding API boundary"
-                        .to_owned(),
+                            .to_owned(),
+                    ),
                     path: Some(unit_name.to_owned()),
                     span: None,
                     help: Some(
@@ -255,11 +257,11 @@ pub fn execute_entry_source(
             vec![Diagnostic {
                 code: PANIC_NORMALIZED_DIAGNOSTIC_CODE,
                 severity: Severity::Error,
-                message: format!(
+                message: std::borrow::Cow::Owned(format!(
                     "the embedding execution boundary caught a panic while evaluating {unit_name:?} \
                      and normalized it to this diagnostic instead of letting the unwind cross \
                      the embedding API boundary"
-                ),
+                )),
                 path: Some(unit_name.to_owned()),
                 span: None,
                 help: Some(

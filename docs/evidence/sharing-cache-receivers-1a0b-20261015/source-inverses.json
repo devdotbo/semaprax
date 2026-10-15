@@ -1,0 +1,25 @@
+{
+  "schema": "semaprax.complete-source-inverse-patches.v1",
+  "source_before": "1a0b9d9bc5ce2b36133d61ea4636dc9614f2f41e",
+  "status": "SOURCE_ONLY_CORRECTIONS_UNEXECUTED",
+  "rows": [
+    {
+      "path": "src/project/incremental/cold_source_tests/oracle_owner_before.rs",
+      "current_sha256": "d01121cc328a636f5561d32e295cdeea232c53ec43d9cd42e3100ff96391d287",
+      "original_sha256": "024897c6af50574ba1ca8acfd161d949ca61b47bc2708bf34953a7282502ea7d",
+      "complete_original_archive": "docs/evidence/sharing-cache-receivers-1a0b-20261015/original/src/project/incremental/cold_source_tests/oracle_owner_before.rs",
+      "inverse_patch": "docs/evidence/sharing-cache-receivers-1a0b-20261015/src__project__incremental__cold_source_tests__oracle_owner_before.rs.inverse.patch",
+      "inverse_patch_sha256": "e3daf6742738e6bc4d562c2fa33bcf1d647f03fd5f5fe710b27662c574e97a4e",
+      "original_archives_modified": false
+    },
+    {
+      "path": "src/project/incremental/checked_hir/tests/lifecycle.rs",
+      "current_sha256": "b3610b51d4281bb07bd9125a0565a9a97f098697e8b5d66e8b7a1d2d9f35e065",
+      "original_sha256": "95164f083553b2f49909ec1e4615db436998a76d5228a8d1125714f9a6e59e70",
+      "complete_original_archive": "docs/evidence/sharing-cache-receivers-1a0b-20261015/original/src/project/incremental/checked_hir/tests/lifecycle.rs",
+      "inverse_patch": "docs/evidence/sharing-cache-receivers-1a0b-20261015/src__project__incremental__checked_hir__tests__lifecycle.rs.inverse.patch",
+      "inverse_patch_sha256": "83c653a0ab87788690d6bcd2b593a6c371924f403f28848ab46dbb8a3334fd19",
+      "original_archives_modified": false
+    }
+  ]
+}

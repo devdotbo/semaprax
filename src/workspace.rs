@@ -907,7 +907,7 @@ impl WorkspaceMode {
                             source_graph_schema: schema,
                             source_revision,
                             source_digest,
-                            source,
+                            source: source.into(),
                             declarations: Vec::new(),
                             declaration_count: 0,
                             callable_count: 0,
@@ -1033,7 +1033,7 @@ impl WorkspaceMode {
                                 source_graph_schema: schema,
                                 source_revision,
                                 source_digest,
-                                source,
+                                source: source.into(),
                                 declarations: Vec::new(),
                                 declaration_count: 0,
                                 callable_count: 0,
@@ -3746,7 +3746,7 @@ fn map_post_publication_candidate_diagnostics(diagnostics: Vec<Diagnostic>) -> V
         .map(|diagnostic| {
             let structural = diagnostic.code == "SPX-I209"
                 && (matches!(
-                    diagnostic.message.as_str(),
+                    diagnostic.message.as_ref(),
                     "workspace directory must be real and non-aliased"
                         | "workspace input must be a real regular file"
                         | "workspace input must be a regular file"

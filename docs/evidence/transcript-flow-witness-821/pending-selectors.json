@@ -1,0 +1,198 @@
+[
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "transcript_witness_tests::evaluated_nested_call_witness_keeps_alternatives_distinct_and_full_old_primary",
+    "ignored": false,
+    "source": "src/byte_data_capacity/witness_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "transcript_witness_tests::actual_loop_component_names_indirect_writer_not_allowed_direct_append",
+    "ignored": false,
+    "source": "src/byte_data_capacity/witness_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "transcript_witness_tests::genuine_closed_mutual_cycle_witness_excludes_noncyclic_residual_tail",
+    "ignored": false,
+    "source": "src/byte_data_capacity/witness_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "transcript_witness_tests::optional_witness_exact_short_zero_and_sticky_receiving_drop_are_paid",
+    "ignored": false,
+    "source": "src/byte_data_capacity/witness_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "transcript_witness_tests::source_and_independent_hostile_hir_projection_keep_primary_and_real_write_sites",
+    "ignored": false,
+    "source": "src/byte_data_capacity/witness_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "transcript_witness_tests::wide_late_branch_spill_and_long_identity_omission_keep_full_old_refusal",
+    "ignored": false,
+    "source": "src/byte_data_capacity/witness_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "transcript_witness_tests::complete_original_receivers_and_current_named_hook_projection_are_source_exact",
+    "ignored": false,
+    "source": "src/byte_data_capacity/witness_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "transcript_witness_tests::optional_owned_help_clone_is_paid_and_omits_after_sticky_refusal",
+    "ignored": false,
+    "source": "src/byte_data_capacity/witness_tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "byte_data_capacity::tests::alternative_takes_the_branch_maximum_where_sequence_sums",
+    "ignored": false,
+    "source": "src/byte_data_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "byte_data_capacity::before::tests::alternative_takes_the_branch_maximum_where_sequence_sums",
+    "ignored": false,
+    "source": "src/byte_data_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "byte_data_capacity::tests::cycle_detection_is_scoped_to_the_relevant_call_closure",
+    "ignored": false,
+    "source": "src/byte_data_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "byte_data_capacity::before::tests::cycle_detection_is_scoped_to_the_relevant_call_closure",
+    "ignored": false,
+    "source": "src/byte_data_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "byte_data_capacity::tests::transcript_bytes_sum_within_a_path_and_take_the_maximum_across_paths",
+    "ignored": false,
+    "source": "src/byte_data_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "byte_data_capacity::before::tests::transcript_bytes_sum_within_a_path_and_take_the_maximum_across_paths",
+    "ignored": false,
+    "source": "src/byte_data_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "byte_data_capacity::tests::a_while_admits_only_direct_append_output_in_its_body",
+    "ignored": false,
+    "source": "src/byte_data_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "byte_data_capacity::before::tests::a_while_admits_only_direct_append_output_in_its_body",
+    "ignored": false,
+    "source": "src/byte_data_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "byte_data_capacity::tests::hostile_projections_are_refused_as_compiler_invariants",
+    "ignored": false,
+    "source": "src/byte_data_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "byte_data_capacity::before::tests::hostile_projections_are_refused_as_compiler_invariants",
+    "ignored": false,
+    "source": "src/byte_data_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "useful_data",
+    "selector": "bounded_stdout_transcript::exact_effectful_write_seals_bytes_only_on_success_and_selects_graph_v18",
+    "ignored": false,
+    "source": "tests/useful_data/bounded_stdout_transcript.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "useful_data",
+    "selector": "bounded_stdout_transcript::missing_authority_and_multiple_or_looped_writes_fail_closed",
+    "ignored": false,
+    "source": "tests/useful_data/bounded_stdout_transcript.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "useful_data",
+    "selector": "bounded_stdout_transcript::staged_bytes_are_discarded_on_terminal_language_failure",
+    "ignored": false,
+    "source": "tests/useful_data/bounded_stdout_transcript.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "useful_data",
+    "selector": "bounded_stdout_transcript::standalone_hosted_and_native_profiles_reject_widened_authority_inventory",
+    "ignored": false,
+    "source": "tests/useful_data/bounded_stdout_transcript.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "useful_data",
+    "selector": "bounded_stdout_transcript::reserved_name_and_identity_cannot_be_shadowed_by_authored_declarations",
+    "ignored": false,
+    "source": "tests/useful_data/bounded_stdout_transcript.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "useful_data",
+    "selector": "bounded_stdout_transcript::hostile_hir_cannot_alias_compiler_owned_host_identity",
+    "ignored": false,
+    "source": "tests/useful_data/bounded_stdout_transcript.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "useful_data",
+    "selector": "bounded_stdout_transcript::native_o0_o2_publish_exact_bytes_and_discard_after_failure",
+    "ignored": false,
+    "source": "tests/useful_data/bounded_stdout_transcript.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::byte_capacity::tests::transcript_source_is_fixed_for_a_known_array_root_and_unknown_otherwise",
+    "ignored": false,
+    "source": "src/hir/byte_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::byte_capacity::tests::every_indexed_fact_equals_the_replaced_whole_program_search",
+    "ignored": false,
+    "source": "src/hir/byte_capacity/tests.rs"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "transcript_witness_tests::reservation_only_facade_uses_existing_payer_zero_and_sticky_refusal",
+    "ignored": false,
+    "source": "src/byte_data_capacity/witness_tests.rs"
+  }
+]

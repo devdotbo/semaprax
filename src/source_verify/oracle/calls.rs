@@ -1,6 +1,7 @@
 //! Test-only recursive checking of call and method-call expressions.
 
-use crate::ast::{Expr, Function, ImportResult, Param, ParamMode, Program, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, Function, ImportResult, Param, ParamMode, Type};
 use crate::diagnostic::Diagnostic;
 use crate::source_verify::arguments::{
     activate_borrowed_bytes_call_loans, check_argument_ownership, release_borrowed_bytes_call_loans,
@@ -21,7 +22,7 @@ pub(super) fn oracle_call(
     name: &String,
     type_arguments: &Vec<Type>,
     args: &Vec<Expr>,
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,
@@ -44,10 +45,15 @@ pub(super) fn oracle_call(
     ) {
         return result;
     }
-    // The recursive oracle predates the byte vocabulary. Keep length inspection
-    // independently checked so streaming Chunk + Len exercises both walkers.
-    if name == crate::byte_ops::LEN_NAME {
-        let op = crate::byte_ops::ByteOp::Len;
+    // Independently check the readonly byte vocabulary used by normalization.
+    if let Some(op) = crate::byte_ops::by_name(name).filter(|op| {
+        matches!(
+            op,
+            crate::byte_ops::ByteOp::Len
+                | crate::byte_ops::ByteOp::Range
+                | crate::byte_ops::ByteOp::BytesAsSlice
+        )
+    }) {
         if !type_arguments.is_empty() {
             diagnostics.push(error(
                 program,
@@ -67,6 +73,24 @@ pub(super) fn oracle_call(
                 ),
                 expr.span,
             ));
+        }
+        if op.is_view()
+            && args.first().is_none_or(|argument| {
+                !crate::source_verify::arguments::source_byte_view_place_is_admitted(
+                    op, argument, variables, types,
+                )
+            })
+        {
+            let diagnostic = error(
+                program,
+                "SPX-T266",
+                format!("borrowed view `{name}` requires an exact admitted storage place"),
+                expr.span,
+            );
+            diagnostics.push(match args.first() {
+                Some(argument) => diagnostic.with_help(hints::view_place_help(name, argument)),
+                None => diagnostic,
+            });
         }
         for (index, argument) in args.iter().enumerate() {
             if let Some(actual) = check_expr(
@@ -213,16 +237,63 @@ pub(super) fn oracle_call(
         }
         return Some(CheckedValue::returned(*result, false));
     }
-    if let Some(op) = crate::vec_ops::by_name(name) {
-        let element = type_arguments.first();
-        if type_arguments.len() != 1
-            || element.is_none_or(|ty| {
-                !crate::vec_ops::ast_operation_element_is_admitted(op, ty)
-                    && !crate::vec_ops::source_parameter_is_admitted(program, current, op, ty)
-                    && !crate::source_verify::declared_type::owned_record_collection::
-                        admits_vec_operation_element(types, op, ty)
-            })
+    let args = if name == crate::vec_ops::sort_keys::NAME {
+        if !current.type_parameters.is_empty()
+            || crate::source_verify::sort_keys::descriptor(types, type_arguments, args).is_none()
         {
+            diagnostics.push(error(program,"SPX-T311","vec_sort_by requires an explicit monomorphic record and 1..8 unique literal field:asc/field:desc keys",expr.span));
+            return None;
+        }
+        &args[..1]
+    } else if name == crate::vec_ops::field_unique::NAME {
+        if !current.type_parameters.is_empty()
+            || crate::source_verify::field_unique::descriptor(
+                types,
+                type_arguments,
+                args,
+                variables,
+            )
+            .is_none()
+        {
+            diagnostics.push(error(
+                program,
+                "SPX-T319",
+                crate::vec_ops::field_unique::SHAPE,
+                expr.span,
+            ));
+            return None;
+        }
+        &args[..1]
+    } else {
+        args
+    };
+    if let Some(op) = crate::vec_ops::by_name(name) {
+        if op == crate::vec_ops::VecOp::StrAt
+            && (!current.type_parameters.is_empty()
+                || crate::source_verify::string_slot::root(type_arguments, args, variables)
+                    .is_none())
+        {
+            diagnostics.push(error(
+                program,
+                "SPX-T281",
+                crate::vec_ops::string_slot::SHAPE,
+                expr.span,
+            ));
+        }
+        let element = if op == crate::vec_ops::VecOp::StrAt {
+            Some(&Type::String)
+        } else {
+            type_arguments.first()
+        };
+        if (if op == crate::vec_ops::VecOp::StrAt {
+            !type_arguments.is_empty()
+        } else {
+            type_arguments.len() != 1
+        }) || element.is_none_or(|ty| {
+            !crate::source_verify::declared_type::owned_leaf_collection::vec_operation_admitted(
+                types, op, ty,
+            ) && !crate::vec_ops::source_parameter_is_admitted(program, current, op, ty)
+        }) {
             diagnostics.push(error(
                 program,
                 "SPX-T281",
@@ -262,8 +333,8 @@ pub(super) fn oracle_call(
                     op,
                     element,
                     *element == crate::ast::Type::Bytes
-                        || crate::source_verify::declared_type::owned_record_collection::
-                            is_admitted_owned_record_collection_element(types, element),
+                        || crate::source_verify::declared_type::owned_leaf_collection::admitted(types, element)
+                        || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(types, element),
                 )
             })
             .unwrap_or_default();
@@ -309,7 +380,15 @@ pub(super) fn oracle_call(
             );
         }
         return element.map(|element| {
-            CheckedValue::returned(op.ast_return_type(element), op.returns_owner())
+            if op == crate::vec_ops::VecOp::StrAt {
+                CheckedValue {
+                    ty: Type::Str,
+                    mode: ParamMode::Borrow,
+                    native_unit: false,
+                }
+            } else {
+                CheckedValue::returned(op.ast_return_type(element), op.returns_owner())
+            }
         });
     }
     if let Some(op) = crate::list_ops::by_name(name) {
@@ -373,8 +452,9 @@ pub(super) fn oracle_call(
         if type_arguments.len() != 1
             || element.is_none_or(|ty| {
                 !crate::iterator_ops::ast_element_is_admitted(ty)
-                    && !crate::source_verify::declared_type::owned_record_collection::
-                        is_admitted_owned_record_collection_element(types, ty)
+                    && !crate::source_verify::declared_type::owned_leaf_collection::runtime_element(
+                        types, ty,
+                    )
             })
         {
             diagnostics.push(error(
@@ -518,6 +598,165 @@ pub(super) fn oracle_call(
             )
         });
     }
+    if name == crate::vec_field::NAME {
+        let Some((params, ty)) =
+            crate::source_verify::vec_field::signature(types, type_arguments, args, expr.span)
+        else {
+            diagnostics.push(error(program,"SPX-T310","vec_field requires one admitted owned record type, a named Vec and usize index, and an exact literal field selector",expr.span));
+            return None;
+        };
+        if !current.type_parameters.is_empty() {
+            diagnostics.push(error(
+                program,
+                "SPX-T310",
+                "vec_field is not admitted in generic function templates",
+                expr.span,
+            ));
+        }
+        let loans = activate_borrowed_bytes_call_loans(program, args, &params, variables, types);
+        for (arg, param) in args.iter().zip(&params) {
+            let actual = check_expr(
+                program,
+                current,
+                arg,
+                variables,
+                functions,
+                types,
+                result_type,
+                allow_moves,
+                diagnostics,
+            );
+            if let Some(actual) = &actual {
+                reject_native_unit_value(program, arg, actual, diagnostics);
+                if actual.ty != param.ty {
+                    diagnostics.push(error(
+                        program,
+                        "SPX-T205",
+                        "vec_field argument type differs",
+                        arg.span,
+                    ));
+                }
+            }
+            check_argument_ownership(
+                program,
+                current,
+                name,
+                arg,
+                param,
+                actual.as_ref(),
+                variables,
+                types,
+                allow_moves,
+                false,
+                false,
+                diagnostics,
+            );
+        }
+        release_borrowed_bytes_call_loans(variables, &loans);
+        let mode = if matches!(ty, Type::Str | Type::SliceU8) {
+            ParamMode::Borrow
+        } else {
+            ParamMode::Value
+        };
+        return Some(CheckedValue {
+            ty,
+            mode,
+            native_unit: false,
+        });
+    }
+    if name == crate::literal_format::NAME {
+        if !type_arguments.is_empty() || !current.type_parameters.is_empty() {
+            diagnostics.push(error(
+                program,
+                "SPX-T225",
+                "string_format is admitted only in monomorphic functions without type arguments",
+                expr.span,
+            ));
+        }
+        let Some(Expr {
+            kind: crate::ast::ExprKind::String(template),
+            ..
+        }) = args.first()
+        else {
+            diagnostics.push(error(
+                program,
+                "SPX-T204",
+                "string_format requires a compile-time string literal as its first argument",
+                expr.span,
+            ));
+            return None;
+        };
+        match crate::literal_format::scan(template) {
+            Ok(pieces) if crate::literal_format::field_count(&pieces) != args.len() - 1 => {
+                diagnostics.push(error(
+                    program,
+                    "SPX-T204",
+                    format!(
+                        "string_format literal has {} fields, received {} values",
+                        crate::literal_format::field_count(&pieces),
+                        args.len() - 1
+                    ),
+                    expr.span,
+                ))
+            }
+            Err(reason) => {
+                diagnostics.push(error(program, "SPX-T204", reason.message(), args[0].span))
+            }
+            _ => {}
+        }
+        for (index, arg) in args.iter().enumerate().skip(1) {
+            let actual = check_expr(
+                program,
+                current,
+                arg,
+                variables,
+                functions,
+                types,
+                result_type,
+                allow_moves,
+                diagnostics,
+            );
+            if let Some(actual) = actual {
+                reject_native_unit_value(program, arg, &actual, diagnostics);
+                if !actual.native_unit && !crate::literal_format::accepts_ast_type(&actual.ty) {
+                    diagnostics.push(error(
+                        program,
+                        "SPX-T205",
+                        format!(
+                            "string_format value {} must be i64, u8, usize, bool, or own string",
+                            index - 1
+                        ),
+                        arg.span,
+                    ));
+                }
+                let parameter = Param {
+                    name: format!("value{}", index - 1),
+                    mode: if actual.ty == Type::String {
+                        ParamMode::Own
+                    } else {
+                        ParamMode::Value
+                    },
+                    ty: actual.ty.clone(),
+                    span: arg.span,
+                };
+                check_argument_ownership(
+                    program,
+                    current,
+                    name,
+                    arg,
+                    &parameter,
+                    Some(&actual),
+                    variables,
+                    types,
+                    allow_moves,
+                    false,
+                    false,
+                    diagnostics,
+                );
+            }
+        }
+        return Some(CheckedValue::returned(Type::String, true));
+    }
     if crate::map_ops::by_generic_name(name, type_arguments).is_some()
         || crate::string_ops::by_name(name).is_some()
         || crate::str_ops::by_name(name).is_some()
@@ -538,7 +777,7 @@ pub(super) fn oracle_call(
         );
     }
     let native_import = program
-        .interfaces
+        .interfaces()
         .iter()
         .flat_map(|interface| &interface.imports)
         .find(|import| import.native_rust && import.name == *name);
@@ -762,23 +1001,39 @@ pub(super) fn oracle_call(
         }
         validation_specialize_function(target, type_arguments)
     });
-    let borrowed_bytes_loans = target
-        .filter(|target| target.type_parameters.is_empty())
-        .map_or_else(Vec::new, |target| {
-            activate_borrowed_bytes_call_loans(args, &target.params, variables, types)
-        });
+    let borrowed_bytes_loans = specialized_target.as_ref().map_or_else(Vec::new, |target| {
+        activate_borrowed_bytes_call_loans(program, args, &target.params, variables, types)
+    });
     for (index, arg) in args.iter().enumerate() {
-        let actual = check_expr(
-            program,
-            current,
-            arg,
-            variables,
-            functions,
-            types,
-            result_type,
-            allow_moves,
-            diagnostics,
-        );
+        // Row Loan v1: the one admitted value use of a traversal row.
+        let loan = target.and_then(|target| {
+            super::super::record_traversal::row_loan::loan_argument(
+                arg, target, index, variables, types,
+            )
+            .inspect(|_| {
+                if !super::super::record_traversal::row_loan::reader_proof(types, target, index) {
+                    diagnostics.push(error(
+                        program,
+                        "SPX-T284",
+                        super::super::record_traversal::row_loan::HELPER_REFUSAL,
+                        arg.span,
+                    ));
+                }
+            })
+        });
+        let actual = loan.or_else(|| {
+            check_expr(
+                program,
+                current,
+                arg,
+                variables,
+                functions,
+                types,
+                result_type,
+                allow_moves,
+                diagnostics,
+            )
+        });
         let Some(param) = specialized_target
             .as_ref()
             .and_then(|target| target.params.get(index))
@@ -835,7 +1090,7 @@ pub(super) fn oracle_method_call(
     method: &String,
     type_arguments: &Vec<Type>,
     args: &Vec<Expr>,
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,

@@ -531,9 +531,9 @@ fn push_chain_declarations(
         program.types.push(ResolvedTypeDeclaration {
             id: DeclarationId::new(format!("classifier.chain{tag}.level{level}")),
             name: format!("Level{level}"),
-            type_parameters: Vec::new(),
+            type_parameters: Vec::new().into(),
             kind: ResolvedTypeDeclarationKind::Record {
-                fields: vec![field],
+                fields: vec![field].into(),
             },
             span: Span::default(),
         });
@@ -651,7 +651,7 @@ fn push_balanced_tree_plus_one_declarations(
     program.types.push(ResolvedTypeDeclaration {
         id: DeclarationId::new(format!("classifier.tree{tag}.node0")),
         name: "Node0".to_owned(),
-        type_parameters: Vec::new(),
+        type_parameters: Vec::new().into(),
         kind: ResolvedTypeDeclarationKind::Record {
             fields: vec![ResolvedFieldDeclaration {
                 id: DeclarationId::new(format!("classifier.tree{tag}.node0.leaf")),
@@ -659,7 +659,8 @@ fn push_balanced_tree_plus_one_declarations(
                 index: 0,
                 ty: ResolvedType::Bytes,
                 span: Span::default(),
-            }],
+            }]
+            .into(),
         },
         span: Span::default(),
     });
@@ -669,7 +670,7 @@ fn push_balanced_tree_plus_one_declarations(
         program.types.push(ResolvedTypeDeclaration {
             id: DeclarationId::new(format!("classifier.tree{tag}.node{level}")),
             name: format!("Node{level}"),
-            type_parameters: Vec::new(),
+            type_parameters: Vec::new().into(),
             kind: ResolvedTypeDeclarationKind::Record {
                 fields: vec![
                     ResolvedFieldDeclaration {
@@ -686,7 +687,8 @@ fn push_balanced_tree_plus_one_declarations(
                         ty: child,
                         span: Span::default(),
                     },
-                ],
+                ]
+                .into(),
             },
             span: Span::default(),
         });
@@ -694,7 +696,7 @@ fn push_balanced_tree_plus_one_declarations(
     program.types.push(ResolvedTypeDeclaration {
         id: DeclarationId::new(format!("classifier.tree{tag}.wrapper")),
         name: "Wrapper".to_owned(),
-        type_parameters: Vec::new(),
+        type_parameters: Vec::new().into(),
         kind: ResolvedTypeDeclarationKind::Record {
             fields: vec![
                 ResolvedFieldDeclaration {
@@ -711,7 +713,8 @@ fn push_balanced_tree_plus_one_declarations(
                     ty: ResolvedType::Bytes,
                     span: Span::default(),
                 },
-            ],
+            ]
+            .into(),
         },
         span: Span::default(),
     });

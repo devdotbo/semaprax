@@ -1,33 +1,40 @@
-use std::collections::BTreeSet;
-
+use super::{
+    backend_error, c_case_symbol, c_field_symbol, c_i32, c_i64, c_pattern_literal, c_string,
+    c_value_type, is_aggregate_type, is_direct_plan_owned, record_declaration_id,
+    variant_declaration_id, CBinding, CEmitter, COutput, CValue,
+};
 use crate::aggregate_layout::AggregateLayout;
 use crate::ast::{BinaryOp, UnaryOp};
 use crate::bounded_output::BudgetedJoin as _;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
+use crate::codegen::NativeOutputProfile;
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
     self, DeclarationId, ExpressionId, FunctionExecutionId, PlaceProjection, ResolvedExpr,
     ResolvedExprKind, ResolvedStatement, ResolvedType,
 };
 use crate::variant_layout::VariantLayout;
-
-use super::{
-    backend_error, c_case_symbol, c_field_symbol, c_i32, c_i64, c_pattern_literal, c_string,
-    c_value_type, is_aggregate_type, is_direct_plan_owned, record_declaration_id,
-    variant_declaration_id, CBinding, CEmitter, COutput, CValue,
-};
-
+use std::collections::BTreeSet;
 mod box_ops;
 mod host_command;
 mod iterator_ops;
+mod lexical_block;
+mod lexical_break;
+mod lexical_exit;
+mod lexical_lookup;
 mod list_ops;
 mod nested_owned;
 mod owned_buffer;
 mod owned_try;
 mod owned_values;
+mod partition;
 mod places;
 mod record_iterator_item;
 mod resource_text;
+pub(super) mod row_loan;
+mod scalar_match;
 mod stdin_stream;
+mod str_equality;
 mod unary;
 mod variant_equality;
 mod variant_if;
@@ -41,135 +48,6 @@ struct RecordMatchBindingMode<'a> {
 // `format!` resolves to the bounded codegen macro declared before
 // `mod native_emit`; it must never fall back to `std::format!` here.
 impl<'a, O: COutput> CEmitter<'a, O> {
-    /// Refutable Match v1 native lowering: the scrutinee stages once, then
-    /// every arm tests `!matched && (<literal equality>)` with an optional
-    /// inner guard branch. `&&` short-circuits so a guard evaluates exactly
-    /// once per reached arm whose pattern matched; failing guards leave
-    /// `matched` false and fall through to the following arms. The resolver
-    /// guarantees one trailing irrefutable guard-free catch-all, but the
-    /// defensive no-arm check mirrors exhaustive matches.
-    fn emit_scalar_match(
-        &mut self,
-        expr: &ResolvedExpr,
-        scalar_scrutinee: &ExpressionId,
-        scrutinee: &CValue,
-        arms: &[hir::ResolvedMatchArm],
-    ) -> Result<CValue, Diagnostic> {
-        let staged = self.temporary(&scrutinee.ty)?;
-        self.line(&format!("{staged} = {};", scrutinee.code));
-        let result = if is_direct_plan_owned(self.program, &expr.ty) {
-            self.bytes_plan
-                .ok_or_else(|| backend_error("owned Bytes match has no cleanup plan"))?
-                .value(&crate::cleanup_plan::StorageId::Temporary(expr.id.clone()))?
-                .to_owned()
-        } else {
-            self.temporary(&expr.ty)?
-        };
-        let matched = self.temporary(&ResolvedType::Bool)?;
-        self.line(&format!("{matched} = false;"));
-        // The builder lowers the one admitted guard-free catch-all directly
-        // in its parent region. Every guarded or multi-arm scalar match has
-        // the canonical arm-value child region selected below.
-        let arm_value_has_child_region = arms.len() != 1 || arms[0].guard.is_some();
-        for arm in arms {
-            let saved = self.variables.clone();
-            if let hir::ResolvedMatchPattern::Binding(binding) = &arm.pattern {
-                self.variables.insert(
-                    binding.id.clone(),
-                    CBinding {
-                        name: staged.clone(),
-                        ty: binding.ty.clone(),
-                    },
-                );
-            }
-            let test = match &arm.pattern {
-                hir::ResolvedMatchPattern::Wildcard | hir::ResolvedMatchPattern::Binding(_) => None,
-                hir::ResolvedMatchPattern::Literal(value) => {
-                    Some(format!("{staged} == {}", c_pattern_literal(*value)))
-                }
-                hir::ResolvedMatchPattern::Or(alternatives) => Some(
-                    alternatives
-                        .iter()
-                        .map(|alternative| match alternative {
-                            hir::ResolvedMatchPattern::Literal(value) => {
-                                format!("{staged} == {}", c_pattern_literal(*value))
-                            }
-                            _ => unreachable!("or-pattern alternatives are literals"),
-                        })
-                        .collect::<Vec<_>>()
-                        .join(" || "),
-                ),
-                hir::ResolvedMatchPattern::Variant { .. }
-                | hir::ResolvedMatchPattern::Record { .. } => {
-                    return Err(backend_error(
-                        "aggregate pattern has a Copy-scalar match scrutinee",
-                    ));
-                }
-            };
-            match &test {
-                Some(test) => self.line(&format!("if (!{matched} && ({test})) {{")),
-                None => self.line(&format!("if (!{matched}) {{")),
-            }
-            self.indent += 1;
-            if let Some(guard) = &arm.guard {
-                // The guard evaluates once here, after the pattern matched
-                // and before any part of the arm value; a false guard leaves
-                // `matched` untouched and falls through to the next arm.
-                let flag = self.emit_expr(guard)?;
-                self.require_type(&flag.ty, &ResolvedType::Bool, "match guard")?;
-                self.emit_scalar_match_guard_scope_exit(guard)?;
-                self.line(&format!("if ({}) {{", flag.code));
-                self.indent += 1;
-                self.line(&format!("{matched} = true;"));
-                let value = self.emit_expr(&arm.value)?;
-                self.require_type(&value.ty, &expr.ty, "match arm result")?;
-                if is_direct_plan_owned(self.program, &expr.ty) {
-                    let transfer = self
-                        .bytes_plan
-                        .expect("checked above")
-                        .transfer_scalar_match_arm(&expr.id, &arm.value.id)?;
-                    for line in transfer.lines() {
-                        self.line(line);
-                    }
-                } else {
-                    self.line(&format!("{result} = {};", value.code));
-                }
-                if arm_value_has_child_region {
-                    self.emit_scalar_match_value_scope_exit(scalar_scrutinee, &arm.value)?;
-                }
-                self.indent -= 1;
-                self.line("}");
-            } else {
-                self.line(&format!("{matched} = true;"));
-                let value = self.emit_expr(&arm.value)?;
-                self.require_type(&value.ty, &expr.ty, "match arm result")?;
-                if is_direct_plan_owned(self.program, &expr.ty) {
-                    let transfer = self
-                        .bytes_plan
-                        .expect("checked above")
-                        .transfer_scalar_match_arm(&expr.id, &arm.value.id)?;
-                    for line in transfer.lines() {
-                        self.line(line);
-                    }
-                } else {
-                    self.line(&format!("{result} = {};", value.code));
-                }
-                if arm_value_has_child_region {
-                    self.emit_scalar_match_value_scope_exit(scalar_scrutinee, &arm.value)?;
-                }
-            }
-            self.variables = saved;
-            self.indent -= 1;
-            self.line("}");
-        }
-        self.line(&format!(
-            "if (!{matched}) spx_runtime_invariant_failure(\"refutable match selected no arm\");"
-        ));
-        Ok(CValue {
-            code: result,
-            ty: expr.ty.clone(),
-        })
-    }
     fn emit_str_op(
         &mut self,
         op: crate::str_ops::StrOp,
@@ -231,7 +109,6 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             ty: op.return_type(),
         })
     }
-
     /// Own String temporary descendants in scalar-match guards and arm values
     /// are each scoped by their own canonical child region. The cleanup plan
     /// determines both the region and its finalizer order; lowering only
@@ -322,7 +199,8 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         // plan owns the one remaining transfer out of it.
         if matches!(
             op,
-            crate::byte_ops::ByteOp::Set
+            crate::byte_ops::ByteOp::Partition
+                | crate::byte_ops::ByteOp::Set
                 | crate::byte_ops::ByteOp::Set5
                 | crate::byte_ops::ByteOp::Set1Or5
                 | crate::byte_ops::ByteOp::Set1Or6Or48
@@ -339,7 +217,10 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         }
         let return_type = op.return_type();
         self.require_type(result_type, &return_type, "byte operation result")?;
-        let temporary = if op.return_type() == ResolvedType::Bytes {
+        let temporary = if op.return_type() == ResolvedType::Bytes
+            || (op == crate::byte_ops::ByteOp::Partition
+                && self.output_profile == super::NativeOutputProfile::SelectedPartition)
+        {
             self.bytes_plan
                 .as_ref()
                 .ok_or_else(|| {
@@ -353,13 +234,16 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.temporary(&return_type)?
         };
         match op {
+            crate::byte_ops::ByteOp::Partition => {
+                self.emit_partition_call(expression, &arguments, &temporary)?;
+            }
             crate::byte_ops::ByteOp::Len => {
                 let helper = self.resource_text_len_helper(&args[0]);
                 self.line(&format!("{temporary} = {helper}({});", arguments[0].code));
             }
             crate::byte_ops::ByteOp::Get => {
                 let slice = &arguments[0].code;
-                let validator = self.resource_text_validator(&args[0]);
+                let validator = self.resource_text_read_validator(&args[0]);
                 self.line(&format!("{validator}({slice});"));
                 self.emit_option_byte_read(
                     &return_type,
@@ -369,12 +253,35 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     &temporary,
                 )?;
             }
+            crate::byte_ops::ByteOp::ZeroedBounded => {
+                self.emit_owned_buffer_bounded_allocation(&arguments, &temporary)?;
+            }
             crate::byte_ops::ByteOp::Copy | crate::byte_ops::ByteOp::Zeroed => {
                 let (allocator, context) = self.output_profile.byte_allocator(op);
-                self.line(&format!(
-                    "{temporary} = {allocator}({context}{});",
-                    arguments[0].code
-                ));
+                if self.output_profile == NativeOutputProfile::CheckedAllocation {
+                    let (operation, constructor) = if op == crate::byte_ops::ByteOp::Copy {
+                        (crate::cleanup_plan::AllocationOperation::BytesCopy, "copy")
+                    } else {
+                        (
+                            crate::cleanup_plan::AllocationOperation::BytesZeroed,
+                            "zeroed",
+                        )
+                    };
+                    self.checked_string_constructor(
+                        expression,
+                        operation,
+                        &format!(
+                            "spx_checked_native_bytes_{constructor}_v1(spx_ctx, {}, &{temporary})",
+                            arguments[0].code
+                        ),
+                        false,
+                    )?;
+                } else {
+                    self.line(&format!(
+                        "{temporary} = {allocator}({context}{});",
+                        arguments[0].code
+                    ));
+                }
             }
             crate::byte_ops::ByteOp::Set => {
                 self.emit_owned_buffer_set(expression, &arguments, &temporary)?;
@@ -409,7 +316,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             for line in transitions.lines() {
                 self.line(line);
             }
-            if matches!(return_type, ResolvedType::Bytes) {
+            if matches!(return_type, ResolvedType::Bytes)
+                || op == crate::byte_ops::ByteOp::Partition
+            {
                 code = plan
                     .result_at(expression)
                     .ok_or_else(|| {
@@ -529,6 +438,21 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     ty: ResolvedType::Bool,
                 }
             }
+            ResolvedExprKind::BorrowedUtf8Literal(value) => {
+                self.require_type(
+                    &expr.ty,
+                    &ResolvedType::Str,
+                    "static borrowed UTF-8 literal",
+                )?;
+                CValue {
+                    code: format!(
+                        "(spx_str_v1){{ .data = (const uint8_t *)\"{}\", .len = UINT64_C({}) }}",
+                        c_string(value.as_str()),
+                        value.len()
+                    ),
+                    ty: ResolvedType::Str,
+                }
+            }
             ResolvedExprKind::String(value) => {
                 self.require_type(&expr.ty, &ResolvedType::String, "string literal")?;
                 let temporary = self
@@ -536,11 +460,17 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     .ok_or_else(|| backend_error("owned String literal has no cleanup plan"))?
                     .value(&crate::cleanup_plan::StorageId::Temporary(expr.id.clone()))?
                     .to_owned();
-                self.line(&format!(
-                    "{temporary} = spx_string_from_literal(\"{}\", UINT64_C({}));",
-                    c_string(value),
-                    value.len()
-                ));
+                if self.output_profile == NativeOutputProfile::CheckedAllocation {
+                    self.checked_string_constructor(&expr.id,
+                        crate::cleanup_plan::AllocationOperation::StringLiteral,
+                        &format!("spx_checked_string_adapter_from_literal_v1(spx_checked_native_adapter_v1(spx_ctx), \"{}\", UINT64_C({}), &{temporary})", c_string(value), value.len()), false)?;
+                } else {
+                    self.line(&format!(
+                        "{temporary} = spx_string_from_literal(\"{}\", UINT64_C({}));",
+                        c_string(value),
+                        value.len()
+                    ));
+                }
                 let value = CValue {
                     code: temporary,
                     ty: ResolvedType::String,
@@ -576,7 +506,13 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                         })?
                         .value(&crate::cleanup_plan::StorageId::Temporary(expr.id.clone()))?
                         .to_owned();
-                    self.line(&format!("{temporary} = spx_string_clone({});", value.code));
+                    if self.output_profile == NativeOutputProfile::CheckedAllocation {
+                        self.checked_string_constructor(&expr.id,
+                            crate::cleanup_plan::AllocationOperation::StringClone,
+                            &format!("spx_checked_string_adapter_clone_v1(spx_checked_native_adapter_v1(spx_ctx), {}, &{temporary})", value.code), false)?;
+                    } else {
+                        self.line(&format!("{temporary} = spx_string_clone({});", value.code));
+                    }
                     self.apply_owned_plan_at_value(
                         &expr.id,
                         &CValue {
@@ -664,11 +600,13 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                         ));
                         self.line(&format!("spx_str_require_valid({temporary});"));
                     }
-                    crate::byte_ops::ByteOp::Len
+                    crate::byte_ops::ByteOp::Partition
+                    | crate::byte_ops::ByteOp::Len
                     | crate::byte_ops::ByteOp::Get
                     | crate::byte_ops::ByteOp::Range
                     | crate::byte_ops::ByteOp::Copy
                     | crate::byte_ops::ByteOp::Zeroed
+                    | crate::byte_ops::ByteOp::ZeroedBounded
                     | crate::byte_ops::ByteOp::Set
                     | crate::byte_ops::ByteOp::Set5
                     | crate::byte_ops::ByteOp::Set1Or5
@@ -686,7 +624,20 @@ impl<'a, O: COutput> CEmitter<'a, O> {
     }
 
     pub(super) fn emit_expr(&mut self, expr: &ResolvedExpr) -> Result<CValue, Diagnostic> {
+        let previous = self.active_expression.replace(expr.id.clone());
+        let result = self.emit_expr_in_context(expr);
+        self.active_expression = previous;
+        result
+    }
+
+    fn emit_expr_in_context(&mut self, expr: &ResolvedExpr) -> Result<CValue, Diagnostic> {
+        self.emit_lexical_step_label(&expr.id)?;
         match &expr.kind {
+            ResolvedExprKind::LexicalExit {
+                kind,
+                target,
+                value,
+            } => self.emit_lexical_exit(expr, *kind, target, value.as_deref()),
             ResolvedExprKind::Int(_)
             | ResolvedExprKind::Int32(_)
             | ResolvedExprKind::Char(_)
@@ -698,8 +649,17 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => self.emit_leaf_expr(expr),
+            ResolvedExprKind::VecFieldRead {
+                origin: _,
+                element,
+                field,
+                bytes,
+                args,
+            } => self.emit_vec_field_read(expr, element, field, *bytes, args),
+            ResolvedExprKind::RowLoan { loan, args } => self.emit_row_loan(expr, loan, args),
             ResolvedExprKind::ByteRange {
                 operation,
                 source,
@@ -707,6 +667,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 end,
             } => self.emit_byte_range_expr(expr, operation, source, start, end),
             ResolvedExprKind::HostCommandCall(_) => self.emit_host_command_expr(expr),
+            ResolvedExprKind::LiteralFormat { template, args } => {
+                self.emit_literal_format(expr, template, args)
+            }
             ResolvedExprKind::Call { .. } => self.emit_call_expr(expr),
             ResolvedExprKind::Closure { .. } if expr.ty.is_once_function() => {
                 super::once::construct(self, expr)
@@ -728,10 +691,15 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             ResolvedExprKind::Binary { op, left, right } => {
                 self.emit_binary(*op, left, right, &expr.ty)
             }
-            ResolvedExprKind::Block { statements, .. } if statements.is_empty() => {
+            ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. }
+                if statements.is_empty() =>
+            {
                 self.emit_empty_block_expr(expr)
             }
-            ResolvedExprKind::Block { .. } => self.emit_block_expr(expr),
+            ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. } => {
+                self.emit_block_expr(expr)
+            }
             ResolvedExprKind::If { .. } => self.emit_if_expr(expr),
             ResolvedExprKind::ConstructRecord { .. } => self.emit_construct_record_expr(expr),
             ResolvedExprKind::ConstructVariant { .. } => self.emit_construct_variant_expr(expr),
@@ -781,7 +749,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             "spx_status = {helper}(spx_ctx, {}, {}, {}, &{temporary});",
             source.code, start.code, end.code
         ));
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check()?;
         if let Some(plan) = self.bytes_plan {
             let transitions = plan.apply_at(&expr.id)?;
             for line in transitions.lines() {
@@ -841,7 +809,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                             "host stdout write result",
                         )?;
                         let temporary = self.temporary(&ResolvedType::Usize)?;
-                        self.emit_stdout_write(&args[0], &value.code, &temporary);
+                        self.emit_stdout_write(&args[0], &value.code, &temporary)?;
                         return Ok(CValue {
                             code: temporary,
                             ty: ResolvedType::Usize,
@@ -971,6 +939,10 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         let mut arguments = Vec::with_capacity(args.len());
         for (index, (expected, argument)) in target.params.iter().zip(values).enumerate() {
             self.require_type(&argument.ty, expected, &format!("call argument {index}"))?;
+            if target.lent.get(index) == Some(&true) {
+                arguments.push(self.row_loan_argument(&args[index], &argument)?);
+                continue;
+            }
             arguments.push(if is_direct_plan_owned(self.program, expected) {
                 match target.param_ownerships[index] {
                     hir::OwnershipMode::Own => {
@@ -1007,7 +979,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     _ => {
                         return Err(backend_error(
                             "owned call argument lacks validated ownership classification",
-                        ))
+                        ));
                     }
                 }
             } else if is_aggregate_type(self.program, expected)? {
@@ -1109,7 +1081,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 }
             }
         }
-        self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+        self.emit_operation_failure_check_at(&expr.id)?;
         if matches!(target.return_type, ResolvedType::String)
             && !is_direct_plan_owned(self.program, &target.return_type)
         {
@@ -1149,328 +1121,24 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         Ok(result)
     }
 
-    fn emit_block_expr(&mut self, expr: &ResolvedExpr) -> Result<CValue, Diagnostic> {
-        let value = match &expr.kind {
-            ResolvedExprKind::Block { statements, tail } => {
-                let saved = self.variables.clone();
-                let saved_resource_text_views = self.resource_text_views.clone();
-                for statement in statements {
-                    match statement {
-                        ResolvedStatement::Let {
-                            binding,
-                            mutable,
-                            value,
-                            ..
-                        } => {
-                            let resource_text_view = self.produces_resource_text_view(value);
-                            if *mutable {
-                                self.mutable_bindings.insert(binding.id.clone());
-                            }
-                            let value_id = value.id.clone();
-                            let value = self.emit_expr(value)?;
-                            self.require_type(&value.ty, &binding.ty, "local binding")?;
-                            let local = if is_direct_plan_owned(self.program, &binding.ty) {
-                                let plan = self.bytes_plan.ok_or_else(|| {
-                                    backend_error(
-                                        "owned Bytes binding has no canonical cleanup plan",
-                                    )
-                                })?;
-                                let storage =
-                                    crate::cleanup_plan::StorageId::Value(binding.id.clone());
-                                let expected = plan.value(&storage)?.to_owned();
-                                if value.code != expected {
-                                    let transitions = plan.transfer_to(&storage, &value_id)?;
-                                    for line in transitions.lines() {
-                                        self.line(line);
-                                    }
-                                }
-                                expected
-                            } else if matches!(binding.ty, ResolvedType::String)
-                                && self.owned_strings.is_some()
-                            {
-                                let local = self.temporary(&ResolvedType::String)?;
-                                self.string_move(&local, &value.code);
-                                local
-                            } else if matches!(binding.ty, ResolvedType::ArrayU8(0)) {
-                                // The expression has already been evaluated;
-                                // its zero-sized Copy value has no C storage.
-                                "UINT8_C(0)".to_owned()
-                            } else if crate::iterator_ops::is_step(&binding.ty) {
-                                // The cleanup plan has already transferred the
-                                // conditional Iter leaf. Keep only the checked
-                                // tag and Copy item in the loop carrier.
-                                let local = format!("spx_local_{}", self.next_local);
-                                self.next_local += 1;
-                                self.line(&format!(
-                                    "{} {local} = {{0}};",
-                                    c_value_type(self.program, self.resource_abi, &binding.ty)?,
-                                ));
-                                self.copy_variant_join_carrier(&local, &value.code, &binding.ty)?;
-                                self.line(&format!("(void){local};"));
-                                local
-                            } else if self.record_contains_owned_bytes(&binding.ty)? {
-                                let local = format!("spx_local_{}", self.next_local);
-                                self.next_local += 1;
-                                self.line(&format!(
-                                    "{} {local} = {{0}};",
-                                    c_value_type(self.program, self.resource_abi, &binding.ty)?,
-                                ));
-                                self.move_owned_record_fields(&local, &value.code, &binding.ty)?;
-                                self.line(&format!("(void){local};"));
-                                local
-                            } else {
-                                let local = format!("spx_local_{}", self.next_local);
-                                self.next_local += 1;
-                                self.line(&format!(
-                                    "{} {local} = {};",
-                                    c_value_type(self.program, self.resource_abi, &binding.ty)?,
-                                    value.code
-                                ));
-                                self.line(&format!("(void){local};"));
-                                local
-                            };
-                            if self
-                                .variables
-                                .insert(
-                                    binding.id.clone(),
-                                    CBinding {
-                                        name: local,
-                                        ty: binding.ty.clone(),
-                                    },
-                                )
-                                .is_some()
-                            {
-                                return Err(backend_error(format!(
-                                    "duplicate resolved local identity `{}`",
-                                    binding.id
-                                )));
-                            }
-                            if resource_text_view && !*mutable {
-                                self.resource_text_views.insert(binding.id.clone());
-                            }
-                        }
-                        ResolvedStatement::Assign {
-                            binding,
-                            field,
-                            value: assigned,
-                            ..
-                        } => {
-                            self.resource_text_views.remove(&binding.id);
-                            // The assigned value is emitted fully first; the
-                            // store is a plain C11 assignment into the local
-                            // or, for Field Mutation v1, into its one direct
-                            // scalar field.
-                            let value_id = assigned.id.clone();
-                            let value = self.emit_expr(assigned)?;
-                            match field {
-                                Some(field_id) => {
-                                    let layout = self.record_layout(&binding.ty)?;
-                                    let field =
-                                        layout.field(field_id).cloned().ok_or_else(|| {
-                                            backend_error(format!(
-                                                "native record `{}` has no assignment field `{field_id}`",
-                                                layout.record
-                                            ))
-                                        })?;
-                                    self.require_type(&value.ty, &field.ty, "field assignment")?;
-                                    if matches!(field.ty, ResolvedType::String) {
-                                        return Err(backend_error(
-                                            "string field assignment has no admitted native lowering",
-                                        ));
-                                    }
-                                    if matches!(field.ty, ResolvedType::Bytes) {
-                                        return Err(backend_error(
-                                            "owned Bytes field assignment has no admitted native lowering",
-                                        ));
-                                    }
-                                    let target =
-                                        self.variables.get(&binding.id).ok_or_else(|| {
-                                            backend_error(format!(
-                                                "assignment target `{}` has no native local",
-                                                binding.id
-                                            ))
-                                        })?;
-                                    if field.size != 0 {
-                                        self.line(&format!(
-                                            "{}.{} = {};",
-                                            target.name,
-                                            c_field_symbol(&field.field),
-                                            value.code
-                                        ));
-                                    }
-                                }
-                                None => {
-                                    self.require_type(&value.ty, &binding.ty, "assignment")?;
-                                    let string_append = crate::string_ops::is_same_owner_concat_hir(
-                                        assigned,
-                                        &binding.id,
-                                    );
-                                    // Same-owner replacement: the canonical cleanup plan
-                                    // already carries the one transfer that publishes the
-                                    // next generation, for `vec_push`, the loop-carried
-                                    // `bytes_set` fill, String append and Reader refill alike.
-                                    if super::is_native_owned_vec_type(self.program, &binding.ty)
-                                        || matches!(binding.ty, ResolvedType::Bytes)
-                                        || crate::stdin_stream_ops::is_reader(&binding.ty)
-                                        || string_append
-                                        || crate::string_ops::replacement::admitted(
-                                            binding, assigned,
-                                        )
-                                    {
-                                        let plan = self.bytes_plan.ok_or_else(|| {
-                                            backend_error(
-                                                "owned same-owner assignment has no cleanup plan",
-                                            )
-                                        })?;
-                                        let storage = crate::cleanup_plan::StorageId::Value(
-                                            binding.id.clone(),
-                                        );
-                                        let expected = plan.value(&storage)?;
-                                        if value.code != expected {
-                                            for line in
-                                                plan.transfer_to(&storage, &value_id)?.lines()
-                                            {
-                                                self.line(line);
-                                            }
-                                        }
-                                        continue;
-                                    }
-                                    if crate::iterator_ops::is_step(&binding.ty) {
-                                        let target_name = self
-                                            .variables
-                                            .get(&binding.id)
-                                            .ok_or_else(|| {
-                                                backend_error(format!(
-                                                    "assignment target `{}` has no native local",
-                                                    binding.id
-                                                ))
-                                            })?
-                                            .name
-                                            .clone();
-                                        self.copy_variant_join_carrier(
-                                            &target_name,
-                                            &value.code,
-                                            &binding.ty,
-                                        )?;
-                                        continue;
-                                    }
-                                    let target =
-                                        self.variables.get(&binding.id).ok_or_else(|| {
-                                            backend_error(format!(
-                                                "assignment target `{}` has no native local",
-                                                binding.id
-                                            ))
-                                        })?;
-                                    if !matches!(binding.ty, ResolvedType::ArrayU8(0)) {
-                                        self.line(&format!("{} = {};", target.name, value.code));
-                                    }
-                                }
-                            }
-                        }
-                        ResolvedStatement::Unsafe { body, .. } => {
-                            // Backends treat the boundary transparently: emit
-                            // exactly the ordinary block body and discard its
-                            // scalar Copy result.
-                            let value = self.emit_expr(body)?;
-                            if matches!(value.ty, ResolvedType::String) {
-                                return Err(backend_error(
-                                    "discarding an owned string has no admitted native lowering",
-                                ));
-                            }
-                            self.line(&format!("(void)({});", value.code));
-                        }
-                        ResolvedStatement::While {
-                            condition, body, ..
-                        } => {
-                            // Bounded While-Loops v1 lowers to a native C11
-                            // loop. Because checked sub-expressions lower to
-                            // statements, the condition re-evaluates at the
-                            // top of every iteration and breaks out on false;
-                            // checked-arithmetic failures inside the loop jump
-                            // to the shared epilogue exactly like
-                            // straight-line failures.
-                            self.line("for (;;) {");
-                            self.indent += 1;
-                            let condition_value = self.emit_expr(condition)?;
-                            self.require_type(
-                                &condition_value.ty,
-                                &ResolvedType::Bool,
-                                "while condition",
-                            )?;
-                            self.emit_scalar_match_guard_scope_exit(condition)?;
-                            self.line(&format!("if (!({})) break;", condition_value.code));
-                            self.semantic_charge();
-                            let body_value = self.emit_expr(body)?;
-                            if matches!(body_value.ty, ResolvedType::String) {
-                                return Err(backend_error(
-                                    "discarding an owned string has no admitted native lowering",
-                                ));
-                            }
-                            self.line(&format!("(void)({});", body_value.code));
-                            self.indent -= 1;
-                            self.line("}");
-                        }
-                    }
-                }
-                let mut tail = self.emit_expr(tail)?;
-                self.require_type(&tail.ty, &expr.ty, "block result")?;
-                // Owned string locals introduced in this block free exactly
-                // their own buffer when the block exits; outer bindings and
-                // the tail value are untouched. The order is sorted so the
-                // projection stays byte-deterministic.
-                if self.bytes_plan.is_none() {
-                    let mut introduced_strings: Vec<String> = self
-                        .variables
-                        .iter()
-                        .filter(|(id, binding)| {
-                            matches!(binding.ty, ResolvedType::String) && !saved.contains_key(*id)
-                        })
-                        .map(|(_, binding)| binding.name.clone())
-                        .collect();
-                    introduced_strings.sort();
-                    for name in introduced_strings {
-                        self.string_drop(&name);
-                    }
-                }
-                if is_direct_plan_owned(self.program, &tail.ty) {
-                    let plan = self.bytes_plan.ok_or_else(|| {
-                        backend_error("owned Bytes block has no canonical cleanup plan")
-                    })?;
-                    let transitions = plan.apply_at(&expr.id)?;
-                    for line in transitions.lines() {
-                        self.line(line);
-                    }
-                    tail.code = plan
-                        .result_at(&expr.id)
-                        .ok_or_else(|| {
-                            backend_error("owned Bytes block has no canonical result transfer")
-                        })?
-                        .to_owned();
-                } else if is_aggregate_type(self.program, &tail.ty)? {
-                    self.apply_owned_plan_at_value(&expr.id, &tail)?;
-                }
-                self.emit_block_plan_scope_exit(expr)?;
-                self.variables = saved;
-                self.resource_text_views = saved_resource_text_views;
-                tail
-            }
-            _ => unreachable!("non-Block expression reached emit_block_expr"),
-        };
-        self.require_type(&value.ty, &expr.ty, "expression")?;
-        Ok(value)
-    }
-
     fn emit_empty_block_expr(&mut self, expr: &ResolvedExpr) -> Result<CValue, Diagnostic> {
         let mut blocks = Vec::new();
         let mut current = expr;
         loop {
-            let ResolvedExprKind::Block { statements, tail } = &current.kind else {
+            let (ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            }) = &current.kind
+            else {
                 unreachable!("non-Block expression reached emit_empty_block_expr")
             };
             debug_assert!(statements.is_empty());
             blocks.push(current);
             match &tail.kind {
-                ResolvedExprKind::Block { statements, .. } if statements.is_empty() => {
+                ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. }
+                    if statements.is_empty() =>
+                {
                     current = tail;
                 }
                 _ => {
@@ -1481,8 +1149,11 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         }
 
         let mut value = self.emit_expr(current)?;
+        if value.ty == ResolvedType::Never {
+            return Ok(value);
+        }
         while let Some(block) = blocks.pop() {
-            self.require_type(&value.ty, &block.ty, "block result")?;
+            self.require_flow_type(&value.ty, &block.ty, "block result")?;
             if is_direct_plan_owned(self.program, &value.ty) {
                 let plan = self.bytes_plan.ok_or_else(|| {
                     backend_error("owned Bytes block has no canonical cleanup plan")
@@ -1498,9 +1169,16 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     })?
                     .to_owned();
             } else if is_aggregate_type(self.program, &value.ty)? {
-                self.apply_owned_plan_at_value(&block.id, &value)?;
+                if self.lexical_variant_block(block)? {
+                    self.emit_lexical_variant_block_result(block, &value)?;
+                } else {
+                    self.apply_owned_plan_at_value(&block.id, &value)?;
+                }
             }
             self.emit_block_plan_scope_exit(block)?;
+            if self.lexical_variant_block(block)? {
+                self.finish_variant_join(block, &value.code)?;
+            }
         }
         Ok(value)
     }
@@ -1531,6 +1209,10 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     self.require_type(&value.ty, &field.ty, "record field initializer")?;
                     if matches!(field.ty, ResolvedType::Bytes | ResolvedType::String)
                         || crate::map_ops::is_collection(&field.ty)
+                        || crate::hir::owned_collection_record::vector(
+                            &self.program.declarations,
+                            &field.ty,
+                        )
                     {
                         let plan = self.bytes_plan.ok_or_else(|| {
                             backend_error("owned Bytes record field has no cleanup plan")
@@ -1630,6 +1312,15 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!("memset(&{temporary}, 0, sizeof({temporary}));"));
                 let case_symbol = c_case_symbol(case);
                 for (field, value) in values {
+                    if field.value_kind == crate::variant_layout::VariantFieldValueKind::OwnedRecord
+                    {
+                        let destination = format!(
+                            "{temporary}.spx_payload.{case_symbol}.{}",
+                            c_field_symbol(&field.field)
+                        );
+                        self.move_owned_record_fields(&destination, &value.code, &field.ty)?;
+                        continue;
+                    }
                     if field.size != 0
                         && !is_direct_plan_owned(self.program, &field.ty)
                         && !crate::iterator_ops::is_iter(&field.ty)
@@ -1701,7 +1392,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     };
                     let anchors = match &arm.pattern {
                         hir::ResolvedMatchPattern::Record { fields, .. } => {
-                            nested_owned::owned_record_pattern_anchors(fields)?
+                            nested_owned::owned_record_pattern_anchors(self.program, fields)?
                         }
                         _ => Default::default(),
                     };
@@ -1800,11 +1491,12 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     // constructor/update. That commit must precede the arm
                     // scope exit below so moved bindings are not finalized.
                     let mut value = self.emit_expr(&arm.value)?;
-                    self.require_type(&value.ty, &expr.ty, "record match arm result")?;
-                    if aggregate_result
-                        || matches!(expr.ty, ResolvedType::Bytes | ResolvedType::String)
-                        || crate::map_ops::is_collection(&expr.ty)
-                    {
+                    self.require_flow_type(&value.ty, &expr.ty, "record match arm result")?;
+                    if value.ty == ResolvedType::Never {
+                        self.variables = saved;
+                        return Ok(value);
+                    }
+                    if aggregate_result || is_direct_plan_owned(self.program, &expr.ty) {
                         self.finish_generic_owned_match_result(expr, &arm.value, &mut value)?;
                     }
                     if *mode == hir::ResolvedMatchMode::Own {
@@ -1846,7 +1538,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     "if ({staged}.spx_tag >= UINT32_C({})) spx_runtime_invariant_failure(\"invalid variant tag\");",
                     layout.cases.len()
                 ));
-                let result = if is_direct_plan_owned(self.program, &expr.ty) {
+                let result = if expr.ty == ResolvedType::Never {
+                    String::new()
+                } else if is_direct_plan_owned(self.program, &expr.ty) {
                     self.bytes_plan
                         .ok_or_else(|| backend_error("owned Bytes match has no cleanup plan"))?
                         .value(&crate::cleanup_plan::StorageId::Temporary(expr.id.clone()))?
@@ -1856,7 +1550,12 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 };
                 let matched = self.temporary(&ResolvedType::Bool)?;
                 self.line(&format!("{matched} = false;"));
-                for arm in arms {
+                let yield_only = self.iterator_true_match.as_ref() == Some(&expr.id);
+                let mut normal = false;
+                for (index, arm) in arms.iter().enumerate() {
+                    if yield_only && index != 1 {
+                        continue;
+                    }
                     let saved = self.variables.clone();
                     match &arm.pattern {
                         hir::ResolvedMatchPattern::Variant {
@@ -2026,78 +1725,83 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                     }
                     self.open_variant_guard(arm.guard.as_deref(), &matched)?;
                     let value = self.emit_expr(&arm.value)?;
-                    self.require_type(&value.ty, &expr.ty, "match arm result")?;
-                    if is_direct_plan_owned(self.program, &expr.ty) {
-                        if expr.ty == ResolvedType::String
-                            && matches!(arm.value.kind, ResolvedExprKind::If { .. })
-                        {
-                            // The If settled its selected branch into its own
-                            // result slot. Replay only that slot's handoff to
-                            // this match, not the already applied branch joins.
-                            let transitions =
-                                self.bytes_plan.expect("checked above").transfer_field_at(
-                                    &arm.value.id,
-                                    &value.code,
-                                    &crate::cleanup_plan::CleanupPlace {
-                                        storage: crate::cleanup_plan::StorageId::Temporary(
-                                            expr.id.clone(),
-                                        ),
-                                        projections: Vec::new(),
-                                    },
-                                )?;
-                            for line in transitions.lines() {
-                                self.line(line);
+                    self.require_flow_type(&value.ty, &expr.ty, "match arm result")?;
+                    normal |= value.ty != ResolvedType::Never;
+                    if value.ty != ResolvedType::Never {
+                        if is_direct_plan_owned(self.program, &expr.ty) {
+                            if expr.ty == ResolvedType::String
+                                && matches!(arm.value.kind, ResolvedExprKind::If { .. })
+                            {
+                                // The If settled its selected branch into its own
+                                // result slot. Replay only that slot's handoff to
+                                // this match, not the already applied branch joins.
+                                let transitions =
+                                    self.bytes_plan.expect("checked above").transfer_field_at(
+                                        &arm.value.id,
+                                        &value.code,
+                                        &crate::cleanup_plan::CleanupPlace {
+                                            storage: crate::cleanup_plan::StorageId::Temporary(
+                                                expr.id.clone(),
+                                            ),
+                                            projections: Vec::new(),
+                                        },
+                                    )?;
+                                for line in transitions.lines() {
+                                    self.line(line);
+                                }
                             }
-                        }
-                        // An owned place needs its arm-to-join transfer here.
-                        // Producers replay that same transition in `emit_expr`;
-                        // replaying it again would move from a dead source.
-                        // An owning `string` place read is such a producer:
-                        // its clone already applied the arm transfer.
-                        if matches!(arm.value.kind, ResolvedExprKind::Place(_))
-                            && arm.value.ty != ResolvedType::String
-                        {
-                            let transitions = self
-                                .bytes_plan
-                                .expect("checked above")
-                                .apply_at(&arm.value.id)?;
-                            for line in transitions.lines() {
-                                self.line(line);
+                            // An owned place needs its arm-to-join transfer here.
+                            // Producers replay that same transition in `emit_expr`;
+                            // replaying it again would move from a dead source.
+                            // An owning `string` place read is such a producer:
+                            // its clone already applied the arm transfer.
+                            if matches!(arm.value.kind, ResolvedExprKind::Place(_))
+                                && arm.value.ty != ResolvedType::String
+                            {
+                                let transitions = self
+                                    .bytes_plan
+                                    .expect("checked above")
+                                    .apply_at(&arm.value.id)?;
+                                for line in transitions.lines() {
+                                    self.line(line);
+                                }
                             }
+                        } else if aggregate_result && expr.ownership == hir::OwnershipMode::Own {
+                            self.copy_variant_join_carrier(&result, &value.code, &expr.ty)?;
+                        } else {
+                            self.line(&format!("{result} = {};", value.code));
                         }
-                    } else if aggregate_result && expr.ownership == hir::OwnershipMode::Own {
-                        self.copy_variant_join_carrier(&result, &value.code, &expr.ty)?;
-                    } else {
-                        self.line(&format!("{result} = {};", value.code));
-                    }
-                    if *mode == hir::ResolvedMatchMode::Own {
-                        let anchors = match &arm.pattern {
-                            hir::ResolvedMatchPattern::Variant { case, fields, .. } => fields
-                                .iter()
-                                .filter(|own| {
-                                    is_direct_plan_owned(self.program, &own.binding.ty)
-                                        || record_iterator_item::is_exact(
-                                            self.program,
-                                            &scrutinee.ty,
-                                            case,
-                                            &own.field,
-                                            &own.binding.ty,
+                        if *mode == hir::ResolvedMatchMode::Own {
+                            let anchors = match &arm.pattern {
+                                hir::ResolvedMatchPattern::Variant { case, fields, .. } => fields
+                                    .iter()
+                                    .filter(|own| {
+                                        is_direct_plan_owned(self.program, &own.binding.ty)
+                                            || record_iterator_item::is_exact(
+                                                self.program,
+                                                &scrutinee.ty,
+                                                case,
+                                                &own.field,
+                                                &own.binding.ty,
+                                            )
+                                    })
+                                    .map(|field| {
+                                        crate::cleanup_plan::StorageId::Value(
+                                            field.binding.id.clone(),
                                         )
-                                })
-                                .map(|field| {
-                                    crate::cleanup_plan::StorageId::Value(field.binding.id.clone())
-                                })
-                                .collect::<BTreeSet<_>>(),
-                            _ => BTreeSet::new(),
-                        };
-                        let cleanup = self
-                            .bytes_plan
-                            .ok_or_else(|| {
-                                backend_error("owned variant match has no cleanup plan")
-                            })?
-                            .scope_exit(&anchors)?;
-                        for line in cleanup.lines() {
-                            self.line(line);
+                                    })
+                                    .collect::<BTreeSet<_>>(),
+                                _ => BTreeSet::new(),
+                            };
+                            let cleanup = self
+                                .bytes_plan
+                                .ok_or_else(|| {
+                                    backend_error("owned variant match has no cleanup plan")
+                                })?
+                                .scope_exit(&anchors)?;
+                            for line in cleanup.lines() {
+                                self.line(line);
+                            }
                         }
                     }
                     self.close_variant_guard(arm.guard.is_some());
@@ -2108,7 +1812,15 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 self.line(&format!(
                     "if (!{matched}) spx_runtime_invariant_failure(\"exhaustive variant match selected no arm\");"
                 ));
-                self.finish_variant_join(expr, &result)?;
+                if yield_only && !normal {
+                    return Ok(CValue {
+                        code: String::new(),
+                        ty: ResolvedType::Never,
+                    });
+                }
+                if expr.ty != ResolvedType::Never {
+                    self.finish_variant_join(expr, &result)?;
+                }
                 CValue {
                     code: result,
                     ty: expr.ty.clone(),
@@ -2403,6 +2115,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             return self.emit_lazy_binary(op, left, right, result_type);
         }
         let left = self.emit_expr(left)?;
+        if matches!(op, BinaryOp::Eq | BinaryOp::Ne) && left.ty == ResolvedType::Str {
+            return self.emit_str_equality(op, left, right, result_type);
+        }
         if matches!(op, BinaryOp::Eq | BinaryOp::Ne)
             && self.program.is_payload_free_variant(&left.ty)
         {
@@ -2552,7 +2267,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 "spx_status = {helper}(spx_ctx, {}, {}, &{temporary});",
                 left.code, right.code
             ));
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
         } else if usize_operand
             && matches!(
                 op,
@@ -2571,7 +2286,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 "spx_status = {helper}(spx_ctx, {}, {}, &{temporary});",
                 left.code, right.code
             ));
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
         } else if matches!(
             op,
             BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem
@@ -2593,7 +2308,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
                 "spx_status = {helper}(spx_ctx, {}, {}, &{temporary});",
                 left.code, right.code
             ));
-            self.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+            self.emit_operation_failure_check()?;
         } else {
             self.line(&format!(
                 "{temporary} = ({} {} {});",

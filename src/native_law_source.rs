@@ -550,7 +550,9 @@ fn scalar_expression(
                 )
                 .at_path(path))
             }
-            ExprKind::Unary { value, .. } => pending.push(value),
+            ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                pending.push(value)
+            }
             ExprKind::Binary { left, right, .. } => {
                 pending.push(left);
                 pending.push(right);

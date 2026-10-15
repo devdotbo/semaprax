@@ -1,0 +1,19 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "harness": "semaprax::lib",
+  "new_exact_owners": [
+    "workspace_graph::generic_type_import::parameter_names::tests::large_late_missing_duplicate_and_unicode_names_keep_old_membership_with_bounded_comparisons",
+    "workspace_graph::generic_type_import::parameter_names::tests::spill_backing_is_exact_paid_owned_and_short_zero_refusal_stays_g171_through_drop",
+    "workspace_graph::generic_type_import::parameter_names::tests::complete_large_declared_generic_source_and_original_caller_keep_paid_g171_order"
+  ],
+  "retained_seven_exact_owners": [
+    "workspace_graph::generic_type_import::borrowed_tests::complete_old_template_membership_preserves_duplicates_empty_unicode_and_arguments",
+    "workspace_graph::generic_type_import::borrowed_tests::ordered_record_class_method_and_variant_visits_match_complete_old_rewrites",
+    "workspace_graph::generic_type_import::borrowed_tests::full_cost_fields_alias_order_and_first_errors_match_old_with_layout_receivers",
+    "workspace_graph::generic_type_import::borrowed_tests::unpriced_membership_and_traversal_backing_disappears_without_ledger_changes",
+    "workspace_graph::generic_type_import::borrowed_tests::alias_paid_exact_short_zero_and_sticky_refusals_keep_complete_old_outputs_through_drop",
+    "workspace_graph::generic_type_import::borrowed_tests::real_workspace_linked_hir_and_graph_keep_complete_original_generic_rewrite_route",
+    "workspace_graph::generic_type_import::borrowed_tests::complete_original_receiver_and_all_joined_source_inverses_remain_byte_exact"
+  ],
+  "source_boundary_owner": "semaprax::language_tests workspace::semantic_graph::expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root"
+}

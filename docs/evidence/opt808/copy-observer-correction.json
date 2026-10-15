@@ -1,0 +1,53 @@
+{
+  "base": "0703f087d5890b7eda7c47f71e8a0adc28094593",
+  "executed": false,
+  "package": "semaprax",
+  "target": [
+    "--test",
+    "native"
+  ],
+  "exact_selectors": [
+    "string_settlement::codec_allocation::string_vectors::primitive_string_codec_reads_and_short_refusal_allocate_nothing_then_copy_final_string_once",
+    "string_settlement::codec_allocation::string_vectors::primitive_string_codec_actual_byte_and_item_plus_one_preflight_never_reserve_output"
+  ],
+  "args": [
+    "--",
+    "--exact",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "source_paths": [
+    "tests/native/string_settlement/codec_allocation/string_vectors.rs",
+    "tests/native/string_settlement/codec_allocation/string_slot_copies.c",
+    "docs/APPLICATION-JSON-NESTED-RESPONSE-V2.md",
+    "docs/evidence/opt808/REVIEW.md",
+    "src/codegen/native_emit/expression/vec_ops/string_slot.rs",
+    "tests/native/string_settlement/codec_allocation.rs",
+    "tests/native/string_settlement/codec_allocation/allocator.c",
+    "tests/native/string_settlement/codec_allocation/probe.c",
+    "tests/native/string_settlement/bulk_utf8/copies.c",
+    "tests/native_owned_utf8_settlement_v1/allocations.c"
+  ],
+  "fixture_proof": {
+    "production_backend": "byte-identical",
+    "v1_receiver": "byte-identical",
+    "full_fault_receiver_and_allocator": "byte-identical",
+    "total_copy_observer": "byte-identical; every forwarded production call reaches it exactly once",
+    "original_v2_input_output_and_app_generation": "byte-identical",
+    "eight_byte_control": "separate owned payload and owned pointer descriptor; both total copies retained, distinct operation+live owners, not size-only",
+    "model": "total == independently counted descriptor + all other copies; full wire copy requires complete independent bytes and distinct live source/destination ownership; no counter subtraction",
+    "execution": "none; authored controls are not measured evidence"
+  },
+  "hashes": {
+    "tests/native/string_settlement/codec_allocation/string_vectors.rs": "faf96e90983a8aa2df3cd9c8736232bcb77985b8f868e430e3ff347a6132d8ac",
+    "tests/native/string_settlement/codec_allocation/string_slot_copies.c": "449661737e636290d59ceb2c0df8464cb68a0a919116918488e4d2d9eb683def",
+    "docs/APPLICATION-JSON-NESTED-RESPONSE-V2.md": "1329c1fba65583d072b629fe6f227c01d33380ee46940913d1ce40cad3c5dd44",
+    "docs/evidence/opt808/REVIEW.md": "5ce8a2d919a2c0090e659796c23a2be5665b9a1c4fe249cd9f66c56e3f29e733",
+    "src/codegen/native_emit/expression/vec_ops/string_slot.rs": "dc46cea7571ebe6409724206771f7eae3f3765e242f4693cf77f004af8d27abd",
+    "tests/native/string_settlement/codec_allocation.rs": "8c350e08fafcccbf185a4aac5778f1e36ec59675b5e88af326f2f3dc8fc2b300",
+    "tests/native/string_settlement/codec_allocation/allocator.c": "15b0fa1d5bbae23f030d1cc7421c5f540e3557dd5b9ebe1392e729fe2aef9037",
+    "tests/native/string_settlement/codec_allocation/probe.c": "9ea14e70abda98da106c14e9bb3643b9997501b0a567e0c19c66b12ab359e3e0",
+    "tests/native/string_settlement/bulk_utf8/copies.c": "1f52dc9a62929ed6fd26e3268bd83e88657133cd5d3e3f759ce1b88cc262a8b5",
+    "tests/native_owned_utf8_settlement_v1/allocations.c": "df0466cdfb24872e75cd2ae1fe63ca35dd924ce04da4570588e4f3d5fe1dcbfc"
+  }
+}

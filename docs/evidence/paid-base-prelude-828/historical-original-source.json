@@ -1,0 +1,16 @@
+{
+  "baseline": "4ec48420b6e78b1035a66cc406893c46c3028464",
+  "sources": [
+    {
+      "path": "src/prelude/base_original.rs",
+      "archive": "src__prelude__base_original.rs.baseline.txt",
+      "sha256": "d20bb1f6e24550dcc975b9b0a2d725a3210055d67eb36b462954501f95802caa"
+    },
+    {
+      "path": "src/prelude.rs",
+      "archive": "src__prelude.rs.baseline.txt",
+      "sha256": "fadacefebd87e160f4fe443ace46aef493a1c85d9522f4374f5026e11b292428"
+    }
+  ],
+  "status": "historical source only; no runtime receipt"
+}

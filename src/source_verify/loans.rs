@@ -6,12 +6,13 @@ use super::binding::{Availability, Binding, BorrowOrigin, SourceLoan, SourceLoan
 use super::diagnostics::error;
 use super::place::{join_definitely_partial, join_moved_places, source_place, SourcePlace};
 use super::type_table::TypeTable;
-use crate::ast::{Expr, ExprKind, MatchArm, ParamMode, Program, Span, Statement, Type};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind, MatchArm, ParamMode, Span, Statement, Type};
 use crate::diagnostic::Diagnostic;
 use std::collections::HashMap;
 
 pub(super) fn local_borrow_origin(
-    program: &Program,
+    program: &dyn ProgramSource,
     expression: &Expr,
     borrower: &str,
     borrower_span: Span,
@@ -26,9 +27,23 @@ pub(super) fn local_borrow_origin(
                 |origin| Some((origin.root, origin.projections, Some(origin.loan))),
             )?
         }
+        ExprKind::Project { .. } => {
+            let (root, value) = super::record_traversal::project(expression, variables, types)?;
+            if !matches!(value.ty, Type::Str | Type::SliceU8) {
+                return None;
+            }
+            let ExprKind::Project { base, .. } = &expression.kind else {
+                unreachable!()
+            };
+            let ExprKind::Var(row) = &base.kind else {
+                unreachable!()
+            };
+            let parent = variables.get(row)?.traversal_row.as_deref()?.freeze.clone();
+            (root, Vec::new(), Some(parent))
+        }
         ExprKind::Call { name, args, .. }
             if program
-                .interfaces
+                .interfaces()
                 .iter()
                 .flat_map(|interface| &interface.imports)
                 .any(|import| {
@@ -65,6 +80,27 @@ pub(super) fn local_borrow_origin(
             }
             (root.clone(), Vec::new(), None)
         }
+        ExprKind::Call {
+            name,
+            type_arguments,
+            args,
+        } if name == crate::vec_ops::string_slot::NAME => {
+            let root = super::string_slot::root(type_arguments, args, variables)?;
+            (root.to_owned(), Vec::new(), None)
+        }
+        ExprKind::Call {
+            name,
+            type_arguments,
+            args,
+        } if name == crate::vec_field::NAME => {
+            let (_, result) =
+                super::vec_field::signature(types, type_arguments, args, expression.span)?;
+            if !matches!(result, Type::Str | Type::SliceU8) {
+                return None;
+            }
+            let place = source_place(args.first()?, variables, types)?;
+            (place.root, place.projections, None)
+        }
         ExprKind::Call { name, args, .. } => {
             let operation = crate::byte_ops::by_name(name)?;
             if !operation.is_view() && operation != crate::byte_ops::ByteOp::Range {
@@ -77,15 +113,44 @@ pub(super) fn local_borrow_origin(
                 return None;
             }
             if operation == crate::byte_ops::ByteOp::Range {
-                let ExprKind::Var(source) = &source.kind else {
-                    return None;
-                };
-                let origin = variables.get(source)?.borrow_origin.clone()?;
-                (origin.root, origin.projections, Some(origin.loan))
+                match &source.kind {
+                    ExprKind::Var(source) => {
+                        let origin = variables.get(source)?.borrow_origin.clone()?;
+                        (origin.root, origin.projections, Some(origin.loan))
+                    }
+                    ExprKind::Call {
+                        name,
+                        type_arguments,
+                        args,
+                    } if crate::byte_ops::by_name(name)
+                        == Some(crate::byte_ops::ByteOp::BytesAsSlice)
+                        && type_arguments.is_empty() =>
+                    {
+                        let [owner] = args.as_slice() else {
+                            return None;
+                        };
+                        let ExprKind::Var(root) = &owner.kind else {
+                            return None;
+                        };
+                        let binding = variables.get(root)?;
+                        if binding.ty != Type::Bytes
+                            || binding.mode != ParamMode::Own
+                            || binding.availability != Availability::Available
+                        {
+                            return None;
+                        }
+                        (root.clone(), Vec::new(), None)
+                    }
+                    _ => return None,
+                }
             } else {
                 let place = if operation == crate::byte_ops::ByteOp::StrAsBytes {
                     if let ExprKind::Call { name, args, .. } = &source.kind {
-                        if crate::byte_ops::by_name(name)
+                        if name == crate::vec_field::NAME
+                            || name == crate::vec_ops::string_slot::NAME
+                        {
+                            source_place(args.first()?, variables, types)?
+                        } else if crate::byte_ops::by_name(name)
                             == Some(crate::byte_ops::ByteOp::StringAsStr)
                         {
                             let [owner] = args.as_slice() else {
@@ -94,6 +159,16 @@ pub(super) fn local_borrow_origin(
                             source_place(owner, variables, types)?
                         } else {
                             source_place(source, variables, types)?
+                        }
+                    } else if let Some((root, _)) =
+                        super::record_traversal::project(source, variables, types)
+                    {
+                        super::place::SourcePlace {
+                            root_span: source.span,
+                            ty: variables.get(&root)?.ty.clone(),
+                            mode: variables.get(&root)?.mode,
+                            root,
+                            projections: Vec::new(),
                         }
                     } else {
                         source_place(source, variables, types)?
@@ -171,7 +246,9 @@ pub(super) fn expression_uses_name(expression: &Expr, name: &str) -> bool {
                 pending.push(receiver);
                 pending.extend(args);
             }
-            ExprKind::Unary { value, .. }
+            ExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }
             | ExprKind::Project { base: value, .. } => pending.push(value),
@@ -194,6 +271,7 @@ pub(super) fn expression_uses_name(expression: &Expr, name: &str) -> bool {
                             pending.push(body);
                         }
                         Statement::For { values, body, .. }
+                        | Statement::ForBorrow { values, body, .. }
                         | Statement::ForOwn { values, body, .. } => {
                             pending.push(values);
                             pending.push(body);
@@ -240,6 +318,7 @@ pub(super) fn expression_uses_name(expression: &Expr, name: &str) -> bool {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => {}
         }
     }
@@ -263,7 +342,9 @@ pub(super) fn release_dead_local_loans(
                 Statement::While {
                     condition, body, ..
                 } => expression_uses_name(condition, name) || expression_uses_name(body, name),
-                Statement::For { values, body, .. } | Statement::ForOwn { values, body, .. } => {
+                Statement::For { values, body, .. }
+                | Statement::ForBorrow { values, body, .. }
+                | Statement::ForOwn { values, body, .. } => {
                     expression_uses_name(values, name) || expression_uses_name(body, name)
                 }
             }) || expression_uses_name(tail, name);
@@ -283,7 +364,7 @@ pub(super) fn release_dead_local_loans(
 }
 
 pub(super) fn mark_value_sources_moved(
-    program: &Program,
+    program: &dyn ProgramSource,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,
     types: &TypeTable<'_>,

@@ -1,13 +1,124 @@
+pub(crate) mod cfg_reservation;
+pub(crate) mod identity_reservation;
+pub(crate) mod key_directory;
+pub(crate) mod prepaid;
+#[cfg(test)]
+pub(crate) mod stage_debits;
 use std::cell::{Cell, RefCell};
 use std::fmt::{self, Write as _};
 use std::ops::Deref;
 use std::rc::Rc;
+
+/// First sticky refusal in one bounded phase. This is ledger evidence, not RSS.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct ReservationRefusal {
+    pub(crate) requested: usize,
+    pub(crate) remaining: usize,
+    pub(crate) floor: usize,
+    pub(crate) stage: Option<ReservationStage>,
+}
+
+/// Compiler-owned labels for the operation enclosing a required reservation.
+/// They never derive from source or from a forecast.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ReservationStage {
+    ResolvedCore,
+    CompactValidation,
+    UncachedSyntheticPeak,
+    AuthoredModuleValidation,
+    FrontendLookup,
+    SelectiveResolution,
+    FrontendRetention,
+    ImportedVecInstances,
+    CorePrebound,
+    ExpectedEdges,
+    ResolvedCallEdges,
+    StubSignatures,
+    DeclarationFacts,
+    RetainedFacts,
+    CoreDirectories,
+    EdgeProof,
+    SyntheticModule,
+    CachedValidation,
+    FreshResolution,
+    HirLowering,
+    HirLoanPlans,
+    HirInstanceLoanPlans,
+    HirCleanupInventories,
+    HirInstanceCleanupInventories,
+    HirCleanupPlans,
+    HirYieldProfiles,
+    HirValidation,
+    CanonicalLoanStorage,
+
+    LoanCandidateInventory,
+    LoanCfgDiscovery,
+    LoanCfgPoints,
+    LoanCfgEdges,
+    LoanCanonicalAppend,
+    LoanOrderedDirectoryNode,
+    LoanVectorBacking,
+
+    RetainedModule,
+    LoanIdentityInventory,
+    RetainedLoanScratch,
+    RetainedLoanSidecars,
+}
+
+impl ReservationStage {
+    pub(crate) fn label(self) -> &'static str {
+        match self {
+            Self::ResolvedCore => "resolved core construction",
+            Self::CompactValidation => "compact validation inventory construction",
+            Self::UncachedSyntheticPeak => "uncached synthetic AST peak reservation",
+            Self::AuthoredModuleValidation => "authored module signature validation",
+            Self::FrontendLookup => "frontend checked module lookup",
+            Self::SelectiveResolution => "frontend selective function resolution",
+            Self::FrontendRetention => "frontend resolved module retention",
+            Self::ImportedVecInstances => "imported Vec instance inventory",
+            Self::CorePrebound => "resolved-core prebound",
+            Self::ExpectedEdges => "expected workspace edges",
+            Self::ResolvedCallEdges => "resolved call edges",
+            Self::StubSignatures => "workspace stub signatures",
+            Self::DeclarationFacts => "workspace declaration facts",
+            Self::RetainedFacts => "retained workspace facts",
+            Self::CoreDirectories => "resolved module directories",
+            Self::EdgeProof => "workspace edge proof",
+            Self::SyntheticModule => "synthetic module construction",
+            Self::CachedValidation => "cached HIR validation",
+            Self::FreshResolution => "fresh HIR resolution",
+            Self::HirLowering => "HIR expression and type lowering",
+            Self::HirLoanPlans => "HIR function loan plans",
+            Self::HirInstanceLoanPlans => "HIR instance loan plans",
+            Self::HirCleanupInventories => "HIR function cleanup inventories",
+            Self::HirInstanceCleanupInventories => "HIR instance cleanup inventories",
+            Self::HirCleanupPlans => "HIR canonical cleanup plans",
+            Self::HirYieldProfiles => "HIR yield profile validation",
+            Self::HirValidation => "HIR final validation",
+            Self::CanonicalLoanStorage => "canonical shared-loan storage preparation",
+
+            Self::LoanCandidateInventory => "loan candidate inventory",
+            Self::LoanCfgDiscovery => "loan CFG expression discovery",
+            Self::LoanCfgPoints => "loan CFG point directory construction",
+            Self::LoanCfgEdges => "loan CFG edge construction",
+            Self::LoanCanonicalAppend => "canonical loan directory append",
+            Self::LoanOrderedDirectoryNode => "loan ordered directory node allocation",
+            Self::LoanVectorBacking => "loan vector backing allocation",
+            Self::RetainedModule => "resolved module retention",
+            Self::LoanIdentityInventory => "loan identity inventory",
+            Self::RetainedLoanScratch => "retained loan scratch allocation",
+            Self::RetainedLoanSidecars => "retained loan sidecar capacity",
+        }
+    }
+}
 
 struct Budget {
     initial: usize,
     remaining: Cell<usize>,
     floor: Cell<usize>,
     overflowed: Cell<bool>,
+    first_refusal: Cell<Option<ReservationRefusal>>,
+    stage: Cell<Option<ReservationStage>>,
 }
 
 thread_local! {
@@ -20,6 +131,14 @@ pub(crate) fn with_limit<T>(limit: usize, operation: impl FnOnce() -> T) -> (T, 
 }
 
 pub(crate) fn with_limit_usage<T>(limit: usize, operation: impl FnOnce() -> T) -> (T, bool, usize) {
+    let (value, overflowed, consumed, _) = with_limit_usage_refusal(limit, operation);
+    (value, overflowed, consumed)
+}
+
+pub(crate) fn with_limit_usage_refusal<T>(
+    limit: usize,
+    operation: impl FnOnce() -> T,
+) -> (T, bool, usize, Option<ReservationRefusal>) {
     struct Restore {
         previous: Option<Rc<Budget>>,
         current: Rc<Budget>,
@@ -34,6 +153,7 @@ pub(crate) fn with_limit_usage<T>(limit: usize, operation: impl FnOnce() -> T) -
             });
             if let Some(parent) = previous {
                 if !reserve(Some(&parent), consumed) {
+                    record_refusal(&parent, consumed);
                     // A refused reservation normally means nothing was
                     // written, but here the child already emitted the bytes:
                     // they cannot be un-spent. Charge the parent anyway, so
@@ -41,6 +161,8 @@ pub(crate) fn with_limit_usage<T>(limit: usize, operation: impl FnOnce() -> T) -
                     // report the refusal.
                     let remaining = parent.remaining.get();
                     parent.remaining.set(remaining.saturating_sub(consumed));
+                    #[cfg(test)]
+                    stage_debits::debit(&parent, remaining.min(consumed));
                     parent.overflowed.set(true);
                 }
             }
@@ -55,6 +177,8 @@ pub(crate) fn with_limit_usage<T>(limit: usize, operation: impl FnOnce() -> T) -
         remaining: Cell::new(effective_limit),
         floor: Cell::new(0),
         overflowed: Cell::new(false),
+        first_refusal: Cell::new(None),
+        stage: Cell::new(None),
     });
     let previous = ACTIVE.with(|active| active.replace(Some(Rc::clone(&budget))));
     let restore = Restore {
@@ -65,20 +189,91 @@ pub(crate) fn with_limit_usage<T>(limit: usize, operation: impl FnOnce() -> T) -
     let value = operation();
     let overflowed = budget.overflowed.get();
     let consumed = effective_limit.saturating_sub(budget.remaining.get());
+    let refusal = budget.first_refusal.get();
     drop(restore);
-    (value, overflowed, consumed)
+    (value, overflowed, consumed, refusal)
 }
 
 fn active() -> Option<Rc<Budget>> {
     ACTIVE.with(|active| active.borrow().clone())
 }
 
+fn record_refusal(budget: &Budget, length: usize) {
+    if budget.first_refusal.get().is_none() {
+        #[cfg(test)]
+        stage_debits::refusal(budget, length);
+        budget.first_refusal.set(Some(ReservationRefusal {
+            requested: length,
+            remaining: budget.remaining.get(),
+            floor: budget.floor.get(),
+            stage: budget.stage.get(),
+        }));
+    }
+}
+
+/// A stage belongs to the current budget only. Nested budgets start unlabelled,
+/// and unwind restores the previous stage before the next reservation.
+pub(crate) fn with_reservation_stage<T>(
+    stage: ReservationStage,
+    operation: impl FnOnce() -> T,
+) -> T {
+    let restore = reservation_stage_guard(stage);
+    let value = operation();
+    drop(restore);
+    value
+}
+
+/// Fixed-size restoration handle. Cloning the existing budget Rc allocates no
+/// backing, and the handle never changes budget ownership or refusal selection.
+pub(crate) struct ReservationStageGuard(Option<(Rc<Budget>, Option<ReservationStage>)>);
+impl Drop for ReservationStageGuard {
+    fn drop(&mut self) {
+        if let Some((budget, previous)) = self.0.take() {
+            budget.stage.set(previous);
+        }
+    }
+}
+pub(crate) fn reservation_stage_guard(stage: ReservationStage) -> ReservationStageGuard {
+    ReservationStageGuard(active().map(|budget| {
+        let previous = budget.stage.replace(Some(stage));
+        (budget, previous)
+    }))
+}
+
+/// Classify only the otherwise unlabelled outer loan-storage operation. An
+/// existing semantic phase always wins; no new owner, state or debit is made.
+pub(crate) fn loan_allocation_stage_guard(stage: ReservationStage) -> ReservationStageGuard {
+    ReservationStageGuard(active().and_then(|budget| {
+        if budget.stage.get() != Some(ReservationStage::CanonicalLoanStorage) {
+            return None;
+        }
+        let previous = budget.stage.replace(Some(stage));
+        Some((budget, previous))
+    }))
+}
+
+macro_rules! staged {
+    ($stage:ident, $operation:expr) => {
+        $crate::bounded_output::with_reservation_stage(
+            $crate::bounded_output::ReservationStage::$stage,
+            || $operation,
+        )
+    };
+}
+pub(crate) use staged;
+
 fn reserve(budget: Option<&Budget>, length: usize) -> bool {
     let Some(budget) = budget else {
         return true;
     };
+    // A selected refusal remains authoritative even when a later request is
+    // zero or fits the unspent balance. No retry may restore admission.
+    if budget.overflowed.get() {
+        return false;
+    }
     let remaining = budget.remaining.get();
     if length > remaining {
+        record_refusal(budget, length);
         budget.overflowed.set(true);
         return false;
     }
@@ -89,6 +284,8 @@ fn reserve(budget: Option<&Budget>, length: usize) -> bool {
         return false;
     }
     budget.remaining.set(remaining - length);
+    #[cfg(test)]
+    stage_debits::debit(budget, length);
     true
 }
 
@@ -104,10 +301,20 @@ pub(crate) fn reserve_active_required(length: usize) -> bool {
     let admitted = reserve(budget.as_deref(), length);
     if !admitted {
         if let Some(budget) = budget {
+            record_refusal(&budget, length);
             budget.overflowed.set(true);
         }
     }
     admitted
+}
+
+/// Fail a required allocator frontier without manufacturing another allocation
+/// request. Already selected receipts and actual debits remain unchanged.
+pub(crate) fn refuse_active_required(requested: usize) {
+    if let Some(budget) = active() {
+        record_refusal(&budget, requested);
+        budget.overflowed.set(true);
+    }
 }
 
 pub(crate) fn reserve_active_preserving(length: usize, floor: usize) -> bool {
@@ -144,6 +351,13 @@ pub(crate) fn clear_active_floor() {
 
 pub(crate) fn active_remaining() -> Option<usize> {
     active().map(|budget| budget.remaining.get())
+}
+
+/// Infallible bounded helpers may return an empty carrier after refusal.
+/// Publication boundaries must reject that sticky state even when their
+/// surrounding operation otherwise returned success.
+pub(crate) fn active_refused() -> bool {
+    active().is_some_and(|budget| budget.overflowed.get())
 }
 
 pub(crate) fn active_limit() -> Option<usize> {
@@ -281,6 +495,8 @@ fn join_slices<T: AsRef<str>>(values: &[T], separator: &str) -> String {
     }
     output
 }
+
+pub(crate) mod classifier_string;
 
 pub(crate) struct CappedString {
     bytes: String,
@@ -1031,3 +1247,18 @@ mod tests {
         assert_eq!(used, 3);
     }
 }
+
+#[cfg(test)]
+mod refusal_tests;
+
+#[cfg(test)]
+mod resolution_stage_tests;
+
+mod source_owner_scope;
+pub(crate) use source_owner_scope::source_owner_scope;
+
+#[cfg(test)]
+mod canonical_stage_tests;
+
+#[cfg(test)]
+mod loan_inner_stage_tests;

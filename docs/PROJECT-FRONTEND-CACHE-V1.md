@@ -22,6 +22,13 @@ separate [Semantic Cache v1](PROJECT-SEMANTIC-CACHE-V1.md) constructor adds
 checked-module reuse and emits its own work schema; it does not change this
 report's zero-HIR contract or make the source-backed store warm.
 
+AST-only resolved-core reception keeps the full resolved owner and original
+work counters, but does not materialize an owning synthetic key that this mode
+would discard. Actual imported presentations acquire real spare declaration
+backing uniformly before resolution; this raises ordinary/warm live storage
+and is not a claimed savings. Semantic publication alone consumes it, as owned
+by [Workspace Semantic Graph v1](WORKSPACE-SEMANTIC-GRAPH-V1.md).
+
 Project finalization reuses the exact retained source AST for source Agent
 extraction and prelude-bound source revision construction/replay. Each borrow checks the source bytes and path. It neither clones the AST nor
 counts as a frontend cache hit. The revision hashing inputs and independent preflight fact checks
@@ -164,3 +171,30 @@ Those regressions still need execution. Checked-HIR reuse, dependency-sensitive
 incremental typechecking, warm cross-process loading, target work reuse,
 incremental candidate application, and measured latency/memory benchmarks remain
 outside this slice and are not completion claims.
+
+The frontend build holds one complete current owned source closure after bundled
+dependency expansion. Once all current-byte/module/invalidation guards finish,
+that exact ordered closure moves into the ordinary Project builder. This handoff
+does not copy its paths/source text, change cache authority or compatibility,
+or change any source/counter/construction limits. Public borrowed input still
+requires its initial owned copy; parsing, checked replay and final publication
+retain their existing ownership and payment obligations. The narrow handoff
+observation excludes construction of the original closure and makes no whole
+build allocation or application-fit claim.
+
+### Borrowed current body-reuse input
+
+The private checked resolver can read the exact synthetic declaration view even
+when a previous owning cache key exists. Full current-source verification runs
+before the unchanged non-body environment and signature comparisons. Complete
+key equality includes every owned Program field; a view is never a cache hint.
+A newly published key still owns its authored declarations. Invariant desugaring
+retains its owning fallback.
+
+Only resolver staging omits old canonical loan and cleanup attachments from a
+reused function clone. Capacity analysis then runs on ordinary lowered input,
+and the existing loan, inventory and cleanup producers rebuild every attachment
+before independent validation and publication. The saved resolution cost remains
+charged; removed attachment storage is never refunded. Source controls compare
+the old full clone through Drop and retain complete graph/image body-edit parity.
+These controls await execution and establish no whole-build fit or latency claim.

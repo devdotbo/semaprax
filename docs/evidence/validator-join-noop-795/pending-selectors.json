@@ -1,0 +1,21 @@
+{
+  "package": "semaprax",
+  "harness": "lib",
+  "status": "source-only; no builds/tests executed",
+  "selectors": [
+    "hir::validation::scope_checkpoint::merge::tests::canonical_nonempty_noop_keeps_complete_old_fields_and_removes_actual_payload_cow",
+    "hir::validation::scope_checkpoint::merge::tests::equal_nonempty_prefix_normalization_and_changed_outputs_keep_complete_original_scope",
+    "hir::validation::scope_checkpoint::merge::tests::noops_use_only_written_fields_and_changed_loan_availability_still_commit",
+    "hir::validation::scope_checkpoint::merge::tests::complete_join_receiver_exact_short_zero_and_sticky_are_paid_through_drop",
+    "hir::validation::scope_checkpoint::merge::tests::sticky_join_scratch_refusal_leaves_complete_target_and_first_receipt_unchanged",
+    "hir::validation::scope_checkpoint::merge::tests::complete_saved_paid_merge_producer_is_byte_exact",
+    "hir::validation::scope_checkpoint::merge::tests::late_error_restores_complete_publication_and_selected_diagnostic_through_drop",
+    "hir::validation::scope_checkpoint::merge::tests::unchanged_availability_and_borrow_producers_keep_complete_saved_receiver_fields"
+  ],
+  "required_existing": [
+    "hir::validation::scope_checkpoint::tests::equal_nonempty_projection_states_still_run_the_full_prefix_join",
+    "hir::validation::scope_checkpoint::tests::real_late_error_moves_the_last_published_full_binding_on_early_return",
+    "hir::validation::function_scope::tests::persistent_body_receiver_preserves_complete_saved_iterative_scope_on_every_corpus_function",
+    "hir::validation::contract_owners::tests::persistent_contract_domains_match_the_complete_saved_owning_oracle"
+  ]
+}

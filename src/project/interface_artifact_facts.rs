@@ -337,6 +337,10 @@ fn derive_source_interface(
         | ProjectProfile::StdinStreamCommandIoV2
         | ProjectProfile::StdinStreamTextCommandIoV1
         | ProjectProfile::StdinStreamDataCommandIoV1
+        | ProjectProfile::StdinStreamDataCommandIoV2
+        | ProjectProfile::StdinStreamOwnedDataCommandIoV1
+        | ProjectProfile::StdinStreamCollectionRecordCommandIoV1
+        | ProjectProfile::StdinStreamNestedOutcomeCommandIoV1
         | ProjectProfile::LineCommandIoV1
         | ProjectProfile::NetworkCommandIoV1
         | ProjectProfile::HttpsCommandIoV1
@@ -349,6 +353,8 @@ fn derive_source_interface(
         | ProjectProfile::SourceLocalFutureIndexedRustV1 => return Ok(None),
         ProjectProfile::ProcessIoV1
         | ProjectProfile::SourceCommandV1
+        | ProjectProfile::SourceCommandSelectedFileV1
+        | ProjectProfile::SourceCommandSelectedFileResourceV1
         | ProjectProfile::SourceCommandResourceOutputV1 => return Ok(None),
     };
     let canonical_bytes = String::from_utf8(bytes)

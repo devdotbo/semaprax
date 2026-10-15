@@ -1,0 +1,38 @@
+{
+  "source_only": true,
+  "source_basis": "17c786eaa",
+  "stage_current_bindings_full_originals": 9,
+  "provider_current_bindings_full_originals": 17,
+  "linked_current_bindings_full_originals": 3,
+  "changes": [
+    {
+      "packet": "stage9",
+      "source": "tests/hir_module_boundaries.rs",
+      "additive_exact_hunks": 2
+    },
+    {
+      "packet": "stage9",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "additive_exact_hunks": 3
+    },
+    {
+      "packet": "stage9",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "additive_exact_hunks": 1
+    },
+    {
+      "packet": "provider17",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "additive_exact_hunks": 1,
+      "recorded_current_basis": "d5006a8ec hash equal"
+    },
+    {
+      "packet": "provider17",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "additive_exact_hunks": 3,
+      "recorded_current_basis": "d5006a8ec hash equal"
+    }
+  ],
+  "archive_or_existing_hook_changes": false,
+  "execution": "Python exact source projection only; no Cargo/Rust tests."
+}

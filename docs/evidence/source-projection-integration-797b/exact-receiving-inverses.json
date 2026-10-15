@@ -1,0 +1,132 @@
+[
+  {
+    "owner": "src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests/constructors.rs",
+    "source": "src/hir.rs",
+    "archive": "docs/evidence/schema-summary/hir.rs.before",
+    "edits": [
+      {
+        "after": "pub(crate) mod borrowed_scalar;\nmod byte_capacity;\nmod byte_slice_provenance;\nmod ordinary_scan;\npub(crate) mod static_text;\npub use static_text::StaticUtf8;\n",
+        "before": "pub(crate) mod borrowed_scalar;\nmod byte_capacity;\nmod ordinary_scan;\nmod byte_slice_provenance;\npub(crate) mod static_text;\npub use static_text::StaticUtf8;\n"
+      },
+      {
+        "after": "    is_admitted_concrete_owned_byte_variant, is_admitted_owned_string_variant,\n};\npub(crate) fn nested_record_copy_scalar_is_admitted(ty: &ResolvedType) -> bool {\n    type_reachability::nested_record_copy_scalar_is_admitted(ty)\n}\nmod validation;\nmod variant_equality;\n",
+        "before": "    is_admitted_concrete_owned_byte_variant, is_admitted_owned_string_variant,\n};\nmod validation;\nmod variant_equality;\n"
+      },
+      {
+        "after": "pub(crate) use type_reachability::owned_oracle::owned_reachable_types as owned_reachable_types_oracle;\npub(crate) use type_reachability::{\n    authored_nominal_declarations, is_admitted_nested_owned_byte_record, is_flat_owned_byte_record,\n    reachable_authored_types, reachable_authored_types_with_roots, reachable_scalar_authored_types,\n    BorrowedTypeInventory,\n};\npub(crate) use validation::resolved_type_contains_owned_bytes;\n#[cfg(test)]\nuse validation::HirValidator;\npub(crate) use workspace_link::{\n    copy_scalar_type, link_https_command_io_workspace, link_https_entry_workspace,\n    link_language_command_io_workspace, link_line_command_io_workspace,\n    link_network_command_io_workspace, link_network_entry_workspace, link_owned_data_api_workspace,\n",
+        "before": "pub(crate) use type_reachability::owned_oracle::owned_reachable_types as owned_reachable_types_oracle;\npub(crate) use type_reachability::{\n    BorrowedTypeInventory, authored_nominal_declarations, is_admitted_nested_owned_byte_record,\n    is_flat_owned_byte_record, reachable_authored_types, reachable_authored_types_with_roots,\n    reachable_scalar_authored_types,\n};\n#[cfg(test)]\nuse validation::HirValidator;\npub(crate) use validation::resolved_type_contains_owned_bytes;\npub(crate) use workspace_link::{\n    COPY_SCALAR_NAMES, LinkedScalarProjectParts, PACKAGE_SCALAR_NAME, copy_scalar_type,\n    link_https_command_io_workspace, link_https_entry_workspace,\n    link_language_command_io_workspace, link_line_command_io_workspace,\n    link_network_command_io_workspace, link_network_entry_workspace, link_owned_data_api_workspace,\n"
+      },
+      {
+        "after": "    validate_stream_collection_record_program, validate_stream_data_program,\n    validate_stream_nested_outcome_program, validate_stream_owned_program,\n    validate_stream_record_program, validate_stream_text_program, LinkedScalarProjectParts,\n    COPY_SCALAR_NAMES, PACKAGE_SCALAR_NAME,\n};\n\n",
+        "before": "    validate_stream_collection_record_program, validate_stream_data_program,\n    validate_stream_nested_outcome_program, validate_stream_owned_program,\n    validate_stream_record_program, validate_stream_text_program,\n};\n\n"
+      },
+      {
+        "after": "    resolved_scalar_substitutions, same_function_meaning,\n};\npub use row_loan::{RowLoan, RowLoanVersion, ROW_LOAN_V1};\npub(crate) use validation::byte_traversal::{\n    function_uses as byte_traversal_function_uses, partial_receiver as is_partial_byte_receiver,\n",
+        "before": "    resolved_scalar_substitutions, same_function_meaning,\n};\npub use row_loan::{ROW_LOAN_V1, RowLoan, RowLoanVersion};\npub(crate) use validation::byte_traversal::{\n    function_uses as byte_traversal_function_uses, partial_receiver as is_partial_byte_receiver,\n"
+      },
+      {
+        "after": "    matched\n}\npub(crate) use nodes::{\n    admitted_owned_byte_prelude_instance, is_refutable_match_scalar, is_scalar_resolved_type,\n    LinkedDeclarationFact, LinkedOwnedDataParts, LinkedScalarFunction,\n};\npub use nodes::{\n    ByteSliceExtent, ByteSliceProvenance, ByteSliceRangeStep, ByteSliceRootKind, Declaration,\n",
+        "before": "    matched\n}\npub use nodes::{\n    ByteSliceExtent, ByteSliceProvenance, ByteSliceRangeStep, ByteSliceRootKind, Declaration,\n"
+      },
+      {
+        "after": "    ResolvedTypeParameterDeclaration, ResolvedVariantCaseDeclaration, ResolvedYieldsClause,\n    TypeFacts, VectorFieldProvenance,\n};\n\n",
+        "before": "    ResolvedTypeParameterDeclaration, ResolvedVariantCaseDeclaration, ResolvedYieldsClause,\n    TypeFacts, VectorFieldProvenance,\n};\npub(crate) use nodes::{\n    LinkedDeclarationFact, LinkedOwnedDataParts, LinkedScalarFunction,\n    admitted_owned_byte_prelude_instance, is_refutable_match_scalar, is_scalar_resolved_type,\n};\n\n"
+      },
+      {
+        "after": "    // The environment proof belongs to this exact current source receiver.\n    current: &'a dyn ProgramSource,\n    program: &'a dyn ProgramSource,\n    resolved: &'a ResolvedProgram,\n    costs: &'a BTreeMap<String, usize>,\n",
+        "before": "    // The environment proof belongs to this exact current source receiver.\n    current: &'a dyn ProgramSource,\n    program: &'a Program,\n    resolved: &'a ResolvedProgram,\n    costs: &'a BTreeMap<String, usize>,\n"
+      },
+      {
+        "after": "        let invalid_oracle = full_verdict(&allocating, None);\n        assert_eq!(invalid_oracle.as_ref().unwrap_err()[0].code, \"SPX-T252\");\n        assert!(invalid_oracle.as_ref().unwrap_err()[0]\n            .message\n            .contains(\"call `leaf` is not admitted in loop bodies\"));\n        assert_eq!(\n            full_verdict(&allocating, Some((&previous, &old, &costs)))\n",
+        "before": "        let invalid_oracle = full_verdict(&allocating, None);\n        assert_eq!(invalid_oracle.as_ref().unwrap_err()[0].code, \"SPX-T252\");\n        assert!(\n            invalid_oracle.as_ref().unwrap_err()[0]\n                .message\n                .contains(\"call `leaf` is not admitted in loop bodies\")\n        );\n        assert_eq!(\n            full_verdict(&allocating, Some((&previous, &old, &costs)))\n"
+      },
+      {
+        "after": "#[path = \"hir/provisional_result_borrow_tests.rs\"]\nmod provisional_result_borrow_tests;\n\nmod function_reuse_source;\n",
+        "before": "#[path = \"hir/provisional_result_borrow_tests.rs\"]\nmod provisional_result_borrow_tests;\n"
+      },
+      {
+        "before": "pub(crate) mod items;\nuse crate::ast::program_source::ProgramSource;\n",
+        "after": "pub(crate) mod items;\nmod nominal_payload;\n#[path = \"hir/prelude_bundle.rs\"]\npub(crate) mod prelude_bundle;\npub use nominal_payload::{NominalPayload, NominalMutationError};\nuse crate::ast::program_source::ProgramSource;\n"
+      },
+      {
+        "before": "pub use declaration_index::{DeclarationIndex, dispose_declaration_index_for_private_contract};\npub(crate) use declaration_index::{TypeFactsPayer, TypeFlags};\n",
+        "after": "pub use declaration_index::{DeclarationIndex, dispose_declaration_index_for_private_contract};\npub(crate) use declaration_index::{inventory_identity, inventory_substitute, InventoryPayer};\npub(crate) use declaration_index::{TypeFactsPayer, TypeFlags};\n"
+      },
+      {
+        "before": "};\nuse byte_slice_provenance::derive_byte_slice_provenance;\n",
+        "after": "};\n#[cfg(test)]\npub(crate) use byte_capacity::byte_data_capacity_inputs;\nuse byte_slice_provenance::derive_byte_slice_provenance;\n"
+      }
+    ]
+  },
+  {
+    "owner": "src/hir/validation/canonical_loans/ownership_tests.rs",
+    "source": "src/hir/validation.rs",
+    "archive": "src__hir__validation.rs.before.txt",
+    "edits": [
+      {
+        "before": "mod executable_profiles;\nmod generic_record_composition;\nmod generic_template;\nmod host_command;\nmod lexical_exit;\nmod native_borrow;\nmod nominal_facts;\nmod ownership_flags;\nmod owned_buffer;\nmod owned_result_try;\npub(super) mod owner_renewal;\nmod proof_return;\nmod record_pattern;\nmod record_traversal;\n",
+        "after": "mod executable_profiles;\nmod generic_record_composition;\nmod generic_template;\nmod held_profiles;\nmod host_command;\nmod lexical_exit;\nmod native_borrow;\nmod nominal_facts;\nmod owned_buffer;\nmod owned_result_try;\npub(super) mod owner_renewal;\nmod ownership_flags;\nmod proof_return;\nmod record_pattern;\nmod record_traversal;\n"
+      },
+      {
+        "before": "                Some(_) => return Err(hir_error_static(\n                    \"executable profile observations do not belong to the current declaration index\",\n                )),\n                None => executable_profiles::Lookup::new(&seed.program.declarations)?,\n            },\n            functions: seed.functions,\n            expression_ids: identity_directory::Set::new(),\n",
+        "after": "                Some(_) => return Err(hir_error_static(\n                    \"executable profile observations do not belong to the current declaration index\",\n                )),\n                None => executable_profiles::Lookup::for_program(seed.program)?,\n            },\n            functions: seed.functions,\n            expression_ids: identity_directory::Set::new(),\n"
+      },
+      {
+        "before": "                            }\n                            let mut intrinsic_parameters = None;\n                            let mut borrowed_parameters = None;\n                            let retained_program = self.program;\n                            let (params, return_type) = if let Some(signature) =\n                                self.intrinsic_signature(callee, type_arguments, instance, args)?\n",
+        "after": "                            }\n                            let mut intrinsic_parameters = None;\n                            let mut borrowed_parameters = None;\n                            let mut held_parameters = None;\n                            let retained_program = self.program;\n                            let (params, return_type) = if let Some(signature) =\n                                self.intrinsic_signature(callee, type_arguments, instance, args)?\n"
+      },
+      {
+        "before": "                                    call_signature::ResultType::Owned(op.return_type()),\n                                )\n                            } else {\n                                let (params, return_type, target_effects) = if let Some(target) =\n                                    retained_program.resolve_call_target(callee, instance.as_ref())\n                                {\n                                    borrowed_parameters = Some(target.params.as_slice());\n                                    (\n",
+        "after": "                                    call_signature::ResultType::Owned(op.return_type()),\n                                )\n                            } else {\n                                let retained_target = if self.executable_profiles.is_bound() {\n                                    held_parameters =\n                                        self.executable_profiles.call(callee, instance.as_ref());\n                                    held_parameters.map(|call| call.function())\n                                } else {\n                                    retained_program.resolve_call_target(callee, instance.as_ref())\n                                };\n                                let (params, return_type, target_effects) = if let Some(target) =\n                                    retained_target\n                                {\n                                    borrowed_parameters = Some(target.params.as_slice());\n                                    (\n"
+      },
+      {
+        "before": "                                (params, return_type)\n                            };\n                            let params = if let Some(parameters) = borrowed_parameters {\n                                CallParameters::Borrowed(parameters)\n                            } else {\n                                intrinsic_parameters.unwrap_or(CallParameters::Owned(params))\n                            };\n",
+        "after": "                                (params, return_type)\n                            };\n                            let params = if let Some(parameters) = borrowed_parameters {\n                                held_parameters.map_or(\n                                    CallParameters::Borrowed(parameters),\n                                    CallParameters::Held,\n                                )\n                            } else {\n                                intrinsic_parameters.unwrap_or(CallParameters::Owned(params))\n                            };\n"
+      }
+    ]
+  },
+  {
+    "owner": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+    "source": "src/cleanup_plan/replay/paid_type_facts.rs",
+    "archive": "docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__paid_type_facts.rs.before",
+    "edits": [
+      {
+        "after": "use crate::hir::{DeclarationIndex, TypeFactsPayer};\n\npub(super) struct Payer<'a> {\n    function: &'a ResolvedFunction,\n    budget: &'a mut ReplayBudget,\n",
+        "before": "use crate::hir::{DeclarationIndex, TypeFactsPayer};\n\nstruct Payer<'a> {\n    function: &'a ResolvedFunction,\n    budget: &'a mut ReplayBudget,\n"
+      }
+    ]
+  },
+  {
+    "owner": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+    "source": "src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests.rs",
+    "archive": "docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__paid_type_facts__inventory_encoded__tests.rs.before",
+    "edits": [
+      {
+        "after": "fn full_classifier_string_original_body_remains_independent_of_work_receiver() {\n    assert_eq!(\n        include_str!(\"../../../../../bounded_output/classifier_string.rs\")\n            .strip_suffix(\"\\nmod inventory_work;\\n\")\n            .unwrap(),\n        include_str!(\"../../../../../../docs/evidence/schema-summary/classifier_string.rs.before\")\n    );\n}\n",
+        "before": "fn full_classifier_string_original_body_remains_independent_of_work_receiver() {\n    assert_eq!(\n        include_str!(\"../../../../bounded_output/classifier_string.rs\")\n            .strip_suffix(\"\\nmod inventory_work;\\n\")\n            .unwrap(),\n        include_str!(\"../../../../../docs/evidence/schema-summary/classifier_string.rs.before\")\n    );\n}\n"
+      }
+    ]
+  },
+  {
+    "owner": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+    "source": "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs",
+    "archive": "docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__paid_type_facts__inventory_tests.rs.before",
+    "edits": [
+      {
+        "after": "#[test]\nfn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter() {\n    let current = include_str!(\"../../paid_type_facts.rs\");\n    let (head, rest) = current\n        .split_once(\"/// Raw ordinary inventory diagnostic adapter.\")\n",
+        "before": "#[test]\nfn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter() {\n    let current = include_str!(\"../paid_type_facts.rs\");\n    let (head, rest) = current\n        .split_once(\"/// Raw ordinary inventory diagnostic adapter.\")\n"
+      }
+    ]
+  },
+  {
+    "owner": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "source": "src/hir/ids.rs",
+    "archive": "docs/evidence/opt810-live-oracle/src__hir__ids.rs.before",
+    "edits": [
+      {
+        "after": "#[cfg(test)]\npub(crate) use metered_owner::matches as monomorphic_owner_matches_with_work;\n\n#[cfg(test)]\npub(in crate::hir) mod fixed_operation_tests;\n",
+        "before": "#[cfg(test)]\npub(crate) use metered_owner::matches as monomorphic_owner_matches_with_work;\n"
+      }
+    ]
+  }
+]

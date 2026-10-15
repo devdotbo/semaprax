@@ -11,7 +11,7 @@ pub(crate) fn graph_schema(program: &ResolvedProgram) -> Result<&'static str, Di
             .functions
             .iter()
             .chain(program.function_instances.iter().map(|i| &i.function))
-            .any(requires)
+            .any(|function| hir::vec_loop_renewal::requires_in(program, function))
         {
             if previous == "semaprax.graph.v67" {
                 previous
@@ -25,14 +25,43 @@ pub(crate) fn graph_schema(program: &ResolvedProgram) -> Result<&'static str, Di
 }
 pub(crate) fn graph_schema_from_parts_and_instances(
     i: &[hir::ResolvedInterface],
-    t: &[hir::ResolvedTypeDeclaration],
-    f: &[ResolvedFunction],
-    x: &[hir::ResolvedFunctionTemplate],
+    t: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    f: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    x: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
     n: &[hir::ResolvedFunctionInstance],
 ) -> Result<&'static str, Diagnostic> {
-    let previous = super::stdin_stream::graph_schema_from_parts_and_instances(i, t, f, x, n)?;
+    graph_schema_from_parts_and_instances_with_renewal_authority(i, t, f, x, n, None)
+}
+
+pub(crate) fn graph_schema_from_parts_and_instances_with_renewal_authority(
+    i: &[hir::ResolvedInterface],
+    t: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    f: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    x: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
+    n: &[hir::ResolvedFunctionInstance],
+    renewal_authority: Option<&dyn Fn(&ResolvedFunction) -> bool>,
+) -> Result<&'static str, Diagnostic> {
+    let previous = match renewal_authority {
+        None => super::stdin_stream::graph_schema_from_parts_and_instances(i, t, f, x, n),
+        Some(_) => {
+            super::stdin_stream::graph_schema_from_parts_and_instances_with_renewal_authority(
+                i,
+                t,
+                f,
+                x,
+                n,
+                renewal_authority,
+            )
+        }
+    }?;
     Ok(
-        if f.iter().chain(n.iter().map(|i| &i.function)).any(requires) {
+        if f.iter()
+            .chain(n.iter().map(|i| &i.function))
+            .any(|function| {
+                renewal_authority
+                    .map_or_else(|| requires(function), |authority| authority(function))
+            })
+        {
             if previous == "semaprax.graph.v67" {
                 previous
             } else {
@@ -55,7 +84,7 @@ pub(super) fn graph_json(
         .functions
         .iter()
         .chain(program.function_instances.iter().map(|i| &i.function))
-        .any(requires)
+        .any(|function| hir::vec_loop_renewal::requires_in(program, function))
     {
         return Ok(graph);
     }
@@ -83,7 +112,7 @@ pub(super) fn graph_json(
         .chain(program.function_instances.iter().map(|i| &i.function))
         .filter(|f| functions.contains(&f.id))
     {
-        for (at, binding) in hir::vec_loop_renewal::bindings(function) {
+        for (at, binding) in hir::vec_loop_renewal::bindings_in(program, function) {
             updates.push(format!(
                 "{{\"function\":{},\"at\":{},\"binding\":{}}}",
                 quote_json(function.id.as_str()),

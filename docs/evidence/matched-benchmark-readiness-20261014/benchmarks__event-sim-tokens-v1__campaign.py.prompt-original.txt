@@ -1,0 +1,117 @@
+def prompt_for(arm: str, candidate: Path, semaprax_bin: Path,
+               authoring_profile: str = AUTHORING_PROFILE_V24) -> str:
+    if authoring_profile == AUTHORING_PROFILE_SHIFTSIM_V31:
+        historical = prompt_for(arm, candidate, semaprax_bin, AUTHORING_PROFILE_V30)
+        if arm == "typescript":
+            return historical
+        old_guidance = (
+            "Private helpers may use the v30 admitted owned leaf collections and flat records; "
+            "the external command ABI still contains no Vec or nominal value. Read "
+            "`$SEMAPRAX_BIN help language author:owned-data` for exact shapes, operations, "
+            "ownership, and unchanged Bytes allocation/clone loop restrictions. Built-in checked "
+            "source derivation is optional; all generated source remains subject to ordinary checks. ")
+        new_guidance = (
+            "Private helpers may use the v31 admitted typed collection records and nested collection "
+            "records; the external command ABI remains `fn() -> i64` with no Vec or nominal value. "
+            "Read `$SEMAPRAX_BIN help language author:collection-records` for exact shapes, ordering, "
+            "ownership, and unchanged limits. Built-in checked source derivation is optional; all "
+            "generated source remains subject to ordinary checks. ")
+        scope = ("This round 6 cohort changes only the historical Project setup clause. Preserve all "
+            "original 15 application requirements, the SPEC's scheduling and tie behavior, limits, "
+            "diagnostics, validation, and exact publication bytes. Existing raw-whitespace, escaped "
+            "identifier, and error-output obligations remain binding. Bytes allocation, clone, and "
+            "replacement loop restrictions remain unchanged.\n")
+        return scope + historical.replace("native Project v30 manifest", "native Project v31 manifest").replace(
+            "`language-command-io.owned-data.v1`", "`language-command-io.collection-record.v1`").replace(
+            old_guidance, new_guidance)
+    if authoring_profile == AUTHORING_PROFILE_V32:
+        historical = prompt_for(arm, candidate, semaprax_bin, AUTHORING_PROFILE_V30)
+        if arm == "typescript":
+            return historical
+        old_guidance = (
+            "Private helpers may use the v30 admitted owned leaf collections and flat records; "
+            "the external command ABI still contains no Vec or nominal value. Read "
+            "`$SEMAPRAX_BIN help language author:owned-data` for exact shapes, operations, "
+            "ownership, and unchanged Bytes allocation/clone loop restrictions. Built-in checked "
+            "source derivation is optional; all generated source remains subject to ordinary checks. ")
+        new_guidance = (
+            "Private helpers may use the checked typed record collections, nested collection records "
+            "and owning nested outcomes admitted by this profile; the external command ABI still "
+            "contains no Vec or nominal value. Read `$SEMAPRAX_BIN help language author:collection-records` "
+            "for ordinary shapes, ordering, ownership and unchanged limits. Discover optional checked "
+            "derivation through built-in help; generated source remains subject to ordinary checks. ")
+        scope = ("This separately versioned cohort supersedes only the SPEC's historical Project "
+            "profile/setup clause. All original 15 application requirements, scheduler ordering and "
+            "tie behavior, bounds, diagnostics and exact publication bytes remain binding. "
+            "Bytes-bearing allocation, clone and replacement loop restrictions remain unchanged.\n")
+        return scope + historical.replace("native Project v30 manifest", "native Project v32 manifest").replace(
+            "`language-command-io.owned-data.v1`", "`language-command-io.nested-outcome.v1`").replace(
+            old_guidance, new_guidance)
+    if authoring_profile == AUTHORING_PROFILE_V30:
+        historical = prompt_for(arm, candidate, semaprax_bin, AUTHORING_PROFILE_V27)
+        if arm == "typescript":
+            return historical
+        old_guidance = (
+            "Private helpers may borrow `Vec<T>` only when T is a Copy scalar (i64, i32, u8, usize, char, f32, f64, or "
+            "bool). Do not expose owned or returned Vec values, borrowed Vec values at public roots, "
+            "or any Vec in the command ABI. ")
+        new_guidance = (
+            "Private helpers may use the v30 admitted owned leaf collections and flat records; "
+            "the external command ABI still contains no Vec or nominal value. Read "
+            "`$SEMAPRAX_BIN help language author:owned-data` for exact shapes, operations, "
+            "ownership, and unchanged Bytes allocation/clone loop restrictions. Built-in checked "
+            "source derivation is optional; all generated source remains subject to ordinary checks. ")
+        return historical.replace("native Project v27 manifest", "native Project v30 manifest").replace(
+            "`language-command-io.stream-data.v1`", "`language-command-io.owned-data.v1`").replace(
+            old_guidance, new_guidance)
+    language = "SEMAPRAX native Project" if arm == "semaprax" else "TypeScript on Node.js"
+    prompt = f"""Implement a complete, idiomatic ShiftSim application in {language} according to
+`benchmarks/event-sim-tokens-v1/SPEC.md`. The whole implementation belongs under
+`{candidate}`. Do not change compiler or benchmark files. The checkout contains
+only the public specification; the independent acceptance corpus and oracle are
+not in your workspace.
+
+Create executable `build.sh`, `run.sh`, and `test.sh`. `build.sh` must compile
+or validate the implementation without network access. `run.sh` must accept
+one JSON request on stdin, emit the exact report plus one newline on stdout,
+and produce the specified status-2 diagnostic for invalid requests. `test.sh`
+must run your own automated tests and fail nonzero on errors. The SEMAPRAX arm
+must use a native Project v24 manifest and the compiler at `{semaprax_bin}`
+(also available as `$SEMAPRAX_BIN`), with Project profile
+`language-command-io.stream.v2`, input `argv-utf8+stdin-stream.v1`, and an
+explicit command function returning `i64` process status in the range 0..255.
+Return 0 for valid requests and 2 for invalid requests, writing the specified
+diagnostic to stderr and nothing to stdout for invalid input. Do not use a
+failed contract or runtime failure to represent ordinary invalid input. Build
+the native command with `$SEMAPRAX_BIN build --manifest-path semaprax.toml
+--target native --output dist/shiftsim`, and have `run.sh` execute that native
+binary. `semaprax run` executes the ordinary Project entry and is not the
+selected command process adapter. Streaming operations are documented by
+`$SEMAPRAX_BIN help language`. The TypeScript arm must use Node from `PATH` and
+provide the same stdin and process status behavior. Built-in
+language/compiler/runtime help is available to either arm.
+The specification explicitly has no raw-input byte limit for JSON whitespace;
+the hidden acceptance corpus includes a valid request over 65,536 bytes due to
+leading whitespace.
+
+Do not access material outside the public specification and your candidate
+directory, except built-in language/compiler/runtime help. Finish by listing files written and stating whether the implementation
+is complete.
+"""
+    if authoring_profile == AUTHORING_PROFILE_V24:
+        return prompt
+    if authoring_profile != AUTHORING_PROFILE_V27:
+        raise ValueError(f"unsupported ShiftSim authoring profile: {authoring_profile}")
+    prompt = prompt.replace("native Project v24 manifest", "native Project v27 manifest")
+    prompt = prompt.replace("`language-command-io.stream.v2`", "`language-command-io.stream-data.v1`")
+    prompt = prompt.replace("`$SEMAPRAX_BIN help language`", "`$SEMAPRAX_BIN help language projects`")
+    marker = "The TypeScript arm must use Node from `PATH`"
+    extension = (
+        "For the SEMAPRAX arm, keep the external command ABI exactly `fn() -> i64` and the "
+        "manifest capabilities exactly `process.args.read`, `process.stderr.write`, "
+        "`process.stdin.read`, and `process.stdout.write` in sorted order. Private helpers may "
+        "borrow `Vec<T>` only when T is a Copy scalar (i64, i32, u8, usize, char, f32, f64, or "
+        "bool). Do not expose owned or returned Vec values, borrowed Vec values at public roots, "
+        "or any Vec in the command ABI. "
+    )
+    return prompt.replace(marker, extension + marker)

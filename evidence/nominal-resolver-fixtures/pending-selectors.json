@@ -1,0 +1,40 @@
+{
+  "base": "020c60c18",
+  "qualification": "source only; not compiled or executed",
+  "selectors": [
+    {
+      "harness": "lib",
+      "source": "src/hir/type_reachability/nominal_tests.rs",
+      "selector": "hir::type_reachability::nominal_tests::nominal_original_generic_owned_bytes_keeps_both_source_refusals"
+    },
+    {
+      "harness": "lib",
+      "source": "src/hir/type_reachability/nominal_tests.rs",
+      "selector": "hir::type_reachability::nominal_tests::nominal_environments_keep_shared_fields_full_trees_and_exact_active_equality"
+    },
+    {
+      "harness": "lib",
+      "source": "src/hir/type_reachability/nominal_tests.rs",
+      "selector": "hir::type_reachability::nominal_tests::nominal_environments_keep_forgery_arity_late_failure_and_tree_order"
+    },
+    {
+      "harness": "lib",
+      "source": "src/hir/type_reachability/nominal_tests.rs",
+      "selector": "hir::type_reachability::nominal_tests::nominal_environments_keep_exact_global_limits_and_first_refusal"
+    },
+    {
+      "harness": "lib",
+      "source": "src/hir/resolver_scope/tests.rs",
+      "selector": "hir::resolver_scope::tests::complete_frozen_iterative_receiver_keeps_every_diagnostic_field_and_first_error"
+    },
+    {
+      "harness": "lib",
+      "source": "src/hir/resolver_scope/tests.rs",
+      "selector": "hir::resolver_scope::tests::complete_frozen_iterative_receiver_keeps_mixed_binary_lowering_and_source_refusal"
+    }
+  ],
+  "unchanged_saved_receivers": {
+    "src/hir/type_reachability/nominal_saved.rs": "cd11170646f9e3782320f97ac89598963ad177ba10604f7519b27a15aab8e5de",
+    "src/hir/borrowed_root_oracle/resolve_expr.rs": "8b9bc136d4bedd83e218f4f7cd1e6b316426a76063c794b1679c4056039ed40a"
+  }
+}

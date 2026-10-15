@@ -1,0 +1,16 @@
+@id("consumer.legacy.json.utf8.valid")
+fn json_Legacy_identifier_valid(input:borrow Slice<u8>,start:usize,end:usize)->bool {
+let length=byte_len(input);let mut valid=start<end && end<=length;
+let closed=if valid{jv_scan_string(input,start,false)}else{length+1usize};
+let total=if valid && closed==end{jv_decoded_len(input,start)}else{length+1usize};
+valid=valid && closed==end && total<=64usize;
+let mut at=if valid{start+1usize}else{end};
+while valid && at<end-1usize {
+let escaped=match byte_get(input,at){Option::Some{value}=>value==92u8,Option::None{}=>false,};
+let scalar=if escaped{ju_escape_scalar(input,at)}else{ju_raw_scalar(input,at)};
+let next=if escaped{jv_token_end(input,at)}else{ju_raw_end(input,at)};
+valid=scalar>=0 && scalar<=1114111 && !(scalar>=55296 && scalar<=57343) && next>at && next<=end-1usize;
+at=if valid{next}else{end};valid && at<end-1usize
+}
+valid
+}

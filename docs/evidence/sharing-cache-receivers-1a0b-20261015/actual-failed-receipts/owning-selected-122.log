@@ -1,0 +1,17 @@
+
+running 1 test
+test project::incremental::cold_source_tests::explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse ... 
+thread 'project::incremental::cold_source_tests::explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse' (2395082) panicked at src/project/incremental/cold_source_tests/oracle_owner_before.rs:77:5:
+assertion `left == right` failed
+  left: 648
+ right: 32
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    project::incremental::cold_source_tests::explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8744 filtered out; finished in 0.06s
+

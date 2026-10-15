@@ -1,4 +1,13 @@
 //! Project v26: ordinary bundled imports with the exact SourceCommand runtime.
+#[cfg(unix)]
+#[path = "source_command/loglens_selected_file.rs"]
+mod loglens_selected_file;
+#[cfg(unix)]
+#[path = "source_command/selected_file.rs"]
+mod selected_file;
+#[cfg(unix)]
+#[path = "source_command/selected_file_resource.rs"]
+mod selected_file_resource;
 use semaprax::project::{self, ProjectExecutionOptions, ProjectManifest, ProjectProfile};
 use std::path::PathBuf;
 use std::process::Command;

@@ -1,0 +1,14 @@
+{
+  "package": "semaprax",
+  "harness": "lib",
+  "exact_lib_selectors": [
+    "workspace_graph::source_schema::static_text::primitive::helpers::tests::cycles_and_unsupported_scalar_provider_extensions_remain_closed",
+    "workspace_graph::source_schema::static_text::primitive::helpers::tests::complete_ordinary_provider_sources_remain_checked_while_selected_schema_refuses",
+    "workspace_graph::source_schema::static_text::primitive::helpers::tests::selected_refusal_fixture_keeps_complete_original_test_and_ordinary_receiver",
+    "workspace_graph::source_schema::static_text::primitive::helpers::tests::three_modules_use_actual_scalar_providers_without_literal_inventories_or_name_collisions",
+    "workspace_graph::source_schema::static_text::primitive::helpers::tests::aggregate_authentication_to_final_drop_work_and_backing_are_exact_and_one_short",
+    "workspace_graph::source_schema::static_text::primitive::helpers::tests::current_source_body_contract_target_and_namespace_guards_refuse_stale_providers",
+    "workspace_graph::source_schema::static_text::primitive::helpers::tests::cloned_function_and_failed_later_provider_cannot_restart_a_lease_or_allowance"
+  ],
+  "executed": false
+}

@@ -666,12 +666,15 @@ fn value_fact_index_matches_the_baseline_over_the_corpus() {
             with_baseline(baseline, || match crate::hir::resolve(&ast) {
                 Ok(program) => Ok((
                     byte_data_capacity_inputs(&program).expect("admitted inputs derive"),
-                    analyze_byte_data_capacity(&program)
-                        .map_err(|diagnostic| (diagnostic.code.to_string(), diagnostic.message)),
+                    analyze_byte_data_capacity(&program).map_err(|diagnostic| {
+                        (diagnostic.code.to_string(), diagnostic.message.into_owned())
+                    }),
                 )),
                 Err(diagnostics) => Err(diagnostics
                     .into_iter()
-                    .map(|diagnostic| (diagnostic.code.to_string(), diagnostic.message))
+                    .map(|diagnostic| {
+                        (diagnostic.code.to_string(), diagnostic.message.into_owned())
+                    })
                     .collect()),
             })
         };

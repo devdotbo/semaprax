@@ -9,14 +9,22 @@
     reason = "sealed validation and test-only replay seams remain non-public"
 )]
 mod builder_bytes_report;
+mod callee_inventory;
 mod checked_value_retention;
+#[path = "workspace_graph/import_validation.rs"]
+mod import_validation;
+use checked_value_retention::retained_signature_type_facts;
+mod constructor_failure;
 mod dependency_pruning;
 pub(crate) mod diagnostics;
 mod expected_projection;
+#[cfg(test)]
+pub(crate) mod forecast_observation;
 mod generic_type_import;
+mod identity_resolution;
 mod operation_sidecar;
 mod owned_function_import;
-use owned_function_import::validate_imported_function;
+use callee_inventory::resolved_function_callees;
 mod agent_execution;
 mod indexed_rust;
 mod loan_retention;
@@ -24,18 +32,29 @@ use loan_retention::retained_function_loan_bytes;
 mod native_law;
 mod owned_generics;
 mod package;
+mod paid_view;
+pub(crate) use paid_view::{ReceivingSources, ViewRefusal};
 mod prelude_binding;
 mod project_render;
+mod record_traversal;
+mod retain_module;
 mod retained_validation;
 mod retained_vectors;
 mod session_protocol_decl;
 mod shape_identity;
 pub(crate) mod source_callables;
+mod source_schema;
+mod static_text;
+use retain_module::retain_workspace_module;
+mod checked_retention;
+use crate::project::incremental::checked_hir::ResolvedModuleInput;
+use checked_retention::Retained;
 mod validation;
 use crate::ast::{
     Expr, ExprKind, Function, ModuleUse, ModuleUseKind, ParamMode, Program, Span, Type,
     TypeDeclaration, TypeDeclarationKind,
 };
+use crate::bounded_output::staged;
 use crate::diagnostic::Diagnostic;
 use crate::{format, graph, hir, prelude, project::ProjectProfile as P, workspace};
 use diagnostics::{graph_error, limit_error, project_function_error, use_error};
@@ -57,12 +76,13 @@ use retained_vectors::{
 use sha2::{Digest, Sha256};
 use shape_identity::{require_retained_shape_fact, top_level_declaration};
 mod type_names;
-use type_names::type_contains_name_from;
-
 use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
-use validation::{expected_declaration_facts, validate_stub_signatures, WorkspaceValidationIndex};
+use type_names::type_contains_name_from;
+use validation::{
+    expected_declaration_facts, validate_stub_signatures_authored, WorkspaceValidationIndex,
+};
 pub(crate) const MAX_FILES: usize = 32;
 const MAX_TOTAL_SOURCE_BYTES: usize = 16 * 1024 * 1024;
 const MAX_DECLARATIONS: usize = 4096;
@@ -187,6 +207,7 @@ pub(crate) struct WorkspaceSource {
     pub(crate) source: String,
 }
 pub(crate) struct WorkspaceGraphBuild {
+    current_sources: Option<current_source::ParsedSources>,
     hir: ValidatedWorkspaceHir,
     edges: Vec<WorkspaceEdge>,
     usage: WorkspaceGraphWorkUsage,
@@ -218,11 +239,10 @@ pub(crate) struct ProjectSemanticGraphArtifact {
     digest: String,
 }
 impl ProjectSemanticGraphArtifact {
-    pub(crate) fn json(&self) -> &str {
-        &self.json
-    }
-    pub(crate) fn digest(&self) -> &str {
-        &self.digest
+    /// Transfer the completed artifact into retained Project state without
+    /// copying its complete JSON or changing any rendering/budget receipt.
+    pub(crate) fn into_parts(self) -> (String, String) {
+        (self.json, self.digest)
     }
 }
 pub(crate) struct WorkspaceGraphOperationView {
@@ -484,7 +504,6 @@ struct WorkspaceDeclarationFact {
     path: Option<String>,
     module: Option<String>,
 }
-
 fn insert_expected_compiler_declaration(
     facts: &mut BTreeMap<String, WorkspaceDeclarationFact>,
     id: &str,
@@ -493,16 +512,15 @@ fn insert_expected_compiler_declaration(
 ) -> Result<(), Vec<Diagnostic>> {
     validation::insert_expected_compiler_declaration(facts, id, kind, owner)
 }
-
 struct WorkspaceResolvedModule {
     path: String,
     module: String,
     permits: Vec<String>,
-    agents: Vec<hir::ResolvedAgentDeclaration>,
-    types: Vec<hir::ResolvedTypeDeclaration>,
+    agents: Retained<hir::ResolvedAgentDeclaration>,
+    types: Retained<hir::ResolvedTypeDeclaration>,
     interfaces: Vec<hir::ResolvedInterface>,
-    functions: Vec<hir::ResolvedFunction>,
-    function_templates: Vec<hir::ResolvedFunctionTemplate>,
+    functions: Retained<hir::ResolvedFunction>,
+    function_templates: Retained<hir::ResolvedFunctionTemplate>,
     function_instances: Vec<hir::ResolvedFunctionInstance>,
     signature_types: BTreeMap<String, (hir::DeclarationKind, hir::TypeFacts)>,
     /// Canonical facts of this module's own declared session protocols
@@ -516,6 +534,12 @@ struct WorkspaceResolvedModule {
     // Only the authored native-law bytes own this schema; the resolved module
     // is an inert internal carrier with no executable declarations.
     native_law: bool,
+    static_text: Option<Box<static_text::Inventory>>,
+    scalar_helpers: Option<Box<static_text::scalar_helpers::Inventory>>,
+    record_closure: Option<Box<static_text::record_closure::Inventory>>,
+    record_source_revision: Option<[u8; 32]>,
+    // Live-reconstructed on every retention; never serialized or trusted alone.
+    scalar_lexical: Option<Box<static_text::scalar_lexical::Inventory>>,
 }
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) struct WorkspaceEdge {
@@ -738,7 +762,6 @@ impl WorkspaceSemanticGraph {
         &self.json
     }
 }
-
 impl WorkspaceSemanticGraphEntry {
     pub fn module(&self) -> &str {
         &self.module
@@ -1018,6 +1041,9 @@ pub(crate) use package::{
     build_package_scalar_sources, PackageWorkspaceImport, PackageWorkspaceModule,
 };
 impl WorkspaceGraphBuild {
+    pub(crate) fn take_current_sources(&mut self) -> Option<current_source::ParsedSources> {
+        self.current_sources.take()
+    }
     pub(crate) fn contains_module(&self, module: &str) -> bool {
         self.hir.module_paths.contains_key(module)
     }
@@ -1065,7 +1091,8 @@ impl WorkspaceGraphBuild {
             )]);
         }
 
-        let mut available = BTreeMap::<hir::DeclarationId, hir::LinkedScalarFunction>::new();
+        let mut available =
+            BTreeMap::<hir::DeclarationId, (&hir::ResolvedFunction, hir::IdentityOrigin)>::new();
         for module in &self.hir.modules {
             for function in &module.functions {
                 let Some(fact) = self.hir.declarations.get(function.id.as_str()) else {
@@ -1084,13 +1111,7 @@ impl WorkspaceGraphBuild {
                     )]);
                 }
                 if available
-                    .insert(
-                        function.id.clone(),
-                        hir::LinkedScalarFunction {
-                            function: function.clone(),
-                            origin: fact.origin,
-                        },
-                    )
+                    .insert(function.id.clone(), (function, fact.origin))
                     .is_some()
                 {
                     return Err(vec![graph_error(
@@ -1114,7 +1135,7 @@ impl WorkspaceGraphBuild {
             let fact = self
                 .hir
                 .declarations
-                .get(linked.function.id.as_str())
+                .get(linked.0.id.as_str())
                 .expect("available functions have declaration facts");
             if fact.module.as_deref() != Some(root_module)
                 || fact.origin != hir::IdentityOrigin::Explicit
@@ -1125,8 +1146,8 @@ impl WorkspaceGraphBuild {
                 )]);
             }
             if anchor.is_none()
-                && linked.function.params.is_empty()
-                && linked.function.return_type == hir::ResolvedType::I64
+                && linked.0.params.is_empty()
+                && linked.0.return_type == hir::ResolvedType::I64
             {
                 anchor = Some(id.clone());
             }
@@ -1150,7 +1171,7 @@ impl WorkspaceGraphBuild {
             if !retained.insert(function_id) {
                 continue;
             }
-            for callee in resolved_function_callees(&linked.function) {
+            for callee in resolved_function_callees(linked.0) {
                 if available.contains_key(&callee) && !retained.contains(&callee) {
                     pending.insert(callee);
                 }
@@ -1162,8 +1183,8 @@ impl WorkspaceGraphBuild {
                 available
                     .get(&id)
                     .map(|linked| hir::LinkedScalarFunction {
-                        function: linked.function.clone(),
-                        origin: linked.origin,
+                        function: (*linked.0).clone(),
+                        origin: linked.1,
                     })
                     .ok_or_else(|| {
                         vec![graph_error(
@@ -1375,16 +1396,8 @@ impl WorkspaceGraphBuild {
                 }
                 // Keep pure main and the selected command as distinct roots;
                 // the command linker independently retains its exact closure.
-                if !matches!(
-                    profile,
-                    crate::project::ProjectProfile::LanguageCommandIoV1
-                        | crate::project::ProjectProfile::StdinStreamCommandIoV1
-                        | crate::project::ProjectProfile::StdinStreamCommandIoV2
-                        | crate::project::ProjectProfile::StdinStreamTextCommandIoV1
-                        | crate::project::ProjectProfile::StdinStreamDataCommandIoV1
-                        | crate::project::ProjectProfile::LineCommandIoV1
-                        | crate::project::ProjectProfile::ProcessIoV1
-                ) || function.effects.is_empty()
+                if !retained_validation::has_separate_command_root(profile)
+                    || function.effects.is_empty()
                 {
                     functions.push(hir::LinkedScalarFunction {
                         function: function.clone(),
@@ -1486,7 +1499,11 @@ impl WorkspaceGraphBuild {
             | crate::project::ProjectProfile::StdinStreamCommandIoV1
             | crate::project::ProjectProfile::StdinStreamCommandIoV2
             | crate::project::ProjectProfile::StdinStreamTextCommandIoV1
-            | crate::project::ProjectProfile::StdinStreamDataCommandIoV1 => {
+            | crate::project::ProjectProfile::StdinStreamDataCommandIoV1
+            | crate::project::ProjectProfile::StdinStreamDataCommandIoV2
+            | crate::project::ProjectProfile::StdinStreamOwnedDataCommandIoV1
+            | P::StdinStreamCollectionRecordCommandIoV1
+            | P::StdinStreamNestedOutcomeCommandIoV1 => {
                 // The selected command is retained separately from this pure entry.
                 retained_validation::entry_link(
                     profile,
@@ -1510,6 +1527,8 @@ impl WorkspaceGraphBuild {
             | crate::project::ProjectProfile::EnvironmentIoV1
             | crate::project::ProjectProfile::ProcessIoV1
             | P::SourceCommandV1
+            | P::SourceCommandSelectedFileV1
+            | P::SourceCommandSelectedFileResourceV1
             | P::SourceCommandResourceOutputV1
             | crate::project::ProjectProfile::OwnedDataApiV1
             | crate::project::ProjectProfile::PublicGenericWasmProviderV1
@@ -1706,7 +1725,11 @@ impl WorkspaceGraphBuild {
             | crate::project::ProjectProfile::StdinStreamCommandIoV1
             | crate::project::ProjectProfile::StdinStreamCommandIoV2
             | crate::project::ProjectProfile::StdinStreamTextCommandIoV1
-            | crate::project::ProjectProfile::StdinStreamDataCommandIoV1 => {
+            | crate::project::ProjectProfile::StdinStreamDataCommandIoV1
+            | crate::project::ProjectProfile::StdinStreamDataCommandIoV2
+            | crate::project::ProjectProfile::StdinStreamOwnedDataCommandIoV1
+            | P::StdinStreamCollectionRecordCommandIoV1
+            | P::StdinStreamNestedOutcomeCommandIoV1 => {
                 let [command_id] = additional_roots else {
                     return Err(vec![graph_error(
                         "SPX-G172",
@@ -1769,6 +1792,8 @@ impl WorkspaceGraphBuild {
             | crate::project::ProjectProfile::EnvironmentIoV1
             | crate::project::ProjectProfile::ProcessIoV1
             | P::SourceCommandV1
+            | P::SourceCommandSelectedFileV1
+            | P::SourceCommandSelectedFileResourceV1
             | P::SourceCommandResourceOutputV1
             | crate::project::ProjectProfile::OwnedDataApiV1
             | crate::project::ProjectProfile::PublicGenericWasmProviderV1
@@ -1807,18 +1832,10 @@ impl WorkspaceGraphBuild {
             entry_module,
             test_module,
             web_roots.profile,
+            web_roots.stable_ids,
             web_roots.dependency_anchors,
         )?;
-        if matches!(
-            web_roots.profile,
-            crate::project::ProjectProfile::LanguageCommandIoV1
-                | crate::project::ProjectProfile::StdinStreamCommandIoV1
-                | crate::project::ProjectProfile::StdinStreamCommandIoV2
-                | crate::project::ProjectProfile::StdinStreamTextCommandIoV1
-                | crate::project::ProjectProfile::StdinStreamDataCommandIoV1
-                | crate::project::ProjectProfile::LineCommandIoV1
-                | crate::project::ProjectProfile::ProcessIoV1
-        ) {
+        if retained_validation::has_separate_command_root(web_roots.profile) {
             let [command_id] = web_roots.stable_ids else {
                 return Err(vec![graph_error(
                     "SPX-G172",
@@ -1845,15 +1862,19 @@ impl WorkspaceGraphBuild {
             let (return_type, signature) = match web_roots.profile {
                 crate::project::ProjectProfile::StdinStreamCommandIoV2
                 | crate::project::ProjectProfile::StdinStreamTextCommandIoV1
-                | crate::project::ProjectProfile::StdinStreamDataCommandIoV1 => {
-                    (hir::ResolvedType::I64, "i64")
-                }
+                | crate::project::ProjectProfile::StdinStreamDataCommandIoV1
+                | crate::project::ProjectProfile::StdinStreamDataCommandIoV2
+                | crate::project::ProjectProfile::StdinStreamOwnedDataCommandIoV1
+                | P::StdinStreamCollectionRecordCommandIoV1
+                | P::StdinStreamNestedOutcomeCommandIoV1 => (hir::ResolvedType::I64, "i64"),
                 _ => (hir::ResolvedType::Bool, "bool"),
             };
             if !explicit || !command.params.is_empty() || command.return_type != return_type {
                 return Err(vec![graph_error(
                     "SPX-G172",
-                    format!("command I/O profile command must have an explicit identity and exact signature fn() -> {signature}"),
+                    format!(
+                        "command I/O profile command must have an explicit identity and exact signature fn() -> {signature}"
+                    ),
                 )]);
             }
         }
@@ -1931,10 +1952,10 @@ impl WorkspaceGraphBuild {
                 source_digest: source.source_digest,
                 dependency_depth,
                 permits: module.permits,
-                types: module.types,
+                types: module.types.into_owned(),
                 interfaces: module.interfaces,
-                functions: module.functions,
-                function_templates: module.function_templates,
+                functions: module.functions.into_owned(),
+                function_templates: module.function_templates.into_owned(),
                 function_instances: module.function_instances,
                 signature_types: module.signature_types,
                 session_protocol_facts: module.session_protocol_facts,
@@ -1997,10 +2018,13 @@ impl WorkspaceGraphBuild {
         entry_module: &str,
         test_module: &str,
         profile: crate::project::ProjectProfile,
+        exports: &[String],
         dependency_anchors: bool,
     ) -> Result<(), Vec<Diagnostic>> {
         validate_entry_module(entry_module)?;
         validate_entry_module(test_module)?;
+        let modules = &self.hir.modules;
+        retained_validation::reject_unselected_owned_collections(profile, exports, modules)?;
         let roots = BTreeSet::from([entry_module, test_module]);
         let natives = retained_validation::scalar_native_imports(
             profile,
@@ -2019,6 +2043,13 @@ impl WorkspaceGraphBuild {
                     && retained_validation::text_project_shape(module))
                 || (profile == crate::project::ProjectProfile::StdinStreamDataCommandIoV1
                     && retained_validation::data_project_shape(module))
+                || (matches!(
+                    profile,
+                    crate::project::ProjectProfile::StdinStreamDataCommandIoV2
+                        | crate::project::ProjectProfile::StdinStreamOwnedDataCommandIoV1
+                        | P::StdinStreamCollectionRecordCommandIoV1
+                        | P::StdinStreamNestedOutcomeCommandIoV1
+                ) && retained_validation::record_project_shape(module))
                 || matches!(profile, crate::project::ProjectProfile::ScalarV1)
                 || (module.types.is_empty()
                     && module.interfaces.is_empty()
@@ -2074,6 +2105,10 @@ impl WorkspaceGraphBuild {
             if profile.is_owned_api()
                 || profile == crate::project::ProjectProfile::StdinStreamTextCommandIoV1
                 || profile == crate::project::ProjectProfile::StdinStreamDataCommandIoV1
+                || profile == crate::project::ProjectProfile::StdinStreamDataCommandIoV2
+                || profile == crate::project::ProjectProfile::StdinStreamOwnedDataCommandIoV1
+                || profile == P::StdinStreamCollectionRecordCommandIoV1
+                || profile == P::StdinStreamNestedOutcomeCommandIoV1
             {
                 continue;
             }
@@ -2092,6 +2127,10 @@ impl WorkspaceGraphBuild {
                     crate::project::ProjectProfile::StdinStreamTextCommandIoV1 => {
                         hir::stream_text_parameter_admitted(parameter)
                     }
+                    crate::project::ProjectProfile::StdinStreamDataCommandIoV2
+                    | crate::project::ProjectProfile::StdinStreamOwnedDataCommandIoV1
+                    | P::StdinStreamCollectionRecordCommandIoV1
+                    | P::StdinStreamNestedOutcomeCommandIoV1 => false,
                     crate::project::ProjectProfile::StdinStreamDataCommandIoV1 => {
                         hir::stream_data_parameter_admitted(parameter)
                     }
@@ -2124,6 +2163,8 @@ impl WorkspaceGraphBuild {
                     | crate::project::ProjectProfile::EnvironmentIoV1
                     | crate::project::ProjectProfile::ProcessIoV1
                     | P::SourceCommandV1
+                    | P::SourceCommandSelectedFileV1
+                    | P::SourceCommandSelectedFileResourceV1
                     | P::SourceCommandResourceOutputV1
                     | crate::project::ProjectProfile::OwnedDataApiV1
                     | crate::project::ProjectProfile::FlatOwnedRecordApiV1
@@ -2142,6 +2183,10 @@ impl WorkspaceGraphBuild {
                     crate::project::ProjectProfile::StdinStreamTextCommandIoV1 => {
                         hir::stream_text_return_admitted(&function.return_type)
                     }
+                    crate::project::ProjectProfile::StdinStreamDataCommandIoV2
+                    | crate::project::ProjectProfile::StdinStreamOwnedDataCommandIoV1
+                    | P::StdinStreamCollectionRecordCommandIoV1
+                    | P::StdinStreamNestedOutcomeCommandIoV1 => false,
                     crate::project::ProjectProfile::StdinStreamDataCommandIoV1 => {
                         hir::stream_text_return_admitted(&function.return_type)
                     }
@@ -2172,6 +2217,8 @@ impl WorkspaceGraphBuild {
                     | crate::project::ProjectProfile::EnvironmentIoV1
                     | crate::project::ProjectProfile::ProcessIoV1
                     | P::SourceCommandV1
+                    | P::SourceCommandSelectedFileV1
+                    | P::SourceCommandSelectedFileResourceV1
                     | P::SourceCommandResourceOutputV1
                     | crate::project::ProjectProfile::OwnedDataApiV1
                     | crate::project::ProjectProfile::PublicGenericWasmProviderV1
@@ -2219,7 +2266,7 @@ impl WorkspaceGraphBuild {
                 }
             }
         }
-        if !profile.is_owned_api()
+        if !retained_validation::project_type_imports_admitted(profile)
             && self.edges.iter().any(|edge| {
                 edge.kind == "type_import"
                     && !(profile == crate::project::ProjectProfile::UsefulDataV1
@@ -2246,6 +2293,7 @@ impl WorkspaceGraphBuild {
             entry_module,
             test_module,
             crate::project::ProjectProfile::ScalarV1,
+            &[],
             false,
         )
     }
@@ -2256,142 +2304,41 @@ impl WorkspaceGraphBuild {
             .map(|_| self.change_builder_bytes)
     }
 
+    // Legacy pass-through wrappers over the paid view route (`paid_view.rs`):
+    // a paid G410 carrier moves out unchanged; an unpaid replay refusal is
+    // allocated only by the named unfunded boundary, and every other refusal
+    // remains an owned, unfunded Diagnostic. These outward APIs are outside
+    // the qualified contract.
+    #[cfg(test)]
     pub(crate) fn into_change_view(self) -> Result<WorkspaceGraphChangeView, Vec<Diagnostic>> {
-        let mut fingerprints = self.change_fingerprints.ok_or_else(|| {
-            vec![graph_error(
-                "SPX-G173",
-                "workspace change fingerprint sidecar is absent",
-            )]
-        })?;
-        let modules = self
-            .hir
-            .modules
-            .into_iter()
-            .map(|module| {
-                let source_graph_schema = semantic_workspace_source_schema(&module)?;
-                Ok(WorkspaceGraphChangeModule {
-                    path: module.path,
-                    module: module.module,
-                    source_graph_schema,
-                    permits: module.permits,
-                })
-            })
-            .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
-        let declarations = self
-            .hir
-            .declarations
-            .into_iter()
-            .map(|(id, declaration)| {
-                let semantic_fingerprint =
-                    if declaration.origin == hir::IdentityOrigin::CompilerOwned {
-                        String::new()
-                    } else {
-                        fingerprints.remove(&id).ok_or_else(|| {
-                            vec![graph_error(
-                                "SPX-G173",
-                                "workspace change declaration fingerprint is absent",
-                            )]
-                        })?
-                    };
-                Ok(WorkspaceGraphChangeDeclaration {
-                    id,
-                    kind: declaration.kind,
-                    origin: declaration.origin,
-                    owner: declaration.owner,
-                    path: declaration.path,
-                    module: declaration.module,
-                    semantic_fingerprint,
-                })
-            })
-            .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
-        if !fingerprints.is_empty() {
-            return Err(vec![graph_error(
-                "SPX-G173",
-                "workspace change fingerprints contain unknown declarations",
-            )]);
-        }
-        Ok(WorkspaceGraphChangeView {
-            modules,
-            declarations,
-            edges: self.edges,
-            dependency_depths: self.hir.dependency_depths,
-            shared_prelude_ids: self.hir.shared_prelude_ids.into_iter().collect(),
-            usage: self.usage,
-        })
+        self.into_change_view_paid(source_schema::REPORT)
+            .map_err(ViewRefusal::into_legacy)
     }
 
     pub(crate) fn into_operation_view(
-        mut self,
+        self,
     ) -> Result<WorkspaceGraphOperationView, Vec<Diagnostic>> {
-        let sidecar = self.operation_sidecar.take().ok_or_else(|| {
-            vec![graph_error(
-                "SPX-G173",
-                "workspace operations AST sidecar is absent",
-            )]
-        })?;
-        let builder_bytes = self.operation_builder_bytes;
-        let change_builder_bytes = self.change_builder_bytes;
-        let graph = self.into_change_view()?;
-        Ok(WorkspaceGraphOperationView {
-            graph,
-            sidecar,
-            builder_bytes,
-            change_builder_bytes,
-        })
+        self.into_operation_view_paid(source_schema::REPORT)
+            .map_err(ViewRefusal::into_legacy)
     }
 
+    // Source-less view: owning tests only. Production receivers pass sources.
+    #[cfg(test)]
     pub(crate) fn source_graph_schemas(
         &self,
     ) -> Result<BTreeMap<String, &'static str>, Vec<Diagnostic>> {
-        let mut schemas = BTreeMap::new();
-        for module in &self.hir.modules {
-            let schema = semantic_workspace_source_schema(module)?;
-            if schemas.insert(module.path.clone(), schema).is_some() {
-                return Err(vec![graph_error(
-                    "SPX-G173",
-                    "workspace module paths disagree while deriving source Graph schemas",
-                )]);
-            }
-        }
-        if schemas.len() != self.usage.managed_files {
-            return Err(vec![graph_error(
-                "SPX-G173",
-                "workspace source Graph schema facts disagree with managed files",
-            )]);
-        }
-        Ok(schemas)
+        self.source_graph_schemas_paid(source_schema::REPORT)
+            .map_err(ViewRefusal::into_legacy)
     }
-}
 
-fn semantic_workspace_source_schema(
-    module: &WorkspaceResolvedModule,
-) -> Result<&'static str, Vec<Diagnostic>> {
-    if module.native_law {
-        return Ok("semaprax.native-law.v1");
+    /// The same pass-through view, receiving the caller's exact sources.
+    pub(crate) fn source_graph_schemas_receiving(
+        &self,
+        sources: &dyn ReceivingSources,
+    ) -> Result<BTreeMap<String, &'static str>, Vec<Diagnostic>> {
+        self.source_graph_schemas_receiving_paid(source_schema::REPORT, Some(sources))
+            .map_err(ViewRefusal::into_legacy)
     }
-    graph::graph_schema_from_parts_and_instances(
-        &module.interfaces,
-        &module.types,
-        &module.functions,
-        &module.function_templates,
-        &module.function_instances,
-    )
-    .map_err(|error| vec![error])
-}
-
-fn resolved_function_callees(function: &hir::ResolvedFunction) -> BTreeSet<hir::DeclarationId> {
-    let mut callees = BTreeSet::new();
-    for expression in function
-        .requires
-        .iter()
-        .chain(std::iter::once(&function.body))
-        .chain(&function.ensures)
-    {
-        hir::visit_resolved_calls(expression, &mut |callee, _, _| {
-            callees.insert(callee.clone());
-        });
-    }
-    callees
 }
 
 fn resolved_function_imports(function: &hir::ResolvedFunction) -> BTreeSet<hir::DeclarationId> {
@@ -2416,7 +2363,10 @@ fn resolved_function_imports(function: &hir::ResolvedFunction) -> BTreeSet<hir::
                 visit(start, imports);
                 visit(end, imports);
             }
-            hir::ResolvedExprKind::Call { args, .. }
+            hir::ResolvedExprKind::LiteralFormat { args, .. }
+            | hir::ResolvedExprKind::VecFieldRead { args, .. }
+            | hir::ResolvedExprKind::RowLoan { args, .. }
+            | hir::ResolvedExprKind::Call { args, .. }
             | hir::ResolvedExprKind::HostCommandCall(hir::ResolvedHostCommandCall {
                 args, ..
             }) => {
@@ -2430,7 +2380,11 @@ fn resolved_function_imports(function: &hir::ResolvedFunction) -> BTreeSet<hir::
                     visit(argument, imports);
                 }
             }
-            hir::ResolvedExprKind::Unary { value, .. }
+            hir::ResolvedExprKind::LexicalExit { value: None, .. } => {}
+            hir::ResolvedExprKind::LexicalExit {
+                value: Some(value), ..
+            }
+            | hir::ResolvedExprKind::Unary { value, .. }
             | hir::ResolvedExprKind::Try { operand: value, .. }
             | hir::ResolvedExprKind::TryOption { operand: value, .. }
             | hir::ResolvedExprKind::Project { base: value, .. }
@@ -2440,7 +2394,10 @@ fn resolved_function_imports(function: &hir::ResolvedFunction) -> BTreeSet<hir::
                 visit(left, imports);
                 visit(right, imports);
             }
-            hir::ResolvedExprKind::Block { statements, tail } => {
+            hir::ResolvedExprKind::Block { statements, tail }
+            | hir::ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -2491,6 +2448,7 @@ fn resolved_function_imports(function: &hir::ResolvedFunction) -> BTreeSet<hir::
             | hir::ResolvedExprKind::Float64(_)
             | hir::ResolvedExprKind::Bool(_)
             | hir::ResolvedExprKind::String(_)
+            | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
             | hir::ResolvedExprKind::ArrayU8(_)
             | hir::ResolvedExprKind::RepeatArrayU8 { .. }
             | hir::ResolvedExprKind::BorrowPlace { .. }
@@ -3191,10 +3149,10 @@ impl AuthenticatedWorkspaceGraphBuild {
                 source_digest: source.source_digest,
                 dependency_depth,
                 permits: module.permits,
-                types: module.types,
+                types: module.types.into_owned(),
                 interfaces: module.interfaces,
-                functions: module.functions,
-                function_templates: module.function_templates,
+                functions: module.functions.into_owned(),
+                function_templates: module.function_templates.into_owned(),
                 function_instances: module.function_instances,
                 signature_types: module.signature_types,
                 session_protocol_facts: module.session_protocol_facts,
@@ -3851,13 +3809,13 @@ fn build_owned_with_builder_limit(
 }
 pub(crate) fn build_owned_retaining_sources(
     sources: Vec<WorkspaceSource>,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     build_owned_retaining_sources_with_builder_limit(sources, MAX_BUILDER_BYTES, None, false)
 }
 pub(crate) fn build_owned_retaining_sources_for_change(
     sources: Vec<WorkspaceSource>,
     change_builder_limit: usize,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     assert!(change_builder_limit <= MAX_CHANGE_BUILDER_BYTES);
     build_owned_retaining_sources_with_builder_limit(
         sources,
@@ -3870,7 +3828,7 @@ pub(crate) fn build_owned_retaining_sources_for_operations(
     sources: Vec<WorkspaceSource>,
     graph_builder_limit: usize,
     operations_builder_limit: usize,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     assert!(
         operations_builder_limit <= 67_108_864,
         "private Semantic Workspace Operations builder limit cannot exceed the production maximum"
@@ -3887,7 +3845,7 @@ fn build_owned_retaining_sources_with_builder_limit(
     builder_limit: usize,
     change_builder_limit: Option<usize>,
     retain_operation_programs: bool,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     build_owned_retaining_sources_with_frontend_limit(
         sources,
         builder_limit,
@@ -3899,7 +3857,7 @@ fn build_owned_retaining_sources_with_builder_limit(
 pub(crate) fn build_owned_retaining_sources_with_frontend(
     sources: Vec<WorkspaceSource>,
     frontend: &mut crate::project::incremental::FrontendPass,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     build_owned_retaining_sources_with_frontend_limit(
         sources,
         MAX_BUILDER_BYTES,
@@ -3915,7 +3873,7 @@ fn build_owned_retaining_sources_with_frontend_limit(
     change_builder_limit: Option<usize>,
     retain_operation_programs: bool,
     frontend: Option<&mut crate::project::incremental::FrontendPass>,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
     assert!(
         builder_limit <= MAX_BUILDER_BYTES,
         "private Workspace Semantic Graph builder limit cannot exceed the production maximum"
@@ -3947,7 +3905,8 @@ fn build_owned_inner(
     change_builder_limit: Option<usize>,
     retain_operation_programs: bool,
     mut frontend: Option<&mut crate::project::incremental::FrontendPass>,
-) -> Result<(WorkspaceGraphBuild, Vec<WorkspaceSource>), Vec<Diagnostic>> {
+) -> Result<(WorkspaceGraphBuild, current_source::SourceFacts), Vec<Diagnostic>> {
+    let _diagnostics = diagnostics::invocation_scope();
     if sources.len() < 2 {
         return Err(vec![graph_error(
             "SPX-G170",
@@ -4094,15 +4053,40 @@ fn build_owned_inner(
     let module_paths = index_modules(&programs)?;
     let authored = index_authored(&programs)?;
     validate_synthetic_main_id_collisions(&programs, &authored)?;
-    validate_uses(&programs, &module_paths, &authored)?;
+    let layouts =
+        expected_projection::private_layout::registry::LayoutRegistry::new(&programs, &authored);
+    import_validation::validate_uses_with_registry(
+        &programs,
+        &module_paths,
+        &authored,
+        Some(&layouts),
+    )?;
     let dependency_depths = validate_dependency_dag(&programs)?;
+    let retention = if frontend
+        .as_deref()
+        .is_some_and(|cache| cache.retains_checked_hir())
+    {
+        expected_projection::cached_exact::Retention::Semantic
+    } else {
+        expected_projection::cached_exact::Retention::Parsed
+    };
     let (mut resolve_builder_bytes, checked_retention_prebound, allow_uncached_peak, initial_mode) =
-        expected_projection::initial_core_prebound(&programs, &authored, frontend.is_none())?;
+        expected_projection::cached_exact::initial_with_registry(
+            &programs,
+            &authored,
+            frontend.is_none(),
+            retention,
+            Some(&layouts),
+        )?;
     if let Some(cache) = frontend.as_deref() {
-        cache.checked_retention_prebound(checked_retention_prebound)?;
+        cache.checked_retention_prebound(checked_usage(
+            checked_retention_prebound,
+            layouts.receipt(),
+            "builder_bytes",
+            active_builder_limit(),
+        )?)?;
     }
-    // Each attempt is an isolated sequential builder phase. Nested budgets
-    // retain their parent's monotonic charge and cannot retry an overflow.
+    // Each isolated attempt keeps the parent's monotonic debit.
     let mut retry_allowed = active_builder_limit() == MAX_BUILDER_BYTES
         && crate::bounded_output::active_remaining().is_none();
     let mut checkpoint = if retry_allowed {
@@ -4120,41 +4104,78 @@ fn build_owned_inner(
         CORE_BUILD_ATTEMPTS.with(|attempts| attempts.set(attempts.get() + 1));
         let compact_layout = (fallback_mode == 6)
             .then(|| {
-                expected_projection::uncached_peak::uncached_output_layout(&programs, &authored)
+                expected_projection::uncached_peak::uncached_output_layout_with_registry(
+                    &programs,
+                    &authored,
+                    Some(&layouts),
+                )
             })
             .transpose()?;
-        let (core, overflowed, consumed) =
-            crate::bounded_output::with_limit_usage(active_builder_limit(), || {
-                charge_builder_prebound(resolve_builder_bytes)?;
-                build_resolved_core(
-                    &programs,
-                    &module_paths,
-                    &dependency_depths,
-                    &authored,
-                    frontend.as_deref_mut(),
-                    compact_layout
-                        .as_ref()
-                        .map(|layout| &layout.order[..programs.len()]),
-                )
+        let (core, overflowed, consumed, refusal) =
+            crate::bounded_output::with_limit_usage_refusal(active_builder_limit(), || {
+                #[cfg(test)]
+                let _trace = crate::bounded_output::stage_debits::start(
+                    resolve_builder_bytes,
+                    layouts.receipt(),
+                    fallback_mode,
+                );
+                reserve_builder_structure(layouts.receipt())?;
+                staged!(CorePrebound, charge_builder_prebound(resolve_builder_bytes))?;
+                let custody =
+                    custody::SourceCustody::plan(&sources, &programs, &pruned_dependency_functions)
+                        .map_err(|error| match error {
+                            custody::CustodyError::Prepaid(_) => {
+                                vec![limit_error("builder_bytes", active_builder_limit())]
+                            }
+                            _ => vec![graph_error(
+                                "SPX-G173",
+                                "current parsed source custody is inconsistent",
+                            )],
+                        })?;
+                let core = staged!(
+                    ResolvedCore,
+                    build_resolved_core_current(
+                        &programs,
+                        &module_paths,
+                        &dependency_depths,
+                        &authored,
+                        Some(&sources),
+                        frontend.as_deref_mut(),
+                        &layouts,
+                        compact_layout
+                            .as_ref()
+                            .map(|layout| &layout.order[..programs.len()]),
+                    )
+                )?;
+                Ok::<_, Vec<Diagnostic>>((core, custody))
             });
         core_builder_bytes = core_builder_bytes.max(consumed);
         if !overflowed {
             break core;
         }
-        // Drop every partial checked tree before computing or allocating the
-        // next phase. Its debit remains in the maximum phase receipt.
+        // Drop partial trees; retain their debit in the maximum phase receipt.
         drop(core);
-        if fallback_mode >= if allow_uncached_peak { 6 } else { 4 } || !retry_allowed {
-            return Err(vec![limit_error("builder_bytes", active_builder_limit())]);
+        if fallback_mode
+            >= if allow_uncached_peak {
+                6
+            } else {
+                expected_projection::cached_exact::MODE
+            }
+            || !retry_allowed
+        {
+            return Err(vec![diagnostics::live_builder_refusal(
+                active_builder_limit(),
+                refusal,
+            )]);
         }
-        // Mode six is the bounded final retry: mode five's uncached receipt
-        // already fits, but its full retained output carrier overflowed. Its
-        // existing final profile replaces the all-HIR receipt with the exact
-        // sequential filtered-output/index plus one-full-HIR peak; no frontend
-        // may reach it, so no cached source lifetime is elided.
+        // Mode six replaces an overflowing all-HIR carrier with the bounded
+        // sequential filtered-output/index plus one-full-HIR peak.
         if fallback_mode == 5 {
-            let (tighter, _) =
-                expected_projection::uncached_output_peak_prebound(&programs, &authored)?;
+            let (tighter, _) = expected_projection::uncached_output_peak_prebound_with_registry(
+                &programs,
+                &authored,
+                Some(&layouts),
+            )?;
             resolve_builder_bytes = tighter;
             fallback_mode = 6;
             continue;
@@ -4163,19 +4184,38 @@ fn build_owned_inner(
             cache.rollback_core_attempt(saved);
             checkpoint = cache.checkpoint_core_attempt();
         }
-        let (tighter, total) = expected_projection::next_retention_prebound_with_uncached_peak(
-            &programs,
-            &authored,
-            resolve_builder_bytes,
-            &mut fallback_mode,
-            allow_uncached_peak,
-        )?;
+        let (tighter, total) = if allow_uncached_peak {
+            expected_projection::next_retention_prebound_with_uncached_peak_with_registry(
+                &programs,
+                &authored,
+                resolve_builder_bytes,
+                &mut fallback_mode,
+                true,
+                Some(&layouts),
+            )?
+        } else {
+            expected_projection::cached_exact::next_with_registry(
+                &programs,
+                &authored,
+                resolve_builder_bytes,
+                &mut fallback_mode,
+                retention,
+                Some(&layouts),
+            )?
+        };
         if let Some(cache) = frontend.as_deref() {
-            cache.checked_retention_prebound(total)?;
+            cache.checked_retention_prebound(checked_usage(
+                total,
+                layouts.receipt(),
+                "builder_bytes",
+                active_builder_limit(),
+            )?)?;
         }
         resolve_builder_bytes = tighter;
     };
-    let (mut modules, module_paths, dependency_depths, declaration_facts, expected_edges) = core?;
+    drop(layouts);
+    let (core, custody) = core?;
+    let (mut modules, module_paths, dependency_depths, declaration_facts, expected_edges) = core;
     for module in &mut modules {
         module.native_law = native_law_paths.contains(&module.path);
     }
@@ -4220,7 +4260,8 @@ fn build_owned_inner(
             (None, None, 0, 0)
         };
     let shared_prelude_ids = prelude_binding::ids_from_facts(&programs, &declaration_facts);
-    let build = WorkspaceGraphBuild {
+    let mut build = WorkspaceGraphBuild {
+        current_sources: None,
         hir: ValidatedWorkspaceHir {
             modules,
             module_paths,
@@ -4245,13 +4286,21 @@ fn build_owned_inner(
         operation_sidecar,
         operation_builder_bytes,
     };
+    // Restore before any owning cache publication, exactly as the original
+    // provider/pruning receiver. Both ordinary and checked Project linking use
+    // these actual parsed owners instead of reparsing an equal source later.
+    pruned_dependency_functions.restore(&mut programs);
+    let custody = custody.complete(sources, programs).map_err(|_| {
+        vec![graph_error(
+            "SPX-G173",
+            "current parsed source custody is inconsistent",
+        )]
+    })?;
     if let Some(frontend) = frontend {
-        // The frontend cache keys a parsed program on that one file's bytes,
-        // but the retained set is a whole-workspace property, so the cache
-        // must only ever see the complete program.
-        pruned_dependency_functions.restore(&mut programs);
-        frontend.retain(&sources, programs, resolve_builder_bytes)?;
+        frontend.retain_current(&custody, resolve_builder_bytes)?;
     }
+    let (sources, owners) = custody.into_parts();
+    build.current_sources = Some(owners);
     Ok((build, sources))
 }
 
@@ -4281,32 +4330,42 @@ const GRAPH_ACCOUNTED_RESOLVED_FUNCTION_INSTANCE_BYTES: usize =
     std::mem::size_of::<hir::ResolvedFunctionInstance>()
         - std::mem::size_of::<crate::loan_plan::LoanPlan>();
 
-fn build_resolved_core(
+// Keep the source-authority inputs explicit at this audited construction boundary.
+#[allow(clippy::too_many_arguments)]
+fn build_resolved_core_current(
     programs: &[Program],
     module_paths: &BTreeMap<&str, &str>,
     dependency_depths: &BTreeMap<&str, usize>,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    authenticated_sources: Option<&[WorkspaceSource]>,
     mut frontend: Option<&mut crate::project::incremental::FrontendPass>,
+    layouts: &expected_projection::private_layout::registry::LayoutRegistry<'_>,
     compact_order: Option<&[usize]>,
 ) -> Result<ResolvedCore, Vec<Diagnostic>> {
     let retained_output_only = compact_order.is_some();
+    let mut loan_scratch = loan_retention::RetentionScratch::default();
     let mut expected_edges = Vec::new();
     for program in programs {
-        collect_expected_edges(program, module_paths, authored, &mut expected_edges)?;
+        staged!(
+            ExpectedEdges,
+            collect_expected_edges(
+                program,
+                programs,
+                module_paths,
+                authored,
+                &mut expected_edges,
+            )
+        )?;
     }
-    reserve_builder_structure(
-        programs
-            .len()
-            .checked_mul(std::mem::size_of::<String>() + GRAPH_ACCOUNTED_RESOLVED_PROGRAM_BYTES)
-            .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?,
-    )?;
-    // Legacy receipts retain the complete synthetic HIR vector until all
-    // cross-module checks finish.  The final uncached output-carrier attempt
-    // instead keeps this compact evidence index and filters one module before
-    // resolving the next, so its live peak matches its sequential receipt.
+    checked_retention::reserve_input_carriers(programs.len())?;
+    // The final uncached attempt uses a compact index and sequential HIR
+    // filtering; earlier receipts retain the complete synthetic HIR vector.
     let mut validation = retained_output_only
-        .then(|| WorkspaceValidationIndex::new(programs))
+        .then(|| staged!(CompactValidation, WorkspaceValidationIndex::new(programs)))
         .transpose()?;
+    let authority = expected_projection::private_layout::authority::invocation::Invocation::new(
+        programs, authored,
+    );
     let mut synthetic_modules = if retained_output_only {
         Vec::new()
     } else {
@@ -4318,26 +4377,59 @@ fn build_resolved_core(
         reserve_workspace_module_carrier(programs.len())?;
         modules = Vec::with_capacity(programs.len());
     }
+    // Earlier/cached forecasts retain the old inline Program carrier. The
+    // new tagged input adds one reused enclosing header, not one per module.
+    // Sequential uncached retention prices that same carrier in its peak.
+    if !retained_output_only {
+        reserve_builder_structure(expected_projection::borrowed_leaf::input_carrier_delta()?)?;
+    }
+    let mut core_proofs = expected_projection::CoreProviderProofs::new(authored, programs)
+        .map_err(|error| vec![error])?;
     let mut synthetic_ast_peak = 0usize;
+    let mut selected_static_modules = static_text::SelectedModules::default();
     for index in 0..programs.len() {
         let program = &programs[compact_order.map_or(index, |order| order[index])];
         if retained_output_only {
-            expected_projection::uncached_peak::charge_uncached_synthetic_ast(
+            staged!(
+                UncachedSyntheticPeak,
+                expected_projection::uncached_peak::charge_uncached_synthetic_ast_core(
+                    program,
+                    authored,
+                    programs,
+                    &mut synthetic_ast_peak,
+                    Some(layouts),
+                    &mut core_proofs,
+                )
+            )?;
+        }
+        let synthetic = staged!(
+            SyntheticModule,
+            constructor_failure::construct_transient_core(
                 program,
                 authored,
                 programs,
-                &mut synthetic_ast_peak,
-            )?;
-        }
-        let synthetic = synthetic_program(program, authored, programs)?;
+                layouts,
+                &mut core_proofs,
+            )
+            .map_err(constructor_failure::Failure::into_legacy_unfunded)
+        )?;
         // Exact stubs/spans and the unconditional prebound govern hits.
-        let cached = frontend
-            .as_deref_mut()
-            .and_then(|cache| cache.checked_module(&program.path, &synthetic));
-        let resolved = if let Some((resolved, resolver_bytes, original_loan_bytes)) = cached {
+        let cached = staged!(
+            FrontendLookup,
+            frontend.as_deref_mut().and_then(|cache| match &synthetic {
+                expected_projection::borrowed_leaf::Input::Owned(input) =>
+                    cache.checked_module(&program.path, input),
+                expected_projection::borrowed_leaf::Input::Borrowed(input) =>
+                    cache.checked_module_source(&program.path, input),
+            })
+        );
+        let (resolved, static_text) = if let Some((resolved, resolver_bytes, original_loan_bytes)) =
+            cached
+        {
             let before = crate::bounded_output::active_remaining()
                 .expect("resolved core has a builder budget");
-            hir::validate(&resolved).map_err(|error| vec![error])?;
+            let static_text = staged!(CachedValidation, hir::validate_with_static_text(&resolved))
+                .map_err(|error| vec![error])?;
             let validation_bytes = before.saturating_sub(
                 crate::bounded_output::active_remaining()
                     .expect("resolved core has a builder budget"),
@@ -4350,13 +4442,9 @@ fn build_resolved_core(
                         "checked module replay accounting exceeds its original resolver work",
                     )]
                 })?;
-            // Revalidation already charged its real cost. Charge only the
-            // remainder of the original resolver cost to preserve cold graph
-            // evidence and admission limits without double-charging validation.
+            // Charge only the residual resolver cost after real revalidation.
             charge_builder_prebound(residual)?;
-            // Rust Clone may shrink owned proof-vector/string capacities. The
-            // filters below charge the cloned proof's real capacity; preserve
-            // the original cold charge by accounting only the lost capacity.
+            // Preserve proof-capacity charging and the cold-equivalent residual.
             let loan_residual = original_loan_bytes
                 .checked_sub(resolved_loan_bytes(&resolved)?)
                 .ok_or_else(|| {
@@ -4366,57 +4454,91 @@ fn build_resolved_core(
                     )]
                 })?;
             charge_builder_prebound(loan_residual)?;
-            resolved
+            (ResolvedModuleInput::Checked(resolved), static_text)
         } else {
             let before = crate::bounded_output::active_remaining()
                 .expect("resolved core has a builder budget");
-            let selective = frontend
+            // Diagnostics name private layout copies by provider provenance
+            // through a borrowed view of the already held closure; binding it
+            // derives, debits and allocates nothing.
+            let held = layouts.held(program);
+            let private = held
                 .as_deref()
-                .and_then(|cache| cache.resolve_functions(&program.path, &synthetic));
-            let (resolved, function_costs, reused_functions) =
-                crate::vec_ops::with_authenticated_linked_source(|| {
-                    crate::box_ops::with_authenticated_linked_source(|| {
-                        if let Some(selective) = selective {
-                            selective.map(|resolved| resolved.into_parts())
-                        } else {
-                            hir::resolve(&synthetic).map(|resolved| (resolved, BTreeMap::new(), 0))
-                        }
-                    })
-                })?;
+                .map(|layout| layout.presentation(program, synthetic.source()))
+                .transpose()?
+                .flatten();
+            // Typed receiver: one identity report is acquired on this same
+            // resolved-core ledger before either route, and Setup stays Copy
+            // until this legacy outer adapter.
+            let (resolved, function_costs, reused_functions, static_text) =
+                identity_resolution::resolve_module_with_core(
+                    &mut core_proofs,frontend.as_deref(),
+                    &program.path,
+                    &synthetic,
+                    private,
+                )
+                .map_err(identity_resolution::ModuleFailure::into_legacy)?;
+            drop(held);
             let resolver_bytes = before.saturating_sub(
                 crate::bounded_output::active_remaining()
                     .expect("resolved core has a builder budget"),
             );
-            if let Some(cache) = frontend.as_deref_mut() {
-                cache.resolved_module(
-                    &program.path,
-                    synthetic,
-                    &resolved,
-                    resolver_bytes,
-                    resolved_loan_bytes(&resolved)?,
-                    function_costs,
-                    reused_functions,
-                );
-            }
-            resolved
+            let resolved = if let Some(cache) = frontend.as_deref_mut() {
+                staged!(FrontendRetention, {
+                    let loan_bytes = resolved_loan_bytes(&resolved)?;
+                    cache.resolved_module_split(
+                        &program.path,
+                        || synthetic.into_split_key(index),
+                        resolved,
+                        resolver_bytes,
+                        loan_bytes,
+                        function_costs,
+                        reused_functions,
+                    )
+                })?
+            } else {
+                ResolvedModuleInput::Owned(resolved)
+            };
+            (resolved, static_text)
         };
-        verify_resolved_call_edges(program, &resolved, authored)?;
+        staged!(
+            ResolvedCallEdges,
+            verify_resolved_call_edges(program, &resolved, authored)
+        )?;
         if let Some(validation) = validation.as_mut() {
-            validation.record_module(&program.module, &resolved, programs)?;
-            let (module, imported_instances) = retain_workspace_module(
-                program,
-                crate::bounded_output::budgeted_clone(&program.module),
-                resolved,
-                programs,
-                authored,
-                true,
+            staged!(
+                AuthoredModuleValidation,
+                validation.record_module_authored(
+                    &program.module,
+                    &resolved,
+                    programs,
+                    authored,
+                    Some(&authority),
+                )
             )?;
-            owned_generics::merge_imported_vec_instances(
-                &mut imported_vec_instances,
-                imported_instances,
+            let (module, imported_instances) = staged!(
+                RetainedModule,
+                retain_workspace_module(
+                    program,
+                    crate::bounded_output::budgeted_clone(&program.module),
+                    resolved,
+                    programs,
+                    authored,
+                    Some(&mut loan_scratch),
+                    static_text,
+                    authenticated_sources,
+                )
+            )?;
+            staged!(
+                ImportedVecInstances,
+                owned_generics::merge_imported_vec_instances(
+                    &mut imported_vec_instances,
+                    imported_instances,
+                )
             )?;
             modules.push(module);
         } else {
+            selected_static_modules.record(synthetic_modules.len(), programs.len(), static_text)?;
             synthetic_modules.push((
                 crate::bounded_output::budgeted_clone(&program.module),
                 resolved,
@@ -4427,48 +4549,93 @@ fn build_resolved_core(
         modules.sort_unstable_by(|left, right| left.path.cmp(&right.path));
     }
     let declarations = if let Some(validation) = validation {
-        validation.validate_stub_signatures(programs)?;
-        validation.finish(programs)?
+        staged!(
+            StubSignatures,
+            validation.validate_stub_signatures_authored(programs, authored, Some(&authority))
+        )?;
+        staged!(DeclarationFacts, validation.finish(programs))?
     } else {
-        validate_stub_signatures(programs, &synthetic_modules)?;
-        let declarations = reconstruct_workspace_declaration_facts(&synthetic_modules, programs)?;
+        staged!(
+            StubSignatures,
+            validate_stub_signatures_authored(
+                programs,
+                &synthetic_modules,
+                authored,
+                Some(&authority)
+            )
+        )?;
+        let declarations = staged!(
+            DeclarationFacts,
+            reconstruct_workspace_declaration_facts_with_authority(
+                &synthetic_modules,
+                programs,
+                authored,
+                Some(&authority)
+            )
+        )?;
         let programs_by_module = programs
             .iter()
             .map(|program| (program.module.as_str(), program))
             .collect::<BTreeMap<_, _>>();
         reserve_workspace_module_carrier(synthetic_modules.len())?;
         modules = Vec::with_capacity(synthetic_modules.len());
-        for (module, resolved) in synthetic_modules {
+        for (module_index, (module, resolved)) in synthetic_modules.into_iter().enumerate() {
             let program = programs_by_module
                 .get(module.as_str())
                 .expect("every resolved module has authenticated source");
-            let (module, imported_instances) =
-                retain_workspace_module(program, module, resolved, programs, authored, false)?;
-            owned_generics::merge_imported_vec_instances(
-                &mut imported_vec_instances,
-                imported_instances,
+            let (module, imported_instances) = staged!(
+                RetainedModule,
+                retain_workspace_module(
+                    program,
+                    module,
+                    resolved,
+                    programs,
+                    authored,
+                    None,
+                    selected_static_modules.contains(module_index),
+                    authenticated_sources,
+                )
+            )?;
+            staged!(
+                ImportedVecInstances,
+                owned_generics::merge_imported_vec_instances(
+                    &mut imported_vec_instances,
+                    imported_instances,
+                )
             )?;
             modules.push(module);
         }
         declarations
     };
-    owned_generics::attach_imported_vec_instances(&mut modules, imported_vec_instances)?;
-    retained_validation::validate_core_facts(
-        programs,
-        &modules,
-        &expected_edges,
-        compact_order.is_some(),
+    staged!(
+        ImportedVecInstances,
+        owned_generics::attach_imported_vec_instances(&mut modules, imported_vec_instances)
     )?;
-    validate_retained_declaration_shapes(&modules, &declarations)?;
-    let owned_module_paths = module_paths
-        .iter()
-        .map(|(module, path)| {
-            (
-                crate::bounded_output::budgeted_clone(module),
-                crate::bounded_output::budgeted_clone(path),
-            )
-        })
-        .collect();
+    staged!(
+        RetainedFacts,
+        retained_validation::validate_core_facts(
+            programs,
+            &modules,
+            &expected_edges,
+            compact_order.is_some(),
+        )
+    )?;
+    staged!(
+        RetainedFacts,
+        validate_retained_declaration_shapes(&modules, &declarations)
+    )?;
+    let owned_module_paths = staged!(
+        CoreDirectories,
+        module_paths
+            .iter()
+            .map(|(module, path)| {
+                (
+                    crate::bounded_output::budgeted_clone(module),
+                    crate::bounded_output::budgeted_clone(path),
+                )
+            })
+            .collect()
+    );
     if dependency_depths.len() != module_paths.len()
         || dependency_depths
             .keys()
@@ -4479,11 +4646,13 @@ fn build_resolved_core(
             "workspace dependency-depth keys disagree with authenticated modules",
         )]);
     }
-    let owned_dependency_depths = dependency_depths
-        .iter()
-        .map(|(module, depth)| (crate::bounded_output::budgeted_clone(module), *depth))
-        .collect();
-    render_edge_proof(&expected_edges);
+    let owned_dependency_depths = staged!(
+        CoreDirectories,
+        dependency_depths
+            .iter()
+            .map(|(module, depth)| (crate::bounded_output::budgeted_clone(module), *depth))
+            .collect()
+    );
     Ok((
         modules,
         owned_module_paths,
@@ -4491,123 +4660,6 @@ fn build_resolved_core(
         declarations,
         expected_edges,
     ))
-}
-
-fn retain_workspace_module(
-    program: &Program,
-    module: String,
-    resolved: hir::ResolvedProgram,
-    programs: &[Program],
-    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
-    retained_output_only: bool,
-) -> Result<(WorkspaceResolvedModule, Vec<hir::ResolvedFunctionInstance>), Vec<Diagnostic>> {
-    hir::replay_agent_source_associations(program, &resolved.agents)
-        .map_err(|error| vec![error])?;
-    // Declaration facts, then `follows` binding facts, in one `Vec`: the two
-    // JSON shapes are distinguished by their own leading key alone
-    // (`{"stable_id":...` vs `{"function":...`), so storing them together
-    // costs no second per-module `Vec` field -- see the field's own doc
-    // comment on `WorkspaceResolvedModule`.
-    let mut session_protocol_facts = session_protocol_decl::declaration_facts(program, &resolved)?;
-    session_protocol_facts.extend(session_protocol_decl::follows_facts(program)?);
-    session_protocol_facts.extend(agent_execution::facts(program)?);
-    let types = filter_owned_vec(
-        resolved.types,
-        |item| {
-            authored
-                .get(item.id.as_str())
-                .is_some_and(|owner| owner.module == program.module)
-        },
-        retained_output_only,
-    )?;
-    let functions = filter_owned_vec_accounted(
-        resolved.functions,
-        GRAPH_ACCOUNTED_RESOLVED_FUNCTION_BYTES,
-        retained_function_loan_bytes,
-        |item| {
-            authored
-                .get(item.id.as_str())
-                .is_some_and(|owner| owner.module == program.module)
-        },
-        retained_output_only,
-    )?;
-    let function_templates = filter_owned_vec(
-        resolved.function_templates,
-        |item| {
-            authored
-                .get(item.id.as_str())
-                .is_some_and(|owner| owner.module == program.module)
-        },
-        retained_output_only,
-    )?;
-    let (function_instances, imported_instances) = owned_generics::retain_module_instances(
-        program,
-        programs,
-        authored,
-        resolved.function_instances,
-        retained_output_only,
-    )?;
-    let signature_types = retained_signature_type_facts(&functions, &resolved.declarations)?;
-    let agents = filter_owned_vec(resolved.agents, |_| true, retained_output_only)?;
-    Ok((
-        WorkspaceResolvedModule {
-            path: crate::bounded_output::budgeted_clone(&program.path),
-            module,
-            permits: resolved.permits,
-            agents,
-            types,
-            interfaces: resolved.interfaces,
-            functions,
-            function_templates,
-            function_instances,
-            signature_types,
-            session_protocol_facts,
-            native_law: false,
-        },
-        imported_instances,
-    ))
-}
-
-fn retained_signature_type_facts(
-    functions: &[hir::ResolvedFunction],
-    declarations: &hir::DeclarationIndex,
-) -> Result<BTreeMap<String, (hir::DeclarationKind, hir::TypeFacts)>, Vec<Diagnostic>> {
-    let mut retained = BTreeMap::new();
-    let mut visits = 0usize;
-    if !functions.is_empty() {
-        reserve_builder_structure(std::mem::size_of::<
-            [Option<(CheckedValueNode<'_>, usize)>; MAX_CHECKED_VALUE_DEPTH + 1],
-        >())?;
-    }
-    for function in functions {
-        for ty in function
-            .params
-            .iter()
-            .map(|parameter| &parameter.ty)
-            .chain(std::iter::once(&function.return_type))
-        {
-            checked_value_retention::retain_checked_value_types(
-                CheckedValueNode::Type(ty),
-                declarations,
-                &mut retained,
-                &mut visits,
-            )?;
-        }
-        for expression in function
-            .requires
-            .iter()
-            .chain(std::iter::once(&function.body))
-            .chain(&function.ensures)
-        {
-            checked_value_retention::retain_checked_value_types(
-                CheckedValueNode::Expression(expression),
-                declarations,
-                &mut retained,
-                &mut visits,
-            )?;
-        }
-    }
-    Ok(retained)
 }
 
 const MAX_CHECKED_VALUE_VISITS: usize = 1_048_576;
@@ -4654,7 +4706,10 @@ impl<'a> CheckedValueNode<'a> {
                         .get(index)
                         .copied()
                 }
-                S::Unsafe { .. } | S::While { .. } => statement.child(index).map(Self::Expression),
+                S::CopyDiscard { .. }
+                | S::Unsafe { .. }
+                | S::While { .. }
+                | S::LexicalWhile { .. } => statement.child(index).map(Self::Expression),
             },
             Self::Arm(arm) => match index {
                 0 => Some(Self::Pattern(&arm.pattern)),
@@ -4677,6 +4732,10 @@ impl<'a> CheckedValueNode<'a> {
                 F::Wildcard => None,
             },
             Self::Expression(expression) => match &expression.kind {
+                E::LexicalExit { value, .. } => (index == 0)
+                    .then_some(value.as_deref())
+                    .flatten()
+                    .map(Self::Expression),
                 E::Closure {
                     parameters,
                     captures,
@@ -4702,7 +4761,10 @@ impl<'a> CheckedValueNode<'a> {
                     .get(index)
                     .copied()
                     .map(Self::Expression),
-                E::Call { args, .. } => args.get(index).map(Self::Expression),
+                E::Call { args, .. }
+                | E::LiteralFormat { args, .. }
+                | E::VecFieldRead { args, .. }
+                | E::RowLoan { args, .. } => args.get(index).map(Self::Expression),
                 E::Invoke { callable, args } => {
                     if index == 0 {
                         Some(Self::Expression(callable))
@@ -4732,7 +4794,10 @@ impl<'a> CheckedValueNode<'a> {
                     .get(index)
                     .copied()
                     .map(Self::Expression),
-                E::Block { statements, tail } => {
+                E::Block { statements, tail }
+                | E::VecConstructor {
+                    statements, tail, ..
+                } => {
                     if index < statements.len() {
                         statements.get(index).map(Self::Statement)
                     } else {
@@ -4779,6 +4844,7 @@ impl<'a> CheckedValueNode<'a> {
                 | E::Float64(_)
                 | E::Bool(_)
                 | E::String(_)
+                | E::BorrowedUtf8Literal(_)
                 | E::ArrayU8(_)
                 | E::RepeatArrayU8 { .. }
                 | E::BorrowPlace { .. }
@@ -4990,28 +5056,6 @@ fn insert_declaration_fingerprint(
 
 fn charge_builder_prebound(bytes: usize) -> Result<(), Vec<Diagnostic>> {
     reserve_builder_structure(bytes)
-}
-
-fn render_edge_proof(edges: &[WorkspaceEdge]) {
-    let mut proof = crate::bounded_output::CappedString::new();
-    use std::fmt::Write as _;
-    for edge in edges {
-        writeln!(
-            proof,
-            "{}\0{}\0{}\0{}\0{}\0{}\0{}\0{}\0{}\0{}",
-            edge.caller_path,
-            edge.caller,
-            edge.target_path,
-            edge.target,
-            edge.kind,
-            edge.site,
-            edge.expression,
-            edge.ast_path,
-            edge.alias,
-            edge.ordinal,
-        )
-        .expect("CappedString formatting is infallible");
-    }
 }
 
 fn checked_usage(
@@ -5262,132 +5306,7 @@ fn validate_uses(
     modules: &BTreeMap<&str, &str>,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
-    for program in programs {
-        let mut function_aliases = BTreeSet::new();
-        let mut type_aliases = BTreeSet::new();
-        let mut protocol_aliases = BTreeSet::new();
-        let mut imported_targets = BTreeSet::new();
-        let local_functions = program
-            .functions
-            .iter()
-            .map(|item| item.name.as_str())
-            .chain(
-                program
-                    .interfaces
-                    .iter()
-                    .flat_map(|interface| &interface.imports)
-                    .map(|import| import.name.as_str()),
-            )
-            .collect::<BTreeSet<_>>();
-        let local_types = program
-            .types
-            .iter()
-            .map(|item| item.name.as_str())
-            .chain(
-                prelude::declarations()
-                    .iter()
-                    .map(|item| item.name.as_str()),
-            )
-            .collect::<BTreeSet<_>>();
-        let local_protocols = program
-            .protocols
-            .iter()
-            .map(|item| item.name.as_str())
-            .collect::<BTreeSet<_>>();
-        let workspace_type_aliases = program
-            .module_uses
-            .iter()
-            .filter(|item| item.kind == ModuleUseKind::Type)
-            .map(|item| item.alias.as_str())
-            .collect::<BTreeSet<_>>();
-        for interface in &program.interfaces {
-            for import in &interface.imports {
-                for param in &import.params {
-                    if type_contains_name_from(&param.ty, &workspace_type_aliases) {
-                        return Err(vec![Diagnostic::error(
-                            "SPX-G172",
-                            "workspace type aliases are not admitted in interface/import parameter carriers",
-                            param.span,
-                        )
-                        .at_path(&program.path)]);
-                    }
-                }
-            }
-        }
-        for module_use in &program.module_uses {
-            if !imported_targets.insert((module_use.kind, module_use.persistent_id.as_str())) {
-                return Err(vec![use_error(
-                    program,
-                    module_use,
-                    "the same workspace target is imported more than once",
-                )]);
-            }
-            if module_use.target_module == program.module
-                || !modules.contains_key(module_use.target_module.as_str())
-            {
-                return Err(vec![use_error(
-                    program,
-                    module_use,
-                    "target module is missing or equals the caller module",
-                )]);
-            }
-            let alias_conflicts = match module_use.kind {
-                ModuleUseKind::Function => {
-                    !function_aliases.insert(module_use.alias.as_str())
-                        || local_functions.contains(module_use.alias.as_str())
-                        || module_use.alias == "main"
-                        || crate::vec_ops::by_name(&module_use.alias).is_some()
-                }
-                ModuleUseKind::Type => {
-                    !type_aliases.insert(module_use.alias.as_str())
-                        || local_types.contains(module_use.alias.as_str())
-                }
-                ModuleUseKind::Protocol => {
-                    !protocol_aliases.insert(module_use.alias.as_str())
-                        || local_protocols.contains(module_use.alias.as_str())
-                }
-            };
-            if alias_conflicts {
-                return Err(vec![use_error(
-                    program,
-                    module_use,
-                    "alias is duplicated or shadows a local/prelude declaration",
-                )]);
-            }
-            let target = authored
-                .get(module_use.persistent_id.as_str())
-                .ok_or_else(|| {
-                    vec![diagnostics::unknown_import_error(
-                        program, module_use, modules,
-                    )]
-                })?;
-            let expected = match module_use.kind {
-                ModuleUseKind::Function => AuthoredKind::Function,
-                ModuleUseKind::Type => AuthoredKind::Type,
-                ModuleUseKind::Protocol => AuthoredKind::Protocol,
-            };
-            if !target.explicit
-                || target.module != module_use.target_module
-                || target.kind != expected
-            {
-                return Err(vec![use_error(
-                    program,
-                    module_use,
-                    "target module, declaration kind, or explicit identity disagrees",
-                )]);
-            }
-            match module_use.kind {
-                ModuleUseKind::Function => {
-                    validate_imported_function(program, module_use, target, authored, programs)?
-                }
-                ModuleUseKind::Type => {
-                    validate_imported_type(program, module_use, target, authored, programs)?;
-                }
-                ModuleUseKind::Protocol => {}
-            }
-        }
-    }
-    Ok(())
+    import_validation::validate_uses_with_registry(programs, modules, authored, None)
 }
 fn signature_type_is_admitted(
     module: &str,
@@ -5398,6 +5317,7 @@ fn signature_type_is_admitted(
     visiting: &mut BTreeSet<String>,
 ) -> bool {
     match ty {
+        Type::Never => false,
         Type::I64
         | Type::I32
         | Type::Char
@@ -5480,7 +5400,7 @@ fn validate_imported_type(
     if owned_function_import::text_record_import(caller, target, authored, programs) {
         return Ok(());
     }
-    if !generic_type_import::template_is_admitted(ty)
+    if !generic_type_import::template_is_admitted(ty)?
         && (!ty.type_parameters.is_empty()
             || !type_is_admitted(target.module, ty, authored, programs, &mut BTreeSet::new())
             || !exposed_types_are_directly_imported(
@@ -5540,6 +5460,7 @@ fn exposed_type_reference_is_directly_imported(
     visiting: &mut BTreeSet<String>,
 ) -> bool {
     match ty {
+        Type::Never => false,
         Type::I64
         | Type::I32
         | Type::Char
@@ -5656,18 +5577,37 @@ fn budgeted_edge_clone(edge: &WorkspaceEdge) -> WorkspaceEdge {
 use source_callables::visit_ast_call_sites;
 
 fn workspace_declaration_facts(
-    modules: &[(String, hir::ResolvedProgram)],
+    modules: &[(String, ResolvedModuleInput)],
     retained_modules: &[WorkspaceResolvedModule],
     programs: &[Program],
 ) -> Result<BTreeMap<String, WorkspaceDeclarationFact>, Vec<Diagnostic>> {
-    let facts = reconstruct_workspace_declaration_facts(modules, programs)?;
+    let authored = index_authored(programs)?;
+    let facts = reconstruct_workspace_declaration_facts(modules, programs, &authored)?;
     validate_retained_declaration_shapes(retained_modules, &facts)?;
     Ok(facts)
 }
 
 fn reconstruct_workspace_declaration_facts(
-    modules: &[(String, hir::ResolvedProgram)],
+    modules: &[(String, ResolvedModuleInput)],
     programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+) -> Result<BTreeMap<String, WorkspaceDeclarationFact>, Vec<Diagnostic>> {
+    let authority = expected_projection::private_layout::authority::invocation::Invocation::new(
+        programs, authored,
+    );
+    reconstruct_workspace_declaration_facts_with_authority(
+        modules,
+        programs,
+        authored,
+        Some(&authority),
+    )
+}
+
+fn reconstruct_workspace_declaration_facts_with_authority(
+    modules: &[(String, ResolvedModuleInput)],
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    authority: Option<&expected_projection::private_layout::authority::invocation::Invocation<'_>>,
 ) -> Result<BTreeMap<String, WorkspaceDeclarationFact>, Vec<Diagnostic>> {
     let expected = expected_declaration_facts(programs)?;
     let resolved_record_iterator = modules
@@ -5690,11 +5630,12 @@ fn reconstruct_workspace_declaration_facts(
             programs,
             module_uses_record_iterator,
         )?;
-        let direct_targets = source
-            .module_uses
-            .iter()
-            .map(|module_use| module_use.persistent_id.as_str())
-            .collect::<BTreeSet<_>>();
+        let private = match authority {
+            Some(owner) => owner.derive_bound(source, programs, authored)?,
+            None => expected_projection::private_layout::authority::PrivateTypes::derive(
+                source, programs, authored,
+            )?,
+        };
         let synthetic_main = crate::bounded_output::budgeted_format(format_args!(
             "workspace.synthetic.main.{module}"
         ));
@@ -5747,7 +5688,11 @@ fn reconstruct_workspace_declaration_facts(
             };
             if top_fact.module.as_deref() != Some(module.as_str()) {
                 let expected_foreign = expected.get(declaration.id.as_str());
-                if direct_targets.contains(top.as_str())
+                if (source
+                    .module_uses
+                    .iter()
+                    .any(|u| u.persistent_id == top.as_str())
+                    || private.contains(top.as_str(), top_fact.module.as_deref())?)
                     && expected_foreign.is_some_and(|fact| {
                         fact.kind == declaration.kind
                             && fact.origin == declaration.identity_origin
@@ -6011,3 +5956,16 @@ mod tests;
 #[cfg(test)]
 #[path = "workspace_graph/type_proof_tests.rs"]
 mod type_proof_tests;
+
+#[cfg(test)]
+mod test_replay_context;
+#[cfg(test)]
+pub(crate) use test_replay_context::SourceRecordReplayFixture;
+
+#[cfg(test)]
+mod cache_key_original;
+#[cfg(test)]
+use cache_key_original::build_resolved_core;
+
+pub(crate) mod current_source;
+pub(crate) mod custody;

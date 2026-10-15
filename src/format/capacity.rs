@@ -251,7 +251,8 @@ pub(super) fn legacy_expr_temporary_bytes(root: &Expr, root_precedence: u8) -> u
             | ExprKind::Float32(_)
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
-            | ExprKind::String(_) => {}
+            | ExprKind::String(_)
+            | ExprKind::BorrowedUtf8Literal(_) => {}
             ExprKind::Var(name) => total = total.saturating_add(name.len()),
             ExprKind::MethodCall { receiver, args, .. } => {
                 let joined = joined_len(
@@ -284,6 +285,29 @@ pub(super) fn legacy_expr_temporary_bytes(root: &Expr, root_precedence: u8) -> u
                 );
                 total = total.saturating_add(joined).saturating_add(rendered);
                 stack.extend(args.iter().rev().map(|argument| (argument, 0)));
+            }
+            ExprKind::LexicalExit { value, .. } => {
+                total = total.saturating_add(rendered);
+                stack.extend(value.iter().map(|value| (value.as_ref(), 0)));
+            }
+            ExprKind::VecConstructor {
+                element,
+                value: expansion,
+                ..
+            } => {
+                total = total
+                    .saturating_add(rendered)
+                    .saturating_add(display_len(element));
+                // A hidden constructor renders its original items, never the
+                // synthetic Block. A rejected marker renders that Block.
+                if rendered_lengths.contains_key(&(
+                    expansion.as_ref() as *const Expr as usize,
+                    parent_precedence,
+                )) {
+                    stack.push((expansion, parent_precedence));
+                } else if let Ok(constructor) = crate::ast::vec_constructor::inspect(value) {
+                    stack.extend(constructor.items().map(|item| (item, 0)));
+                }
             }
             ExprKind::Unary { value, .. } => {
                 total = total.saturating_add(rendered);
@@ -343,6 +367,20 @@ pub(super) fn legacy_expr_temporary_bytes(root: &Expr, root_precedence: u8) -> u
                             .len()
                             .saturating_add(cached_rendered(values, 0))
                             .saturating_add(9),
+                        Statement::ForBorrow {
+                            item,
+                            index,
+                            values,
+                            ..
+                        } => item
+                            .len()
+                            .saturating_add(cached_rendered(values, 0))
+                            .saturating_add(16)
+                            .saturating_add(
+                                index
+                                    .as_ref()
+                                    .map_or(0, |index| index.name.len().saturating_add(4)),
+                            ),
                         Statement::ForOwn { item, values, .. } => item
                             .len()
                             .saturating_add(cached_rendered(values, 0))

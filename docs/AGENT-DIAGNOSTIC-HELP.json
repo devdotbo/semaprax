@@ -13,8 +13,17 @@
       "code": "SPX-F102",
       "rows": [
         {
-          "fix": "Interpreter lacks argv/files; semaprax build <manifest> --target native -o <fresh-path>; run in Project dir. Tests: semaprax test <project> --target native [Tests][native-tests]",
+          "fix": "Interpreter lacks argv/files; semaprax build <manifest> --target native -o <fresh-path>; run in Project dir. Tests: semaprax test <project> --target native [Tests](PROJECT-NATIVE-TEST-V1.md)",
           "wrote": "interpreter: source-command.v1/v28 Project"
+        }
+      ]
+    },
+    {
+      "code": "SPX-F130",
+      "rows": [
+        {
+          "fix": "Use the exact source-only fused-construction-v1 shape with main() -> i64 and explicit managed bytes 1..=1073741824; refusal has no ordinary fallback",
+          "wrote": "explicit fused source account or selection refused"
         }
       ]
     },
@@ -32,6 +41,15 @@
       ]
     },
     {
+      "code": "SPX-G171",
+      "rows": [
+        {
+          "fix": "Preserve behavior/caps; record source, requested/remaining/floor and compiler stage. Reduce source or optimize its compiler owner. Ledger bytes are not RSS/peak; do not infer unknowns.",
+          "wrote": "resolved-core builder ledger refusal"
+        }
+      ]
+    },
+    {
       "code": "SPX-G172",
       "rows": [
         {
@@ -44,7 +62,7 @@
       "code": "SPX-H006",
       "rows": [
         {
-          "fix": "Fewer loans; fixed cap [Loans][loans]",
+          "fix": "Fewer loans; fixed cap [Loans](SHARED-LOAN-PLAN-V1.md)",
           "wrote": "function: >256 shared loans"
         },
         {
@@ -74,8 +92,17 @@
       "code": "SPX-J100",
       "rows": [
         {
-          "fix": "2–16 sorted sources; one bounded nonentry test module: entry=\"app\", sources=[\"a.spx\",\"b.spx\"], tests=[\"app.tests\"] [Manifest][manifest]",
+          "fix": "2–16 sorted sources; one bounded nonentry test module: entry=\"app\", sources=[\"a.spx\",\"b.spx\"], tests=[\"app.tests\"] [Manifest](PACKAGE-MANIFEST-V1.md)",
           "wrote": "bad [modules]"
+        }
+      ]
+    },
+    {
+      "code": "SPX-M104",
+      "rows": [
+        {
+          "fix": "Fresh unique local; result is reserved; record/variant payloads: field: fresh_alias; keep field names unchanged",
+          "wrote": "invalid/duplicate pattern binding"
         }
       ]
     },
@@ -145,8 +172,8 @@
           "wrote": "for range"
         },
         {
-          "fix": "let _ = f(x) or tail result",
-          "wrote": "statement call"
+          "fix": "return 42; or the tail expression 42",
+          "wrote": "return; without a value"
         },
         {
           "fix": "Declare a record",
@@ -197,6 +224,15 @@
         {
           "fix": "Scalar tail, e.g. 0",
           "wrote": "assignment loop"
+        }
+      ]
+    },
+    {
+      "code": "SPX-P220",
+      "rows": [
+        {
+          "fix": "Use vec_of<T>(items), one admitted type and existing bounds; vec_of is reserved",
+          "wrote": "vec_of missing type/reserved name/oversized expansion"
         }
       ]
     },
@@ -275,7 +311,7 @@
       "code": "SPX-T205",
       "rows": [
         {
-          "fix": "Bind String; pass string_as_str(s)",
+          "fix": "Static str\"text\"; or bind String and pass string_as_str(s)",
           "wrote": "literal/String as str arg"
         },
         {
@@ -306,7 +342,7 @@
       "code": "SPX-T209",
       "rows": [
         {
-          "fix": "Rename",
+          "fix": "Fresh name; `_` is an ordinary binding",
           "wrote": "shadowed binding"
         }
       ]
@@ -351,7 +387,7 @@
       "code": "SPX-T252",
       "rows": [
         {
-          "fix": "vec_len<T>; imported generic aliases closed [While][while]",
+          "fix": "vec_len<T>; imported generic aliases closed [While](WHILE-LOOPS-V1.md)",
           "wrote": "generic while call"
         },
         {
@@ -363,7 +399,7 @@
           "wrote": "outer owner changes in while"
         },
         {
-          "fix": "Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook][renewal], executable gate pending",
+          "fix": "Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook](IO-LINES-V1.md#cursor-transitions), executable gate pending",
           "wrote": "Bytes+usize renewal/input views"
         }
       ]
@@ -390,7 +426,7 @@
       "code": "SPX-T265",
       "rows": [
         {
-          "fix": "Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook][renewal], executable gate pending",
+          "fix": "Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook](IO-LINES-V1.md#cursor-transitions), executable gate pending",
           "wrote": "Bytes+usize renewal/input views"
         }
       ]
@@ -412,7 +448,7 @@
       "code": "SPX-T269",
       "rows": [
         {
-          "fix": "Writes outside loops; profile caps: stdout+stderr ≤65536 bytes default; v28 appends ≤1 MiB",
+          "fix": "Build bounded output; publish once outside loops/cycles; default stdout+stderr ≤65536 bytes; v28 direct appends ≤1 MiB",
           "wrote": "direct output repeats per path / is loop-reachable"
         }
       ]
@@ -439,7 +475,7 @@
       "code": "SPX-T282",
       "rows": [
         {
-          "fix": "Reduce vec_with_capacity<T>; Vec cap [Vec][vec]",
+          "fix": "Reduce vec_with_capacity<T>; Vec cap [Vec](OWNED-BOUNDED-VEC-V1.md)",
           "wrote": "Vec capacity >8192"
         }
       ]
@@ -448,7 +484,7 @@
       "code": "SPX-T283",
       "rows": [
         {
-          "fix": "Exact std.collections.vec.* ID only [Vec][vec]",
+          "fix": "Exact std.collections.vec.* ID only [Vec](OWNED-BOUNDED-VEC-V1.md)",
           "wrote": "lookalike Vec wrapper"
         }
       ]
@@ -459,6 +495,33 @@
         {
           "fix": "IDs; acyclic monomorphic; own/borrow; no invariants",
           "wrote": "String/collection record"
+        }
+      ]
+    },
+    {
+      "code": "SPX-T312",
+      "rows": [
+        {
+          "fix": "Bare statement guard; exact else { 0 }; move useful work after it",
+          "wrote": "exit guard has nonzero/owning/view normal arm or is bound"
+        }
+      ]
+    },
+    {
+      "code": "SPX-T315",
+      "rows": [
+        {
+          "fix": "Bind explicitly; intermediate Copy scalar expr; admitted",
+          "wrote": "owned/aggregate/borrowed statement result"
+        }
+      ]
+    },
+    {
+      "code": "SPX-T318",
+      "rows": [
+        {
+          "fix": "Reparse canonical vec_of source; use an explicit Vec chain to read intermediate owners",
+          "wrote": "forged constructor/generated owner capture"
         }
       ]
     },

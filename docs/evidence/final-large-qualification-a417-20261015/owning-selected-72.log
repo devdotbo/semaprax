@@ -1,0 +1,6 @@
+
+running 1 test
+test nested_collection_record::subtree::string_transfer::explicit_recursive_transfer_retains_pointer_without_allocating_copying_or_resizing ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 342 filtered out; finished in 5.12s
+

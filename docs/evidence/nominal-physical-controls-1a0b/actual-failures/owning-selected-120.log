@@ -1,0 +1,15 @@
+
+running 1 test
+test workspace_graph::identity_resolution::base::affinity_tests::actual_base_foreign_then_restored_owner_cannot_reuse_cached_payload_or_reset_detachment ... 
+thread 'workspace_graph::identity_resolution::base::affinity_tests::actual_base_foreign_then_restored_owner_cannot_reuse_cached_payload_or_reset_detachment' (2394383) panicked at src/workspace_graph/identity_resolution/base/affinity_tests.rs:14:9:
+the actual receiving report owner was funded
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    workspace_graph::identity_resolution::base::affinity_tests::actual_base_foreign_then_restored_owner_cannot_reuse_cached_payload_or_reset_detachment
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8744 filtered out; finished in 0.09s
+

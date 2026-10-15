@@ -27,7 +27,7 @@ pub fn to_legacy_json(program: &Program) -> Result<String, Vec<Diagnostic>> {
         &revision(program),
         &functions,
         &types,
-        &GraphView::Module,
+        &GraphView::Module { static_text: false },
     )
     .map_err(|e| vec![e])
 }
@@ -62,7 +62,7 @@ pub(crate) fn to_legacy_hir_json(
         source_revision,
         &functions,
         &types,
-        &GraphView::Module,
+        &GraphView::Module { static_text: false },
     )
 }
 
@@ -80,6 +80,30 @@ pub fn verify_json(program: &Program, submitted: &str) -> Result<(), Vec<Diagnos
 }
 
 pub(super) fn legacy_graph_json(
+    program: &ResolvedProgram,
+    source_revision: &str,
+    selected_functions: &BTreeSet<DeclarationId>,
+    selected_types: &BTreeSet<DeclarationId>,
+    view: &GraphView<'_>,
+) -> Result<String, Diagnostic> {
+    if hir::copy_discard_program_uses(program) {
+        return Err(Diagnostic::io(
+            "SPX-G410",
+            "lexical Copy discard requires Graph v84",
+        ));
+    }
+    ordinary_inner_graph_json(
+        program,
+        source_revision,
+        selected_functions,
+        selected_types,
+        view,
+    )
+}
+
+// The ordinary layered renderer retains its exact previous checks and bytes;
+// its current v84 selector is not a frozen projection's selection authority.
+fn ordinary_inner_graph_json(
     program: &ResolvedProgram,
     source_revision: &str,
     selected_functions: &BTreeSet<DeclarationId>,
@@ -124,6 +148,18 @@ pub(super) fn pre_filesystem_graph_json(
         && !generic_mapping::requires_v35(&program.function_templates)
         && !hir::function_value::requires_function_values(program)
         && !super::owned_text_record_loans::requires(program)
+        && !super::owned_collection_records::requires(program)
+        && !super::projected_string_view::requires(program)
+        && !super::owned_nested_outcome::requires(program)
+        && !super::scoped_vec_field::requires(program)
+        && !super::byte_helper_renewal::requires(program)
+        && !super::finite_byte_scratch::requires(program)
+        && !super::consuming_vec_renewal::requires(program)
+        && !crate::vec_ops::string_slot::resolved_uses(program)
+        && !crate::hir::vec_constructor::program_uses(program)?
+        && !super::row_loan::requires(program)
+        && !crate::hir::byte_traversal_program_uses(program)
+        && !view.static_text()
         && !program
             .declarations
             .byte_slice_provenances()
@@ -143,7 +179,7 @@ pub(super) fn pre_filesystem_graph_json(
                 false,
             );
         }
-        return legacy_graph_json(
+        return ordinary_inner_graph_json(
             program,
             source_revision,
             selected_functions,
@@ -536,3 +572,6 @@ pub(super) fn type_facts_json(
         .collect::<Result<Vec<_>, Diagnostic>>()
         .map(|items| items.budgeted_join(","))
 }
+
+#[cfg(test)]
+mod tests;

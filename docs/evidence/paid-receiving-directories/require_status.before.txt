@@ -1,0 +1,17 @@
+fn require_status(
+    function: &ResolvedFunction,
+    statuses: &BTreeSet<StatusSourceId>,
+    source: &StatusSourceId,
+) -> Result<(), Diagnostic> {
+    if statuses.contains(source) {
+        Ok(())
+    } else {
+        Err(replay_error(
+            function,
+            format_args!(
+                "cleanup plan references unknown status source `{}`",
+                source.expression
+            ),
+        ))
+    }
+}

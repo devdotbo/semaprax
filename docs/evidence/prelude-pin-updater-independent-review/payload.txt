@@ -1,0 +1,483 @@
+Fresh explicitly authorized independent SOURCE-ONLY review of private actual prelude pin updater. Do not run it, mutate any repository, access files, use tools, delegate, or browse. Root's actual capture callback does not yet exist; this is a review of the updater protocol before running it. Verify deriving exactly11literal replacements (one actualbuilderusage, publicgraph whole-documentSHA, eight analysis whole-documentSHAs, projection-wire whole-documentSHA), retaining every other assertion. Focus source/binary/capture authentication versus self-asserted provenance; failed test101 is allowed only because candidate capture precedes stale numeric/hash assertions. Verify graph_digest internal validation against actual producer domain/length formula, not document rawSHA. Check no guessed hashes and no weakening, source drift and apply behavior. We supply exact small function scopes, capture script and whole updater, not giant files. Distinguish concrete blockers from safeguards owned by ROOT's external frozen-build protocol. Return strongest actionable findings with exact source references, under900words. No currentcapture, runtime verification, or approval is claimed.
+
+=== /Volumes/Semaprax/worktrees/sol-prelude-forecast-286-resume/scripts/update-prelude-forecast-pins.py (private authored source; SHA256 362391782ab604c8f57785c39216ec4655599870f01972732396151a77d84369) ===
+#!/usr/bin/env python3
+"""Plan/apply reviewed pins from complete actual ROOT producer captures only.
+
+No compiler/build invocation, synthesized wire, browser update or gate bypass.
+Default is read-only. --apply requires a fresh evidence directory.
+"""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import shutil
+
+ANALYSIS = [
+    ("context", "26296de75d133f1563b1b4fc23049b6eb29f4b407a2369d4849a12e9a379f225"),
+    ("forward", "190a00dfa539b7cef26a50dcbda97d522bb22699b02c6b904682d524806266c8"),
+    ("capability-context", "7ba1554e318ce8d56739e03a2987c90d5d7fdf1ff301b528ad67c1f8cd432a42"),
+    ("type-context", "bccc97fe0ad0026b44544e1e7c27c72f4d266c6773de01e157dcc9492317dd83"),
+    ("impact", "6e0ea8e0fc10e31b325fdc33e41ab9030b75f393c2f0e4fec916be6a19abab62"),
+    ("custom-impact", "421e0b0fba5f10c294d13bbfde592c9837468e074cacf6b113ab62051299b3bc"),
+    ("review", "864367757119c169b5f049542de643b2825bcc64794ae91784920e8d73d18faf"),
+    ("capability-review", "812fa5e3a129b96f36eed9e686ec88e3b5118813f31106c42adae637c6c14b21"),
+]
+OWNERS = {
+    "public-graph": "semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+    "analysis": "semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+    "projection-wire": "workspace_graph::type_proof_tests::projection_tests::emit_projection_wire_pin_candidate",
+}
+
+def sha(data):
+    return "sha256:" + hashlib.sha256(data).hexdigest()
+
+def require(condition, reason):
+    if not condition:
+        raise SystemExit(reason)
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("capture", type=Path)
+    parser.add_argument("--repo", required=True, type=Path)
+    parser.add_argument("--expected-capture-head", required=True)
+    parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--evidence-dir", type=Path)
+    args = parser.parse_args()
+    capture = args.capture.resolve()
+    repo = args.repo.resolve()
+    manifest = json.loads((capture / "candidates.json").read_text())
+    require(manifest["schema"] == "semaprax.prelude-forecast-pin-candidates.v1", "wrong capture schema")
+    require(not manifest["missing"], "incomplete capture; do not update pins")
+    head = (capture / "source-head.txt").read_text().strip()
+    require(len(args.expected_capture_head) >= 7 and head.startswith(args.expected_capture_head), "capture head differs from ROOT-approved build")
+    require(head == manifest["source_head"], "capture head manifest mismatch")
+    source_patch = (capture / "source-local.patch").read_bytes()
+    require(not source_patch, "capture includes source drift; ROOT must audit and recapture frozen source")
+    require(hashlib.sha256(source_patch).hexdigest() == manifest["source_patch_sha256"], "capture patch manifest mismatch")
+    binaries = json.loads((capture / "binaries.json").read_text())
+    require(len(binaries) >= 2, "missing built-binary provenance")
+    statuses = {}
+    for line in (capture / "status.tsv").read_text().splitlines():
+        label, code, selector = line.split("\t")
+        require(label not in statuses, "duplicate producer status")
+        statuses[label] = (int(code), selector)
+    for label, selector in OWNERS.items():
+        require(label in statuses and statuses[label][1] == selector, "missing exact owning producer: " + label)
+        require(statuses[label][0] in (0, 101), "non-test producer failure: " + label)
+        log = (capture / (label + ".log")).read_text()
+        require(selector in log and "running 1 test" in log, "not one exact owning test: " + label)
+    require(statuses["projection-wire"][0] == 0, "ignored wire producer failed")
+    names = ["public-graph"] + [name for name, _ in ANALYSIS] + ["projection-wire"]
+    index = {record["name"]: record for record in manifest["candidates"]}
+    require(len(index) == len(manifest["candidates"]), "duplicate wire candidate")
+    wires = {}
+    values = {}
+    for name in names:
+        require(name in index, "missing actual wire: " + name)
+        data = (capture / "wires" / (name + ".json")).read_bytes()
+        record = index[name]
+        require(record["file"] == "wires/" + name + ".json", "unexpected candidate path")
+        require(sha(data) == record["document_sha256"] and len(data) == record["bytes"], "actual bytes differ from manifest: " + name)
+        require(not data.endswith(b"\n"), "wire has noncanonical terminal LF: " + name)
+        values[name] = json.loads(data)
+        wires[name] = data
+    graph = values["public-graph"]
+    require(graph["schema"] == "semaprax.workspace-semantic-graph.v1", "public graph schema drift")
+    amount = graph["budget"]["used_builder_bytes"]
+    require(type(amount) is int and 0 < amount <= 67108864, "actual builder amount outside unchanged cap")
+    for name in ["public-graph", "projection-wire"]:
+        value = values[name]
+        digest = value["graph_digest"]
+        field = (',"graph_digest":"' + digest + '"').encode()
+        require(wires[name].count(field) == 1, "graph digest field framing drift")
+        require(sha(wires[name].replace(field, b"", 1)) == digest, "graph digest does not bind full payload")
+    for name, _ in ANALYSIS:
+        require(values[name]["workspace_graph_digest"] == graph["graph_digest"], "analysis graph binding differs: " + name)
+    edits = []
+    def edit(path, before, after, evidence):
+        edits.append(dict(path=path, before=before, after=after, actual_wire=evidence))
+    owner = "tests/workspace/semantic_graph.rs"
+    edit(owner, "assert_eq!(graph.budget().used_builder_bytes(), 334_016);",
+         "assert_eq!(graph.budget().used_builder_bytes(), " + format(amount, "_") + ");", "public-graph")
+    edit(owner, "sha256:c5cbb726c4e888d9b6e945964e52d233af45d25c80dc292890343d5ad2079a2e",
+         sha(wires["public-graph"]), "public-graph")
+    for name, old in ANALYSIS:
+        edit(owner, "sha256:" + old, sha(wires[name]), name)
+    edit("src/workspace_graph/type_proof_tests.rs",
+         "sha256:ba3d1b86d584444b3ed9d18bb0dfd2ed7b69a2a68841a40de3ce5cdfc5dc39f9",
+         sha(wires["projection-wire"]), "projection-wire")
+    before_sources = {}
+    after_sources = {}
+    for path in sorted({record["path"] for record in edits}):
+        before_sources[path] = (repo / path).read_text()
+        after_sources[path] = before_sources[path]
+    for record in edits:
+        path = record["path"]
+        require(after_sources[path].count(record["before"]) == 1, "old pin not unique/current: " + path)
+        after_sources[path] = after_sources[path].replace(record["before"], record["after"], 1)
+    report = dict(schema="semaprax.prelude-forecast-reviewed-pin-plan.v1", capture_head=head,
+                  status="actual-candidate-plan-requires-wire-review", edits=edits,
+                  source_sha256={path: sha(text.encode()) for path, text in before_sources.items()})
+    print(json.dumps(report, indent=2))
+    if not args.apply:
+        return
+    require(args.evidence_dir is not None, "--apply requires --evidence-dir")
+    evidence = args.evidence_dir.resolve()
+    require(not evidence.exists(), "evidence directory must be fresh")
+    # All inputs, pins and replacements validate before creating any candidate.
+    evidence.mkdir(parents=True)
+    shutil.copytree(capture, evidence / "actual-capture")
+    for path, text in before_sources.items():
+        (evidence / (path.replace("/", "__") + ".before.txt")).write_text(text)
+    (evidence / "reviewed-pin-plan.json").write_text(json.dumps(report, indent=2) + "\n")
+    for path, text in after_sources.items():
+        require((repo / path).read_text() == before_sources[path], "source drift before pin update")
+        (repo / path).write_text(text)
+
+if __name__ == "__main__":
+    main()
+
+=== scripts/capture-prelude-forecast-pins.sh:1-74 at a184d4406f241aa11df5c297102609b4c35ec1b3 ===
+#!/bin/sh
+# Runs only root-built owning pin producers. Never builds or edits source pins.
+set -eu
+if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
+    echo "usage: $0 <absolute-lib-test-binary> <absolute-workspace-test-binary> <fresh-absolute-output-dir> [absolute-wasm-test-binary]" >&2
+    exit 2
+fi
+lib_binary=$1
+workspace_binary=$2
+capture_root=$3
+wasm_binary=${4:-}
+for binary in "$lib_binary" "$workspace_binary" "$wasm_binary"; do
+    test -n "$binary" || continue
+    case "$binary" in /*) ;; *) echo "test binary must be absolute" >&2; exit 2 ;; esac
+    test -x "$binary"
+done
+case "$capture_root" in /*) ;; *) echo "capture directory must be absolute" >&2; exit 2 ;; esac
+mkdir "$capture_root"
+mkdir "$capture_root/wires"
+export SEMAPRAX_PRELUDE_PIN_CAPTURE_DIR="$capture_root/wires"
+git rev-parse HEAD > "$capture_root/source-head.txt"
+git diff --binary HEAD > "$capture_root/source-local.patch"
+python3 - "$capture_root/binaries.json" "$lib_binary" "$workspace_binary" "$wasm_binary" <<'PY'
+import hashlib,json,pathlib,sys
+records=[]
+for name in sys.argv[2:]:
+    if not name:continue
+    p=pathlib.Path(name)
+    records.append(dict(path=str(p),sha256=hashlib.sha256(p.read_bytes()).hexdigest()))
+pathlib.Path(sys.argv[1]).write_text(json.dumps(records,indent=2)+'\n')
+PY
+run_owner() {
+    label=$1
+    binary=$2
+    selector=$3
+    shift 3
+    result=0
+    "$binary" "$selector" --exact --nocapture --test-threads=1 "$@" > "$capture_root/$label.log" 2>&1 || result=$?
+    printf '%s\t%s\t%s\n' "$label" "$result" "$selector" >> "$capture_root/status.tsv"
+}
+run_owner public-graph "$workspace_binary" semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact
+run_owner analysis "$workspace_binary" semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact
+run_owner projection-wire "$lib_binary" workspace_graph::type_proof_tests::projection_tests::emit_projection_wire_pin_candidate --ignored
+if [ -n "$wasm_binary" ]; then
+    run_owner calculator "$wasm_binary" scalar_browser_ci_contract::browser_known_answers_match_authenticated_baseline_and_rename_graphs
+fi
+python3 - "$capture_root" "$wasm_binary" <<'PY'
+import hashlib,json,pathlib,sys
+root=pathlib.Path(sys.argv[1]);wire_dir=root/'wires'
+marker='PROJECTION_WIRE_PIN_CANDIDATE '
+lines=(root/'projection-wire.log').read_text().splitlines()
+wires=[line.split(marker,1)[1] for line in lines if marker in line]
+if len(wires)==1:
+    data=wires[0].encode();json.loads(data)
+    with (wire_dir/'projection-wire.json').open('xb') as f:f.write(data)
+expected=['public-graph','context','forward','capability-context','type-context','impact','custom-impact','review','capability-review','projection-wire']
+if sys.argv[2]:expected+=['calculator-baseline','calculator-renamed']
+records=[];missing=[]
+for name in expected:
+    path=wire_dir/(name+'.json')
+    if not path.is_file():missing.append(name);continue
+    data=path.read_bytes();value=json.loads(data)
+    record=dict(name=name,file=str(path.relative_to(root)),bytes=len(data),document_sha256='sha256:'+hashlib.sha256(data).hexdigest())
+    for field in ['graph_digest','workspace_revision','project_revision']:
+        if field in value:record[field]=value[field]
+    if 'budget' in value:record['budget']=value['budget']
+    records.append(record)
+report=dict(schema='semaprax.prelude-forecast-pin-candidates.v1',source_head=(root/'source-head.txt').read_text().strip(),source_patch_sha256=hashlib.sha256((root/'source-local.patch').read_bytes()).hexdigest(),candidates=records,missing=missing,note='Actual byte captures only; source pins were not edited. Inspect status.tsv and full logs. A missing renamed calculator capture can follow the earlier baseline pin assertion; review/update only captured baseline pins, then rerun into a fresh directory.')
+(root/'candidates.json').write_text(json.dumps(report,indent=2)+'\n')
+print(root/'candidates.json')
+# An incomplete capture is explicitly non-success; ordinary pin assertion exit
+# codes remain recorded separately, even when every requested wire was captured.
+if missing:raise SystemExit(3)
+PY
+
+=== src/workspace_graph.rs:94-102 at a184d4406f241aa11df5c297102609b4c35ec1b3 ===
+pub(crate) const MAX_BUILDER_BYTES: usize = 64 * 1024 * 1024;
+const MAX_CHANGE_BUILDER_BYTES: usize = 32 * 1024 * 1024;
+const MAX_OUTPUT_BYTES: usize = 16 * 1024 * 1024;
+const MAX_ENTRY_MODULE_BYTES: usize = 16 * 1024 * 1024;
+const WORKSPACE_GRAPH_SCHEMA: &str = "semaprax.workspace-semantic-graph.v1";
+const WORKSPACE_MANIFEST_SCHEMA: &str = "semaprax.workspace-semantic-manifest.v1";
+const ARTIFACT_DIGEST_DOMAIN: &[u8] = b"semaprax.workspace-semantic-graph.artifact-digest.v1\0";
+const PROJECT_GRAPH_SCHEMA: &str = "semaprax.project-semantic-graph.v1";
+const PROJECT_GRAPH_DIGEST_DOMAIN: &[u8] = b"semaprax.project-semantic-graph.artifact-digest.v1\0";
+
+=== src/workspace_graph.rs:3333-3394 at a184d4406f241aa11df5c297102609b4c35ec1b3 ===
+
+fn render_semantic_graph_with_output_limit(
+    mut projection: WorkspaceGraphProjection,
+    output_limit: usize,
+) -> Result<WorkspaceSemanticGraph, Vec<Diagnostic>> {
+    assert!(
+        output_limit <= MAX_OUTPUT_BYTES,
+        "private Workspace Semantic Graph output limit cannot exceed the production maximum"
+    );
+    validate_render_projection(&projection)?;
+    let (graph_digest, used_output_bytes) =
+        semantic_graph_digest_and_output_bytes(&projection, output_limit)?;
+    let json = bounded_graph_json(
+        &projection,
+        Some(&graph_digest),
+        used_output_bytes,
+        output_limit,
+    )?;
+    if json.len() != used_output_bytes {
+        return Err(render_binding_error());
+    }
+    projection.usage.used_output_bytes = used_output_bytes;
+    Ok(public_semantic_graph(projection, graph_digest, json))
+}
+
+pub(crate) fn projection_graph_binding(
+    projection: &WorkspaceGraphProjection,
+) -> Result<(String, usize), Vec<Diagnostic>> {
+    validate_render_projection(projection)?;
+    semantic_graph_digest_and_output_bytes(projection, MAX_OUTPUT_BYTES)
+}
+
+pub(crate) fn validate_project_projection(
+    projection: &WorkspaceGraphProjection,
+) -> Result<(), Vec<Diagnostic>> {
+    validate_render_projection(projection)
+}
+
+fn semantic_graph_digest_and_output_bytes(
+    projection: &WorkspaceGraphProjection,
+    output_limit: usize,
+) -> Result<(String, usize), Vec<Diagnostic>> {
+    const DIGEST_PLACEHOLDER: &str =
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+    let mut used_output_bytes = 0usize;
+    for _ in 0..20 {
+        let placeholder = bounded_graph_json(
+            projection,
+            Some(DIGEST_PLACEHOLDER),
+            used_output_bytes,
+            output_limit,
+        )?;
+        if placeholder.len() == used_output_bytes {
+            let payload = bounded_graph_json(projection, None, used_output_bytes, output_limit)?;
+            return Ok((artifact_digest(payload.as_bytes()), used_output_bytes));
+        }
+        used_output_bytes = placeholder.len();
+    }
+    Err(render_binding_error())
+}
+
+fn public_semantic_graph(
+
+=== src/workspace_graph.rs:3567-3580 at a184d4406f241aa11df5c297102609b4c35ec1b3 ===
+        ),
+    );
+    output.push_str(",\"workspace_manifest_schema\":");
+    push_json_string(&mut output, WORKSPACE_MANIFEST_SCHEMA);
+    output.push_str(",\"workspace_revision\":");
+    push_json_string(&mut output, &projection.workspace_revision);
+    if let Some(graph_digest) = graph_digest {
+        output.push_str(",\"graph_digest\":");
+        push_json_string(&mut output, graph_digest);
+    }
+    output.push_str(",\"entry\":{\"module\":");
+    push_json_string(&mut output, &projection.entry_module);
+    output.push_str(",\"path\":");
+    push_json_string(&mut output, &entry.path);
+
+=== src/workspace_graph.rs:3793-3804 at a184d4406f241aa11df5c297102609b4c35ec1b3 ===
+fn artifact_digest(payload: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(ARTIFACT_DIGEST_DOMAIN);
+    hasher.update((payload.len() as u64).to_le_bytes());
+    hasher.update(payload);
+    format!(
+        "sha256:{:x}",
+        crate::digest_hex::LowerHex(hasher.finalize())
+    )
+}
+fn build_owned_with_builder_limit(
+    sources: Vec<WorkspaceSource>,
+
+=== tests/workspace/semantic_graph.rs:168-188 at a184d4406f241aa11df5c297102609b4c35ec1b3 ===
+fn capture_pin_candidate(name: &str, bytes: &[u8]) {
+    let Some(directory) = std::env::var_os("SEMAPRAX_PRELUDE_PIN_CAPTURE_DIR") else {
+        return;
+    };
+    use std::io::Write as _;
+    let path = std::path::Path::new(&directory).join(name);
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .expect("fresh pin evidence file");
+    file.write_all(bytes).expect("capture complete actual wire");
+}
+
+fn document_digest(bytes: &[u8]) -> String {
+    format!(
+        "sha256:{:x}",
+        semaprax::digest_hex::LowerHex(Sha256::digest(bytes))
+    )
+}
+
+
+=== tests/workspace/semantic_graph.rs:570-611 at a184d4406f241aa11df5c297102609b4c35ec1b3 ===
+fn public_api_cli_bytes_getters_and_read_only_locking_are_exact() {
+    let fixture = ManagedFixture::new("public-success");
+    let before = inventory(&fixture.root);
+    let shared = fixture.lock();
+    fs2::FileExt::try_lock_shared(&shared).unwrap();
+
+    let graph = workspace_graph::snapshot(&fixture.root, "public.app").unwrap();
+    capture_pin_candidate("public-graph.json", graph.to_json().as_bytes());
+    assert_eq!(graph.workspace_revision(), fixture.revision);
+    assert_eq!(
+        graph.workspace_manifest_schema(),
+        "semaprax.workspace-semantic-manifest.v1"
+    );
+    assert!(!graph.to_json().ends_with('\n'));
+    assert_public_getters_match_wire(&graph);
+    assert_eq!(
+        graph
+            .edges()
+            .iter()
+            .map(|edge| edge.kind())
+            .collect::<std::collections::BTreeSet<_>>(),
+        std::collections::BTreeSet::from([
+            "call",
+            "capability_authority",
+            "effect_requirement",
+            "function_import",
+            "type_import",
+            "type_reference",
+        ])
+    );
+    // Restoring the prior 336449-byte debit and authenticated digest chain
+    // independently reproduces all nine original whole-document KATs.
+    assert_eq!(graph.budget().used_builder_bytes(), 334_016);
+    assert_eq!(
+        document_digest(graph.to_json().as_bytes()),
+        "sha256:c5cbb726c4e888d9b6e945964e52d233af45d25c80dc292890343d5ad2079a2e"
+    );
+
+    let output = Command::new(env!("CARGO_BIN_EXE_semaprax"))
+        .arg("workspace-graph")
+        .arg(&fixture.root)
+        .arg("public.app")
+
+=== tests/workspace/semantic_graph.rs:999-1053 at a184d4406f241aa11df5c297102609b4c35ec1b3 ===
+        "audit.write",
+    )
+    .unwrap();
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&capability_review).unwrap()["target"]["kind"],
+        "capability"
+    );
+
+    for (name, wire) in [
+        ("context.json", &context),
+        ("forward.json", &forward),
+        ("capability-context.json", &capability_context),
+        ("type-context.json", &type_context),
+        ("impact.json", &impact),
+        ("custom-impact.json", &custom_impact),
+        ("review.json", &review),
+        ("capability-review.json", &capability_review),
+    ] {
+        capture_pin_candidate(name, wire.as_bytes());
+    }
+
+    // Full current reports reproduce all eight original hashes by restoring
+    // only the measured workspace debit and authenticated digest bindings.
+    assert_eq!(
+        [
+            document_digest(context.as_bytes()),
+            document_digest(forward.as_bytes()),
+            document_digest(capability_context.as_bytes()),
+            document_digest(type_context.as_bytes()),
+            document_digest(impact.as_bytes()),
+            document_digest(custom_impact.as_bytes()),
+            document_digest(review.as_bytes()),
+            document_digest(capability_review.as_bytes()),
+        ],
+        [
+            "sha256:26296de75d133f1563b1b4fc23049b6eb29f4b407a2369d4849a12e9a379f225",
+            "sha256:190a00dfa539b7cef26a50dcbda97d522bb22699b02c6b904682d524806266c8",
+            "sha256:7ba1554e318ce8d56739e03a2987c90d5d7fdf1ff301b528ad67c1f8cd432a42",
+            "sha256:bccc97fe0ad0026b44544e1e7c27c72f4d266c6773de01e157dcc9492317dd83",
+            "sha256:6e0ea8e0fc10e31b325fdc33e41ab9030b75f393c2f0e4fec916be6a19abab62",
+            "sha256:421e0b0fba5f10c294d13bbfde592c9837468e074cacf6b113ab62051299b3bc",
+            "sha256:864367757119c169b5f049542de643b2825bcc64794ae91784920e8d73d18faf",
+            "sha256:812fa5e3a129b96f36eed9e686ec88e3b5118813f31106c42adae637c6c14b21",
+        ]
+    );
+
+    std::thread::scope(|scope| {
+        let context_task = scope.spawn(|| {
+            workspace_analysis::context(
+                &fixture.root,
+                "public.app",
+                WorkspaceAnalysisTargetKind::Declaration,
+                "public.main",
+                WorkspaceContextOptions::default(),
+            )
+
+=== src/workspace_graph/type_proof_tests.rs:817-840 at a184d4406f241aa11df5c297102609b4c35ec1b3 ===
+    }
+
+    #[test]
+    #[ignore = "owning wire pin candidate; audit budget/digest differences before moving the literal"]
+    fn emit_projection_wire_pin_candidate() {
+        eprintln!(
+            "PROJECTION_WIRE_PIN_CANDIDATE {}",
+            rendered_entry().to_json()
+        );
+    }
+
+    #[test]
+    fn rendered_document_has_literal_sha_exact_wire_order_and_digest_binding() {
+        // The owning producer plus restoration against the previous full-wire
+        // SHA proves only builder usage (421597 -> 419077) and its digest move
+        // after borrowing retained identities; all other wire bytes are exact.
+        let graph = rendered_entry();
+        let json = graph.to_json();
+        let document_sha = format!(
+            "sha256:{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(json.as_bytes()))
+        );
+        // Includes the current AST carrier's charged builder bytes, so the
+        // digest moves whenever the pre-bound moves: adding the static
+
+=== src/workspace_graph/type_proof_tests.rs:938-948 at a184d4406f241aa11df5c297102609b4c35ec1b3 ===
+        assert!(json.contains(
+                "\"used_managed_files\":4,\"used_reachable_modules\":3,\"used_entry_module_bytes\":9,\"used_total_source_bytes\":"
+            ));
+
+        let digest_field = format!(",\"graph_digest\":\"{}\"", graph.graph_digest());
+        assert_eq!(json.matches(&digest_field).count(), 1);
+        let payload = json.replacen(&digest_field, "", 1);
+        assert_eq!(artifact_digest(payload.as_bytes()), graph.graph_digest());
+        assert_eq!(graph.budget().used_output_bytes(), json.len());
+    }
+

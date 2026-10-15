@@ -1,0 +1,1792 @@
+Review the test-only correction in commit 2e0df3f8b18ce0f84d25d6c10adbf3d69279f3c5. Actual failure was a missing spx_format_step_v1 callable import when the unchanged 4096-row field uniqueness corpus generates T-index string_format keys. Check real behavior/UTF8/failure ownership/caps, not just linkability. The import is an actual rendering operation, not a fuel callback. The private Vec host has its existing collection policy, distinct from standalone browser max64 table. No production changes, no Rust case changes, no Cargo/runtime executed. Distinguish concrete blockers from uncertainties; no application gain claims. Full host and full receiver follow, plus actual owning contract and implementation. Do not use tools.
+
+
+FILE tests/owned_data/owned_leaf_vec/host.js lines 1..1155
+1: 'use strict';
+2: // Strict private Core-Wasm host for the additive owned-leaf Vec profile.
+3: // Every handle is a one-generation authority; an operation that returns zero
+4: // has consumed nothing. The compiler's status/cleanup path owns that failure.
+5: const fs = require('fs');
+6: const moduleBytes = fs.readFileSync(process.argv[2]);
+7: const expectedStatus = Number(process.argv[3]);
+8: const expectedValue = BigInt(process.argv[4]);
+9: const refusal = process.argv[5] || '';
+10: // Dedicated private scalar String/Bytes witness, not a public Web adapter.
+11: const scalarView = refusal === 'scalar-view';
+12: const contractView = refusal === 'contract-view';
+13: const vecView = refusal === 'vec-view';
+14: const copyRecordCodec = refusal === 'copy-record-codec';
+15: const expectedDomain = (scalarView || contractView || vecView) ? process.argv[6] : null;
+16: if (scalarView && !['ok', 'semaprax.convert.v1'].includes(expectedDomain))
+17:   throw Error('scalar-view requires an exact admitted normalized status domain');
+18: if (contractView && expectedDomain !== 'semaprax.contract.v1')
+19:   throw Error('contract-view requires the exact contract status domain');
+20: if (vecView && !['ok', 'semaprax.vec.v1'].includes(expectedDomain))
+21:   throw Error('vec-view requires an exact admitted normalized status domain');
+22: // OPT #746: `shared-owner` and `shared-owner-lease` route every payload read,
+23: // allocation and drop through the private shared-owner host's hooks
+24: // (src/wasm/shared_owner/host.mjs, staged beside this file) and take its
+25: // payload consumers. `-lease` makes every nonempty allocation a registry
+26: // lease. Every other mode keeps the host-local payload table unchanged.
+27: const sharedOwner = refusal === 'shared-owner' || refusal === 'shared-owner-lease';
+28: let shared = null;
+29: const codecPushFailure = /^codec-push-([1-4])$/.exec(refusal);
+30: let codecPushAttempts = 0;
+31: let instance, fieldOutput, nextPayload = 1, nextVec = 1n, nextIter = 1n << 62n, copies = 0, drops = 0;
+32: const payloads = new Map(), vectors = new Map(), iterators = new Map();
+33: // Fixture authority encoding v2: old mint/move keeps its generation-zero
+34: // low-word handle. Additive sort renews the existing authority slot in place.
+35: // Import signatures, legacy tags and generated legacy modules are unchanged.
+36: const AUTHORITY_ENCODING = 'semaprax.test.owned-leaf-authority.v2';
+37: const EMPTY_BYTES = new Uint8Array(0);
+38: let sorting = false, fieldReading = false, fieldReads = 0;
+39: // Borrowed field uniqueness: requested ordinal scratch is counted separately
+40: // from owner inventory. JS typed-array storage is fixture memory, not paid
+41: // native backing; it only proves no row/payload/authority work occurs.
+42: let uniqueChecking = false, uniqueChecks = 0, uniqueScratchRequests = 0, uniqueScratchBytes = 0;
+43: const allocationOutsideSort = name => {
+44:   if(sorting||fieldReading||uniqueChecking)throw Error(`infallible read/sort reached allocating/settling helper: ${name}`);
+45: };
+46: // Test-only guards make a future slice/sort/map or authority re-mint fail the
+47: // same executable corpus, rather than quietly reintroducing a failure lane.
+48: for(const name of ['slice','sort','map','filter']){
+49:   const original=Array.prototype[name];
+50:   Array.prototype[name]=function(...args){
+51:     allocationOutsideSort(name);return Reflect.apply(original,this,args);
+52:   };
+53: }
+54: const authoritySet=vectors.set;
+55: vectors.set=function(key,value){
+56:   allocationOutsideSort('authority insertion');return authoritySet.call(this,key,value);
+57: };
+58: const utf8 = new TextDecoder('utf-8',{fatal:true});
+59: const memory = () => instance.exports.__spx_byte_memory || instance.exports.memory;
+60: const view = (address, length) => {
+61:   if (!Number.isInteger(address) || address < 0 || address + length > memory().buffer.byteLength)
+62:     throw Error('Wasm output range');
+63:   return new DataView(memory().buffer, address, length);
+64: };
+65: const split = carrier => {
+66:   const word = BigInt.asUintN(64, carrier);
+67:   return {length: Number(word & 0xffffffffn), origin: Number(word >> 32n)};
+68: };
+69: const read = carrier => {
+70:   allocationOutsideSort('payload view');
+71:   const {length, origin} = split(carrier);
+72:   if (origin & 0x80000000) {
+73:     if (shared) return shared.payload.owned(carrier);
+74:     const bytes = payloads.get(origin & 0x7fffffff);
+75:     if (!bytes || bytes.length !== length) throw Error('stale payload');
+76:     return bytes;
+77:   }
+78:   if ((origin & 0xc0000000) === 0x40000000) {
+79:     const pointer=(origin & 0xffff)*8;
+80:     if(pointer>131072-32)throw Error('range descriptor bounds');
+81:     const descriptor=view(pointer,32),identity=descriptor.getUint32(0,true);
+82:     if(!identity||identity!==((origin>>>16)&0x1fff)||descriptor.getUint32(4,true)!==pointer)
+83:       throw Error('range descriptor identity');
+84:     const carrier=descriptor.getBigInt64(8,true),ultimate=split(carrier);
+85:     const start=descriptor.getBigUint64(16,true),extent=descriptor.getBigUint64(24,true);
+86:     if((ultimate.origin & 0xc0000000)===0x40000000||extent!==BigInt(length)||
+87:        start>BigInt(ultimate.length)||extent>BigInt(ultimate.length)-start)
+88:       throw Error('range descriptor extent');
+89:     return read(carrier).subarray(Number(start),Number(start+extent));
+90:   }
+91:   if (origin > memory().buffer.byteLength - length) throw Error('borrowed payload range');
+92:   return new Uint8Array(memory().buffer, origin, length);
+93: };
+94: const alloc = carrier => {
+95:   allocationOutsideSort('payload clone');
+96:   if (shared) { const owned = shared.payload.clone(carrier); copies++; return owned; }
+97:   if(copyRecordCodec && payloads.size>=16)throw Error('Copy codec owned entry capacity');
+98:   const bytes = new Uint8Array(read(carrier));
+99:   const id = nextPayload++;
+100:   payloads.set(id, bytes);
+101:   copies++;
+102:   return BigInt.asIntN(64, ((0x80000000n | BigInt(id)) << 32n) | BigInt(bytes.length));
+103: };
+104: const ownBytes = bytes => {
+105:   allocationOutsideSort('owned payload');
+106:   if (shared) { const owned = shared.payload.own(new Uint8Array(bytes)); copies++; return owned; }
+107:   if(copyRecordCodec && payloads.size>=16)throw Error('Copy codec owned entry capacity');
+108:   const id = nextPayload++;
+109:   payloads.set(id, new Uint8Array(bytes));
+110:   copies++;
+111:   return BigInt.asIntN(64, ((0x80000000n | BigInt(id)) << 32n) | BigInt(bytes.length));
+112: };
+113: const drop = carrier => {
+114:   allocationOutsideSort('payload drop');
+115:   if (carrier === 0n) return;
+116:   if (shared) { shared.payload.drop(carrier); drops++; return; }
+117:   read(carrier);
+118:   const {origin} = split(carrier);
+119:   if (!(origin & 0x80000000) || !payloads.delete(origin & 0x7fffffff))
+120:     throw Error('double or borrowed payload drop');
+121:   drops++;
+122: };
+123: const validUtf8 = bytes => {
+124:     for (let index = 0; index < bytes.length;) {
+125:       const first = bytes[index++];
+126:       let extra, minimum, scalar;
+127:       if (first < 128) continue;
+128:       if (first >= 194 && first <= 223) { extra = 1; minimum = 128; scalar = first & 31; }
+129:       else if (first >= 224 && first <= 239) { extra = 2; minimum = 2048; scalar = first & 15; }
+130:       else if (first >= 240 && first <= 244) { extra = 3; minimum = 65536; scalar = first & 7; }
+131:       else return false;
+132:       if (index + extra > bytes.length) return false;
+133:       for (let count = 0; count < extra; count++) {
+134:         const byte = bytes[index++];
+135:         if ((byte & 192) !== 128) return false;
+136:         scalar = (scalar << 6) | (byte & 63);
+137:       }
+138:       if (scalar < minimum || scalar > 1114111 || (scalar >= 55296 && scalar <= 57343)) return false;
+139:     }
+140:     return true;
+141:   };
+142: 
+143: const fields = shape => {
+144:   allocationOutsideSort('descriptor array');
+145:   const raw = BigInt.asUintN(64, shape), result = [];
+146:   for (let i = 0; i < 8; i++) {
+147:     const byte = Number((raw >> BigInt(i * 8)) & 255n);
+148:     if (byte === 0) {
+149:       if ((raw >> BigInt(i * 8)) !== 0n) throw Error('noncanonical shape');
+150:       break;
+151:     }
+152:     const code = byte >> 4, slot = byte & 15;
+153:     if (code < 1 || code > 10 || slot >= 8 || result.some(field => field.slot === slot))
+154:       throw Error('invalid shape field');
+155:     result.push({code, slot});
+156:   }
+157:   if (!result.length || !result.some(field => field.code >= 9) ||
+158:       result.filter(field => field.code >= 9).length > 2 ||
+159:       result.some(field => field.slot >= result.length)) throw Error('invalid owned shape');
+160:   return result;
+161: };
+162: const limit = shape => {
+163:   const list = fields(shape), owned = list.filter(field => field.code >= 9).length;
+164:   const scalar = list.length - owned;
+165:   return [8192n, scalar ? 8192n / BigInt(scalar) : 8192n,
+166:     131072n / (16n * BigInt(owned))].reduce((a, b) => a < b ? a : b);
+167: };
+168: const checkWord = (word, code) => {
+169:   if (code >= 9) {
+170:     if (word !== 0n && !(split(word).origin & 0x80000000)) throw Error('borrowed owned leaf');
+171:     if (word !== 0n) read(word);
+172:     if (code === 10) utf8.decode(read(word));
+173:   } else if (code === 2 && BigInt.asIntN(32, word) !== word) throw Error('noncanonical i32');
+174:   else if ((code === 3 || code === 8) && (word < 0n || word > (code === 8 ? 1n : 255n)))
+175:     throw Error('noncanonical u8/bool');
+176:   else if (code === 5 && (word < 0n || word > 0x10ffffn || (word >= 0xd800n && word <= 0xdfffn)))
+177:     throw Error('invalid char');
+178:   else if (code === 6 && (word < 0n || word > 0xffffffffn)) throw Error('noncanonical f32');
+179: };
+180: const rowFromDeclared = (shape, values) => {
+181:   const spec = fields(shape), row = Array(spec.length).fill(0n), seen = new Set();
+182:   for (let i = 0; i < spec.length; i++) {
+183:     const word = values[i], field = spec[i];
+184:     checkWord(word, field.code);
+185:     if (field.code >= 9 && word !== 0n) {
+186:       if (seen.has(word)) throw Error('aliased owned leaves');
+187:       seen.add(word);
+188:     }
+189:     row[field.slot] = word;
+190:   }
+191:   if (values.slice(spec.length).some(word => word !== 0n)) throw Error('nonzero spare word');
+192:   return row;
+193: };
+194: const dropRow = (row, shape) => {
+195:   for (const field of fields(shape)) if (field.code >= 9) drop(row[field.slot]);
+196: };
+197: const vectorValue = handle => {
+198:   const raw=BigInt.asUintN(64,handle),slot=raw&0xffffffffn;
+199:   const value=vectors.get(slot);
+200:   return value&&value.generation===(raw>>32n)?value:undefined;
+201: };
+202: const releaseVector = handle => {
+203:   allocationOutsideSort('authority release');
+204:   const value=vectorValue(handle);
+205:   if(!value||!vectors.delete(value.authority_slot))throw Error('stale Vec release');
+206: };
+207: const vec = (handle, tag) => {
+208:   const value = vectorValue(handle);
+209:   if (!value || value.tag !== tag) throw Error('stale or mistyped Vec');
+210:   return value;
+211: };
+212: const bind = (handle, identity, shape) => {
+213:   const value = vectorValue(handle);
+214:   if (!value || (value.tag !== 10 && value.tag !== 11)) throw Error('stale owned Vec');
+215:   const spec = fields(shape);
+216:   if (value.tag === 10 && !(spec.length === 3 &&
+217:       spec.filter(field => field.code === 9).length === 2 &&
+218:       spec.filter(field => field.code <= 8).length === 1 &&
+219:       spec.filter(field => field.code === 9).every(field => field.slot <= 1) &&
+220:       spec.find(field => field.code <= 8).slot === 2)) throw Error('legacy shape mismatch');
+221:   if (value.shape !== undefined && (value.shape !== shape || value.identity !== identity))
+222:     throw Error('declaration identity or shape mismatch');
+223:   return value;
+224: };
+225: const mint = value => {
+226:   allocationOutsideSort('authority mint');
+227:   if(nextVec>0xffffffffn)throw Error('Vec authority identity exhausted');
+228:   const handle = nextVec++;
+229:   value.authority_slot=handle;value.generation=0n;
+230:   // Predeclare even an unbound legacy record's descriptor fields. Its first
+231:   // additive sort only writes existing metadata; no owner object is grown.
+232:   if(value.identity===undefined)value.identity=undefined;
+233:   if(value.shape===undefined)value.shape=undefined;
+234:   vectors.set(handle, value);
+235:   return handle;
+236: };
+237: const move = (handle, value) => {
+238:   releaseVector(handle);
+239:   return mint(value);
+240: };
+241: const iterator = (handle, cursor, identity, shape) => {
+242:   const value = iterators.get(handle);
+243:   if (!value || value.cursor !== cursor || value.identity !== identity || value.shape !== shape)
+244:     throw Error('stale or mistyped iterator epoch');
+245:   return value;
+246: };
+247: const totalKey = (word, code) => {
+248:   const bits = BigInt.asUintN(code === 6 || code === 2 ? 32 : 64, word);
+249:   if (code === 1 || code === 2) return bits ^ (code === 2 ? 0x80000000n : 0x8000000000000000n);
+250:   if (code === 6 || code === 7) {
+251:     const mask = code === 6 ? 0xffffffffn : 0xffffffffffffffffn;
+252:     const sign = code === 6 ? 0x80000000n : 0x8000000000000000n;
+253:     return bits & sign ? bits ^ mask : bits ^ sign;
+254:   }
+255:   return bits;
+256: };
+257: const compareBytes = (left, right) => {
+258:   const a = read(left), b = read(right), bound = Math.min(a.length, b.length);
+259:   for (let i = 0; i < bound; i++) if (a[i] !== b[i]) return a[i] - b[i];
+260:   return a.length - b.length;
+261: };
+262: const ownedSortBytes = word => {
+263:   if(word===0n)return EMPTY_BYTES;
+264:   const raw=BigInt.asUintN(64,word),origin=Number(raw>>32n),length=Number(raw&0xffffffffn);
+265:   if(!(origin&0x80000000))throw Error('borrowed payload in owned sort');
+266:   if(shared)return shared.payload.owned(word);
+267:   const bytes=payloads.get(origin&0x7fffffff);
+268:   if(!bytes||bytes.length!==length)throw Error('stale sort payload');
+269:   return bytes;
+270: };
+271: const compareOwnedBytes = (a,b) => {
+272:   const left=ownedSortBytes(a),right=ownedSortBytes(b),bound=Math.min(left.length,right.length);
+273:   for(let i=0;i<bound;i++)if(left[i]!==right[i])return left[i]-right[i];
+274:   return left.length-right.length;
+275: };
+276: const compareRows = (left, right, shape) => {
+277:   // Read the packed descriptor without building arrays, decoded strings or
+278:   // borrowed views. Both String and Bytes compare their retained owned bytes.
+279:   for(let raw=BigInt.asUintN(64,shape);raw;raw>>=8n) {
+280:     const field=Number(raw&255n),code=field>>4,slot=field&15;
+281:     const a=left[slot],b=right[slot];
+282:     const cmp=code>=9?compareOwnedBytes(a,b):
+283:       (totalKey(a,code)<totalKey(b,code)?-1:totalKey(a,code)>totalKey(b,code)?1:0);
+284:     if (cmp) return cmp;
+285:   }
+286:   return 0;
+287: };
+288: const bindSort = (handle,identity,shape) => {
+289:   const value=vectorValue(handle);
+290:   if(!value||(value.tag!==10&&value.tag!==11))throw Error('stale owned sort vector');
+291:   let count=0,owned=0,seen=0,bytes=0,scalars=0;
+292:   for(let raw=BigInt.asUintN(64,shape);raw;raw>>=8n) {
+293:     const field=Number(raw&255n),code=field>>4,slot=field&15;
+294:     if(!field||code<1||code>10||slot>=8||(seen&(1<<slot)))throw Error('invalid sort shape');
+295:     count++;seen|=1<<slot;
+296:     if(code>=9)owned++;
+297:     if(value.tag===10){
+298:       if(code===9&&slot<=1)bytes++;
+299:       else if(code<=8&&slot===2)scalars++;
+300:       else throw Error('legacy sort shape mismatch');
+301:     }
+302:   }
+303:   if(!count||owned<1||owned>2||seen!==((1<<count)-1))throw Error('invalid owned sort shape');
+304:   if(value.tag===10&&(count!==3||bytes!==2||scalars!==1))throw Error('legacy sort shape mismatch');
+305:   if(value.shape!==undefined&&(value.shape!==shape||value.identity!==identity))
+306:     throw Error('sort declaration identity or shape mismatch');
+307:   if(value.generation===0xffffffffn)throw Error('Vec generation exhausted');
+308:   return value;
+309: };
+310: // Scalar export wrappers signal the selected checked arithmetic status after
+311: // their canonical cleanup has completed. Match the frozen arithmetic imports.
+312: const arithmetic = (code, operation) => (a,b) => {
+313:   if ((code===4||code===6)&&b===0n)throw Error(`status:${code}`);
+314:   if ((code===4||code===6)&&a===-(1n<<63n)&&b===-1n)
+315:     throw Error(`status:${code===4?5:7}`);
+316:   const value=operation(a,b);
+317:   if(value<-(1n<<63n)||value>(1n<<63n)-1n)throw Error(`status:${code}`);
+318:   return value;
+319: };
+320: // Same checked literal-format operations as createByteDataRuntime's
+321: // formatStep (src/wasm/browser_runtime.js). Owned results use this host's
+322: // existing counted allocator; Vec leaves retain their ordinary host policy.
+323: const formatStep = (operation, left, right) => {
+324:   allocationOutsideSort('literal format');
+325:   if (!Number.isInteger(operation) || typeof left !== 'bigint' || typeof right !== 'bigint')
+326:     throw TypeError('literal format import shape invariant');
+327:   const stringBytes = carrier => {
+328:     const bytes = read(carrier);
+329:     if (!validUtf8(bytes)) throw Error('literal format String UTF-8 invariant');
+330:     return bytes;
+331:   };
+332:   let bytes;
+333:   try {
+334:     if (operation === 0) {
+335:       if (right !== 0n) throw Error('literal format copy operand invariant');
+336:       bytes = read(left);
+337:     } else if (operation === 1) {
+338:       const a = stringBytes(left), b = stringBytes(right);
+339:       if (a.byteLength > 65536 - b.byteLength) return 0n;
+340:       bytes = new Uint8Array(a.byteLength + b.byteLength);
+341:       bytes.set(a, 0); bytes.set(b, a.byteLength);
+342:     } else if (operation === 2 || operation === 3) {
+343:       if (right !== 0n) throw Error('literal format numeric operand invariant');
+344:       bytes = new TextEncoder().encode((operation === 3 ? BigInt.asUintN(64, left) : left).toString());
+345:     } else {
+346:       throw Error('literal format operation invariant');
+347:     }
+348:     if (bytes.byteLength > 65536 || nextPayload > 0x7fffffff) return 0n;
+349:     return ownBytes(bytes);
+350:   } catch (failure) {
+351:     if (failure instanceof RangeError) return 0n;
+352:     throw failure;
+353:   }
+354: };
+355: const env = {
+356:   spx_add:arithmetic(1,(a,b)=>a+b), spx_sub:arithmetic(2,(a,b)=>a-b), spx_mul:arithmetic(3,(a,b)=>a*b),
+357:   spx_div:arithmetic(4,(a,b)=>a/b), spx_rem:arithmetic(6,(a,b)=>a%b),
+358:   spx_neg:a=>{if(a===-(1n<<63n))throw Error('status:8');return -a;},
+359:   spx_contract_fail:status=>{throw Error(`status:${status}`)},
+360:   spx_format_step_v1:formatStep,
+361:   spx_bytes_copy:alloc, spx_bytes_drop:drop, spx_bytes_as_slice:carrier=>{read(carrier);return carrier},
+362:   spx_bytes_get:(carrier,index)=>read(carrier)[Number(index)]??-1,
+363:   spx_bytes_zeroed:length=>{
+364:     if(length<0n||length>131072n)return 0n;
+365:     return ownBytes(new Uint8Array(Number(length)));
+366:   },
+367:   spx_bytes_set:(carrier,index,byte)=>{
+368:     const bytes=read(carrier);if(index<0n||index>=BigInt(bytes.length)||byte<0||byte>255)
+369:       throw Error('byte set bounds');
+370:     bytes[Number(index)]=byte;return carrier;
+371:   },
+372:   spx_bytes_set5:()=>{throw Error('unexpected five-byte write')},
+373:   spx_bytes_set1_or5:()=>{throw Error('unexpected one-or-five write')},
+374:   spx_bytes_set1_or6_or48:()=>{throw Error('unexpected one-or-six-or-forty-eight write')},
+375:   spx_string_from_utf8_v1:(carrier,offset)=>{
+376:     const bytes=read(carrier),output=view(offset,8);
+377:     if(!validUtf8(bytes))return 21;
+378:     output.setBigInt64(0,ownBytes(bytes),true);return 0;
+379:   },
+380:   spx_string_from_str_v2:(carrier,offset)=>{
+381:     const bytes=read(carrier),output=view(offset,8);
+382:     if(!validUtf8(bytes))return 25;
+383:     output.setBigInt64(0,ownBytes(bytes),true);return 0;
+384:   },
+385:   spx_string_concat_v1:(left,right)=>ownBytes(new Uint8Array([...read(left),...read(right)])),
+386:   spx_string_from_char_v1:value=>ownBytes(new TextEncoder().encode(String.fromCodePoint(value))),
+387:   spx_string_len_chars_v1:carrier=>BigInt([...new TextDecoder('utf-8',{fatal:true}).decode(read(carrier))].length),
+388:   spx_string_from_i64_v1:value=>ownBytes(new TextEncoder().encode(value.toString())),
+389:   spx_string_from_usize_v1:value=>ownBytes(new TextEncoder().encode(BigInt.asUintN(64,value).toString())),
+390:   spx_string_starts_with_v1:(left,right)=>{
+391:     const a=read(left),b=read(right);
+392:     return b.length<=a.length&&b.every((byte,i)=>a[i]===byte)?1:0;
+393:   },
+394:   spx_string_contains_v1:(left,right)=>{
+395:     const a=read(left),b=read(right);
+396:     for(let i=0;i<=a.length-b.length;i++)if(b.every((byte,j)=>a[i+j]===byte))return 1;
+397:     return 0;
+398:   },
+399:   spx_string_compare_v2:(left,right)=>BigInt(Math.sign(compareBytes(left,right))),
+400:   spx_vec_with_capacity_v2:(tag,capacity)=>{
+401:     if(tag<1||tag>10||capacity<0n||capacity>(tag===10?4096n:8192n))return 0n;
+402:     return mint({tag,capacity,values:[]});
+403:   },
+404:   spx_vec_push_v2:(handle,tag,word)=>{
+405:     if(tag===10)throw Error('legacy record requires exact push');
+406:     const value=vec(handle,tag);
+407:     if(tag===9)(shared?shared.payload.owned:read)(word);
+408:     if(BigInt(value.values.length)>=value.capacity)return 0n;
+409:     value.values.push(word);return move(handle,value);
+410:   },
+411:   spx_vec_record_push_v2:(handle,tag,b0,b1,scalar)=>{
+412:     const value=vec(handle,tag);
+413:     if(tag!==10)throw Error('legacy push tag');
+414:     read(b0);read(b1);
+415:     if(b0!==0n&&b0===b1)throw Error('aliased legacy owned leaves');
+416:     if(BigInt(value.values.length)>=value.capacity)return 0n;
+417:     value.values.push([b0,b1,scalar]);return move(handle,value);
+418:   },
+419:   spx_vec_len_v2:(handle,tag)=>BigInt(vec(handle,tag).values.length),
+420:   spx_vec_capacity_v2:(handle,tag)=>vec(handle,tag).capacity,
+421:   spx_vec_get_v2:(handle,tag,index)=>{
+422:     const value=vec(handle,tag);
+423:     if(tag>=9||index<0n||index>=BigInt(value.values.length))throw Error('invalid Vec get');
+424:     return value.values[Number(index)];
+425:   },
+426:   // A Copy carrier (tags 1..8) bound by `spx_vec_sort_by_v1` policy 0 keeps
+427:   // its Copy-only descriptor; its scalar words own nothing to settle.
+428:   spx_vec_drop_v2:handle=>{
+429:     const value=vectorValue(handle);if(!value)throw Error('stale Vec drop');
+430:     if(value.tag===9)for(const word of value.values)drop(word);
+431:     else if(value.shape===undefined&&value.tag===10){for(const row of value.values){drop(row[0]);drop(row[1])}}
+432:     else if(value.shape!==undefined&&value.tag>=10)for(const row of value.values)dropRow(row,value.shape);
+433:     releaseVector(handle);
+434:   },
+435:   spx_vec_reserve_exact_v2:(handle,tag,additional)=>{
+436:     const value=vec(handle,tag),target=BigInt(value.values.length)+additional;
+437:     if(tag===10||additional<0n||target>8192n)return 0n;
+438:     value.values=value.values.slice();
+439:     if(target>value.capacity)value.capacity=target;
+440:     return move(handle,value);
+441:   },
+442:   spx_vec_set_v2:(handle,tag,index,word)=>{
+443:     const value=vec(handle,tag);
+444:     if(tag===10||index<0n||index>=BigInt(value.values.length))return 0n;
+445:     if(tag===9){(shared?shared.payload.owned:read)(word);drop(value.values[Number(index)])}
+446:     value.values[Number(index)]=word;
+447:     return move(handle,value);
+448:   },
+449:   spx_vec_clear_v2:(handle,tag)=>{
+450:     const value=vec(handle,tag);
+451:     if(tag===9)for(const word of value.values)drop(word);
+452:     else if(value.shape===undefined&&tag===10){for(const row of value.values){drop(row[0]);drop(row[1])}}
+453:     else if(value.shape!==undefined&&tag>=10)for(const row of value.values)dropRow(row,value.shape);
+454:     value.values=[];return move(handle,value);
+455:   },
+456:   spx_vec_sort_v3:(handle,tag)=>{
+457:     const value=vec(handle,tag);
+458:     if(tag>=9)throw Error('old sort cannot reorder owned payloads');
+459:     value.values=value.values.slice().sort((a,b)=>{
+460:       const left=totalKey(a,tag),right=totalKey(b,tag);
+461:       return left<right?-1:left>right?1:0;
+462:     });
+463:     return move(handle,value);
+464:   },
+465:   spx_vec_leaf_new_v1:(identity,shape,capacity)=>{
+466:     if(capacity<0n||capacity>limit(shape)||refusal==='allocation')return 0n;
+467:     const spec=fields(shape);
+468:     const legacy=spec.length===3&&spec.filter(field=>field.code===9).length===2
+469:       &&spec.filter(field=>field.code<=8).length===1
+470:       &&spec.filter(field=>field.code===9).every(field=>field.slot<=1)
+471:       &&spec.find(field=>field.code<=8).slot===2;
+472:     try{return mint({tag:legacy?10:11,identity,shape,capacity,values:[]})}
+473:     catch(error){if(error instanceof RangeError)return 0n;throw error}
+474:   },
+475:   spx_vec_leaf_field_read_v1:(handle,identity,shape,index,position,out)=>{
+476:     // No descriptor construction or binding here. Construction/push already
+477:     // validated each field and payload; a read requires exact existing facts.
+478:     const value=vectorValue(handle);
+479:     if(!value||(value.tag!==10&&value.tag!==11)||value.identity!==identity
+480:        ||value.shape!==shape)throw Error('unbound, stale or mismatched field-read authority');
+481:     if(position<0n||position>=8n)throw Error('invalid field-read position');
+482:     const byte=Number((BigInt.asUintN(64,shape)>>(position*8n))&255n);
+483:     const code=byte>>4,slot=byte&15;
+484:     if(code<1||code>10||slot>=8)
+485:       throw Error('invalid field-read descriptor');
+486:     if(index<0n||index>=BigInt(value.values.length))return 2;
+487:     const row=value.values[Number(index)],word=row[slot];
+488:     const beforeCopies=copies,beforeDrops=drops,beforePayload=nextPayload,beforeVec=nextVec;
+489:     fieldReading=true;
+490:     try{
+491:       if(code>=9&&word!==0n){
+492:         const raw=BigInt.asUintN(64,word),origin=raw>>32n,length=Number(raw&0xffffffffn);
+493:         if(!(origin&0x80000000n))throw Error('borrowed field-read leaf');
+494:         const payload=shared?shared.payload.owned(word):payloads.get(Number(origin&0x7fffffffn));
+495:         if(!payload||payload.length!==length)throw Error('stale field-read leaf');
+496:       }else if(code<9)checkWord(word,code);
+497:       if(copies!==beforeCopies||drops!==beforeDrops||nextPayload!==beforePayload
+498:          ||nextVec!==beforeVec||vectorValue(handle)!==value||value.values[Number(index)]!==row)
+499:         throw Error('field-read changed authority or allocation inventory');
+500:       fieldReads++;
+501:       const result=refusal==='field-bad-word'?(code>=9?1n:0x100000000n):word;
+502:       if(!Number.isInteger(out)||out<0||!fieldOutput||fieldOutput.buffer!==memory().buffer
+503:          ||out>fieldOutput.byteLength-8)throw Error('field-read output range');
+504:       fieldOutput.setBigInt64(out,BigInt.asIntN(64,result),true);
+505:       return 0;
+506:     }finally{fieldReading=false}
+507:   },
+508:   spx_vec_leaf_push_v1:(handle,identity,shape,...words)=>{
+509:     const value=bind(handle,identity,shape);
+510:     let row;
+511:     try{row=rowFromDeclared(shape,words)}
+512:     catch(error){if(error instanceof RangeError)return 0n;throw error}
+513:     if(BigInt(value.values.length)>=value.capacity)return 0n;
+514:     if(refusal==='push-allocation')return 0n;
+515:     codecPushAttempts++;
+516:     if(codecPushFailure&&codecPushAttempts===Number(codecPushFailure[1]))return 0n;
+517:     try{value.values.push(row)}catch(error){if(error instanceof RangeError)return 0n;throw error}
+518:     value.identity=identity;value.shape=shape;
+519:     return move(handle,value);
+520:   },
+521:   spx_vec_leaf_clone_at_v1:(handle,identity,shape,index,out)=>{
+522:     const value=bind(handle,identity,shape),spec=fields(shape);
+523:     if(index<0n||index>=BigInt(value.values.length))return 2;
+524:     const target=view(out,64),row=value.values[Number(index)],clones=[0n,0n];
+525:     let cloneCount=0;
+526:     try {
+527:       const words=[];
+528:       for(const field of spec){
+529:         let word=row[field.slot];
+530:         if(field.code>=9&&word!==0n){
+531:           if(refusal==='string-clone-allocation'&&field.code===10)
+532:             throw new RangeError('injected String clone allocation');
+533:           if(refusal==='bytes-clone-allocation'&&field.code===9)
+534:             throw new RangeError('injected Bytes clone allocation');
+535:           if(refusal==='second-clone'&&cloneCount===1)
+536:             throw new RangeError('injected second clone allocation');
+537:           word=alloc(word);clones[cloneCount++]=word;
+538:         }
+539:         words.push(word);
+540:       }
+541:       for(let i=0;i<8;i++)target.setBigInt64(i*8,BigInt.asIntN(64,words[i]??0n),true);
+542:       value.identity=identity;value.shape=shape;
+543:       return 0;
+544:     } catch(error) {
+545:       for(let i=0;i<cloneCount;i++)drop(clones[i]);
+546:       if(error instanceof RangeError)return 1;
+547:       throw error;
+548:     }
+549:   },
+550:   spx_vec_leaf_replace_v1:(handle,identity,shape,index,...words)=>{
+551:     const value=bind(handle,identity,shape);
+552:     if(index<0n||index>=BigInt(value.values.length))return 0n;
+553:     let row;
+554:     try{row=rowFromDeclared(shape,words)}
+555:     catch(error){if(error instanceof RangeError)return 0n;throw error}
+556:     if(refusal==='replacement-allocation')return 0n;
+557:     const old=value.values[Number(index)];
+558:     value.values[Number(index)]=row;value.identity=identity;value.shape=shape;
+559:     dropRow(old,shape);
+560:     return move(handle,value);
+561:   },
+562:   spx_vec_leaf_reserve_v1:(handle,identity,shape,additional)=>{
+563:     const value=bind(handle,identity,shape);
+564:     const target=BigInt(value.values.length)+additional;
+565:     if(additional<0n||target>limit(shape))return 0n;
+566:     if(target>value.capacity){
+567:       if(refusal==='reserve-allocation')return 0n;
+568:       let replacement;
+569:       try{replacement=value.values.slice()}catch(error){if(error instanceof RangeError)return 0n;throw error}
+570:       value.values=replacement;value.capacity=target;
+571:     }
+572:     value.identity=identity;value.shape=shape;
+573:     return move(handle,value);
+574:   },
+575:   spx_vec_sort_by_v1:(handle,identity,shape,policy)=>{
+576:     const value=vectorValue(handle);
+577:     if(!value)throw Error('stale explicit sort vector');
+578:     const copy=value.tag===1;
+579:     let width=0,seenSlots=0;
+580:     for(let raw=BigInt.asUintN(64,shape);raw;raw>>=8n){
+581:       const field=Number(raw&255n),code=field>>4,slot=field&15;
+582:       if(!field||code<1||code>10||slot>=8||(seenSlots&(1<<slot))||(copy&&code>8))throw Error('explicit sort shape');
+583:       width++;seenSlots|=1<<slot;
+584:     }
+585:     if(!width||seenSlots!==(1<<width)-1)throw Error('explicit sort layout');
+586:     if(copy){
+587:       if(value.values.length%width||value.capacity%BigInt(width))throw Error('Copy sort stride');
+588:       if(policy===0n){
+589:         if(value.identity!==undefined&&(value.identity!==identity||value.shape!==shape))throw Error('Copy descriptor rebound');
+590:         value.identity=identity;value.shape=shape;return handle;
+591:       }
+592:       if(value.identity!==identity||value.shape!==shape)throw Error('foreign Copy sort descriptor');
+593:     }else{
+594:       if(policy===0n)throw Error('owned sort cannot bind an arbitrary carrier');
+595:       bindSort(handle,identity,shape);
+596:     }
+597:     let seen=0,count=0;
+598:     for(let raw=BigInt.asUintN(64,policy);raw;raw>>=8n){const byte=Number(raw&255n),key=(byte>>1)-1;
+599:       if(key<0||key>=width||(seen&(1<<key)))throw Error('explicit sort duplicate/foreign key');
+600:       count++;seen|=1<<key;
+601:     }
+602:     if(!count||count>width||value.generation===0xffffffffn)throw Error('explicit sort policy/epoch');
+603:     if(sorting)throw Error('reentrant explicit sort');sorting=true;
+604:     try{
+605:       const rows=value.values,copied=copies,dropped=drops,authorities=vectors.size;
+606:       const length=copy?rows.length/width:rows.length;
+607:       for(let i=1;i<length;i++){let j=i;
+608:         while(j>0){let order=0;
+609:           for(let raw=BigInt.asUintN(64,policy);raw&&!order;raw>>=8n){
+610:             const byte=Number(raw&255n),key=(byte>>1)-1,field=Number((BigInt.asUintN(64,shape)>>BigInt(key*8))&255n),code=field>>4,slot=field&15;
+611:             const a=copy?rows[(j-1)*width+slot]:rows[j-1][slot],b=copy?rows[j*width+slot]:rows[j][slot];
+612:             const left=byte&1?b:a,right=byte&1?a:b;
+613:             order=code>=9?compareOwnedBytes(left,right):totalKey(left,code)<totalKey(right,code)?-1:totalKey(left,code)>totalKey(right,code)?1:0;
+614:           }
+615:           if(order<=0)break;
+616:           if(copy){for(let f=0;f<width;f++){const word=rows[(j-1)*width+f];rows[(j-1)*width+f]=rows[j*width+f];rows[j*width+f]=word;}}
+617:           else{const row=rows[j-1];rows[j-1]=rows[j];rows[j]=row;}j--;
+618:         }
+619:       }
+620:       value.identity=identity;value.shape=shape;value.generation++;
+621:       if(copies!==copied||drops!==dropped||value.values!==rows||vectors.size!==authorities)throw Error('explicit sort allocated/copied/dropped');
+622:       return BigInt.asIntN(64,(value.generation<<32n)|value.authority_slot);
+623:     }finally{sorting=false}
+624:   },
+625:   spx_vec_unique_by_v1:(handle,identity,shape,position)=>{
+626:     // Borrowed authority: exact already-bound facts only. No binding, renewal,
+627:     // consumption, payload copy, drop or authority insertion is permitted.
+628:     const value=vectorValue(handle);
+629:     if(!value||value.identity!==identity||value.shape!==shape)
+630:       throw Error('unbound, stale or foreign uniqueness authority');
+631:     const copy=value.tag===1;
+632:     if(!copy&&value.tag!==10&&value.tag!==11)throw Error('uniqueness carrier tag');
+633:     let width=0,seen=0;
+634:     for(let raw=BigInt.asUintN(64,shape);raw;raw>>=8n){
+635:       const field=Number(raw&255n),code=field>>4,slot=field&15;
+636:       if(!field||code<1||code>10||slot>=8||(seen&(1<<slot))||(copy&&code>8))throw Error('uniqueness shape');
+637:       width++;seen|=1<<slot;
+638:     }
+639:     if(!width||seen!==(1<<width)-1||typeof position!=='bigint'||position<0n||position>=BigInt(width))
+640:       throw Error('uniqueness field position');
+641:     const byte=Number((BigInt.asUintN(64,shape)>>(position*8n))&255n),code=byte>>4,slot=byte&15;
+642:     if(code===6||code===7||code===9)throw Error('uniqueness key outside v1 profile');
+643:     if(copy&&(value.values.length%width||value.capacity%BigInt(width)))throw Error('Copy uniqueness stride');
+644:     if(uniqueChecking||sorting||fieldReading)throw Error('reentrant field uniqueness');
+645:     const rows=value.values,length=copy?rows.length/width:rows.length;
+646:     if(length<2)return 1;
+647:     const generation=value.generation,copied=copies,dropped=drops,payloadId=nextPayload,vecId=nextVec,authorities=vectors.size;
+648:     uniqueScratchRequests++;
+649:     if(refusal==='unique-scratch')return 3;
+650:     let ordinals;
+651:     try{ordinals=new Uint32Array(length)}catch(error){if(error instanceof RangeError)return 3;throw error}
+652:     uniqueScratchBytes+=4*length;
+653:     uniqueChecking=true;
+654:     try{
+655:       const key=i=>copy?rows[i*width+slot]:rows[i][slot];
+656:       const compare=(a,b)=>{
+657:         const x=key(a),y=key(b);
+658:         if(code===10)return compareOwnedBytes(x,y);
+659:         const left=totalKey(x,code),right=totalKey(y,code);
+660:         return left<right?-1:left>right?1:0;
+661:       };
+662:       for(let i=0;i<length;i++)ordinals[i]=i;
+663:       const sift=(root,n)=>{
+664:         for(;;){
+665:           let child=2*root+1;if(child>=n)return;
+666:           if(child+1<n&&compare(ordinals[child],ordinals[child+1])<0)child++;
+667:           if(compare(ordinals[root],ordinals[child])>=0)return;
+668:           const t=ordinals[root];ordinals[root]=ordinals[child];ordinals[child]=t;root=child;
+669:         }
+670:       };
+671:       for(let i=Math.floor(length/2);i-->0;)sift(i,length);
+672:       for(let end=length-1;end>0;end--){const t=ordinals[0];ordinals[0]=ordinals[end];ordinals[end]=t;sift(0,end)}
+673:       let unique=1;
+674:       for(let i=1;i<length&&unique;i++)if(compare(ordinals[i-1],ordinals[i])===0)unique=0;
+675:       if(copies!==copied||drops!==dropped||nextPayload!==payloadId||nextVec!==vecId||vectors.size!==authorities
+676:          ||value.generation!==generation||value.values!==rows||vectorValue(handle)!==value)
+677:         throw Error('field uniqueness changed authority or inventory');
+678:       uniqueChecks++;
+679:       return unique;
+680:     }finally{uniqueChecking=false}
+681:   },
+682:   spx_vec_leaf_sort_v1:(handle,identity,shape)=>{
+683:     if(sorting)throw Error('reentrant owned sort');
+684:     sorting=true;
+685:     try {
+686:       const value=bindSort(handle,identity,shape),rows=value.values;
+687:       const copied=copies,dropped=drops,authorities=vectors.size;
+688:       for(let i=1;i<rows.length;i++){
+689:         const row=rows[i];let j=i;
+690:         while(j>0&&compareRows(rows[j-1],row,shape)>0){rows[j]=rows[j-1];j--}
+691:         rows[j]=row;
+692:       }
+693:       value.identity=identity;value.shape=shape;value.generation++;
+694:       if(copies!==copied||drops!==dropped||value.values!==rows||vectors.size!==authorities)
+695:         throw Error('sort allocated, copied or settled an owner');
+696:       return BigInt.asIntN(64,(value.generation<<32n)|value.authority_slot);
+697:     } finally {sorting=false}
+698:   },
+699:   spx_vec_leaf_into_iter_v1:(handle,identity,shape,out)=>{
+700:     const value=bind(handle,identity,shape),target=view(out,16);
+701:     if(refusal==='iterator-allocation')return 3;
+702:     const next=nextIter++;
+703:     try{iterators.set(next,{identity,shape,rows:value.values,cursor:0n})}
+704:     catch(error){if(error instanceof RangeError)return 3;throw error}
+705:     releaseVector(handle);
+706:     target.setBigUint64(0,next,true);target.setBigUint64(8,0n,true);
+707:     return 0;
+708:   },
+709:   spx_vec_leaf_iter_next_v1:(handle,cursor,identity,shape,out)=>{
+710:     const value=iterator(handle,cursor,identity,shape),target=view(out,88);
+711:     if(refusal==='iterator-next-allocation')return 3;
+712:     const words=Array(11).fill(0n);
+713:     if(cursor<BigInt(value.rows.length)){
+714:       const row=value.rows[Number(cursor)],spec=fields(shape),next=nextIter++;
+715:       words[0]=1n;
+716:       for(let i=0;i<spec.length;i++)words[i+1]=row[spec[i].slot];
+717:       words[9]=next;words[10]=cursor+1n;
+718:       try{iterators.set(next,{...value,cursor:cursor+1n})}
+719:       catch(error){if(error instanceof RangeError)return 3;throw error}
+720:     }
+721:     iterators.delete(handle);
+722:     for(let i=0;i<11;i++)target.setBigUint64(i*8,BigInt.asUintN(64,words[i]),true);
+723:     return 0;
+724:   },
+725:   spx_vec_leaf_iter_drop_v1:(handle,cursor,identity,shape)=>{
+726:     const value=iterator(handle,cursor,identity,shape);
+727:     for(let i=Number(cursor);i<value.rows.length;i++)dropRow(value.rows[i],shape);
+728:     iterators.delete(handle);
+729:   },
+730:   spx_iter_record_into_v3:(handle,out)=>{
+731:     const value=vec(handle,10),target=view(out,16),next=nextIter++;
+732:     releaseVector(handle);
+733:     iterators.set(next,{legacy:true,rows:value.values,cursor:0n,shape:value.shape});
+734:     target.setBigUint64(0,next,true);target.setBigUint64(8,0n,true);
+735:     return 0;
+736:   },
+737:   spx_iter_record_next_v3:(handle,cursor,out,b0,b1,s,rest)=>{
+738:     const value=iterators.get(handle);
+739:     if(!value||!value.legacy||value.cursor!==cursor)throw Error('stale legacy iterator');
+740:     const target=view(out,Math.max(b0+8,b1+8,s+8,rest+16));
+741:     target.setUint32(0,0,true);target.setUint32(4,0,true);
+742:     for(const offset of [b0,b1,s,rest,rest+8])target.setBigUint64(offset,0n,true);
+743:     if(cursor===BigInt(value.rows.length)){iterators.delete(handle);return 0}
+744:     const row=value.rows[Number(cursor)],next=nextIter++;
+745:     target.setUint32(0,1,true);
+746:     target.setBigInt64(b0,row[0],true);target.setBigInt64(b1,row[1],true);
+747:     target.setBigInt64(s,row[2],true);
+748:     target.setBigUint64(rest,next,true);target.setBigUint64(rest+8,cursor+1n,true);
+749:     iterators.set(next,{...value,cursor:cursor+1n});iterators.delete(handle);
+750:     return 0;
+751:   },
+752:   spx_iter_record_drop_v3:(handle,cursor)=>{
+753:     const value=iterators.get(handle);
+754:     if(!value||!value.legacy||value.cursor!==cursor)throw Error('stale legacy iterator drop');
+755:     for(let i=Number(cursor);i<value.rows.length;i++){
+756:       if(value.shape===undefined){drop(value.rows[i][0]);drop(value.rows[i][1])}
+757:       else dropRow(value.rows[i],value.shape);
+758:     }
+759:     iterators.delete(handle);
+760:   },
+761: };
+762: if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
+763: (async()=>{
+764:   if(sharedOwner){
+765:     const {createPrivateOrdinaryByteHost,PAYLOAD_CONSUMERS}=await import('./host.mjs');
+766:     shared=createPrivateOrdinaryByteHost({leaseWitness:refusal==='shared-owner-lease'});
+767:     for(const name of PAYLOAD_CONSUMERS)env[name]=shared.imports[name];
+768:   }
+769:   const requiredImports=WebAssembly.Module.imports(new WebAssembly.Module(moduleBytes));
+770:   if(requiredImports.some(entry=>entry.module==='env'&&entry.name==='spx_format_step_v1')){
+771:     const missingFormat={...env};delete missingFormat.spx_format_step_v1;
+772:     let absent=false;
+773:     try{await WebAssembly.instantiate(moduleBytes,{env:missingFormat})}
+774:     catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;absent=true}
+775:     if(!absent)throw Error('literal formatter linked without its actual private import');
+776:   }
+777:   if(copyRecordCodec){
+778:     if(!requiredImports.some(entry=>entry.name==='spx_vec_with_capacity') ||
+779:        requiredImports.some(entry=>/^spx_vec_leaf_/.test(entry.name)))
+780:       throw Error('Copy codec does not own the exact legacy Copy collection boundary');
+781:     const missing={...env};delete missing.spx_vec_with_capacity;
+782:     let refused=false;
+783:     try{await WebAssembly.instantiate(moduleBytes,{env:missing})}
+784:     catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;refused=true}
+785:     if(!refused)throw Error('Copy codec linked without its actual capacity import');
+786:   }
+787:   if(scalarView){
+788:     const imports=WebAssembly.Module.imports(new WebAssembly.Module(moduleBytes));
+789:     if(imports.some(entry=>/^spx_(vec|iter)_/.test(entry.name)) ||
+790:        !imports.some(entry=>/^spx_(string|bytes)_/.test(entry.name)))
+791:       throw Error('scalar-view fixture has a collection boundary or no owned payload import');
+792:   }else if(requiredImports.some(entry=>entry.name==='spx_vec_leaf_clone_at_v1')){
+793:   const missing={...env};delete missing.spx_vec_leaf_clone_at_v1;
+794:   let refused=false;
+795:   try{await WebAssembly.instantiate(moduleBytes,{env:missing})}
+796:   catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;refused=true}
+797:   if(!refused)throw Error('private boundary linked without clone import');
+798:   }
+799:   if(WebAssembly.Module.imports(new WebAssembly.Module(moduleBytes)).some(entry=>entry.name==='spx_vec_sort_by_v1')){
+800:     const missingSort={...env};delete missingSort.spx_vec_sort_by_v1;
+801:     let absent=false;
+802:     try{await WebAssembly.instantiate(moduleBytes,{env:missingSort})}
+803:     catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;absent=true}
+804:     if(!absent)throw Error('explicit sort linked without its authenticated private import');
+805:   }
+806:   if(requiredImports.some(entry=>entry.name==='spx_vec_unique_by_v1')){
+807:     const missingUnique={...env};delete missingUnique.spx_vec_unique_by_v1;
+808:     let absent=false;
+809:     try{await WebAssembly.instantiate(moduleBytes,{env:missingUnique})}
+810:     catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;absent=true}
+811:     if(!absent)throw Error('field uniqueness linked without its distinct private import');
+812:   }
+813:   if(refusal==='unique-bad-result'||refusal==='unique-forged-shape'||refusal==='unique-forged-position'){
+814:     let calls=0,trapped=false;
+815:     const actual=env.spx_vec_unique_by_v1;
+816:     const hostile={...env,spx_vec_unique_by_v1:(...args)=>{
+817:       calls++;
+818:       if(refusal==='unique-bad-result')return 2;
+819:       if(refusal==='unique-forged-shape')args[2]^=1n;
+820:       if(refusal==='unique-forged-position')args[3]=8n;
+821:       return actual(...args);
+822:     }};
+823:     ({instance}=await WebAssembly.instantiate(moduleBytes,{env:hostile}));
+824:     fieldOutput=new DataView(memory().buffer);
+825:     try{instance.exports.semaprax_main()}
+826:     catch(error){
+827:       if(refusal==='unique-bad-result'&&!(error instanceof WebAssembly.RuntimeError))throw error;
+828:       if(refusal==='unique-forged-shape'&&error.message!=='unbound, stale or foreign uniqueness authority')throw error;
+829:       if(refusal==='unique-forged-position'&&error.message!=='uniqueness field position')throw error;
+830:       trapped=true;
+831:     }
+832:     if(!trapped||calls!==1)throw Error('forged uniqueness result/descriptor did not trap');
+833:     for(const owner of vectors.values())
+834:       env.spx_vec_drop_v2(BigInt.asIntN(64,(owner.generation<<32n)|owner.authority_slot));
+835:     if(payloads.size||vectors.size||iterators.size||copies!==drops)throw Error('uniqueness trap teardown leaked');
+836:     return;
+837:   }
+838:   if(refusal==='field-no-allocation'||refusal==='slot-no-copy'){
+839:     const withoutRead={...env};delete withoutRead.spx_vec_leaf_field_read_v1;
+840:     let absent=false;
+841:     try{await WebAssembly.instantiate(moduleBytes,{env:withoutRead})}
+842:     catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;absent=true}
+843:     if(!absent)throw Error('read module linked without its conditional private import');
+844:   }
+845:   if(refusal==='field-bad-word'||refusal==='field-forged-shape'||refusal==='field-unknown-status'){
+846:     let calls=0,trapped=false;
+847:     const actual=env.spx_vec_leaf_field_read_v1;
+848:     const hostile={...env,spx_vec_leaf_field_read_v1:(...args)=>{
+849:       calls++;
+850:       if(refusal==='field-unknown-status')return 1;
+851:       if(refusal==='field-forged-shape')args[2]^=1n;
+852:       return actual(...args);
+853:     }};
+854:     ({instance}=await WebAssembly.instantiate(moduleBytes,{env:hostile}));
+855:     fieldOutput=new DataView(memory().buffer);
+856:     try{instance.exports.semaprax_main()}
+857:     catch(error){
+858:       if(refusal!=='field-forged-shape'&&!(error instanceof WebAssembly.RuntimeError))throw error;
+859:       if(refusal==='field-forged-shape'&&error.message!=='unbound, stale or mismatched field-read authority')throw error;
+860:       trapped=true;
+861:     }
+862:     if(!trapped||calls!==1)throw Error('forged field-read result/descriptor did not trap');
+863:     // A broken host aborts the invocation, so its terminal teardown must also
+864:     // release resident record locals that never entered a vector. First keep
+865:     // the stronger independent check that vector Drop settles every child.
+866:     const vectorLeaves=new Set();
+867:     const rememberLeaf=word=>{
+868:       if(word===0n)return;
+869:       const {origin}=split(word);
+870:       if(!(origin&0x80000000))throw Error('vector teardown found a borrowed child');
+871:       vectorLeaves.add(origin&0x7fffffff);
+872:     };
+873:     for(const owner of vectors.values()){
+874:       if(owner.tag===9)for(const word of owner.values)rememberLeaf(word);
+875:       else if(owner.shape===undefined&&owner.tag===10)
+876:         for(const row of owner.values){rememberLeaf(row[0]);rememberLeaf(row[1]);}
+877:       else if(owner.shape!==undefined)
+878:         for(const row of owner.values)for(const field of fields(owner.shape))
+879:           if(field.code>=9)rememberLeaf(row[field.slot]);
+880:     }
+881:     for(const owner of vectors.values())
+882:       env.spx_vec_drop_v2(BigInt.asIntN(64,(owner.generation<<32n)|owner.authority_slot));
+883:     for(const id of vectorLeaves)
+884:       if(payloads.has(id))throw Error('field trap vector Drop retained an owned child');
+885:     for(const [id,bytes] of payloads)
+886:       drop(BigInt.asIntN(64,((0x80000000n|BigInt(id))<<32n)|BigInt(bytes.length)));
+887:     if(payloads.size||vectors.size||iterators.size||copies!==drops)
+888:       throw Error(`field trap teardown leaked payloads=${payloads.size} vectors=${vectors.size} iterators=${iterators.size} copies=${copies} drops=${drops}`);
+889:     return;
+890:   }
+891:   if(refusal==='sort-null'){
+892:     let calls=0,trapped=false;
+893:     const hostile={...env,spx_vec_leaf_sort_v1:()=>{calls++;return 0n}};
+894:     ({instance}=await WebAssembly.instantiate(moduleBytes,{env:hostile}));
+895:     fieldOutput=new DataView(memory().buffer);
+896:     try{instance.exports.semaprax_main()}
+897:     catch(error){if(!(error instanceof WebAssembly.RuntimeError))throw error;trapped=true}
+898:     if(!trapped||calls!==1)throw Error('null infallible sort result was not a host invariant trap');
+899:     // A corrupted host is fail-stop, not a recoverable source failure. Release
+900:     // the host's retained authority explicitly after checking the trap type.
+901:     for(const owner of vectors.values())
+902:       env.spx_vec_drop_v2(BigInt.asIntN(64,(owner.generation<<32n)|owner.authority_slot));
+903:     if(payloads.size||vectors.size||iterators.size||copies!==drops)throw Error('host trap teardown leaked');
+904:     return;
+905:   }
+906:   ({instance}=await WebAssembly.instantiate(moduleBytes,{env}));
+907:   if(shared)shared.bind(instance);
+908:   fieldOutput=new DataView(memory().buffer);
+909:   for(let run=0;run<(copyRecordCodec?16:3);run++){
+910:     codecPushAttempts=0;fieldReads=0;
+911:     const beforeSlotCopies=copies;
+912:     const receipt=shared?shared.facade.beginInvocation():null;
+913:     let selected=0,returned;
+914:     try{returned=instance.exports.semaprax_main()}
+915:     catch(error){if(!error.message.startsWith('status:'))throw error;selected=Number(error.message.slice(7))}
+916:     if(scalarView || contractView || vecView){
+917:       const domain=selected===0?'ok':selected===21||selected===22?'semaprax.convert.v1':selected===9||selected===10?'semaprax.contract.v1':vecView&&selected>=13&&selected<=15?'semaprax.vec.v1':null;
+918:       const code=selected===21||selected===22?selected-20:selected===9||selected===10?selected-8:vecView&&selected>=13&&selected<=15?selected-12:selected;
+919:       if(domain!==expectedDomain||code!==expectedStatus)
+920:         throw Error(`normalized status ${domain}|${code}, expected ${expectedDomain}|${expectedStatus}`);
+921:       if(selected&&returned!==undefined)throw Error('failed scalar view published a result');
+922:     }else if(selected!==expectedStatus)throw Error(`status ${selected}, expected ${expectedStatus}`);
+923:     if(!selected&&returned!==expectedValue)throw Error(`value ${returned}, expected ${expectedValue}`);
+924:     // Shared mode splits payload allocation between both hosts' imports, so
+925:     // the private host's own settlement proof replaces the local balance.
+926:     if(vectors.size||iterators.size||payloads.size||(!shared&&copies!==drops))
+927:       throw Error(`leaks vec=${vectors.size} iter=${iterators.size} payload=${payloads.size} copies=${copies} drops=${drops}`);
+928:     if(shared){shared.facade.audit();shared.facade.endInvocation(receipt)}
+929:     if(refusal==='field-index-failure'&&fieldReads!==0)throw Error('index failure accessed row storage');
+930:     if(vecView&&fieldReads!==1)throw Error('traversal index failure did not preserve exactly the successful current-row read');
+931:     if((refusal==='field-no-allocation'||refusal==='slot-no-copy')&&fieldReads<64)throw Error('repeated read guard was not exercised');
+932:     if(refusal==='slot-no-copy'&&copies-beforeSlotCopies!==3)throw Error('String-slot reads copied payload storage');
+933:     if(codecPushFailure&&codecPushAttempts!==Number(codecPushFailure[1]))
+934:       throw Error('partial codec allocation failure did not reach its exact owning commit');
+935:     if(refusal==='unique-scratch'&&uniqueScratchBytes!==0)throw Error('refused uniqueness scratch was observed as allocated');
+936:     if(refusal==='unique-scratch'&&uniqueScratchRequests===0)throw Error('uniqueness scratch refusal was not exercised');
+937:   }
+938:   if(copyRecordCodec&&requiredImports.some(entry=>entry.name==='spx_vec_unique_by_v1')){
+939:     // Copy-carrier controls through the same strict legacy scalar boundary:
+940:     // the descriptor is bound once by sort-by policy 0 and is never rebound,
+941:     // renewed or repaired by uniqueness.
+942:     const mark=()=>[copies,drops,nextPayload,nextVec,vectors.size],shape=0x3110n;
+943:     let rows=env.spx_vec_with_capacity(1,6n);
+944:     if(!rows||env.spx_vec_sort_by_v1(rows,41n,shape,0n)!==rows)throw Error('Copy descriptor bind');
+945:     for(const word of [5n,1n,5n,2n])rows=env.spx_vec_push(rows,1,word);
+946:     const owner=vectorValue(rows),stored=owner.values,before=mark();
+947:     if(env.spx_vec_unique_by_v1(rows,41n,shape,0n)!==0)throw Error('Copy duplicate was not found');
+948:     if(env.spx_vec_unique_by_v1(rows,41n,shape,1n)!==1)throw Error('Copy distinct keys were not unique');
+949:     if(mark().some((item,i)=>item!==before[i])||vectorValue(rows)!==owner||owner.values!==stored
+950:        ||stored.join()!=='5,1,5,2')
+951:       throw Error('Copy uniqueness changed rows or authority');
+952:     for(const [identity,forged,position] of [[42n,shape,0n],[41n,shape^1n,0n],[41n,shape,2n],[41n,shape,-1n]]){
+953:       let rejected=false;
+954:       try{env.spx_vec_unique_by_v1(rows,identity,forged,position)}catch(error){rejected=true}
+955:       if(!rejected)throw Error('forged Copy uniqueness facts were accepted');
+956:     }
+957:     const consumed=rows;
+958:     for(const word of [7n,3n])rows=env.spx_vec_push(rows,1,word);
+959:     let stale=false;
+960:     try{env.spx_vec_unique_by_v1(consumed,41n,shape,0n)}catch(error){stale=true}
+961:     if(!stale)throw Error('stale Copy generation permitted uniqueness');
+962:     env.spx_vec_drop(rows);
+963:     let floating=env.spx_vec_with_capacity(1,4n);
+964:     env.spx_vec_sort_by_v1(floating,43n,0x6110n,0n);
+965:     for(const word of [1n,0n,2n,0n])floating=env.spx_vec_push(floating,1,word);
+966:     let floatRefused=false;
+967:     try{env.spx_vec_unique_by_v1(floating,43n,0x6110n,1n)}catch(error){floatRefused=true}
+968:     if(!floatRefused)throw Error('floating Copy key entered the v1 uniqueness profile');
+969:     env.spx_vec_drop(floating);
+970:     const unbound=env.spx_vec_with_capacity(1,2n);
+971:     let unboundRefused=false;
+972:     try{env.spx_vec_unique_by_v1(unbound,41n,shape,0n)}catch(error){unboundRefused=true}
+973:     if(!unboundRefused||vectorValue(unbound).shape!==undefined)throw Error('Copy uniqueness lazily bound an authority');
+974:     env.spx_vec_drop(unbound);
+975:     if(vectors.size||iterators.size||payloads.size||copies!==drops)throw Error('Copy uniqueness controls leaked');
+976:   }
+977:   if(refusal==='unique-controls'){
+978:     // Independent host controls over exact bound facts; every refusal leaves
+979:     // the owner, rows and payload inventory unchanged.
+980:     const fieldOut=0,mark=()=>[copies,drops,nextPayload,nextVec,vectors.size];
+981:     const strings=['a\u0000','a','a\u0000b','é','é','é'];
+982:     let rows=env.spx_vec_leaf_new_v1(31n,0xa180n,BigInt(strings.length));
+983:     for(const [i,text] of strings.entries())
+984:       rows=env.spx_vec_leaf_push_v1(rows,31n,0xa180n,BigInt(i%2),ownBytes(new TextEncoder().encode(text)),0n,0n,0n,0n,0n,0n);
+985:     const owner=vectorValue(rows),stored=owner.values,before=mark(),payloadWords=stored.map(row=>row[1]);
+986:     if(env.spx_vec_unique_by_v1(rows,31n,0xa180n,1n)!==0)throw Error('UTF-8 duplicate was not found');
+987:     if(env.spx_vec_unique_by_v1(rows,31n,0xa180n,0n)!==0)throw Error('Bool duplicate was not found');
+988:     if(mark().some((item,i)=>item!==before[i])||vectorValue(rows)!==owner||owner.values!==stored
+989:        ||stored.some((row,i)=>row[1]!==payloadWords[i]))
+990:       throw Error('uniqueness changed rows, payload identity or authority');
+991:     for(const [identity,shape,position] of [[32n,0xa180n,1n],[31n,0xa180n^1n,1n],[31n,0xa180n,2n],[31n,0xa180n,-1n]]){
+992:       let rejected=false;
+993:       try{env.spx_vec_unique_by_v1(rows,identity,shape,position)}catch(error){rejected=true}
+994:       if(!rejected)throw Error('forged uniqueness facts were accepted');
+995:     }
+996:     const consumed=rows;rows=env.spx_vec_leaf_sort_v1(rows,31n,0xa180n);
+997:     let stale=false;
+998:     try{env.spx_vec_unique_by_v1(consumed,31n,0xa180n,1n)}catch(error){stale=true}
+999:     if(!stale)throw Error('stale generation permitted uniqueness');
+1000:     env.spx_vec_drop_v2(rows);
+1001:     let floating=env.spx_vec_leaf_new_v1(29n,0xa170n,2n);
+1002:     floating=env.spx_vec_leaf_push_v1(floating,29n,0xa170n,0n,0n,0n,0n,0n,0n,0n,0n);
+1003:     floating=env.spx_vec_leaf_push_v1(floating,29n,0xa170n,1n,0n,0n,0n,0n,0n,0n,0n);
+1004:     let floatRefused=false;
+1005:     try{env.spx_vec_unique_by_v1(floating,29n,0xa170n,0n)}catch(error){floatRefused=true}
+1006:     if(!floatRefused)throw Error('floating key entered the v1 uniqueness profile');
+1007:     env.spx_vec_drop_v2(floating);
+1008:     const unbound=env.spx_vec_with_capacity_v2(10,1n);
+1009:     let unboundRefused=false;
+1010:     try{env.spx_vec_unique_by_v1(unbound,1n,0x929110n,2n)}catch(error){unboundRefused=true}
+1011:     if(!unboundRefused||vectorValue(unbound).shape!==undefined)throw Error('uniqueness lazily bound an authority');
+1012:     env.spx_vec_drop_v2(unbound);
+1013:     if(vectors.size||iterators.size||payloads.size||copies!==drops)throw Error('uniqueness controls leaked');
+1014:   }
+1015:   if(sharedOwner){
+1016:     // Leaf rows own registry leases: renewal, stale/foreign refusal, clone,
+1017:     // two simultaneous backings, and a popped child that outlives its Vec,
+1018:     // its iterator and both siblings.
+1019:     const {facade,payload}=shared,shape=0x90n,identity=41n,out=0,zeros=[0n,0n,0n,0n,0n,0n,0n];
+1020:     const refused=body=>{try{body()}catch(error){return true}return false};
+1021:     const receipt=facade.beginInvocation();
+1022:     if(refusal==='shared-owner-lease'){
+1023:       const lease=env.spx_bytes_zeroed(6n);
+1024:       if(!refused(()=>facade.partitionForWitness(lease,3n,2n)))throw Error('lease accepted as partition input');
+1025:       env.spx_bytes_drop(lease);
+1026:     }else{
+1027:       const first=facade.partitionForWitness(env.spx_bytes_zeroed(6n),3n,2n);
+1028:       const second=facade.partitionForWitness(env.spx_bytes_zeroed(4n),2n,2n);
+1029:       if(!first.ok||!second.ok||facade.stats().liveBackings!==2)throw Error('two simultaneous backings refused');
+1030:       const [a,b,c]=first.children;
+1031:       let rows=env.spx_vec_leaf_new_v1(identity,shape,3n);
+1032:       const renewed=env.spx_bytes_set(a,0n,7);
+1033:       if(renewed===a||!refused(()=>env.spx_vec_leaf_push_v1(rows,identity,shape,a,...zeros)))
+1034:         throw Error('stale lease generation entered a leaf row');
+1035:       const {createPrivateOrdinaryByteHost}=await import('./host.mjs');
+1036:       const other=createPrivateOrdinaryByteHost(),otherReceipt=other.facade.beginInvocation();
+1037:       const foreign=other.imports.spx_bytes_zeroed(2n);
+1038:       if(!refused(()=>env.spx_vec_leaf_push_v1(rows,identity,shape,foreign,...zeros)))
+1039:         throw Error('foreign host owner entered a leaf row');
+1040:       other.imports.spx_bytes_drop(foreign);other.facade.endInvocation(otherReceipt);
+1041:       for(const child of [renewed,b,c])rows=env.spx_vec_leaf_push_v1(rows,identity,shape,child,...zeros);
+1042:       for(const child of second.children)env.spx_bytes_drop(child);
+1043:       if(facade.stats().liveBackings!==1||facade.stats().releasedBackings!==1)throw Error('second backing release');
+1044:       if(env.spx_vec_leaf_clone_at_v1(rows,identity,shape,0n,out)!==0)throw Error('lease row clone');
+1045:       const clone=view(out,8).getBigInt64(0,true);
+1046:       if(clone===renewed||payload.owned(clone)[0]!==7)throw Error('lease row clone is not a deep copy');
+1047:       payload.drop(clone);
+1048:       if(env.spx_vec_leaf_into_iter_v1(rows,identity,shape,out)!==0)throw Error('lease rows into iterator');
+1049:       const iter=view(out,16).getBigUint64(0,true);
+1050:       if(env.spx_vec_leaf_iter_next_v1(iter,0n,identity,shape,out)!==0)throw Error('lease rows next');
+1051:       const words=view(out,88),popped=words.getBigInt64(8,true);
+1052:       const next=words.getBigUint64(72,true),cursor=words.getBigUint64(80,true);
+1053:       if(popped!==renewed||cursor!==1n)throw Error('next did not transfer the original child');
+1054:       env.spx_vec_leaf_iter_drop_v1(next,cursor,identity,shape);
+1055:       const stats=facade.stats();
+1056:       if(stats.liveLeases!==1||stats.liveBackings!==1||payload.owned(popped)[0]!==7)
+1057:         throw Error('popped child did not survive its Vec, iterator and siblings');
+1058:       payload.drop(popped);
+1059:       if(facade.stats().liveBackings!==0||facade.stats().releasedBackings!==2)throw Error('final backing release');
+1060:     }
+1061:     facade.audit();facade.endInvocation(receipt);
+1062:   }
+1063:   if(refusal==='none'||refusal==='sort-no-allocation'){
+1064:     if(AUTHORITY_ENCODING!=='semaprax.test.owned-leaf-authority.v2')throw Error('fixture authority version');
+1065:     const old=env.spx_vec_leaf_new_v1(11n,0xa0n,0n);
+1066:     if(!old)throw Error('empty private vector allocation refused');
+1067:     for(const [identity,shape] of [[12n,0xa0n],[11n,0x90n]]){
+1068:       let rejected=false;
+1069:       try{env.spx_vec_leaf_sort_v1(old,identity,shape)}catch(error){rejected=true}
+1070:       if(!rejected)throw Error('wrong nominal or shape entered private carrier');
+1071:     }
+1072:     const fresh=env.spx_vec_leaf_sort_v1(old,11n,0xa0n);
+1073:     let stale=false;
+1074:     try{env.spx_vec_len_v2(old,11)}catch(error){stale=true}
+1075:     if(!stale)throw Error('consumed Vec generation remained live');
+1076:     env.spx_vec_drop_v2(fresh);
+1077:     const iter=nextIter++;
+1078:     iterators.set(iter,{identity:11n,shape:0xa0n,rows:[],cursor:0n});
+1079:     for(const [cursor,identity] of [[1n,11n],[0n,12n]]){
+1080:       let rejected=false;
+1081:       try{env.spx_vec_leaf_iter_drop_v1(iter,cursor,identity,0xa0n)}catch(error){rejected=true}
+1082:       if(!rejected)throw Error('wrong iterator epoch or nominal was accepted');
+1083:     }
+1084:     env.spx_vec_leaf_iter_drop_v1(iter,0n,11n,0xa0n);
+1085:     const typed=env.spx_vec_leaf_new_v1(13n,0xa180n,1n);
+1086:     const text=ownBytes(new TextEncoder().encode('x'));
+1087:     let badBool=false;
+1088:     try{env.spx_vec_leaf_push_v1(typed,13n,0xa180n,2n,text,0n,0n,0n,0n,0n,0n)}
+1089:     catch(error){badBool=true}
+1090:     if(!badBool)throw Error('noncanonical Bool entered owned-leaf row');
+1091:     drop(text);env.spx_vec_drop_v2(typed);
+1092:     let tied=env.spx_vec_leaf_new_v1(17n,0xa0n,2n);
+1093:     const a=ownBytes(new TextEncoder().encode('same'));
+1094:     const b=ownBytes(new TextEncoder().encode('same'));
+1095:     tied=env.spx_vec_leaf_push_v1(tied,17n,0xa0n,a,0n,0n,0n,0n,0n,0n,0n);
+1096:     tied=env.spx_vec_leaf_push_v1(tied,17n,0xa0n,b,0n,0n,0n,0n,0n,0n,0n);
+1097:     const owner=vectorValue(tied),rows=owner.values,first=rows[0],second=rows[1];
+1098:     const after=env.spx_vec_leaf_sort_v1(tied,17n,0xa0n);
+1099:     const again=env.spx_vec_leaf_sort_v1(after,17n,0xa0n);
+1100:     if(vectorValue(tied)||vectorValue(after)||vectorValue(again)!==owner||owner.values!==rows
+1101:        ||rows[0]!==first||rows[1]!==second||first[0]!==a||second[0]!==b)
+1102:       throw Error('stable sort changed row identity or retained a stale epoch');
+1103:     env.spx_vec_drop_v2(again);
+1104:     let inspected=env.spx_vec_leaf_new_v1(23n,0xa180n,1n);
+1105:     const inspectedText=ownBytes(new TextEncoder().encode('a\u0000é'));
+1106:     inspected=env.spx_vec_leaf_push_v1(inspected,23n,0xa180n,1n,inspectedText,0n,0n,0n,0n,0n,0n);
+1107:     const beforeCopies=copies,beforeDrops=drops,beforePayload=nextPayload,beforeVec=nextVec;
+1108:     const fieldOut=0;
+1109:     for(let i=0;i<64;i++){
+1110:       if(env.spx_vec_leaf_field_read_v1(inspected,23n,0xa180n,0n,0n,fieldOut)!==0
+1111:          ||view(fieldOut,8).getBigInt64(0,true)!==1n
+1112:          ||env.spx_vec_leaf_field_read_v1(inspected,23n,0xa180n,0n,1n,fieldOut)!==0
+1113:          ||view(fieldOut,8).getBigInt64(0,true)!==inspectedText)
+1114:         throw Error('field-read lost exact scalar/payload identity');
+1115:     }
+1116:     if(copies!==beforeCopies||drops!==beforeDrops||nextPayload!==beforePayload||nextVec!==beforeVec)
+1117:       throw Error('read allocated, cloned, dropped or renewed');
+1118:     for(const [handle,identity,shape,index,position] of [
+1119:       [inspected,24n,0xa180n,0n,0n],[inspected,23n,0xa180n^1n,0n,0n],
+1120:       [inspected,23n,0xa180n,0n,2n],
+1121:       [inspected,23n,0xa180n,0n,-1n],
+1122:     ]){
+1123:       let rejected=false;
+1124:       try{env.spx_vec_leaf_field_read_v1(handle,identity,shape,index,position,fieldOut)}catch(error){rejected=true}
+1125:       if(!rejected)throw Error('forged field-read facts were accepted');
+1126:     }
+1127:     for(const index of [1n,-1n,0xffffffffffffffffn]){
+1128:       view(fieldOut,8).setBigInt64(0,123n,true);
+1129:       if(env.spx_vec_leaf_field_read_v1(inspected,23n,0xa180n,index,0n,fieldOut)!==2
+1130:          ||view(fieldOut,8).getBigInt64(0,true)!==123n)
+1131:         throw Error('index refusal mutated output or lost Vec/2 status');
+1132:     }
+1133:     const consumed=inspected;
+1134:     inspected=env.spx_vec_leaf_sort_v1(inspected,23n,0xa180n);
+1135:     let staleRead=false;
+1136:     try{env.spx_vec_leaf_field_read_v1(consumed,23n,0xa180n,0n,0n,fieldOut)}catch(error){staleRead=true}
+1137:     if(!staleRead)throw Error('stale generation permitted a field read');
+1138:     env.spx_vec_drop_v2(inspected);
+1139:     for(const bits of [-0x8000000000000000n,0x7ff8000000001234n]){
+1140:       let floating=env.spx_vec_leaf_new_v1(29n,0xa170n,1n);
+1141:       floating=env.spx_vec_leaf_push_v1(floating,29n,0xa170n,bits,0n,0n,0n,0n,0n,0n,0n);
+1142:       if(env.spx_vec_leaf_field_read_v1(floating,29n,0xa170n,0n,0n,fieldOut)!==0
+1143:          ||view(fieldOut,8).getBigInt64(0,true)!==bits)
+1144:         throw Error('signed zero or NaN payload bits changed during field read');
+1145:       env.spx_vec_drop_v2(floating);
+1146:     }
+1147:     const unbound=env.spx_vec_with_capacity_v2(10,1n);
+1148:     let unboundRead=false;
+1149:     try{env.spx_vec_leaf_field_read_v1(unbound,1n,0x929110n,0n,0n,fieldOut)}catch(error){unboundRead=true}
+1150:     if(!unboundRead||vectorValue(unbound).shape!==undefined)
+1151:       throw Error('read lazily repaired an unbound legacy authority');
+1152:     env.spx_vec_drop_v2(unbound);
+1153:     if(vectors.size||iterators.size||payloads.size)throw Error('host self-check leaked an owner');
+1154:   }
+1155: })().catch(error=>{console.error(error);process.exitCode=2});
+
+FILE tests/owned_data/owned_leaf_vec/field_unique.rs lines 1..385
+1: //! Borrowed Record-Field Uniqueness v1 (#786): one source through the
+2: //! interpreter, native C11 O0/O2 and the strict private Core-Wasm host. The
+3: //! saved clone/sort helper is an independent oracle, not a producer.
+4: use super::{DECLARATION, HOST, SEQUENCE};
+5: use semaprax::{codegen, interpreter, wasm};
+6: use std::process::Command;
+7: use std::sync::atomic::Ordering;
+8: 
+9: /// The prior ShiftSim helper shape, adapted to `Row.title`: cloned owned keys,
+10: /// consuming `vec_sort_owned` and a neighbor scan.
+11: const CLONE_SORT_ORACLE: &str = r#"@id("app.oracle.titles")
+12: fn oracle_titles(values: borrow Vec<Row>) -> bool
+13: {
+14:     let length = vec_len<Row>(values);
+15:     let mut identifiers = vec_with_capacity<string>(length);
+16:     let mut index = 0usize;
+17:     while index < length {
+18:         let title_view = vec_field<Row>(values, index, "title");
+19:         identifiers = vec_push<string>(identifiers, string_from_str(title_view));
+20:         index = index + 1usize;
+21:         0
+22:     }
+23:     let sorted = vec_sort_owned<string>(identifiers);
+24:     let count = vec_len<string>(sorted);
+25:     let mut at = 1usize;
+26:     let mut valid = true;
+27:     while valid && at < count {
+28:         let previous = vec_str_at(sorted, at - 1usize);
+29:         let current = vec_str_at(sorted, at);
+30:         valid = previous != current;
+31:         at = at + 1usize;
+32:         valid && at < count
+33:     }
+34:     valid
+35: }
+36: "#;
+37: 
+38: const ORIGINAL_MAIN: &str = r#"@id("app.main") fn main()->i64 {
+39:  let empty=vec_with_capacity<Row>(0usize);
+40:  let empty_ok=vec_unique_by<Row>(empty,"title") && vec_unique_by<Row>(empty,"priority") && oracle_titles(empty);
+41:  let single0=vec_with_capacity<Row>(1usize);
+42:  let single=vec_push<Row>(single0,Row{priority:7,title:"a\u{0}\u{e9}",payload:bytes_zeroed(0usize)});
+43:  let single_ok=vec_unique_by<Row>(single,"title") && oracle_titles(single);
+44:  let mut rows=vec_with_capacity<Row>(7usize);
+45:  rows=vec_push<Row>(rows,Row{priority:-9223372036854775807-1,title:"a",payload:bytes_zeroed(1usize)});
+46:  rows=vec_push<Row>(rows,Row{priority:9223372036854775807,title:"a\u{0}",payload:bytes_zeroed(1usize)});
+47:  rows=vec_push<Row>(rows,Row{priority:0,title:"\u{e9}",payload:bytes_zeroed(0usize)});
+48:  rows=vec_push<Row>(rows,Row{priority:-1,title:"e\u{301}",payload:bytes_zeroed(0usize)});
+49:  rows=vec_push<Row>(rows,Row{priority:1,title:"ab",payload:bytes_zeroed(2usize)});
+50:  rows=vec_push<Row>(rows,Row{priority:2,title:"a\u{0}b",payload:bytes_zeroed(3usize)});
+51:  let distinct=vec_unique_by<Row>(rows,"title") && vec_unique_by<Row>(rows,"priority") && oracle_titles(rows);
+52:  rows=vec_push<Row>(rows,Row{priority:3,title:"a",payload:bytes_zeroed(4usize)});
+53:  let duplicate=!vec_unique_by<Row>(rows,"title") && vec_unique_by<Row>(rows,"priority") && !oracle_titles(rows);
+54:  let order=vec_field<Row>(rows,0usize,"priority")==-9223372036854775807-1 && vec_field<Row>(rows,6usize,"priority")==3 && vec_len<Row>(rows)==7usize;
+55:  let ranked=vec_sort_by<Row>(rows,"priority:desc");
+56:  let renewed=vec_field<Row>(ranked,0usize,"priority")==9223372036854775807 && !vec_unique_by<Row>(ranked,"title");
+57:  let mut wide=vec_with_capacity<Row>(4096usize);
+58:  let mut index=0usize;
+59:  while index<4096usize {
+60:   wide=vec_push<Row>(wide,Row{priority:i64_from_usize(index),title:string_format("T{}",index),payload:bytes_zeroed(0usize)});
+61:   index=index+1usize;
+62:   0
+63:  }
+64:  let full=vec_unique_by<Row>(wide,"title") && vec_unique_by<Row>(wide,"priority") && vec_len<Row>(wide)==vec_capacity<Row>(wide);
+65:  let mut late=vec_with_capacity<Row>(4096usize);
+66:  index=0usize;
+67:  while index<4096usize {
+68:   let title=if index==4095usize {"T0"}else{string_format("T{}",index)};
+69:   late=vec_push<Row>(late,Row{priority:i64_from_usize(index % 4095usize),title:title,payload:bytes_zeroed(0usize)});
+70:   index=index+1usize;
+71:   0
+72:  }
+73:  let last=!vec_unique_by<Row>(late,"title") && !vec_unique_by<Row>(late,"priority");
+74:  if empty_ok && single_ok && distinct && duplicate && order && renewed && full && last {42}else{0}
+75: }
+76: "#;
+77: 
+78: // The large corpus retains two owned leaves and one i64 field (capacity 4096).
+79: // Its unselected empty payload uses String: ordinary Bytes construction is
+80: // closed in loops and counts against the unchanged 32-allocation envelope.
+81: // Small Row cases retain their Bytes payloads, including nonempty values.
+82: const LARGE_ROW: &str = r#"@id("app.large.row") record LargeRow {
+83:  @id("app.large.row.priority") priority:i64,
+84:  @id("app.large.row.title") title:string,
+85:  @id("app.large.row.payload") payload:string,
+86: }
+87: "#;
+88: 
+89: fn admitted_source() -> String {
+90:     let large_oracle = CLONE_SORT_ORACLE
+91:         .replace("app.oracle.titles", "app.oracle.large_titles")
+92:         .replace("oracle_titles", "oracle_large_titles")
+93:         .replace("Vec<Row>", "Vec<LargeRow>")
+94:         .replace("<Row>", "<LargeRow>");
+95:     let (small, large) = ORIGINAL_MAIN.split_once(" let mut wide=").unwrap();
+96:     let large = large
+97:         .replace("<Row>", "<LargeRow>")
+98:         .replace("Row{", "LargeRow{")
+99:         .replace("payload:bytes_zeroed(0usize)", "payload:\"\"")
+100:         .replace(
+101:             "vec_len<LargeRow>(wide)==vec_capacity<LargeRow>(wide)",
+102:             r#"vec_len<LargeRow>(wide)==vec_capacity<LargeRow>(wide) && oracle_large_titles(wide) && vec_field<LargeRow>(wide,0usize,"priority")==0 && vec_field<LargeRow>(wide,4095usize,"priority")==4095 && vec_field<LargeRow>(wide,0usize,"payload")==str"""#,
+103:         )
+104:         .replace(
+105:             r#"!vec_unique_by<LargeRow>(late,"priority")"#,
+106:             r#"!vec_unique_by<LargeRow>(late,"priority") && !oracle_large_titles(late) && vec_len<LargeRow>(late)==4096usize && vec_capacity<LargeRow>(late)==4096usize && vec_field<LargeRow>(late,0usize,"priority")==0 && vec_field<LargeRow>(late,4095usize,"priority")==0 && vec_field<LargeRow>(late,4095usize,"title")==str"T0" && vec_field<LargeRow>(late,4095usize,"payload")==str"""#,
+107:         );
+108:     format!("{DECLARATION}{LARGE_ROW}{CLONE_SORT_ORACLE}{large_oracle}{small} let mut wide={large}")
+109: }
+110: 
+111: const COPY_MAIN: &str = r#"@id("app.copy.row") record CopyRow {
+112:  @id("app.copy.row.rank") rank:i32, @id("app.copy.row.small") small:u8,
+113:  @id("app.copy.row.mark") mark:char, @id("app.copy.row.flag") flag:bool,
+114: }
+115: @id("app.main") fn main()->i64 {
+116:  let mut rows=vec_with_capacity<CopyRow>(3usize);
+117:  rows=vec_push<CopyRow>(rows,CopyRow{rank:-2147483647i32-1i32,small:255u8,mark:'a',flag:true});
+118:  rows=vec_push<CopyRow>(rows,CopyRow{rank:2147483647i32,small:0u8,mark:'é',flag:false});
+119:  rows=vec_push<CopyRow>(rows,CopyRow{rank:-1i32,small:254u8,mark:'a',flag:true});
+120:  let distinct=vec_unique_by<CopyRow>(rows,"rank") && vec_unique_by<CopyRow>(rows,"small");
+121:  let duplicates=!vec_unique_by<CopyRow>(rows,"mark") && !vec_unique_by<CopyRow>(rows,"flag");
+122:  if distinct && duplicates && vec_len<CopyRow>(rows)==3usize {42}else{0}
+123: }
+124: "#;
+125: 
+126: const ONE_CALL: &str = r#"@id("app.main") fn main()->i64 {
+127:  let mut rows=vec_with_capacity<Row>(2usize);
+128:  rows=vec_push<Row>(rows,Row{priority:1,title:"x",payload:bytes_zeroed(0usize)});
+129:  rows=vec_push<Row>(rows,Row{priority:2,title:"y",payload:bytes_zeroed(0usize)});
+130:  if vec_unique_by<Row>(rows,"title") {42}else{0}
+131: }
+132: "#;
+133: 
+134: fn root() -> std::path::PathBuf {
+135:     let root = std::env::temp_dir().join(format!(
+136:         "field-unique-{}-{}",
+137:         std::process::id(),
+138:         SEQUENCE.fetch_add(1, Ordering::Relaxed)
+139:     ));
+140:     std::fs::create_dir_all(&root).unwrap();
+141:     root
+142: }
+143: 
+144: fn interpret(root: &std::path::Path, source: &str) {
+145:     let path = root.join("app.spx");
+146:     std::fs::write(&path, source).unwrap();
+147:     for _ in 0..3 {
+148:         let result = interpreter::interpret(&path, "app.main", &[], &Default::default()).unwrap();
+149:         interpreter::verify_envelope(&result.envelope).unwrap();
+150:         assert!(result.returned, "{}", result.envelope);
+151:         let wire: serde_json::Value = serde_json::from_str(&result.envelope).unwrap();
+152:         assert_eq!(wire["payload"]["outcome"]["value"], "42");
+153:     }
+154: }
+155: 
+156: fn host(
+157:     root: &std::path::Path,
+158:     ast: &semaprax::ast::Program,
+159:     status: &str,
+160:     value: &str,
+161:     mode: &str,
+162: ) {
+163:     let bytes = wasm::emit_module(ast).expect("Core Wasm emission");
+164:     wasmparser::Validator::new()
+165:         .validate_all(&bytes)
+166:         .expect("strict Core Wasm validation");
+167:     let mut names = Vec::new();
+168:     for payload in wasmparser::Parser::new(0).parse_all(&bytes) {
+169:         if let wasmparser::Payload::ImportSection(section) = payload.unwrap() {
+170:             for import in section.into_imports() {
+171:                 names.push(import.unwrap().name.to_owned());
+172:             }
+173:         }
+174:     }
+175:     assert_eq!(
+176:         names
+177:             .iter()
+178:             .filter(|n| *n == "spx_vec_unique_by_v1")
+179:             .count(),
+180:         1
+181:     );
+182:     let module = root.join(format!("app-{mode}.wasm"));
+183:     std::fs::write(&module, bytes).unwrap();
+184:     let output = Command::new("node")
+185:         .arg(HOST)
+186:         .arg(&module)
+187:         .args([status, value, mode])
+188:         .output()
+189:         .expect("Node must execute the strict private host");
+190:     assert!(
+191:         output.status.success(),
+192:         "{mode}: {}",
+193:         String::from_utf8_lossy(&output.stderr)
+194:     );
+195: }
+196: 
+197: /// Native probe: only the uniqueness scratch request is redirected, so the
+198: /// requested bytes are observed exactly and may be refused; every other
+199: /// allocation stays on the counted ordinary allocator.
+200: fn native(root: &std::path::Path, ast: &semaprax::ast::Program, refuse: bool, scratch: &[u64]) {
+201:     let generated = codegen::emit_c(ast).unwrap();
+202:     let anchor = "uint32_t *o = malloc(";
+203:     assert_eq!(generated.matches(anchor).count(), 1);
+204:     let generated = generated
+205:         .replace(anchor, "uint32_t *o = probe_unique_malloc(")
+206:         .replace("malloc(", "probe_malloc(")
+207:         .replace("probe_unique_probe_malloc(", "probe_unique_malloc(")
+208:         .replace("calloc(", "probe_calloc(")
+209:         .replace("realloc(", "probe_realloc(")
+210:         .replace(
+211:             "#define SPX_VEC_REALLOC realloc",
+212:             "#define SPX_VEC_REALLOC probe_realloc",
+213:         )
+214:         .replace("free(", "probe_free(");
+215:     let expected = scratch
+216:         .iter()
+217:         .map(|bytes| format!("UINT64_C({bytes})"))
+218:         .collect::<Vec<_>>()
+219:         .join(",");
+220:     let allocator = format!(
+221:         r#"#include <stdint.h>
+222: #include <stdlib.h>
+223: #include <string.h>
+224: static uint64_t live=0,unique_requests=0,unique_bytes_mismatch=0,unique_refuse={refuse};
+225: static const uint64_t unique_expected[]={{{expected}0}};
+226: static void *probe_malloc(size_t n){{void*p=malloc(n);if(p)++live;return p;}}
+227: static void *probe_calloc(size_t n,size_t s){{void*p=calloc(n,s);if(p)++live;return p;}}
+228: static __attribute__((unused)) void *probe_realloc(void*p,size_t n){{void*r=realloc(p,n);if(r&&!p)++live;return r;}}
+229: static void probe_free(void*p){{if(p){{if(!live)abort();--live;free(p);}}}}
+230: static void *probe_unique_malloc(size_t n){{
+231:  if(unique_requests>={count}u||unique_expected[unique_requests]!=(uint64_t)n)++unique_bytes_mismatch;
+232:  ++unique_requests;if(unique_refuse)return NULL;return probe_malloc(n);
+233: }}
+234: "#,
+235:         refuse = u8::from(refuse),
+236:         expected = if expected.is_empty() {
+237:             String::new()
+238:         } else {
+239:             format!("{expected},")
+240:         },
+241:         count = scratch.len(),
+242:     );
+243:     let probe = format!(
+244:         r#"
+245: int main(void){{
+246:  struct spx_status_entry entries[32];struct spx_context context={{0}};
+247:  if(!spx_context_init(&context,17,entries,32,NULL,NULL,NULL))return 1;
+248:  for(unsigned repeat=0;repeat<3;++repeat){{
+249:   int64_t result=INT64_C(123456789);unique_requests=0;
+250:   spx_status_token token=spx_decl_6170702e6d61696e(&context,&result);
+251:   if({refuse}){{
+252:    const struct spx_normalized_status *status=spx_status_resolve(&context,token);
+253:    if(token==SPX_STATUS_SUCCESS||result!=INT64_C(123456789)||!status
+254:       ||strcmp(status->domain_id,"semaprax.vec.v1")!=0||status->code!=UINT32_C(3))return 2;
+255:    if(unique_requests!=1u)return 3;
+256:   }}else if(token!=SPX_STATUS_SUCCESS||result!=INT64_C(42)||unique_requests!={count}u)return 4;
+257:   if(unique_bytes_mismatch||live)return 5;
+258:   for(uint32_t j=0;j<SPX_VEC_AUTHORITY_CAPACITY;++j)if(context.vec_authority[j].live)return 6;
+259:  }}
+260:  return 0;
+261: }}
+262: "#,
+263:         refuse = u8::from(refuse),
+264:         count = scratch.len(),
+265:     );
+266:     let c = root.join(if refuse { "refuse.c" } else { "unique.c" });
+267:     std::fs::write(&c, format!("{allocator}\n{generated}\n{probe}")).unwrap();
+268:     for optimization in ["-O0", "-O2"] {
+269:         let binary = root.join(format!("unique-{refuse}-{optimization}"));
+270:         let output = Command::new("clang")
+271:             .args([
+272:                 "-std=c11",
+273:                 "-Wall",
+274:                 "-Wextra",
+275:                 "-Werror",
+276:                 "-DSPX_NO_ENTRY_WRAPPER",
+277:                 optimization,
+278:             ])
+279:             .arg(&c)
+280:             .arg("-o")
+281:             .arg(&binary)
+282:             .output()
+283:             .expect("Clang must compile the uniqueness probe");
+284:         assert!(
+285:             output.status.success(),
+286:             "{optimization}: {}",
+287:             String::from_utf8_lossy(&output.stderr)
+288:         );
+289:         let output = Command::new(&binary).output().unwrap();
+290:         assert!(
+291:             output.status.success(),
+292:             "{optimization}: {:?}: {}",
+293:             output.status.code(),
+294:             String::from_utf8_lossy(&output.stderr)
+295:         );
+296:     }
+297: }
+298: 
+299: #[test]
+300: fn original_full_bytes_loop_fixture_retains_complete_stable_diagnostics() {
+301:     // Keep the exact formerly positive source: moving these allocations into
+302:     // helpers or changing requirements must never grant loop admission.
+303:     let source = format!("{DECLARATION}{CLONE_SORT_ORACLE}{ORIGINAL_MAIN}");
+304:     let diagnostics = semaprax::check(&source, "field-unique.spx")
+305:         .expect_err("ordinary Bytes allocation in while stays closed");
+306:     assert_eq!(
+307:         format!("{diagnostics:?}"),
+308:         r#"[Diagnostic { code: "SPX-T252", severity: Error, message: "byte operation `bytes_zeroed` is not admitted in while bodies; only exact byte_len, byte_get and byte_range reads and the loop-carried bytes_set/bytes_set5/bytes_set1_or5_from_slice/bytes_set1_or6_or48_from_slice fills qualify", path: Some("field-unique.spx"), span: Some(Span { start: 2832, end: 2852, line: 54, column: 103 }), help: None }, Diagnostic { code: "SPX-T252", severity: Error, message: "byte operation `bytes_zeroed` is not admitted in while bodies; only exact byte_len, byte_get and byte_range reads and the loop-carried bytes_set/bytes_set5/bytes_set1_or5_from_slice/bytes_set1_or6_or48_from_slice fills qualify", path: Some("field-unique.spx"), span: Some(Span { start: 3269, end: 3289, line: 63, column: 94 }), help: None }, Diagnostic { code: "SPX-T267", severity: Error, message: "bytes_copy is reachable from a while condition or body", path: Some("field-unique.spx"), span: Some(Span { start: 1013, end: 3507, line: 32, column: 17 }), help: None }]"#,
+309:     );
+310: }
+311: 
+312: #[test]
+313: fn same_source_uniqueness_matches_clone_sort_oracle_and_preserves_owner_on_every_engine() {
+314:     let source = admitted_source();
+315:     let ast = semaprax::check(&source, "field-unique.spx").expect("checked uniqueness source");
+316:     let root = root();
+317:     interpret(&root, &source);
+318:     // Requested scratch per call, independently computed as 4 * len for every
+319:     // call with at least two rows, in authored evaluation order. Empty and
+320:     // single-row calls request nothing.
+321:     let mut scratch = vec![4 * 6, 4 * 6, 4 * 7, 4 * 7, 4 * 7];
+322:     scratch.extend([4 * 4096; 4]);
+323:     native(&root, &ast, false, &scratch);
+324:     host(&root, &ast, "0", "42", "none");
+325:     std::fs::remove_dir_all(root).unwrap();
+326: }
+327: 
+328: #[test]
+329: fn copy_record_integer_char_and_bool_keys_use_exact_values() {
+330:     let source = format!("{DECLARATION}{COPY_MAIN}");
+331:     let ast = semaprax::check(&source, "copy-unique.spx").expect("checked Copy uniqueness");
+332:     let root = root();
+333:     interpret(&root, &source);
+334:     native(&root, &ast, false, &[4 * 3; 4]);
+335:     // Copy rows cross the exact legacy scalar Vec boundary; the strict codec
+336:     // mode supplies it, refuses any owned-leaf import, proves the capacity
+337:     // import is required and adds Copy-carrier uniqueness refusal controls.
+338:     host(&root, &ast, "0", "42", "copy-record-codec");
+339:     std::fs::remove_dir_all(root).unwrap();
+340: }
+341: 
+342: #[test]
+343: fn scratch_refusal_selects_vec_code_three_and_settles_owner_on_native_and_wasm() {
+344:     let source = format!("{DECLARATION}{ONE_CALL}");
+345:     let ast = semaprax::check(&source, "unique-refusal.spx").unwrap();
+346:     let root = root();
+347:     native(&root, &ast, true, &[4 * 2]);
+348:     // Core-Wasm STATUS_VEC_ALLOCATION_FAILURE; the strict host proves no
+349:     // scratch was observed allocated and every owner settled.
+350:     host(&root, &ast, "15", "0", "unique-scratch");
+351:     std::fs::remove_dir_all(root).unwrap();
+352: }
+353: 
+354: #[test]
+355: fn strict_host_refuses_forged_results_shapes_positions_and_stale_authority() {
+356:     let source = format!("{DECLARATION}{ONE_CALL}");
+357:     let ast = semaprax::check(&source, "unique-hostile.spx").unwrap();
+358:     let root = root();
+359:     for mode in [
+360:         "unique-bad-result",
+361:         "unique-forged-shape",
+362:         "unique-forged-position",
+363:         "unique-controls",
+364:     ] {
+365:         // Hostile modes return after their own trap/teardown assertions; the
+366:         // controls mode runs the ordinary corpus first, then exact host checks.
+367:         host(&root, &ast, "0", "42", mode);
+368:     }
+369:     std::fs::remove_dir_all(root).unwrap();
+370: }
+371: 
+372: #[test]
+373: fn live_root_moves_and_while_bodies_stay_closed() {
+374:     for body in [
+375:         r#"@id("app.main") fn main()->i64 { let rows=vec_with_capacity<Row>(0usize); let moved=rows; if vec_unique_by<Row>(rows,"title") {42}else{0} }"#,
+376:         r#"@id("app.main") fn main()->i64 { let rows=vec_with_capacity<Row>(0usize); let mut i=0usize; let mut ok=true; while i<1usize { ok=vec_unique_by<Row>(rows,"title"); i=i+1usize; 0 } if ok {42}else{0} }"#,
+377:         r#"@id("app.main") fn main()->i64 { if vec_unique_by<Row>(vec_with_capacity<Row>(0usize),"title") {42}else{0} }"#,
+378:         r#"@id("app.main") fn main()->i64 { let rows=vec_with_capacity<Row>(0usize); if vec_unique_by<Row>(rows,"payload") {42}else{0} }"#,
+379:     ] {
+380:         assert!(
+381:             semaprax::check(&format!("{DECLARATION}{body}"), "closed.spx").is_err(),
+382:             "{body}"
+383:         );
+384:     }
+385: }
+
+FILE src/wasm/browser_runtime.js lines 175..242
+175:       if (index + extra > bytes.length) return false;
+176:       for (let count = 0; count < extra; count++) {
+177:         const byte = bytes[index++];
+178:         if ((byte & 192) !== 128) return false;
+179:         scalar = (scalar << 6) | (byte & 63);
+180:       }
+181:       if (scalar < minimum || scalar > 1114111 || (scalar >= 55296 && scalar <= 57343)) return false;
+182:     }
+183:     return true;
+184:   };
+185:   const stringBytes = carrier => {
+186:     const bytes = read(decode(carrier));
+187:     if (!validUtf8(bytes)) throw new Error("SEMAPRAX String UTF-8 invariant");
+188:     return bytes;
+189:   };
+190:   const allocate = bytes => {
+191:     if (!(bytes instanceof Uint8Array) || bytes.byteLength > 131072) {
+192:       throw new Error("SEMAPRAX owned Bytes length invariant");
+193:     }
+194:     if (entries.size >= maxLiveEntries) throw new Error("SEMAPRAX owned Bytes live entry limit exceeded");
+195:     if (nextToken > 0x7fffffff) throw new Error("SEMAPRAX owned Bytes token space exhausted");
+196:     const token = nextToken++;
+197:     const owned = new Uint8Array(bytes);
+198:     entries.set(token, owned);
+199:     const root = 0x80000000n | BigInt(token);
+200:     return BigInt.asIntN(64, (root << 32n) | BigInt(owned.byteLength));
+201:   };
+202:   // The compiler selects this private import only for a checked literal
+203:   // format worker. Zero is its allocation-failure signal; all other byte
+204:   // imports keep their existing invariant behavior and ABI.
+205:   const formatStep = (operation, left, right) => {
+206:     if (!Number.isInteger(operation) || typeof left !== "bigint" || typeof right !== "bigint") {
+207:       throw new TypeError("SEMAPRAX literal format import shape invariant");
+208:     }
+209:     let bytes;
+210:     try {
+211:       if (operation === 0) {
+212:         if (right !== 0n) throw new Error("SEMAPRAX literal format copy operand invariant");
+213:         bytes = read(decode(left));
+214:       } else if (operation === 1) {
+215:         const a = stringBytes(left), b = stringBytes(right);
+216:         if (a.byteLength > 65536 - b.byteLength) return 0n;
+217:         bytes = new Uint8Array(a.byteLength + b.byteLength);
+218:         bytes.set(a, 0); bytes.set(b, a.byteLength);
+219:       } else if (operation === 2 || operation === 3) {
+220:         if (right !== 0n) throw new Error("SEMAPRAX literal format numeric operand invariant");
+221:         bytes = encoder.encode((operation === 3 ? BigInt.asUintN(64, left) : left).toString());
+222:       } else {
+223:         throw new Error("SEMAPRAX literal format operation invariant");
+224:       }
+225:       if (bytes.byteLength > 65536 || entries.size >= maxLiveEntries || nextToken > 0x7fffffff) return 0n;
+226:       return allocate(bytes);
+227:     } catch (failure) {
+228:       if (failure instanceof RangeError) return 0n;
+229:       throw failure;
+230:     }
+231:   };
+232:   const textNumber = (value, unsigned) => {
+233:     if (typeof value !== "bigint") throw new TypeError("SEMAPRAX numeric String input is not i64");
+234:     if (BigInt.asIntN(64, value) !== value) throw new Error("SEMAPRAX numeric String input range invariant");
+235:     return allocate(encoder.encode((unsigned ? BigInt.asUintN(64, value) : value).toString()));
+236:   };
+237:   const beginsWith = (value, prefix) => {
+238:     if (prefix.byteLength > value.byteLength) return 0;
+239:     for (let index = 0; index < prefix.byteLength; index++) {
+240:       if (value[index] !== prefix[index]) return 0;
+241:     }
+242:     return 1;
+
+FILE src/wasm/aggregate/literal_format.rs lines 1..30
+1: //! Backend-private, source-bound literal formatting for the two owned String
+2: //! Wasm profiles. Dynamic children are evaluated and staged before rendering.
+3: use super::*;
+4: 
+5: pub(super) fn import_type(
+6:     program: &ResolvedProgram,
+7:     types: &mut Vec<Signature>,
+8:     indexes: &mut HashMap<Signature, u32>,
+9: ) -> Option<u32> {
+10:     string_runtime::program_uses_format(program).then(|| {
+11:         intern_type(
+12:             Signature {
+13:                 params: vec![I32, I64, I64],
+14:                 results: vec![I64],
+15:             },
+16:             types,
+17:             indexes,
+18:         )
+19:     })
+20: }
+21: 
+22: pub(super) fn emit_import(output: &mut Vec<u8>, ty: Option<u32>) {
+23:     if let Some(ty) = ty {
+24:         function_import(output, "env", "spx_format_step_v1", ty);
+25:     }
+26: }
+27: 
+28: pub(super) fn insert_index(
+29:     indexes: &mut HashMap<FunctionExecutionId, u32>,
+30:     base: u32,
+
+FILE docs/CHECKED-LITERAL-FORMAT-V1.md lines 20..65
+20: (starting at one because the template is source argument zero). It stores no
+21: parsed recipe; validation reparses the template, checks the children
+22: and fixed result, and cached-module restoration independently resolves the
+23: synthetic source before Project replay binds it to canonical authored source.
+24: 
+25: Dynamic arguments evaluate once from left to right. Every scalar is captured
+26: before the next argument runs. Each owned String enters its canonical
+27: CallArgument epoch; one complete CallCommit transfers the group before the
+28: first rendering allocation. A direct owned String Place argument transfers its
+29: existing generation rather than initializing the ordinary String-read clone.
+30: Cleanup construction, independent replay, interpreter, native C11 and Wasm
+31: all derive this exception from the dedicated source-bound operation; ordinary
+32: String reads retain their prior cloning behavior. If a later dynamic argument
+33: fails, the already staged prefix settles through the ordinary pre-commit exit.
+34: A private worker constructs the empty accumulator,
+35: then each literal or converted field, then joins each piece in source order.
+36: If a helper fails, it drops the accumulator, current piece and every remaining
+37: owned argument before the ordinary failure cleanup. The selected failure is
+38: sticky and no partial result is published. The worker creates no source
+39: function, capability, provider, or public String ABI.
+40: 
+41: The aggregate Wasm host adds one format-only private import,
+42: `spx_format_step_v1`. It returns zero for checked String allocation refusal;
+43: the generated worker then releases its owned inputs and reports
+44: `semaprax.string-format.v1/1`. Existing byte and String imports retain their
+45: prior behavior. The selected standalone String arena uses its existing
+46: fallible allocation imports and the same worker recipe. The authenticated
+47: selected closure binds its format-status handling once: checked worker refusal
+48: is internal status 34 and requires a recorded arena capacity cause after all
+49: owners settle; conversion status 21 retains its existing separate meaning.
+50: Non-format profiles do not admit status 34. Its default owner
+51: census additionally charges three worker handles per active function containing
+52: formatting, before the existing call-path bound. Workers in the same function
+53: cannot overlap: dynamic children finish before rendering, which calls no
+54: source functions. Modules without formatting retain their prior owner bound.
+55: Each emitted worker failure guard also charges its three scratch drops and
+56: all staged String argument drops to the existing 262,144 cleanup-action bound.
+57: The browser host recognizes that exact private import in the authenticated
+58: module and admits up to 64 live owned byte entries for this selected shape, so
+59: all 32 owned fields and the worker's scratch owners fit. Earlier modules keep
+60: their 16-entry host bound. An explicit smaller host limit remains a checked
+61: resource policy and can trigger `semaprax.string-format.v1/1` after commit.
+62: 
+63: The first admission is monomorphic ordinary functions, including blocks,
+64: branches, loops and contracts where existing String profiles allow the
+65: operation. Generic templates and closure bodies are refused. Runtime
+
+FILE docs/OWNED-LEAF-COLLECTIONS-V1.md lines 45..69
+45: Bytes construction and copying inside a bounded `while` remain refused with
+46: `SPX-T267`. This includes `bytes_zeroed`, `bytes_copy`, and
+47: `vec_clone_at<Record>` when `Record` contains a Bytes leaf: deep-copying that
+48: element allocates. Construct or copy Bytes before the loop and move the existing
+49: owner through an admitted operation; this tranche does not relax loop allocation
+50: rules.
+51: 
+52: Source and HIR reconstruct this shape independently from authenticated
+53: declarations. String, the record, and their Vec/iterator carriers remain affine;
+54: no owned leaf becomes Copy. The old two-Bytes-plus-one-scalar record collection,
+55: Copy-record collection, scalar Vec, and public ABI profiles stay unchanged.
+56: 
+57: Each owned leaf charges the existing 16-byte owned-carrier rate against the
+58: existing 131072-byte carrier envelope. Each Copy field charges one eight-byte
+59: word against the existing 8192-word scalar envelope. Logical capacity is the
+60: minimum of 8192, `floor(8192 / scalar_count)` when nonzero, and
+61: `floor(131072 / (16 * owned_count))`. This gives 8192 for `Vec<string>`, 2048 for
+62: a String-plus-four-scalar record, and 4096 for two owned leaves plus one scalar.
+63: These are carrier-storage charges, not a new bound on the sum of leaf contents.
+64: Ordinary String/Bytes payload, live-owner, runtime allocation and builder limits
+65: remain authoritative. Capacity counts logical elements. No existing envelope
+66: is raised or specialized to a benchmark. Primitive `Vec<Bytes>` stays unchanged.
+67: 
+68: The four new source operations have distinct stable identities:
+69: `core.vec.clone-at`, `core.vec.replace`, `core.vec.reserve-owned`, and
+
+EXACT CORRECTION DIFF
+diff --git a/tests/owned_data/owned_leaf_vec/host.js b/tests/owned_data/owned_leaf_vec/host.js
+index a561a947a..a4c130918 100644
+--- a/tests/owned_data/owned_leaf_vec/host.js
++++ b/tests/owned_data/owned_leaf_vec/host.js
+@@ -317,11 +317,47 @@ const arithmetic = (code, operation) => (a,b) => {
+   if(value<-(1n<<63n)||value>(1n<<63n)-1n)throw Error(`status:${code}`);
+   return value;
+ };
++// Same checked literal-format operations as createByteDataRuntime's
++// formatStep (src/wasm/browser_runtime.js). Owned results use this host's
++// existing counted allocator; Vec leaves retain their ordinary host policy.
++const formatStep = (operation, left, right) => {
++  allocationOutsideSort('literal format');
++  if (!Number.isInteger(operation) || typeof left !== 'bigint' || typeof right !== 'bigint')
++    throw TypeError('literal format import shape invariant');
++  const stringBytes = carrier => {
++    const bytes = read(carrier);
++    if (!validUtf8(bytes)) throw Error('literal format String UTF-8 invariant');
++    return bytes;
++  };
++  let bytes;
++  try {
++    if (operation === 0) {
++      if (right !== 0n) throw Error('literal format copy operand invariant');
++      bytes = read(left);
++    } else if (operation === 1) {
++      const a = stringBytes(left), b = stringBytes(right);
++      if (a.byteLength > 65536 - b.byteLength) return 0n;
++      bytes = new Uint8Array(a.byteLength + b.byteLength);
++      bytes.set(a, 0); bytes.set(b, a.byteLength);
++    } else if (operation === 2 || operation === 3) {
++      if (right !== 0n) throw Error('literal format numeric operand invariant');
++      bytes = new TextEncoder().encode((operation === 3 ? BigInt.asUintN(64, left) : left).toString());
++    } else {
++      throw Error('literal format operation invariant');
++    }
++    if (bytes.byteLength > 65536 || nextPayload > 0x7fffffff) return 0n;
++    return ownBytes(bytes);
++  } catch (failure) {
++    if (failure instanceof RangeError) return 0n;
++    throw failure;
++  }
++};
+ const env = {
+   spx_add:arithmetic(1,(a,b)=>a+b), spx_sub:arithmetic(2,(a,b)=>a-b), spx_mul:arithmetic(3,(a,b)=>a*b),
+   spx_div:arithmetic(4,(a,b)=>a/b), spx_rem:arithmetic(6,(a,b)=>a%b),
+   spx_neg:a=>{if(a===-(1n<<63n))throw Error('status:8');return -a;},
+   spx_contract_fail:status=>{throw Error(`status:${status}`)},
++  spx_format_step_v1:formatStep,
+   spx_bytes_copy:alloc, spx_bytes_drop:drop, spx_bytes_as_slice:carrier=>{read(carrier);return carrier},
+   spx_bytes_get:(carrier,index)=>read(carrier)[Number(index)]??-1,
+   spx_bytes_zeroed:length=>{
+@@ -731,6 +767,13 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
+     for(const name of PAYLOAD_CONSUMERS)env[name]=shared.imports[name];
+   }
+   const requiredImports=WebAssembly.Module.imports(new WebAssembly.Module(moduleBytes));
++  if(requiredImports.some(entry=>entry.module==='env'&&entry.name==='spx_format_step_v1')){
++    const missingFormat={...env};delete missingFormat.spx_format_step_v1;
++    let absent=false;
++    try{await WebAssembly.instantiate(moduleBytes,{env:missingFormat})}
++    catch(error){if(!(error instanceof WebAssembly.LinkError))throw error;absent=true}
++    if(!absent)throw Error('literal formatter linked without its actual private import');
++  }
+   if(copyRecordCodec){
+     if(!requiredImports.some(entry=>entry.name==='spx_vec_with_capacity') ||
+        requiredImports.some(entry=>/^spx_vec_leaf_/.test(entry.name)))
+

@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import re
 import signal
@@ -26,6 +27,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import live_campaign_common as common
 import campaign_resources as resources
+import compiler_input_capture as compiler_capture
 
 # Direct file loading works for external spec_from_file_location callers and
 # never resolves these trusted siblings through cwd or ambient sys.modules.
@@ -80,6 +82,7 @@ HARNESS_SOURCE_FILES = (
     "benchmarks/webapp-tokens-v2/codex_campaign.py",
     "benchmarks/authored_source_recount.py",
     "benchmarks/compiler_output_provenance.py",
+    "benchmarks/compiler_input_capture.py",
     "benchmarks/webapp-tokens-v2/typescript_bootstrap.py",
     "benchmarks/webapp-tokens-v2/dependency_bundle.py",
     "benchmarks/live_campaign_common.py",
@@ -421,10 +424,22 @@ def trace_usage(exec_usage: dict[str, Any], rollout: Path) -> dict[str, Any]:
     }
 
 
-def list_price_estimate(requests: list[dict[str, Any]]) -> dict[str, Any]:
+def list_price_estimate(requests: list[dict[str, Any]], price_book: dict[str, Any] | None = None) -> dict[str, Any]:
     """Conditional standard-price estimate; actual billing and cache-write amount remain unknown."""
+    # Compatibility calls use the explicitly dated historical card, never a
+    # claim about today's price. Live/recount routes pass their saved card.
+    card = ({"date": "2026-10-08", "standard_short_context_usd_per_million": PRICE_USD_PER_MTOK}
+            if price_book is None else price_book)
+    prices = card.get("standard_short_context_usd_per_million") if isinstance(card, dict) else None
+    date = card.get("date") if isinstance(card, dict) else None
+    card_valid = (isinstance(date, str) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", date) is not None
+        and isinstance(prices, dict) and set(prices) == set(PRICE_USD_PER_MTOK)
+        and all(isinstance(rate, (int, float)) and not isinstance(rate, bool)
+                and math.isfinite(rate) and rate >= 0 for rate in prices.values()))
     amount, writes = 0.0, 0
-    valid = bool(requests)
+    valid = bool(requests) and card_valid
+    if not card_valid:
+        requests = []
     for request in requests:
         known = _usage(request.get("usage"))
         if not all(known[key] is not None for key in ("input_tokens", "cached_input_tokens", "cache_write_input_tokens", "output_tokens")):
@@ -433,13 +448,15 @@ def list_price_estimate(requests: list[dict[str, Any]]) -> dict[str, Any]:
         if uncached < 0 or known["input_tokens"] > SHORT_CONTEXT_LIMIT:
             valid = False; break
         writes += known["cache_write_input_tokens"]
-        amount += (uncached * PRICE_USD_PER_MTOK["input"] + known["cached_input_tokens"] * PRICE_USD_PER_MTOK["cache_read"] + known["cache_write_input_tokens"] * PRICE_USD_PER_MTOK["cache_write"] + known["output_tokens"] * PRICE_USD_PER_MTOK["output"]) / 1_000_000
+        amount += (uncached * prices["input"] + known["cached_input_tokens"] * prices["cache_read"] + known["cache_write_input_tokens"] * prices["cache_write"] + known["output_tokens"] * prices["output"]) / 1_000_000
+        if not math.isfinite(amount):
+            valid = False; break
     return {
         "standard_short_context_api_equivalent_usd": round(amount, 6) if valid else None,
         "assumptions": "each request input <=272k; input/cache-read/cache-write/output use published standard rates",
         "actual_billed_usd": None, "cache_write_tokens": writes if valid else None,
-        "cache_write_cost_usd": round(writes * PRICE_USD_PER_MTOK["cache_write"] / 1_000_000, 6) if valid else None,
-        "reason": None if valid else "missing per-request usage, invalid bucket subset, or a request exceeds the short-context threshold",
+        "cache_write_cost_usd": round(writes * prices["cache_write"] / 1_000_000, 6) if valid else None,
+        "reason": None if valid else "missing/invalid dated rate card, per-request usage, bucket subset, or short-context threshold",
     }
 
 
@@ -813,19 +830,21 @@ def launch_trial(repo: Path, artifacts: Path, commit: str, trial: dict[str, Any]
             return row
         finally:
             row["tooling_provision_elapsed_seconds"] = round(time.monotonic() - provision_started, 3)
-    prompt = prompt_for(arm, candidate, semaprax_bin, tooling)
-    (artifacts / "prompts").mkdir(parents=True, exist_ok=True)
-    (artifacts / "prompts" / f"{label}.txt").write_text(prompt, encoding="utf-8")
-    row["prompt_sha256"] = hashlib.sha256(prompt.encode()).hexdigest()
-    row["fixed_prompt_utf8_bytes"] = len(prompt.encode())
     transcript, stderr, trace = (artifacts / "transcripts" / f"{label}.{suffix}" for suffix in ("jsonl", "stderr.txt", "rollout.jsonl"))
     transcript.parent.mkdir(parents=True, exist_ok=True)
     row.update({"transcript": str(transcript), "stderr_path": str(stderr),
                 "provider_receipt_actual_usd": None})
     try:
-        common.require_compiler_binding(settings, semaprax_bin)
-        process = run_codex(_command(settings, prompt), workspace, trial_environment(semaprax_bin),
-                            transcript, stderr, settings["timeout_seconds"])
+        with compiler_capture.authoring_compiler(arm, candidate, workspace, artifacts, label,
+                settings, semaprax_bin, row) as authoring_binary:
+            prompt = prompt_for(arm, candidate, authoring_binary, tooling)
+            (artifacts / "prompts").mkdir(parents=True, exist_ok=True)
+            (artifacts / "prompts" / f"{label}.txt").write_text(prompt, encoding="utf-8")
+            row["prompt_sha256"] = hashlib.sha256(prompt.encode()).hexdigest()
+            row["fixed_prompt_utf8_bytes"] = len(prompt.encode())
+            common.require_compiler_binding(settings, semaprax_bin)
+            process = run_codex(_command(settings, prompt), workspace, trial_environment(authoring_binary),
+                                transcript, stderr, settings["timeout_seconds"])
         row.update(process)
         exec_usage = parse_exec_jsonl(transcript)
         copied = copy_task_rollout(exec_usage["thread_ids"], workspace, trace)
@@ -837,7 +856,7 @@ def launch_trial(repo: Path, artifacts: Path, commit: str, trial: dict[str, Any]
         row["rollout_trace"] = str(copied) if copied else None
         row["transcript_sha256"] = common.digest(transcript)
         row["rollout_trace_sha256"] = common.digest(copied) if copied else None
-        row["list_price"] = list_price_estimate(trace_result.get("model_requests", []))
+        row["list_price"] = list_price_estimate(trace_result.get("model_requests", []), settings.get("price_book", {}))
         row["telemetry_valid"] = (observed.get("reconciled") is True
             and observed.get("model_observed") == MODEL and observed.get("effort_observed") == EFFORT
             and observed.get("invalid_stream_lines") == 0)
@@ -932,7 +951,7 @@ def launch_calibration(repo: Path, artifacts: Path, commit: str, settings: dict[
         row["rollout_trace"] = str(copied) if copied else None
         row["transcript_sha256"] = common.digest(transcript)
         row["rollout_trace_sha256"] = common.digest(copied) if copied else None
-        row["list_price"] = list_price_estimate(trace_result.get("model_requests", []))
+        row["list_price"] = list_price_estimate(trace_result.get("model_requests", []), settings.get("price_book", {}))
         messages = [json.loads(line).get("item", {}) for line in transcript.read_text().splitlines() if line]
         replies = [item.get("text", "").strip() for item in messages if item.get("type") == "agent_message"]
         counts = usage.get("tool_item_counts", {})
@@ -952,40 +971,63 @@ def launch_calibration(repo: Path, artifacts: Path, commit: str, settings: dict[
     return row
 
 
+def _measurement(value: Any, *, integer: bool = False, signed: bool = False) -> bool:
+    return (type(value) in ((int,) if integer else (int, float))
+            and (type(value) is int or math.isfinite(value))
+            and (signed or value >= 0))
+
+
 def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    def complete_sum(values: list[Any]) -> int | float | None:
+    summary = _summarize(rows)
+    summary["by_arm"] = {arm: _summarize([row for row in rows if row.get("arm") == arm], (arm,))
+                         for arm in ARMS}
+    return summary
+
+
+def _summarize(rows: list[dict[str, Any]], arms: tuple[str, ...] = ARMS) -> dict[str, Any]:
+    def complete_sum(values: list[Any], *, integer: bool = False,
+                     signed: bool = False) -> int | float | None:
         complete = rows and len(values) == len(rows) and all(
-            isinstance(value, (int, float)) for value in values
-        )
-        return sum(values) if complete else None
+            _measurement(value, integer=integer, signed=signed) for value in values)
+        total = sum(values) if complete else None
+        return total if total is not None and _measurement(total, integer=integer, signed=signed) else None
 
     accepted_rows = [row for row in rows if row.get("status") == "accepted"]
     accepted = len(accepted_rows)
     prices = [row.get("list_price", {}).get("standard_short_context_api_equivalent_usd")
               for row in rows if isinstance(row.get("list_price"), dict)]
     price_total = complete_sum(prices)
-    raw_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("input_tokens") for row in rows])
-    cached_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("cached_input_tokens") for row in rows])
-    cache_write_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("cache_write_input_tokens") for row in rows])
-    output = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("output_tokens") for row in rows])
-    legacy_net = complete_sum([row.get("observed", {}).get("legacy_net_input_tokens") for row in rows])
+    raw_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("input_tokens") for row in rows], integer=True)
+    cached_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("cached_input_tokens") for row in rows], integer=True)
+    cache_write_input = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("cache_write_input_tokens") for row in rows], integer=True)
+    output = complete_sum([row.get("observed", {}).get("request_usage_sum", {}).get("output_tokens") for row in rows], integer=True)
+    legacy_net = complete_sum([row.get("observed", {}).get("legacy_net_input_tokens") for row in rows], integer=True, signed=True)
     agent_wall = complete_sum([row.get("elapsed_seconds") for row in rows])
     acceptance_wall_values = [row.get("acceptance_elapsed_seconds",
-        row.get("acceptance", {}).get("seconds", None if "acceptance" in row else 0)) for row in rows]
-    acceptance_wall = (sum(acceptance_wall_values)
-                       if rows and all(isinstance(value, (int, float)) for value in acceptance_wall_values) else None)
+        row.get("acceptance", {}).get("seconds", None)) for row in rows]
+    acceptance_wall = complete_sum(acceptance_wall_values)
+    outer_turns = complete_sum([row.get("observed", {}).get("codex_outer_turns") for row in rows], integer=True)
+    model_requests = complete_sum([row.get("observed", {}).get("model_request_count") for row in rows], integer=True)
+    arm_counts = {arm: sum(row.get("arm") == arm for row in rows) for arm in arms}
     authored_values = [row.get("final_candidate_source_metrics", {}).get("total_tokens") for row in accepted_rows]
     authored_total = (sum(authored_values)
-                      if accepted and len(authored_values) == accepted and all(isinstance(value, int) for value in authored_values)
+                      if accepted and len(authored_values) == accepted and all(_measurement(value, integer=True) for value in authored_values)
                       else None)
     return {
-        "attempt_denominator": len(ARMS) * MIN_TRIALS_PER_ARM,
+        "attempt_denominator": len(arms) * MIN_TRIALS_PER_ARM,
         "recorded_attempts": len(rows),
         "resource_contaminated_attempts": sum(bool(row.get("resource_assessment", {}).get("contaminated")) for row in rows),
-        "clean_comparison_eligible": len(rows) >= len(ARMS) * MIN_TRIALS_PER_ARM and all(
-            row.get("resource_assessment", {}).get("clean_comparison_eligible") is True for row in rows),
+        "attempts_by_arm": arm_counts,
+        "unknown_arm_attempts": len(rows) - sum(arm_counts.values()),
+        "clean_comparison_eligible": all(count >= MIN_TRIALS_PER_ARM for count in arm_counts.values())
+            and sum(arm_counts.values()) == len(rows) and all(
+                row.get("resource_assessment", {}).get("clean_comparison_eligible") is True for row in rows),
         "accepted_attempts": accepted,
         "failed_or_rejected_attempts": len(rows) - accepted,
+        "codex_outer_turns_all_attempts": outer_turns,
+        "model_requests_all_attempts": model_requests,
+        "codex_outer_turns_per_accepted_task": outer_turns / accepted if outer_turns is not None and accepted else None,
+        "model_requests_per_accepted_task": model_requests / accepted if model_requests is not None and accepted else None,
         "usage_all_attempts": {
             "raw_input_tokens": raw_input, "cached_input_tokens_subset": cached_input,
             "cache_write_input_tokens_subset": cache_write_input, "output_tokens": output,
@@ -993,7 +1035,7 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         },
         "accepted_authored_source_tokens": authored_total,
         "authored_source_tokens_per_accepted_task": authored_total / accepted if authored_total is not None and accepted else None,
-        "list_price_estimate_known_attempts": len([value for value in prices if isinstance(value, (int, float))]),
+        "list_price_estimate_known_attempts": len([value for value in prices if _measurement(value)]),
         "list_price_estimate_all_attempts_usd": round(price_total, 6) if price_total is not None else None,
         "list_price_estimate_per_accepted_task_usd": round(price_total / accepted, 6) if price_total is not None and accepted else None,
         "agent_wall_seconds_all_attempts": agent_wall,
@@ -1003,6 +1045,9 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "provider_receipt_actual_usd": None,
         "cost_claim": "conditional standard short-context API-equivalent estimate; no provider billing receipt",
         "calibration_separate": True,
+        "fixed_harness_context_tokens": None,
+        "legacy_net_claim": "historical first-request subtraction proxy; not task-only input",
+        "authored_source_claim": "final accepted-file Claude-BPE inventory proxy; not cumulative edits or exact GPT tokens",
     }
 
 

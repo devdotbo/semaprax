@@ -1,10 +1,11 @@
 use std::fmt::Write as _;
 use std::process::ExitCode;
-
+mod authoring;
 mod diagnostic_index;
+mod language_details;
 mod library;
+mod reference_links;
 mod shapes;
-
 use library::library_help;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -16,6 +17,7 @@ pub(crate) enum CommandId {
     Explore,
     Compact,
     Doc,
+    JsonCodec,
     Verify,
     Agent,
     SourceLive,
@@ -172,6 +174,7 @@ static COMMANDS: &[CommandSpec] = &[
     CommandSpec { id: CommandId::Graph, canonical: "graph", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax graph <file>"] },
     CommandSpec { id: CommandId::Explore, canonical: "explore", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax explore <manifest> [--target <id> --depth <n>] [--candidate-capsule <path> --expect-candidate <digest>] --format html|json|markdown|svg --output <path>"] },
     CommandSpec { id: CommandId::Doc, canonical: "doc", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax doc <file|project> [--module <source-path>] [--json]"] },
+    CommandSpec { id: CommandId::JsonCodec, canonical: "json-codec", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax json-codec <project> --source <module-path> --type <record-id> --output <new-file> [--profile <selector>] [--max-string-bytes <1..64>] [--max-array-items <1..256>]", "semaprax json-codec <project> --plan <plan-json> --output <new-bundle>"] },
     CommandSpec { id: CommandId::Verify, canonical: "verify", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax verify <file> <patch.spatch> <evidence.json>", "semaprax verify <root> <patch.wspatch>|<proposal.json> <evidence.json>", "semaprax verify <definition.json> <profile.json> <graph.json>", "semaprax verify <manifest> <image.json>"] },
     CommandSpec { id: CommandId::Agent, canonical: "agent", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax agent inspect <definition.json> [--profile]", "semaprax agent run <definition.json> <task.json> <transcript.json> [--evidence|--trace]", "semaprax agent replay <definition.json> <task.json> <transcript.json> <evidence.json>", "semaprax agent skill [--require-schema <schema>]"] },
     CommandSpec { id: CommandId::SourceLive, canonical: "source-live", aliases: &[], availability: Availability::Private, global: true, usages: &["semaprax-full source-live run <config.json> <checkpoint-dir> --opencode <absolute-executable> --scratch <empty-absolute-dir>", "semaprax-full source-live resume <config.json> <checkpoint-dir> --opencode <absolute-executable> --scratch <empty-absolute-dir>", "semaprax-full source-live migrate <old-config.json> <old-checkpoint-dir> <new-config.json> <new-checkpoint-dir> <function-id> <steps> --opencode <absolute-executable> --scratch <empty-absolute-dir>", "semaprax-full source-live repair run <repair-config.json> <checkpoint-dir>", "semaprax-full source-live repair resume <repair-config.json> <checkpoint-dir>"] },
@@ -226,12 +229,12 @@ static COMMANDS: &[CommandSpec] = &[
     CommandSpec { id: CommandId::Serve, canonical: "serve", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax serve <file> [--max-request-bytes N]"] },
     CommandSpec { id: CommandId::QualityPlan, canonical: "quality-plan", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax quality-plan <quick|changed|full> [exact-changed-path ...]"] },
     CommandSpec { id: CommandId::Doctor, canonical: "doctor", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax doctor [--profile <id>] [--target native|web|all] [--json]", "semaprax doctor verify-release <release-dir> --trusted-root-sha256 <64-lowercase-hex>"] },
-    CommandSpec { id: CommandId::New, canonical: "new", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax new <destination> [--name project-name] [--template calculator|library|service|stdin-stream-text|stdin-stream-data|source-command-file-text]"] },
-    CommandSpec { id: CommandId::ProjectScaffold, canonical: "project-scaffold", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax project-scaffold --name project-name [--template calculator|library|service|stdin-stream-text|stdin-stream-data|source-command-file-text] [--layout frozen|tables]"] },
-    CommandSpec { id: CommandId::Build, canonical: "build", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax build <file> [--target native] [-o|--output path] [--json]", "semaprax build <file> --target native-callable --function stable-id [-o|--output path] [--json]", "semaprax build <file> --target web|wasm [--profile internal-strings-v1|text-toolkit-v1] [--export stable-id ...] [-o|--output path] [--json]", "semaprax build [<dir>|semaprax.toml|--manifest-path path] [--target native|web|wasm|npm|oci|rust] [-o|--output path] [--json]"] },
-    CommandSpec { id: CommandId::Run, canonical: "run", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax run <file> [--json] [--max-steps N] [--max-bytes N] [--native] [-- <arg>...]", "semaprax run [<dir>|semaprax.toml|--manifest-path path] [--json] [--max-steps N] [--max-bytes N]"] },
+    CommandSpec { id: CommandId::New, canonical: "new", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax new <destination> [--name project-name] [--template calculator|library|service|stdin-stream-text|stdin-stream-data|stdin-stream-collection-record|source-command-file-text]"] },
+    CommandSpec { id: CommandId::ProjectScaffold, canonical: "project-scaffold", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax project-scaffold --name project-name [--template calculator|library|service|stdin-stream-text|stdin-stream-data|stdin-stream-collection-record|source-command-file-text] [--layout frozen|tables|current]"] },
+    CommandSpec { id: CommandId::Build, canonical: "build", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax build <file> --profile fused-construction-v1 --managed-bytes N --target native|wasm [-o|--output fresh-path] [--json]", "semaprax build <file> [--target native] [-o|--output path] [--json]", "semaprax build <file> --target native-callable --function stable-id [-o|--output path] [--json]", "semaprax build <file> --target web|wasm [--profile internal-strings-v1|text-toolkit-v1] [--export stable-id ...] [-o|--output path] [--json]", "semaprax build [<dir>|semaprax.toml|--manifest-path path] [--target native|web|wasm|npm|oci|rust] [-o|--output path] [--json]"] },
+    CommandSpec { id: CommandId::Run, canonical: "run", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax run <file> --profile fused-construction-v1 --managed-bytes N [--json] [--max-steps N|--native]", "semaprax run <file> [--json] [--max-steps N] [--max-bytes N] [--native] [-- <arg>...]", "semaprax run [<dir>|semaprax.toml|--manifest-path path] [--json] [--max-steps N] [--max-bytes N]"] },
     CommandSpec { id: CommandId::NetworkRun, canonical: "network-run", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax network-run [<dir>|semaprax.toml|--manifest-path path] --fixture fixture.json [--arg UTF8]... [--stdin path] [--max-steps N]"] },
-    CommandSpec { id: CommandId::Test, canonical: "test", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax test [<dir>|semaprax.toml|--manifest-path path] [--json] [--max-steps N] [--max-bytes N] [--target interpreter]", "semaprax test [<dir>|semaprax.toml|--manifest-path path] [--json] --target native [--native-timeout-ms N] [--native-max-output-bytes N]"] },
+    CommandSpec { id: CommandId::Test, canonical: "test", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax test [<dir>|semaprax.toml|--manifest-path path] [--json] [--max-steps N] [--max-bytes N] [--target interpreter]", "semaprax test [<dir>|semaprax.toml|--manifest-path path] [--json] --target native [--native-timeout-ms N] [--native-max-output-bytes N] [--native-timing]"] },
     CommandSpec { id: CommandId::Fmt, canonical: "fmt", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax fmt <file>|<dir>|semaprax.toml [--check]", "semaprax fmt --manifest <semaprax.toml> [--check]"] },
     CommandSpec { id: CommandId::Patch, canonical: "patch", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax patch <file> <patch.spatch>"] },
     CommandSpec { id: CommandId::PatchReceipt, canonical: "patch-receipt", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax patch-receipt <project> render <transaction-json> <candidate-digest>", "semaprax patch-receipt <project> verify <transaction-json> <candidate-digest> <receipt-json>", "semaprax patch-receipt <project> refusal <transaction-json> <requested-candidate-digest>", "semaprax patch-receipt <project> verify-refusal <transaction-json> <requested-candidate-digest> <receipt-json>", "semaprax patch-receipt <project> compare <left-transaction-json> <left-candidate-digest> <left-receipt-json> <right-transaction-json> <right-candidate-digest> <right-receipt-json>", "semaprax patch-receipt <project> evidence-summary <transaction-json> <candidate-digest>", "semaprax patch-receipt <project> evidence-page <transaction-json> <candidate-digest> <evidence-id> <handle> <cursor|->"] },
@@ -302,7 +305,7 @@ static COMMANDS: &[CommandSpec] = &[
     CommandSpec { id: CommandId::Version, canonical: "version", aliases: &[], availability: Availability::Public, global: true, usages: &["semaprax version [--json]"] },
     CommandSpec { id: CommandId::VersionFlag, canonical: "--version", aliases: &["-V"], availability: Availability::Public, global: true, usages: &["semaprax --version"] },
     CommandSpec { id: CommandId::Harness, canonical: "harness", aliases: &[], availability: Availability::Private, global: true, usages: &["semaprax-full harness <verb> [args]  (status explain resolve adopt trust revoke inspect run context exec recover decide endpoints skills bridge report conformance bench)"] },
-    CommandSpec { id: CommandId::Help, canonical: "help", aliases: &["--help", "-h"], availability: Availability::Public, global: false, usages: &["semaprax help <command>", "semaprax help all", "semaprax help diagnostic <SPX-code|codes>", "semaprax help language", "semaprax help language <topic|topics>", "semaprax help library", "semaprax help library all", "semaprax help library <module|name|stable-id>", "semaprax help shapes", "semaprax help shapes kinds", "semaprax help shapes <kind|stable-id|path#stable-id>"] },
+    CommandSpec { id: CommandId::Help, canonical: "help", aliases: &["--help", "-h"], availability: Availability::Public, global: false, usages: &["semaprax help <command>", "semaprax help all", "semaprax help diagnostic <SPX-code|codes>", "semaprax help language", "semaprax help language all", "semaprax help language <topic|topics>", "semaprax help language author:<route>", "semaprax help language find:<word>:<offset>", "semaprax help library", "semaprax help library all", "semaprax help library <module|name|stable-id>", "semaprax help shapes", "semaprax help shapes kinds", "semaprax help shapes <kind|stable-id|path#stable-id>"] },
 ];
 fn available(spec: &CommandSpec, private: bool) -> bool {
     spec.availability == Availability::Public || private
@@ -367,12 +370,12 @@ fn edit_distance(left: &[u8], right: &[u8]) -> usize {
 }
 const BANNER: &str = "SEMAPRAX — Meaning in. Verified machine code out.\n";
 
-/// The compiler-checked language card, printed by `semaprax help language` so
-/// an agent or developer with only the installed binary can read the admitted
-/// shapes, the diagnostics foreign habits trigger, and their fixes offline.
-/// The bytes are the repository document; `tests/documentation.rs` checks its
-/// code blocks against this compiler.
+/// The full compiler-checked language reference, available through
+/// `semaprax help language all`. The bytes are the repository document;
+/// `tests/documentation.rs` checks its code blocks against this compiler.
 pub(crate) const LANGUAGE_REFERENCE: &str = include_str!("../../docs/AGENT-QUICK-REFERENCE.md");
+/// A bounded starting point for authoring with the installed compiler.
+const AUTHORING_GUIDE: &str = include_str!("../../docs/AGENT-AUTHORING-GUIDE.md");
 /// The deterministic diagnostic index generated and pinned by the quick
 /// reference documentation gate.
 const DIAGNOSTIC_INDEX: &str = include_str!("../../docs/AGENT-DIAGNOSTIC-HELP.json");
@@ -418,6 +421,18 @@ fn language_topics() -> String {
 }
 
 pub(crate) fn language_topic(query: &str) -> Result<String, String> {
+    if query.starts_with("detail:") {
+        return language_details::lookup(query, LANGUAGE_REFERENCE);
+    }
+    if query.starts_with("author:") || query.starts_with("find:") {
+        return authoring::lookup(query);
+    }
+    if query == "all" {
+        return Ok(LANGUAGE_REFERENCE.to_owned());
+    }
+    if query == "mistakes-index" {
+        return Ok(diagnostic_index::language_summary(DIAGNOSTIC_INDEX));
+    }
     if query == "topics" {
         return Ok(language_topics());
     }
@@ -437,7 +452,7 @@ pub(crate) fn language_topic(query: &str) -> Result<String, String> {
     );
     let section = &LANGUAGE_REFERENCE[start..];
     let end = section.find("\n## ").unwrap_or(section.len());
-    Ok(section[..end].to_owned())
+    reference_links::inline_section(&section[..end], LANGUAGE_REFERENCE)
 }
 
 pub(crate) fn diagnostic_entry(query: &str) -> Result<String, String> {
@@ -553,7 +568,7 @@ pub(crate) fn dispatch(args: &[String], private: bool) -> Option<Result<(), u8>>
     if args.len() == 2 {
         let output = match args[1].as_str() {
             "all" => catalog(private),
-            "language" => LANGUAGE_REFERENCE.to_owned(),
+            "language" => AUTHORING_GUIDE.to_owned(),
             // The code list, not a usage error followed by the whole guide.
             "diagnostic" => {
                 diagnostic_entry("codes").expect("the indexed diagnostic help lists its codes")
@@ -763,13 +778,13 @@ static GUIDE: &[GuideGroup] = &[
             },
             GuideEntry {
                 id: CommandId::Help,
-                shape: "help language [topic]",
-                summary: "One topic (`topics` lists them)",
+                shape: "help language [topic|all]",
+                summary: "Guide, topic, or full card",
             },
             GuideEntry {
                 id: CommandId::Help,
-                shape: "help library [all|selector]",
-                summary: "Module index, one API, or full catalog",
+                shape: "help library [selector]",
+                summary: "Module index; exact API; all exports catalog",
             },
             GuideEntry {
                 id: CommandId::Help,
@@ -872,6 +887,9 @@ pub(crate) fn scoped(name: &str, private: bool) -> Option<String> {
         }
         out.push('\n');
     }
+    if spec.id == CommandId::JsonCodec {
+        out.push_str(super::json_codec::HELP);
+    }
     Some(out)
 }
 /// Every canonical top-level command name this compiler admits, public or
@@ -934,6 +952,7 @@ mod tests {
         "check",
         "graph",
         "doc",
+        "json-codec",
         "verify",
         "agent",
         "source-live",
@@ -1150,6 +1169,7 @@ mod tests {
             assert!(help.contains("\n  help all "));
             assert!(help.contains("\n  help language "));
             assert!(help.contains("help shapes [selector]"));
+            assert!(help.contains("help library [selector]"));
             assert!(help.contains("Catalog; `kinds` lists exact selectors"));
             assert!(help.contains("semaprax help diagnostic <code>`\n"));
             assert!(help.contains("\n  new "));
@@ -1287,6 +1307,8 @@ mod tests {
         assert!(LANGUAGE_REFERENCE.starts_with("# Agent quick reference\n"));
         assert!(LANGUAGE_REFERENCE.contains("```semaprax\n"));
         assert!(LANGUAGE_REFERENCE.ends_with('\n'));
+        authoring::assert_guide_contract();
+        assert_eq!(language_topic("all").unwrap(), LANGUAGE_REFERENCE);
         let reference_units = semaprax::agent_economics::lexical_tokens(LANGUAGE_REFERENCE);
         assert_eq!(LANGUAGE_TOPICS.len(), 17);
         for (selector, heading) in LANGUAGE_TOPICS {
@@ -1364,14 +1386,14 @@ mod tests {
         let g170 = diagnostic_entry("SPX-G170").unwrap();
         assert!(g170.contains("noncanonical Project source"));
         assert!(g170.contains("semaprax fmt --manifest <manifest>"));
-        assert!(g170.contains("Project dependency + stable-ID import"));
+        assert!(g170.contains("std.*: Project dependency + stable-ID import"));
         let t269 = diagnostic_entry("SPX-T269").unwrap();
         assert_eq!(
             t269,
             concat!(
                 "SPX-T269\n",
                 "wrote: direct output repeats per path / is loop-reachable\n",
-                "fix: Writes outside loops; profile caps: stdout+stderr ≤65536 bytes default; v28 appends ≤1 MiB\n",
+                "fix: Build bounded output; publish once outside loops/cycles; default stdout+stderr ≤65536 bytes; v28 direct appends ≤1 MiB\n",
             )
         );
         for (code, expected) in [
@@ -1380,7 +1402,7 @@ mod tests {
                 concat!(
                 "SPX-J100\n",
                 "wrote: bad [modules]\n",
-                "fix: 2–16 sorted sources; one bounded nonentry test module: entry=\"app\", sources=[\"a.spx\",\"b.spx\"], tests=[\"app.tests\"] [Manifest][manifest]\n",
+                "fix: 2–16 sorted sources; one bounded nonentry test module: entry=\"app\", sources=[\"a.spx\",\"b.spx\"], tests=[\"app.tests\"] [Manifest](PACKAGE-MANIFEST-V1.md)\n",
             ),
             ),
             (
@@ -1388,7 +1410,7 @@ mod tests {
                 concat!(
                 "SPX-T252\n",
                 "wrote: generic while call\n",
-                "fix: vec_len<T>; imported generic aliases closed [While][while]\n",
+                "fix: vec_len<T>; imported generic aliases closed [While](WHILE-LOOPS-V1.md)\n",
                 "\n",
                 "wrote: rejected while helper\n",
                 "fix: Borrow compiler Copy-scalar Vec<T>; return scalar/flat Copy variant/string\n",
@@ -1397,7 +1419,7 @@ mod tests {
                 "fix: Keep outer ownership\n",
                 "\n",
                 "wrote: Bytes+usize renewal/input views\n",
-                "fix: Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook][renewal], executable gate pending\n",
+                "fix: Pure nongeneric call; whole same-type owner return; whole named independent Slice/str borrows [renewal hook](IO-LINES-V1.md#cursor-transitions), executable gate pending\n",
             ),
             ),
             (
@@ -1405,7 +1427,7 @@ mod tests {
                 concat!(
                 "SPX-T282\n",
                 "wrote: Vec capacity >8192\n",
-                "fix: Reduce vec_with_capacity<T>; Vec cap [Vec][vec]\n",
+                "fix: Reduce vec_with_capacity<T>; Vec cap [Vec](OWNED-BOUNDED-VEC-V1.md)\n",
             ),
             ),
             (
@@ -1413,7 +1435,7 @@ mod tests {
                 concat!(
                 "SPX-T283\n",
                 "wrote: lookalike Vec wrapper\n",
-                "fix: Exact std.collections.vec.* ID only [Vec][vec]\n",
+                "fix: Exact std.collections.vec.* ID only [Vec](OWNED-BOUNDED-VEC-V1.md)\n",
             ),
             ),
             (
@@ -1421,7 +1443,7 @@ mod tests {
                 concat!(
                 "SPX-H006\n",
                 "wrote: function: >256 shared loans\n",
-                "fix: Fewer loans; fixed cap [Loans][loans]\n",
+                "fix: Fewer loans; fixed cap [Loans](SHARED-LOAN-PLAN-V1.md)\n",
                 "\n",
                 "wrote: function: >4096 loan points\n",
                 "fix: Simplify; admitted helpers\n",
@@ -1436,7 +1458,9 @@ mod tests {
         ] {
             assert_eq!(diagnostic_entry(code).unwrap(), expected);
         }
-        let full_index = language_topic("mistakes-index").unwrap();
+        let marker = "## Habits from other languages: diagnostic index\n";
+        let full_index = LANGUAGE_REFERENCE.split_once(marker).unwrap().1;
+        let full_index = full_index.split("\n## ").next().unwrap();
         assert!(t208.len() * 20 < full_index.len());
         assert!(
             semaprax::agent_economics::lexical_tokens(&t208) * 20

@@ -2,30 +2,51 @@
 //! Attached inventories and plans carry no authority for this selection.
 
 use super::*;
-use crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17;
+#[cfg(test)]
+pub(super) mod borrowed;
+use crate::cleanup_plan::{CLEANUP_PLAN_SCHEMA_V17, CLEANUP_PLAN_SCHEMA_V18};
 
 pub(crate) fn selected_schema(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<&'static str, Diagnostic> {
+    selected_schema_with_index(program, function, None)
+}
+pub(super) fn selected_schema_with_index(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+) -> Result<&'static str, Diagnostic> {
+    // Independently replayed lexical exits select the lexical certificate
+    // profile regardless of any attached inventory or plan.
+    let helper_sites = match helpers {
+        Some(index) => index.has_sites(function),
+        None => !crate::loop_calls::byte_writer::checked_bindings(program, function)?.is_empty(),
+    };
+    if helper_sites {
+        return Ok(crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19);
+    }
+    if lexical_cert::requires_lexical(function) {
+        return Ok(CLEANUP_PLAN_SCHEMA_V18);
+    }
     let inventory = crate::cleanup::build_inventory(program, function)?;
     let has_nested_owned_bytes = inventory.slots.iter().try_fold(false, |nested, slot| {
         crate::cleanup::cleanup_shape_profile(&slot.shape)
             .map(|profile| nested || profile.has_nested_owned_bytes)
     })?;
-    let has_nested_record_destructure = record_destructure::function_contains(function);
+    let has_nested_record_destructure = record_destructure::function_contains(program, function);
     let has_nested_record_update =
         record_destructure::update::function_contains(program, function)?;
     Ok(if crate::byte_ops::requires_same_owner_set(function) {
         CLEANUP_PLAN_SCHEMA_V17
     } else if crate::string_ops::replacement::requires(function) {
         CLEANUP_PLAN_SCHEMA_V16
-    } else if crate::hir::vec_loop_renewal::requires(function) {
+    } else if crate::hir::vec_loop_renewal::requires_in(program, function) {
         CLEANUP_PLAN_SCHEMA_V15
     } else if function_has_owner_admission(program, function)? {
         CLEANUP_PLAN_SCHEMA_V14
     } else if crate::iterator_ops::function_uses_owned_iterator(function)
-        || crate::iterator_ops::function_uses_record_iterator_in(&program.declarations, function)
+        || crate::iterator_ops::function_uses_record_iterator_in(program.declarations(), function)
     {
         CLEANUP_PLAN_SCHEMA_V13
     } else if crate::hir::iterator_loop::function_requires_renewal(function)
@@ -85,7 +106,7 @@ pub(crate) fn selected_schema(
 }
 
 fn function_has_owner_admission(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<bool, Diagnostic> {
     for root in function
@@ -129,3 +150,5 @@ fn expression_has_explicit_variant_match(expression: &ResolvedExpr) -> bool {
         )
     })
 }
+
+pub(super) mod paid_summary;

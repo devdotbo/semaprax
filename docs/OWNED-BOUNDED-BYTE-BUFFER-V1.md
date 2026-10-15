@@ -227,3 +227,51 @@ does not establish a broader browser, physical-host or production support claim.
 - A public FFI or project-boundary buffer layout. Existing owned-data Project
   boundaries are unchanged by this document.
 - A `std.*` interface for these buffer operations.
+
+
+## Additive exact dynamic allocation
+
+`bytes_zeroed_bounded(requested: usize, bound: usize) -> Bytes`
+(`core.bytes.zeroed-bounded`) is an ordinary checked allocation operation. The
+second operand must be a `usize` literal no greater than 131072; source refusal
+is `SPX-T271`, and independent HIR validation rejects a forged nonliteral or
+oversized bound with `SPX-H006`. Its exact persistent call/parameter identities,
+arity, ownership and operand types are replayed through the ordinary intrinsic
+catalog. `bytes_zeroed` retains its existing literal-only admission and bytes.
+
+The runtime compares unsigned `requested <= bound` before invoking an allocator
+or publishing a result. Success allocates exactly `requested` bytes, including
+an empty owner for zero. An excessive request selects normalized adapter status
+`semaprax.byte-buffer.v1` code **2**, `capacity_exceeded`, nonretryable. Existing
+code 1 remains the checked write/index failure. Canonical operation-failure
+cleanup settles earlier live owners without overwriting the chosen failure or
+publishing a partial result. Native reserved-output allocation policy is applied
+only after this capacity check. Core-Wasm uses selector 35 for code 2 and reuses
+the sealed zeroed-buffer import after the check; no host ABI or provider authority
+is added.
+
+Static source and HIR capacity analyses conservatively charge the complete
+literal bound, not the runtime request. Allocation is still refused inside
+bounded loops. Bind a dynamic allocation before same-owner filling; a direct
+construction chain has a statically known exact extent only when both operands
+are literals and the request does not exceed the bound. Read-only
+`array_as_slice` views of admitted fixed Copy byte arrays may occur inside loops
+under the existing loan/type rules; they allocate no owner or payload.
+
+This addition does not change physical allocation exhaustion: native allocator
+failure retains the existing fail-stop invariant. It does not provide the
+recoverable String-OOM or complete allocation-fault obligations of OPT #724.
+Frozen public generic bridge profiles refuse this new operation. Existing
+operation graph encodings remain unchanged; the new operation has its own
+persistent identity. The newly authored source/HIR hostile, interpreter,
+native O0/O2 and Core-Wasm regressions require execution before qualification;
+prior evidence above does not qualify this additive operation.
+
+The selective [Finite Owned Iterator Byte Scratch v1](FINITE-OWNED-ITERATOR-BYTE-SCRATCH-V1.md) separately authenticates a bounded consuming iterator and iteration-local literal scratch. It does not change this arbitrary-while refusal or the cumulative allocation limits; its owning gates remain pending.
+
+The existing inline indexed-read exception for `array_as_slice(named_array)`
+authenticates both the old Call form and the resolver's BorrowPlace form. The
+latter rederives the whole named Copy-array type and 65,536-byte bound from the
+current typed program; ordinary HIR scope/availability replay remains required.
+Computed arrays, projections, owned roots and borrowed Bytes/String conversions
+gain no inline-loop admission from this exception.

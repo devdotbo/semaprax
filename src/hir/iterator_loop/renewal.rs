@@ -1,18 +1,21 @@
 //! Exact same-owner renewal inside authenticated bounded loops.
 use super::*;
 use std::collections::BTreeMap;
+mod paid_scan;
+pub(crate) use paid_scan::function_has_record_renewal_outside_loop_paid;
 
 pub(crate) fn function_requires_renewal(function: &ResolvedFunction) -> bool {
     !bindings(&function.body, None).is_empty()
 }
 pub(crate) fn function_requires_record_renewal(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> bool {
     !record_bindings(program, &function.body).is_empty()
 }
+#[cfg(test)]
 pub(crate) fn function_has_record_renewal_outside_loop(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> bool {
     let mut pending = vec![(&function.body, false)];
@@ -33,9 +36,15 @@ pub(crate) fn function_has_record_renewal_outside_loop(
                         }
                         pending.push((value, in_loop));
                     }
-                    ResolvedStatement::Assign { value, .. } => pending.push((value, in_loop)),
+                    ResolvedStatement::Assign { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. } => {
+                        pending.push((value, in_loop))
+                    }
                     ResolvedStatement::Unsafe { body, .. } => pending.push((body, in_loop)),
                     ResolvedStatement::While {
+                        condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
                         condition, body, ..
                     } => {
                         pending.push((condition, in_loop));
@@ -63,7 +72,7 @@ pub(crate) fn template_requires_renewal(template: &ResolvedFunctionTemplate) -> 
         .is_empty()
 }
 pub(crate) fn renewal_binding<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
     at: &ExpressionId,
 ) -> Option<&'a ResolvedBinding> {
@@ -73,7 +82,7 @@ pub(crate) fn renewal_binding<'a>(
 }
 
 pub(crate) fn renewal_bindings<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
 ) -> BTreeMap<ExpressionId, &'a ResolvedBinding> {
     let mut found = record_bindings(program, &function.body);
@@ -83,15 +92,26 @@ pub(crate) fn renewal_bindings<'a>(
     found
 }
 
+#[cfg(test)]
+mod funded;
+#[cfg(test)]
+pub(crate) use funded::{renewal_binding_funded, renewal_bindings_funded};
+
 fn has_record_renewal_candidate(body: &ResolvedExpr) -> bool {
     let mut pending = vec![body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
-                if let ResolvedStatement::While { body, .. } = statement {
+                if let ResolvedStatement::While { body, .. }
+                | ResolvedStatement::LexicalWhile { body, .. } = statement
+                {
                     let mut loop_nodes = vec![body.as_ref()];
                     while let Some(node) = loop_nodes.pop() {
-                        if let ResolvedExprKind::Block { statements, .. } = &node.kind {
+                        if let ResolvedExprKind::Block { statements, .. }
+                        | ResolvedExprKind::VecConstructor { statements, .. } = &node.kind
+                        {
                             if statements.iter().any(|statement| matches!(statement,
                                 ResolvedStatement::Assign { binding, field: None, value, .. }
                                     if binding.ownership == OwnershipMode::Own
@@ -117,15 +137,19 @@ fn has_record_renewal_candidate(body: &ResolvedExpr) -> bool {
 }
 
 fn record_bindings<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     body: &'a ResolvedExpr,
 ) -> BTreeMap<ExpressionId, &'a ResolvedBinding> {
     let mut found = BTreeMap::new();
     let mut pending = vec![body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
-                if let ResolvedStatement::While { body, .. } = statement {
+                if let ResolvedStatement::While { body, .. }
+                | ResolvedStatement::LexicalWhile { body, .. } = statement
+                {
                     collect_record_bindings(program, body, &mut found);
                 }
             }
@@ -136,13 +160,15 @@ fn record_bindings<'a>(
 }
 
 fn collect_record_bindings<'a>(
-    program: &'a ResolvedProgram,
+    program: &'a dyn crate::cleanup::ReplayContext,
     body: &'a ResolvedExpr,
     found: &mut BTreeMap<ExpressionId, &'a ResolvedBinding>,
 ) {
     let mut pending = vec![body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Assign {
                     binding,
@@ -188,14 +214,14 @@ pub(crate) fn is_owner_renewal_record(declarations: &DeclarationIndex, ty: &Reso
 }
 
 pub(crate) fn is_record_owner_renewal(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     binding: &ResolvedBinding,
     value: &ResolvedExpr,
 ) -> bool {
     if binding.ownership != OwnershipMode::Own
         || value.ownership != OwnershipMode::Own
         || binding.ty != value.ty
-        || !is_owner_renewal_record(&program.declarations, &binding.ty)
+        || !is_owner_renewal_record(program.declarations(), &binding.ty)
     {
         return false;
     }
@@ -240,7 +266,7 @@ pub(crate) fn is_record_owner_renewal(
                             OwnershipMode::Own | OwnershipMode::Borrow
                         ) && matches!(&argument.kind, ResolvedExprKind::Place(place)
                                 if place.projections.is_empty())
-                            && (is_owner_renewal_record(&program.declarations, &parameter.ty)
+                            && (is_owner_renewal_record(program.declarations(), &parameter.ty)
                                 || (argument.ownership == OwnershipMode::Borrow
                                     && crate::loop_calls::resolved_renewal_view(&parameter.ty)))
                     }
@@ -256,9 +282,14 @@ fn bindings<'a>(
     let mut found = BTreeMap::new();
     let mut pending = vec![body];
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::While {
+                    condition, body, ..
+                }
+                | ResolvedStatement::LexicalWhile {
                     condition, body, ..
                 } = statement
                 {
@@ -291,7 +322,9 @@ fn conditional_bindings<'a>(
             continue;
         }
         if conditional {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let ResolvedStatement::Assign {
                         binding,
@@ -342,3 +375,6 @@ fn same_owner(
         && type_arguments.as_slice() == [element.clone()]
         && args.first().is_some_and(|argument| place(argument, &binding.id) && argument.ty == binding.ty && argument.ownership == OwnershipMode::Own))
 }
+
+#[cfg(test)]
+mod tests;

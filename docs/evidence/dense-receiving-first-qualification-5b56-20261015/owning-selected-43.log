@@ -1,0 +1,10 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::tests::complete_current_and_archived_receiving_boundaries_retain_all_raw_costs_through_drop ... whole receiving fact.read old=true physical=Metrics { allocations: 17, reallocations: 2, allocated: 3153, freed: 3153, live: 0, highwater: 2025, invalid: false } paid=38367
+whole receiving fact.read old=false physical=Metrics { allocations: 19, reallocations: 6, allocated: 3025, freed: 3025, live: 0, highwater: 1961, invalid: false } paid=38991
+whole receiving fact.main old=true physical=Metrics { allocations: 121, reallocations: 32, allocated: 24546, freed: 24546, live: 0, highwater: 12041, invalid: false } paid=81889
+whole receiving fact.main old=false physical=Metrics { allocations: 132, reallocations: 49, allocated: 28417, freed: 28417, live: 0, highwater: 12041, invalid: false } paid=93643
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 0.01s
+

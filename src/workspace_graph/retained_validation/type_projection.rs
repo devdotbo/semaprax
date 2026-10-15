@@ -9,7 +9,7 @@ use crate::workspace_graph::{expected_projection::checked_builder_sum, reserve_b
 #[derive(Debug)]
 pub(super) struct TypeSite<'a> {
     owner: Cow<'a, str>,
-    expression: Option<&'a str>,
+    expression: Option<Cow<'a, str>>,
     path: String,
     target: &'a str,
 }
@@ -26,7 +26,7 @@ impl<'a> TypeSite<'a> {
         reserve_builder_structure(bytes)?;
         out.push(Self {
             owner: Cow::Borrowed(owner),
-            expression,
+            expression: expression.map(Cow::Borrowed),
             path: path.to_owned(),
             target,
         });
@@ -47,7 +47,26 @@ impl<'a> TypeSite<'a> {
         reserve_builder_structure(bytes)?;
         out.push(Self {
             owner: Cow::Owned(owner.to_owned()),
-            expression,
+            expression: expression.map(Cow::Borrowed),
+            path: path.to_owned(),
+            target,
+        });
+        Ok(())
+    }
+
+    fn push_owned_expression(
+        out: &mut Vec<Self>,
+        owner: &'a str,
+        expression: &str,
+        path: &str,
+        target: &'a str,
+    ) -> Result<(), Vec<Diagnostic>> {
+        let bytes = checked_builder_sum(std::mem::size_of::<Self>(), path.len())?;
+        let bytes = checked_builder_sum(bytes, expression.len())?;
+        reserve_builder_structure(bytes)?;
+        out.push(Self {
+            owner: Cow::Borrowed(owner),
+            expression: Some(Cow::Owned(expression.to_owned())),
             path: path.to_owned(),
             target,
         });
@@ -57,11 +76,50 @@ impl<'a> TypeSite<'a> {
     pub(super) fn projection(&self) -> (&str, &str, &str, &str) {
         (
             self.owner.as_ref(),
-            self.expression.unwrap_or(&self.path),
+            self.expression.as_deref().unwrap_or(&self.path),
             &self.path,
             self.target,
         )
     }
+}
+
+/// A fused view's authored type argument belongs to its inner call, not the
+/// retained outer HIR node. Copy that temporary identity only into actual sites.
+pub(super) fn collect_reconstructed_sites<'a>(
+    owner: &'a crate::hir::DeclarationId,
+    ty: &'a crate::hir::ResolvedType,
+    path: &str,
+    expression: &str,
+    imported: &std::collections::BTreeSet<&str>,
+    out: &mut Vec<TypeSite<'a>>,
+) -> Result<(), Vec<Diagnostic>> {
+    let crate::hir::ResolvedType::Nominal {
+        declaration,
+        arguments,
+    } = ty
+    else {
+        return Ok(());
+    };
+    if imported.contains(declaration.as_str()) {
+        TypeSite::push_owned_expression(
+            out,
+            owner.as_str(),
+            expression,
+            path,
+            declaration.as_str(),
+        )?;
+    }
+    for (index, argument) in arguments.iter().enumerate() {
+        collect_reconstructed_sites(
+            owner,
+            argument,
+            &crate::bounded_output::budgeted_format(format_args!("{path}.argument.{index}")),
+            expression,
+            imported,
+            out,
+        )?;
+    }
+    Ok(())
 }
 
 impl PartialEq for TypeSite<'_> {
@@ -282,5 +340,143 @@ mod tests {
             )
         });
         bytes
+    }
+    #[test]
+    fn fused_vec_field_sites_use_inner_call_identity_and_nested_type_paths() {
+        let parsed = crate::parse(
+            "module app; @id(\"app.main\") fn main()->i64 {0}",
+            Path::new("fused-type-site.spx"),
+        )
+        .unwrap();
+        let program = hir::resolve(&parsed).unwrap();
+        let main = program
+            .functions
+            .iter()
+            .find(|function| function.id.as_str() == "app.main")
+            .unwrap();
+        let mut expression = main.body.clone();
+        let outer_identity = expression.id.clone();
+        expression.kind = hir::ResolvedExprKind::VecFieldRead {
+            origin: crate::hir::VecFieldReadOrigin::Explicit,
+            element: hir::ResolvedType::Nominal {
+                declaration: hir::DeclarationId::new("lib.row"),
+                arguments: vec![hir::ResolvedType::Nominal {
+                    declaration: hir::DeclarationId::new("lib.leaf"),
+                    arguments: vec![],
+                }],
+            },
+            field: hir::DeclarationId::new("lib.row.text"),
+            bytes: true,
+            args: vec![],
+        };
+        let imported = BTreeSet::from(["lib.row", "lib.leaf"]);
+        let inner = hir::workspace_expression_identity(&main.id, "body.tail.arg.0");
+        let mut sites = Vec::new();
+        super::super::collect_resolved_expression_type_sites(
+            &main.id,
+            &expression,
+            "body.tail",
+            &imported,
+            &mut sites,
+        )
+        .unwrap();
+        assert_eq!(
+            expression.id, outer_identity,
+            "replay never rekeys the retained outer HIR"
+        );
+        assert_eq!(
+            sites.iter().map(TypeSite::projection).collect::<Vec<_>>(),
+            vec![
+                (
+                    "app.main",
+                    inner.as_str(),
+                    "body.tail.arg.0.type_argument.0",
+                    "lib.row"
+                ),
+                (
+                    "app.main",
+                    inner.as_str(),
+                    "body.tail.arg.0.type_argument.0.argument.0",
+                    "lib.leaf"
+                ),
+            ]
+        );
+        assert!(
+            sites
+                .iter()
+                .all(|site| site.projection().1 != outer_identity.as_str()),
+            "outer-identity edge substitution cannot match the independent inner sites"
+        );
+        let hir::ResolvedExprKind::VecFieldRead { bytes, .. } = &mut expression.kind else {
+            unreachable!()
+        };
+        *bytes = false;
+        let mut ordinary = Vec::new();
+        super::super::collect_resolved_expression_type_sites(
+            &main.id,
+            &expression,
+            "body.tail",
+            &imported,
+            &mut ordinary,
+        )
+        .unwrap();
+        assert_eq!(
+            ordinary[0].projection(),
+            (
+                "app.main",
+                outer_identity.as_str(),
+                "body.tail.type_argument.0",
+                "lib.row"
+            )
+        );
+        assert!(std::ptr::eq(
+            ordinary[0].projection().1.as_ptr(),
+            expression.id.as_str().as_ptr()
+        ));
+    }
+
+    #[test]
+    fn owned_type_site_identity_is_charged_before_exact_and_one_short_copy() {
+        let identity = "declaration:8:app.main:expression:15:body.tail.arg.0";
+        let path = "body.tail.arg.0.type_argument.0";
+        let bytes = std::mem::size_of::<TypeSite<'_>>() + path.len() + identity.len();
+        let mut sites = Vec::new();
+        let (result, overflow, consumed) = bounded_output::with_limit_usage(bytes, || {
+            TypeSite::push_owned_expression(&mut sites, "app.main", identity, path, "lib.row")
+        });
+        result.unwrap();
+        assert!(!overflow);
+        assert_eq!(consumed, bytes);
+        assert_eq!(
+            sites[0].projection(),
+            ("app.main", identity, path, "lib.row")
+        );
+        assert!(!std::ptr::eq(
+            sites[0].projection().1.as_ptr(),
+            identity.as_ptr()
+        ));
+        let mut refused = Vec::new();
+        let (result, overflow, _) = bounded_output::with_limit_usage(bytes - 1, || {
+            TypeSite::push_owned_expression(&mut refused, "app.main", identity, path, "lib.row")
+        });
+        assert!(result.is_err());
+        assert!(overflow);
+        assert!(refused.is_empty());
+    }
+
+    #[test]
+    fn budgeted_reconstruction_matches_canonical_identity_on_delimiter_and_unicode_inputs() {
+        for (owner, path) in [
+            ("", ""),
+            ("a:b", "tail:arg.0"),
+            ("é命", "body.é:0"),
+            ("0123456789", "01234567890123456789"),
+        ] {
+            let owner = hir::DeclarationId::new(owner);
+            assert_eq!(
+                hir::budgeted_workspace_expression_identity(&owner, path),
+                hir::workspace_expression_identity(&owner, path)
+            );
+        }
     }
 }

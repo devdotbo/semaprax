@@ -146,7 +146,8 @@ def tokenize_texts(texts: list[dict[str, str]], metadata: dict[str, Any]) -> lis
 
 
 def authored_source_metrics(candidate: Path, metadata: dict[str, Any] | None, *,
-                            exclude_verified_node_modules: bool = False) -> dict[str, Any]:
+                            exclude_verified_node_modules: bool = False,
+                            additional_suffixes: frozenset[str] = frozenset()) -> dict[str, Any]:
     if metadata is None:
         return {"status": "unmeasured", "total_tokens": None, "files": [], "tokenizer": None}
     files = []
@@ -157,12 +158,12 @@ def authored_source_metrics(candidate: Path, metadata: dict[str, Any] | None, *,
                 or any(part in excluded for part in relative.parts[:-1])
                 or (exclude_verified_node_modules and relative.parts[0] == "node_modules")):
             continue
-        if path.suffix.lower() not in AUTHORED_SUFFIXES and path.name not in AUTHORED_SPECIAL_NAMES:
+        if path.suffix.lower() not in AUTHORED_SUFFIXES | additional_suffixes and path.name not in AUTHORED_SPECIAL_NAMES:
             continue
         if path.suffix.lower() in {".c", ".h"}:
             continue
         if path.suffix.lower() in {".js", ".mjs", ".cjs"} and any(
-            path.with_suffix(suffix).is_file() for suffix in (".ts", ".tsx")
+            path.with_suffix(suffix).is_file() for suffix in (".ts", ".tsx", *sorted(additional_suffixes))
         ):
             continue
         content = path.read_text(encoding="utf-8")
@@ -295,9 +296,11 @@ def _usage_values(usage: Any) -> dict[str, int | None]:
 
 
 def _sum_usage(rows: list[dict[str, int | None]]) -> dict[str, int | None]:
+    # A known subtotal is not a complete receipt. Missing one message bucket
+    # keeps that bucket unavailable until an independent final total supplies it.
     return {
-        name: sum(value for row in rows if (value := row.get(name)) is not None) or 0
-        if any(row.get(name) is not None for row in rows) else None
+        name: sum(row[name] for row in rows)
+        if rows and all(row.get(name) is not None for row in rows) else None
         for name in ALL_USAGE_FIELDS
     }
 
@@ -349,6 +352,9 @@ def stream_usage(path: Path, model_preference: str) -> dict[str, Any]:
                 if isinstance(model, str):
                     message_models.add(model)
                 identity = message.get("id")
+                if isinstance(identity, str):
+                    usage_by_id.setdefault(identity, {name: None for name in USAGE_FIELDS})
+                    raw_usage_by_id.setdefault(identity, {name: None for name in (*ALL_USAGE_FIELDS, "thinking_tokens")})
                 usage = message.get("usage")
                 if isinstance(identity, str) and isinstance(usage, dict):
                     parsed = _usage_values(usage)
@@ -374,9 +380,9 @@ def stream_usage(path: Path, model_preference: str) -> dict[str, Any]:
                         if block.get("type") == "text":
                             message_text += str(block.get("text", "")) + "\n"
                         elif block.get("type") == "tool_use":
-                            identity = block.get("id")
-                            if isinstance(identity, str):
-                                tool_use_ids.add(identity)
+                            tool_identity = block.get("id")
+                            if isinstance(tool_identity, str):
+                                tool_use_ids.add(tool_identity)
                             else:
                                 tool_use_without_id += 1
                 if isinstance(identity, str):
@@ -394,24 +400,32 @@ def stream_usage(path: Path, model_preference: str) -> dict[str, Any]:
     first = next(iter(usage_by_id.values()), {name: None for name in ALL_USAGE_FIELDS})
     provider_usage = _usage_values(result_event.get("usage")) if isinstance(result_event, dict) else None
     final = provider_usage if provider_usage and any(value is not None for value in provider_usage.values()) else None
+    model_totals = None
+    final_total_discrepancies = {}
     if isinstance(result_event, dict):
         model_usage = result_event.get("modelUsage")
-        if isinstance(model_usage, dict):
-            for model in (model_preference, *sorted(model_usage)):
-                parsed = _usage_values(model_usage.get(model))
-                if any(value is not None for value in parsed.values()):
-                    final = parsed
-                    break
+        if isinstance(model_usage, dict) and model_usage:
+            # All model buckets belong to this receipt. Selecting only the
+            # requested model would discard fallback/subagent usage.
+            model_totals = _sum_usage([_usage_values(usage) for usage in model_usage.values()])
+            if any(value is not None for value in model_totals.values()):
+                final = model_totals
         if final is not None and provider_usage is not None:
-            for field in CACHE_TTL_USAGE_FIELDS:
-                if provider_usage[field] is not None:
-                    final[field] = provider_usage[field]
+            # Retain both provider projections. Without a reconciliation receipt,
+            # conflicting totals are unavailable rather than choosing a favorite.
+            for name in ALL_USAGE_FIELDS:
+                if provider_usage[name] is not None and final[name] is not None and provider_usage[name] != final[name]:
+                    final_total_discrepancies[name] = {"provider_result": provider_usage[name], "all_model_usage": final[name]}
+            final = {name: None if name in final_total_discrepancies else
+                     provider_usage[name] if provider_usage[name] is not None else final[name]
+                     for name in ALL_USAGE_FIELDS}
     discrepancies: dict[str, Any] = {}
     if final is not None:
         for name in ALL_USAGE_FIELDS:
             if totals[name] is not None and final[name] is not None and totals[name] != final[name]:
                 discrepancies[name] = {"per_turn_sum": totals[name], "final_result": final[name]}
-        totals = {name: final[name] if final[name] is not None else totals[name] for name in ALL_USAGE_FIELDS}
+        totals = {name: None if name in final_total_discrepancies else
+                  final[name] if final[name] is not None else totals[name] for name in ALL_USAGE_FIELDS}
     cost = result_event.get("total_cost_usd") if isinstance(result_event, dict) else None
     if isinstance(cost, bool) or not isinstance(cost, (int, float)) or not math.isfinite(cost) or cost < 0:
         cost = None
@@ -422,12 +436,13 @@ def stream_usage(path: Path, model_preference: str) -> dict[str, Any]:
         "models_observed": sorted(message_models or model_usage_models),
         "assistant_message_models_observed": sorted(message_models),
         "model_usage_keys_observed": sorted(model_usage_models),
+        "pricing_model_identities_observed": sorted(message_models | model_usage_models),
         "turns_with_usage": len(usage_by_id),
         "turn_usage_by_message": [
             {"message_id": identity, "usage": values}
             for identity, values in raw_usage_by_id.items()
         ],
-        "turns_with_usage_definition": "deduplicated assistant message IDs carrying usage; not tool calls or the provider's session turn count",
+        "turns_with_usage_definition": "observed deduplicated assistant message IDs, including unavailable usage; not tool calls or the provider's session turn count",
         "provider_reported_session_turns": provider_turns,
         "legacy_net_input": legacy_net,
         "legacy_net_input_definition": (
@@ -440,6 +455,9 @@ def stream_usage(path: Path, model_preference: str) -> dict[str, Any]:
         "provider_reported_api_equivalent_cost_note": (
             "result.total_cost_usd from the provider stream, when supplied; not a receipt or account-billed amount"
         ),
+        "model_usage_totals": model_totals,
+        "provider_result_usage": provider_usage,
+        "final_total_discrepancies": final_total_discrepancies,
         "usage_updates_per_message": updates,
         "usage_discrepancies": discrepancies,
         "first_turn_usage": first,
@@ -483,6 +501,7 @@ def cache_write_pricing(usage: dict[str, int | None]) -> dict[str, Any]:
 def rate_card_estimate_details(
     usage: dict[str, int | None],
     per_million_prices: dict[str, float] | None = None,
+    *, model_usage_keys: list[str] | None = None,
 ) -> dict[str, Any]:
     prices = PRICE_USD_PER_MTOK if per_million_prices is None else per_million_prices
     if set(prices) != set(PRICE_USD_PER_MTOK) or any(
@@ -491,6 +510,10 @@ def rate_card_estimate_details(
     ):
         raise ValueError("rate card must provide finite nonnegative prices for every usage bucket")
     cache = cache_write_pricing(usage)
+    if model_usage_keys is not None and len(model_usage_keys) > 1:
+        # Totals still describe every model in the receipt, but one model's
+        # rate card cannot price an unpartitioned mixed-model aggregate.
+        return {"usd": None, "cache_write_pricing": cache}
     required = ("input_tokens", "cache_read_input_tokens", "output_tokens")
     known = cache["basis"] not in {"unavailable", "inconsistent_provider_ttl_breakdown"}
     if not all(usage.get(key) is not None for key in required) or not known:

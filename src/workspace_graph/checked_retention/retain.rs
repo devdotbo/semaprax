@@ -1,0 +1,145 @@
+//! Retain the complete existing checked owner through immutable local views.
+use super::*;
+
+#[allow(
+    clippy::too_many_arguments,
+    reason = "keep current source authority explicit"
+)]
+pub(in crate::workspace_graph) fn retain_checked_module(
+    program: &Program,
+    module: String,
+    owner: CheckedModuleLease,
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    mut loan_scratch: Option<&mut loan_retention::RetentionScratch>,
+    selected_static_text: bool,
+    authenticated_sources: Option<&[WorkspaceSource]>,
+) -> Result<(WorkspaceResolvedModule, Vec<hir::ResolvedFunctionInstance>), Vec<Diagnostic>> {
+    let static_text = if selected_static_text {
+        static_text::retain(program, &owner, authored, authenticated_sources)?
+    } else {
+        None
+    };
+    let scalar_helpers = static_text::scalar_helpers::capture(
+        program,
+        &owner,
+        programs,
+        authored,
+        authenticated_sources,
+    )?;
+    let record_closure = static_text::record_closure::capture(
+        program,
+        &owner,
+        programs,
+        authored,
+        authenticated_sources,
+    )?;
+    let record_source_revision = record_closure.as_ref().map(|facts| facts.revision());
+    // Captured from the complete checked owner before any filtered selection.
+    let scalar_lexical = if static_text.is_none() {
+        static_text::scalar_lexical::capture(program, &owner, authored, authenticated_sources)?
+    } else {
+        None
+    };
+    hir::replay_agent_source_associations(program, &owner.agents).map_err(|error| vec![error])?;
+    let mut session_protocol_facts = session_protocol_decl::declaration_facts(program, &owner)?;
+    session_protocol_facts.extend(session_protocol_decl::follows_facts(program)?);
+    session_protocol_facts.extend(agent_execution::facts(program)?);
+    let local = |id: &hir::DeclarationId| {
+        authored
+            .get(id.as_str())
+            .is_some_and(|item| item.module == program.module)
+    };
+    let retained_output_only = loan_scratch.is_some();
+    let types = if retained_output_only {
+        Retained::select(owner.clone(), |p| &p.types, |item| local(&item.id))?
+    } else {
+        Retained::select_accounted(
+            owner.clone(),
+            |p| &p.types,
+            |item| local(&item.id),
+            std::mem::size_of::<hir::ResolvedTypeDeclaration>(),
+            |_| Ok(0),
+        )?
+    };
+    let functions = if retained_output_only {
+        let functions = Retained::select(
+            owner.clone(),
+            |p| &p.functions,
+            |item| loan_retention::authored_function(item, program, authored),
+        )?;
+        if let Some(scratch) = loan_scratch.as_deref_mut() {
+            scratch.prepare(functions.iter())?;
+            for function in &functions {
+                reserve_builder_structure(scratch.measure(function)?)?;
+            }
+        }
+        functions
+    } else {
+        Retained::select_accounted(
+            owner.clone(),
+            |p| &p.functions,
+            |item| loan_retention::authored_function(item, program, authored),
+            GRAPH_ACCOUNTED_RESOLVED_FUNCTION_BYTES,
+            retained_function_loan_bytes,
+        )?
+    };
+    let function_templates = if retained_output_only {
+        Retained::select(
+            owner.clone(),
+            |p| &p.function_templates,
+            |item| local(&item.id),
+        )?
+    } else {
+        Retained::select_accounted(
+            owner.clone(),
+            |p| &p.function_templates,
+            |item| local(&item.id),
+            std::mem::size_of::<hir::ResolvedFunctionTemplate>(),
+            |_| Ok(0),
+        )?
+    };
+    // Instances remain a separately owned compatibility overlay, since current
+    // imported wrapper attachment mutates this field after exact equality checks.
+    let (function_instances, imported_instances) = owned_generics::retain_module_instances(
+        program,
+        programs,
+        authored,
+        owner.function_instances.clone(),
+        loan_scratch,
+    )?;
+    let signature_types = retained_signature_type_facts(&functions, &owner.declarations)?;
+    let agents = if retained_output_only {
+        Retained::select(owner.clone(), |p| &p.agents, |_| true)?
+    } else {
+        Retained::select_accounted(
+            owner.clone(),
+            |p| &p.agents,
+            |_| true,
+            std::mem::size_of::<hir::ResolvedAgentDeclaration>(),
+            |_| Ok(0),
+        )?
+    };
+    Ok((
+        WorkspaceResolvedModule {
+            path: crate::bounded_output::budgeted_clone(&program.path),
+            module,
+            permits: owner.permits.clone(),
+            interfaces: owner.interfaces.clone(),
+            agents,
+            types,
+            functions,
+            function_templates,
+            function_instances,
+            signature_types,
+            session_protocol_facts,
+            native_law: false,
+            static_text,
+            scalar_helpers,
+            record_closure,
+            record_source_revision,
+            scalar_lexical,
+        },
+        imported_instances,
+    ))
+}

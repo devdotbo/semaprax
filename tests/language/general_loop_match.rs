@@ -371,7 +371,10 @@ fn first_match_mut(expression: &mut hir::ResolvedExpr) -> &mut hir::ResolvedExpr
         return expression;
     }
     match &mut expression.kind {
-        hir::ResolvedExprKind::Block { statements, tail } => {
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 match statement {
                     hir::ResolvedStatement::Let { value, .. }

@@ -1,0 +1,13 @@
+{
+  "base": "31dd9324cd5f56358b702ec2904dd30a077a7e5a",
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "package": "semaprax",
+  "harness": "lib",
+  "exact_lib_selectors": [
+    "hir::validation::executable_profiles::tests::uppercase_string_source_keeps_complete_original_unknown_type_diagnostic",
+    "hir::validation::executable_profiles::tests::actual_validator_clone_and_nested_constructor_share_exact_index_memo"
+  ],
+  "original_test_source_sha256": "bd26db83e314e400ab2ea955f1c071fdd05c87d40d1afd040c56d1df9bd01f4b",
+  "current_source_sha256": "3f4963b7afd20dc36907645ee6c19755eb01b705c698d119f091434ede46f039",
+  "old_receiver": "All independent saved classifier implementations and all original shared-state, nested-state and cross-index assertions unchanged"
+}

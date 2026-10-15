@@ -1,0 +1,261 @@
+Bounded source review only, no tools/execution. Find concrete semantic/error-order, Rust typing, unpaid allocation, post-refusal allocation or asymptotic regressions; separate blockers from uncertainty. Both private callers produce edge_live by increasing LoanId (u16) appends. Preserve malformed unordered rows too. reserve(0) authenticates exact ACTIVE Rc/first sticky error. cfg_directory::vector prepays Vec header+exact backing and rejects capacity drift; Set is paid AVL and into_vec sorted unique. Materializer has no WorkCounter: no work credit/limit changes. Slice/LoanId Drop never allocates. No savings/fit/64-byte causality claim.
+OLD ENDPOINT BLOCK:
+    let mut endpoints = cfg_directory::vector(cfg.points.len(), payer)?;
+    for (node, point) in cfg.points.iter().enumerate() {
+        let mut live_before = cfg_directory::Set::new(payer)?;
+        for edge in cfg
+            .predecessors(node)
+            .iter()
+            .filter_map(|from| cfg.edges.binary_search(&(*from, node as u16)).ok())
+        {
+            for id in &edge_live[edge] {
+                cfg_directory::set_insert(&mut live_before, *id, Some(payer))?;
+            }
+        }
+        let mut live_after = cfg_directory::Set::new(payer)?;
+        for edge in cfg
+            .successors(node)
+            .filter_map(|to| cfg.edges.binary_search(&(node as u16, to)).ok())
+        {
+            for id in &edge_live[edge] {
+                cfg_directory::set_insert(&mut live_after, *id, Some(payer))?;
+            }
+        }
+        endpoints.push(LoanEndpoint {
+            point: point.clone(),
+            live_before: compact_ids::from_vec_paid(set_vector(live_before, payer)?, payer)?,
+            starts: compact_ids::from_vec_paid(
+                storage::clone_vec(&starts[node], Some(payer))?,
+                payer,
+            )?,
+            kills: compact_ids::from_vec_paid(
+                storage::clone_vec(&kills[node], Some(payer))?,
+                payer,
+            )?,
+            live_after: compact_ids::from_vec_paid(set_vector(live_after, payer)?, payer)?,
+        });
+    }
+
+OLD set_vector: values.into_vec(payer)
+NEW COMPLETE MATERIALIZER:
+//! Same canonical output order; actual result/temporary/replacement payment.
+use super::*;
+
+pub(super) fn materialize<S>(
+    cfg: Cfg<'_>,
+    drafts: Vec<CfgDraft<S>>,
+    parents: Vec<Option<LoanId>>,
+    edge_live: Vec<Vec<LoanId>>,
+    termination_edges: Vec<Vec<u16>>,
+    payer: &crate::bounded_output::cfg_reservation::CfgReservation,
+) -> Result<LoanPlan, Diagnostic> {
+    // The draft count is exact. Result collection need not retain spare
+    // geometric capacity in the authoritative physical loan inventory.
+    payer
+        .reserve(std::mem::size_of::<LoanPlan>())
+        .map_err(|_| storage::marker())?;
+    let mut loans = cfg_directory::vector(drafts.len(), payer)?;
+    for (index, draft) in drafts.iter().enumerate() {
+        let end_edges = storage::clone_vec(&termination_edges[index], Some(payer))?;
+        if end_edges.is_empty() {
+            return Err(error("loan has no bounded CFG termination edge"));
+        }
+        let mut ends = cfg_directory::vector(end_edges.len(), payer)?;
+        ends.extend(
+            end_edges
+                .iter()
+                .map(|edge| cfg.points[cfg.edges[*edge as usize].1 as usize].clone()),
+        );
+        ends.dedup();
+        loans.push(Loan {
+            id: LoanId(index as u16),
+            site: draft.site.clone(),
+            origin: storage::clone_place(&draft.origin, Some(payer))?,
+            parent: parents[index],
+            start: cfg.points[draft.start as usize].clone(),
+            ends,
+            end_edges,
+            cause: draft.cause.clone(),
+        });
+    }
+    payer
+        .reserve(2 * std::mem::size_of::<Vec<Vec<LoanId>>>())
+        .map_err(|_| storage::marker())?;
+    let mut starts = storage::filled(cfg.points.len(), Vec::<LoanId>::new(), Some(payer))?;
+    let mut kills = storage::filled(cfg.points.len(), Vec::<LoanId>::new(), Some(payer))?;
+    for loan in &loans {
+        storage::push(
+            &mut starts[*cfg.nodes.get(&loan.start).expect("start point retained") as usize],
+            loan.id,
+            Some(payer),
+        )?;
+        for edge in &loan.end_edges {
+            let to = cfg.edges[*edge as usize].1;
+            storage::push(&mut kills[to as usize], loan.id, Some(payer))?;
+        }
+    }
+    let mut endpoints = cfg_directory::vector(cfg.points.len(), payer)?;
+    for (node, point) in cfg.points.iter().enumerate() {
+        // Both producers append LoanId in increasing loan-index order. Merge
+        // borrowed edge rows; never sort or repair canonical plan vectors.
+        let live_before = ordered_union::merge(
+            cfg.predecessors(node)
+                .iter()
+                .filter_map(|from| cfg.edges.binary_search(&(*from, node as u16)).ok())
+                .map(|edge| edge_live[edge].as_slice()),
+            payer,
+        )?;
+        let live_after = ordered_union::merge(
+            cfg.successor_edges(node)
+                .map(|edge| cfg.edges[edge as usize].1)
+                .filter_map(|to| cfg.edges.binary_search(&(node as u16, to)).ok())
+                .map(|edge| edge_live[edge].as_slice()),
+            payer,
+        )?;
+        endpoints.push(LoanEndpoint {
+            point: point.clone(),
+            live_before: compact_ids::from_vec_paid(live_before, payer)?,
+            starts: compact_ids::from_vec_paid(
+                storage::clone_vec(&starts[node], Some(payer))?,
+                payer,
+            )?,
+            kills: compact_ids::from_vec_paid(
+                storage::clone_vec(&kills[node], Some(payer))?,
+                payer,
+            )?,
+            live_after: compact_ids::from_vec_paid(live_after, payer)?,
+        });
+    }
+    let mut edges = cfg_directory::vector(cfg.edges.len(), payer)?;
+    for ((from, to), live) in cfg.edges.iter().zip(edge_live) {
+        edges.push(LoanEdge {
+            from: *from,
+            to: *to,
+            live: compact_ids::from_vec_paid(live, payer)?,
+        });
+    }
+    let schema = if cfg
+        .expressions
+        .iter()
+        .any(|e| matches!(e.kind, ResolvedExprKind::LexicalExit { .. }))
+    {
+        LOAN_PLAN_SCHEMA_V3
+    } else if loans
+        .iter()
+        .any(|loan| loan.cause == LoanCause::TraversalFreeze)
+    {
+        LOAN_PLAN_SCHEMA_V2
+    } else {
+        LOAN_PLAN_SCHEMA_V1
+    };
+    Ok(LoanPlan {
+        schema,
+        loans,
+        endpoints,
+        edges,
+    })
+}
+
+#[cfg(test)]
+mod before;
+mod ordered_union;
+#[cfg(test)]
+mod tests;
+
+NEW COMPLETE ORDERED UNION:
+//! Two bounded k-way passes over internally ordered edge rows. Scratch is one
+//! paid slice heap; output has exact union capacity. No per-ID tree or copy of
+//! the input rows is retained. The materializer has no logical-work grant;
+//! its enclosing producer's existing work units are unchanged.
+use super::*;
+use crate::bounded_output::cfg_reservation::CfgReservation;
+
+pub(super) fn merge<'a>(
+    rows: impl Iterator<Item = &'a [LoanId]> + Clone,
+    payer: &CfgReservation,
+) -> Result<Vec<LoanId>, Diagnostic> {
+    payer.reserve(0).map_err(|_| storage::marker())?;
+    // Producer-owned rows are ordered. Preserve the complete previous union
+    // behavior for an internally malformed row too, without sorting its input.
+    if rows
+        .clone()
+        .any(|row| row.windows(2).any(|pair| pair[0] > pair[1]))
+    {
+        let mut values = cfg_directory::Set::new(payer)?;
+        for row in rows {
+            for id in row {
+                cfg_directory::set_insert(&mut values, *id, Some(payer))?;
+            }
+        }
+        return values.into_vec(payer);
+    }
+    // Pay both actual Vec carriers, even when there are no nonempty rows.
+    let count = rows.clone().filter(|row| !row.is_empty()).count();
+    if count == 0 {
+        return cfg_directory::vector(0, payer);
+    }
+    let mut heap = cfg_directory::vector(count, payer)?;
+    fill(&mut heap, rows.clone());
+    let mut unique = 0;
+    let mut previous = None;
+    while let Some(id) = next(&mut heap) {
+        payer.reserve(0).map_err(|_| storage::marker())?;
+        if previous != Some(id) {
+            unique += 1; // At most the entire u16 LoanId domain.
+            previous = Some(id);
+        }
+    }
+    let mut output = cfg_directory::vector(unique, payer)?;
+    fill(&mut heap, rows);
+    while let Some(id) = next(&mut heap) {
+        payer.reserve(0).map_err(|_| storage::marker())?;
+        if output.last() != Some(&id) {
+            // Capacity is the first pass's exact unique count. No growth.
+            output.push(id);
+        }
+    }
+    Ok(output)
+}
+fn fill<'a>(heap: &mut Vec<&'a [LoanId]>, rows: impl Iterator<Item = &'a [LoanId]>) {
+    debug_assert!(heap.is_empty());
+    for row in rows.filter(|row| !row.is_empty()) {
+        debug_assert!(row.windows(2).all(|pair| pair[0] <= pair[1]));
+        heap.push(row);
+        let mut child = heap.len() - 1;
+        while child != 0 {
+            let parent = (child - 1) / 2;
+            if heap[parent][0] <= heap[child][0] {
+                break;
+            }
+            heap.swap(parent, child);
+            child = parent;
+        }
+    }
+}
+fn next(heap: &mut Vec<&[LoanId]>) -> Option<LoanId> {
+    let first = *heap.first()?;
+    let id = first[0];
+    if first.len() == 1 {
+        heap.swap_remove(0);
+    } else {
+        heap[0] = &first[1..];
+    }
+    let mut parent = 0usize;
+    while let Some(left) = parent.checked_mul(2usize).and_then(|n| n.checked_add(1)) {
+        if left >= heap.len() {
+            break;
+        }
+        let right = left + 1;
+        let child = if right < heap.len() && heap[right][0] < heap[left][0] {
+            right
+        } else {
+            left
+        };
+        if heap[parent][0] <= heap[child][0] {
+            break;
+        }
+        heap.swap(parent, child);
+        parent = child;
+    }
+    Some(id)
+}

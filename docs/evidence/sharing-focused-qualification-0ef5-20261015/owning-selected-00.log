@@ -1,0 +1,17 @@
+
+running 1 test
+test workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal ... identity-retry-parent before=Some(67108864) after=Some(20)
+identity-retry-contract legacy=(67019038, 67020132) tight=(53615014, 53616108) actual_initial=(67019038, 67020132, true, 1) registry_receipt=0 nested_overflow=true nested_debit=67108844 first_refusal=Some(ReservationRefusal { requested: 26, remaining: 20, floor: 0, stage: None }) trace=Some(Trace { owner: 34607552384, operation: None, first_operation_refusal: Some(OperationRefusal { operation: Some(CleanupReplay), requested: 40, remaining: 20, floor: 0, stage: Some(HirValidation) }), initial: 67075946, consumed: 67075926, prebound: 67019038, layouts: 0, mode: 1, debits: [1104, 1392, 0, 0, 0, 0, 0, 0, 0, 67019038, 768, 0, 0, 0, 0, 0, 0, 2157, 0, 33571, 807, 240, 0, 0, 0, 4928, 0, 11571, 350, 0, 0, 0, 0] })
+
+thread 'workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal' (2680489) panicked at src/workspace_graph/tests/builder_limits.rs:442:84:
+called `Result::unwrap()` on an `Err` value: [Diagnostic { code: "SPX-H006", severity: Error, message: "cleanup plan for function `stub.wide` failed independent replay: cleanup replay work budget exhausted during cleanup referenced edge directory", path: None, span: None, help: None }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8748 filtered out; finished in 22.34s
+

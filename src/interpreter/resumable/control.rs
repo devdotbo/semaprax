@@ -278,7 +278,7 @@ fn evaluate(
                     value_id.clone(),
                     Value::Bytes(OwnedBytesValue {
                         allocation: index as u32 + 1,
-                        bytes: Arc::from(bytes.as_slice()),
+                        bytes: Arc::<[u8]>::from(bytes.as_slice()).into(),
                     }),
                 );
             }
@@ -414,7 +414,7 @@ fn settle(
                         carried,
                     },
                 },
-                Err(error) => ControlResumableStep::GuardError(error.message),
+                Err(error) => ControlResumableStep::GuardError(error.message.into_owned()),
             }
         }
         Err(Flow::Failure(status)) => {

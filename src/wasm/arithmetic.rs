@@ -12,6 +12,7 @@ pub(super) fn needs_i32_wide_scratch(expression: &ResolvedExpr) -> bool {
     let mut pending = vec![expression];
     while let Some(expression) = pending.pop() {
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref()),
             ResolvedExprKind::Unary { op, value } => {
                 if *op == UnaryOp::Neg && value.ty == ResolvedType::I32 {
                     return true;
@@ -32,6 +33,9 @@ pub(super) fn needs_i32_wide_scratch(expression: &ResolvedExpr) -> bool {
             ResolvedExprKind::Closure { captures, .. } => {
                 pending.extend(captures.iter().map(|capture| &capture.value))
             }
+            ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter()),
             ResolvedExprKind::Call { callee, args, .. } => {
                 if crate::string_ops::by_id(callee.as_str())
                     .is_some_and(|op| op.is_integer_conversion())
@@ -49,7 +53,10 @@ pub(super) fn needs_i32_wide_scratch(expression: &ResolvedExpr) -> bool {
             ResolvedExprKind::ByteRange {
                 source, start, end, ..
             } => pending.extend([source.as_ref(), start.as_ref(), end.as_ref()]),
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     for index in 0..statement.child_count() {
                         if let Some(child) = statement.child(index) {
@@ -104,6 +111,7 @@ pub(super) fn needs_i32_wide_scratch(expression: &ResolvedExpr) -> bool {
             | ResolvedExprKind::ArrayU8(_)
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::FunctionReference { .. } => {}
@@ -124,6 +132,9 @@ pub(super) fn contains_usize_arithmetic(expression: &ResolvedExpr) -> bool {
 
 fn contains_checked_arithmetic(expression: &ResolvedExpr, target: &ResolvedType) -> bool {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => value
+            .as_deref()
+            .is_some_and(|value| contains_checked_arithmetic(value, target)),
         ResolvedExprKind::Binary { op, left, right: _ }
             if left.ty == *target
                 && matches!(
@@ -142,7 +153,10 @@ fn contains_checked_arithmetic(expression: &ResolvedExpr, target: &ResolvedType)
         | ResolvedExprKind::Project { base: value, .. }
         | ResolvedExprKind::Upcast { source: value }
         | ResolvedExprKind::Yield { request: value } => contains_checked_arithmetic(value, target),
-        ResolvedExprKind::Call { args, .. } => args
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args
             .iter()
             .any(|argument| contains_checked_arithmetic(argument, target)),
         ResolvedExprKind::Invoke { callable, args } => {
@@ -166,7 +180,10 @@ fn contains_checked_arithmetic(expression: &ResolvedExpr, target: &ResolvedType)
                 || contains_checked_arithmetic(start, target)
                 || contains_checked_arithmetic(end, target)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             contains_checked_arithmetic(tail, target)
                 || statements.iter().any(|statement| {
                     (0..statement.child_count()).any(|index| {
@@ -217,11 +234,32 @@ fn contains_checked_arithmetic(expression: &ResolvedExpr, target: &ResolvedType)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. }
         | ResolvedExprKind::FunctionReference { .. } => false,
         ResolvedExprKind::Closure { captures, .. } => captures
             .iter()
             .any(|capture| contains_checked_arithmetic(&capture.value, target)),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn literal_format_arguments_retain_nested_arithmetic_scratch() {
+        let ast=crate::check(r#"module format.arithmetic;
+@id("main") fn main()->i64 {string_len(string_format("{}{}{}",2u8+3u8,4usize+5usize,{let n=1i32+2i32;true}))}
+"#, "format-arithmetic.spx").unwrap();
+        let program = crate::hir::resolve(&ast).unwrap();
+        let body = &program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "main")
+            .unwrap()
+            .body;
+        assert!(super::needs_i32_wide_scratch(body));
+        assert!(super::contains_u8_arithmetic(body));
+        assert!(super::contains_usize_arithmetic(body));
     }
 }

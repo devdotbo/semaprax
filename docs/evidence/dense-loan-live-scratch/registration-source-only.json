@@ -1,0 +1,182 @@
+[
+  {
+    "key": [
+      "semaprax",
+      "lib",
+      "loan_plan::paid_live::dense::tests::dense_live_keys_keep_full_u16_order_growth_and_each_receiving_refusal_through_drop"
+    ],
+    "binding": {
+      "source_path": "src/loan_plan/paid_live/dense/tests.rs",
+      "line": 59,
+      "name": "dense_live_keys_keep_full_u16_order_growth_and_each_receiving_refusal_through_drop",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 237,
+          "module": "loan_plan",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan.rs",
+          "line": 74,
+          "module": "paid_live",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan/paid_live.rs",
+          "line": 150,
+          "module": "dense",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan/paid_live/dense.rs",
+          "line": 178,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "c7a917f9b77b543cdf2d6972bbca5817785b25590009f5a7a6930ccfab967678",
+      "ignored": false
+    }
+  },
+  {
+    "key": [
+      "semaprax",
+      "lib",
+      "loan_plan::paid_live::dense::tests::dense_live_foreign_then_restored_owner_cannot_publish_or_allocate"
+    ],
+    "binding": {
+      "source_path": "src/loan_plan/paid_live/dense/tests.rs",
+      "line": 91,
+      "name": "dense_live_foreign_then_restored_owner_cannot_publish_or_allocate",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 237,
+          "module": "loan_plan",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan.rs",
+          "line": 74,
+          "module": "paid_live",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan/paid_live.rs",
+          "line": 150,
+          "module": "dense",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan/paid_live/dense.rs",
+          "line": 178,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "c7a917f9b77b543cdf2d6972bbca5817785b25590009f5a7a6930ccfab967678",
+      "ignored": false
+    }
+  },
+  {
+    "key": [
+      "semaprax",
+      "lib",
+      "loan_plan::paid_live::dense::tests::dense_liveness_preserves_full_old_rows_edges_and_every_checked_work_frontier"
+    ],
+    "binding": {
+      "source_path": "src/loan_plan/paid_live/dense/tests.rs",
+      "line": 129,
+      "name": "dense_liveness_preserves_full_old_rows_edges_and_every_checked_work_frontier",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 237,
+          "module": "loan_plan",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan.rs",
+          "line": 74,
+          "module": "paid_live",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan/paid_live.rs",
+          "line": 150,
+          "module": "dense",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan/paid_live/dense.rs",
+          "line": 178,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "c7a917f9b77b543cdf2d6972bbca5817785b25590009f5a7a6930ccfab967678",
+      "ignored": false
+    }
+  },
+  {
+    "key": [
+      "semaprax",
+      "lib",
+      "loan_plan::paid_live::dense::tests::dense_complete_plans_and_late_full_diagnostics_keep_old_constructor_and_last_drop"
+    ],
+    "binding": {
+      "source_path": "src/loan_plan/paid_live/dense/tests.rs",
+      "line": 238,
+      "name": "dense_complete_plans_and_late_full_diagnostics_keep_old_constructor_and_last_drop",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 237,
+          "module": "loan_plan",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan.rs",
+          "line": 74,
+          "module": "paid_live",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan/paid_live.rs",
+          "line": 150,
+          "module": "dense",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan/paid_live/dense.rs",
+          "line": 178,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "c7a917f9b77b543cdf2d6972bbca5817785b25590009f5a7a6930ccfab967678",
+      "ignored": false
+    }
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "exit_code": 0,
+  "wall_seconds": 36.2149697089917,
+  "tools_enabled": false,
+  "code_execution": false,
+  "peak_process_group_rss_bytes": 220823552,
+  "resource_refusal": null,
+  "session_id": "1a5d8643-8acc-49fd-8781-528f15e359cb",
+  "result_json_sha256": "3f0586050c933124175859314be42584d57eeb5ef6ad4ba83cd0c2d054f45234",
+  "assessment": "No definite compile or semantic blockers from source-only review; conditional type/privacy and scope-observer properties checked against actual source."
+}

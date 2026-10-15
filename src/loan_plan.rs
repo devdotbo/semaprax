@@ -10,7 +10,19 @@ use crate::hir::{
     ResolvedStatement, ResolvedType, ValueId,
 };
 
+pub(crate) use storage::PlannerError as FundedError;
+
+pub(crate) fn build_plan_with_reservation(
+    program: &ResolvedProgram,
+    function: &ResolvedFunction,
+    payer: &crate::bounded_output::cfg_reservation::CfgReservation,
+) -> Result<LoanPlan, FundedError> {
+    funded_flat::build(program, function, payer)
+}
+
 pub const LOAN_PLAN_SCHEMA_V1: &str = "semaprax.loan-plan.v1";
+pub const LOAN_PLAN_SCHEMA_V2: &str = "semaprax.loan-plan.v2";
+pub const LOAN_PLAN_SCHEMA_V3: &str = "semaprax.loan-plan.v3";
 pub const MAX_LOANS_PER_FUNCTION_V1: usize = 256;
 pub const MAX_LOAN_ENDPOINTS_V1: usize = 4_096;
 pub const MAX_LOAN_EDGES_V1: usize = 4_096;
@@ -25,13 +37,64 @@ pub enum LoanPointPhase {
     After,
 }
 
+mod adjacency;
 #[cfg(test)]
 mod boundary_tests;
+mod call_arguments;
+#[cfg(test)]
+mod call_arguments_legacy;
+mod cfg_directory;
+mod children;
+#[cfg(test)]
+mod children_tests;
+mod compact_ids;
+use call_arguments::borrowed_call_arguments;
+use children::evaluation_children;
+mod directory_access;
+mod funded_flat;
+#[cfg(test)]
+mod funded_flat_legacy;
 mod guidance;
+#[cfg(test)]
+mod legacy_adjacency;
+mod lexical_exit;
 mod native_view;
+#[cfg(test)]
+mod native_view_legacy;
+mod origin;
 pub(crate) mod owned_capacity;
+mod paid_candidate;
+#[cfg(test)]
+mod paid_candidate_before;
+#[cfg(test)]
+mod paid_candidate_legacy;
+mod paid_cfg;
+mod paid_children;
+mod paid_cursor;
+mod paid_live;
+mod paid_materialize;
+#[cfg(test)]
+mod paid_materialize_legacy;
+mod paid_patterns;
+#[cfg(test)]
+mod paid_patterns_legacy;
+mod paid_plan;
+#[cfg(test)]
+mod paid_plan_legacy;
+mod paid_predicates;
+#[cfg(test)]
+mod paid_predicates_legacy;
+mod paid_substitute;
+mod provisional_result;
+mod record_vec_borrow;
+#[cfg(test)]
+mod saved_planner;
 #[cfg(test)]
 mod shared_identity_tests;
+mod storage;
+pub(crate) mod traversal;
+#[cfg(test)]
+mod whole_oracle_tests;
 mod work;
 
 pub(crate) use work::{REACHABILITY_BYTES_PER_EXPRESSION, REACHABILITY_FIXED_BYTES};
@@ -46,6 +109,7 @@ pub struct LoanProgramPoint {
 pub enum LoanCause {
     SliceView,
     StrView,
+    TraversalFreeze,
     BorrowedCall { argument: u16 },
     MatchBorrow { arm: u16 },
 }
@@ -70,13 +134,13 @@ pub struct LoanEndpoint {
     pub point: LoanProgramPoint,
     /// Union summary over incoming CFG edges. [`LoanEdge::live`] is the
     /// authoritative path-exact carrier at joins.
-    pub live_before: Vec<LoanId>,
-    pub starts: Vec<LoanId>,
+    pub live_before: Box<[LoanId]>,
+    pub starts: Box<[LoanId]>,
     /// Edge-qualified terminations are authoritative in [`Loan::end_edges`];
     /// this is the deterministic node-level union summary.
-    pub kills: Vec<LoanId>,
+    pub kills: Box<[LoanId]>,
     /// Union summary over outgoing CFG edges.
-    pub live_after: Vec<LoanId>,
+    pub live_after: Box<[LoanId]>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -86,7 +150,7 @@ pub struct LoanEdge {
     /// Dense endpoint index of the CFG destination point.
     pub to: u16,
     /// Exact simultaneous loans live on this one control-flow edge.
-    pub live: Vec<LoanId>,
+    pub live: Box<[LoanId]>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -121,12 +185,21 @@ pub fn build_plan(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
 ) -> Result<LoanPlan, Diagnostic> {
+    let lexical = crate::hir::lexical_exit::requires(function)?;
+    if lexical {
+        let owner = crate::hir::lexical_exit::owner(program, function)?;
+        crate::hir::lexical_exit::validate_function(program, function, &owner)?;
+    }
     has_own_root_candidate(program, function)
         .and_then(|candidate| {
             if candidate {
                 build_cfg_plan(program, function)
             } else {
-                Ok(LoanPlan::empty_v1())
+                let mut plan = LoanPlan::empty_v1();
+                if lexical {
+                    plan.schema = LOAN_PLAN_SCHEMA_V3;
+                }
+                Ok(plan)
             }
         })
         .map_err(|diagnostic| guidance::work_limit(diagnostic, function))
@@ -140,25 +213,25 @@ pub(crate) fn owned_capacity_bytes(plan: &LoanPlan) -> Option<usize> {
 }
 
 #[derive(Clone)]
-struct CfgDraft {
+struct CfgDraft<S = BTreeSet<u16>> {
     site: ExpressionId,
     origin: Place,
     origin_span: Span,
     parent_root: Option<ValueId>,
     binding: Option<ValueId>,
     start: u16,
-    seeds: BTreeSet<u16>,
+    seeds: S,
     cause: LoanCause,
 }
 
+type PaidDraft = CfgDraft<cfg_directory::Set<u16>>;
+
 struct Cfg<'a> {
     points: Vec<LoanProgramPoint>,
-    nodes: BTreeMap<LoanProgramPoint, u16>,
+    nodes: cfg_directory::Nodes,
     expressions: Vec<&'a ResolvedExpr>,
     edges: Vec<(u16, u16)>,
-    successors: Vec<Vec<u16>>,
-    successor_edges: Vec<Vec<u16>>,
-    predecessors: Vec<Vec<u16>>,
+    adjacency: adjacency::Adjacency,
 }
 
 fn has_own_root_candidate(
@@ -192,7 +265,9 @@ fn has_own_root_candidate(
                 inventory_pattern_ownership(&arm.pattern, &mut ownership);
             }
         }
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, value, .. } = statement {
                     ownership.insert(binding.id.clone(), binding.ownership);
@@ -207,10 +282,43 @@ fn has_own_root_candidate(
         }
     }
 
+    let provisional = provisional_result::root(function);
     let mut root_ownership = BTreeMap::<ValueId, bool>::new();
     for expression in expressions {
+        if let Some(proof) = traversal::inspect(program, expression)? {
+            if expression_place(proof.source)
+                .is_some_and(|place| ownership.get(&place.root) == Some(&OwnershipMode::Own))
+            {
+                return Ok(true);
+            }
+        }
+        // A borrowed byte traversal freezes its view's ultimate owner.
+        if let Some(region) = crate::hir::byte_traversal_region(expression)? {
+            if let Some(place) = expression_place(region.view) {
+                if ultimate_root_is_own(
+                    &place.root,
+                    &aliases,
+                    &ownership,
+                    &mut root_ownership,
+                    provisional,
+                )? {
+                    return Ok(true);
+                }
+            }
+        }
         let view = match &expression.kind {
+            ResolvedExprKind::Call { .. } => {
+                crate::vec_ops::string_slot::place(expression).cloned()
+            }
             ResolvedExprKind::BorrowPlace { place, .. } => Some(place.clone()),
+            ResolvedExprKind::VecFieldRead { args, .. }
+                if matches!(
+                    expression.ty,
+                    crate::hir::ResolvedType::Str | crate::hir::ResolvedType::SliceU8
+                ) =>
+            {
+                args.first().and_then(expression_place)
+            }
             ResolvedExprKind::ByteRange { source, .. } => expression_place(source),
             ResolvedExprKind::NativeRustImportCall(call)
                 if matches!(
@@ -226,13 +334,25 @@ fn has_own_root_candidate(
             _ => None,
         };
         if let Some(place) = view {
-            if ultimate_root_is_own(&place.root, &aliases, &ownership, &mut root_ownership)? {
+            if ultimate_root_is_own(
+                &place.root,
+                &aliases,
+                &ownership,
+                &mut root_ownership,
+                provisional,
+            )? {
                 return Ok(true);
             }
         }
         for (_, argument) in borrowed_call_arguments(program, expression) {
             if let Some(place) = expression_place(argument) {
-                if ultimate_root_is_own(&place.root, &aliases, &ownership, &mut root_ownership)? {
+                if ultimate_root_is_own(
+                    &place.root,
+                    &aliases,
+                    &ownership,
+                    &mut root_ownership,
+                    provisional,
+                )? {
                     return Ok(true);
                 }
             }
@@ -244,7 +364,13 @@ fn has_own_root_candidate(
         } = &expression.kind
         {
             if let Some(place) = expression_place(scrutinee) {
-                if ultimate_root_is_own(&place.root, &aliases, &ownership, &mut root_ownership)? {
+                if ultimate_root_is_own(
+                    &place.root,
+                    &aliases,
+                    &ownership,
+                    &mut root_ownership,
+                    provisional,
+                )? {
                     return Ok(true);
                 }
             }
@@ -258,6 +384,7 @@ fn ultimate_root_is_own(
     aliases: &BTreeMap<ValueId, Place>,
     ownership: &BTreeMap<ValueId, OwnershipMode>,
     memo: &mut BTreeMap<ValueId, bool>,
+    provisional: Option<&ValueId>,
 ) -> Result<bool, Diagnostic> {
     if let Some(result) = memo.get(root) {
         return Ok(*result);
@@ -273,7 +400,8 @@ fn ultimate_root_is_own(
             return Err(error("shared-loan alias provenance contains a cycle"));
         }
         let Some(parent) = aliases.get(&current) else {
-            break ownership.get(&current) == Some(&OwnershipMode::Own);
+            break ownership.get(&current) == Some(&OwnershipMode::Own)
+                || provisional == Some(&current);
         };
         chain.push(current);
         current = parent.root.clone();
@@ -302,17 +430,19 @@ fn build_cfg_plan(
     build_cfg_plan_counted(program, function, &mut work)
 }
 
-#[derive(Clone, Copy, Debug)]
-struct WorkCounter {
+#[derive(Clone, Copy)]
+struct WorkCounter<'payer> {
+    allocation: Option<&'payer crate::bounded_output::cfg_reservation::CfgReservation>,
     #[cfg(test)]
     uncached_reachability: bool,
     used: usize,
     limit: usize,
 }
 
-impl WorkCounter {
+impl<'payer> WorkCounter<'payer> {
     fn new(limit: usize) -> Self {
         Self {
+            allocation: None,
             used: 0,
             limit,
             #[cfg(test)]
@@ -357,7 +487,9 @@ fn build_cfg_plan_counted(
                 inventory_pattern_ownership(&arm.pattern, &mut ownership);
             }
         }
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, value, .. } = statement {
                     ownership.insert(binding.id.clone(), binding.ownership);
@@ -372,11 +504,37 @@ fn build_cfg_plan_counted(
         }
     }
 
+    let mut byte_census = crate::hir::ByteTraversalSlot::new(program, function)?;
     let mut drafts = Vec::<CfgDraft>::new();
     for expression in &cfg.expressions {
         charge(work)?;
+        if let Some(draft) = traversal::draft(program, expression, &cfg, work)? {
+            drafts.push(draft);
+        }
+        if let Some(draft) = traversal::draft_bytes_in(
+            program,
+            function,
+            &mut byte_census,
+            expression,
+            &cfg,
+            &aliases,
+            work,
+        )? {
+            drafts.push(draft);
+        }
         let view = match &expression.kind {
+            ResolvedExprKind::Call { .. } => {
+                crate::vec_ops::string_slot::place(expression).cloned()
+            }
             ResolvedExprKind::BorrowPlace { place, .. } => Some(place.clone()),
+            ResolvedExprKind::VecFieldRead { args, .. }
+                if matches!(
+                    expression.ty,
+                    crate::hir::ResolvedType::Str | crate::hir::ResolvedType::SliceU8
+                ) =>
+            {
+                args.first().and_then(expression_place)
+            }
             ResolvedExprKind::ByteRange { source, .. } => expression_place(source),
             ResolvedExprKind::NativeRustImportCall(call)
                 if matches!(
@@ -462,13 +620,26 @@ fn build_cfg_plan_counted(
         }
     }
 
-    drafts.retain(|draft| ownership.get(&draft.origin.root) == Some(&OwnershipMode::Own));
+    // Independent HIR scope validation admits this exact result identity only
+    // in ensures; it is held owned storage until contract settlement completes.
+    drafts.retain(|draft| {
+        ownership.get(&draft.origin.root) == Some(&OwnershipMode::Own)
+            || provisional_result::root(function) == Some(&draft.origin.root)
+    });
     // Borrow-only roots do not need an authenticated loan attachment. Do not
     // retain the transient CFG built to classify candidates: legacy HIR stays
     // heap-identical at this boundary and only real own-root loans carry the
     // endpoint/edge proof.
     if drafts.is_empty() {
-        return Ok(LoanPlan::empty_v1());
+        let mut plan = LoanPlan::empty_v1();
+        if cfg
+            .expressions
+            .iter()
+            .any(|e| matches!(e.kind, ResolvedExprKind::LexicalExit { .. }))
+        {
+            plan.schema = LOAN_PLAN_SCHEMA_V3;
+        }
+        return Ok(plan);
     }
     if drafts.len() > MAX_LOANS_PER_FUNCTION_V1 {
         return Err(error("function exceeds 256 shared loans"));
@@ -572,7 +743,7 @@ fn build_cfg_plan_counted(
             for (index, point) in cfg.points.iter().enumerate() {
                 charge(work)?;
                 if point.phase == LoanPointPhase::After
-                    && cfg.successors[index].is_empty()
+                    && cfg.successor_edges(index).is_empty()
                     && terminal_roots.contains(&(index as u16))
                 {
                     nodes.remove(&(index as u16));
@@ -643,6 +814,9 @@ fn build_cfg<'a>(
     function: &'a ResolvedFunction,
     work: &mut WorkCounter,
 ) -> Result<Cfg<'a>, Diagnostic> {
+    if work.allocation.is_some() {
+        return paid_cfg::build(function, work);
+    }
     let roots = function
         .requires
         .iter()
@@ -710,7 +884,27 @@ fn build_cfg<'a>(
         let before = node(expression, LoanPointPhase::Before)?;
         let after = node(expression, LoanPointPhase::After)?;
         match &expression.kind {
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::LexicalExit { kind, value, .. } => {
+                if let Some(value) = value {
+                    edge_set.insert((before, node(value, LoanPointPhase::Before)?));
+                    edge_set.insert((node(value, LoanPointPhase::After)?, after));
+                } else {
+                    edge_set.insert((before, after));
+                }
+                let destination = if *kind == crate::ast::LexicalExitKind::Return {
+                    root_after(expression)?
+                } else {
+                    node(
+                        lexical_exit::destination(expression, &expressions, work)?,
+                        LoanPointPhase::Before,
+                    )?
+                };
+                edge_set.insert((after, destination));
+            }
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 let entry = statements
                     .first()
                     .map(statement_entry)
@@ -724,6 +918,9 @@ fn build_cfg<'a>(
                     match statement {
                         ResolvedStatement::While {
                             condition, body, ..
+                        }
+                        | ResolvedStatement::LexicalWhile {
+                            condition, body, ..
                         } => {
                             edge_set.insert((
                                 node(condition, LoanPointPhase::After)?,
@@ -733,10 +930,12 @@ fn build_cfg<'a>(
                                 node(condition, LoanPointPhase::After)?,
                                 node(next, LoanPointPhase::Before)?,
                             ));
-                            edge_set.insert((
-                                node(body, LoanPointPhase::After)?,
-                                node(condition, LoanPointPhase::Before)?,
-                            ));
+                            if body.ty != ResolvedType::Never {
+                                edge_set.insert((
+                                    node(body, LoanPointPhase::After)?,
+                                    node(condition, LoanPointPhase::Before)?,
+                                ));
+                            }
                         }
                         _ => {
                             edge_set.insert((
@@ -746,7 +945,9 @@ fn build_cfg<'a>(
                         }
                     }
                 }
-                edge_set.insert((node(tail, LoanPointPhase::After)?, after));
+                if tail.ty != ResolvedType::Never {
+                    edge_set.insert((node(tail, LoanPointPhase::After)?, after));
+                }
             }
             ResolvedExprKind::If {
                 condition,
@@ -762,8 +963,12 @@ fn build_cfg<'a>(
                     node(condition, LoanPointPhase::After)?,
                     node(else_branch, LoanPointPhase::Before)?,
                 ));
-                edge_set.insert((node(then_branch, LoanPointPhase::After)?, after));
-                edge_set.insert((node(else_branch, LoanPointPhase::After)?, after));
+                if then_branch.ty != ResolvedType::Never {
+                    edge_set.insert((node(then_branch, LoanPointPhase::After)?, after));
+                }
+                if else_branch.ty != ResolvedType::Never {
+                    edge_set.insert((node(else_branch, LoanPointPhase::After)?, after));
+                }
             }
             ResolvedExprKind::Binary {
                 op: BinaryOp::And | BinaryOp::Or,
@@ -801,7 +1006,9 @@ fn build_cfg<'a>(
                             ));
                         }
                     }
-                    edge_set.insert((node(&arm.value, LoanPointPhase::After)?, after));
+                    if arm.value.ty != ResolvedType::Never {
+                        edge_set.insert((node(&arm.value, LoanPointPhase::After)?, after));
+                    }
                 }
             }
             ResolvedExprKind::Try { operand, .. } | ResolvedExprKind::TryOption { operand, .. } => {
@@ -815,19 +1022,18 @@ fn build_cfg<'a>(
                 edge_set.insert((operand_after, root_after(expression)?));
             }
             _ => {
-                let children = evaluation_children(expression);
-                if let Some(first) = children.first() {
+                let mut children = evaluation_children(expression);
+                if let Some(first) = children.next() {
                     edge_set.insert((before, node(first, LoanPointPhase::Before)?));
-                    for pair in children.windows(2) {
+                    let mut last = first;
+                    for next in children {
                         edge_set.insert((
-                            node(pair[0], LoanPointPhase::After)?,
-                            node(pair[1], LoanPointPhase::Before)?,
+                            node(last, LoanPointPhase::After)?,
+                            node(next, LoanPointPhase::Before)?,
                         ));
+                        last = next;
                     }
-                    edge_set.insert((
-                        node(children.last().expect("nonempty"), LoanPointPhase::After)?,
-                        after,
-                    ));
+                    edge_set.insert((node(last, LoanPointPhase::After)?, after));
                 } else {
                     edge_set.insert((before, after));
                 }
@@ -838,86 +1044,37 @@ fn build_cfg<'a>(
     if edges.len() > MAX_LOAN_EDGES_V1 {
         return Err(error("function exceeds 4,096 loan CFG edges"));
     }
-    let mut successors = vec![Vec::new(); points.len()];
-    let mut successor_edges = vec![Vec::new(); points.len()];
-    let mut predecessors = vec![Vec::new(); points.len()];
-    for (edge, (from, to)) in edges.iter().enumerate() {
-        successors[*from as usize].push(*to);
-        successor_edges[*from as usize].push(edge as u16);
-        predecessors[*to as usize].push(*from);
-    }
+    let adjacency =
+        adjacency::Adjacency::build_with_storage(points.len(), &edges, work.allocation)?;
     Ok(Cfg {
         points,
-        nodes,
+        nodes: cfg_directory::Nodes::Legacy(nodes),
         expressions,
         edges,
-        successors,
-        successor_edges,
-        predecessors,
+        adjacency,
     })
 }
 
 fn statement_entry(statement: &ResolvedStatement) -> &ResolvedExpr {
     match statement {
-        ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => value,
+        ResolvedStatement::Let { value, .. }
+        | ResolvedStatement::Assign { value, .. }
+        | ResolvedStatement::CopyDiscard { value, .. } => value,
         ResolvedStatement::Unsafe { body, .. } => body,
-        ResolvedStatement::While { condition, .. } => condition,
+        ResolvedStatement::While { condition, .. }
+        | ResolvedStatement::LexicalWhile { condition, .. } => condition,
     }
 }
 
 fn statement_exit(statement: &ResolvedStatement) -> &ResolvedExpr {
     match statement {
-        ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => value,
+        ResolvedStatement::Let { value, .. }
+        | ResolvedStatement::Assign { value, .. }
+        | ResolvedStatement::CopyDiscard { value, .. } => value,
         ResolvedStatement::Unsafe { body, .. } => body,
-        ResolvedStatement::While { body, .. } => body,
-    }
-}
-
-fn evaluation_children(expression: &ResolvedExpr) -> Vec<&ResolvedExpr> {
-    match &expression.kind {
-        ResolvedExprKind::Closure { captures, .. } => {
-            captures.iter().map(|capture| &capture.value).collect()
+        ResolvedStatement::While { body, .. } | ResolvedStatement::LexicalWhile { body, .. } => {
+            body
         }
-        ResolvedExprKind::FunctionReference { .. } => Vec::new(),
-        ResolvedExprKind::Invoke { callable, args } => std::iter::once(callable.as_ref())
-            .chain(args.iter())
-            .collect(),
-        ResolvedExprKind::Call { args, .. } => args.iter().collect(),
-        ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().collect(),
-        ResolvedExprKind::HostCommandCall(call) => call.args.iter().collect(),
-        ResolvedExprKind::ByteRange {
-            source, start, end, ..
-        } => vec![source, start, end],
-        ResolvedExprKind::Unary { value, .. }
-        | ResolvedExprKind::Try { operand: value, .. }
-        | ResolvedExprKind::TryOption { operand: value, .. }
-        | ResolvedExprKind::Project { base: value, .. }
-        | ResolvedExprKind::Upcast { source: value }
-        | ResolvedExprKind::Yield { request: value } => vec![value],
-        ResolvedExprKind::Binary { left, right, .. } => vec![left, right],
-        ResolvedExprKind::ConstructRecord { fields, .. }
-        | ResolvedExprKind::ConstructVariant { fields, .. } => {
-            fields.iter().map(|field| &field.value).collect()
-        }
-        ResolvedExprKind::UpdateRecord { base, fields, .. } => std::iter::once(base.as_ref())
-            .chain(fields.iter().map(|field| &field.value))
-            .collect(),
-        ResolvedExprKind::Block { .. }
-        | ResolvedExprKind::If { .. }
-        | ResolvedExprKind::Match { .. }
-        | ResolvedExprKind::Int(_)
-        | ResolvedExprKind::Int32(_)
-        | ResolvedExprKind::Char(_)
-        | ResolvedExprKind::Uint8(_)
-        | ResolvedExprKind::Usize(_)
-        | ResolvedExprKind::ArrayU8(_)
-        | ResolvedExprKind::RepeatArrayU8 { .. }
-        | ResolvedExprKind::Float32(_)
-        | ResolvedExprKind::Float64(_)
-        | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_)
-        | ResolvedExprKind::Place(_)
-        | ResolvedExprKind::BorrowPlace { .. } => Vec::new(),
     }
 }
 
@@ -963,7 +1120,9 @@ fn reject_cfg_overlaps(
                 )?;
             }
         }
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Assign {
                     binding,
@@ -998,11 +1157,11 @@ fn reject_cfg_overlaps(
     Ok(())
 }
 
-fn reject_overlap_at(
+fn reject_overlap_at<S, N: paid_live::Membership>(
     node: u16,
     place: &Place,
-    drafts: &[CfgDraft],
-    live: &[BTreeSet<u16>],
+    drafts: &[CfgDraft<S>],
+    live: &[N],
     span: Span,
 ) -> Result<(), Diagnostic> {
     if let Some((loan, _)) = drafts.iter().zip(live).find(|(loan, live)| {
@@ -1042,31 +1201,30 @@ fn materialize_cfg_plan(
     edge_live: Vec<Vec<LoanId>>,
     termination_edges: Vec<Vec<u16>>,
 ) -> Result<LoanPlan, Diagnostic> {
-    let loans = drafts
-        .iter()
-        .enumerate()
-        .map(|(index, draft)| {
-            let end_edges = termination_edges[index].clone();
-            if end_edges.is_empty() {
-                return Err(error("loan has no bounded CFG termination edge"));
-            }
-            let mut ends = end_edges
-                .iter()
-                .map(|edge| cfg.points[cfg.edges[*edge as usize].1 as usize].clone())
-                .collect::<Vec<_>>();
-            ends.dedup();
-            Ok(Loan {
-                id: LoanId(index as u16),
-                site: draft.site.clone(),
-                origin: draft.origin.clone(),
-                parent: parents[index],
-                start: cfg.points[draft.start as usize].clone(),
-                ends,
-                end_edges,
-                cause: draft.cause.clone(),
-            })
-        })
-        .collect::<Result<Vec<_>, Diagnostic>>()?;
+    // The draft count is exact. Result collection need not retain spare
+    // geometric capacity in the authoritative physical loan inventory.
+    let mut loans = Vec::with_capacity(drafts.len());
+    for (index, draft) in drafts.iter().enumerate() {
+        let end_edges = termination_edges[index].clone();
+        if end_edges.is_empty() {
+            return Err(error("loan has no bounded CFG termination edge"));
+        }
+        let mut ends = end_edges
+            .iter()
+            .map(|edge| cfg.points[cfg.edges[*edge as usize].1 as usize].clone())
+            .collect::<Vec<_>>();
+        ends.dedup();
+        loans.push(Loan {
+            id: LoanId(index as u16),
+            site: draft.site.clone(),
+            origin: draft.origin.clone(),
+            parent: parents[index],
+            start: cfg.points[draft.start as usize].clone(),
+            ends,
+            end_edges,
+            cause: draft.cause.clone(),
+        });
+    }
     let mut starts = vec![Vec::<LoanId>::new(); cfg.points.len()];
     let mut kills = vec![Vec::<LoanId>::new(); cfg.points.len()];
     for loan in &loans {
@@ -1076,46 +1234,55 @@ fn materialize_cfg_plan(
             kills[to as usize].push(loan.id);
         }
     }
-    let endpoints = cfg
-        .points
-        .iter()
-        .enumerate()
-        .map(|(node, point)| {
-            let mut live_before = BTreeSet::new();
-            for edge in cfg.predecessors[node]
-                .iter()
-                .filter_map(|from| cfg.edges.binary_search(&(*from, node as u16)).ok())
-            {
-                live_before.extend(edge_live[edge].iter().copied());
-            }
-            let mut live_after = BTreeSet::new();
-            for edge in cfg.successors[node]
-                .iter()
-                .filter_map(|to| cfg.edges.binary_search(&(node as u16, *to)).ok())
-            {
-                live_after.extend(edge_live[edge].iter().copied());
-            }
-            LoanEndpoint {
-                point: point.clone(),
-                live_before: live_before.into_iter().collect(),
-                starts: starts[node].clone(),
-                kills: kills[node].clone(),
-                live_after: live_after.into_iter().collect(),
-            }
-        })
-        .collect();
-    let edges = cfg
-        .edges
-        .iter()
-        .zip(edge_live)
-        .map(|((from, to), live)| LoanEdge {
+    let mut endpoints = Vec::with_capacity(cfg.points.len());
+    for (node, point) in cfg.points.iter().enumerate() {
+        let mut live_before = BTreeSet::new();
+        for edge in cfg
+            .predecessors(node)
+            .iter()
+            .filter_map(|from| cfg.edges.binary_search(&(*from, node as u16)).ok())
+        {
+            live_before.extend(edge_live[edge].iter().copied());
+        }
+        let mut live_after = BTreeSet::new();
+        for edge in cfg
+            .successors(node)
+            .filter_map(|to| cfg.edges.binary_search(&(node as u16, to)).ok())
+        {
+            live_after.extend(edge_live[edge].iter().copied());
+        }
+        endpoints.push(LoanEndpoint {
+            point: point.clone(),
+            live_before: compact_ids::from_vec(live_before.into_iter().collect())?,
+            starts: compact_ids::from_vec(starts[node].clone())?,
+            kills: compact_ids::from_vec(kills[node].clone())?,
+            live_after: compact_ids::from_vec(live_after.into_iter().collect())?,
+        });
+    }
+    let mut edges = Vec::with_capacity(cfg.edges.len());
+    for ((from, to), live) in cfg.edges.iter().zip(edge_live) {
+        edges.push(LoanEdge {
             from: *from,
             to: *to,
-            live,
-        })
-        .collect();
+            live: compact_ids::from_vec(live)?,
+        });
+    }
+    let schema = if cfg
+        .expressions
+        .iter()
+        .any(|e| matches!(e.kind, ResolvedExprKind::LexicalExit { .. }))
+    {
+        LOAN_PLAN_SCHEMA_V3
+    } else if loans
+        .iter()
+        .any(|loan| loan.cause == LoanCause::TraversalFreeze)
+    {
+        LOAN_PLAN_SCHEMA_V2
+    } else {
+        LOAN_PLAN_SCHEMA_V1
+    };
     Ok(LoanPlan {
-        schema: LOAN_PLAN_SCHEMA_V1,
+        schema,
         loans,
         endpoints,
         edges,
@@ -1130,13 +1297,19 @@ pub fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
             .map(|instance| &instance.function),
     ) {
         if function.loan_plan != build_plan(program, function)? {
-            return Err(error(format!(
-                "function `{}` has forged shared-loan evidence",
-                function.id
-            )));
+            return Err(forged_evidence(function));
         }
     }
     Ok(())
+}
+
+// The original owned diagnostic policy is shared with the invocation-local
+// deferred comparison. This renderer grants no proof or validation authority.
+pub(crate) fn forged_evidence(function: &ResolvedFunction) -> Diagnostic {
+    error(format!(
+        "function `{}` has forged shared-loan evidence",
+        function.id
+    ))
 }
 
 fn resolve_parent(
@@ -1156,27 +1329,18 @@ fn resolve_parent(
 
 fn resolve_origin(
     aliases: &BTreeMap<ValueId, Place>,
-    mut place: Place,
+    place: Place,
     work: &mut WorkCounter,
 ) -> Result<Place, Diagnostic> {
-    let mut seen = BTreeSet::new();
-    while let Some(alias) = aliases.get(&place.root) {
-        charge(work)?;
-        if !seen.insert(place.root.clone()) {
-            return Err(error("loan alias provenance contains a cycle"));
-        }
-        let mut projections = alias.projections.clone();
-        projections.extend(place.projections);
-        place = Place {
-            root: alias.root.clone(),
-            projections,
-        };
-    }
-    Ok(place)
+    origin::resolve(aliases, place, work)
 }
 
 fn expression_place(expression: &ResolvedExpr) -> Option<Place> {
     match &expression.kind {
+        ResolvedExprKind::Call { .. } => crate::vec_ops::string_slot::place(expression).cloned(),
+        ResolvedExprKind::VecFieldRead { args, .. } | ResolvedExprKind::RowLoan { args, .. } => {
+            args.first().and_then(expression_place)
+        }
         ResolvedExprKind::Place(place) | ResolvedExprKind::BorrowPlace { place, .. } => {
             Some(place.clone())
         }
@@ -1213,6 +1377,9 @@ fn charge(work: &mut WorkCounter) -> Result<(), Diagnostic> {
 
 fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a ResolvedExpr>) {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            pending.extend(value.as_deref());
+        }
         ResolvedExprKind::Closure { captures, .. } => {
             pending.extend(captures.iter().rev().map(|capture| &capture.value))
         }
@@ -1221,7 +1388,10 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
             pending.extend(args.iter().rev());
             pending.push(callable);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             pending.push(tail);
             for statement in statements.iter().rev() {
                 for index in (0..statement.child_count()).rev() {
@@ -1231,7 +1401,10 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
                 }
             }
         }
-        ResolvedExprKind::Call { args, .. } => pending.extend(args.iter().rev()),
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter().rev()),
         ResolvedExprKind::NativeRustImportCall(call) => pending.extend(call.args.iter().rev()),
         ResolvedExprKind::HostCommandCall(call) => pending.extend(call.args.iter().rev()),
         ResolvedExprKind::ByteRange {
@@ -1290,6 +1463,7 @@ fn push_children<'a>(expression: &'a ResolvedExpr, pending: &mut Vec<&'a Resolve
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
     }
@@ -1302,55 +1476,3 @@ fn error(message: impl Into<String>) -> Diagnostic {
 #[cfg(test)]
 #[path = "loan_plan/tests.rs"]
 mod tests;
-
-// Native loans use the same exact place origins and CFG interval as ordinary
-// borrowed calls. The declared parameter mode is authoritative; a named owned
-// argument remains an owned Place node while the invocation borrows it.
-fn borrowed_call_arguments<'a>(
-    program: &ResolvedProgram,
-    expression: &'a ResolvedExpr,
-) -> Vec<(usize, &'a ResolvedExpr)> {
-    match &expression.kind {
-        ResolvedExprKind::Call {
-            callee,
-            instance,
-            args,
-            ..
-        } => {
-            let target = program.resolve_call_target(callee, instance.as_ref());
-            args.iter()
-                .enumerate()
-                .filter(|(index, argument)| {
-                    target.map_or_else(
-                        || argument.ownership == OwnershipMode::Borrow,
-                        |target| {
-                            target
-                                .params
-                                .get(*index)
-                                .is_some_and(|p| p.ownership == OwnershipMode::Borrow)
-                        },
-                    )
-                })
-                .collect()
-        }
-        ResolvedExprKind::NativeRustImportCall(call) => {
-            let target = program
-                .interfaces
-                .iter()
-                .flat_map(|i| &i.imports)
-                .find(|i| i.id == call.import);
-            call.args
-                .iter()
-                .enumerate()
-                .filter(|(index, _)| {
-                    target.is_some_and(|i| {
-                        i.parameters
-                            .get(*index)
-                            .is_some_and(|p| p.ownership == OwnershipMode::Borrow)
-                    })
-                })
-                .collect()
-        }
-        _ => Vec::new(),
-    }
-}

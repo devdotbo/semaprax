@@ -1,5 +1,771 @@
 # Changelog
 
+- Qualify the closed named String-transfer v1 scope with all15 exact a417 owning controls and the five27ae regenerated-pin/source controls; retain unrelated application-budget failures and frozen public profiles.
+
+- Add bounded authoring-card keyword/identity discovery from the existing route and card inventory, preserving library-only search. Executable qualification and live efficiency measurement remain pending.
+- Author authenticated numeric cleanup-closure memo chunks and reuse immutable
+  single-epsilon child backing (#830), retaining every logical work charge and
+  the complete original receivers. Add prepaid static local Session refusals
+  (#781), retaining original Owned controls and the actual paid-report boundary.
+  The combined focused runtime/Clippy campaign is pending; no application-fit
+  or live token/cost improvement is claimed.
+
+- Author narrowly scoped immutable byte-to-byte nesting (#780), with exact
+  outer-entry views, a function-bound borrowed HIR census and complete ancestor
+  freezes. Keep full v1 receivers, mixed source nesting restrictions and actual
+  manual-loop/backend/refusal/Drop controls; execution qualification is pending.
+
+- Reuse the already paid status-source directory between ordinary cleanup
+  validation passes, retaining membership work and complete original receivers.
+  Bind the retained token to its function, replay payer and active ledger;
+  focused work/refusal/Drop qualification and full retry recovery remain pending.
+
+- Author immutable paid nominal payloads and one invocation-owned base-prelude
+  bundle through workspace fresh, borrowed and selective resolution (#827,
+  #828). Preserve complete declaration maps, wire projections and old receivers;
+  add explicit work/refusal custody, rollback, Drop and hostile-mutation controls.
+  Focused executable qualification is pending; public/final-linker/cache paths
+  and application fit remain open, with unchanged caps and forecast correction.
+
+- Carry the exact borrowed generic-template origin into public signature
+  recovery (#799), preserving independent profile diagnostics and complete
+  six-field refusal authentication. Add an enclosing canonical-loan preparation
+  stage label (#829) without changing reservation layouts or quotas. Both source
+  changes await the next combined focused qualification.
+
+- Author a paid 16-entry borrowed lifecycle active path with the unchanged
+  paid tree spill. Keep complete prior collectors and authored cycle/effect
+  order; add differential, physical refusal/Drop and source-custody controls.
+  Runtime qualification and application fit remain pending.
+
+- Avoid constructing an unused validator result scope for functions without
+  postconditions, while retaining all result/body checks and sticky funding
+  authentication. Complete original and receiving controls await qualification.
+- Author paid immutable weighted payload sharing at the ordinary and selected
+  lexical factored canonical receivers. Preserve complete original algebra,
+  work debits and full source-custody controls; add physical backing, refusal
+  and destruction controls. Runtime qualification and application fit remain
+  pending; no ceiling changes.
+- Author the missing unconditional Option/Result retained-declaration term in
+  workspace forecasts (#286), using borrowed producer schema metadata
+  and existing checked layout factors. Preserve complete historical receipts,
+  complete original receivers, unchanged carrier gates and physical Drop
+  controls. Executable qualification and current-source fit remain pending.
+
+- Author additive paid streaming constructor preflight and shared exact-program
+  function-directory custody (#824), preserving complete independent originals,
+  diagnostic ordering and unchanged whole receiver controls. Qualification is
+  pending; other constructor owners and application fit remain unproved.
+
+- Keep small Program teardown frontiers inline without changing original AST
+  destruction order or source/custody identities. Preserve the complete original
+  destructor/deep owner and add receiving/free-order controls; wider ordinary
+  spill remains unpriced and current qualification is pending.
+
+- Author current parsed-source custody and deferred checked cache keys (#796).
+  Reuse actual restored source owners for Project linking, validate full key/path
+  associations before publication, and retain metadata separately from ASTs.
+  Original receivers and cold/warm checks remain; qualification is pending.
+
+- Author a streaming paid ordinary cleanup-inventory summary (#814) at the real
+  schema caller. Keep complete original producers/schema/receiving controls and
+  compatibility admission; prepay backing and cumulative work from the existing
+  budget. Sixty exact source-bound controls await consolidated qualification;
+  no application fit or aggregate schema funding is claimed.
+- Author paid compatibility canonical-loan preparation and shared custody
+  (#824), keeping complete original receivers and the unchanged whole observer.
+  Carrier backing uses the same captured owner; qualification is pending.
+
+- Remove the standalone validator's unpriced per-function permit-set collection
+  through borrowed exact membership. Keep the complete original receiver and
+  error-order controls; author allocation and phase-isolation controls. Runtime
+  qualification and attribution to the outstanding eight-byte deficit remain
+  pending.
+
+- Author bounded transcript-refusal call, loop and genuine-cycle witnesses
+  (#821), preserving primary diagnostics and complete independent model controls.
+  Optional help uses the existing payer; the separate model harness forwards
+  only a reservation operation through a hidden library facade. Focused runtime
+  qualification and diagnostic-pin production remain pending.
+
+- Author funded borrowed inline scratch for ordinary HIR iterator, renewal and
+  unsafe preflight scans (#817), retaining full independent original receivers
+  and their distinct child/error order. Spill backing and authorization nodes
+  are prepaid; fixed semantic errors retain identical static diagnostic bytes.
+  Exact physical/refusal/Drop controls are authored, with execution pending.
+
+- Author a paid online expression-fact AVL arena for ordinary cleanup replay and
+  selected callers (#813). Retain complete original BTree producers/receivers,
+  exact payloads and immediate duplicate order; prepay full overlapping backing
+  and caller work without changing caps. Full semantic/allocation/Drop controls
+  and source joins are authored; focused execution and application gains remain
+  unqualified.
+
+- Restore the original common diagnostic help shortlist by ranking the explicit
+  fused-profile F130 advice after ordinary diagnostic advice. Exact profile help
+  and the complete inventory stay available; both old exact CLI owners remain
+  unchanged. Focused controller regression is authored; execution is pending.
+
+- Fix cleanup capacity telemetry feeding a previous construction aggregate into
+  the next invocation. Separate standalone/local/persistent component maxima,
+  restore local scopes on refusal, and retain complete staged/attached terms.
+  Count omitted held ordinary directories, conditional flow and string-move
+  ownership. Preserve the full original model/feedback and receiving-Drop
+  controls. Source-only; physical attribution, existing pin regeneration and
+  focused qualification remain pending.
+
+- Record the recovery constructor funding design and source-authored executable
+  boundaries for real unpaid acquisition/work, zero/exact-observed/one-short
+  limits, sticky refusal and complete receiving Drop. Preserve ordinary
+  six-field diagnostics and independent original receivers. Payment remains
+  unimplemented: its failure needs a separate result through the source verifier.
+  No runtime qualification or admission-budget change is claimed.
+
+- Author caller-paid late Agent identity producers in both resolver passes,
+  preserving the full carrier and separate semantic/refusal channels. Borrow
+  held ARC/scoped lookup keys and same-pass function owner identities. Complete
+  frozen receivers, literal compatibility, exact/short/sticky/Drop controls and
+  receiving source joins remain connected. Source-only; focused qualification
+  and complete dynamic producer migration remain pending.
+
+- Author paid borrowed executable text/collection profiles and an exact immutable
+  declaration-index observation directory shared across primary validator clones.
+  Preserve complete independent original receivers, substitutions, structural
+  limits, diagnostic order and sticky refusal; author cold/warm and real Drop
+  controls. Source-only; focused qualification, total funding and application fit
+  remain pending.
+
+- Source-authored borrowed-root HIR scopes defer complete binding-map copies until
+  actual scope mutation, preserving full map fields, sibling isolation and owned
+  publication. The complete frozen nonrecursive receiver and helper/frame bodies
+  remain an independent control. Actual empty-root carrier overhead and physical
+  allocation/Drop controls are explicit; focused qualification and measured
+  resolution-deficit improvement remain pending.
+
+- Author prepaid function collection traversal and lifecycle effect backing,
+  borrowing complete type/identity/effect keys and avoiding discarded invariant
+  identities. Preserve full independent original receivers, structural bounds,
+  diagnostics and sticky refusal controls; add actual allocation-through-Drop
+  definitions and complete source joins. Source-only; combined focused runtime
+  qualification and application fit remain pending.
+
+- Source-authored HIR final-validation scratch batch removes discarded native
+  result trees, small generic frame vectors and nominal key copies, projects
+  Array/scalar callable flag misses, and constructs paid classifier Storage only
+  on actual miss/fallback. Full original receivers and exact sticky budgets stay
+  preserved; combined focused qualification and application fit remain pending.
+
+- Author root-first caller-paid cleanup droppability: classify the borrowed root
+  once before outer traversal storage, retaining hostile cache precedence, exact
+  semantic errors and complete nominal traversal. Preserve the full prior paid
+  receiver verbatim and the independent ordinary callback; add focused root and
+  nominal exact/short/zero/sticky/physical Drop controls. Source-only; no runtime
+  qualification, broader funding repair or G171/application-fit claim.
+
+- Author borrowed logarithmic field/case lookup on unchanged DeclarationIndex
+  tuple BTree keys. Preserve exact DeclarationId/name ordering and returned
+  references; retain independent full old lookups and hostile/real-owner
+  allocation-through-Drop controls. Source-only; runtime qualification pending.
+
+- Source-authored annotation recovery retains actual type/ownership/loan metadata
+  and carries a separate expected-type refusal view. Independent expected types,
+  fixed-result checks and ownership boundaries remain selected. Focused
+  qualification is pending; no Cargo or full gate ran in the implementation lane.
+
+- Author additive bounded-nested-response.v2 for primitive String vectors using
+  existing named borrowed slot views, complete preflight and the original writer.
+  Preserve the independently callable v1 receiver and refusal controls, ordinary
+  caps and request policy. Add complete request/response, exact-wire, replay and
+  actual allocation/Drop definitions; executable qualification remains pending.
+
+- Author allocation-free ordinary substitution for structurally nonrecursive
+  roots, preserving generic owner/name priority, exact diagnostics and cloned
+  compound results. Avoid nonnominal nested-record classifier root carriers
+  while keeping original profile refusals. Preserve full frozen substituters
+  and current/original classifier controls; add real caller boundary/Drop
+  gates. Source-only; no whole-resolver funding or G171 claim.
+
+- Extend the paid outer droppability source corpus with isolated zero-budget
+  helper-allocation controls over real parsed declaration IDs, owned-record and
+  owned-leaf Vec signatures, concrete generic records and refused variants.
+  Independently inspect declaration clone sharing and owned Diagnostic receiving;
+  pair each full receiver with exact/short/zero/sticky and actual Drop controls.
+  Source audit found only borrowed metadata and inline helper state on these
+  routes; executable allocation qualification remains pending.
+
+- Author caller-paid outer cleanup droppability construction on the existing
+  replay type-fact payer: borrowed root and complete owned pending/visited
+  payloads, substitution, original raw/capped diagnostic keys, semantic text
+  and final replay diagnostics. Preserve independent full old receivers and
+  exact cache/diagnostic precedence; add success/hostile, logical-floor,
+  exact/short/zero/sticky and receiving/unwind/Drop controls. Absent visited keys
+  acquire conservative BTree node bounds, separate from actual allocations.
+  Source-only; executable qualification and broader funding claims remain pending.
+
+- Author a constructor-local paid ordered HIR identity directory. Stage shared
+  or weak AVL suffixes before changing unique prefixes, retaining duplicate
+  priority, canonical merge order and complete original BTree receivers. Add
+  full rotation, snapshot, ordered cursor, every-byte refusal and physical Drop
+  controls. Source-only; qualification and allocation effects remain pending.
+- Author scoped refused-binding diagnostic recovery (OPT806/#799): retain lexical declaration frontiers, original ownership and independent closure/match-coverage errors, complete saved receiving bodies and the 60-case old/current corpus. Annotation neutralization is limited to cleanup-inert real values; ordinary recovery directory storage remains unpaid. Execution and qualification are pending under [Scoped diagnostic recovery v1](docs/SCOPED-DIAGNOSTIC-RECOVERY-V1.md).
+
+- Author constructor-local HIR closure funding for capture and nested-body identity
+  insertions, canonical identity/result backing, parameter names/types, and the
+  recursively admitted body payload. Construct the body root directly, retaining
+  the complete original public product and receiver as independent references.
+  Preserve shape checks and canonical plan work/order; those constructors and a
+  complete legacy fallback remain explicit unpaid residuals. Add full-state,
+  diagnostic, exact/short/sticky, actual payload Drop and unwind controls.
+  Source-only; no measured allocation improvement or application-fit claim.
+
+- Add exact `help language detail:<slug>` retrieval for six complete profile
+  appendix sections, preserving their original paragraph bytes and all 17
+  existing topic routes. Topic cards name one actionable detail lookup; unknown,
+  stale or oversized details fail without truncation. Author exact source and CLI
+  projection controls; executable qualification remains pending.
+
+- Keep all 17 exact language help topics within their existing bounds by moving
+  complete detailed profile rules verbatim to the full-reference appendix.
+  Preserve every canonical example, diagnostic marker, full-card rule and route;
+  concise topic guidance links to the full constraints. Static source review
+  only; compiler and CLI qualification remains pending.
+
+- Author caller-paid declaration fact-cache misses on actual cleanup replay
+  routes, removing discarded admission trees and child-fact directories while
+  funding retained classifier keys, layouts, ordered maps and scratch backing.
+  Preserve complete original classifiers, cache precedence, work/error order,
+  and logical reserved-floor/partial-output behavior. Add full old/current and
+  actual allocation/debit/receiving-Drop/refusal controls. Source-only; outer
+  droppability scratch, semantic diagnostic text and synthetic providers remain
+  explicit residuals, and execution/whole-replay funding evidence stays open.
+
+- Author persistent HIR contract baselines that inspect every current freshness
+  flag, share unchanged roots and bindings, and pay complete true-flag payloads
+  plus changed node constructors before returning a staged root. Retain the full
+  original copy receiver and complete function/control corpora, with new rich
+  sharing, every-byte refusal, clause isolation, Drop and unwind owners.
+  Source-only; executable allocation/work/application-fit evidence remains open.
+
+- Author source-verifier constructor removal: lend the existing immutable type
+  table across generic passes, borrow requires entry state, and scan declared
+  fields in reverse to preserve last duplicate winners without secondary indexes.
+  Keep namespace/inheritance storage and cycle function-map construction; retain
+  complete old program/function/table receivers, the full original source corpus,
+  public/private diagnostic JSON and allocation/Drop owners. Source-only; observed
+  allocation, ledger and application-fit evidence remains pending.
+
+- Author direct ordinary cleanup-inventory replay with paid borrowed ordinal
+  indexing, deferred full-frontier comparisons, one reused actual 1028-frame
+  cursor, and paid direct shape/type reconstruction. Preserve complete original
+  owned receivers, duplicate selection, work/depth limits and error ordering;
+  add original-corpus and real allocation/debit/Drop/refusal controls. Source-only;
+  classifier fact-cache misses and synthetic parameter backing remain unpaid
+  residuals, and qualification and whole-replay funding remain open.
+
+- Author constructor-local HIR identity B-tree payment and focused owner
+  corrections: retain the complete allocation/debit bound, catch and drop real
+  owned unwind payloads without harness hook capture, compare rich hostile
+  contract diagnostics with the complete old oracle before an admitted transfer
+  case, and preserve both span-drift rejection and equal-width generic reuse.
+  Full fixtures, saved pass bodies and 64 MiB budgets remain; execution pending.
+
+- Author transactional paid HIR scope insertion: stage a shared suffix with exact
+  owning node carrier/initializer payments, then commit the unique prefix without
+  fallible work or allocation. Preserve the complete coarse receiving policy and
+  all original corpora; add full-field rotation, replacement, snapshot, weak,
+  every-paid-boundary and Drop comparisons. Source-only; physical request counts
+  may remain the same, and consolidated qualification/application fit remain open.
+
+- Author direct paid persistent HIR function scopes across parameters, requires,
+  body, result and ensures through a sealed owner of the mutable scope borrow.
+  Preserve complete saved map function/expression/
+  contract drivers, original publication restoration and conservative insertion
+  payments. Add full-chain diagnostics, hostile payload, allocation/debit/Drop,
+  exact/short/sticky and unwind owners; correct only the contradictory freshness
+  expectation in the unchanged rich refusal fixture. Repair inadmitted I64
+  literal suffixes in the generic reuse fixture with the same default-I64 values.
+  Source-only; consolidated qualification and OPT795 remain open.
+
+- Acquire real caller-paid import declaration directories at construction and transfer their exact backing once at semantic cache publication, retaining standalone key receivers and full raw-graph controls. Preserve type-before-function failure order and generated view lengths; AST-only passes avoid discarded keys. Ordinary/warm spare storage is an explicit tradeoff. Add source-only zero/exact/short/sticky, detached/pointer, complete projection and constructor-through-Drop controls; qualification and whole application funding remain pending.
+
+- Complete private paid loan-plan seed/live propagation, traversal allowed identities and nominal predicate cycle directories. Retain default public BTree drafts and complete old call/predicate/materialization receivers; preserve full canonical plans, first diagnostics and checked-work equations. Prepay two-reference zero-heap ordered cursors and use sticky allocation-free AVL removal, with explicit O(n log n) borrowed traversal tradeoff. Author literal allocation/debit/Drop, exact/short/denied-mutation and full late-error controls through 4096 entries. Source-only, qualification and full application-fit evidence pending.
+
+- Extend the private caller-paid loan planner directories through candidate ownership/alias discovery, native parent bindings, nonconsuming/terminal roots and borrowed cycle sets. Preserve complete pre-change funded BTree receivers and public fallback, full plan/work/error order, and author whole allocation/debit/Drop plus exact/short/sticky controls. Shared draft seed/live propagation and semantic diagnostic funding remain explicit residuals; source-only, consolidated qualification pending.
+- Author an additive affine workspace report failure and typed source-only preflight, retaining each selected replay invocation's initial refusal or original paid slot/text, failed ledger and receipt through both schema receiving passes. Preserve complete legacy preflight and filesystem receivers, exact diagnostics and authority order. Full dynamic directory/TLS attribution and filesystem typed error propagation remain explicit OPT781 residuals; source-only, qualification pending.
+
+- Author Rust embedding facade major 3 for the source-incompatible `Diagnostic.message: Cow<'static, str>` migration. Preserve public dynamic constructor ownership and prepaid pointer/capacity, full diagnostic JSON/Display bytes and historical major-2 negotiation controls; current facade negotiation reports major 3. Fixed validation refusal literals need no message allocation at zero allowance. Original oracles and new whole receiving/clone/Drop controls remain; source-only, qualification and remaining report/output funding are pending.
+
+- Author paid persistent ordered generic-template environments, sharing immutable current-HIR types and untouched checkpoint roots. Unique insertion paths prepay their leaf before mutation; shared path/rotation nodes publish only after complete payment and construction. Retain complete original borrowed-map and owned-map receiver policies and exact caller frontiers. Source-only OPT795 followup; allocation/debit tradeoffs, full application funding and executable qualification remain unassessed.
+
+- Compare replay call-commit ordinals through borrowed signature/transfer receivers, removing two discarded scratch vectors while retaining the complete fallible classification pass and diagnostic priority. Preserve the full vector oracle and author hostile ordinal, later-type-error, actual allocation/Drop and unchanged-debit exact/one-short controls. All parameter fallbacks remain; source-only, consolidated qualification pending.
+
+- Consume newly owned replay observation prefixes when freezing a local extension, removing only the second head-tail clone buffer and its reservation. Preserve borrowed suffix copies, original moved-storage funding, work/node/ordinal/destruction order and complete saved extension oracles. Author full result/error and actual allocation/debit/Drop plus exact/one-short controls; original parameter, union/merge and application controls remain. Source-only; consolidated qualification pending.
+- Author one inline current-member cleanup-validation row with consumed completion and mutable advancement. Release member helper/family backing after canonical comparison, retaining phase proof/census/memo state and cumulative physical debits. Preserve the full unindexed oracle, ten existing controls and large-member whole-phase observations; add foreign/stale/repeated advancement and actual row-Drop/no-refund controls. Source-only followup; executable qualification remains pending.
+
+- Resolve body-dependent byte-helper callers afresh under function reuse, using the exact shared source proof signature frontier and complete nested call traversal. Current transitive proofs, diagnostics, proof failure and reservations remain; ordinary scalar generic callers still reuse. Author full fresh/error, prior Agent authority, metadata drift and actual allocation/Drop with exact funding controls. Source-only; execution pending.
+
+- Harden complete function reuse signatures with exact yields/follows clause equality and full fresh/nonreuse AST-mutation verdict controls. Make owned-text substitution identity leaves exhaustive so future type variants require review; saved old traversal remains unchanged. Source-only and unqualified.
+
+- Author exact generic-environment selective reuse of unchanged monomorphic function HIR. Complete ordered generic signatures and an exact-current source capability replace the blanket generic exclusion; current templates and the full derived instance closure are still rebuilt independently, with previous generic payloads excluded. Full fresh-owned, stale binding, body/closure/argument drift and actual paid allocation/Drop controls are authored; the genuine Vec/Box reuse assertion remains. Source-only and unqualified, with no generic-instance caching or efficiency claim.
+
+- Author ordered deferred cleanup validation over sealed exact current members, lazily reused census/proof storage and stable ordinary-family cells. Preserve original lexical global-owner priority, canonical compare order, Boolean proof refusal and complete independent final replay. Retain the full saved validator and source-author hostile, exact/short and whole allocation/debit/Drop controls; executable qualification is pending.
+
+- Author exact borrowed reserved-record-invariant lookup in the existing declaration map, preserving arbitrary stored declaration presence and complete UTF-8 byte order. Retain the owned suffix-key oracle and author hostile identities, literal zero-query-allocation and complete Drop controls. Source-only followup; executable qualification remains pending.
+
+- Author inline HIR type-admission frames, lazy generic classifiers, and borrowed owned-text record traversal. Presence/ownership queries retain exact arbitrary-cache-first flags; compound substitutions, cycle/depth/field/leaf bounds and diagnostic order remain. Complete pre-change eager and owned traversals plus hostile, boundary and actual allocation/Drop controls are retained. Source-only tranche; coordinated execution and application-efficiency evidence remain pending.
+
+- Keep resolver capacity observations allocation-free while retaining the complete saved HashSet census outside the production allocation observation. Exact highwater, duplicate scope and nested continuation controls remain. This corrects test harness contamination and does not represent a production allocation or live agent token reduction.
+
+- Borrow exact generic-template binding types while retaining ordered scope snapshots, substitutions, duplicate diagnostics and the full owned-map oracle. Compose current finite record-discard Graph v84 only after independent source/HIR/loan/capacity/cleanup replay; preserve frozen, detached and native-import refusals. Repair the checked native allocator zero-clause join without removing existing authority checks, and use the actual ordinary interpreter engine for its private provider controls. Paid scope checkpoints, fixed initial loan-plan staging and cached flag-only queries retain complete owning controls. Consolidated focused execution and scoped Clippy are pending; these compiler changes do not establish live agent token savings.
+
+- Reuse exact initial loan-plan funding in linked workspace metadata, borrow complete authored/instance HIR for provenance, and avoid declaration-index Drop scratch for leaf roots. Preserve full derivation, diagnostic order, canonical replay and iterative nested disposal; independent old-path allocation and hostile controls await current-source execution.
+
+- Fund initial authored and concrete-instance loan-plan construction through one captured existing CFG owner (OPT792). Preserve the original group publication/error order, full independent later rebuild, exact limits and original whole-pipeline observers. Add complete legacy attachment and actual planner backing through Drop controls; current-source execution remains pending.
+
+- Author a selective explicit CopyDiscard statement and the finite owned-record loop profile for OPT779. Source and HIR independently retain the no-result boundary and exact counter shape; canonical cleanup, all three engines, Graph v84 and checked-HIR cache v10 are joined. The original lifetime fixture and allocation limits remain unchanged. Source-only controls and qualification are pending.
+
+- Author named-only explicit `string_take` ownership forwarding (OPT790), preserving default clones, full source/HIR and independent canonical cleanup checks, and frozen public profiles. Initial native/interpreter/private Wasm and hostile gates are authored; qualification and complete acceptance remain pending.
+
+- Reduce discarded HIR classification and identity-audit scratch (#789): nested owned-byte admission counts leaves without building unused field paths or formatted cycle keys, flat admission avoids a discarded result vector, and exact nominal/type-parameter identity leaves retain their NUL checks without a heap worklist. Saved classifiers, exact original bounds and diagnostic priority, and complete query Drop observations remain owning controls. Fixed test-only core debit traces additionally locate checked-cold/ordinary cache report differences without changing Budget layout, graph fields or caps. Source-reviewed; grouped execution remains required, with no whole-validator funding or application-efficiency claim.
+
+- Author Borrowed Record-Field Uniqueness v1 (#786): `vec_unique_by<Row>(rows, "field")` borrows one named admitted Copy-record or owned-leaf record Vec for the call and returns Bool for one literal `string` or `i64`/`i32`/`u8`/`usize`/`bool`/`char` field. Floating and Bytes keys, the legacy two-Bytes carrier, paths, temporaries, generic roots and while bodies stay closed (`SPX-T319`/`SPX-T283`). A distinct `core.vec.unique-by.v1` descriptor reuses only the explicit sort-key layout/field derivation and is replayed by source admission, both resolvers, HIR validation, every backend, workspace source projection (`SPX-G173`) and Project snapshot replay. Interpreter, native C11 and private Core-Wasm (`env.spx_vec_unique_by_v1`) heapsort one `4 * len` ordinal scratch in place, compare full keys and free scratch before the result; refusal is `semaprax.vec.v1` code 3. Selective prelude v18 binds new programs only. ShiftSim's `unique_patient_ids` adopts it; the former clone/sort helpers are kept byte-for-byte as an independent test oracle. Source-only and unexecuted; no qualification, fit or cost claim.
+
+- Author a closed ordinary scalar lexical receiver for retained Workspace schema selection (OPT766). Both retention routes capture a separate inventory for no-import modules whose every retained function, contract and dead branch is a Value scalar shape with typed exits (exact path, module, ordered identities, origins and typed member digests; no revision, plan or schema). The Semantic Workspace preflight passes its own held sources: the receiver recomputes the source revision, authenticates exact live membership and namespace facts, and replays every member (lexical and scalar) on one paid Acquired→Preparation→Session owner. Only the resulting private consumed receipt selects the module's family, through the base classifier's now-shared v17..v10 mapping. The persisted terminated-guard owner's module therefore no longer reaches the frozen from-parts G410. Every other shape, and Change/Structural Change/Operations views, keep their existing route and refusal; frozen from-parts selectors still refuse. Session engine Diagnostics remain unfunded (#781). Oracle-parity, source/namespace/member/detached/inventory attacks, closed-family exclusions, plan mutation, exact/one-short and Drop controls are authored; source-only, unexecuted, with no fit or efficiency claim.
+- Author the valid-only shared `DeclarationId` foundation (#785): a closed allocation-free compiler-static spelling or immutable `Arc<str>` backing, exact text Eq/Ord/Hash/Debug/wire and Borrow<str>, with the actual 24-byte inline layout asserted. Explicit paid borrowed/owned constructors return refusal outside the carrier and reserve backing before allocation; legacy `new` is infallible and explicitly unfunded without ambient budget access. Compiler-constant queries and borrowed graph lookups no longer construct temporary identity text. Decoder preserves wire and charges local plus owning budgets independently. Dynamic legacy construction migration and whole-engine funding remain open; source-only controls are authored and unexecuted.
+- Author immutable borrowed `Slice<u8>` source `for` traversal (#780, OPT780). One `byte_len` snapshot, an ascending counter and one `byte_get` receiver whose only arm is `Some` replace manual length/index/Option/latch scaffolding; an inconsistent `None` reaches the existing invariant refusal on every backend, and every other partial `Option<u8>` consumer was audited to admit only the fully authenticated receiver. The view's whole or subrange root is frozen for the whole traversal by the source verifier and, independently of view liveness, by an HIR census over authenticated provenance and a `TraversalFreeze` loan on the resolved owner. Graph v83 owns the additive `borrow_bytes` latch, `"exhaustive":false` receivers and freeze loans; checked-HIR cache compatibility rises to `semaprax.project-checked-module-hir.v9` for `SourceForKind` tag 3. Programs without a receiver keep their prior schema and bytes. The byte form builds its pieces in place and debits the receiver's exact backing before construction; the workspace `for` prebound stays 16. Exact/one-short/sticky/Drop compiler controls and an interpreter peak no-copy/Drop control are authored. Build, execution and live gain measurement remain pending; generic-instance and native-Rust interop builder routes remain unsupported.
+- Give the actual retained primitive lexical replay caller a paid outward report (#781/OPT781). An affine acquisition/preparation/Session chain keeps its report and ledger together without a pairing argument at refusal or finish. The carrier pays for one Diagnostic slot and its caller's fixed literal on the module's selected ledger before preparation. Setup, authentication, constructor and Session refusals transfer it with the exact failed ledger owner. A refused carrier returns the rejected ledger and a Copy reason instead of a Diagnostic. Local, imported-helper, graph, type, record and current-module authenticators and the selected declaration constructors now refuse with a Copy `Refused`. They allocate no discarded Vec or String. A budget refusal's prepaid text, or a Session's own Diagnostic, is moved once into the failed preparation as its first receipt and is never cloned, formatted or published. `finish_paid` returns the same boxed ledger with no refund. A missing or mismatched paid form fails closed to a typed `Unpaid` boundary, and only its named `into_unfunded` allocates. Change (G184), Structural Change (G192) and Operations (G200) prepay the literal they remap to, and pass-through routes keep G410. The owned-Diagnostic `Preparation` and `Session` retry/finish APIs are now test-only. Remaining unfunded allocations: outward legacy wrappers, non-replay view refusals, the shared scalar purity classifier's structural refusals, and non-budget replay-engine Diagnostics inside the Session. Public literals, types, ceilings and admission are unchanged. Zero/one-short, original-pointer, prepaid-receipt, no-discard, same-ledger/first-receipt, Drop and no-restoration controls are authored but unexecuted.
+
+- Borrow the exact-current nominal type and interface inventories in scalar, owned-data and internal Wasm type reachability (OPT784). Every module's identities are still checked for duplication before the closure walk, including unreachable ones, with unchanged SPX-G173/G172 text and order; RI-06 and indexed-owner admission scan borrowed interfaces in the same flattening order, field visits use borrowed slices, and selected declarations are cloned once at publication. No reservation ledger or forecast covered the removed copies, so none changes. A saved owned-map oracle, workspace/HIR parity, unreachable-duplicate, resource-admission, nested generic, allocation/Drop controls are authored; source-only, unexecuted, with no fit or performance claim.
+- Borrow immutable Kernel-0 parameter and local identities in call-local evaluator environments (partial OPT708), removing larger inline identity slots and Arc clone/drop traffic. Reverse shadowing, fresh calls, lazy/first-fault behavior and source binding remain unchanged. Saved owned-environment and literal allocation controls are authored; execution and whole-formatter performance remain pending.
+- Add internal monomorphic whole-subtree `match own` record bindings (OPT779). Source/HIR checks retain exact field identities, full inherited limits and descendant-loan blocking; independent cleanup transfers map the complete child leaf suffixes. Native and Wasm use existing fieldwise carrier moves, and frozen public profiles remain closed. Recursive-control, failure, hidden-limit and plan-forgery gates are authored; qualification, cache/full-allocation accounting and original Catalog acceptance remain pending.
+
+- Remove temporary owned declaration IDs from all five Kernel-0 renderer entry lookups (partial OPT708). Exact current-program lookup order, source binding, evaluation and settlement are unchanged. Independent lookup allocation and authenticated evaluator parity controls are authored; qualification and whole-formatter performance remain pending.
+
+- Replace iterative HIR lowering's owned expression-path strings with a private parent/edge path arena (OPT778). Continuations hold four-byte coordinates; nodes keep only their own closed edge spelling, checked length and frame height and are released at each pop, so at most one stays live per frame slot. Final `ExpressionId`/local `ValueId` bytes stream back to front into one exactly charged buffer with the unchanged owner/domain/length/path encoding; `scoped_identity` remains the independent oracle, and the recursive reference keeps text paths through it. Closure, record-pattern and synthesized `for` lowering materialize once with exact charges. `RESOLVER_FRAME_BYTES` now bounds one frame slot plus its arena node; its compiled value and pinned builder phase peaks need re-derivation. Budgets, forecasts' formulas and public identity bytes are unchanged. Oracle, slot, growth/refusal, allocation/Drop and full-HIR differential controls are authored; source-only, unexecuted, with no recovery or memory claim.
+
+- Author Scoped Record Row Loan v1 (OPT-775): a flat owned-leaf `for borrow` row may be lent call-only, as a direct argument, to an ordinary monomorphic `borrow R` helper whose body and contracts are independently proven to read only Copy scalar fields. HIR carries a versioned `RowLoan` descriptor (Vec place, index, element, traversal region, length bound, callee, exact parameter) validated against its call slot, traversal freeze and helper proof; the receiving call holds a whole-Vec `BorrowedCall` loan. The helper stays one authored function: native lent parameters take a versioned tagged carrier (ordinary callers adapt resident records), Wasm keeps the one-pointer ABI with a bit-31 loan tag and reserves only the 16-byte loan block, never record-sized storage for the nominal argument, and the interpreter checks the Vec generation once while staging and then aliases the frozen row (no per-read generation check; the validated freeze excludes mutation). Graph v82 and checked-module cache v8 project and encode the descriptor; workspace replay binds each authored slot to current local or provider source. Copy-record rows and every storing, returning, capturing, owning, forwarding, viewing, generic or function-value use stay `SPX-T284`. Owning definitions are authored; no gate has been executed and no efficiency claim is made.
+
+- Author actual-binary public CLI codec suitability controls (#773): twelve-profile receipts, whole-row bounded continuation, exact/+1/one-short output, source and manifest drift, capability versus shape, and read-only grammar refusals. Every query checks the complete fixture tree for writes. Source-only checkpoint; current-source execution qualification remains pending.
+
+- Borrow exact authored AST declarations during uncached, import-free,
+  invariant-free synthetic projection resolution (partial OPT776). The sealed
+  presentation owns only an optional scalar main, retains complete source/HIR
+  verification and reduces only the reservation for the absent AST copy.
+  Cache/import/invariant paths remain paid owned inputs. Owning parity,
+  pointer, allocation-free overlay Drop and budget controls are authored;
+  qualification and original Catalog/Shift fit remain pending.
+
+- Chain decoded-identifier fingerprints through 64 bounded Copy buckets (#748/#771) in the generated request-view record decoder and the Catalog Normalizer's first-failure scan, so a probe walks only its bucket instead of every prior entry. Bucket heads and links are ordinary reserved `Vec<usize>` backing (64 and 256); full decoded-token equality still decides every equal fingerprint, including deliberate collisions. Grammar/cardinality/schema/duplicate/total/provider order, offsets, the ASCII 1..16 request policy, the 1..64-byte UTF-8 id policy, fuel and public limits are unchanged; the eight-server scan and the frozen pairwise reference stay direct. A request-view max-shape regression (256 colliding/escaped rows, 257th refusal, last-row duplicate, early-duplicate/late-schema/grammar order) is authored on interpreter/native/Wasm. Source-authored only; qualification and fuel effects are unmeasured.
+- Replace native lexical-anchor Block/Match prefix rescans with the existing fixed-depth borrowed child cursor. Authored order, exact anchor ambiguity, assignment identity, iterator tail behavior and the 256-frame/1,000,000-work bounds remain unchanged; both actual Block scans are paid before traversal. Independent indexed-order, wide linear-debit, exact/one-short and hostile depth/duplicate controls are authored; qualification and performance measurement remain pending.
+
+- Label previously unlabelled resolved-core builder reservations with compiler-owned operation stages, retaining the first sticky refusal and restoring nested labels. The 64 MiB budget, reservations, forecast and construction behavior are unchanged. Catalog’s prior 2,048-byte refusal remains unattributed; source-only diagnostic controls are extended, with qualification pending.
+
+- Separate recursively retained interpreter Binary/If/Call/Block bodies from the giant expression match, preserving their original code and charging once at entry. Existing terminal-order tests now label each exact route/backend before dispatch. The retained debug artifact showed a 125,024-byte old evaluate prologue; the new artifact and full 256-frame canonical status/fuel/cleanup parity still require qualification. Worker stack and all admission limits are unchanged.
+
+- Repair private BytePartition source controls against actual compiler contracts: admit only the checked usize-to-i64 scalar publication conversion in the current graph, keep owned aggregate returns on a non-entry helper, and preserve the 256/257 conservative view boundary with independent actual loan-site counts. Ordinary admission stays closed; original 4096 and hostile receiving controls remain unchanged and qualification is pending.
+
+- Author private original-source native partition receiving (#746): a current sealed source projection selects shared carrier/helper bindings before canonical function emission, stages the actual operation failure before commit, and settles one invocation registry before publishing the result. Original 4096/count and four-status O0/O2 owning controls are authored. Ordinary/public admission, consuming iteration, Borrow-parameter receiving and complete native runtime funding remain closed or pending; no execution claim.
+
+- Retain the first source-selection refusal from the existing fused construction derivation, preferring the authored main. SPX-F130 now reports its held function location and bounded shape guidance; legacy constructions point to the ordinary route without reducing requirements. Admission, ambiguity, source diagnostic precedence and no-fallback behavior stay unchanged. Existing hostile and legacy controls are extended; executable qualification and agent savings remain pending.
+- Correct bounded agent language help for static borrowed UTF-8 literals, explicit fused source opt-in versus ordinary native builds, and exact-zero lexical guard completion. Add compiler-checked source examples and preserve the existing help budgets and pending qualification boundary; the diagnostic projection is regenerated by its owning producer.
+- Author bounded read-only exact-type codec shape explanations (#773) using existing generator predicates and selector metadata. Current source/revision receipts, optional unmet policy, actual import discovery and whole-row continuation remain separate from candidate/backend admission. Owning source controls are authored; execution and #722 discovery trials remain pending.
+- Author a reusable decoded-key fingerprint index in `std.data.json.dec` (#771): `decoded_fingerprint` folds one token's canonical decoded bytes once into bounded Copy metadata (decoded length 1..=limit, hash mod 65521), `fingerprint_entry` packs it with the opening offset, and `fingerprint_match` rejects unequal fingerprints while every equal fingerprint, including each collision, runs the exact `decoded_token_eq` comparison. The Catalog Normalizer's first-failure scan uses it for all 1–64-byte decoded UTF-8/NUL/escaped ids in place of its `item-###` filter, preserving input order, second-occurrence offsets, preceding grammar/schema/enrichment errors, checked totals and no-prefix publication. The pre-change pairwise batch/record pair is frozen as an independent whole-application reference. Host decoded-byte oracle cases cover deliberate ASCII/non-ASCII/NUL/64-byte-prefix collisions, escaped/surrogate/raw equivalence, 64/65 bounds, 256 rows and earliest-duplicate ordering. Source-authored; qualification, runtime and token effects are unmeasured.
+
+- Author source-bound defining-record sidecars and borrowed retained type closure for explicit monomorphic type imports (#745). Current module/type pointers, revision, layout and field namespace facts authenticate only the demanded declaration on the same preparation transferred into replay; exact Vec field-read digests and cumulative full-chain controls are authored. Generic instances, unsupported provider bodies and broader typed closure remain closed; execution qualification is pending.
+- Repair three fused receiving drifts against the frozen original 33/4096 receipts (#747/#768), sources unchanged. Native: the owner prelude's resource ABI now runs the owner's complete selected revalidation through a new owner-only constructor instead of ordinary validation, which refused the joined loop with `SPX-H006`; raw programs keep ordinary validation. Core-Wasm: a leased payload view now ends only by its exact `SliceView` loan, rederived from authoritative end edges that must be dead on every entering edge. It ends at every end point (the operand after its last read and the short-circuit join skipping it) with guarded ends, not at the transient Vec-operand loan sharing its site that retired it before `view_len`. Interpreter: successful checked arithmetic no longer builds and drops its overflow status (four allocations per row), fuel/depth exhaustion and every other out-of-band flow (guard refusal, cancellation, materialization limit) settle only a certified empty ownership state and never reuse the failure exit of the expression they stopped at, and only an actual language failure matches its exact operation-failure lane exit. Account bounds are unchanged. Positive, hostile and guard-text controls are authored and unexecuted, pending the parent batch.
+
+- Author the explicit source-only `fused-construction-v1` run/build facade (#768): read and parse once, hold the sealed full-validation owner through receiving, require a finite caller managed account, preserve ordinary route refusal and expose only settled results. Native/Wasm fuel is not advertised as interpreter fuel; paired package publication and target-specific account contracts remain mandatory. Original 4096, hostile option, failure and actual allocation/Drop gates are authored; qualification and broader #747 completion are pending.
+
+- Authored private native fused-row receiving now requires the concrete full
+  selected owner and freshly revalidates its immutable source/HIR. Exact row
+  backing is funded on the same held physical ledger at the original Vec
+  boundary; address-bound receipts preserve pointer geometry and one allocation
+  attempt through cleanup. Original 4096-row O0/O2 and cumulative account gates
+  are authored, with execution qualification pending and default routing closed.
+- Repair v0.10 interpreter leased-byte reads after the owner core made refusals sticky: thread mutable registry access through borrowed views and compare two authenticated loans together without payload copies. Add paired-read and foreign-loan regression controls, restore stale test API usage, and apply the required Rust formatting while retaining the workspace graph test size budget through an unchanged test submodule. The all-targets/all-features workspace compile and 26 owning regressions passed; the full profile stopped on five unchanged v0.10 documentation failures, and the separately selected interop unary depth fixture still refuses with SPX-H006.
+
+- Finish the installation implementation batch against released v0.9.0: advertise both per-user scripts and five native archives from recorded hosted evidence; preserve receipt-scoped files during upgrades; retain Windows rollback material through atomic receipt publication; add real previous-release upgrades and shared Windows CLI/daemon acceptance; retain deterministic Homebrew/WinGet proposals and a post-release package-channel gate. Release-note limits now count UTF-8 bytes. The consolidated five-target installer/channel qualification passed at `0c9c2a2fe` in run `38156173827`, and the public Homebrew tap serves v0.9.0 on both native macOS architectures. The attempted full quality profile hit inherited v0.10 compiler error E0596; WinGet public indexing remains subject to external moderator approval.
+
+- Admit an optional `;` after a bare valued lexical-exit guard (`if skip { continue; } else { 0 };`) when another block item follows (#766). The parser reuses the existing StatementIf marker, tree, discard name and canonical text of the unterminated spelling, and admits it only when a parsed exit is present and the next item cannot continue the value `if`, since canonical text drops the `;`. Generic discarded initializers, conditions, postfix/operator continuations and other value boundaries keep `SPX-T312`; `SPX-T313`, `SPX-P209`, `SPX-P106` and scalar-only discard are unchanged. The source contour now also requires the marker's normalized shape and, mirroring HIR, a guard whose every normal completion is the scalar discard zero; owned, aggregate, borrowed, non-`i64` and nonzero normal arms get a source `SPX-T312` in both spellings instead of a later HIR `SPX-H006`. Differential, hostile, nesting-bound, cache/graph and three-backend regressions plus updated compiler-checked help are authored; qualification is pending and no efficiency gain is claimed.
+
+- Restore proved-absent root cleanup storage in the summed constructor-exact cached forecast (#764): literal, unary and binary roots, which every resolver path builds as `Value` primitives, omit only their four storage footprints from each retained parsed/semantic HIR copy. Children, checked/lazy failure blocks, bookkeeping, identities, strings, carriers, unproved fallback kinds, caps and live reservations are unchanged. Independent census, resolved inventory/plan, malformed-census and exact/one-short controls are authored but unexecuted; owning application qualification and any recovery remain pending.
+
+- Author a borrowed current private type authority view (#765). Ordinary, compact and declaration-fact validation callers no longer rebuild an owned top-level function/type map. They reuse the invocation's authored index only after exact caller, member pointer, path, module, kind, explicit-identity, census and charged function/type kind-census proof. Slices with class methods keep the old map. Root/cursor reservations, duplicate/foreign refusal, work limits and quotas are unchanged; the proof's added scans are charged. The saved-map differential, hostile binding and exact/one-short/Drop allocation definitions await grouped qualification. The normalizer refusal causality, admission and any CPU or agent gain remain unclaimed.
+
+- Author a single-walk retained helper closure graph (#763): a sorted borrowed directory of caller functions plus only authenticated selected members, grown with charged moves and comparisons, original-order ordinals, contiguous outgoing-edge ranges and one Kahn visit per edge under the existing preparation. Unchanged target authentication and provider receipts precede every publication; the saved complete-entry oracle, irrelevant-provider/long-ID default-cap controls, walk/visit counters and exact/one-short entry definitions await grouped qualification; no measured saving is claimed.
+
+- Author an invocation-local borrowed helper directory (#762), preserving provider inventory, source authority and authored order while classifying each eligible body once. Independent old-capture, hostile identity, and exact/one-short work/backing controls await grouped qualification; no measured cost gain is claimed.
+
+- Author ordinary checked LF-only NDJSON framing and Copy structured faults (#760), composed through actual receiving byte ranges in Catalog Normalizer. Preserve total legacy wrappers, frozen error ordering and 160M oracle; independent original/backend and hostile receiver definitions await qualification. Numeric frames carry no owner or generation authority.
+- Authored exact borrowed Str/Slice helper-root and scalar-u8 conversion replay; added guarded Copy Option-u8 metadata, distinct-case, ordinary reader and factory-budget controls. Option receiving admission remains closed pending cumulative schema/inventory metering and executable qualification.
+
+- Author a defining-source-bound retained static-UTF-8 composition with imported pure monomorphic scalar helpers (#745). Borrow exact provider HIR, authenticate the whole acyclic closure and replay every helper's real status/cleanup proof with one cumulative work/backing owner. Equal-name aliases, checked failures, stale/hostile provider and plan controls, saved local backend comparisons and exact/one-short allocation/work definitions await grouped qualification; broader #745 remains open.
+
+- Activate deferred lexical replay resource selection and exact expression-scoped Copy factoring (#759), retaining independent lexical/certificate/ownership validation, multiset traces and unchanged enumerated/work ceilings. Keep selected physical provider/type exclusions and cumulative backing/work ledgers. Whole-entry, forced-strategy and immutable original ShiftSim qualification remain pending.
+
+- Attribute seven previously unlabelled live workspace reservation seams with compiler-owned operation stages. Keep exact ledger charges, nested-budget resets and sticky first refusals. Exclude only exact borrowed Vec length/capacity observations from invented census operation failures, retaining every child path and independent enumeration control. Pin the frozen two-Bytes record profile to its documented five operations. Grouped qualification remains pending.
+
+- Repair independent terminal-expression cleanup classification, exact borrowed String-slot result replay and matched loop admission. Preserve nested type refusals, cached-HIR hostile controls and existing lifetime boundaries. Replace audited projection wildcards, compact CLI prose within its unchanged budget and use saturating growth arithmetic. Grouped executable qualification remains pending.
+
+- Advance ASCII once in ordinary UTF-8 scans and reuse checked quoted lengths in generated UTF-8 sizing. Preserve fallback, earliest faults, invalid short circuits and all limits; frozen original/backend differential definitions await grouped qualification.
+
+- Keep generated UTF-8 validator identities while sharing bounded scalar byte
+  kernels through the existing JSON scan/UTF-8 source modules (#753); owning
+  executable qualification pending.
+- Derive lexical terminal paths from exact nearest-loop breaks, actual generated continue advances and function-return postconditions; retain full authored structural scans and unchanged path/work limits. Independent enumeration and reservation regression definitions await qualification.
+- Authored typed `vec_of<T>(...)` construction with bounded hygienic expansion, independent source/HIR provenance, selective Graph v81, ordinary per-push call commits, and private backend regression definitions. Eight-server/two-item examples adopt the syntax; all executable qualification and efficiency measurements remain pending.
+
+- Read each ordinary JSON string-framing byte once in the source scanners and Query plain-byte path, preserving eager offset arithmetic, escape policies and failure encoding. Retain independent original kernels and all-byte/backend differential definitions; grouped execution and measured benefits remain pending.
+- Added a summed exact cached construction fallback distinguishing parsed-only
+  from semantic HIR retention, preserving old fitting receipts, quotas and the
+  uncached-only peak/filter boundaries. Owning qualification remains pending.
+
+- Repair terminal record-arm HIR admission and native resume-only scope cleanup; preserve independent contour/authority proofs. Add whole-token ASCII validation with the unchanged UTF-8 fallback, and correct owning fixture shapes and bounded help without changing limits. Consolidated qualification remains pending.
+- Author same-storage primitive String-slot lowering for interpreter, native and private Core Wasm, preserving whole-Vec loan expiry, Vec/2 failure, resume-scoped commits and separate owned-Str/Slice/foreign extent boundaries. Exact allocation/copy and hostile-provider regression definitions await executable qualification.
+
+- Authored the bounded primitive `vec_str_at` frontend, fixed String signature,
+  scoped whole-owner provenance, fused byte-view identity, and selective Prelude
+  v17/Graph v80 replay. Owning regressions are unexecuted; backend/application
+  qualification and cost evidence remain pending.
+
+- Add lazy ordinary JSON scalar paths for ASCII UTF-8 and selected escape kinds. Preserve the original checked arithmetic at near-limit offsets and retain independent original kernels in owning differential definitions; backend qualification and measured work remain pending.
+- Adopt explicit business sort keys over Catalog wire rows, removing the intermediate SortItem carrier and output Vec rebuild while retaining complete pre-selection validation, wire order, bounded metrics, and the independent original 23-case pipeline oracle. Owning qualification and measured benefits remain pending.
+- Compose exact owned normalization Input with existing independently admitted flat collection outcomes at ordinary match tails. Preserve malformed-shape, ownership, provider, cleanup, ABI and quota guards; source/HIR and three-backend owning definitions await executable qualification.
+
+- Generate direct ASCII scalar/advance checks for JSON identifier validation and owned UTF-8 prefixes, retaining original escape/non-ASCII validation and all grammar, size and fuel limits. Independent original-path differential and maximum-capacity backend gates await qualification.
+- Retain inactive iterator Done storage in its exact authored region and confine
+  owned record Bytes-field moves to authenticated match-arm bindings. Preserve
+  full structural replay and path limits; grouped backend qualification pending.
+
+- Authored scalar expression statements: intermediate Copy scalar `expr;` keeps canonical spelling and lowers to hygienic immutable ordinary lets. Final-tail, underscore, owning discard and lexical initializer boundaries remain checked; qualification pending.
+
+- Retain actual lexical String temporaries until canonical settlement and authenticate iterator condition feasibility across construction, replay, native and Wasm routes. Make isolated help links self-contained, preserve compact diagnostic advice and restore Projects help within its existing budget. Grouped owning qualification remains pending.
+- Author bounded private nominal layout reconstruction behind explicit library roots, with fresh synthetic aliases, unchanged authored visibility/edges and quotas, exact clone forecasts, and hostile owning definitions. OPT #754 owning executable qualification is pending.
+
+- Repair exact owned-record clone loans, independently authenticated cross-row Vec renewal, selected lexical skeleton reservation, and Wasm continuation after certified bottom statements. Preserve owned Str carriers and derive npm's exact fixed memory extent independently of public result authority. Reconstruct compiler Vec facts for retained nominal fields without widening imports. Grouped owning qualification remains pending; quotas and public ABI admission are unchanged.
+- Preserve exact native String-copy and encoder Bytes-OOM observations, all full-bound UTF-8 wire cases, ordinary-versus-lexical record authority and owning closure refusals. Clarify fresh discard names in agent guidance; `_` remains an ordinary binding.
+
+- Repair borrowed-Str byte-writer proof signatures, exact-extent interpreter search, nested final-UTF8 native borrow arguments, and certified bottom-binding Wasm lowering. Consolidated owning qualification remains pending; foreign ingress, source admission and resource limits are unchanged.
+
+- Replace value-proportional JSON byte and UTF-8 offset probes with existing checked numeric conversions; retain contracts, grammar and fuel limits, with all-byte source conformance awaiting grouped execution.
+
+- Author OPT #750 linear saved-cursor work debits for selected primitive replay,
+  renewal reconstruction and resolved byte-helper proofs, preserving work/depth
+  and physical bounds with exact/one-short gates; owning execution remains pending.
+- Keep complete original HIR authority for selected final-UTF8 resource ABI
+  preflight while retaining the exact filtered emission closure and resource
+  refusal gate; authored exclusion/forgery regressions await owning execution.
+- Repair native owned String view validation to retain exact owned extent while keeping foreign root and internal Slice bounds separate; select constant-space linear contains only for owned-view programs. Author long-view, matcher, ingress and backend settlement controls; executable qualification is pending.
+- Move scalar-match guard and arm-value cleanup replay onto the existing bounded heap continuation machine, retaining path order, failure selection, String result transfers and limits; owning regression definitions await grouped qualification.
+
+- Authenticate the compiler-owned owned-Bytes borrow projection in the selected
+  final-UTF8 profile, retaining exact intrinsic-call validation and refusing
+  Array views or named aliases. Extend the JSON helper inventory oracle to
+  visit admitted byte-array literal leaves without changing field-read, clone,
+  wire or backend assertions. Grouped executable qualification is pending.
+- Author OPT #748 collision-safe decoded-identifier duplicate prefilter in ordinary generated request source, retaining full equality on matching fingerprints and existing fuel, cardinality, grammar priority and domain refusals; owning execution remains pending.
+
+- Propose the unimplemented OPT #746 owned Bytes consume-and-partition contract: bounded disjoint leases, exact staged transfer and selected-domain lifetime, without changing existing allocation quotas or admitting the maximum-row constructor loop.
+
+- Authored consuming owned-record outer Vec renewal with independently recovered
+  iterator authority, existing v15 reservation replay and selective Graph v79;
+  native/Core-Wasm and hostile regression definitions await qualification.
+
+- Author a separate selected-file resource profile with 256 raw argv and the
+  existing v28 String/output envelope. Add a LogLens reference whose source
+  owns usage and whose wrapper grants only the selected file, plus an opt-in
+  capability-authenticated future setup. Preserve original CLI49, retained
+  tests, historical evidence and TypeScript task; qualification remains pending.
+
+- Add an invocation-selected native64 Unix file-input profile with an optional
+  host selector that preserves complete application argv. The first checked
+  read lazily acquires one held regular-file descriptor under an explicit
+  follow policy; settlement precedes staged output publication. Retain the
+  existing relative-root no-follow provider. Owning O0/O2 regressions are
+  authored; executable qualification and efficiency measurements are pending.
+
+- Correct lexical completion graph facts, exact iterator argument-slot reuse,
+  scoped literal JSON writes and admitted workspace/cache fixtures. Add a
+  selective authenticated lexical npm recipe while retaining frozen v8 bytes
+  and refusals. Document the grouped contracts in the specification catalog;
+  focused executable qualification remains pending.
+
+- Render derived application JSON responses through ordinary functional Bytes
+  writers after complete length preflight. Add exact runtime-sized bounded
+  allocation, independently proved nonallocating helper renewal, selective
+  cleanup v19 and graph v76, and retained-workspace/cache/backend composition.
+  Preserve wire ordering, escaping, limits, source authority and old profiles.
+  Grouped executable qualification and physical/task-cost measurements remain
+  pending; no measured efficiency improvement is claimed.
+
+- Repair Copy-record Vec shared-read classification, authored multi-key sort
+  renewal arity, absent-sort workspace allocation, exact scratch-refusal
+  witnesses and lexical latch replay order. Retain fixed budgets and independent
+  hostile checks; replace malformed fixtures with admitted source cases.
+
+- Specify recoverable String allocation and author a private explicit-context C
+  kernel plus physical failure probes. Production proof, code generation,
+  interpreter/Wasm injection and typed application outcome integration remain
+  open; this private precursor does not complete OPT #724.
+
+- Author statement-tail lexical break, continue and return with independently
+  bound function/nearest-loop targets, source-for latches, selective cleanup v18
+  and loan v3. Preserve accepted acyclic returns and old schema bytes; keep
+  initializer/argument/aggregate/closure/unsafe/yields crossings closed. Add
+  bounded `help language author:lexical-exits` and source/HIR hostile definitions.
+  Executable qualification and full OPT #734 acceptance remain pending.
+
+- Eliminate zero-argument nominal identity traversal carriers and duplicate
+  retained-key allocations through an exact bounded stack probe. Charge its
+  scratch storage and keep generic/oversized identity handling, retained facts
+  and encoded identities unchanged. Correct the grouped fixtures and private
+  String-view host, and preserve authenticated cleanup-history debits at call
+  commit. Executable verification remains pending.
+
+- Normalize acyclic function guard and terminal match returns to independently verified value
+  control flow, moving each continuation once and retaining contextual loop
+  and closure refusal. Add canonical, graph, ownership-plan, runtime and
+  failure regressions for the grouped implementation batch. Execution is
+  pending; general lexical exits and OPT #734 remain incomplete.
+
+- Derive bounded application codec plans against one immutable authored Project
+  revision and validate the complete combined candidate before returning one
+  exclusive new bundle. Preserve exact authored sources, candidate inventory and
+  per-entry profile/bounds receipts; adopt the real paired ShiftSim setup and add
+  drift, overlap and no-partial-output regressions. Execution remains pending;
+  no managed publication authority or efficiency gain is claimed.
+
+- Derive bounded nested JSON responses with recursive length preflight, borrowed
+  record paths and up to two existing Vec owners. Repair owned Vec renewal,
+  projected Wasm borrow calls, stream-to-nested-result joins and independently
+  authenticated workspace schema selection. Reuse final loan candidate storage
+  for independent backing charges and preflight selected generic scratch once.
+  Add scoped language help and checked application formatting. Full backing
+  charges, canonical cleanup and runtime limits remain unchanged. Grouped
+  executable verification is pending; no current efficiency gain is claimed.
+
+- Intersect retained loan-plan backing keys with a bounded full HIR walk,
+  reserving complete scratch capacities for distinct proof candidates while
+  preserving legacy receipts and the unchanged builder cap. Align finite
+  owning-match cleanup, projected String reads and byte-range failure status
+  replay. Repair generated JSON ownership patterns, genuine stdin bootstrap
+  readers and direct nested-type imports; derive authenticated concrete record
+  Vec defaults and check nonallocating response reads on the actual HIR surface.
+  Grouped executable verification and live efficiency measurement remain pending.
+
+- Pre-size retained loan-census scratch once per module, keeping complete
+  reservations and the 64-MiB builder limit. Compose finite owned collection
+  matches, Copy-record loop renewal and nested record layouts across source,
+  HIR, cleanup replay, native and Wasm paths. Correct shared Node fixture
+  arguments and bound the JSON help card. Grouped executable verification
+  remains pending; no token-efficiency gain is claimed from static checks.
+
+- Hoist generated JSON key views before loops and authenticate finite imported
+  decode/encode result shapes and flat Vec element aliases. Correct authored
+  example identities and native UTF-8 fixture roots/readers while preserving
+  assertions, hostile cases and profile refusals. Executable verification is
+  pending.
+
+- Repair generated JSON effect-binding names and move fixed decoder key arrays
+  outside loops. Authenticate nested collection cleanup and finite typed Project
+  import joins across source, HIR, replay and native ownership paths. Preserve
+  earlier profile refusals and original application corpora; grouped executable
+  verification remains pending.
+
+- Read named String views without cloning their owner in the interpreter and
+  replay the closed conversion status table. Retain full-capacity spare HIR slots
+  only when their cumulative charge is cheaper than replacement storage. Add
+  exact-limit and one-byte-short witnesses; no measured token or memory advantage
+  is claimed before execution.
+
+- Add read-only typed-installation verification and preserve completed-stage
+  failure evidence. Import byte-authenticated formatter outputs and repair
+  terminal help and private adapter fixtures without reducing acceptance checks.
+  Current-source pin regeneration and application qualification remain pending.
+
+- Generate scoped Vec-field reads for collection-response preflight and rendering,
+  preserving direct Row helper APIs, complete validation, wire bytes and limits.
+  Retain explicit owning-clone failure coverage and add a clone-refusing positive
+  witness for the generated two-String path. Avoided deep copies are a source
+  finding; grouped execution and measured efficiency remain pending.
+
+- Repair nested-outcome admission for the documented pure, no-export Project v8
+  JSON-codec route using the actual selected export roots. Preserve public and
+  older command refusals before unused-helper cropping and all ordinary source,
+  HIR and cleanup checks. The real derived-project regression is source-authored;
+  grouped execution remains pending.
+
+- Route Graph v73 projected String views and v74 nested owning outcomes through
+  concrete ownership rendering even without incidental Vec or loan features.
+  Preserve exact additive schemas, source replay and frozen legacy refusals;
+  the new routing regression is source-authored pending grouped execution.
+
+- Release completed JSON-codec parse/round-trip temporaries before the full
+  candidate Project rebuild, and move its canonical source buffer through that
+  unchanged admission path. The source-only handoff regression preserves full
+  typing refusals and original inputs; measured memory savings remain pending.
+
+- Transfer completed Project semantic graph JSON and digest into retained state
+  without cloning their owned buffers. Keep rendering, hashing and cumulative
+  budget charges unchanged; pointer/capacity, digest and refusal regressions are
+  staged for the next grouped check. No measured memory or token gain is claimed.
+
+- Remove the standalone text/format runtime renderer's full-HIR clone by
+  borrowing its authenticated selected functions. Preserve import order and
+  exact artifact bytes; a selected/unselected parity regression is staged.
+  Execution and any measured memory or agent-cost benefit remain pending.
+
+- Align direct owned formatter Place transfers across cleanup construction,
+  independent replay, native and Wasm with the interpreter; preserve ordinary
+  String clones, pre-commit failure cleanup and post-commit worker settlement.
+  Bind standalone format status 34 separately from conversion status 21; source
+  regressions are staged and grouped execution remains pending.
+
+- Reuse fully selected exact HIR carriers and the final uncached workspace
+  loan-inventory allocation across functions,
+  retaining full capacity charges, source ownership and the unchanged 64 MiB
+  pattern gate. Repair Graph v75 generic-render routing and native projected
+  Vec move/drop fixture obligations; grouped execution remains pending.
+
+- Stage OPT-731 bulk UTF-8 codec materialization after complete existing token
+  validation, retaining escaped decoding and exact input bounds. Escape-free
+  quoting uses a bulk String copy; native length-delimited concatenation writes
+  directly to one final carrier. Add scalar/escape/bound and physical native
+  allocation/copy witnesses; current-head runtime and efficiency remain unverified.
+
+- Improve manifest authoring help for quoted dependency keys and unsorted source
+  lists without changing the closed grammar or stable refusal codes/messages.
+  Traverse scoped Vec-field arguments in all affected owning test walkers.
+
+- Author OPT-730 scoped `vec_field` reads over authenticated owned-record Vecs.
+  Preserve exact carrier loans and field/index provenance, avoid semantic owned
+  clones, retain sticky Vec bounds failure and bind checked-cache v7 to canonical
+  selectors. Join conditional Graph v75, native and Wasm/Node field reads,
+  source-index/repair and scalar/view/alias/hostile allocation-budget regressions.
+  Owning execution and application qualification remain pending; no efficiency claim.
+
+
+- Author bounded nested-request streaming derivation with a source-derived fully
+  escaped spelling envelope, unchanged strict normalizer and one-call typed owning
+  result; limits stay fixed and owning/application execution remains pending.
+
+- Author the finite bounded nested-request source decoder for OPT-724: explicit
+  acyclic record paths, existing Vec element carriers, bounded Unicode strings,
+  whole-grammar/schema validation before owning construction, and proper typed
+  malformed outcomes. Stage independent derivation/hostile and three-backend
+  configuration/order gates; execution and full streaming acceptance pending.
+
+- Author OPT-729 properly tagged outcomes carrying authenticated nested owning
+  records. Preserve scalar error cases without a default payload, canonical
+  case-qualified cleanup, existing capacities and frozen command profiles. Stage
+  source/HIR/cache/Graph v74 and three-backend success/failure/zero-allocation
+  error regressions for v32; execution and nested codec qualification pending.
+
+- Author OPT-728 rooted record-field String views: exact source/HIR path and
+  loan authentication, fused byte provenance, no-copy interpreter reads and
+  Graph v73. Stage no-clone and failure-settlement regressions on interpreter,
+  native O0/O2 and Core Wasm; execution and application adoption remain pending.
+
+- Author OPT-727 bounded nested record composition with existing Vec owners,
+  authenticated projected reads, fieldwise cleanup, distinct native/Wasm
+  layouts and Graph v72 replay. Stage same-source success/failure, structural
+  boundary, cache/loan and frozen-profile regressions for the v31 private
+  command successor. Execution and application qualification remain pending.
+
+- Correct native borrowed-root charging to identify actual external function
+  entry rather than the first private borrowed frame. Internal owned Bytes
+  forwarding preserves its existing 131,072-byte capacity, while external
+  Slice/str input retains the cumulative 65,536-byte bound. Stage interpreter,
+  native O0/O2 and strict Wasm capacity/root-bound regression; execution pending.
+
+- Close the reserved String/conversion identity alias gap: authored declarations
+  and retained HIR cannot impersonate compiler intrinsics by stable ID or
+  executable function name. Add independent source/HIR guards and hostile
+  cache-origin/template/instance regression sources; execution is pending.
+
+- Author OPT-725 checked `char_from_i64` Unicode scalar conversion across the
+  source/HIR intrinsic contract, interpreter, C11 and scalar/aggregate Wasm.
+  Preserve byte conversion behavior and existing failure status; stage exact
+  scalar boundaries, hostile graph/cache/HIR, lazy evaluation and staged-owner
+  cleanup gates. Current-head execution and codec qualification remain pending.
+
+- Author the owned identifier-request successor for OPT-724: checked derivation
+  now emits actual String and authored-record vectors, deterministic encoding
+  without retained input spans, and the existing whole-stream normalizer under
+  original authority. Add independently authenticated private owning outcomes
+  while preserving Copy-only and older command profiles. Detached input,
+  unrelated catalog, partial materialization, backend and native stream gates
+  are authored; execution, general nested codecs and efficiency remain pending.
+
+- Author a separate Catalog23 application cohort with the unchanged staged
+  requirements/corpus/oracle, fresh Project v30 source/compiler/native
+  qualification and matched Codex arms. Retain the strong dependency-only
+  TypeScript bootstrap, independently compile its authored source with pinned
+  tsc/Node and preserve complete runtime module bytes. Qualification, owning
+  mocked checks and live measurements are pending; existing cohorts and
+  historical evidence remain unchanged.
+
+- Add an explicit ShiftSim round-4 Project v30 owned-data authoring condition,
+  fresh source/compiler/native-bound all-15 qualification, and pre-dispatch
+  drift guards. Preserve historical rounds and the strong TypeScript prompt
+  and bootstrap; disclose changed SEM harness context with unknown token/billing
+  fields. Owning mocked checks and actual current-compiler qualification await
+  grouped validation; no new live cost or acceptance result is claimed.
+
+- Author the remaining OPT-723 owned-leaf vector slice: explicit deep clone,
+  grouped replacement, bounded reserve, stable scalar/text ordering and
+  consuming traversal, with independent source/HIR descriptors and private
+  interpreter/native/Wasm projections. Add Project v30 while retaining frozen
+  stream/public boundaries, Bytes capacity charges and ordinary cleanup replay.
+  Pointer-inventory, partial-clone failure, stale authority and profile gates
+  are authored; grouped execution, application acceptance and efficiency
+  qualification remain pending.
+
+- Bound default language help and application-route discovery, preserve the full
+  reference under `help language all`, and page exact checked library signatures
+  with explicit prerequisites and deterministic continuations. Correct the
+  starter command grammar; current-head help gates and live measurements await
+  the grouped batch.
+- Add closed checked-source identifier/request-view codec profiles and incremental
+  stdin JSON normalization for #724, with bounded Copy-view collections, source
+  span revalidation, raw-versus-normalized diagnostics and provider-observed
+  boundary fixtures. Source implementation only; combined execution gates and
+  full application acceptance remain pending.
+
+- Add checked-source derivation of ordinary application JSON codecs for private
+  flat scalar records, typed invalid-input outcomes, exact output preflight and
+  exclusive-create CLI publication. Preserve original profile admission and
+  scanner semantics; first-tranche backend gates remain pending.
+- Add the source-checked `string_format` literal operation with bounded brace
+  grammar, grouped owned-argument staging, raw-template HIR/graph projection,
+  and private interpreter, C11 and Core-Wasm rendering. Current-head focused
+  and owning executable verification are pending.
+
+- Store immutable loan endpoint and edge identity lists as exact boxed slices,
+  retaining list order and cache encoding while charging shrinking overlap.
+  Preserve conservative construction prebounds and exact retained payload census.
+- Borrow retained user-function and static String/Str parameter descriptors
+  during HIR validation; preserve owning generic signatures, error identities,
+  recursive parity checks, and the iterative frame bound.
+- Author ordinary logical text-collection declarations for faithful application schemas, with independent source/HIR structural facts and unconditional transitive runtime-use refusal. Add exact v29 stream-input Bytes/length outcomes without changing grants. Declaration, graph/cache and hostile gates are authored; runtime String-vector support is not claimed.
+
+- Extend OPT-723’s unqualified collection tranche with independently checked two-case results owning up to two flat Copy-record vectors, private layout/cleanup carriers, and Copy-record variant loop calls. Actual-cardinality, hostile replay and exact floating-payload gates are authored; execution and application/agent qualification remain pending.
+
+- Author Project v29 `language-command-io.stream-data.v2`: independently
+  authenticated private Copy-record/Vec transport and exact bounded codec
+  outcomes, with unchanged scalar command roots, stream authority and caps.
+  Keep v27 closed; add source/retained/prepared/native and hostile-profile
+  regressions. Execution and benchmark qualification remain pending.
+
+- Author the bounded Copy Record Collections v1 core tranche: nominal scalar
+  records in Vec, Copy reads/writes, named-field loops and deterministic field
+  ordering across interpreter/native/Wasm. Preserve the 65536-byte scalar
+  storage ceiling and existing public/Project profiles. Focused execution and
+  matched application benchmark qualification remain pending.
+
+- Attach the final resolved-core builder phase's first sticky reservation
+  evidence to SPX-G171 help, preserving the exact message, ledger behavior,
+  independent retry budgets, and unknown inner-operation attribution.
 - Bind Native Rust Interop accounting pins to exact old/current nine-component
   reservations on unchanged canonical fixtures. Verify every retained-byte
   delta and derived sum plus byte-identical complete hostile HIR/cleanup/loan
@@ -455,6 +1221,66 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Source-only nested record-pattern validation now streams exact binding paths
+  from its existing depth-first continuation indices, removing owned root/field/
+  record labels without another directory or quota. The complete old receiver
+  remains saved for both full main oracles; Copy/Own/Borrow diagnostic, scope,
+  decimal/depth and actual complete-drop controls are authored but unexecuted.
+
+- Source-only HIR expected child labels now borrow authenticated parent text and
+  stream static suffixes/indices into exact identity comparison. Saved full
+  owned iterative and recursive oracles, frame bounds and forecasts remain;
+  new byte/debit/allocation/hostile parity controls are authored but unexecuted.
+
+- Compare complete canonical loan plans during their existing independent build,
+  retaining an exact-program deferred mismatch for the original final validation
+  boundary. Public standalone validation and diagnostic priority remain intact;
+  owning qualification is pending.
+- Add explicit named `string_take` owner transfer while preserving cloning
+  reads, canonical argument staging, source move checks and backend forwarding.
+  Owning qualification of this consolidated batch remains pending.
+- Fund caller-owned canonical loan lookup storage before growth, borrow current
+  identity keys, and reuse inserted declaration identities and closed Vec/Box
+  compiler constants. Initial dynamic identity and loan-builder funding remain
+  separate open work; no compiler budget or forecast is increased.
+- Scope diagnostic attribution to one invocation and initialize exact byte-array
+  literals directly in their binding slots. Preserve assignment/block-result
+  copies and the fixed-array loop refusal, with repeated-call reinitialization
+  controls. Owning qualification remains pending.
+
+- Optimize changed HIR scope publications by cloning only changed/new bindings,
+  preserving exact nested state and saved full-map publication controls.
+
+- Author public `std.pattern` acceptance gates for #706: four compile-once fixtures independently exhaust ASCII bytes in header/KV key and value positions, plus four 8192-byte valid/nonmatching records under the unchanged 1,000,000-step interpreter default. The same authenticated project snapshot supplies native `-O0`/`-O2` capture results, four-invocation physical settlement and repeated Core Wasm settlement with adjacent arena refusal. These gates are unexecuted; the full issue, long-input usefulness and performance claims remain pending.
+
+- Add phase-owned borrowed function and exact expression-ID directories to byte
+  helper ModuleIndex queries (#738), retaining independent unseen-target proof,
+  original census order and pointer authority. Fixed-pass radix work avoids
+  allocator-address-dependent refusal; constructor-only textual ID discovery
+  retains the first linear winner with actual byte and merge-copy debits. Sparse-module parity, logarithmic
+  zero-backing queries, duplicate-ID and exact/one-short controls are authored;
+  execution qualification remains pending.
+
+- Retain one callee inventory and cumulative replay work ledger across captured primitive lexical module members; reconstruct each function lease independently. Executable qualification pending.
+
+- Factor ShiftSim Copy-state scans and metric decisions into checked helpers, retaining the original semantic path-budget refusal and all 15 wire cases; qualification pending.
+- Precharge geometric selected-replay FIFO frontier growth in full before allocation, preserving wrapped order, sticky refusal and the ordinary route; actual-layout regression definitions await qualification.
+
+- Correct Catalog sorted-owner names, preserve canonical prefixed codec-plan digests, and reuse the canonical command manifest for the full 264-value UTF-8 oracle. Source-only Bytes writer imports independently authenticate their current nonallocating provider before forwarding an owner; public export profiles are unchanged.
+
+- Generated identifier-view JSON encoders renew one String prefix through ordinary consuming append, avoiding scope-long immutable prefix owners without changing wire bytes or limits. The codec-plan regression now authenticates unchanged dependency bytes and SHA-256 separately from canonical generated members, and checks canonical idempotence for every candidate.
+
+
+- Authored finite owned-iterator Bytes scratch capacity replay (OPT741): exact immutable Vec constructor provenance, cumulative allocation bounds and selective Graph v78; owning execution remains pending.
+
+- Preserve authored JSON codec names and stable IDs containing template-marker
+  spellings through one-pass expansion. Added generator and owning Project
+  regressions for exact identities, policy replay and detached nested owners;
+  executable qualification remains pending.
+
+- Add a source-only stream UTF-8 owned request selector that requires the original stdin permit and reuses the unchanged incremental grammar normalizer, with native composition regressions for empty first arrays, Unicode/NUL and large legal whitespace; execution gates remain pending.
+
+- Add source implementation and owning regressions for opt-in bounded UTF-8 owned request codecs, with distinct Unicode scalar decoding, empty/repeated value admission and exact escaped-output preflight. Existing identifier selectors remain separate; execution and the full-bound three-backend gate are pending.
 - Refresh both semantic-change integration receipt KATs after complete historical/current byte proofs; retain exact replay, fixed-point accounting, shared locks, and no-write assertions.
 
 - Generated webapp self-tests stop their child through private parent IPC so Windows
@@ -6274,3 +7100,50 @@ The detailed 0.3.5, 0.2.0, and 0.1.0 history is preserved in the [changelog arch
   borrowed String conversion, numeric conversion/comparison, owned String
   variant transport/matching, explicit file-read provider authority, and a
   digest-bound standalone Web route. Combined executable gates remain pending.
+
+- OPT #750: remaining retained byte-helper and finite scratch proof walkers use saved borrowed cursors with actual enlarged scratch reservations; independent order/work/depth and allocator-layout regressions are authored, not yet executed.
+
+- Source native-container flag discovery compares the exact native import result kinds directly, retaining the original owned-Type constructor as an independent control and removing its discarded temporary backing. Source-only pending focused qualification.
+
+- Restore the originally pinned legacy scaffold guide introduction; keep current
+  bounded route guidance in capsule v8. No legacy digest or limit was updated.
+
+- Avoid repeated final-HIR lifecycle collection for successful exact zero-argument
+  declarations within one function's growing effect obligations. Preserve complete
+  prior receivers and generic collection; allocation-through-Drop, exact-short,
+  diagnostic and repeated-call controls are authored. Application fit under the
+  unchanged graph cap remains pending focused qualification.
+
+- Avoid authored cache-key spare directory backing for imported projections on
+  the actual uncached resolved-core route. Retain complete cache receiving owners
+  and full old oracle assertions. Constructor/Drop and full semantic controls are
+  authored; the independent recursive full-receiver funding deficit remains open.
+
+- Replace iterative variant-match coverage tree constructors with sorted borrowed
+  case backing and prepaid speculative Or checkpoints. Preserve complete old
+  coverage/dispatch controls, diagnostic bytes and all limits; physical Drop,
+  exact-short and full receiver controls are authored pending focused execution.
+
+- Prepay ordinary replay DAG destruction frontiers and checked structural bounds
+  before node publication, retaining the original destructor and an independent
+  old receiver. Construction and release work share the existing replay budget.
+  Legacy refusal destruction remains a documented compatibility boundary;
+  allocation, weak-reference and cross-ledger qualification is pending.
+
+Source-only successor: scoped Vec field reads retain their authored explicit
+lookup or row-derived form so checked previous-row lookups compose with a
+whole-root record traversal freeze. Row indices and source replay remain
+strict; Graph v85/current checked cache v11 and focused hostile/backend owners
+are authored. Qualification is pending; Catalog corpus and limits are unchanged.
+
+- Add affine typed filesystem change/structural/operations reporting routes,
+  retaining selected replay report ownership through preparation and unlock;
+  preserve complete original Vec routes and unlock diagnostic precedence.
+
+- Source-only #781 successor: carry selected-local Session entry, membership and
+  profile refusals as prepaid static data while preserving complete legacy Owned
+  receivers, first receipt/stage and pending full-layout/physical/work controls.
+
+- Source-only #827 Legacy successor: preserve complete old nominal validation,
+  then share explicitly unfunded immutable payloads with isolated iterative COW;
+  keep paid provenance and funded mutation guards separate. Qualification pending.

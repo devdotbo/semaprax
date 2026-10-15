@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from codex_report import recount, summarize
+from codex_report import _acceptance_seconds, _acceptance_subprocess_seconds, recount, summarize
 
 
 def row(arm, number, status="accepted", cost=1):
@@ -19,6 +19,28 @@ def row(arm, number, status="accepted", cost=1):
 
 
 class ReportTests(unittest.TestCase):
+    def test_historical_subprocess_timings_cannot_establish_full_wall(self):
+        receipt = {"acceptance": {"build": {"seconds": 2}, "candidate_tests": {"seconds": 3}, "checks": [{"seconds": 4}]}}
+        self.assertIsNone(_acceptance_seconds(receipt))
+        self.assertEqual(_acceptance_subprocess_seconds(receipt), 9)
+        receipt["acceptance_elapsed_seconds"] = 11
+        self.assertEqual(_acceptance_seconds(receipt), 11)
+        del receipt["acceptance"]["checks"][0]["seconds"]
+        self.assertIsNone(_acceptance_subprocess_seconds(receipt))
+        for invalid in [True, -1, float("nan"), float("inf")]:
+            receipt["acceptance_elapsed_seconds"] = invalid
+            self.assertIsNone(_acceptance_seconds(receipt))
+
+    def test_failure_wall_is_included_and_missing_or_zero_accepted_stays_null(self):
+        data = {"campaign": {"trial_order": ["semaprax", "typescript", "typescript", "semaprax"]}}
+        rows = [row("semaprax", 1), row("typescript", 1, "failed"), row("typescript", 2, "failed"), row("semaprax", 2, "failed")]
+        arms = summarize(data, rows)["arms"]
+        self.assertEqual(arms["semaprax"]["wall_seconds_per_accepted_task_including_failures"]["agent_wall_seconds"], 3)
+        self.assertEqual(arms["semaprax"]["wall_seconds_per_accepted_task_including_failures"]["acceptance_wall_seconds"], 1)
+        self.assertIsNone(arms["typescript"]["wall_seconds_per_accepted_task_including_failures"]["agent_wall_seconds"])
+        rows[-1]["acceptance_wall_seconds"] = None
+        self.assertIsNone(summarize(data, rows)["arms"]["semaprax"]["wall_seconds_per_accepted_task_including_failures"]["acceptance_wall_seconds"])
+
     def test_recount_uses_real_codex_trace_adapter_and_preserves_missing_trace(self):
         usage = {"input_tokens": 100, "cached_input_tokens": 30,
                  "cache_write_input_tokens": 2, "output_tokens": 7,

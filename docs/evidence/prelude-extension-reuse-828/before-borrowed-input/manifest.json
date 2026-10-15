@@ -1,0 +1,8 @@
+{
+  "src/hir/prelude_bundle/extension_producer.rs": "b20dc8b2f9db848c24b52d434e05495600a82c188a0ab9593870a0a672298053",
+  "src/hir/prelude_bundle/vector_extension.rs": "1aab11397750ebcb9134ea33a461b27666b942092a0ceb89c00929bf2cb46384",
+  "src/hir/prelude_bundle/invocation.rs": "b436349907c3eeb48c2a6dc0953f96097268f9f89c9b1255121a2ef8ec6da9ad",
+  "src/hir/prelude_bundle/vector_extension/tests.rs": "49421cdb9778e9530665ecc6585ada126d5c72a8a2c58ff9eacd5ff17c17a566",
+  "src/workspace_graph/identity_resolution/base/vector_tests.rs": "d85c44fe42fc5f03d2a2cea2a6c567a0489124af22a77996edb4fdba677add27",
+  "src/hir/declaration_index/identity_payer.rs": "fe1277b43f51e0f21d77a232da1c8316cd42edf44d24705a9227a3eae83da962"
+}

@@ -18,6 +18,7 @@ pub(crate) mod fix;
 pub(crate) mod fmt;
 pub(crate) mod graph;
 pub(crate) mod help;
+pub(crate) mod json_codec;
 pub(crate) mod manifest_hint;
 pub(crate) mod new_project;
 pub(crate) mod package;
@@ -44,3 +45,5 @@ pub(crate) mod typed_workflow;
 pub(crate) mod verify;
 pub(crate) mod version;
 pub(crate) mod workspace_session;
+
+mod fused_profile;

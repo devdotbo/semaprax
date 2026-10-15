@@ -39,11 +39,12 @@
 //! result `"typestate_checked"`. Passing typestate checking is exactly as
 //! authority-free as a declaration itself.
 
+use crate::ast::program_source::ProgramSource;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Mutex;
 
 use crate::ast::{
-    Function, Program, SessionProtocolDeclaration, SessionProtocolKind, SessionProtocolName,
+    Function, SessionProtocolDeclaration, SessionProtocolKind, SessionProtocolName,
     SessionProtocolNext, Span,
 };
 use crate::diagnostic::{quote_json, Diagnostic};
@@ -297,8 +298,13 @@ fn spec_error_text(error: &SpecError, symbols: &Symbols<'_>) -> String {
     }
 }
 
-fn k_error(program: &Program, code: &'static str, message: String, span: Span) -> Diagnostic {
-    Diagnostic::error(code, message, span).at_path(&program.path)
+fn k_error(
+    program: &dyn ProgramSource,
+    code: &'static str,
+    message: String,
+    span: Span,
+) -> Diagnostic {
+    Diagnostic::error(code, message, span).at_path(program.path())
 }
 
 /// `SPX-K1xx` source checks for every declared session protocol:
@@ -312,31 +318,36 @@ fn k_error(program: &Program, code: &'static str, message: String, span: Span) -
 ///   does not declare (ordering metadata cannot mint authority).
 ///
 /// `SPX-K106` (capacity) is raised by the parser.
-pub(crate) fn check(program: &Program) -> Vec<Diagnostic> {
+pub(crate) fn check(program: &dyn ProgramSource) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
-    if program.session_protocols.is_empty() {
+    if program.session_protocols().is_empty() {
         return diagnostics;
     }
     let mut taken = program
-        .functions
+        .functions()
         .iter()
         .map(|function| function.stable_id.as_str())
-        .chain(program.types.iter().map(|item| item.stable_id.as_str()))
+        .chain(program.types().iter().map(|item| item.stable_id.as_str()))
         .chain(
             program
-                .interfaces
+                .interfaces()
                 .iter()
                 .map(|item| item.stable_id.as_str()),
         )
-        .chain(program.protocols.iter().map(|item| item.stable_id.as_str()))
+        .chain(
+            program
+                .protocols()
+                .iter()
+                .map(|item| item.stable_id.as_str()),
+        )
         .collect::<BTreeSet<_>>();
     let mut names = BTreeSet::new();
     let functions = program
-        .functions
+        .functions()
         .iter()
         .map(|function| (function.stable_id.as_str(), function))
         .collect::<BTreeMap<_, _>>();
-    for declaration in &program.session_protocols {
+    for declaration in program.session_protocols() {
         if !names.insert(declaration.name.as_str()) {
             diagnostics.push(k_error(
                 program,
@@ -486,10 +497,10 @@ fn first_repeat(entries: &[SessionProtocolName]) -> Option<&SessionProtocolName>
 /// so a miss here is an inconsistent source/HIR pair and fails closed. Every
 /// projection calls this before it emits a declaration fact.
 pub(crate) fn bind_to_hir(
-    program: &Program,
+    program: &dyn ProgramSource,
     resolved: &crate::hir::ResolvedProgram,
 ) -> Result<(), Diagnostic> {
-    if program.session_protocols.is_empty() {
+    if program.session_protocols().is_empty() {
         return Ok(());
     }
     let retained = resolved
@@ -497,7 +508,7 @@ pub(crate) fn bind_to_hir(
         .iter()
         .map(|function| function.id.as_str())
         .collect::<BTreeSet<_>>();
-    for declaration in &program.session_protocols {
+    for declaration in program.session_protocols() {
         for transition in &declaration.transitions {
             if let Some(via) = &transition.via {
                 if !retained.contains(via.name.as_str()) {
@@ -508,7 +519,7 @@ pub(crate) fn bind_to_hir(
                             declaration.name, via.name
                         ),
                     )
-                    .at_path(&program.path));
+                    .at_path(program.path()));
                 }
             }
         }
@@ -522,13 +533,13 @@ pub(crate) fn bind_to_hir(
 /// (`SPX-K107`), so a miss here is an inconsistent program and fails closed.
 /// Every projection calls this before it emits a `follows` fact, exactly
 /// like [`bind_to_hir`] is called before a declaration fact.
-pub(crate) fn bind_follows(program: &Program) -> Result<(), Diagnostic> {
+pub(crate) fn bind_follows(program: &dyn ProgramSource) -> Result<(), Diagnostic> {
     let declared: BTreeSet<&str> = program
-        .session_protocols
+        .session_protocols()
         .iter()
         .map(|declaration| declaration.stable_id.as_str())
         .collect();
-    for function in &program.functions {
+    for function in program.functions() {
         if let Some(follows) = &function.follows {
             if !declared.contains(follows.protocol_id.as_str()) {
                 return Err(Diagnostic::io(
@@ -538,7 +549,7 @@ pub(crate) fn bind_follows(program: &Program) -> Result<(), Diagnostic> {
                         function.name, follows.protocol_id
                     ),
                 )
-                .at_path(&program.path));
+                .at_path(program.path()));
             }
         }
     }
@@ -567,11 +578,11 @@ pub(crate) fn follows_json(function: &Function) -> Option<String> {
 /// in, in source order. `"[]"` for a program with no `follows` clause at
 /// all, so a caller can always splice this in unconditionally once it has
 /// decided the program has at least one.
-pub(crate) fn follows_facts_json(program: &Program) -> String {
+pub(crate) fn follows_facts_json(program: &dyn ProgramSource) -> String {
     format!(
         "[{}]",
         program
-            .functions
+            .functions()
             .iter()
             .filter_map(follows_json)
             .collect::<Vec<_>>()

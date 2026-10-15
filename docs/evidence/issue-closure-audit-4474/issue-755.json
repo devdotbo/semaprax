@@ -1,0 +1,24 @@
+{
+  "url": "https://github.com/wavect/semaprax/issues/755",
+  "title": "(OPT) Admit discarded scalar expression statements without synthetic source names",
+  "issue_number": 755,
+  "body": "Actual repair evidence: the current lexical/Wasm fixture hit P106 for an intermediate valued if/else with a semicolon; the full 264-value UTF8 witness required four fresh discard names to avoid T209. Familiar call(); next spellings currently need manually named unused locals.\n\nAdmit intermediate expression statements whose verified result is an existing Copy scalar, preserving canonical expr; spelling. Normalize to collision-free compiler-minted immutable discard bindings with exact syntax provenance. Keep the required final block value, the existing final expr; refusal, ordinary underscore binding semantics, and all existing ownership/evaluation rules. This MVP does not admit owning-result discard or implicit unit values.\n\nReuse parser DiscardNames and independently authenticate the new source marker, checked result type, HIR identity, graph projection and cache reuse. Do not permit lexical exits through authored initializer/argument barriers; statement-if control routes remain separately authenticated.\n\nImplementation lanes: parser/formatter/provenance and diagnostics; source/HIR/current-source replay and graph identity; all-backend qualification and application adoption.\n\nRequired gates: equivalent left-to-right effects to fresh named lets; lazy skipped effects; consumed arguments; checked failure/sticky cleanup; shadowing/collision/forged marker refusals; owning-result refusal; unchanged final-tail behavior; deterministic canonical roundtrip; interpreter/native O0/O2/Wasm equivalence; actual application checks retained. Qualify before reporting any authoring-token or repair-turn benefit.\n\nRelated #608 is existing statement-if canonical spelling, #734 lexical exits, and #722 discovery. None covers general scalar expression statements. No measured multiplier is claimed.\n",
+  "state": "open",
+  "user": {
+    "login": "wsdt",
+    "name": "wsdt",
+    "email": null,
+    "avatar_url": "https://avatars.githubusercontent.com/u/28724551?v=4",
+    "id": 28724551
+  },
+  "assignees": null,
+  "labels": null,
+  "milestone": null,
+  "state_reason": null,
+  "comments": 0,
+  "created_at": "2026-10-11T01:56:46Z",
+  "updated_at": "2026-10-11T01:56:46Z",
+  "closed_at": null,
+  "display_url": "https://github.com/wavect/semaprax/issues/755",
+  "display_title": "(OPT) Admit discarded scalar expression statements without synthetic source names"
+}

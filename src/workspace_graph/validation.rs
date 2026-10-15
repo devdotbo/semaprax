@@ -6,6 +6,7 @@
 //! is live, then performs the same exact comparisons after those programs
 //! have been filtered into their workspace carriers.
 
+use super::expected_projection::private_layout::authority::invocation::Invocation;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::ast::{ModuleUseKind, Program, TypeDeclarationKind};
@@ -14,7 +15,7 @@ use crate::hir;
 
 use super::{
     graph_error, prelude_binding, reserve_builder_structure, top_level_declaration,
-    WorkspaceDeclarationFact,
+    AuthoredDeclaration, ResolvedModuleInput, WorkspaceDeclarationFact,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -29,7 +30,7 @@ struct FunctionSignature {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct TypeSignature {
-    type_parameters: Vec<hir::ResolvedTypeParameterDeclaration>,
+    type_parameters: hir::NominalPayload<hir::ResolvedTypeParameterDeclaration>,
     kind: hir::ResolvedTypeDeclarationKind,
 }
 
@@ -67,21 +68,35 @@ impl WorkspaceValidationIndex {
         })
     }
 
-    /// Extract all HIR-dependent proof while `resolved` is still live.  The
-    /// copied signatures retain type parameters, effects, and Vec/Box wrapper
-    /// identity; bodies, contracts, cleanup plans, and resolver indexes do
-    /// not survive this boundary.
+    #[cfg(test)]
     pub(super) fn record_module(
         &mut self,
         module: &str,
         resolved: &hir::ResolvedProgram,
         programs: &[Program],
     ) -> Result<(), Vec<Diagnostic>> {
+        let authored = super::index_authored(programs)?;
+        self.record_module_authored(module, resolved, programs, &authored, None)
+    }
+
+    /// Extract all HIR-dependent proof while `resolved` is still live.  The
+    /// copied signatures retain type parameters, effects, and Vec/Box wrapper
+    /// identity; bodies, contracts, cleanup plans, and resolver indexes do
+    /// not survive this boundary. `authored` is the caller-held index of the
+    /// same `programs` slice.
+    pub(super) fn record_module_authored(
+        &mut self,
+        module: &str,
+        resolved: &hir::ResolvedProgram,
+        programs: &[Program],
+        authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+        authority: Option<&Invocation<'_>>,
+    ) -> Result<(), Vec<Diagnostic>> {
         let source = programs
             .iter()
             .find(|program| program.module == module)
             .expect("resolved workspace module belongs to authenticated source");
-        self.record_declarations(module, resolved, source, programs)?;
+        self.record_declarations(module, resolved, source, programs, authored, authority)?;
 
         let mut facts = ModuleSignatureFacts::default();
         for function in &resolved.functions {
@@ -158,6 +173,8 @@ impl WorkspaceValidationIndex {
         resolved: &hir::ResolvedProgram,
         source: &Program,
         programs: &[Program],
+        authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+        authority: Option<&Invocation<'_>>,
     ) -> Result<(), Vec<Diagnostic>> {
         let resolved_record_iterator =
             crate::iterator_ops::resolved_program_uses_record_iterator(resolved);
@@ -166,6 +183,12 @@ impl WorkspaceValidationIndex {
                 prelude_binding::expected_declaration_facts_for_programs(programs, true)?;
             self.resolved_record_iterator = true;
         }
+        let private = match authority {
+            Some(owner) => owner.derive_bound(source, programs, authored)?,
+            None => super::expected_projection::private_layout::authority::PrivateTypes::derive(
+                source, programs, authored,
+            )?,
+        };
         let expected_module_compiler = prelude_binding::expected_module_declaration_facts(
             source,
             programs,
@@ -224,10 +247,11 @@ impl WorkspaceValidationIndex {
             };
             if top_fact.module.as_deref() != Some(module) {
                 let expected_foreign = self.expected.get(declaration.id.as_str());
-                if source
+                if (source
                     .module_uses
                     .iter()
                     .any(|item| item.persistent_id == top.as_str())
+                    || private.contains(top.as_str(), top_fact.module.as_deref())?)
                     && expected_foreign.is_some_and(|fact| {
                         fact.kind == declaration.kind
                             && fact.origin == declaration.identity_origin
@@ -283,9 +307,20 @@ impl WorkspaceValidationIndex {
         Ok(())
     }
 
+    #[cfg(test)]
     pub(super) fn validate_stub_signatures(
         &self,
         programs: &[Program],
+    ) -> Result<(), Vec<Diagnostic>> {
+        let authored = super::index_authored(programs)?;
+        self.validate_stub_signatures_authored(programs, &authored, None)
+    }
+
+    pub(super) fn validate_stub_signatures_authored(
+        &self,
+        programs: &[Program],
+        authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+        authority: Option<&Invocation<'_>>,
     ) -> Result<(), Vec<Diagnostic>> {
         for caller in programs {
             let caller_facts = self.modules.get(caller.module.as_str()).ok_or_else(|| {
@@ -366,6 +401,28 @@ impl WorkspaceValidationIndex {
                     ModuleUseKind::Protocol => unreachable!(),
                 }
             }
+            let private = match authority {
+                Some(owner) => owner.derive_bound(caller, programs, authored)?,
+                None => {
+                    super::expected_projection::private_layout::authority::PrivateTypes::derive(
+                        caller, programs, authored,
+                    )?
+                }
+            };
+            private.validate_signatures(|module, id| {
+                caller_facts
+                    .types
+                    .get(id)
+                    .zip(
+                        self.modules
+                            .get(module)
+                            .and_then(|facts| facts.types.get(id)),
+                    )
+                    .is_some_and(|(stub, authority)| {
+                        stub.type_parameters == authority.type_parameters
+                            && stub.kind == authority.kind
+                    })
+            })?;
         }
         Ok(())
     }
@@ -506,6 +563,7 @@ mod clone_cost {
             | hir::ResolvedType::OnceFunctionI64
             | hir::ResolvedType::OnceFunctionI64Pair
             | hir::ResolvedType::MutFunctionI64
+            | hir::ResolvedType::Never
             | hir::ResolvedType::Unit
             | hir::ResolvedType::I64
             | hir::ResolvedType::I32
@@ -619,9 +677,20 @@ mod clone_cost {
     }
 }
 
+#[cfg(test)]
 pub(super) fn validate_stub_signatures(
     programs: &[Program],
-    modules: &[(String, hir::ResolvedProgram)],
+    modules: &[(String, ResolvedModuleInput)],
+) -> Result<(), Vec<Diagnostic>> {
+    let authored = super::index_authored(programs)?;
+    validate_stub_signatures_authored(programs, modules, &authored, None)
+}
+
+pub(super) fn validate_stub_signatures_authored(
+    programs: &[Program],
+    modules: &[(String, ResolvedModuleInput)],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    authority: Option<&Invocation<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
     for caller in programs {
         let caller_hir = modules
@@ -732,6 +801,27 @@ pub(super) fn validate_stub_signatures(
                 ModuleUseKind::Protocol => unreachable!(),
             }
         }
+        let private = match authority {
+            Some(owner) => owner.derive_bound(caller, programs, authored)?,
+            None => super::expected_projection::private_layout::authority::PrivateTypes::derive(
+                caller, programs, authored,
+            )?,
+        };
+        private.validate_signatures(|module, id| {
+            caller_hir
+                .types
+                .iter()
+                .find(|t| t.id.as_str() == id)
+                .zip(
+                    modules
+                        .iter()
+                        .find(|(m, _)| m == module)
+                        .and_then(|(_, p)| p.types.iter().find(|t| t.id.as_str() == id)),
+                )
+                .is_some_and(|(stub, authority)| {
+                    stub.type_parameters == authority.type_parameters && stub.kind == authority.kind
+                })
+        })?;
     }
     Ok(())
 }

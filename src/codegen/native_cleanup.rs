@@ -121,6 +121,10 @@ impl<'a> NativeCleanupIndex<'a> {
         self.admission.clone()
     }
 
+    pub(crate) fn canonical_plan(&self) -> &crate::cleanup_plan::CleanupPlan {
+        &self.canonical_function.cleanup_plan
+    }
+
     pub(crate) fn function_id(&self) -> &DeclarationId {
         self.function_id
     }
@@ -590,6 +594,10 @@ fn validate_supported_type(
     context: &str,
 ) -> Result<(), Diagnostic> {
     match ty {
+        ResolvedType::Never => Err(unsupported(
+            function,
+            format!("does not support compiler-only Never {context} storage"),
+        )),
         ResolvedType::OnceFunction
         | ResolvedType::OnceFunctionI64
         | ResolvedType::OnceFunctionI64Pair
@@ -780,6 +788,12 @@ fn validate_expression(
                 format!("does not support function invocation `{}`", expression.id),
             ));
         }
+        ResolvedExprKind::VecConstructor { .. } => {
+            return Err(unsupported(
+                function,
+                "does not support Vec constructor markers",
+            ))
+        }
         ResolvedExprKind::Int(_)
         | ResolvedExprKind::Int32(_)
         | ResolvedExprKind::Char(_)
@@ -790,7 +804,8 @@ fn validate_expression(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) => {}
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
         ResolvedExprKind::BorrowPlace { operation, place } => {
             if !borrow_place_shape_is_admitted(operation, place) {
                 return Err(unsupported(
@@ -825,6 +840,17 @@ fn validate_expression(
                     format!("uses projected place expression `{}`", expression.id),
                 ));
             }
+        }
+        ResolvedExprKind::VecFieldRead { args, .. } | ResolvedExprKind::RowLoan { args, .. } => {
+            for argument in args {
+                validate_expression(program, function, argument)?;
+            }
+        }
+        ResolvedExprKind::LiteralFormat { .. } => {
+            return Err(unsupported(
+                function,
+                "literal format requires the staged String cleanup profile",
+            ));
         }
         ResolvedExprKind::Call { callee, args, .. } => {
             for argument in args {
@@ -903,12 +929,14 @@ fn validate_expression(
                         // Assignment targets reuse their `let` storage.
                         validate_expression(program, function, value)?;
                     }
+                    ResolvedStatement::CopyDiscard { value, .. } => {
+                        validate_expression(program, function, value)?;
+                    }
                     ResolvedStatement::Unsafe { body, .. } => {
                         validate_expression(program, function, body)?;
                     }
-                    ResolvedStatement::While {
-                        condition, body, ..
-                    } => return Err(unsupported(
+                    ResolvedStatement::While { condition, body, .. }
+                    | ResolvedStatement::LexicalWhile { condition, body, .. } => return Err(unsupported(
                         function,
                         format!(
                             "does not support while statement `{}..{}` in the first native cleanup slice",
@@ -980,6 +1008,12 @@ fn validate_expression(
                     expression.id
                 ),
             ));
+        }
+        ResolvedExprKind::LexicalExit { .. } => {
+            return Err(unsupported(
+                function,
+                "lexical exits remain outside the first native resource cleanup slice",
+            ))
         }
         ResolvedExprKind::TryOption { operand, .. } => {
             validate_expression(program, function, operand)?;

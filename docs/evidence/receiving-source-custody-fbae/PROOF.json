@@ -1,0 +1,11 @@
+{
+  "source_only": true,
+  "basis": "fbae9cd048ef467e5798b538759bb8b9ed8625ce",
+  "actual_failure_log": "/Volumes/Semaprax/lane-prompts/paid-lookup-fbae-20261015/owning-selected-65.log",
+  "consumer": "src/workspace_graph/expected_projection/prelude_forecast_tests.rs:223",
+  "consumer_order": "edits.iter().rev()",
+  "change": "Append exact five paid nominal child joins and invalid-layout child join before undoing all unchanged earlier hooks.",
+  "whole_receiving_originals": 5,
+  "result": "complete source equality and original archive SHA equality",
+  "execution": "Python source projection only; no Rust tests or build."
+}

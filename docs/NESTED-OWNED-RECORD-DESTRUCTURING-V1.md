@@ -28,6 +28,10 @@ call temporaries, escaping or mutable loans, task/closure capture, FFI, Project
 exports, Components, and public aggregate ABIs remain closed. Arm results are
 Copy-only in this tranche.
 
+The additive internal whole-child binding rule is specified separately in
+[v2](NESTED-OWNED-RECORD-DESTRUCTURING-V2.md); its qualification is pending.
+This v1 contract and frozen public profiles retain their existing boundaries.
+
 ## Exact recursive pattern
 
 Every record node must name the exact resolved record declaration and list

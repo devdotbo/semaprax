@@ -1,5 +1,6 @@
 //! Compiler-owned operations for the internal Owned Bounded Box v1 profile.
 
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{Param, ParamMode, Span, Type};
 use crate::hir::{DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId};
 
@@ -134,7 +135,7 @@ pub(crate) fn ast_box(element: Type) -> Type {
 }
 pub(crate) fn resolved_box(element: ResolvedType) -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: DeclarationId::new(crate::prelude::BOX_ID),
+        declaration: DeclarationId::compiler(crate::hir::CompilerDeclaration::Box),
         arguments: vec![element],
     }
 }
@@ -169,8 +170,8 @@ pub(crate) fn is_type(ty: &ResolvedType) -> bool {
 
 /// True when checked meaning needs the v5 owned-Bytes Box runtime contract.
 /// An authored `Box` declaration is never reclassified by its spelling alone.
-pub(crate) fn program_uses_owned_payload(program: &crate::ast::Program) -> bool {
-    if program.types.iter().any(|declaration| {
+pub(crate) fn program_uses_owned_payload(program: &dyn ProgramSource) -> bool {
+    if program.types().iter().any(|declaration| {
         declaration.name == "Box" && declaration.stable_id != crate::prelude::BOX_ID
     }) {
         return false;
@@ -196,9 +197,9 @@ pub(crate) fn program_uses_owned_payload(program: &crate::ast::Program) -> bool 
                     found
                 })
     }
-    program.functions.iter().any(function_uses)
+    program.functions().iter().any(function_uses)
         || program
-            .types
+            .types()
             .iter()
             .any(|declaration| match &declaration.kind {
                 crate::ast::TypeDeclarationKind::Record { fields }

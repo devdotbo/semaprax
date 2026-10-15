@@ -208,7 +208,11 @@ fn raw_sources(root: &Path) -> Vec<Vec<u8>> {
 fn public_api_cli_kat_parity_and_opaque_getters() {
     let fixture = Fixture::new("api-cli");
     let before = inventory(&fixture.root);
-    let artifacts = semantic_workspace_change::generate(&fixture.root, &fixture.proposal).unwrap();
+    let artifacts = semantic_workspace_change::generate(&fixture.root, &fixture.proposal)
+        .unwrap_or_else(|diagnostics| {
+            let proposal = std::fs::read_to_string(&fixture.proposal);
+            panic!("full change KAT generation refused; original proposal={proposal:?}; diagnostics={diagnostics:?}");
+        });
     let preview = semantic_workspace_change::preview(&fixture.root, &fixture.proposal).unwrap();
     let evidence = semantic_workspace_change::evidence(&fixture.root, &fixture.proposal).unwrap();
     assert_eq!(preview, artifacts.preview());
@@ -800,3 +804,6 @@ fn second_application_is_stale_and_preserves_the_committed_generation() {
     lock.try_lock_exclusive().unwrap();
     FileExt::unlock(&lock).unwrap();
 }
+
+#[path = "semantic_change/reporting.rs"]
+mod reporting;

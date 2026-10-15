@@ -1,0 +1,30 @@
+[
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::resolve_expr::path_arena::path_arena_regression_tests::whole_program::whole_program_text_receiver_keeps_complete_hir_graph_cache_and_ordered_plans",
+    "expected_pass_count": 1,
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::resolve_expr::path_arena::path_arena_regression_tests::whole_program::full_text_receiver_keeps_foreign_identity_and_cached_mutation_refusals",
+    "expected_pass_count": 1,
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::resolve_expr::path_arena::path_arena_regression_tests::whole_program::text_reference_scope_restores_current_dispatch_after_unwind_and_nested_use",
+    "expected_pass_count": 1,
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "hir::resolve_statement::text_reference::full_current_expression_entry_is_exact_original_plus_test_dispatch",
+    "expected_pass_count": 1,
+    "ignored": false
+  }
+]

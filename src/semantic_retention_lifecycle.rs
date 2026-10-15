@@ -572,12 +572,12 @@ mod tests {
             forward
                 .1
                 .iter()
-                .map(|diagnostic| (diagnostic.code, diagnostic.message.as_str()))
+                .map(|diagnostic| (diagnostic.code, diagnostic.message.as_ref()))
                 .collect::<Vec<_>>(),
             backward
                 .1
                 .iter()
-                .map(|diagnostic| (diagnostic.code, diagnostic.message.as_str()))
+                .map(|diagnostic| (diagnostic.code, diagnostic.message.as_ref()))
                 .collect::<Vec<_>>()
         );
         assert_eq!(forward.1[0].code, "SPX-G998");

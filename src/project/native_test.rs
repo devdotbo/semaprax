@@ -123,6 +123,12 @@ impl ProjectSnapshot {
         }
         program.entrypoint = crate::hir::DeclarationId::new(stable_id);
         let prepared = match self.manifest().project_profile() {
+            ProjectProfile::SourceCommandSelectedFileV1 if !program.permits.is_empty() => {
+                crate::codegen::emit_hir_c_with_selected_file_command(&program)
+            }
+            ProjectProfile::SourceCommandSelectedFileResourceV1 if !program.permits.is_empty() => {
+                crate::codegen::emit_hir_c_with_selected_file_resource_command(&program)
+            }
             ProjectProfile::SourceCommandV1 if !program.permits.is_empty() => {
                 crate::codegen::emit_hir_c_with_source_command(&program)
             }

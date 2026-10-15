@@ -1,3 +1,4 @@
+use super::super::is_native_owned_vec_type;
 use super::*;
 
 impl<'a, O: COutput> CEmitter<'a, O> {
@@ -22,7 +23,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             };
             let condition = self.emit_expr(condition)?;
             self.require_type(&condition.ty, &ResolvedType::Bool, "if condition")?;
-            let temporary = if self.plan_owned_leaf_result(&current.ty) {
+            let temporary = if current.ty == ResolvedType::Never {
+                String::new()
+            } else if self.plan_owned_leaf_result(&current.ty) {
                 self.bytes_plan
                     .ok_or_else(|| backend_error("owned Bytes if has no cleanup plan"))?
                     .value(&crate::cleanup_plan::StorageId::Temporary(
@@ -48,7 +51,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         };
 
         while let Some(continuation) = continuations.pop() {
-            self.require_type(&value.ty, &continuation.expr.ty, "then branch")?;
+            self.require_flow_type(&value.ty, &continuation.expr.ty, "then branch")?;
             self.assign_branch_result(
                 continuation.expr,
                 continuation.then_branch,
@@ -59,7 +62,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             self.line("} else {");
             self.indent += 1;
             let else_value = self.emit_expr(continuation.else_branch)?;
-            self.require_type(&else_value.ty, &continuation.expr.ty, "else branch")?;
+            self.require_flow_type(&else_value.ty, &continuation.expr.ty, "else branch")?;
             self.assign_branch_result(
                 continuation.expr,
                 continuation.else_branch,
@@ -68,7 +71,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
             )?;
             self.indent -= 1;
             self.line("}");
-            self.finish_variant_join(continuation.expr, &continuation.temporary)?;
+            if continuation.expr.ty != ResolvedType::Never {
+                self.finish_variant_join(continuation.expr, &continuation.temporary)?;
+            }
             value = CValue {
                 code: continuation.temporary,
                 ty: continuation.expr.ty.clone(),
@@ -77,11 +82,12 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         Ok(value)
     }
 
-    /// Owned strings share the Bytes leaf carrier whenever the function has a
-    /// cleanup plan: the If's plan slot is its result, and each reached
-    /// branch transfers into it.
+    /// Direct Vec carriers use the same canonical branch handoff as Bytes.
+    /// Owned strings use it whenever the function has a cleanup plan; the
+    /// legacy standalone String runtime retains its existing fallback.
     fn plan_owned_leaf_result(&self, ty: &ResolvedType) -> bool {
         matches!(ty, ResolvedType::Bytes)
+            || is_native_owned_vec_type(self.program, ty)
             || (matches!(ty, ResolvedType::String) && self.bytes_plan.is_some())
     }
 
@@ -92,6 +98,9 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         temporary: &str,
         value: &CValue,
     ) -> Result<(), Diagnostic> {
+        if value.ty == ResolvedType::Never {
+            return Ok(());
+        }
         if self.plan_owned_leaf_result(&expr.ty) {
             let plan = self
                 .bytes_plan

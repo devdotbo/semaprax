@@ -30,7 +30,9 @@ impl PlanBuilder<'_> {
         let mut evaluated_condition =
             self.lower_expr(condition, condition_entry, state, active_region)?;
         if evaluated_condition.owned_source.is_some() {
-            return Err(plan_error(
+            return Err(self.while_error(
+                condition,
+                body,
                 "while condition owns a value, which no admitted program can express",
             ));
         }
@@ -41,7 +43,9 @@ impl PlanBuilder<'_> {
             evaluated_condition.state = state;
         }
         if evaluated_condition.state != entry_state {
-            return Err(plan_error(
+            return Err(self.while_error(
+                condition,
+                body,
                 "while condition changes surrounding owned cleanup state",
             ));
         }
@@ -64,12 +68,19 @@ impl PlanBuilder<'_> {
 
         // The body is an ordinary checked block; lowering it once yields the
         // exact per-iteration ownership events of any iteration count.
+        self.record_execution_boundary(
+            super::super::ExecutionBoundaryKind::LoopIteration,
+            &condition.id,
+            body_entry,
+            &evaluated_condition.state,
+            region,
+        )?;
         let evaluated_body =
             self.lower_expr(body, body_entry, evaluated_condition.state.clone(), region)?;
         if evaluated_body.state != evaluated_condition.state
             || evaluated_body.owned_source.is_some()
         {
-            return Err(plan_error(
+            return Err(self.while_error(condition, body,
                 "while loop body changes owned liveness, which the Bounded While-Loops v1 admission profile forbids",
             ));
         }
@@ -80,5 +91,58 @@ impl PlanBuilder<'_> {
             state: entry_state,
             owned_source: None,
         })
+    }
+    /// Keep the stable refusal prefix while locating a generated helper without
+    /// dumping its potentially large ownership inventory. Identifiers are
+    /// bounded here because authored stable IDs can be arbitrarily long.
+    fn while_error(
+        &self,
+        condition: &ResolvedExpr,
+        body: &ResolvedExpr,
+        message: &str,
+    ) -> Diagnostic {
+        while_identity_error(
+            self.function.id.as_str(),
+            condition.id.as_str(),
+            body.id.as_str(),
+            message,
+        )
+    }
+}
+
+fn while_identity_error(function: &str, condition: &str, body: &str, message: &str) -> Diagnostic {
+    fn bounded(id: &str) -> String {
+        let mut text: String = id.chars().take(160).collect();
+        if id.chars().nth(160).is_some() {
+            text.push('…');
+        }
+        text
+    }
+    plan_error(format!(
+        "{message}; declaration `{}`, while condition `{}`, body `{}`",
+        bounded(function),
+        bounded(condition),
+        bounded(body)
+    ))
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn loop_refusal_keeps_prefix_and_bounds_unicode_identities() {
+        let prefix = "while loop body changes owned liveness, which the Bounded While-Loops v1 admission profile forbids";
+        let identity = "é".repeat(200);
+        let diagnostic = super::while_identity_error(&identity, "condition", "body", prefix);
+        assert_eq!(diagnostic.code, "SPX-H006");
+        assert!(diagnostic
+            .message
+            .starts_with(&format!("cleanup plan: {prefix};")));
+        assert!(diagnostic
+            .message
+            .contains(&format!("{}…", "é".repeat(160))));
+        assert!(!diagnostic.message.contains(&"é".repeat(161)));
+        assert!(diagnostic
+            .message
+            .ends_with("while condition `condition`, body `body`"));
     }
 }

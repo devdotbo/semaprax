@@ -15,7 +15,11 @@ pub(super) fn block_anchors(
     plan: &crate::codegen::native_bytes::NativeBytesPlan,
     block: &ResolvedExpr,
 ) -> BTreeSet<StorageId> {
-    let ResolvedExprKind::Block { statements, tail } = &block.kind else {
+    let (ResolvedExprKind::Block { statements, tail }
+    | ResolvedExprKind::VecConstructor {
+        statements, tail, ..
+    }) = &block.kind
+    else {
         return BTreeSet::new();
     };
     let owned = |storage: &StorageId, ty: &crate::hir::ResolvedType| {
@@ -30,11 +34,11 @@ pub(super) fn block_anchors(
             }
         }
         let value = match statement {
-            ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } => {
-                Some(value)
-            }
+            ResolvedStatement::Let { value, .. }
+            | ResolvedStatement::Assign { value, .. }
+            | ResolvedStatement::CopyDiscard { value, .. } => Some(value),
             ResolvedStatement::Unsafe { body, .. } => Some(body.as_ref()),
-            ResolvedStatement::While { .. } => None,
+            ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => None,
         };
         if let Some(value) = value {
             let storage = StorageId::Temporary(value.id.clone());
@@ -55,7 +59,11 @@ fn direct_block_anchors(
     plan: &crate::codegen::native_bytes::NativeBytesPlan,
     block: &ResolvedExpr,
 ) -> BTreeSet<StorageId> {
-    let ResolvedExprKind::Block { statements, tail } = &block.kind else {
+    let (ResolvedExprKind::Block { statements, tail }
+    | ResolvedExprKind::VecConstructor {
+        statements, tail, ..
+    }) = &block.kind
+    else {
         return BTreeSet::new();
     };
     let owned = |storage: &StorageId, ty: &crate::hir::ResolvedType| {
@@ -74,8 +82,9 @@ fn direct_block_anchors(
                 anchors.insert(storage);
             }
         }
-        if let ResolvedStatement::Let { value, .. } | ResolvedStatement::Assign { value, .. } =
-            statement
+        if let ResolvedStatement::Let { value, .. }
+        | ResolvedStatement::Assign { value, .. }
+        | ResolvedStatement::CopyDiscard { value, .. } = statement
         {
             let storage = StorageId::Temporary(value.id.clone());
             if owned(&storage, &value.ty) {
@@ -100,7 +109,9 @@ fn nested_temporaries(
             anchors.insert(storage);
         }
         match &expression.kind {
-            ResolvedExprKind::Block { .. } | ResolvedExprKind::Closure { .. } => {}
+            ResolvedExprKind::Block { .. }
+            | ResolvedExprKind::VecConstructor { .. }
+            | ResolvedExprKind::Closure { .. } => {}
             ResolvedExprKind::If {
                 condition,
                 then_branch,
@@ -128,8 +139,8 @@ impl<'a, O: super::COutput> super::CEmitter<'a, O> {
     ) -> Result<(), crate::diagnostic::Diagnostic> {
         if let Some(plan) = self.bytes_plan {
             let cleanup = plan.block_scope_exit(
-                &block_anchors(self.program, plan, block),
-                &direct_block_anchors(self.program, plan, block),
+                &block_anchors(self.program, &plan, block),
+                &direct_block_anchors(self.program, &plan, block),
             )?;
             for line in cleanup.lines() {
                 self.line(line);

@@ -1,0 +1,5 @@
+{
+  "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+  "current": "            include_str!(\"../../../../../src/loan_plan/paid_cfg/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg/seen_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg/rootmap_tests.rs\"),\n",
+  "before": "            include_str!(\"../../../../../src/loan_plan/paid_cfg/tests.rs\"),\n"
+}

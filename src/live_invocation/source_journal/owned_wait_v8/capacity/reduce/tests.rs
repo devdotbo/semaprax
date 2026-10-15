@@ -143,6 +143,9 @@ fn original_status_multiset(plan: &v2::CheckedOwnedReduceV2) -> Vec<Value> {
     for source in &plan.function().cleanup_plan.status_sources {
         use crate::cleanup_plan::StatusProducer;
         let values = match &source.producer {
+            StatusProducer::CheckedAllocation { .. } => {
+                panic!("original owned-reduce profile excludes checked allocation")
+            }
             StatusProducer::ContractFalse { phase, .. } => {
                 vec![crate::conformance::NormalizedStatus::contract(*phase)]
             }

@@ -200,6 +200,17 @@ pub(crate) fn run_wasm_expected(
     refusal: &str,
     expected_value: i64,
 ) {
+    run_wasm_with_abi(source, status, copies, refusal, expected_value, None);
+}
+
+fn run_wasm_with_abi(
+    source: &str,
+    status: u32,
+    copies: u32,
+    refusal: &str,
+    expected_value: i64,
+    expected_v2: Option<bool>,
+) {
     let case = source
         .lines()
         .find_map(|line| line.strip_prefix("module "))
@@ -240,7 +251,7 @@ spx_vec_reserve_exact_v2:(h,t,n)=>{const v=get(h,t),target=BigInt(v.values.lengt
 spx_vec_set_v2:(h,t,i,b)=>{const v=get(h,t);if(t===9)read(b);if(i>=BigInt(v.values.length))return 0n;if(t===9)drop(v.values[Number(i)]);v.values[Number(i)]=b;return move(h,v);},
 spx_vec_clear_v2:(h,t)=>{const v=get(h,t);if(t===9)for(const b of v.values)drop(b);v.values=[];return move(h,v);},
 spx_iter_bytes_into_v2:iterInto,spx_iter_bytes_next_v2:iterNext,spx_iter_bytes_drop_v2:iterDrop};
-(async()=>{const legacy={...env};for(const n of Object.keys(legacy))if(n.endsWith('_v2'))delete legacy[n];let rejected=false;try{await WebAssembly.instantiate(moduleBytes,{env:legacy})}catch(e){if(!(e instanceof WebAssembly.LinkError))throw e;rejected=true}if(!rejected)throw Error('legacy host admitted');
+(async()=>{const imports=WebAssembly.Module.imports(new WebAssembly.Module(moduleBytes)),requiresV2=imports.some(item=>item.module==='env'&&item.name.endsWith('_v2'));if(process.argv[6]!=='any'&&requiresV2!==(process.argv[6]==='v2'))throw Error('ABI control mismatch');const legacy={...env};for(const n of Object.keys(legacy))if(n.endsWith('_v2'))delete legacy[n];for(const item of imports)if(item.module!=='env'||(!requiresV2&&!(item.name in legacy)))throw Error('unknown legacy import');let rejected=false;try{await WebAssembly.instantiate(moduleBytes,{env:legacy})}catch(e){if(!(e instanceof WebAssembly.LinkError))throw e;rejected=true}if(rejected!==requiresV2)throw Error(requiresV2?'legacy host admitted v2':'legacy host rejected v1');
 ({instance}=await WebAssembly.instantiate(moduleBytes,{env}));if(refusal==='none'){const memory=instance.exports.__spx_byte_memory||instance.exports.memory,output=memory.buffer.byteLength-32,view=new DataView(memory.buffer,output,32),vector=nextVec++;vectors.set(vector,{tag:9,capacity:0n,values:[]});if(iterInto(0n,output)!==2||vectors.size!==1||iterators.size)throw Error('stale iterator handle committed');if(iterInto(vector,-1)!==2||!vectors.has(vector)||iterators.size)throw Error('invalid iterator output committed');if(iterInto(vector,output)!==0||vectors.has(vector)||iterators.size!==1)throw Error('iterator admission failed');const iterator=view.getBigUint64(0,true);if(iterNext(iterator,1n,output)!==2||!iterators.has(iterator)||iterators.get(iterator).cursor!==0n)throw Error('stale iterator cursor committed');if(iterNext(iterator,0n,-1)!==2||!iterators.has(iterator)||iterators.get(iterator).cursor!==0n)throw Error('invalid step output committed');iterDrop(iterator,0n);if(vectors.size||iterators.size||data.size)throw Error('hostile iterator cleanup');}for(let i=0;i<4;i++){copies=0;drops=0;let selected=0,value,trapped=false;try{value=instance.exports.semaprax_main()}catch(e){if(expectsTrap&&e instanceof WebAssembly.RuntimeError){trapped=true}else{if(!e.message.startsWith('status:'))throw e;selected=Number(e.message.slice(7));}}if(expectsTrap){if(!trapped)throw Error('malformed iterator output published');if(refusal==='iter-nowrite-into'){if(vectors.size!==1||iterators.size||data.size!==expectedCopies)throw Error('into trap committed');env.spx_vec_drop_v2(vectors.keys().next().value);}else{if(vectors.size||iterators.size!==1||data.size!==expectedCopies)throw Error('next trap committed');iterDrop(iterators.keys().next().value,refusal==='iter-borrowed-item'?1n:0n);}if(vectors.size||iterators.size||data.size)throw Error('malformed host cleanup');continue;}if(selected!==expected||(!expected&&value!==expectedValue)||copies!==expectedCopies||drops!==copies||vectors.size||iterators.size||data.size)throw Error(`settlement:${selected}:${value}:${copies}:${drops}:${vectors.size}:${iterators.size}:${data.size}`);}})().catch(e=>{console.error(e);process.exit(2)});
 "#;
     let out = Command::new("node")
@@ -251,6 +262,11 @@ spx_iter_bytes_into_v2:iterInto,spx_iter_bytes_next_v2:iterNext,spx_iter_bytes_d
         .arg(copies.to_string())
         .arg(refusal)
         .arg(expected_value.to_string())
+        .arg(match expected_v2 {
+            Some(true) => "v2",
+            Some(false) => "v1",
+            None => "any",
+        })
         .output()
         .unwrap();
     assert!(
@@ -259,4 +275,15 @@ spx_iter_bytes_into_v2:iterInto,spx_iter_bytes_next_v2:iterNext,spx_iter_bytes_d
         String::from_utf8_lossy(&out.stderr)
     );
     std::fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn wasm_legacy_host_selection_follows_actual_imports() {
+    // A Bytes-only scalar program uses v1 imports; SUCCESS owns Vec<Bytes>
+    // and requires v2. Both retain the complete repeated settlement oracle.
+    run_wasm_with_abi(
+        "module bytes.v1; @id(\"app.main\") fn main()->i64 { let item=bytes_zeroed(1usize); if byte_len(bytes_as_slice(item))==1usize {29}else{0} }",
+        0, 1, "none", 29, Some(false),
+    );
+    run_wasm_with_abi(SUCCESS, 0, 4, "none", 29, Some(true));
 }

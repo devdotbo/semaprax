@@ -12,22 +12,35 @@
 //! are allowed. A consumed outer binding still changes ownership liveness
 //! inside the loop and keeps its existing diagnostic.
 
-use crate::ast::{ParamMode, Program, Type, TypeDeclarationKind};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{ParamMode, Type, TypeDeclarationKind};
 use crate::hir::{OwnershipMode, ResolvedType};
 use crate::source_verify::is_scalar_source_type;
 
-/// One source parameter a loop-body call admits: a Copy scalar or flat Copy variant, a borrowed
-/// byte slice, named `str`, or exact Copy-scalar Vec, or an owned `string` the call consumes.
-pub(crate) fn ast_param_admitted(program: &Program, mode: ParamMode, ty: &Type) -> bool {
+/// Loop-body parameters include Copy scalars, flat Copy variants and the flat Copy
+/// records of `docs/COPY-RECORD-COLLECTIONS-V1.md`, alongside the admitted borrowed
+/// views, collection carriers and consumed owners below. Each additive profile
+/// keeps its own authenticated shape and ownership boundary.
+pub(crate) fn ast_param_admitted(program: &dyn ProgramSource, mode: ParamMode, ty: &Type) -> bool {
     match mode {
         ParamMode::Value => {
-            ast_copy_variant(program, ty) || is_scalar_source_type(ty) || *ty == Type::String
+            ast_copy_variant(program, ty)
+                || crate::source_verify::copy_record_source_admitted(program, ty)
+                || is_scalar_source_type(ty)
+                || *ty == Type::String
         }
-        ParamMode::Own => *ty == Type::String || crate::map_ops::ast_collection(ty),
+        ParamMode::Own => {
+            *ty == Type::String
+                || crate::map_ops::ast_collection(ty)
+                || crate::source_verify::owned_leaf_source_admitted(program, ty)
+        }
         ParamMode::Borrow => {
             matches!(ty, Type::SliceU8 | Type::Str)
+                || (matches!(ty, Type::Named { .. })
+                    && crate::source_verify::owned_leaf_source_admitted(program, ty))
                 || crate::map_ops::ast_collection(ty)
                 || crate::vec_ops::ast_copy_vec(ty)
+                || matches!(ty, Type::Named { name, arguments } if name == "Vec" && matches!(arguments.as_slice(), [element] if (crate::source_verify::copy_record_source_admitted(program, element) || crate::source_verify::owned_leaf_source_admitted(program, element))))
         }
         ParamMode::Shared => false,
     }
@@ -58,11 +71,15 @@ pub(crate) fn effects_admitted(effects: &[String]) -> bool {
     })
 }
 
-/// One source result a loop-body call admits: a Copy scalar, flat Copy variant or new `string`.
-pub(crate) fn ast_result_admitted(program: &Program, ty: &Type) -> bool {
+/// Loop-body results include Copy scalars, flat Copy variants, flat Copy records
+/// (`docs/COPY-RECORD-COLLECTIONS-V1.md`), new `string` values and the independently
+/// authenticated owned-leaf/collection profiles below.
+pub(crate) fn ast_result_admitted(program: &dyn ProgramSource, ty: &Type) -> bool {
     is_scalar_source_type(ty)
         || *ty == Type::String
         || ast_copy_variant(program, ty)
+        || crate::source_verify::copy_record_source_admitted(program, ty)
+        || crate::source_verify::owned_leaf_source_admitted(program, ty)
         || crate::map_ops::ast_collection(ty)
 }
 
@@ -77,12 +94,20 @@ pub(crate) fn resolved_param_admitted(
             crate::hir::is_scalar_resolved_type(ty)
                 || *ty == ResolvedType::String
                 || resolved_match_scrutinee_admitted(declarations, ty)
+                || crate::hir::copy_record_collection::admitted(declarations, ty)
         }
-        OwnershipMode::Own => *ty == ResolvedType::String || crate::map_ops::is_collection(ty),
+        OwnershipMode::Own => {
+            *ty == ResolvedType::String
+                || crate::map_ops::is_collection(ty)
+                || crate::hir::owned_leaf_collection::layout(declarations, ty).is_some()
+        }
         OwnershipMode::Borrow => {
             matches!(ty, ResolvedType::SliceU8 | ResolvedType::Str)
+                || (matches!(ty, ResolvedType::Nominal { .. })
+                    && crate::hir::owned_leaf_collection::layout(declarations, ty).is_some())
                 || crate::map_ops::is_collection(ty)
                 || crate::vec_ops::resolved_copy_vec(ty)
+                || crate::hir::owned_leaf_collection::is_copy_or_leaf_vec(declarations, ty)
         }
         OwnershipMode::Shared => false,
     }
@@ -96,6 +121,7 @@ pub(crate) fn resolved_result_admitted(
     crate::hir::is_scalar_resolved_type(ty)
         || *ty == ResolvedType::String
         || resolved_match_scrutinee_admitted(declarations, ty)
+        || crate::hir::owned_leaf_collection::copy_or_leaf_admitted(declarations, ty)
         || crate::map_ops::is_collection(ty)
 }
 
@@ -125,7 +151,10 @@ pub(crate) fn resolved_match_scrutinee_admitted(
             ResolvedType::TypeParameter { index, .. } => arguments
                 .get(*index as usize)
                 .is_some_and(crate::hir::is_scalar_resolved_type),
-            other => crate::hir::is_scalar_resolved_type(other),
+            other => {
+                crate::hir::is_scalar_resolved_type(other)
+                    || crate::hir::copy_record_collection::admitted(declarations, other)
+            }
         })
     })
 }
@@ -139,12 +168,12 @@ pub(crate) fn match_scrutinee_refusal(ty: &str) -> String {
 
 /// Exact source twin of the flat concrete Copy-payload variant classifier.
 /// Only direct scalar fields or direct concrete scalar type arguments qualify.
-pub(crate) fn ast_copy_variant(program: &Program, ty: &Type) -> bool {
+pub(crate) fn ast_copy_variant(program: &dyn ProgramSource, ty: &Type) -> bool {
     let Type::Named { name, arguments } = ty else {
         return false;
     };
     let Some(declaration) = program
-        .types
+        .types()
         .iter()
         .chain(crate::prelude::declarations_for_program(program))
         .find(|d| d.name == *name)
@@ -159,7 +188,9 @@ pub(crate) fn ast_copy_variant(program: &Program, ty: &Type) -> bool {
     }
     cases.iter().all(|case| {
         case.fields.iter().all(|field| {
-            if is_scalar_source_type(&field.ty) {
+            if is_scalar_source_type(&field.ty)
+                || crate::source_verify::copy_record_source_admitted(program, &field.ty)
+            {
                 return true;
             }
             let Type::Named {
@@ -179,3 +210,5 @@ pub(crate) fn ast_copy_variant(program: &Program, ty: &Type) -> bool {
         })
     })
 }
+
+pub(crate) mod byte_writer;

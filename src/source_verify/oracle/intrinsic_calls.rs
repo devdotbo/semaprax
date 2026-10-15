@@ -1,5 +1,6 @@
 //! Recursive reference checking for exact String and borrowed-text intrinsics.
 use super::*;
+use crate::ast::program_source::ProgramSource;
 use crate::ast::Param;
 use crate::source_verify::arguments::{
     activate_borrowed_bytes_call_loans, check_argument_ownership, release_borrowed_bytes_call_loans,
@@ -10,7 +11,7 @@ pub(super) fn check_call(
     name: &str,
     type_arguments: &[Type],
     args: &[Expr],
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expression: &Expr,
     variables: &mut HashMap<String, Binding>,
@@ -33,6 +34,16 @@ pub(super) fn check_call(
         };
         signature
     } else if let Some(op) = crate::string_ops::by_name(name) {
+        if op == crate::string_ops::StringOp::Take
+            && !crate::string_ops::take::source_operand(args, allow_moves)
+        {
+            diagnostics.push(error(
+                program,
+                "SPX-O105",
+                "string_take requires an available named owned String outside contracts",
+                expression.span,
+            ));
+        }
         (crate::string_ops::ast_params(op), op.ast_return_type())
     } else {
         let op = crate::str_ops::by_name(name)?;
@@ -58,7 +69,7 @@ pub(super) fn check_call(
             expression.span,
         ));
     }
-    let loans = activate_borrowed_bytes_call_loans(args, &params, variables, types);
+    let loans = activate_borrowed_bytes_call_loans(program, args, &params, variables, types);
     for (index, argument) in args.iter().enumerate() {
         let actual = check_expr(
             program,

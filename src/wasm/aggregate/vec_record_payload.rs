@@ -83,7 +83,7 @@ impl Emitter<'_> {
         let base = vec_import_base(self.program);
         match op {
             crate::vec_ops::VecOp::Sort => {
-                return Err(error("owned Vec payload sorting is not admitted"))
+                return Err(error("owned Vec payload sorting is not admitted"));
             }
             VecOp::WithCapacity => {
                 let capacity = self.emit_expr(&args[0])?;
@@ -184,7 +184,16 @@ impl Emitter<'_> {
                 write_u32(self.output, scalar_local(&result)?);
                 Ok(result)
             }
-            VecOp::Get | VecOp::Set | VecOp::ReserveExact => Err(error(
+            VecOp::StrAt
+            | VecOp::Get
+            | VecOp::Set
+            | VecOp::ReserveExact
+            | VecOp::CloneAt
+            | VecOp::Replace
+            | VecOp::ReserveOwned
+            | VecOp::SortOwned
+            | VecOp::SortBy
+            | VecOp::UniqueBy => Err(error(
                 "owned record Vec operation is outside the admitted profile",
             )),
         }

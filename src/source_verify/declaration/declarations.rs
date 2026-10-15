@@ -1,9 +1,10 @@
 //! Declaration body checks: byte-data storage rules, native Rust imports,
 //! resource lifecycles, declared field types, and recursive record layouts.
 
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
-    ImportDeclaration, ImportFailure, InterfaceDeclaration, ParamMode, Program,
-    ResourceLifecycleKind, Type, TypeDeclarationKind,
+    ImportDeclaration, ImportFailure, InterfaceDeclaration, ParamMode, ResourceLifecycleKind, Type,
+    TypeDeclarationKind,
 };
 use crate::conformance::STATUS_DOMAIN_MAX_BYTES_V1;
 use crate::diagnostic::Diagnostic;
@@ -18,11 +19,11 @@ use crate::source_verify::type_table::{
 use std::collections::{HashMap, HashSet};
 
 pub(super) fn check_byte_data_declarations<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     types: &TypeTable<'p>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for declaration in &program.types {
+    for declaration in program.types() {
         match &declaration.kind {
             TypeDeclarationKind::Record { fields } => {
                 // The nested owned-Bytes profile is monomorphic, and a generic
@@ -54,7 +55,9 @@ pub(super) fn check_byte_data_declarations<'p>(
                     name: declaration.name.clone(),
                     arguments: Vec::new(),
                 };
-                if types.contains_owned_bytes(&root) {
+                if types.contains_owned_bytes(&root)
+                    && !super::super::declared_type::string_record::runtime_admitted(&root, types)
+                {
                     match classify_nested_owned_byte_record(types, &root) {
                         NestedOwnedRecordAdmission::Admitted
                         | NestedOwnedRecordAdmission::Recursive => {}
@@ -156,7 +159,8 @@ pub(super) fn check_byte_data_declarations<'p>(
                             ),
                             field.span,
                         ));
-                    } else if !has_direct_bytes && types.contains_owned_bytes(&field.ty) {
+                    } else if !has_direct_bytes && types.contains_owned_bytes(&field.ty)
+                        && !super::super::declared_type::collection_outcome::runtime_declaration_admitted(types, declaration) {
                         diagnostics.push(error(
                             program,
                             "SPX-T268",
@@ -188,12 +192,12 @@ pub(super) fn check_byte_data_declarations<'p>(
 }
 
 pub(super) fn check_native_rust_imports<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     types: &TypeTable<'p>,
     native_rust_names: &mut HashSet<&'p str>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for interface in &program.interfaces {
+    for interface in program.interfaces() {
         let permits = interface
             .permits
             .iter()
@@ -230,7 +234,7 @@ pub(super) fn check_native_rust_imports<'p>(
             }
             if import.native_rust
                 && program
-                    .functions
+                    .functions()
                     .iter()
                     .any(|function| function.name == import.name)
             {
@@ -443,11 +447,11 @@ pub(super) fn check_native_rust_imports<'p>(
 }
 
 pub(super) fn check_resource_lifecycles<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     import_keys: &HashMap<&'p str, (&'p InterfaceDeclaration, &'p ImportDeclaration)>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for declaration in &program.types {
+    for declaration in program.types() {
         let TypeDeclarationKind::Resource { lifecycles } = &declaration.kind else {
             continue;
         };
@@ -490,11 +494,11 @@ pub(super) fn check_resource_lifecycles<'p>(
 }
 
 pub(super) fn check_declared_fields<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     types: &TypeTable<'p>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for declaration in &program.types {
+    for declaration in program.types() {
         if let TypeDeclarationKind::Record { fields } | TypeDeclarationKind::Class { fields, .. } =
             &declaration.kind
         {
@@ -578,6 +582,15 @@ pub(super) fn check_declared_fields<'p>(
                                 Some(TypeDeclarationKind::Record { .. } | TypeDeclarationKind::Class { .. })
                             )
                 ) && !crate::map_ops::ast_collection(&field.ty)
+                    && !super::super::declared_type::declared_collection::vector(types, &field.ty)
+                    && !(super::super::declared_type::collection_record::vector(types, &field.ty)
+                        && super::super::declared_type::collection_record::admitted(
+                            &Type::Named {
+                                name: declaration.name.clone(),
+                                arguments: Vec::new(),
+                            },
+                            types,
+                        ))
                     && !(types.contains_owned_bytes(&field.ty)
                         && matches!(
                             classify_nested_owned_byte_record(types, &field.ty),
@@ -638,6 +651,10 @@ pub(super) fn check_declared_fields<'p>(
                     let is_copy_aggregate = parameters.is_empty()
                         && types.is_admitted_copy_aggregate_variant_field(&field.ty);
                     if !owned_byte_variant
+                        && !super::super::declared_type::collection_outcome::runtime_declaration_admitted(
+                            types,
+                            declaration,
+                        )
                         && !owned_string_variant
                         && !owned_byte_record_copy_field_is_admitted(&field.ty)
                         && !is_parameter
@@ -661,12 +678,12 @@ pub(super) fn check_declared_fields<'p>(
 }
 
 pub(super) fn check_record_layouts<'p>(
-    program: &'p Program,
+    program: &'p dyn ProgramSource,
     types: &TypeTable<'p>,
     checked_layouts: &mut HashSet<String>,
     diagnostics: &mut Vec<Diagnostic>,
 ) {
-    for declaration in &program.types {
+    for declaration in program.types() {
         if matches!(
             declaration.kind,
             TypeDeclarationKind::Record { .. } | TypeDeclarationKind::Class { .. }

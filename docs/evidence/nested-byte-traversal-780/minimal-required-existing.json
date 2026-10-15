@@ -1,0 +1,90 @@
+{
+  "status": "SOURCE_DECLARED_EXACT_SELECTORS_PENDING_ORIGINAL_PARSER_BINDING_NO_EXECUTION",
+  "purpose": "Minimal v1 byte receiver, hostile HIR, cache/lexical latch, source diagnostics, existing full backend/manual reference and actual help card. Normalizer/cumulative already retained by root. Existing identifiers; current source scope assertions in language/help include v2 changes.",
+  "owners": [
+    {
+      "selector": "hir::validation::byte_traversal::tests::owner_assignment_anywhere_in_the_body_is_refused_by_the_census_freeze",
+      "source": "src/hir/validation/byte_traversal/tests.rs",
+      "source_sha256": "ce80b4b030d143c66d230e33d1785039b78862d2c7ac15725bd6e0bf8ffc4e11",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::validation::byte_traversal::tests::traversal_freeze_loan_spans_the_whole_region_on_the_resolved_owner",
+      "source": "src/hir/validation/byte_traversal/tests.rs",
+      "source_sha256": "ce80b4b030d143c66d230e33d1785039b78862d2c7ac15725bd6e0bf8ffc4e11",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::validation::byte_traversal::tests::detached_view_without_authenticated_provenance_is_refused",
+      "source": "src/hir/validation/byte_traversal/tests.rs",
+      "source_sha256": "ce80b4b030d143c66d230e33d1785039b78862d2c7ac15725bd6e0bf8ffc4e11",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::validation::byte_traversal::tests::nested_receiver_in_the_authored_body_is_refused",
+      "source": "src/hir/validation/byte_traversal/tests.rs",
+      "source_sha256": "ce80b4b030d143c66d230e33d1785039b78862d2c7ac15725bd6e0bf8ffc4e11",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::validation::byte_traversal::tests::only_the_fully_authenticated_receiver_shape_is_partial",
+      "source": "src/hir/validation/byte_traversal/tests.rs",
+      "source_sha256": "ce80b4b030d143c66d230e33d1785039b78862d2c7ac15725bd6e0bf8ffc4e11",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::validation::byte_traversal::tests::complete_receiver_census_region_and_discovery_have_no_heap_scratch",
+      "source": "src/hir/validation/byte_traversal/tests.rs",
+      "source_sha256": "ce80b4b030d143c66d230e33d1785039b78862d2c7ac15725bd6e0bf8ffc4e11",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::cache_codec::byte_traversal_tests::byte_traversal_roundtrips_source_graph_and_both_cache_projections",
+      "source": "src/hir/cache_codec/byte_traversal_tests.rs",
+      "source_sha256": "b683cd2f38d43e83e625b8ab0f9bd327a898e3faa66734c97bd9dcca4fcc5818",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::cache_codec::byte_traversal_tests::source_for_kind_tags_roundtrip_and_refuse_the_tag_after_borrow_bytes",
+      "source": "src/hir/cache_codec/byte_traversal_tests.rs",
+      "source_sha256": "b683cd2f38d43e83e625b8ab0f9bd327a898e3faa66734c97bd9dcca4fcc5818",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::cache_codec::byte_traversal_tests::cached_byte_traversal_latch_drift_is_refused_after_decode",
+      "source": "src/hir/cache_codec/byte_traversal_tests.rs",
+      "source_sha256": "b683cd2f38d43e83e625b8ab0f9bd327a898e3faa66734c97bd9dcca4fcc5818",
+      "harness": "lib"
+    },
+    {
+      "selector": "byte_slice_for_traversal::byte_for_preserves_source_and_lowers_to_one_authenticated_receiver",
+      "source": "tests/language/byte_slice_for_traversal.rs",
+      "source_sha256": "01e0775bd01734c9c8215ac6a6a8d913eaa5661dd9acb130985d635d27909874",
+      "harness": "language"
+    },
+    {
+      "selector": "byte_slice_for_traversal::hostile_byte_traversal_hir_is_refused_independently_of_its_spelling",
+      "source": "tests/language/byte_slice_for_traversal.rs",
+      "source_sha256": "01e0775bd01734c9c8215ac6a6a8d913eaa5661dd9acb130985d635d27909874",
+      "harness": "language"
+    },
+    {
+      "selector": "byte_slice_for_traversal::byte_for_refusals_and_owner_freeze_are_stable",
+      "source": "tests/language/byte_slice_for_traversal.rs",
+      "source_sha256": "01e0775bd01734c9c8215ac6a6a8d913eaa5661dd9acb130985d635d27909874",
+      "harness": "language"
+    },
+    {
+      "selector": "byte_slice_for_runtime::byte_for_matches_manual_loop_and_oracle_on_every_engine",
+      "source": "tests/useful_data/byte_slice_for_runtime.rs",
+      "source_sha256": "0c3a94361f941e09146bec1ba2fe55923363051411957766c20f5d18583fdf22",
+      "harness": "useful_data"
+    },
+    {
+      "selector": "cli::help::authoring::tests::byte_traversal_card_checks_its_actual_example_and_keeps_named_view_authority",
+      "source": "src/cli/help/authoring.rs",
+      "source_sha256": "d5671d768e28bf03688027cb7af5ea2a4a3a18f91d5df88ddc990503ce6f77e9",
+      "harness": "bin:semaprax"
+    }
+  ]
+}

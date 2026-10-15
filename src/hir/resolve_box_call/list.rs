@@ -8,8 +8,8 @@ pub(super) fn schedule<'expr>(
     frames: &mut Vec<Frame<'expr>>,
     type_arguments: &[Type],
     args: &'expr [Expr],
-    bindings: Rc<BTreeMap<String, Binding>>,
-    path: String,
+    bindings: Scope<'expr>,
+    path: PathId,
     span: Span,
     op: ListOp,
 ) -> Result<(), Diagnostic> {
@@ -23,7 +23,7 @@ pub(super) fn schedule<'expr>(
     let _ = function;
     frames.push(Frame::FinishOwnedGenericOp {
         span,
-        path: path.clone(),
+        path,
         op: OwnedGenericCallSite::List(op),
         element: ResolvedType::I64,
         argument_count: args.len(),
@@ -33,14 +33,14 @@ pub(super) fn schedule<'expr>(
         index: 0,
         bindings,
         path,
-        segment: "arg",
+        segment: Seg::Arg,
     });
     Ok(())
 }
 
-pub(super) fn finish(
+pub(super) fn finish<'p>(
     function: &FunctionExecutionId,
-    path: &str,
+    path: impl Into<ExprPath<'p>>,
     span: Span,
     op: ListOp,
     element: ResolvedType,
@@ -61,11 +61,11 @@ pub(super) fn finish(
         ));
     }
     Ok(ResolvedExpr {
-        id: ExpressionId::new(function, path),
+        id: path.into().expression_id(function),
         ownership: OwnershipMode::Value,
         ty: op.resolved_return_type(),
         kind: ResolvedExprKind::Call {
-            callee: DeclarationId::new(op.id()),
+            callee: DeclarationId::compiler(crate::hir::CompilerDeclaration::ListOperation(op)),
             type_arguments: Vec::new(),
             instance: None,
             args,
@@ -98,3 +98,7 @@ pub(super) fn reference(
     }
     finish(function, call.path, call.span, op, ResolvedType::I64, args)
 }
+
+#[cfg(test)]
+#[path = "list/identity_tests.rs"]
+mod identity_tests;

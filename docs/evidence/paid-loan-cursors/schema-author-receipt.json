@@ -1,0 +1,57 @@
+{
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 11287,
+      "cacheReadInputTokens": 535,
+      "cacheCreationInputTokens": 10949,
+      "webSearchRequests": 0,
+      "costUSD": 0.15672350000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 8508,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 10949,
+    "cache_read_input_tokens": 535,
+    "output_tokens": 11287,
+    "output_tokens_details": {
+      "thinking_tokens": 8508
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 10949,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 11287,
+        "cache_read_input_tokens": 535,
+        "cache_creation_input_tokens": 10949,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 10949
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "total_cost_usd": 0.15672350000000002,
+  "duration_ms": 89566,
+  "result": "# Summary receiver design for the cleanup inventory\n\n**Verdict:** the design below is safe for the paths you showed. I can't prove the whole scope from these definitions, and the missing boundaries are listed at the end. The text says \"COMPLETE\" but several referenced definitions are absent.\n\n## Shape of the change\n\nLeave `build_inventory_inner`, `add_slot`, `conditional_entry` and the non-physical `shape_for_type` untouched as the oracle. Make the discovery walker (`collect_expression`, `needs_drop` and the rest) generic over a receiver. The old fields move into `Materializing` unchanged. Add `SummaryReceiver` beside it. Monomorphization compiles the two independently.\n\n```rust\npub(super) trait InventoryReceiver {\n    type Output;\n    fn slot_index(&self) -> usize;                    // was slots.len()\n    fn flag(&mut self, site: FlagSite<'_>) -> Result<LivenessFlagId, Diagnostic>;\n    fn slot(&mut self, a: SlotArgs<'_>) -> Result<CleanupStorageId, Diagnostic>;\n    fn owned_parameter(&mut self, s: CleanupStorageId) -> Result<(), Diagnostic>;\n    fn finish(self) -> Self::Output;\n}\n\npub(super) struct FlagSite<'a> {\n    pub storage: CleanupStorageId,\n    pub prefix: &'a [DeclarationId],   // projections stack, never cloned by the summary\n    pub tail: &'a [&'a DeclarationId], // [case.id, field.id] at the variant site, else []\n    pub lifecycle: &'a DeclarationId,\n}\n\npub(crate) struct InventorySummary {\n    pub has_nested_owned_bytes: bool,\n    pub has_iter_flag: bool,\n    pub schema: &'static str, // V1 or V2\n}\n```\n\n`SummaryReceiver` holds only `slots: usize`, `flags: usize`, three bools and the variant rule. That is constant size, so it needs no funding.\n\n```rust\nfn flag(&mut self, s: FlagSite<'_>) -> Result<LivenessFlagId, Diagnostic> {\n    let id = u32::try_from(self.flags).map_err(|_| cleanup_error(\"too many cleanup liveness flags\"))?;\n    self.has_iter |= s.lifecycle.as_str() == ITER_DROP_LIFECYCLE_ID;\n    self.flags += 1;\n    Ok(LivenessFlagId(id))\n}\n```\n\n- **Flag hook sites:** call `flag` at all five creation sites, not only the `is_iter` one. Those are primitive leaf, vec/iter, box, resource, and variant leaf. A resource `drop.id` or a `variant_leaf_lifecycle` result can equal the iterator lifecycle string. The old `flags.iter().any(...)` would see it.\n- **Slot hook:** keep the order `u32` index check, then shape walk, then profile, then cap check, then count. The summary calls `cleanup_shape_profile(&shape)?` exactly once per slot and folds it with `nested |= profile.has_nested_owned_bytes`, with no short-circuit before the call. It then drops the shape before the next slot. The origin and the `ty` clone go in as lazy closures. Only `Materializing` invokes them.\n- **Variant rule:** keep the two old predicates as a receiver constant. Physical mode checks a top-level `Variant`. Non-physical mode uses recursive `shape_contains_variant`. `selected_schema` goes through `build_inventory`, so use whichever rule that wrapper selects. These rules differ, so don't merge them.\n- **`conditional_entry`:** skip it in the summary. It has one error, the unknown-storage lookup, and that error is dead. `add_slot` pushes `id == slots.len()` immediately before the call, and ids are unique indexes. Keep the check in the oracle and use `debug_assert!` in the summary.\n- **Untouched checks:** `charge(1)` per parameter, the `parameter_index` `u32` check, discovery order (params, requires, body, result slot, ensures), and the frame/projection consistency errors (\"did not settle\", \"projection stack is inconsistent\", record-field capacity) all stay.\n\n## Funding\n\nThe old non-physical walk acquires many unfunded allocations. These are `vec![Frame::Enter]`, `projections.clone()` per flag, `Vec::with_capacity(cases.len())` twice, `vec![FieldLiveness]` in `FinishField`, every `DeclarationId` clone, and the `substitute_type` result. The summary traversal is therefore a copy of that walk with each acquisition routed through a funding hook before construction:\n\n```rust\ntrait Scratch { fn fund<T>(&self, v: &mut Vec<T>, additional: usize) -> Result<(), Diagnostic>; }\n// summary: delegates to selected::reserve on a required ReplayPhysicalReservation\n```\n\nFunding must also cover the bytes of cloned `DeclarationId` strings and of the substituted types. Replace `projections: Vec<DeclarationId>` with `Vec<&DeclarationId>`, which funds pointers only. The consistency check compares ids by value, so it is unchanged.\n\n## What the shown definitions cannot prove\n\n1. **`collect_expression` and the other builder methods.** If any of them reads `self.slots`, `self.flags`, or slot shapes back (scope lookup, dedupe, origin matching), the summary cannot drop those vectors. I need a full read/write audit of `InventoryBuilder` fields.\n2. **`cleanup_shape_profile`.** Its allocations (a stack, say) need funding. Its determinism is also needed, because the old code calls it twice per slot.\n3. **`selected::reserve`.** If it enforces a count cap on slots, flags, or entries as well as bytes, the summary needs a counter-based cap with the same error and the same position in the order.\n4. **`charge`, `clone_owned`, `needs_drop`.** If `clone_owned` charges work units, the summary must keep the charge without the clone. I need a split into `charge_clone` and `clone`, and the funding story for `needs_drop` internals.\n5. **`shape_for_concrete_generic_record`, `variant_record_field`, `variant_leaf_lifecycle`, `substitute_type`, `shape_contains_variant`, `collect_shape_flags`.** The first one takes `&projections` and probably creates flags and variants. It must be routed through `flag(...)`, and I can't tell whether its allocations are funded.\n6. **The physical `selected_shape` branch and `flat_records`.** It may already be funded, but the different variant predicates suggest the shapes differ structurally. Reusing it for the summary is unproven. I'd only do so with an equivalence proof for profile, variant, and iter-flag outcomes.\n7. **`build_inventory`, the wrapper.** Which `physical`, `flat_records`, `work` and `collection_work` it passes decides the variant rule and the budgets.\n8. **Error-path allocations.** Some `format!` and `identity_key()` calls are unfunded. I can't tell whether that is acceptable under your funding rule.\n\n## Integration and validation\n\nIn `selected_schema_with_index`, replace the `build_inventory` call and the `try_fold` with one `build_inventory_summary(program, function)?` at the same position. It must stay after the lexical and helper returns and before `record_destructure` and `update::function_contains`, so error precedence holds. Use `summary.has_iter_flag` for V10 and `summary.schema == V2` for V6. Canonical reconstruction and replay keep calling the old `build_inventory`.\n\nDifferential test: for every fixture and every injected failure (budget at each reserve, `u32` bounds, profile caps), assert that `Materializing` then `selected_schema` equals the summary result, including the exact `Diagnostic` and the high-water allocation.\n\nItems 1, 3 and 4 are the blockers. Send those definitions, plus `cleanup_shape_profile` and the `build_inventory` wrapper, and I can close the proof or name the remaining gap.",
+  "actual_billing": "unknown",
+  "tools_enabled": false
+}

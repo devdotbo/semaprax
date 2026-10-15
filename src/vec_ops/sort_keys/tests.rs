@@ -1,0 +1,177 @@
+use super::*;
+const SOURCE: &str = "module sort; @id(\"r\") record R { @id(\"serial\") serial:i64, @id(\"key\") key:i64, } @id(\"main\") fn main()->i64 { let v=vec_with_capacity<R>(0usize);let w=vec_sort_by<R>(v,\"key:desc,serial:asc\");0 }";
+fn resolved() -> crate::hir::ResolvedProgram {
+    crate::hir::resolve(&crate::check(SOURCE, "sort.spx").unwrap()).unwrap()
+}
+fn call(program: &mut crate::hir::ResolvedProgram) -> &mut crate::hir::ResolvedExpr {
+    let main = program
+        .functions
+        .iter_mut()
+        .find(|f| f.id.as_str() == "main")
+        .unwrap();
+    let crate::hir::ResolvedExprKind::Block { statements, .. } = &mut main.body.kind else {
+        panic!("block")
+    };
+    let crate::hir::ResolvedStatement::Let { value, .. } = &mut statements[1] else {
+        panic!("let")
+    };
+    value
+}
+#[test]
+fn source_literal_descriptors_canonical_graph_cache_replay_and_selective_prelude() {
+    let ast = crate::check(SOURCE, "sort.spx").unwrap();
+    let canonical = crate::format::canonical(&ast);
+    assert_eq!(
+        crate::format::canonical(&crate::check(&canonical, "sort.spx").unwrap()),
+        canonical
+    );
+    assert_eq!(
+        crate::prelude::selected_for_program(&ast).0,
+        crate::prelude::SCHEMA_V15
+    );
+    let graph = crate::graph::to_json(&ast).unwrap();
+    crate::graph::verify_json(&ast, &graph).unwrap();
+    assert!(graph.contains(PREFIX));
+    assert!(graph.contains("semaprax.prelude.v15"));
+    assert!(crate::graph::verify_json(
+        &ast,
+        &graph.replace("semaprax.prelude.v15", "semaprax.prelude.v14")
+    )
+    .is_err());
+    let resolved = resolved();
+    crate::hir::validate(&resolved).unwrap();
+    let wire = crate::cache_codec::encode(&resolved).unwrap();
+    let restored: crate::hir::ResolvedProgram = crate::cache_codec::decode(&wire).unwrap();
+    crate::hir::validate(&restored).unwrap();
+    assert_eq!(wire, crate::cache_codec::encode(&restored).unwrap());
+    let legacy = crate::check(
+        &SOURCE.replace(
+            "vec_sort_by<R>(v,\"key:desc,serial:asc\")",
+            "vec_sort<R>(v)",
+        ),
+        "old.spx",
+    )
+    .unwrap();
+    assert_ne!(
+        crate::prelude::selected_for_program(&legacy).0,
+        crate::prelude::SCHEMA_V15
+    );
+}
+#[test]
+fn malformed_duplicate_unknown_computed_generic_and_primitive_keys_fail_closed() {
+    for policy in [
+        "",
+        "key:up",
+        "key:asc,key:desc",
+        "unknown:asc",
+        "key:asc, serial:desc",
+        "key:asc,",
+        "key:asc:desc",
+    ] {
+        let source = SOURCE.replace("key:desc,serial:asc", policy);
+        assert!(
+            crate::check(&source, "bad.spx")
+                .unwrap_err()
+                .iter()
+                .any(|d| d.code == "SPX-T311"),
+            "{policy}"
+        );
+    }
+    for source in [
+        SOURCE.replace(
+            "\"key:desc,serial:asc\"",
+            "string_concat(\"key\",\":desc\")",
+        ),
+        SOURCE.replace("vec_sort_by<R>", "vec_sort_by<i64>"),
+        SOURCE
+            .replace("record R {", "record R<T> {")
+            .replace("vec_with_capacity<R>", "vec_with_capacity<R<i64>>")
+            .replace("vec_sort_by<R>", "vec_sort_by<R<i64>>"),
+    ] {
+        assert!(crate::check(&source, "bad.spx").is_err());
+    }
+    let mut source = SOURCE.to_owned();
+    source.push_str(&format!(" @id(\"{PREFIX}forged\") fn helper()->i64 {{0}}"));
+    assert!(crate::check(&source, "spoof.spx")
+        .unwrap_err()
+        .iter()
+        .any(|d| d.code == "SPX-S113"));
+}
+#[test]
+fn stale_foreign_layout_keys_type_and_malformed_hir_cache_descriptors_refuse() {
+    let mut original = resolved();
+    let crate::hir::ResolvedExprKind::Call {
+        callee,
+        type_arguments,
+        ..
+    } = &call(&mut original).kind
+    else {
+        panic!("call")
+    };
+    let id = callee.as_str().to_owned();
+    let descriptor = decode(&id).unwrap();
+    let element = type_arguments[0].clone();
+    assert_eq!(
+        replay(&original.declarations, &element, &id),
+        Some(descriptor.clone())
+    );
+    let mut changed = descriptor.clone();
+    changed.keys[0].field = DeclarationId::new("foreign");
+    let mut layout = descriptor.clone();
+    layout.layout.push('x');
+    let mut duplicate = descriptor;
+    duplicate.keys.push(duplicate.keys[0].clone());
+    for forged in [
+        format!("{id}trailing"),
+        String::from(PREFIX),
+        changed.identity().unwrap(),
+        layout.identity().unwrap(),
+        duplicate.identity().unwrap(),
+    ] {
+        assert!(replay(&original.declarations, &element, &forged).is_none());
+        let mut bad = original.clone();
+        let crate::hir::ResolvedExprKind::Call { callee, .. } = &mut call(&mut bad).kind else {
+            panic!()
+        };
+        *callee = DeclarationId::new(forged);
+        assert!(crate::hir::validate(&bad).is_err());
+        if let Ok(wire) = crate::cache_codec::encode(&bad) {
+            if let Ok(restored) = crate::cache_codec::decode::<crate::hir::ResolvedProgram>(&wire) {
+                assert!(crate::hir::validate(&restored).is_err());
+            }
+        }
+    }
+    let mut bad = original;
+    let crate::hir::ResolvedExprKind::Call { type_arguments, .. } = &mut call(&mut bad).kind else {
+        panic!()
+    };
+    type_arguments[0] = ResolvedType::I64;
+    assert!(crate::hir::validate(&bad).is_err());
+}
+#[test]
+fn length_bound_canonical_decimal_and_truncation_are_unforgeable() {
+    assert!(selector(&"a".repeat(MAX_SELECTOR_BYTES + 1)).is_none());
+    assert!(decode(&format!("{PREFIX}01:r0:1:1:fa")).is_none());
+    let descriptor = Descriptor {
+        element: "r".into(),
+        layout: "layout".into(),
+        keys: vec![Key {
+            field: DeclarationId::new("field"),
+            descending: true,
+        }],
+    };
+    let id = descriptor.identity().unwrap();
+    assert_eq!(decode(&id), Some(descriptor));
+    for end in 0..id.len() {
+        assert!(decode(&id[..end]).is_none());
+    }
+    let huge = Descriptor {
+        element: "r".into(),
+        layout: "x".repeat(MAX_DESCRIPTOR_BYTES),
+        keys: vec![Key {
+            field: DeclarationId::new("f"),
+            descending: false,
+        }],
+    };
+    assert!(huge.identity().is_none());
+}

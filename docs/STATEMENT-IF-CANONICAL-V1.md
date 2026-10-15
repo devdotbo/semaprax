@@ -27,8 +27,11 @@ The last two forms remain distinct: explicit `else { 0 }` is retained, and an
 authored `let`, including one whose name looks like `_if1`, stays a `let`.
 Value `if` expressions retain their ordinary canonical rendering. An all-valued
 `if` followed by another statement is still the existing discarded statement
-form; one at the block tail is still a value expression. Existing expression
-statement and missing-final-value diagnostics remain unchanged.
+form; one at the block tail is still a value expression. An all-valued exit
+guard written `if skip { continue; } else { 0 };` before another item is that
+same discarded statement form, so canonical text omits its `;` exactly as it
+does for a valueless statement `if`. Existing expression statement and
+missing-final-value diagnostics remain unchanged.
 
 ## Provenance and normalization
 

@@ -1,0 +1,18 @@
+[
+  {
+    "package": "semaprax",
+    "harness": "test:language",
+    "selector": "verifier_hints::pattern_duplicate_alias_and_reserved_result_keep_complete_primary_diagnostics",
+    "source": "tests/language/verifier_hints.rs",
+    "expected": 1,
+    "status": "source-only/unexecuted"
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "source_verify::recovery_tests::intentional_wrong_field::valid_duplicate_field_and_duplicate_binding_names_stay_unchanged",
+    "source": "src/source_verify/recovery_tests/intentional_wrong_field.rs",
+    "expected": 1,
+    "status": "existing complete saved/current/recursive parsed-source control; fresh execution pending"
+  }
+]

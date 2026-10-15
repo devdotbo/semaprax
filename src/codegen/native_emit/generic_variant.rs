@@ -1,5 +1,6 @@
 //! Copy only the active tag and Copy payload; canonical plans move owner leaves.
 use super::*;
+use crate::codegen::native_bytes::NativeBytesProducer as _;
 impl<'a, O: COutput> CEmitter<'a, O> {
     pub(super) fn match_result_is_admitted(
         &self,
@@ -8,6 +9,7 @@ impl<'a, O: COutput> CEmitter<'a, O> {
         scrutinee: &ResolvedType,
     ) -> bool {
         super::generic_record::match_result_is_admitted(self.program, self.function, expression)
+            || hir::collection_outcome::match_join(&self.program.declarations, expression)
             || hir::generic_variant::match_result(
                 self.program,
                 self.function,

@@ -10,28 +10,191 @@ use std::sync::Arc;
 
 use super::nodes::ResolvedType;
 
-#[derive(Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct DeclarationId(pub(super) String);
+mod compiler;
+pub(crate) use compiler::CompilerDeclaration;
+
+/// A valid declaration identity. Every value holds real text: either a fixed
+/// compiler constant borrowed for the process lifetime, or one immutable
+/// exact-length shared backing that every clone references. There is no
+/// refused, empty-sentinel or cached-fingerprint state. A funded construction
+/// that is refused returns `Err` from its constructor, so a refusal never
+/// reaches HIR, maps, comparison or the cache wire.
+///
+/// Equality, order, hash, `Borrow<str>`, display, debug and the cache wire are
+/// exactly those of the owned text. Neither the variant nor the pointer is
+/// consulted, so a compiler identity, a shared identity and a clone of either
+/// are interchangeable values with no authority beyond their bytes.
+#[derive(Clone)]
+pub struct DeclarationId(DeclarationText);
+
+#[derive(Clone)]
+enum DeclarationText {
+    CompilerStatic(&'static str),
+    Shared(Arc<str>),
+}
+
+// The former `String` footprint, which frame constants, layout pins and
+// size-of forecasts are written against, including through `Option`. These
+// check the actual layout rather than assuming it.
+#[cfg(target_pointer_width = "64")]
+const _: () = {
+    assert!(std::mem::size_of::<DeclarationId>() == 24);
+    assert!(std::mem::size_of::<DeclarationId>() == std::mem::size_of::<String>());
+    assert!(std::mem::align_of::<DeclarationId>() == std::mem::align_of::<String>());
+    assert!(std::mem::size_of::<Option<DeclarationId>>() == std::mem::size_of::<Option<String>>());
+};
 
 impl DeclarationId {
+    /// Legacy infallible construction. It is not budgeted and not funded: it
+    /// consults no payer, active or ambient, and its shared backing is
+    /// charged to nobody. A borrowed argument is first copied into a
+    /// temporary `String`, which is then copied into the backing. Funded
+    /// callers use `paid_borrowed` or `paid_owned`; compiler constants use
+    /// `compiler`. A source control keeps this constructor out of every
+    /// qualified funded domain.
     pub fn new(value: impl Into<String>) -> Self {
-        Self(exact_string(value.into()))
+        let value: String = value.into();
+        Self(DeclarationText::Shared(Arc::from(value)))
+    }
+
+    /// One fixed compiler identity. It allocates nothing, consults no payer
+    /// and grants no prelude or admission authority; only the closed
+    /// `CompilerDeclaration` set can reach it.
+    pub(crate) const fn compiler(id: CompilerDeclaration) -> Self {
+        Self(DeclarationText::CompilerStatic(id.text()))
+    }
+
+    /// Funded construction from borrowed text. The caller's own payer is
+    /// asked for exactly the shared backing before it exists; no temporary
+    /// `String` is made, so the backing is the only allocation. A refusal is
+    /// returned unchanged and nothing is allocated.
+    pub(crate) fn paid_borrowed<E>(
+        value: &str,
+        reserve: impl FnOnce(usize) -> Result<(), E>,
+    ) -> Result<Self, E> {
+        Self::reserve_backing(value.len(), reserve)?;
+        Ok(Self(DeclarationText::Shared(Arc::from(value))))
+    }
+
+    /// Funded construction from text the caller already owns and has already
+    /// paid for. The payer is asked for exactly the shared backing; the
+    /// caller's `String` stays live beside it while its bytes are copied and
+    /// is released afterward. The overlap is therefore that `String` plus the
+    /// backing, and nothing about the `String` is charged or refunded here. A
+    /// refusal returns the `String` to nobody: it is dropped unconstructed.
+    // No qualified production caller holds pre-paid owned identity text yet;
+    // the open legacy formatting sites are its intended migrations.
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "explicit paid-owned migration seam; current qualified source constructions borrow text"
+        )
+    )]
+    pub(crate) fn paid_owned<E>(
+        value: String,
+        reserve: impl FnOnce(usize) -> Result<(), E>,
+    ) -> Result<Self, E> {
+        Self::reserve_backing(value.len(), reserve)?;
+        Ok(Self(DeclarationText::Shared(Arc::from(value))))
+    }
+
+    fn reserve_backing<E>(
+        len: usize,
+        reserve: impl FnOnce(usize) -> Result<(), E>,
+    ) -> Result<(), E> {
+        let Some(backing) = Self::shared_backing_bytes(len) else {
+            // An unaddressable spelling cannot be admitted by any payer.
+            reserve(usize::MAX)?;
+            panic!("declaration identity length exceeds the address space");
+        };
+        reserve(backing)
     }
 
     pub fn as_str(&self) -> &str {
-        &self.0
+        match &self.0 {
+            DeclarationText::CompilerStatic(text) => text,
+            DeclarationText::Shared(text) => text,
+        }
+    }
+
+    /// Requested allocation bytes of one shared backing for `len` text bytes:
+    /// two reference counters followed by the text, padded to their alignment.
+    pub(crate) fn shared_backing_bytes(len: usize) -> Option<usize> {
+        let counters = std::alloc::Layout::new::<[usize; 2]>();
+        let text = std::alloc::Layout::array::<u8>(len).ok()?;
+        Some(counters.extend(text).ok()?.0.pad_to_align().size())
+    }
+
+    /// Heap bytes this identity references: zero for a compiler identity,
+    /// otherwise its one shared backing, which every clone also references.
+    pub fn owned_allocation_bytes(&self) -> usize {
+        match &self.0 {
+            DeclarationText::CompilerStatic(_) => 0,
+            DeclarationText::Shared(text) => Self::shared_backing_bytes(text.len())
+                .expect("an allocated backing has an addressable layout"),
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn is_compiler_static(&self) -> bool {
+        matches!(self.0, DeclarationText::CompilerStatic(_))
+    }
+
+    #[cfg(test)]
+    pub(crate) fn shared_allocation_key(&self) -> Option<usize> {
+        match &self.0 {
+            DeclarationText::CompilerStatic(_) => None,
+            DeclarationText::Shared(text) => Some(Arc::as_ptr(text).cast::<u8>() as usize),
+        }
     }
 }
 
-impl Clone for DeclarationId {
-    fn clone(&self) -> Self {
-        Self(exact_string(self.0.clone()))
+impl fmt::Debug for DeclarationId {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_tuple("DeclarationId")
+            .field(&self.as_str())
+            .finish()
+    }
+}
+
+impl PartialEq for DeclarationId {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
+
+impl Eq for DeclarationId {}
+
+impl PartialOrd for DeclarationId {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for DeclarationId {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.as_str().cmp(other.as_str())
+    }
+}
+
+impl Hash for DeclarationId {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.as_str().hash(state);
+    }
+}
+
+// Sound because Eq, Ord and Hash above are exactly those of the text.
+impl std::borrow::Borrow<str> for DeclarationId {
+    fn borrow(&self) -> &str {
+        self.as_str()
     }
 }
 
 impl fmt::Display for DeclarationId {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.0)
+        formatter.write_str(self.as_str())
     }
 }
 
@@ -125,6 +288,58 @@ impl ValueId {
         Self::new(format!("{operation}.param.{index}"))
     }
 
+    /// Selected replay reserves both the exact temporary string and Arc backing.
+    /// This constructor keeps the ordinary identity bytes without format spare.
+    pub(crate) fn intrinsic_parameter_exact(operation: &str, index: usize) -> Self {
+        let digits = decimal_digits(index);
+        let mut value = String::with_capacity(operation.len() + 7 + digits);
+        value.push_str(operation);
+        value.push_str(".param.");
+        write!(&mut value, "{index}").expect("write into reserved String");
+        Self::new(value)
+    }
+
+    /// Exact guarded constructor: each decimal, copy, hash and Arc transfer
+    /// visit is debited by the caller's existing preparation/replay ledger.
+    #[cfg(test)]
+    pub(crate) fn intrinsic_parameter_with_work<E>(
+        operation: &str,
+        mut index: usize,
+        charge: &mut impl FnMut(usize) -> Result<(), E>,
+    ) -> Result<Self, E> {
+        let mut decimal = [0u8; 3 * std::mem::size_of::<usize>()];
+        let mut start = decimal.len();
+        loop {
+            charge(1)?;
+            start -= 1;
+            decimal[start] = b'0' + (index % 10) as u8;
+            index /= 10;
+            if index == 0 {
+                break;
+            }
+        }
+        for _ in &decimal[start..] {
+            charge(1)?;
+        }
+        let digits = std::str::from_utf8(&decimal[start..]).expect("decimal bytes");
+        let mut value = String::with_capacity(operation.len() + 7 + digits.len());
+        for part in [operation, ".param.", digits] {
+            for _ in part.bytes() {
+                charge(1)?;
+            }
+            value.push_str(part);
+        }
+        let mut fingerprint = 0xcbf29ce484222325u64;
+        for byte in value.bytes() {
+            charge(1)?;
+            fingerprint = (fingerprint ^ u64::from(byte)).wrapping_mul(0x100000001b3);
+        }
+        for _ in value.bytes() {
+            charge(1)?;
+        }
+        Ok(Self(Arc::from(value), fingerprint))
+    }
+
     pub(crate) fn parameter(function: &FunctionExecutionId, index: usize) -> Self {
         Self::new(scoped_identity(function, "value:param", &index.to_string()))
     }
@@ -143,6 +358,15 @@ impl ValueId {
 
     pub(super) fn matches_local(&self, function: &FunctionExecutionId, path: &str) -> bool {
         self.matches_scoped(function, "value:local", path.len(), path)
+    }
+
+    pub(super) fn matches_local_display(
+        &self,
+        function: &FunctionExecutionId,
+        path_length: usize,
+        path: impl fmt::Display,
+    ) -> bool {
+        self.matches_scoped(function, "value:local", path_length, path)
     }
 
     pub(super) fn matches_result(&self, function: &FunctionExecutionId) -> bool {
@@ -167,6 +391,18 @@ impl ValueId {
 
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+
+    /// Byte equality is checked independently by the guarded receiving probe.
+    /// Retain the second component of ordinary ValueId equality as well.
+    #[cfg(test)]
+    pub(crate) fn same_cached_fingerprint(&self, other: &Self) -> bool {
+        self.1 == other.1
+    }
+
+    #[cfg(test)]
+    pub(crate) fn invalidate_fingerprint_for_test(&mut self) {
+        self.1 ^= 1;
     }
 }
 
@@ -209,8 +445,27 @@ impl ExpressionId {
         Self(Some(Arc::new(exact_string(value))))
     }
 
+    /// Hostile accounting fixture: preserve a deliberately oversized buffer.
+    /// Ordinary constructors continue to normalize identity capacity exactly.
+    #[cfg(test)]
+    pub(crate) fn from_untrimmed_backing_for_test(value: String) -> Self {
+        if !crate::bounded_output::reserve_active_required(Self::SHARED_ALLOCATION_CARRIER_BYTES) {
+            return Self(None);
+        }
+        Self(Some(Arc::new(value)))
+    }
+
     pub(super) fn matches(&self, function: &FunctionExecutionId, path: &str) -> bool {
         matches_scoped_identity(self.as_str(), function, "expression", path.len(), path)
+    }
+
+    pub(super) fn matches_display(
+        &self,
+        function: &FunctionExecutionId,
+        path_length: usize,
+        path: impl fmt::Display,
+    ) -> bool {
+        matches_scoped_identity(self.as_str(), function, "expression", path_length, path)
     }
 
     pub fn as_str(&self) -> &str {
@@ -311,6 +566,14 @@ impl fmt::Display for ExpressionId {
 #[path = "ids/shared_identity_tests.rs"]
 mod shared_identity_tests;
 
+#[cfg(test)]
+#[path = "ids/declaration_backing_tests.rs"]
+mod declaration_backing_tests;
+
+#[cfg(test)]
+#[path = "ids/legacy_constructor_boundary_tests.rs"]
+mod legacy_constructor_boundary_tests;
+
 impl FunctionInstanceId {
     pub fn derive(template: &DeclarationId, arguments: &[ResolvedType]) -> Self {
         let mut encoded_arguments = crate::bounded_output::CappedString::new();
@@ -386,3 +649,33 @@ fn decimal_digits(value: usize) -> usize {
 #[cfg(test)]
 #[path = "ids/identity_comparison_tests.rs"]
 mod identity_comparison_tests;
+
+/// Borrow the canonical path only after independently checking its full owner/domain/length encoding.
+pub(super) fn checked_scoped_path<'a>(
+    value: &'a str,
+    owner: &FunctionExecutionId,
+    kind: &str,
+) -> Option<&'a str> {
+    let empty = scoped_identity(owner, kind, "");
+    let prefix = empty.strip_suffix("0:")?;
+    let rest = value.strip_prefix(prefix)?;
+    let (length, path) = rest.split_once(':')?;
+    let parsed = length.parse::<usize>().ok()?;
+    if length != parsed.to_string() || path.len() != parsed {
+        return None;
+    }
+    matches_scoped_identity(value, owner, kind, parsed, path).then_some(path)
+}
+
+pub(super) mod streamed;
+
+#[cfg(test)]
+mod metered_owner;
+#[cfg(test)]
+pub(crate) use metered_owner::matches as monomorphic_owner_matches_with_work;
+
+#[cfg(test)]
+pub(crate) use metered_owner::general_matches as oracle_owner_matches_with_work;
+
+#[cfg(test)]
+pub(in crate::hir) mod fixed_operation_tests;

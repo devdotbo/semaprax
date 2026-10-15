@@ -1,0 +1,15 @@
+{
+  "status": "source-only; no executable list/build/test",
+  "selectors": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "loan_plan::funded_flat::work_boundary::actual_funded_candidate_false_and_plan_routes_keep_exact_short_guided_full_diagnostics",
+      "source": "src/loan_plan/funded_flat/work_boundary.rs",
+      "expected": 1,
+      "ignored": 0
+    }
+  ],
+  "all_existing_controls_retained": true,
+  "new_required_source_include": "src/loan_plan/funded_flat/work_boundary.rs"
+}

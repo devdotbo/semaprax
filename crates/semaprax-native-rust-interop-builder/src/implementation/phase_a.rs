@@ -1218,6 +1218,15 @@ pub(super) fn validate_selected_scalar_closure(
             return Err(b107("scalar value signature required"));
         }
         match &expression.kind {
+            ResolvedExprKind::BorrowedUtf8Literal(_) => {
+                    return Err(b107("static borrowed UTF-8 is outside the native Rust scalar profile"));
+                }
+                ResolvedExprKind::VecConstructor { .. } => {
+                    return Err(b107("Vec constructors are outside the native Rust scalar profile"));
+                }
+                ResolvedExprKind::LexicalExit { .. } => {
+                return Err(b107("lexical control is outside the native Rust scalar profile"));
+            }
             ResolvedExprKind::Int(_)
             | ResolvedExprKind::Int32(_)
             | ResolvedExprKind::Char(_)
@@ -1251,7 +1260,7 @@ pub(super) fn validate_selected_scalar_closure(
                     let (binding, value) = match statement {
                         ResolvedStatement::Let { binding, value, .. }
                         | ResolvedStatement::Assign { binding, value, .. } => (binding, value),
-                        ResolvedStatement::Unsafe { .. } | ResolvedStatement::While { .. } => {
+                        ResolvedStatement::CopyDiscard { .. } | ResolvedStatement::Unsafe { .. } | ResolvedStatement::While { .. } | ResolvedStatement::LexicalWhile { .. } => {
                             return Err(b107("scalar value signature required"));
                         }
                     };
@@ -1284,6 +1293,9 @@ pub(super) fn validate_selected_scalar_closure(
             | ResolvedExprKind::RepeatArrayU8 { .. }
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::ByteRange { .. }
+            | ResolvedExprKind::LiteralFormat { .. }
+            | ResolvedExprKind::VecFieldRead { .. }
+                    | ResolvedExprKind::RowLoan { .. }
             | ResolvedExprKind::Call { .. }
             | ResolvedExprKind::ConstructVariant { .. }
             | ResolvedExprKind::Match { .. }
@@ -1326,12 +1338,18 @@ pub(super) fn validate_native_unit_discard_bindings(
                 return Err(b107("scalar value signature required"));
             }
             match &expression.kind {
+                ResolvedExprKind::RowLoan { .. } => {
+                    return Err(b107("scalar value signature required"))
+                }
                 ResolvedExprKind::Block { statements, tail } => {
                     for statement in statements {
                         let (binding, value) = match statement {
                             ResolvedStatement::Let { binding, value, .. }
                             | ResolvedStatement::Assign { binding, value, .. } => (binding, value),
-                            ResolvedStatement::Unsafe { .. } | ResolvedStatement::While { .. } => {
+                            ResolvedStatement::CopyDiscard { .. }
+                            | ResolvedStatement::Unsafe { .. }
+                            | ResolvedStatement::While { .. }
+                            | ResolvedStatement::LexicalWhile { .. } => {
                                 return Err(b107("scalar value signature required"));
                             }
                         };

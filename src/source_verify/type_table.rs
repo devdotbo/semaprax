@@ -2,12 +2,14 @@
 //! resource declarations, the merged class-field prefix used by inheritance,
 //! and the structural type predicates built on them.
 
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{
-    FieldDeclaration, Function, ImportDeclaration, InterfaceDeclaration, Program,
-    ResourceLifecycleKind, Type, TypeDeclaration, TypeDeclarationKind, VariantCaseDeclaration,
+    FieldDeclaration, Function, ImportDeclaration, InterfaceDeclaration, ResourceLifecycleKind,
+    Type, TypeDeclaration, TypeDeclarationKind, VariantCaseDeclaration,
 };
 use std::collections::{HashMap, HashSet};
 
+mod native_containers;
 mod nested_generic_function;
 
 /// Class Inheritance v1: resolves a method against a receiver class's
@@ -61,13 +63,17 @@ pub(super) fn effective_record_fields<'t>(
 pub(super) struct TypeTable<'a> {
     pub(super) declarations: HashMap<&'a str, &'a TypeDeclaration>,
     native_owned_containers: [bool; 3],
-    declared_fields: HashMap<&'a str, HashMap<&'a str, &'a FieldDeclaration>>,
+    #[cfg(test)]
+    declared_fields: Option<HashMap<&'a str, HashMap<&'a str, &'a FieldDeclaration>>>,
     /// Class Inheritance v1: declared parent name per extending class.
     pub(super) class_parents: HashMap<&'a str, &'a str>,
     /// Class Inheritance v1: the effective declared-field list of every
     /// extending class, root ancestor first, so construction, projection,
     /// and pattern checks treat inherited members like declared ones.
     pub(super) merged_class_fields: HashMap<&'a str, Vec<FieldDeclaration>>,
+    /// Workspace Graph private layout copies in this exact program, presented
+    /// by provider provenance in diagnostics; never consulted for resolution.
+    pub(super) private: Option<super::private_names::PrivateNames<'a>>,
 }
 
 impl<'a> TypeTable<'a> {
@@ -76,31 +82,16 @@ impl<'a> TypeTable<'a> {
             || matches!(ty, Type::Named { name, arguments }
             if matches!(name.as_str(), "Iter" | "IterStep")
             && matches!(arguments.as_slice(), [element]
-                if super::declared_type::owned_record_collection::
-                    is_admitted_owned_record_collection_element(self, element)))
+                if super::declared_type::owned_leaf_collection::runtime_element(self, element)))
     }
-    pub(super) fn new(program: &'a Program) -> Self {
+    pub(super) fn new(program: &'a dyn ProgramSource) -> Self {
         let declarations: HashMap<&'a str, &'a TypeDeclaration> = program
-            .types
+            .types()
             .iter()
             .chain(crate::prelude::declarations_for_program(program))
             .map(|declaration| (declaration.name.as_str(), declaration))
             .collect();
         let mut merged_class_fields = HashMap::new();
-        let mut declared_fields = HashMap::new();
-        for (name, declaration) in &declarations {
-            if let TypeDeclarationKind::Record { fields }
-            | TypeDeclarationKind::Class { fields, .. } = &declaration.kind
-            {
-                declared_fields.insert(
-                    *name,
-                    fields
-                        .iter()
-                        .map(|field| (field.name.as_str(), field))
-                        .collect(),
-                );
-            }
-        }
         for (name, declaration) in &declarations {
             if !matches!(declaration.kind, TypeDeclarationKind::Class { .. }) {
                 continue;
@@ -154,16 +145,13 @@ impl<'a> TypeTable<'a> {
             }
         }
         Self {
-            native_owned_containers: [
-                crate::ast::ImportResult::OwnedOptionString,
-                crate::ast::ImportResult::OwnedResultStringI64,
-                crate::ast::ImportResult::OwnedResultStringOptionI64,
-            ]
-            .map(|kind| crate::ast::ImportResult::container_enabled(program, &kind.value_type())),
+            native_owned_containers: native_containers::flags(program),
             declarations,
-            declared_fields,
+            #[cfg(test)]
+            declared_fields: None,
             merged_class_fields,
             class_parents,
+            private: None,
         }
     }
 
@@ -188,10 +176,20 @@ impl<'a> TypeTable<'a> {
         type_name: &str,
         field_name: &str,
     ) -> Option<&'a FieldDeclaration> {
-        self.declared_fields
-            .get(type_name)
-            .and_then(|fields| fields.get(field_name))
-            .copied()
+        #[cfg(test)]
+        if self.declared_fields.is_some() {
+            return self.declared_field_owned_reference(type_name, field_name);
+        }
+        let fields = match &self.declaration(type_name)?.kind {
+            TypeDeclarationKind::Record { fields } | TypeDeclarationKind::Class { fields, .. } => {
+                fields
+            }
+            TypeDeclarationKind::Resource { .. } | TypeDeclarationKind::Variant { .. } => {
+                return None
+            }
+        };
+        // HashMap collect selected the LAST authored field on hostile duplicates.
+        fields.iter().rev().find(|field| field.name == field_name)
     }
 
     pub(super) fn record_field_type(
@@ -251,6 +249,7 @@ impl<'a> TypeTable<'a> {
         while let Some(frame) = frames.pop() {
             match frame {
                 Frame::Enter(template) => match template {
+                    Type::Never => return None,
                     Type::I64 => resolved.push(Type::I64),
                     Type::I32 => resolved.push(Type::I32),
                     Type::Char => resolved.push(Type::Char),
@@ -338,6 +337,7 @@ impl<'a> TypeTable<'a> {
 
     pub(super) fn contains_string_inner(&self, ty: &Type, visiting: &mut HashSet<String>) -> bool {
         match ty {
+            Type::Never => false,
             Type::String => true,
             Type::I64
             | Type::I32
@@ -461,6 +461,7 @@ impl<'a> TypeTable<'a> {
                 }
                 Frame::Enter(ty) if crate::map_ops::ast_collection(&ty) => return true,
                 Frame::Enter(ty) => match ty {
+                    Type::Never => return false,
                     Type::String
                     | Type::Bytes
                     | Type::StringMap
@@ -483,9 +484,10 @@ impl<'a> TypeTable<'a> {
                         }
                         if name == "Vec"
                             && arguments.len() == 1
-                            && (crate::vec_ops::ast_vec_element_is_admitted(&arguments[0])
-                                || super::declared_type::owned_record_collection::
-                                    is_admitted_owned_record_collection_element(
+                            && (super::declared_type::declared_collection::text_element(self,&arguments[0])
+                                || crate::vec_ops::ast_vec_element_is_admitted(&arguments[0])
+                || crate::source_verify::declared_type::owned_leaf_collection::copy_or_leaf_admitted(self, &arguments[0])
+                                || super::declared_type::owned_leaf_collection::runtime_element(
                                         self,
                                         &arguments[0],
                                     ))
@@ -561,6 +563,7 @@ impl<'a> TypeTable<'a> {
         let mut visited = HashSet::new();
         while let Some(current) = pending.pop() {
             match current {
+                Type::Never => return false,
                 Type::Bytes
                 | Type::OnceFunction
                 | Type::OnceFunctionI64
@@ -799,6 +802,11 @@ impl<'a> TypeTable<'a> {
     /// Direct, monomorphic owned-string variant profile. `string` is a
     /// uniquely owned leaf, so it is deliberately separate from Bytes and
     /// cannot be selected by a generic instantiation.
+    pub(super) fn is_direct_owned_variant(&self, ty: &Type) -> bool {
+        self.is_flat_owned_string_variant(ty)
+            || super::declared_type::collection_outcome::runtime_admitted(self, ty)
+    }
+
     pub(super) fn is_flat_owned_string_variant(&self, ty: &Type) -> bool {
         if let Some(kind) = crate::ast::ImportResult::container_for_type(ty) {
             let index = match kind {
@@ -984,6 +992,7 @@ pub(super) fn classify_nested_owned_byte_record(
 
     while let Some(frame) = frames.pop() {
         match frame {
+            Frame::Type(Type::Never, _) => return NestedOwnedRecordAdmission::OutsideProfile,
             Frame::Type(Type::Bytes, _) => {
                 owned_leaves += 1;
                 if owned_leaves > MAX_NESTED_OWNED_BYTE_LEAVES {
@@ -1137,3 +1146,6 @@ pub(super) fn owned_byte_prelude_instance_is_admitted(name: &str, arguments: &[T
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod old;

@@ -51,6 +51,8 @@ mod generic_owned_function_runtime;
 mod generic_owned_variant_runtime;
 #[path = "owned_data/generic_two_owned_variant_runtime.rs"]
 mod generic_two_owned_variant_runtime;
+#[path = "owned_data/internal_owned_slice_boundary.rs"]
+mod internal_owned_slice_boundary;
 #[path = "owned_data/interpreter.rs"]
 mod interpreter;
 #[path = "owned_data/nested_generic_owned_record_frontend_hir.rs"]
@@ -67,6 +69,8 @@ mod nested_owned_record_update_frontend_hir;
 mod owned_bounded_box_runtime;
 #[path = "owned_data/owned_bounded_vec_runtime.rs"]
 mod owned_bounded_vec_runtime;
+#[path = "owned_data/owned_leaf_vec.rs"]
+mod owned_leaf_vec;
 #[path = "owned_data/owned_record_vec_runtime.rs"]
 mod owned_record_vec_runtime;
 #[path = "owned_data/projected_bytes_borrowed_call_native.rs"]
@@ -92,3 +96,32 @@ mod vec_loop_renewal;
 
 #[path = "owned_data/vec_sort.rs"]
 mod vec_sort;
+
+#[path = "owned_data/copy_record_vec.rs"]
+mod copy_record_vec;
+#[path = "owned_data/owned_collection_outcome.rs"]
+mod owned_collection_outcome;
+
+#[path = "owned_data/nested_collection_record.rs"]
+mod nested_collection_record;
+
+#[path = "owned_data/projected_string_views.rs"]
+mod projected_string_views;
+
+#[path = "owned_data/owned_nested_outcome.rs"]
+mod owned_nested_outcome;
+
+#[path = "owned_data/scoped_vec_field_native.rs"]
+mod scoped_vec_field_native;
+
+#[path = "owned_data/bulk_utf8.rs"]
+mod bulk_utf8;
+
+#[path = "owned_data/lexical_exits.rs"]
+mod lexical_exits;
+
+#[path = "owned_data/byte_helper_renewal.rs"]
+mod byte_helper_renewal;
+
+#[path = "owned_data/static_utf8.rs"]
+mod static_utf8;

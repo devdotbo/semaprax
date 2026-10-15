@@ -33,7 +33,7 @@ impl Resolver<'_> {
             .monomorphic_declaration()
             .and_then(|id| {
                 self.program
-                    .functions
+                    .functions()
                     .iter()
                     .find(|f| f.stable_id == id.as_str())
             })
@@ -85,7 +85,7 @@ impl Resolver<'_> {
         }
         let target = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|f| f.name == *name)
             .ok_or_else(|| hir_error("mutable closure update function is absent"))?;
@@ -138,6 +138,7 @@ impl Resolver<'_> {
                 (
                     p.name.clone(),
                     Binding {
+                        traversal_row: None,
                         id: p.id.clone(),
                         ty: p.ty.clone(),
                         ownership: p.ownership,
@@ -319,8 +320,10 @@ fn validate_local_binding(
             .iter()
             .map(|instance| &instance.function),
     ) {
-        super::super::function_value::walk(function, |expression| {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        super::super::function_value::try_walk(function, |expression| {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let ResolvedStatement::Let {
                         binding,
@@ -337,7 +340,7 @@ fn validate_local_binding(
                     }
                 }
             }
-        });
+        })?;
     }
     if found != 1 || !mutable {
         return Err(hir_error(
@@ -362,7 +365,7 @@ pub(crate) fn validate_uses(program: &ResolvedProgram) -> Result<(), Diagnostic>
         }
         let mut receiver_ids = BTreeSet::new();
         let mut invalid = false;
-        super::super::function_value::walk(function, |expression| {
+        super::super::function_value::try_walk(function, |expression| {
             if let ResolvedExprKind::Invoke { callable, args } = &expression.kind {
                 if callable.ty.is_mut_function() {
                     receiver_ids.insert(callable.id.clone());
@@ -385,15 +388,15 @@ pub(crate) fn validate_uses(program: &ResolvedProgram) -> Result<(), Diagnostic>
                     }
                 }
             }
-        });
-        super::super::function_value::walk(function, |expression| {
+        })?;
+        super::super::function_value::try_walk(function, |expression| {
             if expression.ty.is_mut_function()
                 && matches!(expression.kind, ResolvedExprKind::Place(_))
                 && !receiver_ids.contains(&expression.id)
             {
                 invalid = true;
             }
-        });
+        })?;
         if invalid {
             return Err(hir_error(
                 "mutable receiver cannot be copied, escape, or reenter during argument staging",

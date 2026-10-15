@@ -68,15 +68,21 @@ pub(super) fn push_children<'a>(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. }
         | ResolvedExprKind::ByteRange { .. }
+        | ResolvedExprKind::VecFieldRead { .. }
+        | ResolvedExprKind::RowLoan { .. }
         | ResolvedExprKind::Call { .. }
+        | ResolvedExprKind::LiteralFormat { .. }
         | ResolvedExprKind::NativeRustImportCall(_)
         | ResolvedExprKind::HostCommandCall(_)
+        | ResolvedExprKind::LexicalExit { .. }
         | ResolvedExprKind::Unary { .. }
         | ResolvedExprKind::Binary { .. }
         | ResolvedExprKind::Block { .. }
+        | ResolvedExprKind::VecConstructor { .. }
         | ResolvedExprKind::If { .. }
         | ResolvedExprKind::ConstructRecord { .. }
         | ResolvedExprKind::ConstructVariant { .. }

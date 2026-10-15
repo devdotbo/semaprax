@@ -1,0 +1,36 @@
+{
+  "base": "7ec9a5756",
+  "whole_original_sources": [
+    {
+      "source": "src/hir/validation/executable_profiles.rs",
+      "archive": "docs/evidence/held-generic-call-profiles-812/src__hir__validation__executable_profiles.rs.before.txt",
+      "sha256": "1ba0afaa5014c0d349b48fe45e657856cb49c1d5ed3c6ea786000a66df54cc1d"
+    },
+    {
+      "source": "src/hir/validation/call_parameters.rs",
+      "archive": "docs/evidence/held-generic-call-profiles-812/src__hir__validation__call_parameters.rs.before.txt",
+      "sha256": "6024c088d8dbe299692f977cc89513f9bd3d35a0be304917682bf84128a20c5c"
+    },
+    {
+      "source": "src/hir/validation.rs",
+      "archive": "docs/evidence/held-generic-call-profiles-812/src__hir__validation.rs.before.txt",
+      "sha256": "123c9653b777773baebfea4aaa6218c88179845cca8cdd62552bac6ea2357118"
+    },
+    {
+      "source": "src/hir/byte_capacity.rs",
+      "archive": "docs/evidence/held-generic-call-profiles-812/src__hir__byte_capacity.rs.before.txt",
+      "sha256": "f978a9a5147ec13657454fee35c0bd7b09f0945393cc97cf704ce12fb5cb0763"
+    },
+    {
+      "source": "src/hir/validation/type_profiles.rs",
+      "archive": "docs/evidence/held-generic-call-profiles-812/src__hir__validation__type_profiles.rs.before.txt",
+      "sha256": "59c0774997918335e4fa46cdf286130b5ceeecf443d9d4e21877fd22ed949195"
+    },
+    {
+      "source": "src/hir/validation/type_requirement.rs",
+      "archive": "docs/evidence/held-generic-call-profiles-812/src__hir__validation__type_requirement.rs.before.txt",
+      "sha256": "012dbf9343e9874b81c92e5b8da907cb0bb2733d50d62fd6ca7f22d94790b890"
+    }
+  ],
+  "qualification": "source-only; no execution"
+}

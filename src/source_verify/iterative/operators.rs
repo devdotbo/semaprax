@@ -10,9 +10,13 @@ use crate::source_verify::diagnostics::{
 use crate::source_verify::hints;
 use crate::source_verify::loans::join_conditional;
 use crate::source_verify::place::{join_definitely_partial, join_moved_places};
+use crate::source_verify::private_names::type_name;
 use crate::source_verify::scope::{VerifierFrame, VerifierScope};
 use crate::source_verify::IterativeVerifier;
 use std::collections::HashMap;
+
+#[cfg(test)]
+mod before_799;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     pub(super) fn frame_resume_unary(
@@ -21,6 +25,15 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         operand: &'p Expr,
         op: UnaryOp,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 {
+            return self.before_799_frame_resume_unary(expression, operand, op);
+        }
+        #[cfg(test)]
+        if self.recovery_legacy {
+            return self.recovery_old_frame_resume_unary(expression, operand, op);
+        }
+
         let Some(actual) = self.values.pop().flatten() else {
             self.values.push(None);
             return Ok(());
@@ -33,7 +46,17 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             (UnaryOp::Neg, None) => Type::I64,
             (UnaryOp::Not, _) => Type::Bool,
         };
-        if !actual.native_unit && actual.ty != expected {
+        let mismatched = !actual.native_unit && actual.ty != expected;
+        if mismatched
+            && !self
+                .recovery
+                .explains_acceptance(operand, |declared| match op {
+                    UnaryOp::Neg => {
+                        matches!(declared, Type::I64 | Type::I32 | Type::F32 | Type::F64)
+                    }
+                    UnaryOp::Not => *declared == Type::Bool,
+                })
+        {
             self.diagnostics.push(error(
                 self.program,
                 "SPX-T206",
@@ -42,7 +65,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             ));
         }
         reject_native_unit_value(self.program, operand, &actual, self.diagnostics);
-        self.values.push(Some(CheckedValue::value(expected)));
+        self.values
+            .push((!mismatched && !actual.native_unit).then(|| CheckedValue::value(expected)));
         Ok(())
     }
 
@@ -53,6 +77,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         right: &'p Expr,
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 {
+            return self.before_799_frame_resume_binary_left(expression, op, right, scope);
+        }
         let left_value = self.values.pop().unwrap_or(None);
         let lazy = matches!(op, BinaryOp::And | BinaryOp::Or);
         let baseline_names = if lazy {
@@ -66,6 +94,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         };
         let evaluated_scope = if lazy {
             let index = self.scopes.len();
+            self.recovery.fork(Some(scope), index);
             self.scopes.push(VerifierScope {
                 bindings: self.scopes[scope].bindings.clone(),
                 local_borrow_count: self.scopes[scope].local_borrow_count,
@@ -105,6 +134,31 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         evaluated_scope: usize,
         baseline_names: Vec<String>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.recovery_legacy {
+            return self.recovery_old_frame_resume_binary_right(
+                expression,
+                op,
+                left,
+                left_value,
+                scope,
+                evaluated_scope,
+                baseline_names,
+            );
+        }
+
+        #[cfg(test)]
+        if self.operators_before_799 {
+            return self.before_799_frame_resume_binary_right(
+                expression,
+                op,
+                left,
+                left_value,
+                scope,
+                evaluated_scope,
+                baseline_names,
+            );
+        }
         let right_value = self.values.pop().unwrap_or(None);
         if evaluated_scope != scope {
             if evaluated_scope + 1 != self.scopes.len() {
@@ -124,6 +178,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 &baseline_names,
             );
         }
+        let operator_diagnostics = self.diagnostics.len();
         if let Some(value) = &left_value {
             reject_native_unit_value(self.program, left, value, self.diagnostics);
         }
@@ -194,15 +249,44 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             )
             && string_operands
         {
-            self.diagnostics.push(
-                error(
-                    self.program,
-                    "SPX-T250",
-                    format!("operator `{}` does not support string operands", op.text()),
-                    expression.span,
-                )
-                .with_help(crate::source_verify::hints::STRING_OPERATOR_HELP),
-            );
+            let independent_string = |operand: &Expr, value: &Option<CheckedValue>| {
+                value.as_ref().is_some_and(|value| value.ty == Type::String)
+                    && !self
+                        .recovery
+                        .explains_acceptance(operand, |declared| match op {
+                            BinaryOp::And | BinaryOp::Or => *declared == Type::Bool,
+                            BinaryOp::Rem => {
+                                matches!(declared, Type::I64 | Type::I32 | Type::U8 | Type::Usize)
+                            }
+                            _ => matches!(
+                                declared,
+                                Type::I64
+                                    | Type::I32
+                                    | Type::F32
+                                    | Type::F64
+                                    | Type::U8
+                                    | Type::Usize
+                            ),
+                        })
+            };
+            if independent_string(left, &left_value) || independent_string(right, &right_value) {
+                self.diagnostics.push(
+                    error(
+                        self.program,
+                        "SPX-T250",
+                        format!("operator `{}` does not support string operands", op.text()),
+                        expression.span,
+                    )
+                    .with_help(crate::source_verify::hints::STRING_OPERATOR_HELP),
+                );
+            }
+            if matches!(
+                op,
+                BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem
+            ) {
+                self.values.push(None);
+                return Ok(());
+            }
         }
         let (expected, output) = match op {
             BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Rem => {
@@ -234,6 +318,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     && right_value.is_some()
                     && left_value.as_ref().map(|value| &value.ty)
                         != right_value.as_ref().map(|value| &value.ty)
+                    && !right_value
+                        .as_ref()
+                        .is_some_and(|value| self.recovery.explains(left, &value.ty))
+                    && !left_value
+                        .as_ref()
+                        .is_some_and(|value| self.recovery.explains(right, &value.ty))
                 {
                     self.diagnostics.push(hints::with_optional_help(
                         error(
@@ -250,7 +340,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         ),
                     ));
                 }
-                self.values.push(Some(CheckedValue::value(Type::Bool)));
+                self.values.push(
+                    (left_value.is_some()
+                        && right_value.is_some()
+                        && self.diagnostics.len() == operator_diagnostics)
+                        .then(|| CheckedValue::value(Type::Bool)),
+                );
                 return Ok(());
             }
         };
@@ -260,12 +355,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     op,
                     BinaryOp::Lt | BinaryOp::Le | BinaryOp::Gt | BinaryOp::Ge
                 ))
-            && (left_value
-                .as_ref()
-                .is_some_and(|value| value.ty != expected)
-                || right_value
-                    .as_ref()
-                    .is_some_and(|value| value.ty != expected))
+            && (left_value.as_ref().is_some_and(|value| {
+                value.ty != expected && !self.recovery.explains(left, &expected)
+            }) || right_value.as_ref().is_some_and(|value| {
+                value.ty != expected && !self.recovery.explains(right, &expected)
+            }))
         {
             self.diagnostics.push(hints::with_optional_help(
                 error(
@@ -277,7 +371,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 hints::literal_suffix_help(&expected, left, right),
             ));
         }
-        self.values.push(Some(CheckedValue::value(output)));
+        self.values.push(
+            (left_value.is_some()
+                && right_value.is_some()
+                && self.diagnostics.len() == operator_diagnostics)
+                .then(|| CheckedValue::value(output)),
+        );
         Ok(())
     }
 
@@ -288,7 +387,18 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         else_branch: &'p Expr,
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_799_frame_resume_if_condition(
+                expression,
+                then_branch,
+                else_branch,
+                scope,
+            );
+        }
         let condition_value = self.values.pop().unwrap_or(None);
+        let condition_known = condition_value.is_some();
+        let condition_diagnostics = self.diagnostics.len();
         let condition = match &expression.kind {
             ExprKind::If { condition, .. } => condition.as_ref(),
             _ => unreachable!(),
@@ -296,7 +406,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         if let Some(value) = condition_value {
             if value.native_unit {
                 reject_native_unit_value(self.program, condition, &value, self.diagnostics);
-            } else if value.ty != Type::Bool {
+            } else if value.ty != Type::Bool && !self.recovery.explains(condition, &Type::Bool) {
                 self.diagnostics.push(error(
                     self.program,
                     "SPX-T210",
@@ -305,6 +415,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 ));
             }
         }
+        let condition_admitted = condition_known && self.diagnostics.len() == condition_diagnostics;
         // Empty blocks containing only a scalar literal cannot inspect or
         // mutate any binding. Check both literal values normally, but avoid
         // copying and joining the complete environment for this identity case.
@@ -321,6 +432,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             (literal_tail(then_branch), literal_tail(else_branch))
         {
             self.frames.push(VerifierFrame::ResumeLiteralIf {
+                condition_admitted,
                 expression,
                 then_branch,
                 else_branch,
@@ -341,11 +453,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             .cloned()
             .collect::<Vec<_>>();
         let then_scope = self.scopes.len();
+        self.recovery.fork(Some(scope), then_scope);
         self.scopes.push(VerifierScope {
             bindings: self.scopes[scope].bindings.clone(),
             local_borrow_count: self.scopes[scope].local_borrow_count,
         });
         self.frames.push(VerifierFrame::ResumeIfThen {
+            condition_admitted,
             expression,
             else_branch,
             scope,
@@ -361,12 +475,23 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
 
     pub(super) fn frame_resume_if_then(
         &mut self,
+        condition_admitted: bool,
         expression: &'p Expr,
         else_branch: &'p Expr,
         scope: usize,
         then_scope: usize,
         baseline_names: Vec<String>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_799_frame_resume_if_then(
+                expression,
+                else_branch,
+                scope,
+                then_scope,
+                baseline_names,
+            );
+        }
         if then_scope + 1 != self.scopes.len() {
             return Err(Diagnostic::io(
                 "SPX-H006",
@@ -380,6 +505,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             .expect("active then scope index checked above")
             .bindings;
         let else_scope = self.scopes.len();
+        self.recovery.fork(Some(scope), else_scope);
         self.scopes.push(VerifierScope {
             bindings: self.scopes[scope].bindings.clone(),
             local_borrow_count: self.scopes[scope].local_borrow_count,
@@ -389,6 +515,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             _ => unreachable!(),
         };
         self.frames.push(VerifierFrame::ResumeIfElse {
+            condition_admitted,
             expression,
             then_branch,
             else_branch,
@@ -408,6 +535,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn frame_resume_if_else(
         &mut self,
+        condition_admitted: bool,
         expression: &'p Expr,
         then_branch: &'p Expr,
         else_branch: &'p Expr,
@@ -417,6 +545,19 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         then_value: Option<CheckedValue>,
         then_bindings: HashMap<String, Binding>,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            return self.before_799_frame_resume_if_else(
+                expression,
+                then_branch,
+                else_branch,
+                scope,
+                else_scope,
+                baseline_names,
+                then_value,
+                then_bindings,
+            );
+        }
         if else_scope + 1 != self.scopes.len() {
             return Err(Diagnostic::io(
                 "SPX-H006",
@@ -429,8 +570,27 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             .pop()
             .expect("active else scope index checked above")
             .bindings;
+        let then_exits = then_value
+            .as_ref()
+            .is_some_and(|value| value.ty == Type::Never)
+            && crate::ast::returns_only(then_branch);
+        let else_exits = else_value
+            .as_ref()
+            .is_some_and(|value| value.ty == Type::Never)
+            && crate::ast::returns_only(else_branch);
         for name in &baseline_names {
             if let Some(binding) = self.scopes[scope].bindings.get_mut(name) {
+                if then_exits != else_exits {
+                    let normal = if then_exits {
+                        &else_bindings
+                    } else {
+                        &then_bindings
+                    };
+                    if let Some(state) = normal.get(name) {
+                        *binding = state.clone();
+                    }
+                    continue;
+                }
                 let then_state = then_bindings
                     .get(name)
                     .map_or(Availability::Available, |value| value.availability);
@@ -453,6 +613,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }
         }
         self.finish_if_values(expression, then_branch, else_branch, then_value, else_value);
+        if !condition_admitted {
+            *self.values.last_mut().expect("if result was published") = None;
+        }
         Ok(())
     }
 
@@ -464,7 +627,25 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         then_value: Option<CheckedValue>,
         else_value: Option<CheckedValue>,
     ) {
+        #[cfg(test)]
+        if self.operators_before_799 || self.recovery_legacy {
+            self.before_799_finish_if_values(
+                expression,
+                then_branch,
+                else_branch,
+                then_value,
+                else_value,
+            );
+            return;
+        }
+        let branch_diagnostics = self.diagnostics.len();
         let output = match (then_value, else_value) {
+            (Some(then_value), Some(else_value)) if then_value.ty == Type::Never => {
+                Some(else_value)
+            }
+            (Some(then_value), Some(else_value)) if else_value.ty == Type::Never => {
+                Some(then_value)
+            }
             (Some(then_value), Some(else_value)) => {
                 if then_value.native_unit || else_value.native_unit {
                     reject_native_unit_value(
@@ -485,7 +666,8 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         "SPX-T211",
                         format!(
                             "`if` branches return different types: {} and {}",
-                            then_value.ty, else_value.ty
+                            type_name(self.program, self.types, &then_value.ty),
+                            type_name(self.program, self.types, &else_value.ty)
                         ),
                         expression.span,
                     ));
@@ -502,6 +684,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             }
             _ => None,
         };
-        self.values.push(output);
+        self.values.push(
+            (self.diagnostics.len() == branch_diagnostics)
+                .then_some(output)
+                .flatten(),
+        );
     }
 }

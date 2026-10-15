@@ -54,10 +54,22 @@ pub(crate) fn initialize_from_preflight_with_hook(
     workspace::initialize_semantic_with_hook(root, path_set_path, hook)
 }
 
-pub(crate) struct SemanticWorkspaceSource {
+/// Caller-owned source bytes for source-only semantic preflight.
+/// Construction grants no filesystem or publication authority.
+pub struct SemanticWorkspaceSource {
     pub(crate) path: String,
     pub(crate) source: String,
 }
+
+impl SemanticWorkspaceSource {
+    /// Move already-owned path and source storage into the source receiver.
+    pub fn new(path: String, source: String) -> Self {
+        Self { path, source }
+    }
+}
+
+/// Typed source-only replay with an affine report failure carrier.
+pub mod reporting;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct SemanticWorkspaceFileFact {
@@ -66,7 +78,18 @@ pub(crate) struct SemanticWorkspaceFileFact {
     source_revision: String,
     source_digest: String,
     bytes: usize,
-    source: String,
+    source: workspace_graph::current_source::SourceBytes,
+}
+
+// The preflight's own held normalized sources, for exact schema reception.
+impl workspace_graph::ReceivingSources for Vec<SemanticWorkspaceFileFact> {
+    fn source_count(&self) -> usize {
+        self.len()
+    }
+    fn source_at(&self, index: usize) -> Option<(&str, &str)> {
+        self.get(index)
+            .map(|file| (file.path.as_str(), file.source.as_str()))
+    }
 }
 
 pub(crate) struct SemanticWorkspacePreflight {
@@ -104,10 +127,18 @@ impl SemanticWorkspaceFileFact {
 
     #[cfg(test)]
     pub(crate) fn source_mut(&mut self) -> &mut String {
-        &mut self.source
+        self.source.make_mut()
     }
 
-    pub(crate) fn into_parts(self) -> (String, String, String, String, String) {
+    pub(crate) fn into_parts(
+        self,
+    ) -> (
+        String,
+        String,
+        String,
+        String,
+        workspace_graph::current_source::SourceBytes,
+    ) {
         (
             self.path,
             self.source_graph_schema,
@@ -286,7 +317,8 @@ fn preflight_owned_inner_mode(
     } else {
         workspace_graph::build_owned_retaining_sources(graph_sources)?
     };
-    let mut schemas = graph.source_graph_schemas()?;
+    // The exact sources this build consumed are the receiving authority.
+    let mut schemas = graph.source_graph_schemas_receiving(&recovered_sources)?;
     let mut files = Vec::with_capacity(recovered_sources.len());
     for source in recovered_sources {
         let schema = schemas.remove(&source.path).ok_or_else(|| {
@@ -299,12 +331,12 @@ fn preflight_owned_inner_mode(
             frontend.as_deref(),
         )?;
         files.push(SemanticWorkspaceFileFact {
-            path: source.path,
+            path: source.path.clone(),
             source_graph_schema: schema.to_owned(),
             source_revision,
             source_digest: review::source_digest(source.source.as_bytes()),
             bytes: source.source.len(),
-            source: source.source,
+            source: workspace_graph::current_source::SourceBytes::current(source),
         });
     }
     if !schemas.is_empty() {
@@ -392,7 +424,7 @@ pub(crate) fn authenticated_operations_preflight(
             source_graph_schema: source.source_graph_schema,
             source_revision: source.source_revision,
             source_digest: source.source_digest,
-            source: source.source,
+            source: source.source.into(),
         })
         .collect::<Vec<_>>();
     files.sort_by(|left, right| left.path.cmp(&right.path));
@@ -614,7 +646,7 @@ fn parse_manifest_inner(source: &str) -> Result<Vec<SemanticWorkspaceFileFact>, 
             source_revision: digest_text(object, "source_revision")?.to_owned(),
             source_digest: digest_text(object, "source_digest")?.to_owned(),
             bytes,
-            source: String::new(),
+            source: String::new().into(),
         });
     }
     if files.windows(2).any(|pair| pair[0].path >= pair[1].path) {
@@ -821,7 +853,9 @@ fn validate_preflight_replay_with_frontend(
     preflight: &SemanticWorkspacePreflight,
     frontend: Option<&crate::project::incremental::FrontendPass>,
 ) -> Result<(), Vec<Diagnostic>> {
-    let schemas = preflight.graph.source_graph_schemas()?;
+    let schemas = preflight
+        .graph
+        .source_graph_schemas_receiving(&preflight.files)?;
     if schemas.len() != preflight.files.len() || preflight.path_set.len() != preflight.files.len() {
         return Err(invariant(
             "Semantic Workspace preflight fact cardinality disagrees",
@@ -1066,6 +1100,19 @@ fn is_source_graph_schema(value: &str) -> bool {
             | "semaprax.graph.v69"
             | "semaprax.graph.v70"
             | "semaprax.graph.v71"
+            | "semaprax.graph.v72"
+            | "semaprax.graph.v73"
+            | "semaprax.graph.v74"
+            | "semaprax.graph.v75"
+            | "semaprax.graph.v76"
+            | "semaprax.graph.v78"
+            | "semaprax.graph.v79"
+            | "semaprax.graph.v80"
+            | "semaprax.graph.v81"
+            | "semaprax.graph.v82"
+            | "semaprax.graph.v83"
+            | "semaprax.graph.v84" | "semaprax.graph.v85"
+            | "semaprax.graph.v77"
     )
 }
 

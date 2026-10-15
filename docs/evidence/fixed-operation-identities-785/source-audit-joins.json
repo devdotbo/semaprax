@@ -1,0 +1,19 @@
+{
+  "new_rust_descendants": [
+    "src/hir/ids/fixed_operation_tests.rs",
+    "src/hir/resolve_box_call/map/identity_tests.rs",
+    "src/hir/resolve_box_call/list/identity_tests.rs",
+    "src/hir/resolve_box_call/iterator/identity_tests.rs"
+  ],
+  "root_owned_union_files": [
+    "tests/hir_module_boundaries.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs"
+  ],
+  "status": "Source unions authored, actual qualification pending; no Cargo or execution.",
+  "actual_root_owned_union_files": [
+    "tests/hir_module_boundaries.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs"
+  ]
+}

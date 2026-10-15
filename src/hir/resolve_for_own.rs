@@ -1,4 +1,5 @@
 //! Stack-safe consuming traversal lowering into a checked Step-carried loop.
+use super::resolve_expr::path_arena::{PathArena, PathId, Seg};
 use super::resolve_expr_frame::Frame;
 use super::*;
 use crate::ast::Expr;
@@ -6,29 +7,30 @@ use std::rc::Rc;
 
 pub(super) struct ForOwnFrame<'a> {
     pub(super) span: Span,
-    pub(super) path: String,
+    pub(super) path: PathId,
     pub(super) statements: &'a [crate::ast::Statement],
     pub(super) tail: &'a Expr,
     pub(super) index: usize,
-    pub(super) scope: Rc<BTreeMap<String, Binding>>,
+    pub(super) scope: Scope<'a>,
     pub(super) resolved: Vec<ResolvedStatement>,
     pub(super) source: Option<ResolvedExpr>,
 }
 #[allow(clippy::too_many_arguments)]
 pub(super) fn schedule<'a>(
     frames: &mut Vec<Frame<'a>>,
+    paths: &mut PathArena<'_>,
     span: Span,
-    path: String,
+    path: PathId,
     statements: &'a [crate::ast::Statement],
     tail: &'a Expr,
     index: usize,
-    scope: Rc<BTreeMap<String, Binding>>,
+    scope: Scope<'a>,
     resolved: Vec<ResolvedStatement>,
 ) {
     let crate::ast::Statement::ForOwn { values, .. } = &statements[index] else {
         unreachable!()
     };
-    let source_path = format!("{path}.s{index}.value.s0.value.arg.0");
+    let source = Seg::Statement.at(index).then(Seg::ForOwnSource);
     frames.push(Frame::ForOwn(Box::new(ForOwnFrame {
         span,
         path,
@@ -42,7 +44,7 @@ pub(super) fn schedule<'a>(
     frames.push(Frame::Enter {
         expr: values,
         bindings: scope,
-        path: source_path,
+        path: paths.child(frames, path, source),
     });
 }
 pub(super) fn resume<'a>(
@@ -50,6 +52,7 @@ pub(super) fn resume<'a>(
     function: &FunctionExecutionId,
     mut frame: ForOwnFrame<'a>,
     frames: &mut Vec<Frame<'a>>,
+    paths: &mut PathArena<'_>,
     results: &mut Vec<ResolvedExpr>,
 ) -> Result<(), Diagnostic> {
     let crate::ast::Statement::ForOwn {
@@ -62,7 +65,8 @@ pub(super) fn resume<'a>(
     else {
         unreachable!()
     };
-    let statement_path = format!("{}.s{}", frame.path, frame.index);
+    let block = frame.path;
+    let statement = Seg::Statement.at(frame.index);
     if frame.source.is_none() {
         let source = results.pop().expect("consuming traversal source retained");
         let element = source_element(resolver, function, &source)?;
@@ -73,14 +77,13 @@ pub(super) fn resume<'a>(
                 *item_span,
             ));
         }
+        let item_edge = [statement.then(Seg::ForOwnItem)];
         let mut scope = frame.scope.clone();
-        Rc::make_mut(&mut scope).insert(
+        Rc::make_mut(&mut scope).to_mut().insert(
             item.clone(),
             Binding {
-                id: ValueId::local(
-                    function,
-                    &format!("{statement_path}.value.s1.body.s0.value.arm.1.binding.0"),
-                ),
+                traversal_row: None,
+                id: paths.at(block).value_local_with(function, &item_edge),
                 ownership: crate::iterator_ops::item_ownership(&element, false),
                 ty: element,
                 mutable: false,
@@ -88,11 +91,17 @@ pub(super) fn resume<'a>(
         );
         frame.source = Some(source);
         frames.push(Frame::ForOwn(Box::new(frame)));
+        frames.push(Frame::LeaveLoop);
         frames.push(Frame::Enter {
             expr: body,
             bindings: scope,
-            path: format!("{statement_path}.value.s1.body.s0.value.arm.1.value.s0.value"),
+            path: paths.child(frames, block, statement.then(Seg::ForOwnBody)),
         });
+        let condition = [statement.then(Seg::ForOwnCondition)];
+        frames.push(Frame::EnterLoop(super::ControlTarget::Loop {
+            owner: function.clone(),
+            site: paths.at(block).expression_id_with(function, &condition),
+        }));
     } else {
         let body = results.pop().expect("consuming traversal body retained");
         let source = frame
@@ -100,6 +109,8 @@ pub(super) fn resume<'a>(
             .take()
             .expect("consuming traversal source retained");
         let element = source_element(resolver, function, &source)?;
+        // The synthesized lowering spells its whole canonical subtree from text.
+        let statement_path = paths.at(block).materialize_with(&[statement]);
         frame.resolved.push(lower(
             function,
             &statement_path,
@@ -374,11 +385,17 @@ fn lower(
                         value: next(&format!("{sp}.value"), source),
                         span,
                     },
-                    ResolvedStatement::While {
-                        condition: Box::new(condition),
-                        body: Box::new(body),
+                    super::resolve_expr::lexical_exit::loop_statement(
+                        Box::new(condition),
+                        Box::new(body),
+                        super::LoopLatchKind::OwnedIteratorStep {
+                            next: ExpressionId::new(function, &format!("{yp}.tail")),
+                            assignment: ExpressionId::new(function, &mp),
+                            step: ValueId::local(function, &sp),
+                            remainder: ValueId::local(function, &format!("{mp}.arm.1.binding.1")),
+                        },
                         span,
-                    },
+                    ),
                 ],
                 tail: Box::new(zero(&format!("{vp}.tail"))),
             },
@@ -417,6 +434,7 @@ pub(super) fn resolve_reference(
     scope.insert(
         item.to_owned(),
         Binding {
+            traversal_row: None,
             id: ValueId::local(
                 function,
                 &format!("{path}.value.s1.body.s0.value.arm.1.binding.0"),
@@ -426,11 +444,15 @@ pub(super) fn resolve_reference(
             mutable: false,
         },
     );
-    let body = resolver.resolve_expr_recursive_reference(
+    let body = resolver.resolve_expr_recursive_reference_inner(
         function,
         body,
         &scope,
         &format!("{path}.value.s1.body.s0.value.arm.1.value.s0.value"),
+        Some(&crate::hir::ControlTarget::Loop {
+            owner: function.clone(),
+            site: ExpressionId::new(function, &format!("{path}.value.s1.condition")),
+        }),
     )?;
     Ok(lower(
         function, path, item, item_span, source, element, body, span,
@@ -439,11 +461,10 @@ pub(super) fn resolve_reference(
 #[cfg(test)]
 pub(super) fn capacity(
     frame: &ForOwnFrame<'_>,
-    seen: &mut std::collections::HashSet<*const BTreeMap<String, Binding>>,
+    first_scope: &mut dyn FnMut(*const ()) -> bool,
 ) -> usize {
     use super::capacity_probe::*;
     std::mem::size_of::<ForOwnFrame<'_>>()
-        + frame.path.capacity()
         + frame.resolved.capacity() * std::mem::size_of::<ResolvedStatement>()
         + frame
             .resolved
@@ -454,8 +475,8 @@ pub(super) fn capacity(
             .source
             .as_ref()
             .map_or(0, resolved_expr_owned_capacity)
-        + if seen.insert(Rc::as_ptr(&frame.scope)) {
-            resolver_scope_owned_capacity(&frame.scope)
+        + if first_scope(Rc::as_ptr(&frame.scope) as *const ()) {
+            super::resolver_scope::owned_capacity(&frame.scope)
         } else {
             0
         }
@@ -463,11 +484,13 @@ pub(super) fn capacity(
 
 // Shared continuation adapter keeps the legacy Vec traversal unchanged.
 pub(super) fn resume_vec<'a>(
+    resolver: &Resolver<'_>,
     function: &FunctionExecutionId,
     frame: Frame<'a>,
     frames: &mut Vec<Frame<'a>>,
+    paths: &mut PathArena<'_>,
     results: &mut Vec<ResolvedExpr>,
-) {
+) -> Result<(), Diagnostic> {
     let Frame::BlockForBody {
         span,
         path,
@@ -483,9 +506,9 @@ pub(super) fn resume_vec<'a>(
         unreachable!()
     };
     super::resolve_for::resume(
-        function, frames, results, span, path, statements, tail, index, scope, resolved, source,
-        element,
-    );
+        resolver, function, frames, paths, results, span, path, statements, tail, index, scope,
+        resolved, source, element,
+    )
 }
 #[cfg(test)]
 pub(super) fn resolve_statement_reference(
@@ -513,6 +536,9 @@ pub(super) fn resolve_statement_reference(
             span,
         } => super::resolve_for::resolve_reference(
             resolver, function, scope, path, item, *item_span, values, body, *span,
+        ),
+        crate::ast::Statement::ForBorrow { .. } => super::resolve_for::record::resolve_reference(
+            resolver, function, scope, path, statement,
         ),
         _ => unreachable!(),
     }

@@ -1,0 +1,67 @@
+module catalog.order;
+use type @id("catalog.input_item") from catalog.request_schema as InputItem;
+use function @id("std.text.equals") from std.text as equals;
+
+@id("catalog.identifier")
+fn identifier(value: borrow str) -> bool
+{
+    let bytes = str_as_bytes(value);
+    let length = byte_len(bytes);
+    if length == 0usize || length > 16usize { return false; };
+    for byte in bytes {
+        if !(byte >= 65u8 && byte <= 90u8 || byte >= 97u8 && byte <= 122u8 || byte >= 48u8 && byte <= 57u8 || byte == 95u8 || byte == 45u8) { return false; };
+        0
+    }
+    true
+}
+
+@id("catalog.valid_sorted_tags")
+fn valid_sorted_tags(tags: borrow Vec<string>) -> bool
+{
+    let length = vec_len<string>(tags);
+    let mut valid = length <= 8usize;
+    let mut index = 0usize;
+    while valid && index < length {
+        let current = vec_str_at(tags, index);
+        valid = identifier(current);
+        if valid && index > 0usize { let previous = vec_str_at(tags, index - 1usize); valid = !equals(previous, current); }
+        index = index + 1usize;
+        valid && index < length
+    }
+    valid
+}
+
+@id("catalog.valid_sorted_items")
+fn valid_sorted_items(items: borrow Vec<InputItem>) -> bool
+{
+    let length = vec_len<InputItem>(items);
+    if length > 256usize { return false; }
+    let mut valid = true;
+    for borrow item at index in items {
+        let current = item.id;
+        let department = item.department;
+        let priority = item.priority;
+        let stock = item.stock;
+        let topup = item.topup;
+        valid = identifier(current) && department >= 0 && department <= 9 && priority >= 0 && priority <= 9 && stock >= 0 && stock <= 1000 && topup >= 0 && topup <= 1000;
+        if valid && index > 0usize { let previous = vec_field<InputItem>(items, index - 1usize, "id"); valid = !equals(previous, current); }
+        if !valid { break; }
+        0
+    }
+    valid
+}
+
+@id("catalog.selected")
+fn selected(id: borrow str, tags: borrow Vec<string>) -> bool
+{
+    let length = vec_len<string>(tags);
+    let mut include = length == 0usize;
+    let mut index = 0usize;
+    while !include && index < length {
+        let prefix = vec_str_at(tags, index);
+        include = str_starts_with(id, prefix);
+        index = index + 1usize;
+        !include && index < length
+    }
+    include
+}

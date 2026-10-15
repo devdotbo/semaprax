@@ -1,0 +1,8 @@
+{
+  "status": "authored-unexecuted",
+  "selectors": [
+    "loan_plan::paid_cfg::rootmap_tests::rootmap_identity_membership_preserves_complete_old_cfg_and_every_work_boundary",
+    "loan_plan::paid_cfg::rootmap_tests::rootmap_identity_membership_keeps_duplicate_identity_first_error_and_work_order",
+    "loan_plan::paid_cfg::rootmap_tests::rootmap_identity_membership_removes_one_actual_box_per_expression_and_funds_drop"
+  ]
+}

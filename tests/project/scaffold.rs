@@ -1,9 +1,10 @@
-use semaprax::assurance_manifest::project::{generate_from_snapshot, ProjectAssuranceOptions};
+use semaprax::assurance_manifest::project::{ProjectAssuranceOptions, generate_from_snapshot};
 use semaprax::project::{
-    derive_project_scaffold_v1, derive_project_scaffold_v1_with_layout, replay_project_scaffold_v1,
-    with_authenticated_project, ScaffoldLayout, PROJECT_SCAFFOLD_TEMPLATES,
     PROJECT_SCAFFOLD_TEMPLATE_SOURCE_COMMAND_FILE_TEXT,
-    PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_DATA,
+    PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD,
+    PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_DATA, PROJECT_SCAFFOLD_TEMPLATES, ScaffoldLayout,
+    derive_project_scaffold_v1, derive_project_scaffold_v1_with_layout, replay_project_scaffold_v1,
+    with_authenticated_project,
 };
 use sha2::{Digest, Sha256};
 
@@ -43,7 +44,11 @@ fn every_shipped_template_walks_the_documented_quickstart_journey() {
     for template in PROJECT_SCAFFOLD_TEMPLATES {
         let layout = if matches!(
             template,
-            "service" | "stdin-stream-text" | "stdin-stream-data" | "source-command-file-text"
+            "service"
+                | "stdin-stream-text"
+                | "stdin-stream-data"
+                | "stdin-stream-collection-record"
+                | "source-command-file-text"
         ) {
             ScaffoldLayout::Tables
         } else {
@@ -130,7 +135,11 @@ fn every_shipped_template_fits_the_default_assurance_budget() {
     for template in PROJECT_SCAFFOLD_TEMPLATES {
         let layout = if matches!(
             template,
-            "service" | "stdin-stream-text" | "stdin-stream-data" | "source-command-file-text"
+            "service"
+                | "stdin-stream-text"
+                | "stdin-stream-data"
+                | "stdin-stream-collection-record"
+                | "source-command-file-text"
         ) {
             ScaffoldLayout::Tables
         } else {
@@ -211,9 +220,11 @@ fn expected_files() -> [Vec<u8>; 5] {
 fn assert_digest(value: &str) {
     assert!(value.starts_with("sha256:"), "{value}");
     assert_eq!(value.len(), "sha256:".len() + 64, "{value}");
-    assert!(value["sha256:".len()..]
-        .bytes()
-        .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)));
+    assert!(
+        value["sha256:".len()..]
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    );
 }
 
 fn sha256(bytes: &[u8]) -> String {
@@ -417,9 +428,11 @@ fn library_template_derives_the_package_shape_and_replays_only_as_itself() {
         assert_eq!(file.sha256(), sha256(file.bytes()));
     }
     let canonical = derived.canonical_bytes();
-    assert!(canonical
-        .windows(b"\"template\":\"library\"".len())
-        .any(|window| window == b"\"template\":\"library\""));
+    assert!(
+        canonical
+            .windows(b"\"template\":\"library\"".len())
+            .any(|window| window == b"\"template\":\"library\"")
+    );
     let replayed =
         replay_project_scaffold_v1(NAME, "library", &canonical, derived.digest()).unwrap();
     assert_eq!(replayed.canonical_bytes(), canonical);
@@ -549,8 +562,7 @@ fn tables_layout_derives_a_v3_capsule_and_replays_only_as_itself() {
     assert_eq!(tables.template(), "calculator");
     assert_eq!(tables.project_name(), NAME);
     assert_eq!(
-        serde_json::from_slice::<serde_json::Value>(&tables.canonical_bytes()).unwrap()["limits"]
-            ["files"],
+        serde_json::from_slice::<serde_json::Value>(&tables.canonical_bytes()).unwrap()["limits"]["files"],
         6
     );
     assert_digest(tables.digest());
@@ -577,15 +589,21 @@ fn tables_layout_derives_a_v3_capsule_and_replays_only_as_itself() {
         ]
     );
     assert_eq!(tables.files()[2].bytes(), CALCULATOR_TABLES_MANIFEST);
-    assert!(tables.files()[1]
-        .utf8()
-        .contains("Project v1 function boundaries"));
-    assert!(tables.files()[3]
-        .utf8()
-        .contains("use function @id(\"demo-project.add\") from demo_project.core as add;"));
-    assert!(tables.files()[4]
-        .utf8()
-        .starts_with("module demo_project.core;\n"));
+    assert!(
+        tables.files()[1]
+            .utf8()
+            .contains("Project v1 function boundaries")
+    );
+    assert!(
+        tables.files()[3]
+            .utf8()
+            .contains("use function @id(\"demo-project.add\") from demo_project.core as add;")
+    );
+    assert!(
+        tables.files()[4]
+            .utf8()
+            .starts_with("module demo_project.core;\n")
+    );
     for file in tables.files() {
         assert_eq!(file.sha256(), sha256(file.bytes()));
     }
@@ -605,20 +623,24 @@ fn tables_layout_derives_a_v3_capsule_and_replays_only_as_itself() {
     assert_eq!(replayed.canonical_bytes(), tables.canonical_bytes());
 
     // The frozen digest cannot validate the table bytes, and vice versa.
-    assert!(replay_project_scaffold_v1(
-        NAME,
-        "calculator",
-        &tables.canonical_bytes(),
-        frozen.digest()
-    )
-    .is_err());
-    assert!(replay_project_scaffold_v1(
-        NAME,
-        "calculator",
-        &frozen.canonical_bytes(),
-        tables.digest()
-    )
-    .is_err());
+    assert!(
+        replay_project_scaffold_v1(
+            NAME,
+            "calculator",
+            &tables.canonical_bytes(),
+            frozen.digest()
+        )
+        .is_err()
+    );
+    assert!(
+        replay_project_scaffold_v1(
+            NAME,
+            "calculator",
+            &frozen.canonical_bytes(),
+            tables.digest()
+        )
+        .is_err()
+    );
 
     // The library template also lowers to a v3 table capsule.
     let library =
@@ -796,6 +818,62 @@ fn stdin_stream_data_template_selects_one_native_v27_command_and_borrowed_vec_he
 }
 
 #[test]
+fn stdin_stream_collection_record_template_selects_project_v31_and_replays() {
+    let frozen = derive_project_scaffold_v1_with_layout(
+        NAME,
+        PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD,
+        ScaffoldLayout::Frozen,
+    )
+    .unwrap_err();
+    assert_eq!(frozen[0].code, "SPX-J115");
+
+    let derived = derive_project_scaffold_v1_with_layout(
+        NAME,
+        PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD,
+        ScaffoldLayout::Tables,
+    )
+    .unwrap();
+    assert_eq!(derived.schema(), "semaprax.project-scaffold.v7");
+    assert_eq!(derived.project_schema(), "semaprax.project.v31");
+    assert_eq!(
+        derived
+            .files()
+            .iter()
+            .map(|file| file.path())
+            .collect::<Vec<_>>(),
+        [
+            "README.md",
+            "AGENTS.md",
+            "semaprax.toml",
+            "src/app.spx",
+            "src/core.spx",
+            "src/tests.spx",
+        ]
+    );
+    let manifest = derived.files()[2].utf8();
+    assert!(manifest.contains("profile = \"language-command-io.collection-record.v1\""));
+    assert!(manifest.contains("input = \"argv-utf8+stdin-stream.v1\""));
+    assert!(manifest.contains("matrix = [\"native64\"]"));
+    assert!(manifest.contains("required = [\"process.args.read\", \"process.stderr.write\", \"process.stdin.read\", \"process.stdout.write\"]"));
+    let core = derived.files()[4].utf8();
+    assert!(core.contains("fn inspect(value: borrow Report) -> i64"));
+    assert!(core.contains("vec_len<string>(value.items)"));
+    assert!(core.contains("metrics: Metrics"));
+    let guide = derived.files()[1].utf8();
+    assert!(guide.contains("current-head execution qualification is pending"));
+    assert!(guide.contains("native64"));
+
+    let replayed = replay_project_scaffold_v1(
+        NAME,
+        PROJECT_SCAFFOLD_TEMPLATE_STDIN_STREAM_COLLECTION_RECORD,
+        &derived.canonical_bytes(),
+        derived.digest(),
+    )
+    .unwrap();
+    assert_eq!(replayed.canonical_bytes(), derived.canonical_bytes());
+}
+
+#[test]
 fn source_command_file_text_template_selects_native_v26_and_decimal_dependency() {
     let long_name = "a".repeat(64);
     let long = derive_project_scaffold_v1_with_layout(
@@ -932,7 +1010,9 @@ fn service_template_composes_bundled_dependencies_and_only_derives_under_tables_
     assert!(manifest.contains("schema = \"semaprax.manifest.v1\"\n"));
     assert!(manifest.contains("profile = \"useful-data.v1\"\n"));
     assert!(manifest.contains("entry = \"demo_project.app\"\n"));
-    assert!(manifest.contains("sources = [\"src/app.spx\", \"src/core.spx\", \"src/tests.spx\"]\n"));
+    assert!(
+        manifest.contains("sources = [\"src/app.spx\", \"src/core.spx\", \"src/tests.spx\"]\n")
+    );
     assert!(manifest.contains("tests = [\"demo_project.tests\"]\n"));
     assert!(manifest.contains(
         "web = [\"demo_project.core.identifier_is_valid\", \"demo_project.core.method_is_rejected\"]\n"
@@ -1134,8 +1214,7 @@ fn service_scaffold_configuration_is_closed_and_credential_free() {
         "host configuration selects the named snapshot profile"
     );
     assert_eq!(
-        schema["allOf"][1]["then"]["properties"]["database"]["properties"]["dsn_secret_ref"]
-            ["const"],
+        schema["allOf"][1]["then"]["properties"]["database"]["properties"]["dsn_secret_ref"]["const"],
         serde_json::Value::Null,
         "host configuration never interprets a DSN as snapshot storage"
     );
@@ -1190,6 +1269,91 @@ fn service_scaffold_configuration_is_closed_and_credential_free() {
         assert!(
             !schema.to_string().contains(refused),
             "unsupported adapter label `{refused}` must not enter the generated configuration vocabulary"
+        );
+    }
+}
+
+#[test]
+fn current_guidance_capsule_preserves_legacy_sources_and_replays_all_templates() {
+    for template in PROJECT_SCAFFOLD_TEMPLATES {
+        let legacy = derive_project_scaffold_v1_with_layout(
+            "current-guide",
+            template,
+            ScaffoldLayout::Tables,
+        )
+        .unwrap();
+        let current = derive_project_scaffold_v1_with_layout(
+            "current-guide",
+            template,
+            ScaffoldLayout::Current,
+        )
+        .unwrap();
+        assert_eq!(
+            current.schema(),
+            semaprax::project::PROJECT_SCAFFOLD_SCHEMA_V8
+        );
+        assert_eq!(current.project_schema(), legacy.project_schema());
+        assert_ne!(current.digest(), legacy.digest());
+        assert_eq!(current.files().len(), legacy.files().len());
+        for (old, new) in legacy.files().iter().zip(current.files()) {
+            assert_eq!(old.path(), new.path());
+            if old.path() != "AGENTS.md" {
+                assert_eq!(old.bytes(), new.bytes(), "{template}: {}", old.path());
+                assert_eq!(old.sha256(), new.sha256());
+            } else {
+                let guide = new.utf8();
+                assert!(
+                    guide.contains("semaprax help language author:routes"),
+                    "{template}"
+                );
+                assert!(
+                    guide.contains("semaprax help language author:lexical-exits"),
+                    "{template}"
+                );
+                assert!(
+                    guide.contains("A `while` condition decides whether to loop"),
+                    "{template}"
+                );
+                assert!(!guide.contains("is no `return`, `break`"), "{template}");
+                assert!(
+                    !guide.contains("body ends with the bool that decides"),
+                    "{template}"
+                );
+                assert!(new.bytes().len() <= old.bytes().len() + 1024);
+                assert_ne!(old.sha256(), new.sha256());
+            }
+        }
+        for artifact in [&legacy, &current] {
+            let replay = replay_project_scaffold_v1(
+                "current-guide",
+                template,
+                &artifact.canonical_bytes(),
+                artifact.digest(),
+            )
+            .unwrap();
+            assert_eq!(replay.canonical_bytes(), artifact.canonical_bytes());
+        }
+        let bytes = current.canonical_bytes();
+        assert_eq!(
+            replay_project_scaffold_v1("current-guide", template, &bytes, legacy.digest())
+                .unwrap_err()[0]
+                .code,
+            "SPX-J115"
+        );
+        let forged =
+            String::from_utf8(bytes)
+                .unwrap()
+                .replacen(current.schema(), legacy.schema(), 1);
+        assert_eq!(
+            replay_project_scaffold_v1(
+                "current-guide",
+                template,
+                forged.as_bytes(),
+                current.digest()
+            )
+            .unwrap_err()[0]
+                .code,
+            "SPX-J115"
         );
     }
 }

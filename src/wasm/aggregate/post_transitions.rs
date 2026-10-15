@@ -16,10 +16,34 @@ impl Emitter<'_> {
         value: &Value,
         match_phase: Option<(&BTreeSet<crate::cleanup_plan::StorageId>, bool)>,
     ) -> Result<(), Diagnostic> {
+        self.apply_post_transitions_filtered(expression, value, match_phase, None)
+    }
+
+    pub(super) fn apply_post_transitions_storage(
+        &mut self,
+        expression: &ExpressionId,
+        value: &Value,
+        storage: &crate::cleanup_plan::StorageId,
+        include: bool,
+    ) -> Result<(), Diagnostic> {
+        self.apply_post_transitions_filtered(expression, value, None, Some((storage, include)))
+    }
+
+    fn apply_post_transitions_filtered(
+        &mut self,
+        expression: &ExpressionId,
+        value: &Value,
+        match_phase: Option<(&BTreeSet<crate::cleanup_plan::StorageId>, bool)>,
+        storage_phase: Option<(&crate::cleanup_plan::StorageId, bool)>,
+    ) -> Result<(), Diagnostic> {
         let transitions = self
             .cleanup_plan
             .blocks
             .iter()
+            .filter(|block| {
+                self.cleanup_plan
+                    .lexical_block_in_context(self.lexical_resume, block.id)
+            })
             .flat_map(|block| &block.transitions)
             .filter(|transition| match transition {
                 crate::cleanup_plan::CleanupTransition::Initialize { at, .. }
@@ -43,6 +67,31 @@ impl Emitter<'_> {
                         _ => false,
                     };
                     binding_transfer == entering
+                })
+            })
+            .filter(|transition| {
+                storage_phase.is_none_or(|(storage, include)| {
+                    let destination = match transition {
+                        crate::cleanup_plan::CleanupTransition::Initialize {
+                            destination, ..
+                        }
+                        | crate::cleanup_plan::CleanupTransition::InitializeVariant {
+                            destination,
+                            ..
+                        }
+                        | crate::cleanup_plan::CleanupTransition::Transfer {
+                            destination, ..
+                        }
+                        | crate::cleanup_plan::CleanupTransition::TransferVariant {
+                            destination,
+                            ..
+                        }
+                        | crate::cleanup_plan::CleanupTransition::Renew { destination, .. } => {
+                            Some(&destination.storage)
+                        }
+                        _ => None,
+                    };
+                    (destination == Some(storage)) == include
                 })
             })
             .cloned()

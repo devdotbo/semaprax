@@ -17,6 +17,7 @@ src/codegen/native_emit/expression.rs	2697
 src/codegen/native_emit/mod.rs	2466
 src/economic_agent/tests.rs	1914
 src/graph.rs	5611
+src/hir/borrowed_root_oracle/resolve_expr.rs	3089
 src/hir/resolve_expr.rs	3145
 src/hir/resolve_expr_reference.rs	1860
 src/hir/validation.rs	8812

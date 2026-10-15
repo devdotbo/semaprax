@@ -1,0 +1,7 @@
+{
+  "src/loan_plan/paid_candidate/retained.rs": "fe7725e55cbdc6710c5ed58352a2f17b114e1820d1378727e4f2b333a57cb78c",
+  "src/loan_plan/paid_candidate/retained/inventory.rs": "1278e412c55d76409842147aa9c1de9cccd7b1750f48484047f2a6077fb0c61e",
+  "src/loan_plan/paid_candidate/retained/tests.rs": "9a1c9670bb06caab1e732cf918fc578ef42ecf878fa35275604d02b334e6a3fc",
+  "src/loan_plan/paid_plan/retained.rs": "dacfa5ffd43fdc3478a69c7370da11e4616f5034d554352bdd5a8198262dd3ab",
+  "src/loan_plan/funded_flat/inventory_before.rs": "ebbb30d40a8ea946006d8edf31e6b24cdbfba9edccefa862c35ba30c55af7868"
+}

@@ -179,6 +179,21 @@ impl Rename<'_> {
                             self.expression(condition, &local, next)?;
                             self.expression(body, &local, next)?;
                         }
+                        Statement::ForBorrow {
+                            item,
+                            values,
+                            index,
+                            body,
+                            ..
+                        } => {
+                            self.expression(values, &local, next)?;
+                            let mut body_scope = local.clone();
+                            self.binding(item, &mut body_scope)?;
+                            if let Some(index) = index {
+                                self.binding(&mut index.name, &mut body_scope)?;
+                            }
+                            self.expression(body, &body_scope, next)?;
+                        }
                         Statement::For {
                             item, values, body, ..
                         }
@@ -218,7 +233,13 @@ impl Rename<'_> {
                     self.expression(arg, scope, next)?;
                 }
             }
-            ExprKind::Unary { value, .. }
+            ExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    self.expression(value, scope, next)?;
+                }
+            }
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }
             | ExprKind::Project { base: value, .. } => self.expression(value, scope, next)?,
@@ -257,7 +278,8 @@ impl Rename<'_> {
             | ExprKind::Float32(_)
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
-            | ExprKind::String(_) => {}
+            | ExprKind::String(_)
+            | ExprKind::BorrowedUtf8Literal(_) => {}
         }
         Ok(())
     }

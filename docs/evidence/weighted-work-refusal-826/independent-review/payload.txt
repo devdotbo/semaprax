@@ -1,0 +1,1103 @@
+Review only the bounded source-only fixes e63653235 and ad057fd9f against base4ec48420b. Actual failures328 and348 are supplied as fixed source context, not claims tests pass. Focus: detached LegacyUnobserved ReplayBudget work semantics vs selected/ActiveBuilder/Oracle sticky semantics; preserve complete first full old/current Error + post-refusal counter parity and actual caller early-Err boundary; source inverse must restore complete old canonical receiver exactly once, keep every old hook/archive unchanged and actually bind independent compiled old body. Identify concrete regressions or fake/insufficient controls. No tools, execution, further context requests or broad ownership redesign. Under700words. No production policy changes are proposed. Current350 has completed292PASS58FAIL; followup qualification pending.
+
+=== src/cleanup_plan/replay.rs:176..218; complete-fileSHA256 078098941d77d4fab0f6c7b2bb4e5cba46b14dfdfa8476db3ac2602250afdaaa ===
+176: struct ReplayBudget {
+177:     admission: AdmissionMode,
+178:     payer: AllocationPayer,
+179:     remaining: usize,
+180:     skeleton_remaining: usize,
+181:     /// Actual successful skeleton debits, including deferred lexical walks.
+182:     skeleton_spent: usize,
+183:     /// Ordinary constructors share the temporarily lent skeleton allowance.
+184:     lent_skeleton: bool,
+185:     /// Factored replay: merge equal-state skeleton paths (`skeleton_work`).
+186:     merge_paths: bool,
+187:     /// Present only for the selected retained lexical replay entry.
+188:     physical: Option<Box<physical_storage::PhysicalReservation>>,
+189:     /// Prepaid selected-budget refusal text; consumed without a fresh allocation.
+190:     refusal_text: Option<String>,
+191:     refusal_spent: bool,
+192:     /// One reusable fixed clone census cursor on the ordinary builder path.
+193:     builder_clone_cursor_paid: bool,
+194: }
+195: 
+196: impl ReplayBudget {
+197:     fn charge(
+198:         &mut self,
+199:         function: &ResolvedFunction,
+200:         units: usize,
+201:         phase: &str,
+202:     ) -> Result<(), Diagnostic> {
+203:         self.prepare_builder(function)?;
+204:         if self.refusal_spent {
+205:             return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+206:         }
+207:         if self.lent_skeleton {
+208:             return self.charge_skeleton(function, units, phase);
+209:         }
+210:         self.charge_oracle_work(function, units, phase)?;
+211:         self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
+212:             self.budget_refusal(
+213:                 function,
+214:                 "cleanup replay work budget exhausted during ",
+215:                 phase,
+216:             )
+217:         })?;
+218:         Ok(())
+
+=== src/cleanup_plan/replay/allocation.rs:1..103; complete-fileSHA256 acc9eb5a1f7698d9c58c86357541b4ffe79270debc834fbf935ebb814271b7ad ===
+1: //! Admission is independent of the actual allocation payer. An active builder
+2: //! does not grant any selected schema, helper lease or replay shortcut.
+3: use super::*;
+4: #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+5: pub(super) enum AdmissionMode {
+6:     Ordinary,
+7:     SelectedRetained,
+8: }
+9: #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+10: pub(super) enum AllocationPayer {
+11:     LegacyUnobserved,
+12:     ActiveBuilder,
+13:     SelectedReservation,
+14:     /// Independently funded test oracle account; never an admission mode and
+15:     /// never selected retention.
+16:     #[cfg(test)]
+17:     Oracle(oracle::OracleLease),
+18: }
+19: #[cfg(test)]
+20: mod oracle;
+21: #[cfg(test)]
+22: pub(super) use oracle::{
+23:     InvocationRefusal, OracleLease, OracleReceipt, OracleRefusal, OracleScope, ReplayFailure,
+24:     authority, authority_for_function, enter, opt_in, opted, raw_error_funded, raw_error_metered,
+25:     replay_error_funded,
+26: };
+27: pub(super) fn set_key<K: Ord + ClonePayload>(
+28:     function: &ResolvedFunction,
+29:     budget: &mut ReplayBudget,
+30:     set: &BTreeSet<K>,
+31:     key: &K,
+32: ) -> Result<(), Diagnostic> {
+33:     if !set.contains(key) {
+34:         budget.reserve_btree_node::<K, ()>(function, "ordinary identity tree")?;
+35:     }
+36:     budget.reserve_clone(function, key, "ordinary identity clone")
+37: }
+38: pub(super) fn insert_id(
+39:     function: &ResolvedFunction,
+40:     budget: &mut ReplayBudget,
+41:     set: &mut BTreeSet<DeclarationId>,
+42:     key: &DeclarationId,
+43: ) -> Result<bool, Diagnostic> {
+44:     set_key(function, budget, set, key)?;
+45:     Ok(set.insert(key.clone()))
+46: }
+47: pub(super) fn leaf_payload(
+48:     function: &ResolvedFunction,
+49:     budget: &mut ReplayBudget,
+50:     storage: &StorageId,
+51:     projections: &Vec<DeclarationId>,
+52:     lifecycle: &DeclarationId,
+53: ) -> Result<(), Diagnostic> {
+54:     budget.reserve_clone(function, storage, "ordinary leaf storage")?;
+55:     budget.reserve_clone(function, projections, "ordinary leaf projections")?;
+56:     budget.reserve_clone(function, lifecycle, "ordinary leaf lifecycle")
+57: }
+58: pub(super) fn leaf_indexes(
+59:     function: &ResolvedFunction,
+60:     budget: &mut ReplayBudget,
+61:     leaves: &BTreeMap<LivenessFlagId, Leaf>,
+62:     places: &BTreeSet<CleanupPlace>,
+63:     flag: LivenessFlagId,
+64:     leaf: &Leaf,
+65: ) -> Result<(), Diagnostic> {
+66:     if !leaves.contains_key(&flag) {
+67:         budget.reserve_btree_node::<LivenessFlagId, Leaf>(function, "ordinary leaf index")?;
+68:     }
+69:     budget.reserve_clone(function, &leaf.place, "ordinary leaf clone")?;
+70:     budget.reserve_clone(function, &leaf.lifecycle, "ordinary leaf lifecycle clone")?;
+71:     if !places.contains(&leaf.place) {
+72:         budget.reserve_btree_node::<CleanupPlace, ()>(function, "ordinary leaf places")?;
+73:     }
+74:     Ok(())
+75: }
+76: impl ReplayBudget {
+77:     #[cfg(test)]
+78:     pub(super) fn unobserved() -> Self {
+79:         Self {
+80:             payer: AllocationPayer::LegacyUnobserved,
+81:             ..Self::new()
+82:         }
+83:     }
+84: 
+85:     pub(super) fn new() -> Self {
+86:         Self {
+87:             admission: AdmissionMode::Ordinary,
+88:             payer: if crate::bounded_output::active_limit().is_some() {
+89:                 AllocationPayer::ActiveBuilder
+90:             } else {
+91:                 AllocationPayer::LegacyUnobserved
+92:             },
+93:             remaining: MAX_REPLAY_WORK_UNITS,
+94:             skeleton_remaining: 0,
+95:             skeleton_spent: 0,
+96:             lent_skeleton: false,
+97:             merge_paths: false,
+98:             physical: None,
+99:             refusal_text: None,
+100:             refusal_spent: false,
+101:             builder_clone_cursor_paid: false,
+102:         }
+103:     }
+
+=== src/cleanup_plan/replay/allocation.rs:210..255; complete-fileSHA256 acc9eb5a1f7698d9c58c86357541b4ffe79270debc834fbf935ebb814271b7ad ===
+210:             )?;
+211:             self.builder_clone_cursor_paid = true;
+212:         }
+213:         Ok(())
+214:     }
+215: 
+216:     /// Reserve the first refusal's backing on the existing builder before any
+217:     /// replay allocation. Initial refusal is inline, never an unfunded string.
+218:     pub(super) fn prepare_builder(
+219:         &mut self,
+220:         function: &ResolvedFunction,
+221:     ) -> Result<(), Diagnostic> {
+222:         if !self.pays_builder() {
+223:             return Ok(());
+224:         }
+225:         if self.refusal_spent || self.builder_refused() {
+226:             return Err(self.budget_refusal(function, "ordinary builder already failed", ""));
+227:         }
+228:         let Some(capacity) = function.id.as_str().len().checked_add(512) else {
+229:             return Err(self.budget_refusal(
+230:                 function,
+231:                 "ordinary replay refusal layout overflowed",
+232:                 "",
+233:             ));
+234:         };
+235:         if self
+236:             .refusal_text
+237:             .as_ref()
+238:             .is_some_and(|text| text.capacity() >= capacity)
+239:         {
+240:             return Ok(());
+241:         }
+242:         // A later function may have a longer current ID. Charge its new
+243:         // complete backing while the earlier buffer is still held.
+244:         if !self.reserve_builder(capacity) {
+245:             return Err(self.budget_refusal(
+246:                 function,
+247:                 "ordinary replay refusal reservation exhausted",
+248:                 "",
+249:             ));
+250:         }
+251:         let text = String::with_capacity(capacity);
+252:         if text.capacity() != capacity {
+253:             return Err(self.budget_refusal(
+254:                 function,
+255:                 "ordinary replay refusal capacity differs",
+
+=== src/cleanup_plan/replay/physical_budget.rs:287..345; complete-fileSHA256 d38a39372c110f102af2d4d7c0b503112aa219bdc1f8616bfe636aeb2d8a011e ===
+287:     pub(super) fn budget_refusal(
+288:         &mut self,
+289:         function: &ResolvedFunction,
+290:         reason: &str,
+291:         phase: &str,
+292:     ) -> Diagnostic {
+293:         #[cfg(test)]
+294:         if let Some(lease) = self.oracle_lease().filter(|lease| !lease.refused()) {
+295:             // The diagnostic keeps its complete dynamic reason. The inline
+296:             // account stores a static category only when no prior refusal
+297:             // has selected the failure; byte/work/authentication stay first.
+298:             lease.fail_physical("oracle replay budget refused physical construction");
+299:         }
+300: 
+301:         if self.payer == AllocationPayer::LegacyUnobserved
+302:             || (self.payer == AllocationPayer::SelectedReservation
+303:                 && self.refusal_text.is_none()
+304:                 && !self.refusal_spent)
+305:         {
+306:             // Detached test ledgers retain their previous unadmitted route;
+307:             // only from_reservation establishes a prepaid selected budget.
+308:             return replay_error(function, format_args!("{reason}{phase}"));
+309:         }
+310:         self.refusal_spent = true;
+311:         self.remaining = 0;
+312:         self.skeleton_remaining = 0;
+313:         if let Some(physical) = self.physical.as_deref_mut() {
+314:             physical.reject();
+315:         }
+316:         let Some(mut text) = self.refusal_text.take() else {
+317:             // A selected budget is sticky; no second diagnostic allocation can
+318:             // spend a consumed reservation. The stable error identity remains.
+319:             return Diagnostic::io("SPX-H006", String::new());
+320:         };
+321:         let phase = if phase.len() <= REFUSAL_PHASE_BYTES {
+322:             phase
+323:         } else {
+324:             "internal operation label exceeds the prepaid refusal bound"
+325:         };
+326:         let pieces = [
+327:             "cleanup plan for function `",
+328:             function.id.as_str(),
+329:             "` failed independent replay: ",
+330:             reason,
+331:             phase,
+332:         ];
+333:         let required = pieces
+334:             .iter()
+335:             .try_fold(0usize, |n, part| n.checked_add(part.len()));
+336:         if required.is_some_and(|n| n <= text.capacity()) {
+337:             for part in pieces {
+338:                 text.push_str(part);
+339:             }
+340:         } else {
+341:             text.push_str("cleanup replay internal refusal text exceeds its prepaid backing");
+342:         }
+343:         Diagnostic::io("SPX-H006", text)
+344:     }
+345: }
+
+=== src/cleanup_plan/replay/factored.rs:214..229; complete-fileSHA256 08849c68eff2049859be4b9cb1679f37f7c73b8b5007e10bf126779ebbd1861d ===
+214:     }
+215: 
+216:     let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);
+217:     budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
+218:     let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
+219:         return Ok(None);
+220:     };
+221:     budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
+222:     let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
+223:         return Ok(None);
+224:     };
+225:     Ok(Some(hir == plan))
+226: }
+227: 
+228: struct BuiltComparison {
+229:     automaton: Automaton,
+
+=== src/cleanup_plan/replay/factored/canonical_shared/tests.rs:181..281; complete-fileSHA256 a1df9ca5a907b8476d8f9257ca2457bbaeb90a0f50007ec45638f3b5aceee450 ===
+181: #[test]
+182: fn exact_short_and_zero_work_match_the_complete_old_receiver() {
+183:     let function = fixture();
+184:     let (automaton, sink, roots) = automaton(&function);
+185:     let mut full = ReplayBudget::new();
+186:     Canonicalizer::new(&automaton, sink)
+187:         .id(&function, vec![(roots[4], 1)], &mut full)
+188:         .unwrap();
+189:     let spent = MAX_REPLAY_WORK_UNITS - full.remaining;
+190:     for limit in [spent, spent - 1, 0] {
+191:         let mut old_budget = ReplayBudget::new();
+192:         old_budget.remaining = limit;
+193:         let mut budget = ReplayBudget::new();
+194:         budget.remaining = limit;
+195:         let old = canonical_before::Receiver::new(&automaton, sink).id(
+196:             &function,
+197:             vec![(roots[4], 1)],
+198:             &mut old_budget,
+199:         );
+200:         let current =
+201:             Canonicalizer::new(&automaton, sink).id(&function, vec![(roots[4], 1)], &mut budget);
+202:         assert_eq!(current, old);
+203:         assert_eq!(budget.remaining, old_budget.remaining);
+204:         if limit == spent {
+205:             assert!(current.unwrap().is_some());
+206:             assert_eq!(budget.remaining, 0);
+207:         } else {
+208:             assert!(current.is_err());
+209:             // These deliberately detached LegacyUnobserved ledgers retain
+210:             // the complete old counter policy: Err selects the receiver's
+211:             // result, but does not poison a raw zero-unit counter probe.
+212:             let remaining = budget.remaining;
+213:             let old_zero = old_budget.charge(&function, 0, "legacy work-state probe");
+214:             let zero = budget.charge(&function, 0, "legacy work-state probe");
+215:             assert_eq!(zero, old_zero);
+216:             assert!(zero.is_ok());
+217:             assert_eq!(budget.remaining, remaining);
+218:             assert_eq!(budget.remaining, old_budget.remaining);
+219:             assert_eq!(budget.refusal_spent, old_budget.refusal_spent);
+220:             assert!(!budget.refusal_spent);
+221:         }
+222:     }
+223: 
+224:     // The real ordinary comparison propagates the first id() Err at `?`;
+225:     // it does not retry or evaluate the plan root after that refusal.
+226:     let source = include_str!("../../factored.rs");
+227:     let (_, receiving) = source
+228:         .split_once("let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);")
+229:         .unwrap();
+230:     let (receiving, _) = receiving.split_once("Ok(Some(hir == plan))").unwrap();
+231:     assert!(receiving
+232:         .contains("let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {"));
+233:     assert!(receiving
+234:         .contains("let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {"));
+235:     assert_eq!(receiving.matches("canonical.id(").count(), 2);
+236:     assert!(!receiving.contains(".or_else(") && !receiving.contains(".unwrap_or"));
+237: 
+238:     // Exercise that same two-result boundary with both complete receivers,
+239:     // retaining the first full Diagnostic and counting actual id() entries.
+240:     fn receive(
+241:         mut id: impl FnMut(usize) -> Result<Option<usize>, Diagnostic>,
+242:         roots: &[usize],
+243:     ) -> Result<Option<bool>, Diagnostic> {
+244:         let Some(hir) = id(roots[4])? else {
+245:             return Ok(None);
+246:         };
+247:         let Some(plan) = id(roots[5])? else {
+248:             return Ok(None);
+249:         };
+250:         Ok(Some(hir == plan))
+251:     }
+252:     for limit in [spent - 1, 0] {
+253:         let mut old_budget = ReplayBudget::new();
+254:         old_budget.remaining = limit;
+255:         let mut budget = ReplayBudget::new();
+256:         budget.remaining = limit;
+257:         let mut old_receiver = canonical_before::Receiver::new(&automaton, sink);
+258:         let mut receiver = Canonicalizer::new(&automaton, sink);
+259:         let mut old_calls = 0;
+260:         let mut calls = 0;
+261:         let expected = receive(
+262:             |root| {
+263:                 old_calls += 1;
+264:                 old_receiver.id(&function, vec![(root, 1)], &mut old_budget)
+265:             },
+266:             &roots,
+267:         );
+268:         let actual = receive(
+269:             |root| {
+270:                 calls += 1;
+271:                 receiver.id(&function, vec![(root, 1)], &mut budget)
+272:             },
+273:             &roots,
+274:         );
+275:         assert_eq!(actual, expected);
+276:         assert!(actual.is_err());
+277:         assert_eq!((calls, old_calls), (1, 1));
+278:         assert_eq!(budget.remaining, old_budget.remaining);
+279:     }
+280: }
+281: 
+
+=== src/cleanup_plan/replay/live_oracle/source_custody/a.rs:269..325; complete-fileSHA256 95817364bdfd1db1dfd73ee27994caf32a66c75d4f2f10464acf590e6a219a7c ===
+269:     }
+270:     {
+271:         let mut current = include_str!("../../factored.rs").to_owned();
+272:         undo(&mut current, "#[cfg(test)]\nenum CanonicalFrame {\n    Enter(Weighted),\n    Exit(Weighted, u64, Vec<(Label, Weighted)>),\n}\n\n", "");
+273:         // Join the complete relocated old receiver before the existing inverse.
+274:         let before = include_str!("../../factored/canonical_before.rs");
+275:         let original = before
+276:             .strip_prefix(
+277:                 r###"//! Complete pre-sharing receiver; its interior is retained verbatim.
+278: use super::*;
+279: 
+280: "###,
+281:             )
+282:             .unwrap()
+283:             .strip_suffix(
+284:                 r###"// The wrapper exposes the unchanged receiver to sibling controls.
+285: pub(super) struct Receiver<'a>(Canonicalizer<'a>);
+286: impl<'a> Receiver<'a> {
+287:     pub(super) fn new(automaton: &'a Automaton, sink: usize) -> Self {
+288:         Self(Canonicalizer::new(automaton, sink))
+289:     }
+290:     pub(super) fn id(
+291:         &mut self,
+292:         function: &ResolvedFunction,
+293:         root: Weighted,
+294:         budget: &mut ReplayBudget,
+295:     ) -> Result<Option<usize>, Diagnostic> {
+296:         self.0.id(function, root, budget)
+297:     }
+298:     pub(super) fn states(&self) -> &BTreeMap<Weighted, usize> {
+299:         &self.0.states
+300:     }
+301:     pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {
+302:         &self.0.ids
+303:     }
+304: }
+305: "###,
+306:             )
+307:             .unwrap();
+308:         undo(&mut current, "#[cfg(test)]\nmod canonical_before;\nmod canonical_shared;\n", "");
+309:         undo(&mut current, "#[cfg(test)]\nuse canonical_before::Receiver as Canonicalizer;\n", "");
+310:         undo(
+311:             &mut current,
+312:             "    let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);",
+313:             "    let mut canonical = Canonicalizer::new(&automaton, sink);",
+314:         );
+315:         let marker = "/// Test builds compare the factored verdict";
+316:         assert_eq!(current.matches(marker).count(), 1);
+317:         assert_eq!(original.matches("#[rustfmt::skip]\n").count(), 1);
+318:         let original = original.replacen("#[rustfmt::skip]\n", "", 1);
+319:         // The complete preexisting inverse below already restores this same
+320:         // old receiver. Compose that restoration once, then authenticate its
+321:         // entire body against the independent compiled receiver below.
+322:         undo(
+323:             &mut current,
+324:             r#"        assert_eq!(short.allocated, short.freed);
+325:     }
+
+=== src/cleanup_plan/replay/live_oracle/source_custody/a.rs:650..682; complete-fileSHA256 95817364bdfd1db1dfd73ee27994caf32a66c75d4f2f10464acf590e6a219a7c ===
+650:                         }
+651:                     };
+652:                     if !self.states.contains_key(&state) {
+653:                         budget.reserve_btree_node::<Weighted, usize>(
+654:                             function,
+655:                             "factored canonical state memo node",
+656:                         )?;
+657:                     }
+658:                     self.states.insert(state, id);
+659:                 }
+660:             }
+661:         }
+662:         Ok(self.states.get(&root).copied())
+663:     }
+664: }
+665: 
+666: /// Test builds compare the factored verdict with the enumerating one on every
+667: "####,
+668:         );
+669:         let joined = format!("{original}{marker}");
+670:         assert_eq!(current.matches(&joined).count(), 1,
+671:             "complete compiled old canonical receiver remains byte-exact");
+672:         assert_eq!(
+673:             current,
+674:             include_str!(
+675:                 "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__factored.rs.before"
+676:             ),
+677:             "src/cleanup_plan/replay/factored.rs"
+678:         );
+679:     }
+680:     {
+681:         let mut current =
+682:             include_str!("../../factored/borrowed_canonical/dictionary/keys.rs").to_owned();
+
+=== src/cleanup_plan/replay/factored/canonical_before.rs:1..296; complete-fileSHA256 98e94a76071f92554027b03caf86575ae0cad71c4f151e961a0c949afeb13ed7 ===
+1: //! Complete pre-sharing receiver; its interior is retained verbatim.
+2: use super::*;
+3: 
+4: enum CanonicalFrame {
+5:     Enter(Weighted),
+6:     Exit(Weighted, u64, Vec<(Label, Weighted)>),
+7: }
+8: 
+9: /// Bottom-up hash-consing of the weighted subset construction. A determinized
+10: /// state's id is its accepted weight together with each label and the id of
+11: /// the state that label leads to, so two states share an id exactly when
+12: /// they accept every observation sequence the same number of times.
+13: struct Canonicalizer<'a> {
+14:     automaton: &'a Automaton,
+15:     sink: usize,
+16:     closures: BTreeMap<usize, Rc<BTreeMap<usize, u64>>>,
+17:     states: BTreeMap<Weighted, usize>,
+18:     ids: BTreeMap<(u64, Vec<(Label, usize)>), usize>,
+19: }
+20: 
+21: #[rustfmt::skip]
+22: impl<'a> Canonicalizer<'a> {
+23:     fn new(automaton: &'a Automaton, sink: usize) -> Self {
+24:         Self {
+25:             automaton,
+26:             sink,
+27:             closures: BTreeMap::new(),
+28:             states: BTreeMap::new(),
+29:             ids: BTreeMap::new(),
+30:         }
+31:     }
+32: 
+33:     /// Nodes with moves (or the sink) reachable through epsilon edges, each
+34:     /// with its number of epsilon routes.
+35:     fn closure(
+36:         &mut self,
+37:         function: &ResolvedFunction,
+38:         root: usize,
+39:         budget: &mut ReplayBudget,
+40:     ) -> Result<Option<Rc<BTreeMap<usize, u64>>>, Diagnostic> {
+41:         budget.reserve_array::<(usize, bool)>(function, 1, "factored closure initial cursor")?;
+42:         let mut stack = vec![(root, false)];
+43:         while let Some((node, expanded)) = stack.pop() {
+44:             budget.charge(function, 1, "factored closure cursor")?;
+45:             if self.closures.contains_key(&node) {
+46:                 continue;
+47:             }
+48:             let state = &self.automaton.nodes[node];
+49:             if !expanded {
+50:                 budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
+51:                 stack.push((node, true));
+52:                 for target in &state.epsilon {
+53:                     if !self.closures.contains_key(target) {
+54:                         budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
+55:                         stack.push((*target, false));
+56:                     }
+57:                 }
+58:                 continue;
+59:             }
+60:             let mut closure = BTreeMap::new();
+61:             if !state.moves.is_empty() || node == self.sink {
+62:                 budget.reserve_btree_node::<usize, u64>(function, "factored closure node")?;
+63:                 closure.insert(node, 1_u64);
+64:             }
+65:             for target in &state.epsilon {
+66:                 let Some(inner) = self.closures.get(target) else {
+67:                     return Err(replay_error(function, "cleanup CFG contains a cycle"));
+68:                 };
+69:                 for (inner_node, routes) in inner.iter() {
+70:                     budget.charge(function, 1, "factored closure route addition")?;
+71:                     if !closure.contains_key(inner_node) {
+72:                         budget
+73:                             .reserve_btree_node::<usize, u64>(function, "factored closure node")?;
+74:                     }
+75:                     let slot = closure.entry(*inner_node).or_insert(0_u64);
+76:                     let Some(sum) = slot.checked_add(*routes) else {
+77:                         return Ok(None);
+78:                     };
+79:                     *slot = sum;
+80:                 }
+81:             }
+82:             budget.charge(
+83:                 function,
+84:                 closure.len().saturating_add(1),
+85:                 "factored skeleton closure",
+86:             )?;
+87:             budget.reserve_bytes(
+88:                 function,
+89:                 physical_clone::rc_backing_bytes::<BTreeMap<usize, u64>>(),
+90:                 "factored closure shared header",
+91:             )?;
+92:             budget.reserve_btree_node::<usize, Rc<BTreeMap<usize, u64>>>(
+93:                 function,
+94:                 "factored closure memo node",
+95:             )?;
+96:             self.closures.insert(node, Rc::new(closure));
+97:         }
+98:         Ok(self.closures.get(&root).cloned())
+99:     }
+100: 
+101:     /// The accepted weight of `state` and its weighted successor per label.
+102:     #[allow(clippy::type_complexity)]
+103:     fn successors(
+104:         &mut self,
+105:         function: &ResolvedFunction,
+106:         state: &Weighted,
+107:         budget: &mut ReplayBudget,
+108:     ) -> Result<Option<(u64, Vec<(Label, Weighted)>)>, Diagnostic> {
+109:         let mut closed = BTreeMap::<usize, u64>::new();
+110:         for (node, weight) in state {
+111:             let Some(closure) = self.closure(function, *node, budget)? else {
+112:                 return Ok(None);
+113:             };
+114:             for (inner, routes) in closure.iter() {
+115:                 let Some(sum) = routes.checked_mul(*weight).and_then(|product| {
+116:                     closed.get(inner).copied().unwrap_or(0).checked_add(product)
+117:                 }) else {
+118:                     return Ok(None);
+119:                 };
+120:                 budget.charge(function, 1, "factored weighted route addition")?;
+121:                 if !closed.contains_key(inner) {
+122:                     budget.reserve_btree_node::<usize, u64>(
+123:                         function,
+124:                         "factored weighted closure node",
+125:                     )?;
+126:                 }
+127:                 closed.insert(*inner, sum);
+128:             }
+129:         }
+130:         let accepted = closed.get(&self.sink).copied().unwrap_or(0);
+131:         let mut successors = BTreeMap::<Label, BTreeMap<usize, u64>>::new();
+132:         for (node, weight) in &closed {
+133:             let moves = &self.automaton.nodes[*node].moves;
+134:             budget.charge(
+135:                 function,
+136:                 moves.len().saturating_add(1),
+137:                 "factored skeleton subset construction",
+138:             )?;
+139:             for (label, child) in moves {
+140:                 if !successors.contains_key(label) {
+141:                     budget.reserve_btree_node::<Label, BTreeMap<usize, u64>>(
+142:                         function,
+143:                         "factored successor label node",
+144:                     )?;
+145:                 }
+146:                 let targets = successors.entry(label.clone()).or_default();
+147:                 if !targets.contains_key(child) {
+148:                     budget.reserve_btree_node::<usize, u64>(
+149:                         function,
+150:                         "factored successor target node",
+151:                     )?;
+152:                 }
+153:                 let slot = targets.entry(*child).or_insert(0);
+154:                 let Some(sum) = slot.checked_add(*weight) else {
+155:                     return Ok(None);
+156:                 };
+157:                 *slot = sum;
+158:             }
+159:         }
+160:         budget.reserve_array::<(Label, Weighted)>(
+161:             function,
+162:             successors.len(),
+163:             "factored successor vector",
+164:         )?;
+165:         let mut result = Vec::with_capacity(successors.len());
+166:         for (label, targets) in successors {
+167:             budget.reserve_array::<(usize, u64)>(
+168:                 function,
+169:                 targets.len(),
+170:                 "factored weighted successor vector",
+171:             )?;
+172:             result.push((label, targets.into_iter().collect()));
+173:         }
+174:         Ok(Some((accepted, result)))
+175:     }
+176: 
+177:     fn id(
+178:         &mut self,
+179:         function: &ResolvedFunction,
+180:         root: Weighted,
+181:         budget: &mut ReplayBudget,
+182:     ) -> Result<Option<usize>, Diagnostic> {
+183:         budget.reserve_array::<CanonicalFrame>(function, 1, "factored canonical initial frame")?;
+184:         let root_copy = storage::clone_weighted(function, budget, &root)?;
+185:         let mut frames = vec![CanonicalFrame::Enter(root_copy)];
+186:         let mut open = BTreeSet::new();
+187:         while let Some(frame) = frames.pop() {
+188:             budget.charge(function, 1, "factored canonical frame")?;
+189:             match frame {
+190:                 CanonicalFrame::Enter(state) => {
+191:                     if self.states.contains_key(&state) {
+192:                         continue;
+193:                     }
+194:                     if open.contains(&state) {
+195:                         return Err(replay_error(function, "cleanup CFG contains a cycle"));
+196:                     }
+197:                     budget.reserve_btree_node::<Weighted, ()>(
+198:                         function,
+199:                         "factored open-state identity node",
+200:                     )?;
+201:                     open.insert(storage::clone_weighted(function, budget, &state)?);
+202:                     let Some((accepted, successors)) = self.successors(function, &state, budget)?
+203:                     else {
+204:                         return Ok(None);
+205:                     };
+206:                     let child_count = successors.len();
+207:                     budget.reserve_vec(
+208:                         function,
+209:                         &mut frames,
+210:                         1,
+211:                         "factored canonical exit frame",
+212:                     )?;
+213:                     let exit_index = frames.len();
+214:                     frames.push(CanonicalFrame::Exit(state, accepted, successors));
+215:                     for index in 0..child_count {
+216:                         let CanonicalFrame::Exit(_, _, successors) = &frames[exit_index] else {
+217:                             unreachable!("canonical exit retained below child frames");
+218:                         };
+219:                         let child =
+220:                             storage::clone_weighted(function, budget, &successors[index].1)?;
+221:                         budget.reserve_vec(
+222:                             function,
+223:                             &mut frames,
+224:                             1,
+225:                             "factored canonical child frames",
+226:                         )?;
+227:                         frames.push(CanonicalFrame::Enter(child));
+228:                     }
+229:                 }
+230:                 CanonicalFrame::Exit(state, accepted, successors) => {
+231:                     open.remove(&state);
+232:                     budget.charge(
+233:                         function,
+234:                         successors.len(),
+235:                         "factored canonical signature construction",
+236:                     )?;
+237:                     budget.reserve_array::<(Label, usize)>(
+238:                         function,
+239:                         successors.len(),
+240:                         "factored canonical signature vector",
+241:                     )?;
+242:                     let mut key = Vec::with_capacity(successors.len());
+243:                     for (label, child) in successors {
+244:                         let Some(id) = self.states.get(&child) else {
+245:                             return Err(replay_error(function, "cleanup CFG contains a cycle"));
+246:                         };
+247:                         key.push((label, *id));
+248:                     }
+249:                     let key = (accepted, key);
+250:                     let id = match self.ids.get(&key) {
+251:                         Some(id) => *id,
+252:                         None => {
+253:                             budget.reserve_btree_node::<(u64, Vec<(Label, usize)>), usize>(
+254:                                 function,
+255:                                 "factored canonical signature node",
+256:                             )?;
+257:                             let id = self.ids.len();
+258:                             self.ids.insert(key, id);
+259:                             id
+260:                         }
+261:                     };
+262:                     if !self.states.contains_key(&state) {
+263:                         budget.reserve_btree_node::<Weighted, usize>(
+264:                             function,
+265:                             "factored canonical state memo node",
+266:                         )?;
+267:                     }
+268:                     self.states.insert(state, id);
+269:                 }
+270:             }
+271:         }
+272:         Ok(self.states.get(&root).copied())
+273:     }
+274: }
+275: 
+276: // The wrapper exposes the unchanged receiver to sibling controls.
+277: pub(super) struct Receiver<'a>(Canonicalizer<'a>);
+278: impl<'a> Receiver<'a> {
+279:     pub(super) fn new(automaton: &'a Automaton, sink: usize) -> Self {
+280:         Self(Canonicalizer::new(automaton, sink))
+281:     }
+282:     pub(super) fn id(
+283:         &mut self,
+284:         function: &ResolvedFunction,
+285:         root: Weighted,
+286:         budget: &mut ReplayBudget,
+287:     ) -> Result<Option<usize>, Diagnostic> {
+288:         self.0.id(function, root, budget)
+289:     }
+290:     pub(super) fn states(&self) -> &BTreeMap<Weighted, usize> {
+291:         &self.0.states
+292:     }
+293:     pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {
+294:         &self.0.ids
+295:     }
+296: }
+
+=== docs/evidence/weighted-work-refusal-826/HANDOFF.md ===
+# OPT826 detached work refusal control correction
+
+Status: source-authored correction; no compiler or tests executed.
+Audience: compiler contributors and reviewers.
+
+Actual current350 selector328 failed the old assertion that a detached
+`ReplayBudget::new()` must reject a zero-unit charge after work exhaustion.
+`ReplayBudget::charge` delegates exhaustion to the complete current
+`budget_refusal`. For `LegacyUnobserved`, that function returns the original
+owned Diagnostic before changing `refusal_spent`, `remaining`, or the skeleton
+counter. Both the saved complete canonical receiver and the shared receiver
+therefore retain the same raw zero-charge result. This compatibility counter is
+not an affine selected/ActiveBuilder/Oracle ledger. Those existing funded
+owners retain their actual sticky refusal controls and implementation.
+
+The corrected owning selector keeps the full old/current first Diagnostic,
+work use, exact/one-short/zero boundaries, and compares the complete subsequent
+zero-charge result and unchanged counter/refusal state. It also binds the
+actual ordinary comparison's two `?` receiving boundaries, and exercises both
+complete receivers through that two-root boundary with exact-short and zero
+work: the first full Err survives and only one actual `id` call executes.
+No proof or second-root evaluation can follow the first Err.
+
+No production budget, work ceiling, physical acquisition, full-old receiver,
+public diagnostic, or conditional replay policy changes. The existing
+allocator/exact-small0..4/first-sticky physical controls remain unchanged.
+The original full runtime log is
+`/Volumes/Semaprax/lane-prompts/large-next-consolidated-4ec48-nine-20261015/owning-selected-328.log`.
+This source correction does not establish runtime qualification or OPT826
+closure; the complete current round and subsequent owning execution remain
+required.
+
+Actual selector348 additionally exposed a composition overlap: the weighted
+sharing inverse grafted the complete old canonical receiver, then the existing
+older inverse grafted that same complete receiver a second time. The correction
+keeps every older inverse and original archive. It uses the older restoration
+once, then checks that its complete restored receiver equals the independently
+compiled full old receiver, before the unchanged whole-source archive equality.
+Static byte reconstruction confirms both full equalities. The old receiver is
+neither excluded nor replaced by a smaller signature-only control.
+
+=== docs/evidence/weighted-work-refusal-826/source-custody-349-proof.json ===
+{
+  "schema": "semaprax.source-custody-349-correction.v1",
+  "source": "src/cleanup_plan/replay/factored.rs",
+  "full_original_equal": true,
+  "compiled_complete_old_receiver_equal": true,
+  "archive": "docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__factored.rs.before",
+  "archive_sha256": "34af23f292ac061e443a12ed1452a7cdf90fb428de994071c225d99a1500c0e2",
+  "correction": "Preserve complete old join as equality witness after the preexisting full restoration; restore original exactly once.",
+  "execution": "Static byte reconstruction only; no Rust test/compiler execution"
+}
+
+=== Exact preserved older full restoration literal ===
+r####"
+enum CanonicalFrame {
+    Enter(Weighted),
+    Exit(Weighted, u64, Vec<(Label, Weighted)>),
+}
+
+/// Bottom-up hash-consing of the weighted subset construction. A determinized
+/// state's id is its accepted weight together with each label and the id of
+/// the state that label leads to, so two states share an id exactly when
+/// they accept every observation sequence the same number of times.
+struct Canonicalizer<'a> {
+    automaton: &'a Automaton,
+    sink: usize,
+    closures: BTreeMap<usize, Rc<BTreeMap<usize, u64>>>,
+    states: BTreeMap<Weighted, usize>,
+    ids: BTreeMap<(u64, Vec<(Label, usize)>), usize>,
+}
+
+impl<'a> Canonicalizer<'a> {
+    fn new(automaton: &'a Automaton, sink: usize) -> Self {
+        Self {
+            automaton,
+            sink,
+            closures: BTreeMap::new(),
+            states: BTreeMap::new(),
+            ids: BTreeMap::new(),
+        }
+    }
+
+    /// Nodes with moves (or the sink) reachable through epsilon edges, each
+    /// with its number of epsilon routes.
+    fn closure(
+        &mut self,
+        function: &ResolvedFunction,
+        root: usize,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<Rc<BTreeMap<usize, u64>>>, Diagnostic> {
+        budget.reserve_array::<(usize, bool)>(function, 1, "factored closure initial cursor")?;
+        let mut stack = vec![(root, false)];
+        while let Some((node, expanded)) = stack.pop() {
+            budget.charge(function, 1, "factored closure cursor")?;
+            if self.closures.contains_key(&node) {
+                continue;
+            }
+            let state = &self.automaton.nodes[node];
+            if !expanded {
+                budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
+                stack.push((node, true));
+                for target in &state.epsilon {
+                    if !self.closures.contains_key(target) {
+                        budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
+                        stack.push((*target, false));
+                    }
+                }
+                continue;
+            }
+            let mut closure = BTreeMap::new();
+            if !state.moves.is_empty() || node == self.sink {
+                budget.reserve_btree_node::<usize, u64>(function, "factored closure node")?;
+                closure.insert(node, 1_u64);
+            }
+            for target in &state.epsilon {
+                let Some(inner) = self.closures.get(target) else {
+                    return Err(replay_error(function, "cleanup CFG contains a cycle"));
+                };
+                for (inner_node, routes) in inner.iter() {
+                    budget.charge(function, 1, "factored closure route addition")?;
+                    if !closure.contains_key(inner_node) {
+                        budget
+                            .reserve_btree_node::<usize, u64>(function, "factored closure node")?;
+                    }
+                    let slot = closure.entry(*inner_node).or_insert(0_u64);
+                    let Some(sum) = slot.checked_add(*routes) else {
+                        return Ok(None);
+                    };
+                    *slot = sum;
+                }
+            }
+            budget.charge(
+                function,
+                closure.len().saturating_add(1),
+                "factored skeleton closure",
+            )?;
+            budget.reserve_bytes(
+                function,
+                physical_clone::rc_backing_bytes::<BTreeMap<usize, u64>>(),
+                "factored closure shared header",
+            )?;
+            budget.reserve_btree_node::<usize, Rc<BTreeMap<usize, u64>>>(
+                function,
+                "factored closure memo node",
+            )?;
+            self.closures.insert(node, Rc::new(closure));
+        }
+        Ok(self.closures.get(&root).cloned())
+    }
+
+    /// The accepted weight of `state` and its weighted successor per label.
+    #[allow(clippy::type_complexity)]
+    fn successors(
+        &mut self,
+        function: &ResolvedFunction,
+        state: &Weighted,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<(u64, Vec<(Label, Weighted)>)>, Diagnostic> {
+        let mut closed = BTreeMap::<usize, u64>::new();
+        for (node, weight) in state {
+            let Some(closure) = self.closure(function, *node, budget)? else {
+                return Ok(None);
+            };
+            for (inner, routes) in closure.iter() {
+                let Some(sum) = routes.checked_mul(*weight).and_then(|product| {
+                    closed.get(inner).copied().unwrap_or(0).checked_add(product)
+                }) else {
+                    return Ok(None);
+                };
+                budget.charge(function, 1, "factored weighted route addition")?;
+                if !closed.contains_key(inner) {
+                    budget.reserve_btree_node::<usize, u64>(
+                        function,
+                        "factored weighted closure node",
+                    )?;
+                }
+                closed.insert(*inner, sum);
+            }
+        }
+        let accepted = closed.get(&self.sink).copied().unwrap_or(0);
+        let mut successors = BTreeMap::<Label, BTreeMap<usize, u64>>::new();
+        for (node, weight) in &closed {
+            let moves = &self.automaton.nodes[*node].moves;
+            budget.charge(
+                function,
+                moves.len().saturating_add(1),
+                "factored skeleton subset construction",
+            )?;
+            for (label, child) in moves {
+                if !successors.contains_key(label) {
+                    budget.reserve_btree_node::<Label, BTreeMap<usize, u64>>(
+                        function,
+                        "factored successor label node",
+                    )?;
+                }
+                let targets = successors.entry(label.clone()).or_default();
+                if !targets.contains_key(child) {
+                    budget.reserve_btree_node::<usize, u64>(
+                        function,
+                        "factored successor target node",
+                    )?;
+                }
+                let slot = targets.entry(*child).or_insert(0);
+                let Some(sum) = slot.checked_add(*weight) else {
+                    return Ok(None);
+                };
+                *slot = sum;
+            }
+        }
+        budget.reserve_array::<(Label, Weighted)>(
+            function,
+            successors.len(),
+            "factored successor vector",
+        )?;
+        let mut result = Vec::with_capacity(successors.len());
+        for (label, targets) in successors {
+            budget.reserve_array::<(usize, u64)>(
+                function,
+                targets.len(),
+                "factored weighted successor vector",
+            )?;
+            result.push((label, targets.into_iter().collect()));
+        }
+        Ok(Some((accepted, result)))
+    }
+
+    fn id(
+        &mut self,
+        function: &ResolvedFunction,
+        root: Weighted,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<usize>, Diagnostic> {
+        budget.reserve_array::<CanonicalFrame>(function, 1, "factored canonical initial frame")?;
+        let root_copy = storage::clone_weighted(function, budget, &root)?;
+        let mut frames = vec![CanonicalFrame::Enter(root_copy)];
+        let mut open = BTreeSet::new();
+        while let Some(frame) = frames.pop() {
+            budget.charge(function, 1, "factored canonical frame")?;
+            match frame {
+                CanonicalFrame::Enter(state) => {
+                    if self.states.contains_key(&state) {
+                        continue;
+                    }
+                    if open.contains(&state) {
+                        return Err(replay_error(function, "cleanup CFG contains a cycle"));
+                    }
+                    budget.reserve_btree_node::<Weighted, ()>(
+                        function,
+                        "factored open-state identity node",
+                    )?;
+                    open.insert(storage::clone_weighted(function, budget, &state)?);
+                    let Some((accepted, successors)) = self.successors(function, &state, budget)?
+                    else {
+                        return Ok(None);
+                    };
+                    let child_count = successors.len();
+                    budget.reserve_vec(
+                        function,
+                        &mut frames,
+                        1,
+                        "factored canonical exit frame",
+                    )?;
+                    let exit_index = frames.len();
+                    frames.push(CanonicalFrame::Exit(state, accepted, successors));
+                    for index in 0..child_count {
+                        let CanonicalFrame::Exit(_, _, successors) = &frames[exit_index] else {
+                            unreachable!("canonical exit retained below child frames");
+                        };
+                        let child =
+                            storage::clone_weighted(function, budget, &successors[index].1)?;
+                        budget.reserve_vec(
+                            function,
+                            &mut frames,
+                            1,
+                            "factored canonical child frames",
+                        )?;
+                        frames.push(CanonicalFrame::Enter(child));
+                    }
+                }
+                CanonicalFrame::Exit(state, accepted, successors) => {
+                    open.remove(&state);
+                    budget.charge(
+                        function,
+                        successors.len(),
+                        "factored canonical signature construction",
+                    )?;
+                    budget.reserve_array::<(Label, usize)>(
+                        function,
+                        successors.len(),
+                        "factored canonical signature vector",
+                    )?;
+                    let mut key = Vec::with_capacity(successors.len());
+                    for (label, child) in successors {
+                        let Some(id) = self.states.get(&child) else {
+                            return Err(replay_error(function, "cleanup CFG contains a cycle"));
+                        };
+                        key.push((label, *id));
+                    }
+                    let key = (accepted, key);
+                    let id = match self.ids.get(&key) {
+                        Some(id) => *id,
+                        None => {
+                            budget.reserve_btree_node::<(u64, Vec<(Label, usize)>), usize>(
+                                function,
+                                "factored canonical signature node",
+                            )?;
+                            let id = self.ids.len();
+                            self.ids.insert(key, id);
+                            id
+                        }
+                    };
+                    if !self.states.contains_key(&state) {
+                        budget.reserve_btree_node::<Weighted, usize>(
+                            function,
+                            "factored canonical state memo node",
+                        )?;
+                    }
+                    self.states.insert(state, id);
+                }
+            }
+        }
+        Ok(self.states.get(&root).copied())
+    }
+}
+
+/// Test builds compare the factored verdict with the enumerating one on every
+"####

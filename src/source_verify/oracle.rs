@@ -3,11 +3,14 @@
 //! Mirrors the iterative verifier so tests can cross-check the frame machine
 //! against a direct recursive reading of the same rules.
 
+use crate::ast::program_source::ProgramSource;
 mod intrinsic_calls;
 
 use self::calls::{oracle_call, oracle_method_call};
 use self::matching::oracle_match;
-use self::while_oracle::{check_while_statement, reject_while_disallowed_oracle};
+use self::while_oracle::{
+    check_while_statement, reject_finite_iterator_body_oracle, reject_while_disallowed_oracle,
+};
 use super::binding::{Availability, Binding, CheckedValue};
 use super::declared_type::{
     check_declared_type, function_value_signature, ordinary_option_argument,
@@ -25,14 +28,15 @@ use super::place::{
 };
 use super::type_table::{effective_record_fields, TypeTable};
 use crate::ast::{
-    BinaryOp, Expr, ExprKind, Function, ParamMode, Program, Statement, Type, TypeDeclarationKind,
-    UnaryOp,
+    BinaryOp, Expr, ExprKind, Function, ParamMode, Statement, Type, TypeDeclarationKind, UnaryOp,
 };
 #[cfg(test)]
 use crate::diagnostic::Diagnostic;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 mod calls;
+mod for_traversal;
+mod lexical_exit;
 mod matching;
 mod stdin_stream;
 pub(super) mod while_oracle;
@@ -40,7 +44,7 @@ pub(super) mod while_oracle;
 #[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(super) fn check_expr(
-    program: &Program,
+    program: &dyn ProgramSource,
     current: &Function,
     expr: &Expr,
     variables: &mut HashMap<String, Binding>,
@@ -51,6 +55,15 @@ pub(super) fn check_expr(
     diagnostics: &mut Vec<Diagnostic>,
 ) -> Option<CheckedValue> {
     match &expr.kind {
+        ExprKind::VecConstructor { .. } => match crate::ast::vec_constructor::inspect(expr) {
+            Ok(expansion) if crate::ast::expression_statement::projection_roots(
+                current.requires.iter().chain(std::iter::once(&current.body)).chain(&current.ensures), current.params.iter().map(|param| param.name.as_str()).chain(current.type_parameters.iter().map(|param| param.name.as_str())),
+                crate::bounded_output::reserve_active_required) => check_expr(program, current, expansion.value, variables,
+                functions, types, result_type, allow_moves, diagnostics),
+            Ok(_) => { diagnostics.push(error(program, "SPX-T318", "Vec constructor generated owner names are not hygienic", expr.span)); None }
+            Err(message) => { diagnostics.push(error(program, "SPX-T318", message, expr.span)); None }
+        },
+        ExprKind::LexicalExit{..}=>lexical_exit::check(program,current,expr,variables,functions,types,result_type,allow_moves,diagnostics),
         ExprKind::Closure {
             owning: true,
             return_type,
@@ -82,6 +95,7 @@ pub(super) fn check_expr(
         ExprKind::Float64(_) => Some(CheckedValue::value(Type::F64)),
         ExprKind::Bool(_) => Some(CheckedValue::value(Type::Bool)),
         ExprKind::String(_) => Some(CheckedValue::value(Type::String)),
+        ExprKind::BorrowedUtf8Literal(text) => match super::static_text::checked(program, expr.span, text) { Ok(value) => Some(value), Err(error) => { diagnostics.push(error); None } },
         // This walker only traverses generic-function and contract
         // expressions; `super` is meaningful only inside a class-method
         // override, whose body is resolved by the HIR layer instead.
@@ -111,6 +125,7 @@ pub(super) fn check_expr(
         ExprKind::Var(name) => variables
             .get(name.as_str())
             .map(|binding| {
+                if binding.traversal_row.is_some() { diagnostics.push(error(program, "SPX-T284", "record traversal row cannot escape or materialize aggregate storage; select a field", expr.span)); }
                 super::owning_closure::reject_escaping_read(
                     program,
                     name,
@@ -869,6 +884,10 @@ pub(super) fn check_expr(
                 diagnostics,
             )?;
             reject_native_unit_value(program, base, &base_value, diagnostics);
+            if super::declared_type::collection_record::admitted(&base_value.ty, types) {
+                diagnostics.push(error(program, "SPX-T268", "Vec-bearing record update is outside the nested collection-record profile", expr.span));
+                return None;
+            }
             let declared_fields = effective_record_fields(types, &base_value.ty);
             if declared_fields.is_none() {
                 diagnostics.push(error(
@@ -1005,6 +1024,14 @@ pub(super) fn check_expr(
             ))
         }
         ExprKind::Project { base, field, .. } => {
+            if let Some((root, value)) = super::record_traversal::project(expr, variables, types) {
+                let owner = Expr { kind: ExprKind::Var(root), span: expr.span };
+                if let Some(place) = source_place(&owner, variables, types) { check_source_place_availability(program, &place, variables, expr.span, diagnostics); }
+                return Some(value);
+            }
+            if matching::in_loop_scope() && source_place(base, variables, types).is_some_and(|place| !crate::source_verify::declared_type::owned_leaf_collection::copy_or_leaf_admitted(types, &place.ty) && !crate::source_verify::declared_type::collection_record::admitted(&place.ty, types)) {
+                diagnostics.push(error(program, "SPX-T252", "record field projection is not yet admitted in while bodies", expr.span));
+            }
             if let Some(place) = source_place(expr, variables, types) {
                 check_source_place_availability(
                     program,
@@ -1031,6 +1058,9 @@ pub(super) fn check_expr(
                 diagnostics,
             )?;
             reject_native_unit_value(program, base, &base_value, diagnostics);
+            if matching::in_loop_scope() && !crate::source_verify::declared_type::owned_leaf_collection::copy_or_leaf_admitted(types, &base_value.ty) && !crate::source_verify::declared_type::collection_record::admitted(&base_value.ty, types) {
+                diagnostics.push(error(program, "SPX-T252", "record field projection is not yet admitted in while bodies", expr.span));
+            }
             let Some(fields) = effective_record_fields(types, &base_value.ty) else {
                 diagnostics.push(error(
                     program,
@@ -1072,6 +1102,7 @@ pub(super) fn check_expr(
                         name,
                         name_span,
                         value,
+                        mutable,
                         ..
                     } => {                        if !source_identifier(name) {
                             diagnostics.push(hints::reserved_local_binding(
@@ -1101,10 +1132,14 @@ pub(super) fn check_expr(
                             continue;
                         }
                         if let Some(actual) = actual {
+                            if let Some(diagnostic) = super::expression_statement::check(program, statement, &actual) { diagnostics.push(diagnostic); }
+                            if actual.ty == Type::Str && *mutable { diagnostics.push(error(program, "SPX-T264", format!("byte-slice alias `{name}` must be immutable and cannot be reassigned"), *name_span)); }
+                            let contract_local = !allow_moves && actual.mode == ParamMode::Own
+                                && super::contract_owners::fresh(value, &actual.ty, &scope);
                             if types.needs_drop(&actual.ty)
                                 && actual.mode == ParamMode::Own
                             {
-                                if allow_moves {
+                                if allow_moves || contract_local {
                                     mark_value_sources_moved(
                                         program,
                                         value,
@@ -1138,7 +1173,7 @@ pub(super) fn check_expr(
                             }
                             scope.insert(
                                 name.clone(),
-                                Binding {
+                                Binding { contract_local, traversal_row: None,
                                     ty: actual.ty,
                                     mode: actual.mode,
                                     availability: Availability::Available,
@@ -1216,8 +1251,7 @@ pub(super) fn check_expr(
                             Type::Named { name, arguments } if name == "Iter" && actual.mode == ParamMode::Own
                                 && matches!(arguments.as_slice(), [ty] if crate::vec_ops::ast_element_is_admitted(ty)
                                     || *ty == Type::Bytes
-                                    || crate::source_verify::declared_type::owned_record_collection::
-                                        is_admitted_owned_record_collection_element(types, ty)
+                                    || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(types, ty)
                                     || crate::source_verify::declared_type::generic_collection::slot(current, &actual.ty)) => Some(arguments[0].clone()),
                             _ => None,
                         });
@@ -1233,36 +1267,34 @@ pub(super) fn check_expr(
                         let item_inserted = !scope.contains_key(item);
                         if let Some(element) = element.as_ref().filter(|element| item_inserted && {
                             **element == Type::Bytes
-                                || crate::source_verify::declared_type::owned_record_collection::
-                                    is_admitted_owned_record_collection_element(types, element)
+                                || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(types, element)
                         }) {
                             let _ = matching::with_owned_iterator_item(item, element, || {
-                                reject_while_disallowed_oracle(program, body, functions, types, diagnostics)
+                                reject_finite_iterator_body_oracle(program, current, body, functions, types, diagnostics)
                             });
                         } else {
-                            let _ = reject_while_disallowed_oracle(program, body, functions, types, diagnostics);
+                            let _ = reject_finite_iterator_body_oracle(program, current, body, functions, types, diagnostics);
                         }
                         if !item_inserted {
                             diagnostics.push(error(program, "SPX-T209", format!("loop item `{item}` shadows an existing value"), *item_span));
                         } else if let Some(element) = element.as_ref() {
                             let owned = *element == Type::Bytes
-                                || crate::source_verify::declared_type::owned_record_collection::
-                                    is_admitted_owned_record_collection_element(types, element);
-                            scope.insert(item.clone(), Binding { ty:element.clone(), mode:if owned { ParamMode::Own } else { ParamMode::Value },
+                                || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(types, element);
+                            scope.insert(item.clone(), Binding { contract_local: false, traversal_row: None, ty:element.clone(), mode:if owned { ParamMode::Own } else { ParamMode::Value },
                                 availability:Availability::Available, moved_places:HashMap::new(), definitely_partial:HashSet::new(),
                                 native_unit_discard:false, mutable:false, active_loans:BTreeSet::new(), borrow_origin:None });
                         }
                         let checked_body = || check_expr(program, current, body, &mut scope, functions, types, result_type, allow_moves, diagnostics);
                         let _ = if let Some(element) = element.as_ref().filter(|element| item_inserted && {
                             **element == Type::Bytes
-                                || crate::source_verify::declared_type::owned_record_collection::
-                                    is_admitted_owned_record_collection_element(types, element)
+                                || crate::source_verify::declared_type::owned_leaf_collection::runtime_element(types, element)
                         }) {
                             matching::in_owned_iterator_loop(item, element, checked_body)
                         } else {
                             matching::in_loop(checked_body)
                         };
                         if item_inserted { scope.remove(item); }
+                        if crate::ast::returns_only(body) { scope=baseline.clone(); }
                         let mut names = baseline.keys().collect::<Vec<_>>();
                         names.sort();
                         for name in names {
@@ -1273,80 +1305,8 @@ pub(super) fn check_expr(
                             }
                         }
                     }
-                    Statement::For {
-                        item, item_span, values, body, ..
-                    } => {
-                        let actual = check_expr(
-                            program, current, values, &mut scope, functions, types,
-                            result_type, allow_moves, diagnostics,
-                        );
-                        let source = match &values.kind {
-                            ExprKind::Var(name) => Some(name.as_str()),
-                            _ => None,
-                        };
-                        let element = actual.as_ref().and_then(|actual| match &actual.ty {
-                            Type::Named { name, arguments }
-                                if name == "Vec" && matches!(arguments.as_slice(), [ty] if crate::vec_ops::ast_element_is_admitted(ty)) =>
-                            {
-                                Some(arguments[0].clone())
-                            }
-                            _ => None,
-                        });
-                        if source.is_none() || element.is_none() {
-                            diagnostics.push(error(
-                                program, "SPX-T284",
-                                "for traversal requires a simple immutable binding of exact Vec<T> for a Copy scalar T",
-                                values.span,
-                            ));
-                        }
-                        if source.is_some_and(|name| scope.get(name).is_some_and(|binding| binding.mutable)) {
-                            diagnostics.push(error(
-                                program, "SPX-T284", "for traversal source must be an immutable Vec binding", values.span,
-                            ).with_help(crate::source_verify::hints::IMMUTABLE_TRAVERSAL_HELP));
-                        }
-                        let source_name = source.map(str::to_owned);
-                        let _ = reject_while_disallowed_oracle(program, body, functions, types, diagnostics);
-                        let item_inserted = !scope.contains_key(item);
-                        if !item_inserted {
-                            diagnostics.push(error(
-                                program, "SPX-T209", format!("loop item `{item}` shadows an existing value"), *item_span,
-                            ));
-                        }
-                        if item_inserted {
-                            if let Some(element) = element {
-                            scope.insert(item.clone(), Binding {
-                                ty: element, mode: ParamMode::Value,
-                                availability: Availability::Available,
-                                moved_places: HashMap::new(), definitely_partial: HashSet::new(),
-                                native_unit_discard: false, mutable: false,
-                                active_loans: BTreeSet::new(), borrow_origin: None,
-                            });
-                            }
-                        }
-                        let _ = matching::in_loop(|| {
-                            check_expr(
-                                program, current, body, &mut scope, functions, types,
-                                result_type, allow_moves, diagnostics,
-                            )
-                        });
-                        if item_inserted {
-                            scope.remove(item);
-                        }
-                        if let Some(source) = source_name {
-                            let changed = scope.get(&source).is_none_or(|after| {
-                                after.availability != Availability::Available
-                                    || !after.moved_places.is_empty()
-                                    || !after.definitely_partial.is_empty()
-                            });
-                            if changed {
-                                diagnostics.push(error(
-                                    program,
-                                    "SPX-T284",
-                                    format!("for traversal source `{source}` cannot be consumed or mutated in the loop body"),
-                                    body.span,
-                                ));
-                            }
-                        }
+                    Statement::For { .. } | Statement::ForBorrow { .. } => {
+                        for_traversal::check(program, current, statement, &mut scope, functions, types, result_type, allow_moves, diagnostics);
                     }
                 }
                 release_dead_local_loans(
@@ -1421,8 +1381,13 @@ pub(super) fn check_expr(
                 allow_moves,
                 diagnostics,
             );
+            let then_exits=then_value.as_ref().is_some_and(|value|value.ty==Type::Never) && crate::ast::returns_only(then_branch);
+            let else_exits=else_value.as_ref().is_some_and(|value|value.ty==Type::Never) && crate::ast::returns_only(else_branch);
             for name in &original_names {
                 if let Some(binding) = variables.get_mut(name) {
+                    if then_exits!=else_exits {
+                        if let Some(state)=(if then_exits {&else_variables}else{&then_variables}).get(name) {*binding=state.clone();} continue;
+                    }
                     let then_state = then_variables
                         .get(name)
                         .map_or(Availability::Available, |value| value.availability);
@@ -1445,6 +1410,8 @@ pub(super) fn check_expr(
                 }
             }
             match (then_value, else_value) {
+                (Some(left),Some(right)) if left.ty==Type::Never=>Some(right),
+                (Some(left),Some(right)) if right.ty==Type::Never=>Some(left),
                 (Some(then_value), Some(else_value)) => {
                     if then_value.native_unit || else_value.native_unit {
                         reject_native_unit_value(

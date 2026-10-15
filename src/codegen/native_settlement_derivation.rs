@@ -526,6 +526,13 @@ fn collect_terminal_paths(
                     ExitContinuation::ReturnUnit => {
                         return Err(derivation_error("unit return is outside callable v3"));
                     }
+                    ExitContinuation::LoopLatch { .. }
+                    | ExitContinuation::LoopBreak { .. }
+                    | ExitContinuation::FunctionReturn { .. } => {
+                        return Err(derivation_error(
+                            "lexical continuation is outside the admitted callable v3 cleanup profile",
+                        ));
+                    }
                 }
             }
         }

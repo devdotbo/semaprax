@@ -8,6 +8,10 @@ separately gated.
 
 Audience: language users, compiler contributors, and ownership reviewers.
 
+The separate [Rooted String Views v1](PROJECTED-STRING-VIEWS-V1.md) successor
+authors authenticated record-field operands and Graph v73. Its source-only
+status does not inherit this older profile's hosted evidence.
+
 `string_as_str(value)` is compiler-owned `core.string.as-str`. It takes one
 unprojected named owning `string` place and returns a non-escaping `borrow str`
 view. It does not transfer, clone, drop, or settle the owner, which remains the
@@ -49,6 +53,15 @@ additively admits these exact named views in loop bodies. Each iteration
 retains ordinary root provenance, shared loans, and owner cleanup; constructing
 a view does not release or transfer the owner.
 
+`str_len_bytes` reads the authenticated view extent and selects no recoverable
+operation failure. Its cleanup plan retains the ordinary call commit and all
+owner/loan checks, without an impossible operation-failure source or exit.
+Invariant failures for forged roots or UTF-8 stay invariant failures. Other
+String/Str operation producer facts remain unchanged by this correction.
+Authored `cleanup_plan::deferred_commit::total_len_tests::` controls cover a
+real String cleanup root, preserved arithmetic failure, forged status rejection,
+and the unchanged selected 33/4,096-row source plans; execution is pending.
+
 Native lowering forms the existing length-aware `spx_str_v1` carrier over the
 owner allocation. Frozen terminated-string profiles use their existing
 terminated representation; length-delimited profiles use the authenticated
@@ -76,3 +89,39 @@ This stage grants no escaping view, mutable view, projected String view, borrow
 of a temporary, borrow `Bytes`, external ABI compatibility, automatic package
 or consumer migration, network/filesystem/process authority, runtime execution,
 physical allocation claim, or hosted evidence.
+
+## Native owned extent and foreign ingress repair
+
+An authenticated owned String view retains the allocation's exact UTF-8 byte
+length. The ordinary String allocator and checked concatenation do not grant a
+fixed 128-KiB String limit. Native programs whose checked expressions reach
+`string_as_str` use an internal Str validator that checks non-null storage for
+nonempty views, `SIZE_MAX`, `INT64_MAX`, and canonical UTF-8. The distinct
+call-depth-zero entry validator rejects each foreign Str over 65,536 bytes
+before reading its payload and retains the existing cumulative invocation
+budget. Internal forwarding does not mint a new root or extend its lifetime.
+Pure foreign-Str programs retain their existing emitted runtime bytes.
+
+The reference interpreter also searches the exact authenticated view extent.
+It uses the standard byte-preserving String search without constructing a
+length-sized prefix table; foreign-root and cumulative invocation admission
+keep their existing limits. Forwarded owned views incur no new root charge.
+
+All internal Str consumers use the same exact extent. The selected ordinary
+native `str_contains` implementation uses critical factorization and constant
+scratch space with linear search work, including needles above 65,536 bytes;
+it allocates no prefix table or heap payload. The separate resource-output
+String runtime remains governed by its own profile. `str_as_bytes` still obeys
+the independently owned Slice envelope of 131,072 bytes: a larger String can
+be consumed through Str operations but gains no larger Slice authority.
+
+Owning executable qualification of this repair is pending. The authored
+`owned_data::borrowed_str_native::owned_views` gates retain the original bulk
+UTF-8 interpreter/native/Wasm settlement controls, add 131,072-byte byte views
+and 262,144-byte Str forwarding, and check foreign extent refusal before
+payload access. The 262,144-byte concatenation succeeds only on the reference
+interpreter, native backend, and strict private Core-Wasm host; its browser
+adapter gate requires the existing String-capacity refusal. The browser
+allocation and concatenation ceilings are unchanged. A separate native matcher oracle covers periodic near-matches,
+long needles, NUL and Unicode at O0/O2. These definitions are not execution
+receipts or a broader public ABI grant.

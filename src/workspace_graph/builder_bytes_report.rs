@@ -393,8 +393,7 @@ mod tests {
 
     /// Diagnostic, not a regression gate: the full builder-byte measurement
     /// against the real `examples/catalog-normalizer-project` plus the exact
-    /// two bundled dependencies it declares (`std.data.json.dec`, transitively
-    /// `std.io`). Run with
+    /// bundled dependency closure, including NDJSON framing and UTF-8. Run with
     /// `cargo test --lib workspace_graph::builder_bytes_report::tests::catalog_normalizer_project_reference -- --ignored --nocapture`.
     ///
     /// The report is intentionally diagnostic rather than a limit-changing
@@ -441,6 +440,18 @@ mod tests {
                 &read("std/data-json-doc/src/doc.spx"),
             ),
             ("std/io/src/io.spx", &read("std/io/src/io.spx")),
+            (
+                "std/data-ndjson/src/ndjson.spx",
+                &read("std/data-ndjson/src/ndjson.spx"),
+            ),
+            (
+                "std/io-lines/src/lines.spx",
+                &read("std/io-lines/src/lines.spx"),
+            ),
+            (
+                "std/data-json-utf8/src/utf8.spx",
+                &read("std/data-json-utf8/src/utf8.spx"),
+            ),
         ]);
         let project_manifest =
             ProjectManifest::parse(&read("examples/catalog-normalizer-project/semaprax.toml"))
@@ -469,6 +480,9 @@ mod tests {
             "catalog_normalizer.tests",
             "std.data.json.dec",
             "std.data.json.doc",
+            "std.data.ndjson",
+            "std.data.json.utf8",
+            "std.io.lines",
             "std.io",
         ]
         .into_iter()

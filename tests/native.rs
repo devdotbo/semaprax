@@ -5,6 +5,8 @@
 mod bytes_call_staging;
 #[path = "native/callable_bundle.rs"]
 mod callable_bundle;
+#[path = "native/checked_string_allocation.rs"]
+mod checked_string_allocation;
 #[path = "native/owned_data_string_settlement.rs"]
 mod owned_data_string_settlement;
 #[path = "native/owned_tuple_admission.rs"]

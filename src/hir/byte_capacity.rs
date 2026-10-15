@@ -83,7 +83,8 @@ pub(super) fn inline_array_payload_bytes(
                     pending.push(substitute_type(&field.ty, &declaration.id, &arguments)?);
                 }
             }
-            ResolvedType::Unit
+            ResolvedType::Never
+            | ResolvedType::Unit
             | ResolvedType::I64
             | ResolvedType::I32
             | ResolvedType::Char
@@ -211,19 +212,22 @@ pub(super) fn byte_slice_transcript_source(
                             ByteSliceRootKind::CommandArguments => {
                                 TranscriptSource::CommandArguments
                             }
-                            ByteSliceRootKind::FixedArray => match fact.length {
-                                ByteSliceExtent::Constant(length) => {
-                                    TranscriptSource::Fixed(length)
+                            ByteSliceRootKind::FixedArray | ByteSliceRootKind::SourceExprStatic => {
+                                match fact.length {
+                                    ByteSliceExtent::Constant(length) => {
+                                        TranscriptSource::Fixed(length)
+                                    }
+                                    ByteSliceExtent::ParameterLength
+                                    | ByteSliceExtent::ValueLength => TranscriptSource::Unknown,
                                 }
-                                ByteSliceExtent::ParameterLength | ByteSliceExtent::ValueLength => {
-                                    TranscriptSource::Unknown
-                                }
-                            },
+                            }
                             ByteSliceRootKind::OwnedBytes if facts.is_stdin(&fact.root) => {
                                 TranscriptSource::Stdin
                             }
                             ByteSliceRootKind::FunctionParameter
                             | ByteSliceRootKind::OwnedBytes
+                            | ByteSliceRootKind::OwnedVectorField
+                            | ByteSliceRootKind::OwnedVectorStringSlot
                             | ByteSliceRootKind::OwnedString
                             | ByteSliceRootKind::BorrowedStr
                             | ByteSliceRootKind::StdinStreamReader => TranscriptSource::Unknown,
@@ -261,7 +265,8 @@ pub(super) fn byte_slice_transcript_source(
                     frames.push(Frame::Visit(else_branch));
                     frames.push(Frame::Visit(then_branch));
                 }
-                ResolvedExprKind::Block { tail, .. } => frames.push(Frame::Visit(tail)),
+                ResolvedExprKind::Block { tail, .. }
+                | ResolvedExprKind::VecConstructor { tail, .. } => frames.push(Frame::Visit(tail)),
                 _ => results.push(TranscriptSource::Unknown),
             },
             Frame::If => {
@@ -286,7 +291,10 @@ pub(crate) fn push_resolved_expression_children_in_authored_order<'a>(
         ResolvedExprKind::Closure { captures, .. } => {
             pending.extend(captures.iter().rev().map(|capture| &capture.value))
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             pending.push(tail);
             for statement in statements.iter().rev() {
                 for index in (0..statement.child_count()).rev() {
@@ -301,7 +309,10 @@ pub(crate) fn push_resolved_expression_children_in_authored_order<'a>(
             pending.extend(args.iter().rev());
             pending.push(callable);
         }
-        ResolvedExprKind::Call { args, .. } => pending.extend(args.iter().rev()),
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter().rev()),
         ResolvedExprKind::NativeRustImportCall(call) => pending.extend(call.args.iter().rev()),
         ResolvedExprKind::HostCommandCall(call) => pending.extend(call.args.iter().rev()),
         ResolvedExprKind::ByteRange {
@@ -310,6 +321,11 @@ pub(crate) fn push_resolved_expression_children_in_authored_order<'a>(
             pending.push(end);
             pending.push(start);
             pending.push(source);
+        }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                pending.push(value);
+            }
         }
         ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
@@ -360,6 +376,7 @@ pub(crate) fn push_resolved_expression_children_in_authored_order<'a>(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
     }
@@ -373,7 +390,9 @@ pub(super) fn resolved_value_is_stdin(program: &ResolvedProgram, value: &ValueId
     let in_expression = |root: &ResolvedExpr| {
         let mut pending = vec![root];
         while let Some(expression) = pending.pop() {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let ResolvedStatement::Let {
                         binding,
@@ -416,7 +435,9 @@ pub(super) fn resolved_value_type(
     let in_expression = |root: &ResolvedExpr| {
         let mut pending = vec![root];
         while let Some(expression) = pending.pop() {
-            if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
                 for statement in statements {
                     if let ResolvedStatement::Let { binding, .. }
                     | ResolvedStatement::Assign { binding, .. } = statement
@@ -473,6 +494,10 @@ pub(super) struct ValueFactIndex<'a> {
     facts: std::cell::OnceCell<ValueFacts<'a>>,
     #[cfg(test)]
     baseline: bool,
+    /// The joined `FusedConstructionV1` loop, `None` on every ordinary path.
+    selected: Option<crate::hir::fused_construction::join::SelectedFlow<'a>>,
+    /// How many loops this walk projected as the selected construction.
+    matched: std::cell::Cell<usize>,
 }
 
 struct ValueFacts<'a> {
@@ -487,6 +512,8 @@ impl<'a> ValueFactIndex<'a> {
             facts: std::cell::OnceCell::new(),
             #[cfg(test)]
             baseline: value_index_counters::USE_BASELINE.with(std::cell::Cell::get),
+            selected: None,
+            matched: std::cell::Cell::new(0),
         }
     }
 
@@ -535,7 +562,9 @@ impl<'a> ValueFacts<'a> {
             while let Some(expression) = pending.pop() {
                 #[cfg(test)]
                 value_index_counters::VISITS.with(|count| count.set(count.get() + 1));
-                if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+                if let ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+                {
                     for statement in statements {
                         match statement {
                             ResolvedStatement::Let {
@@ -585,8 +614,23 @@ pub(super) mod value_index_counters {
     }
 }
 
-pub(super) fn byte_capacity_expression(
+mod static_extent;
+use static_extent::static_array_slice_length;
+#[cfg(test)]
+use static_extent::visit_extent_body;
+
+#[cfg(test)]
+fn byte_capacity_expression(
     facts: &ValueFactIndex<'_>,
+    expression: &ResolvedExpr,
+    slots: &mut Vec<crate::byte_data_capacity::ArrayStorageSlot>,
+    direct_destination: bool,
+) -> Result<crate::byte_data_capacity::CapacityFlow, Diagnostic> {
+    byte_capacity_expression_in(facts, None, expression, slots, direct_destination)
+}
+fn byte_capacity_expression_in(
+    facts: &ValueFactIndex<'_>,
+    function: Option<&ResolvedFunction>,
     expression: &ResolvedExpr,
     slots: &mut Vec<crate::byte_data_capacity::ArrayStorageSlot>,
     direct_destination: bool,
@@ -607,7 +651,8 @@ pub(super) fn byte_capacity_expression(
         ),
         Sequence(usize),
         Alternative(usize),
-        Loop,
+        Loop(Option<u32>),
+        FusedConstruction,
         Match(usize),
         Emit(CapacityFlow),
     }
@@ -636,6 +681,7 @@ pub(super) fn byte_capacity_expression(
                         ResolvedExprKind::Place(_) | ResolvedExprKind::BorrowPlace { .. } => None,
                         ResolvedExprKind::ByteRange { .. } => None,
                         ResolvedExprKind::Block { .. }
+                        | ResolvedExprKind::VecConstructor { .. }
                         | ResolvedExprKind::If { .. }
                         | ResolvedExprKind::Match { .. } => None,
                         _ => Some(ArrayStorageKind::Temporary),
@@ -697,11 +743,39 @@ pub(super) fn byte_capacity_expression(
                         args,
                         ..
                     } => {
-                        let effect = if callee.as_str() == crate::byte_ops::COPY_ID {
+                        let effect = if function.is_some_and(|function| {
+                            super::vec_loop_renewal::consuming::empty_clone::refused(
+                                program, function, expression,
+                            )
+                        }) {
+                            Some(CapacityFlow::Empty)
+                        } else if let Some(flow) =
+                            super::owned_leaf_collection::clone_capacity_flow(program, expression)
+                        {
+                            Some(flow)
+                        } else if callee.as_str() == crate::byte_ops::COPY_ID {
                             Some(CapacityFlow::BytesCopy {
                                 site: expression.id.as_str().to_owned(),
-                                conservative_payload_bytes:
-                                    crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES,
+                                conservative_payload_bytes: function
+                                    .and_then(|function| {
+                                        args.first().and_then(|argument| {
+                                            static_array_slice_length(program, function, argument)
+                                        })
+                                    })
+                                    .unwrap_or(crate::byte_ops::MAX_OWNED_BYTE_VALUE_BYTES),
+                            })
+                        } else if callee.as_str() == crate::byte_ops::ZEROED_BOUNDED_ID {
+                            let conservative_payload_bytes = args
+                                .get(1)
+                                .and_then(|arg| match &arg.kind {
+                                    ResolvedExprKind::Usize(bound) => Some(*bound),
+                                    _ => None,
+                                })
+                                .unwrap_or(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES)
+                                .min(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES);
+                            Some(CapacityFlow::BytesCopy {
+                                site: expression.id.as_str().to_owned(),
+                                conservative_payload_bytes,
                             })
                         } else if callee.as_str() == crate::byte_ops::ZEROED_ID {
                             let conservative_payload_bytes = args
@@ -749,6 +823,14 @@ pub(super) fn byte_capacity_expression(
                                 )),
                                 false,
                             ));
+                        }
+                    }
+                    ResolvedExprKind::LiteralFormat { args, .. }
+                    | ResolvedExprKind::VecFieldRead { args, .. }
+                    | ResolvedExprKind::RowLoan { args, .. } => {
+                        frames.push(Frame::Sequence(args.len()));
+                        for argument in args.iter().rev() {
+                            frames.push(Frame::Visit(argument, false));
                         }
                     }
                     ResolvedExprKind::NativeRustImportCall(call) => {
@@ -831,6 +913,13 @@ pub(super) fn byte_capacity_expression(
                         frames.push(Frame::Visit(start, false));
                         frames.push(Frame::Visit(source, false));
                     }
+                    ResolvedExprKind::LexicalExit { value, .. } => {
+                        if let Some(value) = value {
+                            frames.push(Frame::Visit(value, false));
+                        } else {
+                            results.push(CapacityFlow::Empty);
+                        }
+                    }
                     ResolvedExprKind::Unary { value, .. }
                     | ResolvedExprKind::Try { operand: value, .. }
                     | ResolvedExprKind::TryOption { operand: value, .. }
@@ -844,7 +933,10 @@ pub(super) fn byte_capacity_expression(
                         frames.push(Frame::Visit(right, false));
                         frames.push(Frame::Visit(left, false));
                     }
-                    ResolvedExprKind::Block { statements, tail } => {
+                    ResolvedExprKind::Block { statements, tail }
+                    | ResolvedExprKind::VecConstructor {
+                        statements, tail, ..
+                    } => {
                         frames.push(Frame::Sequence(statements.len() + 1));
                         frames.push(Frame::Visit(tail, direct_destination));
                         for statement in statements.iter().rev() {
@@ -860,7 +952,8 @@ pub(super) fn byte_capacity_expression(
                                         true,
                                     ));
                                 }
-                                ResolvedStatement::Assign { value, .. } => {
+                                ResolvedStatement::Assign { value, .. }
+                                | ResolvedStatement::CopyDiscard { value, .. } => {
                                     frames.push(Frame::Visit(value, true));
                                 }
                                 ResolvedStatement::Unsafe { body, .. } => {
@@ -868,8 +961,31 @@ pub(super) fn byte_capacity_expression(
                                 }
                                 ResolvedStatement::While {
                                     condition, body, ..
+                                }
+                                | ResolvedStatement::LexicalWhile {
+                                    condition, body, ..
                                 } => {
-                                    frames.push(Frame::Loop);
+                                    let finite = crate::finite_byte_scratch::resolved(
+                                        program, condition, body,
+                                    )
+                                    .map(|proof| proof.iterations)
+                                    .or_else(|| {
+                                        crate::finite_row_construction::resolved(
+                                            program, condition, body,
+                                        )
+                                    })
+                                    .or_else(|| {
+                                        crate::finite_owned_record_loop::resolved(
+                                            program, condition, body,
+                                        )
+                                    });
+                                    frames.push(
+                                        if fused_selection::selects(facts, condition, body) {
+                                            Frame::FusedConstruction
+                                        } else {
+                                            Frame::Loop(finite)
+                                        },
+                                    );
                                     frames.push(Frame::Visit(body, false));
                                     frames.push(Frame::Visit(condition, false));
                                 }
@@ -928,6 +1044,7 @@ pub(super) fn byte_capacity_expression(
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
                     | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::BorrowedUtf8Literal(_)
                     | ResolvedExprKind::Place(_)
                     | ResolvedExprKind::BorrowPlace { .. } => results.push(CapacityFlow::Empty),
                 }
@@ -970,17 +1087,33 @@ pub(super) fn byte_capacity_expression(
                 let children = results.drain(start..).collect::<Vec<_>>();
                 results.push(CapacityFlow::Alternative(children));
             }
-            Frame::Loop => {
+            Frame::Loop(finite) => {
                 let body = results
                     .pop()
                     .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
                 let condition = results
                     .pop()
                     .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
-                results.push(CapacityFlow::Loop {
-                    condition: Box::new(condition),
-                    body: Box::new(body),
+                results.push(match finite {
+                    Some(iterations) => CapacityFlow::FiniteOwnedLoop {
+                        iterations,
+                        condition: Box::new(condition),
+                        body: Box::new(body),
+                    },
+                    None => CapacityFlow::Loop {
+                        condition: Box::new(condition),
+                        body: Box::new(body),
+                    },
                 });
+            }
+            Frame::FusedConstruction => {
+                let body = results
+                    .pop()
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                let condition = results
+                    .pop()
+                    .ok_or_else(|| hir_error("byte-capacity traversal stack underflowed"))?;
+                results.push(fused_selection::flow(facts, condition, body)?);
             }
             Frame::Match(arm_count) => {
                 let scrutinee = results
@@ -1013,10 +1146,15 @@ pub(super) fn byte_capacity_expression(
 pub(crate) fn byte_data_capacity_inputs(
     program: &ResolvedProgram,
 ) -> Result<Vec<crate::byte_data_capacity::FunctionCapacityInput>, Diagnostic> {
-    use crate::byte_data_capacity::{ArrayStorageKind, CapacityFlow, FunctionCapacityInput};
-
     // One value-fact index per analysis, built on the first transcript lookup.
-    let facts = ValueFactIndex::new(program);
+    byte_data_capacity_inputs_with(program, &ValueFactIndex::new(program))
+}
+
+fn byte_data_capacity_inputs_with(
+    program: &ResolvedProgram,
+    facts: &ValueFactIndex<'_>,
+) -> Result<Vec<crate::byte_data_capacity::FunctionCapacityInput>, Diagnostic> {
+    use crate::byte_data_capacity::{ArrayStorageKind, CapacityFlow, FunctionCapacityInput};
 
     let closure_functions = super::closure::inventory(program)
         .into_iter()
@@ -1055,10 +1193,19 @@ pub(crate) fn byte_data_capacity_inputs(
             let mut execution = function
                 .requires
                 .iter()
-                .map(|expression| byte_capacity_expression(&facts, expression, &mut slots, false))
+                .map(|expression| {
+                    byte_capacity_expression_in(
+                        facts,
+                        Some(function),
+                        expression,
+                        &mut slots,
+                        false,
+                    )
+                })
                 .collect::<Result<Vec<_>, _>>()?;
-            execution.push(byte_capacity_expression(
-                &facts,
+            execution.push(byte_capacity_expression_in(
+                facts,
+                Some(function),
                 &function.body,
                 &mut slots,
                 true,
@@ -1068,7 +1215,13 @@ pub(crate) fn byte_data_capacity_inputs(
                     .ensures
                     .iter()
                     .map(|expression| {
-                        byte_capacity_expression(&facts, expression, &mut slots, false)
+                        byte_capacity_expression_in(
+                            facts,
+                            Some(function),
+                            expression,
+                            &mut slots,
+                            false,
+                        )
                     })
                     .collect::<Result<Vec<_>, _>>()?,
             );
@@ -1085,9 +1238,80 @@ pub(crate) fn analyze_byte_data_capacity(
     program: &ResolvedProgram,
 ) -> Result<crate::byte_data_capacity::ProgramCapacitySummary, Diagnostic> {
     let inputs = byte_data_capacity_inputs(program)?;
-    crate::byte_data_capacity::analyze(&inputs)
-        .map_err(|error| Diagnostic::io(error.diagnostic.code(), error.to_string()))
+    crate::byte_data_capacity::analyze(&inputs).map_err(|error| {
+        let diagnostic = Diagnostic::io(error.diagnostic.code(), error.to_string());
+        match error.witness_help {
+            Some(help) => diagnostic.with_help(help),
+            None => diagnostic,
+        }
+    })
 }
+
+mod fused_selection;
+pub(crate) use fused_selection::analyze_selected_byte_data_capacity;
+#[cfg(test)]
+pub(crate) use fused_selection::selected_inputs_for_test;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod literal_format_capacity_tests {
+    use super::*;
+
+    #[test]
+    fn literal_format_capacity_visits_argument_calls_in_authored_order() {
+        let source = r#"
+module test.format_capacity;
+@id("format.left") fn left() -> usize {
+    let bytes = bytes_zeroed(3usize);
+    byte_len(bytes_as_slice(bytes))
+}
+@id("format.right") fn right() -> usize {
+    let bytes = bytes_zeroed(5usize);
+    byte_len(bytes_as_slice(bytes))
+}
+@id("format.render") fn render() -> string {
+    string_format("{}:{}", left(), right())
+}
+@id("format.main") fn main() -> i64 { string_len(render()) }
+"#;
+        let parsed = crate::check(source, "format-capacity.spx").unwrap();
+        let program = crate::hir::resolve(&parsed).unwrap();
+        let function = program
+            .functions
+            .iter()
+            .find(|function| function.id.as_str() == "format.render")
+            .unwrap();
+        let ResolvedExprKind::Block { tail, .. } = &function.body.kind else {
+            panic!("render retains its authored block")
+        };
+        let ResolvedExprKind::LiteralFormat { args, .. } = &tail.kind else {
+            panic!("render retains its checked format operation")
+        };
+        let facts = ValueFactIndex::new(&program);
+        let mut slots = Vec::new();
+        let flow = byte_capacity_expression(&facts, tail, &mut slots, false).unwrap();
+        let expected = args
+            .iter()
+            .map(|argument| {
+                byte_capacity_expression(&facts, argument, &mut Vec::new(), false).unwrap()
+            })
+            .collect();
+        assert_eq!(
+            flow,
+            crate::byte_data_capacity::CapacityFlow::Sequence(expected)
+        );
+        assert!(
+            slots.is_empty(),
+            "String/scalar staging has no inline arrays"
+        );
+        let summary = analyze_byte_data_capacity(&program).unwrap();
+        let render = summary.function("format.render").unwrap();
+        assert_eq!(render.bytes_copy_sites, 2);
+        assert_eq!(render.owned_byte_payload_bytes, 8);
+    }
+}
+
+#[cfg(test)]
+mod static_extent_tests;

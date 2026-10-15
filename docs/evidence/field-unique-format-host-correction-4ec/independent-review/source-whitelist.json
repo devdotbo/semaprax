@@ -1,0 +1,41 @@
+{
+  "source_commit": "2e0df3f8b18ce0f84d25d6c10adbf3d69279f3c5",
+  "files": [
+    {
+      "path": "tests/owned_data/owned_leaf_vec/host.js",
+      "sha256": "913ba3a6aac53b97903557d1f175ed02ac1690bee9cc9c7dfae53eb51e454331",
+      "start": 1,
+      "end": 1155
+    },
+    {
+      "path": "tests/owned_data/owned_leaf_vec/field_unique.rs",
+      "sha256": "27890c03b25581e000d626cb99a17b80499d720fb5d01fafbf0a5643fddc51a0",
+      "start": 1,
+      "end": 385
+    },
+    {
+      "path": "src/wasm/browser_runtime.js",
+      "sha256": "ab77c41a42522c546f27a69e1ea1a37a77aefc324d9f08d8bd5c87b3a11472c7",
+      "start": 175,
+      "end": 242
+    },
+    {
+      "path": "src/wasm/aggregate/literal_format.rs",
+      "sha256": "2cdf3394b9e4223571ffe4dd14e1c72294a4114a87b921beef8afea35408a445",
+      "start": 1,
+      "end": 30
+    },
+    {
+      "path": "docs/CHECKED-LITERAL-FORMAT-V1.md",
+      "sha256": "c9ba90d3bfcd0a306ecd305297a44ac2f48b5bcb2396de14b0beebf1c04db52e",
+      "start": 20,
+      "end": 65
+    },
+    {
+      "path": "docs/OWNED-LEAF-COLLECTIONS-V1.md",
+      "sha256": "bf8d19afae4274130367b9caadbe7fee8af91ff8295f4150ee0182de8145f95e",
+      "start": 45,
+      "end": 69
+    }
+  ]
+}

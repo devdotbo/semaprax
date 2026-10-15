@@ -205,12 +205,49 @@ pub fn explain_installed_diagnostic(code: &str) -> Result<InstalledDiagnosticExp
         .map_err(|_| unknown("diagnostic code is not in the installed static catalog"))?;
     let (installed, occurrences) = GENERATED_CODES[index];
     let occurrence_count = occurrences.len();
+    let guidance = match installed {
+        "SPX-T311" => Some(json!({
+            "summary": "explicit record sort has an unsupported literal key policy",
+            "required_shape": "vec_sort_by<Row>(rows, \"priority:desc,arrival:asc\")",
+            "requirements": ["one explicit monomorphic admitted flat record type", "one owning Vec", "1..8 unique literal field:asc/field:desc keys", "exact persistent field identities and complete layout", "no live owner field/view loans"],
+            "repair": "Use a literal policy naming declared fields; end field loans before consuming the Vec. See docs/EXPLICIT-RECORD-SORT-KEYS-V1.md.",
+        })),
+        "SPX-T319" => Some(json!({
+            "summary": "borrowed record-field uniqueness has an unsupported field, record or root",
+            "required_shape": "vec_unique_by<Row>(rows, \"id\")",
+            "requirements": ["one explicit monomorphic Copy or owned-leaf record with persistent field identities", "rows is a named available own or borrow Vec<Row>", "one literal field identifier", "a String or i64/i32/u8/usize/bool/char field; no floating or Bytes key"],
+            "repair": "Name a declared String or integer-like field with a literal and pass the named Vec. See docs/BORROWED-RECORD-FIELD-UNIQUENESS-V1.md.",
+        })),
+        "SPX-T310" => Some(json!({
+            "summary": "scoped Vec record-field read has an unsupported operand or field selector",
+            "required_shape": "vec_field<Row>(rows, index, \"field\")",
+            "requirements": [
+                "Row is one admitted owned record type",
+                "rows is a named Vec value",
+                "index has type usize",
+                "field is an exact string-literal selector naming a field of Row",
+            ],
+            "result_behavior": [
+                "copyable scalar fields are returned by value",
+                "String fields are borrowed as str",
+                "Bytes fields are borrowed as Slice<u8>",
+                "a borrowed field view prevents moving or mutating its owner through the view's last use",
+            ],
+            "repair": "Use the exact generic type and argument shape, check the selector against Row's declared fields, and keep any String or Bytes view within the owner's borrow scope.",
+        })),
+        _ => None,
+    };
     let text = format!(
-        "{installed}: installed {} diagnostic ({occurrence_count} static source occurrence{}); emitted message and help are site-specific.\n",
+        "{installed}: installed {} diagnostic ({occurrence_count} static source occurrence{}); emitted message and help are site-specific.{}\n",
         namespace(installed),
         if occurrence_count == 1 { "" } else { "s" },
+        guidance
+            .as_ref()
+            .filter(|_| installed == "SPX-T310")
+            .map(|_| "\nUse vec_field<Row>(rows, index, \"field\") with a named Vec, usize index and literal declared field. Scalars are Copy; String/Bytes views borrow the owner through last use.")
+            .unwrap_or(""),
     );
-    let payload = json!({
+    let mut payload = json!({
         "authority": false,
         "code": installed,
         "compiler": compiler()?,
@@ -232,6 +269,9 @@ pub fn explain_installed_diagnostic(code: &str) -> Result<InstalledDiagnosticExp
             "no_host_capability_grant",
         ],
     });
+    if let Some(guidance) = guidance {
+        payload["explanation"]["code_specific_guidance"] = guidance;
+    }
     let (json, digest) = document(
         INSTALLED_DIAGNOSTIC_EXPLANATION_SCHEMA,
         EXPLANATION_DOMAIN,

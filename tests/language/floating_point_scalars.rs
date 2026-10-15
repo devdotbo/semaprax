@@ -134,6 +134,9 @@ fn main() -> i64 { if identity(4.0) == 43.0 { 1 } else { 0 } }
 /// Collects every direct child expression of a resolved expression.
 fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
     match &expression.kind {
+        hir::ResolvedExprKind::LexicalExit { value, .. } => {
+            value.iter().map(|value| value.as_ref()).collect()
+        }
         hir::ResolvedExprKind::Closure { captures, body, .. } => captures
             .iter()
             .map(|capture| &capture.value)
@@ -143,7 +146,10 @@ fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
         hir::ResolvedExprKind::Invoke { callable, args } => std::iter::once(callable.as_ref())
             .chain(args.iter())
             .collect(),
-        hir::ResolvedExprKind::Call { args, .. } => args.iter().collect(),
+        hir::ResolvedExprKind::Call { args, .. }
+        | hir::ResolvedExprKind::LiteralFormat { args, .. }
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args.iter().collect(),
         hir::ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().collect(),
         hir::ResolvedExprKind::HostCommandCall(call) => call.args.iter().collect(),
         hir::ResolvedExprKind::Unary { value, .. }
@@ -156,7 +162,10 @@ fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
         hir::ResolvedExprKind::ByteRange {
             source, start, end, ..
         } => vec![source.as_ref(), start.as_ref(), end.as_ref()],
-        hir::ResolvedExprKind::Block { statements, tail } => statements
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => statements
             .iter()
             .map(|statement| statement.value())
             .chain(std::iter::once(tail.as_ref()))
@@ -197,6 +206,7 @@ fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
         | hir::ResolvedExprKind::Float64(_)
         | hir::ResolvedExprKind::Bool(_)
         | hir::ResolvedExprKind::String(_)
+        | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
         | hir::ResolvedExprKind::Place(_)
         | hir::ResolvedExprKind::BorrowPlace { .. } => Vec::new(),
     }
@@ -483,7 +493,10 @@ fn replace_f64_in_expression(expression: &mut hir::ResolvedExpr, bits: u64) -> b
         hir::ResolvedExprKind::Binary { left, right, .. } => {
             replace_f64_in_expression(left, bits) || replace_f64_in_expression(right, bits)
         }
-        hir::ResolvedExprKind::Block { statements, tail } => {
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements
                 .iter_mut()
                 .any(|statement| replace_f64_in_expression(statement.value_mut(), bits))
@@ -498,7 +511,10 @@ fn replace_f64_in_expression(expression: &mut hir::ResolvedExpr, bits: u64) -> b
                 || replace_f64_in_expression(then_branch, bits)
                 || replace_f64_in_expression(else_branch, bits)
         }
-        hir::ResolvedExprKind::Call { args, .. } => args
+        hir::ResolvedExprKind::Call { args, .. }
+        | hir::ResolvedExprKind::LiteralFormat { args, .. }
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args
             .iter_mut()
             .any(|argument| replace_f64_in_expression(argument, bits)),
         hir::ResolvedExprKind::ConstructRecord { fields, .. }
@@ -544,7 +560,10 @@ fn replace_f32_in_expression(expression: &mut hir::ResolvedExpr, bits: u32) -> b
         hir::ResolvedExprKind::Binary { left, right, .. } => {
             replace_f32_in_expression(left, bits) || replace_f32_in_expression(right, bits)
         }
-        hir::ResolvedExprKind::Block { statements, tail } => {
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             statements
                 .iter_mut()
                 .any(|statement| replace_f32_in_expression(statement.value_mut(), bits))
@@ -559,7 +578,10 @@ fn replace_f32_in_expression(expression: &mut hir::ResolvedExpr, bits: u32) -> b
                 || replace_f32_in_expression(then_branch, bits)
                 || replace_f32_in_expression(else_branch, bits)
         }
-        hir::ResolvedExprKind::Call { args, .. } => args
+        hir::ResolvedExprKind::Call { args, .. }
+        | hir::ResolvedExprKind::LiteralFormat { args, .. }
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args
             .iter_mut()
             .any(|argument| replace_f32_in_expression(argument, bits)),
         hir::ResolvedExprKind::ConstructRecord { fields, .. }

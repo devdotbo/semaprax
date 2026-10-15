@@ -1,0 +1,52 @@
+{
+  "status": "SOURCE_ONLY_NOT_COMPILED_OR_EXECUTED",
+  "base": "f8d39034fbe2145590160442ae17c4d69145134d",
+  "purpose": "four concrete scoped Clippy findings; all evaluation order, budget guards, layout and original receiving bodies retained",
+  "payer_visibility": "matches existing replay-parent-visible function signature; fields, constructors and physical guard methods stay private; no public or physical authority acquired",
+  "files": [
+    {
+      "path": "src/cleanup_plan/replay/paid_type_facts.rs",
+      "original_sha256": "620c44c1d5b268f5b989e94b6db55edfd63a60aae86bb2f347a9a276cc3920aa",
+      "receiving_sha256": "e508f5533dc1c8913e309d87a80dee963f92edffccb3f24ced35eae49ad904bf",
+      "whole_inverse_edits": [
+        {
+          "original": "use crate::bounded_output::classifier_string::ClassifierLedger;\nuse crate::hir::{DeclarationIndex, TypeFactsPayer};\n\nstruct Payer<'a> {\n    function: &'a ResolvedFunction,\n    budget: &'a mut ReplayBudget,\n    ledger: ClassifierLedger,\n",
+          "receiving": "use crate::bounded_output::classifier_string::ClassifierLedger;\nuse crate::hir::{DeclarationIndex, TypeFactsPayer};\n\npub(super) struct Payer<'a> {\n    function: &'a ResolvedFunction,\n    budget: &'a mut ReplayBudget,\n    ledger: ClassifierLedger,\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/paid_type_facts/inventory_flags.rs",
+      "original_sha256": "51d8f213d641c3980a57a64ba3d5153f21c7941bd0f378401f253978845f44b4",
+      "receiving_sha256": "324549e3f1ca419fd31c24e8d82b5f044a67287bcd7ffeb6af163f9a83321d8e",
+      "whole_inverse_edits": [
+        {
+          "original": "                    push(&mut results, COPY, payer)?;\n                    continue;\n                }\n                if let Some((_, flags)) = scalar(&ty) {\n                    if let Some(flags) = flags {\n                        push(&mut results, flags, payer)?;\n                        continue;\n                    }\n                }\n                let native = metadata::admission::native_owned(index, &ty, payer)?\n                    || families::resource_result(index, &ty, payer)?;\n",
+          "receiving": "                    push(&mut results, COPY, payer)?;\n                    continue;\n                }\n                if let Some((_, Some(flags))) = scalar(&ty) {\n                    push(&mut results, flags, payer)?;\n                    continue;\n                }\n                let native = metadata::admission::native_owned(index, &ty, payer)?\n                    || families::resource_result(index, &ty, payer)?;\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/paid_type_facts/inventory_nested.rs",
+      "original_sha256": "ed462cdb46c219dcddc55f3e58a4ce9cc23bb91e4164a140e34182dfdc5f58c3",
+      "receiving_sha256": "d82f245272b90f73ca4bf3ae60da4cb5be090c180d26c9174b4956454f256d14",
+      "whole_inverse_edits": [
+        {
+          "original": "        };\n        match frame {\n            Frame::Enter(ty, depth) => {\n                if metadata::vector(index, ty, payer)? {\n                    owned = true;\n                    leaves += 1;\n                } else if matches!(ty, ResolvedType::String | ResolvedType::Bytes) {\n                    owned = true;\n                    leaves += 1;\n                } else if crate::vec_ops::resolved_element_is_admitted(ty) {\n",
+          "receiving": "        };\n        match frame {\n            Frame::Enter(ty, depth) => {\n                if metadata::vector(index, ty, payer)?\n                    || matches!(ty, ResolvedType::String | ResolvedType::Bytes)\n                {\n                    owned = true;\n                    leaves += 1;\n                } else if crate::vec_ops::resolved_element_is_admitted(ty) {\n"
+        }
+      ]
+    },
+    {
+      "path": "src/project/incremental.rs",
+      "original_sha256": "c5d2ae03ab3ba1d13f85c34127ab46accbdd579743ba40edf484c7b5cd2fb70a",
+      "receiving_sha256": "78da458d68d923facfff9a7dd25ffade1c6221154bf21b160164656c3ddd0070",
+      "whole_inverse_edits": [
+        {
+          "original": "            }\n        }\n        for path in current.keys() {\n            if reset || !self.entries.contains_key(*path) {\n                invalidated.insert((*path).to_owned());\n            }\n        }\n",
+          "receiving": "            }\n        }\n        for path in current.keys() {\n            if reset || !self.entries.contains_key(path) {\n                invalidated.insert((*path).to_owned());\n            }\n        }\n"
+        }
+      ]
+    }
+  ]
+}

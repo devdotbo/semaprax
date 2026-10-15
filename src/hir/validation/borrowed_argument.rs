@@ -27,7 +27,7 @@ impl<'a> HirValidator<'a> {
         operation: crate::byte_ops::ByteOp,
         place: &Place,
         span: crate::ast::Span,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<(), Diagnostic> {
         let binding = scope
             .get(&place.root)
@@ -57,10 +57,26 @@ impl<'a> HirValidator<'a> {
             }
             return Ok(());
         }
-        if operation == crate::byte_ops::ByteOp::StringAsStr {
+        if matches!(
+            operation,
+            crate::byte_ops::ByteOp::StringAsStr | crate::byte_ops::ByteOp::StrAsBytes
+        ) {
+            if matches!(
+                binding.ownership,
+                OwnershipMode::Own | OwnershipMode::Borrow
+            ) && matches!(place_ownership, OwnershipMode::Own | OwnershipMode::Borrow)
+                && place_ty == ResolvedType::String
+                && crate::hir::projected_string_view::admitted(
+                    &self.program.declarations,
+                    &binding.ty,
+                    &place.projections,
+                )
+            {
+                return Ok(());
+            }
             return Err(hir_error_at_span(
                 span,
-                "owned String view requires one unprojected named storage root",
+                "projected String view requires an authenticated live record field path",
             ));
         }
         if operation != crate::byte_ops::ByteOp::BytesAsSlice
@@ -85,6 +101,49 @@ impl<'a> HirValidator<'a> {
         Ok(())
     }
 
+    /// The expression walker has already checked the argument. Recheck its
+    /// exact view root at the call boundary, including admitted String fields;
+    /// a cached Slice type or a projection path alone cannot authorize a borrow.
+    pub(super) fn validate_byte_slice_call_argument(
+        &self,
+        argument: &ResolvedExpr,
+        scope: &dyn ScopeRead,
+    ) -> Result<(), Diagnostic> {
+        match &argument.kind {
+            ResolvedExprKind::Call { .. }
+                if crate::vec_ops::string_slot::inspect(argument).is_some() =>
+            {
+                Ok(())
+            }
+            ResolvedExprKind::VecFieldRead { .. } => Ok(()),
+            ResolvedExprKind::Place(place)
+                if place.projections.is_empty()
+                    && self.byte_slice_aliases.contains_key(&place.root) =>
+            {
+                Ok(())
+            }
+            ResolvedExprKind::BorrowPlace { operation, place } => {
+                if place.projections.is_empty() {
+                    return Ok(());
+                }
+                let operation = crate::byte_ops::by_id(operation.as_str())
+                    .filter(|op| op.return_type() == ResolvedType::SliceU8)
+                    .ok_or_else(|| {
+                        hir_error("byte-slice call argument has no exact view operation")
+                    })?;
+                self.validate_byte_view_place(operation, place, argument.span, scope)
+            }
+            ResolvedExprKind::ByteRange {
+                operation, source, ..
+            } if operation.as_str() == crate::byte_ops::RANGE_ID => {
+                self.byte_range_origin(source, scope).map(|_| ())
+            }
+            _ => Err(hir_error(
+                "byte-slice call argument lacks authenticated root provenance",
+            )),
+        }
+    }
+
     #[cfg(test)]
     pub(super) fn validate_borrowed_bytes_call_argument(
         &self,
@@ -92,7 +151,7 @@ impl<'a> HirValidator<'a> {
         argument: &ResolvedExpr,
         parameter: &ResolvedParam,
         parameter_index: usize,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<(), Diagnostic> {
         self.validate_borrowed_bytes_call_argument_fields(
             call,
@@ -109,7 +168,7 @@ impl<'a> HirValidator<'a> {
         argument: &ResolvedExpr,
         parameter: (&ResolvedType, OwnershipMode),
         parameter_index: usize,
-        scope: &BTreeMap<ValueId, ValidationBinding>,
+        scope: &dyn ScopeRead,
     ) -> Result<(), Diagnostic> {
         let (parameter_type, parameter_ownership) = parameter;
         if *parameter_type != ResolvedType::Bytes || parameter_ownership != OwnershipMode::Borrow {
@@ -181,9 +240,10 @@ impl<'a> HirValidator<'a> {
             let argument = u16::try_from(parameter_index).map_err(|_| {
                 hir_error_at_span(call.span, "borrowed Bytes argument index overflows")
             })?;
-            if !self
-                .canonical_loan_ids
-                .contains_key(&(call.id.clone(), LoanCause::BorrowedCall { argument }))
+            if self
+                .canonical_loans
+                .id(&(call.id.clone(), LoanCause::BorrowedCall { argument }))
+                .is_none()
             {
                 return Err(hir_error_at_span(
                     call.span,

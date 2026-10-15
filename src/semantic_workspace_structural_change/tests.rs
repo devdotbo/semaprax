@@ -563,7 +563,9 @@ fn base_fixture_with_extra_sources(reverse_sources: bool, extra_sources: usize) 
                 source_graph_schema,
                 source_revision,
                 source_digest,
-                source,
+                // Explicit legacy String boundary: move owned bytes or copy
+                // current shared bytes losslessly; this grants no funding.
+                source: String::from(source),
             }
         })
         .collect();

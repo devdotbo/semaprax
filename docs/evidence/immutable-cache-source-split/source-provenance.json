@@ -1,0 +1,139 @@
+{
+  "base_commit": "d4068cdda",
+  "archives": [
+    {
+      "path": "docs/evidence/immutable-cache-source-split/build_resolved_core.before.txt",
+      "sha256": "6adf8b3b74f262e62c7b15133feae66513f816445b8688a50fe415b1201e3199",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__ast__program_source.rs.before.txt",
+      "sha256": "995cdfef499f2b69ad42ca8de7206f1efd20ce5b456a0f51ffe4ea5f6844d4bd",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__hir.rs.before.txt",
+      "sha256": "9c3160576bc61c4cf14df030e409acaeba2451605c0354c991a1be98f7062691",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__hir__identity_resolution.rs.before.txt",
+      "sha256": "0f09f9c126d4d75426a74047f298c4d52e4b837a32028562c8acbab7595d3046",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__hir__resolve_program.rs.before.txt",
+      "sha256": "d02208238c04b741f40138416e7b28a31266384dd320696ac4272103516bd8e0",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__project__build.rs.before.txt",
+      "sha256": "86cabef6be87bdf07d0b574e9166ff8bdbad71799fce2d14be4431e81238cbd1",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__project__incremental.rs.before.txt",
+      "sha256": "034ecb5a474e9ebd17a40191206ba0a48c9d895604e06799586c7e27442b1459",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__project__incremental__checked_hir__tests.rs.before.txt",
+      "sha256": "705cd817c4e8e4f6212334ff12fd90ca0256fa21d3e11b89a01df1ca51ad97de",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__project__incremental__clone_cost_report.rs.before.txt",
+      "sha256": "4b98c44333a6d8d0a4fb6e3d4625777d61b803e35aceadbadf7519ea60db32bb",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__project__incremental__cold_source_tests.rs.before.txt",
+      "sha256": "cb06a5e9cf2f9d89f2bff6307e17f1749a910f9359b08688609c39063b3eb682",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__project__incremental__paid_resolution.rs.before.txt",
+      "sha256": "65a4ebe32db39047769a6152c80f7a437966d44cedc6d8432c2c6f1551e86ca8",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__project__incremental__snapshot__borrowed_encoding.rs.before.txt",
+      "sha256": "2882c34fc5b74b236d4de7240eb9f7b64ceba9b29805bb43c3c8d9d96a413dcb",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__project__mod.rs.before.txt",
+      "sha256": "26412b3e24d6a94ce791aa775df30329ddc6d973db850f3022776707c9778f66",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__semantic_workspace.rs.before.txt",
+      "sha256": "4d096ca982fa9821b62fb8f89bda660c8740d2b58f43329719582416aa6c502a",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__semantic_workspace__reporting.rs.before.txt",
+      "sha256": "c6137ce427c8fac3b7ece442490e6dd2598b7731d7a779cd7708c40a960a497a",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__semantic_workspace__tests.rs.before.txt",
+      "sha256": "95c6f43eb6fcf7414fb6b04202463b015ab8e986150e1d75c5971962c174a829",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__workspace_graph.rs.before.txt",
+      "sha256": "27323d489dc5107b366b63968978c7a591046b32d9b35c67edc269b3ec42b078",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__workspace_graph__expected_projection__borrowed_leaf.rs.before.txt",
+      "sha256": "2546cefb7fd1fb514c0af1826aa95ab9c88ae6a80361a41929f8643e7f83e892",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__workspace_graph__expected_projection__borrowed_leaf__checked_key.rs.before.txt",
+      "sha256": "b4beba2c92fa9107b10e7083561f83243827da7e8a5edc4df035b571b608bc62",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    },
+    {
+      "path": "docs/evidence/immutable-cache-source-split/src__workspace_graph__paid_view.rs.before.txt",
+      "sha256": "c93ca2a1c50724dc3d718cde274feea37c59c4125f8dcc8277639e3b71abc905",
+      "source_base": "d4068cdda",
+      "role": "complete unchanged source snapshot, no authority"
+    }
+  ],
+  "qualification": "source-only; no Cargo/build/test/Clippy execution",
+  "shared_unchanged_boundaries": [
+    "source parsing and canonical equality",
+    "source-local and whole-workspace static protocol validation",
+    "all provider/module/authored/import/layout/dependency validation",
+    "original dependency pruning and exact restore",
+    "full HIR/loan/cleanup validation and backend admission"
+  ],
+  "named_current_hooks": [
+    "immutable source owner transfer after exact restore",
+    "original AST cache value to actual parsed owner getters",
+    "historical checked key wire streaming",
+    "previous-source input and ordered environment getters"
+  ]
+}

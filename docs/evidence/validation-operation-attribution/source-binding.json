@@ -1,0 +1,70 @@
+{
+  "schema": "semaprax.validation-operation-attribution.source.v1",
+  "base_root_head": "17efd2ed52a97f41eec05c75d56e01ade219b392",
+  "private_parent_head": "9cee6948bf997ccda653b56e5e871654c2110bd0",
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "new_source_children": 0,
+  "budget_layout_byte_identical": true,
+  "reservation_refusal_layout_byte_identical": true,
+  "public_diagnostic_source_byte_identical": true,
+  "existing_lookup_source_byte_identical": true,
+  "claude_review_launch": "Rejected; no process started. Specific new payload authorization required despite reported standing authorization. No retry or bypass.",
+  "source_files": [
+    {
+      "path": "src/bounded_output.rs",
+      "sha256": "aa0f0ebaafab779509d90414d1d64b831e33d4af2864c4fd814f5643c29eeac0",
+      "lines": 1229
+    },
+    {
+      "path": "src/bounded_output/stage_debits.rs",
+      "sha256": "8ae7ecfcb70273e34732644fd904965bc3379d7c83001e8fe6cc01401c817932",
+      "lines": 181
+    },
+    {
+      "path": "src/bounded_output/stage_debits/tests.rs",
+      "sha256": "ac219d2ecdc33d0e5cce88b652eff3cf60e5498e65e12f7d23eb522e9611df4d",
+      "lines": 199
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller.rs",
+      "sha256": "bc304cfbb469891c8eb8cdc150a395affba58dadd3ae3b9a136c6c7f40076056",
+      "lines": 426
+    },
+    {
+      "path": "src/hir/function_directory/caller.rs",
+      "sha256": "217896ad2e11c8bcbdfde236ec29a9cc1c00da142c9c18968a6015b79451127a",
+      "lines": 120
+    },
+    {
+      "path": "src/hir/inspection.rs",
+      "sha256": "5c80d0017ee96a092a80b7fe9c5b2ed263d0a91fe13cfca9a56f9674f27a1252",
+      "lines": 1281
+    },
+    {
+      "path": "src/hir/owned_text_record/paid.rs",
+      "sha256": "8b8cfc23feadca1177f3972fd1bea0f13d98fb54fe99ecac05e055d0bd495e24",
+      "lines": 309
+    },
+    {
+      "path": "src/hir/owned_text_record/paid/substitution.rs",
+      "sha256": "522e82c93bb85f474c6733b0497149ef0f94fba2fcfb1614448ea6cc74d35a65",
+      "lines": 180
+    },
+    {
+      "path": "src/hir/validation/function_scope/lifecycle.rs",
+      "sha256": "5fd13ff6c69920abbbfca62effa9b44be55a1ecbe8651cf163f5ad5ad561ad5b",
+      "lines": 105
+    },
+    {
+      "path": "src/hir/validation/scope_checkpoint/charge.rs",
+      "sha256": "b0cec10240b85e4f52f62d6d0ab27da4495bf5495ed074cf1fb4864dfdc10081",
+      "lines": 140
+    },
+    {
+      "path": "src/workspace_graph/tests/builder_limits.rs",
+      "sha256": "29709e4090b08d472d6fbde25132a8d3ab61a917e0a777c4798f794fa943f411",
+      "lines": 715
+    }
+  ],
+  "successor_observation_note": "Source-only successor: retain last completed Copy trace separately from original maximum-consumed trace; no Budget or ReservationRefusal layout, source authority, reservation or retry change. Original denied review was not retried. New receipt controls and identical authenticated decoded-fingerprint Project check are pending execution."
+}

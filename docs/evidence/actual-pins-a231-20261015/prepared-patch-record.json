@@ -1,0 +1,25 @@
+{
+  "state": "ACTUAL_FROZEN_SOURCE_STRICT_READONLY_VALIDATED_PATCH_NOT_APPLIED",
+  "source_basis": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+  "later_root_at_preparation": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+  "pins": 11,
+  "actual_old_amount": 1416339,
+  "actual_new_amount": 1416776,
+  "delta": 437,
+  "all10_full_actual_wire_archives_preserved": true,
+  "all10_exact_byte_inverses_verified": true,
+  "complete_previous_pin_capture_archives_unchanged": true,
+  "existing_pin_capture_fullsource_inverse_composition_verified": true,
+  "apply_performed": false,
+  "exclusive_causality_or_gain_claim": false,
+  "source_before_sha256": {
+    "tests/workspace/semantic_graph.rs": "46655c91584bf2ebe01ba1f9874b14266c2408ca41283f74751cadf7d6634b01",
+    "docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json": "83bf4373c3c6cd5eac7d23aa515f5436a91a2d9d9e889ca944882fe7a1f78469",
+    "src/workspace_graph/type_proof_tests.rs": "6c43ae2cb39666ff30e0b7cd66ff3a9cdf90a0ee5b90ef4a4f0210136fd7f5a4"
+  },
+  "source_after_sha256": {
+    "tests/workspace/semantic_graph.rs": "9b7e6e3738302e22799f0bb4a29acafcf32231ac3e3bac5c177f86cf2e55c63f",
+    "docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json": "e4670b20d729d3174d9650a405dec0dbf35419f586c939a4dd29e3f4a98aadb7",
+    "src/workspace_graph/type_proof_tests.rs": "72f9a146d1224043655a767f28a20ae4ec90bf2c3cc3ae6210d112ea154fc41b"
+  }
+}

@@ -8,6 +8,18 @@ pub(super) fn render_expr(
     output: &mut String,
 ) {
     match &expr.kind {
+        ResolvedExprKind::LexicalExit { kind, value, .. } => {
+            output.push_str(match kind {
+                hir::LexicalExitKind::Break => "break",
+                hir::LexicalExitKind::Continue => "continue",
+                hir::LexicalExitKind::Return => "return",
+            });
+            if let Some(value) = value {
+                output.push(' ');
+                output.push_str(&render_child(walker, value, 0));
+            }
+            output.push(';');
+        }
         ResolvedExprKind::Closure { .. } => output.push_str("<closure>"),
         ResolvedExprKind::Int(number) => {
             output.push_str(&number.to_string());
@@ -33,6 +45,9 @@ pub(super) fn render_expr(
         }
         ResolvedExprKind::Bool(value) => {
             output.push_str(if *value { "true" } else { "false" });
+        }
+        ResolvedExprKind::BorrowedUtf8Literal(value) => {
+            output.push_str(&crate::format::canonical_borrowed_utf8_literal(value));
         }
         ResolvedExprKind::String(value) => {
             output.push_str(&crate::format::canonical_string(value));
@@ -80,10 +95,63 @@ pub(super) fn render_expr(
             output.push_str(&render_child(walker, callable, 0));
             render_args(walker, args, output);
         }
+        ResolvedExprKind::VecFieldRead {
+            origin: _,
+            element,
+            field,
+            bytes,
+            args,
+        } => {
+            if *bytes {
+                output.push_str("str_as_bytes(");
+            }
+            output.push_str("vec_field<");
+            if let ResolvedType::Nominal { declaration, .. } = element {
+                output.push_str(&walker.declaration_name(declaration));
+            } else {
+                output.push_str("<invalid>");
+            }
+            output.push_str(">(");
+            for (index, argument) in args.iter().enumerate() {
+                if index != 0 {
+                    output.push_str(", ");
+                }
+                output.push_str(&render_child(walker, argument, 0));
+            }
+            output.push_str(", ");
+            output.push_str(&crate::format::canonical_string(
+                &walker.declaration_name(field),
+            ));
+            output.push(')');
+            if *bytes {
+                output.push(')');
+            }
+        }
+        // A lent row has no source spelling beyond its row name; render the
+        // exact borrowed Vec slot it denotes.
+        ResolvedExprKind::RowLoan { args, .. } => {
+            if let [vector, index] = args.as_slice() {
+                output.push_str(&render_child(walker, vector, 0));
+                output.push('[');
+                output.push_str(&render_child(walker, index, 0));
+                output.push(']');
+            } else {
+                output.push_str("<invalid>");
+            }
+        }
         ResolvedExprKind::Call { callee, args, .. } => {
             let name = walker.declaration_name(callee);
             output.push_str(&name);
             render_args(walker, args, output);
+        }
+        ResolvedExprKind::LiteralFormat { template, args } => {
+            output.push_str("string_format(");
+            output.push_str(&crate::diagnostic::quote_json(template));
+            for argument in args {
+                output.push_str(", ");
+                output.push_str(&render_child(walker, argument, 0));
+            }
+            output.push(')');
         }
         ResolvedExprKind::NativeRustImportCall(call) => {
             let name = walker.declaration_name(&call.import);
@@ -118,7 +186,10 @@ pub(super) fn render_expr(
                 output.push(')');
             }
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             output.push_str("{ ");
             for statement in statements {
                 match statement {
@@ -144,12 +215,19 @@ pub(super) fn render_expr(
                         output.push_str(&render_child(walker, value, 0));
                         output.push_str("; ");
                     }
+                    ResolvedStatement::CopyDiscard { value, .. } => {
+                        output.push_str(&render_child(walker, value, 0));
+                        output.push_str("; ");
+                    }
                     ResolvedStatement::Unsafe { body, .. } => {
                         output.push_str("unsafe ");
                         output.push_str(&render_child(walker, body, 0));
                         output.push_str("; ");
                     }
                     ResolvedStatement::While {
+                        condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
                         condition, body, ..
                     } => {
                         output.push_str("while ");
@@ -323,7 +401,8 @@ pub(super) fn scalar_type_name(ty: &Type) -> Option<&'static str> {
         Type::F64 => Some("f64"),
         Type::Bool => Some("bool"),
         Type::Char => Some("char"),
-        Type::String
+        Type::Never
+        | Type::String
         | Type::Str
         | Type::SliceU8
         | Type::StringMap

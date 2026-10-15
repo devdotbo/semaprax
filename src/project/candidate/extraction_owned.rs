@@ -48,13 +48,21 @@ pub(super) fn validate(
         else {
             return Err(invalid("extraction helper has no root block wrapper"));
         };
-        if !statements.is_empty() || !matches!(inner.kind, ResolvedExprKind::Block { .. }) {
+        if !statements.is_empty()
+            || !matches!(
+                inner.kind,
+                ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. }
+            )
+        {
             return Err(invalid(
                 "extraction owning scope must remain nested inside an empty root",
             ));
         }
         inner.as_ref()
-    } else if matches!(selected.expression.kind, ResolvedExprKind::Block { .. }) {
+    } else if matches!(
+        selected.expression.kind,
+        ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. }
+    ) {
         &helper.body
     } else {
         // A helper whose authored body is not itself a block reappears inside

@@ -1,5 +1,6 @@
 //! Source-backed static conformance to local protocol method requirements.
 //! Bindings name ordinary functions by persistent ID; there is no dispatch ABI.
+use crate::ast::program_source::ProgramSource;
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::{json, Value};
@@ -67,11 +68,14 @@ pub fn member_matches(
 /// Safe to call on original workspace modules: cross-file imports do not widen
 /// this strictly local conformance vocabulary.
 pub fn validate(program: &Program) -> Result<(), Diagnostic> {
-    if program.protocols.is_empty() && program.implementations.is_empty() {
+    validate_source(program)
+}
+pub(crate) fn validate_source(program: &dyn ProgramSource) -> Result<(), Diagnostic> {
+    if program.protocols().is_empty() && program.implementations().is_empty() {
         return Ok(());
     }
-    if program.protocols.len() > MAX_IMPLEMENTATIONS
-        || program.implementations.len() > MAX_IMPLEMENTATIONS
+    if program.protocols().len() > MAX_IMPLEMENTATIONS
+        || program.implementations().len() > MAX_IMPLEMENTATIONS
     {
         return Err(error(
             "SPX-Q109",
@@ -80,7 +84,7 @@ pub fn validate(program: &Program) -> Result<(), Diagnostic> {
     }
     let mut methods = 0usize;
     let mut names = BTreeSet::new();
-    for protocol in &program.protocols {
+    for protocol in program.protocols() {
         methods = methods.saturating_add(protocol.methods.len());
         if protocol.methods.len() > MAX_IMPLEMENTATION_MEMBERS || methods > MAX_TOTAL_MEMBERS {
             return Err(error(
@@ -112,7 +116,7 @@ pub fn validate(program: &Program) -> Result<(), Diagnostic> {
             ));
         }
     }
-    crate::protocol_check::validate_program(program)?;
+    crate::protocol_check::validate_program_source(program)?;
     let mut ids = BTreeSet::new();
     for id in crate::prelude::all_reserved_ids() {
         ids.insert(id.to_owned());
@@ -127,10 +131,10 @@ pub fn validate(program: &Program) -> Result<(), Diagnostic> {
             ))
         }
     };
-    for function in &program.functions {
+    for function in program.functions() {
         insert(&function.stable_id)?;
     }
-    for declaration in &program.types {
+    for declaration in program.types() {
         insert(&declaration.stable_id)?;
         match &declaration.kind {
             TypeDeclarationKind::Record { fields } => {
@@ -163,36 +167,36 @@ pub fn validate(program: &Program) -> Result<(), Diagnostic> {
             }
         }
     }
-    for interface in &program.interfaces {
+    for interface in program.interfaces() {
         insert(&interface.stable_id)?;
         for import in &interface.imports {
             insert(&import.stable_id)?;
         }
     }
-    for protocol in &program.protocols {
+    for protocol in program.protocols() {
         insert(&protocol.stable_id)?;
         for method in &protocol.methods {
             insert(&method.stable_id)?;
         }
     }
     let protocols = program
-        .protocols
+        .protocols()
         .iter()
         .map(|item| (item.stable_id.as_str(), item))
         .collect::<BTreeMap<_, _>>();
     let receivers = program
-        .types
+        .types()
         .iter()
         .map(|item| (item.stable_id.as_str(), item))
         .collect::<BTreeMap<_, _>>();
     let functions = program
-        .functions
+        .functions()
         .iter()
         .map(|item| (item.stable_id.as_str(), item))
         .collect::<BTreeMap<_, _>>();
     let mut pairs = BTreeSet::new();
     let mut total = 0usize;
-    for implementation in &program.implementations {
+    for implementation in program.implementations() {
         if !implementation.explicit_id
             || !valid_binding_id(&implementation.stable_id)
             || implementation.stable_id.starts_with("auto:")
@@ -274,9 +278,13 @@ pub fn validate(program: &Program) -> Result<(), Diagnostic> {
     Ok(())
 }
 
-fn require_import(program: &Program, kind: ModuleUseKind, id: &str) -> Result<(), Diagnostic> {
+fn require_import(
+    program: &dyn ProgramSource,
+    kind: ModuleUseKind,
+    id: &str,
+) -> Result<(), Diagnostic> {
     let bindings = program
-        .module_uses
+        .module_uses()
         .iter()
         .filter(|binding| binding.persistent_id == id)
         .collect::<Vec<_>>();
@@ -343,7 +351,7 @@ pub fn facts(program: &Program) -> Result<Value, Vec<Diagnostic>> {
 pub(crate) fn validate_workspace(programs: &[Program]) -> Result<(), Diagnostic> {
     if programs
         .iter()
-        .all(|program| program.protocols.is_empty() && program.implementations.is_empty())
+        .all(|program| program.protocols().is_empty() && program.implementations().is_empty())
     {
         return Ok(());
     }
@@ -358,7 +366,7 @@ pub(crate) fn validate_workspace(programs: &[Program]) -> Result<(), Diagnostic>
         .collect::<BTreeSet<_>>();
     let mut count = ids.len();
     for program in programs {
-        validate(program)?;
+        validate_source(program)?;
         visit_ids(program, |id| {
             count += 1;
             if count > 65_536 {
@@ -381,7 +389,7 @@ pub(crate) fn validate_workspace(programs: &[Program]) -> Result<(), Diagnostic>
         .enumerate()
         .flat_map(|(owner, program)| {
             program
-                .protocols
+                .protocols()
                 .iter()
                 .map(move |item| (item.stable_id.as_str(), (owner, item)))
         })
@@ -391,7 +399,7 @@ pub(crate) fn validate_workspace(programs: &[Program]) -> Result<(), Diagnostic>
         .enumerate()
         .flat_map(|(owner, program)| {
             program
-                .types
+                .types()
                 .iter()
                 .map(move |item| (item.stable_id.as_str(), (owner, item)))
         })
@@ -401,14 +409,14 @@ pub(crate) fn validate_workspace(programs: &[Program]) -> Result<(), Diagnostic>
         .enumerate()
         .flat_map(|(owner, program)| {
             program
-                .functions
+                .functions()
                 .iter()
                 .map(move |item| (item.stable_id.as_str(), (owner, item)))
         })
         .collect::<BTreeMap<_, _>>();
     let mut pairs = BTreeSet::new();
     for (destination, program) in programs.iter().enumerate() {
-        for implementation in &program.implementations {
+        for implementation in program.implementations() {
             if !pairs.insert((
                 implementation.protocol_id.as_str(),
                 implementation.receiver_id.as_str(),
@@ -592,9 +600,9 @@ fn workspace_type_key(
         return Ok(ty.to_string());
     };
     let program = &programs[owner];
-    let local = program.types.iter().find(|item| item.name == *name);
+    let local = program.types().iter().find(|item| item.name == *name);
     let imported = program
-        .module_uses
+        .module_uses()
         .iter()
         .filter(|item| item.kind == ModuleUseKind::Type && item.alias == *name)
         .collect::<Vec<_>>();
@@ -632,13 +640,13 @@ fn workspace_type_key(
 }
 
 fn visit_ids<'a>(
-    program: &'a Program,
+    program: &'a dyn ProgramSource,
     mut visit: impl FnMut(&'a str) -> Result<(), Diagnostic>,
 ) -> Result<(), Diagnostic> {
-    for function in &program.functions {
+    for function in program.functions() {
         visit(&function.stable_id)?;
     }
-    for declaration in &program.types {
+    for declaration in program.types() {
         visit(&declaration.stable_id)?;
         match &declaration.kind {
             TypeDeclarationKind::Record { fields } => {
@@ -671,19 +679,19 @@ fn visit_ids<'a>(
             }
         }
     }
-    for interface in &program.interfaces {
+    for interface in program.interfaces() {
         visit(&interface.stable_id)?;
         for import in &interface.imports {
             visit(&import.stable_id)?;
         }
     }
-    for protocol in &program.protocols {
+    for protocol in program.protocols() {
         visit(&protocol.stable_id)?;
         for method in &protocol.methods {
             visit(&method.stable_id)?;
         }
     }
-    for implementation in &program.implementations {
+    for implementation in program.implementations() {
         visit(&implementation.stable_id)?;
     }
     Ok(())
@@ -691,8 +699,8 @@ fn visit_ids<'a>(
 
 /// Original-source table for a caller already holding the independently
 /// admitted workspace. The result deliberately does not claim body admission.
-pub(crate) fn declaration_facts(program: &Program) -> Result<Value, Vec<Diagnostic>> {
-    validate(program).map_err(|error| vec![error])?;
+pub(crate) fn declaration_facts(program: &dyn ProgramSource) -> Result<Value, Vec<Diagnostic>> {
+    validate_source(program).map_err(|error| vec![error])?;
     // Charge conservative escaping and entry overhead before cloning report
     // strings/arrays. This is a construction charge, not an allocator bound.
     let mut budget = 4096usize;
@@ -714,9 +722,9 @@ pub(crate) fn declaration_facts(program: &Program) -> Result<Value, Vec<Diagnost
         }
         Ok(())
     };
-    charge(&program.path, 256)?;
-    charge(&program.module, 256)?;
-    for protocol in &program.protocols {
+    charge(program.path(), 256)?;
+    charge(program.module(), 256)?;
+    for protocol in program.protocols() {
         charge(&protocol.stable_id, 512)?;
         charge(&protocol.name, 128)?;
         for method in &protocol.methods {
@@ -735,7 +743,7 @@ pub(crate) fn declaration_facts(program: &Program) -> Result<Value, Vec<Diagnost
             }
         }
     }
-    for implementation in &program.implementations {
+    for implementation in program.implementations() {
         charge(&implementation.stable_id, 512)?;
         charge(&implementation.protocol_id, 128)?;
         charge(&implementation.receiver_id, 128)?;
@@ -744,7 +752,7 @@ pub(crate) fn declaration_facts(program: &Program) -> Result<Value, Vec<Diagnost
             charge(&member.function_id, 128)?;
         }
     }
-    let mut protocols = program.protocols.iter().collect::<Vec<_>>();
+    let mut protocols = program.protocols().iter().collect::<Vec<_>>();
     protocols.sort_by(|a, b| a.stable_id.cmp(&b.stable_id));
     let protocols = protocols.into_iter().map(|protocol| {
         let mut methods = protocol.methods.iter().collect::<Vec<_>>();
@@ -756,7 +764,7 @@ pub(crate) fn declaration_facts(program: &Program) -> Result<Value, Vec<Diagnost
                 "params":method.params.iter().map(|param| json!({"name":param.name,"type":param.ty.to_string(),"ownership":param.mode.text()})).collect::<Vec<_>>(),
                 "return_type":method.return_type.to_string()})).collect::<Vec<_>>()})
     }).collect::<Vec<_>>();
-    let mut implementations = program.implementations.iter().collect::<Vec<_>>();
+    let mut implementations = program.implementations().iter().collect::<Vec<_>>();
     implementations.sort_by(|a, b| a.stable_id.cmp(&b.stable_id));
     let entries = implementations.into_iter().map(|implementation| {
         let mut members = implementation.members.iter().collect::<Vec<_>>();
@@ -767,7 +775,7 @@ pub(crate) fn declaration_facts(program: &Program) -> Result<Value, Vec<Diagnost
             "evidence":"source_checked_static_signature_conformance"})
     }).collect::<Vec<_>>();
     Ok(
-        json!({"schema":SCHEMA,"path":program.path,"module":program.module,
+        json!({"schema":SCHEMA,"path":program.path(),"module":program.module(),
         "protocols":protocols,"type_representation":"source_display_not_resolved_HIR_identity",
         "implementations":entries,"full_source_admitted":false,"source_authority":false,
         "nonclaims":["no_dynamic_dispatch","no_runtime_witness_table","no_target_execution","no_source_publication_authority"]}),

@@ -73,6 +73,12 @@ The exact class, escape, and greedy rules are in the owning
 
 Malformed-pattern detail selects the first offending byte from left to right; a missing byte reports EOF at the pattern length. A dangling backslash therefore has pattern detail 1, while an unsupported first byte can have detail 0. Both use detail domain 1.
 
+Packet validation borrows the immutable storage once per call and reads the same
+little-endian fields and every reported capture directly from that checked view.
+It retains the complete packet checks and does not cache validity across mutation.
+The package tests retain the original helper-based validator as a differential
+control; logical `work_used` and the default interpreter fuel allowance are unchanged.
+
 Packet observers other than `result_valid` require a valid packet. Numeric capture endpoints grant no ownership or input authority. The consumer remains responsible for applying them to the input of that match. Borrowing a view of the renewed Matcher storage still fails ordinary ownership/loan replay; only independent named views qualify.
 
 For a reusable parser, keep the owner returned by `compile`, require a valid

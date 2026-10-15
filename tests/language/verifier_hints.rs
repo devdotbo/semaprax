@@ -512,12 +512,18 @@ fn borrowed_view_of_a_literal_names_the_binding_step() {
     );
     assert_eq!(
         diagnostic.message,
-        "borrowed view `str_as_bytes` requires an exact admitted storage place"
+        "borrowed view `str_as_bytes` requires a named String owner or an authenticated named-record path to a String field"
     );
     assert!(
         help(&diagnostic).contains("let text = \"…\"; str_as_bytes(string_as_str(text))"),
         "{diagnostic}"
     );
+    // Follow the actual repair, retaining the ordinary owned String literal
+    // and the independently authenticated view root rather than admitting
+    // a temporary literal borrow or a new static root.
+    let repaired = "module habit.view; permit {process.stdout.write} @id(\"app.main\") fn main()->i64 uses {process.stdout.write} {let text=\"hi\";let view=string_as_str(text);let n=stdout_write(str_as_bytes(view));0}";
+    let checked = semaprax::check(repaired, "habit-view-repaired.spx").unwrap();
+    semaprax::hir::validate(&semaprax::hir::resolve(&checked).unwrap()).unwrap();
 }
 
 #[test]
@@ -687,4 +693,196 @@ fn borrowed_returns_and_scalar_methods_name_the_admitted_form() {
         "{method}"
     );
     assert!(help(&method).contains("`abs(x)`"), "{method}");
+}
+
+#[test]
+fn a_narrow_integer_generic_argument_names_the_i64_round_trip() {
+    let option = only(
+        "module habit.o;\n@id(\"habit.f\")\nfn f(a: Option<usize>) -> i64\n{\n    0\n}\n@id(\"app.main\")\nfn main() -> i64\n{\n    0\n}\n",
+        "SPX-T223",
+    );
+    assert!(
+        help(&option).contains("instantiate `Option` with `i64`"),
+        "{option}"
+    );
+    assert!(
+        help(&option).contains("`i64_from_usize(value)`"),
+        "{option}"
+    );
+    assert!(
+        help(&option).contains("`usize_from_i64(value)`"),
+        "{option}"
+    );
+    assert!(
+        help(&option).contains("at most 9223372036854775807 (i64::MAX)"),
+        "{option}"
+    );
+    assert!(
+        help(&option).contains("otherwise the conversion fails"),
+        "{option}"
+    );
+
+    let record = only(
+        "module habit.p;\n@id(\"habit.pair\")\nrecord Pair<T> {\n    @id(\"habit.pair.left\")\n    left: T,\n}\n@id(\"habit.f\")\nfn f(a: Pair<u8>) -> i64\n{\n    0\n}\n@id(\"app.main\")\nfn main() -> i64\n{\n    0\n}\n",
+        "SPX-T223",
+    );
+    assert!(help(&record).contains("`i64_from_u8(value)`"), "{record}");
+    assert!(help(&record).contains("`u8_from_i64(value)`"), "{record}");
+    assert!(
+        !help(&record).contains("otherwise the conversion fails"),
+        "{record}"
+    );
+
+    // The form the hint names verifies, and no hint is invented for an
+    // argument without that round trip.
+    assert!(diagnostics(
+        "module habit.o;\n@id(\"habit.find\")\nfn find(index: usize) -> Option<i64>\n{\n    Option<i64>::Some { value: i64_from_usize(index) }\n}\n@id(\"app.main\")\nfn main() -> i64\n{\n    match find(3usize) { Option::Some { value: v } => i64_from_usize(usize_from_i64(v)), Option::None {} => 0, }\n}\n",
+    )
+    .is_empty());
+    let float = only(
+        "module habit.o;\n@id(\"habit.f\")\nfn f(a: Option<f64>) -> i64\n{\n    0\n}\n@id(\"app.main\")\nfn main() -> i64\n{\n    0\n}\n",
+        "SPX-T223",
+    );
+    assert!(float.help.is_none(), "{float}");
+}
+
+#[test]
+fn collection_typos_use_canonical_operation_names_without_admitting_calls() {
+    for (typo, expected) in [
+        ("vec_pus", "vec_push"),
+        ("list_con", "list_cons"),
+        ("map_ad", "map_add"),
+        ("box_ne", "box_new"),
+        ("iter_nex", "iter_next"),
+    ] {
+        let source = format!(
+            "module habit.collection;\n@id(\"app.main\")\nfn main() -> i64\n{{\n    {typo}()\n}}\n"
+        );
+        let diagnostic = only(&source, "SPX-T203");
+        assert_eq!(diagnostic.message, format!("unknown function `{typo}`"));
+        assert_eq!(help(&diagnostic), format!("did you mean `{expected}`?"));
+    }
+}
+
+#[test]
+fn collection_typo_ties_do_not_guess_or_override_a_declared_function() {
+    let prefix = "module habit.collection;\n@id(\"habit.put\")\nfn vec_put() -> i64 { 0 }\n";
+    let ambiguous = format!("{prefix}@id(\"app.main\")\nfn main() -> i64 {{ vec_pus() }}\n");
+    let diagnostic = only(&ambiguous, "SPX-T203");
+    assert!(help(&diagnostic).starts_with("declare `vec_pus`"));
+    assert!(!help(&diagnostic).contains("did you mean"));
+    let declared = "module habit.collection;\n@id(\"habit.pus\")\nfn vec_pus() -> i64 { 7 }\n@id(\"app.main\")\nfn main() -> i64 { vec_pus() }\n";
+    assert!(diagnostics(declared).is_empty());
+}
+
+#[test]
+fn standard_library_repair_includes_the_catalog_profile_prerequisite() {
+    let catalog: serde_json::Value =
+        serde_json::from_str(include_str!("../../std/catalog.json")).unwrap();
+    let module = catalog["modules"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|module| module["module"] == "std.num")
+        .unwrap();
+    let profile = module["required_profile"].as_str().unwrap();
+    let diagnostic = only(
+        "module habit.std;\n@id(\"app.main\")\nfn main() -> i64 { abs(-3) }\n",
+        "SPX-T203",
+    );
+    assert!(help(&diagnostic).contains(&format!("[package] profile = \"{profile}\"")));
+    assert!(help(&diagnostic).contains("from std.num as abs;"));
+    assert_eq!(diagnostic.message, "unknown function `abs`");
+}
+
+#[test]
+fn pattern_collision_explains_alias_without_replacing_the_outer_binding() {
+    let source = "module habit.alias; @id(\"app.main\") fn main() -> i64 { let value = 7; match (Option<i64>::Some { value: 1 }) { Option::Some { value } => value, Option::None {} => 0, } }";
+    let found = diagnostics(source);
+    let collision = found.iter().find(|d| d.code == "SPX-M104").unwrap();
+    assert_eq!(
+        collision.message,
+        "invalid or duplicate pattern binding `value`"
+    );
+    assert_eq!(collision.path.as_deref(), Some("habit.spx"));
+    assert_eq!(
+        &source[collision.span.unwrap().start..collision.span.unwrap().end],
+        "value"
+    );
+    assert!(help(collision).contains("field: fresh_alias"));
+    assert!(help(collision).contains("`result` is reserved"));
+    let corrected = source.replace(
+        "Option::Some { value } => value",
+        "Option::Some { value: parsed_number } => parsed_number",
+    );
+    assert!(diagnostics(&corrected).is_empty());
+}
+
+#[test]
+fn transcript_repeated_writes_explain_bounded_publication() {
+    let source = "module habit.publish; permit { process.stdout.write } @id(\"app.main\") fn main() -> i64 uses { process.stdout.write } { let text = \"hi\"; let bytes = str_as_bytes(string_as_str(text)); let first = stdout_write(bytes); let second = stdout_write(bytes); 0 }";
+    let diagnostic = only(source, "SPX-T269");
+    assert_eq!(
+        diagnostic.message,
+        "stdout_write path reaches 2 sites; limit is 1"
+    );
+    assert!(help(&diagnostic).contains("publish once per stream"));
+    assert!(help(&diagnostic).contains("selected profile's byte limits"));
+    let corrected = source.replace("let second = stdout_write(bytes);", "");
+    assert!(diagnostics(&corrected).is_empty());
+}
+
+#[test]
+fn pattern_duplicate_alias_and_reserved_result_keep_complete_primary_diagnostics() {
+    use semaprax::ast::Span;
+
+    for (payload, body, primary, marker, offset, count) in [
+        ("value: n, value: n", "n", "n", "value: n }", 7, 2),
+        ("value: result", "0", "result", "value: result }", 7, 1),
+    ] {
+        let source = format!(
+            "module habit.alias; @id(\"app.main\") fn main() -> i64 {{ match (Option<i64>::Some {{ value: 1 }}) {{ Option::Some {{ {payload} }} => {body}, Option::None {{}} => 0, }} }}"
+        );
+        let found = diagnostics(&source);
+        assert_eq!(found.len(), count, "{source}: {found:?}");
+        let selected = found.last().unwrap();
+        assert!(help(selected).contains("field: fresh_alias"));
+        assert!(help(selected).contains("`result` is reserved"));
+        let start = source.find(marker).unwrap() + offset;
+        assert_eq!(&source[start..start + primary.len()], primary);
+        let expected = Diagnostic::error(
+            "SPX-M104",
+            format!("invalid or duplicate pattern binding `{primary}`"),
+            Span {
+                start,
+                end: start + primary.len(),
+                line: 1,
+                column: start + 1,
+            },
+        )
+        .at_path("habit.spx");
+        let mut actual_primary = selected.clone();
+        actual_primary.help = None;
+        assert_eq!(actual_primary.json(), expected.json());
+        if count == 2 {
+            let start = source.find(marker).unwrap();
+            let expected_field = Diagnostic::error(
+                "SPX-M104",
+                "unknown or duplicate pattern field `value` in `Option::Some`",
+                Span {
+                    start,
+                    end: start + "value: n".len(),
+                    line: 1,
+                    column: start + 1,
+                },
+            )
+            .at_path("habit.spx");
+            assert_eq!(found[0].json(), expected_field.json());
+        }
+        let corrected = source.replace(payload, "value: parsed_number").replace(
+            &format!("=> {body}, Option::None"),
+            "=> parsed_number, Option::None",
+        );
+        assert!(diagnostics(&corrected).is_empty(), "{corrected}");
+    }
 }

@@ -1,27 +1,43 @@
 //! Deterministic declaration lookup, type facts, and inheritance materialization.
-
 use super::*;
+use super::nominal_payload::map::{CaseFields, IndexMap};
 
+mod flags;
+mod nominal;
+mod nominal_base;
+mod nominal_construction;
+mod nominal_paid_values;
+mod nominal_paid_inheritance;
+mod nominal_rollback;
+#[cfg(test)]
+pub(crate) mod nominal_original;
+pub(crate) use flags::{inventory_identity, inventory_substitute, InventoryPayer};
+pub(crate) use flags::{TypeFactsPayer, TypeFlags};
+pub(super) mod identity_payer;
+mod inventory_lookup;
 mod linked_owned_data;
 mod owned_builtin;
+mod owner_name;
+mod primitive_replay;
 mod projection;
+mod source;
 use owned_builtin::owned_builtin_facts;
-
 /// A deterministic, display-name-to-identity index.
 ///
 /// Types and values occupy distinct namespaces so future record/variant type
 /// declarations can coexist with functions without ambiguous lookup.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct DeclarationIndex {
+    pub(super) nominal_drop_workspace: nominal_rollback::Workspace,
     pub(super) declarations: BTreeMap<DeclarationId, Declaration>,
     pub(super) types_by_name: BTreeMap<String, DeclarationId>,
     pub(super) functions_by_name: BTreeMap<String, DeclarationId>,
     pub(super) fields_by_owner_name: BTreeMap<(DeclarationId, String), DeclarationId>,
-    pub(super) record_fields: BTreeMap<DeclarationId, Vec<ResolvedFieldDeclaration>>,
+    pub(super) record_fields: IndexMap<NominalPayload<ResolvedFieldDeclaration>>,
     pub(super) cases_by_owner_name: BTreeMap<(DeclarationId, String), DeclarationId>,
-    pub(super) variant_cases: BTreeMap<DeclarationId, Vec<ResolvedVariantCaseDeclaration>>,
-    pub(super) case_fields: BTreeMap<DeclarationId, Vec<ResolvedFieldDeclaration>>,
-    pub(super) type_parameters: BTreeMap<DeclarationId, Vec<ResolvedTypeParameterDeclaration>>,
+    pub(super) variant_cases: IndexMap<NominalPayload<ResolvedVariantCaseDeclaration>>,
+    pub(super) case_fields: IndexMap<CaseFields>,
+    pub(super) type_parameters: IndexMap<NominalPayload<ResolvedTypeParameterDeclaration>>,
     pub(super) imports_by_key: BTreeMap<String, DeclarationId>,
     pub(super) native_rust_imports_by_name: BTreeMap<String, DeclarationId>,
     pub(super) type_facts_by_id: BTreeMap<String, TypeFacts>,
@@ -30,7 +46,6 @@ pub struct DeclarationIndex {
     pub(super) class_parents: BTreeMap<DeclarationId, DeclarationId>,
     pub(super) byte_slice_roots: BTreeMap<ValueId, ByteSliceProvenance>,
 }
-
 impl DeclarationIndex {
     pub(super) fn contains_declaration_id(&self, id: &DeclarationId) -> bool {
         self.declarations.contains_key(id)
@@ -43,22 +58,16 @@ impl DeclarationIndex {
         &mut self,
         mut dispose: impl FnMut(ResolvedType),
     ) {
+        // Release case views before asking whether the outer case owner is
+        // unique. Legacy full field inventories retain their original roots.
+        for (_, fields) in std::mem::take(&mut self.case_fields) {
+            fields.drain(&mut dispose);
+        }
         for (_, fields) in std::mem::take(&mut self.record_fields) {
-            for field in fields {
-                dispose(field.ty);
-            }
+            fields.drain_recursive_types(&mut dispose);
         }
         for (_, cases) in std::mem::take(&mut self.variant_cases) {
-            for case in cases {
-                for field in case.fields {
-                    dispose(field.ty);
-                }
-            }
-        }
-        for (_, fields) in std::mem::take(&mut self.case_fields) {
-            for field in fields {
-                dispose(field.ty);
-            }
+            cases.drain_recursive_types(&mut dispose);
         }
     }
     pub fn byte_slice_provenance(&self, value: &ValueId) -> Option<&ByteSliceProvenance> {
@@ -117,8 +126,8 @@ impl DeclarationIndex {
             .sum::<usize>();
         let field_bytes = self
             .record_fields
-            .values()
-            .chain(self.case_fields.values())
+            .values().map(|values|values.as_slice())
+            .chain(self.case_fields.values().map(|values|values.as_slice()))
             .flatten()
             .map(field_capacity)
             .sum::<usize>();
@@ -142,19 +151,19 @@ impl DeclarationIndex {
             self.declarations.len() * std::mem::size_of::<(DeclarationId, Declaration)>();
         let record_field_maps = self
             .record_fields
-            .iter()
-            .chain(self.case_fields.iter())
-            .map(|(owner, fields)| {
-                std::mem::size_of::<(DeclarationId, Vec<ResolvedFieldDeclaration>)>()
+            .iter().map(|(owner,fields)|(owner,fields.capacity()))
+            .chain(self.case_fields.iter().map(|(owner,fields)|(owner,fields.capacity())))
+            .map(|(owner, capacity)| {
+                std::mem::size_of::<(DeclarationId, NominalPayload<ResolvedFieldDeclaration>)>()
                     + owner.as_str().len()
-                    + fields.capacity() * std::mem::size_of::<ResolvedFieldDeclaration>()
+                    + capacity * std::mem::size_of::<ResolvedFieldDeclaration>()
             })
             .sum::<usize>();
         let variant_case_map = self
             .variant_cases
             .iter()
             .map(|(owner, cases)| {
-                std::mem::size_of::<(DeclarationId, Vec<ResolvedVariantCaseDeclaration>)>()
+                std::mem::size_of::<(DeclarationId, NominalPayload<ResolvedVariantCaseDeclaration>)>()
                     + owner.as_str().len()
                     + cases.capacity() * std::mem::size_of::<ResolvedVariantCaseDeclaration>()
             })
@@ -163,7 +172,7 @@ impl DeclarationIndex {
             .type_parameters
             .iter()
             .map(|(owner, parameters)| {
-                std::mem::size_of::<(DeclarationId, Vec<ResolvedTypeParameterDeclaration>)>()
+                std::mem::size_of::<(DeclarationId, NominalPayload<ResolvedTypeParameterDeclaration>)>()
                     + owner.as_str().len()
                     + parameters.capacity()
                         * std::mem::size_of::<ResolvedTypeParameterDeclaration>()
@@ -186,6 +195,7 @@ impl DeclarationIndex {
                         .iter()
                         .map(place_projection_owned_capacity)
                         .sum::<usize>()
+                    + super::capacity_probe::vector_field_owned_capacity(provenance)
                     + resolved_type_owned_capacity(&provenance.projected_type)
                     + provenance.ranges.capacity() * std::mem::size_of::<ByteSliceRangeStep>()
                     + provenance
@@ -235,12 +245,11 @@ impl DeclarationIndex {
     }
 
     pub fn field_id(&self, owner: &DeclarationId, name: &str) -> Option<&DeclarationId> {
-        self.fields_by_owner_name
-            .get(&(owner.clone(), name.to_owned()))
+        owner_name::get(&self.fields_by_owner_name, owner, name)
     }
 
     pub fn record_fields(&self, owner: &DeclarationId) -> Option<&[ResolvedFieldDeclaration]> {
-        self.record_fields.get(owner).map(Vec::as_slice)
+        self.record_fields.get(owner).map(|values| values.as_slice())
     }
 
     /// Class Inheritance v1: the declared parent of `class`, if any.
@@ -272,26 +281,34 @@ impl DeclarationIndex {
     }
 
     pub fn case_id(&self, owner: &DeclarationId, name: &str) -> Option<&DeclarationId> {
-        self.cases_by_owner_name
-            .get(&(owner.clone(), name.to_owned()))
+        owner_name::get(&self.cases_by_owner_name, owner, name)
     }
 
     pub fn variant_cases(
         &self,
         owner: &DeclarationId,
     ) -> Option<&[ResolvedVariantCaseDeclaration]> {
-        self.variant_cases.get(owner).map(Vec::as_slice)
+        self.variant_cases.get(owner).map(|values| values.as_slice())
     }
 
     pub fn case_fields(&self, case: &DeclarationId) -> Option<&[ResolvedFieldDeclaration]> {
-        self.case_fields.get(case).map(Vec::as_slice)
+        if let Some(fields) = self.case_fields.get(case) {
+            return Some(fields.as_slice());
+        }
+        if !self.nominal_drop_workspace.building { return None; }
+        // During canonical construction the same complete semantic metadata
+        // is available before any shared allocation is attempted.
+        let declaration = self.declarations.get(case)?;
+        if declaration.kind != DeclarationKind::VariantCase { return None; }
+        let owner = declaration.owner.as_ref()?;
+        self.variant_cases.get(owner)?.iter().find(|row| row.id == *case).map(|row| row.fields.as_slice())
     }
 
     pub fn type_parameters(
         &self,
         declaration: &DeclarationId,
     ) -> Option<&[ResolvedTypeParameterDeclaration]> {
-        self.type_parameters.get(declaration).map(Vec::as_slice)
+        self.type_parameters.get(declaration).map(|values| values.as_slice())
     }
 
     pub fn import_id(&self, key: &str) -> Option<&DeclarationId> {
@@ -308,9 +325,16 @@ impl DeclarationIndex {
 
     /// Computes the recursive semantic facts shared by ownership and backends.
     ///
-    /// `None` is reserved for unresolved type parameters and future malformed
-    /// HIR. Every type produced for today's verified language has facts.
+    /// `None` covers unresolved type parameters, malformed HIR, and the
+    /// non-storable `Never` completion marker. Verified value types have facts.
     pub fn type_facts(&self, ty: &ResolvedType) -> Option<TypeFacts> {
+        #[cfg(test)]
+        if flags::old_key_enabled() {
+            return self.type_facts_owned_key_oracle(ty);
+        }
+        if let Some(facts) = flags::cached_facts(self, ty) {
+            return facts.cloned().or_else(|| self.recompute_type_facts(ty));
+        }
         self.type_facts_by_id
             .get(&ty.identity_key())
             .cloned()
@@ -418,6 +442,7 @@ impl DeclarationIndex {
                             });
                             continue;
                         }
+                        ResolvedType::Never => None,
                         ResolvedType::Unit => {
                             Some((true, false, false, "native-rust-import-result:unit"))
                         }
@@ -764,388 +789,34 @@ impl DeclarationIndex {
         true
     }
 
-    pub(super) fn recompute_type_facts(&self, ty: &ResolvedType) -> Option<TypeFacts> {
-        self.compute_type_facts(ty, &mut BTreeSet::new(), &mut BTreeMap::new())
-    }
-
-    pub(super) fn from_verified(program: &Program) -> Result<Self, Diagnostic> {
-        Self::from_verified_with_prelude(program, crate::prelude::declarations_for_program(program))
-    }
-
+    /// Ordinary compatibility construction is explicitly unfunded. The
+    /// shared implementation never discovers a payer through ambient state.
     pub(super) fn from_verified_with_prelude(
-        program: &Program,
+        program: &dyn ProgramSource,
         prelude: &[crate::ast::TypeDeclaration],
     ) -> Result<Self, Diagnostic> {
-        let mut index = Self::default();
-        for declaration in program.types.iter().chain(prelude) {
-            let kind = match declaration.kind {
-                TypeDeclarationKind::Resource { .. } => DeclarationKind::Resource,
-                TypeDeclarationKind::Record { .. } => DeclarationKind::Record,
-                TypeDeclarationKind::Class { .. } => DeclarationKind::Class,
-                TypeDeclarationKind::Variant { .. } => DeclarationKind::Variant,
-            };
-            index.insert_top_level(
-                declaration.name.clone(),
-                DeclarationId::new(declaration.stable_id.clone()),
-                kind,
-                if crate::prelude::is_compiler_owned_id(&declaration.stable_id) {
-                    IdentityOrigin::CompilerOwned
-                } else if declaration.explicit_id {
-                    IdentityOrigin::Explicit
-                } else {
-                    IdentityOrigin::Automatic
-                },
-            );
-            let owner = DeclarationId::new(declaration.stable_id.clone());
-            let parameters = declaration
-                .type_parameters
-                .iter()
-                .enumerate()
-                .map(|(ordinal, parameter)| {
-                    Ok(ResolvedTypeParameterDeclaration {
-                        name: parameter.name.clone(),
-                        index: u32::try_from(ordinal).map_err(|_| {
-                            Diagnostic::error(
-                                "SPX-H006",
-                                format!("type `{}` has too many parameters", declaration.name),
-                                declaration.span,
-                            )
-                            .at_path(&program.path)
-                        })?,
-                        span: parameter.span,
-                    })
-                })
-                .collect::<Result<Vec<_>, Diagnostic>>()?;
-            index.type_parameters.insert(owner, parameters);
-        }
-        for interface in &program.interfaces {
-            let interface_id = DeclarationId::new(interface.stable_id.clone());
-            index.insert_top_level(
-                interface.name.clone(),
-                interface_id.clone(),
-                DeclarationKind::Interface,
-                IdentityOrigin::Explicit,
-            );
-            for import in &interface.imports {
-                let import_id = DeclarationId::new(import.stable_id.clone());
-                index
-                    .imports_by_key
-                    .insert(import.stable_id.clone(), import_id.clone());
-                if import.native_rust {
-                    index
-                        .native_rust_imports_by_name
-                        .insert(import.name.clone(), import_id.clone());
-                }
-                index.insert_owned_declaration(
-                    interface_id.clone(),
-                    import.name.clone(),
-                    import_id,
-                    DeclarationKind::Import,
-                    IdentityOrigin::Explicit,
-                );
-            }
-        }
-        for declaration in program.types.iter().chain(prelude) {
-            let TypeDeclarationKind::Resource { lifecycles } = &declaration.kind else {
-                continue;
-            };
-            if let [lifecycle] = lifecycles.as_slice() {
-                let lifecycle_id = lifecycle
-                    .stable_id
-                    .as_ref()
-                    .expect("verified lifecycle has an explicit identity");
-                index.insert_owned_declaration(
-                    DeclarationId::new(declaration.stable_id.clone()),
-                    "drop".to_owned(),
-                    DeclarationId::new(lifecycle_id.clone()),
-                    DeclarationKind::ResourceDrop,
-                    IdentityOrigin::Explicit,
-                );
-            }
-        }
-        for function in &program.functions {
-            let owner = DeclarationId::new(function.stable_id.clone());
-            index.insert_top_level(
-                function.name.clone(),
-                owner.clone(),
-                DeclarationKind::Function,
-                if super::record_invariants::is_synthesized(&function.name) {
-                    IdentityOrigin::CompilerOwned
-                } else if function.explicit_id {
-                    IdentityOrigin::Explicit
-                } else {
-                    IdentityOrigin::Automatic
-                },
-            );
-            let parameters = function
-                .type_parameters
-                .iter()
-                .enumerate()
-                .map(|(ordinal, parameter)| {
-                    Ok(ResolvedTypeParameterDeclaration {
-                        name: parameter.name.clone(),
-                        index: u32::try_from(ordinal).map_err(|_| {
-                            Diagnostic::error(
-                                "SPX-H006",
-                                format!("function `{}` has too many parameters", function.name),
-                                function.span,
-                            )
-                            .at_path(&program.path)
-                        })?,
-                        span: parameter.span,
-                    })
-                })
-                .collect::<Result<Vec<_>, Diagnostic>>()?;
-            index.type_parameters.insert(owner, parameters);
-        }
-        if program
-            .interfaces
-            .iter()
-            .flat_map(|interface| &interface.imports)
-            .filter(|import| import.native_rust)
-            .any(|import| index.functions_by_name.contains_key(&import.name))
-        {
-            return Err(Diagnostic::error(
-                "SPX-B107",
-                "Native Rust Interop declaration set is unsupported: symbol collision",
-                Span::default(),
-            )
-            .at_path(&program.path));
-        }
-        for declaration in program.types.iter().chain(prelude) {
-            let (TypeDeclarationKind::Record { fields }
-            | TypeDeclarationKind::Class { fields, .. }) = &declaration.kind
-            else {
-                continue;
-            };
-            let owner = DeclarationId::new(declaration.stable_id.clone());
-            let mut resolved_fields = Vec::with_capacity(fields.len());
-            for (ordinal, field) in fields.iter().enumerate() {
-                let ty = index
-                    .resolve_source_type(&field.ty, Some(&owner))
-                    .ok_or_else(|| {
-                        Diagnostic::error(
-                            "SPX-H001",
-                            format!("unresolved field type `{}`", field.ty),
-                            field.span,
-                        )
-                        .at_path(&program.path)
-                    })?;
-                let field_index = u32::try_from(ordinal).map_err(|_| {
-                    Diagnostic::error(
-                        "SPX-H006",
-                        format!("record `{}` has too many fields", declaration.name),
-                        declaration.span,
-                    )
-                    .at_path(&program.path)
-                })?;
-                let resolved = ResolvedFieldDeclaration {
-                    id: DeclarationId::new(field.stable_id.clone()),
-                    name: field.name.clone(),
-                    index: field_index,
-                    ty,
-                    span: field.span,
-                };
-                index.insert_field(
-                    owner.clone(),
-                    resolved.clone(),
-                    if field.explicit_id {
-                        IdentityOrigin::Explicit
-                    } else {
-                        IdentityOrigin::Automatic
-                    },
-                );
-                resolved_fields.push(resolved);
-            }
-            index.record_fields.insert(owner, resolved_fields);
-        }
-        for declaration in program.types.iter() {
-            let TypeDeclarationKind::Class { fields, methods } = &declaration.kind else {
-                continue;
-            };
-            let owner = DeclarationId::new(declaration.stable_id.clone());
-            let mut resolved_fields = Vec::with_capacity(fields.len());
-            for (ordinal, field) in fields.iter().enumerate() {
-                let ty = index
-                    .resolve_source_type(&field.ty, Some(&owner))
-                    .ok_or_else(|| {
-                        Diagnostic::error(
-                            "SPX-H001",
-                            format!("unresolved class field type `{}`", field.ty),
-                            field.span,
-                        )
-                        .at_path(&program.path)
-                    })?;
-                let field_index = u32::try_from(ordinal).map_err(|_| {
-                    Diagnostic::error(
-                        "SPX-H006",
-                        format!("class `{}` has too many fields", declaration.name),
-                        declaration.span,
-                    )
-                    .at_path(&program.path)
-                })?;
-                let resolved = ResolvedFieldDeclaration {
-                    id: DeclarationId::new(field.stable_id.clone()),
-                    name: field.name.clone(),
-                    index: field_index,
-                    ty,
-                    span: field.span,
-                };
-                index.insert_field(
-                    owner.clone(),
-                    resolved.clone(),
-                    if field.explicit_id {
-                        IdentityOrigin::Explicit
-                    } else {
-                        IdentityOrigin::Automatic
-                    },
-                );
-                resolved_fields.push(resolved);
-            }
-            index.record_fields.insert(owner.clone(), resolved_fields);
-            for method in methods {
-                let method_id = DeclarationId::new(method.stable_id.clone());
-                if index.declarations.contains_key(&method_id) {
-                    return Err(Diagnostic::error(
-                        "SPX-S102",
-                        format!("duplicate stable id `{}`", method.stable_id),
-                        method.span,
-                    )
-                    .at_path(&program.path));
-                }
-                index.insert_owned_declaration(
-                    owner.clone(),
-                    method.name.clone(),
-                    method_id,
-                    DeclarationKind::Function,
-                    if method.explicit_id {
-                        IdentityOrigin::Explicit
-                    } else {
-                        IdentityOrigin::Automatic
-                    },
-                );
-                if !method.type_parameters.is_empty() {
-                    return Err(Diagnostic::error(
-                        "SPX-T224",
-                        format!(
-                            "class method `{}` cannot declare generic parameters in this slice",
-                            method.name
-                        ),
-                        method.span,
-                    )
-                    .at_path(&program.path));
-                }
-                index
-                    .type_parameters
-                    .insert(DeclarationId::new(method.stable_id.clone()), Vec::new());
-            }
-        }
-        for declaration in program.types.iter().chain(prelude) {
-            let TypeDeclarationKind::Variant { cases } = &declaration.kind else {
-                continue;
-            };
-            let owner = DeclarationId::new(declaration.stable_id.clone());
-            let mut resolved_cases = Vec::with_capacity(cases.len());
-            for (case_ordinal, case) in cases.iter().enumerate() {
-                let case_id = DeclarationId::new(case.stable_id.clone());
-                let case_index = u32::try_from(case_ordinal).map_err(|_| {
-                    Diagnostic::error(
-                        "SPX-H006",
-                        format!("variant `{}` has too many cases", declaration.name),
-                        declaration.span,
-                    )
-                    .at_path(&program.path)
-                })?;
-                index.insert_case(
-                    owner.clone(),
-                    case.name.clone(),
-                    case_id.clone(),
-                    if crate::prelude::is_compiler_owned_id(&case.stable_id) {
-                        IdentityOrigin::CompilerOwned
-                    } else if case.explicit_id {
-                        IdentityOrigin::Explicit
-                    } else {
-                        IdentityOrigin::Automatic
-                    },
-                );
-                let mut resolved_fields = Vec::with_capacity(case.fields.len());
-                for (field_ordinal, field) in case.fields.iter().enumerate() {
-                    let ty = index
-                        .resolve_source_type(&field.ty, Some(&owner))
-                        .ok_or_else(|| {
-                            Diagnostic::error(
-                                "SPX-H001",
-                                format!("unresolved case field type `{}`", field.ty),
-                                field.span,
-                            )
-                            .at_path(&program.path)
-                        })?;
-                    let field_index = u32::try_from(field_ordinal).map_err(|_| {
-                        Diagnostic::error(
-                            "SPX-H006",
-                            format!(
-                                "variant case `{}::{}` has too many fields",
-                                declaration.name, case.name
-                            ),
-                            case.span,
-                        )
-                        .at_path(&program.path)
-                    })?;
-                    let resolved = ResolvedFieldDeclaration {
-                        id: DeclarationId::new(field.stable_id.clone()),
-                        name: field.name.clone(),
-                        index: field_index,
-                        ty,
-                        span: field.span,
-                    };
-                    index.insert_case_field(
-                        case_id.clone(),
-                        resolved.clone(),
-                        if crate::prelude::is_compiler_owned_id(&field.stable_id) {
-                            IdentityOrigin::CompilerOwned
-                        } else if field.explicit_id {
-                            IdentityOrigin::Explicit
-                        } else {
-                            IdentityOrigin::Automatic
-                        },
-                    );
-                    resolved_fields.push(resolved);
-                }
-                index
-                    .case_fields
-                    .insert(case_id.clone(), resolved_fields.clone());
-                resolved_cases.push(ResolvedVariantCaseDeclaration {
-                    id: case_id,
-                    name: case.name.clone(),
-                    index: case_index,
-                    fields: resolved_fields,
-                    span: case.span,
-                });
-            }
-            index.variant_cases.insert(owner, resolved_cases);
-        }
-        index.materialize_class_inheritance(program)?;
-        if !index.populate_type_facts() {
-            return Err(Diagnostic::error(
-                "SPX-T217",
-                "record declarations contain an illegal by-value recursive layout",
-                Span::default(),
-            )
-            .at_path(&program.path));
-        }
-        Ok(index)
+        Self::from_verified_with_identity_payer(program, prelude, &mut |text| {
+            Ok::<_, std::convert::Infallible>(DeclarationId::new(text))
+        })
+        .map_err(|error| match error {
+            identity_payer::IdentityIndexError::Semantic(error) => error,
+            identity_payer::IdentityIndexError::Identity(impossible) => match impossible {},
+        })
     }
 
     /// Class Inheritance v1: resolves `extends` links, rejects unknown or
     /// non-class parents and inheritance cycles, then prepends each class's
     /// inherited field prefix so layouts, semantic facts, projections, and
     /// cleanup treat an inherited member exactly like a declared one.
-    fn materialize_class_inheritance(&mut self, program: &Program) -> Result<(), Diagnostic> {
-        for declaration in &program.types {
+    fn materialize_class_inheritance(
+        &mut self,
+        program: &dyn ProgramSource,
+    ) -> Result<(), Diagnostic> {
+        for declaration in program.types() {
             let Some(extends) = &declaration.extends else {
                 continue;
             };
-            let child = DeclarationId::new(declaration.stable_id.clone());
+            let child = self.inserted_identity(&declaration.stable_id);
             let Type::Named {
                 name: parent_name,
                 arguments: parent_arguments,
@@ -1159,7 +830,7 @@ impl DeclarationIndex {
                     ),
                     declaration.name_span,
                 )
-                .at_path(&program.path));
+                .at_path(program.path()));
             };
             if !parent_arguments.is_empty() {
                 return Err(Diagnostic::error(
@@ -1170,7 +841,7 @@ impl DeclarationIndex {
                     ),
                     declaration.name_span,
                 )
-                .at_path(&program.path));
+                .at_path(program.path()));
             }
             let parent = self.types_by_name.get(parent_name).ok_or_else(|| {
                 Diagnostic::error(
@@ -1181,7 +852,7 @@ impl DeclarationIndex {
                     ),
                     declaration.name_span,
                 )
-                .at_path(&program.path)
+                .at_path(program.path())
             })?;
             if self
                 .declaration(parent)
@@ -1195,15 +866,15 @@ impl DeclarationIndex {
                     ),
                     declaration.name_span,
                 )
-                .at_path(&program.path));
+                .at_path(program.path()));
             }
             self.class_parents.insert(child, parent.clone());
         }
-        for declaration in &program.types {
+        for declaration in program.types() {
             if !matches!(declaration.kind, TypeDeclarationKind::Class { .. }) {
                 continue;
             }
-            let child = DeclarationId::new(declaration.stable_id.clone());
+            let child = self.inserted_identity(&declaration.stable_id);
             let mut visited = BTreeSet::new();
             let mut cursor = child.clone();
             while let Some(parent) = self.class_parents.get(&cursor) {
@@ -1216,7 +887,7 @@ impl DeclarationIndex {
                         ),
                         declaration.span,
                     )
-                    .at_path(&program.path));
+                    .at_path(program.path()));
                 }
                 cursor = parent.clone();
             }
@@ -1225,19 +896,19 @@ impl DeclarationIndex {
         // its standalone ancestor layout at every depth. Declared-only lists
         // are snapshotted first because ancestors are materialized in place.
         let mut declared_fields = BTreeMap::new();
-        for declaration in &program.types {
+        for declaration in program.types() {
             if matches!(declaration.kind, TypeDeclarationKind::Class { .. }) {
-                let id = DeclarationId::new(declaration.stable_id.clone());
+                let id = self.inserted_identity(&declaration.stable_id);
                 if let Some(fields) = self.record_fields(&id) {
                     declared_fields.insert(id, fields.to_vec());
                 }
             }
         }
-        for declaration in &program.types {
+        for declaration in program.types() {
             let TypeDeclarationKind::Class { .. } = &declaration.kind else {
                 continue;
             };
-            let child = DeclarationId::new(declaration.stable_id.clone());
+            let child = self.inserted_identity(&declaration.stable_id);
             let mut chain = self.class_ancestors(&child);
             chain.reverse();
             chain.push(child.clone());
@@ -1252,7 +923,7 @@ impl DeclarationIndex {
                         format!("class `{member}` has no resolved fields"),
                         declaration.span,
                     )
-                    .at_path(&program.path)
+                    .at_path(program.path())
                 })?;
                 for mut field in fields.iter().cloned() {
                     if !seen_names.insert(field.name.clone()) || !seen_ids.insert(field.id.clone())
@@ -1265,7 +936,7 @@ impl DeclarationIndex {
                             ),
                             field.span,
                         )
-                        .at_path(&program.path));
+                        .at_path(program.path()));
                     }
                     // Effective positions are canonical for the extending
                     // class; backends consume them as declaration order.
@@ -1275,7 +946,7 @@ impl DeclarationIndex {
                             format!("class `{}` has too many fields", declaration.name),
                             declaration.span,
                         )
-                        .at_path(&program.path)
+                        .at_path(program.path())
                     })?;
                     if !is_child {
                         self.fields_by_owner_name
@@ -1347,6 +1018,7 @@ impl DeclarationIndex {
         );
     }
 
+    #[cfg(test)]
     fn insert_field(
         &mut self,
         owner: DeclarationId,
@@ -1388,6 +1060,7 @@ impl DeclarationIndex {
         );
     }
 
+    #[cfg(test)]
     fn insert_case_field(
         &mut self,
         owner: DeclarationId,
@@ -1425,6 +1098,7 @@ impl DeclarationIndex {
                     ty @ Type::Function { .. } => {
                         resolved.push(super::function_value::resolve::source_type(ty)?)
                     }
+                    Type::Never => return None,
                     Type::I64 => resolved.push(ResolvedType::I64),
                     Type::I32 => resolved.push(ResolvedType::I32),
                     Type::Char => resolved.push(ResolvedType::Char),
@@ -1489,11 +1163,242 @@ pub fn dispose_declaration_index_for_private_contract(
 
 impl Drop for DeclarationIndex {
     fn drop(&mut self) {
+        if let Some(scratch) = self.nominal_drop_workspace.scratch.take() {
+            let mut scratch=scratch.lock().expect("construction disposal lock");
+            self.drain_recursive_types_for_private_contract(|ty| nominal_payload::dispose(ty, &mut scratch));
+            return;
+        }
         let mut pending = Vec::new();
-        self.drain_recursive_types_for_private_contract(|ty| pending.push(ty));
+        // Leaf fields have no recursive payload to queue. Move only nominal
+        // children into the iterative fallback, preserving bounded stack use.
+        self.drain_legacy_type_roots(|ty| {
+            if let ResolvedType::Nominal { arguments, .. } = ty {
+                pending.extend(arguments);
+            }
+        });
         while let Some(ty) = pending.pop() {
             if let ResolvedType::Nominal { arguments, .. } = ty {
                 pending.extend(arguments);
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod leaf_drop_tests;
+
+// Keep this small exact-key receiver inline so existing source-locked readers
+// continue covering the entire declaration-map lookup contract.
+mod invariant_lookup {
+    use super::{DeclarationId, DeclarationIndex};
+    use std::borrow::Borrow;
+    use std::cmp::Ordering;
+
+    type Bytes<'a> = std::iter::Chain<
+        std::iter::Copied<std::slice::Iter<'a, u8>>,
+        std::iter::Copied<std::slice::Iter<'a, u8>>,
+    >;
+    trait Key {
+        fn bytes(&self) -> Bytes<'_>;
+    }
+    impl Key for DeclarationId {
+        fn bytes(&self) -> Bytes<'_> {
+            self.as_str()
+                .as_bytes()
+                .iter()
+                .copied()
+                .chain([].iter().copied())
+        }
+    }
+    // DeclarationId's Eq/Ord are exact text equality/UTF-8 byte ordering.
+    // The borrowed trait object must use that same order for EVERY stored id.
+    impl<'a> Borrow<dyn Key + 'a> for DeclarationId {
+        fn borrow(&self) -> &(dyn Key + 'a) {
+            self
+        }
+    }
+    impl PartialEq for dyn Key + '_ {
+        fn eq(&self, other: &Self) -> bool {
+            self.cmp(other) == Ordering::Equal
+        }
+    }
+    impl Eq for dyn Key + '_ {}
+    impl PartialOrd for dyn Key + '_ {
+        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            Some(self.cmp(other))
+        }
+    }
+    impl Ord for dyn Key + '_ {
+        fn cmp(&self, other: &Self) -> Ordering {
+            self.bytes().cmp(other.bytes())
+        }
+    }
+    struct Invariant<'a>(&'a DeclarationId);
+    impl Key for Invariant<'_> {
+        fn bytes(&self) -> Bytes<'_> {
+            self.0
+                .as_str()
+                .as_bytes()
+                .iter()
+                .copied()
+                .chain(b"#invariant".iter().copied())
+        }
+    }
+    impl DeclarationIndex {
+        /// Exact reserved declaration presence, with the existing map's lookup
+        /// and arbitrary stored declaration precedence. No index or map scan.
+        pub(crate) fn has_record_invariant(&self, declaration: &DeclarationId) -> bool {
+            self.declarations
+                .contains_key(&Invariant(declaration) as &dyn Key)
+        }
+        #[cfg(test)]
+        fn has_record_invariant_owned_oracle(&self, declaration: &DeclarationId) -> bool {
+            self.declaration(&DeclarationId::new(format!("{declaration}#invariant")))
+                .is_some()
+        }
+    }
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use crate::hir::{Declaration, DeclarationKind, IdentityOrigin};
+        fn declaration(id: DeclarationId, kind: DeclarationKind) -> Declaration {
+            Declaration {
+                id,
+                name: "arbitrary stored declaration".into(),
+                kind,
+                identity_origin: IdentityOrigin::Explicit,
+                owner: None,
+            }
+        }
+        fn names() -> Vec<String> {
+            vec![
+                "".into(),
+                "a".into(),
+                ":".into(),
+                "::#".into(),
+                "#invariant".into(),
+                "a#invariant".into(),
+                "a#invariant#invariant".into(),
+                "a:0:".into(),
+                "α:0:🦀".into(),
+                "é".into(),
+                "e\u{301}".into(),
+                "a\0b".into(),
+                "a".repeat(65_536),
+                "α".repeat(32_768),
+            ]
+        }
+        #[test]
+        fn suffix_lookup_matches_full_owned_key_for_arbitrary_ids_and_declarations() {
+            let names = names();
+            let queries: Vec<_> = names
+                .iter()
+                .map(|name| DeclarationId::new(name.clone()))
+                .collect();
+            let mut index = DeclarationIndex::default();
+            for id in &queries {
+                index.declarations.insert(
+                    id.clone(),
+                    declaration(id.clone(), DeclarationKind::Resource),
+                );
+                for suffix in ["#invarian", "#invariant!", "#invariant\0", "#invariantα"] {
+                    let neighbor = DeclarationId::new(format!("{id}{suffix}"));
+                    index.declarations.insert(
+                        neighbor.clone(),
+                        declaration(neighbor, DeclarationKind::Record),
+                    );
+                }
+            }
+            for query in &queries {
+                assert_eq!(
+                    index.has_record_invariant(query),
+                    index.has_record_invariant_owned_oracle(query)
+                );
+            }
+            // Kind/name/origin carry no authority for this presence probe: an
+            // arbitrary exact stored declaration selects the original refusal.
+            for (position, query) in queries.iter().enumerate() {
+                let id = DeclarationId::new(format!("{query}#invariant"));
+                index
+                    .declarations
+                    .insert(id.clone(), declaration(id, DeclarationKind::Function));
+                for (probe_position, probe) in queries.iter().enumerate() {
+                    assert_eq!(
+                        index.has_record_invariant(probe),
+                        index.has_record_invariant_owned_oracle(probe)
+                    );
+                    if probe_position <= position {
+                        assert!(index.has_record_invariant(probe));
+                    }
+                }
+            }
+            let (_, metrics) = crate::test_allocation_observer::measure(|| {
+                for query in &queries {
+                    assert!(index.has_record_invariant(query));
+                }
+            });
+            assert!(!metrics.invalid);
+            assert_eq!(
+                (
+                    metrics.allocations,
+                    metrics.allocated,
+                    metrics.live,
+                    metrics.freed
+                ),
+                (0, 0, 0, 0)
+            );
+            let (_, old) = crate::test_allocation_observer::measure(|| {
+                for query in &queries {
+                    assert!(index.has_record_invariant_owned_oracle(query));
+                }
+            });
+            assert!(!old.invalid);
+            assert!(old.allocated > 0 && old.allocations > 0);
+            assert_eq!(old.live, 0);
+            assert_eq!(old.allocated, old.freed);
+            let (_, overflowed, used, first) =
+                crate::bounded_output::with_limit_usage_refusal(0, || {
+                    assert!(!crate::bounded_output::reserve_active_required(1));
+                    for query in &queries {
+                        assert!(index.has_record_invariant(query));
+                    }
+                    assert!(!crate::bounded_output::reserve_active_required(0));
+                });
+            assert!(overflowed);
+            assert_eq!(used, 0);
+            assert_eq!(first.unwrap().requested, 1);
+            // Observe destruction of a complete index, separately from queries.
+            let mut drop_index = DeclarationIndex::default();
+            let (_, dropped) = crate::test_allocation_observer::measure(|| {
+                let id = DeclarationId::new("drop#invariant");
+                drop_index
+                    .declarations
+                    .insert(id.clone(), declaration(id, DeclarationKind::Function));
+                assert!(drop_index.has_record_invariant(&DeclarationId::new("drop")));
+                drop(drop_index);
+            });
+            assert!(!dropped.invalid);
+            assert_eq!(dropped.live, 0);
+            assert_eq!(dropped.allocated, dropped.freed);
+        }
+        #[test]
+        fn streamed_order_is_exact_for_stored_keys_and_suffix_queries() {
+            let names = names();
+            let ids: Vec<_> = names
+                .iter()
+                .map(|name| DeclarationId::new(name.clone()))
+                .collect();
+            for left in &ids {
+                for right in &ids {
+                    let stored_left = left as &dyn Key;
+                    let stored_right = right as &dyn Key;
+                    assert_eq!(stored_left.cmp(stored_right), left.cmp(right));
+                    let query = Invariant(left);
+                    assert_eq!(
+                        (&query as &dyn Key).cmp(stored_right),
+                        format!("{left}#invariant").as_str().cmp(right.as_str())
+                    );
+                }
             }
         }
     }

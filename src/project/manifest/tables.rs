@@ -15,7 +15,7 @@
 mod profiles;
 use super::{
     PROJECT_SCHEMA_V17, PROJECT_SCHEMA_V18, PROJECT_SCHEMA_V26, PROJECT_SCHEMA_V27,
-    PROJECT_SCHEMA_V28,
+    PROJECT_SCHEMA_V28, PROJECT_SCHEMA_V29, PROJECT_SCHEMA_V30, PROJECT_SCHEMA_V32,
 };
 use crate::project::profile::{
     valid_environment_capabilities, valid_process_capabilities,
@@ -23,8 +23,12 @@ use crate::project::profile::{
     PROJECT_PROFILE_ENVIRONMENT_IO_V1,
 };
 use crate::project::profile::{
-    PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1, PROJECT_PROFILE_SOURCE_COMMAND_V1,
-    PROJECT_SOURCE_COMMAND_INPUT_V1,
+    PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1,
+    PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1,
+    PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1, PROJECT_PROFILE_SOURCE_COMMAND_V1,
+    PROJECT_SCHEMA_V33, PROJECT_SCHEMA_V34, PROJECT_SOURCE_COMMAND_INPUT_V1,
+    PROJECT_SOURCE_COMMAND_SELECTED_FILE_INPUT_V1,
+    PROJECT_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_INPUT_V1,
 };
 use profiles::{lower_profile, profile_by_name};
 
@@ -53,11 +57,15 @@ use crate::project::profile::{
     PROJECT_PROFILE_OWNED_UTF8_API_V1, PROJECT_PROFILE_PROCESS_IO_V1,
     PROJECT_PROFILE_PUBLIC_GENERIC_WASM_PROVIDER_V1,
     PROJECT_PROFILE_SOURCE_LOCAL_FUTURE_INDEXED_RUST_V1, PROJECT_PROFILE_SOURCE_LOCAL_FUTURE_V1,
+    PROJECT_PROFILE_STDIN_STREAM_COLLECTION_RECORD_COMMAND_IO_V1,
     PROJECT_PROFILE_STDIN_STREAM_COMMAND_IO_V1, PROJECT_PROFILE_STDIN_STREAM_COMMAND_IO_V2,
     PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V1,
+    PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V2,
+    PROJECT_PROFILE_STDIN_STREAM_NESTED_OUTCOME_COMMAND_IO_V1,
+    PROJECT_PROFILE_STDIN_STREAM_OWNED_DATA_COMMAND_IO_V1,
     PROJECT_PROFILE_STDIN_STREAM_TEXT_COMMAND_IO_V1, PROJECT_PROFILE_USEFUL_DATA_COMMAND_V1,
     PROJECT_PROFILE_USEFUL_DATA_COMMAND_V2, PROJECT_PROFILE_USEFUL_DATA_V1,
-    PROJECT_PROFILE_USEFUL_TEXT_CONSUMER_V1,
+    PROJECT_PROFILE_USEFUL_TEXT_CONSUMER_V1, PROJECT_SCHEMA_V31,
 };
 use crate::project::profile::{
     PROJECT_FILESYSTEM_CAPABILITIES_V1, PROJECT_PROFILE_FILESYSTEM_IO_V1,
@@ -108,6 +116,9 @@ const CODE_TARGET_OUTSIDE_MATRIX: &str = "SPX-J122";
 const LABEL: &str = "Package Manifest v1";
 const MAX_RANGE_BYTES: usize = 33;
 const SCAFFOLD_HELP: &str = "start from `semaprax new <destination>` or render a canonical template with `semaprax project-scaffold --name <name> --layout tables`";
+const QUOTED_DEPENDENCY_KEY_HELP: &str =
+    "write a bare stable dependency key, for example `std.text = \"=0.1.0\"`";
+const UNSORTED_SOURCES_HELP: &str = "sort `[modules] sources` in strictly increasing byte order and remove duplicates; after correcting the list, `semaprax fmt --manifest semaprax.toml` canonicalizes the valid manifest";
 
 /// Which source layout a manifest was parsed from. The frozen layouts and the
 /// table layout lower to the same profile contract and differ only in bytes.
@@ -497,6 +508,10 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
             | PROJECT_PROFILE_STDIN_STREAM_COMMAND_IO_V2
             | PROJECT_PROFILE_STDIN_STREAM_TEXT_COMMAND_IO_V1
             | PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V1
+            | PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V2
+            | PROJECT_PROFILE_STDIN_STREAM_OWNED_DATA_COMMAND_IO_V1
+            | PROJECT_PROFILE_STDIN_STREAM_COLLECTION_RECORD_COMMAND_IO_V1
+            | PROJECT_PROFILE_STDIN_STREAM_NESTED_OUTCOME_COMMAND_IO_V1
             | PROJECT_PROFILE_LINE_COMMAND_IO_V1
             | PROJECT_PROFILE_NETWORK_COMMAND_IO_V1
             | PROJECT_PROFILE_HTTPS_COMMAND_IO_V1
@@ -506,6 +521,8 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
             | PROJECT_PROFILE_ENVIRONMENT_IO_V1
             | PROJECT_PROFILE_PROCESS_IO_V1
             | PROJECT_PROFILE_SOURCE_COMMAND_V1
+            | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1
+            | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1
             | PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1
     );
     if command_profile {
@@ -537,6 +554,12 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
         }
         let expected_input = match profile {
             PROJECT_PROFILE_SOURCE_COMMAND_V1 => Some(PROJECT_SOURCE_COMMAND_INPUT_V1),
+            PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1 => {
+                Some(PROJECT_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_INPUT_V1)
+            }
+            PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1 => {
+                Some(PROJECT_SOURCE_COMMAND_SELECTED_FILE_INPUT_V1)
+            }
             PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1 => {
                 Some(PROJECT_SOURCE_COMMAND_INPUT_V1)
             }
@@ -548,7 +571,11 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
             PROJECT_PROFILE_STDIN_STREAM_COMMAND_IO_V1
             | PROJECT_PROFILE_STDIN_STREAM_COMMAND_IO_V2
             | PROJECT_PROFILE_STDIN_STREAM_TEXT_COMMAND_IO_V1
-            | PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V1 => {
+            | PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V1
+            | PROJECT_PROFILE_STDIN_STREAM_DATA_COMMAND_IO_V2
+            | PROJECT_PROFILE_STDIN_STREAM_OWNED_DATA_COMMAND_IO_V1
+            | PROJECT_PROFILE_STDIN_STREAM_COLLECTION_RECORD_COMMAND_IO_V1
+            | PROJECT_PROFILE_STDIN_STREAM_NESTED_OUTCOME_COMMAND_IO_V1 => {
                 Some(PROJECT_LANGUAGE_COMMAND_STREAM_INPUT_V1)
             }
             _ => None,
@@ -577,6 +604,15 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
             if if profile == PROJECT_PROFILE_SOURCE_COMMAND_V1 {
                 !crate::source_command::selects(required)
                     || !required.windows(2).all(|v| v[0] < v[1])
+            } else if matches!(
+                profile,
+                PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1
+                    | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1
+            ) {
+                !crate::source_command::selects(required)
+                    || !required.iter().any(|v| v == "fs.read")
+                    || !required.iter().any(|v| v == "process.args.read")
+                    || !required.windows(2).all(|v| v[0] < v[1])
             } else if profile == PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1 {
                 !crate::source_command::selects_resource_output(required)
                     || !required.windows(2).all(|v| v[0] < v[1])
@@ -592,6 +628,12 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
             } {
                 let message = if profile == PROJECT_PROFILE_SOURCE_COMMAND_V1 {
                     "source-command.v1 requires a sorted nonempty subset of fs.read, process.args.read, process.stderr.write, process.stdout.write, other than stdout alone".to_owned()
+                } else if matches!(
+                    profile,
+                    PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1
+                        | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1
+                ) {
+                    "source-command.selected-file.v1 requires sorted source-command capabilities including fs.read and process.args.read".to_owned()
                 } else if profile == PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1 {
                     "source-command.resource-output.v1 requires a sorted nonempty subset of fs.read, process.args.read, process.stderr.write, process.stdout.write, other than stdout alone".to_owned()
                 } else {
@@ -630,9 +672,13 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
             });
         }
         if !sources.windows(2).all(|pair| pair[0] < pair[1]) {
-            diagnostics.push(scaffold_diagnostic(format!(
-                "{LABEL} source paths must be strictly byte-sorted and unique"
-            )));
+            diagnostics.push(
+                Diagnostic::io(
+                    "SPX-J100",
+                    format!("{LABEL} source paths must be strictly byte-sorted and unique"),
+                )
+                .with_help(UNSORTED_SOURCES_HELP),
+            );
         }
         if sources.iter().any(|path| {
             path.len() > super::MAX_PATH_BYTES
@@ -663,6 +709,8 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
                         | PROJECT_PROFILE_ENVIRONMENT_IO_V1
                         | PROJECT_PROFILE_PROCESS_IO_V1
                         | PROJECT_PROFILE_SOURCE_COMMAND_V1
+                        | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1
+                        | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1
                         | PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1
                 ))
         {
@@ -693,6 +741,8 @@ fn structural_diagnostics(tables: &[Table<'_>], law_layout: bool) -> Vec<Diagnos
                     | PROJECT_PROFILE_ENVIRONMENT_IO_V1
                     | PROJECT_PROFILE_PROCESS_IO_V1
                     | PROJECT_PROFILE_SOURCE_COMMAND_V1
+                    | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_V1
+                    | PROJECT_PROFILE_SOURCE_COMMAND_SELECTED_FILE_RESOURCE_V1
                     | PROJECT_PROFILE_SOURCE_COMMAND_RESOURCE_OUTPUT_V1
             )
         }) {
@@ -1306,9 +1356,17 @@ fn parse_assignment<'a>(line: &'a str, table: &str) -> Result<(&'a str, Value), 
             byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'-' | b'_' | b'.')
         })
     {
-        return Err(grammar(format!(
-            "{LABEL} keys are lowercase [a-z0-9._-]+; found `{key}` in `[{table}]`"
-        )));
+        let message =
+            format!("{LABEL} keys are lowercase [a-z0-9._-]+; found `{key}` in `[{table}]`");
+        if table == "dependencies"
+            && ((key.starts_with('\"') && key.ends_with('\"'))
+                || (key.starts_with('\'') && key.ends_with('\'')))
+        {
+            return Err(vec![
+                Diagnostic::io("SPX-J100", message).with_help(QUOTED_DEPENDENCY_KEY_HELP)
+            ]);
+        }
+        return Err(grammar(message));
     }
     if value.starts_with('[') {
         Ok((key, Value::List(super::parse_array_assignment(line, key)?)))

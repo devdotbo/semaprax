@@ -2,6 +2,72 @@
 use super::*;
 
 impl Evaluator<'_> {
+    /// All dynamic values are staged before the first render operation. Once
+    /// staging completes this worker owns every String value; an error drops
+    /// the unrendered suffix and the accumulator without publishing a result.
+    pub(super) fn evaluate_literal_format(
+        &mut self,
+        template: &str,
+        args: &[ResolvedExpr],
+        environment: &mut Environment,
+        depth: usize,
+    ) -> Result<Value, Flow> {
+        self.charge()?;
+        let pieces = crate::literal_format::scan(template)
+            .map_err(|_| Flow::Guard("invalid checked literal format"))?;
+        if crate::literal_format::field_count(&pieces) != args.len() {
+            return Err(Flow::Guard("checked literal format arity changed"));
+        }
+        let mut staged = Vec::with_capacity(args.len());
+        for argument in args {
+            let value = if argument.ty == ResolvedType::String {
+                if let ResolvedExprKind::Place(place) = &argument.kind {
+                    self.begin_expression(argument, depth)?;
+                    take_owned_place(environment, place)
+                        .ok_or(Flow::Guard("checked literal format owner is unavailable"))?
+                } else {
+                    self.evaluate(argument, environment, depth)?
+                }
+            } else {
+                self.evaluate(argument, environment, depth)?
+            };
+            staged.push(value);
+        }
+        let mut result = self.materialize_utf8_copy("")?;
+        let mut field = 0;
+        for piece in pieces {
+            let part = match piece {
+                crate::literal_format::Piece::Literal(text) => self.materialize_utf8_copy(&text)?,
+                crate::literal_format::Piece::Field => {
+                    let value = std::mem::replace(&mut staged[field], Value::Moved);
+                    field += 1;
+                    match value {
+                        Value::String(text) => text,
+                        Value::Int(number) => self.materialize_utf8_copy(&number.to_string())?,
+                        Value::Uint8(number) => self.materialize_utf8_copy(&number.to_string())?,
+                        Value::Usize(number) => self.materialize_utf8_copy(&number.to_string())?,
+                        Value::Bool(boolean) => {
+                            self.materialize_utf8_copy(if boolean { "true" } else { "false" })?
+                        }
+                        _ => return Err(Flow::Guard("ill-typed checked literal format value")),
+                    }
+                }
+            };
+            let length = result.len().checked_add(part.len()).ok_or(
+                Flow::Utf8MaterializationLimitExceeded {
+                    attempted_materializations: u64::MAX,
+                    attempted_bytes: u64::MAX,
+                },
+            )?;
+            self.charge_utf8_materialization(length)?;
+            let mut joined = String::with_capacity(length);
+            joined.push_str(&result);
+            joined.push_str(&part);
+            result = joined;
+        }
+        Ok(Value::String(result))
+    }
+
     pub(super) fn evaluate_string_op(
         &mut self,
         op: crate::string_ops::StringOp,
@@ -10,6 +76,29 @@ impl Evaluator<'_> {
         depth: usize,
     ) -> Result<Value, Flow> {
         self.charge()?;
+        if self.checked_allocation.is_some() {
+            return self.evaluate_checked_string_op(op, args, environment, depth);
+        }
+        if op == crate::string_ops::StringOp::Take {
+            let [argument] = args else {
+                return Err(Flow::Guard("String transfer arity changed"));
+            };
+            if argument.ty != ResolvedType::String || argument.ownership != hir::OwnershipMode::Own
+            {
+                return Err(Flow::Guard("String transfer ownership changed"));
+            }
+            let ResolvedExprKind::Place(place) = &argument.kind else {
+                return Err(Flow::Guard("String transfer requires a named owner"));
+            };
+            if !place.projections.is_empty() {
+                return Err(Flow::Guard("String transfer requires a whole owner"));
+            }
+            self.begin_expression(argument, depth)?;
+            return match take_owned_place(environment, place) {
+                Some(value @ Value::String(_)) => Ok(value),
+                _ => Err(Flow::Guard("String transfer owner is unavailable")),
+            };
+        }
         if matches!(
             op,
             crate::string_ops::StringOp::Len
@@ -76,15 +165,27 @@ impl Evaluator<'_> {
             values.push(self.evaluate(argument, environment, depth)?);
         }
         if op.is_text_toolkit() {
-            return self.evaluate_text_toolkit(op, &values);
+            let outcome = self.evaluate_text_toolkit(op, &values);
+            if outcome.is_ok() {
+                self.retain_completed_string_arguments(op, args, &mut values, environment)?;
+            }
+            return outcome;
         }
         if op.is_collection() {
-            return self.evaluate_collection(op, values);
+            let outcome = self.evaluate_collection(op, &mut values);
+            if outcome.is_ok() {
+                self.retain_completed_string_arguments(op, args, &mut values, environment)?;
+            }
+            return outcome;
         }
         if op.is_conversion() {
-            return self.evaluate_conversion(op, &values);
+            let outcome = self.evaluate_conversion(op, &values);
+            if outcome.is_ok() {
+                self.retain_completed_string_arguments(op, args, &mut values, environment)?;
+            }
+            return outcome;
         }
-        match op {
+        let outcome = match op {
             crate::string_ops::StringOp::Len => match values.first() {
                 Some(Value::String(value)) => Ok(Value::Int(value.len() as i64)),
                 _ => Err(Flow::Guard("ill-typed string operation operand")),
@@ -149,7 +250,11 @@ impl Evaluator<'_> {
                 _ => Err(Flow::Guard("ill-typed string operation operand")),
             },
             _ => Err(Flow::Guard("ill-typed string operation operand")),
+        };
+        if outcome.is_ok() {
+            self.retain_completed_string_arguments(op, args, &mut values, environment)?;
         }
+        outcome
     }
 
     /// Text Toolkit v1. Offsets are byte offsets; every failure is the
@@ -224,10 +329,10 @@ impl Evaluator<'_> {
     fn evaluate_collection(
         &mut self,
         op: crate::string_ops::StringOp,
-        values: Vec<Value>,
+        values: &mut [Value],
     ) -> Result<Value, Flow> {
         use crate::string_ops::StringOp;
-        match (op, values.as_slice()) {
+        match (op, &*values) {
             (StringOp::Compare, [Value::String(left), Value::String(right)]) => Ok(Value::Int(
                 crate::string_ops::compare_bytes(left.as_bytes(), right.as_bytes()),
             )),
@@ -244,15 +349,18 @@ impl Evaluator<'_> {
                 StringOp::MapAdd | StringOp::MapSet,
                 [Value::Map(_), Value::String(_), Value::Int(_)],
             ) => {
-                let mut values = values.into_iter();
-                let (Some(Value::Map(map)), Some(Value::String(key)), Some(Value::Int(value))) =
-                    (values.next(), values.next(), values.next())
-                else {
+                let Value::Map(map) = std::mem::replace(&mut values[0], Value::Moved) else {
+                    return Err(Flow::Guard("ill-typed map operand"));
+                };
+                let Value::String(key) = &values[1] else {
+                    return Err(Flow::Guard("ill-typed map operand"));
+                };
+                let Value::Int(value) = values[2] else {
                     return Err(Flow::Guard("ill-typed map operand"));
                 };
                 let mut map =
                     Arc::try_unwrap(map).map_err(|_| Flow::Guard("aliased owned map carrier"))?;
-                match map.find(&key) {
+                match map.find(key) {
                     Ok(index) => {
                         let entry = &mut map.entries[index].1;
                         *entry = if op == StringOp::MapSet {
@@ -267,22 +375,22 @@ impl Evaluator<'_> {
                         if map.entries.len() >= map.capacity {
                             return Err(map_failure(crate::string_ops::MAP_FULL_CODE));
                         }
-                        let key = self.materialize_utf8_copy(&key)?;
+                        let key = self.materialize_utf8_copy(key)?;
                         map.entries.insert(index, (key, value));
                     }
                 }
                 Ok(Value::Map(Arc::new(map)))
             }
             (StringOp::MapRemove, [Value::Map(_), Value::String(_)]) => {
-                let mut values = values.into_iter();
-                let (Some(Value::Map(map)), Some(Value::String(key))) =
-                    (values.next(), values.next())
-                else {
+                let Value::Map(map) = std::mem::replace(&mut values[0], Value::Moved) else {
+                    return Err(Flow::Guard("ill-typed map removal operand"));
+                };
+                let Value::String(key) = &values[1] else {
                     return Err(Flow::Guard("ill-typed map removal operand"));
                 };
                 let mut map =
                     Arc::try_unwrap(map).map_err(|_| Flow::Guard("aliased owned map carrier"))?;
-                if let Ok(index) = map.find(&key) {
+                if let Ok(index) = map.find(key) {
                     map.entries.remove(index);
                 }
                 Ok(Value::Map(Arc::new(map)))
@@ -327,6 +435,11 @@ impl Evaluator<'_> {
     ) -> Result<Value, Flow> {
         use crate::string_ops::{StringOp, CONVERT_NAN_CODE, CONVERT_OUT_OF_RANGE_CODE};
         match (op, values) {
+            (StringOp::FromUtf8, [Value::BorrowedSlice(bytes)]) => {
+                let text = std::str::from_utf8(bytes.bytes())
+                    .map_err(|_| convert_failure(CONVERT_OUT_OF_RANGE_CODE))?;
+                Ok(Value::String(self.materialize_utf8_copy(text)?))
+            }
             (StringOp::FromStr, [Value::BorrowedStr(text)]) => {
                 let text = std::str::from_utf8(text.bytes.as_ref())
                     .map_err(|_| Flow::Guard("ill-typed borrowed string operand"))?;
@@ -339,6 +452,11 @@ impl Evaluator<'_> {
                 .map(Value::Uint8)
                 .map_err(|_| convert_failure(CONVERT_OUT_OF_RANGE_CODE)),
             (StringOp::CharFromU8, [Value::Uint8(value)]) => Ok(Value::Char(u32::from(*value))),
+            (StringOp::CharFromI64, [Value::Int(value)]) => u32::try_from(*value)
+                .ok()
+                .and_then(char::from_u32)
+                .map(|value| Value::Char(u32::from(value)))
+                .ok_or_else(|| convert_failure(CONVERT_OUT_OF_RANGE_CODE)),
             // Rust's `as` rounds to nearest, ties to even, like C and Wasm.
             (StringOp::F64FromI64, [Value::Int(value)]) => Ok(Value::Float64(*value as f64)),
             (StringOp::I64FromF64, [Value::Float64(value)]) => {
@@ -361,6 +479,25 @@ impl Evaluator<'_> {
             _ => Err(Flow::Guard("ill-typed conversion operand")),
         }
     }
+}
+
+/// Envelope replay recognizes only the compiler's closed conversion table.
+pub(super) fn rebuild_conversion_status(code: u64) -> Result<String, Diagnostic> {
+    use crate::string_ops::{CONVERT_NAN_CODE, CONVERT_OUT_OF_RANGE_CODE};
+    let code = u32::try_from(code)
+        .ok()
+        .filter(|code| matches!(*code, CONVERT_OUT_OF_RANGE_CODE | CONVERT_NAN_CODE))
+        .ok_or_else(|| {
+            consistency_error("conversion status code is outside the closed v1 table".to_owned())
+        })?;
+    Ok(NormalizedStatus::try_new(
+        crate::string_ops::CONVERT_STATUS_DOMAIN,
+        code,
+        StatusClass::Adapter,
+        Retryability::Known(false),
+    )
+    .expect("compiler-owned conversion status table is valid")
+    .to_json())
 }
 
 fn convert_failure(code: u32) -> Flow {
@@ -407,3 +544,9 @@ fn text_failure(code: u32) -> Flow {
         .expect("compiler-owned text status table is valid"),
     )
 }
+
+#[cfg(test)]
+mod bulk_utf8_tests;
+
+#[cfg(test)]
+mod take_tests;

@@ -721,8 +721,8 @@ module test.nested_pattern_exact_closure;
         ),
         (
             r#"
-@id("exact.whole-binding") fn invalid(root: own Root) -> i64 {
-  match own root { Root { branch, marker: _ } => 0, }
+@id("exact.whole-binding") fn invalid(root: borrow Root) -> i64 {
+  match borrow root { Root { branch, marker: _ } => 0, }
 }
 "#,
             "nested owned-record fields require recursive record patterns",
@@ -745,5 +745,36 @@ module test.nested_pattern_exact_closure;
             }),
             "missing exact recursive-pattern closure `{expected}`: {errors:?}"
         );
+    }
+}
+
+#[test]
+fn subtree_binding_counts_the_entire_hidden_type_closure_at_inherited_limits() {
+    // The independently constructed type inventories retain every hidden field;
+    // the match itself visits only Wrapper.child. No pattern-node discount.
+    for (label, source, child, admitted) in [
+        ("depth-exact", nested_depth_source(63), "R0", true),
+        ("depth-short", nested_depth_source(64), "R0", false),
+        ("leaves-exact", wide_record_source(256, 256), "Root", true),
+        ("leaves-short", wide_record_source(257, 257), "Root", false),
+        ("fields-exact", wide_record_source(4_095, 1), "Root", true),
+        ("fields-short", wide_record_source(4_096, 1), "Root", false),
+    ] {
+        let source = format!("{source}\n@id(\"hidden.wrapper\") record Wrapper {{ @id(\"hidden.wrapper.child\") child:{child}, }}\n@id(\"hidden.take\") fn take(root:own Wrapper)->i64 {{match own root {{Wrapper{{child}}=>0,}}}}\n");
+        let errors = diagnostics(&source);
+        if admitted {
+            assert!(
+                errors.iter().all(|d| !d.severity.is_error()),
+                "{label}: {errors:?}"
+            );
+            let ast = parse(&source, Path::new("hidden-subtree-limits.spx")).unwrap();
+            let resolved = hir::resolve(&ast).unwrap();
+            hir::validate(&resolved).unwrap();
+        } else {
+            assert!(
+                errors.iter().any(|d| d.code == "SPX-T268"),
+                "{label}: {errors:?}"
+            );
+        }
     }
 }

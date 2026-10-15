@@ -1,0 +1,12 @@
+{
+  "base": "f8d39034fbe2145590160442ae17c4d69145134d",
+  "status": "source-only; execution pending",
+  "current_replay_sha256": "470e45827fd36635d7f39380ac86f430617ada2dbfda801fd8c2a460f0ab1bf0",
+  "original_receiver_sha256": "e5b9b5ea3e0288f035697ef4701380e66cb18af18c25b5645aa777bf3f3d9149",
+  "exact_current_hook": "    let ordinary_schema =\n        schema::paid_summary::selected_with_budget(program, function, helpers, budget)?;",
+  "exact_original_hook": "    let ordinary_schema = schema::selected_schema_with_index(program, function, helpers)?;",
+  "hook_occurrences": 1,
+  "full_projected_source_contains_complete_original_receiver": true,
+  "independent_compiled_receiver_and_archives": "unchanged",
+  "selector": "cleanup_plan::replay::allocation::tests::accounting_scope::complete_ordinary_tree_receiver_original_owner_and_current_accounting_scope_stay_source_bound"
+}

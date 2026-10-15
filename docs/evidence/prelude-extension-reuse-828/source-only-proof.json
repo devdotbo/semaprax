@@ -1,0 +1,17 @@
+{
+  "state": "SOURCE_ONLY_UNEXECUTED",
+  "own_exact_inverse_rows": 18,
+  "full_historical_nominal_inverse_rows": 79,
+  "controls": 11,
+  "new_children": [
+    "src/hir/prelude_bundle/extension_model.rs",
+    "src/hir/prelude_bundle/extension_producer.rs",
+    "src/hir/prelude_bundle/extension_staging.rs"
+  ],
+  "historical_v12_v13_preserved": true,
+  "notes": [
+    "Full current source bytes and complete historical original bytes retained; every inverse verified byte-equal.",
+    "rustfmt and diff checks only; no Cargo/build/runtime.",
+    "Existing bounded review applies to the earlier Vec authority seam; the complete-slot implementation has not had a second Claude review."
+  ]
+}

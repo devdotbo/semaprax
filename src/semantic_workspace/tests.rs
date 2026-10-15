@@ -41,6 +41,17 @@ fn current_source_graph_schemas_are_admitted_without_widening_unknown_schemas() 
         "semaprax.graph.v69",
         "semaprax.graph.v70",
         "semaprax.graph.v71",
+        "semaprax.graph.v72",
+        "semaprax.graph.v73",
+        "semaprax.graph.v74",
+        "semaprax.graph.v75",
+        "semaprax.graph.v76",
+        "semaprax.graph.v77",
+        "semaprax.graph.v78",
+        "semaprax.graph.v79",
+        "semaprax.graph.v80",
+        "semaprax.graph.v81",
+        "semaprax.graph.v82", "semaprax.graph.v83", "semaprax.graph.v84", "semaprax.graph.v85",
     ] {
         assert!(is_source_graph_schema(schema));
     }
@@ -60,6 +71,21 @@ fn current_source_graph_schemas_are_admitted_without_widening_unknown_schemas() 
         "semaprax.graph.v070",
         "semaprax.graph.v70 ",
         "semaprax.graph.v072",
+        "semaprax.graph.v073",
+        "semaprax.graph.v074",
+        "semaprax.graph.v075",
+        "semaprax.graph.v75 ",
+        "semaprax.graph.v75+v74",
+        "semaprax.graph.v076",
+        "semaprax.graph.v76 ",
+        "semaprax.graph.v76+v75",
+        "semaprax.graph.v83 ", "semaprax.graph.v085", "semaprax.graph.v85+v84",
+        "semaprax.graph.v081",
+        "semaprax.graph.v81 ",
+        "semaprax.graph.v81+v80",
+        "semaprax.graph.v082",
+        "semaprax.graph.v82 ",
+        "semaprax.graph.v82+v81",
         "semaprax.graph.v999",
         "semaprax.graph.v067",
         "semaprax.graph.v67 ",
@@ -373,7 +399,7 @@ fn manifest_fact(path: &str, bytes: usize) -> SemanticWorkspaceFileFact {
         source_revision: format!("sha256:{}", "1".repeat(64)),
         source_digest: format!("sha256:{}", "2".repeat(64)),
         bytes,
-        source: String::new(),
+        source: String::new().into(),
     }
 }
 
@@ -383,12 +409,12 @@ fn typed_cardinality_and_manifest_byte_replay_fail_before_unbounded_work() {
     for sources in [
         vec![SemanticWorkspaceSource {
             path: "not-canonical".to_owned(),
-            source: String::new(),
+            source: String::new().into(),
         }],
         (0..4096)
             .map(|index| SemanticWorkspaceSource {
                 path: format!("NOT-CANONICAL-{index}"),
-                source: String::new(),
+                source: String::new().into(),
             })
             .collect::<Vec<_>>(),
     ] {
@@ -1050,5 +1076,27 @@ use function @id("replace.provider.replaced") from replace.provider as replaced;
     ] {
         let manifest = first.manifest().replace("semaprax.graph.v68", forged);
         assert_code(parse_manifest(&manifest), "SPX-G174");
+    }
+}
+
+#[test]
+fn constructor_schema_round_trips_without_admitting_forged_spellings() {
+    let digest = format!("sha256:{}", "a".repeat(64));
+    let manifest = render_manifest_facts(&[
+        ("a.spx", "semaprax.graph.v81", &digest, &digest, 1),
+        ("b.spx", "semaprax.graph.v80", &digest, &digest, 1),
+    ])
+    .unwrap();
+    let facts = parse_manifest(&manifest).unwrap();
+    assert_eq!(facts[0].source_graph_schema, "semaprax.graph.v81");
+    assert_eq!(render_manifest(&facts).unwrap(), manifest);
+    for forged in [
+        "semaprax.graph.v081",
+        "semaprax.graph.v81 ",
+        "semaprax.graph.v81+v80",
+        "semaprax.graph.v82",
+    ] {
+        let error = parse_manifest(&manifest.replace("semaprax.graph.v81", forged)).unwrap_err();
+        assert_eq!(error[0].code, "SPX-G174");
     }
 }

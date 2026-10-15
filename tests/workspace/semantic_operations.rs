@@ -509,3 +509,6 @@ fn main() {
     assert!(stderr.contains("private"));
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[path = "semantic_operations/reporting.rs"]
+mod reporting;

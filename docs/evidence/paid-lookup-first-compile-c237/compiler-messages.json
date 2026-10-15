@@ -1,0 +1,1049 @@
+[
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0433]: cannot find `inventory_before` in `super`\n   --> src/loan_plan/paid_live/../funded_flat/work_boundary.rs:60:66\n    |\n 60 |                         let result = with_limit(limit, || super::inventory_before::build(program, function, &owner));\n    |                                                                  ^^^^^^^^^^^^^^^^ could not find `inventory_before` in `super`\n    |\nnote: module `crate::loan_plan::funded_flat::inventory_before` exists but is inaccessible\n   --> src/loan_plan/funded_flat.rs:103:1\n    |\n103 | mod inventory_before;\n    | ^^^^^^^^^^^^^^^^^^^^^ not accessible\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "module `crate::loan_plan::funded_flat::inventory_before` exists but is inaccessible",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 3715,
+              "byte_start": 3694,
+              "column_end": 22,
+              "column_start": 1,
+              "expansion": null,
+              "file_name": "src/loan_plan/funded_flat.rs",
+              "is_primary": true,
+              "label": "not accessible",
+              "line_end": 103,
+              "line_start": 103,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 22,
+                  "highlight_start": 1,
+                  "text": "mod inventory_before;"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "error",
+      "message": "cannot find `inventory_before` in `super`",
+      "spans": [
+        {
+          "byte_end": 2621,
+          "byte_start": 2605,
+          "column_end": 82,
+          "column_start": 66,
+          "expansion": null,
+          "file_name": "src/loan_plan/paid_live/../funded_flat/work_boundary.rs",
+          "is_primary": true,
+          "label": "could not find `inventory_before` in `super`",
+          "line_end": 60,
+          "line_start": 60,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 82,
+              "highlight_start": 66,
+              "text": "                        let result = with_limit(limit, || super::inventory_before::build(program, function, &owner));"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0433",
+        "explanation": "An undeclared crate, module, or type was used.\n\nErroneous code example:\n\n```compile_fail,E0433\nlet map = HashMap::new();\n// error: failed to resolve: use of undeclared type `HashMap`\n```\n\nPlease verify you didn't misspell the type/module's name or that you didn't\nforget to import it:\n\n```\nuse std::collections::HashMap; // HashMap has been imported.\nlet map: HashMap<u32, u32> = HashMap::new(); // So it can be used!\n```\n\nIf you've expected to use a crate name:\n\n```compile_fail\nuse ferris_wheel::BigO;\n// error: failed to resolve: use of undeclared module or unlinked crate\n```\n\nMake sure the crate has been added as a dependency in `Cargo.toml`.\n\nTo use a module from your current crate, add the `crate::` prefix to the path.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "error[E0433]: cannot find `inventory_before` in `super`\n   --> src/loan_plan/paid_live/../funded_flat/work_boundary.rs:91:31\n    |\n 91 |             let plan = super::inventory_before::build(program, function, &owner)\n    |                               ^^^^^^^^^^^^^^^^ could not find `inventory_before` in `super`\n    |\nnote: module `crate::loan_plan::funded_flat::inventory_before` exists but is inaccessible\n   --> src/loan_plan/funded_flat.rs:103:1\n    |\n103 | mod inventory_before;\n    | ^^^^^^^^^^^^^^^^^^^^^ not accessible\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "module `crate::loan_plan::funded_flat::inventory_before` exists but is inaccessible",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 3715,
+              "byte_start": 3694,
+              "column_end": 22,
+              "column_start": 1,
+              "expansion": null,
+              "file_name": "src/loan_plan/funded_flat.rs",
+              "is_primary": true,
+              "label": "not accessible",
+              "line_end": 103,
+              "line_start": 103,
+              "suggested_replacement": null,
+              "suggestion_applicability": null,
+              "text": [
+                {
+                  "highlight_end": 22,
+                  "highlight_start": 1,
+                  "text": "mod inventory_before;"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "error",
+      "message": "cannot find `inventory_before` in `super`",
+      "spans": [
+        {
+          "byte_end": 4341,
+          "byte_start": 4325,
+          "column_end": 47,
+          "column_start": 31,
+          "expansion": null,
+          "file_name": "src/loan_plan/paid_live/../funded_flat/work_boundary.rs",
+          "is_primary": true,
+          "label": "could not find `inventory_before` in `super`",
+          "line_end": 91,
+          "line_start": 91,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 47,
+              "highlight_start": 31,
+              "text": "            let plan = super::inventory_before::build(program, function, &owner)"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "E0433",
+        "explanation": "An undeclared crate, module, or type was used.\n\nErroneous code example:\n\n```compile_fail,E0433\nlet map = HashMap::new();\n// error: failed to resolve: use of undeclared type `HashMap`\n```\n\nPlease verify you didn't misspell the type/module's name or that you didn't\nforget to import it:\n\n```\nuse std::collections::HashMap; // HashMap has been imported.\nlet map: HashMap<u32, u32> = HashMap::new(); // So it can be used!\n```\n\nIf you've expected to use a crate name:\n\n```compile_fail\nuse ferris_wheel::BigO;\n// error: failed to resolve: use of undeclared module or unlinked crate\n```\n\nMake sure the crate has been added as a dependency in `Cargo.toml`.\n\nTo use a module from your current crate, add the `crate::` prefix to the path.\n"
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "warning: unused import: `bindings_with_index_funded`\n  --> src/cleanup_plan/renewal_profile.rs:11:49\n   |\n11 |     binding_with_index_funded, bindings_funded, bindings_with_index_funded,\n   |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "note",
+          "message": "`#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default",
+          "rendered": null,
+          "spans": []
+        },
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "remove the unused import",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 375,
+              "byte_start": 347,
+              "column_end": 75,
+              "column_start": 47,
+              "expansion": null,
+              "file_name": "src/cleanup_plan/renewal_profile.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 11,
+              "line_start": 11,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 75,
+                  "highlight_start": 47,
+                  "text": "    binding_with_index_funded, bindings_funded, bindings_with_index_funded,"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "warning",
+      "message": "unused import: `bindings_with_index_funded`",
+      "spans": [
+        {
+          "byte_end": 375,
+          "byte_start": 349,
+          "column_end": 75,
+          "column_start": 49,
+          "expansion": null,
+          "file_name": "src/cleanup_plan/renewal_profile.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 11,
+          "line_start": 11,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 75,
+              "highlight_start": 49,
+              "text": "    binding_with_index_funded, bindings_funded, bindings_with_index_funded,"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "unused_imports",
+        "explanation": null
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "warning: unused imports: `condition_reads_funded` and `needs_cleanup_funded`\n  --> src/string_ops/conditions.rs:18:25\n   |\n18 | pub(crate) use funded::{condition_reads_funded, function_reads_funded, needs_cleanup_funded};\n   |                         ^^^^^^^^^^^^^^^^^^^^^^                         ^^^^^^^^^^^^^^^^^^^^\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "remove the unused imports",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 646,
+              "byte_start": 622,
+              "column_end": 49,
+              "column_start": 25,
+              "expansion": null,
+              "file_name": "src/string_ops/conditions.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 18,
+              "line_start": 18,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 49,
+                  "highlight_start": 25,
+                  "text": "pub(crate) use funded::{condition_reads_funded, function_reads_funded, needs_cleanup_funded};"
+                }
+              ]
+            },
+            {
+              "byte_end": 689,
+              "byte_start": 667,
+              "column_end": 92,
+              "column_start": 70,
+              "expansion": null,
+              "file_name": "src/string_ops/conditions.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 18,
+              "line_start": 18,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 92,
+                  "highlight_start": 70,
+                  "text": "pub(crate) use funded::{condition_reads_funded, function_reads_funded, needs_cleanup_funded};"
+                }
+              ]
+            },
+            {
+              "byte_end": 622,
+              "byte_start": 621,
+              "column_end": 25,
+              "column_start": 24,
+              "expansion": null,
+              "file_name": "src/string_ops/conditions.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 18,
+              "line_start": 18,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 25,
+                  "highlight_start": 24,
+                  "text": "pub(crate) use funded::{condition_reads_funded, function_reads_funded, needs_cleanup_funded};"
+                }
+              ]
+            },
+            {
+              "byte_end": 690,
+              "byte_start": 689,
+              "column_end": 93,
+              "column_start": 92,
+              "expansion": null,
+              "file_name": "src/string_ops/conditions.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 18,
+              "line_start": 18,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 93,
+                  "highlight_start": 92,
+                  "text": "pub(crate) use funded::{condition_reads_funded, function_reads_funded, needs_cleanup_funded};"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "warning",
+      "message": "unused imports: `condition_reads_funded` and `needs_cleanup_funded`",
+      "spans": [
+        {
+          "byte_end": 644,
+          "byte_start": 622,
+          "column_end": 47,
+          "column_start": 25,
+          "expansion": null,
+          "file_name": "src/string_ops/conditions.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 18,
+          "line_start": 18,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 47,
+              "highlight_start": 25,
+              "text": "pub(crate) use funded::{condition_reads_funded, function_reads_funded, needs_cleanup_funded};"
+            }
+          ]
+        },
+        {
+          "byte_end": 689,
+          "byte_start": 669,
+          "column_end": 92,
+          "column_start": 72,
+          "expansion": null,
+          "file_name": "src/string_ops/conditions.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 18,
+          "line_start": 18,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 92,
+              "highlight_start": 72,
+              "text": "pub(crate) use funded::{condition_reads_funded, function_reads_funded, needs_cleanup_funded};"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "unused_imports",
+        "explanation": null
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "warning: unused imports: `condition_reads_funded_with_work` and `needs_cleanup_funded_with_work`\n   --> src/string_ops/conditions.rs:123:5\n    |\n123 |     condition_reads_funded_with_work, function_reads_funded_with_work,\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n124 |     needs_cleanup_funded_with_work,\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "remove the unused imports",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 4341,
+              "byte_start": 4307,
+              "column_end": 39,
+              "column_start": 5,
+              "expansion": null,
+              "file_name": "src/string_ops/conditions.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 123,
+              "line_start": 123,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 39,
+                  "highlight_start": 5,
+                  "text": "    condition_reads_funded_with_work, function_reads_funded_with_work,"
+                }
+              ]
+            },
+            {
+              "byte_end": 4408,
+              "byte_start": 4372,
+              "column_end": 35,
+              "column_start": 70,
+              "expansion": null,
+              "file_name": "src/string_ops/conditions.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 124,
+              "line_start": 123,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 71,
+                  "highlight_start": 70,
+                  "text": "    condition_reads_funded_with_work, function_reads_funded_with_work,"
+                },
+                {
+                  "highlight_end": 35,
+                  "highlight_start": 1,
+                  "text": "    needs_cleanup_funded_with_work,"
+                }
+              ]
+            },
+            {
+              "byte_end": 4307,
+              "byte_start": 4301,
+              "column_end": 5,
+              "column_start": 30,
+              "expansion": null,
+              "file_name": "src/string_ops/conditions.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 123,
+              "line_start": 122,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 31,
+                  "highlight_start": 30,
+                  "text": "pub(crate) use funded::work::{"
+                },
+                {
+                  "highlight_end": 5,
+                  "highlight_start": 1,
+                  "text": "    condition_reads_funded_with_work, function_reads_funded_with_work,"
+                }
+              ]
+            },
+            {
+              "byte_end": 4411,
+              "byte_start": 4408,
+              "column_end": 2,
+              "column_start": 35,
+              "expansion": null,
+              "file_name": "src/string_ops/conditions.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 125,
+              "line_start": 124,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 36,
+                  "highlight_start": 35,
+                  "text": "    needs_cleanup_funded_with_work,"
+                },
+                {
+                  "highlight_end": 2,
+                  "highlight_start": 1,
+                  "text": "};"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "warning",
+      "message": "unused imports: `condition_reads_funded_with_work` and `needs_cleanup_funded_with_work`",
+      "spans": [
+        {
+          "byte_end": 4339,
+          "byte_start": 4307,
+          "column_end": 37,
+          "column_start": 5,
+          "expansion": null,
+          "file_name": "src/string_ops/conditions.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 123,
+          "line_start": 123,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 37,
+              "highlight_start": 5,
+              "text": "    condition_reads_funded_with_work, function_reads_funded_with_work,"
+            }
+          ]
+        },
+        {
+          "byte_end": 4408,
+          "byte_start": 4378,
+          "column_end": 35,
+          "column_start": 5,
+          "expansion": null,
+          "file_name": "src/string_ops/conditions.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 124,
+          "line_start": 124,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 35,
+              "highlight_start": 5,
+              "text": "    needs_cleanup_funded_with_work,"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "unused_imports",
+        "explanation": null
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "warning: unused imports: `is_same_owner_concat_hir_funded` and `same_owner_concat_appends_funded`\n  --> src/string_ops.rs:88:5\n   |\n88 |     is_same_owner_concat_hir_funded, same_owner_concat_appends_funded,\n   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "remove the unused imports",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 4585,
+              "byte_start": 4514,
+              "column_end": 5,
+              "column_start": 5,
+              "expansion": null,
+              "file_name": "src/string_ops.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 89,
+              "line_start": 88,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 71,
+                  "highlight_start": 5,
+                  "text": "    is_same_owner_concat_hir_funded, same_owner_concat_appends_funded,"
+                },
+                {
+                  "highlight_end": 5,
+                  "highlight_start": 1,
+                  "text": "    same_owner_concat_operands_funded,"
+                }
+              ]
+            },
+            {
+              "byte_end": 4514,
+              "byte_start": 4508,
+              "column_end": 5,
+              "column_start": 31,
+              "expansion": null,
+              "file_name": "src/string_ops.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 88,
+              "line_start": 87,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 32,
+                  "highlight_start": 31,
+                  "text": "pub(crate) use concat_funded::{"
+                },
+                {
+                  "highlight_end": 5,
+                  "highlight_start": 1,
+                  "text": "    is_same_owner_concat_hir_funded, same_owner_concat_appends_funded,"
+                }
+              ]
+            },
+            {
+              "byte_end": 4621,
+              "byte_start": 4618,
+              "column_end": 2,
+              "column_start": 38,
+              "expansion": null,
+              "file_name": "src/string_ops.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 90,
+              "line_start": 89,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 39,
+                  "highlight_start": 38,
+                  "text": "    same_owner_concat_operands_funded,"
+                },
+                {
+                  "highlight_end": 2,
+                  "highlight_start": 1,
+                  "text": "};"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "warning",
+      "message": "unused imports: `is_same_owner_concat_hir_funded` and `same_owner_concat_appends_funded`",
+      "spans": [
+        {
+          "byte_end": 4545,
+          "byte_start": 4514,
+          "column_end": 36,
+          "column_start": 5,
+          "expansion": null,
+          "file_name": "src/string_ops.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 88,
+          "line_start": 88,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 36,
+              "highlight_start": 5,
+              "text": "    is_same_owner_concat_hir_funded, same_owner_concat_appends_funded,"
+            }
+          ]
+        },
+        {
+          "byte_end": 4579,
+          "byte_start": 4547,
+          "column_end": 70,
+          "column_start": 38,
+          "expansion": null,
+          "file_name": "src/string_ops.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 88,
+          "line_start": 88,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 70,
+              "highlight_start": 38,
+              "text": "    is_same_owner_concat_hir_funded, same_owner_concat_appends_funded,"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "unused_imports",
+        "explanation": null
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "warning: unused imports: `is_same_owner_concat_hir_funded_with_work` and `same_owner_concat_appends_funded_with_work`\n    --> src/string_ops.rs:1231:5\n     |\n1231 |     is_same_owner_concat_hir_funded_with_work, same_owner_concat_appends_funded_with_work,\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "remove the unused imports",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 51854,
+              "byte_start": 51763,
+              "column_end": 5,
+              "column_start": 5,
+              "expansion": null,
+              "file_name": "src/string_ops.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 1232,
+              "line_start": 1231,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 91,
+                  "highlight_start": 5,
+                  "text": "    is_same_owner_concat_hir_funded_with_work, same_owner_concat_appends_funded_with_work,"
+                },
+                {
+                  "highlight_end": 5,
+                  "highlight_start": 1,
+                  "text": "    same_owner_concat_operands_funded_with_work,"
+                }
+              ]
+            },
+            {
+              "byte_end": 51763,
+              "byte_start": 51757,
+              "column_end": 5,
+              "column_start": 37,
+              "expansion": null,
+              "file_name": "src/string_ops.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 1231,
+              "line_start": 1230,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 38,
+                  "highlight_start": 37,
+                  "text": "pub(crate) use concat_funded::work::{"
+                },
+                {
+                  "highlight_end": 5,
+                  "highlight_start": 1,
+                  "text": "    is_same_owner_concat_hir_funded_with_work, same_owner_concat_appends_funded_with_work,"
+                }
+              ]
+            },
+            {
+              "byte_end": 51900,
+              "byte_start": 51897,
+              "column_end": 2,
+              "column_start": 48,
+              "expansion": null,
+              "file_name": "src/string_ops.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 1233,
+              "line_start": 1232,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 49,
+                  "highlight_start": 48,
+                  "text": "    same_owner_concat_operands_funded_with_work,"
+                },
+                {
+                  "highlight_end": 2,
+                  "highlight_start": 1,
+                  "text": "};"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "warning",
+      "message": "unused imports: `is_same_owner_concat_hir_funded_with_work` and `same_owner_concat_appends_funded_with_work`",
+      "spans": [
+        {
+          "byte_end": 51804,
+          "byte_start": 51763,
+          "column_end": 46,
+          "column_start": 5,
+          "expansion": null,
+          "file_name": "src/string_ops.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 1231,
+          "line_start": 1231,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 46,
+              "highlight_start": 5,
+              "text": "    is_same_owner_concat_hir_funded_with_work, same_owner_concat_appends_funded_with_work,"
+            }
+          ]
+        },
+        {
+          "byte_end": 51848,
+          "byte_start": 51806,
+          "column_end": 90,
+          "column_start": 48,
+          "expansion": null,
+          "file_name": "src/string_ops.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 1231,
+          "line_start": 1231,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 90,
+              "highlight_start": 48,
+              "text": "    is_same_owner_concat_hir_funded_with_work, same_owner_concat_appends_funded_with_work,"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "unused_imports",
+        "explanation": null
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "warning: unused import: `default_expr`\n --> src/workspace_graph/expected_projection/borrowed_imports/tests.rs:2:44\n  |\n2 |     active_builder_limit, budgeted_format, default_expr, graph_error, import_stub, limit_error,\n  |                                            ^^^^^^^^^^^^\n\n",
+      "$message_type": "diagnostic",
+      "children": [
+        {
+          "children": [],
+          "code": null,
+          "level": "help",
+          "message": "remove the unused import",
+          "rendered": null,
+          "spans": [
+            {
+              "byte_end": 75,
+              "byte_start": 61,
+              "column_end": 56,
+              "column_start": 42,
+              "expansion": null,
+              "file_name": "src/workspace_graph/expected_projection/borrowed_imports/tests.rs",
+              "is_primary": true,
+              "label": null,
+              "line_end": 2,
+              "line_start": 2,
+              "suggested_replacement": "",
+              "suggestion_applicability": "MachineApplicable",
+              "text": [
+                {
+                  "highlight_end": 56,
+                  "highlight_start": 42,
+                  "text": "    active_builder_limit, budgeted_format, default_expr, graph_error, import_stub, limit_error,"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "level": "warning",
+      "message": "unused import: `default_expr`",
+      "spans": [
+        {
+          "byte_end": 75,
+          "byte_start": 63,
+          "column_end": 56,
+          "column_start": 44,
+          "expansion": null,
+          "file_name": "src/workspace_graph/expected_projection/borrowed_imports/tests.rs",
+          "is_primary": true,
+          "label": null,
+          "line_end": 2,
+          "line_start": 2,
+          "suggested_replacement": null,
+          "suggestion_applicability": null,
+          "text": [
+            {
+              "highlight_end": 56,
+              "highlight_start": 44,
+              "text": "    active_builder_limit, budgeted_format, default_expr, graph_error, import_stub, limit_error,"
+            }
+          ]
+        }
+      ],
+      "code": {
+        "code": "unused_imports",
+        "explanation": null
+      }
+    }
+  },
+  {
+    "reason": "compiler-message",
+    "package_id": "path+file:///Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang#semaprax@0.9.0",
+    "manifest_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/Cargo.toml",
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "semaprax",
+      "src_path": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang/src/lib.rs",
+      "edition": "2021",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "message": {
+      "rendered": "For more information about this error, try `rustc --explain E0433`.\n",
+      "$message_type": "diagnostic",
+      "children": [],
+      "level": "failure-note",
+      "message": "For more information about this error, try `rustc --explain E0433`.",
+      "spans": [],
+      "code": null
+    }
+  }
+]

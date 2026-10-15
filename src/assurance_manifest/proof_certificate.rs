@@ -159,7 +159,8 @@ fn no_certificate(message: String) -> Diagnostic {
 /// sites (a fresh export, and a source-bound replay) can wrap it in whichever
 /// diagnostic code fits their own context.
 fn compile_wasm_core_module(resolved: &ResolvedProgram) -> Result<Vec<u8>, String> {
-    let bytes = crate::wasm::emit_resolved_module(resolved).map_err(|error| error.message)?;
+    let bytes =
+        crate::wasm::emit_resolved_module(resolved).map_err(|error| error.message.into_owned())?;
     wasmparser::Validator::new_with_features(wasmparser::WasmFeatures::all())
         .validate_all(&bytes)
         .map_err(|error| {

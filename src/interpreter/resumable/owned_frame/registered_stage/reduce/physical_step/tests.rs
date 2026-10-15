@@ -68,7 +68,7 @@ fn owned_reduce_held_step_moves_original_state_backing_to_report_and_retains_sto
             })
             .unwrap();
         assert!(
-            Arc::ptr_eq(bytes, &weak[0].upgrade().unwrap()),
+            Arc::ptr_eq(bytes.ordinary(), &weak[0].upgrade().unwrap()),
             "actual moved backing"
         );
         assert_eq!(weak[0].strong_count(), 1);

@@ -18,16 +18,21 @@ mod agents;
 mod closures;
 mod depth;
 mod entry;
+mod expression_statement;
 #[path = "parser/for_loop.rs"]
 mod for_loop;
 mod hints;
 mod interface;
+mod lexical_exit;
 mod lookahead;
 mod patterns;
+mod return_flow;
 pub(crate) mod session_protocol;
 mod signed_minimum;
 mod statement_if;
+mod static_text;
 mod types;
+mod vec_constructor;
 use types::expression_path;
 mod yields;
 pub struct Parser {
@@ -36,6 +41,8 @@ pub struct Parser {
     path: String,
     /// Names already given to statement-`if` discards in this file.
     discards: statement_if::DiscardNames,
+    explicit_lexical_exits: bool,
+    constructor_bytes: usize,
 }
 
 impl Parser {
@@ -777,7 +784,7 @@ impl Parser {
                 break;
             }
         }
-        let body = self.block("function body")?;
+        let body = self.function_return_body()?;
         let end = body.span;
         let function = Function {
             stable_id,
@@ -875,6 +882,9 @@ impl Parser {
                 kind: ExprKind::String(value),
                 span: token.span,
             },
+            TokenKind::Ident(value) if value == "str" && self.adjacent_text_literal(token.span) => {
+                self.static_text_literal(token.span)
+            }
             TokenKind::Float(literal) => Expr {
                 kind: if literal.wide {
                     ExprKind::Float64(literal.value.to_bits())
@@ -1106,13 +1116,18 @@ impl Parser {
                 let end = self
                     .expect(&TokenKind::RParen, "`)` after call arguments")?
                     .span;
-                expression = Expr {
-                    kind: ExprKind::Call {
-                        name,
-                        type_arguments,
-                        args,
-                    },
-                    span: expression.span.merge(end),
+                let span = expression.span.merge(end);
+                expression = if name == "vec_of" {
+                    self.vec_constructor(type_arguments, args, span)?
+                } else {
+                    Expr {
+                        kind: ExprKind::Call {
+                            name,
+                            type_arguments,
+                            args,
+                        },
+                        span,
+                    }
                 };
                 continue;
             }
@@ -1221,76 +1236,6 @@ impl Parser {
             },
             span: start.merge(end),
         })
-    }
-
-    /// The statements and final expression of a block whose `{` was consumed,
-    /// through its `}`. Only a statement `if` branch passes `optional_tail`.
-    fn block_contents(
-        &mut self,
-        optional_tail: bool,
-    ) -> Result<(Vec<Statement>, Option<Expr>, Span), Diagnostic> {
-        let mut statements = Vec::new();
-        let mut trailing_if = None;
-        loop {
-            if self.at_keyword("if") {
-                let checkpoint = self.cursor;
-                match self.statement_if()? {
-                    statement_if::IfItem::Statement(statement) => {
-                        statements.push(statement);
-                        trailing_if = Some(checkpoint);
-                    }
-                    statement_if::IfItem::Value(tail) => {
-                        return self.block_tail_end(statements, tail);
-                    }
-                }
-                continue;
-            }
-            let statement = if self.at_keyword("let") {
-                self.let_statement()?
-            } else if self.at_assign_statement() {
-                self.assign_statement()?
-            } else if self.at_unsafe_statement() {
-                self.unsafe_statement()?
-            } else if self.at_keyword("while") {
-                self.while_statement()?
-            } else if self.at_keyword("for") {
-                for_loop::parse(self)?
-            } else {
-                break;
-            };
-            statements.push(statement);
-            trailing_if = None;
-        }
-        if self.at(&TokenKind::RBrace) {
-            if optional_tail {
-                let end = self.bump().span;
-                return Ok((statements, None, end));
-            }
-            if let Some(checkpoint) = trailing_if {
-                return Err(self.valueless_tail_if(checkpoint));
-            }
-            return Err(self.error_here("SPX-P203", "block requires a final value expression"));
-        }
-        if let Some(diagnostic) = self
-            .foreign_statement()
-            .or_else(|| self.compound_assignment())
-        {
-            return Err(diagnostic);
-        }
-        let tail = self.expression(0)?;
-        self.block_tail_end(statements, tail)
-    }
-
-    fn block_tail_end(
-        &mut self,
-        statements: Vec<Statement>,
-        tail: Expr,
-    ) -> Result<(Vec<Statement>, Option<Expr>, Span), Diagnostic> {
-        if self.take(&TokenKind::Semicolon) {
-            return Err(self.expression_statement(&tail));
-        }
-        let end = self.expect(&TokenKind::RBrace, "`}` after block")?.span;
-        Ok((statements, Some(tail), end))
     }
 
     fn let_statement(&mut self) -> Result<Statement, Diagnostic> {
@@ -1537,6 +1482,14 @@ impl Parser {
     }
 
     fn match_expression(&mut self, start: Span) -> Result<Expr, Diagnostic> {
+        self.match_expression_with_arm(start, |parser| parser.expression(0))
+    }
+
+    fn match_expression_with_arm(
+        &mut self,
+        start: Span,
+        mut arm_value: impl FnMut(&mut Self) -> Result<Expr, Diagnostic>,
+    ) -> Result<Expr, Diagnostic> {
         let mode = self.contextual_match_mode()?;
         let scrutinee = self.expression_with_record_literals(0, false)?;
         self.expect(&TokenKind::LBrace, "`{` before match arms")?;
@@ -1558,7 +1511,7 @@ impl Parser {
                 return Err(diagnostic);
             }
             self.expect(&TokenKind::FatArrow, "`=>` after match pattern")?;
-            let value = self.expression(0)?;
+            let value = arm_value(self)?;
             let pattern_end = guard
                 .as_ref()
                 .map_or(pattern.span(), |guard| pattern.span().merge(guard.span));
@@ -1737,6 +1690,12 @@ impl Parser {
     fn ident(&mut self, description: &str) -> Result<(String, Span), Diagnostic> {
         let token = self.bump().clone();
         match token.kind {
+            TokenKind::Ident(value) if value == "vec_of" => Err(Diagnostic::error(
+                "SPX-P220",
+                "vec_of is reserved for typed Vec construction",
+                token.span,
+            )
+            .at_path(&self.path)),
             TokenKind::Ident(value) => Ok((value, token.span)),
             _ => Err(
                 Diagnostic::error("SPX-P105", format!("expected {description}"), token.span)

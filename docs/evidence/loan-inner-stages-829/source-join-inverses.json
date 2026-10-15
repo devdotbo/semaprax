@@ -1,0 +1,12 @@
+[
+  {
+    "source": "tests/hir_module_boundaries.rs",
+    "after": "                    include_str!(\"../src/bounded_output/canonical_stage_tests.rs\"),\n                    include_str!(\"../src/bounded_output/loan_inner_stage_tests.rs\"),\n",
+    "before": "                    include_str!(\"../src/bounded_output/canonical_stage_tests.rs\"),\n"
+  },
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "after": "            include_str!(\"../../../../../src/bounded_output/canonical_stage_tests.rs\"),\n            include_str!(\"../../../../../src/bounded_output/loan_inner_stage_tests.rs\"),\n",
+    "before": "            include_str!(\"../../../../../src/bounded_output/canonical_stage_tests.rs\"),\n"
+  }
+]

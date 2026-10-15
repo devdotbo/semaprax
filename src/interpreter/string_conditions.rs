@@ -16,8 +16,13 @@ impl Evaluator<'_> {
             // Restore the enclosing context before either the body or an
             // error exit, and reuse the derived set across physical iterations.
             std::mem::swap(&mut self.string_condition_reads, &mut reads);
+            let temporary_base = super::lexical_temporary::checkpoint(environment);
             let condition_value = self.evaluate(condition, environment, depth);
             std::mem::swap(&mut self.string_condition_reads, &mut reads);
+            if condition_value.is_ok() {
+                self.settle_completed_string_scope(environment, temporary_base)?;
+                super::lexical_temporary::truncate(environment, temporary_base);
+            }
             let flag = match condition_value? {
                 Value::Bool(flag) => flag,
                 _ => return Err(Flow::Guard("non-boolean while condition")),
@@ -25,8 +30,35 @@ impl Evaluator<'_> {
             if !flag {
                 return Ok(());
             }
-            self.semantic_charge()?;
-            self.evaluate(body, environment, depth)?;
+            if let Err(failure) = self.semantic_charge() {
+                if environment.control.is_some() {
+                    let function = self.lexical_function(environment)?;
+                    self.settle_execution_boundary(
+                        function,
+                        environment,
+                        crate::cleanup_plan::ExecutionBoundaryKind::LoopIteration,
+                        &condition.id,
+                    )?;
+                }
+                return Err(failure);
+            }
+            match self.evaluate(body, environment, depth) {
+                Ok(_) => {}
+                Err(Flow::Lexical(lexical_control::ExitFlow::Break(target)))
+                    if matches!(&target, hir::ControlTarget::Loop { site, .. } if site == &condition.id)
+                        && environment.control.as_deref().is_some_and(|control| {
+                            lexical_control::target_owner(&target) == &control.owner
+                        }) =>
+                {
+                    return Ok(())
+                }
+                Err(Flow::Lexical(lexical_control::ExitFlow::Continue(target)))
+                    if matches!(&target, hir::ControlTarget::Loop { site, .. } if site == &condition.id)
+                        && environment.control.as_deref().is_some_and(|control| {
+                            lexical_control::target_owner(&target) == &control.owner
+                        }) => {}
+                Err(flow) => return Err(flow),
+            }
         }
     }
 }

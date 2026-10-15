@@ -1619,6 +1619,63 @@ with no intermediate buffer, so escapes decode before comparison and
 fn decoded_token_eq(input: borrow Slice<u8>, left: usize, right: usize) -> bool
 ```
 
+### `std.data.json.dec.decoded_byte_at`
+
+One canonical decoded byte at a pull cursor, or 256 when the cursor emits
+none. An admitted raw byte is its own decoded value; an escape uses
+`emit_at`. Unlike `emit_at`, a raw byte needs no `byte_code` probe.
+
+```semaprax
+fn decoded_byte_at(input: borrow Slice<u8>, index: usize, part: usize) -> usize
+    ensures result <= 256usize
+```
+
+### `std.data.json.dec.decoded_fingerprint`
+
+A bounded decoded-key fingerprint `length * 65536 + hash`. The hash folds
+the token's canonical decoded bytes as `(hash * 257 + byte) % 65521`, and
+`length` is its decoded byte count in 1..=limit. Zero means the token is
+not a complete JSON string of that size; the walk stops at the first
+decoded byte past `limit`. Equal fingerprints never prove equal keys.
+
+```semaprax
+fn decoded_fingerprint(input: borrow Slice<u8>, start: usize, limit: usize) -> usize
+    requires limit >= 1usize && limit <= 256usize
+    ensures result < 16842752usize
+```
+
+### `std.data.json.dec.fingerprint_entry`
+
+One bounded Copy index entry: a token's opening offset and fingerprint.
+Offsets admit the 131,072-byte internal owned-view bound.
+
+```semaprax
+fn fingerprint_entry(opening: usize, fingerprint: usize) -> usize
+    requires opening <= 131072usize && fingerprint < 16842752usize
+```
+
+### `std.data.json.dec.entry_opening`
+
+```semaprax
+fn entry_opening(entry: usize) -> usize
+```
+
+### `std.data.json.dec.entry_fingerprint`
+
+```semaprax
+fn entry_fingerprint(entry: usize) -> usize
+    ensures result < 16842752usize
+```
+
+### `std.data.json.dec.fingerprint_match`
+
+A fingerprint only rejects. Every equal fingerprint, including every hash
+collision, is decided by the exact decoded comparison `decoded_token_eq`.
+
+```semaprax
+fn fingerprint_match(input: borrow Slice<u8>, entry: usize, current: usize, fingerprint: usize) -> bool
+```
+
 ## `std.data.json.digits`
 
 Package `std/data-json-digits`, tier `core`, status partial. Required project profile: `scalar`. Dependency: `std.data.json.digits = "^0.1.0"`. Targets: `interpreter`, `native-c11`, `core-wasm`.
@@ -1974,6 +2031,15 @@ Number bytes are preserved exactly: [start, decimal_end) is the source span.
 fn decimal_end(input: borrow Slice<u8>, start: usize) -> usize
 ```
 
+### `std.data.json.scan.utf8_text_valid`
+
+Validate one exact JSON text token after ordinary whole-document grammar.
+The bound is an explicit decoded-byte policy, not an input capability.
+
+```semaprax
+fn utf8_text_valid(input: borrow Slice<u8>, start: usize, end: usize, max_bytes: usize) -> bool
+```
+
 ## `std.data.json.token`
 
 Package `std/data-json-token`, tier `portable`, status partial. Required project profile: `useful-data.v1`. Dependency: `std.data.json.token = "^0.1.0"`. Targets: `interpreter`, `native-c11`, `core-wasm`.
@@ -2133,6 +2199,20 @@ fn utf8_end(input: borrow Slice<u8>, start: usize) -> usize
 fn is_utf8(input: borrow Slice<u8>) -> bool
 ```
 
+### `std.data.json.utf8.bounded_valid`
+
+Bounded JSON text kernels borrow bytes and never construct String owners.
+
+```semaprax
+fn bounded_valid(input: borrow Slice<u8>, max_bytes: usize) -> bool
+```
+
+### `std.data.json.utf8.quoted_len`
+
+```semaprax
+fn quoted_len(input: borrow Slice<u8>, max_bytes: usize) -> usize
+```
+
 ## `std.data.json.write`
 
 Package `std/data-json-write`, tier `portable`, status partial. Required project profile: `useful-data.v2`. Dependency: `std.data.json.write = "^0.1.0"`. Targets: `interpreter`, `native-c11`, `core-wasm`.
@@ -2247,6 +2327,87 @@ fn usize_byte(value: usize, index: usize) -> i64
 ```semaprax
 fn count_into(value: usize, output: own Writer) -> Writer
     requires match borrow output { Writer { data, position } => position <= byte_len(bytes_as_slice(data)) && usize_len(value) <= byte_len(bytes_as_slice(data)) - position, }
+```
+
+## `std.data.ndjson`
+
+Package `std/data-ndjson`, tier `portable`, status partial. Required project profile: `owned-data-api.v1`. Dependency: `std.data.ndjson = "^0.1.0"`. Targets: `interpreter`, `native-c11`, `core-wasm`.
+
+### `std.data.ndjson.frame`
+
+Copy observations only: neither record contains a borrowed carrier or owner token.
+
+```semaprax
+record Frame {
+    ordinal: usize,
+    start: usize,
+    end: usize,
+    next: usize,
+}
+```
+
+### `std.data.ndjson.fault`
+
+```semaprax
+record Fault {
+    category: i64,
+    record_index: i64,
+    byte_offset: usize,
+}
+```
+
+### `std.data.ndjson.record-count`
+
+```semaprax
+fn record_count(body: borrow Slice<u8>) -> usize
+```
+
+### `std.data.ndjson.line-start`
+
+```semaprax
+fn line_start(body: borrow Slice<u8>, ordinal: usize) -> usize
+```
+
+### `std.data.ndjson.line-end`
+
+```semaprax
+fn line_end(body: borrow Slice<u8>, start: usize) -> usize
+    requires start <= byte_len(body)
+```
+
+### `std.data.ndjson.global-fault`
+
+```semaprax
+fn global_fault(body: borrow Slice<u8>) -> Fault
+```
+
+### `std.data.ndjson.frame-at`
+
+```semaprax
+fn frame_at(body: borrow Slice<u8>, ordinal: usize) -> Frame
+    requires byte_len(body) <= 65536usize && ordinal < 256usize && ordinal < record_count(body)
+```
+
+### `std.data.ndjson.frame-matches`
+
+```semaprax
+fn frame_matches(body: borrow Slice<u8>, frame: Frame) -> bool
+```
+
+### `std.data.ndjson.basic-line-fault`
+
+Receives an ACTUAL current borrowed view, whose existing byte-range loan is replayed independently.
+
+```semaprax
+fn basic_line_fault(line: borrow Slice<u8>, ordinal: usize) -> Fault
+    requires ordinal < 256usize
+```
+
+### `std.data.ndjson.basic-fault`
+
+```semaprax
+fn basic_fault(body: borrow Slice<u8>, frame: Frame) -> Fault
+    requires frame_matches(body, frame)
 ```
 
 ## `std.data.toml`

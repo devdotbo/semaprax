@@ -7,6 +7,9 @@ use semaprax::project::{
 };
 use sha2::{Digest, Sha256};
 
+#[path = "public_api_descriptor/vec_constructor.rs"]
+mod vec_constructor;
+
 #[path = "public_api_descriptor/parameter_identity.rs"]
 mod parameter_identity;
 
@@ -610,12 +613,44 @@ fn project_v8_is_activated_only_by_manifest_and_profile_admission() {
         include_str!("../../src/project/npm/publication.rs"),
         include_str!("../../src/project/npm/publication_plan.rs"),
         include_str!("../../src/project/npm/semantic_recipe_v8.rs"),
+        include_str!("../../src/project/npm/semantic_recipe_lexical_v1.rs"),
         include_str!("../../src/project/npm/semantic_recipe_v8/type_names.rs"),
         include_str!("../../src/project/npm/validation.rs")
     );
     let native_sdk = include_str!("../../src/project/native_sdk.rs");
     let wasm = concat!(
-        include_str!("../../src/wasm.rs"),
+        concat!(
+            include_str!("../../src/wasm.rs"),
+            "\n",
+            include_str!("../../src/wasm/fused_row_host.rs"),
+            "\n",
+            include_str!("../../src/wasm/fused_source_package.rs"),
+            "\n",
+            include_str!("../../src/wasm/selected_fused.rs"),
+            "\n",
+            include_str!("../../src/wasm/selected_fused/cleanup.rs"),
+            "\n",
+            include_str!("../../src/wasm/selected_fused/facts.rs"),
+            "\n",
+            include_str!("../../src/wasm/selected_fused/layout.rs"),
+            "\n",
+            include_str!("../../src/wasm/selected_fused/lower.rs"),
+            "\n",
+            include_str!("../../src/wasm/selected_fused/precursor.rs"),
+            "\n",
+            include_str!("../../src/wasm/selected_fused/suffix.rs"),
+            "\n",
+            include_str!("../../src/wasm/shared_owner.rs"),
+            "\n",
+            include_str!("../../src/wasm/shared_owner/partition.rs"),
+            "\n",
+            include_str!("../../src/wasm/shared_owner/signatures.rs")
+        ),
+        include_str!("../../src/wasm/scalar_emit.rs"),
+        include_str!("../../src/wasm/borrowed_equality.rs"),
+        include_str!("../../src/wasm/scalar_emit_match.rs"),
+        include_str!("../../src/wasm/scalar_control.rs"),
+        include_str!("../../src/wasm/lexical_lookup.rs"),
         include_str!("../../src/wasm/string_ops_v2_use.rs"),
         include_str!("../../src/wasm/browser_runtime.js"),
         include_str!("../../src/wasm/arithmetic.rs"),

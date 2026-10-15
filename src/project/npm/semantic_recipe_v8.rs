@@ -22,6 +22,7 @@ const MAX_FUNCTIONS: usize = 256;
 mod type_names;
 
 struct Names {
+    lexical: bool,
     functions: BTreeMap<String, String>,
     types: BTreeMap<String, String>,
     cases: BTreeMap<String, String>,
@@ -115,6 +116,7 @@ impl Names {
         }
         let type_header = type_names::apply_aliases(&authored, &mut types)?;
         Ok(Self {
+            lexical: false,
             functions,
             types,
             cases,
@@ -160,6 +162,13 @@ impl Names {
 }
 
 pub(super) fn render(program: &crate::hir::ResolvedProgram) -> Result<String, Diagnostic> {
+    render_profile(program, false)
+}
+
+pub(super) fn render_profile(
+    program: &crate::hir::ResolvedProgram,
+    lexical: bool,
+) -> Result<String, Diagnostic> {
     if program.functions.is_empty() || program.functions.len() > MAX_FUNCTIONS {
         return Err(package_error(
             "owned-data semantic recipe function inventory is unbounded",
@@ -174,7 +183,8 @@ pub(super) fn render(program: &crate::hir::ResolvedProgram) -> Result<String, Di
             "owned-data semantic recipe contains unsupported authority or callable metadata",
         ));
     }
-    let names = Names::derive(program)?;
+    let mut names = Names::derive(program)?;
+    names.lexical = lexical;
     let mut output = names.type_header.clone();
     output.push_str("module semaprax_npm_recipe;\n\n");
     ensure_bound(&output)?;
@@ -272,6 +282,13 @@ pub(super) fn replay_against(
 }
 
 pub(super) fn replay(recipe: &str) -> Result<crate::hir::ResolvedProgram, Diagnostic> {
+    replay_profile(recipe, false)
+}
+
+pub(super) fn replay_profile(
+    recipe: &str,
+    lexical: bool,
+) -> Result<crate::hir::ResolvedProgram, Diagnostic> {
     if recipe.is_empty() || recipe.len() > MAX_RECIPE_BYTES {
         return Err(package_error(
             "owned-data semantic recipe is outside its byte bound",
@@ -292,24 +309,27 @@ pub(super) fn replay(recipe: &str) -> Result<crate::hir::ResolvedProgram, Diagno
             "owned-data semantic recipe does not resolve: {detail}"
         ))
     })?;
+    if lexical {
+        crate::hir::validate(&replayed)?;
+    }
     let replayed = if let Some(type_names) = type_names {
         // Authenticate the complete aliased source before rebuilding its
         // presentation names. In particular no authority, declarations, or
         // noncanonical source may disappear through the linker projection.
-        if render(&replayed)? != body {
+        if render_profile(&replayed, lexical)? != body {
             return Err(package_error("owned-data aliased recipe is not canonical"));
         }
         type_names::restore(replayed, type_names)?
     } else {
         replayed
     };
-    if render(&replayed)? != recipe {
+    if render_profile(&replayed, lexical)? != recipe {
         return Err(package_error("owned-data semantic recipe is not canonical"));
     }
     Ok(replayed)
 }
 
-fn declaration_inventory(
+pub(super) fn declaration_inventory(
     program: &crate::hir::ResolvedProgram,
 ) -> Vec<(
     String,
@@ -334,7 +354,7 @@ fn declaration_inventory(
     inventory
 }
 
-fn function_inventory(program: &crate::hir::ResolvedProgram) -> Vec<String> {
+pub(super) fn function_inventory(program: &crate::hir::ResolvedProgram) -> Vec<String> {
     let mut inventory = program
         .functions
         .iter()
@@ -489,9 +509,9 @@ fn recipe_type(
         {
             Ok(format!("P{index}"))
         }
-        ResolvedType::Unit | ResolvedType::TypeParameter { .. } => Err(package_error(
-            "owned-data semantic recipe type is unsupported",
-        )),
+        ResolvedType::Never | ResolvedType::Unit | ResolvedType::TypeParameter { .. } => Err(
+            package_error("owned-data semantic recipe type is unsupported"),
+        ),
     }
 }
 
@@ -502,6 +522,18 @@ fn render_expr(
     local_index: &mut usize,
 ) -> Result<String, Diagnostic> {
     match &expression.kind {
+        ResolvedExprKind::LexicalExit { kind, value, .. } if names.lexical => match (kind, value) {
+            (crate::hir::LexicalExitKind::Return, Some(value)) => Ok(format!(
+                "return {};",
+                render_expr(value, names, values, local_index)?
+            )),
+            (crate::hir::LexicalExitKind::Break, None) => Ok("break;".to_owned()),
+            (crate::hir::LexicalExitKind::Continue, None) => Ok("continue;".to_owned()),
+            _ => Err(package_error("lexical recipe exit operand is not exact")),
+        },
+        ResolvedExprKind::LexicalExit { .. } => Err(package_error(
+            "lexical exits are outside semantic recipe v8",
+        )),
         ResolvedExprKind::Closure { .. }
         | ResolvedExprKind::FunctionReference { .. }
         | ResolvedExprKind::Invoke { .. } => Err(package_error(
@@ -524,6 +556,9 @@ fn render_expr(
         ResolvedExprKind::Float32(bits) => render_float(f64::from(f32::from_bits(*bits)), "f32"),
         ResolvedExprKind::Float64(bits) => render_float(f64::from_bits(*bits), "f64"),
         ResolvedExprKind::Bool(value) => Ok(value.to_string()),
+        ResolvedExprKind::BorrowedUtf8Literal(_) => Err(package_error(
+            "static borrowed literals are outside semantic recipe v8",
+        )),
         ResolvedExprKind::String(value) => bounded_string_literal(value, MAX_RECIPE_BYTES),
         ResolvedExprKind::Place(place) => render_place(place, names, values),
         ResolvedExprKind::BorrowPlace { operation, place } => {
@@ -587,9 +622,10 @@ fn render_expr(
             op.text(),
             render_expr(right, names, values, local_index)?,
         )),
-        ResolvedExprKind::Block { statements, tail } => {
-            render_block(statements, tail, names, values, local_index)
-        }
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => render_block(statements, tail, names, values, local_index, false),
         ResolvedExprKind::If {
             condition,
             then_branch,
@@ -661,7 +697,10 @@ fn render_expr(
         ResolvedExprKind::Upcast { .. }
         | ResolvedExprKind::Yield { .. }
         | ResolvedExprKind::ByteRange { .. }
-        | ResolvedExprKind::Call { .. } => Err(package_error(
+        | ResolvedExprKind::Call { .. }
+        | ResolvedExprKind::LiteralFormat { .. }
+        | ResolvedExprKind::VecFieldRead { .. }
+        | ResolvedExprKind::RowLoan { .. } => Err(package_error(
             "owned-data semantic recipe expression is unsupported",
         )),
     }
@@ -686,12 +725,29 @@ fn render_fields(
         .map(|fields| fields.join(", "))
 }
 
+fn render_guard_branch(
+    expression: &ResolvedExpr,
+    names: &Names,
+    values: &mut BTreeMap<String, String>,
+    local_index: &mut usize,
+) -> Result<String, Diagnostic> {
+    if let ResolvedExprKind::Block { statements, tail } = &expression.kind {
+        if matches!(tail.kind, ResolvedExprKind::Int(0)) {
+            // Statement parsing recreates this zero at the same branch/tail path.
+            // Keep every statement; only the direct synthesized scalar is omitted.
+            return render_block(statements, tail, names, values, local_index, true);
+        }
+    }
+    render_expr(expression, names, values, local_index)
+}
+
 fn render_block(
     statements: &[ResolvedStatement],
     tail: &ResolvedExpr,
     names: &Names,
     values: &mut BTreeMap<String, String>,
     local_index: &mut usize,
+    omit_zero_tail: bool,
 ) -> Result<String, Diagnostic> {
     let mut rendered = String::from("{ ");
     for statement in statements {
@@ -702,6 +758,44 @@ fn render_block(
                 value,
                 ..
             } => {
+                if names.lexical && crate::hir::lexical_exit::contains(value) {
+                    // Independent HIR validation authenticates unread immutable
+                    // scalar guard discards. Replay must retain statement syntax:
+                    // an authored initializer may not carry lexical control.
+                    if !matches!(value.kind, ResolvedExprKind::If { .. }) || *mutable {
+                        return Err(package_error(
+                            "lexical recipe admits only statement-if guards",
+                        ));
+                    }
+                    let ResolvedExprKind::If {
+                        condition,
+                        then_branch,
+                        else_branch,
+                    } = &value.kind
+                    else {
+                        unreachable!("statement guard checked above");
+                    };
+                    // The parser represents an absent alternative as an empty
+                    // block with a synthesized zero. A nonempty zero-tail block
+                    // is an explicit alternative and must retain its statements.
+                    let absent = matches!(else_branch.kind, ResolvedExprKind::Int(0))
+                        || matches!(&else_branch.kind,
+                            ResolvedExprKind::Block { statements, tail }
+                            if statements.is_empty() && matches!(tail.kind, ResolvedExprKind::Int(0)));
+                    rendered.push_str(&format!(
+                        "if {} {}",
+                        render_expr(condition, names, values, local_index)?,
+                        render_guard_branch(then_branch, names, values, local_index)?
+                    ));
+                    if !absent {
+                        rendered.push_str(&format!(
+                            " else {}",
+                            render_guard_branch(else_branch, names, values, local_index)?
+                        ));
+                    }
+                    rendered.push_str("; ");
+                    continue;
+                }
                 let value = render_expr(value, names, values, local_index)?;
                 let name = next_local(values, local_index);
                 values.insert(binding.id.as_str().to_owned(), name.clone());
@@ -729,10 +823,27 @@ fn render_block(
                     rendered.push_str(&format!("{target} = {value}; "));
                 }
             }
-            ResolvedStatement::Unsafe { .. } => {
+            ResolvedStatement::CopyDiscard { .. } | ResolvedStatement::Unsafe { .. } => {
                 return Err(package_error(
                     "owned-data semantic recipe unsafe boundary is unsupported",
                 ));
+            }
+            ResolvedStatement::LexicalWhile {
+                condition,
+                body,
+                latch: crate::hir::LoopLatchKind::Condition,
+                ..
+            } if names.lexical => {
+                rendered.push_str(&format!(
+                    "while {} {} ",
+                    render_expr(condition, names, values, local_index)?,
+                    render_expr(body, names, values, local_index)?
+                ));
+            }
+            ResolvedStatement::LexicalWhile { .. } => {
+                return Err(package_error(
+                    "lexical loops are outside semantic recipe v8",
+                ))
             }
             ResolvedStatement::While {
                 condition, body, ..
@@ -743,7 +854,9 @@ fn render_block(
             )),
         }
     }
-    rendered.push_str(&render_expr(tail, names, values, local_index)?);
+    if !omit_zero_tail {
+        rendered.push_str(&render_expr(tail, names, values, local_index)?);
+    }
     rendered.push_str(" }");
     Ok(rendered)
 }

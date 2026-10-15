@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Write as _;
 
@@ -23,10 +24,11 @@ impl Severity {
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(test, derive(Eq, PartialEq))]
 pub struct Diagnostic {
     pub code: &'static str,
     pub severity: Severity,
-    pub message: String,
+    pub message: Cow<'static, str>,
     pub path: Option<String>,
     pub span: Option<Span>,
     pub help: Option<String>,
@@ -37,7 +39,7 @@ impl Diagnostic {
         Self {
             code,
             severity: Severity::Error,
-            message: message.into(),
+            message: Cow::Owned(message.into()),
             path: None,
             span: Some(span),
             help: None,
@@ -48,7 +50,7 @@ impl Diagnostic {
         Self {
             code,
             severity: Severity::Warning,
-            message: message.into(),
+            message: Cow::Owned(message.into()),
             path: None,
             span: Some(span),
             help: None,
@@ -59,10 +61,32 @@ impl Diagnostic {
         Self {
             code,
             severity: Severity::Error,
-            message: message.into(),
+            message: Cow::Owned(message.into()),
             path: None,
             span: None,
             help: None,
+        }
+    }
+
+    /// Fixed compiler text only. Dynamic public constructors retain owned
+    /// String conversion, including nonstatic caller slices and paid carriers.
+    pub(crate) fn io_static(code: &'static str, message: &'static str) -> Self {
+        Self {
+            code,
+            severity: Severity::Error,
+            message: Cow::Borrowed(message),
+            path: None,
+            span: None,
+            help: None,
+        }
+    }
+
+    /// Actual owned text capacity only; static message bytes are not invocation
+    /// backing. This does not price report slots or dynamic output rendering.
+    pub fn message_owned_capacity(&self) -> usize {
+        match &self.message {
+            Cow::Borrowed(_) => 0,
+            Cow::Owned(message) => message.capacity(),
         }
     }
 
@@ -318,3 +342,6 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+mod refusal_tests;

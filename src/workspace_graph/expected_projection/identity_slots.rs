@@ -94,6 +94,7 @@ fn fixed_expression_identity_slots(kind: &ExprKind) -> usize {
     match kind {
         ExprKind::Try { .. } => BASE + 5,
         ExprKind::Yield { .. } => BASE,
+        ExprKind::LexicalExit { .. } => BASE + 2,
         ExprKind::ConstructVariant { .. } => BASE + 2,
         ExprKind::Call { .. }
         | ExprKind::MethodCall { .. }
@@ -155,7 +156,12 @@ fn ast_expr_identity_slots(expression: &Expr) -> Result<usize, Vec<Diagnostic>> 
                 slots = checked_builder_sum(slots, ast_expr_identity_slots(argument)?)?;
             }
         }
-        ExprKind::Unary { value, .. } => {
+        ExprKind::LexicalExit { value: None, .. } => {}
+        ExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. } => {
             slots = checked_builder_sum(slots, ast_expr_identity_slots(value)?)?;
         }
         ExprKind::Binary { left, right, .. } => {
@@ -210,6 +216,10 @@ fn ast_expr_identity_slots(expression: &Expr) -> Result<usize, Vec<Diagnostic>> 
             slots = checked_builder_sum(slots, ast_expr_identity_slots(scrutinee)?)?;
             for arm in arms {
                 slots = checked_builder_sum(slots, ast_pattern_identity_slots(&arm.pattern)?)?;
+                // `Expr::child` (and so the scalar-call discount) visits guards.
+                if let Some(guard) = &arm.guard {
+                    slots = checked_builder_sum(slots, ast_expr_identity_slots(guard)?)?;
+                }
                 slots = checked_builder_sum(slots, ast_expr_identity_slots(&arm.value)?)?;
             }
         }
@@ -236,6 +246,7 @@ fn ast_expr_identity_slots(expression: &Expr) -> Result<usize, Vec<Diagnostic>> 
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::ArrayU8(_)
         | ExprKind::RepeatArrayU8 { .. }
         | ExprKind::Var(_) => {}

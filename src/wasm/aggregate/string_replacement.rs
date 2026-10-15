@@ -15,6 +15,8 @@ impl Emitter<'_> {
             self.cleanup_plan.schema,
             crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V16
                 | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17
+                | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+                | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
         ) && crate::string_ops::replacement::binding(self.function, at).is_some_and(|binding| {
             destination.projections.is_empty()
                 && destination.storage == crate::cleanup_plan::StorageId::Value(binding.id.clone())

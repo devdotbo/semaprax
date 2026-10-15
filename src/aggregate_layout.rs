@@ -53,6 +53,7 @@ pub(crate) enum AggregateFieldValueKind {
     OwnedBytes,
     OwnedString,
     OwnedCollection,
+    OwnedVec,
     Resource,
     Aggregate,
 }
@@ -102,8 +103,15 @@ impl AggregateLayout {
             !arguments.is_empty() || contains_concrete_generic_record_descendant(program, instance);
         let owned_text_profile =
             crate::hir::owned_text_record::contains_string(instance, &program.declarations);
-        if (owned_text_profile && !bounded_layout_instance_is_admitted(program, instance, true))
+        let collection_profile =
+            crate::hir::owned_collection_record::admitted(instance, &program.declarations);
+        if (collection_profile
+            && !bounded_layout_instance_is_admitted(program, instance, true, true))
+            || (owned_text_profile
+                && !collection_profile
+                && !bounded_layout_instance_is_admitted(program, instance, true, false))
             || (!owned_text_profile
+                && !collection_profile
                 && nested_generic_profile
                 && !concrete_layout_instance_is_admitted(program, instance))
         {
@@ -143,7 +151,7 @@ impl AggregateLayout {
         self.fields.iter().find(|item| item.field == *field)
     }
 
-    #[cfg(any(test, feature = "unstable-wit-component-harness"))]
+    // Selected native constructor certificates bind this independently computed layout.
     pub(crate) const fn digest(&self) -> [u8; 32] {
         self.digest
     }
@@ -239,6 +247,7 @@ enum ValueLayoutKind {
     OwnedBytes,
     OwnedString,
     OwnedCollection,
+    OwnedVec,
     Resource,
     Record { fields: Vec<AggregateFieldLayout> },
 }
@@ -250,6 +259,7 @@ impl ValueLayoutKind {
             Self::OwnedBytes => AggregateFieldValueKind::OwnedBytes,
             Self::OwnedString => AggregateFieldValueKind::OwnedString,
             Self::OwnedCollection => AggregateFieldValueKind::OwnedCollection,
+            Self::OwnedVec => AggregateFieldValueKind::OwnedVec,
             Self::Resource => AggregateFieldValueKind::Resource,
             Self::Record { .. } | Self::Variant => AggregateFieldValueKind::Aggregate,
         }
@@ -262,6 +272,19 @@ fn layout_type(
     ty: &ResolvedType,
     visiting: &mut BTreeSet<String>,
 ) -> Result<ValueLayout, Diagnostic> {
+    if crate::hir::owned_collection_record::vector(&program.declarations, ty) {
+        let size = if target == AggregateTarget::Native64 {
+            40
+        } else {
+            8
+        };
+        return Ok(ValueLayout {
+            size,
+            align: 8,
+            digest: digest_value(target, ty, size, 8, &[]),
+            kind: ValueLayoutKind::OwnedVec,
+        });
+    }
     if crate::map_ops::is_collection(ty) {
         return Ok(ValueLayout {
             size: 8,
@@ -271,6 +294,7 @@ fn layout_type(
         });
     }
     match ty {
+        ResolvedType::Never => Err(layout_error("lexical completion has no value layout")),
         ResolvedType::Unit => Err(layout_error("unit has no aggregate value layout")),
         ResolvedType::I64
         | ResolvedType::I32
@@ -483,7 +507,9 @@ fn contains_concrete_generic_record_descendant(
     let mut visited = BTreeSet::new();
     while let Some(ty) = pending.pop() {
         // Authenticated collection atoms are owning leaves, not generic record descendants.
-        if crate::map_ops::is_collection(&ty) {
+        if crate::map_ops::is_collection(&ty)
+            || crate::hir::owned_collection_record::vector(&program.declarations, &ty)
+        {
             continue;
         }
         let ResolvedType::Nominal {
@@ -535,7 +561,7 @@ fn concrete_layout_instance_is_admitted(
     program: &ResolvedProgram,
     instance: &ResolvedType,
 ) -> bool {
-    bounded_layout_instance_is_admitted(program, instance, false)
+    bounded_layout_instance_is_admitted(program, instance, false, false)
 }
 
 // The additive internal text/collection profile retains a separate record-only
@@ -544,6 +570,7 @@ fn bounded_layout_instance_is_admitted(
     program: &ResolvedProgram,
     instance: &ResolvedType,
     owned_text: bool,
+    owned_vectors: bool,
 ) -> bool {
     enum Frame<'a> {
         Type(ResolvedType, usize),
@@ -564,6 +591,15 @@ fn bounded_layout_instance_is_admitted(
 
     while let Some(frame) = pending.pop() {
         match frame {
+            Frame::Type(ty, _)
+                if owned_vectors
+                    && crate::hir::owned_collection_record::vector(&program.declarations, &ty) =>
+            {
+                owned_leaves += 1;
+                if owned_leaves > crate::cleanup::MAX_CLEANUP_OWNED_LEAVES {
+                    return false;
+                }
+            }
             Frame::Type(ty, _)
                 if owned_text
                     && (ty == ResolvedType::String || crate::map_ops::is_collection(&ty)) =>
@@ -643,7 +679,8 @@ fn bounded_layout_instance_is_admitted(
                 pending.push(Frame::Fields(declaration, fields, arguments, 0, depth));
             }
             Frame::Type(
-                ResolvedType::Unit
+                ResolvedType::Never
+                | ResolvedType::Unit
                 | ResolvedType::ArrayU8(_)
                 | ResolvedType::String
                 | ResolvedType::Str
@@ -726,10 +763,10 @@ fn layout_record(
 
         let field_ty = crate::hir::substitute_type(&declaration.ty, record, arguments)?;
         let value = layout_type(program, target, &field_ty, visiting).map_err(|mut error| {
-            error.message = format!(
+            error.message = std::borrow::Cow::Owned(format!(
                 "record `{record}` field `{}`: {}",
                 declaration.id, error.message
-            );
+            ));
             error.span = Some(declaration.span);
             error
         })?;
@@ -815,6 +852,15 @@ fn collect_record_type(
                 collect_record_type(program, &field_ty, instances)?;
             }
         }
+    } else if let ResolvedTypeDeclarationKind::Variant { cases } = &item.kind {
+        // Signature-only outcome carriers still require every possible payload
+        // record layout, even when the executable body constructs only errors.
+        if crate::hir::collection_outcome::runtime_admitted(&program.declarations, ty) {
+            for field in cases.iter().flat_map(|case| &case.fields) {
+                let field_ty = crate::hir::substitute_type(&field.ty, declaration, arguments)?;
+                collect_record_type(program, &field_ty, instances)?;
+            }
+        }
     }
     Ok(())
 }
@@ -851,7 +897,10 @@ fn collect_expr_record_types(
                 pending.extend(args.iter().rev().map(Work::Expression));
                 pending.push(Work::Expression(callable));
             }
-            ResolvedExprKind::Call { args, .. } => {
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => {
                 pending.extend(args.iter().rev().map(Work::Expression));
             }
             ResolvedExprKind::NativeRustImportCall(call) => {
@@ -866,6 +915,9 @@ fn collect_expr_record_types(
                 pending.push(Work::Expression(end));
                 pending.push(Work::Expression(start));
                 pending.push(Work::Expression(source));
+            }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                pending.extend(value.as_deref().map(Work::Expression))
             }
             ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Project { base: value, .. }
@@ -890,7 +942,10 @@ fn collect_expr_record_types(
                 pending.push(Work::Expression(right));
                 pending.push(Work::Expression(left));
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(Work::Expression(tail));
                 for statement in statements.iter().rev() {
                     for index in (0..statement.child_count()).rev() {
@@ -952,6 +1007,7 @@ fn collect_expr_record_types(
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. }
             | ResolvedExprKind::FunctionReference { .. } => {}

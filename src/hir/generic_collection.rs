@@ -62,7 +62,7 @@ pub(crate) fn substitutions(count: usize) -> Vec<Vec<ResolvedType>> {
     }
 }
 pub(super) fn source_parameter(
-    program: &crate::ast::Program,
+    program: &dyn crate::ast::program_source::ProgramSource,
     execution: &super::FunctionExecutionId,
     ty: &ResolvedType,
 ) -> bool {
@@ -70,7 +70,7 @@ pub(super) fn source_parameter(
         return false;
     };
     program
-        .functions
+        .functions()
         .iter()
         .find(|function| function.stable_id == owner.as_str())
         .is_some_and(|function| {
@@ -78,9 +78,12 @@ pub(super) fn source_parameter(
                 && parameter(ty, owner, function.type_parameters.len())
         })
 }
-pub(super) fn source_count(program: &crate::ast::Program, owner: &DeclarationId) -> usize {
+pub(super) fn source_count(
+    program: &dyn crate::ast::program_source::ProgramSource,
+    owner: &DeclarationId,
+) -> usize {
     program
-        .functions
+        .functions()
         .iter()
         .find(|function| function.stable_id == owner.as_str())
         .map_or(0, |function| function.type_parameters.len())

@@ -1,0 +1,89 @@
+{
+  "head": "04e6fa2db",
+  "files": [
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "start": 1,
+      "end": 558,
+      "whole_sha256": "18d1c4fa1a9e82cd2a3997a199011cbac33b5a75f0d127ef103cb3f16f6d5075"
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs",
+      "start": 1,
+      "end": 141,
+      "whole_sha256": "0d545a36d25de4005e073c64db69016bdaf39b024beade10ccd97173bfa53499"
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+      "start": 16,
+      "end": 160,
+      "whole_sha256": "2e8e01a0d509c00cc39953fa8358d7533c862ea1367c9eba6fe7fcb8c0179762"
+    },
+    {
+      "source": "src/cleanup_plan/replay.rs",
+      "start": 170,
+      "end": 225,
+      "whole_sha256": "2a4db37f10435075809a43d112073b686710d55f4f5f43e0f553686a63504796"
+    },
+    {
+      "source": "src/cleanup_plan/replay.rs",
+      "start": 612,
+      "end": 650,
+      "whole_sha256": "2a4db37f10435075809a43d112073b686710d55f4f5f43e0f553686a63504796"
+    },
+    {
+      "source": "src/cleanup_plan/replay/allocation.rs",
+      "start": 75,
+      "end": 103,
+      "whole_sha256": "acc9eb5a1f7698d9c58c86357541b4ffe79270debc834fbf935ebb814271b7ad"
+    },
+    {
+      "source": "src/cleanup_plan/replay/allocation.rs",
+      "start": 130,
+      "end": 175,
+      "whole_sha256": "acc9eb5a1f7698d9c58c86357541b4ffe79270debc834fbf935ebb814271b7ad"
+    },
+    {
+      "source": "src/cleanup_plan/replay/allocation.rs",
+      "start": 210,
+      "end": 270,
+      "whole_sha256": "acc9eb5a1f7698d9c58c86357541b4ffe79270debc834fbf935ebb814271b7ad"
+    },
+    {
+      "source": "src/cleanup_plan/replay/physical_budget.rs",
+      "start": 25,
+      "end": 125,
+      "whole_sha256": "d38a39372c110f102af2d4d7c0b503112aa219bdc1f8616bfe636aeb2d8a011e"
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+      "start": 95,
+      "end": 180,
+      "whole_sha256": "a5d9e5fa66faf99fd0853a3322c04fcf8e3e3a48ebe26ed6d6c4fcc923623c14"
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+      "start": 265,
+      "end": 290,
+      "whole_sha256": "a5d9e5fa66faf99fd0853a3322c04fcf8e3e3a48ebe26ed6d6c4fcc923623c14"
+    },
+    {
+      "source": "src/bounded_output/classifier_string.rs",
+      "start": 187,
+      "end": 220,
+      "whole_sha256": "c301a761a04ef7036c7eed8375e0ee77c34266eeb89b6e1c3ae38eaad5a86193"
+    },
+    {
+      "source": "docs/evidence/cleanup-status-directory-retention/HANDOFF.md",
+      "start": 1,
+      "end": 9,
+      "whole_sha256": "712a3a79d0e9b76a155f9bf91162e73fed171cced2e65142fb0e06a8b99ce345"
+    },
+    {
+      "source": "docs/SCOPED-REPLAY-ORACLE-ACCOUNT-V1.md",
+      "start": 1,
+      "end": 27,
+      "whole_sha256": "0d2d6067ac0a2b75cf9af4305debfdd8f1e3a2c6d8ebd9d40a3c911331949594"
+    }
+  ]
+}

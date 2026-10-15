@@ -11,6 +11,9 @@ use std::sync::{
     Arc,
 };
 
+#[path = "../fixtures/checked_cache_profiles.rs"]
+mod checked_cache_profiles;
+
 static SERIAL: AtomicU64 = AtomicU64::new(0);
 const PATHS: [&str; 4] = [
     "src/app.spx",
@@ -111,7 +114,7 @@ fn work_split(
     assert_eq!(report["schema"], "semaprax.project-semantic-cache-work.v1");
     assert_eq!(
         report["compiler"]["compatibility"],
-        "semaprax.project-checked-module-hir.v6"
+        "semaprax.project-checked-module-hir.v11"
     );
     assert_eq!(report["work"]["modules_parsed"], ast_parsed);
     assert_eq!(report["work"]["canonicalizer_calls"], ast_parsed);
@@ -443,3 +446,136 @@ fn projected() -> i64 {
     same(warm.revision(), Arc::clone(cold.revision()));
     same(warm.revision(), fixture.cold().unwrap());
 }
+
+/// Row Loan v1 provider/consumer pair on the owned-data project: the provider
+/// module defines the record and its scalar-reader helper, and the test module
+/// lends each frozen traversal row to that imported helper.
+fn row_loan_fixture() -> Fixture {
+    let root = std::env::temp_dir().join(format!(
+        "spx-semantic-row-loan-cache-{}-{}",
+        std::process::id(),
+        SERIAL.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::create_dir_all(root.join("src")).unwrap();
+    let fixture = Fixture(root.canonicalize().unwrap());
+    let sample = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/frame-payload-project");
+    for path in [
+        "semaprax.toml",
+        "src/app.spx",
+        "src/frame.spx",
+        "src/tests.spx",
+    ] {
+        std::fs::copy(sample.join(path), fixture.0.join(path)).unwrap();
+    }
+    for (path, source) in checked_cache_profiles::sources(false) {
+        if path != "src/app.spx" {
+            fixture.write(path, &source);
+        }
+    }
+    fixture
+}
+
+fn row_loan_sources(fixture: &Fixture, manifest: &ProjectManifest) -> Vec<ProjectFrontendSource> {
+    manifest
+        .sources()
+        .iter()
+        .map(|path| ProjectFrontendSource::new(path, &fixture.read(path)).unwrap())
+        .collect()
+}
+
+#[test]
+fn warm_row_loan_consumers_reprove_current_provider_helpers() {
+    let fixture = row_loan_fixture();
+    let manifest = fixture.manifest();
+    let mut cache = ProjectFrontendCache::new_with_semantic_cache();
+    let cold = cache
+        .build(&manifest, &row_loan_sources(&fixture, &manifest))
+        .unwrap();
+    work(&cold, 3, 0);
+    assert!(cold
+        .revision()
+        .sources()
+        .iter()
+        .any(|source| source.source_graph_schema() == "semaprax.graph.v82"));
+    same(cold.revision(), fixture.cold().unwrap());
+    let warm = cache
+        .build(&manifest, &row_loan_sources(&fixture, &manifest))
+        .unwrap();
+    assert_eq!(work(&warm, 0, 3)["invalidated_sources"], json!([]));
+    same(warm.revision(), Arc::clone(cold.revision()));
+
+    // A provider-only body edit that remains a scalar reader is re-proven
+    // against the warm consumer and matches the cold build exactly.
+    let original = fixture.read("src/frame.spx");
+    fixture.replace("src/frame.spx", "row.n + 1", "1 + row.n");
+    let reader = cache
+        .build(&manifest, &row_loan_sources(&fixture, &manifest))
+        .unwrap();
+    let report: Value = serde_json::from_str(reader.to_json()).unwrap();
+    assert_eq!(report["work"]["modules_parsed"], 1);
+    assert_eq!(report["invalidated_sources"], json!(["src/frame.spx"]));
+    same(reader.revision(), fixture.cold().unwrap());
+
+    // The consumer's text and checked descriptor are unchanged, but the
+    // current provider helper no longer reads only Copy scalar fields of a
+    // borrowed row: it views a leaf, forwards the row, or owns it. Cached
+    // checked HIR carries no proof; the warm build refuses exactly as cold.
+    let reader = fixture.read("src/frame.spx");
+    for (from, to) in [
+        ("1 + row.n", "str_len_bytes(string_as_str(row.text))"),
+        ("1 + row.n", "loan_weight(row)"),
+        ("row: borrow LoanRow", "row: own LoanRow"),
+    ] {
+        fixture.replace("src/frame.spx", from, to);
+        let cached = errors(cache.build(&manifest, &row_loan_sources(&fixture, &manifest)));
+        let cold = errors(fixture.cold());
+        assert_eq!(format!("{cached:?}"), format!("{cold:?}"), "{to}");
+        assert!(
+            cached.iter().any(|error| error.code == "SPX-T284"),
+            "{to}: {cached:#?}"
+        );
+        fixture.write("src/frame.spx", &reader);
+    }
+
+    // Valid provider-only owned-result changes remain closed even if their
+    // bodies never escape/read a non-Copy row field. The current signature is
+    // rechecked through the same warm consumer, independently of a cached flag.
+    let start = reader.find("@id(\"loan.weight\")").unwrap();
+    assert_eq!(
+        reader[start..].matches("@id(").count(),
+        1,
+        "only the final helper is replaced"
+    );
+    for helper in [
+        "@id(\"loan.weight\") fn loan_weight(row:borrow LoanRow)->string {\"owned\"}",
+        "@id(\"loan.weight\") fn loan_weight(row:borrow LoanRow)->Bytes {bytes_zeroed(0usize)}",
+    ] {
+        fixture.write("src/frame.spx", &format!("{}{}", &reader[..start], helper));
+        let cached = errors(cache.build(&manifest, &row_loan_sources(&fixture, &manifest)));
+        let cold = errors(fixture.cold());
+        assert_eq!(format!("{cached:?}"), format!("{cold:?}"), "{helper}");
+        assert!(
+            cached.iter().any(|error| error.code == "SPX-T284"),
+            "{helper}: {cached:#?}"
+        );
+        fixture.write("src/frame.spx", &reader);
+    }
+
+    // No refused build installed partial checked state: restoring the original
+    // provider reproduces the original cold revision.
+    fixture.write("src/frame.spx", &original);
+    let restored = cache
+        .build(&manifest, &row_loan_sources(&fixture, &manifest))
+        .unwrap();
+    same(restored.revision(), fixture.cold().unwrap());
+    same(restored.revision(), Arc::clone(cold.revision()));
+}
+
+#[path = "semantic_cache/byte_traversal.rs"]
+mod byte_traversal;
+
+#[path = "semantic_cache/string_transfer.rs"]
+mod string_transfer;
+
+#[path = "semantic_cache/copy_discard.rs"]
+mod copy_discard;

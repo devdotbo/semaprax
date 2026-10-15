@@ -1,0 +1,13 @@
+@id("std.data.json.utf8.scalar_at")
+fn scalar_at(input: borrow Slice<u8>, start: usize) -> i64
+    ensures result >= -1 && result <= 1114111
+{
+    let kind = sequence_kind(input, start);
+    let head = match kind { 1 => offset_at(input, start, 0u8, 127), 2 => offset_at(input, start, 194u8, 29), 3 => offset_at(input, start, 224u8, 15), 4 => offset_at(input, start, 240u8, 4), _ => -1, };
+    let first = if kind >= 2 { continuation_at(input, start + 1usize) } else { 0 };
+    let second = if kind >= 3 { continuation_at(input, start + 2usize) } else { 0 };
+    let third = if kind == 4 { continuation_at(input, start + 3usize) } else { 0 };
+    let ready = head >= 0 && first >= 0 && second >= 0 && third >= 0;
+    let value = match kind { 1 => head, 2 => head * 64 + first + 128, 3 => head * 4096 + first * 64 + second, 4 => head * 262144 + first * 4096 + second * 64 + third, _ => -1, };
+    if ready && is_shortest(kind, value) { value } else { -1 }
+}

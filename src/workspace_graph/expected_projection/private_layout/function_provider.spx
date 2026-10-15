@@ -1,0 +1,58 @@
+module function_layout.provider;
+
+@id("config")
+record Config {
+    @id("config.text")
+    text: string,
+    @id("config.n")
+    n: i64,
+}
+
+@id("row")
+record Row {
+    @id("row.text")
+    text: string,
+    @id("row.n")
+    n: i64,
+}
+
+@id("report")
+record Report {
+    @id("report.config")
+    config: Config,
+    @id("report.rows")
+    rows: Vec<Row>,
+}
+
+@id("sibling")
+record Sibling {
+    @id("sibling.n")
+    n: i64,
+}
+
+@id("ancestor")
+record Ancestor {
+    @id("ancestor.report")
+    report: Report,
+}
+
+@id("make")
+fn make() -> Report
+{
+    let empty = vec_with_capacity<Row>(1usize);
+    let rows = vec_push<Row>(empty, Row { text: "row", n: 21 });
+    Report { config: Config { text: "é\u{0}", n: 21 }, rows: rows }
+}
+
+@id("read")
+fn read(value: borrow Report) -> i64
+{
+    let text = string_as_str(value.config.text);
+    if str_len_bytes(text) == 3 && vec_len<Row>(value.rows) == 1usize { value.config.n } else { 0 }
+}
+
+@id("forward")
+fn forward(value: own Report) -> Report
+{
+    value
+}

@@ -1,0 +1,447 @@
+Review the DISTINCT concrete prefix-certified AVL comparator implementation below, not the earlier timed-out whole hotpath design packet. No tools/execution. Check byte-prefix bracket proof for UTF-8/NUL/prefix/endpoints; ordering and exact full CallFact binding; paid-before-read semantics; actual byte work/bookkeeping accounting. Same old byte-pair unit, no quota/cap/unit discount, refunds or weaker fixture allowed. No stored cache/index/new heap allocation. Complete old find remains independently compiled. Important unresolved source-accounting question: compare() adds a Result<(Ordering,usize),Diagnostic> stack carrier and two local bracket values. Full new initialized carriers/overlap must be paid; no old-header credit is allowed. Identify the smallest explicit complete carrier charge or inline alternative without hidden allocations. Do not assume stack locals are exempt. Current source has not yet added that final carrier debit. Keep concrete blockers separate from concerns. Source only, under900words.
+
+=== COMPLETE src/cleanup_plan/replay/expression_facts/arena/prefix.rs ===
+1: //! Prefix-certified lookup over the existing immutable ordered AVL tree.
+2: //! No index, allocation, hash, key normalization or insertion-policy change.
+3: use super::*;
+4: 
+5: // Three node/key/child visits retain the original lookup charge. Four additional
+6: // units cover selecting/updating the two local bracket-prefix certificates.
+7: const BOUND_UNITS: usize = 4;
+8: 
+9: fn compare(
+10:     function: &ResolvedFunction,
+11:     query: &ExpressionId,
+12:     candidate: &ExpressionId,
+13:     prefix: usize,
+14:     budget: &mut ReplayBudget,
+15: ) -> Result<(Ordering, usize), Diagnostic> {
+16:     let left = query.as_str().as_bytes();
+17:     let right = candidate.as_str().as_bytes();
+18:     let end = left.len().min(right.len());
+19:     let units = end.checked_sub(prefix).and_then(|n| n.checked_add(1))
+20:         .and_then(|n| n.checked_add(BOUND_UNITS)).ok_or_else(|| {
+21:             budget.budget_refusal(function, "expression-fact prefix comparison work overflow", "")
+22:         })?;
+23:     // Same one-unit-per-byte-pair comparison rate as the complete old lookup,
+24:     // including its end comparison. Only certified bytes are no longer read.
+25:     budget.charge(function, units, "expression-fact certified suffix lookup")?;
+26:     let mut common = prefix;
+27:     while common < end {
+28:         let a = left[common];
+29:         let b = right[common];
+30:         if a != b {
+31:             return Ok((a.cmp(&b), common));
+32:         }
+33:         common += 1;
+34:     }
+35:     Ok((left.len().cmp(&right.len()), common))
+36: }
+37: 
+38: pub(super) fn find<'a, 'hir>(
+39:     arena: &'a Arena<'hir>,
+40:     function: &ResolvedFunction,
+41:     query: &ExpressionId,
+42:     budget: &mut ReplayBudget,
+43: ) -> Result<Option<&'a Option<CallFact<'hir>>>, Diagnostic> {
+44:     budget.reserve_bytes(function, 0, "expression-fact arena lookup authentication")?;
+45:     budget.charge(function, 0, "expression-fact arena lookup authentication")?;
+46:     let (mut lower, mut upper) = (0, 0);
+47:     // Two paid full comparisons seed useful bounds even for endpoint-heavy
+48:     // queries. The first key is already the producer's minimum; finding the
+49:     // maximum follows only actual right children and pays before each read.
+50:     if arena.nodes.len() >= 16 {
+51:         budget.charge(function, 3, "expression-fact minimum key access")?;
+52:         let first = &arena.nodes[arena.first];
+53:         match compare(function, query, &first.key, 0, budget)? {
+54:             (Ordering::Less, _) => return Ok(None),
+55:             (Ordering::Equal, _) => return Ok(Some(&first.fact)),
+56:             (Ordering::Greater, common) => lower = common,
+57:         }
+58:         let mut last = arena.root;
+59:         loop {
+60:             budget.charge(function, 3, "expression-fact maximum key access")?;
+61:             let node = &arena.nodes[last];
+62:             if node.right == NIL {
+63:                 match compare(function, query, &node.key, 0, budget)? {
+64:                     (Ordering::Greater, _) => return Ok(None),
+65:                     (Ordering::Equal, _) => return Ok(Some(&node.fact)),
+66:                     (Ordering::Less, common) => upper = common,
+67:                 }
+68:                 break;
+69:             }
+70:             last = node.right;
+71:         }
+72:     }
+73:     let mut at = arena.root;
+74:     while at != NIL {
+75:         // Every node reached is strictly between the last lower and upper
+76:         // bound keys. If the query shares p bytes with both, every intervening
+77:         // byte-lexicographic key shares those p bytes. Endpoints were compared
+78:         // explicitly above. With a missing bound its certificate is zero.
+79:         let prefix = lower.min(upper);
+80:         budget.charge(function, 3, "expression-fact certified node access")?;
+81:         let node = &arena.nodes[at];
+82:         match compare(function, query, &node.key, prefix, budget)? {
+83:             (Ordering::Equal, _) => return Ok(Some(&node.fact)),
+84:             (Ordering::Less, common) => {
+85:                 upper = common;
+86:                 at = node.left;
+87:             }
+88:             (Ordering::Greater, common) => {
+89:                 lower = common;
+90:                 at = node.right;
+91:             }
+92:         }
+93:     }
+94:     Ok(None)
+95: }
+96: 
+97: #[cfg(test)]
+98: mod tests;
+
+=== COMPLETE src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs ===
+1: use super::*;
+2: use crate::test_allocation_observer::measure;
+3: 
+4: fn program() -> ResolvedProgram {
+5:     crate::hir::resolve(&crate::check(
+6:         "module prefix.lookup; @id(\"prefix.main\") fn main() -> i64 { 0 }",
+7:         "prefix-lookup.spx",
+8:     ).unwrap()).unwrap()
+9: }
+10: 
+11: fn arena<'hir>(function: &'hir ResolvedFunction, keys: &[ExpressionId]) -> Arena<'hir> {
+12:     let mut physical = physical_storage::PhysicalReservation::new(usize::MAX);
+13:     let mut capacity = capacity::FactCapacity::with_payer(
+14:         function, capacity::Payer::Selected(&mut physical),
+15:     ).unwrap();
+16:     let mut arena = Arena::new(&mut capacity).unwrap();
+17:     let mut budget = ReplayBudget::unobserved();
+18:     for key in keys {
+19:         arena.prepare_growth_work(function, &mut budget).unwrap();
+20:         arena.reserve_next(&mut capacity).unwrap();
+21:         arena.prepare_insert_work(function, key, &mut budget).unwrap();
+22:         assert!(arena.insert(key.clone(), None, &mut capacity).unwrap());
+23:     }
+24:     assert!(arena.balanced());
+25:     arena
+26: }
+27: 
+28: fn hit(function: &ResolvedFunction, arena: &Arena<'_>, query: &ExpressionId, old: bool)
+29:     -> (bool, usize)
+30: {
+31:     let mut budget = ReplayBudget::unobserved();
+32:     let (result, allocation) = measure(|| {
+33:         let result = if old { arena.find(function, query, &mut budget) }
+34:             else { find(arena, function, query, &mut budget) };
+35:         let hit = result.unwrap().is_some();
+36:         hit
+37:     });
+38:     assert!(!allocation.invalid && allocation.allocated == 0 && allocation.live == 0);
+39:     (result, MAX_REPLAY_WORK_UNITS - budget.remaining)
+40: }
+41: 
+42: #[test]
+43: fn complete_old_lookup_matches_every_opaque_byte_endpoint_hit_miss_and_prefix() {
+44:     let program = program();
+45:     let function = &program.functions[0];
+46:     let mut texts = vec!["".to_owned(), "\0".to_owned(), "\0\0".to_owned(),
+47:         "a".to_owned(), "aa".to_owned(), "a\0".to_owned(), "a\0b".to_owned(),
+48:         "λ".to_owned(), "λ\0".to_owned(), "識別子".to_owned(), "🙂".to_owned()];
+49:     for index in 0..257 { texts.push(format!("opaque.{}.{index:03}\0suffix", "λ\0識別子🙂".repeat(24))); }
+50:     texts.sort(); texts.dedup();
+51:     let keys: Vec<_> = texts.iter().cloned().map(ExpressionId::from_owned).collect();
+52:     let mut saw_saving = false;
+53:     for reversed in [false, true] {
+54:         let mut order = keys.clone();
+55:         if reversed { order.reverse(); }
+56:         let arena = arena(function, &order);
+57:         for key in &keys {
+58:             let old = hit(function, &arena, key, true);
+59:             let new = hit(function, &arena, key, false);
+60:             assert!(old.0 && new.0);
+61:             saw_saving |= new.1 < old.1;
+62:         }
+63:         for query in ["\0a", "a\0a", "ab", "λ\0b", "識別", "🙂\0", "zzzz"] {
+64:             let query = ExpressionId::from_owned(query.into());
+65:             assert_eq!(hit(function, &arena, &query, true).0,
+66:                 hit(function, &arena, &query, false).0);
+67:         }
+68:     }
+69:     assert!(saw_saving, "actual repeated full-byte comparisons must be eliminated");
+70: }
+71: 
+72: #[test]
+73: fn actual_suffix_byte_rates_and_work_exact_short_zero_and_sticky_refusals_are_preserved() {
+74:     let program = program();
+75:     let function = &program.functions[0];
+76:     let key = ExpressionId::from_owned("λ\0🙂end".into());
+77:     let other = ExpressionId::from_owned("λ\0🙂else".into());
+78:     let mut budget = ReplayBudget::unobserved();
+79:     let prefix = "λ\0🙂e".len();
+80:     let before = budget.remaining;
+81:     let (order, common) = compare(function, &key, &other, prefix, &mut budget).unwrap();
+82:     assert_eq!(order, key.cmp(&other));
+83:     assert_eq!(common, prefix);
+84:     assert_eq!(before - budget.remaining,
+85:         key.as_str().len().min(other.as_str().len()) - prefix + 1 + BOUND_UNITS);
+86:     let keys: Vec<_> = (0..129).map(|n| ExpressionId::from_owned(
+87:         format!("shared.{}.{n:03}", "opaque\0λ".repeat(32)))).collect();
+88:     let arena = arena(function, &keys);
+89:     let query = &keys[63];
+90:     let required = hit(function, &arena, query, false).1;
+91:     for units in [0, required - 1, required] {
+92:         let mut budget = ReplayBudget::unobserved();
+93:         budget.remaining = units;
+94:         let result = find(&arena, function, query, &mut budget);
+95:         if units == required {
+96:             assert!(result.unwrap().is_some());
+97:             assert_eq!(budget.remaining, 0);
+98:         } else {
+99:             assert_eq!(result.err().unwrap().code, "SPX-H006");
+100:             // Same insufficient allowance cannot become a semantic miss.
+101:             assert!(find(&arena, function, query, &mut budget).is_err());
+102:         }
+103:     }
+104: }
+105: 
+106: #[test]
+107: fn complete_current_fact_payloads_match_original_lookup_and_active_refusal_stays_sticky() {
+108:     let owner = include_str!("../../../expression_facts.rs");
+109:     let source = owner.split_once("r#\"module replay.fact_owner;").unwrap().1
+110:         .split_once("\"#,").unwrap().0;
+111:     let source = format!("module replay.fact_owner;{source}");
+112:     let program = crate::hir::resolve(&crate::check(&source, "prefix-facts.spx").unwrap()).unwrap();
+113:     let mut saw_call = false;
+114:     for function in &program.functions {
+115:         let mut physical = physical_storage::PhysicalReservation::new(usize::MAX);
+116:         let mut preparation = ReplayBudget::unobserved();
+117:         let arena = super::super::build::<errors::Legacy>(function,
+118:             capacity::Payer::Selected(&mut physical), &mut preparation).unwrap();
+119:         for (key, fact) in arena.entries() {
+120:             saw_call |= fact.is_some();
+121:             let mut old = ReplayBudget::unobserved();
+122:             let mut new = ReplayBudget::unobserved();
+123:             let prior = arena.find(function, key, &mut old).unwrap().unwrap();
+124:             let current = find(&arena, function, key, &mut new).unwrap().unwrap();
+125:             // The exact same full fact object includes callee, instance,
+126:             // argument payloads and type arguments, with no clone or projection.
+127:             assert!(std::ptr::eq(prior, current));
+128:             assert!(std::ptr::eq(current, fact));
+129:         }
+130:         let (((), allocation), _, _, _) = crate::bounded_output::with_limit_usage_refusal(1 << 26, || measure(|| {
+131:             let mut budget = ReplayBudget::new();
+132:             budget.remaining = 0;
+133:             let query = ExpressionId::from_owned("missing.opaque\0λ".into());
+134:             let first = find(&arena, function, &query, &mut budget);
+135:             assert!(first.is_err());
+136:             assert!(budget.refusal_spent);
+137:             let repeated = find(&arena, function, &query, &mut budget);
+138:             assert!(repeated.is_err());
+139:             assert_eq!(budget.remaining, 0);
+140:             drop(first);
+141:             drop(repeated);
+142:             drop(budget);
+143:         }));
+144:         assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated == allocation.freed);
+145:     }
+146:     assert!(saw_call);
+147: }
+
+=== Complete old find ===
+    #[cfg(test)]
+    fn find(
+        &self,
+        function: &ResolvedFunction,
+        key: &ExpressionId,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<&Option<CallFact<'hir>>>, Diagnostic> {
+        budget.reserve_bytes(function, 0, "expression-fact arena lookup authentication")?;
+        budget.charge(function, 0, "expression-fact arena lookup authentication")?;
+        let mut at = self.root;
+        while at != NIL {
+            let units = comparison_units(key, &self.nodes[at].key)
+                .map_err(|f| budget.budget_refusal(function, f.detail, ""))?;
+            let units = units.checked_add(3).ok_or_else(|| {
+                budget.budget_refusal(function, "expression-fact lookup work overflow", "")
+            })?;
+            budget.charge(function, units, "expression-fact arena lookup")?;
+            match key.cmp(&self.nodes[at].key) {
+                Ordering::Equal => return Ok(Some(&self.nodes[at].fact)),
+                Ordering::Less => at = self.nodes[at].left,
+                Ordering::Greater => at = self.nodes[at].right,
+            }
+        }
+        Ok(None)
+    }
+=== src/cleanup_plan/replay.rs:197-241 ===
+    fn charge(
+        &mut self,
+        function: &ResolvedFunction,
+        units: usize,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        self.prepare_builder(function)?;
+        if self.refusal_spent {
+            return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+        }
+        if self.lent_skeleton {
+            return self.charge_skeleton(function, units, phase);
+        }
+        self.charge_oracle_work(function, units, phase)?;
+        self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
+            self.budget_refusal(
+                function,
+                "cleanup replay work budget exhausted during ",
+                phase,
+            )
+        })?;
+        Ok(())
+    }
+
+    fn reserve_skeleton(
+        &mut self,
+        function: &ResolvedFunction,
+        units: usize,
+    ) -> Result<(), Diagnostic> {
+        self.prepare_builder(function)?;
+        if self.refusal_spent {
+            return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+        }
+        self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
+            self.budget_refusal(
+                function,
+                "cleanup replay skeleton-work preflight exceeds the global budget",
+                "",
+            )
+        })?;
+        self.skeleton_remaining = units;
+        Ok(())
+    }
+
+    fn charge_skeleton(
+=== src/cleanup_plan/replay/physical_budget.rs:25-116 ===
+    }
+
+    pub(super) fn reserve_bytes(
+        &mut self,
+        function: &ResolvedFunction,
+        bytes: usize,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if bytes == 0 {
+            // A zero request constructs nothing, so it must not bootstrap the
+            // refusal String. It consults the same payer, sticky refusal,
+            // reserved floor and refusal_spent state that a positive request
+            // would, then authenticates only. Positive requests below keep
+            // their original bootstrap and charges byte-for-byte.
+            let admitted = match self.payer {
+                AllocationPayer::LegacyUnobserved => true,
+                AllocationPayer::ActiveBuilder => {
+                    if self.refusal_spent || crate::bounded_output::active_refused() {
+                        return Err(self.budget_refusal(
+                            function,
+                            "ordinary builder already failed",
+                            "",
+                        ));
+                    }
+                    crate::bounded_output::reserve_active_required(0)
+                }
+                #[cfg(test)]
+                AllocationPayer::Oracle(lease) => {
+                    if self.refusal_spent || lease.refused() {
+                        return Err(self.budget_refusal(
+                            function,
+                            "ordinary builder already failed",
+                            "",
+                        ));
+                    }
+                    lease.charge(0).is_ok()
+                }
+                AllocationPayer::SelectedReservation => self
+                    .physical
+                    .as_deref_mut()
+                    .expect("selected reservation payer")
+                    .reserve(0)
+                    .is_ok(),
+            };
+            return if admitted {
+                Ok(())
+            } else {
+                Err(self.budget_refusal(
+                    function,
+                    "cleanup replay physical reservation exhausted during ",
+                    phase,
+                ))
+            };
+        }
+        self.prepare_builder(function)?;
+        let accepted = match self.payer {
+            AllocationPayer::LegacyUnobserved => true,
+            AllocationPayer::ActiveBuilder => {
+                !self.refusal_spent
+                    && !crate::bounded_output::active_refused()
+                    && crate::bounded_output::reserve_active_required(bytes)
+            }
+            #[cfg(test)]
+            AllocationPayer::Oracle(lease) => {
+                !self.refusal_spent && !lease.refused() && lease.charge(bytes).is_ok()
+            }
+            AllocationPayer::SelectedReservation => self
+                .physical
+                .as_deref_mut()
+                .expect("selected reservation payer")
+                .reserve(bytes)
+                .is_ok(),
+        };
+        if accepted {
+            Ok(())
+        } else {
+            Err(self.budget_refusal(
+                function,
+                "cleanup replay physical reservation exhausted during ",
+                phase,
+            ))
+        }
+    }
+
+    pub(super) fn reserve_clone<T: ClonePayload>(
+        &mut self,
+        function: &ResolvedFunction,
+        value: &T,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if !self.pays_allocations() {
+            return Ok(());
+=== src/cleanup_plan/replay/expression_facts/arena.rs:1-30 ===
+//! Online paid full-expression facts. Indices are private construction coordinates.
+use super::*;
+use std::cmp::Ordering;
+mod prefix;
+const NIL: usize = usize::MAX;
+struct Node<'hir> {
+    key: ExpressionId,
+    fact: Option<CallFact<'hir>>,
+    left: usize,
+    right: usize,
+    parent: usize,
+    next: usize,
+    height: u8,
+}
+pub(in crate::cleanup_plan::replay) struct Arena<'hir> {
+    nodes: Vec<Node<'hir>>,
+    root: usize,
+    first: usize,
+}
+fn failure(detail: &'static str, physical: bool) -> capacity::Failure {
+    capacity::Failure { detail, physical }
+}
+fn comparison_units(a: &ExpressionId, b: &ExpressionId) -> Result<usize, capacity::Failure> {
+    a.as_str()
+        .len()
+        .min(b.as_str().len())
+        .checked_add(1)
+        .ok_or_else(|| failure("expression-fact key comparison work overflow", false))
+}
+impl<'hir> Arena<'hir> {

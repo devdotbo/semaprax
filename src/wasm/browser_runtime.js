@@ -74,12 +74,14 @@ function checked(value, operation) {
   return value;
 }
 
-function createByteDataRuntime(options = {}) {
+function createByteDataRuntime(options = {}, formatSelected = false) {
   const FIXED_MEMORY_BYTES = 131072;
   const OWNED_UTF8_LITERAL_BASE = 196608;
   const OWNED_UTF8_MEMORY_BYTES = 262144;
   const entries = new Map();
-  const maxLiveEntries = boundedLimit(options.maxOwnedByteEntries, 16, "owned-byte-entry");
+  const maxLiveEntries = boundedLimit(
+    options.maxOwnedByteEntries === undefined && formatSelected ? 64 : options.maxOwnedByteEntries,
+    formatSelected ? 64 : 16, "owned-byte-entry");
   const encoder = new TextEncoder();
   let nextToken = 1;
   let instance = null;
@@ -112,10 +114,10 @@ function createByteDataRuntime(options = {}) {
     }
     return entry;
   };
-  const fixed = decoded => {
+  const fixed = (decoded, copy = true) => {
     const bytes = memory();
     if (decoded.root <= FIXED_MEMORY_BYTES - decoded.length) {
-      return bytes.slice(decoded.root, decoded.root + decoded.length);
+      return copy ? bytes.slice(decoded.root, decoded.root + decoded.length) : bytes.subarray(decoded.root, decoded.root + decoded.length);
     }
     // Aggregate owned String literals are compiler-authored data in the fourth
     // fixed page. Only the exact 256 KiB String profile can address this
@@ -124,11 +126,11 @@ function createByteDataRuntime(options = {}) {
         && decoded.root >= OWNED_UTF8_LITERAL_BASE
         && decoded.root < OWNED_UTF8_MEMORY_BYTES
         && decoded.root <= OWNED_UTF8_MEMORY_BYTES - decoded.length) {
-      return bytes.slice(decoded.root, decoded.root + decoded.length);
+      return copy ? bytes.slice(decoded.root, decoded.root + decoded.length) : bytes.subarray(decoded.root, decoded.root + decoded.length);
     }
     throw new Error("SEMAPRAX fixed byte range invariant");
   };
-  const read = decoded => {
+  const read = (decoded, copy = true) => {
     if (decoded.tagged) return resolve(decoded);
     if ((decoded.root & 0xc0000000) === 0x40000000) {
       // The guest validates the descriptor against its private binding globals
@@ -155,11 +157,11 @@ function createByteDataRuntime(options = {}) {
       if (offset > BigInt(ultimate.length) || length > BigInt(ultimate.length) - offset) {
         throw new Error("SEMAPRAX byte range descriptor extent invariant");
       }
-      const root = ultimate.tagged ? resolve(ultimate) : fixed(ultimate);
+      const root = ultimate.tagged ? resolve(ultimate) : fixed(ultimate, copy);
       const start = Number(offset);
-      return root.slice(start, start + Number(length));
+      return copy ? root.slice(start, start + Number(length)) : root.subarray(start, start + Number(length));
     }
-    return fixed(decoded);
+    return fixed(decoded, copy);
   };
   const validUtf8 = bytes => {
     for (let index = 0; index < bytes.length;) {
@@ -196,6 +198,36 @@ function createByteDataRuntime(options = {}) {
     entries.set(token, owned);
     const root = 0x80000000n | BigInt(token);
     return BigInt.asIntN(64, (root << 32n) | BigInt(owned.byteLength));
+  };
+  // The compiler selects this private import only for a checked literal
+  // format worker. Zero is its allocation-failure signal; all other byte
+  // imports keep their existing invariant behavior and ABI.
+  const formatStep = (operation, left, right) => {
+    if (!Number.isInteger(operation) || typeof left !== "bigint" || typeof right !== "bigint") {
+      throw new TypeError("SEMAPRAX literal format import shape invariant");
+    }
+    let bytes;
+    try {
+      if (operation === 0) {
+        if (right !== 0n) throw new Error("SEMAPRAX literal format copy operand invariant");
+        bytes = read(decode(left));
+      } else if (operation === 1) {
+        const a = stringBytes(left), b = stringBytes(right);
+        if (a.byteLength > 65536 - b.byteLength) return 0n;
+        bytes = new Uint8Array(a.byteLength + b.byteLength);
+        bytes.set(a, 0); bytes.set(b, a.byteLength);
+      } else if (operation === 2 || operation === 3) {
+        if (right !== 0n) throw new Error("SEMAPRAX literal format numeric operand invariant");
+        bytes = encoder.encode((operation === 3 ? BigInt.asUintN(64, left) : left).toString());
+      } else {
+        throw new Error("SEMAPRAX literal format operation invariant");
+      }
+      if (bytes.byteLength > 65536 || entries.size >= maxLiveEntries || nextToken > 0x7fffffff) return 0n;
+      return allocate(bytes);
+    } catch (failure) {
+      if (failure instanceof RangeError) return 0n;
+      throw failure;
+    }
   };
   const textNumber = (value, unsigned) => {
     if (typeof value !== "bigint") throw new TypeError("SEMAPRAX numeric String input is not i64");
@@ -349,6 +381,7 @@ function createByteDataRuntime(options = {}) {
     collectionBytes += delta; output.setBigInt64(0, token, true); return 0;
   };
   const byteImports = Object.freeze({
+    spx_format_step_v1: formatStep,
     spx_collection_checked_v2: collectionChecked,
     spx_collection_drop_v2: collectionDrop,
     spx_bytes_copy: carrier => allocate(read(decode(carrier))),
@@ -504,6 +537,11 @@ function createByteDataRuntime(options = {}) {
       if (!textRange(index, bytes.length) || index === BigInt(bytes.length)) return 23;
       output.setBigInt64(0, BigInt(bytes[Number(index)]), true); return 0;
     },
+    spx_string_from_utf8_v1: (carrier, offset) => {
+      const bytes = read(decode(carrier), false), output = toolkitOutput(offset);
+      if (!validUtf8(bytes)) return 21;
+      output.setBigInt64(0, allocate(bytes), true); return 0;
+    },
     spx_string_from_str_v2: (carrier, offset) => {
       const bytes = read(decode(carrier)), output = toolkitOutput(offset);
       if (!validUtf8(bytes)) return 25;
@@ -580,8 +618,10 @@ export const imports = {
       // normalizes to the identical status the native C11 backend's
       // `spx_rt_call_depth_failure` reports.
       if (code === 18) throw new SpxSemanticFailure("semaprax.runtime.v1", 1, "SEMAPRAX call-depth admission failure");
+      if (code === 34) throw new SpxSemanticFailure("semaprax.string-format.v1", 1, "SEMAPRAX checked literal format failure");
       if (code === 11) throw new SpxSemanticFailure("semaprax.byte-range.v1", 1, "SEMAPRAX byte range failure");
       if (code === 12) throw new SpxSemanticFailure("semaprax.byte-range.v1", 2, "SEMAPRAX byte range failure");
+      if (code === 35) throw new SpxSemanticFailure("semaprax.byte-buffer.v1", 2, "SEMAPRAX owned byte buffer capacity exceeded");
       if (code === 16) throw new SpxSemanticFailure("semaprax.byte-buffer.v1", 1, "SEMAPRAX owned byte buffer failure");
       if (code >= 26 && code <= 29) throw new SpxSemanticFailure("semaprax.map.v1", code - 25, "SEMAPRAX checked map failure");
       if (code >= 30 && code <= 33) throw new SpxSemanticFailure("semaprax.map.v2", code - 29, "SEMAPRAX checked collection failure");
@@ -933,7 +973,10 @@ function createOwnedRuntime(options = {}) {
 
 export async function instantiateBytes(bytes, options = {}) {
   const authenticatedBytes = await authenticatedWasmBytes(bytes);
-  const byteRuntime = createByteDataRuntime(options);
+  const inspected = await WebAssembly.compile(authenticatedBytes);
+  const formatSelected = WebAssembly.Module.imports(inspected).some(item =>
+    item.module === "env" && item.name === "spx_format_step_v1" && item.kind === "function");
+  const byteRuntime = createByteDataRuntime(options, formatSelected);
   if (Object.keys(SPX_OWNED_EXPORTS).length === 0) {
     const linkedImports = { env: { ...imports.env, ...byteRuntime.imports } };
     const result = await WebAssembly.instantiate(authenticatedBytes, linkedImports);

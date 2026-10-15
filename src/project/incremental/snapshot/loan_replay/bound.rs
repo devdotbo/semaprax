@@ -34,6 +34,7 @@ struct Inventory {
     projection_text: usize,
     identity_bytes: usize,
     root_bytes: usize,
+    native_prefix_replication: bool,
 }
 
 fn add(total: &mut usize, value: usize) -> Result<()> {
@@ -232,6 +233,34 @@ fn walk(
                 walk(program, child, inventory, depth + 1)?;
             }
         }
+        // Row Loan v1 borrows its whole Vec place for its own read interval;
+        // the receiving call counts the call-long borrowed argument itself.
+        ResolvedExprKind::RowLoan { args, .. } => {
+            add(&mut inventory.drafts, 1)?;
+            for argument in args {
+                walk(program, argument, inventory, depth + 1)?;
+            }
+        }
+        ResolvedExprKind::VecFieldRead { args, .. } => {
+            add(
+                &mut inventory.drafts,
+                1 + usize::from(matches!(
+                    expression.ty,
+                    crate::hir::ResolvedType::Str | crate::hir::ResolvedType::SliceU8
+                )),
+            )?;
+            for argument in args {
+                walk(program, argument, inventory, depth + 1)?;
+            }
+        }
+        ResolvedExprKind::LiteralFormat { args, .. } => {
+            for argument in args {
+                if argument.ownership == OwnershipMode::Borrow {
+                    add(&mut inventory.drafts, 1)?;
+                }
+                walk(program, argument, inventory, depth + 1)?;
+            }
+        }
         ResolvedExprKind::Call {
             callee,
             instance,
@@ -284,7 +313,11 @@ fn walk(
                 walk(program, argument, inventory, depth + 1)?;
             }
         }
-        ResolvedExprKind::Unary { value, .. }
+        ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ResolvedExprKind::Unary { value, .. }
         | ResolvedExprKind::Try { operand: value, .. }
         | ResolvedExprKind::TryOption { operand: value, .. }
         | ResolvedExprKind::Project { base: value, .. }
@@ -296,7 +329,10 @@ fn walk(
             walk(program, left, inventory, depth + 1)?;
             walk(program, right, inventory, depth + 1)?;
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 match statement {
                     crate::hir::ResolvedStatement::Let { binding, .. } => {
@@ -309,8 +345,10 @@ fn walk(
                             add(&mut inventory.projection_text, field.as_str().len())?;
                         }
                     }
-                    crate::hir::ResolvedStatement::Unsafe { .. }
-                    | crate::hir::ResolvedStatement::While { .. } => {}
+                    crate::hir::ResolvedStatement::CopyDiscard { .. }
+                    | crate::hir::ResolvedStatement::Unsafe { .. }
+                    | crate::hir::ResolvedStatement::While { .. }
+                    | crate::hir::ResolvedStatement::LexicalWhile { .. } => {}
                 }
                 for index in 0..statement.child_count() {
                     if let Some(child) = statement.child(index) {
@@ -346,6 +384,14 @@ fn walk(
         } => {
             if *mode == ResolvedMatchMode::Borrow {
                 add(&mut inventory.drafts, arms.len())?;
+                // Native receiver aliases can clone one shared scrutinee
+                // prefix into several field bindings. Refuse the linear
+                // census discount for EVERY possible producer shape, without
+                // trusting interface/type metadata or the attached proof.
+                inventory.native_prefix_replication |= arms.iter().any(|arm| {
+                    matches!(&arm.pattern, ResolvedMatchPattern::Variant { fields, .. }
+                        if !fields.is_empty())
+                });
             }
             walk(program, scrutinee, inventory, depth + 1)?;
             for arm in arms {
@@ -373,7 +419,8 @@ fn walk(
         | ResolvedExprKind::Float32(_)
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
-        | ResolvedExprKind::String(_) => {}
+        | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_) => {}
     }
     Ok(())
 }
@@ -384,12 +431,15 @@ fn walk(
 fn edge_entries(expression: &ResolvedExpr) -> Result<usize> {
     use crate::ast::BinaryOp;
     let children = match &expression.kind {
-        ResolvedExprKind::Block { statements, .. } => {
+        ResolvedExprKind::LexicalExit { value, .. } => return Ok(usize::from(value.is_some()) + 2),
+
+        ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } => {
             let mut edges = 2usize;
             for statement in statements {
                 add(
                     &mut edges,
-                    if matches!(statement, crate::hir::ResolvedStatement::While { .. }) {
+                    if crate::hir::lexical_exit::is_loop_statement(statement) {
                         3
                     } else {
                         1
@@ -419,7 +469,10 @@ fn edge_entries(expression: &ResolvedExpr) -> Result<usize> {
         ResolvedExprKind::Try { .. } | ResolvedExprKind::TryOption { .. } => return Ok(3),
         ResolvedExprKind::Closure { captures, .. } => captures.len(),
         ResolvedExprKind::Invoke { args, .. } => sum(&[args.len(), 1])?,
-        ResolvedExprKind::Call { args, .. } => args.len(),
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => args.len(),
         ResolvedExprKind::NativeRustImportCall(call) => call.args.len(),
         ResolvedExprKind::HostCommandCall(call) => call.args.len(),
         ResolvedExprKind::ByteRange { .. } => 3,
@@ -443,6 +496,7 @@ fn edge_entries(expression: &ResolvedExpr) -> Result<usize> {
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => 0,
     };
@@ -480,14 +534,25 @@ fn function_bytes(inventory: &Inventory) -> Result<usize> {
     let drafts = inventory.drafts;
     let loans = drafts.min(MAX_LOANS_PER_FUNCTION_V1);
     let bindings = inventory.bindings;
-    // Alias resolution follows at most one link per distinct binding; a link
-    // may carry any source/native-pattern projection prefix. Growth and two
-    // simultaneously live old/new prefixes are retained, never refunded.
+    // Ordinary aliases clone one prefix from their distinct Let value tree.
+    // A cycle-free path uses each such prefix at most once. The complete
+    // occurrence census covers that sum plus one initial origin (including
+    // synthetic assignment fields), with the retained factor two. origin.rs
+    // materializes this final prefix only once; its actual reservation stays
+    // on the same ledger in addition to this conservative construction debit.
+    // Native field aliases can replicate one scrutinee prefix across bindings,
+    // so their overinclusive shape flag retains the ORIGINAL chain multiplier.
+    // All recipient, map, liveness, text, overlap and old-proof terms remain.
     let projection_payload = inventory
         .projection_text
         .checked_add(vector(inventory.projections, size_of::<PlaceProjection>())?)
         .ok_or_else(|| capacity("decoded HIR loan place bound overflows"))?;
-    let place = product(&[2, sum(&[bindings, 1])?, projection_payload])?
+    let chain_multiplier = if inventory.native_prefix_replication {
+        sum(&[bindings, 1])?
+    } else {
+        1
+    };
+    let place = product(&[2, chain_multiplier, projection_payload])?
         .checked_add(inventory.root_bytes)
         .ok_or_else(|| capacity("decoded HIR loan place bound overflows"))?;
     let mut bytes = size_of::<LoanPlan>();
@@ -548,10 +613,23 @@ fn function_bytes(inventory: &Inventory) -> Result<usize> {
     // Termination/liveness rows and returned endpoint/edge proof rows. Charge
     // growth on each nested vector, not only its outer carrier.
     add(&mut bytes, vector(loans, size_of::<Loan>())?)?;
-    add(&mut bytes, vector(points, size_of::<LoanEndpoint>())?)?;
+    // The returned endpoint has compact slices, but construction retains
+    // temporary Vec rows and may shrink them while their old storage is live.
+    // Preserve the prior four-Vec carrier allowance for that transient peak.
+    let endpoint_carrier = sum(&[
+        size_of::<LoanProgramPoint>(),
+        product(&[4, size_of::<Vec<LoanId>>()])?,
+    ])?;
     add(
         &mut bytes,
-        vector(edges, size_of::<crate::loan_plan::LoanEdge>())?,
+        vector(points, endpoint_carrier.max(size_of::<LoanEndpoint>()))?,
+    )?;
+    add(
+        &mut bytes,
+        vector(
+            edges,
+            sum(&[size_of::<crate::loan_plan::LoanEdge>(), size_of::<usize>()])?,
+        )?,
     )?;
     add(
         &mut bytes,
@@ -584,3 +662,7 @@ fn function_bytes(inventory: &Inventory) -> Result<usize> {
     )?;
     Ok(bytes)
 }
+
+#[cfg(test)]
+#[path = "bound/places_tests.rs"]
+mod places_tests;

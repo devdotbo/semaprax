@@ -1,0 +1,40 @@
+{
+  "base": "f8d39034fbe2145590160442ae17c4d69145134d",
+  "status": "source-only; no Cargo/tests/Clippy executed",
+  "identity_conversions_removed": 9,
+  "complete_source_projections": {
+    "src/semantic_workspace/reporting.rs": {
+      "before_sha256": "a3f8f8ab6a4414da7721cdf46457124c60f6a397a40e27b4af2bca18c8ee47b0",
+      "current_sha256": "6a1ee6dbaf59fd894b91feb841d54ad09f019add0b2d27aa22fe2c4ea5ea11ac",
+      "identity_conversions_removed": 1,
+      "complete_source_projection": "exact original source with only named identity conversions removed"
+    },
+    "src/semantic_workspace.rs": {
+      "before_sha256": "e91c13805d8825e4e832c90fb3ff8d5b877fde4ef3c225773d72cd87da23cc7c",
+      "current_sha256": "0e5ac344af46a82b1119639cbbc4d6b0c6d70ee315628e0798e596411edcb4d5",
+      "identity_conversions_removed": 1,
+      "complete_source_projection": "exact original source with only named identity conversions removed"
+    },
+    "src/semantic_workspace_change/reporting.rs": {
+      "before_sha256": "bb4e4f611b44edb3254785307c3de1c6b650280d619b92951ed22d7932c410a7",
+      "current_sha256": "b6181795b3face5d4ac706fb60019470432e11723b76b6427b00291985c72e45",
+      "identity_conversions_removed": 3,
+      "complete_source_projection": "exact original source with only named identity conversions removed"
+    },
+    "src/semantic_workspace_operations/reporting.rs": {
+      "before_sha256": "766b55f69ab42b0c666d3400f2896244c558f5736968b286ef0129a001b357f6",
+      "current_sha256": "d3a681e84770359f6d08d2cd0b5e4b0392443a50346137f446713b54679da83c",
+      "identity_conversions_removed": 1,
+      "complete_source_projection": "exact original source with only named identity conversions removed"
+    },
+    "src/semantic_workspace_structural_change/reporting.rs": {
+      "before_sha256": "94b5894580ed52017b5718c6184c082db01fccade0e1c9ec25dc10634142e488",
+      "current_sha256": "c96d766294222e9a90fa6e243308cb336bde4a278bc1bd05dd08199357e93768",
+      "identity_conversions_removed": 3,
+      "complete_source_projection": "exact original source with only named identity conversions removed"
+    }
+  },
+  "original_archives_unchanged": 6,
+  "required_String_to_SourceBytes_conversions": "second source.source.into() preserved in both semantic_workspace owners",
+  "public_api_and_selectors": "unchanged"
+}

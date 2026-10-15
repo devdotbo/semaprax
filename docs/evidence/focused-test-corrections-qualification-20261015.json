@@ -1,0 +1,18 @@
+{
+  "source_subject": "344eb92dfdf4ee80142cfd304ed5b7e83d530d68",
+  "scope": "Eight exact affected checks after a test-only correction batch; no full suite",
+  "build_exit_code": 0,
+  "runtime": {
+    "selected": 8,
+    "passed": 7,
+    "failed": 1,
+    "receipt_sha256": "3a929443dec4d67bd3cd12558a105f7cf1a24527bfe21aa00e09d86098dc8ca1"
+  },
+  "remaining_failed_selector": "workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core",
+  "production_source_changed": false,
+  "prior_production_clippy_subject": "4ec48420b6e78b1035a66cc406893c46c3028464",
+  "new_clippy_run": false,
+  "new_live_benchmark": false,
+  "additional_issue_closures": [],
+  "note": "Forecast comparison remains under investigation. Actual-caller replay follow-up and public generic fix remain private; no additional issue closed."
+}

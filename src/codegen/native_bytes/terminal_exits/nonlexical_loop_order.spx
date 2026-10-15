@@ -1,0 +1,51 @@
+module test.native_terminal_nonlexical_loop;
+
+@id("test.native_terminal_nonlexical_loop.Choice")
+variant Choice {
+    @id("test.native_terminal_nonlexical_loop.Choice.none")
+    None,
+    @id("test.native_terminal_nonlexical_loop.Choice.data")
+    Data {
+        @id("test.native_terminal_nonlexical_loop.Choice.data.payload")
+        payload: Bytes,
+    },
+}
+
+@id("test.native_terminal_nonlexical_loop.weigh")
+fn weigh(value: i64, divisor: i64) -> i64
+{
+    value / divisor
+}
+
+// No break/continue: `run` stays nonlexical, so its plan carries no loop
+// execution-boundary certificate while both opposing owners are live.
+@id("test.native_terminal_nonlexical_loop.run")
+fn run(first: i64, second: i64, rounds: i64) -> i64
+{
+    let seed = [83u8, 87u8];
+    let pad1 = 1;
+    let older = Choice::Data { payload: bytes_copy(array_as_slice(seed)) };
+    let pad3 = 3;
+    let pad4 = 4;
+    let pad5 = 5;
+    let pad6 = 6;
+    let pad7 = 7;
+    let pad8 = 8;
+    let pad9 = 9;
+    let newer = Choice::Data { payload: bytes_copy(array_as_slice(seed)) };
+    let before = weigh(100, first);
+    let joined = if before > 0 { 1 } else { 2 };
+    let after = weigh(100, second);
+    let mut index = 0;
+    while index < rounds {
+        index = index + 1;
+        0
+    }
+    before + joined + after + index
+}
+
+@id("app.main")
+fn main() -> i64
+{
+    0
+}

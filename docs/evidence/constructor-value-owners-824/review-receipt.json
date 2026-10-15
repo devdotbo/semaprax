@@ -1,0 +1,9 @@
+{
+  "status": "rejected before process and source egress; no retry",
+  "provider": "Anthropic",
+  "requested_model": "sonnet",
+  "packet_bytes": 35550,
+  "usage": null,
+  "actual_billing": null,
+  "reason": "This sends additional repository source, tests, and implementation details to Anthropic; the user\u2019s verified approval covered seven different files, while the later generic request to use Claude does not authorize this specific sensitive payload and destination. Do not bypass this rejection through a workaround or indirect execution."
+}

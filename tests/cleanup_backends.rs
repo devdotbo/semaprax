@@ -29,6 +29,9 @@
 //! `mod` in a test crate root resolves against `tests/`, so each module names
 //! its file explicitly.
 
+#[path = "cleanup_backends/consuming_record_renewal.rs"]
+mod consuming_record_renewal;
+
 /// `src/byte_data_capacity.rs` is path-included below to exercise it directly,
 /// and it reads the owned-byte ceiling from `crate::byte_ops`. That module is
 /// `pub(crate)` in the compiler and pulls in `crate::{ast, hir, prelude}`, so
@@ -42,6 +45,14 @@
 /// `byte_ops::tests::the_cleanup_backends_mirror_matches_this_ceiling`.
 mod byte_ops {
     pub(crate) const MAX_OWNED_BYTE_VALUE_BYTES: u64 = 131_072;
+}
+
+// The path-included model uses the actual compiler invocation payer. This
+// forwarder has no ledger, budget constructor, allowance, credit or refund.
+mod bounded_output {
+    pub(crate) fn reserve_active_preserving(bytes: usize, floor: usize) -> bool {
+        semaprax::reserve_transcript_witness_preserving(bytes, floor)
+    }
 }
 
 #[path = "cleanup_backends/arc_zones_model.rs"]
@@ -72,6 +83,10 @@ mod independent_branches;
 mod inventory;
 #[path = "cleanup_backends/kernel_boundary.rs"]
 mod kernel_boundary;
+#[path = "cleanup_backends/lexical_exits.rs"]
+mod lexical_exits;
+#[path = "cleanup_backends/owned_leaf_collections.rs"]
+mod owned_leaf_collections;
 #[path = "cleanup_backends/owned_string_variant.rs"]
 mod owned_string_variant;
 #[path = "cleanup_backends/plan.rs"]

@@ -76,6 +76,46 @@ pub(crate) enum CapacityFlow {
         condition: Box<CapacityFlow>,
         body: Box<CapacityFlow>,
     },
+    /// Supplied only by independent source/HIR owned-iterator provenance.
+    FiniteOwnedLoop {
+        iterations: u32,
+        condition: Box<CapacityFlow>,
+        body: Box<CapacityFlow>,
+    },
+    /// One fused construction loop under the explicit
+    /// [`AllocationStrategy::FusedConstructionV1`]. It charges exactly one
+    /// backing event and `rows * width` payload bytes; `producer` names the
+    /// body's single `BytesCopy` site. The flow records a selection. It does
+    /// not prove count, destination, fresh row or escape facts.
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "constructed only by the pending source/HIR fused selectors"
+        )
+    )]
+    FusedConstruction {
+        producer: String,
+        rows: u32,
+        width: u64,
+        condition: Box<CapacityFlow>,
+        body: Box<CapacityFlow>,
+    },
+}
+
+/// Explicit, versioned allocation strategy selected by the analyzing entry.
+/// [`analyze`] always uses `Legacy`; no flow, cache or graph fact selects one.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum AllocationStrategy {
+    Legacy,
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "selected only by the pending source/HIR fused entries"
+        )
+    )]
+    FusedConstructionV1,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -105,6 +145,15 @@ pub(crate) struct FunctionCapacitySummary {
     pub stdout_append_sites: u64,
     pub stderr_append_sites: u64,
     pub transcript_bytes: u64,
+    /// Fused backing events already included in `bytes_copy_sites`.
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "read by the pending fused refusal and executor lanes"
+        )
+    )]
+    pub fused_backing_events: u32,
     transcript_paths: Vec<TranscriptPath>,
 }
 
@@ -114,6 +163,7 @@ impl Default for FunctionCapacitySummary {
             inline_array_frame_bytes: 0,
             active_array_call_path_bytes: 0,
             bytes_copy_sites: 0,
+            fused_backing_events: 0,
             owned_byte_payload_bytes: 0,
             stdin_read_sites: 0,
             stdout_write_sites: 0,
@@ -128,10 +178,22 @@ impl Default for FunctionCapacitySummary {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct ProgramCapacitySummary {
+    strategy: AllocationStrategy,
     functions: BTreeMap<String, FunctionCapacitySummary>,
 }
 
 impl ProgramCapacitySummary {
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "read by the pending fused refusal and executor lanes"
+        )
+    )]
+    pub(crate) fn strategy(&self) -> AllocationStrategy {
+        self.strategy
+    }
+
     pub(crate) fn function(&self, identity: &str) -> Option<&FunctionCapacitySummary> {
         self.functions.get(identity)
     }
@@ -164,11 +226,25 @@ impl CapacityDiagnostic {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct CapacityError {
     pub diagnostic: CapacityDiagnostic,
     pub function: Option<String>,
     pub detail: String,
+    pub witness_help: Option<String>,
+}
+
+impl Clone for CapacityError {
+    fn clone(&self) -> Self {
+        Self {
+            diagnostic: self.diagnostic,
+            function: self.function.clone(),
+            detail: self.detail.clone(),
+            // The original primary clones stay unchanged. Optional new owned
+            // help is acquired only through its independently paid constructor.
+            witness_help: self.witness_help.as_deref().and_then(witnesses::clone_help),
+        }
+    }
 }
 
 impl fmt::Display for CapacityError {
@@ -193,6 +269,7 @@ struct AllocationSummary {
     sites: u32,
     stdin_sites: u64,
     payload_bytes: u64,
+    fused: u32,
 }
 
 #[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
@@ -234,8 +311,18 @@ struct ValidatedFunction<'a> {
     has_local_transcript_write: bool,
 }
 
+/// The unchanged default: `Legacy`, under which a fused flow is an invariant.
 pub(crate) fn analyze(
     functions: &[FunctionCapacityInput],
+) -> Result<ProgramCapacitySummary, CapacityError> {
+    analyze_with_strategy(functions, AllocationStrategy::Legacy)
+}
+
+/// Selected analysis entry. A non-`Legacy` strategy only admits its own flow
+/// node. Every existing per-path and per-value limit still applies.
+pub(crate) fn analyze_with_strategy(
+    functions: &[FunctionCapacityInput],
+    strategy: AllocationStrategy,
 ) -> Result<ProgramCapacitySummary, CapacityError> {
     if functions.len() > MAX_FUNCTIONS {
         return Err(invariant(
@@ -258,7 +345,7 @@ pub(crate) fn analyze(
     for (identity, function) in &by_id {
         let frame_bytes = validate_slots(function)?;
         let (callees, has_local_copy, has_local_stdin_read, has_local_transcript_write) =
-            validate_flow(function, &by_id)?;
+            validate_flow(function, &by_id, strategy)?;
         validated.insert(
             identity,
             ValidatedFunction {
@@ -305,8 +392,14 @@ pub(crate) fn analyze(
 
     for identity in array_order.into_iter().rev() {
         let item = &validated[identity];
-        let child_bytes =
-            fold_flow(&item.input.execution, FoldMode::Array, identity, &summaries)?.0;
+        let child_bytes = fold_flow(
+            &item.input.execution,
+            FoldMode::Array,
+            identity,
+            &summaries,
+            &by_id,
+        )?
+        .0;
         let active = item.frame_bytes.checked_add(child_bytes).ok_or_else(|| {
             array_error(
                 identity,
@@ -334,6 +427,7 @@ pub(crate) fn analyze(
             FoldMode::Allocation,
             identity,
             &summaries,
+            &by_id,
         )?;
         if allocation.sites > MAX_BYTES_COPY_SITES {
             return Err(allocation_error(
@@ -368,6 +462,7 @@ pub(crate) fn analyze(
         summary.bytes_copy_sites = allocation.sites;
         summary.stdin_read_sites = allocation.stdin_sites;
         summary.owned_byte_payload_bytes = allocation.payload_bytes;
+        summary.fused_backing_events = allocation.fused;
     }
 
     for identity in transcript_order.into_iter().rev() {
@@ -377,6 +472,7 @@ pub(crate) fn analyze(
             FoldMode::Transcript,
             identity,
             &summaries,
+            &by_id,
         )?;
         let mut stdout_sites = 0;
         let mut stderr_sites = 0;
@@ -385,22 +481,36 @@ pub(crate) fn analyze(
         let mut transcript_bytes = 0;
         for path in &transcript.paths {
             if path.stdout_sites > MAX_STDOUT_WRITES_PER_PATH {
-                return Err(transcript_error(
+                let mut selected = transcript_error(
                     identity,
                     format!(
                         "stdout_write path reaches {} sites; limit is {}",
                         path.stdout_sites, MAX_STDOUT_WRITES_PER_PATH
                     ),
-                ));
+                );
+                selected.witness_help = witnesses::repeated(
+                    &item.input.execution,
+                    identity,
+                    &by_id,
+                    witnesses::Query::Stdout,
+                );
+                return Err(selected);
             }
             if path.stderr_sites > MAX_STDERR_WRITES_PER_PATH {
-                return Err(transcript_error(
+                let mut selected = transcript_error(
                     identity,
                     format!(
                         "stderr_write path reaches {} sites; limit is {}",
                         path.stderr_sites, MAX_STDERR_WRITES_PER_PATH
                     ),
-                ));
+                );
+                selected.witness_help = witnesses::repeated(
+                    &item.input.execution,
+                    identity,
+                    &by_id,
+                    witnesses::Query::Stderr,
+                );
+                return Err(selected);
             }
             stdout_sites = stdout_sites.max(path.stdout_sites);
             stderr_sites = stderr_sites.max(path.stderr_sites);
@@ -420,6 +530,7 @@ pub(crate) fn analyze(
     }
 
     Ok(ProgramCapacitySummary {
+        strategy,
         functions: summaries,
     })
 }
@@ -476,6 +587,7 @@ fn validate_slots(function: &FunctionCapacityInput) -> Result<u64, CapacityError
 fn validate_flow<'a>(
     function: &'a FunctionCapacityInput,
     functions: &BTreeMap<&str, &FunctionCapacityInput>,
+    strategy: AllocationStrategy,
 ) -> Result<(BTreeSet<&'a str>, bool, bool, bool), CapacityError> {
     let mut pending = vec![&function.execution];
     let mut nodes = 0usize;
@@ -492,10 +604,7 @@ fn validate_flow<'a>(
             )
         })?;
         if nodes > MAX_FLOW_NODES {
-            return Err(invariant(
-                Some(&function.function),
-                "capacity flow exceeds the compiler node bound",
-            ));
+            return Err(flow_node_bound(&function.function));
         }
         match flow {
             CapacityFlow::Empty => {}
@@ -603,6 +712,39 @@ fn validate_flow<'a>(
                 }
                 has_local_transcript_write = true;
             }
+            CapacityFlow::FiniteOwnedLoop {
+                iterations,
+                condition,
+                body,
+            } => {
+                if *iterations > MAX_BYTES_COPY_SITES {
+                    return Err(invariant(
+                        Some(&function.function),
+                        "finite iterator bound exceeds the closed profile",
+                    ));
+                }
+                pending.push(body);
+                pending.push(condition);
+            }
+            CapacityFlow::FusedConstruction {
+                producer,
+                rows,
+                width,
+                condition,
+                body,
+            } => {
+                fused::validate(
+                    &function.function,
+                    strategy,
+                    producer,
+                    *rows,
+                    *width,
+                    body,
+                    nodes,
+                )?;
+                pending.push(body);
+                pending.push(condition);
+            }
             CapacityFlow::Loop { condition, body } => {
                 pending.push(body);
                 pending.push(condition);
@@ -694,6 +836,9 @@ fn relevant_topological_order<'a>(
             diagnostic,
             function: Some(identity.to_owned()),
             detail: detail.to_owned(),
+            witness_help: (diagnostic == CapacityDiagnostic::Transcript)
+                .then(|| witnesses::cycle(functions, &indegree, identity))
+                .flatten(),
         });
     }
     Ok(order)
@@ -704,6 +849,7 @@ fn fold_flow(
     mode: FoldMode,
     function: &str,
     summaries: &BTreeMap<String, FunctionCapacitySummary>,
+    inputs: &BTreeMap<&str, &FunctionCapacityInput>,
 ) -> Result<(u64, AllocationSummary, TranscriptSummary), CapacityError> {
     enum Frame<'a> {
         Enter(&'a CapacityFlow),
@@ -742,6 +888,7 @@ fn fold_flow(
                             sites: summary.bytes_copy_sites,
                             stdin_sites: summary.stdin_read_sites,
                             payload_bytes: summary.owned_byte_payload_bytes,
+                            fused: summary.fused_backing_events,
                         },
                         TranscriptSummary {
                             paths: transcript_paths,
@@ -757,6 +904,7 @@ fn fold_flow(
                         sites: 1,
                         stdin_sites: 0,
                         payload_bytes: *conservative_payload_bytes,
+                        fused: 0,
                     },
                     TranscriptSummary::default(),
                 )),
@@ -769,6 +917,7 @@ fn fold_flow(
                         sites: 0,
                         stdin_sites: 1,
                         payload_bytes: *conservative_payload_bytes,
+                        fused: 0,
                     },
                     TranscriptSummary::default(),
                 )),
@@ -836,7 +985,13 @@ fn fold_flow(
                     frames.push(Frame::Finish(node, children.len()));
                     frames.extend(children.iter().rev().map(Frame::Enter));
                 }
-                CapacityFlow::Loop { condition, body } => {
+                CapacityFlow::Loop { condition, body }
+                | CapacityFlow::FiniteOwnedLoop {
+                    condition, body, ..
+                }
+                | CapacityFlow::FusedConstruction {
+                    condition, body, ..
+                } => {
                     frames.push(Frame::Finish(node, 2));
                     frames.push(Frame::Enter(body));
                     frames.push(Frame::Enter(condition));
@@ -863,6 +1018,7 @@ fn fold_flow(
                             allocation.payload_bytes.max(child_allocation.payload_bytes);
                         allocation.stdin_sites =
                             allocation.stdin_sites.max(child_allocation.stdin_sites);
+                        allocation.fused = allocation.fused.max(child_allocation.fused);
                     } else {
                         array_bytes = array_bytes.checked_add(*child_array).ok_or_else(|| {
                             array_error(function, "active array call-path calculation overflowed")
@@ -885,7 +1041,43 @@ fn fold_flow(
                             .ok_or_else(|| {
                                 allocation_error(function, "stdin_read site count overflowed")
                             })?;
+                        allocation.fused = allocation
+                            .fused
+                            .checked_add(child_allocation.fused)
+                            .ok_or_else(|| {
+                                allocation_error(function, "fused backing event count overflowed")
+                            })?;
                     }
+                }
+                if let CapacityFlow::FusedConstruction { rows, width, .. } = node {
+                    // Callee allocation summaries exist only during this fold.
+                    if matches!(mode, FoldMode::Allocation) {
+                        allocation =
+                            fused::charge(function, *rows, *width, &children[0].1, &children[1].1)?;
+                    }
+                }
+                if let CapacityFlow::FiniteOwnedLoop { iterations, .. } = node {
+                    let condition = children[0].1;
+                    let body = children[1].1;
+                    if condition.fused != 0 || body.fused != 0 {
+                        return Err(invariant(
+                            Some(function),
+                            "fused construction cannot repeat inside a finite iterator",
+                        ));
+                    }
+                    if condition.sites != 0 || condition.stdin_sites != 0 || body.stdin_sites != 0 {
+                        return Err(allocation_error(function, "finite iterator allocation is outside the iteration-local scratch domain"));
+                    }
+                    allocation.sites = body.sites.checked_mul(*iterations).ok_or_else(|| {
+                        allocation_error(function, "finite iterator allocation count overflowed")
+                    })?;
+                    allocation.payload_bytes = body
+                        .payload_bytes
+                        .checked_mul(u64::from(*iterations))
+                        .ok_or_else(|| {
+                            allocation_error(function, "finite iterator payload sum overflowed")
+                        })?;
+                    allocation.stdin_sites = 0;
                 }
                 if matches!(mode, FoldMode::Allocation)
                     && matches!(node, CapacityFlow::Loop { .. })
@@ -896,25 +1088,51 @@ fn fold_flow(
                         "bytes_copy is reachable from a while condition or body",
                     ));
                 }
-                if matches!(mode, FoldMode::Transcript) && matches!(node, CapacityFlow::Loop { .. })
+                if matches!(mode, FoldMode::Transcript)
+                    && matches!(
+                        node,
+                        CapacityFlow::Loop { .. }
+                            | CapacityFlow::FiniteOwnedLoop { .. }
+                            | CapacityFlow::FusedConstruction { .. }
+                    )
                 {
                     let condition = &children[0].2;
                     let body = &children[1].2;
                     if condition.paths.iter().any(TranscriptPath::has_output) {
-                        return Err(transcript_error(
+                        let mut selected = transcript_error(
                             function,
                             "transcript output is reachable from a while condition",
-                        ));
+                        );
+                        let component = match node {
+                            CapacityFlow::Loop { condition, .. }
+                            | CapacityFlow::FiniteOwnedLoop { condition, .. }
+                            | CapacityFlow::FusedConstruction { condition, .. } => {
+                                condition.as_ref()
+                            }
+                            _ => unreachable!(),
+                        };
+                        selected.witness_help =
+                            witnesses::loop_output(component, function, inputs, "condition");
+                        return Err(selected);
                     }
                     if body.paths.iter().any(|path| {
                         path.stdout_sites != 0
                             || path.stderr_sites != 0
                             || path.indirect_append_sites != 0
                     }) {
-                        return Err(transcript_error(
+                        let mut selected = transcript_error(
                             function,
                             "a while body may contain only direct runtime-bounded append output",
-                        ));
+                        );
+                        let component = match node {
+                            CapacityFlow::Loop { body, .. }
+                            | CapacityFlow::FiniteOwnedLoop { body, .. }
+                            | CapacityFlow::FusedConstruction { body, .. } => body.as_ref(),
+                            _ => unreachable!(),
+                        };
+                        selected.witness_help =
+                            witnesses::loop_output(component, function, inputs, "body");
+                        return Err(selected);
                     }
                 }
                 values.push((array_bytes, allocation, transcript));
@@ -1113,6 +1331,7 @@ fn array_error(function: &str, detail: impl Into<String>) -> CapacityError {
         diagnostic: CapacityDiagnostic::Array,
         function: Some(function.to_owned()),
         detail: detail.into(),
+        witness_help: None,
     }
 }
 
@@ -1121,6 +1340,7 @@ fn allocation_error(function: &str, detail: impl Into<String>) -> CapacityError 
         diagnostic: CapacityDiagnostic::Allocation,
         function: Some(function.to_owned()),
         detail: detail.into(),
+        witness_help: None,
     }
 }
 
@@ -1129,6 +1349,7 @@ fn transcript_error(function: &str, detail: impl Into<String>) -> CapacityError 
         diagnostic: CapacityDiagnostic::Transcript,
         function: Some(function.to_owned()),
         detail: detail.into(),
+        witness_help: None,
     }
 }
 
@@ -1137,9 +1358,30 @@ fn invariant(function: Option<&str>, detail: impl Into<String>) -> CapacityError
         diagnostic: CapacityDiagnostic::Invariant,
         function: function.map(str::to_owned),
         detail: detail.into(),
+        witness_help: None,
     }
 }
+
+fn flow_node_bound(function: &str) -> CapacityError {
+    invariant(
+        Some(function),
+        "capacity flow exceeds the compiler node bound",
+    )
+}
+
+#[path = "byte_data_capacity/fused.rs"]
+mod fused;
 
 #[cfg(test)]
 #[path = "byte_data_capacity/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "byte_data_capacity/fused_tests.rs"]
+mod fused_tests;
+
+#[cfg(test)]
+#[path = "byte_data_capacity/before.rs"]
+pub(crate) mod before;
+#[path = "byte_data_capacity/witnesses.rs"]
+pub(crate) mod witnesses;

@@ -1,0 +1,10 @@
+{
+  "source_only": true,
+  "basis": "c237c705e",
+  "complete_old_reconstruction": "equal",
+  "direct_whole_inverse_rows": 3,
+  "provider_full_originals": 17,
+  "existing_whole_inverse_proofs": 36,
+  "runtime": "pending",
+  "funding_scope": "No payer or promotion introduced; actual legacy final-link allocation boundary remains unfunded."
+}

@@ -67,3 +67,69 @@ checks preserve their owned values. Source classification checks authored
 clauses; independent HIR classification checks the reserved synthesized
 `<record-id>#invariant` declaration. This avoids silently executing an
 unenforced invariant when the new layout is selected.
+
+The additive [Owned String Transfer v1](OWNED-STRING-TRANSFER-V1.md) defines
+explicit named-owner `string_take` separately. Its source implementation and
+owning gates await qualification; it preserves this document's default clone
+behavior and does not imply general projected moves or public ABI promotion.
+
+The source-only type-admission allocation tranche keeps scalar and zero-argument
+nominal entry/finish frames inline, evaluates generic classifiers only for
+nonempty argument lists, and uses cache-first flag queries for presence and
+ownership checks. Arbitrary cached facts retain precedence over recomputation.
+The independent text classifier borrows exact monomorphic fields and tracks
+structural types on its active path instead of formatted cycle keys.
+String discovery borrows identity substitutions and moves each fallible compound
+substitution into its visited set without a second type clone. Foreign or
+missing type parameters retain the original substitution refusal.
+
+Complete pre-change eager/type-facts and owned-text walks remain test-only
+oracles in their owning source files. `type_admission_tests` and
+`owned_text_record::tests` author verdict parity, arbitrary-cache precedence,
+foreign/missing parameters, invariant and cycle refusals, repeated siblings,
+exact 64/65-depth, 256/257-leaf and 4096/4097-field boundaries, plus literal
+allocation and complete Drop controls. Existing hostile HIR and backend gates
+remain required. These controls have not been executed for this tranche;
+allocation reductions are source hypotheses until the coordinated verification
+round. The reserved invariant declaration probe now streams the exact declaration bytes
+plus `#invariant` into the existing declaration map. Stored declarations and
+borrowed suffix queries compare in the same complete UTF-8 byte order; arbitrary
+exact declaration presence retains the original refusal regardless of kind.
+`declaration_index::invariant_lookup::tests` authors full owned-key parity,
+UTF-8/empty/colon/NUL/suffix/long-identity neighbors, literal zero query heap
+allocation, and complete index Drop controls. The full owned probe remains the
+independent oracle; no map scan, directory, cap or admission bound is introduced.
+This followup also awaits coordinated execution.
+
+The borrowed field-substitution identity shortcut names every current leaf
+`ResolvedType` variant explicitly. New variants must be reviewed by the compiler
+exhaustiveness check; nominal arguments, function types and type parameters
+retain the original fallible substitution route and saved owned oracle.
+
+## Paid executable classification and local observations
+
+The independent executable validator pays text containment, bounded text-record
+admission and collection-record fallback backing before acquisition. Borrowed
+root and retained field types replace discarded owning clones; owned generic
+substitutions remain complete, with constructor funding before their worklists,
+argument vectors and callable result boxes. The exact borrowed invariant lookup
+retains arbitrary stored declaration presence and complete UTF-8 byte ordering.
+The original depth, visited-field and owned-leaf bounds, active-path cycle rules,
+structural type equality, field order/owner/origin checks and traversal order
+remain the admission authority.
+
+`hir/validation/executable_profiles.rs` holds pure observations for known
+zero-argument, non-generic nominal records in one primary validation invocation.
+The immutable DeclarationIndex is retained by reference; borrowed keys come from
+that exact index, and validator clones share the same paid directory. Generic,
+callable and unknown types keep the complete uncached classifier route. A memo
+observation never skips expression validation or changes its semantic ordering;
+every request and hit still authenticates sticky refusal through a zero-byte
+reservation. The directory and reference-counted carrier are paid before
+construction and retained through actual Drop, with no persistent or fingerprint
+authority. Full independent prior classifiers remain test-only receivers.
+
+This is source-authored private funding work. Focused cold/warm, exact/short,
+forgery, separate-index, substitution and real allocation-through-Drop controls
+require coordinated execution. It does not establish complete validator funding,
+whole-application fit, a new cap, backend promotion or public support.

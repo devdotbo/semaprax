@@ -3,6 +3,7 @@
 //! Resolved types, type facts, ownership modes, and the declaration
 //! nodes (types, interfaces, imports, functions) the resolver emits.
 
+mod import_result_type;
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
@@ -66,7 +67,13 @@ pub enum ByteSliceRootKind {
     /// A symbolic function-parameter root. Callers substitute the argument's
     /// existing root; only a concrete host entry turns it into external input.
     FunctionParameter,
+    /// The exact decoded literal expression in the held checked module image.
+    /// `root` identifies a scoped descriptor; `producer` authenticates the literal.
+    SourceExprStatic,
     OwnedBytes,
+    /// Exact indexed field of a borrowed, generation-protected owned Vec.
+    OwnedVectorField,
+    OwnedVectorStringSlot,
     /// Fused `str_as_bytes(string_as_str(owner))` over one exact owned
     /// String root. The fused HIR operation retains the root String identity.
     OwnedString,
@@ -99,6 +106,14 @@ pub struct ByteSliceRangeStep {
     pub end: ExpressionId,
 }
 
+/// Stable element/field identity and the exact once-evaluated index child.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct VectorFieldProvenance {
+    pub element: ResolvedType,
+    pub field: DeclarationId,
+    pub index: ExpressionId,
+}
+
 /// Exact provenance for a byte view. Legacy views retain a complete symbolic
 /// root (`offset = 0`, `length = root length`). The additive projected-field
 /// profile retains one stable field-ID projection and its authenticated type;
@@ -106,6 +121,8 @@ pub struct ByteSliceRangeStep {
 /// Host boundaries alone bind external parameter symbols to input storage.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ByteSliceProvenance {
+    /// Present only for a checked indexed Vec element field.
+    pub vector_field: Option<Box<VectorFieldProvenance>>,
     pub root: ValueId,
     /// Exact stable-ID path from `root` to the borrowed storage. Empty retains
     /// the byte-for-byte legacy root provenance carried through Graph v23.
@@ -126,6 +143,8 @@ pub struct ByteSliceProvenance {
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ResolvedType {
+    /// Compiler-owned absence of normal completion; never a stored/ABI value.
+    Never,
     /// A retained affine zero-argument, i64-result callable.
     OnceFunction,
     OnceFunctionI64,
@@ -231,6 +250,7 @@ impl ResolvedType {
             | Self::OnceFunctionI64
             | Self::OnceFunctionI64Pair
             | Self::MutFunctionI64
+            | Self::Never
             | Self::Unit
             | Self::I64
             | Self::I32
@@ -252,6 +272,17 @@ impl ResolvedType {
 
     /// A name-independent key suitable as an input to future layout hashing.
     pub fn identity_key(&self) -> String {
+        // Zero-argument nominal keys need no traversal or child-key storage.
+        // Keep the exact length-delimited encoding used by the general path.
+        if let Self::Nominal {
+            declaration,
+            arguments,
+        } = self
+        {
+            if arguments.is_empty() {
+                return format!("nominal:{}:{}:0:", declaration.as_str().len(), declaration);
+            }
+        }
         enum Frame<'a> {
             Enter(&'a ResolvedType),
             Finish(&'a DeclarationId, usize),
@@ -273,6 +304,7 @@ impl ResolvedType {
                         keys.push("fn-once:bytes+i64+i64:i64:v3".to_owned())
                     }
                     Self::MutFunctionI64 => keys.push("fn-mut:i64+i64:i64:v1".to_owned()),
+                    Self::Never => keys.push("never:lexical-exit:v1".to_owned()),
                     Self::Unit => keys.push("unit".to_owned()),
                     Self::I64 => keys.push("i64".to_owned()),
                     Self::I32 => keys.push("i32".to_owned()),
@@ -460,13 +492,21 @@ pub(super) fn resolver_admits_flat_owned_string_variant(
     super::type_reachability::is_admitted_owned_string_variant(declarations, ty)
 }
 
+pub(super) fn resolver_admits_direct_owned_variant(
+    declarations: &DeclarationIndex,
+    ty: &ResolvedType,
+) -> bool {
+    resolver_admits_flat_owned_string_variant(declarations, ty)
+        || super::collection_outcome::runtime_admitted(declarations, ty)
+}
+
 #[allow(dead_code)]
 pub(super) fn resolver_admits_owned_variant(
     declarations: &DeclarationIndex,
     ty: &ResolvedType,
 ) -> bool {
     resolver_admits_flat_owned_byte_variant(declarations, ty)
-        || resolver_admits_flat_owned_string_variant(declarations, ty)
+        || resolver_admits_direct_owned_variant(declarations, ty)
 }
 
 impl From<ParamMode> for OwnershipMode {
@@ -576,7 +616,7 @@ pub struct ResolvedHostCommandCall {
 pub struct ResolvedTypeDeclaration {
     pub id: DeclarationId,
     pub name: String,
-    pub type_parameters: Vec<ResolvedTypeParameterDeclaration>,
+    pub type_parameters: super::NominalPayload<ResolvedTypeParameterDeclaration>,
     pub kind: ResolvedTypeDeclarationKind,
     pub span: Span,
 }
@@ -594,14 +634,14 @@ pub enum ResolvedTypeDeclarationKind {
         drop: ResolvedResourceDrop,
     },
     Record {
-        fields: Vec<ResolvedFieldDeclaration>,
+        fields: super::NominalPayload<ResolvedFieldDeclaration>,
     },
     Class {
-        fields: Vec<ResolvedFieldDeclaration>,
+        fields: super::NominalPayload<ResolvedFieldDeclaration>,
         methods: Vec<DeclarationId>,
     },
     Variant {
-        cases: Vec<ResolvedVariantCaseDeclaration>,
+        cases: super::NominalPayload<ResolvedVariantCaseDeclaration>,
     },
 }
 
@@ -776,10 +816,7 @@ impl ResolvedImportResultKind {
             Self::OwnedResultStringOptionI64,
         ]
         .iter()
-        .any(|kind| {
-            kind.value_type(declarations)
-                .is_ok_and(|actual| &actual == ty)
-        })
+        .any(|kind| kind.matches_value_type(declarations, ty))
     }
 }
 

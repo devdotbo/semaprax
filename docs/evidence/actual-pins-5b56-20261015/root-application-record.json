@@ -1,0 +1,9 @@
+{
+  "actual_producer_source": "5b562965d2fc8e75c552f19e4f81ec7ab0835b68",
+  "application_head_before": "f6c3abf8db8b8c0ec4c6d4b5c676a3f3321fdaa8",
+  "patch_sha256": "00d723ce797be16458a948587d7be332e2eba5be5e0ba8596613da408568d19d",
+  "all_three_source_before_and_after_sha256_verified": true,
+  "actual_old_amount": 1416776,
+  "actual_new_amount": 1421848,
+  "no_reexecution_or_gain_claim": true
+}

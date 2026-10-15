@@ -1,0 +1,22 @@
+{
+  "base": "fde751e20236152d581e31ce6bf2b1d3e11ede45",
+  "runtime": "not run; source-only",
+  "exact_lib_selectors": [
+    "hir::validation::function_scope::lifecycle::completed::tests::completed_roots_reduce_repeated_real_collection_backing_and_pay_receiving_drop",
+    "hir::validation::function_scope::lifecycle::completed::tests::complete_effect_sets_and_six_field_diagnostics_match_original_cold_and_warm",
+    "hir::validation::function_scope::lifecycle::completed::tests::complete_generic_arguments_unknown_metadata_and_equal_ids_stay_independent",
+    "hir::validation::function_scope::lifecycle::completed::tests::warm_hits_authenticate_sticky_refusal_without_allocations_or_work_debits",
+    "hir::validation::function_scope::lifecycle::completed::tests::actual_function_chain_matches_complete_prior_receiver_and_auxiliary_state",
+    "hir::validation::function_scope::lifecycle::completed::tests::nested_cycles_imported_effect_payloads_and_missing_imports_keep_full_original_order",
+    "hir::validation::function_scope::lifecycle::completed::tests::complete_frozen_function_receiver_is_exact_named_projection_with_original_digest",
+    "hir::validation::function_scope::lifecycle::completed::tests::actual_repeated_call_receiver_is_paid_through_drop_with_exact_short_and_sticky_refusal",
+    "hir::validation::function_scope::collection_tests::funded_early::funded_lifecycle_collector_matches_original_cycles_errors_and_pays_nodes",
+    "hir::validation::function_scope::tests::production_chain_matches_complete_saved_map_function_and_full_iterative_corpus",
+    "hir::validation::function_scope::tests::production_chain_observes_actual_backing_debits_complete_drop_and_exact_short_sticky"
+  ],
+  "application_selectors": [
+    "standard_library::application_json::owned::shiftsim_typed_records::typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus",
+    "standard_library::application_json::owned::catalog_scoped_records::typed_catalog_derives_codecs_and_preserves_all_23_functional_cases",
+    "catalog_normalizer_application::batch_boundaries_and_string_normalization_agree_across_backends"
+  ]
+}

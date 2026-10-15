@@ -66,7 +66,13 @@ fn expression(
                 self::expression(arg, next, nodes, visit)?;
             }
         }
-        ExprKind::Unary { value, .. }
+        ExprKind::LexicalExit { value, .. } => {
+            if let Some(value) = value {
+                self::expression(value, next, nodes, visit)?;
+            }
+        }
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Yield { request: value }
         | ExprKind::Project { base: value, .. } => self::expression(value, next, nodes, visit)?,
@@ -88,6 +94,7 @@ fn expression(
                         self::expression(body, next, nodes, visit)?;
                     }
                     Statement::For { values, body, .. }
+                    | Statement::ForBorrow { values, body, .. }
                     | Statement::ForOwn { values, body, .. } => {
                         self::expression(values, next, nodes, visit)?;
                         self::expression(body, next, nodes, visit)?;
@@ -138,6 +145,7 @@ fn expression(
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
     }
     let previous_arity = match &expression.kind {

@@ -1,0 +1,9 @@
+{
+  "status": "authored-unexecuted",
+  "selectors": [
+    "hir::declaration_index::linked_owned_data::tests::linked_nominal_views_preserve_complete_old_maps_wire_and_owned_decoded_facts",
+    "hir::declaration_index::linked_owned_data::tests::linked_nominal_views_keep_full_old_errors_partial_maps_and_first_fact_order",
+    "hir::declaration_index::linked_owned_data::tests::linked_nominal_views_remove_actual_discarded_backing_and_retain_owner_until_drop",
+    "hir::declaration_index::linked_owned_data::tests::linked_shared_case_views_last_owner_drop_uses_prepaid_iterative_frontier"
+  ]
+}

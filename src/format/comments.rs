@@ -304,6 +304,7 @@ fn statement_item(statement: &Statement) -> Item {
         Statement::Let { span, .. } | Statement::Assign { span, .. } => leaf(*span),
         Statement::While { body, span, .. }
         | Statement::For { body, span, .. }
+        | Statement::ForBorrow { body, span, .. }
         | Statement::ForOwn { body, span, .. }
         | Statement::Unsafe { body, span, .. } => Item {
             start: span.start,

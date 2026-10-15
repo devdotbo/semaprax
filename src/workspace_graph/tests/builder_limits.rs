@@ -1,5 +1,29 @@
 use super::*;
 
+// Render fixture bindings before construction and receipts only after it.
+// Neither formatting participates in the watched ledger or can grant authority.
+fn print_operation_sources(profile: &str, sources: &[WorkspaceSource]) {
+    eprintln!(
+        "validation-operation-profile profile={profile} cap={MAX_BUILDER_BYTES} sources={}",
+        sources.len()
+    );
+    for source in sources {
+        let digest = Sha256::digest(source.source.as_bytes());
+        eprintln!(
+            "validation-operation-source profile={profile} path={} bytes={} sha256={:x}",
+            source.path,
+            source.source.len(),
+            crate::digest_hex::LowerHex(digest)
+        );
+    }
+}
+fn print_operation_receipt(profile: &str) {
+    let trace = crate::bounded_output::stage_debits::take_completed();
+    eprintln!(
+        "validation-operation-receipt profile={profile} cap={MAX_BUILDER_BYTES} trace={trace:?}"
+    );
+}
+
 fn minimum_successful_builder_limit(sources: &[WorkspaceSource]) -> usize {
     assert!(build_owned_with_builder_limit(sources.to_vec(), MAX_BUILDER_BYTES).is_ok());
     let mut low = 0usize;
@@ -264,20 +288,75 @@ fn a_for_item_binding_is_charged_exactly_like_a_let_binding() {
     assert_eq!(charged, widened("let"));
 }
 
-/// Tune only the fixture size, never the production bound. The largest legacy
-/// prebound that fits leaves less than one statement of room for actual core
-/// structures, forcing a real first-attempt overflow.
+/// Tune only the fixture size, never the production bound. Select the largest
+/// count whose actual pre-core charges and unchanged legacy first reservation
+/// fit the enclosing owner. Runtime assertions must still prove the later core
+/// overflow, one nested attempt and two ordinary attempts.
 fn core_retry_fixture() -> Vec<WorkspaceSource> {
     let sources = |count| {
         vec![
-        stub_charge_provider(count),
-        canonical_source("stub/consumer.spx", "module stub.consumer; use function @id(\"stub.wide\") from stub.provider as wide; @id(\"stub.consumer.main\") fn main() -> i64 { wide(0) }"),
-    ]
+            stub_charge_provider(count),
+            canonical_source(
+                "stub/consumer.spx",
+                "module stub.consumer; use function @id(\"stub.wide\") from stub.provider as wide; @id(\"stub.consumer.main\") fn main() -> i64 { wide(0) }",
+            ),
+        ]
     };
     let fits = |count| {
-        let programs = parsed_sources(&sources(count));
+        let mut candidate = sources(count);
+        candidate.sort_by(|left, right| left.path.cmp(&right.path));
+        let programs = parsed_sources(&candidate);
         let authored = index_authored(&programs).unwrap();
-        expected_projection::retention_prebound_mode(&programs, &authored, false, 0).is_ok()
+        let Ok(legacy) = expected_projection::retention_prebound_mode(
+            &programs, &authored, false, 0,
+        ) else { return false };
+        // The fixed fixture has only ordinary modules, no frontend or native
+        // law branch. Run their actual pre-core formatter and registry owners:
+        // the enclosing ledger keeps these debits before entering core.
+        let (actual, refused, pre_core) = crate::bounded_output::with_limit_usage(
+            MAX_BUILDER_BYTES,
+            || {
+                let mut programs = Vec::with_capacity(candidate.len());
+                let mut canonical_bytes = 0usize;
+                for source in &candidate {
+                    let (program, comments) = crate::parse_with_comments(
+                        &source.source, Path::new(&source.path),
+                    ).unwrap();
+                    crate::static_protocol::validate(&program).unwrap();
+                    let remaining = MAX_BUILDER_BYTES.saturating_sub(canonical_bytes);
+                    let (canonical, overflowed) = crate::bounded_output::with_limit(
+                        remaining,
+                        || format::comments::canonical_with_comments(&program, &comments),
+                    );
+                    if overflowed { return None; }
+                    assert_eq!(canonical, source.source);
+                    canonical_bytes = canonical_bytes.checked_add(canonical.len()).unwrap();
+                    programs.push(program);
+                }
+                crate::static_protocol::validate_workspace(&programs).unwrap();
+                let _pruned = dependency_pruning::prune(&mut programs, &candidate);
+                let modules = index_modules(&programs).unwrap();
+                let authored = index_authored(&programs).unwrap();
+                validate_synthetic_main_id_collisions(&programs, &authored).unwrap();
+                let registry = expected_projection::private_layout::registry::LayoutRegistry::new(
+                    &programs, &authored,
+                );
+                import_validation::validate_uses_with_registry(
+                    &programs, &modules, &authored, Some(&registry),
+                ).unwrap();
+                let _depths = validate_dependency_dag(&programs).unwrap();
+                let initial = expected_projection::cached_exact::initial_with_registry(
+                    &programs, &authored, true,
+                    expected_projection::cached_exact::Retention::Parsed, Some(&registry),
+                ).ok()?;
+                Some((initial, registry.receipt()))
+            },
+        );
+        let Some((initial, registry)) = actual else { return false };
+        !refused && initial.0 == legacy.0 && initial.3 == 1
+            && pre_core.checked_add(registry)
+                .and_then(|paid| paid.checked_add(initial.0))
+                .is_some_and(|paid| paid <= MAX_BUILDER_BYTES)
     };
     assert!(fits(1));
     assert!(!fits(1024));
@@ -295,6 +374,24 @@ fn core_retry_fixture() -> Vec<WorkspaceSource> {
 
 #[test]
 fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal() {
+    // Preserve the complete earlier fixture before changing only admissibility.
+    let current = include_str!("builder_limits.rs");
+    let start = current.find("/// Tune only the fixture size, never the production bound.").unwrap();
+    let end = start + current[start..].find("\n#[test]\nfn identity_prebound_production_core_retry").unwrap();
+    let mut restored = current[start..end].to_owned();
+    let inverse: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"), "/docs/evidence/canonical-preparation-stage-829/retry-precharge-fixture/exact-inverse.json"
+    ))).unwrap();
+    for splice in inverse["splices"].as_array().unwrap().iter().rev() {
+        let at = splice["start"].as_u64().unwrap() as usize;
+        let after = splice["after"].as_str().unwrap();
+        assert_eq!(restored.get(at..at + after.len()), Some(after));
+        restored.replace_range(at..at + after.len(), splice["before"].as_str().unwrap());
+    }
+    let original = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/canonical-preparation-stage-829/retry-precharge-fixture/complete-fixture.before.txt"));
+    use sha2::{Digest, Sha256};
+    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))), "4c8f8a2cac574013d6acb485d7af2c86699fb3b5b09be532c90786c6ec7add24");
+    assert_eq!(restored, original);
     let sources = core_retry_fixture();
     let programs = parsed_sources(&sources);
     let authored = index_authored(&programs).unwrap();
@@ -304,17 +401,42 @@ fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refu
         expected_projection::retention_prebound_mode(&programs, &authored, true, 2).unwrap();
     assert!(original.1 <= MAX_BUILDER_BYTES && tight.1 < original.1);
 
+    // Capture the actual producer's ordered source/registry reservation before
+    // interpreting a legacy standalone forecast as a completed debit.
+    let mut ordered = sources.clone();
+    ordered.sort_by(|left, right| left.path.cmp(&right.path));
+    let ordered_programs = parsed_sources(&ordered);
+    let ordered_authored = index_authored(&ordered_programs).unwrap();
+    let ordered_modules = index_modules(&ordered_programs).unwrap();
+    let registry = expected_projection::private_layout::registry::LayoutRegistry::new(
+        &ordered_programs, &ordered_authored,
+    );
+    import_validation::validate_uses_with_registry(
+        &ordered_programs, &ordered_modules, &ordered_authored, Some(&registry),
+    ).unwrap();
+    let actual_initial = expected_projection::cached_exact::initial_with_registry(
+        &ordered_programs, &ordered_authored, true,
+        expected_projection::cached_exact::Retention::Parsed, Some(&registry),
+    ).unwrap();
+    let registry_receipt = registry.receipt();
+    crate::bounded_output::stage_debits::take_completed();
     CORE_BUILD_ATTEMPTS.with(|attempts| attempts.set(0));
-    let (nested, _, nested_debit) =
-        crate::bounded_output::with_limit_usage(MAX_BUILDER_BYTES, || {
-            build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES)
+    let (nested, nested_overflow, nested_debit, first_refusal) =
+        crate::bounded_output::with_limit_usage_refusal(MAX_BUILDER_BYTES, || {
+            let before = crate::bounded_output::active_remaining();
+            let result = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES);
+            eprintln!("identity-retry-parent before={before:?} after={:?}", crate::bounded_output::active_remaining());
+            result
         });
+    let trace = crate::bounded_output::stage_debits::take_completed();
+    eprintln!("identity-retry-contract legacy={original:?} tight={tight:?} actual_initial={actual_initial:?} registry_receipt={registry_receipt} nested_overflow={nested_overflow} nested_debit={nested_debit} first_refusal={first_refusal:?} trace={trace:?}");
     let errors = nested
         .err()
         .expect("enclosing budget must not be reset for retry");
     assert_eq!(errors[0].code, "SPX-G171");
     assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), 1);
-    assert!(nested_debit >= original.0);
+    assert!(nested_debit >= original.0,
+        "failed phase debit remains required: legacy={original:?}, actual_initial={actual_initial:?}, registry={registry_receipt}, debit={nested_debit}, first={first_refusal:?}, trace={trace:?}");
 
     CORE_BUILD_ATTEMPTS.with(|attempts| attempts.set(0));
     let built = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES).unwrap();
@@ -359,6 +481,59 @@ fn retained_output_carrier_charges_only_selected_entries_and_loan_plans() {
     assert!(!overflowed);
     assert_eq!(retained.unwrap(), vec![2, 4]);
     assert_eq!(debit, 20, "two entries plus their retained loan plans");
+}
+
+#[test]
+fn retained_output_reuses_only_complete_exact_carriers_and_charges_all_sidecars() {
+    let input = || vec![1usize, 2, 3, 4];
+    let original = input();
+    assert_eq!(original.capacity(), original.len());
+    let pointer = original.as_ptr();
+    let (retained, overflow, debit) = crate::bounded_output::with_limit_usage(10, || {
+        filter_owned_vec_accounted(original, 7, |item| Ok(*item), |_| true, true)
+    });
+    let retained = retained.unwrap();
+    assert!(!overflow);
+    assert_eq!(debit, 10, "every sidecar remains charged");
+    assert_eq!(retained, input());
+    assert_eq!(retained.as_ptr(), pointer, "no second physical carrier");
+    let (refused, overflow, _) = crate::bounded_output::with_limit_usage(9, || {
+        filter_owned_vec_accounted(input(), 7, |item| Ok(*item), |_| true, true)
+    });
+    assert_eq!(refused.unwrap_err()[0].code, "SPX-G171");
+    assert!(overflow);
+
+    let original = input();
+    let pointer = original.as_ptr();
+    let (retained, overflow, debit) =
+        crate::bounded_output::with_limit_usage(0, || filter_owned_vec(original, |_| true, true));
+    let retained = retained.unwrap();
+    assert_eq!(retained.as_ptr(), pointer);
+    assert!(!overflow);
+    assert_eq!(debit, 0);
+    for final_retry in [false, true] {
+        let mut excess = Vec::with_capacity(8);
+        excess.extend(input());
+        let pointer = excess.as_ptr();
+        let (retained, overflow, debit) = crate::bounded_output::with_limit_usage(38, || {
+            filter_owned_vec_accounted(excess, 7, |item| Ok(*item), |_| true, final_retry)
+        });
+        let retained = retained.unwrap();
+        assert!(!overflow);
+        assert_eq!(
+            debit, 38,
+            "excess carriers and earlier attempts keep their receipt"
+        );
+        assert_eq!(retained, input());
+        if final_retry {
+            assert_eq!(retained.capacity(), 4);
+            assert_ne!(
+                retained.as_ptr(),
+                pointer,
+                "compact while the old carrier is live"
+            );
+        }
+    }
 }
 
 #[test]
@@ -410,22 +585,40 @@ fn catalog_normalizer_compact_core_fits_production_builder_cap() {
             source: include_str!("../../../std/io/src/io.spx").to_owned(),
         },
     ]);
+    sources.extend([
+        WorkspaceSource {
+            path: "dependencies/std.data.ndjson/0.1.0/ndjson.spx".to_owned(),
+            source: include_str!("../../../std/data-ndjson/src/ndjson.spx").to_owned(),
+        },
+        WorkspaceSource {
+            path: "dependencies/std.io.lines/0.1.0/lines.spx".to_owned(),
+            source: include_str!("../../../std/io-lines/src/lines.spx").to_owned(),
+        },
+        WorkspaceSource {
+            path: "dependencies/std.data.json.utf8/0.1.0/utf8.spx".to_owned(),
+            source: include_str!("../../../std/data-json-utf8/src/utf8.spx").to_owned(),
+        },
+    ]);
     sources.sort_by(|left, right| left.path.cmp(&right.path));
-    let built = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES)
-        .unwrap_or_else(|errors| {
+    print_operation_sources("catalog-normalizer-compact-original", &sources);
+    crate::bounded_output::stage_debits::take_completed();
+    let result = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES);
+    print_operation_receipt("catalog-normalizer-compact-original");
+    let built = result.unwrap_or_else(|errors| {
             let programs = parsed_sources(&sources);
             let authored = index_authored(&programs).unwrap();
             let module_paths = index_modules(&programs).unwrap();
             let depths = validate_dependency_dag(&programs).unwrap();
+            let layouts = expected_projection::private_layout::registry::LayoutRegistry::new(&programs, &authored);
             let forecast = expected_projection::uncached_output_peak_prebound(&programs, &authored);
             let layout = expected_projection::uncached_peak::uncached_output_layout(&programs, &authored).unwrap();
             let (core, overflow, debit) = crate::bounded_output::with_limit_usage(
                 MAX_BUILDER_BYTES,
-                || build_resolved_core(&programs, &module_paths, &depths, &authored, None, Some(&layout.order[..programs.len()])),
+                || build_resolved_core(&programs, &module_paths, &depths, &authored, None, None, &layouts, Some(&layout.order[..programs.len()])),
             );
             panic!("catalog compact core exceeds cap: {errors:?}; forecast={forecast:?}; live debit={debit}, overflow={overflow}, core_ok={}", core.is_ok());
         });
-    assert_eq!(built.hir.modules.len(), 9);
+    assert_eq!(built.hir.modules.len(), 12);
     assert!(built
         .hir
         .modules
@@ -438,6 +631,9 @@ fn catalog_normalizer_compact_core_fits_production_builder_cap() {
     assert!(built.hir.module_paths.contains_key("std.data.json.dec"));
     assert!(built.hir.module_paths.contains_key("std.data.json.doc"));
     assert!(built.hir.module_paths.contains_key("std.io"));
+    assert!(built.hir.module_paths.contains_key("std.data.ndjson"));
+    assert!(built.hir.module_paths.contains_key("std.io.lines"));
+    assert!(built.hir.module_paths.contains_key("std.data.json.utf8"));
     assert!(built.usage.builder_bytes <= MAX_BUILDER_BYTES);
 }
 
@@ -513,7 +709,7 @@ fn import_free_edge_replay_does_not_materialize_unused_paths() {
         let resolved = hir::resolve(&synthetic).unwrap();
         let (result, overflow, consumed) = crate::bounded_output::with_limit_usage(0, || {
             let mut edges = Vec::new();
-            collect_expected_edges(program, &paths, &authored, &mut edges)?;
+            collect_expected_edges(program, &programs, &paths, &authored, &mut edges)?;
             assert!(edges.is_empty());
             verify_resolved_call_edges(program, &resolved, &authored)
         });
@@ -554,7 +750,7 @@ fn import_free_edge_replay_does_not_materialize_unused_paths() {
 
 #[test]
 fn pattern_source_workspace_fits_unchanged_builder_budget() {
-    let sources = [
+    let sources: Vec<WorkspaceSource> = [
         (
             "src/examples.spx",
             include_str!("../../../std/pattern/src/examples.spx"),
@@ -574,8 +770,41 @@ fn pattern_source_workspace_fits_unchanged_builder_budget() {
         source: source.to_owned(),
     })
     .collect();
-    let built = build_owned(sources).unwrap_or_else(|errors| panic!("{errors:?}"));
+    print_operation_sources("pattern-original", &sources);
+    crate::bounded_output::stage_debits::take_completed();
+    let result = build_owned(sources);
+    print_operation_receipt("pattern-original");
+    let built = result.unwrap_or_else(|errors| panic!("{errors:?}"));
     assert_eq!(built.hir.modules.len(), 3);
     assert!(built.usage.builder_bytes <= MAX_BUILDER_BYTES);
     assert!(built.hir.module_paths.contains_key("std.pattern"));
+}
+
+#[path = "edge_proof_storage.rs"]
+mod edge_proof_storage;
+
+/// The identical authenticated Project check used before the owning backend
+/// conformance run. No backend compilation, alternate source, raised cap, or
+/// inference from a requested byte count participates in this attribution.
+#[test]
+fn decoded_fingerprint_project_check_records_final_attempt_attribution() {
+    use crate::bounded_output::stage_debits::{take_completed, take_last_completed};
+    take_completed();
+    take_last_completed();
+    let manifest =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("std/data-json-dec/semaprax.toml");
+    let result = crate::project::with_authenticated_project(&manifest, |snapshot| snapshot.check());
+    let maximum = take_completed();
+    let last = take_last_completed();
+    eprintln!("decoded-fingerprint-attribution cap={MAX_BUILDER_BYTES} maximum={maximum:?} final={last:?} result={result:?}");
+    if let Err(diagnostics) = result {
+        assert!(!diagnostics.is_empty());
+        assert_eq!(diagnostics[0].code, "SPX-G171");
+        let trace = last.expect("actual refused core attempt");
+        let refusal = trace
+            .first_operation_refusal
+            .expect("original first-refusal write");
+        assert!(refusal.requested > 0);
+        assert!(trace.sum() == trace.consumed && trace.consumed <= MAX_BUILDER_BYTES);
+    }
 }

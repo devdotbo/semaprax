@@ -1,8 +1,73 @@
 //! Independent structural validation of attached cleanup plans without invoking the builder.
+// Private prerequisite only: no selected replay admission hook.
 mod constructed_variant;
+#[cfg(test)]
+mod context_closure;
+mod continuation_storage;
 use constructed_variant::materialize_constructed_variant;
+pub(in crate::cleanup_plan) mod allocation_coverage;
+mod allocation_paths;
+mod call_paths;
+mod call_payload;
 mod expression_children;
+mod expression_facts;
+mod flat_records;
+use call_paths::finish_call_states;
+mod inventory_coverage;
+pub(in crate::cleanup_plan) mod ordinary_status;
+mod physical_budget;
+mod physical_clone;
+mod physical_storage;
+mod scalar_match;
+mod scalar_replay;
+#[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "complete independently compiled original Tree scalar receiver"
+)]
+mod scalar_replay_tree;
+mod selected_callees;
+mod selected_context;
+mod selected_entry;
+mod shape_cursor;
+mod status_construction;
+mod structural_control;
+mod structural_maps;
+#[cfg(test)]
+pub(crate) use selected_context::borrowed::{
+    Identity as ReplayBorrowedIdentity, Lease as ReplayBorrowedLease,
+};
+#[cfg(test)]
+pub(crate) use selected_entry::validate_retained_lexical_with_limit;
+#[cfg(test)]
+pub(crate) use selected_entry::validate_retained_lexical_with_reservation;
+#[cfg(test)]
+pub(crate) use selected_entry::Session as SelectedReplaySession;
+pub(crate) use selected_entry::{
+    Acquired as SelectedReplayReport, PaidRefusal as SelectedReplayRefusal,
+    Preparation as SelectedReplayPreparation, Refused as SelectedReplayRefused,
+    ReportForm as SelectedReplayReportForm, Unpaid as SelectedReplayUnpaid,
+};
+#[cfg(test)]
+pub(crate) use selected_entry::{
+    Cause as SelectedReplayCause, UnpaidReason as SelectedReplayUnpaidReason,
+};
+mod selected_owner;
+mod selected_profile;
+mod semantic_refusal;
+mod status_validation;
+pub(crate) use physical_clone::ClonePayload;
+#[cfg(test)]
+pub(crate) use physical_storage::PhysicalRefusal as ReplayPhysicalRefusal;
+pub(crate) use physical_storage::{
+    btree_node_upper as replay_btree_node_upper, replay_reserve_vec, PhysicalReservation,
+};
+#[cfg(test)]
+mod physical_observation_tests;
+#[cfg(test)]
+mod primitive_fixture;
 use expression_children::replay_expression_child;
+use expression_facts::expression_facts;
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -13,15 +78,18 @@ use std::cell::Cell;
 
 use super::{
     BlockId, CleanupPlace, CleanupRegionId, CleanupResultSource, CleanupTerminator,
-    CleanupTransition, ConditionalVariantCase, ConditionalVariantEntry, EdgeCondition, EdgeId,
-    ExitContinuation, ExitTarget, StagedCopyResultSource, StatusCase, StatusLane, StatusProducer,
-    StatusSource, StatusSourceId, StorageId, CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11,
-    CLEANUP_PLAN_SCHEMA_V12, CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14,
-    CLEANUP_PLAN_SCHEMA_V15, CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V2,
-    CLEANUP_PLAN_SCHEMA_V3, CLEANUP_PLAN_SCHEMA_V4, CLEANUP_PLAN_SCHEMA_V5, CLEANUP_PLAN_SCHEMA_V6,
-    CLEANUP_PLAN_SCHEMA_V7, CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
+    CleanupTransition, EdgeCondition, EdgeId, ExitContinuation, ExitTarget, StagedCopyResultSource,
+    StatusCase, StatusLane, StatusProducer, StatusSource, StatusSourceId, StorageId,
+    CLEANUP_PLAN_SCHEMA_V10, CLEANUP_PLAN_SCHEMA_V11, CLEANUP_PLAN_SCHEMA_V12,
+    CLEANUP_PLAN_SCHEMA_V13, CLEANUP_PLAN_SCHEMA_V14, CLEANUP_PLAN_SCHEMA_V15,
+    CLEANUP_PLAN_SCHEMA_V16, CLEANUP_PLAN_SCHEMA_V2, CLEANUP_PLAN_SCHEMA_V3,
+    CLEANUP_PLAN_SCHEMA_V4, CLEANUP_PLAN_SCHEMA_V5, CLEANUP_PLAN_SCHEMA_V6, CLEANUP_PLAN_SCHEMA_V7,
+    CLEANUP_PLAN_SCHEMA_V8, CLEANUP_PLAN_SCHEMA_V9,
 };
+#[cfg(test)]
+use super::{ConditionalVariantCase, ConditionalVariantEntry};
 use crate::ast::{BinaryOp, UnaryOp};
+use crate::cleanup::ReplayContext;
 use crate::cleanup::{CleanupStorageOrigin, FieldLivenessShape, LivenessFlagId};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{
@@ -37,6 +105,7 @@ use leaf_index::Leaves;
 mod path_summary;
 mod skeleton_bound;
 mod skeleton_work;
+mod typed_storage;
 use path_summary::{
     cleanup_inert_large_decisions_can_be_summarized, cleanup_inert_path_product_can_be_summarized,
     or_arm_path_counts, plan_structure_units, status_only_paths_can_be_summarized,
@@ -47,24 +116,44 @@ use path_summary::{cleanup_plan_requires_path_replay, STATUS_ONLY_PATH_SUMMARY_T
 use skeleton_work::{empty_expr_path, Observations, SkeletonWork};
 
 #[cfg(test)]
+mod context_tests;
+#[cfg(test)]
 mod copy_success_result_tests;
 mod guarded_variant;
+mod lexical_boundary;
+mod lexical_census;
+mod lexical_cert;
+mod lexical_flow;
+mod lexical_hir;
+mod lexical_replay;
+mod lexical_skeleton;
 #[cfg(test)]
 mod mixed_result_tests;
 mod nested_shape;
+mod ordinary_inventory;
+mod ordinary_renewals;
+mod paid_type_facts;
 mod path_join;
 mod renewal;
 mod string_replacement;
 mod strings;
+mod transition;
+mod transition_storage;
 use renewal::validate_join_compatibility;
 use strings::temporary_place;
+use transition::{
+    append_dead_flags, execute_replay_transition, find_resolved_expression, replay_exit,
+    replay_transfer, require_normal_flow_state, state_for_edge, validate_staged_target, ExitFlow,
+};
 mod record_destructure;
 mod resolved_call;
 mod supplemental;
+#[cfg(test)]
 use supplemental::collect_supplemental_slots;
 mod schema;
 #[cfg(test)]
 mod schema_tests;
+#[cfg(test)]
 use nested_shape::expected_shape_for_type;
 use nested_shape::type_needs_drop;
 use path_join::validate_path_states;
@@ -75,43 +164,55 @@ use resolved_call::{
 };
 pub(crate) use schema::selected_schema;
 
+/// Provisional normal-scope end of a region whose independently proven flow has
+/// no normal completion. Only the lexical certificate replay may accept it.
+const UNRESOLVED_NORMAL_END: super::ExitTargetId = super::ExitTargetId(u32::MAX);
 const MAX_REPLAY_PATHS: usize = 65_536;
 const MAX_REPLAY_WORK_UNITS: usize = 32_000_000;
 
+mod allocation;
+use allocation::{AdmissionMode, AllocationPayer};
+
 struct ReplayBudget {
+    admission: AdmissionMode,
+    payer: AllocationPayer,
     remaining: usize,
     skeleton_remaining: usize,
+    /// Actual successful skeleton debits, including deferred lexical walks.
+    skeleton_spent: usize,
+    /// Ordinary constructors share the temporarily lent skeleton allowance.
+    lent_skeleton: bool,
     /// Factored replay: merge equal-state skeleton paths (`skeleton_work`).
     merge_paths: bool,
+    /// Present only for the selected retained lexical replay entry.
+    physical: Option<Box<physical_storage::PhysicalReservation>>,
+    /// Prepaid selected-budget refusal text; consumed without a fresh allocation.
+    refusal_text: Option<String>,
+    refusal_spent: bool,
+    /// One reusable fixed clone census cursor on the ordinary builder path.
+    builder_clone_cursor_paid: bool,
 }
 
 impl ReplayBudget {
-    fn new() -> Self {
-        Self {
-            remaining: MAX_REPLAY_WORK_UNITS,
-            skeleton_remaining: 0,
-            merge_paths: false,
-        }
-    }
-    #[cfg(test)]
-    fn with_skeleton_limit(limit: usize) -> Self {
-        Self {
-            remaining: MAX_REPLAY_WORK_UNITS,
-            skeleton_remaining: limit,
-            merge_paths: false,
-        }
-    }
-
     fn charge(
         &mut self,
         function: &ResolvedFunction,
         units: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
+        self.prepare_builder(function)?;
+        if self.refusal_spent {
+            return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+        }
+        if self.lent_skeleton {
+            return self.charge_skeleton(function, units, phase);
+        }
+        self.charge_oracle_work(function, units, phase)?;
         self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
-            replay_error(
+            self.budget_refusal(
                 function,
-                format!("cleanup replay work budget exhausted during {phase}"),
+                "cleanup replay work budget exhausted during ",
+                phase,
             )
         })?;
         Ok(())
@@ -122,10 +223,15 @@ impl ReplayBudget {
         function: &ResolvedFunction,
         units: usize,
     ) -> Result<(), Diagnostic> {
+        self.prepare_builder(function)?;
+        if self.refusal_spent {
+            return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+        }
         self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
-            replay_error(
+            self.budget_refusal(
                 function,
                 "cleanup replay skeleton-work preflight exceeds the global budget",
+                "",
             )
         })?;
         self.skeleton_remaining = units;
@@ -138,12 +244,26 @@ impl ReplayBudget {
         units: usize,
         phase: &str,
     ) -> Result<(), Diagnostic> {
-        self.skeleton_remaining = self.skeleton_remaining.checked_sub(units).ok_or_else(|| {
-            replay_error(
+        self.prepare_builder(function)?;
+        if self.refusal_spent {
+            return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+        }
+        self.charge_oracle_work(function, units, phase)?;
+        let spent = self.skeleton_spent.checked_add(units).ok_or_else(|| {
+            self.budget_refusal(
                 function,
-                format!("cleanup replay work budget exhausted during {phase}"),
+                "cleanup replay skeleton debit count overflowed",
+                "",
             )
         })?;
+        self.skeleton_remaining = self.skeleton_remaining.checked_sub(units).ok_or_else(|| {
+            self.budget_refusal(
+                function,
+                "cleanup replay work budget exhausted during ",
+                phase,
+            )
+        })?;
+        self.skeleton_spent = spent;
         Ok(())
     }
 }
@@ -168,13 +288,14 @@ fn skeleton_materializations() -> usize {
     SKELETON_MATERIALIZATIONS.with(Cell::get)
 }
 
-fn skeleton_clone<T: Clone>(
+fn skeleton_clone<T: Clone + ClonePayload>(
     budget: &mut ReplayBudget,
     function: &ResolvedFunction,
     value: &T,
     phase: &str,
 ) -> Result<T, Diagnostic> {
     budget.charge_skeleton(function, 1, phase)?;
+    budget.reserve_clone(function, value, phase)?;
     note_skeleton_materialization();
     Ok(value.clone())
 }
@@ -183,11 +304,17 @@ fn skeleton_push<T>(
     budget: &mut ReplayBudget,
     function: &ResolvedFunction,
     target: &mut Vec<T>,
-    value: impl Into<T>,
+    value: impl physical_clone::IntoReplay<T>,
     phase: &str,
 ) -> Result<(), Diagnostic> {
     budget.charge_skeleton(function, 1, phase)?;
     note_skeleton_materialization();
+    budget.reserve_vec(function, target, 1, phase)?;
+    budget.reserve_bytes(
+        function,
+        physical_clone::conversion_bytes::<T, _>(&value),
+        phase,
+    )?;
     target.push(value.into());
     Ok(())
 }
@@ -201,6 +328,7 @@ fn skeleton_queue_push<T>(
 ) -> Result<(), Diagnostic> {
     budget.charge_skeleton(function, 1, phase)?;
     note_skeleton_materialization();
+    budget.reserve_deque(function, target, 1, phase)?;
     target.push_back(value);
     Ok(())
 }
@@ -212,22 +340,32 @@ struct Leaf {
 }
 
 #[derive(Clone)]
-struct CallFact {
-    callee: DeclarationId,
-    instance: Option<FunctionInstanceId>,
-    arguments: Vec<ExpressionId>,
-    type_arguments: Vec<ResolvedType>,
+struct CallFact<'hir> {
+    callee: std::borrow::Cow<'hir, DeclarationId>,
+    instance: Option<&'hir FunctionInstanceId>,
+    arguments: call_payload::Arguments<'hir>,
+    type_arguments: call_payload::Types<'hir>,
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct PathState {
-    renewals: BTreeMap<ExpressionId, Vec<LivenessFlagId>>,
+    renewals: BTreeMap<ExpressionId, super::renewal_history::RenewalHistory>,
     live_order: Vec<LivenessFlagId>,
     conditional_variants: Vec<ReplayConditionalVariant>,
     pending_failure: Option<StatusSourceId>,
     selected_failure: Option<StatusSourceId>,
     staged_copy_result: Option<StagedCopyResultSource>,
     published: bool,
+    /// Result source a lexical `return` handed to its per-return postcondition
+    /// domain. A commit in that domain must publish exactly this source.
+    returned: Option<ReturnedSource>,
+}
+
+/// Orderable image of a `CleanupResultSource` carried through one return domain.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+enum ReturnedSource {
+    Scalar(ExpressionId),
+    Owned(CleanupPlace),
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -276,12 +414,24 @@ enum SkeletonObservation {
         success: bool,
     },
     StageCopyResult(StagedCopyResultSource),
+    /// A lexical `return`, `break` or `continue` that left its contour.
+    LexicalExit {
+        site: ExpressionId,
+        kind: crate::ast::LexicalExitKind,
+        target: crate::hir::ControlTarget,
+    },
+    /// A finite iteration witness reached its authenticated runtime latch.
+    LoopLatch {
+        target: crate::hir::ControlTarget,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 enum SkeletonTerminal {
     Success,
     Failure,
+    /// Normal iteration end or `continue` handing off to the loop latch.
+    LoopLatch,
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -296,6 +446,7 @@ struct ExprSkeletonPath {
     owned_source: Option<CleanupPlace>,
     failed: bool,
     residual: bool,
+    continuation: lexical_skeleton::Continuation,
 }
 
 type BooleanSkeletonSplit = (
@@ -309,37 +460,63 @@ type CallSkeletonState = (ExprSkeletonPath, Vec<(u32, CleanupPlace)>);
 /// rebuilding it from HIR.
 #[cfg(test)]
 fn validate_structure(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
     let mut budget = ReplayBudget::new();
     reserve_program_skeleton_work(program, std::iter::once(function), &mut budget)?;
-    validate_structure_with_budget(program, function, &mut budget)
+    validate_structure_with_budget(program, function, &mut budget, None)
 }
 
 pub(super) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    validate_program_context(program)
+}
+
+pub(in crate::cleanup_plan) fn validate_program_context(
+    program: &dyn crate::cleanup::ReplayContext,
+) -> Result<(), Diagnostic> {
+    let full = program.full_program().ok_or_else(|| {
+        Diagnostic::io(
+            "SPX-H006",
+            "allocation replay requires the held complete program",
+        )
+    })?;
     let mut budget = ReplayBudget::new();
+    let helpers = ordinary_renewals::index(full, &mut budget)?;
     reserve_program_skeleton_work(
         program,
-        program.functions.iter().chain(
+        program.functions().iter().chain(
             program
-                .function_instances
+                .function_instances()
                 .iter()
                 .map(|instance| &instance.function),
         ),
         &mut budget,
     )?;
-    for function in &program.functions {
-        validate_structure_with_budget(program, function, &mut budget)?;
+    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?;
+    for function in program.functions() {
+        validate_structure_with_budget_storage(
+            program,
+            function,
+            &mut budget,
+            Some(&helpers),
+            Some(&mut continuations),
+        )?;
     }
-    for instance in &program.function_instances {
-        validate_structure_with_budget(program, &instance.function, &mut budget)?;
+    for instance in program.function_instances() {
+        validate_structure_with_budget_storage(
+            program,
+            &instance.function,
+            &mut budget,
+            Some(&helpers),
+            Some(&mut continuations),
+        )?;
     }
     Ok(())
 }
 
 fn reserve_program_skeleton_work<'a>(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     functions: impl IntoIterator<Item = &'a ResolvedFunction>,
     budget: &mut ReplayBudget,
 ) -> Result<usize, Diagnostic> {
@@ -347,6 +524,13 @@ fn reserve_program_skeleton_work<'a>(
     let mut first = None;
     for function in functions {
         first.get_or_insert(function);
+        // Actual lexical HIR selects a deferred resource plan before the
+        // capped enumerating census. This is no proof or zero-work estimate.
+        if factored::strategy::provisional(function)
+            == factored::strategy::ResourceStrategy::DeferredLexical
+        {
+            continue;
+        }
         let function_upper = skeleton_work_upper(program, function)?;
         total = total.checked_add(function_upper).ok_or_else(|| {
             replay_error(
@@ -368,22 +552,60 @@ fn reserve_program_skeleton_work<'a>(
 }
 
 fn validate_structure_with_budget(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+) -> Result<(), Diagnostic> {
+    validate_structure_with_budget_storage(program, function, budget, helpers, None)
+}
+fn validate_structure_with_budget_storage<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
+    continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
-    let expected_schema = schema::selected_schema(program, function)?;
+    if helpers.is_some_and(|index| {
+        !program
+            .full_program()
+            .is_some_and(|full| index.matches_program(full))
+    }) {
+        return Err(replay_error(
+            function,
+            "cleanup replay helper index belongs to a different typed program",
+        ));
+    }
+    // Reconstruct the ordinary schema first, preserving all its current-source
+    // probes/error order. A private source-held projection adds allocation
+    // branches; neither its attached v20 string nor an ordinary context selects it.
+    let ordinary_schema =
+        schema::paid_summary::selected_with_budget(program, function, helpers, budget)?;
+    let expected_schema = if allocation_paths::current(program, function).is_some() {
+        super::CLEANUP_PLAN_SCHEMA_V20
+    } else {
+        ordinary_schema
+    };
     if plan.schema != expected_schema {
         return Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "uses cleanup-plan schema `{}` instead of HIR-derived `{expected_schema}`",
                 plan.schema
             ),
         ));
     }
 
+    if lexical_cert::requires_lexical(function) {
+        return lexical_replay::validate_with_index(program, function, budget, helpers);
+    }
+    if plan.lexical_control.is_some() {
+        return Err(replay_error(
+            function,
+            "function without lexical exits carries a lexical-control certificate",
+        ));
+    }
     validate_replay_size_budget(function)?;
     budget.charge(
         function,
@@ -391,24 +613,51 @@ fn validate_structure_with_budget(
         "structural validation",
     )?;
 
-    let expression_facts = expression_facts(function)?;
-    validate_inventory_coverage(program, function)?;
+    let expression_facts = expression_facts::with_budget(function, budget)?;
+    ordinary_inventory::validate_inventory_coverage(program, function, budget)?;
     validate_required_status_sources(program, function)?;
-    let storage = validate_slots(function)?;
-    let leaves = collect_leaves(function)?;
-    validate_status_sources(function, &expression_facts)?;
-    validate_regions(function, &storage)?;
-    validate_entry(function, &storage, &leaves)?;
-    validate_blocks_and_edges(program, function, &expression_facts, &storage, &leaves)?;
-    validate_exits(program, function, &storage, &leaves)?;
-    validate_reference_coverage(function)?;
-    validate_reachable_acyclic_cfg(function)?;
+    let storage = validate_slots_paid(function, budget)?;
+    let leaves = collect_leaves_paid(function, budget)?;
+    let statuses = expression_facts::receiving::validate_status_sources_retained(
+        function, &expression_facts, budget,
+    )?;
+    expression_facts::receiving::validate_regions(function, &storage, budget)?;
+    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;
+    expression_facts::receiving::validate_blocks_and_edges_retained(
+        program,
+        function,
+        &expression_facts,
+        &storage,
+        &leaves,
+        helpers,
+        budget,
+        &statuses,
+    )?;
+    expression_facts::receiving::validate_exits_retained(
+        program,
+        function,
+        &storage,
+        &leaves,
+        &BTreeSet::new(),
+        budget,
+        &statuses,
+    )?;
+    structural_maps::validate_reference_coverage(function, budget)?;
+    structural_control::validate_ordinary_cfg(function, budget)?;
     if !cleanup_inert_path_product_can_be_summarized(function)?
         && !status_only_paths_can_be_summarized(function)
         && !cleanup_inert_large_decisions_can_be_summarized(function)
     {
-        validate_path_states(program, function, &storage, &leaves, budget)?;
-        validate_typed_control_skeleton(program, function, budget)?;
+        validate_path_states::<Diagnostic>(
+            program, function, &storage, &leaves, budget, None, helpers,
+        )?;
+        validate_typed_control_skeleton_with_index(
+            program,
+            function,
+            budget,
+            helpers,
+            continuations,
+        )?;
     }
     Ok(())
 }
@@ -419,132 +668,11 @@ struct CfgReplayBounds {
     skeleton_work: usize,
 }
 
-/// Bound actual CFG traversal work without multiplying every structure item by
-/// every terminal path. The cleanup graph is authenticated as acyclic later;
-/// this independent saturating propagation is deliberately cycle-safe and
-/// fails closed if a forged graph keeps increasing multiplicity.
+mod cfg_bounds;
 fn branch_sensitive_cfg_bounds(function: &ResolvedFunction) -> Result<CfgReplayBounds, Diagnostic> {
-    let plan = &function.cleanup_plan;
-    let invalid = || {
-        replay_error(
-            function,
-            "cleanup replay preflight references an unknown id",
-        )
-    };
-    let entry = plan
-        .blocks
-        .get(plan.entry.0 as usize)
-        .map(|_| plan.entry.0 as usize)
-        .ok_or_else(invalid)?;
-    let mut successors = vec![Vec::<usize>::new(); plan.blocks.len()];
-    let mut terminal = vec![false; plan.blocks.len()];
-    for (index, block) in plan.blocks.iter().enumerate() {
-        let targets = match &block.terminator {
-            CleanupTerminator::Goto(edge) => plan
-                .edges
-                .get(edge.0 as usize)
-                .map(|edge| vec![edge.to.0 as usize])
-                .ok_or_else(invalid)?,
-            CleanupTerminator::Branch(edges) => edges
-                .iter()
-                .map(|edge| {
-                    plan.edges
-                        .get(edge.0 as usize)
-                        .map(|edge| edge.to.0 as usize)
-                        .ok_or_else(invalid)
-                })
-                .collect::<Result<Vec<_>, _>>()?,
-            CleanupTerminator::Exit(exit) => {
-                match &plan
-                    .exits
-                    .get(exit.0 as usize)
-                    .ok_or_else(invalid)?
-                    .continuation
-                {
-                    ExitContinuation::Continue(edge) => plan
-                        .edges
-                        .get(edge.0 as usize)
-                        .map(|edge| vec![edge.to.0 as usize])
-                        .ok_or_else(invalid)?,
-                    ExitContinuation::CommitResult { .. }
-                    | ExitContinuation::ReturnUnit
-                    | ExitContinuation::ReturnFailure { .. } => {
-                        terminal[index] = true;
-                        Vec::new()
-                    }
-                }
-            }
-        };
-        if targets.iter().any(|target| *target >= plan.blocks.len()) {
-            return Err(invalid());
-        }
-        successors[index] = targets;
-    }
-
-    let mut reachable = vec![false; plan.blocks.len()];
-    let mut discover = vec![entry];
-    while let Some(index) = discover.pop() {
-        if std::mem::replace(&mut reachable[index], true) {
-            continue;
-        }
-        discover.extend(successors[index].iter().copied());
-    }
-    let mut indegree = vec![0_usize; plan.blocks.len()];
-    for (index, targets) in successors.iter().enumerate() {
-        if reachable[index] {
-            for target in targets {
-                indegree[*target] = indegree[*target].saturating_add(1);
-            }
-        }
-    }
-    let mut pending = VecDeque::from([entry]);
-    let mut incoming = vec![0_usize; plan.blocks.len()];
-    incoming[entry] = 1;
-    let mut total = 0_usize;
-    let mut skeleton_work = 1_usize; // Initial cleanup-plan queue push.
-    let mut terminal_paths = 0_usize;
-    let mut visited = 0_usize;
-    let ceiling = MAX_REPLAY_WORK_UNITS.saturating_add(1);
-
-    while let Some(index) = pending.pop_front() {
-        visited = visited.saturating_add(1);
-        let paths = incoming[index];
-        let block = &plan.blocks[index];
-        let local = block.transitions.len().saturating_add(1);
-        total = total
-            .saturating_add(local.saturating_mul(paths))
-            .min(ceiling);
-        skeleton_work = skeleton_work
-            .saturating_add(
-                skeleton_bound::plan_skeleton_block_weight(plan, block).saturating_mul(paths),
-            )
-            .min(ceiling);
-        if terminal[index] {
-            terminal_paths = terminal_paths.saturating_add(paths);
-        }
-        for successor in &successors[index] {
-            incoming[*successor] = incoming[*successor].saturating_add(paths).min(ceiling);
-            indegree[*successor] = indegree[*successor].saturating_sub(1);
-            if indegree[*successor] == 0 {
-                pending.push_back(*successor);
-            }
-        }
-        if total >= ceiling {
-            return Ok(CfgReplayBounds {
-                terminal_paths: MAX_REPLAY_PATHS.saturating_add(1),
-                work: ceiling,
-                skeleton_work: ceiling,
-            });
-        }
-    }
-    if visited != reachable.iter().filter(|reachable| **reachable).count() {
-        return Err(replay_error(function, "cleanup CFG contains a cycle"));
-    }
-    Ok(CfgReplayBounds {
-        terminal_paths,
-        work: total,
-        skeleton_work,
-    })
+    // Preflight callers have no selected reservation. Their scratch uses the
+    // ordinary active payer without granting any schema or replay authority.
+    cfg_bounds::bounds(function, &mut ReplayBudget::new())
 }
 
 #[derive(Clone, Copy, Default)]
@@ -642,6 +770,9 @@ fn expression_path_counts_with_while(
             return args.get(index);
         }
         match &expression.kind {
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                (index == 0).then(|| value.as_deref()).flatten()
+            }
             ResolvedExprKind::Closure { .. }
             | ResolvedExprKind::FunctionReference { .. }
             | ResolvedExprKind::Int(_)
@@ -655,8 +786,10 @@ fn expression_path_counts_with_while(
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
-            | ResolvedExprKind::BorrowPlace { .. } => None,
+            | ResolvedExprKind::BorrowPlace { .. }
+            | ResolvedExprKind::RowLoan { .. } => None,
             ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Upcast { source: value }
             | ResolvedExprKind::Yield { request: value }
@@ -669,7 +802,9 @@ fn expression_path_counts_with_while(
                 [left.as_ref(), right.as_ref()].get(index).copied()
             }
             ResolvedExprKind::Invoke { args, .. } => args.get(index),
-            ResolvedExprKind::Call { args, .. } => args.get(index),
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. } => args.get(index),
             ResolvedExprKind::NativeRustImportCall(call) => call.args.get(index),
             ResolvedExprKind::HostCommandCall(call) => call.args.get(index),
             ResolvedExprKind::ByteRange {
@@ -700,7 +835,10 @@ fn expression_path_counts_with_while(
             | ResolvedExprKind::ConstructVariant { fields, .. } => {
                 fields.get(index).map(|field| &field.value)
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 for statement in statements {
                     let child_count = statement.child_count();
                     if index < child_count {
@@ -784,8 +922,10 @@ fn expression_path_counts_with_while(
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
                     | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::BorrowedUtf8Literal(_)
                     | ResolvedExprKind::Place(_)
-                    | ResolvedExprKind::BorrowPlace { .. } => HirPathCounts::ONE,
+                    | ResolvedExprKind::BorrowPlace { .. }
+                    | ResolvedExprKind::RowLoan { .. } => HirPathCounts::ONE,
                     ResolvedExprKind::Unary { op, .. } => {
                         let inner = children[0];
                         if *op == UnaryOp::Neg {
@@ -801,6 +941,16 @@ fn expression_path_counts_with_while(
                     ResolvedExprKind::Upcast { .. }
                     | ResolvedExprKind::Yield { .. }
                     | ResolvedExprKind::Project { .. } => children[0],
+                    // Lexical profile functions never reach the legacy census;
+                    // a stray exit conservatively terminates its operand paths.
+                    ResolvedExprKind::LexicalExit { .. } => {
+                        let operand = children.first().copied().unwrap_or(HirPathCounts::ONE);
+                        HirPathCounts {
+                            normal: 0,
+                            failed: operand.failed.saturating_add(operand.normal).max(1),
+                            residual: operand.residual,
+                        }
+                    }
                     ResolvedExprKind::Binary { op, .. } => {
                         let left = children[0];
                         let right = children[1];
@@ -833,8 +983,16 @@ fn expression_path_counts_with_while(
                             }
                         }
                     }
+                    _ if super::deferred_commit::infallible_borrowed_vector_observer(
+                        expression,
+                    ) =>
+                    {
+                        sequence(children)
+                    }
                     ResolvedExprKind::Invoke { .. }
                     | ResolvedExprKind::Call { .. }
+                    | ResolvedExprKind::LiteralFormat { .. }
+                    | ResolvedExprKind::VecFieldRead { .. }
                     | ResolvedExprKind::NativeRustImportCall(_) => {
                         let accumulator = sequence(children);
                         HirPathCounts {
@@ -919,7 +1077,8 @@ fn expression_path_counts_with_while(
                     ResolvedExprKind::UpdateRecord { .. }
                     | ResolvedExprKind::ConstructRecord { .. }
                     | ResolvedExprKind::ConstructVariant { .. } => sequence(children),
-                    ResolvedExprKind::Block { statements, .. } => {
+                    ResolvedExprKind::Block { statements, .. }
+                    | ResolvedExprKind::VecConstructor { statements, .. } => {
                         let mut accumulator = HirPathCounts::ONE;
                         let mut index = 0usize;
                         for statement in statements {
@@ -981,9 +1140,12 @@ fn hir_terminal_path_bound(function: &ResolvedFunction) -> Result<usize, Diagnos
 }
 
 fn skeleton_work_upper(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<usize, Diagnostic> {
+    if lexical_cert::requires_lexical(function) {
+        return lexical_census::skeleton_work_upper(program, function);
+    }
     if status_only_paths_can_be_summarized(function)
         || cleanup_inert_large_decisions_can_be_summarized(function)
     {
@@ -1028,9 +1190,11 @@ fn skeleton_work_upper(
         )?,
     )?;
 
-    let cfg = match branch_sensitive_cfg_bounds(function) {
-        Ok(cfg) if cfg.terminal_paths <= MAX_REPLAY_PATHS => cfg,
-        Ok(_) | Err(_) => return Ok(0),
+    let mut cfg_budget = ReplayBudget::new();
+    let result = cfg_bounds::bounds(function, &mut cfg_budget);
+    let cfg = match cfg_bounds::enumerating_result(result, &cfg_budget)? {
+        Some(cfg) => cfg,
+        None => return Ok(0),
     };
     let plan_expansion = cfg.skeleton_work;
     let plan_terminals = checked_skeleton_mul(function, cfg.terminal_paths.max(1), 4)?;
@@ -1043,7 +1207,7 @@ fn skeleton_work_upper(
 }
 
 fn expression_skeleton_work_upper(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     root: &ResolvedExpr,
 ) -> Result<usize, Diagnostic> {
@@ -1073,16 +1237,19 @@ fn expression_skeleton_work_upper(
                 | ResolvedExprKind::Float32(_)
                 | ResolvedExprKind::Float64(_)
                 | ResolvedExprKind::Bool(_)
-                | ResolvedExprKind::String(_) => 2,
+                | ResolvedExprKind::String(_)
+                | ResolvedExprKind::BorrowedUtf8Literal(_) => 2,
                 ResolvedExprKind::Place(place) => place.projections.len().saturating_mul(2) + 8,
                 ResolvedExprKind::BorrowPlace { place, .. } => {
                     place.projections.len().saturating_mul(2) + 8
                 }
+                ResolvedExprKind::RowLoan { .. } => 8,
                 ResolvedExprKind::Unary { .. } => 8,
                 ResolvedExprKind::Binary { .. } => 12,
-                ResolvedExprKind::Invoke { args, .. } | ResolvedExprKind::Call { args, .. } => {
-                    args.len().saturating_mul(6) + 14
-                }
+                ResolvedExprKind::Invoke { args, .. }
+                | ResolvedExprKind::Call { args, .. }
+                | ResolvedExprKind::LiteralFormat { args, .. }
+                | ResolvedExprKind::VecFieldRead { args, .. } => args.len().saturating_mul(6) + 14,
                 ResolvedExprKind::NativeRustImportCall(call) => {
                     if super::native_rust::owns(expression) {
                         call.args.len().saturating_mul(6) + 14
@@ -1092,7 +1259,8 @@ fn expression_skeleton_work_upper(
                 }
                 ResolvedExprKind::HostCommandCall(call) => call.args.len().saturating_mul(6) + 14,
                 ResolvedExprKind::ByteRange { .. } => 32,
-                ResolvedExprKind::Block { statements, .. } => {
+                ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } => {
                     // Child censuses include their Eval push. Each statement
                     // additionally needs its continuation and four sequencing
                     // operations; root setup and tail sequencing need seven.
@@ -1137,6 +1305,7 @@ fn expression_skeleton_work_upper(
                 ResolvedExprKind::Try { .. } | ResolvedExprKind::TryOption { .. } => 10,
                 ResolvedExprKind::Project { .. } | ResolvedExprKind::Upcast { .. } => 6,
                 ResolvedExprKind::Yield { .. } => 6,
+                ResolvedExprKind::LexicalExit { .. } => 16,
                 ResolvedExprKind::If { .. } => 10,
                 ResolvedExprKind::Match { arms, .. } => {
                     // Guards recurse as separate sub-skeletons, so each arm
@@ -1320,8 +1489,15 @@ fn expression_path_counts(
             continue;
         }
         result = match &frame.expression.kind {
-            kind if matches!(kind, ResolvedExprKind::Call { .. })
-                || super::native_rust::owns(frame.expression) =>
+            _ if super::deferred_commit::infallible_borrowed_vector_observer(frame.expression) => {
+                frame.accumulator
+            }
+            kind if matches!(
+                kind,
+                ResolvedExprKind::Call { .. }
+                    | ResolvedExprKind::LiteralFormat { .. }
+                    | ResolvedExprKind::VecFieldRead { .. }
+            ) || super::native_rust::owns(frame.expression) =>
             {
                 HirPathCounts {
                     normal: frame.accumulator.normal,
@@ -1381,205 +1557,6 @@ fn expression_path_counts(
     Ok(result)
 }
 
-fn validate_inventory_coverage(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
-) -> Result<(), Diagnostic> {
-    let plan = &function.cleanup_plan;
-    let base_len = function.cleanup.slots.len();
-    if plan.slots.len() < base_len {
-        return Err(replay_error(
-            function,
-            "cleanup plan omits storage required by the cleanup inventory",
-        ));
-    }
-
-    let mut inventory_storage = BTreeMap::new();
-    for inventory_slot in &function.cleanup.slots {
-        let storage = inventory_storage_id(&inventory_slot.origin);
-        inventory_storage.insert(inventory_slot.id, storage);
-    }
-    let mut independently_derived_flag = 0u32;
-    for (index, inventory_slot) in function.cleanup.slots.iter().enumerate() {
-        let actual = &plan.slots[index];
-        let expected_storage = inventory_storage_id(&inventory_slot.origin);
-        let independently_derived = expected_shape_for_type(
-            program,
-            function,
-            &inventory_slot.ty,
-            &mut independently_derived_flag,
-        )?;
-        if inventory_slot.shape != independently_derived {
-            return Err(replay_error(
-                function,
-                format!(
-                    "cleanup inventory base slot {index} disagrees with independently derived typed HIR"
-                ),
-            ));
-        }
-        if actual.id.0 != inventory_slot.id.0
-            || actual.storage_index != inventory_slot.discovery_index
-            || actual.storage != expected_storage
-            || actual.ty != inventory_slot.ty
-            || actual.field_liveness_shape != inventory_slot.shape
-        {
-            return Err(replay_error(
-                function,
-                format!("cleanup plan base slot {index} disagrees with the independent inventory"),
-            ));
-        }
-    }
-    if usize::try_from(independently_derived_flag).ok() != Some(function.cleanup.flags.len()) {
-        return Err(replay_error(
-            function,
-            "cleanup inventory liveness census disagrees with independently derived typed HIR",
-        ));
-    }
-
-    let expected_entry = function
-        .cleanup
-        .entry_state
-        .live_owned_parameters
-        .iter()
-        .map(|storage| {
-            inventory_storage
-                .get(storage)
-                .cloned()
-                .map(|storage| CleanupPlace {
-                    storage,
-                    projections: Vec::new(),
-                })
-                .ok_or_else(|| {
-                    replay_error(
-                        function,
-                        "cleanup inventory entry references unknown storage",
-                    )
-                })
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    if plan.entry_state.live_owned_parameters != expected_entry {
-        return Err(replay_error(
-            function,
-            "cleanup plan entry ownership disagrees with the independent inventory",
-        ));
-    }
-    let expected_conditional = function
-        .cleanup
-        .entry_state
-        .conditional_owned_parameters
-        .iter()
-        .map(|entry| {
-            let storage = inventory_storage
-                .get(&entry.storage)
-                .cloned()
-                .ok_or_else(|| {
-                    replay_error(
-                        function,
-                        "conditional cleanup inventory entry references unknown storage",
-                    )
-                })?;
-            let cases = entry
-                .cases
-                .iter()
-                .map(|case| {
-                    let live_places = case
-                        .live_flags
-                        .iter()
-                        .map(|flag| {
-                            let inventory = function
-                                .cleanup
-                                .flags
-                                .iter()
-                                .find(|candidate| candidate.id == *flag)
-                                .ok_or_else(|| {
-                                    replay_error(
-                                        function,
-                                        "conditional cleanup entry references unknown flag",
-                                    )
-                                })?;
-                            if inventory.place.storage != entry.storage
-                                || inventory.place.projections.first() != Some(&case.case)
-                            {
-                                return Err(replay_error(
-                                    function,
-                                    "conditional cleanup entry flag has a foreign case path",
-                                ));
-                            }
-                            Ok(CleanupPlace {
-                                storage: storage.clone(),
-                                projections: inventory.place.projections.clone(),
-                            })
-                        })
-                        .collect::<Result<Vec<_>, Diagnostic>>()?;
-                    Ok(ConditionalVariantCase {
-                        case: case.case.clone(),
-                        live_places,
-                    })
-                })
-                .collect::<Result<Vec<_>, Diagnostic>>()?;
-            Ok(ConditionalVariantEntry {
-                storage,
-                variant: entry.variant.clone(),
-                cases,
-            })
-        })
-        .collect::<Result<Vec<_>, Diagnostic>>()?;
-    if plan.entry_state.conditional_owned_parameters != expected_conditional {
-        return Err(replay_error(
-            function,
-            "conditional cleanup-plan entry disagrees with the independent inventory",
-        ));
-    }
-
-    let mut next_flag = u32::try_from(function.cleanup.flags.len())
-        .map_err(|_| replay_error(function, "too many inventory liveness flags"))?;
-    let mut expected_supplemental = Vec::new();
-    for expression in function
-        .requires
-        .iter()
-        .chain(std::iter::once(&function.body))
-        .chain(&function.ensures)
-    {
-        collect_supplemental_slots(
-            program,
-            function,
-            expression,
-            &mut next_flag,
-            &mut expected_supplemental,
-        )?;
-    }
-    let actual_supplemental = &plan.slots[base_len..];
-    if actual_supplemental.len() != expected_supplemental.len() {
-        return Err(replay_error(
-            function,
-            "cleanup plan has missing or extra call-argument storage",
-        ));
-    }
-    for (offset, (actual, expected)) in actual_supplemental
-        .iter()
-        .zip(&expected_supplemental)
-        .enumerate()
-    {
-        let expected_index = base_len
-            .checked_add(offset)
-            .ok_or_else(|| replay_error(function, "too many cleanup slots"))?;
-        let expected_index = u32::try_from(expected_index)
-            .map_err(|_| replay_error(function, "too many cleanup slots"))?;
-        if actual.id.0 != expected_index
-            || actual.storage_index != expected_index
-            || actual.storage != expected.storage
-            || actual.ty != expected.ty
-            || actual.field_liveness_shape != expected.shape
-        {
-            return Err(replay_error(
-                function,
-                format!("supplemental call-argument slot {offset} disagrees with typed HIR"),
-            ));
-        }
-    }
-    Ok(())
-}
-
 struct ExpectedSupplementalSlot {
     storage: StorageId,
     ty: ResolvedType,
@@ -1597,270 +1574,15 @@ fn inventory_storage_id(origin: &CleanupStorageOrigin) -> StorageId {
 }
 
 fn validate_required_status_sources(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
-    let mut expected = Vec::new();
-    for (ordinal, contract) in function.requires.iter().enumerate() {
-        collect_expression_statuses(program, function, contract, &mut expected)?;
-        expected.push(StatusSource {
-            id: StatusSourceId {
-                expression: contract.id.clone(),
-                lane: StatusLane::ContractFalse,
-            },
-            producer: StatusProducer::ContractFalse {
-                phase: super::ContractPhase::Requires,
-                ordinal: u32::try_from(ordinal)
-                    .map_err(|_| replay_error(function, "too many preconditions"))?,
-            },
-        });
-    }
-    collect_expression_statuses(program, function, &function.body, &mut expected)?;
-    for (ordinal, contract) in function.ensures.iter().enumerate() {
-        collect_expression_statuses(program, function, contract, &mut expected)?;
-        expected.push(StatusSource {
-            id: StatusSourceId {
-                expression: contract.id.clone(),
-                lane: StatusLane::ContractFalse,
-            },
-            producer: StatusProducer::ContractFalse {
-                phase: super::ContractPhase::Ensures,
-                ordinal: u32::try_from(ordinal)
-                    .map_err(|_| replay_error(function, "too many postconditions"))?,
-            },
-        });
-    }
-    if function.cleanup_plan.status_sources != expected {
-        return Err(replay_error(
-            function,
-            "cleanup status sources do not exactly cover typed HIR failure producers",
-        ));
-    }
-    Ok(())
-}
-
-fn collect_expression_statuses(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    statuses: &mut Vec<StatusSource>,
-) -> Result<(), Diagnostic> {
-    let mut stack = [None; 514];
-    stack[0] = Some((expression, 0usize));
-    let mut len = 1usize;
-    while len != 0 {
-        len -= 1;
-        let (expression, next) = stack[len].take().expect("status frame retained");
-        if let Some(child) = replay_expression_child(expression, next) {
-            if len + 2 > stack.len() {
-                return Err(replay_error(
-                    function,
-                    "cleanup status expression depth exceeds 512",
-                ));
-            }
-            stack[len] = Some((expression, next + 1));
-            stack[len + 1] = Some((child, 0));
-            len += 2;
-            continue;
+    match allocation_paths::current(program, function) {
+        Some(current) => {
+            ordinary_status::validate_allocation_projection(current, &function.cleanup_plan)
         }
-        if super::owner_admission::required(program, expression) {
-            let call = super::native_rust::parts(expression).expect("admitted owner call");
-            statuses.push(StatusSource {
-                id: StatusSourceId {
-                    expression: expression.id.clone(),
-                    lane: StatusLane::OwnerAdmission,
-                },
-                producer: StatusProducer::PropagatedCall {
-                    callee: call.callee.clone(),
-                },
-            });
-        }
-        match &expression.kind {
-            ResolvedExprKind::Closure { .. } if !expression.ty.is_once_function() => {}
-            ResolvedExprKind::FunctionReference { .. } => {}
-            ResolvedExprKind::ByteRange { operation, .. } => {
-                if operation.as_str() != crate::byte_ops::RANGE_ID {
-                    return Err(replay_error(
-                        function,
-                        "byte range status source carries an unknown operation identity",
-                    ));
-                }
-                statuses.push(StatusSource {
-                    id: StatusSourceId {
-                        expression: expression.id.clone(),
-                        lane: StatusLane::OperationFailure,
-                    },
-                    producer: StatusProducer::PropagatedCall {
-                        callee: operation.clone(),
-                    },
-                });
-            }
-            ResolvedExprKind::Invoke { .. } | ResolvedExprKind::Closure { .. } => {
-                statuses.push(StatusSource {
-                    id: StatusSourceId {
-                        expression: expression.id.clone(),
-                        lane: StatusLane::OperationFailure,
-                    },
-                    producer: StatusProducer::PropagatedCall {
-                        callee: crate::hir::function_value::cleanup_call(expression)?
-                            .0
-                            .clone(),
-                    },
-                });
-            }
-            ResolvedExprKind::Call {
-                callee, instance, ..
-            } => {
-                if instance.is_none()
-                    && (crate::byte_ops::by_id(callee.as_str()).is_some_and(|op| !op.is_fallible())
-                        || crate::host_io_ops::by_id(callee.as_str()).is_some()
-                        || callee.as_str() == crate::stdin_stream_ops::EOF_ID)
-                {
-                    // Byte-data operations are total after HIR admission, with
-                    // the bounded `bytes_set`, `bytes_set5`, and `bytes_set1_or5_from_slice` stores, whose computed
-                    // element index is checked at run time. Physical allocation
-                    // failure stays invariant fail-stop, not a recoverable
-                    // operation status.
-                    continue;
-                }
-                if instance.is_none()
-                    && super::deferred_commit::is_infallible_vec_operation(crate::vec_ops::by_id(
-                        callee.as_str(),
-                    ))
-                {
-                    continue;
-                }
-                if instance.is_none() && super::deferred_commit::is_infallible_box_operation(callee)
-                {
-                    continue;
-                }
-                if instance.is_none()
-                    && (crate::map_ops::by_id(callee.as_str()).is_some()
-                        || crate::string_ops::by_id(callee.as_str()).is_some()
-                        || crate::str_ops::by_id(callee.as_str()).is_some()
-                        || crate::vec_ops::by_id(callee.as_str()).is_some()
-                        || crate::iterator_ops::by_id(callee.as_str()).is_some()
-                        || crate::list_ops::by_id(callee.as_str()).is_some()
-                        || crate::box_ops::by_id(callee.as_str()).is_some()
-                        || crate::byte_ops::by_id(callee.as_str()).is_some())
-                {
-                    // Closed String/collection/byte operations project like ordinary propagated calls.
-                } else if program
-                    .resolve_call_target(callee, instance.as_ref())
-                    .is_none()
-                {
-                    return Err(replay_error(
-                        function,
-                        format!("status source call has unknown callee `{callee}`"),
-                    ));
-                }
-                statuses.push(StatusSource {
-                    id: StatusSourceId {
-                        expression: expression.id.clone(),
-                        lane: StatusLane::OperationFailure,
-                    },
-                    producer: StatusProducer::PropagatedCall {
-                        callee: callee.clone(),
-                    },
-                });
-            }
-            ResolvedExprKind::HostCommandCall(call) => {
-                if crate::command_io_ops::failure(call.operation)
-                    == crate::command_io_ops::CommandIoFailure::Status
-                {
-                    statuses.push(StatusSource {
-                        id: StatusSourceId {
-                            expression: expression.id.clone(),
-                            lane: StatusLane::OperationFailure,
-                        },
-                        producer: StatusProducer::PropagatedCall {
-                            callee: DeclarationId::new(crate::command_io_ops::id(call.operation)),
-                        },
-                    });
-                }
-            }
-            ResolvedExprKind::Unary {
-                op: UnaryOp::Neg, ..
-            } => statuses.push(checked_status(
-                expression,
-                super::CheckedOperation::Neg,
-                vec![StatusCase::NegationOverflow],
-            )),
-            ResolvedExprKind::Unary {
-                op: UnaryOp::Not, ..
-            } => {}
-            ResolvedExprKind::Binary { op, .. } => {
-                let checked = match op {
-                    BinaryOp::Add => {
-                        Some((super::CheckedOperation::Add, vec![StatusCase::AddOverflow]))
-                    }
-                    BinaryOp::Sub => {
-                        Some((super::CheckedOperation::Sub, vec![StatusCase::SubOverflow]))
-                    }
-                    BinaryOp::Mul => {
-                        Some((super::CheckedOperation::Mul, vec![StatusCase::MulOverflow]))
-                    }
-                    BinaryOp::Div => Some((
-                        super::CheckedOperation::Div,
-                        vec![StatusCase::DivisionByZero, StatusCase::DivisionOverflow],
-                    )),
-                    BinaryOp::Rem => Some((
-                        super::CheckedOperation::Rem,
-                        vec![StatusCase::RemainderByZero, StatusCase::RemainderOverflow],
-                    )),
-                    BinaryOp::Eq
-                    | BinaryOp::Ne
-                    | BinaryOp::Lt
-                    | BinaryOp::Le
-                    | BinaryOp::Gt
-                    | BinaryOp::Ge
-                    | BinaryOp::And
-                    | BinaryOp::Or => None,
-                };
-                if let Some((operation, cases)) = checked {
-                    statuses.push(checked_status(expression, operation, cases));
-                }
-            }
-            ResolvedExprKind::NativeRustImportCall(call) => {
-                if super::native_rust::owns(expression) {
-                    statuses.push(StatusSource {
-                        id: StatusSourceId {
-                            expression: expression.id.clone(),
-                            lane: StatusLane::OperationFailure,
-                        },
-                        producer: StatusProducer::PropagatedCall {
-                            callee: call.import.clone(),
-                        },
-                    });
-                }
-            }
-            ResolvedExprKind::Block { .. }
-            | ResolvedExprKind::If { .. }
-            | ResolvedExprKind::ConstructRecord { .. }
-            | ResolvedExprKind::ConstructVariant { .. }
-            | ResolvedExprKind::Try { .. }
-            | ResolvedExprKind::TryOption { .. }
-            | ResolvedExprKind::Match { .. }
-            | ResolvedExprKind::UpdateRecord { .. }
-            | ResolvedExprKind::Project { .. }
-            | ResolvedExprKind::Upcast { .. }
-            | ResolvedExprKind::Yield { .. }
-            | ResolvedExprKind::Int(_)
-            | ResolvedExprKind::Int32(_)
-            | ResolvedExprKind::Char(_)
-            | ResolvedExprKind::Uint8(_)
-            | ResolvedExprKind::Usize(_)
-            | ResolvedExprKind::ArrayU8(_)
-            | ResolvedExprKind::RepeatArrayU8 { .. }
-            | ResolvedExprKind::Float32(_)
-            | ResolvedExprKind::Float64(_)
-            | ResolvedExprKind::Bool(_)
-            | ResolvedExprKind::String(_)
-            | ResolvedExprKind::Place(_)
-            | ResolvedExprKind::BorrowPlace { .. } => {}
-        }
+        None => ordinary_status::validate(program, function),
     }
-    Ok(())
 }
 
 fn checked_status(
@@ -1880,29 +1602,52 @@ fn checked_status(
     }
 }
 
+#[cfg(test)]
 fn validate_slots(function: &ResolvedFunction) -> Result<BTreeSet<StorageId>, Diagnostic> {
+    validate_slots_paid(function, &mut ReplayBudget::unobserved())
+}
+fn validate_slots_paid(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<BTreeSet<StorageId>, Diagnostic> {
+    validate_slots_paid_core::<Diagnostic>(function, budget)
+}
+
+fn validate_slots_paid_core<E: semantic_refusal::Error>(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<BTreeSet<StorageId>, E> {
     let mut storage = BTreeSet::new();
     for (index, slot) in function.cleanup_plan.slots.iter().enumerate() {
         let expected = u32_index(function, index, "cleanup slot")?;
         if slot.id.0 != expected || slot.storage_index != expected {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!("cleanup slot at index {index} has non-contiguous identity or index"),
+                semantic_refusal::Atom::NoncontiguousSlot(index),
             ));
         }
+        allocation::set_key(function, budget, &storage, &slot.storage)?;
         if !storage.insert(slot.storage.clone()) {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!("cleanup storage `{:?}` is repeated", slot.storage),
+                semantic_refusal::Atom::RepeatedStorage(slot.storage.clone()),
             ));
         }
     }
     Ok(storage)
 }
 
+#[cfg(test)]
 fn collect_leaves(function: &ResolvedFunction) -> Result<Leaves, Diagnostic> {
+    collect_leaves_paid(function, &mut ReplayBudget::unobserved())
+}
+fn collect_leaves_paid(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<Leaves, Diagnostic> {
     let mut leaves = BTreeMap::new();
     let mut places = BTreeSet::new();
+    let mut pending = shape_cursor::Pending::new();
     for slot in &function.cleanup_plan.slots {
         collect_shape(
             function,
@@ -1911,6 +1656,7 @@ fn collect_leaves(function: &ResolvedFunction) -> Result<Leaves, Diagnostic> {
             &slot.field_liveness_shape,
             &mut leaves,
             &mut places,
+            (budget, &mut pending),
         )?;
     }
     for (expected, flag) in leaves.keys().enumerate() {
@@ -1921,25 +1667,24 @@ fn collect_leaves(function: &ResolvedFunction) -> Result<Leaves, Diagnostic> {
             ));
         }
     }
-    Ok(Leaves::new(leaves))
+    Leaves::new_with_budget(function, leaves, budget)
 }
 
-fn collect_shape(
+fn collect_shape<'shape>(
     function: &ResolvedFunction,
     storage: &StorageId,
     projections: &mut Vec<DeclarationId>,
-    shape: &FieldLivenessShape,
+    shape: &'shape FieldLivenessShape,
     leaves: &mut BTreeMap<LivenessFlagId, Leaf>,
     places: &mut BTreeSet<CleanupPlace>,
+    scratch: (&mut ReplayBudget, &mut shape_cursor::Pending<'shape>),
 ) -> Result<(), Diagnostic> {
-    enum Item<'a> {
-        Shape(&'a FieldLivenessShape),
-        Push(&'a DeclarationId),
-        Pop,
-    }
+    let (budget, pending) = scratch;
+    use shape_cursor::Item;
 
     let initial_projection_depth = projections.len();
-    let mut pending = vec![Item::Shape(shape)];
+    pending.reserve(function, budget, 1, "shape worklist")?;
+    pending.push(Item::Shape(shape));
     let mut work = 0usize;
     while let Some(item) = pending.pop() {
         work = work
@@ -1953,6 +1698,8 @@ fn collect_shape(
         }
         match item {
             Item::Push(projection) => {
+                budget.reserve_vec(function, projections, 1, "shape projections")?;
+                budget.reserve_clone(function, projection, "shape identity")?;
                 projections.try_reserve(1).map_err(|_| {
                     replay_error(
                         function,
@@ -1972,6 +1719,7 @@ fn collect_shape(
             }
             Item::Shape(FieldLivenessShape::NoDrop) => {}
             Item::Shape(FieldLivenessShape::Leaf { flag, lifecycle }) => {
+                allocation::leaf_payload(function, budget, storage, projections, lifecycle)?;
                 let leaf = Leaf {
                     place: CleanupPlace {
                         storage: storage.clone(),
@@ -1979,10 +1727,11 @@ fn collect_shape(
                     },
                     lifecycle: lifecycle.clone(),
                 };
+                allocation::leaf_indexes(function, budget, leaves, places, *flag, &leaf)?;
                 if leaves.insert(*flag, leaf.clone()).is_some() {
                     return Err(replay_error(
                         function,
-                        format!("liveness flag {} is repeated", flag.0),
+                        format_args!("liveness flag {} is repeated", flag.0),
                     ));
                 }
                 if !places.insert(leaf.place) {
@@ -1993,21 +1742,21 @@ fn collect_shape(
                 let mut field_ids = BTreeSet::new();
                 for (index, field) in fields.iter().enumerate() {
                     let expected = u32_index(function, index, "cleanup field")?;
-                    if field.field_index != expected || !field_ids.insert(field.field.clone()) {
+                    if field.field_index != expected
+                        || !allocation::insert_id(function, budget, &mut field_ids, &field.field)?
+                    {
                         return Err(replay_error(
                             function,
                             "record cleanup shape has non-contiguous or repeated fields",
                         ));
                     }
                 }
-                pending
-                    .try_reserve(fields.len().saturating_mul(3))
-                    .map_err(|_| {
-                        replay_error(
-                            function,
-                            "cleanup shape replay capacity exceeds address space",
-                        )
-                    })?;
+                pending.reserve(
+                    function,
+                    budget,
+                    fields.len().saturating_mul(3),
+                    "record shape worklist",
+                )?;
                 for field in fields.iter().rev() {
                     pending.push(Item::Pop);
                     pending.push(Item::Shape(&field.shape));
@@ -2036,7 +1785,7 @@ fn collect_shape(
                 let mut item_count = 0usize;
                 for (case_index, case) in cases.iter().enumerate() {
                     if case.case_index != u32_index(function, case_index, "cleanup variant case")?
-                        || !case_ids.insert(case.case.clone())
+                        || !allocation::insert_id(function, budget, &mut case_ids, &case.case)?
                     {
                         return Err(replay_error(
                             function,
@@ -2047,7 +1796,12 @@ fn collect_shape(
                     for (field_index, field) in case.fields.iter().enumerate() {
                         if field.field_index
                             != u32_index(function, field_index, "cleanup variant field")?
-                            || !field_ids.insert(field.field.clone())
+                            || !allocation::insert_id(
+                                function,
+                                budget,
+                                &mut field_ids,
+                                &field.field,
+                            )?
                         {
                             return Err(replay_error(
                                 function,
@@ -2067,12 +1821,7 @@ fn collect_shape(
                             replay_error(function, "cleanup shape replay work overflowed")
                         })?;
                 }
-                pending.try_reserve(item_count).map_err(|_| {
-                    replay_error(
-                        function,
-                        "cleanup shape replay capacity exceeds address space",
-                    )
-                })?;
+                pending.reserve(function, budget, item_count, "variant shape worklist")?;
                 for case in cases.iter().rev() {
                     pending.push(Item::Pop);
                     for field in case.fields.iter().rev() {
@@ -2096,23 +1845,27 @@ fn collect_shape(
 
 fn validate_status_sources(
     function: &ResolvedFunction,
-    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+    expressions: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
 ) -> Result<(), Diagnostic> {
+    validate_status_sources_core::<Diagnostic>(function, expressions)
+}
+
+fn validate_status_sources_core<E: semantic_refusal::Error>(
+    function: &ResolvedFunction,
+    expressions: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
+) -> Result<(), E> {
     let mut ids = BTreeSet::new();
     for source in &function.cleanup_plan.status_sources {
         if !ids.insert(source.id.clone()) {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!("status source for `{}` is repeated", source.id.expression),
+                semantic_refusal::Atom::RepeatedStatus(source.id.expression.clone()),
             ));
         }
         if !expressions.contains_key(&source.id.expression) {
-            return Err(replay_error(
+            return Err(E::structural(
                 function,
-                format!(
-                    "status source references unknown expression `{}`",
-                    source.id.expression
-                ),
+                semantic_refusal::Atom::UnknownStatus(source.id.expression.clone()),
             ));
         }
         match (&source.id.lane, &source.producer) {
@@ -2124,13 +1877,15 @@ fn validate_status_sources(
                     return Err(replay_error(
                         function,
                         "propagated-call status source does not name a call expression",
-                    ));
+                    )
+                    .into());
                 };
-                if &call.callee != callee {
+                if call.callee.as_ref() != callee {
                     return Err(replay_error(
                         function,
                         "propagated-call status source names the wrong callee",
-                    ));
+                    )
+                    .into());
                 }
             }
             (
@@ -2144,15 +1899,28 @@ fn validate_status_sources(
                     return Err(replay_error(
                         function,
                         "checked-arithmetic status cases are empty or repeated",
-                    ));
+                    )
+                    .into());
                 }
             }
+            (
+                StatusLane::AllocationFailure,
+                StatusProducer::CheckedAllocation {
+                    normalized_cases, ..
+                },
+            ) if function.cleanup_plan.schema == super::CLEANUP_PLAN_SCHEMA_V20
+                && *normalized_cases
+                    == [
+                        super::AllocationCase::PayloadRefused,
+                        super::AllocationCase::SizeOverflow,
+                    ] => {}
             (StatusLane::ContractFalse, StatusProducer::ContractFalse { .. }) => {}
             _ => {
                 return Err(replay_error(
                     function,
                     "status source lane does not match its producer",
-                ));
+                )
+                .into());
             }
         }
     }
@@ -2206,9 +1974,12 @@ fn validate_regions(
                 ));
             }
         }
-        if usize::try_from(region.normal_scope_end.0)
-            .ok()
-            .is_none_or(|exit| exit >= plan.exits.len())
+        let unresolved =
+            plan.lexical_control.is_some() && region.normal_scope_end == UNRESOLVED_NORMAL_END;
+        if !unresolved
+            && usize::try_from(region.normal_scope_end.0)
+                .ok()
+                .is_none_or(|exit| exit >= plan.exits.len())
         {
             return Err(replay_error(
                 function,
@@ -2251,11 +2022,13 @@ fn validate_entry(
 }
 
 fn validate_blocks_and_edges(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
-    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+    expressions: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+    budget: &mut ReplayBudget,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let statuses = plan
@@ -2298,7 +2071,7 @@ fn validate_blocks_and_edges(
                     validate_place(function, destination, storage, leaves)?;
                 }
                 CleanupTransition::ReserveRenewal { at, binding } => {
-                    renewal::validate_binding(program, function, at, binding)?;
+                    renewal::validate_binding(program, function, at, binding, helpers, budget)?;
                     require_expression(function, expressions, at)?;
                     validate_place(function, binding, storage, leaves)?;
                 }
@@ -2307,7 +2080,7 @@ fn validate_blocks_and_edges(
                     source,
                     destination,
                 } => {
-                    renewal::validate_binding(program, function, at, destination)?;
+                    renewal::validate_binding(program, function, at, destination, helpers, budget)?;
                     require_expression(function, expressions, at)?;
                     validate_place(function, source, storage, leaves)?;
                     validate_place(function, destination, storage, leaves)?;
@@ -2339,7 +2112,7 @@ fn validate_blocks_and_edges(
                 } => {
                     require_expression(function, expressions, at)?;
                     validate_place(function, source, storage, leaves)?;
-                    let Some(cases) = program.declarations.variant_cases(variant) else {
+                    let Some(cases) = program.declarations().variant_cases(variant) else {
                         return Err(replay_error(
                             function,
                             "variant authentication references a non-variant declaration",
@@ -2441,23 +2214,29 @@ fn validate_blocks_and_edges(
                             "call commit does not name a call expression",
                         ));
                     };
-                    if !committed_calls.insert(call.clone()) {
+                    // Lexical return domains duplicate postcondition bodies, so one
+                    // call legitimately commits once per proof domain; the typed
+                    // skeleton comparison counts those per-domain commits exactly.
+                    if !committed_calls.insert(call.clone()) && plan.lexical_control.is_none() {
                         return Err(replay_error(
                             function,
                             "call has more than one atomic commit",
                         ));
                     }
-                    let params = resolved_call_params(
+                    let params = resolved_call::resolved_call_param_view(
                         program,
                         function,
+                        find_resolved_expression(function, call).ok_or_else(|| {
+                            replay_error(function, "call commit expression is absent")
+                        })?,
                         &fact.callee,
-                        fact.instance.as_ref(),
-                        &fact.type_arguments,
+                        fact.instance,
+                        fact.type_arguments.as_slice(),
                     )
                     .map_err(|_| {
                         replay_error(
                             function,
-                            format!("call commit has unknown callee `{}`", fact.callee),
+                            format_args!("call commit has unknown callee `{}`", fact.callee),
                         )
                     })?;
                     if params.len() != fact.arguments.len() {
@@ -2466,23 +2245,12 @@ fn validate_blocks_and_edges(
                             "call commit callee signature has inconsistent arity",
                         ));
                     }
-                    let mut expected_parameters = Vec::new();
-                    for (index, parameter) in params.iter().enumerate() {
-                        if parameter.ownership == OwnershipMode::Own
-                            && type_needs_drop(program, function, &parameter.ty)?
-                        {
-                            expected_parameters.push(
-                                u32::try_from(index).map_err(|_| {
-                                    replay_error(function, "too many call parameters")
-                                })?,
-                            );
-                        }
-                    }
-                    let actual_parameters = arguments
-                        .iter()
-                        .map(|argument| argument.parameter_index)
-                        .collect::<Vec<_>>();
-                    if actual_parameters != expected_parameters {
+                    if !resolved_call::owned_parameter_indices_match(
+                        &params,
+                        arguments,
+                        function,
+                        |ty| type_needs_drop(program, function, ty),
+                    )? {
                         return Err(replay_error(
                             function,
                             "call commit does not contain every and only owned droppable parameter",
@@ -2587,6 +2355,8 @@ fn validate_blocks_and_edges(
                             | CLEANUP_PLAN_SCHEMA_V15
                             | CLEANUP_PLAN_SCHEMA_V16
                             | super::CLEANUP_PLAN_SCHEMA_V17
+                            | super::CLEANUP_PLAN_SCHEMA_V18
+                            | super::CLEANUP_PLAN_SCHEMA_V19
                             | CLEANUP_PLAN_SCHEMA_V14
                     ) && matches!(
                         plan.edges[edge.0 as usize].condition,
@@ -2636,7 +2406,9 @@ fn validate_blocks_and_edges(
         .iter()
         .filter_map(|(expression, fact)| fact.as_ref().map(|_| expression.clone()))
         .collect::<BTreeSet<_>>();
-    if committed_calls != expected_calls {
+    // Control-flow-dead calls after an abrupt exit are never lowered, so the
+    // lexical profile checks commit coverage in the typed skeleton instead.
+    if plan.lexical_control.is_none() && committed_calls != expected_calls {
         return Err(replay_error(
             function,
             "cleanup plan does not contain exactly one atomic commit for every call",
@@ -2646,10 +2418,11 @@ fn validate_blocks_and_edges(
 }
 
 fn validate_exits(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     storage: &BTreeSet<StorageId>,
     leaves: &Leaves,
+    return_operands: &BTreeSet<ExpressionId>,
 ) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let statuses = plan
@@ -2659,6 +2432,19 @@ fn validate_exits(
         .collect::<BTreeSet<_>>();
     let mut continuation_edges = BTreeSet::new();
     for (index, exit) in plan.exits.iter().enumerate() {
+        if plan.lexical_control.is_none()
+            && matches!(
+                exit.continuation,
+                ExitContinuation::LoopLatch { .. }
+                    | ExitContinuation::LoopBreak { .. }
+                    | ExitContinuation::FunctionReturn { .. }
+            )
+        {
+            return Err(replay_error(
+                function,
+                "lexical exit continuation has no lexical-control certificate",
+            ));
+        }
         if exit.id.0 != u32_index(function, index, "cleanup exit")?
             || !block_exists(function, exit.from)
         {
@@ -2692,50 +2478,7 @@ fn validate_exits(
             }
             prior = Some(item.id);
         }
-        let mut finalized = BTreeSet::new();
-        for action in &exit.finalize_in_order {
-            let under = validate_place(function, &action.source, storage, leaves)?;
-            if under.len() != 1
-                || under[0] != action.guard_flag
-                || leaves[&action.guard_flag].place != action.source
-            {
-                return Err(replay_error(
-                    function,
-                    "finalizer guard does not name its exact cleanup leaf",
-                ));
-            }
-            let leaf = leaves
-                .get(&action.guard_flag)
-                .expect("validated cleanup flag");
-            if leaf.lifecycle != action.lifecycle_id || !finalized.insert(action.guard_flag) {
-                return Err(replay_error(
-                    function,
-                    "finalizer lifecycle or guard is invalid or repeated",
-                ));
-            }
-            if let Some(condition) = &action.active_case {
-                if condition.storage != action.source.storage
-                    || action.source.projections.first() != Some(&condition.case)
-                    || function
-                        .cleanup_plan
-                        .slots
-                        .iter()
-                        .find(|slot| slot.storage == condition.storage)
-                        .is_none_or(|slot| {
-                            !matches!(
-                                &slot.ty,
-                                ResolvedType::Nominal { declaration, .. }
-                                    if declaration == &condition.variant
-                            )
-                        })
-                {
-                    return Err(replay_error(
-                        function,
-                        "conditional finalizer does not bind its exact variant case path",
-                    ));
-                }
-            }
-        }
+        validate_finalizer_actions(function, &exit.finalize_in_order, storage, leaves)?;
         match &exit.continuation {
             ExitContinuation::Continue(edge) => {
                 validate_owned_edge(function, exit.from, *edge, &mut continuation_edges)?;
@@ -2746,53 +2489,29 @@ fn validate_exits(
                     ));
                 }
             }
-            ExitContinuation::CommitResult { source } => match source {
-                CleanupResultSource::Scalar { expression } => {
-                    if type_needs_drop(program, function, &function.return_type)? {
-                        return Err(replay_error(
-                            function,
-                            "droppable function result uses a scalar result commit",
-                        ));
-                    }
-                    if expression != &function.body.id {
-                        return Err(replay_error(
-                            function,
-                            "scalar result commit does not publish the function body",
-                        ));
-                    }
+            ExitContinuation::CommitResult { source } => {
+                validate_result_source(program, function, source, storage, leaves, return_operands)?
+            }
+            ExitContinuation::FunctionReturn { edge, source, .. } => {
+                validate_owned_edge(function, exit.from, *edge, &mut continuation_edges)?;
+                if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always) {
+                    return Err(replay_error(
+                        function,
+                        "function-return continuation edge is conditional",
+                    ));
                 }
-                CleanupResultSource::Owned { storage: result } => {
-                    if !matches!(
-                        function.return_type,
-                        ResolvedType::Nominal { .. }
-                            | ResolvedType::Bytes
-                            | ResolvedType::String
-                            | ResolvedType::StringMap
-                            | ResolvedType::OnceFunction
-                            | ResolvedType::OnceFunctionI64
-                            | ResolvedType::OnceFunctionI64Pair
-                    ) || !type_needs_drop(program, function, &function.return_type)?
-                        || result.storage != StorageId::ProvisionalResult
-                        || !result.projections.is_empty()
-                    {
-                        return Err(replay_error(
-                            function,
-                            "owned result commit must publish the whole droppable provisional result",
-                        ));
-                    }
-                    validate_place(function, result, storage, leaves)?;
-                    let provisional_leaves = leaves
-                        .values()
-                        .filter(|leaf| leaf.place.storage == StorageId::ProvisionalResult)
-                        .count();
-                    if provisional_leaves == 0 {
-                        return Err(replay_error(
-                            function,
-                            "owned result commit has no provisional-result leaves",
-                        ));
-                    }
+                validate_result_source(program, function, source, storage, leaves, return_operands)?
+            }
+            ExitContinuation::LoopBreak { edge, .. } => {
+                validate_owned_edge(function, exit.from, *edge, &mut continuation_edges)?;
+                if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always) {
+                    return Err(replay_error(
+                        function,
+                        "loop-break continuation edge is conditional",
+                    ));
                 }
-            },
+            }
+            ExitContinuation::LoopLatch { .. } => {}
             ExitContinuation::ReturnFailure { source } => {
                 require_status(function, &statuses, source)?;
                 let selected = plan.blocks[exit.from.0 as usize]
@@ -2819,12 +2538,130 @@ fn validate_exits(
         }
     }
     for region in &plan.regions {
+        if plan.lexical_control.is_some() && region.normal_scope_end == UNRESOLVED_NORMAL_END {
+            // Authenticated as abrupt-only by the lexical certificate replay.
+            continue;
+        }
         let exit = &plan.exits[region.normal_scope_end.0 as usize];
         if !exit.leaves_regions.contains(&region.id) {
             return Err(replay_error(
                 function,
                 "region normal-scope exit does not leave that region",
             ));
+        }
+    }
+    Ok(())
+}
+
+/// Each finalizer names its exact cleanup leaf, lifecycle and variant case path.
+/// Shared by exits and lexical execution-boundary certificates.
+fn validate_finalizer_actions(
+    function: &ResolvedFunction,
+    actions: &[super::FinalizeAction],
+    storage: &BTreeSet<StorageId>,
+    leaves: &Leaves,
+) -> Result<(), Diagnostic> {
+    let mut finalized = BTreeSet::new();
+    for action in actions {
+        let under = validate_place(function, &action.source, storage, leaves)?;
+        if under.len() != 1
+            || under[0] != action.guard_flag
+            || leaves[&action.guard_flag].place != action.source
+        {
+            return Err(replay_error(
+                function,
+                "finalizer guard does not name its exact cleanup leaf",
+            ));
+        }
+        let leaf = leaves
+            .get(&action.guard_flag)
+            .expect("validated cleanup flag");
+        if leaf.lifecycle != action.lifecycle_id || !finalized.insert(action.guard_flag) {
+            return Err(replay_error(
+                function,
+                "finalizer lifecycle or guard is invalid or repeated",
+            ));
+        }
+        if let Some(condition) = &action.active_case {
+            if condition.storage != action.source.storage
+                || action.source.projections.first() != Some(&condition.case)
+                || function
+                    .cleanup_plan
+                    .slots
+                    .iter()
+                    .find(|slot| slot.storage == condition.storage)
+                    .is_none_or(|slot| {
+                        !matches!(
+                            &slot.ty,
+                            ResolvedType::Nominal { declaration, .. }
+                                if declaration == &condition.variant
+                        )
+                    })
+            {
+                return Err(replay_error(
+                    function,
+                    "conditional finalizer does not bind its exact variant case path",
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Shared by the ordinary commit and every lexical function-return source.
+fn validate_result_source(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    source: &CleanupResultSource,
+    storage: &BTreeSet<StorageId>,
+    leaves: &Leaves,
+    return_operands: &BTreeSet<ExpressionId>,
+) -> Result<(), Diagnostic> {
+    match source {
+        CleanupResultSource::Scalar { expression } => {
+            if type_needs_drop(program, function, &function.return_type)? {
+                return Err(replay_error(
+                    function,
+                    "droppable function result uses a scalar result commit",
+                ));
+            }
+            if expression != &function.body.id && !return_operands.contains(expression) {
+                return Err(replay_error(
+                    function,
+                    "scalar result commit does not publish the function body",
+                ));
+            }
+        }
+        CleanupResultSource::Owned { storage: result } => {
+            if !matches!(
+                function.return_type,
+                ResolvedType::Nominal { .. }
+                    | ResolvedType::Bytes
+                    | ResolvedType::String
+                    | ResolvedType::StringMap
+                    | ResolvedType::OnceFunction
+                    | ResolvedType::OnceFunctionI64
+                    | ResolvedType::OnceFunctionI64Pair
+            ) || !type_needs_drop(program, function, &function.return_type)?
+                || result.storage != StorageId::ProvisionalResult
+                || !result.projections.is_empty()
+            {
+                return Err(replay_error(
+                    function,
+                    "owned result commit must publish the whole droppable provisional result",
+                ));
+            }
+            validate_place(function, result, storage, leaves)?;
+            let provisional_leaves = leaves
+                .values()
+                .filter(|leaf| leaf.place.storage == StorageId::ProvisionalResult)
+                .count();
+            if provisional_leaves == 0 {
+                return Err(replay_error(
+                    function,
+                    "owned result commit has no provisional-result leaves",
+                ));
+            }
         }
     }
     Ok(())
@@ -2842,7 +2679,29 @@ fn expected_exit_regions(
         .region;
     let source_chain = region_chain_to_root(function, source_region)?;
     match &exit.continuation {
-        ExitContinuation::Continue(edge) => {
+        ExitContinuation::LoopLatch { target } => {
+            if let Some(leaves) =
+                lexical_cert::owned_continue_leaves(function, exit.id, &source_chain)?
+            {
+                return Ok(leaves);
+            }
+            let region = lexical_cert::loop_region(plan, target).ok_or_else(|| {
+                replay_error(function, "loop latch names an unknown lexical loop")
+            })?;
+            if !source_chain.contains(&region) {
+                return Err(replay_error(
+                    function,
+                    "loop latch exit does not originate inside its loop region",
+                ));
+            }
+            Ok(source_chain
+                .into_iter()
+                .take_while(|candidate| *candidate != region)
+                .collect())
+        }
+        ExitContinuation::Continue(edge)
+        | ExitContinuation::LoopBreak { edge, .. }
+        | ExitContinuation::FunctionReturn { edge, .. } => {
             let target = plan
                 .edges
                 .get(edge.0 as usize)
@@ -2887,15 +2746,26 @@ fn region_chain_to_root(
     Ok(chain)
 }
 
-fn validate_typed_control_skeleton(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
+fn validate_typed_control_skeleton_with_index<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
     budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
+    mut continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<(), Diagnostic> {
-    if factored::validate(program, function, budget)? {
+    if function.cleanup_plan.lexical_control.is_none()
+        && factored::validate_with_index_storage(
+            program,
+            function,
+            budget,
+            helpers,
+            continuations.as_deref_mut(),
+        )?
+    {
         return Ok(());
     }
-    let mut expected = hir_skeleton_paths(program, function, budget)?;
+    let mut expected =
+        hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?;
     let mut actual = plan_skeleton_paths(function, budget)?;
     expected.sort();
     actual.sort();
@@ -2916,12 +2786,31 @@ fn validate_typed_control_skeleton(
     Ok(())
 }
 
+#[cfg(test)]
 fn hir_skeleton_paths(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<Vec<SkeletonPath>, Diagnostic> {
-    let mut work = SkeletonWork::new(program, function, budget);
+    hir_skeleton_paths_with_index(program, function, budget, None)
+}
+fn hir_skeleton_paths_with_index(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+) -> Result<Vec<SkeletonPath>, Diagnostic> {
+    hir_skeleton_paths_with_index_storage(program, function, budget, helpers, None)
+}
+fn hir_skeleton_paths_with_index_storage<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    budget: &mut ReplayBudget,
+    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
+    continuations: Option<&mut continuation_storage::Storage<'hir>>,
+) -> Result<Vec<SkeletonPath>, Diagnostic> {
+    let mut work = SkeletonWork::checked_with_index(program, function, budget, helpers)?;
+    work.continuations = continuations;
     let mut paths = work.singleton_path(empty_expr_path(), "HIR root path")?;
     for contract in &function.requires {
         paths = sequence_expression(program, function, paths, contract, &mut work)?;
@@ -2929,7 +2818,12 @@ fn hir_skeleton_paths(
     }
     paths = sequence_expression(program, function, paths, &function.body, &mut work)?;
     let has_residual = paths.iter().any(|path| path.residual);
-    let owned_result = type_needs_drop(program, function, &function.return_type)?;
+    let owned_result = nested_shape::type_needs_drop_with_budget(
+        program,
+        function,
+        &function.return_type,
+        work.budget,
+    )?;
     if has_residual && !owned_result {
         if !function.cleanup_plan.slots.is_empty() {
             return Err(replay_error(
@@ -2985,21 +2879,21 @@ fn hir_skeleton_paths(
             }
         }
     }
+    // A lexical `return` has already staged its result and left its contour;
+    // it now runs every postcondition exactly like a normally completed body.
+    lexical_skeleton::release_returns(&mut paths);
     for contract in &function.ensures {
         paths = sequence_expression(program, function, paths, contract, &mut work)?;
         paths = split_contract(paths, contract, &mut work)?;
     }
     let mut completed = Vec::new();
     for path in paths {
+        let terminal = lexical_skeleton::terminal(&path);
         work.push_skeleton_path(
             &mut completed,
             SkeletonPath {
                 observations: path.observations,
-                terminal: if path.failed {
-                    SkeletonTerminal::Failure
-                } else {
-                    SkeletonTerminal::Success
-                },
+                terminal,
             },
             "completed HIR skeleton path",
         )?;
@@ -3007,12 +2901,12 @@ fn hir_skeleton_paths(
     Ok(completed)
 }
 
-fn sequence_expression(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
+fn sequence_expression<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
     prefixes: Vec<ExprSkeletonPath>,
-    expression: &ResolvedExpr,
-    work: &mut SkeletonWork<'_, '_>,
+    expression: &'hir ResolvedExpr,
+    work: &mut SkeletonWork<'hir, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     if !has_active_paths(&prefixes) {
         return Ok(prefixes);
@@ -3028,17 +2922,21 @@ fn sequence_skeleton_paths(
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     let prefixes = work.merged_paths(prefixes)?;
     let suffixes = work.merged_suffixes(suffixes)?;
+    let share_prefix = work.shares_prefix_tail(&suffixes)?;
     let mut combined = Vec::new();
-    for prefix in prefixes {
+    for mut prefix in prefixes {
         if prefix.failed || prefix.residual {
             work.push_expr_path(&mut combined, prefix, "short-circuited skeleton path")?;
             continue;
         }
+        if share_prefix {
+            work.share_prefix_tail(&mut prefix.observations)?;
+        }
         for suffix in suffixes.iter() {
-            let mut observations =
+            let observations =
                 work.clone_observations(&prefix.observations, "skeleton prefix clone")?;
-            work.extend_observations(
-                &mut observations,
+            let observations = work.extend_owned_observations(
+                observations,
                 &suffix.observations,
                 "skeleton suffix clone",
             )?;
@@ -3053,6 +2951,10 @@ fn sequence_skeleton_paths(
                     owned_source,
                     failed: suffix.failed,
                     residual: suffix.residual,
+                    continuation: lexical_skeleton::Continuation::sequenced(
+                        &prefix.continuation,
+                        &suffix.continuation,
+                    ),
                 },
                 "sequenced skeleton path",
             )?;
@@ -3063,154 +2965,43 @@ fn sequence_skeleton_paths(
 
 use path_summary::has_active_paths;
 
-fn expression_skeleton(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    work: &mut SkeletonWork<'_, '_>,
+fn expression_skeleton<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    expression: &'hir ResolvedExpr,
+    work: &mut SkeletonWork<'hir, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    enum Frame<'a> {
-        Eval(&'a ResolvedExpr),
-        RenewalPrefix(&'a ResolvedExpr),
-        UpcastPassthrough,
-        Unary {
-            expression: &'a ResolvedExpr,
-            op: UnaryOp,
-        },
-        BinaryLeft {
-            expression: &'a ResolvedExpr,
-            op: BinaryOp,
-            right: &'a ResolvedExpr,
-        },
-        BinaryRight {
-            expression: &'a ResolvedExpr,
-            op: BinaryOp,
-            left_paths: Vec<ExprSkeletonPath>,
-        },
-        LazyRight {
-            expression: &'a ResolvedExpr,
-            op: BinaryOp,
-            left: &'a ResolvedExpr,
-            left_paths: Vec<ExprSkeletonPath>,
-        },
-        CallArgument {
-            expression: &'a ResolvedExpr,
-            params: Vec<crate::hir::ResolvedParam>,
-            args: &'a [ResolvedExpr],
-            index: usize,
-            states: Vec<CallSkeletonState>,
-        },
-        ByteRangeArgument {
-            expression: &'a ResolvedExpr,
-            index: usize,
-            states: Vec<CallSkeletonState>,
-        },
-        NativeArgument {
-            args: &'a [ResolvedExpr],
-            index: usize,
-            paths: Vec<ExprSkeletonPath>,
-        },
-        BlockValue {
-            expression: &'a ResolvedExpr,
-            statements: &'a [ResolvedStatement],
-            tail: &'a ResolvedExpr,
-            index: usize,
-            paths: Vec<ExprSkeletonPath>,
-        },
-        BlockTail {
-            expression: &'a ResolvedExpr,
-            paths: Vec<ExprSkeletonPath>,
-        },
-        WhileAfterCondition {
-            prefixes: Vec<ExprSkeletonPath>,
-            expression: &'a ResolvedExpr,
-            statements: &'a [ResolvedStatement],
-            tail: &'a ResolvedExpr,
-            index: usize,
-            condition: &'a ResolvedExpr,
-            body: &'a ResolvedExpr,
-        },
-        WhileAfterBody {
-            expression: &'a ResolvedExpr,
-            statements: &'a [ResolvedStatement],
-            tail: &'a ResolvedExpr,
-            index: usize,
-            results: Vec<ExprSkeletonPath>,
-            true_prefixes: Vec<ExprSkeletonPath>,
-            false_prefixes: Vec<ExprSkeletonPath>,
-        },
-        VariantField {
-            expression: &'a ResolvedExpr,
-            case: &'a DeclarationId,
-            fields: &'a [crate::hir::ResolvedFieldInitializer],
-            index: usize,
-            paths: Vec<ExprSkeletonPath>,
-        },
-        RecordField {
-            expression: &'a ResolvedExpr,
-            fields: &'a [crate::hir::ResolvedFieldInitializer],
-            index: usize,
-            paths: Vec<ExprSkeletonPath>,
-        },
-        UpdateBase {
-            expression: &'a ResolvedExpr,
-            base: &'a ResolvedExpr,
-            record: &'a DeclarationId,
-            fields: &'a [crate::hir::ResolvedFieldInitializer],
-        },
-        UpdateField {
-            expression: &'a ResolvedExpr,
-            base: &'a ResolvedExpr,
-            record: &'a DeclarationId,
-            fields: &'a [crate::hir::ResolvedFieldInitializer],
-            index: usize,
-            paths: Vec<ExprSkeletonPath>,
-            replaced: BTreeSet<DeclarationId>,
-            needs_cleanup: bool,
-        },
-        Try {
-            expression: &'a ResolvedExpr,
-        },
-        TryOption {
-            expression: &'a ResolvedExpr,
-        },
-        Project {
-            expression: &'a ResolvedExpr,
-            field: &'a DeclarationId,
-        },
-        IfCondition {
-            expression: &'a ResolvedExpr,
-            condition: &'a ResolvedExpr,
-            then_branch: &'a ResolvedExpr,
-            else_branch: &'a ResolvedExpr,
-        },
-        IfThen {
-            expression: &'a ResolvedExpr,
-            else_branch: &'a ResolvedExpr,
-            true_prefixes: Vec<ExprSkeletonPath>,
-            false_prefixes: Vec<ExprSkeletonPath>,
-            results: Vec<ExprSkeletonPath>,
-        },
-        IfElse {
-            expression: &'a ResolvedExpr,
-            false_prefixes: Vec<ExprSkeletonPath>,
-            results: Vec<ExprSkeletonPath>,
-        },
-        MatchScrutinee {
-            expression: &'a ResolvedExpr,
-            scrutinee: &'a ResolvedExpr,
-            arms: &'a [ResolvedMatchArm],
-        },
-        MatchArm {
-            expression: &'a ResolvedExpr,
-            scrutinee: &'a ResolvedExpr,
-            arms: &'a [ResolvedMatchArm],
-            index: usize,
-            remaining: Vec<ExprSkeletonPath>,
-            results: Vec<ExprSkeletonPath>,
-            is_record: bool,
-        },
+    let (lease, mut frames) = if let Some(storage) = work.continuations.as_mut() {
+        if !storage.matches(program) {
+            return Err(replay_error(
+                function,
+                "typed-HIR continuation storage belongs to another program",
+            ));
+        }
+        storage.acquire(function, work.budget)?
+    } else {
+        (
+            continuation_storage::Lease::Local,
+            continuation_storage::fresh(function, work.budget)?,
+        )
+    };
+    // No directory borrow spans the runner: guards re-enter this same Storage.
+    // A panic still unwinds to invocation Drop, as in the original lease owner.
+    let result = expression_skeleton_run(program, function, expression, work, &mut frames);
+    frames.clear(); // Drop every owned continuation payload before reuse.
+    if let Some(storage) = work.continuations.as_mut() {
+        storage.release(lease, frames);
     }
+    result
+}
+fn expression_skeleton_run<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    expression: &'hir ResolvedExpr,
+    work: &mut SkeletonWork<'hir, '_>,
+    frames: &mut Vec<continuation_storage::Frame<'hir>>,
+) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
+    use continuation_storage::{Frame, OwnedStep};
 
     macro_rules! push_frame {
         ($frames:expr, $frame:expr) => {{
@@ -3223,6 +3014,24 @@ fn expression_skeleton(
             work.charge(1, "typed-HIR skeleton continuation push")?;
             note_skeleton_materialization();
             $frames.push($frame);
+        }};
+    }
+
+    macro_rules! schedule_scalar {
+        ($next:expr, $frames:ident, $produced:ident) => {{
+            match $next {
+                scalar_match::Next::Guard(state) => {
+                    let guard = state.expression();
+                    push_frame!($frames, Frame::ScalarGuard(state));
+                    push_frame!($frames, Frame::Eval(guard));
+                }
+                scalar_match::Next::Value(state) => {
+                    let value = state.expression();
+                    push_frame!($frames, Frame::ScalarValue(state));
+                    push_frame!($frames, Frame::Eval(value));
+                }
+                scalar_match::Next::Done(paths) => $produced = Some(paths),
+            }
         }};
     }
 
@@ -3274,6 +3083,27 @@ fn expression_skeleton(
                     )?;
                     push(frames, Frame::Eval(condition))?;
                 }
+                ResolvedStatement::LexicalWhile {
+                    condition,
+                    body,
+                    latch,
+                    ..
+                } => {
+                    push(
+                        frames,
+                        Frame::LexicalLoopCondition {
+                            prefixes: paths,
+                            expression,
+                            statements,
+                            tail,
+                            index: next,
+                            condition,
+                            body,
+                            latch,
+                        },
+                    )?;
+                    push(frames, Frame::Eval(condition))?;
+                }
                 _ => {
                     push(
                         frames,
@@ -3297,12 +3127,27 @@ fn expression_skeleton(
         Ok(None)
     }
 
-    // Depth excludes the body block; the machine retains its evaluated child, that block, and 512 expression ancestors.
-    let mut frames = Vec::with_capacity(515);
     push_frame!(frames, Frame::Eval(expression));
     let mut produced: Option<Vec<ExprSkeletonPath>> = None;
+    /// Lexical loops whose body is being evaluated, innermost last. A `continue`
+    /// reads its loop's generated advancement from here.
+    struct ActiveLoop<'a> {
+        condition: &'a ExpressionId,
+        true_match: Option<&'a ResolvedExpr>,
+        advance: Option<&'a ResolvedExpr>,
+        step: OwnedStep<'a>,
+    }
+    let mut active_loops: Vec<ActiveLoop<'_>> = Vec::new();
     while let Some(frame) = frames.pop() {
         match frame {
+            Frame::FinishCopyRegion { previous } => {
+                let paths = produced
+                    .take()
+                    .expect("Copy region expression paths retained");
+                let paths = work.merged_paths(paths)?;
+                work.active_copy_region = previous;
+                produced = Some(paths);
+            }
             Frame::RenewalPrefix(expression) => {
                 let mut paths = produced.take().expect("renewal RHS paths retained");
                 renewal::prepend_reservation(function, expression, &mut paths, work)?;
@@ -3310,18 +3155,81 @@ fn expression_skeleton(
             }
             Frame::Eval(expression) => {
                 debug_assert!(produced.is_none());
-                if work.renewal_binding(&expression.id).is_some() {
+                if work.budget.merge_paths
+                    && function.cleanup_plan.lexical_control.is_some()
+                    && work.active_copy_region.is_none()
+                    && factored::copy_regions::eligible(program, function, expression, work.budget)?
+                {
+                    // This expression starts from its own empty path. Close its
+                    // scope before the caller sequences any retained prefix.
+                    let identity = work.clone_payload(&expression.id, "Copy region origin")?;
+                    let previous = work.active_copy_region.replace(identity);
+                    push_frame!(frames, Frame::FinishCopyRegion { previous });
+                }
+                if work.renewal_binding(&expression.id)?.is_some() {
                     push_frame!(frames, Frame::RenewalPrefix(expression));
                 }
                 if strings::owns_clone(expression)
                     && !work.string_owner_moves.contains(&expression.id)
                     && !work.string_condition_reads.contains(&expression.id)
                 {
-                    produced = Some(strings::paths(expression, work)?);
+                    produced = Some(if allocation_paths::current(program, function).is_some() {
+                        allocation_paths::string_paths(expression, work)?
+                    } else {
+                        strings::paths(expression, work)?
+                    });
                     continue;
                 }
 
                 match &expression.kind {
+                    ResolvedExprKind::LexicalExit {
+                        kind,
+                        target,
+                        value,
+                    } => match (kind, value) {
+                        (crate::ast::LexicalExitKind::Return, Some(operand)) => {
+                            push_frame!(frames, Frame::LexicalReturn { expression });
+                            push_frame!(frames, Frame::Eval(operand));
+                        }
+                        (crate::ast::LexicalExitKind::Break, None) => {
+                            produced = Some(lexical_skeleton::exit_paths(expression, work)?);
+                        }
+                        (crate::ast::LexicalExitKind::Continue, None) => {
+                            let crate::hir::ControlTarget::Loop { site, .. } = target else {
+                                return Err(replay_error(
+                                    function,
+                                    "continue does not target a lexical loop",
+                                ));
+                            };
+                            let active = active_loops
+                                .iter()
+                                .rev()
+                                .find(|active| active.condition == site)
+                                .ok_or_else(|| {
+                                    replay_error(function, "continue names no active lexical loop")
+                                })?;
+                            let (advance, step) = (active.advance, active.step);
+                            match advance {
+                                None => {
+                                    produced =
+                                        Some(lexical_skeleton::exit_paths(expression, work)?);
+                                }
+                                Some(advance) => {
+                                    push_frame!(
+                                        frames,
+                                        Frame::ContinueAdvance { expression, step }
+                                    );
+                                    push_frame!(frames, Frame::Eval(advance));
+                                }
+                            }
+                        }
+                        _ => {
+                            return Err(replay_error(
+                                function,
+                                "lexical exit has an inconsistent kind or operand",
+                            ));
+                        }
+                    },
                     ResolvedExprKind::Closure { .. } if !expression.ty.is_once_function() => {
                         produced = Some(
                             work.singleton_path(empty_expr_path(), "copy closure skeleton path")?,
@@ -3338,7 +3246,8 @@ fn expression_skeleton(
                     | ResolvedExprKind::Float32(_)
                     | ResolvedExprKind::Float64(_)
                     | ResolvedExprKind::Bool(_)
-                    | ResolvedExprKind::String(_) => {
+                    | ResolvedExprKind::String(_)
+                    | ResolvedExprKind::BorrowedUtf8Literal(_) => {
                         produced =
                             Some(work.singleton_path(empty_expr_path(), "literal skeleton path")?);
                     }
@@ -3357,6 +3266,7 @@ fn expression_skeleton(
                                 owned_source,
                                 failed: false,
                                 residual: false,
+                                continuation: lexical_skeleton::Continuation::Normal,
                             },
                             "place skeleton path",
                         )?);
@@ -3364,6 +3274,17 @@ fn expression_skeleton(
                     ResolvedExprKind::BorrowPlace { .. } => {
                         produced =
                             Some(work.singleton_path(empty_expr_path(), "borrow skeleton path")?);
+                    }
+                    // Row Loan v1 borrows two exact places and owns no state.
+                    ResolvedExprKind::RowLoan { args, .. } => {
+                        if !super::row_loan::exact_places(args) {
+                            return Err(replay_error(
+                                function,
+                                "row loan skeleton children are not exact places",
+                            ));
+                        }
+                        produced =
+                            Some(work.singleton_path(empty_expr_path(), "row loan skeleton path")?);
                     }
                     ResolvedExprKind::ByteRange {
                         operation, source, ..
@@ -3380,7 +3301,7 @@ fn expression_skeleton(
                             Frame::ByteRangeArgument {
                                 expression,
                                 index: 0,
-                                states: vec![(empty_expr_path(), Vec::new())],
+                                states: typed_storage::call_root(work)?,
                             }
                         );
                         push_frame!(frames, Frame::Eval(source));
@@ -3435,16 +3356,80 @@ fn expression_skeleton(
                         push_frame!(frames, Frame::Eval(left));
                     }
                     ResolvedExprKind::Invoke { .. } | ResolvedExprKind::Closure { .. } => {
+                        typed_storage::unsupported_provider(work)?;
                         let (_, args, params) =
                             crate::hir::function_value::cleanup_call(expression)?;
                         work.charge(1, "indirect call skeleton root state")?;
-                        let states = vec![(empty_expr_path(), Vec::new())];
+                        let states = typed_storage::call_root(work)?;
                         if let Some(argument) = args.first() {
                             push_frame!(
                                 frames,
                                 Frame::CallArgument {
                                     expression,
-                                    params,
+                                    params: params.into(),
+                                    args,
+                                    index: 0,
+                                    states
+                                }
+                            );
+                            push_frame!(frames, Frame::Eval(argument));
+                        } else {
+                            produced = Some(finish_call_states(
+                                program, function, expression, states, work,
+                            )?);
+                        }
+                    }
+                    ResolvedExprKind::VecFieldRead { args, .. } => {
+                        let params = if work.budget.selected() {
+                            typed_storage::field_params(program, expression, work)?
+                        } else {
+                            resolved_call_params(
+                                program,
+                                function,
+                                expression,
+                                crate::vec_field::operation_id(),
+                                None,
+                                &[],
+                            )?
+                        };
+                        work.charge(1, "scoped vector read skeleton root state")?;
+                        let states = typed_storage::call_root(work)?;
+                        if let Some(argument) = args.first() {
+                            push_frame!(
+                                frames,
+                                Frame::CallArgument {
+                                    expression,
+                                    params: params.into(),
+                                    args,
+                                    index: 0,
+                                    states
+                                }
+                            );
+                            push_frame!(frames, Frame::Eval(argument));
+                        } else {
+                            produced = Some(finish_call_states(
+                                program, function, expression, states, work,
+                            )?);
+                        }
+                    }
+                    ResolvedExprKind::LiteralFormat { args, .. } => {
+                        typed_storage::unsupported_provider(work)?;
+                        let params = resolved_call_params(
+                            program,
+                            function,
+                            expression,
+                            crate::literal_format::operation_id(),
+                            None,
+                            &[],
+                        )?;
+                        work.charge(1, "literal format skeleton root state")?;
+                        let states = typed_storage::call_root(work)?;
+                        if let Some(argument) = args.first() {
+                            push_frame!(
+                                frames,
+                                Frame::CallArgument {
+                                    expression,
+                                    params: params.into(),
                                     args,
                                     index: 0,
                                     states
@@ -3463,77 +3448,193 @@ fn expression_skeleton(
                         args,
                         type_arguments,
                     } => {
-                        let string_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::string_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let str_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::str_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let byte_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::byte_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let host_io_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::host_io_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let vec_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::vec_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let box_intrinsic = instance
-                            .is_none()
-                            .then(|| crate::box_ops::by_id(callee.as_str()))
-                            .flatten();
-                        let params = if instance.is_none()
-                            && crate::map_ops::by_id(callee.as_str()).is_some()
-                        {
-                            resolved_call_params(program, function, callee, None, type_arguments)?
-                        } else if let Some(op) = string_intrinsic {
-                            crate::string_ops::resolved_params(op)
-                        } else if let Some(op) = str_intrinsic {
-                            crate::str_ops::resolved_params(op)
-                        } else if let Some(op) = byte_intrinsic {
-                            crate::byte_ops::resolved_params(op)
-                        } else if let Some(op) = host_io_intrinsic {
-                            crate::host_io_ops::resolved_params(op)
-                        } else if instance.is_none()
-                            && (crate::iterator_ops::by_id(callee.as_str()).is_some()
-                                || crate::list_ops::by_id(callee.as_str()).is_some()
-                                || callee.as_str() == crate::stdin_stream_ops::EOF_ID)
-                        {
-                            resolved_call_params(program, function, callee, None, type_arguments)?
-                        } else if let Some(op) = vec_intrinsic {
-                            let [element] = type_arguments.as_slice() else {
-                                return Err(replay_error(
-                                    function,
-                                    "bounded Vec skeleton call has incorrect type arity",
-                                ));
-                            };
-                            crate::vec_ops::resolved_params(op, element)
-                        } else if let Some(op) = box_intrinsic {
-                            let [element] = type_arguments.as_slice() else {
-                                return Err(replay_error(
-                                    function,
-                                    "bounded Box skeleton call has incorrect type arity",
-                                ));
-                            };
-                            crate::box_ops::resolved_params(op, element)
+                        #[cfg(test)]
+                        let held_params = match program.borrowed_helper_lease(function) {
+                            Some(lease) => {
+                                Some(lease.call_params(program, function, expression, work)?)
+                            }
+                            None => None,
+                        };
+                        #[cfg(not(test))]
+                        let held_params: Option<
+                            Vec<crate::hir::ResolvedParam>,
+                        > = None;
+                        let params: resolved_call::Params<'_> = if let Some(params) = held_params {
+                            params.into()
                         } else {
-                            let target = program
-                                .resolve_call_target(callee, instance.as_ref())
-                                .ok_or_else(|| {
-                                    replay_error(
-                                        function,
-                                        format!("unknown skeleton callee `{callee}`"),
+                            let string_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::string_ops::by_id(callee.as_str()))
+                                .flatten();
+                            let str_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::str_ops::by_id(callee.as_str()))
+                                .flatten();
+                            let byte_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::byte_ops::by_id(callee.as_str()))
+                                .flatten();
+                            let host_io_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::host_io_ops::by_id(callee.as_str()))
+                                .flatten();
+                            let vec_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::vec_ops::by_id(callee.as_str()))
+                                .flatten();
+                            let box_intrinsic = instance
+                                .is_none()
+                                .then(|| crate::box_ops::by_id(callee.as_str()))
+                                .flatten();
+                            if instance.is_none()
+                                && crate::map_ops::by_id(callee.as_str()).is_some()
+                            {
+                                typed_storage::unsupported_provider(work)?;
+                                resolved_call_params(
+                                    program,
+                                    function,
+                                    expression,
+                                    callee,
+                                    None,
+                                    type_arguments,
+                                )?
+                                .into()
+                            } else if let Some(op) = string_intrinsic {
+                                if work.budget.selected()
+                                    || !resolved_call::ordinary_borrows_enabled()
+                                {
+                                    typed_storage::static_params(
+                                        op.id(),
+                                        op.param_types(),
+                                        op.param_names(),
+                                        |i, _| op.param_ownership(i),
+                                        work,
                                     )
-                                })?;
-                            target.params.clone()
+                                    .map(resolved_call::Params::Owned)?
+                                } else {
+                                    work.budget.reserve_bytes(
+                                        function,
+                                        0,
+                                        "intrinsic parameter slots",
+                                    )?;
+                                    resolved_call::Params::String(op)
+                                }
+                            } else if let Some(op) = str_intrinsic {
+                                if work.budget.selected()
+                                    || !resolved_call::ordinary_borrows_enabled()
+                                {
+                                    typed_storage::static_params(
+                                        op.id(),
+                                        op.param_types(),
+                                        op.param_names(),
+                                        |_, ty| {
+                                            if *ty == ResolvedType::Str {
+                                                OwnershipMode::Borrow
+                                            } else {
+                                                OwnershipMode::Value
+                                            }
+                                        },
+                                        work,
+                                    )
+                                    .map(resolved_call::Params::Owned)?
+                                } else {
+                                    work.budget.reserve_bytes(
+                                        function,
+                                        0,
+                                        "intrinsic parameter slots",
+                                    )?;
+                                    resolved_call::Params::Str(op)
+                                }
+                            } else if let Some(op) = byte_intrinsic {
+                                if work.budget.selected()
+                                    || !resolved_call::ordinary_borrows_enabled()
+                                {
+                                    typed_storage::static_params(
+                                        op.id(),
+                                        op.param_types(),
+                                        op.param_names(),
+                                        |i, _| op.param_ownership(i),
+                                        work,
+                                    )
+                                    .map(resolved_call::Params::Owned)?
+                                } else {
+                                    work.budget.reserve_bytes(
+                                        function,
+                                        0,
+                                        "intrinsic parameter slots",
+                                    )?;
+                                    resolved_call::Params::Byte(op)
+                                }
+                            } else if let Some(op) = host_io_intrinsic {
+                                typed_storage::unsupported_provider(work)?;
+                                crate::host_io_ops::resolved_params(op).into()
+                            } else if instance.is_none()
+                                && (crate::iterator_ops::by_id(callee.as_str()).is_some()
+                                    || crate::list_ops::by_id(callee.as_str()).is_some()
+                                    || callee.as_str() == crate::stdin_stream_ops::EOF_ID)
+                            {
+                                typed_storage::unsupported_provider(work)?;
+                                resolved_call_params(
+                                    program,
+                                    function,
+                                    expression,
+                                    callee,
+                                    None,
+                                    type_arguments,
+                                )?
+                                .into()
+                            } else if let Some(op) = vec_intrinsic {
+                                if work.budget.selected() {
+                                    typed_storage::vector_params(program, expression, work)?.into()
+                                } else {
+                                    let [element] = type_arguments.as_slice() else {
+                                        return Err(replay_error(
+                                            function,
+                                            "bounded Vec skeleton call has incorrect type arity",
+                                        ));
+                                    };
+                                    crate::vec_ops::resolved_params_in(
+                                        program.declarations(),
+                                        op,
+                                        element,
+                                    )
+                                    .into()
+                                }
+                            } else if let Some(op) = box_intrinsic {
+                                typed_storage::unsupported_provider(work)?;
+                                let [element] = type_arguments.as_slice() else {
+                                    return Err(replay_error(
+                                        function,
+                                        "bounded Box skeleton call has incorrect type arity",
+                                    ));
+                                };
+                                crate::box_ops::resolved_params(op, element).into()
+                            } else {
+                                let target = program
+                                    .resolve_call_target(callee, instance.as_ref())
+                                    .ok_or_else(|| {
+                                        replay_error(
+                                            function,
+                                            format_args!("unknown skeleton callee `{callee}`"),
+                                        )
+                                    })?;
+                                if work.budget.selected()
+                                    || !resolved_call::ordinary_borrows_enabled()
+                                {
+                                    work.clone_payload(&target.params, "callee parameter clone")?
+                                        .into()
+                                } else {
+                                    work.budget.reserve_bytes(
+                                        function,
+                                        0,
+                                        "callee parameter clone",
+                                    )?;
+                                    resolved_call::Params::Borrowed(&target.params)
+                                }
+                            }
                         };
                         work.charge(1, "call skeleton root state")?;
-                        let states = vec![(empty_expr_path(), Vec::new())];
+                        let states = typed_storage::call_root(work)?;
                         if let Some(argument) = args.first() {
                             push_frame!(
                                 frames,
@@ -3555,10 +3656,17 @@ fn expression_skeleton(
                     ResolvedExprKind::NativeRustImportCall(call)
                         if super::native_rust::owns(expression) =>
                     {
-                        let params =
-                            resolved_call_params(program, function, &call.import, None, &[])?;
+                        typed_storage::unsupported_provider(work)?;
+                        let params = resolved_call_params(
+                            program,
+                            function,
+                            expression,
+                            &call.import,
+                            None,
+                            &[],
+                        )?;
                         work.charge(1, "owned native call skeleton root state")?;
-                        let states = vec![(empty_expr_path(), Vec::new())];
+                        let states = typed_storage::call_root(work)?;
                         if let Some(argument) = call.args.first() {
                             let lend = super::native_rust::lends_string_place(
                                 expression,
@@ -3569,7 +3677,7 @@ fn expression_skeleton(
                                 frames,
                                 Frame::CallArgument {
                                     expression,
-                                    params,
+                                    params: params.into(),
                                     args: &call.args,
                                     index: 0,
                                     states,
@@ -3606,15 +3714,16 @@ fn expression_skeleton(
                         }
                     }
                     ResolvedExprKind::HostCommandCall(call) => {
+                        typed_storage::unsupported_provider(work)?;
                         let params = crate::command_io_ops::resolved_params(call.operation);
                         work.charge(1, "host-command skeleton root state")?;
-                        let states = vec![(empty_expr_path(), Vec::new())];
+                        let states = typed_storage::call_root(work)?;
                         if let Some(argument) = call.args.first() {
                             push_frame!(
                                 frames,
                                 Frame::CallArgument {
                                     expression,
-                                    params,
+                                    params: params.into(),
                                     args: &call.args,
                                     index: 0,
                                     states,
@@ -3627,7 +3736,10 @@ fn expression_skeleton(
                             )?);
                         }
                     }
-                    ResolvedExprKind::Block { statements, tail } => {
+                    ResolvedExprKind::Block { statements, tail }
+                    | ResolvedExprKind::VecConstructor {
+                        statements, tail, ..
+                    } => {
                         let paths = work.singleton_path(empty_expr_path(), "block root path")?;
                         if let Some(first_statement) = statements.first() {
                             match first_statement {
@@ -3647,6 +3759,27 @@ fn expression_skeleton(
                                             index: 0,
                                             condition,
                                             body,
+                                        }
+                                    );
+                                    push_frame!(frames, Frame::Eval(condition));
+                                }
+                                ResolvedStatement::LexicalWhile {
+                                    condition,
+                                    body,
+                                    latch,
+                                    ..
+                                } => {
+                                    push_frame!(
+                                        frames,
+                                        Frame::LexicalLoopCondition {
+                                            prefixes: paths,
+                                            expression,
+                                            statements,
+                                            tail,
+                                            index: 0,
+                                            condition,
+                                            body,
+                                            latch,
                                         }
                                     );
                                     push_frame!(frames, Frame::Eval(condition));
@@ -3747,7 +3880,7 @@ fn expression_skeleton(
                             Frame::MatchScrutinee {
                                 expression,
                                 scrutinee,
-                                arms,
+                                arms
                             }
                         );
                         push_frame!(frames, Frame::Eval(scrutinee));
@@ -3894,7 +4027,7 @@ fn expression_skeleton(
                     let lend = super::native_rust::lends_string_place(
                         expression,
                         &args[next],
-                        params[next].ownership,
+                        params.get(next).expect("next call parameter").ownership,
                     );
                     push_frame!(
                         frames,
@@ -3927,7 +4060,22 @@ fn expression_skeleton(
                 let argument = replay_expression_child(expression, index).ok_or_else(|| {
                     replay_error(function, "byte range skeleton arity is inconsistent")
                 })?;
-                let params = crate::byte_ops::resolved_params(crate::byte_ops::ByteOp::Range);
+                let op = crate::byte_ops::ByteOp::Range;
+                let params = if work.budget.selected() || !resolved_call::ordinary_borrows_enabled()
+                {
+                    typed_storage::static_params(
+                        op.id(),
+                        op.param_types(),
+                        op.param_names(),
+                        |i, _| op.param_ownership(i),
+                        work,
+                    )
+                    .map(resolved_call::Params::Owned)?
+                } else {
+                    work.budget
+                        .reserve_bytes(function, 0, "intrinsic parameter slots")?;
+                    resolved_call::Params::Byte(op)
+                };
                 let parameter = params.get(index).ok_or_else(|| {
                     replay_error(function, "byte range parameter arity is inconsistent")
                 })?;
@@ -3965,17 +4113,10 @@ fn expression_skeleton(
                 let suffixes = produced.take().expect("binding path retained");
                 let mut paths = sequence_skeleton_paths(paths, &suffixes, work)?;
                 match &statements[index] {
-                    ResolvedStatement::Unsafe { .. } => {
+                    ResolvedStatement::CopyDiscard { .. } | ResolvedStatement::Unsafe { .. } => {
                         // Unsafe boundaries bind and own nothing here: their ordinary block body was evaluated as this statement's value expression.
                         if let Some(settled) = advance_block_value(
-                            function,
-                            &mut frames,
-                            work,
-                            expression,
-                            statements,
-                            tail,
-                            index,
-                            paths,
+                            function, frames, work, expression, statements, tail, index, paths,
                         )? {
                             produced = Some(settled);
                         }
@@ -4002,14 +4143,7 @@ fn expression_skeleton(
                             )?;
                         }
                         if let Some(settled) = advance_block_value(
-                            function,
-                            &mut frames,
-                            work,
-                            expression,
-                            statements,
-                            tail,
-                            index,
-                            paths,
+                            function, frames, work, expression, statements, tail, index, paths,
                         )? {
                             produced = Some(settled);
                         }
@@ -4059,14 +4193,142 @@ fn expression_skeleton(
                     work.push_expr_path(&mut results, path, "while join path")?;
                 }
                 if let Some(settled) = advance_block_value(
-                    function,
-                    &mut frames,
-                    work,
-                    expression,
-                    statements,
-                    tail,
-                    index,
-                    results,
+                    function, frames, work, expression, statements, tail, index, results,
+                )? {
+                    produced = Some(settled);
+                }
+            }
+            Frame::LexicalReturn { expression } => {
+                let mut paths = produced.take().expect("return operand path retained");
+                if type_needs_drop(program, function, &function.return_type)? {
+                    // The owned result moves into provisional storage at the exit
+                    // site, before any contour cleanup or postcondition runs.
+                    let at = work.clone_owned(&expression.id, "lexical return site clone")?;
+                    paths = transfer_completed_paths(
+                        function,
+                        paths,
+                        at,
+                        CleanupPlace::whole(StorageId::ProvisionalResult),
+                        "owned lexical return",
+                        work,
+                    )?;
+                }
+                produced = Some(lexical_skeleton::mark_return(paths, expression, work)?);
+            }
+            Frame::ContinueAdvance { expression, step } => {
+                let advance = produced.take().expect("continue advancement path retained");
+                let ResolvedExprKind::LexicalExit { target, .. } = &expression.kind else {
+                    return Err(replay_error(
+                        function,
+                        "continue advancement frame lost its exit",
+                    ));
+                };
+                let prefix = lexical_skeleton::continue_prefix(expression, work)?;
+                let mut advanced = sequence_skeleton_paths(prefix, &advance, work)?;
+                if let Some((assignment, binding, arm)) = step {
+                    // Only the Yield tail runs. Its owned Step moves into the
+                    // Yield block at the arm identity, then into the match at the
+                    // same identity, then renews the Step binding at the match.
+                    let arm_at =
+                        work.clone_owned(&arm.id, "yield block transfer identity clone")?;
+                    let arm_place = temporary_place(arm, work)?;
+                    advanced = transfer_completed_paths(
+                        function,
+                        advanced,
+                        arm_at,
+                        arm_place,
+                        "owning continue Yield block",
+                        work,
+                    )?;
+                    advanced = finish_owned(program, function, assignment, arm, advanced, work)?;
+                    let at = work.clone_owned(&assignment.id, "step renewal expression clone")?;
+                    let binding = work.clone_owned(&binding.id, "step renewal binding clone")?;
+                    advanced = transfer_completed_paths(
+                        function,
+                        advanced,
+                        at,
+                        CleanupPlace::whole(StorageId::Value(binding)),
+                        "owned iterator step renewal",
+                        work,
+                    )?;
+                }
+                produced = Some(lexical_skeleton::finish_continue(advanced, target, work)?);
+            }
+            Frame::LexicalLoopCondition {
+                prefixes,
+                expression,
+                statements,
+                tail,
+                index,
+                condition,
+                body,
+                latch,
+            } => {
+                let condition_paths = produced.take().expect("loop condition path retained");
+                let prefixed = sequence_skeleton_paths(prefixes, &condition_paths, work)?;
+                let (results, true_prefixes, false_prefixes) =
+                    split_boolean_prefixes(prefixed, &condition.id, work)?;
+                work.budget
+                    .reserve_vec(function, &mut active_loops, 1, "active lexical loops")?;
+                active_loops.push(ActiveLoop {
+                    condition: &condition.id,
+                    true_match: crate::hir::iterator_loop::true_body_match(condition, body, latch),
+                    advance: lexical_hir::generated_advance(body, latch),
+                    step: if matches!(latch, crate::hir::LoopLatchKind::OwnedIteratorStep { .. }) {
+                        lexical_hir::owned_step_assignment(body).and_then(
+                            |(assignment, binding)| {
+                                lexical_hir::yield_arm(body)
+                                    .map(|(_, arm)| (assignment, binding, arm))
+                            },
+                        )
+                    } else {
+                        None
+                    },
+                });
+                push_frame!(
+                    frames,
+                    Frame::LexicalLoopBody {
+                        expression,
+                        statements,
+                        tail,
+                        index,
+                        results,
+                        true_prefixes,
+                        false_prefixes,
+                        condition,
+                    }
+                );
+                push_frame!(frames, Frame::Eval(body));
+            }
+            Frame::LexicalLoopBody {
+                expression,
+                statements,
+                tail,
+                index,
+                mut results,
+                true_prefixes,
+                false_prefixes,
+                condition,
+            } => {
+                active_loops.pop();
+                let body_paths = produced.take().expect("loop body path retained");
+                let joined = sequence_skeleton_paths(true_prefixes, &body_paths, work)?;
+                work.budget
+                    .reserve_clone(function, &work.owner, "lexical loop owner clone")?;
+                let owner = work
+                    .owner
+                    .clone()
+                    .ok_or_else(|| replay_error(function, "lexical loop has no execution owner"))?;
+                let target = crate::hir::ControlTarget::Loop {
+                    owner,
+                    site: work.clone_owned(&condition.id, "loop target site clone")?,
+                };
+                let settled = lexical_skeleton::settle_loop_body(joined, &target, work)?;
+                for path in settled.into_iter().chain(false_prefixes) {
+                    work.push_expr_path(&mut results, path, "lexical loop join path")?;
+                }
+                if let Some(settled) = advance_block_value(
+                    function, frames, work, expression, statements, tail, index, results,
                 )? {
                     produced = Some(settled);
                 }
@@ -4105,12 +4367,18 @@ fn expression_skeleton(
                     && type_needs_drop(program, function, &field.value.ty)?
                 {
                     let mut destination = temporary_place(expression, work)?;
-                    destination
-                        .projections
-                        .push(work.clone_owned(case, "variant case projection clone")?);
-                    destination
-                        .projections
-                        .push(work.clone_owned(&field.field, "variant field projection clone")?);
+                    typed_storage::push_projection(
+                        &mut destination,
+                        case,
+                        "variant case projection clone",
+                        work,
+                    )?;
+                    typed_storage::push_projection(
+                        &mut destination,
+                        &field.field,
+                        "variant field projection clone",
+                        work,
+                    )?;
                     let value_id =
                         work.clone_owned(&field.value.id, "variant field value clone")?;
                     paths = transfer_completed_paths(
@@ -4152,6 +4420,12 @@ fn expression_skeleton(
                     && type_needs_drop(program, function, &field.value.ty)?
                 {
                     let mut destination = temporary_place(expression, work)?;
+                    work.budget.reserve_vec(
+                        function,
+                        &mut destination.projections,
+                        1,
+                        "field projection slots",
+                    )?;
                     let field_id =
                         work.clone_owned(&field.field, "record field projection clone")?;
                     work.charge(1, "record field projection push")?;
@@ -4268,7 +4542,7 @@ fn expression_skeleton(
                 if !replaced.insert(field_id) {
                     return Err(replay_error(
                         function,
-                        format!("record update repeats field `{}`", field.field),
+                        format_args!("record update repeats field `{}`", field.field),
                     ));
                 }
                 let suffixes = produced.take().expect("update field path retained");
@@ -4278,6 +4552,12 @@ fn expression_skeleton(
                     && type_needs_drop(program, function, &field.value.ty)?
                 {
                     let mut destination = temporary_place(expression, work)?;
+                    work.budget.reserve_vec(
+                        function,
+                        &mut destination.projections,
+                        1,
+                        "field projection slots",
+                    )?;
                     let field_id =
                         work.clone_owned(&field.field, "update field projection clone")?;
                     work.charge(1, "update field projection push")?;
@@ -4359,6 +4639,12 @@ fn expression_skeleton(
                         let mut source = path.owned_source.take().ok_or_else(|| {
                             replay_error(function, "owned projection has no HIR cleanup source")
                         })?;
+                        work.budget.reserve_vec(
+                            function,
+                            &mut source.projections,
+                            1,
+                            "projection slots",
+                        )?;
                         let field = work.clone_owned(field, "projection field clone")?;
                         work.charge(1, "projection field push")?;
                         note_skeleton_materialization();
@@ -4454,6 +4740,16 @@ fn expression_skeleton(
                 append_expr_paths(&mut results, selected, work, "if else result")?;
                 produced = Some(results);
             }
+            Frame::ScalarGuard(state) => {
+                let paths = produced.take().expect("scalar guard paths retained");
+                let next = state.finish(paths, work)?;
+                schedule_scalar!(next, frames, produced);
+            }
+            Frame::ScalarValue(state) => {
+                let paths = produced.take().expect("scalar value paths retained");
+                let next = state.finish(program, paths, work)?;
+                schedule_scalar!(next, frames, produced);
+            }
             Frame::MatchScrutinee {
                 expression,
                 scrutinee,
@@ -4466,7 +4762,7 @@ fn expression_skeleton(
                 }
                 // Scalar decisions authenticate each selected arm and guard.
                 if crate::hir::is_refutable_match_scalar(&scrutinee.ty) {
-                    produced = Some(finish_scalar_match_skeleton(
+                    let next = scalar_match::State::new(
                         program,
                         function,
                         expression,
@@ -4474,11 +4770,13 @@ fn expression_skeleton(
                         arms,
                         scrutinee_paths,
                         work,
-                    )?);
+                    )?
+                    .next(work)?;
+                    schedule_scalar!(next, frames, produced);
                     continue;
                 }
                 let is_record =
-                    validate_match_skeleton_shape(program, function, expression, scrutinee, arms)?;
+                    validate_match_shape(program, function, expression, scrutinee, arms, work)?;
                 if is_record {
                     let ResolvedExprKind::Match { mode, .. } = &expression.kind else {
                         unreachable!("match skeleton frame retained its expression")
@@ -4509,7 +4807,12 @@ fn expression_skeleton(
                                         "owned record match lacks an exact record pattern",
                                     ));
                                 };
-                                if record_destructure::contains_nested(fields) {
+                                typed_storage::unsupported_provider(work)?;
+                                if record_destructure::contains_nested(
+                                    program.declarations(),
+                                    instance,
+                                    fields,
+                                ) {
                                     let expected = record_destructure::replay(
                                         program, function, record, instance, fields, *mode,
                                     )?;
@@ -4520,26 +4823,35 @@ fn expression_skeleton(
                                         ));
                                     }
                                     for binding in expected.bindings {
-                                        let mut field_source = source.clone();
+                                        let mut field_source = work
+                                            .clone_payload(&source, "nested match source clone")?;
                                         for field in binding.path {
+                                            work.budget.reserve_vec(
+                                                function,
+                                                &mut field_source.projections,
+                                                1,
+                                                "nested match projection slots",
+                                            )?;
                                             field_source.projections.push(field);
                                         }
-                                        path.observations.push(
+                                        typed_storage::push_observation(
+                                            &mut path.observations,
                                             SkeletonObservation::Transfer {
                                                 at: expression.id.clone(),
                                                 source: field_source,
                                                 destination: CleanupPlace::whole(StorageId::Value(
                                                     binding.binding,
                                                 )),
-                                            }
-                                            .into(),
-                                        );
+                                            },
+                                            work,
+                                            "nested record transfer observation",
+                                        )?;
                                     }
                                     continue;
                                 }
                                 // Declaration order independently authenticates transfers.
                                 let declarations = program
-                                    .declarations
+                                    .declarations()
                                     .record_fields(record)
                                     .ok_or_else(|| {
                                         replay_error(
@@ -4565,16 +4877,29 @@ fn expression_skeleton(
                                     if binding.ownership != crate::hir::OwnershipMode::Own {
                                         continue;
                                     }
-                                    path.observations.push(
+                                    let mut projected =
+                                        work.clone_payload(&source, "record match source clone")?;
+                                    work.budget.reserve_vec(
+                                        function,
+                                        &mut projected.projections,
+                                        1,
+                                        "record match projection slots",
+                                    )?;
+                                    let field_identity = work
+                                        .clone_payload(&field.field, "record match field clone")?;
+                                    projected.projections.push(field_identity);
+                                    typed_storage::push_observation(
+                                        &mut path.observations,
                                         SkeletonObservation::Transfer {
                                             at: expression.id.clone(),
-                                            source: source.projected(field.field.clone()),
+                                            source: projected,
                                             destination: CleanupPlace::whole(StorageId::Value(
                                                 binding.id.clone(),
                                             )),
-                                        }
-                                        .into(),
-                                    );
+                                        },
+                                        work,
+                                        "record transfer observation",
+                                    )?;
                                 }
                             } else {
                                 // A borrowed match observes a named owned or borrowed place without moving any cleanup epoch. The match expression itself
@@ -4608,19 +4933,31 @@ fn expression_skeleton(
                 is_record,
             } => {
                 let arm_paths = produced.take().expect("match arm path retained");
-                let next_remaining = finish_match_arm(
-                    program,
-                    function,
-                    expression,
-                    scrutinee,
-                    arms,
-                    index,
-                    remaining,
-                    &arm_paths,
-                    &mut results,
-                    is_record,
-                    work,
-                )?;
+                // Both original arm expressions have been independently scanned.
+                // Project only the impossible Done runtime path out at the join.
+                let done_in_true_body = index == 0
+                    && active_loops.last().is_some_and(|context| {
+                        context
+                            .true_match
+                            .is_some_and(|value| std::ptr::eq(value, expression))
+                    });
+                let next_remaining = if done_in_true_body {
+                    remaining
+                } else {
+                    finish_match_arm(
+                        program,
+                        function,
+                        expression,
+                        scrutinee,
+                        arms,
+                        index,
+                        remaining,
+                        &arm_paths,
+                        &mut results,
+                        is_record,
+                        work,
+                    )?
+                };
                 let next = index + 1;
                 if !next_remaining.is_empty() && next < arms.len() {
                     push_frame!(
@@ -4648,7 +4985,7 @@ fn expression_skeleton(
 
 #[allow(clippy::too_many_arguments)]
 fn authenticated_try_stage_source(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     operand: &ResolvedExpr,
@@ -4672,13 +5009,16 @@ fn authenticated_try_stage_source(
         ));
     }
     for id in [result, ok_case, ok_field, err_case, err_field] {
-        let declaration = program.declarations.declaration(id).ok_or_else(|| {
-            replay_error(function, format!("postfix `?` references unknown `{id}`"))
+        let declaration = program.declarations().declaration(id).ok_or_else(|| {
+            replay_error(
+                function,
+                format_args!("postfix `?` references unknown `{id}`"),
+            )
         })?;
         if declaration.identity_origin != IdentityOrigin::CompilerOwned {
             return Err(replay_error(
                 function,
-                format!("postfix `?` reference `{id}` is not compiler-owned"),
+                format_args!("postfix `?` reference `{id}` is not compiler-owned"),
             ));
         }
     }
@@ -4702,9 +5042,10 @@ fn authenticated_try_stage_source(
         ));
     }
     for ty in [&operand.ty, residual_type] {
-        let facts = program.declarations.type_facts(ty).ok_or_else(|| {
-            replay_error(function, "postfix `?` Result instance has no type facts")
-        })?;
+        let facts = paid_type_facts::flags(program.declarations(), function, ty, work.budget)?
+            .ok_or_else(|| {
+                replay_error(function, "postfix `?` Result instance has no type facts")
+            })?;
         let valid = if exact_owned {
             !facts.copy && facts.sized && !facts.contains_resource && facts.needs_drop
         } else {
@@ -4746,7 +5087,7 @@ fn authenticated_try_stage_source(
 
 #[allow(clippy::too_many_arguments)]
 fn authenticated_try_option_stage_source(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     operand: &ResolvedExpr,
@@ -4768,16 +5109,16 @@ fn authenticated_try_option_stage_source(
         ));
     }
     for id in [option, some_case, some_field, none_case] {
-        let declaration = program.declarations.declaration(id).ok_or_else(|| {
+        let declaration = program.declarations().declaration(id).ok_or_else(|| {
             replay_error(
                 function,
-                format!("Option postfix `?` references unknown `{id}`"),
+                format_args!("Option postfix `?` references unknown `{id}`"),
             )
         })?;
         if declaration.identity_origin != IdentityOrigin::CompilerOwned {
             return Err(replay_error(
                 function,
-                format!("Option postfix `?` reference `{id}` is not compiler-owned"),
+                format_args!("Option postfix `?` reference `{id}` is not compiler-owned"),
             ));
         }
     }
@@ -4798,9 +5139,10 @@ fn authenticated_try_option_stage_source(
         ));
     }
     for ty in [&operand.ty, residual_type] {
-        let facts = program.declarations.type_facts(ty).ok_or_else(|| {
-            replay_error(function, "Option postfix `?` instance has no type facts")
-        })?;
+        let facts = paid_type_facts::flags(program.declarations(), function, ty, work.budget)?
+            .ok_or_else(|| {
+                replay_error(function, "Option postfix `?` instance has no type facts")
+            })?;
         if !facts.copy || !facts.sized || facts.contains_resource || facts.needs_drop {
             return Err(replay_error(
                 function,
@@ -4865,8 +5207,24 @@ fn replay_option_arguments<'a>(
     Ok(arguments)
 }
 
+fn validate_match_shape(
+    program: &dyn ReplayContext,
+    function: &ResolvedFunction,
+    expression: &ResolvedExpr,
+    scrutinee: &ResolvedExpr,
+    arms: &[ResolvedMatchArm],
+    work: &mut SkeletonWork<'_, '_>,
+) -> Result<bool, Diagnostic> {
+    #[cfg(test)]
+    if let Some(lease) = program.borrowed_helper_lease(function) {
+        return lease.match_shape(program, function, expression, work.budget);
+    }
+    let _ = work;
+    validate_match_skeleton_shape(program, function, expression, scrutinee, arms)
+}
+
 fn validate_match_skeleton_shape(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     scrutinee: &ResolvedExpr,
@@ -4894,7 +5252,7 @@ fn validate_match_skeleton_shape(
 
     let is_record = match &scrutinee.ty {
         ResolvedType::Nominal { declaration, .. } => program
-            .declarations
+            .declarations()
             .declaration(declaration)
             .is_some_and(|item| item.kind == DeclarationKind::Record),
         ResolvedType::Unit
@@ -4918,10 +5276,16 @@ fn validate_match_skeleton_shape(
         | ResolvedType::OnceFunctionI64Pair
         | ResolvedType::MutFunctionI64
         | ResolvedType::Function { .. } => false,
+        ResolvedType::Never => {
+            return Err(replay_error(
+                function,
+                "match scrutinee cannot have terminal flow type",
+            ));
+        }
     };
     let is_variant = match &scrutinee.ty {
         ResolvedType::Nominal { declaration, .. } => program
-            .declarations
+            .declarations()
             .declaration(declaration)
             .is_some_and(|item| item.kind == DeclarationKind::Variant),
         _ => false,
@@ -5000,9 +5364,12 @@ fn validate_match_skeleton_shape(
                 }
                 crate::hir::ResolvedMatchMode::Value => unreachable!(),
             };
-            let declarations = program.declarations.record_fields(record).ok_or_else(|| {
-                replay_error(function, "explicit record match has no field inventory")
-            })?;
+            let declarations = program
+                .declarations()
+                .record_fields(record)
+                .ok_or_else(|| {
+                    replay_error(function, "explicit record match has no field inventory")
+                })?;
             let ResolvedMatchPattern::Record { instance, .. } = &arm.pattern else {
                 unreachable!("record pattern matched above")
             };
@@ -5012,7 +5379,7 @@ fn validate_match_skeleton_shape(
                     "explicit record match instance is not nominal",
                 ));
             };
-            if record_destructure::contains_nested(fields) {
+            if record_destructure::contains_nested(program.declarations(), instance, fields) {
                 let expected =
                     record_destructure::replay(program, function, record, instance, fields, *mode)?;
                 if !expected.nested {
@@ -5024,7 +5391,13 @@ fn validate_match_skeleton_shape(
                 return Ok(is_record);
             }
             for declaration in declarations {
-                let field_ty = crate::hir::substitute_type(&declaration.ty, record, arguments)?;
+                let field_ty = nested_shape::substitute_type_current(
+                    program,
+                    function,
+                    &declaration.ty,
+                    record,
+                    arguments,
+                )?;
                 let field = fields
                     .iter()
                     .find(|field| field.field == declaration.id)
@@ -5121,18 +5494,18 @@ fn validate_match_skeleton_shape(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn finish_match_arm(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    scrutinee: &ResolvedExpr,
-    arms: &[ResolvedMatchArm],
+fn finish_match_arm<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    expression: &'hir ResolvedExpr,
+    scrutinee: &'hir ResolvedExpr,
+    arms: &'hir [ResolvedMatchArm],
     index: usize,
     remaining: Vec<ExprSkeletonPath>,
     arm_paths: &[ExprSkeletonPath],
     results: &mut Vec<ExprSkeletonPath>,
     is_record: bool,
-    work: &mut SkeletonWork<'_, '_>,
+    work: &mut SkeletonWork<'hir, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     if arms[index].guard.is_some() {
         return guarded_variant::finish_arm(
@@ -5203,7 +5576,7 @@ fn finish_match_arm(
             append_expr_paths(results, selected, work, "match selected result")?;
             continue;
         }
-        let cases = arms[index].pattern.variant_cases().ok_or_else(|| {
+        let cases = arms[index].pattern.case_iter().ok_or_else(|| {
             replay_error(
                 function,
                 "wildcard match arm must be the final exhaustive arm",
@@ -5264,7 +5637,7 @@ fn finish_match_arm(
 }
 
 fn prepare_selected_match_path(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     arm: &ResolvedMatchArm,
@@ -5277,21 +5650,29 @@ fn prepare_selected_match_path(
     };
     if mode == crate::hir::ResolvedMatchMode::Own {
         if let ResolvedMatchPattern::Variant { case, fields, .. } = &arm.pattern {
-            let source = path.owned_source.clone().ok_or_else(|| {
-                replay_error(function, "owned variant match has no HIR cleanup source")
-            })?;
+            let source = work
+                .clone_payload(&path.owned_source, "selected match owned source clone")?
+                .ok_or_else(|| {
+                    replay_error(function, "owned variant match has no HIR cleanup source")
+                })?;
             for field in fields {
                 if !type_needs_drop(program, function, &field.binding.ty)? {
                     continue;
                 }
                 let mut field_source =
                     work.clone_owned(&source, "owned variant match source clone")?;
-                field_source
-                    .projections
-                    .push(work.clone_owned(case, "owned variant match case clone")?);
-                field_source
-                    .projections
-                    .push(work.clone_owned(&field.field, "owned variant match field clone")?);
+                typed_storage::push_projection(
+                    &mut field_source,
+                    case,
+                    "owned variant match case clone",
+                    work,
+                )?;
+                typed_storage::push_projection(
+                    &mut field_source,
+                    &field.field,
+                    "owned variant match field clone",
+                    work,
+                )?;
                 let destination = CleanupPlace::whole(StorageId::Value(
                     work.clone_owned(&field.binding.id, "owned variant binding clone")?,
                 ));
@@ -5312,186 +5693,12 @@ fn prepare_selected_match_path(
     Ok(())
 }
 
-/// Refutable Match v1 skeleton expectations for a Copy-scalar match. Each
-/// non-final arm contributes one `ArmSelected` pair (selected paths continue
-/// through the optional guard's Boolean join; rejected paths — including
-/// false guards — fall through), and the trailing catch-all arm consumes
-/// everything unconditionally, mirroring the canonical builder exactly.
-#[allow(clippy::too_many_arguments)]
-fn finish_scalar_match_skeleton(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    scrutinee: &ResolvedExpr,
-    arms: &[ResolvedMatchArm],
-    scrutinee_paths: Vec<ExprSkeletonPath>,
-    work: &mut SkeletonWork<'_, '_>,
-) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    if type_needs_drop(program, function, &expression.ty)?
-        && !matches!(expression.ty, crate::hir::ResolvedType::String)
-    {
-        return Err(replay_error(
-            function,
-            "droppable refutable-match result reached the copy-only cleanup skeleton",
-        ));
-    }
-    let last = arms
-        .last()
-        .ok_or_else(|| replay_error(function, "refutable match has no arms"))?;
-    let catch_all = matches!(
-        &last.pattern,
-        ResolvedMatchPattern::Wildcard | ResolvedMatchPattern::Binding(_)
-    );
-    if !catch_all || last.guard.is_some() {
-        return Err(replay_error(
-            function,
-            "resolved refutable match lacks a trailing irrefutable guard-free catch-all",
-        ));
-    }
-
-    let mut results: Vec<ExprSkeletonPath> = Vec::new();
-    let mut remaining = scrutinee_paths;
-    for (index, arm) in arms.iter().enumerate() {
-        let final_arm = index + 1 == arms.len();
-
-        // Terminal paths bypass the rest of the decision chain.
-        let mut active = Vec::new();
-        for path in std::mem::take(&mut remaining) {
-            if path.failed || path.residual {
-                results.push(path);
-            } else {
-                active.push(path);
-            }
-        }
-
-        let mut selected_paths: Vec<ExprSkeletonPath> = Vec::new();
-        let mut rejected_paths: Vec<ExprSkeletonPath> = Vec::new();
-        if final_arm {
-            selected_paths = active;
-        } else {
-            let arm_index = u32::try_from(index)
-                .map_err(|_| replay_error(function, "too many scalar match arms"))?;
-            for path in active {
-                let mut selected = work.clone_expr_path(&path, "scalar match selected clone")?;
-                let scrutinee_id =
-                    work.clone_owned(&scrutinee.id, "scalar match selected scrutinee clone")?;
-                work.push_observation(
-                    &mut selected,
-                    SkeletonObservation::ArmSelected {
-                        scrutinee: scrutinee_id,
-                        arm: arm_index,
-                        selected: true,
-                    },
-                    "scalar match selected observation",
-                )?;
-                selected_paths.push(selected);
-
-                let mut rejected = path;
-                let scrutinee_id =
-                    work.clone_owned(&scrutinee.id, "scalar match rejected scrutinee clone")?;
-                work.push_observation(
-                    &mut rejected,
-                    SkeletonObservation::ArmSelected {
-                        scrutinee: scrutinee_id,
-                        arm: arm_index,
-                        selected: false,
-                    },
-                    "scalar match rejected observation",
-                )?;
-                rejected_paths.push(rejected);
-            }
-        }
-
-        if let Some(guard) = &arm.guard {
-            let guard_paths = expression_skeleton(program, function, guard.as_ref(), work)?;
-            let (terminal, when_true, when_false) =
-                split_boolean_prefixes_at(guard_paths, &guard.id, work)?;
-            // The true continuation consumes the shared prefixes; false and terminal continuations clone them.
-            let mut with_false = Vec::new();
-            for prefix in &selected_paths {
-                let cloned = clone_expr_path_shallow(prefix, work)?;
-                let prefixed = sequence_skeleton_paths(
-                    work.singleton_path(cloned, "guard-false prefix")?,
-                    &when_false,
-                    work,
-                )?;
-                with_false.extend(prefixed);
-            }
-            let mut with_terminal = Vec::new();
-            for prefix in &selected_paths {
-                let cloned = clone_expr_path_shallow(prefix, work)?;
-                let prefixed = sequence_skeleton_paths(
-                    work.singleton_path(cloned, "guard-terminal prefix")?,
-                    &terminal,
-                    work,
-                )?;
-                with_terminal.extend(prefixed);
-            }
-            let with_true = sequence_skeleton_paths(selected_paths, &when_true, work)?;
-            // False guards and failed guard evaluations fall through.
-            rejected_paths.extend(with_false);
-            rejected_paths.extend(with_terminal);
-            remaining.extend(rejected_paths);
-            for selected in with_true {
-                append_scalar_arm_value(
-                    program,
-                    function,
-                    expression,
-                    arm,
-                    selected,
-                    &mut results,
-                    work,
-                )?;
-            }
-        } else {
-            remaining.extend(rejected_paths);
-            for selected in selected_paths {
-                append_scalar_arm_value(
-                    program,
-                    function,
-                    expression,
-                    arm,
-                    selected,
-                    &mut results,
-                    work,
-                )?;
-            }
-        }
-    }
-    for path in remaining {
-        results.push(path);
-    }
-    Ok(results)
-}
-
-/// Sequences one selected-arm prefix with its arm-value sub-skeleton and
-/// publishes the conditional-result transfer for owned values.
-#[allow(clippy::too_many_arguments)]
-fn append_scalar_arm_value(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    arm: &ResolvedMatchArm,
-    selected_prefix: ExprSkeletonPath,
-    results: &mut Vec<ExprSkeletonPath>,
-    work: &mut SkeletonWork<'_, '_>,
-) -> Result<(), Diagnostic> {
-    let value_paths = expression_skeleton(program, function, &arm.value, work)?;
-    let sequenced = sequence_skeleton_paths(
-        work.singleton_path(selected_prefix, "scalar match selected prefix")?,
-        &value_paths,
-        work,
-    )?;
-    let finished = finish_conditional_result(program, function, expression, sequenced, work)?;
-    append_expr_paths(results, finished, work, "scalar match arm result")?;
-    Ok(())
-}
-
+/// Clone a guarded scalar-match prefix under its existing payload reservation.
 fn clone_expr_path_shallow(
     path: &ExprSkeletonPath,
-    _work: &mut SkeletonWork<'_, '_>,
+    work: &mut SkeletonWork<'_, '_>,
 ) -> Result<ExprSkeletonPath, Diagnostic> {
-    Ok(path.clone())
+    work.clone_payload(path, "scalar match guarded prefix clone")
 }
 
 #[allow(clippy::type_complexity)]
@@ -5569,7 +5776,7 @@ fn finish_record_paths(
 
 #[allow(clippy::too_many_arguments)]
 fn finish_update_paths(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     base: &ResolvedExpr,
@@ -5584,15 +5791,19 @@ fn finish_update_paths(
     }
     let staged_base = temporary_place(base, work)?;
     let destination = temporary_place(expression, work)?;
-    let declarations = program.declarations.record_fields(record).ok_or_else(|| {
-        replay_error(
-            function,
-            format!("record update has unknown record `{record}`"),
-        )
-    })?;
+    let declarations = program
+        .declarations()
+        .record_fields(record)
+        .ok_or_else(|| {
+            replay_error(
+                function,
+                format_args!("record update has unknown record `{record}`"),
+            )
+        })?;
     let arguments = record_destructure::update::concrete_arguments(function, expression, record)?;
     for field in declarations {
-        let field_ty = crate::hir::substitute_type(&field.ty, record, arguments)?;
+        let field_ty =
+            nested_shape::substitute_type_current(program, function, &field.ty, record, arguments)?;
         if replaced.contains(&field.id) || !type_needs_drop(program, function, &field_ty)? {
             continue;
         }
@@ -5628,7 +5839,7 @@ fn finish_update_paths(
 }
 
 fn finish_try_paths(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     operand_paths: Vec<ExprSkeletonPath>,
@@ -5831,7 +6042,7 @@ fn split_boolean_prefixes(
 }
 
 fn finish_conditional_result(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
     paths: Vec<ExprSkeletonPath>,
@@ -5891,10 +6102,10 @@ fn call_states_have_active(states: &[CallSkeletonState]) -> bool {
 
 #[allow(clippy::too_many_arguments)]
 fn sequence_call_argument(
-    program: &ResolvedProgram,
+    program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     expression: &ResolvedExpr,
-    parameter: &crate::hir::ResolvedParam,
+    parameter: resolved_call::Param<'_>,
     argument: &ResolvedExpr,
     index: usize,
     states: Vec<CallSkeletonState>,
@@ -5903,18 +6114,28 @@ fn sequence_call_argument(
 ) -> Result<Vec<CallSkeletonState>, Diagnostic> {
     let states = work.merged_call_states(states)?;
     let suffixes = work.merged_suffixes(suffixes)?;
+    let share_prefix = work.shares_prefix_tail(&suffixes)?;
     let mut next = Vec::new();
-    for (prefix, commits) in states {
+    for (mut prefix, commits) in states {
         if prefix.failed || prefix.residual {
             work.charge(1, "short-circuited call state push")?;
             note_skeleton_materialization();
+            work.budget
+                .reserve_vec(function, &mut next, 1, "short circuit call slots")?;
             next.push((prefix, commits));
             continue;
         }
+        if share_prefix {
+            work.share_prefix_tail(&mut prefix.observations)?;
+        }
         for suffix in suffixes.iter() {
-            let mut observations =
+            let observations =
                 work.clone_observations(&prefix.observations, "call prefix clone")?;
-            work.extend_observations(&mut observations, &suffix.observations, "call suffix clone")?;
+            let observations = work.extend_owned_observations(
+                observations,
+                &suffix.observations,
+                "call suffix clone",
+            )?;
             let owned_source =
                 work.clone_owned(&suffix.owned_source, "call suffix owned-source clone")?;
             let mut path = ExprSkeletonPath {
@@ -5922,12 +6143,16 @@ fn sequence_call_argument(
                 owned_source,
                 failed: suffix.failed,
                 residual: suffix.residual,
+                continuation: lexical_skeleton::Continuation::sequenced(
+                    &prefix.continuation,
+                    &suffix.continuation,
+                ),
             };
             let mut path_commits = work.clone_owned(&commits, "call commit-state clone")?;
             if !path.failed
                 && !path.residual
                 && parameter.ownership == OwnershipMode::Own
-                && type_needs_drop(program, function, &parameter.ty)?
+                && type_needs_drop(program, function, parameter.ty)?
             {
                 let parameter_index = u32::try_from(index)
                     .map_err(|_| replay_error(function, "too many skeleton call arguments"))?;
@@ -5958,162 +6183,22 @@ fn sequence_call_argument(
                 )?;
                 work.charge(1, "call-commit argument push")?;
                 note_skeleton_materialization();
+                work.budget.reserve_vec(
+                    function,
+                    &mut path_commits,
+                    1,
+                    "staged call commit slots",
+                )?;
                 path_commits.push((parameter_index, epoch));
             }
             work.charge(1, "call state push")?;
             note_skeleton_materialization();
+            work.budget
+                .reserve_vec(function, &mut next, 1, "call state slots")?;
             next.push((path, path_commits));
         }
     }
     Ok(next)
-}
-
-fn finish_call_states(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    states: Vec<CallSkeletonState>,
-    work: &mut SkeletonWork<'_, '_>,
-) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    let infallible_compiler_operation =
-        super::deferred_commit::expression_is_infallible_compiler_operation(expression);
-    // `vec_push` and the one fallible byte operation both check their bound before the owner transfer commits, so their status observation precedes the
-    // call-commit and a failed call leaves the owner in its call-argument slot for the ordinary region cleanup.
-    let defer_commit = resolved_call::defers_owner_commit(expression);
-    let infallible_compiler_operation = infallible_compiler_operation
-        || matches!(
-            &expression.kind,
-            ResolvedExprKind::HostCommandCall(call)
-                if crate::command_io_ops::failure(call.operation)
-                    == crate::command_io_ops::CommandIoFailure::Infallible
-        );
-    let source_expression =
-        work.clone_owned(&expression.id, "call status source expression clone")?;
-    let source = StatusSourceId {
-        expression: source_expression,
-        lane: StatusLane::OperationFailure,
-    };
-    let mut results = Vec::new();
-    for (mut path, commits) in states {
-        if path.failed || path.residual {
-            work.push_expr_path(&mut results, path, "short-circuited call path")?;
-            continue;
-        }
-        if super::owner_admission::required(program, expression) {
-            let admission = StatusSourceId {
-                expression: work.clone_owned(&expression.id, "owner-admission identity clone")?,
-                lane: StatusLane::OwnerAdmission,
-            };
-            let mut refused = work.clone_expr_path(&path, "owner-admission failure path")?;
-            work.push_observation(
-                &mut refused,
-                SkeletonObservation::Status {
-                    source: admission.clone(),
-                    success: false,
-                },
-                "owner-admission failure",
-            )?;
-            refused.failed = true;
-            refused.owned_source = None;
-            work.push_expr_path(&mut results, refused, "owner-admission failed path")?;
-            work.push_observation(
-                &mut path,
-                SkeletonObservation::Status {
-                    source: admission,
-                    success: true,
-                },
-                "owner-admission success",
-            )?;
-        }
-        if !defer_commit {
-            let call = work.clone_owned(&expression.id, "call-commit identity clone")?;
-            work.push_observation(
-                &mut path,
-                SkeletonObservation::CallCommit {
-                    call,
-                    arguments: commits.clone(),
-                },
-                "call-commit observation",
-            )?;
-        }
-        if infallible_compiler_operation {
-            if expression.ownership == OwnershipMode::Own
-                && type_needs_drop(program, function, &expression.ty)?
-            {
-                let destination = temporary_place(expression, work)?;
-                let at = work.clone_owned(&expression.id, "byte result expression clone")?;
-                let initialized =
-                    work.clone_owned(&destination, "byte result destination clone")?;
-                work.push_observation(
-                    &mut path,
-                    SkeletonObservation::Initialize {
-                        at,
-                        destination: initialized,
-                    },
-                    "owned infallible byte result initialization",
-                )?;
-                path.owned_source = Some(destination);
-            } else {
-                path.owned_source = None;
-            }
-            work.push_expr_path(&mut results, path, "infallible byte call path")?;
-            continue;
-        }
-        let mut failure = work.clone_expr_path(&path, "call failure path clone")?;
-        let failure_source = work.clone_owned(&source, "call failure status-source clone")?;
-        work.push_observation(
-            &mut failure,
-            SkeletonObservation::Status {
-                source: failure_source,
-                success: false,
-            },
-            "call failure observation",
-        )?;
-        failure.failed = true;
-        failure.owned_source = None;
-        work.push_expr_path(&mut results, failure, "call failure path")?;
-
-        let success_source = work.clone_owned(&source, "call success status-source clone")?;
-        work.push_observation(
-            &mut path,
-            SkeletonObservation::Status {
-                source: success_source,
-                success: true,
-            },
-            "call success observation",
-        )?;
-        if defer_commit {
-            let call = work.clone_owned(&expression.id, "call-commit identity clone")?;
-            work.push_observation(
-                &mut path,
-                SkeletonObservation::CallCommit {
-                    call,
-                    arguments: commits,
-                },
-                "deferred success call-commit observation",
-            )?;
-        }
-        if expression.ownership == OwnershipMode::Own
-            && type_needs_drop(program, function, &expression.ty)?
-        {
-            let destination = temporary_place(expression, work)?;
-            let at = work.clone_owned(&expression.id, "call result expression clone")?;
-            let initialized = work.clone_owned(&destination, "call result destination clone")?;
-            work.push_observation(
-                &mut path,
-                SkeletonObservation::Initialize {
-                    at,
-                    destination: initialized,
-                },
-                "owned call result initialization",
-            )?;
-            path.owned_source = Some(destination);
-        } else {
-            path.owned_source = None;
-        }
-        work.push_expr_path(&mut results, path, "call success path")?;
-    }
-    Ok(results)
 }
 
 fn split_status_paths(
@@ -6209,7 +6294,10 @@ fn transfer_completed_paths(
             continue;
         }
         let source = path.owned_source.take().ok_or_else(|| {
-            replay_error(function, format!("{description} has no HIR cleanup source"))
+            replay_error(
+                function,
+                format_args!("{description} has no HIR cleanup source"),
+            )
         })?;
         let transfer_at = work.clone_owned(&at, "completed transfer expression clone")?;
         let transfer_destination =
@@ -6579,7 +6667,69 @@ fn plan_skeleton_paths(
             }
             CleanupTerminator::Exit(exit) => {
                 let exit = &plan.exits[exit.0 as usize];
-                match exit.continuation {
+                match &exit.continuation {
+                    ExitContinuation::LoopBreak { edge, .. }
+                    | ExitContinuation::FunctionReturn { edge, .. } => {
+                        if let Some(marker) =
+                            lexical_skeleton::plan_exit_observation(budget, function, exit.id)?
+                        {
+                            skeleton_push(
+                                budget,
+                                function,
+                                &mut observations,
+                                marker,
+                                "plan lexical exit observation push",
+                            )?;
+                        }
+                        skeleton_queue_push(
+                            budget,
+                            function,
+                            &mut queue,
+                            (plan.edges[edge.0 as usize].to, observations),
+                            "plan lexical continuation state push",
+                        )?;
+                    }
+                    ExitContinuation::LoopLatch { target } => {
+                        let marker = match lexical_skeleton::plan_exit_observation(
+                            budget, function, exit.id,
+                        )? {
+                            Some(marker) => marker,
+                            None => SkeletonObservation::LoopLatch {
+                                target: skeleton_clone(
+                                    budget,
+                                    function,
+                                    target,
+                                    "plan loop-latch target clone",
+                                )?,
+                            },
+                        };
+                        skeleton_push(
+                            budget,
+                            function,
+                            &mut observations,
+                            marker,
+                            "plan loop-latch observation push",
+                        )?;
+                        match lexical_cert::latch_resume(plan, exit.id) {
+                            Some(entry) => skeleton_queue_push(
+                                budget,
+                                function,
+                                &mut queue,
+                                (entry, observations),
+                                "plan generated-latch state push",
+                            )?,
+                            None => skeleton_push(
+                                budget,
+                                function,
+                                &mut paths,
+                                SkeletonPath {
+                                    observations: observations.into(),
+                                    terminal: SkeletonTerminal::LoopLatch,
+                                },
+                                "plan loop-latch path push",
+                            )?,
+                        }
+                    }
                     ExitContinuation::Continue(edge) => {
                         skeleton_queue_push(
                             budget,
@@ -6633,784 +6783,6 @@ fn storage_regions(
         }
     }
     Ok(regions)
-}
-
-fn execute_replay_transition(
-    program: &ResolvedProgram,
-    function: &ResolvedFunction,
-    transition: &CleanupTransition,
-    state: &mut PathState,
-    storage: &BTreeSet<StorageId>,
-    leaves: &Leaves,
-) -> Result<(), Diagnostic> {
-    if state.published {
-        return Err(replay_error(
-            function,
-            "cleanup transition occurs after result publication",
-        ));
-    }
-    if state.selected_failure.is_some()
-        && !matches!(transition, CleanupTransition::SelectFailure { .. })
-    {
-        return Err(replay_error(
-            function,
-            "ordinary cleanup transition occurs after failure selection",
-        ));
-    }
-    if state.pending_failure.is_some()
-        && !matches!(transition, CleanupTransition::SelectFailure { .. })
-    {
-        return Err(replay_error(
-            function,
-            "operation failure is not selected before another transition",
-        ));
-    }
-
-    match transition {
-        CleanupTransition::Initialize { destination, .. } => {
-            let flags = validate_place(function, destination, storage, leaves)?;
-            append_dead_flags(function, state, flags, "initialize transition")?;
-        }
-        CleanupTransition::ReserveRenewal { at, binding } => {
-            renewal::reserve(program, function, at, binding, state, storage, leaves)?
-        }
-        CleanupTransition::Renew {
-            at,
-            source,
-            destination,
-        } => renewal::renew(
-            program,
-            function,
-            at,
-            (source, destination),
-            state,
-            storage,
-            leaves,
-        )?,
-        CleanupTransition::Transfer {
-            at,
-            source,
-            destination,
-        } => {
-            renewal::reject_unmarked_finish(program, function, at, destination)?;
-            let append = strings::reserve_append(function, at, source, destination, state)?;
-            replay_transfer(function, state, source, destination, storage, leaves)?;
-            seal_try_residual(program, function, at, destination, state, storage, leaves)?;
-            strings::publish_append(function, append, state)?;
-        }
-        CleanupTransition::TransferVariant {
-            source,
-            destination,
-            variant,
-            ..
-        } => {
-            if !state
-                .conditional_variants
-                .iter()
-                .any(|conditional| conditional.root == *source)
-            {
-                materialize_constructed_variant(
-                    program, function, state, source, variant, storage, leaves,
-                )?;
-            }
-            replay_transfer(function, state, source, destination, storage, leaves)?;
-        }
-        CleanupTransition::InitializeVariant {
-            destination,
-            variant,
-            ..
-        } => {
-            let flags = validate_place(function, destination, storage, leaves)?;
-            if flags.iter().any(|flag| {
-                state.live_order.contains(flag)
-                    || state.conditional_variants.iter().any(|conditional| {
-                        conditional
-                            .cases
-                            .iter()
-                            .any(|(_, case_flags)| case_flags.contains(flag))
-                    })
-            }) {
-                return Err(replay_error(
-                    function,
-                    "variant initialization targets a live cleanup place",
-                ));
-            }
-            let slot = function
-                .cleanup_plan
-                .slots
-                .iter()
-                .find(|slot| slot.storage == destination.storage)
-                .ok_or_else(|| replay_error(function, "variant initialization has no slot"))?;
-            let FieldLivenessShape::Variant { cases, .. } = &slot.field_liveness_shape else {
-                return Err(replay_error(
-                    function,
-                    "variant initialization destination is not conditional storage",
-                ));
-            };
-            let conditional_cases = cases
-                .iter()
-                .map(|case| {
-                    let prefix = destination
-                        .projections
-                        .iter()
-                        .chain(std::iter::once(&case.case))
-                        .cloned()
-                        .collect::<Vec<_>>();
-                    let case_flags = flags
-                        .iter()
-                        .filter(|flag| leaves[flag].place.projections.starts_with(&prefix))
-                        .copied()
-                        .collect::<Vec<_>>();
-                    (case.case.clone(), case_flags)
-                })
-                .collect();
-            state.conditional_variants.push(ReplayConditionalVariant {
-                root: destination.clone(),
-                variant: variant.clone(),
-                cases: conditional_cases,
-            });
-        }
-        CleanupTransition::AuthenticateVariantCase {
-            source,
-            variant,
-            case,
-            ..
-        } => {
-            if !state
-                .conditional_variants
-                .iter()
-                .any(|entry| entry.root == *source)
-            {
-                materialize_constructed_variant(
-                    program, function, state, source, variant, storage, leaves,
-                )?;
-            }
-            if let Some(index) = state
-                .conditional_variants
-                .iter()
-                .position(|candidate| candidate.root == *source && candidate.variant == *variant)
-            {
-                let conditional = state.conditional_variants.remove(index);
-                let flags = conditional
-                    .cases
-                    .into_iter()
-                    .find_map(|(candidate, flags)| (candidate == *case).then_some(flags))
-                    .ok_or_else(|| {
-                        replay_error(function, "conditional state omits authenticated case")
-                    })?;
-                let flags = if flags.is_empty() {
-                    let prefix = source.projected(case.clone()).projections;
-                    validate_place(function, source, storage, leaves)?
-                        .into_iter()
-                        .filter(|flag| leaves[flag].place.projections.starts_with(&prefix))
-                        .collect()
-                } else {
-                    flags
-                };
-                // A valid selected case may carry only Copy fields. Its authenticated case state is consumed even though there are no cleanup flags to
-                // materialize.
-                if !flags.is_empty() {
-                    append_dead_flags(function, state, flags, "variant authentication")?;
-                }
-            }
-            let prefix = source
-                .projections
-                .iter()
-                .chain(std::iter::once(case))
-                .cloned()
-                .collect::<Vec<_>>();
-            if validate_place(function, source, storage, leaves)?
-                .iter()
-                .any(|flag| {
-                    state.live_order.contains(flag)
-                        && !leaves[flag].place.projections.starts_with(&prefix)
-                })
-            {
-                return Err(replay_error(
-                    function,
-                    "variant authentication retains a live inactive-case payload",
-                ));
-            }
-        }
-        CleanupTransition::CallCommit { call, arguments } => {
-            let mut consumed = BTreeSet::new();
-            let mut consumed_conditional_roots = BTreeSet::new();
-            for argument in arguments {
-                if let Some(index) = state
-                    .conditional_variants
-                    .iter()
-                    .position(|variant| variant.root == argument.source)
-                {
-                    if !consumed_conditional_roots.insert(argument.source.clone()) {
-                        return Err(replay_error(
-                            function,
-                            format!("call `{call}` atomically consumes a variant epoch twice"),
-                        ));
-                    }
-                    let conditional = state.conditional_variants.remove(index);
-                    for flag in conditional.cases.into_iter().flat_map(|(_, flags)| flags) {
-                        if !consumed.insert(flag) {
-                            return Err(replay_error(
-                                function,
-                                format!(
-                                    "call `{call}` atomically consumes argument flag {} twice",
-                                    flag.0
-                                ),
-                            ));
-                        }
-                    }
-                    continue;
-                }
-                for flag in validate_place(function, &argument.source, storage, leaves)? {
-                    if !state.live_order.contains(&flag) {
-                        return Err(replay_error(
-                            function,
-                            format!(
-                                "call `{call}` atomically consumes dead argument flag {}",
-                                flag.0
-                            ),
-                        ));
-                    }
-                    if !consumed.insert(flag) {
-                        return Err(replay_error(
-                            function,
-                            format!(
-                                "call `{call}` atomically consumes argument flag {} twice",
-                                flag.0
-                            ),
-                        ));
-                    }
-                }
-            }
-            state.live_order.retain(|flag| !consumed.contains(flag));
-        }
-        CleanupTransition::SelectFailure { source } => {
-            state.renewals.clear();
-            if state.selected_failure.is_some() {
-                return Err(replay_error(
-                    function,
-                    "failure selection is not write-once during path replay",
-                ));
-            }
-            if state.pending_failure.as_ref() != Some(source) {
-                return Err(replay_error(
-                    function,
-                    format!(
-                        "selected failure `{}` does not match the pending failing edge",
-                        source.expression
-                    ),
-                ));
-            }
-            state.pending_failure = None;
-            state.selected_failure = Some(source.clone());
-        }
-        CleanupTransition::StageCopyResult { source } => {
-            if state.staged_copy_result.is_some() {
-                return Err(replay_error(
-                    function,
-                    "Copy aggregate result is staged more than once on one path",
-                ));
-            }
-            if !state.live_order.is_empty() || !state.conditional_variants.is_empty() {
-                return Err(replay_error(
-                    function,
-                    "Copy aggregate result staging carries resource liveness",
-                ));
-            }
-            state.staged_copy_result = Some(source.clone());
-        }
-    }
-    Ok(())
-}
-
-fn replay_transfer(
-    function: &ResolvedFunction,
-    state: &mut PathState,
-    source: &CleanupPlace,
-    destination: &CleanupPlace,
-    storage: &BTreeSet<StorageId>,
-    leaves: &Leaves,
-) -> Result<(), Diagnostic> {
-    let source_flags = validate_place(function, source, storage, leaves)?;
-    let destination_flags = validate_place(function, destination, storage, leaves)?;
-    let source_set = source_flags.iter().copied().collect::<BTreeSet<_>>();
-    let destination_set = destination_flags.iter().copied().collect::<BTreeSet<_>>();
-    if source_set.len() != destination_set.len() || !source_set.is_disjoint(&destination_set) {
-        return Err(replay_error(
-            function,
-            "cleanup transfer does not have disjoint equal-size ownership epochs",
-        ));
-    }
-    if let Some(index) = state
-        .conditional_variants
-        .iter()
-        .position(|variant| variant.root == *source)
-    {
-        let mapping = transfer_mapping(function, source, destination, leaves)?;
-        let variant = state.conditional_variants.remove(index);
-        let cases = variant
-            .cases
-            .into_iter()
-            .map(|(case, flags)| {
-                flags
-                    .into_iter()
-                    .map(|flag| {
-                        mapping.get(&flag).copied().ok_or_else(|| {
-                            replay_error(function, "conditional cleanup transfer omits a case leaf")
-                        })
-                    })
-                    .collect::<Result<Vec<_>, Diagnostic>>()
-                    .map(|flags| (case, flags))
-            })
-            .collect::<Result<Vec<_>, Diagnostic>>()?;
-        state.conditional_variants.push(ReplayConditionalVariant {
-            root: destination.clone(),
-            variant: variant.variant,
-            cases,
-        });
-        return Ok(());
-    }
-    if source_set
-        .iter()
-        .any(|flag| !state.live_order.contains(flag))
-    {
-        return Err(replay_error(
-            function,
-            "cleanup transfer reads a dead source leaf",
-        ));
-    }
-    if destination_set
-        .iter()
-        .any(|flag| state.live_order.contains(flag))
-    {
-        return Err(replay_error(
-            function,
-            "cleanup transfer initializes a live destination leaf",
-        ));
-    }
-
-    let mapping = transfer_mapping(function, source, destination, leaves)?;
-    // A whole-source transfer is a completed aggregate boundary, authenticated by the typed control skeleton. Filling every owned destination field is not:
-    // later Copy initializers can still fail, so preserve their preceding field-initialization history until the constructor actually completes.
-    let source_history = if source.projections.is_empty() {
-        source_flags
-    } else {
-        state
-            .live_order
-            .iter()
-            .filter(|flag| source_set.contains(flag))
-            .copied()
-            .collect::<Vec<_>>()
-    };
-    state.live_order.retain(|flag| !source_set.contains(flag));
-    if destination.projections.is_empty() {
-        state.live_order.extend(destination_flags);
-    } else {
-        for source_flag in source_history {
-            state.live_order.push(mapping[&source_flag]);
-        }
-    }
-    Ok(())
-}
-
-fn find_resolved_expression<'a>(
-    function: &'a ResolvedFunction,
-    identity: &ExpressionId,
-) -> Option<&'a ResolvedExpr> {
-    let mut stack = function
-        .requires
-        .iter()
-        .chain(std::iter::once(&function.body))
-        .chain(&function.ensures)
-        .collect::<Vec<_>>();
-    while let Some(expression) = stack.pop() {
-        if expression.id == *identity {
-            return Some(expression);
-        }
-        let mut index = 0;
-        while let Some(child) = replay_expression_child(expression, index) {
-            stack.push(child);
-            index += 1;
-        }
-    }
-    None
-}
-
-fn transfer_mapping(
-    function: &ResolvedFunction,
-    source: &CleanupPlace,
-    destination: &CleanupPlace,
-    leaves: &Leaves,
-) -> Result<BTreeMap<LivenessFlagId, LivenessFlagId>, Diagnostic> {
-    let mut mapping = BTreeMap::new();
-    let mut destinations = BTreeSet::new();
-    for (source_flag, source_leaf) in leaves.iter().filter(|(_, leaf)| {
-        leaf.place.storage == source.storage
-            && leaf.place.projections.starts_with(&source.projections)
-    }) {
-        let relative = source_leaf
-            .place
-            .projections
-            .strip_prefix(source.projections.as_slice())
-            .ok_or_else(|| replay_error(function, "transfer source is not a projection prefix"))?;
-        let projections = destination
-            .projections
-            .iter()
-            .chain(relative)
-            .cloned()
-            .collect::<Vec<_>>();
-        let Some((destination_flag, destination_leaf)) = leaves.iter().find(|(_, leaf)| {
-            leaf.place.storage == destination.storage && leaf.place.projections == projections
-        }) else {
-            return Err(replay_error(
-                function,
-                "cleanup transfer leaf shapes do not correspond",
-            ));
-        };
-        if source_leaf.lifecycle != destination_leaf.lifecycle
-            || !destinations.insert(*destination_flag)
-        {
-            return Err(replay_error(
-                function,
-                "cleanup transfer changes a leaf lifecycle or aliases its destination",
-            ));
-        }
-        mapping.insert(*source_flag, *destination_flag);
-    }
-    if mapping.is_empty() {
-        return Err(replay_error(
-            function,
-            "cleanup transfer has no mapped ownership leaves",
-        ));
-    }
-    Ok(mapping)
-}
-
-fn append_dead_flags(
-    function: &ResolvedFunction,
-    state: &mut PathState,
-    flags: Vec<LivenessFlagId>,
-    operation: &str,
-) -> Result<(), Diagnostic> {
-    if flags.is_empty()
-        || flags.iter().any(|flag| {
-            state.live_order.contains(flag)
-                || state.conditional_variants.iter().any(|variant| {
-                    variant
-                        .cases
-                        .iter()
-                        .any(|(_, case_flags)| case_flags.contains(flag))
-                })
-        })
-    {
-        return Err(replay_error(
-            function,
-            format!("{operation} initializes an empty or live cleanup place"),
-        ));
-    }
-    state.live_order.extend(flags);
-    Ok(())
-}
-
-fn state_for_edge(
-    function: &ResolvedFunction,
-    mut state: PathState,
-    condition: &EdgeCondition,
-    contract_sources: &BTreeMap<ExpressionId, StatusSourceId>,
-) -> Result<PathState, Diagnostic> {
-    if state.pending_failure.is_some() || state.selected_failure.is_some() || state.published {
-        return Err(replay_error(
-            function,
-            "conditional edge follows pending, selected, or published state",
-        ));
-    }
-    match condition {
-        EdgeCondition::Always => {}
-        EdgeCondition::BooleanResult(expression, false) => {
-            if let Some(source) = contract_sources.get(expression) {
-                state.pending_failure = Some(source.clone());
-            }
-        }
-        EdgeCondition::BooleanResult(_, true)
-        | EdgeCondition::VariantCase { .. }
-        | EdgeCondition::ArmSelected { .. }
-        | EdgeCondition::StatusZero(_) => {}
-        EdgeCondition::StatusNonzero(source) => {
-            state.pending_failure = Some(source.clone());
-        }
-    }
-    Ok(state)
-}
-
-fn replay_exit(
-    function: &ResolvedFunction,
-    exit: &ExitTarget,
-    mut state: PathState,
-    storage_regions: &BTreeMap<StorageId, CleanupRegionId>,
-    storage: &BTreeSet<StorageId>,
-    leaves: &Leaves,
-) -> Result<Option<(EdgeId, PathState)>, Diagnostic> {
-    if state.published {
-        return Err(replay_error(function, "cleanup exit follows publication"));
-    }
-    let leaving = exit.leaves_regions.iter().copied().collect::<BTreeSet<_>>();
-    let protected_result = match &exit.continuation {
-        ExitContinuation::CommitResult {
-            source: CleanupResultSource::Owned { storage: result },
-        } => validate_place(function, result, storage, leaves)?
-            .into_iter()
-            .collect::<BTreeSet<_>>(),
-        _ => BTreeSet::new(),
-    };
-    let expected = state
-        .live_order
-        .iter()
-        .rev()
-        .filter_map(|flag| {
-            let leaf = &leaves[flag];
-            let region = storage_regions[&leaf.place.storage];
-            (leaving.contains(&region) && !protected_result.contains(flag)).then_some(*flag)
-        })
-        .collect::<Vec<_>>();
-    let mut expected_conditional = Vec::new();
-    for variant in state.conditional_variants.iter().rev() {
-        let region = storage_regions[&variant.root.storage];
-        let protected = matches!(
-            &exit.continuation,
-            ExitContinuation::CommitResult {
-                source: CleanupResultSource::Owned { storage },
-            } if storage == &variant.root
-        );
-        if !leaving.contains(&region) || protected {
-            continue;
-        }
-        for (case, flags) in variant.cases.iter().rev() {
-            for flag in flags.iter().rev() {
-                expected_conditional.push((
-                    *flag,
-                    super::VariantCaseGuard {
-                        storage: variant.root.storage.clone(),
-                        variant: variant.variant.clone(),
-                        case: case.clone(),
-                    },
-                ));
-            }
-        }
-    }
-    let actual = exit
-        .finalize_in_order
-        .iter()
-        .filter_map(|action| {
-            state
-                .live_order
-                .contains(&action.guard_flag)
-                .then_some(action.guard_flag)
-        })
-        .collect::<Vec<_>>();
-    if actual != expected {
-        return Err(replay_error(
-            function,
-            format!(
-                "exit {} does not finalize its live region leaves in reverse initialization order",
-                exit.id.0
-            ),
-        ));
-    }
-    let actual_conditional = exit
-        .finalize_in_order
-        .iter()
-        .filter_map(|action| {
-            action
-                .active_case
-                .as_ref()
-                .map(|condition| (action.guard_flag, condition.clone()))
-        })
-        .collect::<Vec<_>>();
-    if actual_conditional != expected_conditional {
-        return Err(replay_error(
-            function,
-            "exit does not preserve exact conditional variant finalizers",
-        ));
-    }
-    let finalized = expected.into_iter().collect::<BTreeSet<_>>();
-    state.live_order.retain(|flag| !finalized.contains(flag));
-    state.conditional_variants.retain(|variant| {
-        !leaving.contains(&storage_regions[&variant.root.storage])
-            || matches!(
-                &exit.continuation,
-                ExitContinuation::CommitResult {
-                    source: CleanupResultSource::Owned { storage },
-                } if storage == &variant.root
-            )
-    });
-    if state.live_order.iter().any(|flag| {
-        let leaf = &leaves[flag];
-        leaving.contains(&storage_regions[&leaf.place.storage]) && !protected_result.contains(flag)
-    }) {
-        return Err(replay_error(
-            function,
-            "cleanup exit retains a live non-result leaf in a region it leaves",
-        ));
-    }
-
-    match &exit.continuation {
-        ExitContinuation::Continue(edge) => {
-            if state.pending_failure.is_some() || state.selected_failure.is_some() {
-                return Err(replay_error(
-                    function,
-                    "normal cleanup continuation carries a failure state",
-                ));
-            }
-            Ok(Some((*edge, state)))
-        }
-        ExitContinuation::ReturnFailure { source } => {
-            if state.pending_failure.is_some()
-                || state.selected_failure.as_ref() != Some(source)
-                || !state.live_order.is_empty()
-                || !state.conditional_variants.is_empty()
-            {
-                return Err(replay_error(
-                    function,
-                    "failure return changes status or retains live ownership",
-                ));
-            }
-            Ok(None)
-        }
-        ExitContinuation::CommitResult { source } => {
-            if state.pending_failure.is_some() || state.selected_failure.is_some() {
-                return Err(replay_error(
-                    function,
-                    "result commit follows a pending or selected failure",
-                ));
-            }
-            match source {
-                CleanupResultSource::Scalar { .. } => {
-                    if !state.live_order.is_empty() || !state.conditional_variants.is_empty() {
-                        return Err(replay_error(
-                            function,
-                            "scalar result commits before non-result cleanup completes",
-                        ));
-                    }
-                    if expression_has_try(&function.body) {
-                        let staged = state.staged_copy_result.take().ok_or_else(|| {
-                            replay_error(
-                                function,
-                                "Copy Result commit has no authenticated staged producer",
-                            )
-                        })?;
-                        validate_staged_target(function, &staged)?;
-                    } else if state.staged_copy_result.is_some() {
-                        return Err(replay_error(
-                            function,
-                            "non-try scalar result carries a staged Copy aggregate",
-                        ));
-                    }
-                }
-                CleanupResultSource::Owned { storage: result } => {
-                    if let Some(index) = state
-                        .conditional_variants
-                        .iter()
-                        .position(|variant| variant.root == *result)
-                    {
-                        if !state.live_order.is_empty() || state.conditional_variants.len() != 1 {
-                            return Err(replay_error(
-                                function,
-                                "conditional owned result retains non-result ownership",
-                            ));
-                        }
-                        state.conditional_variants.remove(index);
-                    } else {
-                        let result_flags = validate_place(function, result, storage, leaves)?;
-                        if result_flags
-                            .iter()
-                            .any(|flag| !state.live_order.contains(flag))
-                            || state.live_order.len() != result_flags.len()
-                        {
-                            return Err(replay_error(
-                            function,
-                            "owned result commit has incomplete result or remaining non-result ownership",
-                        ));
-                        }
-                        let result_flags = result_flags.into_iter().collect::<BTreeSet<_>>();
-                        state.live_order.retain(|flag| !result_flags.contains(flag));
-                    }
-                }
-            }
-            state.published = true;
-            if !state.live_order.is_empty() || !state.conditional_variants.is_empty() {
-                return Err(replay_error(
-                    function,
-                    "result publication leaves cleanup ownership live",
-                ));
-            }
-            Ok(None)
-        }
-        ExitContinuation::ReturnUnit => {
-            if state.pending_failure.is_some()
-                || state.selected_failure.is_some()
-                || !state.live_order.is_empty()
-                || !state.conditional_variants.is_empty()
-            {
-                return Err(replay_error(
-                    function,
-                    "unit return follows failure or incomplete cleanup",
-                ));
-            }
-            state.published = true;
-            Ok(None)
-        }
-    }
-}
-
-fn require_normal_flow_state(
-    function: &ResolvedFunction,
-    state: &PathState,
-    block: BlockId,
-) -> Result<(), Diagnostic> {
-    if state.pending_failure.is_none() && state.selected_failure.is_none() && !state.published {
-        Ok(())
-    } else {
-        Err(replay_error(
-            function,
-            format!(
-                "block {} continues ordinary control flow with failure or publication state",
-                block.0
-            ),
-        ))
-    }
-}
-
-fn validate_staged_target(
-    function: &ResolvedFunction,
-    source: &StagedCopyResultSource,
-) -> Result<(), Diagnostic> {
-    let target = match source {
-        StagedCopyResultSource::Body {
-            expression,
-            instance,
-        } => {
-            if expression != &function.body.id {
-                return Err(replay_error(
-                    function,
-                    "body result staging references another expression",
-                ));
-            }
-            instance
-        }
-        StagedCopyResultSource::TryResidual {
-            target_instance, ..
-        }
-        | StagedCopyResultSource::TryOptionNone {
-            target_instance, ..
-        } => target_instance,
-    };
-    if target != &function.return_type {
-        return Err(replay_error(
-            function,
-            "staged Copy result targets another concrete function result",
-        ));
-    }
-    Ok(())
 }
 
 fn expression_has_kind(
@@ -7473,7 +6845,10 @@ fn expression_has_explicit_record_match(expression: &ResolvedExpr) -> bool {
     })
 }
 
-fn expression_has_nested_record_destructure(expression: &ResolvedExpr) -> bool {
+fn expression_has_nested_record_destructure(
+    program: &dyn crate::cleanup::ReplayContext,
+    expression: &ResolvedExpr,
+) -> bool {
     expression_has_kind(expression, |kind| {
         matches!(
             kind,
@@ -7483,13 +6858,14 @@ fn expression_has_nested_record_destructure(expression: &ResolvedExpr) -> bool {
                 ..
             } if arms.iter().any(|arm| matches!(
                 &arm.pattern,
-                ResolvedMatchPattern::Record { fields, .. }
-                    if record_destructure::contains_nested(fields)
+                ResolvedMatchPattern::Record { instance, fields, .. }
+                    if record_destructure::contains_nested(program.declarations(), instance, fields)
             ))
         )
     })
 }
 
+#[cfg(test)]
 fn validate_reachable_acyclic_cfg(function: &ResolvedFunction) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let mut colors = vec![0_u8; plan.blocks.len()];
@@ -7525,6 +6901,7 @@ fn validate_reachable_acyclic_cfg(function: &ResolvedFunction) -> Result<(), Dia
     Ok(())
 }
 
+#[cfg(test)]
 fn validate_reference_coverage(function: &ResolvedFunction) -> Result<(), Diagnostic> {
     let plan = &function.cleanup_plan;
     let mut edge_references = vec![0_usize; plan.edges.len()];
@@ -7560,11 +6937,17 @@ fn validate_reference_coverage(function: &ResolvedFunction) -> Result<(), Diagno
     }
     for exit in &plan.exits {
         match &exit.continuation {
-            ExitContinuation::Continue(edge) => edge_references[edge.0 as usize] += 1,
+            ExitContinuation::Continue(edge)
+            | ExitContinuation::LoopBreak { edge, .. }
+            | ExitContinuation::FunctionReturn { edge, .. } => {
+                edge_references[edge.0 as usize] += 1
+            }
             ExitContinuation::ReturnFailure { source } => {
                 status_references.insert(source.clone());
             }
-            ExitContinuation::CommitResult { .. } | ExitContinuation::ReturnUnit => {}
+            ExitContinuation::CommitResult { .. }
+            | ExitContinuation::ReturnUnit
+            | ExitContinuation::LoopLatch { .. } => {}
         }
     }
     if edge_references.iter().any(|count| *count != 1) {
@@ -7599,7 +6982,16 @@ fn block_successors(function: &ResolvedFunction, block: BlockId) -> Vec<BlockId>
         CleanupTerminator::Goto(edge) => vec![*edge],
         CleanupTerminator::Branch(edges) => edges.clone(),
         CleanupTerminator::Exit(exit) => match &plan.exits[exit.0 as usize].continuation {
-            ExitContinuation::Continue(edge) => vec![*edge],
+            ExitContinuation::Continue(edge)
+            | ExitContinuation::LoopBreak { edge, .. }
+            | ExitContinuation::FunctionReturn { edge, .. } => vec![*edge],
+            ExitContinuation::LoopLatch { .. } => {
+                // A generated advancement proof fragment has no CFG edge; its
+                // certified entry is the only implicit successor.
+                return lexical_cert::latch_resume(plan, *exit)
+                    .into_iter()
+                    .collect();
+            }
             ExitContinuation::CommitResult { .. }
             | ExitContinuation::ReturnFailure { .. }
             | ExitContinuation::ReturnUnit => Vec::new(),
@@ -7614,7 +7006,7 @@ fn block_successors(function: &ResolvedFunction, block: BlockId) -> Vec<BlockId>
 fn validate_edge_condition(
     function: &ResolvedFunction,
     condition: &EdgeCondition,
-    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+    expressions: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
     statuses: &BTreeSet<StatusSourceId>,
 ) -> Result<(), Diagnostic> {
     match condition {
@@ -7725,127 +7117,9 @@ fn validate_place(
     Ok(under)
 }
 
-fn expression_facts(
-    function: &ResolvedFunction,
-) -> Result<BTreeMap<ExpressionId, Option<CallFact>>, Diagnostic> {
-    let mut facts = BTreeMap::new();
-    for expression in function
-        .requires
-        .iter()
-        .chain(std::iter::once(&function.body))
-        .chain(&function.ensures)
-    {
-        collect_expression_facts(function, expression, &mut facts)?;
-    }
-    Ok(facts)
-}
-
-fn collect_expression_facts(
-    function: &ResolvedFunction,
-    expression: &ResolvedExpr,
-    facts: &mut BTreeMap<ExpressionId, Option<CallFact>>,
-) -> Result<(), Diagnostic> {
-    // The private replay entry admits at most 512 semantic expression levels. Keep one indexed continuation per ancestor so wide calls, records, blocks,
-    // and matches never create a width-sized frontier and callback order stays identical to the former recursive pre-order walk.
-    let mut stack = [None; 514];
-    stack[0] = Some((expression, 0usize));
-    let mut len = 1usize;
-    while len != 0 {
-        len -= 1;
-        let (current, next_child) = stack[len].take().expect("expression-fact frame retained");
-        if next_child == 0 {
-            let fact = match &current.kind {
-                _ if crate::hir::closure::once::call(current).is_some() => {
-                    let (callee, args, _) = crate::hir::function_value::cleanup_call(current)?;
-                    Some(CallFact {
-                        callee: callee.clone(),
-                        instance: None,
-                        arguments: args.iter().map(|a| a.id.clone()).collect(),
-                        type_arguments: vec![],
-                    })
-                }
-                ResolvedExprKind::Invoke { callable, args } => Some(CallFact {
-                    callee: crate::hir::function_value::INVOKE_ID.clone(),
-                    instance: None,
-                    arguments: args.iter().map(|a| a.id.clone()).collect(),
-                    type_arguments: vec![callable.ty.clone()],
-                }),
-                ResolvedExprKind::Call {
-                    callee,
-                    instance,
-                    args,
-                    type_arguments,
-                } => Some(CallFact {
-                    callee: callee.clone(),
-                    instance: instance.clone(),
-                    arguments: args.iter().map(|argument| argument.id.clone()).collect(),
-                    type_arguments: type_arguments.clone(),
-                }),
-                ResolvedExprKind::NativeRustImportCall(call)
-                    if super::native_rust::owns(current) =>
-                {
-                    Some(CallFact {
-                        callee: call.import.clone(),
-                        instance: None,
-                        arguments: call
-                            .args
-                            .iter()
-                            .map(|argument| argument.id.clone())
-                            .collect(),
-                        type_arguments: Vec::new(),
-                    })
-                }
-                ResolvedExprKind::HostCommandCall(call) => Some(CallFact {
-                    callee: DeclarationId::new(crate::command_io_ops::id(call.operation)),
-                    instance: None,
-                    arguments: call
-                        .args
-                        .iter()
-                        .map(|argument| argument.id.clone())
-                        .collect(),
-                    type_arguments: Vec::new(),
-                }),
-                ResolvedExprKind::ByteRange {
-                    operation,
-                    source,
-                    start,
-                    end,
-                } => Some(CallFact {
-                    callee: operation.clone(),
-                    instance: None,
-                    arguments: [source.as_ref(), start.as_ref(), end.as_ref()]
-                        .into_iter()
-                        .map(|argument| argument.id.clone())
-                        .collect(),
-                    type_arguments: Vec::new(),
-                }),
-                _ => None,
-            };
-            if facts.insert(current.id.clone(), fact).is_some() {
-                return Err(replay_error(
-                    function,
-                    format!("HIR expression identity `{}` is repeated", current.id),
-                ));
-            }
-        }
-        if let Some(child) = replay_expression_child(current, next_child) {
-            if len + 2 > stack.len() {
-                return Err(replay_error(
-                    function,
-                    "HIR expression fact traversal exceeds the admitted depth",
-                ));
-            }
-            stack[len] = Some((current, next_child + 1));
-            stack[len + 1] = Some((child, 0));
-            len += 2;
-        }
-    }
-    Ok(())
-}
-
 fn require_expression(
     function: &ResolvedFunction,
-    expressions: &BTreeMap<ExpressionId, Option<CallFact>>,
+    expressions: &BTreeMap<ExpressionId, Option<CallFact<'_>>>,
     expression: &ExpressionId,
 ) -> Result<(), Diagnostic> {
     if expressions.contains_key(expression) {
@@ -7853,7 +7127,7 @@ fn require_expression(
     } else {
         Err(replay_error(
             function,
-            format!("cleanup plan references unknown expression `{expression}`"),
+            format_args!("cleanup plan references unknown expression `{expression}`"),
         ))
     }
 }
@@ -7868,7 +7142,7 @@ fn require_status(
     } else {
         Err(replay_error(
             function,
-            format!(
+            format_args!(
                 "cleanup plan references unknown status source `{}`",
                 source.expression
             ),
@@ -7883,10 +7157,106 @@ fn block_exists(function: &ResolvedFunction, block: BlockId) -> bool {
 }
 
 fn u32_index(function: &ResolvedFunction, index: usize, what: &str) -> Result<u32, Diagnostic> {
-    u32::try_from(index).map_err(|_| replay_error(function, format!("too many {what}s")))
+    u32::try_from(index).map_err(|_| replay_error(function, format_args!("too many {what}s")))
 }
 
-fn replay_error(function: &ResolvedFunction, message: impl Into<String>) -> Diagnostic {
+/// Borrowing message bridge for `replay_error`. Nothing is owned until the
+/// route is chosen: the ordinary route reproduces the original allocations, the
+/// test-only funded route counts and prepays before constructing any text.
+enum ReplayMessage<'a> {
+    Borrowed(&'a str),
+    Owned(String),
+    Formatted(std::fmt::Arguments<'a>),
+}
+
+impl<'a> From<&'a str> for ReplayMessage<'a> {
+    fn from(message: &'a str) -> Self {
+        Self::Borrowed(message)
+    }
+}
+
+impl<'a> From<&'a String> for ReplayMessage<'a> {
+    fn from(message: &'a String) -> Self {
+        Self::Borrowed(message.as_str())
+    }
+}
+
+impl From<String> for ReplayMessage<'_> {
+    fn from(message: String) -> Self {
+        Self::Owned(message)
+    }
+}
+
+impl<'a> From<std::fmt::Arguments<'a>> for ReplayMessage<'a> {
+    fn from(message: std::fmt::Arguments<'a>) -> Self {
+        Self::Formatted(message)
+    }
+}
+
+impl ReplayMessage<'_> {
+    /// The original owned argument: borrowed text converts as `Into<String>`
+    /// did, an owned String moves unchanged, arguments format once as the
+    /// original pre-call `format!` did.
+    fn into_original(self) -> String {
+        match self {
+            Self::Borrowed(message) => message.into(),
+            Self::Owned(message) => message,
+            Self::Formatted(arguments) => std::fmt::format(arguments),
+        }
+    }
+}
+
+fn replay_error<'a>(
+    function: &ResolvedFunction,
+    message: impl Into<ReplayMessage<'a>>,
+) -> Diagnostic {
+    let message = message.into();
+    #[cfg(test)]
+    match allocation::authority_for_function(function) {
+        Ok(None) => {}
+        Ok(Some(lease)) => return funded_replay_error(lease, function, message),
+        Err(_) => {
+            // A stale or expired subject never falls back to the production
+            // ledger or the ordinary allocation route.
+            return Diagnostic::io_static(
+                "SPX-H006",
+                "oracle invocation authority refused a replay diagnostic",
+            );
+        }
+    }
+    replay_error_old(function, message.into_original())
+}
+
+/// Funded route. Borrowed and formatted messages are counted and prepaid before
+/// any diagnostic text exists. An already owned String was allocated by the
+/// caller before this call and cannot be prepaid: the account records that as a
+/// sticky physical failure so the live hook fails visibly, never a free pass.
+#[cfg(test)]
+fn funded_replay_error(
+    lease: allocation::OracleLease,
+    function: &ResolvedFunction,
+    message: ReplayMessage<'_>,
+) -> Diagnostic {
+    let result = match &message {
+        ReplayMessage::Borrowed(text) => {
+            allocation::replay_error_funded(lease, function, format_args!("{text}"))
+        }
+        ReplayMessage::Formatted(arguments) => {
+            allocation::replay_error_funded(lease, function, *arguments)
+        }
+        ReplayMessage::Owned(text) => {
+            lease.fail_physical("replay diagnostic message was allocated before its prepayment");
+            allocation::replay_error_funded(lease, function, format_args!("{text}"))
+        }
+    };
+    match result {
+        Ok(diagnostic) => diagnostic,
+        Err(failure) => failure.into_diagnostic(),
+    }
+}
+
+/// Original `replay_error` body, unchanged and independent of the bridge.
+fn replay_error_old(function: &ResolvedFunction, message: impl Into<String>) -> Diagnostic {
     Diagnostic::io(
         "SPX-H006",
         format!(
@@ -7896,6 +7266,9 @@ fn replay_error(function: &ResolvedFunction, message: impl Into<String>) -> Diag
         ),
     )
 }
+
+#[cfg(test)]
+mod oracle_controls;
 
 #[cfg(test)]
 #[path = "replay_tests.rs"]
@@ -7908,3 +7281,11 @@ mod nested_owned_records_tests;
 #[cfg(test)]
 #[path = "nested_record_destructure_tests.rs"]
 mod nested_record_destructure_tests;
+
+#[cfg(test)]
+pub(super) mod phase_measurement;
+
+#[cfg(test)]
+mod live_oracle;
+#[cfg(test)]
+pub(crate) use live_oracle::with_financed_test_oracles;

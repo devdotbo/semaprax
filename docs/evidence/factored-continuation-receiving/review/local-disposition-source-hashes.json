@@ -1,0 +1,8 @@
+{
+  "src/cleanup_plan/replay/allocation.rs": "acc9eb5a1f7698d9c58c86357541b4ffe79270debc834fbf935ebb814271b7ad",
+  "src/cleanup_plan/replay/physical_budget.rs": "d38a39372c110f102af2d4d7c0b503112aa219bdc1f8616bfe636aeb2d8a011e",
+  "src/bounded_output/classifier_string.rs": "c301a761a04ef7036c7eed8375e0ee77c34266eeb89b6e1c3ae38eaad5a86193",
+  "src/cleanup_plan/replay.rs": "f2e97365dd2e89277ebbf0a2f43ece357321bc991b4ab39bfdfb76586b1004e5",
+  "src/cleanup_plan/replay/factored.rs": "95bfc24f97155a7072e377ef62ef031d46272f41459538706f5a68e53a27ce18",
+  "src/cleanup_plan/replay/factored/oracle_hook.rs": "dc67888164c54006a2c87f9ceef744162d57a533b26be3270d2fdd0b7fac0f02"
+}

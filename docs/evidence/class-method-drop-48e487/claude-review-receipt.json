@@ -1,0 +1,14 @@
+{
+  "exit_code": 0,
+  "wall_seconds": 24.271133041998837,
+  "tools_enabled": false,
+  "code_execution": false,
+  "peak_process_group_rss_bytes": 311312384,
+  "resource_refusal": null,
+  "actual_billing": "unknown",
+  "result_sha256": "a5a7acda3a01addd8a43ac8f3960c4e1965217f9a45355a266f4e835b48b8f06",
+  "prompt_sha256": "3d3e5ac767c0361549a9bd78d3ffa29e7ec3efeed4c9ba6d6003a4d2453316f5",
+  "result_path": "/Volumes/Semaprax/lane-prompts/class-method-drop-review-48e487-20261014/result.json",
+  "resolved_finding": "Explicit path attribute now routes nested tests to drop_method_roots/tests.rs; analogous existing lexical original test adapter remains unchanged.",
+  "list_cost_usd": 0.07520550000000001
+}

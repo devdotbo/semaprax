@@ -1,0 +1,72 @@
+{
+  "qualification": "bounded read-only source audit; uncommitted changing private source, not approval or execution",
+  "worktree": "/Volumes/Semaprax/worktrees/nominal-payload-827-20261015",
+  "committed_base": "69f34e5e99c855c86ecebcc5cc97e8cedcf0f35d",
+  "sources": [
+    {
+      "path": "src/workspace_graph/identity_resolution/base.rs",
+      "sha256": "34ca8733a8a19a6ce971b759c5ad1de15d5c4150b70a5e59256d9cf7fa7295db",
+      "lines": 104
+    },
+    {
+      "path": "src/workspace_graph/expected_projection/import_stub/core_proofs.rs",
+      "sha256": "add8404195a03e8398ec850877af14d0c16122175b76f7ca1f594805dc03889f",
+      "lines": 181
+    },
+    {
+      "path": "src/workspace_graph.rs",
+      "sha256": "c82d3bb6176c847fd9ff171f02d9c5aedd113e72b1eb9b1739ffee062319c11b",
+      "lines": 5971
+    },
+    {
+      "path": "src/hir/prelude_bundle/invocation.rs",
+      "sha256": "1ae20415df171bfa7d1c0972d5277b40777f267173b63ef53d9909143ed8d893",
+      "lines": 95
+    },
+    {
+      "path": "src/hir/identity_resolution/nominal.rs",
+      "sha256": "e6deb2b59f1a20868770a1f4ad79b66799d346ebe25f56de3233dc150b69e715",
+      "lines": 224
+    },
+    {
+      "path": "src/hir/declaration_index/nominal_base.rs",
+      "sha256": "ff72459b8c2a83260abd3fc03d5fe8293ec8dbb7eac52fcd7e6359e1ca2c3d09",
+      "lines": 82
+    },
+    {
+      "path": "src/hir/declaration_index/identity_payer.rs",
+      "sha256": "0bce106ddcd77073cdb7bbe4d3c14d2884ed89e9305738a10bb945282c09ff7a",
+      "lines": 505
+    },
+    {
+      "path": "src/hir/declaration_index/nominal_rollback.rs",
+      "sha256": "b107953ef5b3aecf87e30473b8548b74ca7ca534429671f419a39f7bd62fa61e",
+      "lines": 236
+    },
+    {
+      "path": "src/hir/declaration_index/nominal.rs",
+      "sha256": "c859b20ce83e1b526fdbc8afb2f3e27f1983f618814247db085efe143e2c0c82",
+      "lines": 79
+    },
+    {
+      "path": "src/hir/nominal_payload/map.rs",
+      "sha256": "93f20b1d6425c99d81d3dd0c50853f7f21a2b1119fd3d389825c10a6cf511746",
+      "lines": 119
+    },
+    {
+      "path": "src/bounded_output/identity_reservation/base_prelude.rs",
+      "sha256": "911cc958acd7ac48e25444c7d43454420ce5eb695769e054527c039e83d5b417",
+      "lines": 22
+    },
+    {
+      "path": "src/bounded_output/identity_reservation/producer_failure.rs",
+      "sha256": "19837bd39430ad7935cc07451ecbaf5e3546d0c7a8b98fee26fdc725976e9828",
+      "lines": 11
+    },
+    {
+      "path": "src/hir/prelude_bundle/fixed_work.rs",
+      "sha256": "f0797f594a25861ab1a06587c91353c2ce107a82b81fb7e9eb781bf87d322479",
+      "lines": 106
+    }
+  ]
+}

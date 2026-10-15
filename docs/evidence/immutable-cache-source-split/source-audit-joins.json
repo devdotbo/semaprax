@@ -1,0 +1,20 @@
+{
+  "required_children": [
+    "src/ast/program_source/checked_key.rs",
+    "src/ast/program_source/checked_key/encode.rs",
+    "src/ast/program_source/decl_slices.rs",
+    "src/ast/program_source/decl_slices_original.rs",
+    "src/bounded_output/prepaid.rs",
+    "src/bounded_output/source_owner_scope.rs",
+    "src/hir/function_reuse_source.rs",
+    "src/hir/identity_resolution/previous_source.rs",
+    "src/project/incremental/source_directory.rs",
+    "src/project/incremental/source_receiver_original.rs",
+    "src/workspace_graph/cache_key_original.rs",
+    "src/workspace_graph/current_source.rs",
+    "src/workspace_graph/current_source/source_bytes.rs",
+    "src/workspace_graph/custody.rs",
+    "src/workspace_graph/custody/tests.rs"
+  ],
+  "root_owns_final_union": true
+}

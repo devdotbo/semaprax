@@ -8,6 +8,9 @@ use std::time::{Duration, Instant};
 
 use cli::execution::NativeTestLimits;
 
+#[path = "native_test/timing.rs"]
+mod timing;
+
 struct CaseResult {
     stable_id: String,
     name: String,
@@ -17,10 +20,16 @@ struct CaseResult {
     stdout: Vec<u8>,
     stderr: Vec<u8>,
     failure: Option<String>,
+    timing: Option<timing::Timing>,
 }
 
 impl CaseResult {
     fn value(&self) -> Option<i64> {
+        // A successful child status may precede a reader/output refusal. Host
+        // settlement must complete before publishing either result carrier.
+        if self.failure.is_some() {
+            return None;
+        }
         if self.result_is_exit_status {
             return self
                 .status
@@ -112,7 +121,7 @@ pub(super) fn execute(manifest: &Path, limits: NativeTestLimits, json: bool) -> 
         let results: Vec<_> = cases
             .iter()
             .map(|case| {
-                serde_json::json!({
+                let mut result = serde_json::json!({
                     "stable_id": case.stable_id,
                     "name": case.name,
                     "role": if case.is_main { "main" } else { "case" },
@@ -122,7 +131,11 @@ pub(super) fn execute(manifest: &Path, limits: NativeTestLimits, json: bool) -> 
                     "outcome": case.outcome(),
                     "stdout": String::from_utf8_lossy(&case.stdout),
                     "stderr": String::from_utf8_lossy(&case.stderr),
-                })
+                });
+                if let Some(timing) = &case.timing {
+                    result["diagnostic_timings"] = timing.json(limits.timeout_ms);
+                }
+                result
             })
             .collect();
         println!(
@@ -189,6 +202,7 @@ fn stop(child: &mut Child) {
 }
 
 fn run_case(executable: &Path, cwd: &Path, limits: NativeTestLimits) -> CaseResult {
+    let timing = limits.diagnostic_timing.then(timing::Timing::new);
     let mut case = CaseResult {
         stable_id: String::new(),
         name: String::new(),
@@ -198,6 +212,7 @@ fn run_case(executable: &Path, cwd: &Path, limits: NativeTestLimits) -> CaseResu
         stdout: Vec::new(),
         stderr: Vec::new(),
         failure: None,
+        timing,
     };
     let mut child = match Command::new(executable)
         .current_dir(cwd)
@@ -208,10 +223,18 @@ fn run_case(executable: &Path, cwd: &Path, limits: NativeTestLimits) -> CaseResu
     {
         Ok(child) => child,
         Err(error) => {
+            if let Some(timing) = &mut case.timing {
+                timing.spawn_return = Some(timing.elapsed());
+                timing.terminal("spawn_error");
+                timing.complete = Some(timing.elapsed());
+            }
             case.failure = Some(format!("cannot start native test: {error}"));
             return case;
         }
     };
+    if let Some(timing) = &mut case.timing {
+        timing.spawn_return = Some(timing.elapsed());
+    }
     let stdout = child.stdout.take().expect("piped stdout");
     let stderr = child.stderr.take().expect("piped stderr");
     let limit = limits.max_output_bytes;
@@ -224,25 +247,49 @@ fn run_case(executable: &Path, cwd: &Path, limits: NativeTestLimits) -> CaseResu
     let stderr_reader =
         std::thread::spawn(move || read_bounded(stderr, limit, &total, &overflow_tx));
     let started = Instant::now();
+    if let Some(timing) = &mut case.timing {
+        timing.deadline_started(started);
+    }
     let timeout = Duration::from_millis(limits.timeout_ms);
     loop {
         if overflow_rx.try_recv().is_ok() {
+            if let Some(timing) = &mut case.timing {
+                timing.terminal("output_refusal");
+            }
             case.failure = Some(format!("native test exceeded {limit} output bytes"));
             stop(&mut child);
             break;
         }
-        match child.try_wait() {
+        if let Some(timing) = &mut case.timing {
+            if timing.first_wait.is_none() {
+                timing.first_wait = Some(timing.elapsed());
+            }
+        }
+        let observation = child.try_wait();
+        if let Some(timing) = &mut case.timing {
+            timing.wait_observed(matches!(&observation, Ok(None)));
+        }
+        match observation {
             Ok(Some(status)) => {
+                if let Some(timing) = &mut case.timing {
+                    timing.terminal("exit");
+                }
                 case.status = Some(status);
                 break;
             }
             Ok(None) if started.elapsed() < timeout => std::thread::sleep(Duration::from_millis(5)),
             Ok(None) => {
+                if let Some(timing) = &mut case.timing {
+                    timing.terminal("deadline");
+                }
                 case.failure = Some(format!("native test exceeded {} ms", limits.timeout_ms));
                 stop(&mut child);
                 break;
             }
             Err(error) => {
+                if let Some(timing) = &mut case.timing {
+                    timing.terminal("wait_error");
+                }
                 case.failure = Some(format!("cannot wait for native test: {error}"));
                 stop(&mut child);
                 break;
@@ -256,6 +303,9 @@ fn run_case(executable: &Path, cwd: &Path, limits: NativeTestLimits) -> CaseResu
                 .get_or_insert_with(|| "cannot read native test stdout".to_owned());
         }
     }
+    if let Some(timing) = &mut case.timing {
+        timing.stdout_settled = Some(timing.elapsed());
+    }
     match stderr_reader.join() {
         Ok(Ok(bytes)) => case.stderr = bytes,
         _ => {
@@ -263,9 +313,15 @@ fn run_case(executable: &Path, cwd: &Path, limits: NativeTestLimits) -> CaseResu
                 .get_or_insert_with(|| "cannot read native test stderr".to_owned());
         }
     }
+    if let Some(timing) = &mut case.timing {
+        timing.stderr_settled = Some(timing.elapsed());
+    }
     if case.stdout.len().saturating_add(case.stderr.len()) > limit {
         case.failure
             .get_or_insert_with(|| format!("native test exceeded {limit} output bytes"));
+    }
+    if let Some(timing) = &mut case.timing {
+        timing.complete = Some(timing.elapsed());
     }
     case
 }
@@ -294,6 +350,7 @@ mod tests {
             stdout: b"0\n".to_vec(),
             stderr: Vec::new(),
             failure: None,
+            timing: None,
         };
         assert!(case.passed());
         case.stdout = b"0\n1\n".to_vec();
@@ -310,6 +367,38 @@ mod tests {
         case.stdout = b"0\n".to_vec();
         case.failure = Some("output limit".to_owned());
         assert!(!case.passed());
+    }
+
+    #[test]
+    fn host_refusal_discards_result_after_successful_child_exit() {
+        for result_is_exit_status in [false, true] {
+            let mut case = CaseResult {
+                stable_id: "case".to_owned(),
+                name: "case".to_owned(),
+                is_main: false,
+                result_is_exit_status,
+                status: Some(success_status()),
+                stdout: b"0\n".to_vec(),
+                stderr: Vec::new(),
+                failure: None,
+                timing: None,
+            };
+            assert_eq!(case.value(), Some(0));
+            for failure in [
+                "native test exceeded 12 output bytes",
+                "native test exceeded 100 ms",
+                "cannot read native test stderr",
+            ] {
+                // Covers the race where try_wait observes success before the
+                // output readers finish and independently refuse the envelope.
+                case.failure = Some(failure.to_owned());
+                assert_eq!(case.value(), None);
+                assert!(!case.passed());
+                assert_eq!(case.outcome(), failure);
+                assert_eq!(case.status.as_ref().and_then(ExitStatus::code), Some(0));
+                assert_eq!(case.stdout, b"0\n");
+            }
+        }
     }
 
     fn success_status() -> ExitStatus {

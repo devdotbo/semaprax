@@ -1,0 +1,12 @@
+{
+  "producer_source": "fbae9cd048ef467e5798b538759bb8b9ed8625ce",
+  "application_head_before": "32a86c12372d86d6b9aee7a8d24622f92b14d8d8",
+  "all_old_sources_preflighted": true,
+  "all_candidate_hashes_matched": true,
+  "producer_reexecuted_at_application_head": false,
+  "literal_edits": 11,
+  "public_budget_delta": 64736,
+  "gain_claim": false,
+  "application_recovery": false,
+  "patch_sha256": "013167cc140c6543036798f6ea9924388e4e935463c48116127ec46bdb6008da"
+}

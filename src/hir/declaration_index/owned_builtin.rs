@@ -17,11 +17,14 @@ pub(super) fn owned_builtin_facts(
     let prefix = match declaration.as_str() {
         crate::prelude::VEC_ID
             if crate::vec_ops::resolved_vec_element_is_admitted(element)
+                || crate::hir::copy_record_collection::admitted(declarations, element)
                 || crate::hir::owned_record_collection::
                     is_admitted_owned_record_collection_element(declarations, element) =>
         {
             "vec"
         }
+        crate::prelude::VEC_ID if super::super::declared_collection::text_element(declarations,element) => "declared-vector-only",
+        crate::prelude::VEC_ID if crate::hir::owned_leaf_collection::layout(declarations,element).is_some() => "owned-leaf-vector-v1",
         crate::prelude::BOX_ID if crate::box_ops::resolved_box_element_is_admitted(element) => {
             "box"
         }
@@ -58,4 +61,11 @@ pub(super) fn resource_result_shape(index: &DeclarationIndex, ty: &ResolvedType)
         && index
             .declaration(resource)
             .is_some_and(|d| d.kind == DeclarationKind::Resource)
+}
+
+#[cfg(test)]
+impl DeclarationIndex {
+    pub(crate) fn remove_type_parameters_for_test(&mut self, owner: &DeclarationId) -> bool {
+        self.type_parameters.remove(owner).is_some()
+    }
 }

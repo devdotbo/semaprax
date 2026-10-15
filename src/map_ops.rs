@@ -1,4 +1,5 @@
 //! Additive typed Map and Set catalogue; v1 String Collections stays monomorphic.
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{Param, ParamMode, Span, Type};
 use crate::hir::{DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId};
 
@@ -63,7 +64,7 @@ impl MapOp {
             Self::SetKeyAt => "set_key_at",
         }
     }
-    pub(crate) fn id(self) -> &'static str {
+    pub(crate) const fn id(self) -> &'static str {
         match self {
             Self::New => "core.collection.map.new.v2",
             Self::Add => "core.collection.map.add.v2",
@@ -376,7 +377,11 @@ pub(crate) fn ast_resolved(ty: &Type) -> Option<ResolvedType> {
         Type::Bool => ResolvedType::Bool,
         Type::StringMap => ResolvedType::StringMap,
         Type::Named { name, arguments } if ast_collection(ty) => ResolvedType::Nominal {
-            declaration: DeclarationId::new(if name == "Map" { MAP_ID } else { SET_ID }),
+            declaration: DeclarationId::compiler(if name == "Map" {
+                crate::hir::CompilerDeclaration::Map
+            } else {
+                crate::hir::CompilerDeclaration::Set
+            }),
             arguments: arguments
                 .iter()
                 .map(ast_resolved)
@@ -385,8 +390,8 @@ pub(crate) fn ast_resolved(ty: &Type) -> Option<ResolvedType> {
         _ => return None,
     })
 }
-pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
-    program.functions.iter().any(|function| {
+pub(crate) fn program_uses(program: &dyn ProgramSource) -> bool {
+    program.functions().iter().any(|function| {
         function
             .params
             .iter()
@@ -404,7 +409,7 @@ pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
                     });
                     found
                 })
-    }) || program.types.iter().any(|decl| match &decl.kind {
+    }) || program.types().iter().any(|decl| match &decl.kind {
         crate::ast::TypeDeclarationKind::Record { fields }
         | crate::ast::TypeDeclarationKind::Class { fields, .. } => {
             fields.iter().any(|field| ast_collection(&field.ty))
@@ -413,25 +418,29 @@ pub(crate) fn program_uses(program: &crate::ast::Program) -> bool {
     })
 }
 
+pub(crate) fn resolved_function_uses(function: &crate::hir::ResolvedFunction) -> bool {
+    is_typed_collection(&function.return_type)
+        || function.params.iter().any(|p| is_typed_collection(&p.ty))
+        || function
+            .requires
+            .iter()
+            .chain(std::iter::once(&function.body))
+            .chain(&function.ensures)
+            .any(|root| {
+                let mut found = false;
+                crate::hir::visit_resolved_calls(root, &mut |callee, _, _| {
+                    found |= by_id(callee.as_str()).is_some()
+                });
+                found
+            })
+}
+
 pub(crate) fn resolved_program_uses(program: &crate::hir::ResolvedProgram) -> bool {
-    fn uses(function: &crate::hir::ResolvedFunction) -> bool {
-        is_typed_collection(&function.return_type)
-            || function.params.iter().any(|p| is_typed_collection(&p.ty))
-            || function
-                .requires
-                .iter()
-                .chain(std::iter::once(&function.body))
-                .chain(&function.ensures)
-                .any(|root| {
-                    let mut found = false;
-                    crate::hir::visit_resolved_calls(root, &mut |callee, _, _| {
-                        found |= by_id(callee.as_str()).is_some()
-                    });
-                    found
-                })
-    }
-    program.functions.iter().any(uses)
-        || program.function_instances.iter().any(|i| uses(&i.function))
+    program.functions.iter().any(resolved_function_uses)
+        || program
+            .function_instances
+            .iter()
+            .any(|i| resolved_function_uses(&i.function))
         || program.types.iter().any(|decl| match &decl.kind {
             crate::hir::ResolvedTypeDeclarationKind::Record { fields }
             | crate::hir::ResolvedTypeDeclarationKind::Class { fields, .. } => {

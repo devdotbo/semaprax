@@ -207,7 +207,8 @@ impl Sites {
                         sites.productions.insert(key, name);
                     }
                 }
-                ResolvedExprKind::Block { statements, .. } => {
+                ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. } => {
                     for statement in statements {
                         let ResolvedStatement::Assign {
                             binding,
@@ -384,7 +385,9 @@ fn push_children<'e>(expression: &'e mut Expr, pending: &mut Vec<&'e mut Expr>) 
             pending.push(receiver);
             pending.extend(args.iter_mut());
         }
-        ExprKind::Unary { value, .. }
+        ExprKind::LexicalExit { value, .. } => pending.extend(value.as_deref_mut()),
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
         | ExprKind::Try { operand: value }
         | ExprKind::Project { base: value, .. }
         | ExprKind::Yield { request: value } => pending.push(value),
@@ -406,6 +409,7 @@ fn push_children<'e>(expression: &'e mut Expr, pending: &mut Vec<&'e mut Expr>) 
                         pending.push(body);
                     }
                     Statement::For { values, body, .. }
+                    | Statement::ForBorrow { values, body, .. }
                     | Statement::ForOwn { values, body, .. } => {
                         pending.push(values);
                         pending.push(body);
@@ -452,6 +456,7 @@ fn push_children<'e>(expression: &'e mut Expr, pending: &mut Vec<&'e mut Expr>) 
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::Var(_) => {}
     }
 }
@@ -538,3 +543,6 @@ fn check_function(
         ExprKind::Var("value".to_owned()),
     )
 }
+
+#[path = "record_invariants/source.rs"]
+pub(super) mod source;

@@ -61,7 +61,9 @@ fn requires_function(function: &ResolvedFunction) -> bool {
         .map(|parameter| parameter.id.clone())
         .collect::<BTreeSet<_>>();
     hir::function_value::walk(function, |expression| {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Let { binding, .. } = statement {
                     if binding.ty == ResolvedType::String && binding.ownership == OwnershipMode::Own
@@ -136,10 +138,23 @@ pub(crate) fn legacy_graph_schema(program: &ResolvedProgram) -> Result<&'static 
 
 pub(crate) fn graph_schema_from_parts_and_instances(
     interfaces: &[hir::ResolvedInterface],
-    types: &[hir::ResolvedTypeDeclaration],
-    functions: &[ResolvedFunction],
-    templates: &[hir::ResolvedFunctionTemplate],
+    types: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    templates: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
     instances: &[hir::ResolvedFunctionInstance],
+) -> Result<&'static str, Diagnostic> {
+    graph_schema_from_parts_and_instances_with_renewal_authority(
+        interfaces, types, functions, templates, instances, None,
+    )
+}
+
+pub(crate) fn graph_schema_from_parts_and_instances_with_renewal_authority(
+    interfaces: &[hir::ResolvedInterface],
+    types: &(impl crate::hir::items::ItemSource<hir::ResolvedTypeDeclaration> + ?Sized),
+    functions: &(impl crate::hir::items::ItemSource<ResolvedFunction> + ?Sized),
+    templates: &(impl crate::hir::items::ItemSource<hir::ResolvedFunctionTemplate> + ?Sized),
+    instances: &[hir::ResolvedFunctionInstance],
+    renewal_authority: Option<&dyn Fn(&ResolvedFunction) -> bool>,
 ) -> Result<&'static str, Diagnostic> {
     if requires_functions(
         functions
@@ -148,9 +163,7 @@ pub(crate) fn graph_schema_from_parts_and_instances(
     ) {
         Ok(SCHEMA)
     } else {
-        super::byte_buffer_renewal::graph_schema_from_parts_and_instances(
-            interfaces, types, functions, templates, instances,
-        )
+        match renewal_authority { None => super::byte_buffer_renewal::graph_schema_from_parts_and_instances(interfaces, types, functions, templates, instances), Some(_) => super::byte_buffer_renewal::graph_schema_from_parts_and_instances_with_renewal_authority(interfaces, types, functions, templates, instances, renewal_authority), }
     }
 }
 

@@ -13,6 +13,24 @@ structural scanner, UTF-8 validator, and decoded string-token query. The older
 escapes or raw UTF-8; `std.data.json.doc.is_unique` continues to compare encoded
 member names. Their stable identities and behavior are unchanged.
 
+## Bounded generated-text kernel
+
+`utf8_text_valid(input, start, end, max_bytes)` checks one exact JSON string
+span and its decoded UTF-8 byte extent. Bounds above 64 return false; the
+caller still performs `strict_end` before field validation. It preserves raw
+ASCII, escape, surrogate and UTF-8 checks without materializing an owner.
+The generated stable-ID validators delegate to this ordinary checked function;
+helper identity grants no compiler authority. This additive kernel's owning
+executable qualification is pending.
+
+The ordinary `utf8_end` scan advances present ASCII bytes with one checked
+read, including NUL and controls; non-ASCII and absent reads retain the original
+sequence validator. Initial start clamping and earliest-fault encoding are
+unchanged. Generated UTF-8 sizing checks the quoted-length sentinel before
+scalar or total arithmetic and reuses that checked length. Frozen original scan
+and sizing differential definitions await grouped executable qualification;
+this does not change JSON grammar, limits or the maximum-shape fuel ceiling.
+
 ## Validation and result
 
 The package has the `useful-data.v1` profile and depends on bundled

@@ -84,6 +84,17 @@ pub(crate) struct KernelProgram {
 
 impl KernelProgram {
     pub(crate) fn function(&self, id: &DeclarationId) -> Option<&KernelFn> {
-        self.functions.iter().find(|function| &function.id == id)
+        self.function_text(id.as_str())
+    }
+
+    /// Exact identity text discovery in this current program, in authored order.
+    /// This grants no source binding or evaluation authority.
+    pub(crate) fn function_text(&self, id: &str) -> Option<&KernelFn> {
+        self.functions
+            .iter()
+            .find(|function| function.id.as_str() == id)
     }
 }
+
+#[cfg(test)]
+mod tests;

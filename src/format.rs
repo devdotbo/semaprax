@@ -1,7 +1,11 @@
+#[path = "format/parameters.rs"]
+mod parameters;
 use crate::ast::{
     BinaryOp, Expr, ExprKind, ImportFailure, MatchPattern, ModuleUseKind, Program,
     ResourceLifecycleKind, Statement, TypeDeclarationKind,
 };
+use parameters::write_type_arguments;
+pub(crate) use parameters::{write_record_literal_delimited_expr, write_type_parameters};
 use std::collections::HashMap;
 use std::fmt::Write as _;
 // Explicit paths: other crates include this file by `#[path]`, where a bare
@@ -16,6 +20,8 @@ mod capacity;
 mod closure;
 #[path = "format/comments.rs"]
 pub mod comments;
+#[path = "format/expression_statement.rs"]
+mod expression_statement;
 #[cfg(test)]
 #[path = "format/iterative_tests.rs"]
 mod iterative_tests;
@@ -23,16 +29,16 @@ mod iterative_tests;
 mod kernel_zero_tokens;
 #[path = "format/literals.rs"]
 mod literals;
+pub(crate) use literals::canonical_borrowed_utf8_literal;
 #[path = "format/session_protocol.rs"]
 mod session_protocol;
 #[path = "format/statement_if.rs"]
 mod statement_if;
 use block_statement::write_block_statement;
-use closure::contains_record_construction;
-
 use capacity::{
     legacy_canonical_temporary_bytes, legacy_expr_temporary_bytes, write_expr_measured,
 };
+use closure::contains_record_construction;
 use kernel_zero_tokens::{canonical_binary_op, canonical_unary_op};
 pub(crate) use kernel_zero_tokens::{
     canonical_bool, canonical_char, canonical_int, canonical_string, write_string_escaped,
@@ -42,6 +48,7 @@ enum ExprFormatFrame<'a> {
     Expr(&'a Expr, u8),
     MeasureEnd(usize, u8, usize),
     CallArgs(&'a [Expr], usize),
+    ConstructorItems(&'a [Statement], usize),
     BinaryRight(&'a Expr, BinaryOp, bool),
     Block(&'a [Statement], Option<&'a Expr>, usize),
     BlockNext(&'a [Statement], Option<&'a Expr>, usize),
@@ -81,7 +88,6 @@ enum TypeFormatFrame<'a> {
     FunctionParameters(&'a [crate::ast::Type], usize),
     FunctionResult(&'a crate::ast::Type),
 }
-
 #[derive(Clone, Copy)]
 #[allow(dead_code)]
 pub(crate) struct PrivateScratchCapacity {
@@ -436,6 +442,7 @@ pub(crate) fn write_canonical_commented(
                         write_joined(output, &method.effects, ", ");
                         writeln!(output, " }}").unwrap();
                     }
+                    let _expression_scope = expression_statement::whole_function_scope(method);
                     write_indented_function_body(output, &method.body, 2, placement);
                     placement.trailing(output, method.span.start, 1);
                 }
@@ -643,6 +650,10 @@ fn write_format_frames(
         }
     }
 
+    let _scope = match &initial {
+        ExprFormatFrame::Expr(root, _) => Some(expression_statement::scope(root)),
+        _ => None,
+    };
     let mut output = Positioned {
         inner: output,
         bytes: 0,
@@ -660,6 +671,14 @@ fn write_format_frames(
                     ));
                 }
                 match &value.kind {
+                    ExprKind::LexicalExit { kind, value } => {
+                        output.write_str(kind.keyword()).unwrap();
+                        frames.push(Frame::Close(';'));
+                        if let Some(value) = value {
+                            output.write_char(' ').unwrap();
+                            frames.push(Frame::Expr(value, 0));
+                        }
+                    }
                     ExprKind::Int(number) => output.write_str(&canonical_int(*number)).unwrap(),
                     ExprKind::Int32(value) => {
                         // The explicit suffix keeps the declared width stable
@@ -701,9 +720,10 @@ fn write_format_frames(
                     }
                     ExprKind::Bool(value) => output.write_str(&canonical_bool(*value)).unwrap(),
                     ExprKind::String(value) => {
-                        output.write_char('"').unwrap();
-                        write_string_escaped(&mut output, value);
-                        output.write_char('"').unwrap();
+                        literals::write_text_literal(&mut output, value, false)
+                    }
+                    ExprKind::BorrowedUtf8Literal(value) => {
+                        literals::write_text_literal(&mut output, value, true)
                     }
                     ExprKind::Var(name) => output.write_str(name).unwrap(),
                     ExprKind::Closure {
@@ -723,6 +743,25 @@ fn write_format_frames(
                         }
                         closure::write_signature(&mut output, params, return_type);
                         frames.push(Frame::Expr(body, 0));
+                    }
+
+                    ExprKind::VecConstructor {
+                        element,
+                        value: normalized,
+                        ..
+                    } => {
+                        if let (Ok(expansion), true) = (
+                            crate::ast::vec_constructor::inspect(value),
+                            expression_statement::hygienic(),
+                        ) {
+                            output.write_str("vec_of<").unwrap();
+                            write_type(&mut output, element);
+                            output.write_str(">(").unwrap();
+                            frames.push(Frame::Close(')'));
+                            frames.push(Frame::ConstructorItems(expansion.statements, 1));
+                        } else {
+                            frames.push(Frame::Expr(normalized, parent_precedence));
+                        }
                     }
                     ExprKind::Call {
                         name,
@@ -914,6 +953,19 @@ fn write_format_frames(
                     .expect("measurement frames require a length table")
                     .insert((expression, precedence), output.bytes.saturating_sub(start));
             }
+
+            Frame::ConstructorItems(statements, index) => {
+                if let Some(Statement::Let { value, .. }) = statements.get(index) {
+                    let ExprKind::Call { args, .. } = &value.kind else {
+                        unreachable!("authenticated constructor")
+                    };
+                    if index != 1 {
+                        output.write_str(", ").unwrap();
+                    }
+                    frames.push(Frame::ConstructorItems(statements, index + 1));
+                    frames.push(Frame::Expr(&args[1], 0));
+                }
+            }
             Frame::CallArgs(args, index) => {
                 if let Some(argument) = args.get(index) {
                     if index != 0 {
@@ -943,23 +995,8 @@ fn write_format_frames(
                         continue;
                     }
                     match statement {
-                        Statement::Let {
-                            name,
-                            mutable,
-                            declared,
-                            value,
-                            ..
-                        } => {
-                            if *mutable {
-                                write!(output, "let mut {name}").unwrap();
-                            } else {
-                                write!(output, "let {name}").unwrap();
-                            }
-                            if let Some(ty) = declared {
-                                write!(output, ": ").unwrap();
-                                write_type(&mut output, ty);
-                            }
-                            write!(output, " = ").unwrap();
+                        Statement::Let { value, .. } => {
+                            expression_statement::write_let_prefix(&mut output, statement);
                             frames.push(Frame::BlockNext(statements, tail, index + 1));
                             frames.push(Frame::Expr(value, 0));
                         }
@@ -993,15 +1030,13 @@ fn write_format_frames(
                         Statement::For {
                             item, values, body, ..
                         }
+                        | Statement::ForBorrow {
+                            item, values, body, ..
+                        }
                         | Statement::ForOwn {
                             item, values, body, ..
                         } => {
-                            let prefix = if matches!(statement, Statement::ForOwn { .. }) {
-                                "for own"
-                            } else {
-                                "for"
-                            };
-                            write!(output, "{prefix} {item} in ").unwrap();
+                            block_statement::write_traversal_header(&mut output, statement, item);
                             frames.push(Frame::BlockNextAfterWhile(statements, tail, index + 1));
                             frames.push(Frame::WhileBody(body));
                             frames.push(Frame::Expr(values, 0));
@@ -1193,53 +1228,14 @@ fn write_format_frames(
     }
 }
 
-pub(crate) fn write_record_literal_delimited_expr(output: &mut impl std::fmt::Write, value: &Expr) {
-    let delimited = contains_record_construction(value);
-    if delimited {
-        output.write_char('(').unwrap();
-    }
-    write_expr(output, value, 0);
-    if delimited {
-        output.write_char(')').unwrap();
-    }
-}
-
-pub(crate) fn write_type_parameters(
-    output: &mut impl std::fmt::Write,
-    parameters: &[crate::ast::TypeParameterDeclaration],
-) {
-    if parameters.is_empty() {
-        return;
-    }
-    output.write_char('<').unwrap();
-    for (index, parameter) in parameters.iter().enumerate() {
-        if index != 0 {
-            output.write_str(", ").unwrap();
-        }
-        output.write_str(&parameter.name).unwrap();
-    }
-    output.write_char('>').unwrap();
-}
-
-fn write_type_arguments(output: &mut impl std::fmt::Write, arguments: &[crate::ast::Type]) {
-    if arguments.is_empty() {
-        return;
-    }
-    output.write_char('<').unwrap();
-    for (index, argument) in arguments.iter().enumerate() {
-        if index != 0 {
-            output.write_str(", ").unwrap();
-        }
-        write_type(output, argument);
-    }
-    output.write_char('>').unwrap();
-}
-
 pub(crate) fn write_type(output: &mut impl std::fmt::Write, ty: &crate::ast::Type) {
     use TypeFormatFrame as Frame;
     let mut frames = FormatFrameStack::new(Frame::Type(ty), ScratchStackKind::Type);
     while let Some(frame) = frames.pop() {
         match frame {
+            Frame::Type(crate::ast::Type::Never) => {
+                panic!("compiler-only completion marker has no source type spelling")
+            }
             Frame::Type(crate::ast::Type::I64) => output.write_str("i64").unwrap(),
             Frame::Type(crate::ast::Type::I32) => output.write_str("i32").unwrap(),
             Frame::Type(crate::ast::Type::Char) => output.write_str("char").unwrap(),
@@ -1438,6 +1434,7 @@ fn write_indented_function_body(
     depth: usize,
     placement: &comments::Placement,
 ) {
+    let _scope = expression_statement::scope(body);
     let indent = "    ".repeat(depth);
     writeln!(output, "{{").unwrap();
     if let ExprKind::Block { statements, tail } = &body.kind {
@@ -1487,6 +1484,7 @@ fn statement_start(statement: &Statement) -> usize {
         | Statement::Unsafe { span, .. }
         | Statement::While { span, .. }
         | Statement::For { span, .. }
+        | Statement::ForBorrow { span, .. }
         | Statement::ForOwn { span, .. } => span.start,
     }
 }

@@ -1,0 +1,19 @@
+// Frozen pre-fast-path scan; sequence_end retains its ordinary original body.
+@id("consumer.legacy.utf8_end")
+fn legacy_utf8_end(input: borrow Slice<u8>, start: usize) -> usize
+{
+    let length = byte_len(input);
+    let mut index = if start > length { length } else { start };
+    let mut fault = index;
+    let mut bad = false;
+    let mut scanning = index < length;
+    while scanning {
+        let step = ju_raw_end(input, index);
+        bad = step > byte_len(input);
+        fault = if bad { index } else { fault };
+        index = if bad { index } else { step };
+        scanning = !bad && index < length;
+        scanning
+    }
+    if bad { byte_len(input) + 1usize + fault } else { index }
+}

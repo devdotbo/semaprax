@@ -1,0 +1,17 @@
+{
+  "source_only": true,
+  "source": "src/workspace_graph/expected_projection/defaults/field_directory.rs",
+  "original_sha256": "d2e7a118155dc5859e86373d09de082f58f51280a8b96c342eba1979e21717d5",
+  "inverse": [
+    {
+      "name": "explicit-tests-path",
+      "current": "#[path = \"field_directory/tests.rs\"]\nmod tests;",
+      "before": "mod tests;"
+    },
+    {
+      "name": "explicit-lexical-imports",
+      "current": "use super::{\n    active_builder_limit, limit_error, reserve_builder_structure, Diagnostic, FieldInitializer,\n    Span, TypeDeclaration,\n};\n",
+      "before": "use super::*;\n"
+    }
+  ]
+}

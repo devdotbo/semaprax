@@ -1,0 +1,6 @@
+
+running 1 test
+test loan_plan::paid_candidate::retained::tests::retained_inventory_foreign_subject_reservation_detached_and_sticky_owners_fail_closed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8800 filtered out; finished in 0.01s
+

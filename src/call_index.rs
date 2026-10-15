@@ -252,7 +252,10 @@ impl PersistentCallIndex {
                 ResolvedExprKind::Invoke { callable, args } => std::iter::once(callable.as_ref())
                     .chain(args.iter())
                     .nth(index),
-                ResolvedExprKind::Call { args, .. } => args.get(index),
+                ResolvedExprKind::Call { args, .. }
+                | ResolvedExprKind::LiteralFormat { args, .. }
+                | ResolvedExprKind::VecFieldRead { args, .. }
+                | ResolvedExprKind::RowLoan { args, .. } => args.get(index),
                 ResolvedExprKind::NativeRustImportCall(call) => call.args.get(index),
                 ResolvedExprKind::HostCommandCall(call) => call.args.get(index),
                 ResolvedExprKind::ByteRange {
@@ -260,6 +263,9 @@ impl PersistentCallIndex {
                 } => [source.as_ref(), start.as_ref(), end.as_ref()]
                     .get(index)
                     .copied(),
+                ResolvedExprKind::LexicalExit { value, .. } => {
+                    (index == 0).then_some(value.as_deref()).flatten()
+                }
                 ResolvedExprKind::Unary { value, .. }
                 | ResolvedExprKind::Project { base: value, .. }
                 | ResolvedExprKind::Try { operand: value, .. }
@@ -269,7 +275,10 @@ impl PersistentCallIndex {
                 ResolvedExprKind::Binary { left, right, .. } => {
                     [left.as_ref(), right.as_ref()].get(index).copied()
                 }
-                ResolvedExprKind::Block { statements, tail } => {
+                ResolvedExprKind::Block { statements, tail }
+                | ResolvedExprKind::VecConstructor {
+                    statements, tail, ..
+                } => {
                     let mut offset = 0;
                     for statement in statements {
                         let count = statement.child_count();
@@ -335,6 +344,7 @@ impl PersistentCallIndex {
                 | ResolvedExprKind::Float64(_)
                 | ResolvedExprKind::Bool(_)
                 | ResolvedExprKind::String(_)
+                | ResolvedExprKind::BorrowedUtf8Literal(_)
                 | ResolvedExprKind::ArrayU8(_)
                 | ResolvedExprKind::RepeatArrayU8 { .. }
                 | ResolvedExprKind::BorrowPlace { .. }

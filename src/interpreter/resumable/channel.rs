@@ -759,7 +759,7 @@ fn settle_channel_step(
         Err(Flow::Exhausted) => ChannelStep::FuelExhausted,
         Err(Flow::DepthExceeded) => ChannelStep::CallDepthExceeded,
         Err(Flow::Guard(detail)) => ChannelStep::GuardError(detail.to_owned()),
-        Err(Flow::Residual(_)) => ChannelStep::GuardError(
+        Err(Flow::Residual(_) | Flow::Lexical(_)) => ChannelStep::GuardError(
             "owned postfix `?` residual escaped its function frame".to_owned(),
         ),
         Err(Flow::Cancelled { .. }) => {

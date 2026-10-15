@@ -1,0 +1,133 @@
+{
+  "base": "f1f48d5a74e80037b805deff0db5cb69f45697c7",
+  "files": [
+    {
+      "source": "src/list_ops.rs",
+      "archive": "src__list_ops.rs.before.txt",
+      "sha256": "0abc67a67c5c22b175b81e2ef82e46206421f6a974fa772ea40de40181467dd2",
+      "edits": [
+        {
+          "name": "exact-current-hook-1",
+          "before": "}\n\npub(crate) fn is_list(ty: &ResolvedType) -> bool {\n    *ty == resolved_list()\n}\n\npub(crate) fn is_step(ty: &ResolvedType) -> bool {\n    *ty == resolved_step()\n}\n\npub(crate) fn step_shape(index: &crate::hir::DeclarationIndex, ty: &ResolvedType) -> bool {\n    if !is_step(ty) {\n        return false;\n    }\n    let owner = DeclarationId::compiler(CompilerDeclaration::ListStep);\n    let Some(cases) = index.variant_cases(&owner) else {\n        return false;\n    };\n    let parameter = ResolvedType::TypeParameter {\n        owner: owner.clone(),\n        index: 0,\n    };\n    matches!(cases, [nil, cons]\n        if nil.id.as_str() == NIL_CASE_ID && nil.name == \"Nil\" && nil.index == 0 && nil.fields.is_empty()\n        && cons.id.as_str() == CONS_CASE_ID && cons.name == \"Cons\" && cons.index == 1\n        && matches!(cons.fields.as_slice(), [head, tail]\n            if head.id.as_str() == HEAD_ID && head.name == \"head\" && head.index == 0 && head.ty == parameter\n            && tail.id.as_str() == TAIL_ID && tail.name == \"tail\" && tail.index == 1\n            && tail.ty == ResolvedType::Nominal { declaration: DeclarationId::compiler(CompilerDeclaration::List), arguments: vec![parameter] }))\n}\n\npub(crate) fn validate_declarations(\n",
+          "after": "}\n\npub(crate) fn is_list(ty: &ResolvedType) -> bool {\n    matches!(ty, ResolvedType::Nominal { declaration, arguments }\n        if declaration.as_str() == LIST_ID\n        && matches!(arguments.as_slice(), [ResolvedType::I64]))\n}\n\npub(crate) fn is_step(ty: &ResolvedType) -> bool {\n    matches!(ty, ResolvedType::Nominal { declaration, arguments }\n        if declaration.as_str() == STEP_ID\n        && matches!(arguments.as_slice(), [ResolvedType::I64]))\n}\n\npub(crate) fn step_shape(index: &crate::hir::DeclarationIndex, ty: &ResolvedType) -> bool {\n    if !is_step(ty) {\n        return false;\n    }\n    canonical_step_shape(index)\n}\n\nfn canonical_step_shape(index: &crate::hir::DeclarationIndex) -> bool {\n    let owner = DeclarationId::compiler(CompilerDeclaration::ListStep);\n    let Some(cases) = index.variant_cases(&owner) else {\n        return false;\n    };\n    matches!(cases, [nil, cons]\n        if nil.id.as_str() == NIL_CASE_ID && nil.name == \"Nil\" && nil.index == 0 && nil.fields.is_empty()\n        && cons.id.as_str() == CONS_CASE_ID && cons.name == \"Cons\" && cons.index == 1\n        && matches!(cons.fields.as_slice(), [head, tail]\n            if head.id.as_str() == HEAD_ID && head.name == \"head\" && head.index == 0 && is_step_parameter(&head.ty)\n            && tail.id.as_str() == TAIL_ID && tail.name == \"tail\" && tail.index == 1\n            && is_list_of_step_parameter(&tail.ty)))\n}\n\nfn is_step_parameter(ty: &ResolvedType) -> bool {\n    matches!(ty, ResolvedType::TypeParameter { owner, index: 0 }\n        if owner.as_str() == STEP_ID)\n}\n\nfn is_list_of_step_parameter(ty: &ResolvedType) -> bool {\n    matches!(ty, ResolvedType::Nominal { declaration, arguments }\n        if declaration.as_str() == LIST_ID\n        && matches!(arguments.as_slice(), [argument] if is_step_parameter(argument)))\n}\n\npub(crate) fn validate_declarations(\n"
+        },
+        {
+          "name": "exact-current-hook-2",
+          "before": "            } else {\n                declaration.kind == DeclarationKind::Variant\n                    && declaration.name == \"ListStep\"\n                    && step_shape(&program.declarations, &resolved_step())\n            };\n        if !valid {\n            return Err(crate::diagnostic::Diagnostic::io(\n",
+          "after": "            } else {\n                declaration.kind == DeclarationKind::Variant\n                    && declaration.name == \"ListStep\"\n                    && canonical_step_shape(&program.declarations)\n            };\n        if !valid {\n            return Err(crate::diagnostic::Diagnostic::io(\n"
+        },
+        {
+          "name": "exact-current-hook-3",
+          "before": "        )\n        .any(function_uses)\n}\n",
+          "after": "        )\n        .any(function_uses)\n}\n\n#[cfg(test)]\npub(crate) mod original_constructor;\n"
+        }
+      ]
+    },
+    {
+      "source": "src/iterator_ops.rs",
+      "archive": "src__iterator_ops.rs.before.txt",
+      "sha256": "8541bd6ab7e58bd7a39eae3eef770e6ac29f104a6ea6923aa73287d2b6a8ed44",
+      "edits": [
+        {
+          "name": "exact-current-hook-1",
+          "before": "    {\n        return false;\n    }\n    let owner = DeclarationId::compiler(CompilerDeclaration::IterStep);\n    let Some(cases) = index.variant_cases(&owner) else {\n        return false;\n    };\n    let parameter = ResolvedType::TypeParameter {\n        owner: owner.clone(),\n        index: 0,\n    };\n    matches!(cases,[done,yielded] if done.id.as_str()==DONE_ID&&done.name==\"Done\"&&done.index==0&&done.fields.is_empty()\n &&yielded.id.as_str()==YIELD_ID&&yielded.name==\"Yield\"&&yielded.index==1\n &&matches!(yielded.fields.as_slice(),[item,rest] if item.id.as_str()==ITEM_ID&&item.name==\"item\"&&item.index==0&&item.ty==parameter\n &&rest.id.as_str()==REST_ID&&rest.name==\"rest\"&&rest.index==1&&rest.ty==resolved_iter(parameter)))\n}\npub(crate) fn validate_declarations(\n    program: &crate::hir::ResolvedProgram,\n",
+          "after": "    {\n        return false;\n    }\n    canonical_step_shape(index)\n}\n\nfn canonical_step_shape(index: &crate::hir::DeclarationIndex) -> bool {\n    let owner = DeclarationId::compiler(CompilerDeclaration::IterStep);\n    let Some(cases) = index.variant_cases(&owner) else {\n        return false;\n    };\n    matches!(cases,[done,yielded] if done.id.as_str()==DONE_ID&&done.name==\"Done\"&&done.index==0&&done.fields.is_empty()\n &&yielded.id.as_str()==YIELD_ID&&yielded.name==\"Yield\"&&yielded.index==1\n &&matches!(yielded.fields.as_slice(),[item,rest] if item.id.as_str()==ITEM_ID&&item.name==\"item\"&&item.index==0&&is_step_parameter(&item.ty)\n &&rest.id.as_str()==REST_ID&&rest.name==\"rest\"&&rest.index==1&&is_iter_of_step_parameter(&rest.ty)))\n}\n\nfn is_step_parameter(ty: &ResolvedType) -> bool {\n    matches!(ty, ResolvedType::TypeParameter { owner, index: 0 }\n        if owner.as_str() == STEP_ID)\n}\n\nfn is_iter_of_step_parameter(ty: &ResolvedType) -> bool {\n    matches!(ty, ResolvedType::Nominal { declaration, arguments }\n        if declaration.as_str() == ITER_ID\n        && matches!(arguments.as_slice(), [argument] if is_step_parameter(argument)))\n}\npub(crate) fn validate_declarations(\n    program: &crate::hir::ResolvedProgram,\n"
+        },
+        {
+          "name": "exact-current-hook-2",
+          "before": "            } else {\n                declaration.kind == DeclarationKind::Variant\n                    && declaration.name == \"IterStep\"\n                    && step_shape(\n                        &program.declarations,\n                        &resolved_iter_step(ResolvedType::I64),\n                    )\n            };\n        if !valid {\n            return Err(crate::diagnostic::Diagnostic::io(\n",
+          "after": "            } else {\n                declaration.kind == DeclarationKind::Variant\n                    && declaration.name == \"IterStep\"\n                    && resolved_element_is_admitted_in(&program.declarations, &ResolvedType::I64)\n                    && canonical_step_shape(&program.declarations)\n            };\n        if !valid {\n            return Err(crate::diagnostic::Diagnostic::io(\n"
+        },
+        {
+          "name": "exact-current-hook-3",
+          "before": "        );\n    }\n}\n",
+          "after": "        );\n    }\n}\n\n#[cfg(test)]\npub(crate) mod original_constructor;\n"
+        }
+      ]
+    },
+    {
+      "source": "src/hir/validation/constructor_seed.rs",
+      "archive": "src__hir__validation__constructor_seed.rs.before.txt",
+      "sha256": "52c886c27a00527cca2468b308102608224fe80aa2a3e36ea5e20470b7ccf855",
+      "edits": [
+        {
+          "name": "exact-current-hook-1",
+          "before": "\n#[cfg(test)]\npub(super) mod original;\n",
+          "after": "\n#[cfg(test)]\npub(super) mod original;\n\n#[cfg(test)]\nmod intrinsic_tests;\n#[cfg(test)]\nmod original_intrinsics;\n"
+        },
+        {
+          "name": "test-only-complete-original-authentication-bridge",
+          "before": "",
+          "after": "\n/// Test bridge to the complete independently compiled original constructor.\n#[cfg(test)]\npub(in crate::hir) fn original_authentication_error(program: &ResolvedProgram) -> Option<Diagnostic> {\n    original::ConstructorSeed::authenticate(program, None).err()\n}\n"
+        }
+      ]
+    },
+    {
+      "source": "src/hir/validation/constructor_seed/original.rs",
+      "archive": "src__hir__validation__constructor_seed__original.rs.before.txt",
+      "sha256": "e38ef154a4b8a0e2fb00d2256f8fced29d75e6c8a847984f8387caa1019a5b1f",
+      "edits": [
+        {
+          "name": "exact-current-hook-1",
+          "before": "//! Exact current constructor subject, authenticated in the original order.\nuse super::super::function_lookup::original as function_lookup;\nuse super::*;\n\npub(in crate::hir) struct ConstructorSeed<'a> {\n",
+          "after": "//! Exact current constructor subject, authenticated in the original order.\nuse super::super::function_lookup::original as function_lookup;\nuse super::original_intrinsics as box_intrinsic;\nuse super::*;\n\npub(in crate::hir) struct ConstructorSeed<'a> {\n"
+        },
+        {
+          "name": "independent-full-original-generic-graph-dispatch",
+          "before": "use super::super::function_lookup::original as function_lookup;\n",
+          "after": "use super::super::function_lookup::original as function_lookup;\nuse super::super::generic_template::original_call_graph as generic_template;\n"
+        },
+        {
+          "name": "complete-independent-old-nul-receiver-dispatch",
+          "before": "use super::*;\n",
+          "after": "use crate::hir::inspection::validate_nul_free_identities_original as validate_nul_free_identities;\nuse super::*;\n"
+        }
+      ]
+    },
+    {
+      "source": "src/hir/validation/function_lookup/paid_custody.rs",
+      "archive": "src__hir__validation__function_lookup__paid_custody.rs.before.txt",
+      "sha256": "815fb8254c64f3dc68161b56be163d9fdeb6c2503d69da11b8c237a78eb8cdf9",
+      "edits": [
+        {
+          "name": "exact-saved-intrinsics-dispatch-guard",
+          "before": "    let current = current.replacen(alias, \"\", 1).replacen(",
+          "after": "    let saved_intrinsics = \"use super::original_intrinsics as box_intrinsic;\\n\";\n    assert_eq!(current.matches(saved_intrinsics).count(), 1);\n    let current = current.replacen(saved_intrinsics, \"\", 1);\n    let current = current.replacen(alias, \"\", 1).replacen("
+        },
+        {
+          "name": "complete-semantic-error-receiving-drop-window",
+          "before": "        let ((current, actual), refused, paid, first) = with_limit_usage_refusal(LIMIT, || {\n            measure(|| constructor_seed::ConstructorSeed::authenticate(&program, None).err())\n        });\n        assert_eq!(current, old);",
+          "after": "        let (((), actual), refused, paid, first) = with_limit_usage_refusal(LIMIT, || {\n            measure(|| {\n                let current = constructor_seed::ConstructorSeed::authenticate(&program, None).err();\n                // Compare every diagnostic field before dropping the complete receiving result.\n                // Returning an owned error would keep its backing outside this Drop observation.\n                assert_eq!(current, old);\n                drop(current);\n            })\n        });"
+        },
+        {
+          "name": "independent-full-original-generic-graph-dispatch",
+          "before": "    let saved_intrinsics = \"use super::original_intrinsics as box_intrinsic;\\n\";\n",
+          "after": "    let saved_generic_graph = \"use super::super::generic_template::original_call_graph as generic_template;\\n\";\n    assert_eq!(current.matches(saved_generic_graph).count(), 1);\n    let current = current.replacen(saved_generic_graph, \"\", 1);\n    let saved_intrinsics = \"use super::original_intrinsics as box_intrinsic;\\n\";\n"
+        },
+        {
+          "name": "complete-independent-old-nul-receiver-dispatch",
+          "before": "    let saved_generic_graph = \"use super::super::generic_template::original_call_graph as generic_template;\\n\";\n",
+          "after": "    let saved_nul = \"use crate::hir::inspection::validate_nul_free_identities_original as validate_nul_free_identities;\\n\";\n    assert_eq!(current.matches(saved_nul).count(), 1);\n    let current = current.replacen(saved_nul, \"\", 1);\n    let saved_generic_graph = \"use super::super::generic_template::original_call_graph as generic_template;\\n\";\n"
+        }
+      ]
+    }
+  ],
+  "whole_old_box_source": {
+    "archive": "src__hir__validation__box_intrinsic.rs.before.txt",
+    "sha256": "ae74763572e1f1447e3bbc9c15445bf6bfb9014529350287bff4ee7bc685b07d"
+  },
+  "saved_receivers": [
+    {
+      "source": "src/list_ops/original_constructor.rs",
+      "sha256": "9289ebd9ab42c9861644ac88641f48c7b9d30b99bbaba8a9b785f9507e3cb7a5"
+    },
+    {
+      "source": "src/iterator_ops/original_constructor.rs",
+      "sha256": "106d9f8a281a66a26633811571f80fc81949c70202be235fa4bc67c7cda85636"
+    },
+    {
+      "source": "src/hir/validation/constructor_seed/original_intrinsics.rs",
+      "sha256": "68f522899feb21fa7d0e0db389ce2d7cc5742dcd360b7b4f9ec57d49efc866e0"
+    }
+  ]
+}

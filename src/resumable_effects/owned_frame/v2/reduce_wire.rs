@@ -333,6 +333,7 @@ fn failure(plan: &CheckedOwnedReduceV2, basis: &Value) -> Result<(), Error> {
     for source in &f.cleanup_plan.status_sources {
         use crate::cleanup_plan::{ContractPhase, StatusProducer};
         let values = match &source.producer {
+            StatusProducer::CheckedAllocation { .. } => return Err(Error::Binding),
             StatusProducer::ContractFalse { phase, ordinal } => {
                 let (kind, contracts) = match phase {
                     ContractPhase::Requires => ("initial_failure", &f.requires),

@@ -1,0 +1,306 @@
+{
+  "qualification": "source-only, not executed; all26 prior owners plus4new",
+  "new_source_audit_children": [],
+  "selectors": [
+    {
+      "harness": "lib",
+      "selector": "hir::validation::ownership_flags::tests::complete_saved_copy_receivers_keep_all_modes_cache_precedence_and_corpus_types",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/ownership_flags/tests.rs",
+      "line": 35,
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
+      "role": "new copy owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::ownership_flags::tests::primitive_copy_queries_remove_actual_layout_acquisition_and_authenticate_sticky_zero",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/ownership_flags/tests.rs",
+      "line": 85,
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
+      "role": "new copy owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::ownership_flags::tests::original_dispatch_is_nested_unwind_safe_and_complete_methods_stay_frozen",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/ownership_flags/tests.rs",
+      "line": 147,
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
+      "role": "new copy owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::ownership_flags::tests::full_nominal_fixture_keeps_missing_generic_forged_cache_and_unknown_copy_routes",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/ownership_flags/tests.rs",
+      "line": 186,
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
+      "role": "new copy owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::ownership_flags::tests::full_original_ownership_methods_and_all_hooked_sources_are_exactly_bound",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/ownership_flags/tests.rs",
+      "line": 233,
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
+      "role": "new copy owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::ownership_flags::tests::generic_copy_fallback_pays_complete_backing_drop_exact_short_and_sticky",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/ownership_flags/tests.rs",
+      "line": 328,
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
+      "role": "new copy owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::tests::production_chain_matches_complete_saved_map_function_and_full_iterative_corpus",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/function_scope/tests.rs",
+      "line": 42,
+      "sha256": "9668364415acfde0f4f9ab2f78e78113332acd4b5926d1ad27a5051759d7cafa",
+      "role": "unchanged whole scope owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::tests::production_chain_preserves_parameter_requires_body_result_and_ensures_first_errors",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/function_scope/tests.rs",
+      "line": 55,
+      "sha256": "9668364415acfde0f4f9ab2f78e78113332acd4b5926d1ad27a5051759d7cafa",
+      "role": "unchanged whole scope owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::tests::production_chain_observes_actual_backing_debits_complete_drop_and_exact_short_sticky",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/function_scope/tests.rs",
+      "line": 136,
+      "sha256": "9668364415acfde0f4f9ab2f78e78113332acd4b5926d1ad27a5051759d7cafa",
+      "role": "unchanged whole scope owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::tests::production_chain_validator_drop_is_complete_on_postvalidation_unwind",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/function_scope/tests.rs",
+      "line": 177,
+      "sha256": "9668364415acfde0f4f9ab2f78e78113332acd4b5926d1ad27a5051759d7cafa",
+      "role": "unchanged whole scope owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::tests::persistent_requires_and_ensures_keep_hostile_flags_and_full_outer_metadata_isolated",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/function_scope/tests.rs",
+      "line": 213,
+      "sha256": "9668364415acfde0f4f9ab2f78e78113332acd4b5926d1ad27a5051759d7cafa",
+      "role": "unchanged whole scope owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::function_scope::tests::persistent_body_receiver_preserves_complete_saved_iterative_scope_on_every_corpus_function",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/function_scope/tests.rs",
+      "line": 326,
+      "sha256": "9668364415acfde0f4f9ab2f78e78113332acd4b5926d1ad27a5051759d7cafa",
+      "role": "unchanged whole scope owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::copy_flags_tests::complete_argument_receiver_keeps_every_ownership_mode_type_span_and_parameter_identity",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/copy_flags_tests.rs",
+      "line": 15,
+      "sha256": "7b25d8dd797bcc27a338c35ad13000ae32764335df295443521e94dc04634b38",
+      "role": "new argument copy owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::copy_flags_tests::actual_argument_copy_receiver_removes_layout_allocation_preserves_old_and_sticky_zero",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/copy_flags_tests.rs",
+      "line": 54,
+      "sha256": "7b25d8dd797bcc27a338c35ad13000ae32764335df295443521e94dc04634b38",
+      "role": "new argument copy owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::copy_flags_tests::complete_original_argument_body_is_compiled_exactly_with_only_entry_name_changed",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/copy_flags_tests.rs",
+      "line": 108,
+      "sha256": "7b25d8dd797bcc27a338c35ad13000ae32764335df295443521e94dc04634b38",
+      "role": "new argument copy owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::copy_flags_tests::full_original_byte_corpus_keeps_exact_place_and_intrinsic_borrow_diagnostics",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/copy_flags_tests.rs",
+      "line": 128,
+      "sha256": "7b25d8dd797bcc27a338c35ad13000ae32764335df295443521e94dc04634b38",
+      "role": "new argument copy owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::tests::byte_signature_views_match_every_owned_descriptor_without_materializing_labels",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/tests.rs",
+      "line": 35,
+      "sha256": "e9fa71a0cdb97e0e55b5bd4188add4b9ef1c99e77edde78c17a17f515e930fc9",
+      "role": "unchanged original argument owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::tests::byte_signature_views_keep_recursive_success_and_call_shape_refusal_exact",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/tests.rs",
+      "line": 136,
+      "sha256": "e9fa71a0cdb97e0e55b5bd4188add4b9ef1c99e77edde78c17a17f515e930fc9",
+      "role": "unchanged original argument owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::tests::byte_signature_views_preserve_owned_bytes_identity_and_borrow_authority_failures",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/tests.rs",
+      "line": 170,
+      "sha256": "e9fa71a0cdb97e0e55b5bd4188add4b9ef1c99e77edde78c17a17f515e930fc9",
+      "role": "unchanged original argument owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::tests::ownership_view_borrows_nominal_facts_and_preserves_byte_and_missing_fact_diagnostics",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/tests.rs",
+      "line": 249,
+      "sha256": "e9fa71a0cdb97e0e55b5bd4188add4b9ef1c99e77edde78c17a17f515e930fc9",
+      "role": "unchanged original argument owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::tests::borrowed_user_signatures_keep_exact_descriptors_and_original_owned_census",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/tests.rs",
+      "line": 349,
+      "sha256": "e9fa71a0cdb97e0e55b5bd4188add4b9ef1c99e77edde78c17a17f515e930fc9",
+      "role": "unchanged original argument owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::tests::borrowed_user_signatures_keep_recursive_calls_and_hostile_argument_refusals_exact",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/tests.rs",
+      "line": 385,
+      "sha256": "e9fa71a0cdb97e0e55b5bd4188add4b9ef1c99e77edde78c17a17f515e930fc9",
+      "role": "unchanged original argument owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::tests::string_signature_views_match_all_materialized_descriptors_at_zero_identity_budget",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/tests.rs",
+      "line": 475,
+      "sha256": "e9fa71a0cdb97e0e55b5bd4188add4b9ef1c99e77edde78c17a17f515e930fc9",
+      "role": "unchanged original argument owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::tests::string_signature_views_keep_recursive_order_and_call_shape_refusals_exact",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/tests.rs",
+      "line": 536,
+      "sha256": "e9fa71a0cdb97e0e55b5bd4188add4b9ef1c99e77edde78c17a17f515e930fc9",
+      "role": "unchanged original argument owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::tests::string_signature_views_preserve_exact_owned_and_scalar_parameter_error_identities",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/tests.rs",
+      "line": 605,
+      "sha256": "e9fa71a0cdb97e0e55b5bd4188add4b9ef1c99e77edde78c17a17f515e930fc9",
+      "role": "unchanged original argument owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::call_parameters::tests::lexical_exit_declared_ownership_is_value_only_without_nominal_authority",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/call_parameters/tests.rs",
+      "line": 656,
+      "sha256": "e9fa71a0cdb97e0e55b5bd4188add4b9ef1c99e77edde78c17a17f515e930fc9",
+      "role": "unchanged original argument owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::ownership_flags::tests::clone_payer_literal_backing_cursor_once_exact_short_and_sticky_drop",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/ownership_flags/tests.rs",
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
+      "line": 393,
+      "role": "new clone-census owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::ownership_flags::tests::clone_payer_keeps_deep_census_boundary_and_failed_clone_sticky",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/ownership_flags/tests.rs",
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
+      "line": 477,
+      "role": "new clone-census owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::ownership_flags::tests::lazy_flags_payer_keeps_zero_limit_primitives_and_full_forged_cache_precedence",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/ownership_flags/tests.rs",
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
+      "line": 521,
+      "role": "new clone-census owner"
+    },
+    {
+      "harness": "lib",
+      "selector": "hir::validation::ownership_flags::tests::complete_original_paid_entry_and_lazy_fast_gates_stay_source_exact",
+      "expected": 1,
+      "ignored": 0,
+      "source": "src/hir/validation/ownership_flags/tests.rs",
+      "sha256": "e993fe313d66fa164ae8d55c3dfd6a5addd41977bd0a10437d332d8684a66d5c",
+      "line": 581,
+      "role": "new clone-census owner"
+    }
+  ]
+}

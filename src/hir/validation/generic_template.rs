@@ -1,6 +1,12 @@
 //! Validation-only rules for bounded generic templates.
 
 use super::*;
+mod call_graph;
+mod reachability;
+#[cfg(test)]
+pub(super) use call_graph::original as original_call_graph;
+pub(super) mod values;
+pub(super) use reachability::{reachable_instances, Reachable};
 
 impl HirValidator<'_> {
     pub(super) fn validate_template_expressions(
@@ -8,13 +14,21 @@ impl HirValidator<'_> {
         template: &ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
     ) -> Result<(), Diagnostic> {
-        let mut values = BTreeMap::new();
+        self.validate_template_expressions_with_values(template, execution, values::Values::new()?)
+    }
+
+    fn validate_template_expressions_with_values<'value>(
+        &mut self,
+        template: &'value ResolvedFunctionTemplate,
+        execution: &FunctionExecutionId,
+        mut values: values::Values<'value>,
+    ) -> Result<(), Diagnostic> {
         for parameter in &template.params {
             self.insert_value(&parameter.id)?;
-            values.insert(parameter.id.clone(), parameter.ty.clone());
+            values.insert(parameter.id.clone(), &parameter.ty)?;
         }
         for (index, expression) in template.requires.iter().enumerate() {
-            let mut contract_values = values.clone();
+            let mut contract_values = values.checkpoint()?;
             self.validate_template_expr(
                 template,
                 execution,
@@ -32,9 +46,9 @@ impl HirValidator<'_> {
             (false, true),
         )?;
         self.insert_value(&template.result_id)?;
-        values.insert(template.result_id.clone(), template.return_type.clone());
+        values.insert(template.result_id.clone(), &template.return_type)?;
         for (index, expression) in template.ensures.iter().enumerate() {
-            let mut contract_values = values.clone();
+            let mut contract_values = values.checkpoint()?;
             self.validate_template_expr(
                 template,
                 execution,
@@ -96,7 +110,8 @@ pub(super) fn body_type_requires_validation(
     template: &ResolvedFunctionTemplate,
     ty: &ResolvedType,
 ) -> bool {
-    ty != &ResolvedType::Char
+    ty != &ResolvedType::Never
+        && ty != &ResolvedType::Char
         && ty != &ResolvedType::Str
         && !(ty == &ResolvedType::Bytes && has_owned_record_composition(program, template))
 }
@@ -232,14 +247,21 @@ fn admits_ordinary_record_result(
         && (super::super::type_reachability::is_admitted_nested_owned_byte_record(
             &program.declarations,
             &scrutinee.ty,
-        ) || super::super::owned_text_record::admitted(&scrutinee.ty, &program.declarations))
+        ) || super::super::owned_text_record::runtime_admitted(
+            &scrutinee.ty,
+            &program.declarations,
+        ))
         && (matches!(expression.ty, ResolvedType::Bytes | ResolvedType::String)
             || crate::map_ops::is_collection(&expression.ty)
+            || crate::hir::owned_collection_record::vector(&program.declarations, &expression.ty)
             || super::super::type_reachability::is_admitted_nested_owned_byte_record(
                 &program.declarations,
                 &expression.ty,
             )
-            || super::super::owned_text_record::admitted(&expression.ty, &program.declarations));
+            || super::super::owned_text_record::runtime_admitted(
+                &expression.ty,
+                &program.declarations,
+            ));
     copy || owns
 }
 
@@ -249,7 +271,16 @@ fn validate_record_match_result(
     expression: &ResolvedExpr,
     arm: &ResolvedMatchArm,
 ) -> Result<(), Diagnostic> {
-    if matches!(arm.value.ty, ResolvedType::I64 | ResolvedType::Bool)
+    // Completion carries no runtime value. The independent lexical contour
+    // validator still proves the terminal arm and its exact Value ownership.
+    let terminal = !matches!(execution, FunctionExecutionId::Generic(_))
+        && expression.ty == ResolvedType::Never
+        && expression.ownership == OwnershipMode::Value
+        && arm.value.ty == ResolvedType::Never
+        && arm.value.ownership == OwnershipMode::Value
+        && matches!(&expression.kind, ResolvedExprKind::Match { arms, .. } if arms.len() == 1);
+    if terminal
+        || matches!(arm.value.ty, ResolvedType::I64 | ResolvedType::Bool)
         || admits_owned_record_match_result(program, execution, expression, arm)
         || admits_ordinary_record_result(program, execution, expression, arm)
     {
@@ -272,14 +303,13 @@ impl HirValidator<'_> {
     }
 }
 
-pub(super) fn projected_place_type(
+pub(super) fn projected_place_type<'scope>(
     program: &ResolvedProgram,
     place: &Place,
-    values: &BTreeMap<ValueId, ResolvedType>,
-) -> Result<ResolvedType, Diagnostic> {
+    values: &'scope values::Values<'_>,
+) -> Result<std::borrow::Cow<'scope, ResolvedType>, Diagnostic> {
     let mut ty = values
-        .get(&place.root)
-        .cloned()
+        .root(&place.root)
         .ok_or_else(|| hir_error("generic template place root is out of scope"))?;
     for projection in &place.projections {
         let PlaceProjection::Field(field) = projection else {
@@ -290,7 +320,7 @@ pub(super) fn projected_place_type(
         let ResolvedType::Nominal {
             declaration,
             arguments,
-        } = &ty
+        } = ty.as_ref()
         else {
             return Err(hir_error("generic template projects a non-record place"));
         };
@@ -300,7 +330,7 @@ pub(super) fn projected_place_type(
             .and_then(|fields| fields.iter().find(|candidate| candidate.id == *field))
             .map(|candidate| &candidate.ty)
             .ok_or_else(|| hir_error("generic template projects an unknown record field"))?;
-        ty = substitute_type(field_ty, declaration, arguments)?;
+        ty = std::borrow::Cow::Owned(substitute_type(field_ty, declaration, arguments)?);
     }
     Ok(ty)
 }
@@ -310,9 +340,9 @@ pub(super) fn validate_template_place(
     _template: &ResolvedFunctionTemplate,
     expression: &ResolvedExpr,
     place: &Place,
-    values: &BTreeMap<ValueId, ResolvedType>,
+    values: &values::Values<'_>,
 ) -> Result<(), Diagnostic> {
-    if projected_place_type(program, place, values)? != expression.ty {
+    if *projected_place_type(program, place, values)? != expression.ty {
         return Err(hir_error("generic projected place type differs"));
     }
     Ok(())
@@ -326,7 +356,7 @@ pub(super) fn authenticate_vec_wrapper(
         || (program.module == crate::vec_ops::MODULE
             && crate::vec_ops::ALL
                 .into_iter()
-                .any(|op| crate::vec_ops::wrapper_name(op) == template.name));
+                .any(|op| crate::vec_ops::wrapper_name(op) == Some(template.name.as_str())));
     match (
         candidate,
         crate::vec_ops::hir_wrapper_in_program(program, template),
@@ -474,6 +504,14 @@ pub(super) fn is_forwarded_call(
 }
 
 pub(super) fn validate_call_graph(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    if crate::bounded_output::active_remaining().is_some() {
+        call_graph::validate_call_graph_paid(program)
+    } else {
+        validate_call_graph_original(program)
+    }
+}
+
+pub(super) fn validate_call_graph_original(program: &ResolvedProgram) -> Result<(), Diagnostic> {
     let ids = program
         .function_templates
         .iter()
@@ -522,64 +560,6 @@ pub(super) fn validate_call_graph(program: &ResolvedProgram) -> Result<(), Diagn
     (visited == ids.len())
         .then_some(())
         .ok_or_else(|| hir_error("generic function template call graph contains a direct cycle"))
-}
-
-pub(super) fn reachable_instances(
-    program: &ResolvedProgram,
-) -> Result<Vec<(FunctionInstanceId, DeclarationId, Vec<ResolvedType>)>, Diagnostic> {
-    const MAX_FUNCTION_INSTANCES: usize = 256;
-    let mut seen = BTreeSet::new();
-    let mut reachable = Vec::new();
-    let mut pending = std::collections::VecDeque::new();
-    for function in &program.functions {
-        collect_calls(function, &mut pending);
-    }
-    while let Some((instance, template, arguments)) = pending.pop_front() {
-        if FunctionInstanceId::derive(&template, &arguments) != instance {
-            return Err(hir_error(
-                "reachable generic function instance identity is inconsistent",
-            ));
-        }
-        if !seen.insert(instance.clone()) {
-            continue;
-        }
-        if reachable.len() == MAX_FUNCTION_INSTANCES {
-            return Err(hir_error(format!(
-                "generic function instance closure exceeds {MAX_FUNCTION_INSTANCES} entries"
-            )));
-        }
-        reachable.push((instance.clone(), template, arguments));
-        if let Some(materialized) = program
-            .function_instances
-            .iter()
-            .find(|candidate| candidate.id == instance)
-        {
-            collect_calls(&materialized.function, &mut pending);
-        }
-    }
-    Ok(reachable)
-}
-
-fn collect_calls(
-    function: &ResolvedFunction,
-    pending: &mut std::collections::VecDeque<(
-        FunctionInstanceId,
-        DeclarationId,
-        Vec<ResolvedType>,
-    )>,
-) {
-    for expression in function
-        .requires
-        .iter()
-        .chain(std::iter::once(&function.body))
-        .chain(&function.ensures)
-    {
-        visit_resolved_calls(expression, &mut |callee, instance, arguments| {
-            if let Some(instance) = instance {
-                pending.push_back((instance.clone(), callee.clone(), arguments.to_vec()));
-            }
-        });
-    }
 }
 
 pub(super) fn proof_return_type(
@@ -654,12 +634,12 @@ pub(super) fn substitutions(
 }
 
 impl HirValidator<'_> {
-    pub(super) fn validate_template_result_expression(
+    pub(super) fn validate_template_result_expression<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        expression: &ResolvedExpr,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        expression: &'value ResolvedExpr,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         if !super::super::generic_result::profile(template) || !path.starts_with("body") {
@@ -751,12 +731,12 @@ impl HirValidator<'_> {
         generic_template::validate_type(self.program, template, ty)
     }
 
-    pub(super) fn validate_template_expr(
+    pub(super) fn validate_template_expr<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        expression: &ResolvedExpr,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        expression: &'value ResolvedExpr,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         self.validate_template_expr_with_context(
@@ -771,12 +751,12 @@ impl HirValidator<'_> {
 }
 
 impl HirValidator<'_> {
-    pub(super) fn validate_template_callable(
+    pub(super) fn validate_template_callable<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        expression: &ResolvedExpr,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        expression: &'value ResolvedExpr,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         if !super::super::generic_collection::profile(template) {
@@ -841,12 +821,12 @@ impl HirValidator<'_> {
 }
 
 impl HirValidator<'_> {
-    pub(super) fn validate_template_mutation(
+    pub(super) fn validate_template_mutation<'value>(
         &mut self,
-        template: &ResolvedFunctionTemplate,
+        template: &'value ResolvedFunctionTemplate,
         execution: &FunctionExecutionId,
-        statement: &ResolvedStatement,
-        values: &mut BTreeMap<ValueId, ResolvedType>,
+        statement: &'value ResolvedStatement,
+        values: &mut generic_template::values::Values<'value>,
         path: &str,
     ) -> Result<(), Diagnostic> {
         if !super::super::generic_collection::profile(template) {
@@ -881,9 +861,15 @@ impl HirValidator<'_> {
             }
             ResolvedStatement::While {
                 condition, body, ..
+            }
+            | ResolvedStatement::LexicalWhile {
+                condition, body, ..
             } => {
                 if condition.ty != ResolvedType::Bool
-                    || !matches!(body.kind, ResolvedExprKind::Block { .. })
+                    || !matches!(
+                        body.kind,
+                        ResolvedExprKind::Block { .. } | ResolvedExprKind::VecConstructor { .. }
+                    )
                 {
                     return Err(hir_error(
                         "generic collection loop requires bool condition and block body",
@@ -893,14 +879,14 @@ impl HirValidator<'_> {
                     template,
                     execution,
                     condition,
-                    &mut values.clone(),
+                    &mut values.checkpoint()?,
                     &format!("{path}.condition"),
                 )?;
                 self.validate_template_expr(
                     template,
                     execution,
                     body,
-                    &mut values.clone(),
+                    &mut values.checkpoint()?,
                     &format!("{path}.body"),
                 )
             }
@@ -916,7 +902,9 @@ fn template_mutable_binding(
     let mut pending = vec![&template.body];
     let mut matched = false;
     while let Some(expression) = pending.pop() {
-        if let ResolvedExprKind::Block { statements, .. } = &expression.kind {
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
             for statement in statements {
                 if let ResolvedStatement::Let {
                     binding: declared,

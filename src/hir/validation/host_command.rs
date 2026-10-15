@@ -9,15 +9,23 @@ use super::*;
 
 /// Every effect a host-command call needs must be declared by the enclosing
 /// function; contracts (`allowed_effects == None`) admit no host command.
+#[cfg(test)]
 pub(super) fn require_effects(
     operation: ResolvedHostCommandOperation,
     allowed_effects: Option<&BTreeSet<String>>,
+) -> Result<(), Diagnostic> {
+    require_effects_view(operation, allowed_effects.map(effect_keys::Allowed::Owned))
+}
+
+pub(super) fn require_effects_view(
+    operation: ResolvedHostCommandOperation,
+    allowed_effects: Option<effect_keys::Allowed<'_>>,
 ) -> Result<(), Diagnostic> {
     let Some(allowed) = allowed_effects else {
         return Err(hir_error("contract calls effectful host-command operation"));
     };
     if let Some(effect) =
-        crate::command_io_ops::required_effects(operation).find(|effect| !allowed.contains(*effect))
+        crate::command_io_ops::required_effects(operation).find(|effect| !allowed.contains(effect))
     {
         return Err(hir_error(format!(
             "host-command operation requires undeclared effect `{effect}`"

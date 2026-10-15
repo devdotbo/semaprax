@@ -2,8 +2,13 @@
 //! Schema-only records outside that executable profile retain SPX-T309.
 use super::super::diagnostics::error;
 use super::super::type_table::TypeTable;
-use crate::ast::{Program, Span, Type, TypeDeclarationKind};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Span, Type, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
+
+pub(in crate::source_verify) fn runtime_admitted(root: &Type, types: &TypeTable<'_>) -> bool {
+    admitted(root, types) || super::collection_record::admitted(root, types)
+}
 
 /// The first `string`-bearing field of a monomorphic authored record.
 fn string_field<'a>(ty: &Type, types: &TypeTable<'a>) -> Option<(&'a str, &'a str)> {
@@ -28,19 +33,22 @@ fn string_field<'a>(ty: &Type, types: &TypeTable<'a>) -> Option<(&'a str, &'a st
 
 /// Push `SPX-T309` when `ty` is a string-bearing record used as `role`.
 pub(in crate::source_verify) fn reject(
-    program: &Program,
+    program: &dyn ProgramSource,
     ty: &Type,
     role: &str,
     span: Span,
     types: &TypeTable<'_>,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> bool {
-    if admitted(ty, types) {
+    if runtime_admitted(ty, types) {
         return false;
     }
     let Some((record, field)) = string_field(ty, types) else {
         return false;
     };
+    // The record can be an appended private layout copy.
+    let record = crate::source_verify::private_names::private_label(program, types, record)
+        .unwrap_or_else(|| record.to_owned());
     diagnostics.push(
         error(
             program,

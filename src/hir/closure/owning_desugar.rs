@@ -85,9 +85,12 @@ fn expr_has_owning_closure(expr: &Expr) -> bool {
         ExprKind::MethodCall { receiver, args, .. } => {
             expr_has_owning_closure(receiver) || args.iter().any(expr_has_owning_closure)
         }
-        ExprKind::Unary { value, .. } | ExprKind::Try { operand: value } => {
-            expr_has_owning_closure(value)
-        }
+        ExprKind::LexicalExit { value, .. } => value
+            .as_ref()
+            .is_some_and(|value| expr_has_owning_closure(value)),
+        ExprKind::VecConstructor { value, .. }
+        | ExprKind::Unary { value, .. }
+        | ExprKind::Try { operand: value } => expr_has_owning_closure(value),
         ExprKind::Binary { left, right, .. } => {
             expr_has_owning_closure(left) || expr_has_owning_closure(right)
         }
@@ -137,7 +140,9 @@ fn statement_has_owning_closure(statement: &Statement) -> bool {
         Statement::While {
             condition, body, ..
         } => expr_has_owning_closure(condition) || expr_has_owning_closure(body),
-        Statement::For { values, body, .. } | Statement::ForOwn { values, body, .. } => {
+        Statement::For { values, body, .. }
+        | Statement::ForBorrow { values, body, .. }
+        | Statement::ForOwn { values, body, .. } => {
             expr_has_owning_closure(values) || expr_has_owning_closure(body)
         }
     }
@@ -233,7 +238,13 @@ fn lower_expr(expr: &mut Expr, substitutions: &mut HashMap<String, Expr>) {
                 lower_expr(arg, substitutions);
             }
         }
-        ExprKind::Unary { value, .. } => lower_expr(value, substitutions),
+        ExprKind::LexicalExit {
+            value: Some(value), ..
+        } => lower_expr(value, substitutions),
+        ExprKind::LexicalExit { value: None, .. } => {}
+        ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+            lower_expr(value, substitutions)
+        }
         ExprKind::Try { operand } => lower_expr(operand, substitutions),
         ExprKind::Binary { left, right, .. } => {
             lower_expr(left, substitutions);
@@ -331,6 +342,22 @@ fn lower_statements(statements: &mut Vec<Statement>, substitutions: &mut HashMap
         } => {
             lower_expr(values, substitutions);
             lower_scoped(body, substitutions, [item.as_str()]);
+            true
+        }
+        Statement::ForBorrow {
+            item,
+            index,
+            values,
+            body,
+            ..
+        } => {
+            lower_expr(values, substitutions);
+            lower_scoped(
+                body,
+                substitutions,
+                std::iter::once(item.as_str())
+                    .chain(index.as_ref().map(|index| index.name.as_str())),
+            );
             true
         }
     });

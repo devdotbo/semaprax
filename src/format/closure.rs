@@ -6,7 +6,15 @@ pub(super) fn contains_record_construction(value: &Expr) -> bool {
         match &value.kind {
             ExprKind::Closure { body, .. } => (index == 0).then_some(body),
             ExprKind::Call { args, .. } => args.get(index),
-            ExprKind::Unary { value, .. }
+            ExprKind::LexicalExit { value, .. } => {
+                if index == 0 {
+                    value.as_deref()
+                } else {
+                    None
+                }
+            }
+            ExprKind::VecConstructor { value, .. }
+            | ExprKind::Unary { value, .. }
             | ExprKind::Try { operand: value }
             | ExprKind::Yield { request: value }
             | ExprKind::Project { base: value, .. } => (index == 0).then_some(value),
@@ -85,6 +93,7 @@ pub(super) fn contains_record_construction(value: &Expr) -> bool {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => None,
         }
     }
@@ -129,11 +138,15 @@ pub(super) fn write_signature(
     output.write_char(' ').unwrap();
 }
 
-/// Qualified variant constructors parse directly in a match scrutinee. Avoid
-/// turning the contextual ownership word into a legacy call named `own`.
+/// Qualified variants and named calls parse directly in a match scrutinee;
+/// call arguments admit record literals inside their own delimiters. Avoid
+/// turning a contextual ownership word into a legacy call named `own`.
 pub(super) fn match_scrutinee_needs_delimiters(mode: crate::ast::MatchMode, value: &Expr) -> bool {
     if mode != crate::ast::MatchMode::Value
-        && matches!(&value.kind, ExprKind::ConstructVariant { .. })
+        && matches!(
+            &value.kind,
+            ExprKind::ConstructVariant { .. } | ExprKind::Call { .. }
+        )
     {
         return false;
     }

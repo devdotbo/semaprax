@@ -1,0 +1,49 @@
+{
+  "base": "8ce5c0fb7d65d1a13e150bf2044c8aed011f57bf",
+  "source_only": true,
+  "original_sources": [
+    {
+      "path": "src/cleanup_plan/replay/allocation/oracle/tests.rs",
+      "archive": "src__cleanup_plan__replay__allocation__oracle__tests.rs.before.txt",
+      "sha256": "ab3af20c463ecd93ac8cc508b35e3cb75895b15edebf39378d172e9271beb4fc"
+    },
+    {
+      "path": "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs",
+      "archive": "src__cleanup_plan__replay__paid_type_facts__inventory_tests.rs.before.txt",
+      "sha256": "b67dc34c71cf9d86aa6ff7c70699df8613b405f823fb748065904cf0d57e4ced"
+    },
+    {
+      "path": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+      "archive": "src__cleanup_plan__replay__live_oracle__source_custody__a.rs.before.txt",
+      "sha256": "3d3c26a1a4dcef548c7eee1605215e890145013068662e8d7b2932b1af01bdb4"
+    }
+  ],
+  "unchanged_prior_fast_owner_archive": {
+    "path": "docs/evidence/paid-classifier-receiving-f8/oracle-fast-owner.before.txt",
+    "sha256": "3e5e5daaf0fe29d40598a5ebc8a3043248d8380209f7baf8ce7f64f4eab277ab"
+  },
+  "exact_receiving_changes": [
+    {
+      "path": "src/cleanup_plan/replay/allocation/oracle/tests.rs",
+      "original": "                let received = crate::cleanup_plan::replay::nested_shape::type_needs_drop(\n                    &program, function, ty,\n                )\n                .unwrap();",
+      "current": "                let received = nested_shape::type_needs_drop(&program, function, ty).unwrap();",
+      "count": 1
+    },
+    {
+      "path": "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs",
+      "original": "    let alias = \"    use original_fast_type_probe as nested_shape;\\n\";\n    assert_eq!(current.matches(alias).count(), 1);\n    assert!(current.replacen(alias, \"\", 1).contains(old));",
+      "current": "    // The complete old zero-backing owner uses the declared prior receiver;\n    // the independent funded current owner remains on its real production path.\n    let dispatch = \"                let received = nested_shape::type_needs_drop(&program, function, ty).unwrap();\";\n    let original_dispatch = \"                let received = crate::cleanup_plan::replay::nested_shape::type_needs_drop(\\n                    &program, function, ty,\\n                )\\n                .unwrap();\";\n    assert_eq!(current.matches(dispatch).count(), 1);\n    let current = current.replacen(dispatch, original_dispatch, 1);\n    let alias = \"    use original_fast_type_probe as nested_shape;\\n\";\n    assert_eq!(current.matches(alias).count(), 1);\n    assert!(current.replacen(alias, \"\", 1).contains(old));",
+      "count": 1
+    },
+    {
+      "path": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+      "original": "    let alias = \"    use original_fast_type_probe as nested_shape;\\n\";\n    assert_eq!(current.matches(alias).count(), 1);\n    assert!(current.replacen(alias, \"\", 1).contains(old));",
+      "current": "    // The complete old zero-backing owner uses the declared prior receiver;\n    // the independent funded current owner remains on its real production path.\n    let dispatch = \"                let received = nested_shape::type_needs_drop(&program, function, ty).unwrap();\";\n    let original_dispatch = \"                let received = crate::cleanup_plan::replay::nested_shape::type_needs_drop(\\n                    &program, function, ty,\\n                )\\n                .unwrap();\";\n    assert_eq!(current.matches(dispatch).count(), 1);\n    let current = current.replacen(dispatch, original_dispatch, 1);\n    let alias = \"    use original_fast_type_probe as nested_shape;\\n\";\n    assert_eq!(current.matches(alias).count(), 1);\n    assert!(current.replacen(alias, \"\", 1).contains(old));",
+      "count": 1
+    }
+  ],
+  "unchanged_authenticated_prior_helper": {
+    "path": "src/cleanup_plan/replay/paid_type_facts/tests.rs",
+    "sha256": "365372032ee47eb37f766e111c2b13cb61ebc6b6be9cd786ba0947b179f91b6c"
+  }
+}

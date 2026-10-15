@@ -5,9 +5,9 @@
 use super::admission::validate_schema;
 use super::*;
 
-pub(super) fn route<H: AgentHost>(
+pub(super) fn route(
     profile: &Profile,
-    host: &mut H,
+    host: &mut dyn AgentHost,
     cancellation: &AgentCancellation,
     task: &Task,
     state: &RunState,

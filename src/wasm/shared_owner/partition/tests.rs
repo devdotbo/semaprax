@@ -1,0 +1,119 @@
+//! Actual checked source -> module -> private host invocation, never witness substitution.
+use super::super::tests::{node_available, run_node, stage, ORDINARY};
+use super::*;
+
+const SOURCE: &str = r#"module partition_wasm;
+@id("partition_wasm.split") fn split()->Vec<Bytes>{
+ let buffer=bytes_zeroed(65536usize);
+ bytes_partition(buffer,4096usize,16usize)
+}
+@id("partition_wasm.main") fn main()->i64{
+ let values=split();
+ if vec_len<Bytes>(values)==4096usize {7}else{0}
+}
+"#;
+
+fn emitted(source: &str) -> PartitionModule {
+    let ast = crate::parse(source, "partition_wasm.spx").unwrap();
+    let owner = crate::hir::byte_partition::ValidatedPartitionProgram::compile_source(&ast, &mut {
+        usize::MAX
+    })
+    .unwrap();
+    assert!(crate::check(source, "partition_wasm.spx").is_err());
+    let module = PartitionModule::emit(&owner, &mut { usize::MAX }).unwrap();
+    assert!(consumer_closure(module.bytes(), Host::PrivateOrdinary).is_err());
+    assert!(module
+        .closure
+        .lease_aware
+        .iter()
+        .any(|name| name == "spx_bytes_partition"));
+    assert_eq!(
+        admit_producer(&module.closure),
+        Err(Refusal::ProducerClosed)
+    );
+    module
+}
+
+#[test]
+fn checked_source_partition_emits_real_4096_vec_and_consuming_iterator_with_settlement() {
+    let iterator = SOURCE.replace(
+        "if vec_len<Bytes>(values)==4096usize {7}else{0}",
+        "let mut seen=0; for own item in vec_into_iter<Bytes>(values) { let view=bytes_as_slice(item); if byte_len(view)==16usize {seen=seen+1;0}else{seen=0;0} } seen",
+    );
+    for (source, expected) in [(SOURCE, "7"), (iterator.as_str(), "4096")] {
+        let module = emitted(source);
+        if node_available() {
+            let entry = module.entry_source();
+            let script = format!("{ORDINARY}\n{SUCCESS_ENTRY_TEST}");
+            let directory = stage(&[
+                ("ordinary.mjs", script.as_bytes()),
+                ("app.wasm", module.bytes()),
+                ("entry.mjs", entry.as_bytes()),
+            ]);
+            let stdout = run_node(&directory, "ordinary.mjs", &["app.wasm", expected, "plain"]);
+            assert!(stdout.contains("shared-owner-ordinary-ok"));
+            assert!(stdout.contains("partition-paired-success-ok"));
+        }
+    }
+}
+
+#[test]
+fn actual_partition_failure_codes_keep_owner_live_until_canonical_cleanup_and_reentry() {
+    for (source, code) in [
+        (SOURCE.replace("4096usize,16usize", "4096usize,0usize"), 1),
+        (
+            SOURCE.replace("4096usize,16usize", "18446744073709551615usize,2usize"),
+            2,
+        ),
+        (SOURCE.replace("4096usize,16usize", "4095usize,16usize"), 3),
+        (SOURCE.replace("4096usize,16usize", "65536usize,1usize"), 4),
+    ] {
+        let module = emitted(&source);
+        if node_available() {
+            let entry = module.entry_source();
+            let directory = stage(&[
+                ("entry.mjs", entry.as_bytes()),
+                ("entry-test.mjs", ENTRY_TEST.as_bytes()),
+            ]);
+            assert!(run_node(&directory, "entry-test.mjs", &[&code.to_string()])
+                .contains("partition-entry-ok"));
+        }
+    }
+}
+
+// Same four invocations per case; one actual paired installer, no witness ticket.
+const ENTRY_TEST: &str = r#"import { install } from './entry.mjs';
+const code = Number(process.argv[2]);
+const metadata = 16384*6 + 8192*22 + 32*11 + 32*8;
+const entry = await install(metadata + 65536);
+for (let run=0; run<4; run+=1) {
+ const outcome = entry.invoke();
+ if (JSON.stringify(outcome) !== JSON.stringify({outcome:'language_failure',status:{domain:'semaprax.byte-partition.v1',code}})) throw new Error(JSON.stringify(outcome));
+ if ('result' in outcome || 'reason' in outcome) throw new Error('failure published extra result');
+ const account = entry.account();
+ if (account.reserved !== metadata || account.peak !== metadata+65536) throw new Error(JSON.stringify(account));
+}
+let rejected=false;
+try { await install({module:new Uint8Array(),managedBytes:metadata+65536}); } catch { rejected=true; }
+if (!rejected) throw new Error('caller module accepted');
+const short = await install(metadata+65535);
+const refused = short.invoke();
+if (refused.outcome !== 'administrative_refusal' || 'status' in refused || 'result' in refused) throw new Error(JSON.stringify(refused));
+if (short.account().reserved !== metadata || short.invoke().reason !== 'private entry is poisoned') throw new Error('short account reused');
+console.log('partition-entry-ok');
+"#;
+
+// The unchanged raw control and paired entry run in one Node process per source.
+const SUCCESS_ENTRY_TEST: &str = r#"
+import { install } from './entry.mjs';
+const pairedMetadata = 16384*6 + 8192*22 + 32*11 + 32*8;
+const pairedEntry = await install(pairedMetadata+65536);
+for (let run=0; run<4; run+=1) {
+ const outcome = pairedEntry.invoke();
+ if (JSON.stringify(outcome) !== JSON.stringify({outcome:'returned',result:expected.toString()})) throw new Error(JSON.stringify(outcome));
+ if ('status' in outcome || 'reason' in outcome) throw new Error('success published failure');
+ const account = pairedEntry.account();
+ if (account.reserved !== pairedMetadata || account.peak !== pairedMetadata+65536) throw new Error(JSON.stringify(account));
+}
+console.log('partition-paired-success-ok');
+"#;

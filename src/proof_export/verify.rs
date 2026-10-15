@@ -558,9 +558,10 @@ pub(crate) fn rebind_certificate_against_source_text(
     let resolved = crate::hir::resolve(&program).map_err(|diagnostics| {
         drift_error(format!(
             "the bound source no longer resolves: {}",
-            diagnostics
-                .first()
-                .map_or_else(|| "unknown".to_owned(), |item| item.message.clone())
+            diagnostics.first().map_or_else(
+                || "unknown".to_owned(),
+                |item| item.message.clone().into_owned()
+            )
         ))
     })?;
     let artifact = super::compile_wasm_core_module(&resolved).map_err(drift_error)?;

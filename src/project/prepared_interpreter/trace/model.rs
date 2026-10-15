@@ -118,12 +118,18 @@ pub(crate) fn parse_status(value: &serde_json::Value) -> Result<NormalizedStatus
             _ => Err(verification_error("unknown contract status code")),
         },
         (crate::byte_ops::SET_STATUS_DOMAIN, "adapter") => {
-            if code != u64::from(crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE) {
+            if ![
+                u64::from(crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE),
+                u64::from(crate::byte_ops::CAPACITY_EXCEEDED_CODE),
+            ]
+            .contains(&code)
+            {
                 return Err(verification_error("unknown owned byte buffer status code"));
             }
             NormalizedStatus::try_new(
                 crate::byte_ops::SET_STATUS_DOMAIN,
-                crate::byte_ops::SET_INDEX_OUT_OF_BOUNDS_CODE,
+                u32::try_from(code)
+                    .map_err(|_| verification_error("owned byte buffer status code exceeds u32"))?,
                 StatusClass::Adapter,
                 Retryability::Known(false),
             )

@@ -1,0 +1,159 @@
+//! Finite borrowed response projection over the independently checked request shape.
+mod emit;
+#[cfg(test)]
+mod tests;
+
+use super::nested_request::descriptor::{self, Kind, Record};
+use super::refusal;
+use crate::ast::{Program, Type, TypeDeclaration};
+use crate::diagnostic::Diagnostic;
+use std::fmt::Write as _;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum Version {
+    V1,
+    V2,
+}
+impl Version {
+    const fn family(self) -> &'static str {
+        match self {
+            Self::V1 => "nested-response",
+            Self::V2 => "nested-response-v2",
+        }
+    }
+    const fn namespace(self) -> &'static str {
+        match self {
+            Self::V1 => "nested_response",
+            Self::V2 => "nested_response_v2",
+        }
+    }
+    const fn result(self) -> &'static str {
+        match self {
+            Self::V1 => "JsonNestedResponseEncode",
+            Self::V2 => "JsonNestedResponseV2Encode",
+        }
+    }
+}
+
+pub(super) fn derive_v2(
+    program: &Program,
+    root: &TypeDeclaration,
+    max_string_bytes: usize,
+    max_array_items: usize,
+) -> Result<String, Vec<Diagnostic>> {
+    derive_version(
+        program,
+        root,
+        max_string_bytes,
+        max_array_items,
+        Version::V2,
+    )
+}
+
+pub(super) fn derive(
+    program: &Program,
+    root: &TypeDeclaration,
+    max_string_bytes: usize,
+    max_array_items: usize,
+) -> Result<String, Vec<Diagnostic>> {
+    derive_version(
+        program,
+        root,
+        max_string_bytes,
+        max_array_items,
+        Version::V1,
+    )
+}
+
+fn derive_version(
+    program: &Program,
+    root: &TypeDeclaration,
+    max_string_bytes: usize,
+    max_array_items: usize,
+    version: Version,
+) -> Result<String, Vec<Diagnostic>> {
+    let shape = descriptor::validate_response(program, root, max_string_bytes, max_array_items)
+        .map_err(response_diagnostics)?;
+    if version == Version::V1 {
+        validate_reads(&shape.root)?;
+    }
+    let mut output = format!("module {};\n", program.module);
+    for (module, name, alias) in [
+        ("digits", "i64_len", "jv_i64_len"),
+        ("write", "usize_len", "jv_usize_len"),
+        ("utf8", "scalar_at", "ju_raw_scalar"),
+        ("utf8", "sequence_end", "ju_raw_end"),
+        ("utf8", "bounded_valid", "ju_bounded_valid"),
+        ("utf8", "quoted_len", "ju_quoted_len"),
+    ] {
+        writeln!(output, "use function @id(\"std.data.json.{module}.{name}\") from std.data.json.{module} as {alias};").unwrap();
+    }
+    output.push_str(&super::utf8::nested_response_text_version(
+        root,
+        max_string_bytes,
+        version.family(),
+        version.namespace(),
+    ));
+    output.push_str(&super::collection_response::writer::source(
+        root,
+        version.family(),
+        version.namespace(),
+    ));
+    output.push_str(&emit::source(root, &shape.root, max_array_items, version));
+    Ok(output)
+}
+
+/// The shared descriptor keeps request diagnostics byte-for-byte frozen. Only
+/// its controlled policy prefix is contextualized; authored identities and
+/// diagnostic code/span/help/path retain their original bytes and authority.
+fn response_diagnostics(mut diagnostics: Vec<Diagnostic>) -> Vec<Diagnostic> {
+    for diagnostic in &mut diagnostics {
+        if let Some(message) = diagnostic.message.strip_prefix("nested request ") {
+            let message = message.strip_suffix("and one admitted Vec").map_or_else(
+                || message.to_owned(),
+                |prefix| format!("{prefix}and at most two admitted Vec fields"),
+            );
+            diagnostic.message = std::borrow::Cow::Owned(format!("nested response {message}"));
+        }
+    }
+    diagnostics
+}
+
+fn validate_reads(record: &Record<'_>) -> Result<(), Vec<Diagnostic>> {
+    for field in &record.fields {
+        match &field.kind {
+            Kind::Record(child) => validate_reads(child)?,
+            Kind::Vector { kind, .. } if matches!(**kind, Kind::Text) => {
+                // Primitive String vectors have owning copy-out but no admitted
+                // borrowed element projection. Do not silently clone in preflight.
+                return Err(refusal(
+                    "nested response requires scalar or flat record Vec elements; primitive String Vec has no nonallocating borrowed read",
+                ));
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+fn owns(record: &Record<'_>) -> bool {
+    record.fields.iter().any(|field| match &field.kind {
+        Kind::Text | Kind::Vector { .. } => true,
+        Kind::Record(child) => owns(child),
+        Kind::Scalar(_) => false,
+    })
+}
+fn type_name(ty: &Type) -> String {
+    match ty {
+        Type::I64 => "i64".into(),
+        Type::U8 => "u8".into(),
+        Type::Usize => "usize".into(),
+        Type::Bool => "bool".into(),
+        Type::String => "string".into(),
+        Type::Named { name, arguments } if arguments.is_empty() => name.clone(),
+        _ => unreachable!("validated borrowed element"),
+    }
+}
+fn literal(value: &str) -> String {
+    format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
+}

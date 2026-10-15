@@ -186,7 +186,10 @@ impl Admission<'_> {
                 self.expression(then_branch, depth + 1)?;
                 self.expression(else_branch, depth + 1)
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 if statements.len() >= MAX_DEPTH.saturating_sub(depth) {
                     return Err(Refusal::Capacity);
                 }
@@ -419,7 +422,10 @@ fn translate_expr(expr: &ResolvedExpr) -> Term {
             then_branch: Box::new(translate_expr(then_branch)),
             else_branch: Box::new(translate_expr(else_branch)),
         },
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             // Fold right-to-left so the innermost `Let` wraps the tail and
             // each outer one wraps the one before it -- exactly the nested
             // `let x1 = e1 ; let x2 = e2 ; ... ; tail` shape the grammar's

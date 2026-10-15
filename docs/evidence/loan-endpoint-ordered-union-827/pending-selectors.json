@@ -1,0 +1,10 @@
+{
+  "status": "AUTHORED_NOT_EXECUTED",
+  "exact_selectors": [
+    "loan_plan::paid_materialize::tests::ordered_endpoint_union_keeps_full_id_domain_duplicates_and_malformed_old_behavior",
+    "loan_plan::paid_materialize::tests::ordered_endpoint_union_complete_old_materializer_plan_and_first_error_are_exact",
+    "loan_plan::paid_materialize::tests::ordered_endpoint_union_exact_short_zero_sticky_and_full_drop_are_physically_paid",
+    "bounded_output::loan_inner_stage_tests::loan_allocation_class_fallback_preserves_all_inner_phases_and_unchanged_layouts",
+    "bounded_output::loan_inner_stage_tests::loan_allocation_class_first_receipt_is_sticky_through_foreign_owner_and_unwind"
+  ]
+}

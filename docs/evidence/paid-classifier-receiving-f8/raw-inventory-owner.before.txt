@@ -1,0 +1,35 @@
+#[test]
+fn raw_inventory_classifier_keeps_complete_original_diagnostic_fields() {
+    for program in tests::fixtures() {
+        for function in &program.functions {
+            let mut budget = ReplayBudget::new();
+            let (results, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+                reserve_program_skeleton_work(&program, std::iter::once(function), &mut budget)
+                    .unwrap();
+                let mut results = Vec::new();
+                for ty in function
+                    .params
+                    .iter()
+                    .map(|p| &p.ty)
+                    .chain(std::iter::once(&function.return_type))
+                {
+                    results.push((
+                        crate::cleanup::type_needs_resource_cleanup(&program, ty)
+                            .map_err(|m| Diagnostic::io("SPX-H006", m)),
+                        inventory_needs_drop(
+                            &program,
+                            ty,
+                            &mut tests::payer(function, &mut budget),
+                        ),
+                    ));
+                }
+                results
+            });
+            assert!(!refused);
+            for (old, current) in results {
+                assert_eq!(current, old);
+            }
+        }
+    }
+}
+

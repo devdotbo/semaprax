@@ -1,0 +1,10 @@
+{
+  "source_only": true,
+  "whole_source_rows": 71,
+  "old_archives_unchanged": true,
+  "provider17_full_originals_equal": true,
+  "affected_active_list_originals_equal": true,
+  "facts_joined_in_all_three_source_inventories": true,
+  "no_new_selectors": true,
+  "runtime_execution": false
+}

@@ -1,5 +1,8 @@
 //! Standalone explorer CLI output remains source-free and never clobbers a destination.
 
+#[path = "explore_cli/json_codec_suitability.rs"]
+mod json_codec_suitability;
+
 use semaprax::project::{with_authenticated_project, ProjectCandidate, SemanticChange};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};

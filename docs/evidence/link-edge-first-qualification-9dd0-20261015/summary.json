@@ -1,0 +1,24 @@
+{
+  "source_subject": "9dd051bce67bdfbb409c1833617161465bd57591",
+  "selected": 91,
+  "passed": 82,
+  "failed": 9,
+  "failed_selectors": [
+    "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+    "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+    "workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core",
+    "workspace_graph::type_proof_tests::projection_tests::rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+    "semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+    "semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+    "workspace_graph::expected_projection::prelude_forecast::tests::complete_receiving_sources_reconstruct_pinned_originals",
+    "core_validation_has_no_resolution_cleanup_build_or_physical_authority",
+    "hir::declaration_index::linked_owned_data::tests::linked_shared_case_views_last_owner_drop_uses_prepaid_iterative_frontier"
+  ],
+  "edge_controls": "all3PASS",
+  "link_controls": "3PASS,lastownerDropFAIL6420LIVEbytes",
+  "whole_nominal_funding": "PASS",
+  "full_suite": false,
+  "application_recovery": false,
+  "new_live_benchmark": false,
+  "clippy": "FAIL101 unused old cfgtest-only insert_field/insert_case_field"
+}

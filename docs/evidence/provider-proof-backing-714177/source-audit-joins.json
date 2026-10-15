@@ -1,0 +1,31 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "new_children": [
+    "src/loop_calls/byte_writer/source_index_original.rs",
+    "src/workspace_graph/expected_projection/import_stub/core_proofs.rs",
+    "src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs",
+    "src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs",
+    "src/workspace_graph/expected_projection/import_stub_original.rs",
+    "src/workspace_graph/expected_projection/held_projection_original.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports_original.rs"
+  ],
+  "workspace_projection_owner": "tests/workspace/semantic_graph/source_inventory.rs",
+  "interop_byte_writer_and_verifier_owner": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+  "hir_validation_domain": "Complete production source_index.rs remains in its existing HIR concat. No production validator is relocated. Independent test-only receiver source_index_original.rs is explicitly compiled and covered by the new complete-original inverse owner, not mixed into production authority validation.",
+  "complete_original_test_receivers": [
+    "src/loop_calls/byte_writer/source_index_original.rs",
+    "src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs",
+    "src/workspace_graph/expected_projection/import_stub_original.rs",
+    "src/workspace_graph/expected_projection/held_projection_original.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports_original.rs"
+  ],
+  "current_child_bindings": {
+    "src/loop_calls/byte_writer/source_index_original.rs": "ada0bc8eb040891346371f0435aedd5a557670e25c366e342a02c49193fa347e",
+    "src/workspace_graph/expected_projection/import_stub/core_proofs.rs": "48ba6849940e7ecf3b1e69ba6d5f785b041d9f6bf53509c53726415fe99ab04f",
+    "src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs": "1391ce79bafca9a8832bf3776a7299013c4c23969ac91eb88b6680d6bdb8abcb",
+    "src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs": "13d5ab2918fa7fb97619e985d781d3e60fc06278a73e0d4a27791c4a4fe65206",
+    "src/workspace_graph/expected_projection/import_stub_original.rs": "f620a3891ac4707e9b0c827a9b8c9e2ff480659bbc1a52f8bef88e5dc96cab71",
+    "src/workspace_graph/expected_projection/held_projection_original.rs": "b976530c05c01bb64e685f1ed12b36d1305032cda8560778ce0f832bcc88e6f6",
+    "src/workspace_graph/expected_projection/borrowed_imports_original.rs": "0c4c18c12a4c617ed90103a3107e38a93e9590c27eb0514d9c6d81c21a92a9c7"
+  }
+}

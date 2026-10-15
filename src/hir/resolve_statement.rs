@@ -15,6 +15,9 @@ use super::monomorphize::substitute_type;
 use super::nodes::{is_scalar_resolved_type, DeclarationKind, ResolvedBinding, ResolvedType};
 use super::{Binding, Resolver};
 
+#[cfg(test)]
+pub(in crate::hir) mod text_reference;
+
 impl Resolver<'_> {
     pub(super) fn resolve_expr(
         &self,
@@ -23,6 +26,11 @@ impl Resolver<'_> {
         bindings: &BTreeMap<String, Binding>,
         path: &str,
     ) -> Result<ResolvedExpr, Diagnostic> {
+        #[cfg(test)]
+        if text_reference::active() {
+            text_reference::note_expression();
+            return self.resolve_expr_recursive_reference(function, expr, bindings, path);
+        }
         self.resolve_expr_iterative(function, expr, bindings, path)
     }
 
@@ -149,11 +157,25 @@ impl Resolver<'_> {
         expression: &Expr,
         execution: Option<&FunctionExecutionId>,
     ) -> Result<(), Diagnostic> {
+        if execution
+            .and_then(FunctionExecutionId::monomorphic_declaration)
+            .and_then(|owner| {
+                self.program
+                    .functions()
+                    .iter()
+                    .find(|f| f.stable_id == owner.as_str())
+            })
+            .is_some_and(|function| {
+                crate::finite_owned_record_loop::source(function, expression).is_some()
+            })
+        {
+            return Ok(());
+        }
         let generic = execution
             .and_then(FunctionExecutionId::monomorphic_declaration)
             .and_then(|owner| {
                 self.program
-                    .functions
+                    .functions()
                     .iter()
                     .find(|f| f.stable_id == owner.as_str())
             })
@@ -194,7 +216,9 @@ impl Resolver<'_> {
                         pending.push(Item::Expression(condition));
                         continue;
                     }
-                    Statement::For { span, .. } | Statement::ForOwn { span, .. } => {
+                    Statement::For { span, .. }
+                    | Statement::ForBorrow { span, .. }
+                    | Statement::ForOwn { span, .. } => {
                         return Err(self.error(
                             "SPX-H006",
                             "nested for traversal reached bounded-loop HIR admission",
@@ -206,6 +230,17 @@ impl Resolver<'_> {
             };
 
             match &expression.kind {
+                ExprKind::LexicalExit { kind, value } => {
+                    if let Some(value) = value {
+                        if *kind != crate::ast::LexicalExitKind::Return
+                            || !crate::hir::lexical_exit::return_operand::source_named_handoff(
+                                value,
+                            )
+                        {
+                            pending.push(Item::Expression(value));
+                        }
+                    }
+                }
                 ExprKind::Closure { .. } => {}
 
                 ExprKind::Int(_)
@@ -220,6 +255,9 @@ impl Resolver<'_> {
                 // Owned String Loops v1: a literal allocates one owned
                 // String in the per-iteration body region.
                 ExprKind::String(_) => {}
+                ExprKind::BorrowedUtf8Literal(text) => {
+                    crate::hir::static_text::validate_literal(text)?
+                }
                 ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => {
                     return Err(self.error(
                         "SPX-T252",
@@ -227,7 +265,9 @@ impl Resolver<'_> {
                         expression.span,
                     ));
                 }
-                ExprKind::Unary { value, .. } => pending.push(Item::Expression(value)),
+                ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                    pending.push(Item::Expression(value))
+                }
                 ExprKind::Binary { left, right, .. } => {
                     pending.push(Item::Expression(right));
                     pending.push(Item::Expression(left));
@@ -254,6 +294,7 @@ impl Resolver<'_> {
                     let vec_operation = crate::vec_ops::by_name(name);
                     if !type_arguments.is_empty()
                         && vec_operation.is_none()
+                        && name != crate::vec_field::NAME
                         && crate::map_ops::by_generic_name(name, type_arguments).is_none()
                     {
                         return Err(self.error(
@@ -264,8 +305,13 @@ impl Resolver<'_> {
                     }
                     if let Some(operation) = vec_operation {
                         if !operation.admitted_in_while()
-                            || type_arguments.len() != 1
-                            || !(crate::vec_ops::ast_element_is_admitted(&type_arguments[0]) || generic.is_some_and(|f| matches!(&type_arguments[0], Type::Named { name, arguments } if arguments.is_empty() && f.type_parameters.iter().any(|parameter| parameter.name == *name))))
+                            || (if operation == crate::vec_ops::VecOp::StrAt {
+                                !type_arguments.is_empty()
+                                    || !matches!(args.as_slice(), [source, _] if matches!(source.kind, ExprKind::Var(_)))
+                            } else {
+                                type_arguments.len() != 1
+                                    || !(crate::vec_ops::ast_element_is_admitted(&type_arguments[0]) || crate::source_verify::copy_record_source_admitted(self.program, &type_arguments[0]) || crate::source_verify::owned_leaf_source_admitted(self.program, &type_arguments[0]) || generic.is_some_and(|f| matches!(&type_arguments[0], Type::Named { name, arguments } if arguments.is_empty() && f.type_parameters.iter().any(|parameter| parameter.name == *name))))
+                            })
                             || args.len() != operation.arity()
                         {
                             return Err(self.error(
@@ -276,7 +322,16 @@ impl Resolver<'_> {
                         }
                     }
                     if let Some(operation) = crate::byte_ops::by_name(name) {
-                        if !operation.admitted_in_while() || args.len() != operation.arity() {
+                        if (!operation.admitted_in_while()
+                            && !crate::source_verify::finite_row_allocation(
+                                self.program,
+                                expression,
+                            )
+                            && !self
+                                .fused_producer
+                                .is_some_and(|producer| std::ptr::eq(producer, expression)))
+                            || args.len() != operation.arity()
+                        {
                             return Err(self.error(
                                 "SPX-T252",
                                 format!(
@@ -293,32 +348,32 @@ impl Resolver<'_> {
                     // admission scan.
                     let declared = self
                         .program
-                        .functions
+                        .functions()
                         .iter()
                         .find(|function| function.name == *name);
                     if let Some(declared) = declared {
-                        let scalar_signature =
-                            crate::stdin_stream_ops::ast_forward_signature(declared)
-                                || (crate::loop_calls::effects_admitted(&declared.effects)
-                                    && crate::loop_calls::ast_result_admitted(
+                        let scalar_signature = self.byte_helpers.target(declared)
+                            || crate::stdin_stream_ops::ast_forward_signature(declared)
+                            || (crate::loop_calls::effects_admitted(&declared.effects)
+                                && crate::loop_calls::ast_result_admitted(
+                                    self.program,
+                                    &declared.return_type,
+                                )
+                                && declared.params.iter().all(|param| {
+                                    crate::loop_calls::ast_param_admitted(
                                         self.program,
-                                        &declared.return_type,
-                                    )
-                                    && declared.params.iter().all(|param| {
-                                        crate::loop_calls::ast_param_admitted(
-                                self.program,
-                                param.mode,
-                                &param.ty,
-                            ) || (param.mode == crate::ast::ParamMode::Borrow
-                                && self
-                                    .resolve_type(&param.ty, expression.span)
-                                    .is_ok_and(|ty| {
-                                        crate::hir::iterator_loop::is_owner_renewal_record(
-                                            &self.declarations,
-                                            &ty,
-                                        )
-                                    }))
-                                    }));
+                                        param.mode,
+                                        &param.ty,
+                                    ) || (param.mode == crate::ast::ParamMode::Borrow
+                                        && self.resolve_type(&param.ty, expression.span).is_ok_and(
+                                            |ty| {
+                                                crate::hir::iterator_loop::is_owner_renewal_record(
+                                                    &self.declarations,
+                                                    &ty,
+                                                )
+                                            },
+                                        ))
+                                }));
                         if !scalar_signature {
                             return Err(self.error(
                                 "SPX-T252",
@@ -345,19 +400,32 @@ impl Resolver<'_> {
                         expression.span,
                     ));
                 }
-                ExprKind::Project { .. } => {
-                    return Err(self.error(
-                        "SPX-T252",
-                        "record field projection is not yet admitted in while bodies",
-                        expression.span,
-                    ));
-                }
-                ExprKind::ConstructRecord { .. } => {
-                    return Err(self.error(
-                        "SPX-T252",
-                        "record construction is not yet admitted in while bodies",
-                        expression.span,
-                    ));
+                ExprKind::Project { base, .. } => pending.push(Item::Expression(base)),
+                ExprKind::ConstructRecord {
+                    type_name,
+                    type_arguments,
+                    fields,
+                    ..
+                } => {
+                    let ty = Type::Named {
+                        name: type_name.clone(),
+                        arguments: type_arguments.clone(),
+                    };
+                    if !crate::source_verify::copy_record_source_admitted(self.program, &ty)
+                        && !crate::source_verify::owned_leaf_source_admitted(self.program, &ty)
+                    {
+                        return Err(self.error(
+                            "SPX-T252",
+                            "record construction is not yet admitted in while bodies",
+                            expression.span,
+                        ));
+                    }
+                    pending.extend(
+                        fields
+                            .iter()
+                            .rev()
+                            .map(|field| Item::Expression(&field.value)),
+                    );
                 }
                 ExprKind::ConstructVariant {
                     type_name,
@@ -425,6 +493,9 @@ impl Resolver<'_> {
     }
 
     fn source_record_owner_renewal(&self, binding: &str, value: &Expr) -> bool {
+        if self.byte_helpers.assignment(binding, value) {
+            return true;
+        }
         let ExprKind::Call {
             name,
             type_arguments,
@@ -436,7 +507,7 @@ impl Resolver<'_> {
         };
         let Some(target) = self
             .program
-            .functions
+            .functions()
             .iter()
             .find(|function| function.name == *name)
         else {

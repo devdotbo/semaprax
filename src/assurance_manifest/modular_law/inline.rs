@@ -84,7 +84,10 @@ impl Lowerer<'_> {
                 then_branch: Box::new(self.expr(then_branch, scope, owner)?),
                 else_branch: Box::new(self.expr(else_branch, scope, owner)?),
             },
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 let mut local = scope.clone();
                 let mut lowered = Vec::new();
                 for statement in statements {

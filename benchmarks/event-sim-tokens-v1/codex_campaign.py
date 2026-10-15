@@ -32,6 +32,7 @@ spec.loader.exec_module(codex)
 
 sys.path.insert(0, str(BENCHMARK))
 import campaign as shiftsim
+import compiler_input_capture as compiler_capture
 
 MODEL, EFFORT, TIMEOUT_SECONDS = codex.MODEL, codex.EFFORT, codex.TIMEOUT_SECONDS
 ARMS, MIN_TRIALS_PER_ARM = shiftsim.ARMS, shiftsim.MIN_TRIALS_PER_ARM
@@ -74,7 +75,10 @@ def plan(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("compiler-source-ref differs from the qualified compiler source commit")
     base.update({
         "schema": shiftsim.AUTHORING_PROFILES[base["authoring_profile"]]["codex_campaign_schema"],
-        "adapter": "codex-matched-shiftsim-v2" if base["round"] == 3 else "codex-matched-shiftsim-v1",
+        "adapter": (shiftsim.AUTHORING_PROFILES[base["authoring_profile"]]["codex_adapter"]
+                    if base["authoring_profile"] == shiftsim.AUTHORING_PROFILE_SHIFTSIM_V31 else
+                    {3: "codex-matched-shiftsim-v2", 4: "codex-matched-shiftsim-v3",
+                     5: "codex-matched-shiftsim-v4"}.get(base["round"], "codex-matched-shiftsim-v1")),
         "resource_policy": codex.resources.policy(),
         "harness_source_files_sha256": codex.harness_source_inventory(REPO, HARNESS_SOURCE_FILES),
         "model_requested": MODEL,
@@ -162,14 +166,14 @@ def invalidate(row: dict[str, Any], reason: str) -> None:
         row["acceptance"]["invalidated"] = reason
 
 
-def observe(workspace: Path, artifacts: Path, label: str, stream: Path) -> dict[str, Any]:
+def observe(workspace: Path, artifacts: Path, label: str, stream: Path, price_book: dict[str, Any] | None = None) -> dict[str, Any]:
     usage = codex.parse_exec_jsonl(stream)
     copied = codex.copy_task_rollout(usage["thread_ids"], workspace,
                                      artifacts / "transcripts" / f"{label}.rollout.jsonl")
     trace = codex.trace_usage(usage, copied) if copied else {"reconciled": False, "model_requests": []}
     return {"rollout_trace": str(copied) if copied else None,
             "observed": {**usage, **trace, "stable_context_tokens": None},
-            "list_price": codex.list_price_estimate(trace.get("model_requests", [])),
+            "list_price": codex.list_price_estimate(trace.get("model_requests", []), price_book),
             "provider_receipt_actual_usd": None}
 
 
@@ -177,6 +181,7 @@ def observe(workspace: Path, artifacts: Path, label: str, stream: Path) -> dict[
 def launch_trial(seed_repo: Path, artifacts: Path, seed_commit: str, trial: dict[str, Any],
                  settings: dict[str, Any], semaprax_bin: Path) -> dict[str, Any]:
     """Persist one attempt, reconcile exact task telemetry, and recheck each boundary."""
+    shiftsim.require_authoring_eligibility(settings, semaprax_bin)
     shiftsim.common.require_compiler_binding(settings, semaprax_bin)
     label = f"{trial['arm']}-{trial['number']:02d}"
     workspace = artifacts / "worktrees" / label
@@ -206,21 +211,26 @@ def launch_trial(seed_repo: Path, artifacts: Path, seed_commit: str, trial: dict
                                    "context_tokens": None}
         node_path = Path(shutil.which(tooling["node_binary"]) or tooling["node_binary"]).resolve(strict=True)
         env["PATH"] = os.pathsep.join((str(candidate / "node_modules/.bin"), str(node_path.parent), env.get("PATH", "")))
-    prompt = shiftsim.prompt_for(trial["arm"], candidate, semaprax_bin,
-                                 settings.get("authoring_profile", shiftsim.AUTHORING_PROFILE_V24))
-    if tooling:
-        prompt += "\n\n" + shiftsim.ts_bootstrap.prompt_note(receipt)
-    (artifacts / "prompts").mkdir(exist_ok=True)
-    (artifacts / "prompts" / f"{label}.txt").write_text(prompt, encoding="utf-8")
-    row["prompt_sha256"] = shiftsim.sha_text(prompt)
     stream, stderr = (artifacts / "transcripts" / f"{label}.{suffix}" for suffix in ("jsonl", "stderr.txt"))
     stream.parent.mkdir(exist_ok=True)
     row.update({"transcript": str(stream), "stderr_path": str(stderr)})
     try:
-        shiftsim.common.require_compiler_binding(settings, semaprax_bin)
-        row.update(codex.run_codex(command_for(settings, prompt), workspace,
-                                   env, stream, stderr, settings["timeout_seconds"]))
-        row.update(observe(workspace, artifacts, label, stream))
+        with compiler_capture.authoring_compiler(trial["arm"], candidate, workspace, artifacts,
+                label, settings, semaprax_bin, row) as authoring_binary:
+            prompt = shiftsim.prompt_for(trial["arm"], candidate, authoring_binary,
+                settings.get("authoring_profile", shiftsim.AUTHORING_PROFILE_V24))
+            if tooling:
+                prompt += "\n\n" + shiftsim.ts_bootstrap.prompt_note(receipt)
+            (artifacts / "prompts").mkdir(exist_ok=True)
+            (artifacts / "prompts" / f"{label}.txt").write_text(prompt, encoding="utf-8")
+            row["prompt_sha256"] = shiftsim.sha_text(prompt)
+            shiftsim.retain_fixed_harness_context(row, settings, prompt)
+            authoring_env = {**env, "SEMAPRAX_BIN": str(authoring_binary)} if trial["arm"] == "semaprax" else env
+            shiftsim.require_authoring_eligibility(settings, semaprax_bin)
+            shiftsim.common.require_compiler_binding(settings, semaprax_bin)
+            row.update(codex.run_codex(command_for(settings, prompt), workspace,
+                                       authoring_env, stream, stderr, settings["timeout_seconds"]))
+        row.update(observe(workspace, artifacts, label, stream, settings.get("price_book", {})))
         observed = row["observed"]
         row["telemetry_valid"] = (observed.get("reconciled") is True
             and observed.get("model_observed") == MODEL and observed.get("effort_observed") == EFFORT
@@ -237,7 +247,7 @@ def launch_trial(seed_repo: Path, artifacts: Path, seed_commit: str, trial: dict
                 row["final_candidate_source_metrics"] = {"status": "measurement_failed", "total_tokens": None,
                     "files": [], "tokenizer": settings.get("authored_source_tokenizer")}
                 return row
-        if settings.get("authoring_profile") == shiftsim.AUTHORING_PROFILE_V27:
+        if settings.get("authoring_profile") in shiftsim.PINNED_AUTHORING_PROFILES:
             try:
                 row["closed_authored_inventory_after_model"] = shiftsim.closed_authored_inventory(
                     candidate, exclude_verified_node_modules=bool(tooling))
@@ -265,18 +275,20 @@ def launch_trial(seed_repo: Path, artifacts: Path, seed_commit: str, trial: dict
                             "failure": "candidate failed exact authoring-profile admission"})
             else:
                 started = time.monotonic()
-                if settings.get("authoring_profile") == shiftsim.AUTHORING_PROFILE_V27:
-                    row["acceptance"] = shiftsim.check_program(candidate, settings["timeout_seconds"],
-                        env, "evidence_gated_scored",
-                        shiftsim.AUTHORING_PROFILE_V27,
-                        artifacts / "harness-native" / label / "shiftsim",
-                        settings["qualification"].get("compiler_binary_sha256"),
-                        row.get("closed_authored_inventory_after_model"), trial["arm"],
-                        exclude_verified_node_modules=bool(tooling))
-                else:
-                    row["acceptance"] = shiftsim.check_program(candidate, settings["timeout_seconds"],
-                        env, "evidence_gated_scored", exclude_verified_node_modules=bool(tooling))
-                row["acceptance_elapsed_seconds"] = round(time.monotonic() - started, 3)
+                try:
+                    if settings.get("authoring_profile") in shiftsim.PINNED_AUTHORING_PROFILES:
+                        row["acceptance"] = shiftsim.check_program(candidate, settings["timeout_seconds"],
+                            env, "evidence_gated_scored",
+                            settings["authoring_profile"],
+                            artifacts / "harness-native" / label / "shiftsim",
+                            settings["qualification"].get("compiler_binary_sha256"),
+                            row.get("closed_authored_inventory_after_model"), trial["arm"],
+                            exclude_verified_node_modules=bool(tooling))
+                    else:
+                        row["acceptance"] = shiftsim.check_program(candidate, settings["timeout_seconds"],
+                            env, "evidence_gated_scored", exclude_verified_node_modules=bool(tooling))
+                finally:
+                    row["acceptance_elapsed_seconds"] = time.monotonic() - started
                 row["status"] = "accepted" if row["acceptance"]["accepted"] else "not_accepted"
                 if row["status"] != "accepted":
                     row["failure"] = "candidate failed build or acceptance checks"
@@ -297,7 +309,7 @@ def launch_trial(seed_repo: Path, artifacts: Path, seed_commit: str, trial: dict
     except (OSError, RuntimeError, ValueError, UnicodeError) as error:
         row["final_candidate_source_metrics"] = {"status": "measurement_failed", "total_tokens": None,
             "files": [], "tokenizer": settings.get("authored_source_tokenizer"), "error": str(error)}
-    if settings.get("authoring_profile") == shiftsim.AUTHORING_PROFILE_V27:
+    if settings.get("authoring_profile") in shiftsim.PINNED_AUTHORING_PROFILES:
         acceptance = row.get("acceptance", {})
         native = acceptance.get("native_binary", {})
         native_path = Path(native["path"]) if native.get("path") else None
@@ -340,7 +352,7 @@ def launch_trial(seed_repo: Path, artifacts: Path, seed_commit: str, trial: dict
         if isinstance(row.get("acceptance"), dict):
             row["acceptance"]["accepted"] = False
         return row
-    if settings.get("authoring_profile") == shiftsim.AUTHORING_PROFILE_V27:
+    if settings.get("authoring_profile") in shiftsim.PINNED_AUTHORING_PROFILES:
         acceptance = row.get("acceptance", {})
         native = acceptance.get("native_binary", {})
         native_path = Path(native["path"]) if native.get("path") else None
@@ -372,6 +384,7 @@ def launch_trial(seed_repo: Path, artifacts: Path, seed_commit: str, trial: dict
 def launch_calibration(seed_repo: Path, artifacts: Path, seed_commit: str,
                        settings: dict[str, Any], semaprax_bin: Path) -> dict[str, Any]:
     """A separate tool-free READY request, with the same isolation and cleanup."""
+    shiftsim.require_authoring_eligibility(settings, semaprax_bin)
     shiftsim.common.require_compiler_binding(settings, semaprax_bin)
     workspace = artifacts / "worktrees" / "calibration"
     row: dict[str, Any] = {"status": "failed", "failure": None, "separate_from_trials": True,
@@ -384,10 +397,11 @@ def launch_calibration(seed_repo: Path, artifacts: Path, seed_commit: str,
     stream.parent.mkdir(parents=True, exist_ok=True)
     row.update({"transcript": str(stream), "stderr_path": str(stderr)})
     try:
+        shiftsim.require_authoring_eligibility(settings, semaprax_bin)
         shiftsim.common.require_compiler_binding(settings, semaprax_bin)
         row.update(codex.run_codex(command_for(settings, shiftsim.CALIBRATION_PROMPT), workspace,
                                    shiftsim.trial_environment(semaprax_bin), stream, stderr, settings["timeout_seconds"]))
-        row.update(observe(workspace, artifacts, "calibration", stream))
+        row.update(observe(workspace, artifacts, "calibration", stream, settings.get("price_book", {})))
         observed = row["observed"]
         events = [json.loads(line) for line in stream.read_text().splitlines() if line]
         messages = [event.get("item") for event in events if isinstance(event, dict)]
@@ -409,6 +423,7 @@ def launch_calibration(seed_repo: Path, artifacts: Path, seed_commit: str,
 
 def run_campaign(args: argparse.Namespace) -> dict[str, Any]:
     settings = plan(args)
+    shiftsim.require_authoring_eligibility(settings, Path(args.semaprax_bin))
     shiftsim.common.require_compiler_binding(settings, Path(args.semaprax_bin))
     shiftsim.ts_bootstrap.verify_plan(settings.get("typescript_bootstrap"))
     artifacts, binary = Path(settings["artifacts"]), Path(args.semaprax_bin).expanduser().resolve()
@@ -461,7 +476,7 @@ def main() -> int:
         p.add_argument("--repo", default=str(REPO)); p.add_argument("--base-ref", required=True)
         p.add_argument("--compiler-source-ref", required=True); p.add_argument("--semaprax-bin", required=True)
         p.add_argument("--qualification-evidence", required=True); p.add_argument("--artifacts", required=True)
-        p.add_argument("--round", type=int, choices=(1, 2, 3), default=2)
+        p.add_argument("--round", type=int, choices=(1, 2, 3, 4, 5, 6), default=2)
         p.add_argument("--authoring-profile", choices=tuple(shiftsim.AUTHORING_PROFILES), default=None)
         p.add_argument("--trials-per-arm", type=int, default=5)
         p.add_argument("--model", default=MODEL); p.add_argument("--effort", default=EFFORT)

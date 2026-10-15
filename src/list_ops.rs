@@ -1,8 +1,11 @@
 //! Exact compiler-owned immutable `List<i64>` constructor and destructor lane.
 //! The source type is algebraic even though its physical carrier is opaque.
 
+use crate::ast::program_source::ProgramSource;
 use crate::ast::{Param, ParamMode, Span, Type};
-use crate::hir::{DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId};
+use crate::hir::{
+    CompilerDeclaration, DeclarationId, OwnershipMode, ResolvedParam, ResolvedType, ValueId,
+};
 
 pub(crate) const LIST_ID: &str = "core.list";
 pub(crate) const STEP_ID: &str = "core.list-step";
@@ -125,53 +128,71 @@ pub(crate) fn ast_step() -> Type {
 
 pub(crate) fn resolved_list() -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: DeclarationId::new(LIST_ID),
+        declaration: DeclarationId::compiler(CompilerDeclaration::List),
         arguments: vec![ResolvedType::I64],
     }
 }
 
 pub(crate) fn resolved_step() -> ResolvedType {
     ResolvedType::Nominal {
-        declaration: DeclarationId::new(STEP_ID),
+        declaration: DeclarationId::compiler(CompilerDeclaration::ListStep),
         arguments: vec![ResolvedType::I64],
     }
 }
 
 pub(crate) fn is_list(ty: &ResolvedType) -> bool {
-    *ty == resolved_list()
+    matches!(ty, ResolvedType::Nominal { declaration, arguments }
+        if declaration.as_str() == LIST_ID
+        && matches!(arguments.as_slice(), [ResolvedType::I64]))
 }
 
 pub(crate) fn is_step(ty: &ResolvedType) -> bool {
-    *ty == resolved_step()
+    matches!(ty, ResolvedType::Nominal { declaration, arguments }
+        if declaration.as_str() == STEP_ID
+        && matches!(arguments.as_slice(), [ResolvedType::I64]))
 }
 
 pub(crate) fn step_shape(index: &crate::hir::DeclarationIndex, ty: &ResolvedType) -> bool {
     if !is_step(ty) {
         return false;
     }
-    let owner = DeclarationId::new(STEP_ID);
+    canonical_step_shape(index)
+}
+
+fn canonical_step_shape(index: &crate::hir::DeclarationIndex) -> bool {
+    let owner = DeclarationId::compiler(CompilerDeclaration::ListStep);
     let Some(cases) = index.variant_cases(&owner) else {
         return false;
-    };
-    let parameter = ResolvedType::TypeParameter {
-        owner: owner.clone(),
-        index: 0,
     };
     matches!(cases, [nil, cons]
         if nil.id.as_str() == NIL_CASE_ID && nil.name == "Nil" && nil.index == 0 && nil.fields.is_empty()
         && cons.id.as_str() == CONS_CASE_ID && cons.name == "Cons" && cons.index == 1
         && matches!(cons.fields.as_slice(), [head, tail]
-            if head.id.as_str() == HEAD_ID && head.name == "head" && head.index == 0 && head.ty == parameter
+            if head.id.as_str() == HEAD_ID && head.name == "head" && head.index == 0 && is_step_parameter(&head.ty)
             && tail.id.as_str() == TAIL_ID && tail.name == "tail" && tail.index == 1
-            && tail.ty == ResolvedType::Nominal { declaration: DeclarationId::new(LIST_ID), arguments: vec![parameter] }))
+            && is_list_of_step_parameter(&tail.ty)))
+}
+
+fn is_step_parameter(ty: &ResolvedType) -> bool {
+    matches!(ty, ResolvedType::TypeParameter { owner, index: 0 }
+        if owner.as_str() == STEP_ID)
+}
+
+fn is_list_of_step_parameter(ty: &ResolvedType) -> bool {
+    matches!(ty, ResolvedType::Nominal { declaration, arguments }
+        if declaration.as_str() == LIST_ID
+        && matches!(arguments.as_slice(), [argument] if is_step_parameter(argument)))
 }
 
 pub(crate) fn validate_declarations(
     program: &crate::hir::ResolvedProgram,
 ) -> Result<(), crate::diagnostic::Diagnostic> {
     use crate::hir::DeclarationKind;
-    for id in [LIST_ID, STEP_ID] {
-        let key = DeclarationId::new(id);
+    for (id, key) in [
+        (LIST_ID, CompilerDeclaration::List),
+        (STEP_ID, CompilerDeclaration::ListStep),
+    ] {
+        let key = DeclarationId::compiler(key);
         let Some(declaration) = program.declarations.declaration(&key) else {
             continue;
         };
@@ -190,7 +211,7 @@ pub(crate) fn validate_declarations(
             } else {
                 declaration.kind == DeclarationKind::Variant
                     && declaration.name == "ListStep"
-                    && step_shape(&program.declarations, &resolved_step())
+                    && canonical_step_shape(&program.declarations)
             };
         if !valid {
             return Err(crate::diagnostic::Diagnostic::io(
@@ -214,7 +235,7 @@ pub(crate) fn is_step_tail_field(
         && field.name == "tail"
         && field.ty
             == ResolvedType::Nominal {
-                declaration: DeclarationId::new(LIST_ID),
+                declaration: DeclarationId::compiler(CompilerDeclaration::List),
                 arguments: vec![ResolvedType::TypeParameter {
                     owner: owner.clone(),
                     index: 0,
@@ -226,7 +247,7 @@ pub(crate) fn ast_is_list(ty: &Type) -> bool {
     *ty == ast_list() || *ty == ast_step()
 }
 
-pub(crate) fn program_uses_list(program: &crate::ast::Program) -> bool {
+pub(crate) fn program_uses_list(program: &dyn ProgramSource) -> bool {
     fn type_uses(ty: &Type) -> bool {
         match ty {
             Type::Named { name, arguments } => {
@@ -252,8 +273,8 @@ pub(crate) fn program_uses_list(program: &crate::ast::Program) -> bool {
                     found
                 })
     }
-    program.functions.iter().any(function_uses)
-        || program.types.iter().any(|declaration| {
+    program.functions().iter().any(function_uses)
+        || program.types().iter().any(|declaration| {
             matches!(&declaration.kind, crate::ast::TypeDeclarationKind::Class { methods, .. }
                 if methods.iter().any(function_uses))
         })
@@ -336,3 +357,6 @@ pub(crate) fn resolved_program_uses_list(program: &crate::hir::ResolvedProgram) 
         )
         .any(function_uses)
 }
+
+#[cfg(test)]
+pub(crate) mod original_constructor;

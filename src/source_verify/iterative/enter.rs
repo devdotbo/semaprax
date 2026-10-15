@@ -23,13 +23,90 @@ use crate::source_verify::type_table::effective_record_fields;
 use crate::source_verify::IterativeVerifier;
 use std::collections::HashSet;
 
+#[cfg(test)]
+mod enter_before_components;
+#[cfg(test)]
+mod enter_before_extended;
+
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
     pub(super) fn frame_enter(
         &mut self,
         expression: &'p Expr,
         scope: usize,
     ) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        if self.extended_before_799 {
+            return self.before_extended_frame_enter(expression, scope);
+        }
+        #[cfg(test)]
+        if self.operators_before_799 {
+            return self.before_components_frame_enter(expression, scope);
+        }
+        #[cfg(test)]
+        if self.recovery_legacy {
+            return self.recovery_old_frame_enter(expression, scope);
+        }
+
+        self.recovery.begin(expression);
         match &expression.kind {
+            ExprKind::VecConstructor { .. } => {
+                let hygienic = *self.constructor_hygiene.get_or_insert_with(|| {
+                    crate::ast::expression_statement::projection_roots(
+                        self.current
+                            .requires
+                            .iter()
+                            .chain(std::iter::once(&self.current.body))
+                            .chain(&self.current.ensures),
+                        self.current
+                            .params
+                            .iter()
+                            .map(|param| param.name.as_str())
+                            .chain(
+                                self.current
+                                    .type_parameters
+                                    .iter()
+                                    .map(|param| param.name.as_str()),
+                            ),
+                        crate::bounded_output::reserve_active_required,
+                    )
+                });
+                if !hygienic {
+                    return Err(error(
+                        self.program,
+                        "SPX-T318",
+                        "Vec constructor generated owner names are not hygienic",
+                        expression.span,
+                    ));
+                }
+                let expansion = crate::ast::vec_constructor::inspect(expression)
+                    .map_err(|message| error(self.program, "SPX-T318", message, expression.span))?;
+                self.frames.push(VerifierFrame::Enter {
+                    expression: expansion.value,
+                    scope,
+                });
+            }
+            ExprKind::LexicalExit { kind, value } => {
+                if let Some(operand) = value {
+                    self.frames.push(VerifierFrame::ResumeLexicalReturn {
+                        expression,
+                        operand,
+                        scope,
+                    });
+                    self.frames.push(VerifierFrame::Enter {
+                        expression: operand,
+                        scope,
+                    });
+                } else if *kind != crate::ast::LexicalExitKind::Return {
+                    self.values.push(Some(CheckedValue::value(Type::Never)));
+                } else {
+                    return Err(error(
+                        self.program,
+                        "SPX-T312",
+                        "return requires an operand",
+                        expression.span,
+                    ));
+                }
+            }
             ExprKind::Closure { .. } => self.enter_closure(expression, scope)?,
             ExprKind::Int(_) => self.values.push(Some(CheckedValue::value(Type::I64))),
             ExprKind::Int32(_) => self.values.push(Some(CheckedValue::value(Type::I32))),
@@ -46,7 +123,20 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             ExprKind::Float64(_) => self.values.push(Some(CheckedValue::value(Type::F64))),
             ExprKind::Bool(_) => self.values.push(Some(CheckedValue::value(Type::Bool))),
             ExprKind::String(_) => self.values.push(Some(CheckedValue::value(Type::String))),
+            ExprKind::BorrowedUtf8Literal(text) => {
+                self.values
+                    .push(Some(crate::source_verify::static_text::checked(
+                        self.program,
+                        expression.span,
+                        text,
+                    )?))
+            }
             ExprKind::Var(name) if name == "result" => {
+                if self.result_type.is_some() && self.recovery.reads_value(scope, name, expression)
+                {
+                    self.values.push(None);
+                    return Ok(());
+                }
                 let value = self
                     .result_type
                     .map(|ty| CheckedValue::returned(ty.clone(), self.types.needs_drop(ty)));
@@ -64,6 +154,21 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 self.values.push(value);
             }
             ExprKind::Var(name) => {
+                if self.scopes[scope]
+                    .bindings
+                    .get(name)
+                    .is_some_and(|binding| binding.traversal_row.is_some())
+                    && !self
+                        .row_loan_sites
+                        .contains(&(expression.span.start, expression.span.end))
+                {
+                    return Err(error(
+                        self.program,
+                        "SPX-T284",
+                        "record traversal row cannot escape or materialize aggregate storage; select a field",
+                        expression.span,
+                    ));
+                }
                 let value = self.scopes[scope].bindings.get(name).map(|binding| {
                     crate::source_verify::owning_closure::reject_escaping_read(
                         self.program,
@@ -125,7 +230,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         .and_then(|function| function_value_signature(function))
                         .map(CheckedValue::value)
                 });
-                if value.is_none() {
+                if value.is_none() && !self.recovery.reads_refused(scope, name) {
                     self.diagnostics.push(hints::with_optional_help(
                         error(
                             self.program,
@@ -136,7 +241,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         hints::variant_shorthand_help(name).map(str::to_owned),
                     ));
                 }
-                self.values.push(value);
+                // Preserve every real binding/ownership check above before
+                // attaching a separate expected-type refusal view to this read.
+                let refused = value.is_some() && self.recovery.reads_value(scope, name, expression);
+                self.values.push(if refused { None } else { value });
             }
             ExprKind::Unary { op, value } => {
                 self.frames.push(VerifierFrame::ResumeUnary {
@@ -166,6 +274,43 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 type_arguments,
                 args,
             } => {
+                let args: &[Expr] = if name == crate::vec_ops::sort_keys::NAME {
+                    if !self.current.type_parameters.is_empty()
+                        || crate::source_verify::sort_keys::descriptor(
+                            self.types,
+                            type_arguments,
+                            args,
+                        )
+                        .is_none()
+                    {
+                        self.diagnostics.push(error(self.program,"SPX-T311","vec_sort_by requires an explicit monomorphic record and 1..8 unique literal field:asc/field:desc keys",expression.span));
+                        self.values.push(None);
+                        return Ok(());
+                    }
+                    &args[..1]
+                } else if name == crate::vec_ops::field_unique::NAME {
+                    if !self.current.type_parameters.is_empty()
+                        || crate::source_verify::field_unique::descriptor(
+                            self.types,
+                            type_arguments,
+                            args,
+                            &self.scopes[scope].bindings,
+                        )
+                        .is_none()
+                    {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T319",
+                            crate::vec_ops::field_unique::SHAPE,
+                            expression.span,
+                        ));
+                        self.values.push(None);
+                        return Ok(());
+                    }
+                    &args[..1]
+                } else {
+                    args
+                };
                 if let Some(result) = crate::source_verify::owning_closure::check_call(
                     self.program,
                     name,
@@ -182,7 +327,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 }
                 let native = self
                     .program
-                    .interfaces
+                    .interfaces()
                     .iter()
                     .flat_map(|interface| &interface.imports)
                     .find(|import| import.native_rust && import.name == *name);
@@ -293,12 +438,93 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         return_type,
                         implicit_unique_ownership: false,
                     }))
+                } else if name == crate::vec_field::NAME {
+                    let Some((params, return_type)) = super::super::vec_field::signature(
+                        self.types,
+                        type_arguments,
+                        args,
+                        expression.span,
+                    ) else {
+                        self.diagnostics.push(error(self.program,"SPX-T310","vec_field requires one admitted owned record type, a named Vec and usize index, and an exact literal field selector",expression.span));
+                        self.values.push(None);
+                        return Ok(());
+                    };
+                    if !self.current.type_parameters.is_empty() {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T310",
+                            "vec_field is not admitted in generic function templates",
+                            expression.span,
+                        ));
+                    }
+                    VerifierCallTarget::Ordinary(Some(VerifierFunctionSignature::Specialized {
+                        params,
+                        return_type,
+                        implicit_unique_ownership: false,
+                    }))
+                } else if name == crate::literal_format::NAME {
+                    if !type_arguments.is_empty() {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T225",
+                            "string_format does not accept type arguments",
+                            expression.span,
+                        ));
+                    }
+                    if !self.current.type_parameters.is_empty() {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T225",
+                            "string_format is not admitted in generic function templates",
+                            expression.span,
+                        ));
+                    }
+                    let template = match args.first().map(|arg| &arg.kind) {
+                        Some(ExprKind::String(value)) => value,
+                        _ => {
+                            self.diagnostics.push(error(self.program, "SPX-T204", "string_format requires a compile-time string literal as its first argument", expression.span));
+                            self.values.push(None);
+                            return Ok(());
+                        }
+                    };
+                    let pieces = match crate::literal_format::scan(template) {
+                        Ok(pieces) => pieces,
+                        Err(reason) => {
+                            self.diagnostics.push(error(
+                                self.program,
+                                "SPX-T204",
+                                reason.message(),
+                                args[0].span,
+                            ));
+                            self.values.push(None);
+                            return Ok(());
+                        }
+                    };
+                    let fields = crate::literal_format::field_count(&pieces);
+                    if args.len() - 1 != fields {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T204",
+                            format!(
+                                "string_format literal has {fields} fields, received {} values",
+                                args.len() - 1
+                            ),
+                            expression.span,
+                        ));
+                    }
+                    VerifierCallTarget::LiteralFormat
                 } else if let Some(op) = crate::string_ops::by_name(name) {
                     // Compiler-owned string operations verify through
                     // the ordinary monomorphic machinery with one
                     // synthetic signature; consuming arguments use the
                     // established `own` transfer mode and borrowed
                     // arguments never mark their sources moved.
+                    if op == crate::string_ops::StringOp::Take
+                        && !crate::string_ops::take::source_operand(args, self.allow_moves)
+                    {
+                        self.diagnostics.push(error(self.program, "SPX-O105",
+                            "string_take requires an available named owned String outside contracts", expression.span));
+                    }
                     let params = crate::string_ops::ast_params(op);
                     if !type_arguments.is_empty() {
                         self.diagnostics.push(error(
@@ -353,18 +579,31 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         implicit_unique_ownership: false,
                     }))
                 } else if let Some(op) = crate::vec_ops::by_name(name) {
-                    let element = type_arguments.first();
-                    if type_arguments.len() != 1
+                    if op == crate::vec_ops::VecOp::StrAt
+                        && (!self.current.type_parameters.is_empty()
+                            || crate::source_verify::string_slot::root(
+                                type_arguments,
+                                args,
+                                &self.scopes[scope].bindings,
+                            )
+                            .is_none())
+                    {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T281",
+                            crate::vec_ops::string_slot::SHAPE,
+                            expression.span,
+                        ));
+                    }
+                    let element = if op == crate::vec_ops::VecOp::StrAt {
+                        Some(&Type::String)
+                    } else {
+                        type_arguments.first()
+                    };
+                    if (if op == crate::vec_ops::VecOp::StrAt { !type_arguments.is_empty() } else { type_arguments.len() != 1 })
                         || element.is_none_or(|ty| {
-                            !crate::vec_ops::ast_operation_element_is_admitted(op, ty)
-                                && !crate::vec_ops::source_parameter_is_admitted(
-                                    self.program,
-                                    self.current,
-                                    op,
-                                    ty,
-                                )
-                                && !crate::source_verify::declared_type::owned_record_collection::
-                                    admits_vec_operation_element(self.types, op, ty)
+                            !crate::source_verify::declared_type::owned_leaf_collection::vec_operation_admitted(self.types, op, ty)
+                                && !crate::vec_ops::source_parameter_is_admitted(self.program, self.current, op, ty)
                         })
                     {
                         self.diagnostics.push(error(
@@ -406,9 +645,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                                 op,
                                 element,
                                 *element == crate::ast::Type::Bytes
+                                    || crate::source_verify::declared_type::owned_leaf_collection::admitted(self.types, element)
                                     || crate::source_verify::declared_type::
-                                        owned_record_collection::
-                                        is_admitted_owned_record_collection_element(
+                                        owned_leaf_collection::runtime_element(
                                             self.types, element,
                                         ),
                             ),
@@ -432,8 +671,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         || element.is_none_or(|ty| {
                             !crate::iterator_ops::ast_element_is_admitted(ty)
                                     && !crate::source_verify::declared_type::
-                                        owned_record_collection::
-                                        is_admitted_owned_record_collection_element(
+                                        owned_leaf_collection::runtime_element(
                                             self.types,
                                             ty,
                                         )
@@ -520,9 +758,19 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         let diagnostic = error(
                             self.program,
                             "SPX-T266",
-                            format!(
-                                "borrowed view `{name}` requires an exact admitted storage place"
-                            ),
+                            if matches!(
+                                op,
+                                crate::byte_ops::ByteOp::StringAsStr
+                                    | crate::byte_ops::ByteOp::StrAsBytes
+                            ) {
+                                format!(
+                                    "borrowed view `{name}` requires a named String owner or an authenticated named-record path to a String field"
+                                )
+                            } else {
+                                format!(
+                                    "borrowed view `{name}` requires an exact admitted storage place"
+                                )
+                            },
                             expression.span,
                         );
                         self.diagnostics.push(match args.first() {
@@ -666,25 +914,49 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         }
                         validation_specialize_signature(target, type_arguments).map(
                             |(params, return_type)| {
-                                VerifierFunctionSignature::Specialized {
+                                VerifierFunctionSignature::SourceSpecialized {
+                                    function: target,
                                     params,
                                     return_type,
-                                    implicit_unique_ownership: true,
                                 }
                             },
                         )
                     });
                     VerifierCallTarget::Ordinary(specialized)
                 };
+                if let VerifierCallTarget::Ordinary(Some(VerifierFunctionSignature::Borrowed(
+                    function,
+                ))) = &target
+                {
+                    self.note_row_loan_arguments(function, args, scope);
+                }
                 let borrowed_bytes_loans = match &target {
                     VerifierCallTarget::Ordinary(Some(VerifierFunctionSignature::Borrowed(
                         function,
                     ))) => activate_borrowed_bytes_call_loans(
+                        self.program,
                         args,
                         &function.params,
                         &mut self.scopes[scope].bindings,
                         self.types,
                     ),
+                    VerifierCallTarget::Ordinary(Some(
+                        VerifierFunctionSignature::Specialized { params, .. }
+                        | VerifierFunctionSignature::SourceSpecialized { params, .. },
+                    )) if params.iter().any(|p| {
+                        crate::source_verify::declared_type::collection_record::vector(
+                            self.types, &p.ty,
+                        )
+                    }) =>
+                    {
+                        activate_borrowed_bytes_call_loans(
+                            self.program,
+                            args,
+                            params,
+                            &mut self.scopes[scope].bindings,
+                            self.types,
+                        )
+                    }
                     _ => Vec::new(),
                 };
                 if let Some(argument) = args.first() {
@@ -702,7 +974,14 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         scope,
                     });
                 } else {
+                    if self.refused_callee_return(&target) {
+                        self.values.push(None);
+                        return Ok(());
+                    }
                     self.values.push(Some(match target {
+                        VerifierCallTarget::LiteralFormat => {
+                            CheckedValue::returned(Type::String, true)
+                        }
                         VerifierCallTarget::Native(import) => {
                             let mut value = CheckedValue::returned(
                                 import.result.value_type(),
@@ -712,7 +991,9 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             value
                         }
                         VerifierCallTarget::Byte(op) => {
-                            CheckedValue::returned(op.ast_return_type(), false)
+                            let ty = op.ast_return_type();
+                            let owns = self.types.needs_drop(&ty);
+                            CheckedValue::returned(ty, owns)
                         }
                         VerifierCallTarget::HostIo(op) => {
                             CheckedValue::returned(op.ast_return_type(), false)
@@ -815,6 +1096,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     .cloned()
                     .collect::<Vec<_>>();
                 let block_scope = self.scopes.len();
+                self.recovery.fork(Some(scope), block_scope);
                 self.scopes.push(VerifierScope {
                     bindings: self.scopes[scope].bindings.clone(),
                     local_borrow_count: self.scopes[scope].local_borrow_count,
@@ -854,6 +1136,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         body,
                         ..
                     }
+                    | Statement::ForBorrow {
+                        item,
+                        item_span,
+                        values,
+                        body,
+                        ..
+                    }
                     | Statement::ForOwn {
                         item,
                         item_span,
@@ -886,6 +1175,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                             block_scope,
                             index: 0,
                             outer_names,
+                            recovery_checkpoint: self.recovery.checkpoint(self.diagnostics),
                         });
                         self.frames.push(VerifierFrame::Enter {
                             expression: first_statement.value(),
@@ -928,6 +1218,57 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 });
             }
             ExprKind::Project { base, field, .. } => {
+                if let Some((root, value)) = crate::source_verify::record_traversal::project(
+                    expression,
+                    &self.scopes[scope].bindings,
+                    self.types,
+                ) {
+                    let owner = Expr {
+                        kind: ExprKind::Var(root),
+                        span: expression.span,
+                    };
+                    if let Some(place) =
+                        source_place(&owner, &self.scopes[scope].bindings, self.types)
+                    {
+                        check_source_place_availability(
+                            self.program,
+                            &place,
+                            &self.scopes[scope].bindings,
+                            expression.span,
+                            self.diagnostics,
+                        );
+                    }
+                    self.values.push(Some(value));
+                    return Ok(());
+                }
+                let rooted_string_view = matches!(
+                    self.frames.last(),
+                    Some(VerifierFrame::ResumeCallArgument {
+                        target: VerifierCallTarget::Byte(crate::byte_ops::ByteOp::StringAsStr),
+                        ..
+                    })
+                ) && source_byte_view_place_is_admitted(
+                    crate::byte_ops::ByteOp::StringAsStr,
+                    expression,
+                    &self.scopes[scope].bindings,
+                    self.types,
+                );
+                if self.loop_depth != 0 && !rooted_string_view
+                    && source_place(base, &self.scopes[scope].bindings, self.types).is_some_and(
+                        |place| {
+                            !crate::source_verify::declared_type::owned_leaf_collection::copy_or_leaf_admitted(
+                                self.types, &place.ty,
+                            ) && !crate::source_verify::declared_type::collection_record::admitted(&place.ty, self.types)
+                        },
+                    )
+                {
+                    self.diagnostics.push(error(
+                        self.program,
+                        "SPX-T252",
+                        "record field projection is not yet admitted in while bodies",
+                        expression.span,
+                    ));
+                }
                 if let Some(place) =
                     source_place(expression, &self.scopes[scope].bindings, self.types)
                 {
@@ -938,11 +1279,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         expression.span,
                         self.diagnostics,
                     );
-                    self.values.push(Some(CheckedValue {
-                        ty: place.ty,
-                        mode: place.mode,
-                        native_unit: false,
-                    }));
+                    self.publish_source_place(place, scope);
                 } else {
                     self.frames.push(VerifierFrame::ResumeProject {
                         expression,
@@ -981,6 +1318,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     name: type_name.clone(),
                     arguments: type_arguments.clone(),
                 };
+                let reported = self.diagnostics.len();
                 check_declared_type(
                     self.program,
                     &instance,
@@ -990,7 +1328,11 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     self.diagnostics,
                 );
                 let declared_fields = effective_record_fields(self.types, &instance);
-                if declared_fields.is_none() {
+                if declared_fields.is_none()
+                    && !self.diagnostics[reported..]
+                        .iter()
+                        .any(|diagnostic| diagnostic.severity.is_error())
+                {
                     self.diagnostics.push(error(
                         self.program,
                         "SPX-T215",
@@ -1130,6 +1472,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 scrutinee, arms, ..
             } => {
                 self.frames.push(VerifierFrame::ResumeMatchScrutinee {
+                    checkpoint: self.recovery.checkpoint(self.diagnostics),
                     expression,
                     scrutinee,
                     arms,

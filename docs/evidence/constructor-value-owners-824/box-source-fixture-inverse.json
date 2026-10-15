@@ -1,0 +1,19 @@
+{
+  "source": "src/box_ops/wrappers/source_view_tests.rs",
+  "archive": "box-source-fixture.before.txt",
+  "sha256": "59eae3c9037b515b58ab852e79feb389e720bf3ec9922cbc53a7f49c98afcb95",
+  "edits": [
+    {
+      "before": "fn program() -> crate::ast::Program {\n    crate::parse(\n        include_str!(concat!(\n            env!(\"CARGO_MANIFEST_DIR\"),\n            \"/std/collections/src/collections.spx\"\n        )),\n        \"std-collections-wrapper.spx\",\n    )\n    .unwrap()\n}",
+      "after": "fn program() -> crate::ast::Program {\n    crate::parse(\n        include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/std/mem/src/mem.spx\")),\n        \"std-mem-wrapper.spx\",\n    )\n    .unwrap()\n}"
+    },
+    {
+      "before": "foreign.collections",
+      "after": "foreign.mem"
+    },
+    {
+      "before": "",
+      "after": "    // The original collections fixture is not a Box source and stays negative.\n    let collections = crate::parse(\n        include_str!(concat!(\n            env!(\"CARGO_MANIFEST_DIR\"),\n            \"/std/collections/src/collections.spx\"\n        )),\n        \"std-collections-wrapper.spx\",\n    )\n    .unwrap();\n    for function in &collections.functions {\n        parity(&collections, function);\n        assert!(original::source_wrapper(&collections, function).is_none());\n        assert!(source_wrapper(&collections, function).is_none());\n    }\n"
+    }
+  ]
+}

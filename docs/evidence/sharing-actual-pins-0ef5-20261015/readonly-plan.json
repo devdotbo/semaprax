@@ -1,0 +1,83 @@
+{
+  "schema": "semaprax.prelude-forecast-reviewed-pin-plan.v1",
+  "capture_head": "0ef52c381ed4615da7c6b124df7fafa420a71902",
+  "status": "actual-candidate-plan-requires-wire-review",
+  "edits": [
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "assert_eq!(graph.budget().used_builder_bytes(), 1_349_771);",
+      "after": "assert_eq!(graph.budget().used_builder_bytes(), 1_349_899);",
+      "actual_wire": "public-graph"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:7db6d87dbe0f5785a6c92ef1bf8586b2ba2b7bc231cdd1be17cce6d8bc79c466",
+      "after": "sha256:c4f57ad54ee1ce1917ae5097fcd58e9132336919f1ff4242e7dfe72b685d515d",
+      "actual_wire": "public-graph"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:02c1863757d4bb0ce7cc1996e1c1c611b295a73746540f93a03f05bd8cd2d50d",
+      "after": "sha256:d2de6194220196d0a1a5d65fd4deb7f3fb13aa5836e6f04c5ff77d3e37e36afe",
+      "actual_wire": "context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:483d3a6d5fc582df70cedc61f175882271b7cb1719f5da2e138168cbafcc176f",
+      "after": "sha256:5c1930f0204a853993db44657ea03533d980f43d29c041bb3bfb18a46cafe8ae",
+      "actual_wire": "forward"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:e1e95226e6facd043e03be4d946bc4dc2809696f026d60536f7fd70a530ad2bd",
+      "after": "sha256:39105a0bd8838eae6c7a5678c055b623f00667376711bb8d958ff5bce5fb49ed",
+      "actual_wire": "capability-context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:ebfaf2cdb2101e9913372bddd55a0e65dcd94744f17a1f1c7fbd537cbe8c833d",
+      "after": "sha256:e5461da70259ee699153aed2f83f4d02091b5541067a77a7e21cdff46a4de4b3",
+      "actual_wire": "type-context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:6d5389d14872659ff10172647eb9a2895243ec55ce7920cb8b8a4516bb469a48",
+      "after": "sha256:f2a170413901a08d1559cf06d3ee98523b43dfbd57ae871215ab2cbef2e4e71d",
+      "actual_wire": "impact"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:ecef7772dff4e4d34d615c660a085874d3958156d0d28e0ccc92e6cc70a0f69d",
+      "after": "sha256:4d950185b3491dbd80f79064f195e00c7c8c3d76f1517e4038f1ddcf08a63fe0",
+      "actual_wire": "custom-impact"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:b119980535c92812147b717f91fe11179ccb1c34bda827d873b490eea3eeb72d",
+      "after": "sha256:45ad79b0f2a43a4b6b1fe1b5b91437c0bd629366f46ddb01908daf9afa7b4efd",
+      "actual_wire": "review"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:deb3ce57b3595fec0be2d324a0d6787d676674b9f901548252d947973a2f0d19",
+      "after": "sha256:172db21a38a249e1c44bfebc9c96bc4b6bce21e6b82d23be061d99149ab1cfab",
+      "actual_wire": "capability-review"
+    },
+    {
+      "path": "src/workspace_graph/type_proof_tests.rs",
+      "before": "sha256:55a0accbdfa1d8770dc6be6ee3f1d1e4d5b733923fab6f83937c39e2530dc10a",
+      "after": "sha256:dfd72facdc354e3b6494a1d76713b04c6d4c5869931e7be1ec39cee7177008d1",
+      "actual_wire": "projection-wire"
+    }
+  ],
+  "source_sha256": {
+    "src/workspace_graph/type_proof_tests.rs": "sha256:5151cceb4b99db3470a01f7ed5d192de9e5c212610aa774e11a4079c17d27c92",
+    "tests/workspace/semantic_graph.rs": "sha256:00786b21cf8e3d6a23ef90e4ca042ac5a5b2a57842916675c78ffed0b1b6347e"
+  },
+  "after_sha256": {
+    "src/workspace_graph/type_proof_tests.rs": "sha256:ce1446da9052dd08ab0b00a1fdb0e9ada8832b9bcd9f8ca7e6902e13272af928",
+    "tests/workspace/semantic_graph.rs": "sha256:72ef20a30c5044d3b3bb3815f4767a2288bbd60640c8e2a371bd346a6485b9c8"
+  },
+  "trusted_build_receipt_sha256": "sha256:e7182abf95f75fab2d6970bed170ea8d3eb4c4229a28b12dc50a39438efae3ba",
+  "trusted_producer_receipt_sha256": "sha256:8e2819d59cdc6cdf2798ea4dd0a058b73affc386d4b806e9e06dde89f26a579b"
+}

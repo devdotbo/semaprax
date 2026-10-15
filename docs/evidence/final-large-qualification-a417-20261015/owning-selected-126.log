@@ -1,0 +1,6 @@
+
+running 1 test
+test cleanup_plan::replay::selected_entry::tests::fact_errors::paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8847 filtered out; finished in 0.01s
+

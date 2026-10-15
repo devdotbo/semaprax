@@ -1,0 +1,68 @@
+{
+  "executed": false,
+  "rust": [
+    {
+      "harness": "project",
+      "selector": "standard_library::application_json::owned::shiftsim_typed_records::typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus"
+    },
+    {
+      "harness": "project",
+      "selector": "standard_library::application_json::owned::shiftsim_typed_records::unfactored_schedule_retains_original_source_and_factored_admission"
+    },
+    {
+      "harness": "project",
+      "selector": "standard_library::application_json::owned::catalog_scoped_records::typed_catalog_derives_codecs_and_preserves_all_23_functional_cases"
+    },
+    {
+      "harness": "owned_data",
+      "selector": "copy_record_vec::traversal::shiftsim_live_scans_match_complete_indexed_prefix_empty_full_and_early_overlength"
+    },
+    {
+      "harness": "owned_data",
+      "selector": "copy_record_vec::traversal::shiftsim_live_and_complete_indexed_scans_keep_late_overlength_vec_refusal"
+    },
+    {
+      "harness": "owned_data",
+      "selector": "owned_leaf_vec::record_traversal::owned_row_traversal_keeps_previous_indexed_string_view_scoped_to_iteration"
+    }
+  ],
+  "python": [
+    {
+      "class": "TypedApplicationSetupTests",
+      "selectors": [
+        "test_both_outputs_replay_against_same_unchanged_bootstrap",
+        "test_failed_second_derivation_never_publishes_or_installs_first",
+        "test_failed_second_derivation_keeps_only_first_confirmed_replay_binding",
+        "test_replay_drift_is_refused_before_installation",
+        "test_bootstrap_drift_is_refused_before_second_generator",
+        "test_generated_output_byte_bound_is_enforced",
+        "test_original_ascii_shiftsim_selector_is_preserved",
+        "test_explicit_scaffolding_uses_real_native_and_source_test_routes",
+        "test_completion_is_exclusive_and_keeps_regular_complete_tree",
+        "test_existing_destination_and_symlink_ancestors_are_never_overwritten",
+        "test_failed_completion_persistence_keeps_no_usable_receipt",
+        "test_regular_source_rejects_symlink_and_capacity_excess",
+        "test_build_receipt_binds_source_binary_and_retained_log",
+        "test_actual_public_manifests_match_closed_v31_inventory",
+        "test_bundled_closure_uses_real_registry_and_rejects_unclosed_dependencies",
+        "test_completed_installation_recheck_is_read_only_and_not_qualification",
+        "test_completed_installation_recheck_rejects_live_source_drift",
+        "test_completed_installation_recheck_rejects_schema_and_retained_snapshot_drift",
+        "test_completed_installation_recheck_rejects_compiler_drift",
+        "test_completed_installation_recheck_rejects_incomplete_or_relabelled_receipt",
+        "test_completed_installation_recheck_rejects_symlink_ancestor",
+        "test_completed_installation_recheck_requires_original_generated_bytes",
+        "test_completed_installation_recheck_requires_exact_inventory"
+      ]
+    },
+    {
+      "class": "PairedPlanSetupTests",
+      "selectors": [
+        "test_reviewed_application_policies_match_operator_exact_selectors",
+        "test_complete_paired_replay_precedes_every_staged_module_binding",
+        "test_partial_or_changed_complete_replay_never_stages_first_module",
+        "test_complete_inventory_receipt_and_original_bytes_are_checked"
+      ]
+    }
+  ]
+}

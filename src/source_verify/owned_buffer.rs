@@ -25,7 +25,8 @@
 //! at run time, before the owner transfer commits, and selects the single
 //! `semaprax.byte-buffer.v1` failure identically on every backend.
 
-use crate::ast::{Expr, ExprKind, Program};
+use crate::ast::program_source::ProgramSource;
+use crate::ast::{Expr, ExprKind};
 use crate::byte_ops::{self, ByteOp};
 use crate::diagnostic::Diagnostic;
 
@@ -34,7 +35,7 @@ use super::diagnostics::error;
 /// Check one `bytes_zeroed` or `bytes_set` call site. The caller has already
 /// rejected type arguments and a wrong argument count.
 pub(super) fn check_call(
-    program: &Program,
+    program: &dyn ProgramSource,
     expression: &Expr,
     op: ByteOp,
     name: &str,
@@ -46,6 +47,12 @@ pub(super) fn check_call(
         return diagnostics;
     }
     match op {
+        ByteOp::ZeroedBounded => {
+            if !matches!(&args[1].kind,ExprKind::Usize(bound) if *bound<=byte_ops::MAX_BUFFER_CAPACITY_BYTES)
+            {
+                diagnostics.push(error(program,"SPX-T271","bytes_zeroed_bounded requires a usize literal bound of at most 131072 bytes",args[1].span).with_help("supply a literal bound; the runtime request is checked before allocation"));
+            }
+        }
         ByteOp::Zeroed => {
             if byte_ops::owned_buffer_chain_capacity(expression).is_none() {
                 diagnostics.push(
@@ -131,7 +138,8 @@ pub(super) fn check_call(
                 None => {}
             }
         }
-        ByteOp::Len
+        ByteOp::Partition
+        | ByteOp::Len
         | ByteOp::Get
         | ByteOp::Range
         | ByteOp::Copy
@@ -153,6 +161,14 @@ pub(super) fn allocation_payload_bytes(args: &[Expr]) -> u64 {
         Some(ExprKind::Usize(capacity)) => {
             (*capacity).min(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES)
         }
+        _ => crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES,
+    }
+}
+
+/// Static accounting charges the bound, never the smaller runtime request.
+pub(super) fn bounded_allocation_payload_bytes(args: &[Expr]) -> u64 {
+    match args.get(1).map(|argument| &argument.kind) {
+        Some(ExprKind::Usize(bound)) => (*bound).min(crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES),
         _ => crate::byte_ops::MAX_BUFFER_CAPACITY_BYTES,
     }
 }

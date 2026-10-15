@@ -303,7 +303,7 @@ fn stage_root_for(
                 allocation += 1;
                 Value::Bytes(OwnedBytesValue {
                     allocation,
-                    bytes: Arc::from(bytes),
+                    bytes: Arc::<[u8]>::from(bytes).into(),
                 })
             }
             OwnedFrameInputValue::Scalar(scalar) => {
@@ -519,7 +519,7 @@ fn exclusive(root: &Value) -> bool {
     };
     Arc::strong_count(record) == 1
         && record.fields.values().all(|value| match value {
-            Value::Bytes(bytes) => Arc::strong_count(&bytes.bytes) == 1,
+            Value::Bytes(bytes) => Arc::strong_count(bytes.bytes.ordinary()) == 1,
             _ => super::clone_scalar(value).is_some(),
         })
 }

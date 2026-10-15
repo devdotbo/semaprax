@@ -34,7 +34,7 @@ pub(in crate::implementation) const C_EXPRESSION_FRAME_BYTES: usize =
 /// expression. The final C artifact has a separate reservation; this arena is
 /// transient scratch and cannot grow geometrically past the admitted artifact
 /// ceiling before the final-size gate observes it.
-pub(super) struct CExpressionLineArena {
+pub(in crate::implementation) struct CExpressionLineArena {
     bytes: Box<[u8]>,
     len: usize,
 }
@@ -131,6 +131,18 @@ pub(in crate::implementation) fn c_expression_shape(
         let (node, next_child, node_depth) = stack[stack_len - 1].take().ok_or_else(b111)?;
         stack_len -= 1;
         if next_child == 0 {
+            if matches!(&node.kind,
+                ResolvedExprKind::Block { statements, .. }
+                | ResolvedExprKind::VecConstructor { statements, .. }
+                if statements.iter().any(|statement| matches!(statement, ResolvedStatement::CopyDiscard { .. }))
+            ) {
+                return Err(b107(
+                    "copy discard is outside the native Rust scalar profile",
+                ));
+            }
+            if matches!(node.kind, ResolvedExprKind::RowLoan { .. }) {
+                return Err(b107("scalar value signature required"));
+            }
             nodes = nodes
                 .checked_add(1)
                 .ok_or_else(|| b109("max_builder_bytes", MAX_BUILDER_BYTES))?;
@@ -267,6 +279,21 @@ fn c_expression_linear(
         note_c_expression_scratch(mode, &frame, &frames, &values, &arguments, lines)?;
         match frame {
             CExpressionFrame::Enter(expression) => match &expression.kind {
+                ResolvedExprKind::BorrowedUtf8Literal(_) => {
+                    return Err(b107(
+                        "static borrowed UTF-8 is outside the native Rust scalar profile",
+                    ));
+                }
+                ResolvedExprKind::VecConstructor { .. } => {
+                    return Err(b107(
+                        "Vec constructors are outside the native Rust scalar profile",
+                    ));
+                }
+                ResolvedExprKind::LexicalExit { .. } => {
+                    return Err(b107(
+                        "lexical control is outside the native Rust scalar profile",
+                    ));
+                }
                 ResolvedExprKind::Int32(_)
                 | ResolvedExprKind::Char(_)
                 | ResolvedExprKind::Uint8(_)
@@ -277,7 +304,10 @@ fn c_expression_linear(
                 | ResolvedExprKind::Float64(_)
                 | ResolvedExprKind::String(_)
                 | ResolvedExprKind::BorrowPlace { .. }
-                | ResolvedExprKind::ByteRange { .. } => {
+                | ResolvedExprKind::ByteRange { .. }
+                | ResolvedExprKind::LiteralFormat { .. }
+                | ResolvedExprKind::VecFieldRead { .. }
+                | ResolvedExprKind::RowLoan { .. } => {
                     // Non-i64 scalar signatures are outside the scalar
                     // native boundary; admission rejects them first.
                     return Err(b107("scalar value signature required"));
@@ -1108,7 +1138,7 @@ pub(super) fn c_expr(
     )
 }
 
-pub(super) fn c_expr(
+pub(in crate::implementation) fn c_expr(
     expression: &ResolvedExpr,
     imports: &[ImportFact],
     temporary_count: &mut usize,

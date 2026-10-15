@@ -153,6 +153,9 @@ fn main() -> i64 {
 /// Collects every direct child expression of a resolved expression.
 fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
     match &expression.kind {
+        hir::ResolvedExprKind::LexicalExit { value, .. } => {
+            value.iter().map(|value| value.as_ref()).collect()
+        }
         hir::ResolvedExprKind::Closure { captures, body, .. } => captures
             .iter()
             .map(|capture| &capture.value)
@@ -162,7 +165,10 @@ fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
         hir::ResolvedExprKind::Invoke { callable, args } => std::iter::once(callable.as_ref())
             .chain(args.iter())
             .collect(),
-        hir::ResolvedExprKind::Call { args, .. } => args.iter().collect(),
+        hir::ResolvedExprKind::Call { args, .. }
+        | hir::ResolvedExprKind::LiteralFormat { args, .. }
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => args.iter().collect(),
         hir::ResolvedExprKind::NativeRustImportCall(call) => call.args.iter().collect(),
         hir::ResolvedExprKind::HostCommandCall(call) => call.args.iter().collect(),
         hir::ResolvedExprKind::Unary { value, .. }
@@ -175,7 +181,10 @@ fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
         hir::ResolvedExprKind::ByteRange {
             source, start, end, ..
         } => vec![source.as_ref(), start.as_ref(), end.as_ref()],
-        hir::ResolvedExprKind::Block { statements, tail } => statements
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => statements
             .iter()
             .map(|statement| statement.value())
             .chain(std::iter::once(tail.as_ref()))
@@ -216,6 +225,7 @@ fn children(expression: &hir::ResolvedExpr) -> Vec<&hir::ResolvedExpr> {
         | hir::ResolvedExprKind::Float64(_)
         | hir::ResolvedExprKind::Bool(_)
         | hir::ResolvedExprKind::String(_)
+        | hir::ResolvedExprKind::BorrowedUtf8Literal(_)
         | hir::ResolvedExprKind::Place(_)
         | hir::ResolvedExprKind::BorrowPlace { .. } => Vec::new(),
     }

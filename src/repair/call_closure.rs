@@ -114,10 +114,19 @@ fn collect_calls(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::ArrayU8(_)
         | ResolvedExprKind::RepeatArrayU8 { .. }
         | ResolvedExprKind::BorrowPlace { .. }
+        | ResolvedExprKind::RowLoan { .. }
         | ResolvedExprKind::Place(_) => {}
+        ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. } => {
+            *call_sites = call_sites.saturating_add(1);
+            for argument in args {
+                collect_calls(argument, known, calls, call_sites);
+            }
+        }
         ResolvedExprKind::Call { callee, args, .. } => {
             *call_sites = call_sites.saturating_add(1);
             if known.contains(callee) {
@@ -137,12 +146,19 @@ fn collect_calls(
                 collect_calls(argument, known, calls, call_sites);
             }
         }
-        ResolvedExprKind::Unary { value, .. } => collect_calls(value, known, calls, call_sites),
+        ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ResolvedExprKind::Unary { value, .. } => collect_calls(value, known, calls, call_sites),
         ResolvedExprKind::Binary { left, right, .. } => {
             collect_calls(left, known, calls, call_sites);
             collect_calls(right, known, calls, call_sites);
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     collect_calls(
@@ -200,6 +216,24 @@ fn collect_calls(
 mod tests {
     use super::*;
 
+    #[test]
+    fn literal_format_retains_nested_calls_and_operation_work() {
+        let ast = crate::check(
+            r#"module format.repair;
+@id("helper") fn helper()->i64 {1}
+@id("main") fn main()->i64 {string_len(string_format("{}",helper()))}
+"#,
+            "format-repair.spx",
+        )
+        .unwrap();
+        let program = hir::resolve(&ast).unwrap();
+        let graph = call_graph(&program).unwrap();
+        assert_eq!(graph.call_sites, 3);
+        assert_eq!(
+            graph.edges[&DeclarationId::new("main")],
+            BTreeSet::from([DeclarationId::new("helper")])
+        );
+    }
     #[test]
     fn closure_body_calls_contribute_dependencies_and_call_site_budget_without_counting_creation() {
         let source = r#"

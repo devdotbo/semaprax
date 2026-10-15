@@ -46,21 +46,22 @@ pub(super) fn render_toolkit(
     wasm_byte_length: usize,
     program: &crate::hir::ResolvedProgram,
     closure: &std::collections::BTreeSet<crate::hir::DeclarationId>,
+    literal_format: bool,
 ) -> String {
-    let mut selected = program.clone();
-    selected
+    // Admission already authenticated this monomorphic executable closure.
+    // Borrow its functions: unrelated HIR, proofs, instances and declarations
+    // neither need a second allocation nor contribute host imports.
+    let selected = program
         .functions
-        .retain(|function| closure.contains(&function.id));
-    selected.function_instances.clear();
-    // Import selection is bound to the chosen executable closure. Unused
-    // type declarations cannot add a host arena or widen its import inventory.
-    selected.types.clear();
-    let uses_byte_get = crate::wasm::aggregate::text_toolkit::uses_byte_get(&selected);
-    let collections = crate::wasm::aggregate::map_collections::uses(&selected);
+        .iter()
+        .filter(|function| closure.contains(&function.id));
+    let (operations, uses_byte_get) =
+        crate::wasm::aggregate::text_toolkit::selected_functions(selected.clone());
+    let collections = crate::wasm::aggregate::map_collections::selected_functions_use(selected);
     let names = ["from_i64", "from_usize", "compare"]
         .into_iter()
         .chain(
-            crate::wasm::aggregate::text_toolkit::selected(&selected)
+            operations
                 .into_iter()
                 .map(crate::wasm::aggregate::text_toolkit::import_name),
         )
@@ -104,6 +105,18 @@ pub(super) fn render_toolkit(
             .replace("status>=21&&status<=25", "status>=21&&status<=33")
             .replace("status<=25?\"semaprax.text.v1\":\"semaprax.filesystem.v1\"", "status<=25?\"semaprax.text.v1\":status<=29?\"semaprax.map.v1\":status<=33?\"semaprax.map.v2\":\"semaprax.filesystem.v1\"")
             .replace("status<=25?status-22:status-64", "status<=25?status-22:status<=29?status-25:status<=33?status-29:status-64");
+    }
+    if literal_format {
+        const CAUSE: &str = "(status===11)!==(cause!==null)";
+        const RANGE: &str = "status>=0&&status<=11||";
+        const FAILURE: &str = "else result=Object.freeze({kind:\"failure\",domain:";
+        assert_eq!(arena.matches(CAUSE).count(), 1);
+        assert_eq!(facade.matches(RANGE).count(), 1);
+        assert_eq!(facade.matches(FAILURE).count(), 1);
+        arena = arena.replacen(CAUSE, "(status===11||status===34)!==(cause!==null)", 1);
+        facade = facade.replacen(RANGE, "status>=0&&status<=11||status===34||", 1)
+            .replacen(FAILURE,
+                "else if(status===34)result=Object.freeze({kind:\"failure\",domain:\"semaprax.string-format.v1\",code:1});\n      else result=Object.freeze({kind:\"failure\",domain:", 1);
     }
     facade = facade.replace(
         "Object.freeze({\"semaprax.internal-strings.v1\":arena.imports})",

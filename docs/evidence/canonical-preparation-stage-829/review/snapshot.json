@@ -1,0 +1,79 @@
+{
+  "source_commit": "5dc34d3eff30e66b21a7c4e14949f3713c343491",
+  "issue_source_commit": "194b20810",
+  "files": [
+    {
+      "path": "src/bounded_output.rs",
+      "full_file_sha256": "809fd5a6bafc4c5b5150017b049d7e10c14dc3a60e81b0c8c60a5831ca044803",
+      "lines": [
+        1,
+        225
+      ]
+    },
+    {
+      "path": "src/bounded_output/cfg_reservation.rs",
+      "full_file_sha256": "ecf425709b8c13b438cabeda37b2c7e11683ba0c17521b0ffcea2ee33aaff3f1",
+      "lines": [
+        1,
+        129
+      ]
+    },
+    {
+      "path": "src/bounded_output/canonical_stage_tests.rs",
+      "full_file_sha256": "72a10f8320f21718cc149790c80a488296fa908588dd40be75037db601e65a63",
+      "lines": [
+        1,
+        249
+      ]
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller.rs",
+      "full_file_sha256": "fc81b10797c6cba14ddaf2a375cadf1c2dc34a3af936e0738b321d45d39858c0",
+      "lines": [
+        1,
+        432
+      ]
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller/owned_before.rs",
+      "full_file_sha256": "f119db223c35acd6e975e2825f5a6e4806508a49698989d94500ba8601fb456f",
+      "lines": [
+        1,
+        71
+      ]
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/caller/stage_tests.rs",
+      "full_file_sha256": "637a3a01bbf3495f55bf53ed998f40114d64c275ee0a4754294a408194c675b0",
+      "lines": [
+        1,
+        85
+      ]
+    },
+    {
+      "path": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "full_file_sha256": "885d9992c4e560f98914acd1bc438cf1b41295c8b1306b87146327f82eccb16d",
+      "lines": [
+        255,
+        350
+      ]
+    },
+    {
+      "path": "src/workspace_graph/diagnostics.rs",
+      "full_file_sha256": "fc3c1ccaccd725e8440883ab47e9eda3c0618983a5d40a28ef213f6a56e6b083",
+      "lines": [
+        265,
+        295
+      ]
+    },
+    {
+      "path": "src/workspace_graph/diagnostics/refusal_tests.rs",
+      "full_file_sha256": "b37be444f630670c19ccff335f22903630362901e1f27e5c6e25ff0abf1baa47",
+      "lines": [
+        87,
+        154
+      ]
+    }
+  ],
+  "payload_bytes": 65902
+}

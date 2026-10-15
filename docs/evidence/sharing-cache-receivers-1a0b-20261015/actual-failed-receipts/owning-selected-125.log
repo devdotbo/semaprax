@@ -1,0 +1,31 @@
+
+running 1 test
+test project::incremental::checked_hir::tests::lifecycle::actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop ... OPT777 stage scope=cold_parse_to_publication_drop stage=cache_new metrics=Metrics { allocations: 0, reallocations: 0, allocated: 0, freed: 0, live: 0, highwater: 0, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=build metrics=Metrics { allocations: 23587, reallocations: 2731, allocated: 12017358, freed: 11870174, live: 147184, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=independent_parity metrics=Metrics { allocations: 26664, reallocations: 3017, allocated: 13972987, freed: 13825803, live: 147184, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=json_report metrics=Metrics { allocations: 26725, reallocations: 3018, allocated: 13979118, freed: 13825931, live: 153187, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=publication_drop metrics=Metrics { allocations: 26725, reallocations: 3018, allocated: 13979118, freed: 13905201, live: 73917, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=cache_drop metrics=Metrics { allocations: 26725, reallocations: 3018, allocated: 13979118, freed: 13973115, live: 6003, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=report_drop metrics=Metrics { allocations: 26725, reallocations: 3018, allocated: 13979118, freed: 13979118, live: 0, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 requested-layout scope=cold_parse_to_publication_drop allocations=26725 reallocations=3018 requested=13979118 highwater=300403 freed=13979118 live=0 observer_metadata=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=cache_new metrics=Metrics { allocations: 0, reallocations: 0, allocated: 0, freed: 0, live: 0, highwater: 0, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=build metrics=Metrics { allocations: 22073, reallocations: 2562, allocated: 11783124, freed: 11697003, live: 86121, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=independent_parity metrics=Metrics { allocations: 25150, reallocations: 2848, allocated: 13738753, freed: 13652632, live: 86121, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=json_report metrics=Metrics { allocations: 25207, reallocations: 2849, allocated: 13744720, freed: 13652760, live: 91960, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=publication_drop metrics=Metrics { allocations: 25207, reallocations: 2849, allocated: 13744720, freed: 13732030, live: 12690, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=cache_drop metrics=Metrics { allocations: 25207, reallocations: 2849, allocated: 13744720, freed: 13738881, live: 5839, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=report_drop metrics=Metrics { allocations: 25207, reallocations: 2849, allocated: 13744720, freed: 13744720, live: 0, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 requested-layout scope=warm_lookup_to_publication_drop allocations=25207 reallocations=2849 requested=13744720 highwater=239428 freed=13744720 live=0 observer_metadata=excluded
+
+thread 'project::incremental::checked_hir::tests::lifecycle::actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop' (2397079) panicked at src/project/incremental/checked_hir/tests/lifecycle.rs:187:5:
+[Diagnostic { code: "SPX-T208", severity: Error, message: "operator `+` expects i32 operands", path: Some("src/core.spx"), span: Some(Span { start: 83, end: 92, line: 6, column: 5 }), help: Some("integer literals are `i64` unless suffixed; write `2i32` to match the `i32` operand") }, Diagnostic { code: "SPX-T105", severity: Error, message: "executable module must define `fn main() -> i64`", path: Some("src/core.spx"), span: Some(Span { start: 48, end: 94, line: 4, column: 1 }), help: Some("a module without `fn main() -> i64` is a library module: check it through the project that owns it with `semaprax check <project-dir>`, or add `main` to run this file alone") }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    project::incremental::checked_hir::tests::lifecycle::actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8744 filtered out; finished in 1.09s
+

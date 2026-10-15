@@ -230,7 +230,7 @@ fn run_held(
         _ => return Err(invariant("wasm_executor.process.run")),
     };
     if output.termination != ProcessTermination::Exited(0) {
-        return Err(invariant("wasm_executor.run"));
+        return Err(failure_with_stderr(&output.stderr));
     }
     String::from_utf8(output.stdout).map_err(|_| invariant("wasm_executor.output_utf8"))
 }
@@ -243,4 +243,79 @@ fn run_held(
     _output_budget: usize,
 ) -> Result<String, Diagnostic> {
     Err(invariant("wasm_executor.host.unsupported"))
+}
+
+// Stderr is observation from the already settled held process, never candidate
+// authority or a replacement selected failure. Bound the diagnostic itself,
+// including its label; decode invalid bytes without an unbounded lossy copy.
+#[cfg(any(target_os = "linux", target_os = "macos", test))]
+fn failure_with_stderr(stderr: &[u8]) -> Diagnostic {
+    const MAX_HELP_BYTES: usize = 1024;
+    const PREFIX: &str = "Held Wasm subprocess stderr prefix (diagnostic only):\n";
+    let mut failure = invariant("wasm_executor.run");
+    if stderr.is_empty() {
+        return failure;
+    }
+    let mut help = String::with_capacity(MAX_HELP_BYTES);
+    help.push_str(PREFIX);
+    let captured = &stderr[..stderr.len().min(MAX_NODE_STDERR_BYTES)];
+    'capture: for chunk in captured.utf8_chunks() {
+        for character in chunk.valid().chars() {
+            if character.len_utf8() > MAX_HELP_BYTES - help.len() {
+                break 'capture;
+            }
+            help.push(character);
+        }
+        if !chunk.invalid().is_empty() {
+            if 3 > MAX_HELP_BYTES - help.len() {
+                break;
+            }
+            help.push('\u{fffd}');
+        }
+    }
+    failure.help = Some(help);
+    failure
+}
+
+#[cfg(test)]
+mod failure_cause_tests {
+    use super::failure_with_stderr;
+    use crate::agent_lifecycle::stages::invariant;
+
+    #[test]
+    fn empty_stderr_preserves_the_exact_selected_invariant() {
+        assert_eq!(failure_with_stderr(&[]), invariant("wasm_executor.run"));
+    }
+    #[test]
+    fn held_memory_failure_cause_changes_help_only() {
+        let cause = b"Error: owned invocation memory extent disagrees with emitted module\n";
+        let mut failure = failure_with_stderr(cause);
+        assert!(failure
+            .help
+            .as_deref()
+            .unwrap()
+            .ends_with(std::str::from_utf8(cause).unwrap()));
+        failure.help = None;
+        assert_eq!(failure, invariant("wasm_executor.run"));
+    }
+    #[test]
+    fn hostile_stderr_is_bounded_and_truncates_only_between_utf8_scalars() {
+        for bytes in [
+            vec![b'x'; 16384],
+            vec![0xff; 16384],
+            "é命".repeat(4096).into_bytes(),
+        ] {
+            let help = failure_with_stderr(&bytes).help.unwrap();
+            assert!(help.len() <= 1024);
+            assert!(help.starts_with("Held Wasm subprocess stderr prefix (diagnostic only):\n"));
+        }
+        let mixed = failure_with_stderr(b"valid \xff tail").help.unwrap();
+        assert!(mixed.ends_with("valid \u{fffd} tail"));
+        let prefix = "Held Wasm subprocess stderr prefix (diagnostic only):\n";
+        let mut exact = vec![b'x'; 1024 - prefix.len()];
+        exact.extend_from_slice("é".as_bytes());
+        let help = failure_with_stderr(&exact).help.unwrap();
+        assert_eq!(help.len(), 1024);
+        assert!(!help.ends_with('é'));
+    }
 }

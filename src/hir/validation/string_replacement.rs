@@ -1,11 +1,8 @@
 //! Whole String publication after a fully checked owning RHS.
 use super::*;
-pub(super) fn reopen(
-    scope: &mut BTreeMap<ValueId, ValidationBinding>,
-    id: &ValueId,
-) -> Result<(), Diagnostic> {
+pub(super) fn reopen(scope: &mut dyn ScopeWrite, id: &ValueId) -> Result<(), Diagnostic> {
     let target = scope
-        .get_mut(id)
+        .get_mut(id)?
         .ok_or_else(|| hir_error("String replacement target is absent"))?;
     if target.ty != ResolvedType::String
         || target.ownership != OwnershipMode::Own

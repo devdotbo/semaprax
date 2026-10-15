@@ -1,0 +1,10 @@
+{
+  "src__cleanup_plan__replay.rs": "2a4db37f10435075809a43d112073b686710d55f4f5f43e0f553686a63504796",
+  "tests__workspace__semantic_graph__source_inventory.rs": "cf03c2e2c076eca2e8a4f5da0ab6db5efd8965f2888b3f081955c58ca0d26469",
+  "src__cleanup_plan__replay__continuation_storage.rs": "1e9e1d5338a1d26f9596e7d8749cc55abf4b40a7718813117d588222d4e192ce",
+  "src__cleanup_plan__replay__factored.rs": "08849c68eff2049859be4b9cb1679f37f7c73b8b5007e10bf126779ebbd1861d",
+  "tests__hir_module_boundaries.rs": "ef30bafb7e74ece87a8e4ccc2a056906a5775e3689139e538c74db8d8c4d4b0d",
+  "src__cleanup_plan__replay__live_oracle__source_custody__b.rs": "a349da31a1efabca38017cca4b1b7305a694ff7bd5f923e8eddad84d9e82053d",
+  "src__cleanup_plan__replay__factored__oracle_hook.rs": "d2e27e865bfe49f41639731b4148e32aef6177c87994874ef931a37487f2af46",
+  "crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs": "4cc35f98927317e03348e7cb2508fec59d99b697def2b35f620fcac0060735a6"
+}

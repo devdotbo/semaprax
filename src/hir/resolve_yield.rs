@@ -118,7 +118,7 @@ fn profile_refusal(
     }
     if resolver
         .declarations
-        .type_facts(ty)
+        .type_flags(ty)
         .is_some_and(|facts| facts.contains_resource)
     {
         return (
@@ -145,7 +145,7 @@ impl Resolver<'_> {
             return request.clone();
         };
         self.program
-            .functions
+            .functions()
             .iter()
             .find(|candidate| candidate.stable_id == id.as_str())
             .and_then(|candidate| candidate.yields.as_ref())
@@ -605,6 +605,7 @@ fn scan_expr(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => {}
         ResolvedExprKind::ByteRange {
@@ -671,7 +672,10 @@ fn scan_expr(
                 yielded_bindings,
             )?;
         }
-        ResolvedExprKind::Call { args, .. } => {
+        ResolvedExprKind::Call { args, .. }
+        | ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             scan_children(
                 resolver,
                 function_name,
@@ -707,7 +711,11 @@ fn scan_expr(
                 yielded_bindings,
             )?;
         }
-        ResolvedExprKind::Unary { value, .. } => {
+        ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ResolvedExprKind::Unary { value, .. } => {
             scan_expr(
                 resolver,
                 function_name,
@@ -747,7 +755,10 @@ fn scan_expr(
                 yielded_bindings,
             )?;
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements.iter_mut() {
                 scan_statement(
                     resolver,
@@ -1031,6 +1042,20 @@ fn scan_statement(
 ) -> Result<(), Diagnostic> {
     use super::expr_nodes::ResolvedStatement;
     match statement {
+        // A CopyDiscard value is never an admitted yield slot: scan it with
+        // `top_level` closed so a `yield` there stays unaccepted.
+        ResolvedStatement::CopyDiscard { value, .. } => scan_expr(
+            resolver,
+            function_name,
+            yields,
+            params,
+            return_type,
+            value,
+            false,
+            false,
+            found,
+            yielded_bindings,
+        ),
         ResolvedStatement::Let { binding, value, .. } => {
             // A `let` value is a slot at any depth in the admitted chain
             // (`top_level` carries that), but the value can never itself be
@@ -1110,6 +1135,9 @@ fn scan_statement(
             yielded_bindings,
         ),
         ResolvedStatement::While {
+            condition, body, ..
+        }
+        | ResolvedStatement::LexicalWhile {
             condition, body, ..
         } => {
             scan_expr(

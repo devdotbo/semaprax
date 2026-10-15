@@ -15,6 +15,8 @@ fn root() -> PathBuf {
 
 #[path = "standard_library/api_inventory.rs"]
 mod api_inventory;
+#[path = "standard_library/application_json.rs"]
+mod application_json;
 #[path = "standard_library/backend_conformance.rs"]
 mod backend_conformance;
 use backend_conformance::run_examples_and_conformance;
@@ -448,6 +450,16 @@ fn typed_paths_execute_on_all_three_backends() {
         packages()
             .into_iter()
             .filter(|p| p.module == "std.path.value")
+            .collect(),
+    );
+}
+
+#[test]
+fn decoded_fingerprint_raw_bytes_execute_on_all_three_backends() {
+    run_examples_and_conformance(
+        packages()
+            .into_iter()
+            .filter(|package| package.module == "std.data.json.dec")
             .collect(),
     );
 }
@@ -1295,3 +1307,6 @@ mod composition_inventory;
 mod imported_view_composition;
 #[path = "standard_library/owned_failure_composition.rs"]
 mod owned_failure_composition;
+
+#[path = "standard_library/ndjson.rs"]
+mod ndjson;

@@ -4,6 +4,7 @@ use super::*;
 
 /// `true` when the resolved expression tree contains an unsafe boundary
 /// statement anywhere inside its blocks, branches, arms, or nested bodies.
+#[cfg(test)]
 pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
     let mut pending = vec![expression];
     while let Some(expression) = pending.pop() {
@@ -11,7 +12,10 @@ pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
             ResolvedExprKind::Closure { captures, .. } => {
                 pending.extend(captures.iter().map(|capture| &capture.value))
             }
-            ResolvedExprKind::Block { statements, tail } => {
+            ResolvedExprKind::Block { statements, tail }
+            | ResolvedExprKind::VecConstructor {
+                statements, tail, ..
+            } => {
                 pending.push(tail);
                 for statement in statements.iter().rev() {
                     if matches!(statement, ResolvedStatement::Unsafe { .. }) {
@@ -29,7 +33,10 @@ pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
                 pending.extend(args.iter().rev());
                 pending.push(callable);
             }
-            ResolvedExprKind::Call { args, .. } => pending.extend(args.iter().rev()),
+            ResolvedExprKind::Call { args, .. }
+            | ResolvedExprKind::LiteralFormat { args, .. }
+            | ResolvedExprKind::VecFieldRead { args, .. }
+            | ResolvedExprKind::RowLoan { args, .. } => pending.extend(args.iter().rev()),
             ResolvedExprKind::NativeRustImportCall(call) => {
                 pending.extend(call.args.iter().rev());
             }
@@ -40,6 +47,11 @@ pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
                 pending.push(end);
                 pending.push(start);
                 pending.push(source);
+            }
+            ResolvedExprKind::LexicalExit { value, .. } => {
+                if let Some(value) = value {
+                    pending.push(value);
+                }
             }
             ResolvedExprKind::Unary { value, .. }
             | ResolvedExprKind::Try { operand: value, .. }
@@ -85,9 +97,13 @@ pub(super) fn contains_unsafe_boundary(expression: &ResolvedExpr) -> bool {
             | ResolvedExprKind::Float64(_)
             | ResolvedExprKind::Bool(_)
             | ResolvedExprKind::String(_)
+            | ResolvedExprKind::BorrowedUtf8Literal(_)
             | ResolvedExprKind::Place(_)
             | ResolvedExprKind::BorrowPlace { .. } => {}
         }
     }
     false
 }
+
+mod paid;
+pub(in crate::hir::validation) use paid::contains_unsafe_boundary_paid;

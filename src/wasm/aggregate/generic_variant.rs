@@ -10,7 +10,7 @@ impl Emitter<'_> {
             storage: crate::cleanup_plan::StorageId::Temporary(expression.id.clone()),
             projections: Vec::new(),
         };
-        let transitions = self.function.cleanup_plan.blocks.iter().flat_map(|block| &block.transitions)
+        let transitions = self.function.cleanup_plan.blocks.iter().filter(|block| self.cleanup_plan.lexical_block_in_context(self.lexical_resume, block.id)).flat_map(|block| &block.transitions)
             .filter(|transition| matches!(transition, crate::cleanup_plan::CleanupTransition::TransferVariant { at, .. } if *at == expression.id)).cloned().collect::<Vec<_>>();
         for transition in transitions {
             if let crate::cleanup_plan::CleanupTransition::TransferVariant {
@@ -46,6 +46,14 @@ impl Emitter<'_> {
             .filter(|field| {
                 field.binding.ty == ResolvedType::Bytes
                     || field.binding.ty == ResolvedType::String
+                    || crate::hir::collection_outcome::field_admitted(
+                        &self.program.declarations,
+                        &field.binding.ty,
+                    )
+                    || crate::hir::collection_outcome::nested::record_payload_admitted(
+                        &self.program.declarations,
+                        &field.binding.ty,
+                    )
                     || crate::iterator_ops::is_iter(&field.binding.ty)
                     || crate::iterator_ops::is_step(&field.binding.ty)
             })
@@ -54,11 +62,16 @@ impl Emitter<'_> {
         if storage.is_empty() {
             return Ok(());
         }
-        let mut regions = self.cleanup_plan.regions.iter().filter(|region| {
-            storage
-                .iter()
-                .all(|candidate| region.slots.contains(candidate))
-        });
+        let mut regions = self
+            .cleanup_plan
+            .regions
+            .iter()
+            .filter(|region| self.lexical_region_in_context(region.id))
+            .filter(|region| {
+                storage
+                    .iter()
+                    .all(|candidate| region.slots.contains(candidate))
+            });
         let region = regions
             .next()
             .ok_or_else(|| error("owned variant bindings have no CleanupPlan region"))?;
@@ -68,10 +81,7 @@ impl Emitter<'_> {
             ));
         }
         let exit = self
-            .cleanup_plan
-            .exits
-            .get(region.normal_scope_end.0 as usize)
-            .filter(|exit| exit.id == region.normal_scope_end)
+            .lexical_scope_end(region)
             .ok_or_else(|| error("owned variant match region has no normal exit"))?;
         if !matches!(
             exit.continuation,
@@ -82,4 +92,17 @@ impl Emitter<'_> {
         }
         self.emit_cleanup_actions(&exit.finalize_in_order)
     }
+}
+
+/// Keep old direct payload lowering byte-identical; proper record outcomes add
+/// a recursive move while their case-qualified owner flags remain canonical.
+pub(super) fn has_owned_payload(layout: &crate::variant_layout::VariantLayout) -> bool {
+    layout
+        .cases
+        .iter()
+        .flat_map(|case| &case.fields)
+        .any(|field| {
+            matches!(field.ty, ResolvedType::Bytes | ResolvedType::String)
+                || field.value_kind == crate::variant_layout::VariantFieldValueKind::OwnedRecord
+        })
 }

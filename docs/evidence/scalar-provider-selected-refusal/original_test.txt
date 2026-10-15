@@ -1,0 +1,16 @@
+#[test]
+fn cycles_and_unsupported_scalar_provider_extensions_remain_closed() {
+    for provider in [
+        PROVIDER.replace("{leaf_step(n)}", "{step(n)}"),
+        PROVIDER.replace(
+            "fn step(n:i64)->i64 {leaf_step(n)}",
+            "fn step(n:i64)->i64 {let label=str\"x\";if str_len_bytes(label)==1usize {n}else{0}}",
+        ),
+        PROVIDER.replace(
+            "fn step(n:i64)->i64 {leaf_step(n)}",
+            "fn step(n:i64)->i64 {let values=vec_with_capacity<i64>(1usize);n}",
+        ),
+    ] {
+        assert!(build(CALLER, &provider, LEAF).is_err());
+    }
+}

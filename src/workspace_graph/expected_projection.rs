@@ -1,11 +1,12 @@
 //! Pure deterministic authored-program projection used to prebind builder
 //! costs, reconstruct dependency depth, and independently reconstruct the
 //! expected cross-file edge set.
+use private_layout::registry::LayoutRegistry;
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::ast::{
-    Expr, ExprKind, Function, ModuleUse, ModuleUseKind, Program, Span, Type, TypeDeclaration,
+    Expr, ExprKind, Function, ModuleUse, ModuleUseKind, Program, Type, TypeDeclaration,
     TypeDeclarationKind,
 };
 use crate::bounded_output::budgeted_format;
@@ -19,6 +20,12 @@ use super::{
     HIR_STRUCTURE_EXPANSION_FACTOR, MAX_DEPENDENCY_DEPTH,
 };
 
+#[path = "expected_projection/borrowed_imports.rs"]
+pub(in crate::workspace_graph) mod borrowed_imports;
+#[path = "expected_projection/borrowed_leaf.rs"]
+pub(in crate::workspace_graph) mod borrowed_leaf;
+#[path = "expected_projection/cached_exact.rs"]
+pub(super) mod cached_exact;
 #[path = "expected_projection/call_identity.rs"]
 mod call_identity;
 #[path = "expected_projection/call_sites.rs"]
@@ -29,17 +36,69 @@ pub(super) mod cost;
 mod declaration_cost;
 #[path = "expected_projection/defaults.rs"]
 mod defaults;
+#[path = "expected_projection/held_projection.rs"]
+mod held_projection;
 #[path = "expected_projection/identity_slots.rs"]
 mod identity_slots;
 #[path = "expected_projection/import_stub.rs"]
 mod import_stub;
+#[path = "expected_projection/prelude_forecast.rs"]
+mod prelude_forecast;
+#[cfg(test)]
+#[path = "expected_projection/prelude_forecast_original.rs"]
+#[allow(
+    dead_code,
+    reason = "complete independent prelude-forecast reference includes its original construction receivers"
+)]
+mod prelude_forecast_original;
+// CORE_PROOF_RECEIVERS_BEGIN
+#[cfg(test)]
+#[path = "expected_projection/borrowed_imports_original.rs"]
+mod borrowed_imports_original;
+#[cfg(test)]
+#[path = "expected_projection/held_projection_original.rs"]
+mod held_projection_original;
+#[cfg(test)]
+#[path = "expected_projection/import_stub_original.rs"]
+mod import_stub_original;
+pub(in crate::workspace_graph) use import_stub::core_proofs::CoreProviderProofs;
+// CORE_PROOF_RECEIVERS_END
 #[path = "expected_projection/local_identity.rs"]
 mod local_identity;
+#[path = "expected_projection/private_layout.rs"]
+pub(super) mod private_layout;
+pub(in crate::workspace_graph) use held_projection::{
+    synthetic_builder_bytes_scoped_with_retention_with_registry, synthetic_program_with_registry,
+};
+#[path = "expected_projection/field_unique.rs"]
+mod field_unique;
+#[path = "expected_projection/record_traversal.rs"]
+mod record_traversal;
+#[path = "expected_projection/retention.rs"]
+mod retention;
+#[path = "expected_projection/sort_keys.rs"]
+mod sort_keys;
 #[path = "expected_projection/statement_segment.rs"]
-mod statement_segment;
+pub(super) mod statement_segment;
+mod string_slots;
+#[path = "expected_projection/type_rewrite.rs"]
+pub(super) mod type_rewrite;
 #[path = "expected_projection/uncached_peak.rs"]
 pub(super) mod uncached_peak;
+mod vec_constructor;
 use cost::{ExpandedDefaultCost, GenericInstanceCost, StructuralCost};
+#[cfg(test)]
+use retention::retention_prebound;
+// A private source-call admission only; scalar/public export gates are separate.
+pub(super) fn byte_writer_import_authorized<'a>(
+    function: &'a Function,
+    module: &str,
+    authored: &'a BTreeMap<&'a str, AuthoredDeclaration<'a>>,
+    programs: &'a [Program],
+) -> Result<bool, Vec<Diagnostic>> {
+    import_stub::byte_writer_import_authorized(function, module, authored, programs)
+}
+
 use declaration_cost::{
     ast_field_cost, ast_function_contract_cost, ast_function_cost, ast_function_signature_cost,
     ast_program_cost,
@@ -48,11 +107,19 @@ use identity_slots::{
     ast_function_identity_slots, ast_program_identity_slots, ast_type_declaration_identity_slots,
     ast_type_identity_slots,
 };
-use import_stub::{default_expr, default_expr_expanded_cost};
+use import_stub::default_expr;
+pub(in crate::workspace_graph) use retention::checked_retention_prebound_with_uncached_peak_with_registry;
+#[cfg(test)]
 use uncached_peak::uncached_peak_prebound;
+use uncached_peak::uncached_peak_prebound_with_registry;
+#[cfg(test)]
 pub(super) use uncached_peak::{
     initial_core_prebound, next_retention_prebound_with_uncached_peak,
     uncached_output_peak_prebound,
+};
+pub(in crate::workspace_graph) use uncached_peak::{
+    initial_core_prebound_with_registry, next_retention_prebound_with_uncached_peak_with_registry,
+    uncached_output_peak_prebound_with_registry,
 };
 pub(super) struct SyntheticBuilderCosts {
     pub(super) raw_clone_and_hir: usize,
@@ -67,7 +134,17 @@ pub(super) fn synthetic_builder_bytes(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     programs: &[Program],
 ) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
-    synthetic_builder_bytes_scoped(program, authored, programs, None, 0, true)
+    synthetic_builder_bytes_with_registry(program, authored, programs, None)
+}
+pub(in crate::workspace_graph) fn synthetic_builder_bytes_with_registry(
+    program: &Program,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    programs: &[Program],
+    registry: Option<&LayoutRegistry<'_>>,
+) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
+    synthetic_builder_bytes_scoped_with_registry(
+        program, authored, programs, None, 0, true, registry,
+    )
 }
 pub(super) fn synthetic_builder_bytes_scoped(
     program: &Program,
@@ -77,256 +154,70 @@ pub(super) fn synthetic_builder_bytes_scoped(
     layout_mode: u8,
     include_imports: bool,
 ) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
-    let mut raw = StructuralCost::raw_ast(layout_mode >= 1).with_inline_values(layout_mode >= 2);
-    ast_program_cost(program, &mut raw, include_imports)?;
-    let mut identity_slots = ast_program_identity_slots(program)?;
-    let mut runtime = StructuralCost::new();
-    let mut default_memo = [BTreeMap::new(), BTreeMap::new()];
-    let mut transient_import_clone = 0usize;
-    for module_use in program.module_uses.iter().filter(|_| include_imports) {
-        if module_use.kind == ModuleUseKind::Protocol {
-            continue;
-        }
-        let target = &authored[module_use.persistent_id.as_str()];
-        runtime.string(&module_use.alias)?;
-        if let Some(function) = target.function {
-            // `synthetic_program` retains an imported function as a stub: the
-            // signature it rewrites, with `requires` and `ensures` cleared and
-            // the body replaced by the return type's default expression. Only
-            // the retained signature is charged here; the default body is
-            // charged as runtime cost below. The provider's own contract and
-            // body reach the resolver exactly once, through the defining
-            // module's own `ast_program_cost`.
-            ast_function_signature_cost(function, &mut raw)?;
-            // Preserve old fitting receipts even though ordinary stubs now
-            // clone only their signature. The historical transient-body debit
-            // remains conservative; only mode 4 removes its peak after all
-            // older estimates refuse. Intrinsic wrapper bodies are separately
-            // charged as retained runtime structures below.
-            transient_import_clone =
-                transient_import_clone.max(ast_function_contract_cost(function)?.total);
-            if programs
-                .iter()
-                .find(|provider| provider.module == target.module)
-                .is_some_and(|provider| {
-                    crate::vec_ops::source_wrapper(provider, function).is_some()
-                        || crate::box_ops::source_wrapper(provider, function).is_some()
-                })
-            {
-                ast_function_cost(function, &mut runtime)?;
-                identity_slots =
-                    checked_builder_sum(identity_slots, ast_function_identity_slots(function)?)?;
-                continue;
-            }
-            identity_slots = checked_builder_sum(
-                identity_slots,
-                ast_type_identity_slots(&function.return_type)?,
-            )?;
-            for param in &function.params {
-                identity_slots =
-                    checked_builder_sum(identity_slots, ast_type_identity_slots(&param.ty)?)?;
-                rewrite_type_runtime_cost(
-                    &param.ty,
-                    target.module,
-                    program,
-                    programs,
-                    &mut runtime,
-                )?;
-            }
-            rewrite_type_runtime_cost(
-                &function.return_type,
-                target.module,
-                program,
-                programs,
-                &mut runtime,
-            )?;
-            let cost = default_expr_expanded_cost(
-                function,
-                target.module,
-                program,
-                authored,
-                programs,
-                &mut default_memo,
-                &mut BTreeSet::new(),
-                super::owned_function_import::admitted(program, target, authored, programs),
-            )?;
-            runtime.add_split(cost.bytes, cost.string_bytes)?;
-            runtime.add_identity_carriers(cost.identity_carriers)?;
-            identity_slots = checked_builder_sum(identity_slots, cost.identity_slots)?;
-        } else {
-            let declaration = target.ty.expect("validated type target");
-            ast_type_declaration_cost(declaration, &mut raw)?;
-            identity_slots = checked_builder_sum(
-                identity_slots,
-                ast_type_declaration_identity_slots(declaration)?,
-            )?;
-            super::generic_type_import::rewrite_declaration_runtime_cost(
-                declaration,
-                target.module,
-                program,
-                programs,
-                &mut runtime,
-            )?;
-        }
-    }
-    if !program
-        .functions
-        .iter()
-        .any(|function| function.name == "main")
-    {
-        let synthetic_main = synthetic_main_runtime_cost(&program.module)?;
-        runtime.add_split(synthetic_main.total, synthetic_main.string_bytes)?;
-        runtime.add_identity_carriers(synthetic_main.identity_carriers)?;
-    }
-    if layout_mode >= 2 {
-        identity_slots = identity_slots
-            .checked_sub(call_identity::discount_with_imports(
-                program,
-                authored,
-                include_imports,
-            ))
-            .expect("scalar calls retain their expression and callee identity slots");
-    }
-    identity_slots = identity_slots
-        .checked_sub(raw.scalar_identity_discount)
-        .expect("raw scalar discount retains each expression identity slot");
-    let generic_instances = generic_instance_source_cost(program)?;
-    identity_slots = checked_builder_sum(identity_slots, generic_instances.identity_slots)?;
-    let hir_input = checked_usage(
-        raw.total,
-        runtime.total,
-        "builder_bytes",
-        active_builder_limit(),
-    )?;
-    let hir_input = checked_usage(
-        hir_input,
-        generic_instances.bytes,
-        "builder_bytes",
-        active_builder_limit(),
-    )?;
-    let string_input = checked_builder_sum(raw.string_bytes, runtime.string_bytes)?;
-    let string_input = checked_builder_sum(string_input, generic_instances.string_bytes)?;
-    // String contents are part of `hir_input`; only the remaining structural
-    // bytes expand by the structural factor.
-    let structure_input = hir_input.saturating_sub(string_input);
-    let fixed_hir_upper = structure_input
-        .checked_mul(HIR_STRUCTURE_EXPANSION_FACTOR)
-        .and_then(|structure| {
-            string_input
-                .checked_mul(HIR_STRING_COPY_FACTOR)
-                .and_then(|strings| structure.checked_add(strings))
-        })
-        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
-    let maximum_identity_bytes = maximum_identity.unwrap_or_else(|| {
-        authored
-            .keys()
-            .map(|id| id.len())
-            .chain(prelude::all_ids().into_iter().map(str::len))
-            .max()
-            .unwrap_or(0)
-    });
-    let fixed_hir_upper = fixed_hir_upper
-        .checked_sub(cost::fixed_hir_discount(layout_mode, &raw, &runtime)?)
-        .expect("literal storage discount retains the complete reduced fixed bundle");
-    let identity_occurrence_upper = identity_slots
-        .checked_mul(maximum_identity_bytes)
-        .and_then(|bytes| bytes.checked_mul(HIR_IDENTITY_COPY_FACTOR))
-        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
-    // Heap carriers are prebound independently of inline layouts and shared clones.
-    let identity_carriers = cost::identity_carriers(layout_mode, &raw, &runtime)?;
-    let identity_carriers =
-        checked_builder_sum(identity_carriers, generic_instances.identity_carriers)?;
-    let identity_carrier_bytes = identity_carriers
-        .checked_mul(hir::ExpressionId::SHARED_ALLOCATION_CARRIER_BYTES)
-        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
-    let hir_upper = fixed_hir_upper
-        .checked_add(identity_carrier_bytes)
-        .and_then(|bytes| bytes.checked_add(identity_occurrence_upper))
-        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
-    let retained_clone_and_hir = checked_usage(
-        raw.total,
-        hir_upper,
-        "builder_bytes",
-        active_builder_limit(),
-    )?;
-    Ok(SyntheticBuilderCosts {
-        raw_clone_and_hir: checked_usage(
-            retained_clone_and_hir,
-            transient_import_clone,
-            "builder_bytes",
-            active_builder_limit(),
-        )?,
-        retained_clone_and_hir,
-        transient_import_clone,
-        runtime: runtime.total,
-        retained_hir: hir_upper,
-        synthetic_ast: checked_usage(
-            raw.total,
-            runtime.total,
-            "builder_bytes",
-            active_builder_limit(),
-        )?,
-    })
+    synthetic_builder_bytes_scoped_with_registry(
+        program,
+        authored,
+        programs,
+        maximum_identity,
+        layout_mode,
+        include_imports,
+        None,
+    )
+}
+pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_registry(
+    program: &Program,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    programs: &[Program],
+    maximum_identity: Option<usize>,
+    layout_mode: u8,
+    include_imports: bool,
+    registry: Option<&LayoutRegistry<'_>>,
+) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
+    synthetic_builder_bytes_scoped_with_retention_with_registry(
+        program,
+        authored,
+        programs,
+        maximum_identity,
+        include_imports,
+        (layout_mode, cached_exact::Retention::Parsed),
+        registry,
+    )
+}
+fn synthetic_builder_bytes_scoped_with_retention(
+    program: &Program,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    programs: &[Program],
+    maximum_identity: Option<usize>,
+    include_imports: bool,
+    profile: (u8, cached_exact::Retention),
+) -> Result<SyntheticBuilderCosts, Vec<Diagnostic>> {
+    held_projection::synthetic_builder_bytes_scoped_with_retention_with_registry(
+        program,
+        authored,
+        programs,
+        maximum_identity,
+        include_imports,
+        profile,
+        None,
+    )
 }
 
-/// Preserve the exact legacy receipt whenever it fits. Only a legacy builder
-/// refusal activates the narrower, still conservative identity universe.
 pub(super) fn checked_retention_prebound(
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    checked_retention_prebound_with_uncached_peak(programs, authored, false)
+    retention::checked_retention_prebound(programs, authored)
 }
-
-/// Modes zero through four preserve existing receipts. The uncached core
-/// builds and drops one synthetic AST per source, so only that construction
-/// work may use the final peak-only receipt. A semantic frontend stages those
-/// synthetic ASTs and must retain the ordinary summed receipts.
 pub(super) fn checked_retention_prebound_with_uncached_peak(
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     allow_uncached_peak: bool,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    match retention_prebound(programs, authored, false) {
-        Ok(costs) => Ok(costs),
-        Err(errors) if cost::is_builder_refusal(&errors) => {
-            match retention_prebound(programs, authored, true) {
-                Ok(costs) => Ok(costs),
-                Err(errors) if cost::is_builder_refusal(&errors) => {
-                    match retention_prebound_mode(programs, authored, true, 2) {
-                        Ok(costs) => Ok(costs),
-                        Err(errors) if cost::is_builder_refusal(&errors) => {
-                            match retention_prebound_mode(programs, authored, true, 3) {
-                                Err(errors) if cost::is_builder_refusal(&errors) => {
-                                    match retention_prebound_mode(programs, authored, true, 4) {
-                                        Err(errors)
-                                            if cost::is_builder_refusal(&errors)
-                                                && allow_uncached_peak =>
-                                        {
-                                            uncached_peak_prebound(programs, authored)
-                                        }
-                                        result => result,
-                                    }
-                                }
-                                result => result,
-                            }
-                        }
-                        Err(errors) => Err(errors),
-                    }
-                }
-                Err(errors) => Err(errors),
-            }
-        }
-        Err(errors) => Err(errors),
-    }
-}
-
-fn retention_prebound(
-    programs: &[Program],
-    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
-    dependency_scoped: bool,
-) -> Result<(usize, usize), Vec<Diagnostic>> {
-    retention_prebound_mode(programs, authored, dependency_scoped, 0)
+    retention::checked_retention_prebound_with_uncached_peak(
+        programs,
+        authored,
+        allow_uncached_peak,
+    )
 }
 pub(super) fn retention_prebound_mode(
     programs: &[Program],
@@ -334,67 +225,45 @@ pub(super) fn retention_prebound_mode(
     dependency_scoped: bool,
     layout_mode: u8,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    let _precharge = super::diagnostics::precharge_scope();
-    super::diagnostics::begin_precharge_pass();
-    let mut resolve = 0usize;
-    let mut runtime = 0usize;
-    // build_resolved_core calls synthetic_program once per source, in order.
-    // synthetic_program replaces each imported full-function clone's body and
-    // contracts before starting the next import; the finished synthetic
-    // module retains only its stub. Thus retained modules add, while at most
-    // one full imported body is transiently live across the whole loop.
-    let mut transient_peak = 0usize;
-    for program in programs {
-        super::diagnostics::begin_precharge_module(&program.path);
-        let maximum = if dependency_scoped {
-            Some(dependency_identity_max(program, authored, programs)?)
-        } else {
-            None
-        };
-        let costs = if maximum.is_some() {
-            synthetic_builder_bytes_scoped(program, authored, programs, maximum, layout_mode, true)?
-        } else {
-            synthetic_builder_bytes(program, authored, programs)?
-        };
-        let charged = if layout_mode >= 3 {
-            costs.retained_clone_and_hir
-        } else {
-            costs.raw_clone_and_hir
-        };
-        super::diagnostics::record_precharge_module(&program.path, charged);
-        resolve = checked_usage(resolve, charged, "builder_bytes", active_builder_limit())?;
-        transient_peak = transient_peak.max(costs.transient_import_clone);
-        runtime = checked_usage(
-            runtime,
-            costs.runtime,
-            "builder_bytes",
-            active_builder_limit(),
-        )?;
-    }
-    if layout_mode == 3 {
-        resolve = checked_usage(
-            resolve,
-            transient_peak,
-            "builder_bytes",
-            active_builder_limit(),
-        )?;
-    }
-    let total = checked_usage(resolve, runtime, "builder_bytes", active_builder_limit())?;
-    Ok((resolve, total))
+    retention_prebound_mode_with_registry(programs, authored, dependency_scoped, layout_mode, None)
 }
-
-/// Return the next strictly smaller core reservation after a real builder
-/// overflow. A refusal in one fallback is not authority to retry the same
-/// reservation or to skip an unrelated diagnostic. The caller owns attempt
-/// rollback and uses `layout_mode = 1` before the first retry, so modes 2
-/// through 4 are considered in order.
+pub(in crate::workspace_graph) fn retention_prebound_mode_with_registry(
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    dependency_scoped: bool,
+    layout_mode: u8,
+    registry: Option<&LayoutRegistry<'_>>,
+) -> Result<(usize, usize), Vec<Diagnostic>> {
+    retention::retention_prebound_mode_with_registry(
+        programs,
+        authored,
+        dependency_scoped,
+        layout_mode,
+        registry,
+    )
+}
 pub(super) fn next_retention_prebound(
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     current: usize,
     layout_mode: &mut u8,
 ) -> Result<(usize, usize), Vec<Diagnostic>> {
-    next_retention_prebound_with_uncached_peak(programs, authored, current, layout_mode, false)
+    next_retention_prebound_with_registry(programs, authored, current, layout_mode, None)
+}
+pub(in crate::workspace_graph) fn next_retention_prebound_with_registry(
+    programs: &[Program],
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    current: usize,
+    layout_mode: &mut u8,
+    registry: Option<&LayoutRegistry<'_>>,
+) -> Result<(usize, usize), Vec<Diagnostic>> {
+    retention::next_retention_prebound_with_registry(
+        programs,
+        authored,
+        current,
+        layout_mode,
+        registry,
+    )
 }
 
 /// A synthetic module retains its own declarations and explicit imported
@@ -543,41 +412,7 @@ pub(super) fn rewrite_type_runtime_cost(
     programs: &[Program],
     cost: &mut StructuralCost,
 ) -> Result<(), Vec<Diagnostic>> {
-    if crate::stdin_stream_ops::ast_is_reader(ty)
-        || crate::map_ops::ast_collection(ty)
-        || crate::vec_ops::ast_copy_vec(ty)
-    {
-        return Ok(());
-    }
-    let Type::Named { name, arguments } = ty else {
-        return Ok(());
-    };
-    if !arguments.is_empty() {
-        return Err(vec![graph_error(
-            "SPX-G172",
-            "generic cross-file types are not admitted",
-        )]);
-    }
-    let target_id = resolve_type_id(target_module, name, programs).ok_or_else(|| {
-        vec![graph_error(
-            "SPX-G173",
-            "cross-file type identity cost lookup disagrees",
-        )]
-    })?;
-    let alias = caller
-        .module_uses
-        .iter()
-        .find(|item| item.kind == ModuleUseKind::Type && item.persistent_id == target_id)
-        .map(|item| item.alias.as_str())
-        .ok_or_else(|| {
-            vec![graph_error(
-                "SPX-G172",
-                budgeted_format(format_args!(
-                    "cross-file signature type `{target_id}` is not explicitly imported"
-                )),
-            )]
-        })?;
-    cost.string(alias)
+    type_rewrite::runtime_cost(ty, target_module, caller, programs, cost)
 }
 fn synthetic_main_runtime_cost(module: &str) -> Result<StructuralCost, Vec<Diagnostic>> {
     let mut cost = StructuralCost::new();
@@ -800,113 +635,7 @@ pub(super) fn synthetic_program(
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     programs: &[Program],
 ) -> Result<Program, Vec<Diagnostic>> {
-    let mut synthetic = program.clone();
-    synthetic.module_uses.clear();
-    // Project validation already authenticated static implementation sidecars.
-    // Runtime HIR has no witness or dispatch representation for them.
-    synthetic.implementations.clear();
-    for module_use in program
-        .module_uses
-        .iter()
-        .filter(|item| item.kind == ModuleUseKind::Type)
-    {
-        let target = &authored[module_use.persistent_id.as_str()];
-        let mut ty = target.ty.expect("validated type target").clone();
-        ty.name = crate::bounded_output::budgeted_clone(&module_use.alias);
-        super::generic_type_import::rewrite_declaration(&mut ty, target.module, program, programs)?;
-        synthetic.types.push(ty);
-    }
-    let type_index_bytes = synthetic
-        .types
-        .len()
-        .checked_mul(std::mem::size_of::<(&str, &TypeDeclaration)>())
-        .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;
-    reserve_builder_structure(type_index_bytes)?;
-    let mut type_declarations = Vec::with_capacity(synthetic.types.len());
-    for declaration in &synthetic.types {
-        type_declarations.push((declaration.name.as_str(), declaration));
-    }
-    type_declarations.sort_by(|left, right| left.0.cmp(right.0));
-    if type_declarations
-        .windows(2)
-        .any(|items| items[0].0 == items[1].0)
-    {
-        return Err(vec![graph_error(
-            "SPX-G173",
-            "synthetic workspace type-name index is not unique",
-        )]);
-    }
-    for module_use in program
-        .module_uses
-        .iter()
-        .filter(|item| item.kind == ModuleUseKind::Function)
-    {
-        let target = &authored[module_use.persistent_id.as_str()];
-        let target_function = target.function.expect("validated function target");
-        let retain_body = programs
-            .iter()
-            .find(|provider| provider.module == target.module)
-            .is_some_and(|provider| {
-                crate::vec_ops::source_wrapper(provider, target_function).is_some()
-                    || crate::box_ops::source_wrapper(provider, target_function).is_some()
-            });
-        let mut function = if retain_body {
-            target_function.clone()
-        } else {
-            import_stub::signature(target_function)
-        };
-        function.name = crate::bounded_output::budgeted_clone(&module_use.alias);
-        if retain_body {
-            synthetic.functions.push(function);
-            continue;
-        }
-        for param in &mut function.params {
-            rewrite_type(&mut param.ty, target.module, program, programs)?;
-        }
-        rewrite_type(&mut function.return_type, target.module, program, programs)?;
-        // Clearing would retain the cloned contracts' Vec capacities in every
-        // finished stub. Replace the vectors so the full imported contracts
-        // remain transient, matching the final peak-only pre-bound.
-        function.requires = Vec::new();
-        function.ensures = Vec::new();
-        function.body = default_expr(
-            &function,
-            &type_declarations,
-            super::owned_function_import::admitted(program, target, authored, programs),
-        )?;
-        synthetic.functions.push(function);
-    }
-    if !synthetic
-        .functions
-        .iter()
-        .any(|function| function.name == "main")
-    {
-        reserve_builder_structure(std::mem::size_of::<Function>())?;
-        reserve_builder_structure(std::mem::size_of::<Expr>())?;
-        synthetic.functions.push(Function {
-            stable_id: budgeted_format(format_args!(
-                "workspace.synthetic.main.{}",
-                synthetic.module
-            )),
-            explicit_id: true,
-            name: crate::bounded_output::budgeted_clone("main"),
-            name_span: Span::default(),
-            type_parameters: Vec::new(),
-            params: Vec::new(),
-            return_type: Type::I64,
-            effects: Vec::new(),
-            yields: None,
-            follows: None,
-            requires: Vec::new(),
-            ensures: Vec::new(),
-            body: Expr {
-                kind: ExprKind::Int(0),
-                span: Span::default(),
-            },
-            span: Span::default(),
-        });
-    }
-    Ok(synthetic)
+    held_projection::synthetic_program_with_registry(program, authored, programs, None)
 }
 pub(super) fn rewrite_type(
     ty: &mut Type,
@@ -914,46 +643,21 @@ pub(super) fn rewrite_type(
     caller: &Program,
     programs: &[Program],
 ) -> Result<(), Vec<Diagnostic>> {
-    if crate::stdin_stream_ops::ast_is_reader(ty)
-        || crate::map_ops::ast_collection(ty)
-        || crate::vec_ops::ast_copy_vec(ty)
-    {
-        return Ok(());
-    }
-    let Type::Named { name, arguments } = ty else {
-        return Ok(());
-    };
-    if !arguments.is_empty() {
-        return Err(vec![graph_error(
-            "SPX-G172",
-            "generic cross-file types are not admitted",
-        )]);
-    }
-    let target_id = resolve_type_id(target_module, name, programs).ok_or_else(|| {
-        vec![graph_error(
-            "SPX-G173",
-            "cross-file type identity lookup disagrees",
-        )]
-    })?;
-    let alias = caller
-        .module_uses
-        .iter()
-        .find(|item| item.kind == ModuleUseKind::Type && item.persistent_id == target_id)
-        .map(|item| item.alias.as_str())
-        .ok_or_else(|| {
-            vec![graph_error(
-                "SPX-G172",
-                budgeted_format(format_args!(
-                    "cross-file signature type `{target_id}` is not explicitly imported"
-                )),
-            )]
-        })?;
-    *name = crate::bounded_output::budgeted_clone(alias);
-    Ok(())
+    type_rewrite::rewrite(ty, target_module, caller, programs)
 }
-
 pub(super) fn collect_expected_edges(
     program: &Program,
+    programs: &[Program],
+    module_paths: &BTreeMap<&str, &str>,
+    authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
+    edges: &mut Vec<WorkspaceEdge>,
+) -> Result<(), Vec<Diagnostic>> {
+    collect_expected_edges_impl::<false>(program, programs, module_paths, authored, edges)
+}
+
+fn collect_expected_edges_impl<const VISIT_EMPTY_CALL_IMPORTS: bool>(
+    program: &Program,
+    programs: &[Program],
     module_paths: &BTreeMap<&str, &str>,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     edges: &mut Vec<WorkspaceEdge>,
@@ -1125,71 +829,75 @@ pub(super) fn collect_expected_edges(
                     "ensures" => budgeted_format(format_args!("ensures.{root_index}")),
                     _ => unreachable!(),
                 };
-                let mut call_ordinal = 0usize;
-                visit_ast_call_sites(expression, &root, &mut |name, path| {
-                    let ordinal = call_ordinal;
-                    call_ordinal += 1;
-                    if let Some(module_use) = function_uses.get(name) {
-                        let target = &authored[module_use.persistent_id.as_str()];
-                        let edge = WorkspaceEdge {
-                            caller_path: crate::bounded_output::budgeted_clone(&program.path),
-                            caller: crate::bounded_output::budgeted_clone(&function.stable_id),
-                            target_path: crate::bounded_output::budgeted_clone(
-                                module_paths[target.module],
-                            ),
-                            target: crate::bounded_output::budgeted_clone(
-                                &module_use.persistent_id,
-                            ),
-                            kind: "call",
-                            site,
-                            expression: hir::workspace_expression_identity(
-                                &hir::DeclarationId::new(crate::bounded_output::budgeted_clone(
-                                    &function.stable_id,
-                                )),
-                                path,
-                            ),
-                            ast_path: crate::bounded_output::budgeted_clone(path),
-                            alias: crate::bounded_output::budgeted_clone(&module_use.alias),
-                            ordinal,
-                        };
-                        push_edge(edges, edge)?;
-                        if let Some(target_function) = target.function {
-                            for effect in &target_function.effects {
-                                push_edge(
-                                    edges,
-                                    WorkspaceEdge {
-                                        caller_path: crate::bounded_output::budgeted_clone(
-                                            &program.path,
-                                        ),
-                                        caller: crate::bounded_output::budgeted_clone(
-                                            &function.stable_id,
-                                        ),
-                                        target_path: crate::bounded_output::budgeted_clone(
-                                            target.path,
-                                        ),
-                                        target: crate::bounded_output::budgeted_clone(effect),
-                                        kind: "effect_requirement",
-                                        site,
-                                        expression: hir::workspace_expression_identity(
-                                            &hir::DeclarationId::new(
-                                                crate::bounded_output::budgeted_clone(
-                                                    &function.stable_id,
-                                                ),
+                // No call edge is possible without an authored function import.
+                // Type references and all later edge reconstruction still run.
+                if VISIT_EMPTY_CALL_IMPORTS || !function_uses.is_empty() {
+                    let mut call_ordinal = 0usize;
+                    visit_ast_call_sites(expression, &root, &mut |name, path| {
+                        let ordinal = call_ordinal;
+                        call_ordinal += 1;
+                        if let Some(module_use) = function_uses.get(name) {
+                            let target = &authored[module_use.persistent_id.as_str()];
+                            let edge = WorkspaceEdge {
+                                caller_path: crate::bounded_output::budgeted_clone(&program.path),
+                                caller: crate::bounded_output::budgeted_clone(&function.stable_id),
+                                target_path: crate::bounded_output::budgeted_clone(
+                                    module_paths[target.module],
+                                ),
+                                target: crate::bounded_output::budgeted_clone(
+                                    &module_use.persistent_id,
+                                ),
+                                kind: "call",
+                                site,
+                                expression: hir::workspace_expression_identity(
+                                    &hir::DeclarationId::new(
+                                        crate::bounded_output::budgeted_clone(&function.stable_id),
+                                    ),
+                                    path,
+                                ),
+                                ast_path: crate::bounded_output::budgeted_clone(path),
+                                alias: crate::bounded_output::budgeted_clone(&module_use.alias),
+                                ordinal,
+                            };
+                            push_edge(edges, edge)?;
+                            if let Some(target_function) = target.function {
+                                for effect in &target_function.effects {
+                                    push_edge(
+                                        edges,
+                                        WorkspaceEdge {
+                                            caller_path: crate::bounded_output::budgeted_clone(
+                                                &program.path,
                                             ),
-                                            path,
-                                        ),
-                                        ast_path: crate::bounded_output::budgeted_clone(path),
-                                        alias: crate::bounded_output::budgeted_clone(
-                                            &module_use.alias,
-                                        ),
-                                        ordinal,
-                                    },
-                                )?;
+                                            caller: crate::bounded_output::budgeted_clone(
+                                                &function.stable_id,
+                                            ),
+                                            target_path: crate::bounded_output::budgeted_clone(
+                                                target.path,
+                                            ),
+                                            target: crate::bounded_output::budgeted_clone(effect),
+                                            kind: "effect_requirement",
+                                            site,
+                                            expression: hir::workspace_expression_identity(
+                                                &hir::DeclarationId::new(
+                                                    crate::bounded_output::budgeted_clone(
+                                                        &function.stable_id,
+                                                    ),
+                                                ),
+                                                path,
+                                            ),
+                                            ast_path: crate::bounded_output::budgeted_clone(path),
+                                            alias: crate::bounded_output::budgeted_clone(
+                                                &module_use.alias,
+                                            ),
+                                            ordinal,
+                                        },
+                                    )?;
+                                }
                             }
                         }
-                    }
-                    Ok(())
-                })?;
+                        Ok(())
+                    })?;
+                }
                 collect_expression_type_edges(
                     program,
                     &function.stable_id,
@@ -1203,6 +911,7 @@ pub(super) fn collect_expected_edges(
             }
         }
     }
+    record_traversal::collect_edges(program, programs, module_paths, authored, edges)?;
     for (ordinal, module_use) in program.module_uses.iter().enumerate() {
         if module_use.kind == ModuleUseKind::Protocol {
             continue;
@@ -1372,6 +1081,25 @@ fn collect_expression_type_edges(
         )
     });
     match &expression.kind {
+        ExprKind::VecConstructor { .. } => {
+            let expansion = crate::ast::vec_constructor::inspect(expression).map_err(|_| {
+                vec![graph_error(
+                    "SPX-G173",
+                    "Vec constructor source provenance disagrees with retained HIR",
+                )]
+            })?;
+            // The marker replaces its ordinary Block at the same identity.
+            collect_expression_type_edges(
+                program,
+                owner,
+                expansion.value,
+                path,
+                type_uses,
+                module_paths,
+                authored,
+                edges,
+            )?;
+        }
         ExprKind::Closure {
             params,
             return_type,
@@ -1505,7 +1233,11 @@ fn collect_expression_type_edges(
                 )?;
             }
         }
-        ExprKind::Unary { value, .. } => collect_expression_type_edges(
+        ExprKind::LexicalExit { value: None, .. } => {}
+        ExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | ExprKind::Unary { value, .. } => collect_expression_type_edges(
             program,
             owner,
             value,
@@ -1723,6 +1455,7 @@ fn collect_expression_type_edges(
         | ExprKind::Float64(_)
         | ExprKind::Bool(_)
         | ExprKind::String(_)
+        | ExprKind::BorrowedUtf8Literal(_)
         | ExprKind::ArrayU8(_)
         | ExprKind::RepeatArrayU8 { .. }
         | ExprKind::Var(_) => {}
@@ -1847,6 +1580,10 @@ pub(super) fn verify_resolved_call_edges(
     resolved: &hir::ResolvedProgram,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
 ) -> Result<(), Vec<Diagnostic>> {
+    sort_keys::verify(program, resolved, authored)?;
+    field_unique::verify(program, resolved, authored)?;
+    string_slots::verify(program, resolved)?;
+    vec_constructor::verify(program, resolved)?;
     let aliases = program
         .module_uses
         .iter()
@@ -1927,3 +1664,7 @@ pub(super) fn verify_resolved_call_edges(
 #[cfg(test)]
 #[path = "expected_projection/identity_prebound_tests.rs"]
 mod identity_prebound_tests;
+
+#[cfg(test)]
+#[path = "expected_projection/call_absence_tests.rs"]
+mod call_absence_tests;

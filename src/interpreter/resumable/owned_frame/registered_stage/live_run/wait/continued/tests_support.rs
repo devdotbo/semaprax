@@ -23,7 +23,7 @@ impl LiveContinuedParkedStateV8<'_> {
                     let inert = match value {
                         Value::Bytes(bytes) => Value::Bytes(OwnedBytesValue {
                             allocation: bytes.allocation,
-                            bytes: Arc::from(bytes.bytes.to_vec()),
+                            bytes: Arc::<[u8]>::from(bytes.bytes.to_vec()).into(),
                         }),
                         other => crate::interpreter::resumable::clone_scalar(other)
                             .expect("actual scalar"),

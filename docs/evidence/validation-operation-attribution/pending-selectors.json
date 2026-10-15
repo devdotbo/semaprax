@@ -1,0 +1,47 @@
+[
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "bounded_output::stage_debits::tests::operation_guards_keep_complete_untagged_refusal_and_actual_zero_allocation",
+    "source_path": "src/bounded_output/stage_debits/tests.rs",
+    "source_sha256": "4b6265da52b4594939bdeb3d5eae186aaf220bc3c1b726d1ce1235ceb215caf9",
+    "expected_selected_authored": 1,
+    "execution_performed": false
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "bounded_output::stage_debits::tests::operation_scope_restores_after_unwind_and_nested_foreign_budget_cannot_tag_parent",
+    "source_path": "src/bounded_output/stage_debits/tests.rs",
+    "source_sha256": "4b6265da52b4594939bdeb3d5eae186aaf220bc3c1b726d1ce1235ceb215caf9",
+    "expected_selected_authored": 1,
+    "execution_performed": false
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "bounded_output::stage_debits::tests::exact_budget_stage_trace_preserves_nested_settlement_refusal_and_unwind_without_storage",
+    "source_path": "src/bounded_output/stage_debits/tests.rs",
+    "source_sha256": "4b6265da52b4594939bdeb3d5eae186aaf220bc3c1b726d1ce1235ceb215caf9",
+    "expected_selected_authored": 1,
+    "execution_performed": false
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+    "source_path": "src/workspace_graph/tests/builder_limits.rs",
+    "source_sha256": "9a0a032349bea1f517b1787cc8fbcf2088969ff82d6023b7f37ca43b086ef868",
+    "expected_selected_authored": 1,
+    "execution_performed": false
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "workspace_graph::tests::builder_limits::pattern_source_workspace_fits_unchanged_builder_budget",
+    "source_path": "src/workspace_graph/tests/builder_limits.rs",
+    "source_sha256": "9a0a032349bea1f517b1787cc8fbcf2088969ff82d6023b7f37ca43b086ef868",
+    "expected_selected_authored": 1,
+    "execution_performed": false
+  }
+]

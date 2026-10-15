@@ -13,7 +13,10 @@ fn compact_validation_index_preserves_cross_module_signature_and_identity_proof(
         compact
             .record_module(&program.module, &resolved, &programs)
             .unwrap();
-        resolved_modules.push((program.module.clone(), resolved));
+        resolved_modules.push((
+            program.module.clone(),
+            crate::project::incremental::checked_hir::ResolvedModuleInput::Owned(resolved),
+        ));
     }
     compact.validate_stub_signatures(&programs).unwrap();
     let compact_facts = compact.finish(&programs).unwrap();

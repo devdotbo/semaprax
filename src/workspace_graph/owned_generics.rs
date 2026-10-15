@@ -14,41 +14,43 @@ use crate::diagnostic::Diagnostic;
 use crate::{ast::Program, hir};
 
 use super::{
-    graph_error, retained_function_loan_bytes, AuthoredDeclaration, WorkspaceDeclarationFact,
-    WorkspaceResolvedModule, GRAPH_ACCOUNTED_RESOLVED_FUNCTION_INSTANCE_BYTES,
+    graph_error, loan_retention::RetentionScratch, retained_function_loan_bytes,
+    AuthoredDeclaration, WorkspaceDeclarationFact, WorkspaceResolvedModule,
+    GRAPH_ACCOUNTED_RESOLVED_FUNCTION_INSTANCE_BYTES,
 };
+
+mod available;
+#[cfg(test)]
+mod borrowed_inventory_tests;
+mod retention;
+use available::BorrowedFunction;
 
 /// Retain only authored nominal declarations reached by an already selected
 /// scalar function closure. This is needed when an otherwise scalar public
 /// root constructs and consumes an owned aggregate entirely inside its body;
 /// function-declaration ownership is not evidence of that expression type.
+///
+/// The type and interface inventories are borrowed views of the current
+/// modules: every module's identities are still checked for duplication,
+/// reachable or not, and only selected declarations are cloned on publication.
 pub(super) fn reachable_scalar_types(
     modules: &[WorkspaceResolvedModule],
     functions: &[hir::LinkedScalarFunction],
     function_instances: &[hir::ResolvedFunctionInstance],
 ) -> Result<Vec<hir::ResolvedTypeDeclaration>, Vec<Diagnostic>> {
-    let mut available = BTreeMap::new();
-    for declaration in modules.iter().flat_map(|module| &module.types) {
-        if available
-            .insert(declaration.id.clone(), declaration.clone())
-            .is_some()
-        {
-            return Err(vec![graph_error(
-                "SPX-G173",
-                "workspace scalar type identity is duplicated",
-            )]);
-        }
-    }
-    let owner_interfaces = modules
-        .iter()
-        .flat_map(|module| &module.interfaces)
-        .cloned()
-        .collect::<Vec<_>>();
+    let available =
+        hir::BorrowedTypeInventory::collect(modules.iter().flat_map(|module| module.types.iter()))
+            .map_err(|_| {
+                vec![graph_error(
+                    "SPX-G173",
+                    "workspace scalar type identity is duplicated",
+                )]
+            })?;
     hir::reachable_scalar_authored_types(
         functions,
         function_instances,
         &available,
-        &owner_interfaces,
+        modules.iter().flat_map(|module| &module.interfaces),
     )
     .map_err(|error| vec![error])
 }
@@ -104,7 +106,7 @@ pub(super) fn retain_module_instances(
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     instances: Vec<hir::ResolvedFunctionInstance>,
-    retained_output_only: bool,
+    mut loan_scratch: Option<&mut RetentionScratch>,
 ) -> Result<
     (
         Vec<hir::ResolvedFunctionInstance>,
@@ -112,20 +114,26 @@ pub(super) fn retain_module_instances(
     ),
     Vec<Diagnostic>,
 > {
+    let retained_output_only = loan_scratch.is_some();
+    // The final uncached pass reserves the largest selected census before
+    // consuming any instance. This avoids successive physical replacements;
+    // the original per-instance path and receipt remain exact in earlier passes.
+    if let Some(scratch) = loan_scratch.as_deref_mut() {
+        scratch.prepare(
+            instances
+                .iter()
+                .filter(|item| retention::selected(program, programs, authored, item))
+                .map(|item| &item.function),
+        )?;
+    }
     let retained = super::filter_owned_vec_accounted(
         instances,
         GRAPH_ACCOUNTED_RESOLVED_FUNCTION_INSTANCE_BYTES,
-        |item| retained_function_loan_bytes(&item.function),
-        |item| {
-            authored
-                .get(item.template.as_str())
-                .is_some_and(|owner| owner.module == program.module)
-                || program.module_uses.iter().any(|module_use| {
-                    module_use.persistent_id == item.template.as_str()
-                        && (imported_vec_wrapper(programs, module_use).is_some()
-                            || imported_box_wrapper(programs, module_use).is_some())
-                })
+        |item| match loan_scratch.as_deref_mut() {
+            Some(scratch) => scratch.measure(&item.function),
+            None => retained_function_loan_bytes(&item.function),
         },
+        |item| retention::selected(program, programs, authored, item),
         retained_output_only,
     )?;
     Ok(retained.into_iter().partition(|item| {
@@ -194,9 +202,9 @@ pub(super) fn attach_imported_vec_instances(
 }
 
 /// The authenticated generic inventory of one Phase-A workspace build.
-pub(super) struct OwnedGenericInventory {
-    templates: BTreeMap<hir::DeclarationId, hir::ResolvedFunctionTemplate>,
-    instances: BTreeMap<hir::FunctionInstanceId, hir::ResolvedFunctionInstance>,
+pub(super) struct OwnedGenericInventory<'a> {
+    templates: BTreeMap<hir::DeclarationId, &'a hir::ResolvedFunctionTemplate>,
+    instances: BTreeMap<hir::FunctionInstanceId, &'a hir::ResolvedFunctionInstance>,
 }
 
 /// The exact retained closure over ordinary functions, generic templates, and
@@ -207,12 +215,12 @@ pub(super) struct OwnedGenericClosure {
     instances: BTreeSet<hir::FunctionInstanceId>,
 }
 
-impl OwnedGenericInventory {
+impl<'a> OwnedGenericInventory<'a> {
     /// Collect every authenticated template and instance. Identities are
     /// rejected for duplication exactly like the ordinary function inventory,
     /// and each template must agree with its Phase-A declaration fact.
     pub(super) fn collect(
-        modules: &[WorkspaceResolvedModule],
+        modules: &'a [WorkspaceResolvedModule],
         declarations: &BTreeMap<String, WorkspaceDeclarationFact>,
     ) -> Result<Self, Vec<Diagnostic>> {
         let mut templates = BTreeMap::new();
@@ -234,10 +242,7 @@ impl OwnedGenericInventory {
                         "workspace owned-data generic template facts disagree with its retained body",
                     )]);
                 }
-                if templates
-                    .insert(template.id.clone(), template.clone())
-                    .is_some()
-                {
+                if templates.insert(template.id.clone(), template).is_some() {
                     return Err(vec![graph_error(
                         "SPX-G173",
                         "workspace owned-data generic template identity is duplicated",
@@ -253,10 +258,7 @@ impl OwnedGenericInventory {
                         "workspace owned-data generic instance identity is not canonical",
                     )]);
                 }
-                if instances
-                    .insert(instance.id.clone(), instance.clone())
-                    .is_some()
-                {
+                if instances.insert(instance.id.clone(), instance).is_some() {
                     return Err(vec![graph_error(
                         "SPX-G173",
                         "workspace owned-data generic instance identity is duplicated",
@@ -282,7 +284,7 @@ impl OwnedGenericInventory {
     }
 
     fn template(&self, id: &hir::DeclarationId) -> Option<&hir::ResolvedFunctionTemplate> {
-        self.templates.get(id)
+        self.templates.get(id).copied()
     }
 
     /// Retain the exact templates the closure selected, in canonical identity
@@ -294,14 +296,17 @@ impl OwnedGenericInventory {
         selected
             .iter()
             .map(|id| {
-                self.templates.get(id).cloned().ok_or_else(|| {
-                    vec![graph_error(
-                        "SPX-G173",
-                        format!(
+                self.templates
+                    .get(id)
+                    .map(|value| (**value).clone())
+                    .ok_or_else(|| {
+                        vec![graph_error(
+                            "SPX-G173",
+                            format!(
                             "owned-data closure names an unauthenticated generic template `{id}`"
                         ),
-                    )]
-                })
+                        )]
+                    })
             })
             .collect()
     }
@@ -358,15 +363,18 @@ impl OwnedGenericInventory {
         ordered
             .into_iter()
             .map(|id| {
-                self.instances.get(&id).cloned().ok_or_else(|| {
-                    vec![graph_error(
-                        "SPX-G173",
-                        format!(
-                            "owned-data closure names an unauthenticated generic instance `{}`",
-                            id.as_str()
-                        ),
-                    )]
-                })
+                self.instances
+                    .get(&id)
+                    .map(|value| (**value).clone())
+                    .ok_or_else(|| {
+                        vec![graph_error(
+                            "SPX-G173",
+                            format!(
+                                "owned-data closure names an unauthenticated generic instance `{}`",
+                                id.as_str()
+                            ),
+                        )]
+                    })
             })
             .collect()
     }
@@ -389,8 +397,8 @@ pub(super) fn retained_scalar_generics(
         .map(|linked| {
             (
                 linked.function.id.clone(),
-                hir::LinkedScalarFunction {
-                    function: linked.function.clone(),
+                BorrowedFunction {
+                    function: &linked.function,
                     origin: linked.origin,
                 },
             )
@@ -461,9 +469,9 @@ pub(super) fn retained_scalar_parts(
 /// sites. A call that names a generic template selects exactly the instance
 /// its authenticated type-argument vector derives; the walk then continues
 /// through that instance body's own callees.
-pub(super) fn close_owned_data_closure(
-    available: &BTreeMap<hir::DeclarationId, hir::LinkedScalarFunction>,
-    generics: &OwnedGenericInventory,
+pub(super) fn close_owned_data_closure<F: available::FunctionView>(
+    available: &BTreeMap<hir::DeclarationId, F>,
+    generics: &OwnedGenericInventory<'_>,
     roots: BTreeSet<hir::DeclarationId>,
 ) -> Result<OwnedGenericClosure, Vec<Diagnostic>> {
     let mut closure = OwnedGenericClosure {
@@ -495,7 +503,7 @@ pub(super) fn close_owned_data_closure(
                     ),
                 )]);
             }
-            &linked.function
+            linked.function()
         } else if let Some(instance_id) = pending_instances.pop_first() {
             let Some(instance) = generics.instances.get(&instance_id) else {
                 return Err(vec![graph_error(
@@ -784,6 +792,126 @@ impl super::WorkspaceGraphBuild {
         self.attach_project_agents(&mut linked)?;
         Ok(linked)
     }
+    pub(super) fn linked_stream_record_test_program(
+        &self,
+        test_module: &str,
+    ) -> Result<hir::ResolvedProgram, Vec<Diagnostic>> {
+        let roots = self
+            .hir
+            .modules
+            .iter()
+            .filter(|module| module.module == test_module)
+            .flat_map(|module| &module.functions)
+            .filter(|function| {
+                function.name.starts_with(crate::project::TEST_CASE_PREFIX)
+                    && function.params.is_empty()
+                    && function.return_type == hir::ResolvedType::I64
+                    && self
+                        .hir
+                        .declarations
+                        .get(function.id.as_str())
+                        .is_some_and(|fact| fact.origin == hir::IdentityOrigin::Explicit)
+            })
+            .map(|function| function.id.as_str().to_owned())
+            .collect::<Vec<_>>();
+        let mut linked = self.linked_owned_data_api_program_with_roots(test_module, &roots)?;
+        hir::validate_stream_record_program(&linked, None).map_err(|error| vec![error])?;
+        self.attach_project_agents(&mut linked)?;
+        Ok(linked)
+    }
+
+    pub(super) fn linked_stream_owned_test_program(
+        &self,
+        test_module: &str,
+    ) -> Result<hir::ResolvedProgram, Vec<Diagnostic>> {
+        let roots = self
+            .hir
+            .modules
+            .iter()
+            .filter(|module| module.module == test_module)
+            .flat_map(|module| &module.functions)
+            .filter(|function| {
+                function.name.starts_with(crate::project::TEST_CASE_PREFIX)
+                    && function.params.is_empty()
+                    && function.return_type == hir::ResolvedType::I64
+                    && self
+                        .hir
+                        .declarations
+                        .get(function.id.as_str())
+                        .is_some_and(|fact| fact.origin == hir::IdentityOrigin::Explicit)
+            })
+            .map(|function| function.id.as_str().to_owned())
+            .collect::<Vec<_>>();
+        let mut linked = self.linked_owned_data_api_program_with_roots(test_module, &roots)?;
+        hir::validate_stream_owned_program(&linked, None).map_err(|error| vec![error])?;
+        self.attach_project_agents(&mut linked)?;
+        Ok(linked)
+    }
+
+    pub(super) fn linked_stream_collection_record_test_program(
+        &self,
+        test_module: &str,
+    ) -> Result<hir::ResolvedProgram, Vec<Diagnostic>> {
+        let roots = self
+            .hir
+            .modules
+            .iter()
+            .filter(|module| module.module == test_module)
+            .flat_map(|module| &module.functions)
+            .filter(|function| {
+                function.name.starts_with(crate::project::TEST_CASE_PREFIX)
+                    && function.params.is_empty()
+                    && function.return_type == hir::ResolvedType::I64
+                    && self
+                        .hir
+                        .declarations
+                        .get(function.id.as_str())
+                        .is_some_and(|fact| fact.origin == hir::IdentityOrigin::Explicit)
+            })
+            .map(|function| function.id.as_str().to_owned())
+            .collect::<Vec<_>>();
+        let mut linked = self.linked_owned_data_api_program_with_roots(test_module, &roots)?;
+        hir::validate_stream_collection_record_program(&linked, None)
+            .map_err(|error| vec![error])?;
+        self.attach_project_agents(&mut linked)?;
+        Ok(linked)
+    }
+
+    pub(super) fn linked_stream_nested_outcome_test_program(
+        &self,
+        test_module: &str,
+    ) -> Result<hir::ResolvedProgram, Vec<Diagnostic>> {
+        let roots = self
+            .hir
+            .modules
+            .iter()
+            .filter(|module| module.module == test_module)
+            .flat_map(|module| &module.functions)
+            .filter(|function| {
+                function.name.starts_with(crate::project::TEST_CASE_PREFIX)
+                    && function.params.is_empty()
+                    && function.return_type == hir::ResolvedType::I64
+                    && self
+                        .hir
+                        .declarations
+                        .get(function.id.as_str())
+                        .is_some_and(|fact| fact.origin == hir::IdentityOrigin::Explicit)
+            })
+            .map(|function| function.id.as_str().to_owned())
+            .collect::<Vec<_>>();
+        let mut linked = self.linked_owned_data_api_program_with_roots(test_module, &roots)?;
+        hir::validate_stream_nested_outcome_program(&linked, None).map_err(|error| vec![error])?;
+        self.attach_project_agents(&mut linked)?;
+        Ok(linked)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn linked_owned_data_program_for_test(
+        &self,
+        entry_module: &str,
+    ) -> Result<hir::ResolvedProgram, Vec<Diagnostic>> {
+        self.linked_owned_data_api_program_with_roots(entry_module, &[])
+    }
 
     pub(super) fn linked_owned_data_api_program_with_roots(
         &self,
@@ -813,7 +941,7 @@ impl super::WorkspaceGraphBuild {
     ) -> Result<hir::ResolvedProgram, Vec<Diagnostic>> {
         use super::*;
         validate_entry_module(entry_module)?;
-        let mut available = BTreeMap::<hir::DeclarationId, hir::LinkedScalarFunction>::new();
+        let mut available = BTreeMap::<hir::DeclarationId, BorrowedFunction<'_>>::new();
         let mut entrypoints = Vec::new();
         for module in &self.hir.modules {
             for function in &module.functions {
@@ -845,8 +973,8 @@ impl super::WorkspaceGraphBuild {
                 if available
                     .insert(
                         function.id.clone(),
-                        hir::LinkedScalarFunction {
-                            function: function.clone(),
+                        BorrowedFunction {
+                            function,
                             origin: fact.origin,
                         },
                     )
@@ -923,19 +1051,14 @@ impl super::WorkspaceGraphBuild {
         // Resource finalizers belong to the exact reachable owner closure even
         // though no authored expression calls them. Retain only the finalizer
         // identified by an admitted selected Regex resource, never its module.
-        let all_interfaces = self
-            .hir
-            .modules
-            .iter()
-            .flat_map(|m| m.interfaces.iter().cloned())
-            .collect::<Vec<_>>();
+        let all_interfaces = self.hir.modules.iter().flat_map(|m| &m.interfaces);
         let reached_types = functions
             .iter()
             .flat_map(|f| hir::authored_nominal_declarations(&f.function))
             .collect::<BTreeSet<_>>();
         for declaration in self.hir.modules.iter().flat_map(|m| &m.types) {
             if reached_types.contains(&declaration.id)
-                && hir::admitted_ri06_regex_resource(declaration, &all_interfaces)
+                && hir::admitted_ri06_regex_resource_in(declaration, all_interfaces.clone())
             {
                 if let hir::ResolvedTypeDeclarationKind::Resource { drop } = &declaration.kind {
                     if let hir::ResolvedResourceDropKind::Imported { import, .. } = &drop.kind {
@@ -978,20 +1101,18 @@ impl super::WorkspaceGraphBuild {
             })
             .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
 
-        let mut available_types = BTreeMap::new();
-        for module in &self.hir.modules {
-            for declaration in &module.types {
-                if available_types
-                    .insert(declaration.id.clone(), declaration.clone())
-                    .is_some()
-                {
-                    return Err(vec![graph_error(
-                        "SPX-G173",
-                        "workspace owned-data type identity is duplicated",
-                    )]);
-                }
-            }
-        }
+        let available_types = hir::BorrowedTypeInventory::collect(
+            self.hir
+                .modules
+                .iter()
+                .flat_map(|module| module.types.iter()),
+        )
+        .map_err(|_| {
+            vec![graph_error(
+                "SPX-G173",
+                "workspace owned-data type identity is duplicated",
+            )]
+        })?;
         let types = hir::reachable_authored_types_with_roots(
             &functions,
             &function_instances,

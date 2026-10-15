@@ -45,12 +45,14 @@ use crate::ast::{BinaryOp, UnaryOp};
 /// most recently bound last. Kernel-0 has no closures, so a function call
 /// starts a brand new, empty environment (just its own parameters) rather
 /// than inheriting the caller's -- there is nothing to capture.
-type Env = Vec<(ValueId, Value)>;
+// Identities borrow the immutable current entry/term for the call lifetime;
+// values remain call-local and shadow lookup remains newest-first.
+type Env<'a> = Vec<(&'a ValueId, Value)>;
 
-fn lookup(env: &Env, id: &ValueId) -> Value {
+fn lookup(env: &Env<'_>, id: &ValueId) -> Value {
     env.iter()
         .rev()
-        .find(|(bound, _)| bound == id)
+        .find(|(bound, _)| *bound == id)
         .map(|(_, value)| *value)
         .unwrap_or_else(|| {
             panic!(
@@ -67,9 +69,9 @@ fn lookup(env: &Env, id: &ValueId) -> Value {
 /// this by construction, so a mismatch panics rather than returning an
 /// error -- it can only mean a bug in the caller, not a Kernel-0 program
 /// that got stuck.
-pub(crate) fn eval_program(
-    program: &KernelProgram,
-    entry: &super::term::KernelFn,
+pub(crate) fn eval_program<'a>(
+    program: &'a KernelProgram,
+    entry: &'a super::term::KernelFn,
     args: &[Value],
 ) -> Result<Value, Fault> {
     assert_eq!(
@@ -77,14 +79,18 @@ pub(crate) fn eval_program(
         entry.params.len(),
         "kernel-0 reference evaluator: argument count must match parameter count"
     );
-    let mut env: Env = Vec::with_capacity(args.len());
+    let mut env: Env<'_> = Vec::with_capacity(args.len());
     for ((id, _), value) in entry.params.iter().zip(args.iter()) {
-        env.push((id.clone(), *value));
+        env.push((id, *value));
     }
     eval_term(program, &entry.body, &mut env)
 }
 
-fn eval_term(program: &KernelProgram, term: &Term, env: &mut Env) -> Result<Value, Fault> {
+fn eval_term<'a>(
+    program: &'a KernelProgram,
+    term: &'a Term,
+    env: &mut Env<'a>,
+) -> Result<Value, Fault> {
     match term {
         Term::Int(value) => Ok(Value::Int(*value)),
         Term::Bool(value) => Ok(Value::Bool(*value)),
@@ -134,7 +140,7 @@ fn eval_term(program: &KernelProgram, term: &Term, env: &mut Env) -> Result<Valu
         },
         Term::Let { bound, value, body } => {
             let bound_value = eval_term(program, value, env)?;
-            env.push((bound.clone(), bound_value));
+            env.push((bound, bound_value));
             let result = eval_term(program, body, env);
             env.pop();
             result
@@ -449,3 +455,6 @@ mod tests {
         assert_eq!(eval_program(&program, &caller, &[]), Ok(Value::Int(7)));
     }
 }
+
+#[cfg(test)]
+mod borrowed_env;

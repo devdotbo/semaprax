@@ -41,6 +41,7 @@ const REASON_RECORD_UPDATE: &str = "record_update";
 const REASON_RECORD_PROJECTION: &str = "record_projection";
 const REASON_MATCH_EXPRESSION: &str = "match_expression";
 const REASON_TRY_EXPRESSION: &str = "try_expression";
+const REASON_LEXICAL_EXIT_EXPRESSION: &str = "lexical_exit_expression";
 const REASON_YIELD_EXPRESSION: &str = "yield_expression";
 const REASON_ASSIGNMENT: &str = "assignment_statement";
 const REASON_GENERIC_CALL: &str = "generic_call";
@@ -592,6 +593,7 @@ impl<'a> Analyzer<'a> {
             | ExprKind::Float64(_)
             | ExprKind::Bool(_)
             | ExprKind::String(_)
+            | ExprKind::BorrowedUtf8Literal(_)
             | ExprKind::Var(_) => None,
             ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => {
                 Some(REASON_BYTE_DATA_EXPRESSION)
@@ -612,7 +614,9 @@ impl<'a> Analyzer<'a> {
                 }
                 args.iter().find_map(|argument| self.scan(argument))
             }
-            ExprKind::Unary { value, .. } => self.scan(value),
+            ExprKind::VecConstructor { value, .. } | ExprKind::Unary { value, .. } => {
+                self.scan(value)
+            }
             ExprKind::Binary { left, right, .. } => self.scan(left).or_else(|| self.scan(right)),
             ExprKind::Block { statements, tail } => statements
                 .iter()
@@ -640,6 +644,7 @@ impl<'a> Analyzer<'a> {
             ExprKind::MethodCall { .. } | ExprKind::SuperMethod { .. } => Some(REASON_METHOD_CALL),
             ExprKind::Match { .. } => Some(REASON_MATCH_EXPRESSION),
             ExprKind::Try { .. } => Some(REASON_TRY_EXPRESSION),
+            ExprKind::LexicalExit { .. } => Some(REASON_LEXICAL_EXIT_EXPRESSION),
             ExprKind::Yield { .. } => Some(REASON_YIELD_EXPRESSION),
         }
     }
@@ -664,6 +669,7 @@ impl<'a> Analyzer<'a> {
             return Outcome::Exhausted;
         }
         match &expression.kind {
+            ExprKind::VecConstructor { .. } => Outcome::Unsupported(REASON_BYTE_DATA_EXPRESSION),
             ExprKind::Closure { .. } => Outcome::Unsupported(REASON_UNSUPPORTED_CALLEE),
             ExprKind::Int(value) => Outcome::Value(Value::Int(*value)),
             ExprKind::Int32(value) => Outcome::Value(Value::Int32(*value)),
@@ -676,7 +682,9 @@ impl<'a> Analyzer<'a> {
             ExprKind::MethodCall { .. } | ExprKind::SuperMethod { .. } => {
                 Outcome::Unsupported(REASON_METHOD_CALL)
             }
-            ExprKind::String(_) => Outcome::Unsupported(REASON_ILL_TYPED_EXPRESSION),
+            ExprKind::String(_) | ExprKind::BorrowedUtf8Literal(_) => {
+                Outcome::Unsupported(REASON_ILL_TYPED_EXPRESSION)
+            }
             ExprKind::ArrayU8(_) | ExprKind::RepeatArrayU8 { .. } => {
                 Outcome::Unsupported(REASON_BYTE_DATA_EXPRESSION)
             }
@@ -870,7 +878,9 @@ impl<'a> Analyzer<'a> {
                                 }
                             }
                         },
-                        Statement::For { .. } | Statement::ForOwn { .. } => {
+                        Statement::For { .. }
+                        | Statement::ForBorrow { .. }
+                        | Statement::ForOwn { .. } => {
                             interrupted = Some(Outcome::Unsupported(REASON_ILL_TYPED_EXPRESSION));
                             break;
                         }
@@ -898,6 +908,7 @@ impl<'a> Analyzer<'a> {
             ExprKind::Project { .. } => Outcome::Unsupported(REASON_RECORD_PROJECTION),
             ExprKind::Match { .. } => Outcome::Unsupported(REASON_MATCH_EXPRESSION),
             ExprKind::Try { .. } => Outcome::Unsupported(REASON_TRY_EXPRESSION),
+            ExprKind::LexicalExit { .. } => Outcome::Unsupported(REASON_LEXICAL_EXIT_EXPRESSION),
             ExprKind::Yield { .. } => Outcome::Unsupported(REASON_YIELD_EXPRESSION),
         }
     }
@@ -1129,6 +1140,7 @@ enum ScalarKind {
 impl ScalarKind {
     fn of(ty: &Type) -> Self {
         match ty {
+            Type::Never => unreachable!("compiler-only completion marker is not an admitted property scalar"),
             Type::I64 => ScalarKind::Int,
             Type::I32 => ScalarKind::Int32,
             Type::U8 => ScalarKind::Uint8,

@@ -113,9 +113,12 @@ interface HostEcho permits { host.echo } {
     let resolved = hir::resolve(&parsed).unwrap();
     let resolver = Resolver {
         program: &parsed,
+        byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(&parsed),
         declarations: DeclarationIndex::from_verified(&parsed).unwrap(),
         reuse: None,
         function_work: FunctionResolutionWork::default(),
+        fused_producer: None,
+        partition_profile: false,
     };
     for source_function in &parsed.functions {
         let Some(resolved_function) = resolved
@@ -134,6 +137,7 @@ interface HostEcho permits { host.echo } {
                 (
                     source.name.clone(),
                     Binding {
+                        traversal_row: None,
                         id: resolved.id.clone(),
                         ty: resolved.ty.clone(),
                         ownership: resolved.ownership,
@@ -144,6 +148,16 @@ interface HostEcho permits { host.echo } {
             .collect();
         let iterative =
             resolver.resolve_expr_iterative(&execution, &source_function.body, &bindings, "body");
+        assert_eq!(
+            iterative,
+            super::borrowed_root_oracle::Resolver(&resolver).expression(
+                &execution,
+                &source_function.body,
+                &bindings,
+                "body"
+            ),
+            "complete frozen nonrecursive receiver, including every Diagnostic field"
+        );
         let recursive = resolver.resolve_expr_recursive_reference(
             &execution,
             &source_function.body,
@@ -214,7 +228,7 @@ interface HostEcho permits { host.echo } {
     assert_eq!(iterative.help, recursive.help);
 }
 
-const SOURCE: &str = r#"
+pub(super) const SOURCE: &str = r#"
 module test.validator_oracle_hostiles;
 permit { host.echo }
 
@@ -284,6 +298,22 @@ fn match_hostile(choice: Choice, token: own Token) -> i64 {
     match choice { Choice::A {} => consume(token), Choice::B {} => 0, }
 }
 
+@id("checkpoint.guarded")
+fn guarded(choice: Choice, flag: bool) -> i64 {
+    match choice {
+        Choice::A {} if flag => 1,
+        Choice::A {} => 2,
+        Choice::B {} => 3,
+    }
+}
+
+@id("checkpoint.assignment")
+fn assignment(value: i64) -> i64 {
+    let mut changed = value;
+    changed = changed + 1;
+    changed
+}
+
 @id("app.main")
 fn main() -> i64 { 0 }
 "#;
@@ -315,6 +345,8 @@ fn validation_scope(function: &ResolvedFunction) -> BTreeMap<ValueId, Validation
             (
                 param.id.clone(),
                 ValidationBinding {
+                    contract_local: false,
+                    mutable: false,
                     ty: param.ty.clone(),
                     ownership: param.ownership,
                     availability: Availability::Available,
@@ -337,8 +369,10 @@ fn validate_expression_hostile(
     let execution = FunctionExecutionId::Monomorphic(function.id.clone());
     let mut scope = validation_scope(function);
     let mut recursive_scope = scope.clone();
+    let mut owned_scope = scope.clone();
     let mut validator = HirValidator::new(program).unwrap();
     let mut recursive_validator = validator.clone();
+    let mut owned_validator = validator.clone();
     let allowed_effects = function.effects.iter().cloned().collect();
     let recursive = recursive_validator.validate_expr_recursive_reference(
         &execution,
@@ -365,6 +399,24 @@ fn validate_expression_hostile(
         &recursive_scope,
         path,
     );
+    let owned = owned_validator.validate_expr_iterative_owned_oracle(
+        &execution,
+        expression,
+        &mut owned_scope,
+        path,
+        true,
+        Some(&allowed_effects),
+    );
+    HirValidator::assert_validation_oracle(
+        &iterative,
+        &owned,
+        &validator,
+        &owned_validator,
+        &scope,
+        &owned_scope,
+        path,
+    );
+    HirValidator::assert_scope_auxiliary_oracle(&validator, &owned_validator);
     let diagnostic = iterative.unwrap_err();
     assert_eq!(diagnostic.code, "SPX-H006", "{function_id}");
     function
@@ -473,6 +525,11 @@ fn validator_oracle_handles_an_exact_depth_512_late_error_with_a_nonempty_scope(
             hir::resolve(&parse(source, Path::new("validator-depth-hostile.spx")).unwrap())
                 .unwrap();
         let index = function_index(&hostile, "hostile.depth");
+        // This owner tests the expression validator's exact 512-node boundary,
+        // not the separate 256-depth full-program lexical/loan preflight.
+        // Keep that independently checked constructor subject intact while
+        // supplying the hostile expression to both saved expression drivers.
+        let original_body = hostile.functions[index].body.clone();
         let execution = FunctionExecutionId::Monomorphic(hostile.functions[index].id.clone());
         let mut nested = tail_mut(&mut hostile.functions[index]).clone();
         let call_path = format!("body.tail{}", ".value".repeat(UNARY_NODES));
@@ -511,6 +568,22 @@ fn validator_oracle_handles_an_exact_depth_512_late_error_with_a_nonempty_scope(
         assert_eq!(depth, 512);
         expression.ownership = OwnershipMode::Borrow;
         let expression = expression.clone();
+        // Full-program acquisition retains its independent narrower contour
+        // refusal; only the private expression oracle admits the detached
+        // candidate at its own unchanged exact boundary.
+        let preflight = HirValidator::new(&hostile).err().unwrap();
+        assert_eq!(preflight.code, "SPX-H006");
+        assert_eq!(
+            preflight.message,
+            "lexical control scan exceeds admitted expression depth"
+        );
+        hostile.functions[index].body = original_body;
+        assert!(!hir::lexical_exit::requires(&hostile.functions[index]).unwrap());
+        assert_eq!(
+            crate::loan_plan::build_plan(&hostile, &hostile.functions[index]).unwrap(),
+            hostile.functions[index].loan_plan,
+            "the full constructor still independently replays the checked source subject"
+        );
         let scope =
             validate_expression_hostile(&hostile, "hostile.depth", &expression, "body.tail");
         assert_eq!(scope["token"], Availability::Moved);
@@ -523,4 +596,44 @@ fn validator_oracle_handles_an_exact_depth_512_late_error_with_a_nonempty_scope(
         .unwrap()
         .join()
         .unwrap();
+}
+
+#[test]
+fn checkpoint_validator_preserves_full_saved_iterative_success_corpus() {
+    let program = program();
+    for function in &program.functions {
+        let execution = FunctionExecutionId::Monomorphic(function.id.clone());
+        let mut scope = validation_scope(function);
+        let mut old_scope = scope.clone();
+        let mut validator = HirValidator::new(&program).unwrap();
+        let mut old_validator = validator.clone();
+        let effects = function.effects.iter().cloned().collect();
+        let old = old_validator.validate_expr_iterative_owned_oracle(
+            &execution,
+            &function.body,
+            &mut old_scope,
+            "body",
+            true,
+            Some(&effects),
+        );
+        let current = validator.validate_expr_iterative(
+            &execution,
+            &function.body,
+            &mut scope,
+            "body",
+            true,
+            Some(&effects),
+        );
+        HirValidator::assert_validation_oracle(
+            &current,
+            &old,
+            &validator,
+            &old_validator,
+            &scope,
+            &old_scope,
+            function.id.as_str(),
+        );
+        HirValidator::assert_scope_auxiliary_oracle(&validator, &old_validator);
+        current.unwrap();
+    }
 }

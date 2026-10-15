@@ -142,21 +142,51 @@ impl Sources {
             // ordinary doctor/CLI surfaces, not a repository-wide call-graph
             // proof that no future command module can activate the provisioner.
             known_ordinary_cli_surfaces: [
-                read(repository, "src/cli_driver.rs"),
-                read(repository, "src/cli_driver/native_test.rs"),
+                [
+                    read(repository, "src/cli_driver.rs"),
+                    read(repository, "src/cli_driver/help_dispatch.rs"),
+                ]
+                .join("\n"),
+                [
+                    read(repository, "src/cli/json_codec.rs"),
+                    read(repository, "src/cli/json_codec/plan.rs"),
+                    read(repository, "src/cli/json_codec/profile.rs"),
+                    read(repository, "src/cli/json_codec/suitability.rs"),
+                ]
+                .join("\n"),
+                [
+                    read(repository, "src/cli_driver/native_test.rs"),
+                    read(repository, "src/cli_driver/native_test/timing.rs"),
+                ]
+                .join("\n"),
                 read(repository, "src/cli_driver/context_dispatch.rs"),
                 read(repository, "src/cli_driver/hot_reload.rs"),
                 read(repository, "src/cli_driver/options.rs"),
                 read(repository, "src/cli_driver/options/tests.rs"),
                 read(repository, "src/cli_driver/report_options.rs"),
                 read(repository, "src/cli_driver/report_options/tests.rs"),
-                read(repository, "src/cli_driver/source_execution.rs"),
+                [
+                    read(repository, "src/cli_driver/source_execution.rs"),
+                    read(
+                        repository,
+                        "src/cli_driver/source_execution/fused_profile.rs",
+                    ),
+                    read(repository, "src/cli/fused_profile.rs"),
+                    read(repository, "src/fused_source.rs"),
+                ]
+                .join("\n"),
                 read(repository, "src/cli_driver/project_scaffold_options.rs"),
                 read(repository, "src/cli_driver/supply_chain.rs"),
                 read(repository, "src/cli_driver/persistence_dispatch.rs"),
                 read(repository, "src/cli/project_runtime.rs"),
-                read(repository, "src/cli/help.rs"),
+                [
+                    read(repository, "src/cli/help.rs"),
+                    read(repository, "src/cli/help/authoring.rs"),
+                    read(repository, "src/cli/help/language_details.rs"),
+                ]
+                .join("\n"),
                 read(repository, "src/cli/help/library.rs"),
+                read(repository, "src/cli/help/reference_links.rs"),
                 read(repository, "src/cli/help/shapes.rs"),
                 read(repository, "src/cli/help/diagnostic_index.rs"),
                 read(repository, "src/doctor.rs"),

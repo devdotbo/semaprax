@@ -92,7 +92,7 @@ pub(super) fn invoke<O: COutput>(
         "spx_status = spx_mut_i64_invoke_v1(spx_ctx, &{}, {staged}, &{result});",
         receiver.code
     ));
-    emitter.line("if (spx_status != SPX_STATUS_SUCCESS) goto spx_epilogue;");
+    emitter.emit_operation_failure_check()?;
     Ok(CValue {
         code: result,
         ty: ResolvedType::I64,

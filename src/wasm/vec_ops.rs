@@ -15,7 +15,67 @@ use crate::hir::{ResolvedProgram, ResolvedType};
 /// would silently change both lanes at once.
 pub(crate) fn is_wasm_owned_vec_type(program: &ResolvedProgram, ty: &ResolvedType) -> bool {
     crate::cleanup::is_owned_bounded_vec_type(ty)
+        || crate::hir::copy_record_collection::is_vec(&program.declarations, ty)
         || crate::hir::owned_record_collection::is_owned_record_vec_type(&program.declarations, ty)
+        || crate::hir::owned_leaf_collection::is_vec(&program.declarations, ty)
+}
+
+/// Select the additive private boundary for its operations and for owned
+/// iterator carriers whose cleanup uses its drop import. The frozen two-Bytes
+/// record keeps its old imports unless a new operation is present.
+pub(crate) fn program_uses_owned_leaf_vec(program: &ResolvedProgram) -> bool {
+    let private_iterator = |ty: &ResolvedType| {
+        crate::hir::collection_outcome::owned_admitted(&program.declarations, ty)
+        || crate::iterator_ops::element(ty).is_some_and(|element| {
+            crate::hir::owned_leaf_collection::layout(&program.declarations, element).is_some()
+                && !crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
+                    &program.declarations,
+                    element,
+                )
+        })
+    };
+    crate::hir::collection_outcome::nested::program_requires_profile(program)
+        || crate::hir::owned_collection_record::program_requires_profile(program)
+        || program.functions.iter().chain(program.function_instances.iter().map(|i| &i.function))
+        .any(|function| private_iterator(&function.return_type)
+            || function.params.iter().any(|param| private_iterator(&param.ty))
+            || std::iter::once(&function.body).chain(&function.requires).chain(&function.ensures)
+            .any(|root| {
+                let mut pending = vec![root];
+                while let Some(expr) = pending.pop() {
+                    if private_iterator(&expr.ty)
+                        || matches!(
+                            expr.kind,
+                            crate::hir::ResolvedExprKind::VecFieldRead { .. }
+                                | crate::hir::ResolvedExprKind::RowLoan { .. }
+                        )
+                    {
+                        return true;
+                    }
+                    if let crate::hir::ResolvedExprKind::Call { callee, type_arguments, .. } = &expr.kind {
+                        if let [element] = type_arguments.as_slice() {
+                            if crate::hir::owned_leaf_collection::layout(&program.declarations, element).is_some()
+                                && crate::vec_ops::by_id(callee.as_str()).is_some_and(|op|
+                                    op.owned_leaf_only() || matches!(op, crate::vec_ops::VecOp::SortBy | crate::vec_ops::VecOp::UniqueBy)
+                                        || !crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
+                                            &program.declarations, element))
+                            {
+                                return true;
+                            }
+                            if crate::iterator_ops::by_id(callee.as_str()).is_some()
+                                && crate::hir::owned_leaf_collection::layout(
+                                    &program.declarations, element).is_some()
+                                && !crate::hir::owned_record_collection::is_admitted_owned_record_collection_element(
+                                    &program.declarations, element)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                    crate::hir::push_resolved_expression_children_in_authored_order(expr, &mut pending);
+                }
+                false
+            }))
 }
 
 /// The host element tag the SPX-AI-019 owned-record element carries.
@@ -42,44 +102,47 @@ pub(crate) const RECORD_ELEMENT_MAX_CAPACITY: u64 = crate::vec_ops::MAX_OWNED_PA
 const _: () = assert!(RECORD_ELEMENT_MAX_CAPACITY == 4_096);
 
 pub(crate) fn program_uses_vec(program: &ResolvedProgram) -> bool {
-    program
-        .functions
-        .iter()
-        .chain(
-            program
-                .function_instances
-                .iter()
-                .map(|instance| &instance.function),
-        )
-        .any(|function| {
-            is_wasm_owned_vec_type(program, &function.return_type)
-                || crate::iterator_ops::is_iter(&function.return_type)
-                || crate::iterator_ops::is_step(&function.return_type)
-                || function.params.iter().any(|param| {
-                    is_wasm_owned_vec_type(program, &param.ty)
-                        || crate::iterator_ops::is_iter(&param.ty)
-                        || crate::iterator_ops::is_step(&param.ty)
-                })
-                || std::iter::once(&function.body)
-                    .chain(function.requires.iter())
-                    .chain(function.ensures.iter())
-                    .any(|expression| {
-                        if crate::iterator_ops::resolved_expression_uses_iterator(expression) {
-                            return true;
-                        }
-                        let mut found = false;
-                        crate::hir::visit_resolved_calls(
-                            expression,
-                            &mut |callee, instance, type_arguments| {
-                                found |= instance.is_none()
-                                    && type_arguments.len() == 1
-                                    && (crate::vec_ops::by_id(callee.as_str()).is_some()
-                                        || crate::iterator_ops::by_id(callee.as_str()).is_some());
-                            },
-                        );
-                        found
+    program_uses_owned_leaf_vec(program)
+        || crate::hir::copy_record_collection::program_uses(program)
+        || program
+            .functions
+            .iter()
+            .chain(
+                program
+                    .function_instances
+                    .iter()
+                    .map(|instance| &instance.function),
+            )
+            .any(|function| {
+                is_wasm_owned_vec_type(program, &function.return_type)
+                    || crate::iterator_ops::is_iter(&function.return_type)
+                    || crate::iterator_ops::is_step(&function.return_type)
+                    || function.params.iter().any(|param| {
+                        is_wasm_owned_vec_type(program, &param.ty)
+                            || crate::iterator_ops::is_iter(&param.ty)
+                            || crate::iterator_ops::is_step(&param.ty)
                     })
-        })
+                    || std::iter::once(&function.body)
+                        .chain(function.requires.iter())
+                        .chain(function.ensures.iter())
+                        .any(|expression| {
+                            if crate::iterator_ops::resolved_expression_uses_iterator(expression) {
+                                return true;
+                            }
+                            let mut found = false;
+                            crate::hir::visit_resolved_calls(
+                                expression,
+                                &mut |callee, instance, type_arguments| {
+                                    found |= instance.is_none()
+                                        && type_arguments.len() == 1
+                                        && (crate::vec_ops::by_id(callee.as_str()).is_some()
+                                            || crate::iterator_ops::by_id(callee.as_str())
+                                                .is_some());
+                                },
+                            );
+                            found
+                        })
+            })
 }
 
 /// `true` when the program names the SPX-AI-019 owned-record element profile,
@@ -92,37 +155,38 @@ pub(crate) fn program_uses_record_vec(program: &ResolvedProgram) -> bool {
 }
 
 pub(crate) fn program_uses_extended_vec(program: &ResolvedProgram) -> bool {
-    program
-        .functions
-        .iter()
-        .chain(
-            program
-                .function_instances
-                .iter()
-                .map(|instance| &instance.function),
-        )
-        .any(|function| {
-            std::iter::once(&function.body)
-                .chain(function.requires.iter())
-                .chain(function.ensures.iter())
-                .any(|expression| {
-                    let mut found = false;
-                    crate::hir::visit_resolved_calls(
-                        expression,
-                        &mut |callee, instance, type_arguments| {
-                            found |= instance.is_none()
-                                && type_arguments.len() == 1
-                                && matches!(
-                                    crate::vec_ops::by_id(callee.as_str()),
-                                    Some(
-                                        crate::vec_ops::VecOp::ReserveExact
-                                            | crate::vec_ops::VecOp::Set
-                                            | crate::vec_ops::VecOp::Clear
-                                    )
-                                );
-                        },
-                    );
-                    found
-                })
-        })
+    crate::hir::copy_record_collection::program_uses(program)
+        || program
+            .functions
+            .iter()
+            .chain(
+                program
+                    .function_instances
+                    .iter()
+                    .map(|instance| &instance.function),
+            )
+            .any(|function| {
+                std::iter::once(&function.body)
+                    .chain(function.requires.iter())
+                    .chain(function.ensures.iter())
+                    .any(|expression| {
+                        let mut found = false;
+                        crate::hir::visit_resolved_calls(
+                            expression,
+                            &mut |callee, instance, type_arguments| {
+                                found |= instance.is_none()
+                                    && type_arguments.len() == 1
+                                    && matches!(
+                                        crate::vec_ops::by_id(callee.as_str()),
+                                        Some(
+                                            crate::vec_ops::VecOp::ReserveExact
+                                                | crate::vec_ops::VecOp::Set
+                                                | crate::vec_ops::VecOp::Clear
+                                        )
+                                    );
+                            },
+                        );
+                        found
+                    })
+            })
 }

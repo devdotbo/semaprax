@@ -109,7 +109,7 @@ fn state_weak(state: &CompletedOwnedAgentStateV2) -> Vec<Weak<[u8]>> {
             let Value::Bytes(b) = &r.fields[&DeclarationId::new(*id)] else {
                 panic!()
             };
-            Arc::downgrade(&b.bytes)
+            Arc::downgrade(b.bytes.ordinary())
         })
         .collect()
 }
@@ -118,7 +118,7 @@ fn seal_weak(staged: &StagedOwnedAuthorizeV2) -> Option<Weak<[u8]>> {
         panic!()
     };
     match v.fields.get(staged.plan.seal())? {
-        Value::Bytes(b) => Some(Arc::downgrade(&b.bytes)),
+        Value::Bytes(b) => Some(Arc::downgrade(b.bytes.ordinary())),
         _ => panic!(),
     }
 }
@@ -654,7 +654,7 @@ fn owned_frame_v2_authorize_live_variant_witnesses_and_exclusive_proof_are_actua
         );
         drop(alias);
         if let Some(Value::Bytes(seal)) = variant.fields.get(p.seal()) {
-            let alias = Arc::clone(&seal.bytes);
+            let alias = Arc::clone(seal.bytes.ordinary());
             assert!(
                 !exclusive_decision(decision),
                 "seal backing alias is refused"

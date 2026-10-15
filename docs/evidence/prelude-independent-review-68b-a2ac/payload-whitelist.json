@@ -1,0 +1,103 @@
+{
+  "commits": [
+    "68b95366ba9420e189fce45f69b7d4d542aa6183",
+    "a2ac6673bc6b7d4f9e8ecc7d861e58c44b5e3966"
+  ],
+  "source_sharing_authorized": true,
+  "tools": false,
+  "files": [
+    {
+      "source": "src/prelude/base_schema.rs",
+      "first_line": 1,
+      "last_line": 132,
+      "selected_bytes": 3948,
+      "selected_sha256": "13a596c3469dc07ab192ca0c6d169bb5c5bfc01b636fca69aba4dabad01db338"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/prelude_forecast.rs",
+      "first_line": 1,
+      "last_line": 80,
+      "selected_bytes": 3225,
+      "selected_sha256": "9c1b5e17bb19fe44d33a043c157b853168d2680e02eb4dac79c3e3ba2fdd09f2"
+    },
+    {
+      "source": "docs/WORKSPACE-GRAPH-PRELUDE-FORECAST-V1.md",
+      "first_line": 1,
+      "last_line": 87,
+      "selected_bytes": 5125,
+      "selected_sha256": "4a4df32fcbe3149b84238f36b439abe31c40b668511e1352de3caa3c630b84eb"
+    },
+    {
+      "source": "src/prelude/base_original.rs",
+      "first_line": 1,
+      "last_line": 51,
+      "selected_bytes": 1596,
+      "selected_sha256": "d20bb1f6e24550dcc975b9b0a2d725a3210055d67eb36b462954501f95802caa"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/prelude_forecast_original.rs",
+      "first_line": 1,
+      "last_line": 522,
+      "selected_bytes": 21032,
+      "selected_sha256": "78952cede1ba2ad17dddc43fb22a3e3c423154755721f34f3e58c6bcad62f187"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/held_projection.rs",
+      "first_line": 200,
+      "last_line": 355,
+      "selected_bytes": 6481,
+      "selected_sha256": "7ac4d2c50dc256bf5020683dbbe2afceec78ed377f2b183be96b31d22234b845"
+    },
+    {
+      "source": "src/prelude.rs",
+      "first_line": 95,
+      "last_line": 150,
+      "selected_bytes": 1892,
+      "selected_sha256": "a63e273beb1b83b45bcc19191fd7650cc8f66ba39a1628de74e5fe98723d1acd"
+    },
+    {
+      "source": "src/prelude.rs",
+      "first_line": 811,
+      "last_line": 855,
+      "selected_bytes": 1064,
+      "selected_sha256": "079839a6ca0532217d85324f00a6c511b0e6292beca17959e86d4c5445e08f1b"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/cost.rs",
+      "first_line": 300,
+      "last_line": 470,
+      "selected_bytes": 6039,
+      "selected_sha256": "4c7e29954dfb62c854c402f4007660e95a21b85f5fc8f610f2a8b636b6b494b2"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/declaration_cost.rs",
+      "first_line": 35,
+      "last_line": 150,
+      "selected_bytes": 4019,
+      "selected_sha256": "a364df88425847795ef851ffd34bd247d17fd0ff4610fbbae9d790a3b0ec1410"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/cost.rs",
+      "first_line": 133,
+      "last_line": 170,
+      "selected_bytes": 1342,
+      "selected_sha256": "860b84a77b55f209a7b30211eb05dfe9ce3fbc3b65c7b0195875e0a95016f84f"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection.rs",
+      "first_line": 430,
+      "last_line": 480,
+      "selected_bytes": 1725,
+      "selected_sha256": "ca4472fc2dd86110cd380a5c43e7a7ac0ea092666204b15e762c6e2ee6bc9e98"
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/identity_slots.rs",
+      "first_line": 28,
+      "last_line": 85,
+      "selected_bytes": 2024,
+      "selected_sha256": "041cb44fec6385b920734e0df70594bb1587e0161cbd84540fa79d6c36a414c8"
+    }
+  ],
+  "payload_bytes": 61912,
+  "payload_sha256": "7ba8e167dbf1e37d3f77e8880cb18ac8667b1cbdc722585c0e84b67b4d566189"
+}

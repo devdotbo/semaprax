@@ -1,17 +1,15 @@
-use std::path::Path;
-
+use super::*;
 use crate::cleanup_plan::{CleanupBlock, CleanupEdge};
 use crate::{hir, parse};
-
-use super::*;
-
+use std::path::Path;
 #[path = "replay_tests/block_work.rs"]
 mod block_work;
 #[path = "replay_tests/factored.rs"]
 mod factored;
+#[path = "replay_tests/lexical_boundary.rs"]
+mod lexical_boundary;
 #[path = "replay_tests/transition_mutations.rs"]
 mod transition_mutations;
-
 const SOURCE: &str = r#"module test.replay_paths;
 
 @id("token.type")
@@ -930,7 +928,10 @@ fn replay_preflight_rejects_every_invalid_cfg_target_and_cycles_without_panickin
             ExitContinuation::Continue(edge) => Some(edge),
             ExitContinuation::CommitResult { .. }
             | ExitContinuation::ReturnFailure { .. }
-            | ExitContinuation::ReturnUnit => None,
+            | ExitContinuation::ReturnUnit
+            | ExitContinuation::LoopLatch { .. }
+            | ExitContinuation::LoopBreak { .. }
+            | ExitContinuation::FunctionReturn { .. } => None,
         })
         .expect("fixture must contain a continuing exit");
     *continuation = EdgeId(u32::MAX);
@@ -960,8 +961,7 @@ fn replay_budget_exhaustion_is_a_deterministic_diagnostic() {
     let function = function(&program, "app.main");
     let mut budget = ReplayBudget {
         remaining: 1,
-        skeleton_remaining: 0,
-        merge_paths: false,
+        ..ReplayBudget::new()
     };
     let diagnostic = budget.charge(&function, 2, "hostile test").unwrap_err();
     assert_eq!(diagnostic.code, "SPX-H006");
@@ -989,8 +989,7 @@ fn assert_program_skeleton_authority(program: &ResolvedProgram) -> usize {
     reset_skeleton_materializations();
     let mut exact = ReplayBudget {
         remaining: independently_summed,
-        skeleton_remaining: 0,
-        merge_paths: false,
+        ..ReplayBudget::new()
     };
     assert_eq!(
         reserve_program_skeleton_work(program, functions(), &mut exact).unwrap(),
@@ -1003,8 +1002,7 @@ fn assert_program_skeleton_authority(program: &ResolvedProgram) -> usize {
     reset_skeleton_materializations();
     let mut one_less = ReplayBudget {
         remaining: independently_summed - 1,
-        skeleton_remaining: 0,
-        merge_paths: false,
+        ..ReplayBudget::new()
     };
     let diagnostic =
         reserve_program_skeleton_work(program, functions(), &mut one_less).unwrap_err();
@@ -1018,7 +1016,7 @@ fn assert_program_skeleton_authority(program: &ResolvedProgram) -> usize {
     let mut actual = ReplayBudget::new();
     let derived = reserve_program_skeleton_work(program, functions(), &mut actual).unwrap();
     for function in functions() {
-        validate_structure_with_budget(program, function, &mut actual).unwrap();
+        validate_structure_with_budget(program, function, &mut actual, None).unwrap();
     }
     let charged = derived - actual.skeleton_remaining;
     assert!(charged <= derived);
@@ -1131,7 +1129,7 @@ fn wide_resource_update_untouched_fields_are_inside_charge_first_authority() {
 
     reset_skeleton_materializations();
     let mut budget = ReplayBudget::with_skeleton_limit(derived);
-    validate_structure_with_budget(&program, function, &mut budget).unwrap();
+    validate_structure_with_budget(&program, function, &mut budget, None).unwrap();
     let charged = derived - budget.skeleton_remaining;
     assert!(charged <= derived);
     assert!(skeleton_materializations() <= charged);

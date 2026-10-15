@@ -94,6 +94,9 @@ pub(in crate::implementation) fn visit_calls(
     while let Some((expression, next)) = frames.pop() {
         if next == 0 {
             match &expression.kind {
+                ResolvedExprKind::RowLoan { .. } => {
+                    return Err(b107("scalar value signature required"))
+                }
                 ResolvedExprKind::Call { callee, .. } => {
                     functions.insert(callee.clone());
                 }
@@ -152,6 +155,10 @@ pub(in crate::implementation) fn resolved_expression_child<'a>(
             };
             advance(index.checked_add(1)?, index, child)
         }
+        ResolvedExprKind::LexicalExit { value, .. } => {
+            (index == 0).then_some(())?;
+            advance(1, 0, value.as_deref()?)
+        }
         ResolvedExprKind::Invoke { callable, args } => {
             let child = if index == 0 {
                 callable.as_ref()
@@ -161,6 +168,11 @@ pub(in crate::implementation) fn resolved_expression_child<'a>(
             advance(index.checked_add(1)?, index, child)
         }
         ResolvedExprKind::Call { args, .. } => {
+            advance(index.checked_add(1)?, index, args.get(index)?)
+        }
+        ResolvedExprKind::LiteralFormat { args, .. }
+        | ResolvedExprKind::VecFieldRead { args, .. }
+        | ResolvedExprKind::RowLoan { args, .. } => {
             advance(index.checked_add(1)?, index, args.get(index)?)
         }
         ResolvedExprKind::NativeRustImportCall(call) => {
@@ -189,12 +201,19 @@ pub(in crate::implementation) fn resolved_expression_child<'a>(
             let child = [left.as_ref(), right.as_ref()].get(index).copied()?;
             advance(index.checked_add(1)?, index, child)
         }
-        ResolvedExprKind::Block { statements, tail } => {
+        ResolvedExprKind::Block { statements, tail }
+        | ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             let has_while = complex
                 || (index == 0
-                    && statements
-                        .iter()
-                        .any(|statement| matches!(statement, ResolvedStatement::While { .. })));
+                    && statements.iter().any(|statement| {
+                        matches!(
+                            statement,
+                            ResolvedStatement::While { .. }
+                                | ResolvedStatement::LexicalWhile { .. }
+                        )
+                    }));
             if has_while {
                 if !complex {
                     *cursor = RESOLVED_COMPLEX_CURSOR;
@@ -303,6 +322,7 @@ pub(in crate::implementation) fn resolved_expression_child<'a>(
         | ResolvedExprKind::Float64(_)
         | ResolvedExprKind::Bool(_)
         | ResolvedExprKind::String(_)
+        | ResolvedExprKind::BorrowedUtf8Literal(_)
         | ResolvedExprKind::Place(_)
         | ResolvedExprKind::BorrowPlace { .. } => None,
     }
@@ -330,6 +350,9 @@ pub(in crate::implementation) fn expression_call_site_census(
         frame_len -= 1;
         if next == 0 {
             match &expression.kind {
+                ResolvedExprKind::RowLoan { .. } => {
+                    return Err(b107("scalar value signature required"))
+                }
                 ResolvedExprKind::Call { callee, .. } => {
                     census.function_sites = census
                         .function_sites

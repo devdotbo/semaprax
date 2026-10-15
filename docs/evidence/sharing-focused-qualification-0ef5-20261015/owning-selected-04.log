@@ -1,0 +1,15 @@
+
+running 1 test
+test hir::identity_resolution::nominal_tests::nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal ... 
+thread 'hir::identity_resolution::nominal_tests::nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal' (2685773) panicked at src/hir/identity_resolution/nominal_tests.rs:230:13:
+actual backing=Metrics { allocations: 280, reallocations: 35, allocated: 27765, freed: 12085, live: 15680, highwater: 15800, invalid: false }; paid=18685
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    hir::identity_resolution::nominal_tests::nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8748 filtered out; finished in 0.05s
+

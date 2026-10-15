@@ -1,0 +1,28 @@
+{
+  "schema": "semaprax.source-only-provenance.v1",
+  "issue": "https://github.com/wavect/semaprax/issues/813",
+  "base_head": "fe4e742a773a7e64bc2e1affccc85a545f39116f",
+  "status": "unexecuted; static source comparisons, module registrations, budgets and include resolution only",
+  "source_hashes": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "daf6c198625949e542904e15e578cbd7c4f494769a5b0ed37ed021cc0a77b49a",
+    "src/cleanup_plan/replay.rs": "470e45827fd36635d7f39380ac86f430617ada2dbfda801fd8c2a460f0ab1bf0",
+    "src/cleanup_plan/replay/expression_facts.rs": "82c15975078a1e841c342440723a2e75ec2a0bfee01366ea8f43c49af0b6dec1",
+    "src/cleanup_plan/replay/expression_facts/capacity.rs": "ee3bbd81a54e829a6859f5636ed272bc8a9f28177f4f8f4cf99b590243c967bd",
+    "src/cleanup_plan/replay/expression_facts/tests/payloads.rs": "b91cf8efbacb0c394458b8f3dcbecdc8b78a7d24d24688cc1bd5c88762ae138e",
+    "src/cleanup_plan/replay/lexical_replay.rs": "20e1f53661791728da24801f90ff31228173d5f5d4125a8dac541dc2e8c80981",
+    "src/cleanup_plan/replay/scalar_replay.rs": "48603f16f8fec4d6290a20cdc5729f0e8372c9064ec5d500f002760595056ef6",
+    "src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs": "1fff759bb8c4fbf58e3ab41d81c3033e2464e09a362a7ece926b98784aef75a8",
+    "src/cleanup_plan/replay/structural_control/blocks.rs": "04b3b312866bde5572832a8a753cd963edcef45ec6f7dbcc5c2023bbba40928e",
+    "tests/hir_module_boundaries.rs": "4eb4a53ed30ddb137a8a3e23f051c7e9506b89b99f3dbebe92245bc98ac1e151",
+    "docs/evidence/expression-fact-arena/original_capacity.txt": "f95245c44f2ec9ba13d288f58ceac361a3b3784d752fab16d4595de1b9b347ba",
+    "docs/evidence/expression-fact-arena/original_facts.txt": "ff2ce0e84fe159c585901635fe49d356ac1342ccfeecd0ebe20ffb815d98e398",
+    "docs/evidence/expression-fact-arena/original_receivers.txt": "6325749010bdbfec9b7172f1bed9e3aff18b41d2ad5236b099a67a855e0406c6",
+    "src/cleanup_plan/replay/expression_facts/arena.rs": "94e056acbccb322afa35d42ba81af4672725b036bb4cf730c9495a8bbbb44d17",
+    "src/cleanup_plan/replay/expression_facts/arena/producer.rs": "8186fb1a71dff699b07640e6f545b6a725ec1803ce6d7c83bad70e94c8b95441",
+    "src/cleanup_plan/replay/expression_facts/receiving.rs": "4e35f87c1f78006a0f36583a8be6b75488a98856be32ecefdbd33e3526064e23",
+    "src/cleanup_plan/replay/expression_facts/saved.rs": "0aef16929be73f5fe43438565c98a17f00cf52cd4169a4bc33cc99e6f184650a",
+    "src/cleanup_plan/replay/expression_facts/tests/arena.rs": "2885db6402ef58382423cde7bb1ad3dfd0706ac7c6ba76146d34d9765b722609",
+    "src/cleanup_plan/replay/expression_facts/tests/payloads/arena.rs": "3b1e27a8eedd06339788aca28c75b4d9699fe268e0f51a450a574e3028e28623",
+    "src/cleanup_plan/replay/selected_entry/tests/fact_errors/arena.rs": "6de451ceaa7d875cb553b94fa290f3f5c6d52e2b7e6b7e4d47a7803db9335e7f"
+  }
+}

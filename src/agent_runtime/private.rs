@@ -23,6 +23,21 @@ use execution::run_bounded;
 #[cfg(test)]
 pub(super) use replay::{replay_evidence, replay_trace};
 
+#[cfg(test)]
+pub(super) fn deadline_for_host_erasure_test(
+    profile: &Profile,
+    host: &dyn AgentHost,
+    cancellation: &AgentCancellation,
+    policy_epoch: u64,
+) -> Result<u64, Termination> {
+    deadline::remaining_deadline_ms(profile, host, cancellation, policy_epoch)
+}
+
+#[cfg(test)]
+pub(super) fn termination_for_host_erasure_test(diagnostic: Diagnostic) -> Termination {
+    execution::termination_from_diagnostic(diagnostic)
+}
+
 #[derive(Clone, Default, Eq, PartialEq)]
 struct EvidenceBudget {
     used_models: u64,
@@ -248,9 +263,12 @@ impl<H: AgentHost> Agent<H> {
                 .map_err(|_| g208("builder_bytes", self.profile.limits.max_builder_bytes))?;
             let (run, child_overflowed, child_used) = with_limit_usage(remaining, || {
                 let admitted_policy_epoch = self.host.policy_epoch();
+                // Erase only the borrowed private execution boundary; the
+                // public Agent still owns its caller's concrete host.
+                let host: &mut dyn AgentHost = &mut self.host;
                 let state = run_bounded(
                     &self.profile,
-                    &mut self.host,
+                    host,
                     &self.cancellation,
                     admitted_policy_epoch,
                     task,

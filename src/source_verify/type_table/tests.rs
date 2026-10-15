@@ -5,6 +5,7 @@
 //! half-written source (inheritance cycles, recursive records, oversized
 //! aggregates) without hanging or reporting an admitted shape.
 
+use crate::ast::Program;
 use std::path::Path;
 
 use super::*;

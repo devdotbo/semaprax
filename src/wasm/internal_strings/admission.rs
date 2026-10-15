@@ -76,7 +76,9 @@ fn prepare_profile(
                 parameter.ownership != OwnershipMode::Value || !public_scalar(&parameter.ty)
             })
         {
-            return Err(error("standalone String export requires an explicit identity and bounded value i64/bool signature"));
+            return Err(error(
+                "standalone String export requires an explicit identity and bounded value i64/bool signature",
+            ));
         }
         exports.push(Export {
             id: id.clone(),
@@ -104,6 +106,13 @@ fn prepare_profile(
             .ok_or_else(|| error("standalone String callee is absent"))?;
         pending.extend(children.iter().filter(|id| !closure.contains(*id)).cloned());
     }
+    let literal_format = program.functions.iter().any(|function| {
+        closure.contains(&function.id)
+            && std::iter::once(&function.body)
+                .chain(&function.requires)
+                .chain(&function.ensures)
+                .any(crate::literal_format::expression_uses)
+    });
     let mut nodes = 0usize;
     let mut literals = BTreeSet::new();
     let mut literal_bytes = 0usize;
@@ -130,6 +139,7 @@ fn prepare_profile(
                 copy_variants,
                 toolkit,
                 general_guards,
+                literal_format,
             ) || general_guards
                 && crate::variant_guards::copy_variant(
                     &program.declarations,
@@ -176,6 +186,7 @@ fn prepare_profile(
                         copy_variants,
                         toolkit,
                         general_guards,
+                        literal_format,
                     ) || general_guards
                         && crate::variant_guards::copy_variant(
                             &program.declarations,
@@ -201,14 +212,25 @@ fn prepare_profile(
                 .ok_or_else(|| {
                     error("standalone String expression inventory exceeds 65536 nodes")
                 })?;
+            let lexical_bottom = expression.ty == ResolvedType::Never
+                && function.cleanup_plan.lexical_control.is_some()
+                && matches!(
+                    expression.kind,
+                    ResolvedExprKind::LexicalExit { .. }
+                        | ResolvedExprKind::Block { .. }
+                        | ResolvedExprKind::If { .. }
+                        | ResolvedExprKind::Match { .. }
+                );
             if depth > 256
-                || !expression_type(
-                    program,
-                    &expression.ty,
-                    copy_variants,
-                    toolkit,
-                    general_guards,
-                )
+                || !(lexical_bottom
+                    || expression_type(
+                        program,
+                        &expression.ty,
+                        copy_variants,
+                        toolkit,
+                        general_guards,
+                        literal_format,
+                    ))
             {
                 return Err(error(
                     "standalone String expression depth or type is outside the profile",
@@ -227,9 +249,13 @@ fn prepare_profile(
                 && !general_guards
                 && matches!(&expression.kind, ResolvedExprKind::Match {scrutinee,arms,..} if crate::variant_guards::copy_variant(&program.declarations,&scrutinee.ty) && arms.iter().any(|arm| arm.guard.as_ref().is_some_and(|guard| !crate::variant_guards::scalar_guard_shape(guard) || !matches!(arm.pattern,hir::ResolvedMatchPattern::Variant {..}))))
             {
-                return Err(error("general Copy variant guards require the explicit general-loop-match-v1 profile"));
+                return Err(error(
+                    "general Copy variant guards require the explicit general-loop-match-v1 profile",
+                ));
             }
             match &expression.kind {
+                ResolvedExprKind::LexicalExit { kind, target, .. }
+                    if function.cleanup_plan.lexical_exit(&expression.id).is_some_and(|(certificate, _)| certificate.kind == *kind && certificate.target == *target) => {}
                 ResolvedExprKind::Float64(_) | ResolvedExprKind::Float32(_) | ResolvedExprKind::Int32(_) if toolkit || general_guards => {}
                 ResolvedExprKind::Int(_)
                 | ResolvedExprKind::Bool(_)
@@ -237,9 +263,9 @@ fn prepare_profile(
                 | ResolvedExprKind::Unary { .. }
                 | ResolvedExprKind::Binary { .. }
                 | ResolvedExprKind::If { .. } => {}
-                ResolvedExprKind::Uint8(_)
-                | ResolvedExprKind::Usize(_)
-                | ResolvedExprKind::ArrayU8(_)
+                ResolvedExprKind::Uint8(_) | ResolvedExprKind::Usize(_)
+                    if copy_variants || literal_format => {}
+                ResolvedExprKind::ArrayU8(_)
                 | ResolvedExprKind::RepeatArrayU8 { .. }
                     if copy_variants => {}
                 ResolvedExprKind::ConstructRecord { .. } if toolkit && (hir::is_admitted_copy_aggregate_variant_field(&program.declarations, &expression.ty) || hir::owned_text_record::admitted(&expression.ty, &program.declarations)) => {}
@@ -259,6 +285,10 @@ fn prepare_profile(
                         ) => {}
                 ResolvedExprKind::BorrowPlace { operation, place }
                     if copy_variants && operation.as_str() == crate::byte_ops::ARRAY_AS_SLICE_ID && place.projections.is_empty() => {}
+                ResolvedExprKind::VecConstructor { .. } => return Err(error("Vec constructors are outside the standalone String arena profile")),
+                    ResolvedExprKind::BorrowedUtf8Literal(_) => {
+                    return Err(error("static borrowed UTF-8 literals are outside the standalone String arena profile"));
+                }
                 ResolvedExprKind::String(value) => {
                     // The selected profile owns the fixed literal segment's
                     // admission. Match the emitter's exact UTF-8 deduplication
@@ -273,6 +303,7 @@ fn prepare_profile(
                     }
                 }
                 ResolvedExprKind::Place(place) if place.projections.is_empty() || toolkit && place.projections.iter().all(|projection| matches!(projection, hir::PlaceProjection::Field(_))) => {}
+                ResolvedExprKind::LiteralFormat { .. } if literal_format => {}
                 ResolvedExprKind::Call { callee, instance, type_arguments, args }
                     if toolkit && instance.is_none()
                         && crate::map_ops::by_id(callee.as_str()).and_then(|op| op.resolved_signature(type_arguments))
@@ -286,11 +317,11 @@ fn prepare_profile(
                 } if instance.is_none()
                     && type_arguments.is_empty()
                     && (closure.contains(callee)
-                        || crate::string_ops::by_id(callee.as_str()).is_some()
+                        || crate::string_ops::by_id(callee.as_str()).is_some_and(|op| op != crate::string_ops::StringOp::FromUtf8)
                         || copy_variants && matches!(crate::byte_ops::by_id(callee.as_str()), Some(crate::byte_ops::ByteOp::Len | crate::byte_ops::ByteOp::Get))) => {}
                 ResolvedExprKind::Block { statements, .. } => {
                     if !toolkit && statements.iter().any(|statement| matches!(statement,
-                        ResolvedStatement::While { condition, .. } if condition_allocates_string(condition))) {
+                        ResolvedStatement::While { condition, .. } | ResolvedStatement::LexicalWhile { condition, .. } if condition_allocates_string(condition))) {
                         return Err(error("String condition temporaries require text-toolkit-v1"));
                     }
                     if statements.iter().any(|statement| {
@@ -474,6 +505,9 @@ fn admits_owned_string_byte_view(
                         provenance.root == place.root
                             && provenance.projected_type == ResolvedType::Str
                     }
+                    crate::hir::ByteSliceRootKind::OwnedVectorField
+                    | crate::hir::ByteSliceRootKind::OwnedVectorStringSlot
+                    | crate::hir::ByteSliceRootKind::SourceExprStatic => false,
                     _ => false,
                 }
         })
@@ -495,6 +529,7 @@ fn signature_type(
     copy_variants: bool,
     toolkit: bool,
     general_guards: bool,
+    literal_format: bool,
 ) -> bool {
     internal_type(ty)
         || general_guards && hir::is_scalar_resolved_type(ty)
@@ -506,7 +541,7 @@ fn signature_type(
                 || crate::map_ops::is_collection(ty)
                 || hir::owned_text_record::admitted(ty, &program.declarations))
         || toolkit && matches!(ty, ResolvedType::F64 | ResolvedType::Str)
-        || copy_variants && matches!(ty, ResolvedType::U8 | ResolvedType::Usize)
+        || (copy_variants || literal_format) && matches!(ty, ResolvedType::U8 | ResolvedType::Usize)
 }
 
 fn expression_type(
@@ -515,9 +550,16 @@ fn expression_type(
     copy_variants: bool,
     toolkit: bool,
     general_guards: bool,
+    literal_format: bool,
 ) -> bool {
-    signature_type(program, ty, copy_variants, toolkit, general_guards)
-        || toolkit && hir::is_admitted_owned_string_variant(&program.declarations, ty)
+    signature_type(
+        program,
+        ty,
+        copy_variants,
+        toolkit,
+        general_guards,
+        literal_format,
+    ) || toolkit && hir::is_admitted_owned_string_variant(&program.declarations, ty)
         || copy_variants
             && (matches!(ty, ResolvedType::ArrayU8(_) | ResolvedType::SliceU8)
                 || crate::variant_guards::copy_variant(&program.declarations, ty))
@@ -529,7 +571,9 @@ fn condition_allocates_string(condition: &hir::ResolvedExpr) -> bool {
         if expression.ty == ResolvedType::String
             && matches!(
                 expression.kind,
-                ResolvedExprKind::String(_) | ResolvedExprKind::Call { .. }
+                ResolvedExprKind::String(_)
+                    | ResolvedExprKind::Call { .. }
+                    | ResolvedExprKind::LiteralFormat { .. }
             )
         {
             return true;

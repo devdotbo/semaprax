@@ -518,6 +518,10 @@ fn owned_bounded_byte_buffer_executes_and_reenters_without_memory_copy() {
 
     for (label, source, expectation) in [
         ("success", SUCCESS, RETURNS_SEVEN),
+        ("bounded-zero", "module bounded;@id(\"app.main\") fn main()->i64{let n=0usize;let bytes=bytes_zeroed_bounded(n,3usize);if byte_len(bytes_as_slice(bytes))==0usize{7}else{0}}", RETURNS_SEVEN),
+        ("bounded-full", "module bounded;@id(\"app.main\") fn main()->i64{let n=3usize;let bytes=bytes_zeroed_bounded(n,3usize);if byte_len(bytes_as_slice(bytes))==3usize{7}else{0}}", RETURNS_SEVEN),
+        ("bounded-plus-one", "module bounded;@id(\"app.main\") fn main()->i64{let kept=bytes_zeroed(2usize);let n=4usize;let bytes=bytes_zeroed_bounded(n,3usize);i64_from_usize(byte_len(bytes_as_slice(kept))+byte_len(bytes_as_slice(bytes)))}", "let failed=false;try{instance.exports.semaprax_main();}catch(error){const status=semanticStatus(error);if(status===null||status.domain_id!=='semaprax.byte-buffer.v1'||status.code!==2)throw error;failed=true;}if(!failed)throw Error('missing bounded capacity failure');"),
+
         ("computed", COMPUTED, RETURNS_SEVEN),
         ("computed-past-end", COMPUTED_OUT_OF_RANGE, BOUND_FAILURE),
         ("loop-fill", LOOP_FILL, RETURNS_SEVEN),

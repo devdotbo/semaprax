@@ -1,9 +1,9 @@
 //! Parser fix hints for habits carried over from other languages.
 //!
 //! Each case is the first thing a newcomer or a coding agent tends to write.
-//! The grammar already rejected every one of them; these regressions pin the
-//! stable code the rejection keeps, the fix the diagnostic now carries, and
-//! the invariant that no hint admits new syntax.
+//! Rejected habits retain stable diagnostics and fixes. Lexical exits are
+//! explicitly admitted now; their original inputs remain executable positive
+//! controls rather than obsolete grammar refusals.
 
 use std::path::Path;
 
@@ -37,28 +37,66 @@ fn missing_module_header_shows_the_first_line() {
     );
 }
 
+fn admitted_lexical(source: &str, expected: &str, stem: &str) {
+    let program = semaprax::check(source, "habit.spx").unwrap();
+    let canonical = semaprax::format::canonical(&program);
+    let roundtrip = semaprax::check(&canonical, "habit.spx").unwrap();
+    assert_eq!(canonical, semaprax::format::canonical(&roundtrip));
+    assert_eq!(
+        semaprax::graph::to_json(&program).unwrap(),
+        semaprax::graph::to_json(&roundtrip).unwrap()
+    );
+    semaprax::hir::validate(&semaprax::hir::resolve(&program).unwrap()).unwrap();
+    let directory = std::env::temp_dir().join(format!(
+        "semaprax-foreign-habit-{}-{stem}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&directory).unwrap();
+    let path = directory.join("main.spx");
+    std::fs::write(&path, source).unwrap();
+    let result = semaprax::interpreter::internal_strings::interpret(
+        &path,
+        "main",
+        &[],
+        &semaprax::interpreter::InterpreterOptions::default(),
+    )
+    .unwrap();
+    let envelope: serde_json::Value = serde_json::from_str(&result.envelope).unwrap();
+    assert_eq!(envelope["payload"]["outcome"]["kind"], "returned");
+    assert_eq!(envelope["payload"]["outcome"]["value"], expected);
+    std::fs::remove_dir_all(directory).unwrap();
+}
+
 #[test]
-fn return_statement_names_the_tail_expression_rule() {
-    let diagnostic = rejection(
+fn loop_return_is_checked_and_value_boundary_crossings_remain_closed() {
+    admitted_lexical(
         r#"
 module habit.ret;
 @id("app.main")
 fn main() -> i64
 {
-    return 42;
+    while true { return 42; }
+    0
 }
 "#,
+        "42",
+        "loop-return",
     );
-    assert_eq!(diagnostic.code, "SPX-P106");
-    assert!(diagnostic.message.contains("`return`"), "{diagnostic}");
-    assert!(
-        help(&diagnostic).contains("last expression"),
-        "{diagnostic}"
-    );
-    assert_eq!(
-        diagnostic.span.map(|span| (span.line, span.column)),
-        Some((6, 5))
-    );
+    for body in [
+        "let value={while false {0} return 42;};value",
+        "let call=fn()->i64 {while false {0} return 42;};0",
+    ] {
+        let source = main_body(body);
+        let program = parse(&source, Path::new("habit-crossing.spx")).unwrap();
+        let diagnostics = semaprax::verify::verify(&program);
+        let diagnostic = diagnostics
+            .iter()
+            .find(|d| d.code == "SPX-T312")
+            .expect("value boundary stays closed");
+        assert!(help(diagnostic).contains(
+            "initializer, argument, aggregate, return-operand, yield and closure crossings"
+        ));
+    }
 }
 
 #[test]
@@ -99,7 +137,7 @@ fn a_binding_named_return_still_parses() {
 
 #[test]
 fn expression_statement_explains_the_block_shape() {
-    let diagnostic = rejection(
+    admitted_lexical(
         r#"
 module habit.stmt;
 @id("habit.side")
@@ -114,10 +152,40 @@ fn main() -> i64
     0
 }
 "#,
+        "0",
+        "scalar-expression-statement",
     );
+    let diagnostic = rejection(&main_body("1;"));
     assert_eq!(diagnostic.code, "SPX-P106");
     assert_eq!(diagnostic.message, "expected `}` after block");
-    assert!(help(&diagnostic).contains("let _ = …;"), "{diagnostic}");
+    // The habitual `;` after a bare exit guard is now admitted as the same
+    // statement `if` as the unterminated spelling, with identical canonical text.
+    let terminated = main_body("let mut i=0;while i<2 {i=i+1;if i==1 {continue;} else {0};0} i");
+    admitted_lexical(&terminated, "2", "terminated-exit-guard");
+    let unterminated = terminated.replace("else {0};0", "else {0} 0");
+    admitted_lexical(&unterminated, "2", "valued-exit-guard");
+    let canonical =
+        |source: &str| semaprax::format::canonical(&semaprax::check(source, "habit.spx").unwrap());
+    assert_eq!(canonical(&terminated), canonical(&unterminated));
+    // Value boundaries keep their refusals: an initializer and an operator
+    // suffix are generic discarded initializers, and a final `;` has no item.
+    for closed in [
+        terminated.replace(
+            "if i==1 {continue;} else {0};",
+            "let _=if i==1 {continue;} else {0};",
+        ),
+        terminated.replace("else {0};0", "else {0} + 0;0"),
+    ] {
+        let diagnostics = semaprax::check(&closed, "habit.spx").unwrap_err();
+        assert!(
+            diagnostics.iter().any(|d| d.code == "SPX-T312"),
+            "{closed}: {diagnostics:?}"
+        );
+    }
+    assert_eq!(
+        rejection(&terminated.replace("else {0};0}", "else {0};}")).code,
+        "SPX-P106"
+    );
 }
 
 #[test]
@@ -126,14 +194,16 @@ fn keyword_and_unknown_identifier_statements_point_at_the_offending_token() {
         let source = format!(
             "module habit.bad_statement;\n@id(\"app.main\")\nfn main() -> i64\n{{\n    {word};\n    42\n}}\n"
         );
-        let diagnostic = rejection(&source);
-        assert_eq!(diagnostic.code, "SPX-P106", "{diagnostic}");
+        let diagnostics = semaprax::check(&source, "habit.spx").unwrap_err();
+        let diagnostic = diagnostics
+            .iter()
+            .find(|d| d.code == "SPX-T202")
+            .expect("unknown operand remains rejected before discard typing");
         assert_eq!(
             diagnostic.span.map(|span| (span.line, span.column)),
             Some((5, 5)),
             "{diagnostic}"
         );
-        assert!(help(&diagnostic).contains("let _ ="), "{diagnostic}");
     }
 }
 
@@ -169,6 +239,23 @@ fn trailing_expression_semicolon_is_never_silently_rewritten() {
             "{diagnostic}"
         );
     }
+    let diagnostic =
+        rejection("module habit.if_tail; @id(\"app.main\") fn main()->i64 {if true {1} else {2};}");
+    assert_eq!(diagnostic.code, "SPX-P106");
+    assert_eq!(diagnostic.message, "expected `}` after block");
+    assert!(help(&diagnostic).contains("a final value expression has no trailing `;`"));
+    assert!(help(&diagnostic).contains("intermediate Copy scalar `if ... else ...` may use `;`"));
+    assert!(help(&diagnostic).contains("never in a `let` initializer"));
+    let program = semaprax::check(
+        "module habit.if_statement; @id(\"app.main\") fn main()->i64 {if true {1} else {2}; 3}",
+        "habit.spx",
+    )
+    .unwrap();
+    let canonical = semaprax::format::canonical(&program);
+    assert_eq!(
+        canonical,
+        semaprax::format::canonical(&parse(&canonical, "habit.spx").unwrap())
+    );
 }
 
 #[test]
@@ -220,8 +307,11 @@ fn main() -> i64
 fn empty_function_body_names_the_rule() {
     let diagnostic = rejection("module habit.empty;\n@id(\"app.main\")\nfn main() -> i64\n{\n}\n");
     assert_eq!(diagnostic.code, "SPX-P203");
+    assert!(help(&diagnostic).contains("return value;"), "{diagnostic}");
     assert!(
-        help(&diagnostic).contains("there is no `return`"),
+        help(&diagnostic).contains("terminal exhaustive `match`")
+            && help(&diagnostic).contains("explicitly return on every path")
+            && help(&diagnostic).contains("loop and closure returns remain refused"),
         "{diagnostic}"
     );
 }
@@ -444,6 +534,16 @@ fn main_body(body: &str) -> String {
 
 #[test]
 fn operators_and_statements_from_other_languages_name_the_admitted_form() {
+    admitted_lexical(
+        &main_body("    let mut i = 0;\n    while true { i = i + 1; break; }\n    i"),
+        "1",
+        "loop-break",
+    );
+    admitted_lexical(
+        &main_body("    let mut i = 0;\n    while i < 2 { i = i + 1; continue; }\n    i"),
+        "2",
+        "loop-continue",
+    );
     let cases = [
         (
             "    let x = 1;\n    x > 0 ? 1 : 2",
@@ -466,11 +566,6 @@ fn operators_and_statements_from_other_languages_name_the_admitted_form() {
             "logical or is `||`",
         ),
         (
-            "    let mut i = 0;\n    while true { i = i + 1; break; }\n    i",
-            "SPX-P106",
-            "no `break` or `continue`",
-        ),
-        (
             "    let f = |x: i64| x + 1;\n    0",
             "SPX-P201",
             "`fn(x: i64) -> i64 { x + 1 }`",
@@ -481,15 +576,39 @@ fn operators_and_statements_from_other_languages_name_the_admitted_form() {
             "SPX-P106",
             "there is no `if let`",
         ),
-        ("    let x = 2;\n    match x { 0..=5 => 1, _ => 0, }", "SPX-P106", "guard the arm"),
-        ("    let s = format!(\"{}\", 1);\n    0", "SPX-P106", "there are no macros"),
-        ("    println!(\"hi\");\n    0", "SPX-P106", "there are no macros"),
-        ("    let mut i = 0;\n    i++;\n    i", "SPX-P201", "`i = i + 1;`"),
-        ("    let mut i = 0;\n    i--;\n    i", "SPX-P201", "`i = i + 1;`"),
-        ("    let x = 2;\n    match x { 1 => 10 _ => 0, }", "SPX-P106", "every match arm ends with `,`"),
+        (
+            "    let x = 2;\n    match x { 0..=5 => 1, _ => 0, }",
+            "SPX-P106",
+            "guard the arm",
+        ),
+        (
+            "    let s = format!(\"{}\", 1);\n    0",
+            "SPX-P106",
+            "there are no macros",
+        ),
+        (
+            "    println!(\"hi\");\n    0",
+            "SPX-P106",
+            "there are no macros",
+        ),
+        (
+            "    let mut i = 0;\n    i++;\n    i",
+            "SPX-P201",
+            "`i = i + 1;`",
+        ),
+        (
+            "    let mut i = 0;\n    i--;\n    i",
+            "SPX-P201",
+            "`i = i + 1;`",
+        ),
+        (
+            "    let x = 2;\n    match x { 1 => 10 _ => 0, }",
+            "SPX-P106",
+            "every match arm ends with `,`",
+        ),
         (
             "    println(\"hi\");\n    0",
-            "SPX-P106",
+            "SPX-T203",
             "stdout_write(str_as_bytes(view))",
         ),
         (
@@ -499,7 +618,15 @@ fn operators_and_statements_from_other_languages_name_the_admitted_form() {
         ),
     ];
     for (body, code, expected_help) in cases {
-        let diagnostic = rejection(&main_body(body));
+        let diagnostic = if code == "SPX-T203" {
+            semaprax::check(&main_body(body), "habit.spx")
+                .unwrap_err()
+                .into_iter()
+                .find(|d| d.code == code)
+                .unwrap()
+        } else {
+            rejection(&main_body(body))
+        };
         assert_eq!(diagnostic.code, code, "{body}: {diagnostic}");
         assert!(
             help(&diagnostic).contains(expected_help),

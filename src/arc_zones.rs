@@ -751,11 +751,11 @@ impl<'a> ArcZonesRun<'a> {
     /// incoming payload link plus one per outstanding explicit handle.
     #[must_use]
     pub fn strong_count(&self, object: &str) -> Option<u32> {
-        let id = DeclarationId::new(object);
-        if self.phases.get(&id).copied()? != Phase::Live {
+        let (id, phase) = self.phases.get_key_value(object)?;
+        if *phase != Phase::Live {
             return None;
         }
-        Some(self.live_total(&id))
+        Some(self.live_total(id))
     }
 
     fn authenticate(&self) -> Result<(), ArcZonesError> {
@@ -1368,3 +1368,6 @@ const fn shareable_name(mark: ShareableMark) -> &'static str {
 #[cfg(test)]
 #[path = "arc_zones/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod borrowed_lookup_tests;

@@ -1,26 +1,27 @@
-//! Independent replay of retained Workspace AST, HIR, and typed edges.
-//!
-//! This module validates already-retained compiler facts under the parent's
-//! bounded builder ledger. It has no filesystem, locking, mutation, rendering,
-//! publication, backend, or runtime authority.
+//! Independent retained AST/HIR/edge replay under the parent bounded ledger.
+//! Read-only proof code with no publication, backend or runtime authority.
 
 use crate::ast::{ModuleUseKind, Program};
 use crate::diagnostic::Diagnostic;
 use crate::hir;
 use std::collections::{BTreeMap, BTreeSet};
 
+mod authority;
 mod capability_projection;
+pub(super) use authority::{permits_admitted, project_effects_admitted};
 mod compact_calls;
 mod dependency_closure;
 mod edge_projection;
 mod profile_names;
 mod scalar_link;
 mod stream_admission;
+mod traversal_type_sites;
 mod type_projection;
 mod type_reference;
 pub(super) use profile_names::project_linker_name;
 pub(super) use stream_admission::{
-    command_link, data_project_shape, entry_link, owned_stream_command, owned_stream_entry,
+    command_link, data_project_shape, entry_link, has_separate_command_root, owned_stream_command,
+    owned_stream_entry, record_project_shape, reject_unselected_owned_collections,
     stream_parameter_admitted, stream_return_admitted, stream_test_program, text_project_shape,
 };
 
@@ -33,6 +34,19 @@ use super::{
     CallOccurrenceKey, WorkspaceDeclarationFact, WorkspaceEdge, WorkspaceResolvedModule, MAX_CALLS,
 };
 use edge_projection::push_edge_reference;
+
+/// Type imports are admitted only by the selected owned API or the exact
+/// record-bearing stream successors. Their type closure is replayed separately.
+pub(super) fn project_type_imports_admitted(profile: crate::project::ProjectProfile) -> bool {
+    profile.is_owned_api()
+        || matches!(
+            profile,
+            crate::project::ProjectProfile::StdinStreamDataCommandIoV2
+                | crate::project::ProjectProfile::StdinStreamOwnedDataCommandIoV1
+                | crate::project::ProjectProfile::StdinStreamCollectionRecordCommandIoV1
+                | crate::project::ProjectProfile::StdinStreamNestedOutcomeCommandIoV1
+        )
+}
 
 pub(super) fn validate_retained_facts(
     programs: &[Program],
@@ -87,6 +101,7 @@ fn validate_retained_facts_inner(
             )]);
         }
     }
+    super::record_traversal::validate(programs, modules)?;
     let mut actual_type_sites = Vec::new();
     for module in modules {
         let source = programs
@@ -176,6 +191,10 @@ fn validate_retained_facts_inner(
                 &mut actual_type_sites,
             )?;
         }
+        // The traversal replay above authenticates compiler-introduced row
+        // reads and length calls. Their inferred element arguments are emitted
+        // as authored-projection edges too, so each must remain exactly once.
+        traversal_type_sites::require(source, programs, &imported_type_ids, &actual_type_sites)?;
     }
     let mut expected_type_sites = Vec::new();
     for edge in edges.iter().filter(|edge| edge.kind == "type_reference") {
@@ -198,27 +217,42 @@ fn validate_retained_facts_inner(
             "workspace explicit type-reference facts disagree with retained HIR",
         )]);
     }
-    if compact {
-        let calls = compact_calls::reconstruct(programs, modules, edges)?;
-        validate_retained_call_projection(programs, modules, calls.iter().copied())?;
-        validate_effect_and_capability_edges_against_calls(modules, edges, calls.iter().copied())?;
-        return Ok(());
-    }
-    let authenticated_calls = reconstruct_authenticated_call_edges(programs, modules)?;
-    validate_retained_call_projection(programs, modules, &authenticated_calls)?;
-    let mut emitted_calls = Vec::new();
-    for edge in edges.iter().filter(|edge| edge.kind == "call") {
-        push_edge_reference(&mut emitted_calls, edge)?;
-    }
-    emitted_calls.sort();
-    if !emitted_calls.into_iter().eq(authenticated_calls.iter()) {
-        return Err(vec![graph_error(
-            "SPX-G173",
-            "emitted workspace call edges disagree with authenticated AST/HIR occurrences",
-        )]);
-    }
-    validate_effect_and_capability_edges_against_calls(modules, edges, authenticated_calls.iter())?;
-    Ok(())
+    // The edge proof is the independent replay below. No discarded text
+    // projection is constructed after these exact source/HIR comparisons.
+    crate::bounded_output::with_reservation_stage(
+        crate::bounded_output::ReservationStage::EdgeProof,
+        || {
+            if compact {
+                let calls = compact_calls::reconstruct(programs, modules, edges)?;
+                validate_retained_call_projection(programs, modules, calls.iter().copied())?;
+                validate_effect_and_capability_edges_against_calls(
+                    modules,
+                    edges,
+                    calls.iter().copied(),
+                )?;
+                return Ok(());
+            }
+            let authenticated_calls = reconstruct_authenticated_call_edges(programs, modules)?;
+            validate_retained_call_projection(programs, modules, &authenticated_calls)?;
+            let mut emitted_calls = Vec::new();
+            for edge in edges.iter().filter(|edge| edge.kind == "call") {
+                push_edge_reference(&mut emitted_calls, edge)?;
+            }
+            emitted_calls.sort();
+            if !emitted_calls.into_iter().eq(authenticated_calls.iter()) {
+                return Err(vec![graph_error(
+                    "SPX-G173",
+                    "emitted workspace call edges disagree with authenticated AST/HIR occurrences",
+                )]);
+            }
+            validate_effect_and_capability_edges_against_calls(
+                modules,
+                edges,
+                authenticated_calls.iter(),
+            )?;
+            Ok(())
+        },
+    )
 }
 
 fn reconstruct_authenticated_call_edges(
@@ -411,6 +445,13 @@ fn visit_resolved_calls<'a>(
                 visit_resolved_calls(argument, visit);
             }
         }
+        hir::ResolvedExprKind::LiteralFormat { args, .. }
+        | hir::ResolvedExprKind::VecFieldRead { args, .. }
+        | hir::ResolvedExprKind::RowLoan { args, .. } => {
+            for argument in args {
+                visit_resolved_calls(argument, visit);
+            }
+        }
         hir::ResolvedExprKind::Invoke { callable, args } => {
             visit_resolved_calls(callable, visit);
             for argument in args {
@@ -427,16 +468,23 @@ fn visit_resolved_calls<'a>(
                 visit_resolved_calls(argument, visit);
             }
         }
-        hir::ResolvedExprKind::Unary { value, .. } => visit_resolved_calls(value, visit),
+        hir::ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        hir::ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | hir::ResolvedExprKind::Unary { value, .. } => visit_resolved_calls(value, visit),
         hir::ResolvedExprKind::Binary { left, right, .. } => {
             visit_resolved_calls(left, visit);
             visit_resolved_calls(right, visit);
         }
-        hir::ResolvedExprKind::String(_) => {}
+        hir::ResolvedExprKind::String(_) | hir::ResolvedExprKind::BorrowedUtf8Literal(_) => {}
         hir::ResolvedExprKind::ArrayU8(_)
         | hir::ResolvedExprKind::RepeatArrayU8 { .. }
         | hir::ResolvedExprKind::BorrowPlace { .. } => {}
-        hir::ResolvedExprKind::Block { statements, tail } => {
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for statement in statements {
                 for index in 0..statement.child_count() {
                     visit_resolved_calls(
@@ -844,7 +892,7 @@ fn collect_resolved_expression_type_sites<'a>(
                 out,
             )?;
         }
-        hir::ResolvedExprKind::String(_) => {}
+        hir::ResolvedExprKind::String(_) | hir::ResolvedExprKind::BorrowedUtf8Literal(_) => {}
         hir::ResolvedExprKind::ArrayU8(_)
         | hir::ResolvedExprKind::RepeatArrayU8 { .. }
         | hir::ResolvedExprKind::BorrowPlace { .. }
@@ -870,7 +918,77 @@ fn collect_resolved_expression_type_sites<'a>(
                 collect_resolved_expression_type_sites(
                     owner,
                     argument,
-                    &crate::bounded_output::budgeted_format(format_args!("{path}.arg.{index}")),
+                    &crate::vec_ops::string_slot::argument_path(expression, path, index),
+                    imported,
+                    out,
+                )?;
+            }
+        }
+        hir::ResolvedExprKind::VecFieldRead {
+            element,
+            bytes,
+            args,
+            ..
+        } => {
+            let call_path = if *bytes {
+                std::borrow::Cow::Owned(crate::bounded_output::budgeted_format(format_args!(
+                    "{path}.arg.0"
+                )))
+            } else {
+                std::borrow::Cow::Borrowed(path)
+            };
+            let type_path =
+                crate::bounded_output::budgeted_format(format_args!("{call_path}.type_argument.0"));
+            if *bytes {
+                let inner_identity = hir::budgeted_workspace_expression_identity(owner, &call_path);
+                if crate::bounded_output::active_refused() {
+                    return Err(vec![limit_error(
+                        "builder_bytes",
+                        super::active_builder_limit(),
+                    )]);
+                }
+                type_projection::collect_reconstructed_sites(
+                    owner,
+                    element,
+                    &type_path,
+                    &inner_identity,
+                    imported,
+                    out,
+                )?;
+            } else {
+                collect_resolved_type_sites(
+                    owner.as_str(),
+                    element,
+                    &type_path,
+                    Some(expression_id),
+                    imported,
+                    out,
+                )?;
+            }
+            for (index, argument) in args.iter().enumerate() {
+                collect_resolved_expression_type_sites(
+                    owner,
+                    argument,
+                    &crate::bounded_output::budgeted_format(format_args!(
+                        "{call_path}.arg.{index}"
+                    )),
+                    imported,
+                    out,
+                )?;
+            }
+        }
+        // A lent row is authored as a bare name: no type spelling, and its
+        // two children are synthetic places of existing bindings.
+        hir::ResolvedExprKind::RowLoan { .. } => {}
+        hir::ResolvedExprKind::LiteralFormat { args, .. } => {
+            for (index, argument) in args.iter().enumerate() {
+                collect_resolved_expression_type_sites(
+                    owner,
+                    argument,
+                    &crate::bounded_output::budgeted_format(format_args!(
+                        "{path}.arg.{}",
+                        index + 1
+                    )),
                     imported,
                     out,
                 )?;
@@ -920,7 +1038,11 @@ fn collect_resolved_expression_type_sites<'a>(
                 )?;
             }
         }
-        hir::ResolvedExprKind::Unary { value, .. } => collect_resolved_expression_type_sites(
+        hir::ResolvedExprKind::LexicalExit { value: None, .. } => {}
+        hir::ResolvedExprKind::LexicalExit {
+            value: Some(value), ..
+        }
+        | hir::ResolvedExprKind::Unary { value, .. } => collect_resolved_expression_type_sites(
             owner,
             value,
             &crate::bounded_output::budgeted_format(format_args!("{path}.value")),
@@ -943,7 +1065,10 @@ fn collect_resolved_expression_type_sites<'a>(
                 out,
             )?;
         }
-        hir::ResolvedExprKind::Block { statements, tail } => {
+        hir::ResolvedExprKind::Block { statements, tail }
+        | hir::ResolvedExprKind::VecConstructor {
+            statements, tail, ..
+        } => {
             for (index, statement) in statements.iter().enumerate() {
                 let statement_path =
                     crate::bounded_output::budgeted_format(format_args!("{path}.s{index}"));
@@ -957,7 +1082,7 @@ fn collect_resolved_expression_type_sites<'a>(
                     continue;
                 }
                 for child_index in 0..statement.child_count() {
-                    let segment = if matches!(statement, hir::ResolvedStatement::While { .. }) {
+                    let segment = if hir::lexical_exit::is_loop_statement(statement) {
                         if child_index == 0 {
                             "condition"
                         } else {
@@ -1278,174 +1403,8 @@ pub(super) fn scalar_web_entrypoint(
         .unwrap_or_else(|| ordinary_entrypoint.clone())
 }
 
-pub(super) fn project_effects_admitted(
-    profile: crate::project::ProjectProfile,
-    effects: &[String],
-    natives: &ScalarNativeImports,
-) -> bool {
-    if profile.is_source_command() {
-        return effects
-            .iter()
-            .all(|v| crate::source_command::EFFECTS.contains(&v.as_str()));
-    }
-    (profile == crate::project::ProjectProfile::EnvironmentIoV1
-        && effects.iter().all(|effect| {
-            crate::project::PROJECT_ENVIRONMENT_CAPABILITIES_V1.contains(&effect.as_str())
-        }))
-        || (profile == crate::project::ProjectProfile::ProcessIoV1
-            && effects.iter().all(|effect| {
-                crate::project::PROJECT_PROCESS_CAPABILITIES_V1.contains(&effect.as_str())
-            }))
-        || (profile.is_filesystem()
-            && effects
-                .iter()
-                .all(|effect| crate::filesystem_ops::FILESYSTEM_EFFECTS.contains(&effect.as_str())))
-        || effects.is_empty()
-        || natives.effects_admitted(effects)
-        || (matches!(
-            profile,
-            crate::project::ProjectProfile::UsefulDataCommandV1
-                | crate::project::ProjectProfile::UsefulDataCommandV2
-        ) && effects == [crate::host_io_ops::STDOUT_WRITE_EFFECT])
-        || (matches!(
-            profile,
-            crate::project::ProjectProfile::LanguageCommandIoV1
-                | crate::project::ProjectProfile::StdinStreamCommandIoV1
-                | crate::project::ProjectProfile::StdinStreamCommandIoV2
-                | crate::project::ProjectProfile::StdinStreamTextCommandIoV1
-                | crate::project::ProjectProfile::StdinStreamDataCommandIoV1
-                | crate::project::ProjectProfile::LineCommandIoV1
-        ) && effects.iter().all(|effect| {
-            matches!(
-                effect.as_str(),
-                crate::command_io_ops::ARGS_READ_EFFECT
-                    | crate::command_io_ops::STDERR_WRITE_EFFECT
-                    | crate::command_io_ops::STDIN_READ_EFFECT
-                    | crate::host_io_ops::STDOUT_WRITE_EFFECT
-            )
-        }))
-        || (profile == crate::project::ProjectProfile::NetworkCommandIoV1
-            && effects.iter().all(|effect| {
-                crate::project::PROJECT_NETWORK_COMMAND_CAPABILITIES_V1.contains(&effect.as_str())
-            }))
-        || (profile == crate::project::ProjectProfile::HttpsCommandIoV1
-            && effects.iter().all(|effect| {
-                crate::project::PROJECT_HTTPS_COMMAND_CAPABILITIES_V1.contains(&effect.as_str())
-            }))
-}
-
-/// Whether one retained module's declared permits stay inside the Project
-/// profile's admitted authority.
-pub(super) fn permits_admitted(
-    profile: crate::project::ProjectProfile,
-    module: &WorkspaceResolvedModule,
-    entry_module: &str,
-    natives: &ScalarNativeImports,
-) -> bool {
-    if profile.is_source_command() {
-        return module
-            .permits
-            .iter()
-            .all(|v| crate::source_command::EFFECTS.contains(&v.as_str()));
-    }
-    if profile.is_stdin_stream() {
-        return module.permits.iter().all(|permit| {
-            crate::project::PROJECT_COMMAND_ADAPTER_CAPABILITIES_V2.contains(&permit.as_str())
-        });
-    }
-    (profile == crate::project::ProjectProfile::EnvironmentIoV1
-        && module.permits.iter().all(|effect| {
-            crate::project::PROJECT_ENVIRONMENT_CAPABILITIES_V1.contains(&effect.as_str())
-        }))
-        || (profile == crate::project::ProjectProfile::ProcessIoV1
-            && module.permits.iter().all(|effect| {
-                crate::project::PROJECT_PROCESS_CAPABILITIES_V1.contains(&effect.as_str())
-            }))
-        || (profile.is_filesystem()
-            && module
-                .permits
-                .iter()
-                .all(|effect| crate::filesystem_ops::FILESYSTEM_EFFECTS.contains(&effect.as_str())))
-        || module.permits.is_empty()
-        || natives.effects_admitted(&module.permits)
-        || (matches!(
-            profile,
-            crate::project::ProjectProfile::UsefulDataCommandV1
-                | crate::project::ProjectProfile::UsefulDataCommandV2
-        ) && module.module == entry_module
-            && module.permits == [crate::host_io_ops::STDOUT_WRITE_EFFECT])
-        || (matches!(
-            profile,
-            crate::project::ProjectProfile::LanguageCommandIoV1
-                | crate::project::ProjectProfile::StdinStreamCommandIoV1
-                | crate::project::ProjectProfile::StdinStreamCommandIoV2
-                | crate::project::ProjectProfile::StdinStreamTextCommandIoV1
-                | crate::project::ProjectProfile::StdinStreamDataCommandIoV1
-                | crate::project::ProjectProfile::LineCommandIoV1
-        ) && module.module == entry_module
-            && module.permits
-                == [
-                    crate::command_io_ops::ARGS_READ_EFFECT,
-                    crate::command_io_ops::STDERR_WRITE_EFFECT,
-                    crate::command_io_ops::STDIN_READ_EFFECT,
-                    crate::host_io_ops::STDOUT_WRITE_EFFECT,
-                ])
-        || (profile == crate::project::ProjectProfile::NetworkCommandIoV1
-            && module.module == entry_module
-            && module
-                .permits
-                .iter()
-                .map(String::as_str)
-                .eq(crate::project::PROJECT_NETWORK_COMMAND_CAPABILITIES_V1))
-        || (profile == crate::project::ProjectProfile::HttpsCommandIoV1
-            && module.module == entry_module
-            && module
-                .permits
-                .iter()
-                .map(String::as_str)
-                .eq(crate::project::PROJECT_HTTPS_COMMAND_CAPABILITIES_V1))
-}
-
 /// Bind one retained declaration to its authenticated Phase-A fact. Both an
 /// absent fact and a disagreeing or repeated one fail closed.
-fn retain_linked_fact(
-    authenticated: &BTreeMap<String, WorkspaceDeclarationFact>,
-    selected: &mut BTreeMap<hir::DeclarationId, hir::LinkedDeclarationFact>,
-    id: &hir::DeclarationId,
-    kind: hir::DeclarationKind,
-    owner: Option<&hir::DeclarationId>,
-) -> Result<(), Diagnostic> {
-    let Some(fact) = authenticated.get(id.as_str()) else {
-        return Err(graph_error(
-            "SPX-G173",
-            format!("scalar Native Rust declaration `{id}` has no Phase-A fact"),
-        ));
-    };
-    if fact.kind != kind || fact.owner.as_deref() != owner.map(hir::DeclarationId::as_str) {
-        return Err(graph_error(
-            "SPX-G173",
-            format!("scalar Native Rust declaration `{id}` disagrees with its Phase-A fact"),
-        ));
-    }
-    if selected
-        .insert(
-            id.clone(),
-            hir::LinkedDeclarationFact {
-                kind: fact.kind,
-                origin: fact.origin,
-                owner: owner.cloned(),
-            },
-        )
-        .is_some()
-    {
-        return Err(graph_error(
-            "SPX-G173",
-            format!("scalar Native Rust declaration `{id}` is selected more than once"),
-        ));
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod environment_profile_tests {
     use super::{project_effects_admitted, scalar_native_imports};
@@ -1493,3 +1452,6 @@ mod environment_profile_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod profile_join_tests;

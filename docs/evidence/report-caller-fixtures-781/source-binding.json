@@ -1,0 +1,106 @@
+{
+  "status": "SOURCE_ONLY_NO_CARGO_BUILD_TEST_EXECUTION",
+  "base": "5a066a828395d0c49593743571a14bf3f8ee000b",
+  "files": {
+    "tests/workspace/semantic_change/reporting.rs": {
+      "whole_original_archive": "docs/evidence/report-caller-fixtures-781/tests__workspace__semantic_change__reporting.rs.before.txt",
+      "original_sha256": "5ef9fbfd2836ff7a12feea43de5be573020be68fee9f61608321cf8f4423ac81",
+      "receiving_sha256": "e2cdfa00b312d7750d35dd765e3e5b4b8fdae55dd962cacdf43f5451019b179c",
+      "whole_inverse_edits": [
+        {
+          "original": "        assert_eq!(help.as_deref(), expected_help.as_deref());\n    }\n}\n",
+          "receiving": "        assert_eq!(help.as_deref(), expected_help.as_deref());\n    }\n}\n\n// An irrefutable Copy record pattern has the same field result and uses the\n// existing Graph v13 family, avoiding a projected-loan Graph outside Change v1.\nfn admitted_provider(source: &str, record: &str, increment: bool) -> String {\n    let body = if increment {\n        \"{ value.value + 1 }\"\n    } else {\n        \"{ value.value }\"\n    };\n    assert_eq!(source.matches(body).count(), 1);\n    let result = if increment { \"field + 1\" } else { \"field\" };\n    source.replacen(\n        body,\n        &format!(\"{{ match value {{ {record} {{ value: field }} => {result}, }} }}\"),\n        1,\n    )\n}\n\nfn admitted_fixture(label: &str) -> Fixture {\n    let serial = SERIAL.fetch_add(1, Ordering::Relaxed);\n    let root = std::env::temp_dir().join(format!(\n        \"semaprax-semantic-workspace-change-v1-{label}-{}-{serial}\",\n        std::process::id()\n    ));\n    std::fs::create_dir(&root).unwrap();\n    let provider = admitted_provider(provider_base(), \"Point\", false);\n    for (path, source) in [\n        (\"a/provider.spx\", provider.as_str()),\n        (\"m/consumer.spx\", consumer_source()),\n        (\"z/entry.spx\", entry_base()),\n    ] {\n        write_source(&root, path, source);\n    }\n    let path_set = root.join(\"paths.json\");\n    std::fs::write(&path_set, \"{\\\"schema\\\":\\\"semaprax.workspace-semantic-path-set.v1\\\",\\\"files\\\":[{\\\"path\\\":\\\"a/provider.spx\\\"},{\\\"path\\\":\\\"m/consumer.spx\\\"},{\\\"path\\\":\\\"z/entry.spx\\\"}]}\\n\").unwrap();\n    semantic_workspace::initialize(&root, &path_set).unwrap();\n    let graph = workspace_graph::snapshot(&root, \"change.entry\").unwrap();\n    for module in graph.modules() {\n        assert!(matches!(\n            module.source_graph_schema(),\n            \"semaprax.graph.v10\"\n                | \"semaprax.graph.v11\"\n                | \"semaprax.graph.v12\"\n                | \"semaprax.graph.v13\"\n                | \"semaprax.graph.v14\"\n        ));\n    }\n    let old_candidate = json(&canonical(provider_candidate(), \"a/provider.spx\"));\n    let candidate = admitted_provider(provider_candidate(), \"Metric\", true);\n    let new_candidate = json(&canonical(&candidate, \"a/provider.spx\"));\n    let old_proposal = proposal_source(&root);\n    assert_eq!(old_proposal.matches(&old_candidate).count(), 1);\n    let proposal = root.join(\"change.json\");\n    std::fs::write(\n        &proposal,\n        old_proposal.replacen(&old_candidate, &new_candidate, 1),\n    )\n    .unwrap();\n    Fixture { root, proposal }\n}\n\n#[test]\nfn full_original_projected_record_fixture_keeps_unsupported_graph_refusal_and_legacy_report() {\n    let fixture = Fixture::new(\"typed-original-unsupported\");\n    let before = inventory(&fixture.root);\n    let old = semantic_workspace_change::generate(&fixture.root, &fixture.proposal)\n        .err()\n        .expect(\"full original unsupported proposal must refuse\");\n    let current = semantic_workspace_change::reporting::generate(&fixture.root, &fixture.proposal)\n        .err()\n        .expect(\"full original unsupported proposal must refuse\");\n    assert_eq!(old[0].code, \"SPX-G181\");\n    assert_eq!(\n        old[0].message,\n        \"Semantic Workspace change base source Graph schema is unsupported\"\n    );\n    assert_complete_report_equality(current.reported().unwrap(), old.as_slice());\n    assert_eq!(inventory(&fixture.root), before);\n}\n"
+        },
+        {
+          "original": "\n#[test]\nfn typed_public_evidence_refusal_keeps_complete_original_diagnostics() {\n    let fixture = Fixture::new(\"typed-report-negative\");\n    let evidence = fixture.root.join(\"invalid-evidence.json\");\n    std::fs::write(&evidence, \"{}\\n\").unwrap();\n    let old =\n",
+          "receiving": "\n#[test]\nfn typed_public_evidence_refusal_keeps_complete_original_diagnostics() {\n    let fixture = admitted_fixture(\"typed-report-negative\");\n    let evidence = fixture.root.join(\"invalid-evidence.json\");\n    std::fs::write(&evidence, \"{}\\n\").unwrap();\n    let old =\n"
+        },
+        {
+          "original": "    let receipt =\n        semantic_workspace_change::reporting::apply(&fixture.root, &fixture.proposal, &evidence)\n            .unwrap();\n    let legacy_fixture = Fixture::new(\"typed-report-legacy-apply\");\n    let legacy_artifacts =\n        semantic_workspace_change::generate(&legacy_fixture.root, &legacy_fixture.proposal)\n            .unwrap();\n",
+          "receiving": "    let receipt =\n        semantic_workspace_change::reporting::apply(&fixture.root, &fixture.proposal, &evidence)\n            .unwrap();\n    let legacy_fixture = admitted_fixture(\"typed-report-legacy-apply\");\n    let legacy_artifacts =\n        semantic_workspace_change::generate(&legacy_fixture.root, &legacy_fixture.proposal)\n            .unwrap();\n"
+        },
+        {
+          "original": "\n#[test]\nfn typed_public_generation_verification_and_application_keep_full_legacy_bytes() {\n    let fixture = Fixture::new(\"typed-report-parity\");\n    let old = semantic_workspace_change::generate(&fixture.root, &fixture.proposal).unwrap();\n    let current =\n        semantic_workspace_change::reporting::generate(&fixture.root, &fixture.proposal).unwrap();\n",
+          "receiving": "\n#[test]\nfn typed_public_generation_verification_and_application_keep_full_legacy_bytes() {\n    let fixture = admitted_fixture(\"typed-report-parity\");\n    let old = semantic_workspace_change::generate(&fixture.root, &fixture.proposal).unwrap();\n    let current =\n        semantic_workspace_change::reporting::generate(&fixture.root, &fixture.proposal).unwrap();\n"
+        }
+      ]
+    },
+    "tests/workspace/semantic_structural_change/reporting.rs": {
+      "whole_original_archive": "docs/evidence/report-caller-fixtures-781/tests__workspace__semantic_structural_change__reporting.rs.before.txt",
+      "original_sha256": "a6fac9046e742ee9cf1c8c8123c45e096b5afed5011f3d691c24da68576181c3",
+      "receiving_sha256": "163b5ff0a939c8580692c5fe8d9b9daa44be9af0ed595ecb8691c2b459147fee",
+      "whole_inverse_edits": [
+        {
+          "original": "        assert_eq!(help.as_deref(), expected_help.as_deref());\n    }\n}\n",
+          "receiving": "        assert_eq!(help.as_deref(), expected_help.as_deref());\n    }\n}\n\nfn admitted_fixture(label: &str) -> Fixture {\n    let serial = SERIAL.fetch_add(1, Ordering::Relaxed);\n    let root = std::env::temp_dir().join(format!(\n        \"semaprax-semantic-workspace-structural-change-v1-{label}-{}-{serial}\",\n        std::process::id()\n    ));\n    std::fs::create_dir(&root).unwrap();\n    // The same record/field identities, effects and return value are retained.\n    // Irrefutable Copy extraction stays in the existing v13 evidence family.\n    let old = provider();\n    let body = \"{ value.value }\";\n    assert_eq!(old.matches(body).count(), 1);\n    let provider = old.replacen(\n        body,\n        \"{ match value { Point { value: field } => field, } }\",\n        1,\n    );\n    for (path, source) in [\n        (\"a/provider.spx\", provider.as_str()),\n        (\"m/consumer.spx\", consumer()),\n        (\"n/island.spx\", island()),\n        (\"z/entry.spx\", entry()),\n    ] {\n        write_source(&root, path, source);\n    }\n    let path_set = root.join(\"paths.json\");\n    std::fs::write(&path_set, \"{\\\"schema\\\":\\\"semaprax.workspace-semantic-path-set.v1\\\",\\\"files\\\":[{\\\"path\\\":\\\"a/provider.spx\\\"},{\\\"path\\\":\\\"m/consumer.spx\\\"},{\\\"path\\\":\\\"n/island.spx\\\"},{\\\"path\\\":\\\"z/entry.spx\\\"}]}\\n\").unwrap();\n    semantic_workspace::initialize(&root, &path_set).unwrap();\n    let graph = workspace_graph::snapshot(&root, \"structural.entry\").unwrap();\n    for module in graph.modules() {\n        assert!(matches!(\n            module.source_graph_schema(),\n            \"semaprax.graph.v10\"\n                | \"semaprax.graph.v11\"\n                | \"semaprax.graph.v12\"\n                | \"semaprax.graph.v13\"\n                | \"semaprax.graph.v14\"\n        ));\n    }\n    let proposal = root.join(\"structural-change.json\");\n    std::fs::write(&proposal, proposal_source(&root)).unwrap();\n    Fixture { root, proposal }\n}\n\n#[test]\nfn full_original_projected_record_proposal_keeps_canonical_refusal_and_legacy_report() {\n    let fixture = Fixture::new(\"typed-original-unsupported\");\n    let before = inventory(&fixture.root);\n    let old = semantic_workspace_structural_change::generate(&fixture.root, &fixture.proposal)\n        .err()\n        .expect(\"full original unsupported proposal must refuse\");\n    let current =\n        semantic_workspace_structural_change::reporting::generate(&fixture.root, &fixture.proposal)\n            .err()\n            .expect(\"full original unsupported proposal must refuse\");\n    assert_eq!(old[0].code, \"SPX-G188\");\n    assert_eq!(\n        old[0].message,\n        \"Semantic Workspace Structural Change proposal is not canonical\"\n    );\n    assert_complete_report_equality(current.reported().unwrap(), old.as_slice());\n    assert_eq!(inventory(&fixture.root), before);\n}\n"
+        },
+        {
+          "original": "\n#[test]\nfn typed_public_evidence_refusal_keeps_complete_original_diagnostics() {\n    let fixture = Fixture::new(\"typed-report-negative\");\n    let evidence = fixture.root.join(\"invalid-evidence.json\");\n    std::fs::write(&evidence, \"{}\\n\").unwrap();\n    let old =\n",
+          "receiving": "\n#[test]\nfn typed_public_evidence_refusal_keeps_complete_original_diagnostics() {\n    let fixture = admitted_fixture(\"typed-report-negative\");\n    let evidence = fixture.root.join(\"invalid-evidence.json\");\n    std::fs::write(&evidence, \"{}\\n\").unwrap();\n    let old =\n"
+        },
+        {
+          "original": "        &evidence,\n    )\n    .unwrap();\n    let legacy_fixture = Fixture::new(\"typed-report-legacy-apply\");\n    let legacy_artifacts = semantic_workspace_structural_change::generate(\n        &legacy_fixture.root,\n        &legacy_fixture.proposal,\n",
+          "receiving": "        &evidence,\n    )\n    .unwrap();\n    let legacy_fixture = admitted_fixture(\"typed-report-legacy-apply\");\n    let legacy_artifacts = semantic_workspace_structural_change::generate(\n        &legacy_fixture.root,\n        &legacy_fixture.proposal,\n"
+        },
+        {
+          "original": "\n#[test]\nfn typed_public_generation_verification_and_application_keep_full_legacy_bytes() {\n    let fixture = Fixture::new(\"typed-report-parity\");\n    let old =\n        semantic_workspace_structural_change::generate(&fixture.root, &fixture.proposal).unwrap();\n    let current =\n",
+          "receiving": "\n#[test]\nfn typed_public_generation_verification_and_application_keep_full_legacy_bytes() {\n    let fixture = admitted_fixture(\"typed-report-parity\");\n    let old =\n        semantic_workspace_structural_change::generate(&fixture.root, &fixture.proposal).unwrap();\n    let current =\n"
+        }
+      ]
+    }
+  },
+  "whole_original_fixture_and_api_modules_unchanged": {
+    "tests/workspace/semantic_change.rs": "d161ed6fadf92b518e48ace904e701bfa5b2644859340fafd37010816227c04f",
+    "tests/workspace/semantic_structural_change.rs": "ec963928ca32fc47883e7c23d65fc6f805883f09e1e5f3c6a4818e4f5d443826",
+    "src/semantic_workspace_change.rs": "e234b66dd9373362ccb9f0da4a11406c288b9e83db19fbe49f49f0c5d5574ab6",
+    "src/semantic_workspace_structural_change.rs": "178a0782e66f5ff32e91f2b9e96d73b391109f61c900646970f7d67fa9902734"
+  },
+  "pending_selectors": [
+    {
+      "harness": "semaprax::workspace",
+      "selector": "semantic_change::reporting::typed_public_generation_verification_and_application_keep_full_legacy_bytes",
+      "status": "PENDING_ACTUAL_REGISTRATION_BUILD_EXECUTION"
+    },
+    {
+      "harness": "semaprax::workspace",
+      "selector": "semantic_change::reporting::typed_public_evidence_refusal_keeps_complete_original_diagnostics",
+      "status": "PENDING_ACTUAL_REGISTRATION_BUILD_EXECUTION"
+    },
+    {
+      "harness": "semaprax::workspace",
+      "selector": "semantic_change::reporting::full_original_projected_record_fixture_keeps_unsupported_graph_refusal_and_legacy_report",
+      "status": "PENDING_ACTUAL_REGISTRATION_BUILD_EXECUTION"
+    },
+    {
+      "harness": "semaprax::workspace",
+      "selector": "semantic_structural_change::reporting::typed_public_generation_verification_and_application_keep_full_legacy_bytes",
+      "status": "PENDING_ACTUAL_REGISTRATION_BUILD_EXECUTION"
+    },
+    {
+      "harness": "semaprax::workspace",
+      "selector": "semantic_structural_change::reporting::typed_public_evidence_refusal_keeps_complete_original_diagnostics",
+      "status": "PENDING_ACTUAL_REGISTRATION_BUILD_EXECUTION"
+    },
+    {
+      "harness": "semaprax::workspace",
+      "selector": "semantic_structural_change::reporting::full_original_projected_record_proposal_keeps_canonical_refusal_and_legacy_report",
+      "status": "PENDING_ACTUAL_REGISTRATION_BUILD_EXECUTION"
+    }
+  ],
+  "source_semantics": "Same declarations/field IDs/permits/effects/path and operations; value-mode irrefutable record pattern replaces scalar projected field read in admitted child-local positive fixtures. Actual snapshot base schemas must be in existing v10..v14 grammar; source tags are never rewritten.",
+  "owning_sources": [
+    "docs/SEMANTIC-WORKSPACE-V1.md:93",
+    "docs/SEMANTIC-WORKSPACE-CHANGE-V1.md:87",
+    "src/semantic_workspace_change.rs:698",
+    "src/semantic_workspace_structural_change.rs:1247",
+    "src/graph/base_lattice.rs",
+    "src/hir/resolve_pattern.rs:71",
+    "src/graph.rs:2182"
+  ],
+  "binding_refresh_required": [
+    "Both reporting source file/registration SHA",
+    "Existing workspace root/source inventories consuming complete reporting files",
+    "781 packet proof binding if declared"
+  ],
+  "production_semantics_modified": false
+}

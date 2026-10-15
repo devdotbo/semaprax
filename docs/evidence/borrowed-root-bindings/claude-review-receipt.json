@@ -1,0 +1,7 @@
+{
+  "exit": 143,
+  "peak_rss_kib": 290992,
+  "elapsed": 180.81849704100023,
+  "stop_reason": "180s timeout",
+  "source_only": true
+}

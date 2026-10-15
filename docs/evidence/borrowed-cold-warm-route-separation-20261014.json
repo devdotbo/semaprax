@@ -1,0 +1,45 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "base": "366c353e3f8b466f07f37ed13d67d4806d4704cc",
+  "purpose": "Retain original cold-only gate and complete warm checked-body borrowing via distinct paid source route; production chooses actual route, no warm optimization removed",
+  "original_legacy_owner_unchanged": "src/project/incremental/cold_source_tests/oracle_owner_before.rs",
+  "owning_controls": [
+    "project::incremental::cold_source_tests::checked_cold_source_preserves_limits_costs_current_key_and_body_reuse_fallback",
+    "project::incremental::cold_source_tests::explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse"
+  ],
+  "files": [
+    {
+      "path": "src/project/incremental/cold_source_tests.rs",
+      "original_sha256": "eeed29868ca4871d23e660d9c800cbbcd1b484415596d4294fa29b29d3ab96f8",
+      "receiving_sha256": "bb064e63b57815d599c447c4a03a981670fd394e390e4af25a9e2966b74e4c9f",
+      "whole_inverse_edits": [
+        {
+          "original": "    let (borrowed, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {\n        let mut owner =\n            crate::bounded_output::identity_reservation::IdentityReservation::acquire().unwrap();\n        pass.resolve_borrowed_cold_source_paid(&program.path, &changed_view, None, &mut owner)\n            .unwrap()\n            .unwrap()\n    });\n",
+          "receiving": "    let (borrowed, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {\n        let mut owner =\n            crate::bounded_output::identity_reservation::IdentityReservation::acquire().unwrap();\n        let before = crate::bounded_output::active_remaining();\n        assert!(pass\n            .resolve_borrowed_cold_source_paid(&program.path, &changed_view, None, &mut owner)\n            .is_none());\n        assert_eq!(before, crate::bounded_output::active_remaining());\n        pass.resolve_borrowed_source_paid(&program.path, &changed_view, None, &mut owner)\n            .unwrap()\n            .unwrap()\n    });\n"
+        }
+      ]
+    },
+    {
+      "path": "src/project/incremental/paid_resolution.rs",
+      "original_sha256": "2de14405b5592f4799ffbc844cb04e71b73fcb53a015a1b733c63e947f13a3d8",
+      "receiving_sha256": "8272123050c3e6c46630bd5be9375bf1965f095486935b590d6ba310d5ca1d8f",
+      "whole_inverse_edits": [
+        {
+          "original": "\nimpl FrontendPass {\n    pub(crate) fn resolve_borrowed_cold_source_paid<'p>(\n        &self,\n        path: &str,\n        synthetic: &'p dyn crate::ast::program_source::ProgramSource,\n",
+          "receiving": "\nimpl FrontendPass {\n    pub(crate) fn resolve_borrowed_cold_source_paid<'p>(\n        &self,\n        path: &str,\n        synthetic: &'p dyn crate::ast::program_source::ProgramSource,\n        private: Option<crate::source_verify::private_names::PrivateNames<'p>>,\n        owner: &mut IdentityReservation,\n    ) -> Option<Result<SelectiveResolvedModule, SelectiveFailure>> {\n        if !self.permits_borrowed_cold_source(path) {\n            return None;\n        }\n        self.resolve_borrowed_source_paid(path, synthetic, private, owner)\n    }\n\n    pub(crate) fn resolve_borrowed_source_paid<'p>(\n        &self,\n        path: &str,\n        synthetic: &'p dyn crate::ast::program_source::ProgramSource,\n"
+        }
+      ]
+    },
+    {
+      "path": "src/workspace_graph/identity_resolution.rs",
+      "original_sha256": "1016073c8ad1029a2a77317e964bd6ba22807bbb8118fca00153a58888b59146",
+      "receiving_sha256": "0a73266278e11e38de53f5ca3bcf39612815f14136cb90b65183acb4752e933f",
+      "whole_inverse_edits": [
+        {
+          "original": "                        })\n                        .or_else(|| {\n                            synthetic.borrowed().and_then(|view| {\n                                cache.resolve_borrowed_cold_source_paid(\n                                    path, view, private, &mut owner,\n                                )\n                            })\n                        })\n                })\n",
+          "receiving": "                        })\n                        .or_else(|| {\n                            synthetic.borrowed().and_then(|view| {\n                                if cache.permits_borrowed_cold_source(path) {\n                                    cache.resolve_borrowed_cold_source_paid(\n                                        path, view, private, &mut owner,\n                                    )\n                                } else {\n                                    cache.resolve_borrowed_source_paid(\n                                        path, view, private, &mut owner,\n                                    )\n                                }\n                            })\n                        })\n                })\n"
+        }
+      ]
+    }
+  ]
+}

@@ -37,12 +37,34 @@ mod phase_b_staging;
 mod phase_b_toolchain;
 #[path = "tests/resolved_disposal.rs"]
 mod resolved_disposal;
+#[path = "tests/row_loan_closed.rs"]
+mod row_loan_closed;
 #[path = "tests/source_census.rs"]
 mod source_census;
 
 /// The complete private implementation module, root first.
 const IMPLEMENTATION_SOURCE: &str = concat!(
-    include_str!("../implementation.rs"),
+    concat!(
+        include_str!("../implementation.rs"),
+        "\n",
+        include_str!("canonical_input.rs"),
+        "\n",
+        include_str!("exact_replay.rs"),
+        "\n",
+        include_str!("hir_analysis.rs"),
+        "\n",
+        include_str!("hir_analysis/calls.rs"),
+        "\n",
+        include_str!("hir_analysis/closure.rs"),
+        "\n",
+        include_str!("hir_analysis/fingerprint.rs"),
+        "\n",
+        include_str!("hir_analysis/scalars.rs"),
+        "\n",
+        include_str!("hir_analysis/type_identity.rs"),
+        "\n",
+        include_str!("phase_a.rs")
+    ),
     include_str!("observability.rs"),
     include_str!("facts_capacity.rs"),
     include_str!("bundle_facts.rs"),
@@ -92,14 +114,21 @@ const TESTS_SOURCE: &str = concat!(
     include_str!("tests/phase_b_publication.rs"),
     include_str!("tests/artifact_replay.rs"),
     include_str!("tests/ledger_capacity.rs"),
+    include_str!("tests/ledger_capacity/scope_projection.rs"),
+    include_str!("tests/ledger_capacity/source_inventory.rs"),
     include_str!("tests/phase_b_toolchain.rs"),
     include_str!("tests/phase_b_staging.rs"),
-    include_str!("tests/source_census.rs"),
+    concat!(
+        include_str!("tests/source_census.rs"),
+        "\n",
+        include_str!("tests/source_census/lexical.rs")
+    ),
     include_str!("tests/cleanup_census.rs"),
     include_str!("tests/hir_traversal.rs"),
     include_str!("tests/indexed_scalar.rs"),
     include_str!("tests/cleanup_regions.rs"),
     include_str!("tests/resolved_disposal.rs"),
+    include_str!("tests/row_loan_closed.rs"),
     include_str!("tests/linked_bundle.rs"),
 );
 
@@ -246,7 +275,8 @@ struct ObservedCleanupProof {
 
 fn observed_type_bytes(ty: &ResolvedType) -> usize {
     match ty {
-        ResolvedType::Unit
+        ResolvedType::Never
+        | ResolvedType::Unit
         | ResolvedType::I64
         | ResolvedType::I32
         | ResolvedType::Char
@@ -403,11 +433,13 @@ fn observe_cleanup_function(
         observe_place(place, false, observed);
     }
     for status in &plan.status_sources {
-        if let StatusProducer::CheckedArithmetic {
-            normalized_cases, ..
-        } = &status.producer
-        {
-            observed.status_case_capacity_entries += normalized_cases.capacity();
+        match &status.producer {
+            StatusProducer::CheckedArithmetic {
+                normalized_cases, ..
+            } => observed.status_case_capacity_entries += normalized_cases.capacity(),
+            StatusProducer::PropagatedCall { .. } | StatusProducer::ContractFalse { .. } => {}
+            // The frozen capacity census has no allocation-status accounting.
+            StatusProducer::CheckedAllocation { .. } => return None,
         }
     }
     for block in &plan.blocks {

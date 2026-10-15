@@ -8,6 +8,16 @@ use super::*;
 mod compiler_prelude;
 mod profile_diagnostics;
 mod stdin_stream;
+mod stream_collection_record;
+mod stream_nested_outcome;
+pub(crate) use stream_nested_outcome::{
+    stream_nested_outcome_signature_admitted, validate_stream_nested_outcome_program,
+};
+mod stream_owned;
+pub(crate) use stream_collection_record::{
+    stream_collection_record_signature_admitted, validate_stream_collection_record_program,
+};
+mod stream_record;
 pub(crate) use stdin_stream::{
     link_stdin_stream_command_workspace, link_stdin_stream_data_command_workspace,
     link_stdin_stream_data_entry_workspace, link_stdin_stream_exit_command_workspace,
@@ -16,6 +26,9 @@ pub(crate) use stdin_stream::{
     stream_text_parameter_with_index, stream_text_return_admitted, stream_text_return_with_index,
     validate_stream_data_program, validate_stream_text_program,
 };
+pub(crate) use stream_owned::function_requires_owned_profile as stream_owned_function_requires_profile;
+pub(crate) use stream_owned::{stream_owned_signature_admitted, validate_stream_owned_program};
+pub(crate) use stream_record::{stream_record_signature_admitted, validate_stream_record_program};
 pub(in crate::hir) mod native_owner;
 
 pub(crate) use compiler_prelude::compiler_prelude_declarations;
@@ -255,20 +268,15 @@ fn link_scalar_workspace_impl(
     compiler_types.extend(types);
     types = compiler_types;
     let has_generic_instances = !function_instances.is_empty();
-    if has_generic_instances {
-        let mut cleanup_functions = functions.clone();
-        cleanup_functions.extend(
-            function_instances
+    // The original scan is authored functions followed by concrete instances.
+    // Borrow those exact bodies instead of cloning full HIR and attachments.
+    declarations.byte_slice_roots =
+        super::byte_slice_provenance::derive_byte_slice_provenance_from(
+            &mut functions
                 .iter()
-                .map(|instance| instance.function.clone()),
-        );
-        declarations.byte_slice_roots =
-            derive_byte_slice_provenance(&cleanup_functions, &declarations)?;
-    } else {
-        // Scalar signatures may contain checked native returned views and byte
-        // inspections. Rebuild their facts from the exact retained bodies too.
-        declarations.byte_slice_roots = derive_byte_slice_provenance(&functions, &declarations)?;
-    }
+                .chain(function_instances.iter().map(|instance| &instance.function)),
+            &declarations,
+        )?;
     let mut linked = ResolvedProgram {
         module,
         permits: import_effects.into_iter().collect(),
@@ -492,7 +500,7 @@ pub(crate) fn link_owned_data_api_workspace(
     let uses_stream = functions
         .iter()
         .any(crate::stdin_stream_ops::resolved_function_uses);
-    let uses_vec = functions.iter().any(resolved_function_uses_vec);
+    let uses_vec = compiler_prelude::owned_data_uses_vec(&functions, &parts);
     let (mut declarations, mut types) = if uses_private_collections && uses_vec {
         compiler_prelude::workspace_compiler_prelude_for_stream_data_collections()?
     } else if uses_private_collections {
@@ -937,6 +945,9 @@ fn link_useful_data_workspace_profile(
         | WorkspaceIoProfile::NetworkEntry
         | WorkspaceIoProfile::HttpsEntry => {}
     }
+    if profile.is_stream() {
+        stdin_stream::reject_owned_collection_runtime(&linked)?;
+    }
     analyze_byte_data_capacity(&linked)?;
     rebuild_cleanup_metadata(&mut linked)?;
     validate(&linked)?;
@@ -1037,26 +1048,7 @@ fn link_error(message: impl Into<String>) -> Diagnostic {
 }
 
 fn rebuild_cleanup_metadata(program: &mut ResolvedProgram) -> Result<(), Diagnostic> {
-    let loan_plans = program
-        .functions
-        .iter()
-        .map(|function| crate::loan_plan::build_plan(program, function))
-        .collect::<Result<Vec<_>, _>>()?;
-    for (function, loan_plan) in program.functions.iter_mut().zip(loan_plans) {
-        function.loan_plan = loan_plan;
-    }
-    let instance_loan_plans = program
-        .function_instances
-        .iter()
-        .map(|instance| crate::loan_plan::build_plan(program, &instance.function))
-        .collect::<Result<Vec<_>, _>>()?;
-    for (instance, loan_plan) in program
-        .function_instances
-        .iter_mut()
-        .zip(instance_loan_plans)
-    {
-        instance.function.loan_plan = loan_plan;
-    }
+    super::resolve_program::initial_loan_plans::attach(program)?;
     let inventories = program
         .functions
         .iter()
@@ -1077,26 +1069,7 @@ fn rebuild_cleanup_metadata(program: &mut ResolvedProgram) -> Result<(), Diagnos
     {
         instance.function.cleanup = inventory;
     }
-    let cleanup_plans = program
-        .functions
-        .iter()
-        .map(|function| crate::cleanup_plan::build_plan(program, function))
-        .collect::<Result<Vec<_>, _>>()?;
-    for (function, cleanup_plan) in program.functions.iter_mut().zip(cleanup_plans) {
-        function.cleanup_plan = cleanup_plan;
-    }
-    let instance_cleanup_plans = program
-        .function_instances
-        .iter()
-        .map(|instance| crate::cleanup_plan::build_plan(program, &instance.function))
-        .collect::<Result<Vec<_>, _>>()?;
-    for (instance, cleanup_plan) in program
-        .function_instances
-        .iter_mut()
-        .zip(instance_cleanup_plans)
-    {
-        instance.function.cleanup_plan = cleanup_plan;
-    }
+    crate::cleanup_plan::attach_program_plans(program)?;
     for function in &program.functions {
         if let Some(yields) = &function.yields {
             crate::hir::yield_aggregate::check_bytes_request_site_count(
