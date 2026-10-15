@@ -22,6 +22,10 @@ Closure bodies start a separate ancestry, and mixed traversals stay closed.
 
 A private non-Clone, non-serialized census borrows one immutable function and its exact current replay context. It indexes exact expression references and complete IDs; a same-ID clone, foreign function/context or stale decoded graph is not a current member. Current HIR must be freshly replayed after decode.
 
+Context identity compares the held object's data address, independently of
+trait-object vtable duplication across compiler codegen units. Function and
+expression membership still require their exact held references.
+
 Local shape replay authenticates every region's snapshot, view, receiver, counter, item, discarded authored body and optional BorrowBytes latch. This is structural evidence only. Before an early loan-plan receiver borrows a region, a complete function census independently proves outer-entry definition availability, exact receiver association and every enclosing freeze over the ENTIRE inner subtree. It never skips an inner body or exempts its lowered statements from an outer freeze. Hidden receiver payloads cannot escape into any authored body. Duplicate expression/binding identities fail closed.
 
 Late HIR validation runs after ordinary type/scope/ownership checks and fresh byte-provenance derivation. It adds each authenticated ultimate root to the same complete ancestor freeze proof. The loan planner independently resolves aliases and creates a distinct `TraversalFreeze` loan per region, ending after that exact region. Ending an inner same-root loan must preserve the outer loan, including on a back edge and after inner Break. Each lexical Break/Continue still targets its exact nearest current loop; Continue executes that loop's own latch once. Return, failure selection, postconditions and cleanup remain unchanged.

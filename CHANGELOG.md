@@ -1,5 +1,8 @@
 # Changelog
 
+- Keep borrowed byte replay context identity stable across compiler codegen
+  units while retaining exact function, expression and foreign-context checks.
+
 - Keep nested immutable byte traversal tied to an actual enclosing authored
   byte traversal, including through while bridges, when resolving unchecked AST.
 

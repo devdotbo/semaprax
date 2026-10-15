@@ -14,7 +14,7 @@
 
 use crate::cleanup::FieldLivenessShape;
 use crate::cleanup_plan::CleanupTransition;
-use crate::hir::ResolvedProgram;
+use crate::hir::{DeclarationId, ResolvedProgram, ResolvedType};
 
 /// `quantity: i64`, the exact catalog-normalizer shape.
 const DECLARATION: &str = r#"
