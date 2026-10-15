@@ -363,7 +363,7 @@ pub(super) fn substitute_type<E>(
             + size_of::<Vec<ResolvedType>>()
             + size_of::<std::result::Result<ResolvedType, IdentityIndexError<E>>>(),
     )?;
-    let mut values = workspace.types(Vec::new());
+    let mut values = workspace.types();
     while let Some(frame) = frames.pop() {
         match frame {
             Frame::Enter(ty, active) => {

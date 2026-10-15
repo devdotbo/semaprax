@@ -316,7 +316,13 @@ mod function_reuse_source;
 mod provisional_result_borrow_tests;
 "###);
     assert_eq!(current, include_str!("../../../../../../docs/evidence/schema-summary/hir.rs.before"));
-    assert_eq!(include_str!("../../../../../hir/declaration_index/flags/paid.rs")
+    let paid_nominal_input = include_str!("../../../../../hir/declaration_index/flags/paid.rs");
+    let paid_nominal_registration = r####"#[path = "../nominal_paid_facts.rs"]
+mod nominal_constructor;
+"####;
+    assert_eq!(paid_nominal_input.matches(paid_nominal_registration).count(), 1);
+    let paid_nominal_original = paid_nominal_input.replacen(paid_nominal_registration, "", 1);
+    assert_eq!(paid_nominal_original
         .strip_suffix("\nmod inventory_constructor;\npub(crate) use inventory_constructor::{\n    identity as inventory_identity, substitute as inventory_substitute, InventoryPayer,\n};\n").unwrap(),
         include_str!("../../../../../../docs/evidence/schema-summary/flags-paid.rs.before"));
     assert_eq!(

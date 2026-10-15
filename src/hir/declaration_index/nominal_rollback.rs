@@ -128,6 +128,11 @@ pub(super) struct PendingTypes {
     values: Vec<ResolvedType>,
     scratch: Option<Scratch>,
 }
+impl PendingTypes {
+    pub(super) fn into_vec(mut self) -> Vec<ResolvedType> {
+        std::mem::take(&mut self.values)
+    }
+}
 impl Deref for PendingTypes {
     type Target = Vec<ResolvedType>;
     fn deref(&self) -> &Self::Target {

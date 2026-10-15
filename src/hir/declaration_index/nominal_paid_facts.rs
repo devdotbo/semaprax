@@ -129,7 +129,7 @@ fn children<'a, E>(
     workspace: &Workspace,
 ) -> Option<PendingTypes> {
     storage.bytes(size_of::<PendingTypes>() + size_of::<Vec<ResolvedType>>())?;
-    let mut children = workspace.types(Vec::new());
+    let mut children = workspace.types();
     for ty in types {
         storage.grow(&mut children, 1)?;
         let result = storage.payer.substitute(ty, owner, arguments);

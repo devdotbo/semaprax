@@ -7,6 +7,8 @@ mod admission;
 mod builtin;
 mod compute;
 mod key;
+#[path = "../nominal_paid_facts.rs"]
+mod nominal_constructor;
 mod storage;
 mod substitute;
 pub(crate) use storage::Payer as TypeFactsPayer;
