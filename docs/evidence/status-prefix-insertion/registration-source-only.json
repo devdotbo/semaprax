@@ -1,0 +1,402 @@
+[
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::certified_status_insertion_keeps_complete_original_avl_shape_and_byte_lane_order",
+    "binding": {
+      "source_path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
+      "line": 47,
+      "name": "certified_status_insertion_keeps_complete_original_avl_shape_and_byte_lane_order",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 13,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 3,
+          "module": "directory",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+          "line": 490,
+          "module": "status_prefix",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+          "line": 312,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "e27716cbfa5622514718b578db113ff2ec9a805f62020454aabc97bba637a9c5",
+      "ignored": false
+    }
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::certified_status_actual_work_and_every_small_byte_frontier_are_sticky_through_drop",
+    "binding": {
+      "source_path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
+      "line": 269,
+      "name": "certified_status_actual_work_and_every_small_byte_frontier_are_sticky_through_drop",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 13,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 3,
+          "module": "directory",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+          "line": 490,
+          "module": "status_prefix",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+          "line": 312,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "e27716cbfa5622514718b578db113ff2ec9a805f62020454aabc97bba637a9c5",
+      "ignored": false
+    }
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::certified_status_foreign_restored_and_wrong_subject_never_reactivate_the_bound_owner",
+    "binding": {
+      "source_path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
+      "line": 299,
+      "name": "certified_status_foreign_restored_and_wrong_subject_never_reactivate_the_bound_owner",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 13,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 3,
+          "module": "directory",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+          "line": 490,
+          "module": "status_prefix",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+          "line": 312,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "e27716cbfa5622514718b578db113ff2ec9a805f62020454aabc97bba637a9c5",
+      "ignored": false
+    }
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::retained::status_tests::complete_status_receivers_preserve_call_payload_six_fields_priority_and_drop",
+    "binding": {
+      "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs",
+      "line": 109,
+      "name": "complete_status_receivers_preserve_call_payload_six_fields_priority_and_drop",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 13,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 4,
+          "module": "retained",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+          "line": 628,
+          "module": "status_tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "119fdda915c5cacef250f369885ea802894b65c0a3d261fbc797326308dc828c",
+      "ignored": false
+    }
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::retained::status_tests::actual_status_borrow_receivers_keep_own_exact_short_zero_work_and_bytes",
+    "binding": {
+      "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs",
+      "line": 187,
+      "name": "actual_status_borrow_receivers_keep_own_exact_short_zero_work_and_bytes",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 13,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 4,
+          "module": "retained",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+          "line": 628,
+          "module": "status_tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "119fdda915c5cacef250f369885ea802894b65c0a3d261fbc797326308dc828c",
+      "ignored": false
+    }
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::retained::status_tests::complete_before_status_fact_receiver_and_full_source_remain_exact",
+    "binding": {
+      "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs",
+      "line": 209,
+      "name": "complete_before_status_fact_receiver_and_full_source_remain_exact",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 13,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 4,
+          "module": "retained",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+          "line": 628,
+          "module": "status_tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "119fdda915c5cacef250f369885ea802894b65c0a3d261fbc797326308dc828c",
+      "ignored": false
+    }
+  },
+  {
+    "package": "semaprax",
+    "harness": "lib",
+    "selector": "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+    "binding": {
+      "source_path": "src/workspace_graph/tests/builder_limits.rs",
+      "line": 376,
+      "name": "identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 528,
+          "module": "workspace_graph",
+          "attributes": []
+        },
+        {
+          "source_path": "src/workspace_graph.rs",
+          "line": 5954,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]",
+            "#[path = \"workspace_graph/tests.rs\"]"
+          ]
+        },
+        {
+          "source_path": "src/workspace_graph/tests.rs",
+          "line": 5,
+          "module": "builder_limits",
+          "attributes": [
+            "#[path = \"tests/builder_limits.rs\"]"
+          ]
+        }
+      ],
+      "sha256": "6ccadd41c2a5e782fd666fb02f9a599d3645ddf9d1f6888b99677b028a726821",
+      "ignored": false
+    }
+  }
+]

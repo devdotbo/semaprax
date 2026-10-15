@@ -6,6 +6,10 @@ macro_rules! semantic_graph_private_layout_source_inventory {
         include_str!("../../src/loan_plan/paid_live/dense/tests.rs"),
         include_str!("../../src/loan_plan/paid_plan/retained_before_dense.rs"),
         include_str!("../../src/loan_plan/funded_flat/before_dense.rs"),
+        include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs"),
+        include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before_prefix.rs"),
+        include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/component_before_prefix.rs"),
 concat!(
         include_str!("../../src/workspace_graph/expected_projection/private_layout.rs"),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/registry.rs"),

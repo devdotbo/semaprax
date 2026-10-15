@@ -33,7 +33,9 @@ The probe follows every original AVL node in the same order. Each node/key/child
 read retains VISIT_UNITS=3 before dereference. New initialized/control fields
 and assignments are charged explicitly before execution. Each complete or
 suffix comparison pays the existing comparator model's ten scalar bookkeeping
-units and min(byte lengths)-certified-prefix+1 byte-pair/end units. Only equal
+units and min(byte lengths)-certified-prefix+1 byte-pair/end units. The complete
+expression ordering receipt and equal-expression branch pay two additional
+scalar units before execution. Only equal
 expression bytes compare lanes, paying one existing numeric-field unit first.
 No full expression Ord call rereads the skipped prefix. All work uses the same
 ReplayBudget and phase text; no old debit is discounted or credited. Different

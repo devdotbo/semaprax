@@ -89,6 +89,10 @@ macro_rules! generic_values_source_inventory {
 macro_rules! loan_cfg_source_inventory {
     () => {
         concat!(
+        include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before_prefix.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/component_before_prefix.rs"),
             include_str!("../../../../../src/loan_plan/storage.rs"),
             include_str!("../../../../../src/loan_plan/funded_flat.rs"),
             include_str!("../../../../../src/loan_plan/funded_flat/work_boundary.rs"),

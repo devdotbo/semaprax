@@ -1,0 +1,29 @@
+{
+  "status": "SOURCE_ONLY_NO_EXECUTION",
+  "new": [
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::certified_status_insertion_keeps_complete_original_avl_shape_and_byte_lane_order",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::certified_status_actual_work_and_every_small_byte_frontier_are_sticky_through_drop",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs"
+    },
+    {
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::certified_status_foreign_restored_and_wrong_subject_never_reactivate_the_bound_owner",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs"
+    }
+  ],
+  "required_existing": [
+    "cleanup_plan::replay::expression_facts::receiving::retained::status_tests::complete_status_receivers_preserve_call_payload_six_fields_priority_and_drop",
+    "cleanup_plan::replay::expression_facts::receiving::retained::status_tests::actual_status_borrow_receivers_keep_own_exact_short_zero_work_and_bytes",
+    "cleanup_plan::replay::expression_facts::receiving::retained::status_tests::complete_before_status_fact_receiver_and_full_source_remain_exact",
+    "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal"
+  ]
+}

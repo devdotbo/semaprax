@@ -638,3 +638,6 @@ pub(in crate::cleanup_plan::replay) use exits::validate_exits_retained;
 
 #[cfg(test)]
 mod status_before_prefix;
+
+#[cfg(test)]
+mod component_before_prefix;

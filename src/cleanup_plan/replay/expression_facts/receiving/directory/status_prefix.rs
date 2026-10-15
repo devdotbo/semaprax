@@ -126,9 +126,12 @@ struct Comparison<'a> {
 const COMPARISON_UNITS: usize = 10;
 const COMPARISON_BYTES: usize = size_of::<Comparison<'static>>()
     + size_of::<Result<(Ordering, usize), Diagnostic>>()
-    + size_of::<(Ordering, usize)>();
-const SEARCH_BYTES: usize =
-    2 * size_of::<Search>() + size_of::<Result<Probe, Diagnostic>>() + size_of::<Probe>();
+    + size_of::<(Ordering, usize)>()
+    + size_of::<Ordering>(); // Simultaneous complete-expression ordering local.
+const SEARCH_BYTES: usize = 2 * size_of::<Search>()
+    + size_of::<Result<Probe, Diagnostic>>()
+    + size_of::<Probe>()
+    + size_of::<&StatusSourceId>(); // Simultaneously received minimum key.
 
 fn compare(
     function: &ResolvedFunction,
@@ -164,6 +167,8 @@ fn compare(
         }
         comparison.common += 1;
     }
+    // New scalar ordering receipt and equal-expression branch, before either.
+    budget.charge(function, 2, phase)?;
     let order = comparison.left.len().cmp(&comparison.right.len());
     if order != Ordering::Equal {
         return Ok((order, comparison.common));
@@ -302,3 +307,6 @@ impl<'hir> Directory<&'hir StatusSourceId> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;

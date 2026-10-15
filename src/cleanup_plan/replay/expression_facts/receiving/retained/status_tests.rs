@@ -116,6 +116,15 @@ fn complete_status_receivers_preserve_call_payload_six_fields_priority_and_drop(
         let old = observe(&program, function, false, MAX_REPLAY_WORK_UNITS, 1 << 26, Some(&expected));
         let new = observe(&program, function, true, MAX_REPLAY_WORK_UNITS, 1 << 26, Some(&expected));
         assert!(old.0 && new.0 && !old.3 && !new.3);
+        // Keep the complete earlier component's exact equations independent.
+        // The actual production receiver above still runs with every original
+        // hostile/physical/Drop control; prefix work is a separate algorithm.
+        let component = component_before_prefix::observe(&program, function, true,
+            MAX_REPLAY_WORK_UNITS, 1 << 26, Some(&expected));
+        assert!(component.0 && !component.3);
+        assert!(old.5 <= old.2 && new.5 <= new.2 && component.5 <= component.2);
+        {
+        let new = component;
         let calls = function.cleanup_plan.status_sources.iter()
             .filter(|source| matches!(source.producer, StatusProducer::PropagatedCall { .. })).count();
         let receiving_bytes = function.cleanup_plan.status_sources.len()
@@ -129,6 +138,7 @@ fn complete_status_receivers_preserve_call_payload_six_fields_priority_and_drop(
             assert!(new.1 < old.1 && new.2 < old.2);
             assert!(new.5 <= old.5); // Receiving control is fully paid and allocation-free.
             saved = true;
+        }
         }
         let mut attacks = Vec::new();
         if let Some(source) = function.cleanup_plan.status_sources.first() {
