@@ -404,7 +404,7 @@ fn manifest_fact(path: &str, bytes: usize) -> SemanticWorkspaceFileFact {
         source_revision: format!("sha256:{}", "1".repeat(64)),
         source_digest: format!("sha256:{}", "2".repeat(64)),
         bytes,
-        source: String::new(),
+        source: String::new().into(),
     }
 }
 

@@ -838,7 +838,7 @@ fn valid_eight_scalar_generic_closures_keep_full_owned_fallback_projection_recei
     ) -> usize {
         let mut invocations = 0;
         if let ResolvedExprKind::Invoke { callable, args } = &expression.kind {
-            let callee = &crate::hir::function_value::INVOKE_ID;
+            let callee: &DeclarationId = &crate::hir::function_value::INVOKE_ID;
             let arguments = [callable.ty.clone()];
             let old = resolved_call_params(program, function, expression, callee, None, &arguments)
                 .unwrap();

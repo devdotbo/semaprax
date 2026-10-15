@@ -62,11 +62,11 @@ fn classifier_leaf_roots_keep_all_original_profile_results_with_literal_zero_bac
     for root in roots {
         parity(&index, &root);
         let expected = summary(leaf_saved::classify_nested_owned_byte_record(&index, &root));
+        #[allow(
+            clippy::drop_non_drop,
+            reason = "End this borrowed proof at the measured lifetime boundary."
+        )]
         let (_, old) =
-            #[allow(
-                clippy::drop_non_drop,
-                reason = "End this borrowed proof at the measured lifetime boundary."
-            )]
             measure(|| drop(leaf_saved::classify_nested_owned_byte_record(&index, &root)));
         let (((), current), refused, used, first) = with_limit_usage_refusal(0, || {
             measure(|| {
