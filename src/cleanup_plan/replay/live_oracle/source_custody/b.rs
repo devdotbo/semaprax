@@ -1087,6 +1087,9 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        undo(&mut current, r#####"        concat!(include_str!("../src/cleanup_plan/replay/expression_facts/arena.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs")),"#####, r#####"        include_str!("../src/cleanup_plan/replay/expression_facts/arena.rs"),"#####);
         // Exact full pre-stage shared-sealing receiver join.
         undo(&mut current, r###"                    include_str!("../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs"),
 "###, "");

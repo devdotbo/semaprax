@@ -1,0 +1,11 @@
+{
+  "status": "source authored, unexecuted",
+  "selectors": [
+    "cleanup_plan::replay::expression_facts::arena::prefix::tests::complete_old_lookup_matches_every_opaque_byte_endpoint_hit_miss_and_prefix",
+    "cleanup_plan::replay::expression_facts::arena::prefix::tests::actual_suffix_byte_rates_and_work_exact_short_zero_and_sticky_refusals_are_preserved",
+    "cleanup_plan::replay::expression_facts::arena::prefix::tests::complete_current_fact_payloads_match_original_lookup_and_active_refusal_stays_sticky",
+    "cleanup_plan::replay::expression_facts::arena::prefix::tests::full_initialized_lookup_and_comparison_carriers_are_paid_exact_short_zero_and_drop",
+    "cleanup_plan::replay::expression_facts::arena::prefix::tests::complete_original_arena_and_every_added_source_join_have_exact_full_inverses",
+    "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal"
+  ]
+}

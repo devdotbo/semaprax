@@ -1,6 +1,7 @@
 //! Online paid full-expression facts. Indices are private construction coordinates.
 use super::*;
 use std::cmp::Ordering;
+mod prefix;
 const NIL: usize = usize::MAX;
 struct Node<'hir> {
     key: ExpressionId,
@@ -280,6 +281,7 @@ impl<'hir> Arena<'hir> {
         }
         height(self, self.root, NIL).is_some()
     }
+    #[cfg(test)]
     fn find(
         &self,
         function: &ResolvedFunction,
@@ -342,7 +344,7 @@ impl<'hir> Lookup for Arena<'hir> {
         key: &ExpressionId,
         budget: &mut ReplayBudget,
     ) -> Result<Option<&'a Option<CallFact<'a>>>, Diagnostic> {
-        self.find(function, key, budget)
+        prefix::find(self, function, key, budget)
     }
 }
 

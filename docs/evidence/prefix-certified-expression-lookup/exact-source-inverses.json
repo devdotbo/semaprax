@@ -1,0 +1,48 @@
+[
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/arena.rs",
+    "archive": "arena.rs.before.txt",
+    "original_sha256": "94e056acbccb322afa35d42ba81af4672725b036bb4cf730c9495a8bbbb44d17",
+    "edits": [
+      {
+        "name": "certified-prefix-hook-0",
+        "before": "use super::*;\nuse std::cmp::Ordering;\nconst NIL: usize = usize::MAX;\nstruct Node<'hir> {\n",
+        "after": "use super::*;\nuse std::cmp::Ordering;\nmod prefix;\nconst NIL: usize = usize::MAX;\nstruct Node<'hir> {\n"
+      },
+      {
+        "name": "certified-prefix-hook-1",
+        "before": "        height(self, self.root, NIL).is_some()\n    }\n    fn find(\n        &self,\n",
+        "after": "        height(self, self.root, NIL).is_some()\n    }\n    #[cfg(test)]\n    fn find(\n        &self,\n"
+      },
+      {
+        "name": "certified-prefix-hook-2",
+        "before": "        budget: &mut ReplayBudget,\n    ) -> Result<Option<&'a Option<CallFact<'a>>>, Diagnostic> {\n        self.find(function, key, budget)\n    }\n}\n",
+        "after": "        budget: &mut ReplayBudget,\n    ) -> Result<Option<&'a Option<CallFact<'a>>>, Diagnostic> {\n        prefix::find(self, function, key, budget)\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "source": "tests/hir_module_boundaries.rs",
+    "archive": "hir_module_boundaries.rs.before.txt",
+    "original_sha256": "57db1e409226dc2ddf5c9519071ad69822e646d6f71d11cfd16e88d51ad8c4fc",
+    "edits": [
+      {
+        "name": "certified-prefix-hook-0",
+        "before": "        include_str!(\"../src/cleanup_plan/replay/allocation/tests/accounting_scope.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/arena/producer.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/arena.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/borrowed/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/borrowed.rs\"),\n",
+        "after": "        include_str!(\"../src/cleanup_plan/replay/allocation/tests/accounting_scope.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/arena/producer.rs\"),\n        concat!(include_str!(\"../src/cleanup_plan/replay/expression_facts/arena.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/arena/prefix.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs\")),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/borrowed/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/borrowed.rs\"),\n"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "archive": "source_custody_b.rs.before.txt",
+    "original_sha256": "ead6bb549f1bd85d904eecbf182f14103639489320ec8ad09f0d29232f2fe90b",
+    "edits": [
+      {
+        "name": "certified-prefix-hook-0",
+        "before": "    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        // Exact full pre-stage shared-sealing receiver join.\n        undo(&mut current, r###\"                    include_str!(\"../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs\"),\n",
+        "after": "    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, r#####\"        concat!(include_str!(\"../src/cleanup_plan/replay/expression_facts/arena.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/arena/prefix.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs\")),\"#####, r#####\"        include_str!(\"../src/cleanup_plan/replay/expression_facts/arena.rs\"),\"#####);\n        // Exact full pre-stage shared-sealing receiver join.\n        undo(&mut current, r###\"                    include_str!(\"../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs\"),\n"
+      }
+    ]
+  }
+]
