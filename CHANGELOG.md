@@ -1,5 +1,7 @@
 # Changelog
 
+- Refresh both browser graph pins from authenticated hosted compiler records, retaining full current/prior graph wires, exact historical bill reconstruction, and the unchanged original cursor-control helper and hashes. Use the direct error assertion for the unit-valued hidden-law check result to satisfy the pinned Clippy gate.
+
 - Refuse a native-law carrier in ordinary Project file facts unless the manifest selected its law path before workspace preflight; preserve raw Graph retention and add owned, cold, and cached Project regressions.
 
 - Select the application JSON and NDJSON module gates in library-depth CI, keep complete browser graph diagnostics in job logs without artifact coupling, and preserve the scaffold layout error’s frozen-or-tables prefix while listing current guidance.

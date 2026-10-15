@@ -125,8 +125,7 @@ fn hidden_missing_and_misassociated_laws_fail_closed() {
     assert_ne!(hidden, MANIFEST);
     std::fs::write(fixture.manifest(), hidden).unwrap();
     let errors = with_authenticated_project(&fixture.manifest(), |snapshot| snapshot.check())
-        .err()
-        .expect("an ordinary source cannot hide a native law declaration");
+        .expect_err("an ordinary source cannot hide a native law declaration");
     assert_eq!(errors[0].code, "SPX-LW110");
     assert_eq!(
         errors[0].message,
