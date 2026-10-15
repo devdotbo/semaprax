@@ -1,0 +1,2034 @@
+Independently evaluate the full actual ordinary cleanup hot path below. Actual owner17 wide fixture still exceeds UNCHANGED 32,000,000 work units after a real duplicate status-directory reconstruction was eliminated; failure now arises while inserting referenced numeric edges. Find the largest genuine algorithmic redundancies or alternate exact algorithms, not quota increases, unit discounts, old-header credits, refunds, exemptions, weaker fixture/assertions or non-paying caches. Complete semantic first-error order, full opaque IDs (including NUL/Unicode/prefix keys), deterministic iteration, physical before allocation, sticky refusal and Drop must stay. Source only, no execution. Separate concrete immediate repetition elimination from larger algorithm changes. Consider whether full-string AVL lookups/insertion upper bounds dominate wide IDs and whether an online radix/crit-bit exact directory could reduce actual full-key comparisons without hashing/IDs inferred as authority; compare that against dense numeric directories and retained probes. Do not claim a runtime cure. Give the most valuable bounded implementation seam and its independent controls.
+
+=== COMPLETE src/cleanup_plan/replay/expression_facts/arena.rs ===
+1: //! Online paid full-expression facts. Indices are private construction coordinates.
+2: use super::*;
+3: use std::cmp::Ordering;
+4: const NIL: usize = usize::MAX;
+5: struct Node<'hir> {
+6:     key: ExpressionId,
+7:     fact: Option<CallFact<'hir>>,
+8:     left: usize,
+9:     right: usize,
+10:     parent: usize,
+11:     next: usize,
+12:     height: u8,
+13: }
+14: pub(in crate::cleanup_plan::replay) struct Arena<'hir> {
+15:     nodes: Vec<Node<'hir>>,
+16:     root: usize,
+17:     first: usize,
+18: }
+19: fn failure(detail: &'static str, physical: bool) -> capacity::Failure {
+20:     capacity::Failure { detail, physical }
+21: }
+22: fn comparison_units(a: &ExpressionId, b: &ExpressionId) -> Result<usize, capacity::Failure> {
+23:     a.as_str()
+24:         .len()
+25:         .min(b.as_str().len())
+26:         .checked_add(1)
+27:         .ok_or_else(|| failure("expression-fact key comparison work overflow", false))
+28: }
+29: impl<'hir> Arena<'hir> {
+30:     pub(super) fn new(
+31:         capacity: &mut capacity::FactCapacity<'hir, '_>,
+32:     ) -> Result<Self, capacity::Failure> {
+33:         capacity.arena_reserve_array::<Self>(1)?;
+34:         Ok(Self {
+35:             nodes: Vec::new(),
+36:             root: NIL,
+37:             first: NIL,
+38:         })
+39:     }
+40:     pub(super) fn len(&self) -> usize {
+41:         self.nodes.len()
+42:     }
+43:     // Reserve the complete replacement while the old allocation is still live.
+44:     // This occurs before dispatch, at the old node-reservation boundary.
+45:     pub(super) fn reserve_next(
+46:         &mut self,
+47:         capacity: &mut capacity::FactCapacity<'hir, '_>,
+48:     ) -> Result<(), capacity::Failure> {
+49:         capacity.arena_reserve_array::<Node<'hir>>(0)?;
+50:         let required = self
+51:             .nodes
+52:             .len()
+53:             .checked_add(1)
+54:             .ok_or_else(|| failure("expression-fact arena capacity overflow", true))?;
+55:         if required <= self.nodes.capacity() {
+56:             return Ok(());
+57:         }
+58:         let target =
+59:             super::super::physical_storage::replay_growth_capacity(self.nodes.capacity(), required)
+60:                 .ok_or_else(|| failure("expression-fact arena capacity overflow", true))?;
+61:         capacity.arena_reserve_array::<Node<'hir>>(target)?;
+62:         capacity.arena_work(self.nodes.len())?;
+63:         let mut replacement = Vec::new();
+64:         replacement
+65:             .try_reserve_exact(target)
+66:             .map_err(|_| failure("physical expression-fact arena allocation refused", true))?;
+67:         if replacement.capacity() != target {
+68:             return Err(failure(
+69:                 "physical expression-fact arena capacity differs",
+70:                 true,
+71:             ));
+72:         }
+73:         replacement.append(&mut self.nodes);
+74:         self.nodes = replacement;
+75:         Ok(())
+76:     }
+77:     pub(super) fn prepare_insert_work(
+78:         &self,
+79:         function: &ResolvedFunction,
+80:         key: &ExpressionId,
+81:         budget: &mut ReplayBudget,
+82:     ) -> Result<(), Diagnostic> {
+83:         // Each search compares at most key.len()+1 bytes and visits at most
+84:         // three indexed fields. Ancestor update/balance/parent reads cost at
+85:         // most 16 indexed visits, plus two rotations of at most 20 visits.
+86:         // Appending and predecessor/parent links cost at most three visits.
+87:         let levels = usize::from(self.height(self.root)) + 1;
+88:         let units = key
+89:             .as_str()
+90:             .len()
+91:             .checked_add(60)
+92:             .and_then(|per_level| per_level.checked_mul(levels))
+93:             .and_then(|bound| bound.checked_add(3))
+94:             .ok_or_else(|| {
+95:                 budget.budget_refusal(function, "expression-fact insertion work overflow", "")
+96:             })?;
+97:         budget.charge(function, units, "expression-fact online AVL insertion")
+98:     }
+99:     pub(super) fn prepare_growth_work(
+100:         &self,
+101:         function: &ResolvedFunction,
+102:         budget: &mut ReplayBudget,
+103:     ) -> Result<(), Diagnostic> {
+104:         if self.nodes.len() == self.nodes.capacity() {
+105:             let units = self.nodes.len().checked_add(1).ok_or_else(|| {
+106:                 budget.budget_refusal(function, "expression-fact relocation work overflow", "")
+107:             })?;
+108:             budget.charge(
+109:                 function,
+110:                 units,
+111:                 "expression-fact arena allocation and relocation",
+112:             )?;
+113:         }
+114:         Ok(())
+115:     }
+116:     pub(super) fn insert(
+117:         &mut self,
+118:         key: ExpressionId,
+119:         fact: Option<CallFact<'hir>>,
+120:         capacity: &mut capacity::FactCapacity<'hir, '_>,
+121:     ) -> Result<bool, capacity::Failure> {
+122:         capacity.arena_reserve_array::<Node<'hir>>(0)?;
+123:         let (mut at, mut parent, mut before, mut after) = (self.root, NIL, NIL, NIL);
+124:         let mut side = Ordering::Equal;
+125:         while at != NIL {
+126:             capacity.arena_work(3)?;
+127:             capacity.arena_work(comparison_units(&key, &self.nodes[at].key)?)?;
+128:             side = key.cmp(&self.nodes[at].key);
+129:             if side == Ordering::Equal {
+130:                 return Ok(false);
+131:             }
+132:             parent = at;
+133:             if side == Ordering::Less {
+134:                 after = at;
+135:                 at = self.nodes[at].left;
+136:             } else {
+137:                 before = at;
+138:                 at = self.nodes[at].right;
+139:             }
+140:         }
+141:         capacity.arena_work(3)?;
+142:         let index = self.nodes.len();
+143:         self.nodes.push(Node {
+144:             key,
+145:             fact,
+146:             left: NIL,
+147:             right: NIL,
+148:             parent,
+149:             next: after,
+150:             height: 1,
+151:         });
+152:         if before == NIL {
+153:             self.first = index;
+154:         } else {
+155:             self.nodes[before].next = index;
+156:         }
+157:         if parent == NIL {
+158:             self.root = index;
+159:         } else if side == Ordering::Less {
+160:             self.nodes[parent].left = index;
+161:         } else {
+162:             self.nodes[parent].right = index;
+163:         }
+164:         self.rebalance(parent, capacity)?;
+165:         Ok(true)
+166:     }
+167:     fn height(&self, at: usize) -> u8 {
+168:         if at == NIL {
+169:             0
+170:         } else {
+171:             self.nodes[at].height
+172:         }
+173:     }
+174:     fn update(&mut self, at: usize) -> Result<(), capacity::Failure> {
+175:         self.nodes[at].height = self
+176:             .height(self.nodes[at].left)
+177:             .max(self.height(self.nodes[at].right))
+178:             .checked_add(1)
+179:             .ok_or_else(|| failure("expression-fact AVL height overflow", false))?;
+180:         Ok(())
+181:     }
+182:     fn attach(&mut self, parent: usize, old: usize, next: usize) {
+183:         if parent == NIL {
+184:             self.root = next;
+185:         } else if self.nodes[parent].left == old {
+186:             self.nodes[parent].left = next;
+187:         } else {
+188:             self.nodes[parent].right = next;
+189:         }
+190:         self.nodes[next].parent = parent;
+191:     }
+192:     fn rotate_left(
+193:         &mut self,
+194:         at: usize,
+195:         capacity: &mut capacity::FactCapacity<'hir, '_>,
+196:     ) -> Result<usize, capacity::Failure> {
+197:         capacity.arena_work(20)?;
+198:         let right = self.nodes[at].right;
+199:         let middle = self.nodes[right].left;
+200:         let parent = self.nodes[at].parent;
+201:         self.attach(parent, at, right);
+202:         self.nodes[right].left = at;
+203:         self.nodes[at].parent = right;
+204:         self.nodes[at].right = middle;
+205:         if middle != NIL {
+206:             self.nodes[middle].parent = at;
+207:         }
+208:         self.update(at)?;
+209:         self.update(right)?;
+210:         Ok(right)
+211:     }
+212:     fn rotate_right(
+213:         &mut self,
+214:         at: usize,
+215:         capacity: &mut capacity::FactCapacity<'hir, '_>,
+216:     ) -> Result<usize, capacity::Failure> {
+217:         capacity.arena_work(20)?;
+218:         let left = self.nodes[at].left;
+219:         let middle = self.nodes[left].right;
+220:         let parent = self.nodes[at].parent;
+221:         self.attach(parent, at, left);
+222:         self.nodes[left].right = at;
+223:         self.nodes[at].parent = left;
+224:         self.nodes[at].left = middle;
+225:         if middle != NIL {
+226:             self.nodes[middle].parent = at;
+227:         }
+228:         self.update(at)?;
+229:         self.update(left)?;
+230:         Ok(left)
+231:     }
+232:     fn rebalance(
+233:         &mut self,
+234:         mut at: usize,
+235:         capacity: &mut capacity::FactCapacity<'hir, '_>,
+236:     ) -> Result<(), capacity::Failure> {
+237:         while at != NIL {
+238:             capacity.arena_work(16)?;
+239:             self.update(at)?;
+240:             let (left, right) = (self.nodes[at].left, self.nodes[at].right);
+241:             let top = if i16::from(self.height(left)) - i16::from(self.height(right)) > 1 {
+242:                 if self.height(self.nodes[left].left) < self.height(self.nodes[left].right) {
+243:                     self.rotate_left(left, capacity)?;
+244:                 }
+245:                 self.rotate_right(at, capacity)?
+246:             } else if i16::from(self.height(right)) - i16::from(self.height(left)) > 1 {
+247:                 if self.height(self.nodes[right].right) < self.height(self.nodes[right].left) {
+248:                     self.rotate_right(right, capacity)?;
+249:                 }
+250:                 self.rotate_left(at, capacity)?
+251:             } else {
+252:                 at
+253:             };
+254:             at = self.nodes[top].parent;
+255:         }
+256:         Ok(())
+257:     }
+258:     pub(super) fn entries(&self) -> Iter<'_, 'hir> {
+259:         Iter {
+260:             arena: self,
+261:             next: self.first,
+262:         }
+263:     }
+264:     #[cfg(test)]
+265:     pub(super) fn balanced(&self) -> bool {
+266:         fn height(arena: &Arena<'_>, at: usize, parent: usize) -> Option<u8> {
+267:             if at == NIL {
+268:                 return Some(0);
+269:             }
+270:             let node = arena.nodes.get(at)?;
+271:             if node.parent != parent {
+272:                 return None;
+273:             }
+274:             let left = height(arena, node.left, at)?;
+275:             let right = height(arena, node.right, at)?;
+276:             if left.abs_diff(right) > 1 || node.height != left.max(right) + 1 {
+277:                 return None;
+278:             }
+279:             Some(node.height)
+280:         }
+281:         height(self, self.root, NIL).is_some()
+282:     }
+283:     fn find(
+284:         &self,
+285:         function: &ResolvedFunction,
+286:         key: &ExpressionId,
+287:         budget: &mut ReplayBudget,
+288:     ) -> Result<Option<&Option<CallFact<'hir>>>, Diagnostic> {
+289:         budget.reserve_bytes(function, 0, "expression-fact arena lookup authentication")?;
+290:         budget.charge(function, 0, "expression-fact arena lookup authentication")?;
+291:         let mut at = self.root;
+292:         while at != NIL {
+293:             let units = comparison_units(key, &self.nodes[at].key)
+294:                 .map_err(|f| budget.budget_refusal(function, f.detail, ""))?;
+295:             let units = units.checked_add(3).ok_or_else(|| {
+296:                 budget.budget_refusal(function, "expression-fact lookup work overflow", "")
+297:             })?;
+298:             budget.charge(function, units, "expression-fact arena lookup")?;
+299:             match key.cmp(&self.nodes[at].key) {
+300:                 Ordering::Equal => return Ok(Some(&self.nodes[at].fact)),
+301:                 Ordering::Less => at = self.nodes[at].left,
+302:                 Ordering::Greater => at = self.nodes[at].right,
+303:             }
+304:         }
+305:         Ok(None)
+306:     }
+307: }
+308: pub(in crate::cleanup_plan::replay) struct Iter<'a, 'hir> {
+309:     arena: &'a Arena<'hir>,
+310:     next: usize,
+311: }
+312: impl<'a, 'hir> Iterator for Iter<'a, 'hir> {
+313:     type Item = (&'a ExpressionId, &'a Option<CallFact<'hir>>);
+314:     fn next(&mut self) -> Option<Self::Item> {
+315:         if self.next == NIL {
+316:             return None;
+317:         }
+318:         let node = &self.arena.nodes[self.next];
+319:         self.next = node.next;
+320:         Some((&node.key, &node.fact))
+321:     }
+322: }
+323: impl<'hir> Lookup for Arena<'hir> {
+324:     fn entries(&self) -> Entries<'_> {
+325:         Entries::Arena(self.entries())
+326:     }
+327:     fn entries_paid(
+328:         &self,
+329:         function: &ResolvedFunction,
+330:         budget: &mut ReplayBudget,
+331:     ) -> Result<Entries<'_>, Diagnostic> {
+332:         budget.reserve_bytes(function, 0, "expression-fact arena entries authentication")?;
+333:         let units = self.nodes.len().checked_add(1).ok_or_else(|| {
+334:             budget.budget_refusal(function, "expression-fact entry work overflow", "")
+335:         })?;
+336:         budget.charge(function, units, "expression-fact arena entries")?;
+337:         Ok(Entries::Arena(self.entries()))
+338:     }
+339:     fn fact<'a>(
+340:         &'a self,
+341:         function: &ResolvedFunction,
+342:         key: &ExpressionId,
+343:         budget: &mut ReplayBudget,
+344:     ) -> Result<Option<&'a Option<CallFact<'a>>>, Diagnostic> {
+345:         self.find(function, key, budget)
+346:     }
+347: }
+348: 
+349: mod producer;
+350: pub(super) fn build<'hir, P: errors::Policy>(
+351:     function: &'hir ResolvedFunction,
+352:     payer: capacity::Payer<'_>,
+353:     budget: &mut ReplayBudget,
+354: ) -> Result<Arena<'hir>, P::Error> {
+355:     let mut capacity = capacity::FactCapacity::with_payer(function, payer)
+356:         .map_err(|failure| P::capacity(function, failure))?;
+357:     budget.charge(function, 1, "expression-fact arena owner construction")?;
+358:     let mut facts = Arena::new(&mut capacity).map_err(|failure| P::capacity(function, failure))?;
+359:     for expression in function
+360:         .requires
+361:         .iter()
+362:         .chain(std::iter::once(&function.body))
+363:         .chain(&function.ensures)
+364:     {
+365:         producer::collect_arena_facts::<P>(
+366:             function,
+367:             expression,
+368:             &mut facts,
+369:             Some(&mut capacity),
+370:             budget,
+371:         )?;
+372:     }
+373:     Ok(facts)
+374: }
+
+=== COMPLETE src/cleanup_plan/replay/expression_facts/arena/producer.rs ===
+1: use super::*;
+2: 
+3: pub(super) fn collect_arena_facts<'a, P: errors::Policy>(
+4:     function: &'a ResolvedFunction,
+5:     expression: &'a ResolvedExpr,
+6:     facts: &mut Arena<'a>,
+7:     mut capacity: Option<&mut capacity::FactCapacity<'a, '_>>,
+8:     budget: &mut ReplayBudget,
+9: ) -> Result<(), P::Error> {
+10:     // One borrowed continuation per ancestor keeps the original pre-order walk
+11:     // and avoids rescanning wide Block/Match prefixes for each child.
+12:     let mut stack = [None; 514];
+13:     stack[0] = Some((
+14:         expression_children::ReplayChildCursor::new(expression),
+15:         false,
+16:     ));
+17:     let mut len = 1usize;
+18:     while len != 0 {
+19:         len -= 1;
+20:         let (mut cursor, started) = stack[len].take().expect("expression-fact frame retained");
+21:         let current = cursor.expression();
+22:         if !started {
+23:             if let Some(capacity) = capacity.as_deref_mut() {
+24:                 facts.prepare_growth_work(function, budget)?;
+25:                 facts
+26:                     .reserve_next(capacity)
+27:                     .map_err(|failure| P::capacity(function, failure))?;
+28:                 capacity
+29:                     .arena_expression(current)
+30:                     .map_err(|failure| P::capacity(function, failure))?;
+31:             }
+32:             let fact = match &current.kind {
+33:                 _ if crate::hir::closure::once::call(current).is_some() => {
+34:                     let (callee, args) = if capacity.is_some() {
+35:                         crate::hir::closure::once::call(current).expect("same closed affine call")
+36:                     } else {
+37:                         let (callee, args, _) = crate::hir::function_value::cleanup_call(current)?;
+38:                         (callee, args)
+39:                     };
+40:                     Some(CallFact {
+41:                         callee: std::borrow::Cow::Borrowed(callee),
+42:                         instance: None,
+43:                         arguments: call_payload::Arguments::Slice(args),
+44:                         type_arguments: call_payload::Types::Slice(&[]),
+45:                     })
+46:                 }
+47:                 ResolvedExprKind::Invoke { callable, args } => Some(CallFact {
+48:                     callee: std::borrow::Cow::Borrowed(&crate::hir::function_value::INVOKE_ID),
+49:                     instance: None,
+50:                     arguments: call_payload::Arguments::Slice(args),
+51:                     type_arguments: call_payload::Types::One(&callable.ty),
+52:                 }),
+53:                 ResolvedExprKind::VecFieldRead { args, .. } => Some(CallFact {
+54:                     callee: std::borrow::Cow::Borrowed(crate::vec_field::operation_id()),
+55:                     instance: None,
+56:                     arguments: call_payload::Arguments::Slice(args),
+57:                     type_arguments: call_payload::Types::Slice(&[]),
+58:                 }),
+59:                 ResolvedExprKind::LiteralFormat { args, .. } => Some(CallFact {
+60:                     callee: std::borrow::Cow::Borrowed(crate::literal_format::operation_id()),
+61:                     instance: None,
+62:                     arguments: call_payload::Arguments::Slice(args),
+63:                     type_arguments: call_payload::Types::Slice(&[]),
+64:                 }),
+65:                 ResolvedExprKind::Call {
+66:                     callee,
+67:                     instance,
+68:                     args,
+69:                     type_arguments,
+70:                 } => Some(CallFact {
+71:                     callee: std::borrow::Cow::Borrowed(callee),
+72:                     instance: instance.as_ref(),
+73:                     arguments: call_payload::Arguments::Slice(args),
+74:                     type_arguments: call_payload::Types::Slice(type_arguments),
+75:                 }),
+76:                 ResolvedExprKind::NativeRustImportCall(call)
+77:                     if crate::cleanup_plan::native_rust::owns(current) =>
+78:                 {
+79:                     Some(CallFact {
+80:                         callee: std::borrow::Cow::Borrowed(&call.import),
+81:                         instance: None,
+82:                         arguments: call_payload::Arguments::Slice(&call.args),
+83:                         type_arguments: call_payload::Types::Slice(&[]),
+84:                     })
+85:                 }
+86:                 ResolvedExprKind::HostCommandCall(call) => Some(CallFact {
+87:                     callee: std::borrow::Cow::Owned(DeclarationId::compiler(
+88:                         crate::hir::CompilerDeclaration::Command(call.operation),
+89:                     )),
+90:                     instance: None,
+91:                     arguments: call_payload::Arguments::Slice(&call.args),
+92:                     type_arguments: call_payload::Types::Slice(&[]),
+93:                 }),
+94:                 ResolvedExprKind::ByteRange {
+95:                     operation,
+96:                     source,
+97:                     start,
+98:                     end,
+99:                 } => Some(CallFact {
+100:                     callee: std::borrow::Cow::Borrowed(operation),
+101:                     instance: None,
+102:                     arguments: call_payload::Arguments::Range([source, start, end]),
+103:                     type_arguments: call_payload::Types::Slice(&[]),
+104:                 }),
+105:                 _ => None,
+106:             };
+107:             let capacity = capacity.as_deref_mut().expect("arena owns its payer");
+108:             facts.prepare_insert_work(function, &current.id, budget)?;
+109:             if !facts
+110:                 .insert(current.id.clone(), fact, capacity)
+111:                 .map_err(|failure| P::capacity(function, failure))?
+112:             {
+113:                 return Err(P::duplicate(function, &current.id));
+114:             }
+115:         }
+116:         if let Some(child) = cursor.next() {
+117:             if len + 2 > stack.len() {
+118:                 return Err(P::capacity(
+119:                     function,
+120:                     capacity::Failure {
+121:                         detail: "HIR expression fact traversal exceeds the admitted depth",
+122:                         physical: false,
+123:                     },
+124:                 ));
+125:             }
+126:             stack[len] = Some((cursor, true));
+127:             stack[len + 1] = Some((expression_children::ReplayChildCursor::new(child), false));
+128:             len += 2;
+129:         }
+130:     }
+131:     Ok(())
+132: }
+
+=== COMPLETE src/cleanup_plan/replay/expression_facts/receiving/directory.rs ===
+1: //! Complete paid ordered key directory for receiving replay. Indices are private
+2: //! construction coordinates; keys are compared in full and never hashed.
+3: use super::*;
+4: use crate::cleanup_plan::ExitTargetId;
+5: use std::cmp::Ordering;
+6: 
+7: const NIL: usize = usize::MAX;
+8: // Per-step charges mirror the expression-fact arena.
+9: const VISIT_UNITS: usize = 3;
+10: const STEP_UNITS: usize = 2;
+11: const REBALANCE_UNITS: usize = 16;
+12: const ROTATION_UNITS: usize = 20;
+13: 
+14: /// Work for one full-key comparison: full string `min(len) + 1` plus one unit per
+15: /// structural numeric field. `None` on arithmetic overflow.
+16: pub(super) trait KeyWork: Ord {
+17:     fn comparison_units(&self, other: &Self) -> Option<usize>;
+18: }
+19: 
+20: impl KeyWork for u32 {
+21:     fn comparison_units(&self, _: &Self) -> Option<usize> {
+22:         Some(1)
+23:     }
+24: }
+25: 
+26: impl KeyWork for ExpressionId {
+27:     fn comparison_units(&self, other: &Self) -> Option<usize> {
+28:         self.as_str().len().min(other.as_str().len()).checked_add(1)
+29:     }
+30: }
+31: 
+32: impl KeyWork for StorageId {
+33:     fn comparison_units(&self, other: &Self) -> Option<usize> {
+34:         let payload = match (self, other) {
+35:             (Self::Value(left), Self::Value(right)) => left
+36:                 .as_str()
+37:                 .len()
+38:                 .min(right.as_str().len())
+39:                 .checked_add(1)?,
+40:             (Self::Temporary(left), Self::Temporary(right)) => left.comparison_units(right)?,
+41:             (
+42:                 Self::CallArgument {
+43:                     call: left_call,
+44:                     parameter_index: _,
+45:                     value_expression: left_value,
+46:                 },
+47:                 Self::CallArgument {
+48:                     call: right_call,
+49:                     parameter_index: _,
+50:                     value_expression: right_value,
+51:                 },
+52:             ) => left_call
+53:                 .comparison_units(right_call)?
+54:                 .checked_add(1)?
+55:                 .checked_add(left_value.comparison_units(right_value)?)?,
+56:             _ => 0,
+57:         };
+58:         // One variant discriminator; full Ord remains the actual comparator.
+59:         payload.checked_add(1)
+60:     }
+61: }
+62: 
+63: impl KeyWork for StatusSourceId {
+64:     fn comparison_units(&self, other: &Self) -> Option<usize> {
+65:         // The lane is one structural numeric field.
+66:         self.expression
+67:             .comparison_units(&other.expression)?
+68:             .checked_add(1)
+69:     }
+70: }
+71: 
+72: macro_rules! numeric_key {
+73:     ($($ty:ty),* $(,)?) => { $(impl KeyWork for $ty {
+74:         fn comparison_units(&self, _: &Self) -> Option<usize> { Some(1) }
+75:     })* };
+76: }
+77: numeric_key!(EdgeId, ExitTargetId, LivenessFlagId, StatusCase);
+78: 
+79: impl<T: KeyWork> KeyWork for &T {
+80:     fn comparison_units(&self, other: &Self) -> Option<usize> {
+81:         T::comparison_units(self, other)
+82:     }
+83: }
+84: 
+85: struct Node<K> {
+86:     key: K,
+87:     left: usize,
+88:     right: usize,
+89:     parent: usize,
+90:     next: usize,
+91:     height: u8,
+92: }
+93: 
+94: struct Probe {
+95:     found: bool,
+96:     parent: usize,
+97:     before: usize,
+98:     after: usize,
+99:     side: Ordering,
+100: }
+101: 
+102: pub(super) struct Directory<K> {
+103:     nodes: Vec<Node<K>>,
+104:     root: usize,
+105:     first: usize,
+106:     phase: &'static str,
+107: }
+108: 
+109: struct Iter<'a, K> {
+110:     nodes: &'a [Node<K>],
+111:     next: usize,
+112: }
+113: 
+114: impl<'a, K> Iterator for Iter<'a, K> {
+115:     type Item = &'a K;
+116:     fn next(&mut self) -> Option<Self::Item> {
+117:         let node = self.nodes.get(self.next)?;
+118:         self.next = node.next;
+119:         Some(&node.key)
+120:     }
+121: }
+122: 
+123: fn overflow(
+124:     function: &ResolvedFunction,
+125:     budget: &mut ReplayBudget,
+126:     detail: &'static str,
+127: ) -> Diagnostic {
+128:     budget.budget_refusal(function, detail, "")
+129: }
+130: 
+131: impl<K: KeyWork> Directory<K> {
+132:     pub(super) fn new(
+133:         function: &ResolvedFunction,
+134:         budget: &mut ReplayBudget,
+135:         phase: &'static str,
+136:     ) -> Result<Self, Diagnostic> {
+137:         budget.reserve_bytes(function, 0, phase)?;
+138:         budget.charge(function, 0, phase)?;
+139:         Ok(Self {
+140:             nodes: Vec::new(),
+141:             root: NIL,
+142:             first: NIL,
+143:             phase,
+144:         })
+145:     }
+146: 
+147:     pub(super) fn is_empty(&self) -> bool {
+148:         self.nodes.is_empty()
+149:     }
+150: 
+151:     pub(super) fn len(&self) -> usize {
+152:         self.nodes.len()
+153:     }
+154: 
+155:     fn authenticate(
+156:         &self,
+157:         function: &ResolvedFunction,
+158:         budget: &mut ReplayBudget,
+159:     ) -> Result<(), Diagnostic> {
+160:         budget.reserve_bytes(function, 0, self.phase)?;
+161:         budget.charge(function, 0, self.phase)
+162:     }
+163: 
+164:     fn next_paid<'a>(
+165:         &self,
+166:         iter: &mut Iter<'a, K>,
+167:         function: &ResolvedFunction,
+168:         budget: &mut ReplayBudget,
+169:     ) -> Result<Option<&'a K>, Diagnostic> {
+170:         if iter.next != NIL {
+171:             budget.charge(function, STEP_UNITS, self.phase)?;
+172:         }
+173:         Ok(iter.next())
+174:     }
+175: 
+176:     fn iter(&self) -> Iter<'_, K> {
+177:         Iter {
+178:             nodes: &self.nodes,
+179:             next: self.first,
+180:         }
+181:     }
+182: 
+183:     fn probe(
+184:         &self,
+185:         function: &ResolvedFunction,
+186:         key: &K,
+187:         budget: &mut ReplayBudget,
+188:     ) -> Result<Probe, Diagnostic> {
+189:         let mut probe = Probe {
+190:             found: false,
+191:             parent: NIL,
+192:             before: NIL,
+193:             after: NIL,
+194:             side: Ordering::Equal,
+195:         };
+196:         let mut at = self.root;
+197:         while at != NIL {
+198:             let node = &self.nodes[at];
+199:             let units = key
+200:                 .comparison_units(&node.key)
+201:                 .and_then(|units| units.checked_add(VISIT_UNITS))
+202:                 .ok_or_else(|| {
+203:                     overflow(function, budget, "directory key comparison work overflow")
+204:                 })?;
+205:             budget.charge(function, units, self.phase)?;
+206:             probe.side = Ord::cmp(key, &node.key);
+207:             if probe.side == Ordering::Equal {
+208:                 probe.found = true;
+209:                 return Ok(probe);
+210:             }
+211:             probe.parent = at;
+212:             if probe.side == Ordering::Less {
+213:                 probe.after = at;
+214:                 at = node.left;
+215:             } else {
+216:                 probe.before = at;
+217:                 at = node.right;
+218:             }
+219:         }
+220:         Ok(probe)
+221:     }
+222: 
+223:     pub(super) fn contains(
+224:         &self,
+225:         function: &ResolvedFunction,
+226:         key: &K,
+227:         budget: &mut ReplayBudget,
+228:     ) -> Result<bool, Diagnostic> {
+229:         self.authenticate(function, budget)?;
+230:         Ok(self.probe(function, key, budget)?.found)
+231:     }
+232: 
+233:     /// Returns `false` for a duplicate, like `BTreeSet::insert`.
+234:     pub(super) fn insert(
+235:         &mut self,
+236:         function: &ResolvedFunction,
+237:         key: K,
+238:         budget: &mut ReplayBudget,
+239:     ) -> Result<bool, Diagnostic> {
+240:         self.authenticate(function, budget)?;
+241:         let probe = self.probe(function, &key, budget)?;
+242:         if probe.found {
+243:             return Ok(false);
+244:         }
+245:         self.grow(function, budget)?;
+246:         budget.charge(function, VISIT_UNITS, self.phase)?;
+247:         let index = self.nodes.len();
+248:         self.nodes.push(Node {
+249:             key,
+250:             left: NIL,
+251:             right: NIL,
+252:             parent: probe.parent,
+253:             next: probe.after,
+254:             height: 1,
+255:         });
+256:         if probe.before == NIL {
+257:             self.first = index;
+258:         } else {
+259:             self.nodes[probe.before].next = index;
+260:         }
+261:         if probe.parent == NIL {
+262:             self.root = index;
+263:         } else if probe.side == Ordering::Less {
+264:             self.nodes[probe.parent].left = index;
+265:         } else {
+266:             self.nodes[probe.parent].right = index;
+267:         }
+268:         self.rebalance(probe.parent, function, budget)?;
+269:         Ok(true)
+270:     }
+271: 
+272:     // Relocation is metered before any work; `reserve_vec` pays the complete
+273:     // replacement array while the old allocation is still live.
+274:     fn grow(
+275:         &mut self,
+276:         function: &ResolvedFunction,
+277:         budget: &mut ReplayBudget,
+278:     ) -> Result<(), Diagnostic> {
+279:         if self.nodes.len() == self.nodes.capacity() {
+280:             let units =
+281:                 self.nodes.len().checked_add(1).ok_or_else(|| {
+282:                     overflow(function, budget, "directory relocation work overflow")
+283:                 })?;
+284:             budget.charge(function, units, self.phase)?;
+285:         }
+286:         budget.reserve_vec(function, &mut self.nodes, 1, self.phase)
+287:     }
+288: 
+289:     /// Full-key set equality by lockstep ordered walk.
+290:     pub(super) fn same_keys(
+291:         &self,
+292:         other: &Self,
+293:         function: &ResolvedFunction,
+294:         budget: &mut ReplayBudget,
+295:     ) -> Result<bool, Diagnostic> {
+296:         self.authenticate(function, budget)?;
+297:         if self.len() != other.len() {
+298:             return Ok(false);
+299:         }
+300:         let (mut left, mut right) = (self.iter(), other.iter());
+301:         loop {
+302:             match (
+303:                 self.next_paid(&mut left, function, budget)?,
+304:                 other.next_paid(&mut right, function, budget)?,
+305:             ) {
+306:                 (Some(a), Some(b)) => {
+307:                     Self::charge_pair(a, b, function, budget, self.phase)?;
+308:                     if Ord::cmp(a, b) != Ordering::Equal {
+309:                         return Ok(false);
+310:                     }
+311:                 }
+312:                 (None, None) => return Ok(true),
+313:                 _ => return Ok(false),
+314:             }
+315:         }
+316:     }
+317: 
+318:     /// Ordered merge walk; `true` when no full key is shared.
+319:     pub(super) fn is_disjoint(
+320:         &self,
+321:         other: &Self,
+322:         function: &ResolvedFunction,
+323:         budget: &mut ReplayBudget,
+324:     ) -> Result<bool, Diagnostic> {
+325:         self.authenticate(function, budget)?;
+326:         let (mut left, mut right) = (self.iter(), other.iter());
+327:         let (mut a, mut b) = (
+328:             self.next_paid(&mut left, function, budget)?,
+329:             other.next_paid(&mut right, function, budget)?,
+330:         );
+331:         while let (Some(x), Some(y)) = (a, b) {
+332:             Self::charge_pair(x, y, function, budget, self.phase)?;
+333:             match Ord::cmp(x, y) {
+334:                 Ordering::Equal => return Ok(false),
+335:                 Ordering::Less => a = self.next_paid(&mut left, function, budget)?,
+336:                 Ordering::Greater => b = other.next_paid(&mut right, function, budget)?,
+337:             }
+338:         }
+339:         Ok(true)
+340:     }
+341: 
+342:     fn charge_pair(
+343:         a: &K,
+344:         b: &K,
+345:         function: &ResolvedFunction,
+346:         budget: &mut ReplayBudget,
+347:         phase: &'static str,
+348:     ) -> Result<(), Diagnostic> {
+349:         let units = a
+350:             .comparison_units(b)
+351:             .ok_or_else(|| overflow(function, budget, "directory key comparison work overflow"))?;
+352:         budget.charge(function, units, phase)
+353:     }
+354: 
+355:     fn height(&self, at: usize) -> u8 {
+356:         if at == NIL {
+357:             0
+358:         } else {
+359:             self.nodes[at].height
+360:         }
+361:     }
+362: 
+363:     // Callers meter the enclosing rebalance/rotation step before calling.
+364:     fn update(
+365:         &mut self,
+366:         at: usize,
+367:         function: &ResolvedFunction,
+368:         budget: &mut ReplayBudget,
+369:     ) -> Result<(), Diagnostic> {
+370:         let height = self
+371:             .height(self.nodes[at].left)
+372:             .max(self.height(self.nodes[at].right))
+373:             .checked_add(1)
+374:             .ok_or_else(|| overflow(function, budget, "directory AVL height overflow"))?;
+375:         self.nodes[at].height = height;
+376:         Ok(())
+377:     }
+378: 
+379:     fn attach(&mut self, parent: usize, old: usize, next: usize) {
+380:         if parent == NIL {
+381:             self.root = next;
+382:         } else if self.nodes[parent].left == old {
+383:             self.nodes[parent].left = next;
+384:         } else {
+385:             self.nodes[parent].right = next;
+386:         }
+387:         self.nodes[next].parent = parent;
+388:     }
+389: 
+390:     fn rotate_left(
+391:         &mut self,
+392:         at: usize,
+393:         function: &ResolvedFunction,
+394:         budget: &mut ReplayBudget,
+395:     ) -> Result<usize, Diagnostic> {
+396:         budget.charge(function, ROTATION_UNITS, self.phase)?;
+397:         let right = self.nodes[at].right;
+398:         let middle = self.nodes[right].left;
+399:         let parent = self.nodes[at].parent;
+400:         self.attach(parent, at, right);
+401:         self.nodes[right].left = at;
+402:         self.nodes[at].parent = right;
+403:         self.nodes[at].right = middle;
+404:         if middle != NIL {
+405:             self.nodes[middle].parent = at;
+406:         }
+407:         self.update(at, function, budget)?;
+408:         self.update(right, function, budget)?;
+409:         Ok(right)
+410:     }
+411: 
+412:     fn rotate_right(
+413:         &mut self,
+414:         at: usize,
+415:         function: &ResolvedFunction,
+416:         budget: &mut ReplayBudget,
+417:     ) -> Result<usize, Diagnostic> {
+418:         budget.charge(function, ROTATION_UNITS, self.phase)?;
+419:         let left = self.nodes[at].left;
+420:         let middle = self.nodes[left].right;
+421:         let parent = self.nodes[at].parent;
+422:         self.attach(parent, at, left);
+423:         self.nodes[left].right = at;
+424:         self.nodes[at].parent = left;
+425:         self.nodes[at].left = middle;
+426:         if middle != NIL {
+427:             self.nodes[middle].parent = at;
+428:         }
+429:         self.update(at, function, budget)?;
+430:         self.update(left, function, budget)?;
+431:         Ok(left)
+432:     }
+433: 
+434:     fn rebalance(
+435:         &mut self,
+436:         mut at: usize,
+437:         function: &ResolvedFunction,
+438:         budget: &mut ReplayBudget,
+439:     ) -> Result<(), Diagnostic> {
+440:         while at != NIL {
+441:             budget.charge(function, REBALANCE_UNITS, self.phase)?;
+442:             self.update(at, function, budget)?;
+443:             let (left, right) = (self.nodes[at].left, self.nodes[at].right);
+444:             let top = if i16::from(self.height(left)) - i16::from(self.height(right)) > 1 {
+445:                 if self.height(self.nodes[left].left) < self.height(self.nodes[left].right) {
+446:                     self.rotate_left(left, function, budget)?;
+447:                 }
+448:                 self.rotate_right(at, function, budget)?
+449:             } else if i16::from(self.height(right)) - i16::from(self.height(left)) > 1 {
+450:                 if self.height(self.nodes[right].right) < self.height(self.nodes[right].left) {
+451:                     self.rotate_right(right, function, budget)?;
+452:                 }
+453:                 self.rotate_left(at, function, budget)?
+454:             } else {
+455:                 at
+456:             };
+457:             at = self.nodes[top].parent;
+458:         }
+459:         Ok(())
+460:     }
+461: }
+462: #[cfg(test)]
+463: impl<K: KeyWork> Directory<K> {
+464:     pub(super) fn keys(&self) -> impl Iterator<Item = &K> {
+465:         self.iter()
+466:     }
+467:     pub(super) fn capacity(&self) -> usize {
+468:         self.nodes.capacity()
+469:     }
+470:     pub(super) fn balanced(&self) -> bool {
+471:         fn height<K>(nodes: &[Node<K>], at: usize, parent: usize) -> Option<u8> {
+472:             if at == NIL {
+473:                 return Some(0);
+474:             }
+475:             let node = nodes.get(at)?;
+476:             if node.parent != parent {
+477:                 return None;
+478:             }
+479:             let left = height(nodes, node.left, at)?;
+480:             let right = height(nodes, node.right, at)?;
+481:             if left.abs_diff(right) > 1 || node.height != left.max(right) + 1 {
+482:                 return None;
+483:             }
+484:             Some(node.height)
+485:         }
+486:         height(&self.nodes, self.root, NIL).is_some()
+487:     }
+488: }
+
+=== COMPLETE src/cleanup_plan/replay/expression_facts/receiving/retained.rs ===
+1: //! One immutable, fully paid status directory reused by consecutive ordinary passes.
+2: //! Complete pre-retention receivers remain in the parent and execute independently.
+3: use super::*;
+4: use crate::bounded_output::classifier_string::ClassifierLedger;
+5: 
+6: // Pay both complete initialized return and receiving controls; no old Directory credit.
+7: const CONTROL_BYTES: usize = std::mem::size_of::<Result<StatusSources<'static>, Diagnostic>>()
+8:     + std::mem::size_of::<StatusSources<'static>>();
+9: 
+10: pub(in crate::cleanup_plan::replay) struct StatusSources<'hir> {
+11:     function: &'hir ResolvedFunction,
+12:     budget: *const ReplayBudget,
+13:     ledger: ClassifierLedger,
+14:     ids: Option<Directory<&'hir StatusSourceId>>,
+15: }
+16: 
+17: pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
+18:     function: &'hir ResolvedFunction,
+19:     facts: &Facts<'_>,
+20:     budget: &mut ReplayBudget,
+21: ) -> Result<StatusSources<'hir>, Diagnostic> {
+22:     if let Facts::Tree(tree) = facts {
+23:         super::super::super::validate_status_sources(function, tree)?;
+24:         budget.reserve_bytes(function, CONTROL_BYTES, "retained status full controls")?;
+25:         return Ok(StatusSources { function, budget, ledger: ClassifierLedger::capture(), ids: None });
+26:     }
+27:     let expressions: &dyn Lookup = facts;
+28:     let mut ids = Directory::new(function, budget, "cleanup status identity directory")?;
+29:     for source in &function.cleanup_plan.status_sources {
+30:         if !ids.insert(function, &source.id, budget)? {
+31:             return Err(<Diagnostic as semantic_refusal::Error>::structural(
+32:                 function,
+33:                 semantic_refusal::Atom::RepeatedStatus(source.id.expression.clone()),
+34:             ));
+35:         }
+36:         if expressions
+37:             .fact(function, &source.id.expression, budget)?
+38:             .is_none()
+39:         {
+40:             return Err(<Diagnostic as semantic_refusal::Error>::structural(
+41:                 function,
+42:                 semantic_refusal::Atom::UnknownStatus(source.id.expression.clone()),
+43:             ));
+44:         }
+45:         match (&source.id.lane, &source.producer) {
+46:             (
+47:                 StatusLane::OperationFailure | StatusLane::OwnerAdmission,
+48:                 StatusProducer::PropagatedCall { callee },
+49:             ) => {
+50:                 let Some(Some(call)) = expressions.fact(function, &source.id.expression, budget)?
+51:                 else {
+52:                     return Err(replay_error(
+53:                         function,
+54:                         "propagated-call status source does not name a call expression",
+55:                     )
+56:                     .into());
+57:                 };
+58:                 if call.callee.as_ref() != callee {
+59:                     return Err(replay_error(
+60:                         function,
+61:                         "propagated-call status source names the wrong callee",
+62:                     )
+63:                     .into());
+64:                 }
+65:             }
+66:             (
+67:                 StatusLane::OperationFailure,
+68:                 StatusProducer::CheckedArithmetic {
+69:                     normalized_cases, ..
+70:                 },
+71:             ) => {
+72:                 let mut cases = Directory::new(
+73:                     function,
+74:                     budget,
+75:                     "cleanup checked arithmetic case directory",
+76:                 )?;
+77:                 for case in normalized_cases {
+78:                     cases.insert(function, *case, budget)?;
+79:                 }
+80:                 if cases.is_empty() || cases.len() != normalized_cases.len() {
+81:                     return Err(replay_error(
+82:                         function,
+83:                         "checked-arithmetic status cases are empty or repeated",
+84:                     )
+85:                     .into());
+86:                 }
+87:             }
+88:             (
+89:                 StatusLane::AllocationFailure,
+90:                 StatusProducer::CheckedAllocation {
+91:                     normalized_cases, ..
+92:                 },
+93:             ) if function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20
+94:                 && *normalized_cases
+95:                     == [
+96:                         crate::cleanup_plan::AllocationCase::PayloadRefused,
+97:                         crate::cleanup_plan::AllocationCase::SizeOverflow,
+98:                     ] => {}
+99:             (StatusLane::ContractFalse, StatusProducer::ContractFalse { .. }) => {}
+100:             _ => {
+101:                 return Err(replay_error(
+102:                     function,
+103:                     "status source lane does not match its producer",
+104:                 )
+105:                 .into());
+106:             }
+107:         }
+108:     }
+109:     budget.reserve_bytes(function, CONTROL_BYTES, "retained status full controls")?;
+110:     Ok(StatusSources { function, budget, ledger: ClassifierLedger::capture(), ids: Some(ids) })
+111: }
+112: 
+113: pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
+114:     program: &dyn crate::cleanup::ReplayContext,
+115:     function: &ResolvedFunction,
+116:     facts: &Facts<'_>,
+117:     storage: &BTreeSet<StorageId>,
+118:     leaves: &Leaves,
+119:     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+120:     budget: &mut ReplayBudget,
+121:     validated: &StatusSources<'_>,
+122: ) -> Result<(), Diagnostic> {
+123:     if !std::ptr::eq(function, validated.function)
+124:         || !std::ptr::eq(budget, validated.budget)
+125:     {
+126:         return Err(replay_error(function, "status directory belongs to another function or budget"));
+127:     }
+128:     if !validated.ledger.current() {
+129:         return Err(budget.budget_refusal(function, "retained status invocation owner changed", ""));
+130:     }
+131:     // Authenticate the unchanged payer even though retaining the directory allocates nothing.
+132:     budget.reserve_bytes(function, 0, "retained cleanup status directory")?;
+133:     budget.charge(function, 0, "retained cleanup status directory")?;
+134:     if let Facts::Tree(tree) = facts {
+135:         return super::super::super::validate_blocks_and_edges(
+136:             program, function, tree, storage, leaves, helpers, budget,
+137:         );
+138:     }
+139:     let expressions: &dyn Lookup = facts;
+140:     let plan = &function.cleanup_plan;
+141:     let statuses = validated.ids.as_ref().ok_or_else(|| {
+142:         replay_error(function, "retained status directory has no metered keys")
+143:     })?;
+144:     for (index, edge) in plan.edges.iter().enumerate() {
+145:         if edge.id.0 != u32_index(function, index, "cleanup edge")?
+146:             || !block_exists(function, edge.from)
+147:             || !block_exists(function, edge.to)
+148:         {
+149:             return Err(replay_error(
+150:                 function,
+151:                 "cleanup edge has a non-contiguous ID or unknown endpoint",
+152:             ));
+153:         }
+154:         validate_edge_condition(function, &edge.condition, expressions, statuses, budget)?;
+155:     }
+156: 
+157:     let mut referenced_edges =
+158:         Directory::new(function, budget, "cleanup referenced edge directory")?;
+159:     let mut referenced_exits =
+160:         Directory::new(function, budget, "cleanup referenced exit directory")?;
+161:     let mut committed_calls = Directory::new(function, budget, "cleanup committed call directory")?;
+162:     for (index, block) in plan.blocks.iter().enumerate() {
+163:         if block.id.0 != u32_index(function, index, "cleanup block")?
+164:             || usize::try_from(block.region.0)
+165:                 .ok()
+166:                 .is_none_or(|region| region >= plan.regions.len())
+167:         {
+168:             return Err(replay_error(
+169:                 function,
+170:                 "cleanup block has a non-contiguous ID or unknown region",
+171:             ));
+172:         }
+173:         let mut selected = None;
+174:         for transition in &block.transitions {
+175:             match transition {
+176:                 CleanupTransition::Initialize { at, destination } => {
+177:                     require_expression(function, expressions, at, budget)?;
+178:                     validate_place(function, destination, storage, leaves)?;
+179:                 }
+180:                 CleanupTransition::ReserveRenewal { at, binding } => {
+181:                     renewal::validate_binding(program, function, at, binding, helpers, budget)?;
+182:                     require_expression(function, expressions, at, budget)?;
+183:                     validate_place(function, binding, storage, leaves)?;
+184:                 }
+185:                 CleanupTransition::Renew {
+186:                     at,
+187:                     source,
+188:                     destination,
+189:                 } => {
+190:                     renewal::validate_binding(program, function, at, destination, helpers, budget)?;
+191:                     require_expression(function, expressions, at, budget)?;
+192:                     validate_place(function, source, storage, leaves)?;
+193:                     validate_place(function, destination, storage, leaves)?;
+194:                 }
+195:                 CleanupTransition::Transfer {
+196:                     at,
+197:                     source,
+198:                     destination,
+199:                 } => {
+200:                     require_expression(function, expressions, at, budget)?;
+201:                     let source_flags = validate_place(function, source, storage, leaves)?;
+202:                     let destination_flags = validate_place(function, destination, storage, leaves)?;
+203:                     let mut source_directory =
+204:                         Directory::new(function, budget, "cleanup transfer source flag directory")?;
+205:                     for flag in source_flags {
+206:                         source_directory.insert(function, flag, budget)?;
+207:                     }
+208:                     let mut destination_directory = Directory::new(
+209:                         function,
+210:                         budget,
+211:                         "cleanup transfer destination flag directory",
+212:                     )?;
+213:                     for flag in destination_flags {
+214:                         destination_directory.insert(function, flag, budget)?;
+215:                     }
+216:                     let source_flags = source_directory;
+217:                     let destination_flags = destination_directory;
+218:                     if source_flags.len() != destination_flags.len()
+219:                         || !source_flags.is_disjoint(&destination_flags, function, budget)?
+220:                     {
+221:                         return Err(replay_error(
+222:                             function,
+223:                             "cleanup transfer has incompatible structural places",
+224:                         ));
+225:                     }
+226:                 }
+227:                 CleanupTransition::AuthenticateVariantCase {
+228:                     at,
+229:                     source,
+230:                     variant,
+231:                     case,
+232:                 } => {
+233:                     require_expression(function, expressions, at, budget)?;
+234:                     validate_place(function, source, storage, leaves)?;
+235:                     let Some(cases) = program.declarations().variant_cases(variant) else {
+236:                         return Err(replay_error(
+237:                             function,
+238:                             "variant authentication references a non-variant declaration",
+239:                         ));
+240:                     };
+241:                     if !cases.iter().any(|candidate| candidate.id == *case) {
+242:                         return Err(replay_error(
+243:                             function,
+244:                             "variant authentication references a foreign case",
+245:                         ));
+246:                     }
+247:                     let slot = function
+248:                         .cleanup_plan
+249:                         .slots
+250:                         .iter()
+251:                         .find(|slot| slot.storage == source.storage)
+252:                         .ok_or_else(|| {
+253:                             replay_error(function, "variant authentication source has no slot")
+254:                         })?;
+255:                     if !matches!(
+256:                         &slot.ty,
+257:                         ResolvedType::Nominal { declaration, .. } if declaration == variant
+258:                     ) {
+259:                         return Err(replay_error(
+260:                             function,
+261:                             "variant authentication source type disagrees with its variant",
+262:                         ));
+263:                     }
+264:                 }
+265:                 CleanupTransition::TransferVariant {
+266:                     at,
+267:                     source,
+268:                     destination,
+269:                     variant,
+270:                 } => {
+271:                     require_expression(function, expressions, at, budget)?;
+272:                     let source_flags = validate_place(function, source, storage, leaves)?;
+273:                     let destination_flags = validate_place(function, destination, storage, leaves)?;
+274:                     if source_flags.len() != destination_flags.len()
+275:                         || function
+276:                             .cleanup_plan
+277:                             .slots
+278:                             .iter()
+279:                             .filter(|slot| {
+280:                                 slot.storage == source.storage
+281:                                     || slot.storage == destination.storage
+282:                             })
+283:                             .any(|slot| {
+284:                                 !matches!(
+285:                                     &slot.ty,
+286:                                     ResolvedType::Nominal { declaration, .. }
+287:                                         if declaration == variant
+288:                                 )
+289:                             })
+290:                     {
+291:                         return Err(replay_error(
+292:                             function,
+293:                             "variant transfer has incompatible conditional inventories",
+294:                         ));
+295:                     }
+296:                 }
+297:                 CleanupTransition::InitializeVariant {
+298:                     at,
+299:                     destination,
+300:                     variant,
+301:                 } => {
+302:                     require_expression(function, expressions, at, budget)?;
+303:                     validate_place(function, destination, storage, leaves)?;
+304:                     let slot = function
+305:                         .cleanup_plan
+306:                         .slots
+307:                         .iter()
+308:                         .find(|slot| slot.storage == destination.storage)
+309:                         .ok_or_else(|| {
+310:                             replay_error(function, "variant initialization has no destination slot")
+311:                         })?;
+312:                     if !destination.projections.is_empty()
+313:                         || !matches!(
+314:                             &slot.ty,
+315:                             ResolvedType::Nominal { declaration, .. }
+316:                                 if declaration == variant
+317:                         )
+318:                         || !matches!(
+319:                             &slot.field_liveness_shape,
+320:                             FieldLivenessShape::Variant { declaration, .. }
+321:                                 if declaration == variant
+322:                         )
+323:                     {
+324:                         return Err(replay_error(
+325:                             function,
+326:                             "variant initialization destination disagrees with its variant",
+327:                         ));
+328:                     }
+329:                 }
+330:                 CleanupTransition::CallCommit { call, arguments } => {
+331:                     let Some(Some(fact)) = expressions.fact(function, call, budget)? else {
+332:                         return Err(replay_error(
+333:                             function,
+334:                             "call commit does not name a call expression",
+335:                         ));
+336:                     };
+337:                     // Lexical return domains duplicate postcondition bodies, so one
+338:                     // call legitimately commits once per proof domain; the typed
+339:                     // skeleton comparison counts those per-domain commits exactly.
+340:                     if !committed_calls.insert(function, call, budget)?
+341:                         && plan.lexical_control.is_none()
+342:                     {
+343:                         return Err(replay_error(
+344:                             function,
+345:                             "call has more than one atomic commit",
+346:                         ));
+347:                     }
+348:                     let params = resolved_call::resolved_call_param_view(
+349:                         program,
+350:                         function,
+351:                         find_resolved_expression(function, call).ok_or_else(|| {
+352:                             replay_error(function, "call commit expression is absent")
+353:                         })?,
+354:                         &fact.callee,
+355:                         fact.instance,
+356:                         fact.type_arguments.as_slice(),
+357:                     )
+358:                     .map_err(|_| {
+359:                         replay_error(
+360:                             function,
+361:                             format_args!("call commit has unknown callee `{}`", fact.callee),
+362:                         )
+363:                     })?;
+364:                     if params.len() != fact.arguments.len() {
+365:                         return Err(replay_error(
+366:                             function,
+367:                             "call commit callee signature has inconsistent arity",
+368:                         ));
+369:                     }
+370:                     if !resolved_call::owned_parameter_indices_match(
+371:                         &params,
+372:                         arguments,
+373:                         function,
+374:                         |ty| type_needs_drop(program, function, ty),
+375:                     )? {
+376:                         return Err(replay_error(
+377:                             function,
+378:                             "call commit does not contain every and only owned droppable parameter",
+379:                         ));
+380:                     }
+381:                     let mut previous = None;
+382:                     let mut consumed =
+383:                         Directory::new(function, budget, "cleanup consumed flag directory")?;
+384:                     for argument in arguments {
+385:                         if previous.is_some_and(|value| value >= argument.parameter_index) {
+386:                             return Err(replay_error(
+387:                                 function,
+388:                                 "call-commit parameters are not in strict signature order",
+389:                             ));
+390:                         }
+391:                         previous = Some(argument.parameter_index);
+392:                         let index = usize::try_from(argument.parameter_index).map_err(|_| {
+393:                             replay_error(function, "call-commit parameter index does not fit usize")
+394:                         })?;
+395:                         let Some(expected_expression) = fact.arguments.get(index) else {
+396:                             return Err(replay_error(
+397:                                 function,
+398:                                 "call-commit parameter index exceeds call arity",
+399:                             ));
+400:                         };
+401:                         match &argument.source.storage {
+402:                             StorageId::CallArgument {
+403:                                 call: storage_call,
+404:                                 parameter_index,
+405:                                 value_expression,
+406:                             } if storage_call == call
+407:                                 && parameter_index == &argument.parameter_index
+408:                                 && value_expression == expected_expression
+409:                                 && argument.source.projections.is_empty() => {}
+410:                             _ => {
+411:                                 return Err(replay_error(
+412:                                     function,
+413:                                     "call commit does not consume its matching whole argument epoch",
+414:                                 ));
+415:                             }
+416:                         }
+417:                         for flag in validate_place(function, &argument.source, storage, leaves)? {
+418:                             if !consumed.insert(function, flag, budget)? {
+419:                                 return Err(replay_error(
+420:                                     function,
+421:                                     "atomic call commit consumes overlapping argument epochs",
+422:                                 ));
+423:                             }
+424:                         }
+425:                     }
+426:                 }
+427:                 CleanupTransition::SelectFailure { source } => {
+428:                     require_status_paid(function, statuses, source, budget)?;
+429:                     if selected.replace(source).is_some() {
+430:                         return Err(replay_error(
+431:                             function,
+432:                             "cleanup block selects more than one failure status",
+433:                         ));
+434:                     }
+435:                 }
+436:                 CleanupTransition::StageCopyResult { source } => {
+437:                     validate_staged_target(function, source)?;
+438:                     match source {
+439:                         StagedCopyResultSource::Body { expression, .. } => {
+440:                             if expression != &function.body.id {
+441:                                 return Err(replay_error(
+442:                                     function,
+443:                                     "body Copy-result stage names another expression",
+444:                                 ));
+445:                             }
+446:                         }
+447:                         StagedCopyResultSource::TryResidual {
+448:                             expression,
+449:                             operand,
+450:                             ..
+451:                         }
+452:                         | StagedCopyResultSource::TryOptionNone {
+453:                             expression,
+454:                             operand,
+455:                             ..
+456:                         } => {
+457:                             require_expression(function, expressions, expression, budget)?;
+458:                             require_expression(function, expressions, operand, budget)?;
+459:                         }
+460:                     }
+461:                 }
+462:             }
+463:         }
+464:         match &block.terminator {
+465:             CleanupTerminator::Goto(edge) => {
+466:                 validate_owned_edge_paid(function, block.id, *edge, &mut referenced_edges, budget)?;
+467:                 if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always)
+468:                     && !(matches!(
+469:                         function.cleanup_plan.schema,
+470:                         CLEANUP_PLAN_SCHEMA_V6
+471:                             | CLEANUP_PLAN_SCHEMA_V7
+472:                             | CLEANUP_PLAN_SCHEMA_V8
+473:                             | CLEANUP_PLAN_SCHEMA_V9
+474:                             | CLEANUP_PLAN_SCHEMA_V10
+475:                             | CLEANUP_PLAN_SCHEMA_V11
+476:                             | CLEANUP_PLAN_SCHEMA_V12
+477:                             | CLEANUP_PLAN_SCHEMA_V13
+478:                             | CLEANUP_PLAN_SCHEMA_V15
+479:                             | CLEANUP_PLAN_SCHEMA_V16
+480:                             | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17
+481:                             | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+482:                             | crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
+483:                             | CLEANUP_PLAN_SCHEMA_V14
+484:                     ) && matches!(
+485:                         plan.edges[edge.0 as usize].condition,
+486:                         EdgeCondition::VariantCase { matches: true, .. }
+487:                     ))
+488:                 {
+489:                     return Err(replay_error(function, "goto edge is conditional"));
+490:                 }
+491:             }
+492:             CleanupTerminator::Branch(edges) => {
+493:                 if edges.len() != 2 || edges[0] == edges[1] {
+494:                     return Err(replay_error(
+495:                         function,
+496:                         "cleanup branch must own exactly two distinct edges",
+497:                     ));
+498:                 }
+499:                 for edge in edges {
+500:                     validate_owned_edge_paid(
+501:                         function,
+502:                         block.id,
+503:                         *edge,
+504:                         &mut referenced_edges,
+505:                         budget,
+506:                     )?;
+507:                 }
+508:                 validate_branch_pair(
+509:                     function,
+510:                     &plan.edges[edges[0].0 as usize].condition,
+511:                     &plan.edges[edges[1].0 as usize].condition,
+512:                 )?;
+513:             }
+514:             CleanupTerminator::Exit(exit) => {
+515:                 if usize::try_from(exit.0)
+516:                     .ok()
+517:                     .is_none_or(|value| value >= plan.exits.len())
+518:                     || !referenced_exits.insert(function, *exit, budget)?
+519:                 {
+520:                     return Err(replay_error(
+521:                         function,
+522:                         "cleanup block references an unknown or repeated exit",
+523:                     ));
+524:                 }
+525:                 if plan.exits[exit.0 as usize].from != block.id {
+526:                     return Err(replay_error(
+527:                         function,
+528:                         "cleanup exit is owned by the wrong block",
+529:                     ));
+530:                 }
+531:             }
+532:         }
+533:     }
+534:     let mut expected_calls = Directory::new(function, budget, "cleanup expected call directory")?;
+535:     for (expression, fact) in expressions.entries_paid(function, budget)? {
+536:         if fact.is_some() {
+537:             expected_calls.insert(function, expression, budget)?;
+538:         }
+539:     }
+540:     // Control-flow-dead calls after an abrupt exit are never lowered, so the
+541:     // lexical profile checks commit coverage in the typed skeleton instead.
+542:     if plan.lexical_control.is_none()
+543:         && !committed_calls.same_keys(&expected_calls, function, budget)?
+544:     {
+545:         return Err(replay_error(
+546:             function,
+547:             "cleanup plan does not contain exactly one atomic commit for every call",
+548:         ));
+549:     }
+550:     Ok(())
+551: }
+552: 
+553: #[cfg(test)]
+554: mod tests;
+555: 
+556: #[cfg(test)]
+557: pub(in crate::cleanup_plan::replay) fn before_status_retention(path: &str, source: &str) -> String {
+558:     let records: serde_json::Value = serde_json::from_str(include_str!(concat!(
+559:         env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json"
+560:     ))).unwrap();
+561:     let record = records.as_array().unwrap().iter().find(|entry| entry["source"] == path).unwrap();
+562:     let mut restored = source.to_owned();
+563:     for edit in record["edits"].as_array().unwrap().iter().rev() {
+564:         let after = edit["after"].as_str().unwrap();
+565:         assert_eq!(restored.matches(after).count(), 1, "{}", edit["name"]);
+566:         restored = restored.replacen(after, edit["before"].as_str().unwrap(), 1);
+567:     }
+568:     restored
+569: }
+
+=== src/cleanup_plan/replay.rs:176-276 ===
+176: struct ReplayBudget {
+177:     admission: AdmissionMode,
+178:     payer: AllocationPayer,
+179:     remaining: usize,
+180:     skeleton_remaining: usize,
+181:     /// Actual successful skeleton debits, including deferred lexical walks.
+182:     skeleton_spent: usize,
+183:     /// Ordinary constructors share the temporarily lent skeleton allowance.
+184:     lent_skeleton: bool,
+185:     /// Factored replay: merge equal-state skeleton paths (`skeleton_work`).
+186:     merge_paths: bool,
+187:     /// Present only for the selected retained lexical replay entry.
+188:     physical: Option<Box<physical_storage::PhysicalReservation>>,
+189:     /// Prepaid selected-budget refusal text; consumed without a fresh allocation.
+190:     refusal_text: Option<String>,
+191:     refusal_spent: bool,
+192:     /// One reusable fixed clone census cursor on the ordinary builder path.
+193:     builder_clone_cursor_paid: bool,
+194: }
+195: 
+196: impl ReplayBudget {
+197:     fn charge(
+198:         &mut self,
+199:         function: &ResolvedFunction,
+200:         units: usize,
+201:         phase: &str,
+202:     ) -> Result<(), Diagnostic> {
+203:         self.prepare_builder(function)?;
+204:         if self.refusal_spent {
+205:             return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+206:         }
+207:         if self.lent_skeleton {
+208:             return self.charge_skeleton(function, units, phase);
+209:         }
+210:         self.charge_oracle_work(function, units, phase)?;
+211:         self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
+212:             self.budget_refusal(
+213:                 function,
+214:                 "cleanup replay work budget exhausted during ",
+215:                 phase,
+216:             )
+217:         })?;
+218:         Ok(())
+219:     }
+220: 
+221:     fn reserve_skeleton(
+222:         &mut self,
+223:         function: &ResolvedFunction,
+224:         units: usize,
+225:     ) -> Result<(), Diagnostic> {
+226:         self.prepare_builder(function)?;
+227:         if self.refusal_spent {
+228:             return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+229:         }
+230:         self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
+231:             self.budget_refusal(
+232:                 function,
+233:                 "cleanup replay skeleton-work preflight exceeds the global budget",
+234:                 "",
+235:             )
+236:         })?;
+237:         self.skeleton_remaining = units;
+238:         Ok(())
+239:     }
+240: 
+241:     fn charge_skeleton(
+242:         &mut self,
+243:         function: &ResolvedFunction,
+244:         units: usize,
+245:         phase: &str,
+246:     ) -> Result<(), Diagnostic> {
+247:         self.prepare_builder(function)?;
+248:         if self.refusal_spent {
+249:             return Err(self.budget_refusal(function, "selected replay budget already failed", ""));
+250:         }
+251:         self.charge_oracle_work(function, units, phase)?;
+252:         let spent = self.skeleton_spent.checked_add(units).ok_or_else(|| {
+253:             self.budget_refusal(
+254:                 function,
+255:                 "cleanup replay skeleton debit count overflowed",
+256:                 "",
+257:             )
+258:         })?;
+259:         self.skeleton_remaining = self.skeleton_remaining.checked_sub(units).ok_or_else(|| {
+260:             self.budget_refusal(
+261:                 function,
+262:                 "cleanup replay work budget exhausted during ",
+263:                 phase,
+264:             )
+265:         })?;
+266:         self.skeleton_spent = spent;
+267:         Ok(())
+268:     }
+269: }
+270: 
+271: #[cfg(test)]
+272: thread_local! {
+273:     static SKELETON_MATERIALIZATIONS: Cell<usize> = const { Cell::new(0) };
+274: }
+275: 
+276: fn note_skeleton_materialization() {
+
+=== src/cleanup_plan/replay.rs:550-660 ===
+550:     }
+551:     Ok(total)
+552: }
+553: 
+554: fn validate_structure_with_budget(
+555:     program: &dyn crate::cleanup::ReplayContext,
+556:     function: &ResolvedFunction,
+557:     budget: &mut ReplayBudget,
+558:     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,
+559: ) -> Result<(), Diagnostic> {
+560:     validate_structure_with_budget_storage(program, function, budget, helpers, None)
+561: }
+562: fn validate_structure_with_budget_storage<'hir>(
+563:     program: &'hir dyn crate::cleanup::ReplayContext,
+564:     function: &'hir ResolvedFunction,
+565:     budget: &mut ReplayBudget,
+566:     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
+567:     continuations: Option<&mut continuation_storage::Storage<'hir>>,
+568: ) -> Result<(), Diagnostic> {
+569:     let plan = &function.cleanup_plan;
+570:     if helpers.is_some_and(|index| {
+571:         !program
+572:             .full_program()
+573:             .is_some_and(|full| index.matches_program(full))
+574:     }) {
+575:         return Err(replay_error(
+576:             function,
+577:             "cleanup replay helper index belongs to a different typed program",
+578:         ));
+579:     }
+580:     // Reconstruct the ordinary schema first, preserving all its current-source
+581:     // probes/error order. A private source-held projection adds allocation
+582:     // branches; neither its attached v20 string nor an ordinary context selects it.
+583:     let ordinary_schema =
+584:         schema::paid_summary::selected_with_budget(program, function, helpers, budget)?;
+585:     let expected_schema = if allocation_paths::current(program, function).is_some() {
+586:         super::CLEANUP_PLAN_SCHEMA_V20
+587:     } else {
+588:         ordinary_schema
+589:     };
+590:     if plan.schema != expected_schema {
+591:         return Err(replay_error(
+592:             function,
+593:             format_args!(
+594:                 "uses cleanup-plan schema `{}` instead of HIR-derived `{expected_schema}`",
+595:                 plan.schema
+596:             ),
+597:         ));
+598:     }
+599: 
+600:     if lexical_cert::requires_lexical(function) {
+601:         return lexical_replay::validate_with_index(program, function, budget, helpers);
+602:     }
+603:     if plan.lexical_control.is_some() {
+604:         return Err(replay_error(
+605:             function,
+606:             "function without lexical exits carries a lexical-control certificate",
+607:         ));
+608:     }
+609:     validate_replay_size_budget(function)?;
+610:     budget.charge(
+611:         function,
+612:         plan_structure_units(plan),
+613:         "structural validation",
+614:     )?;
+615: 
+616:     let expression_facts = expression_facts::with_budget(function, budget)?;
+617:     ordinary_inventory::validate_inventory_coverage(program, function, budget)?;
+618:     validate_required_status_sources(program, function)?;
+619:     let storage = validate_slots_paid(function, budget)?;
+620:     let leaves = collect_leaves_paid(function, budget)?;
+621:     let statuses = expression_facts::receiving::validate_status_sources_retained(
+622:         function, &expression_facts, budget,
+623:     )?;
+624:     expression_facts::receiving::validate_regions(function, &storage, budget)?;
+625:     expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;
+626:     expression_facts::receiving::validate_blocks_and_edges_retained(
+627:         program,
+628:         function,
+629:         &expression_facts,
+630:         &storage,
+631:         &leaves,
+632:         helpers,
+633:         budget,
+634:         &statuses,
+635:     )?;
+636:     expression_facts::receiving::validate_exits(
+637:         program,
+638:         function,
+639:         &storage,
+640:         &leaves,
+641:         &BTreeSet::new(),
+642:         budget,
+643:     )?;
+644:     structural_maps::validate_reference_coverage(function, budget)?;
+645:     structural_control::validate_ordinary_cfg(function, budget)?;
+646:     if !cleanup_inert_path_product_can_be_summarized(function)?
+647:         && !status_only_paths_can_be_summarized(function)
+648:         && !cleanup_inert_large_decisions_can_be_summarized(function)
+649:     {
+650:         validate_path_states::<Diagnostic>(
+651:             program, function, &storage, &leaves, budget, None, helpers,
+652:         )?;
+653:         validate_typed_control_skeleton_with_index(
+654:             program,
+655:             function,
+656:             budget,
+657:             helpers,
+658:             continuations,
+659:         )?;
+660:     }
+
+=== src/cleanup_plan/replay/expression_facts/capacity.rs:270-312 ===
+270:             }
+271:             ResolvedExprKind::NativeRustImportCall(call)
+272:                 if crate::cleanup_plan::native_rust::owns(expression) =>
+273:             {
+274:                 self.reserve(call.import.as_str().len())?;
+275:                 self.array::<ExpressionId>(call.args.len())?;
+276:             }
+277:             ResolvedExprKind::HostCommandCall(call) => {
+278:                 // The callee is a fixed compiler identity and allocates nothing;
+279:                 // its original text term stays reserved, conservatively.
+280:                 self.reserve(crate::command_io_ops::id(call.operation).len())?;
+281:                 self.array::<ExpressionId>(call.args.len())?;
+282:             }
+283:             ResolvedExprKind::ByteRange { operation, .. } => {
+284:                 self.reserve(operation.as_str().len())?;
+285:                 self.array::<ExpressionId>(3)?;
+286:             }
+287:             _ => {}
+288:         }
+289:         Ok(())
+290:     }
+291:     pub(super) fn arena_reserve_array<T>(&mut self, count: usize) -> Result<(), Failure> {
+292:         self.array::<T>(count)
+293:     }
+294:     pub(super) fn arena_work(&mut self, units: usize) -> Result<(), Failure> {
+295:         let remaining = self.work.checked_sub(units).ok_or(Failure {
+296:             detail: "expression-fact arena work exceeds limit",
+297:             physical: false,
+298:         })?;
+299:         self.work = remaining;
+300:         Ok(())
+301:     }
+302: }
+
+=== src/workspace_graph/tests/builder_limits.rs:263-452 ===
+263:              {body}\
+264:              sum\n}}\n"
+265:         ),
+266:     )
+267: }
+268: 
+269: /// Issue #86. A bounded `for` names its item binding, so the pre-bound must
+270: /// charge that name exactly as it charges a `let` of the same name. Before
+271: /// this, the AST-side cost walk special-cased only `while` and reached
+272: /// `Statement::name`, which panics for every statement that is not a `let` or
+273: /// an assignment: a workspace project containing a `for` could not be checked
+274: /// at all. Comparing the two *deltas* pins the charge without freezing how
+275: /// many times a string is counted.
+276: #[test]
+277: fn a_for_item_binding_is_charged_exactly_like_a_let_binding() {
+278:     let widened = |binder| {
+279:         let short = stub_charge_prebound(&[traversal_source(binder, "i")], "stub.traverse");
+280:         let long = stub_charge_prebound(
+281:             &[traversal_source(binder, "collected_reading_item")],
+282:             "stub.traverse",
+283:         );
+284:         long - short
+285:     };
+286:     let charged = widened("for");
+287:     assert!(charged > 0, "a for item binding must be charged");
+288:     assert_eq!(charged, widened("let"));
+289: }
+290: 
+291: /// Tune only the fixture size, never the production bound. Select the largest
+292: /// count whose actual pre-core charges and unchanged legacy first reservation
+293: /// fit the enclosing owner. Runtime assertions must still prove the later core
+294: /// overflow, one nested attempt and two ordinary attempts.
+295: fn core_retry_fixture() -> Vec<WorkspaceSource> {
+296:     let sources = |count| {
+297:         vec![
+298:             stub_charge_provider(count),
+299:             canonical_source(
+300:                 "stub/consumer.spx",
+301:                 "module stub.consumer; use function @id(\"stub.wide\") from stub.provider as wide; @id(\"stub.consumer.main\") fn main() -> i64 { wide(0) }",
+302:             ),
+303:         ]
+304:     };
+305:     let fits = |count| {
+306:         let mut candidate = sources(count);
+307:         candidate.sort_by(|left, right| left.path.cmp(&right.path));
+308:         let programs = parsed_sources(&candidate);
+309:         let authored = index_authored(&programs).unwrap();
+310:         let Ok(legacy) = expected_projection::retention_prebound_mode(
+311:             &programs, &authored, false, 0,
+312:         ) else { return false };
+313:         // The fixed fixture has only ordinary modules, no frontend or native
+314:         // law branch. Run their actual pre-core formatter and registry owners:
+315:         // the enclosing ledger keeps these debits before entering core.
+316:         let (actual, refused, pre_core) = crate::bounded_output::with_limit_usage(
+317:             MAX_BUILDER_BYTES,
+318:             || {
+319:                 let mut programs = Vec::with_capacity(candidate.len());
+320:                 let mut canonical_bytes = 0usize;
+321:                 for source in &candidate {
+322:                     let (program, comments) = crate::parse_with_comments(
+323:                         &source.source, Path::new(&source.path),
+324:                     ).unwrap();
+325:                     crate::static_protocol::validate(&program).unwrap();
+326:                     let remaining = MAX_BUILDER_BYTES.saturating_sub(canonical_bytes);
+327:                     let (canonical, overflowed) = crate::bounded_output::with_limit(
+328:                         remaining,
+329:                         || format::comments::canonical_with_comments(&program, &comments),
+330:                     );
+331:                     if overflowed { return None; }
+332:                     assert_eq!(canonical, source.source);
+333:                     canonical_bytes = canonical_bytes.checked_add(canonical.len()).unwrap();
+334:                     programs.push(program);
+335:                 }
+336:                 crate::static_protocol::validate_workspace(&programs).unwrap();
+337:                 let _pruned = dependency_pruning::prune(&mut programs, &candidate);
+338:                 let modules = index_modules(&programs).unwrap();
+339:                 let authored = index_authored(&programs).unwrap();
+340:                 validate_synthetic_main_id_collisions(&programs, &authored).unwrap();
+341:                 let registry = expected_projection::private_layout::registry::LayoutRegistry::new(
+342:                     &programs, &authored,
+343:                 );
+344:                 import_validation::validate_uses_with_registry(
+345:                     &programs, &modules, &authored, Some(&registry),
+346:                 ).unwrap();
+347:                 let _depths = validate_dependency_dag(&programs).unwrap();
+348:                 let initial = expected_projection::cached_exact::initial_with_registry(
+349:                     &programs, &authored, true,
+350:                     expected_projection::cached_exact::Retention::Parsed, Some(&registry),
+351:                 ).ok()?;
+352:                 Some((initial, registry.receipt()))
+353:             },
+354:         );
+355:         let Some((initial, registry)) = actual else { return false };
+356:         !refused && initial.0 == legacy.0 && initial.3 == 1
+357:             && pre_core.checked_add(registry)
+358:                 .and_then(|paid| paid.checked_add(initial.0))
+359:                 .is_some_and(|paid| paid <= MAX_BUILDER_BYTES)
+360:     };
+361:     assert!(fits(1));
+362:     assert!(!fits(1024));
+363:     let (mut low, mut high) = (1, 1024);
+364:     while low + 1 < high {
+365:         let middle = low + (high - low) / 2;
+366:         if fits(middle) {
+367:             low = middle;
+368:         } else {
+369:             high = middle;
+370:         }
+371:     }
+372:     sources(low)
+373: }
+374: 
+375: #[test]
+376: fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal() {
+377:     // Preserve the complete earlier fixture before changing only admissibility.
+378:     let current = include_str!("builder_limits.rs");
+379:     let start = current.find("/// Tune only the fixture size, never the production bound.").unwrap();
+380:     let end = start + current[start..].find("\n#[test]\nfn identity_prebound_production_core_retry").unwrap();
+381:     let mut restored = current[start..end].to_owned();
+382:     let inverse: serde_json::Value = serde_json::from_str(include_str!(concat!(
+383:         env!("CARGO_MANIFEST_DIR"), "/docs/evidence/canonical-preparation-stage-829/retry-precharge-fixture/exact-inverse.json"
+384:     ))).unwrap();
+385:     for splice in inverse["splices"].as_array().unwrap().iter().rev() {
+386:         let at = splice["start"].as_u64().unwrap() as usize;
+387:         let after = splice["after"].as_str().unwrap();
+388:         assert_eq!(restored.get(at..at + after.len()), Some(after));
+389:         restored.replace_range(at..at + after.len(), splice["before"].as_str().unwrap());
+390:     }
+391:     let original = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/canonical-preparation-stage-829/retry-precharge-fixture/complete-fixture.before.txt"));
+392:     use sha2::{Digest, Sha256};
+393:     assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))), "4c8f8a2cac574013d6acb485d7af2c86699fb3b5b09be532c90786c6ec7add24");
+394:     assert_eq!(restored, original);
+395:     let sources = core_retry_fixture();
+396:     let programs = parsed_sources(&sources);
+397:     let authored = index_authored(&programs).unwrap();
+398:     let original =
+399:         expected_projection::retention_prebound_mode(&programs, &authored, false, 0).unwrap();
+400:     let tight =
+401:         expected_projection::retention_prebound_mode(&programs, &authored, true, 2).unwrap();
+402:     assert!(original.1 <= MAX_BUILDER_BYTES && tight.1 < original.1);
+403: 
+404:     // Capture the actual producer's ordered source/registry reservation before
+405:     // interpreting a legacy standalone forecast as a completed debit.
+406:     let mut ordered = sources.clone();
+407:     ordered.sort_by(|left, right| left.path.cmp(&right.path));
+408:     let ordered_programs = parsed_sources(&ordered);
+409:     let ordered_authored = index_authored(&ordered_programs).unwrap();
+410:     let ordered_modules = index_modules(&ordered_programs).unwrap();
+411:     let registry = expected_projection::private_layout::registry::LayoutRegistry::new(
+412:         &ordered_programs, &ordered_authored,
+413:     );
+414:     import_validation::validate_uses_with_registry(
+415:         &ordered_programs, &ordered_modules, &ordered_authored, Some(&registry),
+416:     ).unwrap();
+417:     let actual_initial = expected_projection::cached_exact::initial_with_registry(
+418:         &ordered_programs, &ordered_authored, true,
+419:         expected_projection::cached_exact::Retention::Parsed, Some(&registry),
+420:     ).unwrap();
+421:     let registry_receipt = registry.receipt();
+422:     crate::bounded_output::stage_debits::take_completed();
+423:     CORE_BUILD_ATTEMPTS.with(|attempts| attempts.set(0));
+424:     let (nested, nested_overflow, nested_debit, first_refusal) =
+425:         crate::bounded_output::with_limit_usage_refusal(MAX_BUILDER_BYTES, || {
+426:             let before = crate::bounded_output::active_remaining();
+427:             let result = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES);
+428:             eprintln!("identity-retry-parent before={before:?} after={:?}", crate::bounded_output::active_remaining());
+429:             result
+430:         });
+431:     let trace = crate::bounded_output::stage_debits::take_completed();
+432:     eprintln!("identity-retry-contract legacy={original:?} tight={tight:?} actual_initial={actual_initial:?} registry_receipt={registry_receipt} nested_overflow={nested_overflow} nested_debit={nested_debit} first_refusal={first_refusal:?} trace={trace:?}");
+433:     let errors = nested
+434:         .err()
+435:         .expect("enclosing budget must not be reset for retry");
+436:     assert_eq!(errors[0].code, "SPX-G171");
+437:     assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), 1);
+438:     assert!(nested_debit >= original.0,
+439:         "failed phase debit remains required: legacy={original:?}, actual_initial={actual_initial:?}, registry={registry_receipt}, debit={nested_debit}, first={first_refusal:?}, trace={trace:?}");
+440: 
+441:     CORE_BUILD_ATTEMPTS.with(|attempts| attempts.set(0));
+442:     let built = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES).unwrap();
+443:     assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), 2);
+444:     assert!(
+445:         built.usage.builder_bytes >= original.0,
+446:         "failed first phase is not refunded"
+447:     );
+448:     assert!(built.usage.builder_bytes <= MAX_BUILDER_BYTES);
+449:     let repeated = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES).unwrap();
+450:     assert_eq!(built.usage.builder_bytes, repeated.usage.builder_bytes);
+451:     assert_eq!(built.edges, repeated.edges);
+452: 
+
+=== ACTUAL RUNTIME FAILURE ===
+
+running 1 test
+test workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal ... identity-retry-parent before=Some(67108864) after=Some(20)
+identity-retry-contract legacy=(67019038, 67020132) tight=(53615014, 53616108) actual_initial=(67019038, 67020132, true, 1) registry_receipt=0 nested_overflow=true nested_debit=67108844 first_refusal=Some(ReservationRefusal { requested: 26, remaining: 20, floor: 0, stage: None }) trace=Some(Trace { owner: 48968996736, operation: None, first_operation_refusal: Some(OperationRefusal { operation: Some(CleanupReplay), requested: 24, remaining: 20, floor: 0, stage: Some(HirValidation) }), initial: 67075946, consumed: 67075926, prebound: 67019038, layouts: 0, mode: 1, debits: [1104, 1392, 0, 0, 0, 0, 0, 0, 0, 67019038, 768, 0, 0, 0, 0, 0, 0, 2157, 0, 33507, 807, 240, 0, 0, 0, 4928, 0, 11635, 350, 0, 0, 0, 0] })
+
+thread 'workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal' (2531304) panicked at src/workspace_graph/tests/builder_limits.rs:442:84:
+called `Result::unwrap()` on an `Err` value: [Diagnostic { code: "SPX-H006", severity: Error, message: "cleanup plan for function `stub.wide` failed independent replay: cleanup replay work budget exhausted during cleanup referenced edge directory", path: None, span: None, help: None }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8748 filtered out; finished in 22.46s
+
