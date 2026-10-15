@@ -298,8 +298,13 @@
       "archive": "10.before.txt",
       "original_sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
       "original_bytes": 25059,
-      "current_sha256": "b73afa30844e32b5d953776e8726d7c8593a9b981ba3233a2d3ff3f7ed85ceb7",
+      "current_sha256": "cf03c2e2c076eca2e8a4f5da0ab6db5efd8965f2888b3f081955c58ca0d26469",
       "inverse": [
+        {
+          "hook": "assembled-17c-exact-later-source-join-0",
+          "current": "        include_str!(\"../../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_work.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_model.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_producer.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_staging.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/vector_extension.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/vector_extension/tests.rs\"),\n        include_str!(\"../../src/workspace_graph/identity_resolution/base/vector_tests.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/materialize.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/merge.rs\"),\n",
+          "before": "        include_str!(\"../../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/materialize.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/merge.rs\"),\n"
+        },
         {
           "hook": "linked-nominal-views-complete-source",
           "current": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data/original.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data/tests.rs\"),\n",
@@ -377,8 +382,23 @@
       "archive": "11.before.txt",
       "original_sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
       "original_bytes": 85667,
-      "current_sha256": "c202c8ca331789b7f06aa2c7349574fc22e7a8c8e2ac999d54b23a7c5625a86e",
+      "current_sha256": "4cc35f98927317e03348e7cb2508fec59d99b697def2b35f620fcac0060735a6",
       "inverse": [
+        {
+          "hook": "assembled-17c-exact-later-source-join-0",
+          "current": "        include_str!(\"../../../../../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_work.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_model.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_producer.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_staging.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/vector_extension.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/vector_extension/tests.rs\"),\n        include_str!(\"../../../../../src/workspace_graph/identity_resolution/base/vector_tests.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/materialize.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/merge.rs\"),\n",
+          "before": "        include_str!(\"../../../../../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/materialize.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/merge.rs\"),\n"
+        },
+        {
+          "hook": "assembled-17c-exact-later-source-join-1",
+          "current": "            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs\")),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory.rs\"),\n",
+          "before": "            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs\")),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory.rs\"),\n"
+        },
+        {
+          "hook": "assembled-17c-exact-later-source-join-2",
+          "current": "            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs\")),\n            include_str!(\n",
+          "before": "            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs\")),\n            include_str!(\n"
+        },
         {
           "hook": "loan-inner-stage-complete-source",
           "current": "            include_str!(\"../../../../../src/bounded_output/canonical_stage_tests.rs\"),\n            include_str!(\"../../../../../src/bounded_output/loan_inner_stage_tests.rs\"),\n",
