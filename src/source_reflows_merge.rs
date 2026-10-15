@@ -760,14 +760,27 @@ fn before_actual_pin_consumers(source: &str, current: &str) -> String {
 
 // Independent physical-input domains: no checkpoint table accepts another stage.
 fn final_ready_input(stage: &str, source: &str, current: &str) -> String {
-    let current = project(
-        include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/docs/evidence/field-update-hir-visitor-836-20261015/current-to-677.json"
-        )),
-        source,
-        current,
-    );
+    let current = if stage == "844" {
+        let previous = main27424_stage("523", source, current);
+        project(
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/docs/evidence/compact-old-receiver-compile-fix-844-20261015/current-to-677.json"
+            )),
+            source,
+            &previous,
+        )
+    } else {
+        let previous = main27424_stage("7f", source, current);
+        project(
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/docs/evidence/field-update-hir-visitor-836-20261015/current-to-677.json"
+            )),
+            source,
+            &previous,
+        )
+    };
     let current = current.as_str();
     let data = match stage {
         "d8" => include_str!(concat!(
@@ -802,4 +815,27 @@ pub(crate) fn compact844_input(source: &str, current: &str) -> String {
 }
 pub(crate) fn diagnostic846_input(source: &str, current: &str) -> String {
     final_ready_input("846", source, current)
+}
+
+// MAIN and the two677 compile corrections have independent physical inputs.
+fn main27424_stage(stage: &str, source: &str, current: &str) -> String {
+    let data = match stage {
+        "7f" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/main27424-source-integration-20261015/final-to-7f.json"
+        )),
+        "523" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/main27424-source-integration-20261015/final-to-523.json"
+        )),
+        "main" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/main27424-source-integration-20261015/final-to-main.json"
+        )),
+        _ => panic!("unknown exact MAIN27424 source domain"),
+    };
+    project(data, source, current)
+}
+pub(crate) fn main27424_input(source: &str, current: &str) -> String {
+    main27424_stage("main", source, current)
 }
