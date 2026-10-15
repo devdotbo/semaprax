@@ -26,8 +26,9 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
     }
     let expressions: &dyn Lookup = facts;
     let mut ids = Directory::new(function, budget, "cleanup status identity directory")?;
+    let prefix_owner = directory::StatusInsertionOwner::new(function, &ids, budget)?;
     for source in &function.cleanup_plan.status_sources {
-        if !ids.insert(function, &source.id, budget)? {
+        if !ids.insert_certified(function, &source.id, budget, &prefix_owner)? {
             return Err(<Diagnostic as semantic_refusal::Error>::structural(
                 function,
                 semantic_refusal::Atom::RepeatedStatus(source.id.expression.clone()),
@@ -111,6 +112,7 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
             }
         }
     }
+    drop(prefix_owner);
     budget.reserve_bytes(function, CONTROL_BYTES, "retained status full controls")?;
     Ok(StatusSources { function, budget, ledger: ClassifierLedger::capture(), ids: Some(ids) })
 }
@@ -633,3 +635,6 @@ mod exit_tests;
 
 mod exits;
 pub(in crate::cleanup_plan::replay) use exits::validate_exits_retained;
+
+#[cfg(test)]
+mod status_before_prefix;

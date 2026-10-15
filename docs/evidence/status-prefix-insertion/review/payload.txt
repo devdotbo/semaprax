@@ -1,0 +1,170 @@
+Review a bounded STATUS-ONLY prefix-certified insertion proposal; no code execution/tools, no implementation/runtime approval claim. Concrete actual first refusal a231 is logical replay work during "cleanup status identity directory" for stub.wide after expression facts built, before its first source fact check. Existing retained receiver already reuses this directory for blocks/exits, so do NOT propose deleting an actual duplicate build. Candidate removes repeated full prefix reads in each online AVL insertion only. No quota/cap/work credits, no hash, ordinal parsing, key normalization, generic fallback success or oracle exclusion. Complete old generic Directory::insert/probe and whole old status_before receiver remain independently compiled.
+NEW child receiving/directory/status_prefix.rs: specialized impl Directory<&StatusSourceId>::insert_certified; scope restricted to private receiving module, one actual current retained caller substitutes ids.insert_certified at same first-duplicate frontier. StatusSources layout and all generic contains APIs unchanged. Old exact AVL path/shape, first duplicate before unknown expression before producer/callee/cases, append/growth/rotations/order unchanged. Min/max are ACTUAL keys of THIS borrowed immutable directory, no external certificate/attached authority. Exact same held function/budget/ClassifierLedger authenticated before probe; no retained pointer/cert escapes method. Stored keys are borrowed from immutable function.status_sources.
+For len0/1 use old insert path; no useful repeated-prefix certificate. Otherwise prepay full specialized probe/comparison/control/return layouts and initialization work before constructing anything; authenticate byte/work current/sticky first. Minimum is nodes[first].key. Find maximum by existing right-child walk, paying3 indexed node/key/child visits BEFORE each read, exactly old VISIT_UNITS price. Use existing arena comparator byte-loop/rate below twice, query vs min and query vs max, with prefix0. Preserve returned full expression ordering/LCP and pay one numeric lane comparison if expressions equal; min/max comparisons never trust StatusLane or text-derived width. Let p=min(actual query-min expression LCP, actual query-max expression LCP). Every existing expression key is byte-lexicographically between min.expression and max.expression, so it shares p query bytes. Lane is secondary so equal-expression multiple lanes do not invalidate that invariant.
+Walk old root-to-leaf path in same order. BEFORE each node read charge VISIT_UNITS3, explicit new certificate/control scalar bookkeeping, and suffixcomparison (min byte lengths - p +1) at unchanged one-unit-per-byte-pair+end rate. Start explicit byte loop at certified p; NEVER invoke full Ord on expression after suffix comparison, since that would reread skipped prefix. If expression suffixes equal, pay exactly1 lane ordinal comparison, use actual StatusLane::cmp. Result full Ordering equals old derived StatusSourceId::Ord. Same probe parent/before/after/side updates, same found duplicate exit. No early min/max duplicate/outside return because parent requires identical actual AVL search path. Only bytes proven common across full held keyset are skipped. Scalar probe bookkeeping gets explicit source-derived units, no guessed percentage/width.
+On missing key, execute exact existing grow, VISIT append, Node initialization/link updates and rebalance as pasted. No allocation/work after a failed charge; failed partial mutation/Drop policy matches old insertion and selected failure stays sticky. Full original controls/whole producers retained; new tests compare exact key order/AVL graph, early duplicate-vs-unknown-vs-callee diagnostics all6fields, explicit UTF8/NUL/empty/prefix/end/lane collisions, all logical exact/short/zero/refusal no postrefusal allocation, byte physical/foreign/restored/last Drop. Old/current actual work counts differ ONLY for newly executed comparator/bookkeeping algorithm; success/error frontier compare each algorithm's actual exact derived work, no old unit discount. Current status-fact-only algebraic control must retain complete pre-prefix receiver as independent isolation owner rather than erase its old equations.
+Questions: Is p valid for every stored key including malformed IDs, UTF8 byte order, lane ties/outside query? Does same root path and explicit suffix cmp guarantee same duplicate/semantic priority without trusting earlier facts? Identify concrete work/accounting or lifetime holes, or scope risks; do not invent execution evidence. Source snippets below are exact current production.
+
+STATUS KEY WORK:
+impl KeyWork for StatusSourceId {
+    fn comparison_units(&self, other: &Self) -> Option<usize> {
+        // The lane is one structural numeric field.
+        self.expression
+            .comparison_units(&other.expression)?
+            .checked_add(1)
+    }
+}
+
+
+ACTUAL STORAGE/PROBE TYPES:
+struct Node<K> {
+    key: K,
+    left: usize,
+    right: usize,
+    parent: usize,
+    next: usize,
+    height: u8,
+}
+
+struct Probe {
+    found: bool,
+    parent: usize,
+    before: usize,
+    after: usize,
+    side: Ordering,
+}
+
+pub(super) struct Directory<K> {
+    nodes: Vec<Node<K>>,
+    root: usize,
+    first: usize,
+    phase: &'static str,
+}
+
+struct Iter<'a, K> {
+    nodes: &'a [Node<K>],
+    next: usize,
+}
+
+
+OLD ACTUAL PROBE+CONTAINS+INSERT:
+    fn probe(
+        &self,
+        function: &ResolvedFunction,
+        key: &K,
+        budget: &mut ReplayBudget,
+    ) -> Result<Probe, Diagnostic> {
+        let mut probe = Probe {
+            found: false,
+            parent: NIL,
+            before: NIL,
+            after: NIL,
+            side: Ordering::Equal,
+        };
+        let mut at = self.root;
+        while at != NIL {
+            let node = &self.nodes[at];
+            let units = key
+                .comparison_units(&node.key)
+                .and_then(|units| units.checked_add(VISIT_UNITS))
+                .ok_or_else(|| {
+                    overflow(function, budget, "directory key comparison work overflow")
+                })?;
+            budget.charge(function, units, self.phase)?;
+            probe.side = Ord::cmp(key, &node.key);
+            if probe.side == Ordering::Equal {
+                probe.found = true;
+                return Ok(probe);
+            }
+            probe.parent = at;
+            if probe.side == Ordering::Less {
+                probe.after = at;
+                at = node.left;
+            } else {
+                probe.before = at;
+                at = node.right;
+            }
+        }
+        Ok(probe)
+    }
+
+    pub(super) fn contains(
+        &self,
+        function: &ResolvedFunction,
+        key: &K,
+        budget: &mut ReplayBudget,
+    ) -> Result<bool, Diagnostic> {
+        self.authenticate(function, budget)?;
+        Ok(self.probe(function, key, budget)?.found)
+    }
+
+    /// Returns `false` for a duplicate, like `BTreeSet::insert`.
+    pub(super) fn insert(
+        &mut self,
+        function: &ResolvedFunction,
+        key: K,
+        budget: &mut ReplayBudget,
+    ) -> Result<bool, Diagnostic> {
+        self.authenticate(function, budget)?;
+        let probe = self.probe(function, &key, budget)?;
+        if probe.found {
+            return Ok(false);
+        }
+        self.grow(function, budget)?;
+        budget.charge(function, VISIT_UNITS, self.phase)?;
+        let index = self.nodes.len();
+        self.nodes.push(Node {
+            key,
+            left: NIL,
+            right: NIL,
+            parent: probe.parent,
+            next: probe.after,
+            height: 1,
+        });
+        if probe.before == NIL {
+            self.first = index;
+        } else {
+            self.nodes[probe.before].next = index;
+        }
+        if probe.parent == NIL {
+            self.root = index;
+        } else if probe.side == Ordering::Less {
+            self.nodes[probe.parent].left = index;
+        } else {
+            self.nodes[probe.parent].right = index;
+        }
+        self.rebalance(probe.parent, function, budget)?;
+        Ok(true)
+    }
+
+
+EXISTING PAID PREFIX COMPARATOR:
+fn compare(
+    function: &ResolvedFunction,
+    query: &ExpressionId,
+    candidate: &ExpressionId,
+    prefix: usize,
+    budget: &mut ReplayBudget,
+) -> Result<(Ordering, usize), Diagnostic> {
+    budget.reserve_bytes(function, COMPARISON_BYTES, "expression-fact comparison controls")?;
+    budget.charge(function, BOUND_UNITS, "expression-fact prefix control bookkeeping")?;
+    let mut comparison = Comparison {
+        left: query.as_str().as_bytes(), right: candidate.as_str().as_bytes(),
+        end: query.as_str().len().min(candidate.as_str().len()), common: prefix,
+    };
+    let units = comparison.end.checked_sub(prefix).and_then(|n| n.checked_add(1))
+        .ok_or_else(|| {
+            budget.budget_refusal(function, "expression-fact prefix comparison work overflow", "")
+        })?;
+    // Same one-unit-per-byte-pair comparison rate as the complete old lookup,
+    // including its end comparison. Only certified bytes are no longer read.
+    budget.charge(function, units, "expression-fact certified suffix lookup")?;
+    while comparison.common < comparison.end {
+        let a = comparison.left[comparison.common];
+        let b = comparison.right[comparison.common];
+        if a != b { return Ok((a.cmp(&b), comparison.common)); }
+        comparison.common += 1;
+    }
+    Ok((comparison.left.len().cmp(&comparison.right.len()), comparison.common))
+}
+
