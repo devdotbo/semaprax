@@ -1356,6 +1356,9 @@ jobs:
         run: |
           cargo fetch --locked
           cargo fetch --locked --manifest-path examples/calculator-rust/Cargo.toml
+      - name: Expose Darwin native tool link prerequisites
+        if: runner.os == 'macOS'
+        run: python3 scripts/ci-darwin-native-reference.py
       - name: Require exact reproducible Darwin archive admission
         if: runner.os == 'macOS'
         env:
