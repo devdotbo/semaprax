@@ -1,0 +1,11 @@
+{
+  "source_only": true,
+  "runtime_executed": false,
+  "basis": "5b562965d2fc8e75c552f19e4f81ec7ab0835b68",
+  "retained_before_dense_archive_sha256": "9d607f15de1fa480724b5e278023d60a1185a00799f0119f6690b8a9917b9764",
+  "retained_body_byte_equal": true,
+  "funded_facade_and_lexical_preflight_byte_equal_except_visibility": true,
+  "whole_observer": "all three routes include payer, complete plan construction/comparison, retry and final Drop; nested test wrapper setup/Drop remain observed",
+  "cost_contract": "strict pre-dense pending-vector reuse retained for counts 1,3,17; dense physical comparisons retained all counts; dense strict debit assertion for existing count17 awaits actual qualification",
+  "set_len_callers": "cfg(test) paid_plan::build; cfg(test) retained_before_dense; cfg_directory cfg(test) tests/live_receivers_tests. Ordinary retained uses dense::Nodes::len, a distinct production method."
+}

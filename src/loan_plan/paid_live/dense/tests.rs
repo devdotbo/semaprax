@@ -99,10 +99,13 @@ fn dense_live_foreign_then_restored_owner_cannot_publish_or_allocate() {
                 }
                 let len = nodes.len();
                 let pointer = nodes.words.as_ptr();
-                let before = current_metrics().allocated;
                 let (_, child_refused, child_paid, _) =
                     with_limit_usage_refusal(usize::MAX, || {
+                        // The nested test ledger is constructed before this closure.
+                        // Its construction and Drop remain in the whole observer.
+                        let before = current_metrics().allocated;
                         assert!(nodes.insert(64, &payer).is_err());
+                        assert_eq!(current_metrics().allocated, before);
                     });
                 assert!(!child_refused);
                 assert_eq!(child_paid, 0);
@@ -110,6 +113,7 @@ fn dense_live_foreign_then_restored_owner_cannot_publish_or_allocate() {
                     payer.first(),
                     Some(crate::bounded_output::cfg_reservation::Refused::Detached)
                 );
+                let before = current_metrics().allocated;
                 assert!(nodes.insert(u16::MAX, &payer).is_err());
                 assert!(nodes.remove(&63, &payer).is_err());
                 assert!(nodes.values(&payer).is_err());

@@ -131,3 +131,8 @@ pub(super) fn before_inventory_for_test(program: &ResolvedProgram, function: &Re
 {
     inventory_before::build(program, function, payer)
 }
+
+#[cfg(test)]
+mod before_dense;
+#[cfg(test)]
+pub(super) use before_dense::build as build_before_dense;

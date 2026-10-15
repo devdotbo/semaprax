@@ -65,6 +65,7 @@ impl<K: Ord> Set<K> {
     pub(super) fn is_empty(&self) -> bool {
         self.0.len == 0
     }
+    #[cfg(test)]
     pub(super) fn len(&self) -> usize {
         self.0.len
     }

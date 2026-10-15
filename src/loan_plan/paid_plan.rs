@@ -490,3 +490,8 @@ pub(super) fn build_before_live_reuse(
 
 mod retained;
 pub(super) use retained::build as build_retained;
+
+#[cfg(test)]
+mod retained_before_dense;
+#[cfg(test)]
+pub(super) use retained_before_dense::build as build_retained_before_dense;
