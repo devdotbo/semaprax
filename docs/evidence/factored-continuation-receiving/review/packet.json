@@ -1,0 +1,11 @@
+{
+  "source_commit": "a4349a0795480f142226f0bbab909afbd6ad1225",
+  "bytes": 8426,
+  "payload_sha256": "2a59f1cf053147e1b5627c88289d51bc8a0bf809f1128160ab7d542003f44316",
+  "sources": {
+    "src/cleanup_plan/replay/continuation_storage/paid_receiving.rs": "e8035484b93b32ea2ee13d942f011d79a6a91510ad5252ac1c73ec6069e685f6",
+    "src/cleanup_plan/replay/continuation_storage.rs": "acc616d33ab36c4e9239db612dd8e5487b53b59eec798d1a68cc35c5a4c60df6",
+    "src/cleanup_plan/replay/factored/continuation_receiver.rs": "c946aa0786e0ec977aeb233ad8b12cf186076d2e3352dcad201377bb18f7a7ca",
+    "src/cleanup_plan/replay/factored/oracle_hook.rs": "dc67888164c54006a2c87f9ceef744162d57a533b26be3270d2fdd0b7fac0f02"
+  }
+}

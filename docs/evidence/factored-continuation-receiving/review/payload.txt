@@ -1,0 +1,238 @@
+Review exact continuation receiving authority, payment, borrowed lifetimes and old-oracle independence. Source only, no tools/execution. Ordinary root creates ReplayBudget::new():ActiveBuilder iff existing active cap; after unchanged helper index + full program skeleton census, Storage::for_program is called once; full immutable Program lives through Storage. New current hook below is called only unselected factored branch, then ordinary enumeration proceeds as before. Storage carries EMPTY frame backing only; no cached HIR verdict. Frame sizeof136, capacity516 remains unchanged. PhysicalReservation is cumulative, no refund; every budget.reserve_bytes uses same active required payer and sticky refusal; positive requests bootstrap prepaid refusal String. budget.budget_refusal moves preowned String into Diagnostic without allocations; repeat yields H006 empty String. ClassifierLedger::capture clones original ACTIVE Rc (no new heap), current compares Rc::ptr_eq to actual active, poisons held original on mismatch; no quota. Original cross_check body remains compiled byte-identical: enums hir_skeleton_paths+plan_skeleton_paths/sort/equality, then if Oktrue freshfactored compare and original assertion. Explicitly opted Oracle never borrows ordinaryStorage. Four source controls compare full original+current pairs in SAME observer/ledger, old/current automata/work/full hostile diagnostics, exact/short/zero, foreign/restored beforefirst/cached and wholeDrop. Required owner3 unchanged. Find concrete source/type/payment/auth/Drop errors; distinguish uncertainties.
+
+FILE src/cleanup_plan/replay/continuation_storage/paid_receiving.rs
+use super::*;
+#[derive(Clone, Copy)]
+pub(super) enum Failure {
+Program,
+Detached,
+}
+impl<'hir> Storage<'hir> {
+pub(in crate::cleanup_plan::replay) fn for_program(
+program: &'hir ResolvedProgram,
+budget: &mut ReplayBudget,
+) -> Result<Self, Diagnostic> {
+let first = program
+.functions
+.iter()
+.chain(
+program
+.function_instances
+.iter()
+.map(|instance| &instance.function),
+)
+.next();
+let Some(function) = first.filter(|_| budget.payer == AllocationPayer::ActiveBuilder)
+else {
+return Ok(Self::new(program));
+};
+budget.reserve_bytes(
+function,
+2 * std::mem::size_of::<Self>() + std::mem::size_of::<Result<Self, Diagnostic>>(),
+"held continuation owner carrier",
+)?;
+let mut storage = Self::new(program);
+storage.receiving_owner =
+Some(crate::bounded_output::classifier_string::ClassifierLedger::capture());
+Ok(storage)
+}
+pub(in crate::cleanup_plan::replay) fn has_receiving_owner(&self) -> bool {
+self.receiving_owner.is_some()
+}
+pub(in crate::cleanup_plan::replay) fn authenticate(
+&mut self,
+program: &dyn crate::cleanup::ReplayContext,
+function: &ResolvedFunction,
+budget: &mut ReplayBudget,
+) -> Result<(), Diagnostic> {
+if self.receiving_first.is_none() {
+if !self.matches(program) {
+self.receiving_first = Some(Failure::Program);
+} else if self
+.receiving_owner
+.as_ref()
+.is_some_and(|owner| !owner.current())
+{
+self.receiving_first = Some(Failure::Detached);
+}
+}
+if let Some(first) = self.receiving_first {
+let reason = match first {
+Failure::Program => "typed-HIR continuation storage belongs to another program",
+Failure::Detached => "typed-HIR continuation storage belongs to another invocation",
+};
+return Err(budget.budget_refusal(function, reason, ""));
+}
+budget.reserve_bytes(function, 0, "typed HIR continuation storage authentication")
+}
+}
+
+FILE src/cleanup_plan/replay/continuation_storage.rs
+use super::*;
+mod paid_receiving;
+pub(super) const FRAME_CAPACITY: usize = 516;
+pub(super) struct Storage<'hir> {
+program: &'hir ResolvedProgram,
+pub(super) frames: Option<Vec<Frame<'hir>>>,
+nested: Option<Box<Nested<'hir>>>,
+receiving_owner: Option<crate::bounded_output::classifier_string::ClassifierLedger>,
+receiving_first: Option<paid_receiving::Failure>,
+}
+struct Nested<'hir> {
+depth: usize,
+slots: Vec<Option<Vec<Frame<'hir>>>>,
+}
+pub(super) enum Lease {
+Top,
+Nested(usize),
+Local,
+}
+impl<'hir> Storage<'hir> {
+pub(super) fn new(program: &'hir ResolvedProgram) -> Self {
+Self {
+program,
+frames: Some(Vec::new()),
+nested: None,
+receiving_owner: None,
+receiving_first: None,
+}
+}
+pub(super) fn matches(&self, program: &dyn crate::cleanup::ReplayContext) -> bool {
+program
+.full_program()
+.is_some_and(|current| std::ptr::eq(current, self.program))
+}
+pub(super) fn acquire(
+&mut self,
+function: &ResolvedFunction,
+budget: &mut ReplayBudget,
+) -> Result<(Lease, Vec<Frame<'hir>>), Diagnostic> {
+if self.receiving_owner.is_some() {
+self.authenticate(self.program, function, budget)?;
+}
+if self.frames.is_some() {
+let frames = self.frames.as_mut().unwrap();
+if frames.capacity() == 0 {
+*frames = fresh(function, budget)?;
+} else {
+budget.reserve_bytes(function, 0, "typed HIR continuation stack")?;
+}
+return Ok((Lease::Top, self.frames.take().unwrap()));
+}
+#[cfg(test)]
+if legacy_nested() {
+return Ok((Lease::Local, fresh(function, budget)?));
+}
+if self.nested.is_none() {
+budget.reserve_array::<Nested<'hir>>(function, 1, "nested continuation carrier")?;
+self.nested = Some(Box::new(Nested {
+depth: 0,
+slots: Vec::new(),
+}));
+}
+let nested = self.nested.as_mut().unwrap();
+let depth = nested.depth;
+let next = depth
+.checked_add(1)
+.ok_or_else(|| replay_error(function, "nested continuation depth overflowed"))?;
+if depth == nested.slots.len() {
+budget.reserve_array::<Option<Vec<Frame<'hir>>>>(
+function,
+next,
+"nested continuation directory",
+)?;
+let mut replacement = Vec::with_capacity(next);
+replacement.append(&mut nested.slots);
+replacement.push(None);
+nested.slots = replacement;
+}
+if nested.slots[depth].is_none() {
+nested.slots[depth] = Some(fresh(function, budget)?);
+} else {
+budget.reserve_bytes(function, 0, "typed HIR continuation stack")?;
+}
+let frames = nested.slots[depth].take().unwrap();
+nested.depth = next;
+#[cfg(test)]
+record_nested_entry(depth, frames.as_ptr() as usize);
+Ok((Lease::Nested(depth), frames))
+}
+pub(super) fn release(&mut self, lease: Lease, frames: Vec<Frame<'hir>>) {
+debug_assert!(frames.is_empty());
+match lease {
+Lease::Top => self.frames = Some(frames),
+Lease::Nested(depth) => {
+let nested = self.nested.as_mut().unwrap();
+debug_assert_eq!(nested.depth, depth + 1);
+nested.depth = depth;
+nested.slots[depth] = Some(frames);
+}
+Lease::Local => {}
+}
+}
+}
+pub(super) fn fresh<'hir>(
+function: &ResolvedFunction,
+budget: &mut ReplayBudget,
+) -> Result<Vec<Frame<'hir>>, Diagnostic> {
+budget.reserve_array::<Frame<'hir>>(
+function,
+FRAME_CAPACITY,
+"typed HIR continuation stack",
+)?;
+Ok(Vec::with_capacity(FRAME_CAPACITY))
+}
+
+FILE src/cleanup_plan/replay/factored/continuation_receiver.rs
+use super::*;
+pub(super) fn cross_check<'hir>(
+program: &'hir dyn crate::cleanup::ReplayContext,
+function: &'hir ResolvedFunction,
+storage: &mut continuation_storage::Storage<'hir>,
+) {
+let saved = SKELETON_MATERIALIZATIONS.with(Cell::get);
+let mut enumerating = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+let enumerated = hir_skeleton_paths(program, function, &mut enumerating).and_then(|mut hir| {
+let mut plan = plan_skeleton_paths(function, &mut enumerating)?;
+hir.sort();
+plan.sort();
+Ok(hir == plan)
+});
+if let Ok(true) = enumerated {
+let mut factored = ReplayBudget::with_skeleton_limit(0);
+let verdict =
+compare_with_index_storage(program, function, &mut factored, None, Some(storage));
+assert!(
+matches!(verdict, Ok(Some(true))),
+"factored skeleton comparison disagrees with enumeration for `{}`: {:?}",
+function.id,
+verdict.map_err(|error| error.message)
+);
+}
+SKELETON_MATERIALIZATIONS.with(|count| count.set(saved));
+}
+#[cfg(test)]
+mod tests;
+
+FILE src/cleanup_plan/replay/factored/oracle_hook.rs
+pub(super) fn cross_check_with_storage<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    budget: &mut ReplayBudget,
+    storage: Option<&mut continuation_storage::Storage<'hir>>,
+) -> Result<(), Diagnostic> {
+    match super::super::allocation::opted() {
+        Ok(None) => match storage {
+            Some(storage) if storage.has_receiving_owner() => {
+                storage.authenticate(program, function, budget)?;
+                super::continuation_receiver::cross_check(program, function, storage);
+            }
+            _ => super::cross_check(program, function),
+        },
+        Ok(Some(lease)) => cross_check_oracle(program, function, lease),
+        Err(refusal) => panic!("opted oracle lease is not live: {refusal:?}"),
+    }
+    Ok(())
+}
+
+
