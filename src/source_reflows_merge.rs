@@ -710,3 +710,15 @@ fn retained_function847_previous(source: &str, current: &str) -> String {
 pub(crate) fn retained_function847_input(_source: &str, current: &str) -> String {
     current.to_owned()
 }
+
+// The original directory guard owns its complete source825 domain independently.
+pub(crate) fn directory825_input(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-function-alias-847/directory825-domain.json"
+        )),
+        source,
+        current,
+    )
+}

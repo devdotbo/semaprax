@@ -8,7 +8,7 @@ for row in rows:
  assert len(row['edits'])==1 and raw==row['edits'][0]['new'].encode()
  old=row['edits'][0]['old'].encode();assert sha(old)==row['original_sha256']
  assert old==(R/row['archive']).read_bytes()==subprocess.check_output(['git','show',BASE+':'+row['source']]);named[p]=old
-owners=json.loads((D/'new-owners.json').read_text());introduced={(R[x['source']]).resolve() for x in []} # populated below
+owners=json.loads((D/'new-owners.json').read_text())
 introduced={(R/x['source']).resolve() for x in owners};assert len(introduced)==8
 for x in owners:assert sha((R/x['source']).read_bytes())==x['sha256']
 receivers=json.loads((D/'independent-receivers.json').read_text());assert len(receivers)==4
@@ -20,10 +20,22 @@ def tokens(s):return [m.group() for m in lex.finditer(s) if not m.group().starts
 by={x['original_source']:x for x in receivers}
 x=by['src/ast/program_source/decl_slices.rs'];assert x['compiled']==x['original']
 x=by['src/hir/identity_resolution/nominal.rs'];assert x['compiled']==x['original']
-x=by['src/workspace_graph/expected_projection/borrowed_imports/typed.rs'];a='fn construct_using';compiled=x['compiled'][x['compiled'].index(a):].replace('super::super::super::super::generic_type_import','super::super::super::generic_type_import').replace('super::super::super::super::owned_function_import','super::super::super::owned_function_import');assert tokens(compiled)==tokens(x['original'][x['original'].index(a):]),'complete independent old constructor and directory bodies'
+x=by['src/workspace_graph/expected_projection/borrowed_imports/typed.rs'];a='fn construct_using';compiled=x['compiled'][x['compiled'].index(a):].replace('super::super::super::super::generic_type_import','super::super::super::generic_type_import').replace('super::super::super::super::owned_function_import','super::super::super::owned_function_import');original=x['original'][x['original'].index(a):x['original'].index('\n#[cfg(test)]\nmod directory_tests')];assert tokens(compiled)==tokens(original),'complete independent old constructor and directory production bodies; original tests remain registered once'
 x=by['src/workspace_graph.rs'];a='fn build_resolved_core_current(';old=x['original'][x['original'].index(a):x['original'].index('\nconst MAX_CHECKED_VALUE_VISITS')];compiled=x['compiled'][x['compiled'].index(a):x['compiled'].index('\n#[cfg(test)]\nmod tests;')];assert tokens(old)==tokens(compiled),'complete independent immediate old core body'
+# Separate source825 historical input, reconstructed from unchanged original edits.
+prior=json.loads((R/'docs/evidence/constructor-directory-propagation-825/source-inverses.json').read_text())
+active=json.loads((D/'directory825-domain.json').read_text());assert len(active)==len(prior)==3
+for previous,row in zip(prior,active):
+ assert row['source']==previous['source']
+ raw=(R/row['source']).read_bytes();assert raw==row['edits'][0]['new'].encode() and sha(raw)==row['current_sha256']
+ target=row['edits'][0]['old'];assert sha(target.encode())==row['original_sha256']==previous['current_sha256']
+ original=(R/previous['archive']).read_text();assert sha(original.encode())==previous['original_sha256']
+ restored=target
+ for edit in previous['edits']:
+  assert restored.count(edit['new'])==1;restored=restored.replace(edit['new'],edit['before'],1)
+ assert restored==original and target==(R/row['archive']).read_text()
 # Existing typed producer remains byte-token exact; the new branch is separate.
-p='src/workspace_graph/expected_projection/borrowed_imports/typed.rs';old=named[(R/p).resolve()].decode();current=(R/p).read_text();assert tokens(current[:current.index('\nmod alias;')])==tokens(old)
+p='src/workspace_graph/expected_projection/borrowed_imports/typed.rs';old=named[(R/p).resolve()].decode();current=(R/p).read_text();assert tokens(current[:current.index('\n#[cfg(test)]\nmod directory_tests')])==tokens(old[:old.index('\n#[cfg(test)]\nmod directory_tests')]);a='        let rows = rows.as_array().unwrap();';b='\nmod alias;';assert current[current.index(a):current.index(b)]==old[old.index(a):], 'all original sourceguard assertions unchanged'
 # Only the actual cloned retained branch disappears. No bound/cap/refund edit.
 for p in ['src/workspace_graph/expected_projection/held_projection.rs','src/workspace_graph/expected_projection/uncached_peak.rs','src/workspace_graph/expected_projection/borrowed_imports/alias_clone.rs']:
  assert (R/p).read_bytes()==subprocess.check_output(['git','show',BASE+':'+p])
