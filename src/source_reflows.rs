@@ -13,7 +13,7 @@ macro_rules! ci_str {
     };
 }
 
-const REPAIRS: &str = include_str!("source_reflows.json");
+const REPAIRS: &str = include_str!("../docs/evidence/mainff869-source-successor-20261015/live-mainff-ci92.json");
 type Cache = HashMap<(&'static str, &'static str), &'static str>;
 static CACHE: OnceLock<Mutex<Cache>> = OnceLock::new();
 static RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
