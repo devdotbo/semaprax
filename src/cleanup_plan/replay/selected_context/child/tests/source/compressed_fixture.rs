@@ -62,9 +62,27 @@ fn decode(
     }
     String::from_utf8(output).map_err(|_| Failure::Utf8)
 }
+// Common in both paired builds: only the single BYTES include path changes.
+// The raw transport authenticates the same length/hash/UTF-8 before copying.
+fn plain(bytes: &[u8], expected_len: usize, raw_sha: [u8; 32]) -> Result<String, Failure> {
+    if expected_len > OUTPUT_CAP || bytes.len() != expected_len {
+        return Err(Failure::Bound);
+    }
+    if digest(bytes) != raw_sha {
+        return Err(Failure::DecodedDigest);
+    }
+    std::str::from_utf8(bytes)
+        .map(str::to_owned)
+        .map_err(|_| Failure::Utf8)
+}
 pub(super) fn load() -> String {
     check_decoder_contract();
-    decode(BYTES, OUTPUT_CAP, GZIP_SHA, RAW_SHA).expect("complete authenticated immutable fixture")
+    let loaded = if BYTES.starts_with(&[0x1f, 0x8b]) {
+        decode(BYTES, OUTPUT_CAP, GZIP_SHA, RAW_SHA)
+    } else {
+        plain(BYTES, OUTPUT_CAP, RAW_SHA)
+    };
+    loaded.expect("complete authenticated immutable fixture")
 }
 const GZIP_SHA: [u8; 32] = [
     108, 122, 171, 139, 39, 30, 147, 21, 28, 217, 60, 121, 234, 223, 41, 85, 216, 240, 207, 159,
@@ -88,6 +106,16 @@ fn check_decoder_contract() {
     let small_raw = b"{\"bounded\":true}\n";
     let compressed = digest(small);
     let raw = digest(small_raw);
+    assert_eq!(
+        plain(small_raw, small_raw.len(), raw).unwrap().as_bytes(),
+        small_raw
+    );
+    assert_eq!(plain(small_raw, OUTPUT_CAP + 1, raw), Err(Failure::Bound));
+    assert_eq!(
+        plain(small_raw, small_raw.len(), [0; 32]),
+        Err(Failure::DecodedDigest)
+    );
+    assert_eq!(plain(&[255], 1, digest(&[255])), Err(Failure::Utf8));
     assert_eq!(
         decode(small, small_raw.len(), compressed, raw)
             .unwrap()
