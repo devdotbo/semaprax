@@ -172,19 +172,48 @@ fn actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop
     let actual = cache.build(&manifest, &changed).err().unwrap();
     let expected = ordinary.build(&manifest, &changed).err().unwrap();
     assert_eq!(actual, expected);
-    // Integer operands are checked in the changed i32 parameter context;
-    // the standalone helper returns i32. The complete workspace checks its
-    // source-ordered app callers first, so their i64 arguments win there.
+    // The complete workspace checks its source-ordered app callers first, so
+    // their i64 arguments win there. Independently retain the original invalid
+    // provider: unsuffixed 2 is i64, and this library has no executable main.
     let provider = changed
         .iter()
         .find(|source| source.path() == "src/core.spx")
         .unwrap();
     let independent = crate::check(provider.source(), "src/core.spx").unwrap_err();
+    assert_eq!(
+        independent,
+        [
+            crate::diagnostic::Diagnostic {
+                code: "SPX-T208",
+                severity: crate::diagnostic::Severity::Error,
+                message: "operator `+` expects i32 operands".into(),
+                path: Some("src/core.spx".to_owned()),
+                span: Some(crate::ast::Span { start: 83, end: 92, line: 6, column: 5 }),
+                help: Some("integer literals are `i64` unless suffixed; write `2i32` to match the `i32` operand".to_owned()),
+            },
+            crate::diagnostic::Diagnostic {
+                code: "SPX-T105",
+                severity: crate::diagnostic::Severity::Error,
+                message: "executable module must define `fn main() -> i64`".into(),
+                path: Some("src/core.spx".to_owned()),
+                span: Some(crate::ast::Span { start: 48, end: 94, line: 4, column: 1 }),
+                help: Some("a module without `fn main() -> i64` is a library module: check it through the project that owns it with `semaprax check <project-dir>`, or add `main` to run this file alone".to_owned()),
+            },
+        ]
+    );
+    // Exercise the original intended return mismatch with an actual i32
+    // expression and a valid standalone entry. The workspace drift above and
+    // its complete diagnostics remain unchanged.
+    let mut standalone = provider.source().replace("value + 2", "value + 2i32");
+    assert_ne!(standalone, provider.source());
+    standalone.push_str("\n@id(\"lifecycle.independent.main\")\nfn main() -> i64 { 0 }\n");
+    let independent = crate::check(&standalone, "src/core.spx").unwrap_err();
     let result_mismatch = |error: &crate::diagnostic::Diagnostic| {
         error.code == "SPX-T103"
             && error.message == "function `helper` returns i32, but its signature declares i64"
     };
     assert!(independent.iter().any(result_mismatch), "{independent:?}");
+    assert_eq!(independent.len(), 1, "{independent:?}");
     assert_eq!(actual.len(), 2, "{actual:?}");
     for error in &actual {
         assert_eq!(error.code, "SPX-T205");
