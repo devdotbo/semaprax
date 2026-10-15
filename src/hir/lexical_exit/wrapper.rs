@@ -42,6 +42,18 @@ pub(crate) fn source_for_wrapper_with<'a>(
         &ResolvedExpr,
     ) -> Result<bool, Diagnostic>,
 ) -> Result<Option<SourceForWrapper<'a>>, Diagnostic> {
+    source_for_wrapper_with_bytes(program, region, None, inspect)
+}
+
+pub(crate) fn source_for_wrapper_with_bytes<'a>(
+    program: &dyn crate::cleanup::ReplayContext,
+    region: &'a ResolvedExpr,
+    byte_census: Option<&mut crate::hir::ByteTraversalSlot<'a>>,
+    inspect: &mut dyn FnMut(
+        &dyn crate::cleanup::ReplayContext,
+        &ResolvedExpr,
+    ) -> Result<bool, Diagnostic>,
+) -> Result<Option<SourceForWrapper<'a>>, Diagnostic> {
     let ResolvedExprKind::Block { statements, tail } = &region.kind else {
         return Ok(None);
     };
@@ -110,7 +122,12 @@ pub(crate) fn source_for_wrapper_with<'a>(
         ..
     } = latch
     {
-        let proof = crate::hir::validation::byte_traversal::region(region)?.ok_or_else(fail)?;
+        let proof = if let Some(census) = byte_census {
+            census.region_for(program, region)?
+        } else {
+            crate::hir::validation::byte_traversal::region(region)?
+        }
+        .ok_or_else(fail)?;
         return Ok(Some(SourceForWrapper {
             authored_body: proof.authored_body,
             iterator_step: None,

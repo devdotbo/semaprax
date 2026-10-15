@@ -1,0 +1,20 @@
+{
+  "status": "SOURCE_ONLY_NO_RUST_EXECUTION",
+  "basis": "5b562965d",
+  "complete_source_rows": 41,
+  "all_current_bindings_and_unchanged_originals": true,
+  "independently_compiled_old_receiver_exact": true,
+  "new_authored_selectors": 10,
+  "source_36": "PASS",
+  "later_packet_rows": 227,
+  "integration_basis": "77e3afe45",
+  "private_checkpoint": "3cb054bc2",
+  "exact_later_join_rows": [
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "src/loan_plan/paid_plan.rs",
+    "tests/hir_module_boundaries.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs"
+  ],
+  "later_packet_count": 20
+}

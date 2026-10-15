@@ -468,7 +468,16 @@ fn byte_for_refusals_and_owner_freeze_are_stable() {
         "for inner in view { let copy = inner; 0 } let first = byte;",
         1,
     );
-    assert!(codes(nested).contains(&"SPX-T284"));
+    assert!(codes(nested.clone()).is_empty());
+    hir::validate(&hir::resolve(&parsed(&nested)).unwrap()).unwrap();
+    let computed_nested = nested.replacen(
+        "for inner in view",
+        "for inner in byte_range(view,0usize,1usize)",
+        1,
+    );
+    assert!(codes(computed_nested).contains(&"SPX-T284"));
+    // The exact original nested fixture's complete v1 refusal remains compiled
+    // in the source verifier's independent before_nested receiver controls.
 
     // The body never names the view, so its alias loan alone could expire;
     // the traversal freeze keeps the owner unavailable for every iteration.

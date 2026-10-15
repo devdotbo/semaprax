@@ -1,5 +1,5 @@
 //! Independent typed contour replay before cleanup certificates may authorize exits.
-use super::{child, contains, source_for_wrapper_with, validate_latch, validate_owner};
+use super::{child, contains, validate_latch, validate_owner};
 use crate::diagnostic::Diagnostic;
 use crate::hir::*;
 fn error(message: &str) -> Diagnostic {
@@ -89,9 +89,9 @@ pub(crate) fn validate_function(
     })
 }
 
-pub(crate) fn validate_function_with(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
+pub(crate) fn validate_function_with<'a>(
+    program: &'a dyn crate::cleanup::ReplayContext,
+    function: &'a ResolvedFunction,
     owner: &FunctionExecutionId,
     inspect: &mut dyn FnMut(
         &dyn crate::cleanup::ReplayContext,
@@ -106,9 +106,25 @@ pub(crate) fn validate_function_with(
             "lexical completion has no public signature or storage type",
         ));
     }
+    crate::hir::validation::byte_traversal::nested::slot::controls(
+        std::mem::size_of::<Proofs<'_, '_>>()
+            + std::mem::size_of::<Result<Proofs<'_, '_>, Diagnostic>>(),
+    )?;
+    let mut proofs = Proofs {
+        bytes: crate::hir::ByteTraversalSlot::new(program, function)?,
+        inspect,
+    };
     for contract in function.requires.iter().chain(&function.ensures) {
         walk(
-            program, function, owner, contract, false, None, None, 0, inspect,
+            program,
+            function,
+            owner,
+            contract,
+            false,
+            None,
+            None,
+            0,
+            &mut proofs,
         )?;
     }
     walk(
@@ -120,22 +136,26 @@ pub(crate) fn validate_function_with(
         None,
         None,
         0,
-        inspect,
+        &mut proofs,
     )
 }
+struct Proofs<'a, 'b> {
+    bytes: crate::hir::ByteTraversalSlot<'a>,
+    inspect: &'b mut dyn FnMut(
+        &dyn crate::cleanup::ReplayContext,
+        &ResolvedExpr,
+    ) -> Result<bool, Diagnostic>,
+}
 fn walk<'a>(
-    program: &dyn crate::cleanup::ReplayContext,
-    function: &ResolvedFunction,
+    program: &'a dyn crate::cleanup::ReplayContext,
+    function: &'a ResolvedFunction,
     owner: &FunctionExecutionId,
     expression: &'a ResolvedExpr,
     route: bool,
     nearest: Option<&'a ExpressionId>,
     allowed: Option<&'a ResolvedExpr>,
     depth: usize,
-    inspect: &mut dyn FnMut(
-        &dyn crate::cleanup::ReplayContext,
-        &ResolvedExpr,
-    ) -> Result<bool, Diagnostic>,
+    inspect: &mut Proofs<'a, '_>,
 ) -> Result<(), Diagnostic> {
     if depth > crate::cache_codec::MAX_DEPTH {
         return Err(error("lexical contour exceeds admitted HIR depth"));
@@ -274,7 +294,12 @@ fn walk<'a>(
                         value,
                         ..
                     } => {
-                        if let Some(wrapper) = source_for_wrapper_with(program, value, inspect)? {
+                        if let Some(wrapper) = super::wrapper::source_for_wrapper_with_bytes(
+                            program,
+                            value,
+                            Some(&mut inspect.bytes),
+                            inspect.inspect,
+                        )? {
                             if *mutable
                                 || binding.ty != value.ty
                                 || binding.ownership != OwnershipMode::Value

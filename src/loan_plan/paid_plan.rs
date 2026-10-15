@@ -62,13 +62,22 @@ pub(super) fn build(
         }
     }
 
+    let mut byte_census = crate::hir::ByteTraversalSlot::new(program, function)?;
     let mut drafts = Vec::<PaidDraft>::new();
     for expression in &cfg.expressions {
         charge(work)?;
         if let Some(draft) = traversal::paid::draft(program, expression, &cfg, work)? {
             storage::push(&mut drafts, draft, payer)?;
         }
-        if let Some(draft) = traversal::paid::draft_bytes(expression, &cfg, &aliases, work)? {
+        if let Some(draft) = traversal::paid::draft_bytes_in(
+            program,
+            function,
+            &mut byte_census,
+            expression,
+            &cfg,
+            &aliases,
+            work,
+        )? {
             storage::push(&mut drafts, draft, payer)?;
         }
         let view = match &expression.kind {

@@ -1,5 +1,10 @@
 # Changelog
 
+- Author narrowly scoped immutable byte-to-byte nesting (#780), with exact
+  outer-entry views, a function-bound borrowed HIR census and complete ancestor
+  freezes. Keep full v1 receivers, mixed source nesting restrictions and actual
+  manual-loop/backend/refusal/Drop controls; execution qualification is pending.
+
 - Reuse the already paid status-source directory between ordinary cleanup
   validation passes, retaining membership work and complete original receivers.
   Bind the retained token to its function, replay payer and active ledger;

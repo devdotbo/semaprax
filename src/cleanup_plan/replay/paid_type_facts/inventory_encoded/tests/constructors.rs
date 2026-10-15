@@ -174,6 +174,7 @@ fn complete_prior_key_substitution_and_storage_receivers_remain_independent_byte
         *source = source.replacen(new, old, 1);
     }
     let mut current = include_str!("../../../../../hir.rs").to_owned();
+    undo(&mut current, "pub(crate) use validation::byte_traversal::nested::Slot as ByteTraversalSlot;\n", "");
     undo(&mut current, "mod nominal_payload;\n#[path = \"hir/prelude_bundle.rs\"]\npub(crate) mod prelude_bundle;\npub use nominal_payload::{NominalPayload, NominalMutationError};\n", "");
     undo(&mut current, "pub(crate) use declaration_index::{inventory_identity, inventory_substitute, InventoryPayer};\n", "");
     undo(&mut current, "#[cfg(test)]\npub(crate) use byte_capacity::byte_data_capacity_inputs;\n", "");

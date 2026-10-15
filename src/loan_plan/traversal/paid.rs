@@ -213,6 +213,37 @@ pub(in crate::loan_plan) fn draft_bytes(
     }))
 }
 
+pub(in crate::loan_plan) fn draft_bytes_in<'a>(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &'a ResolvedFunction,
+    census: &mut crate::hir::ByteTraversalSlot<'a>,
+    expression: &'a ResolvedExpr,
+    cfg: &Cfg<'_>,
+    aliases: &impl crate::loan_plan::directory_access::Aliases,
+    work: &mut WorkCounter,
+) -> Result<Option<PaidDraft>, Diagnostic> {
+    let region = census.region(program, function, expression)?;
+    let Some(region) = region else {
+        return Ok(None);
+    };
+    charge(work)?;
+    let place = storage::expression_place(region.view, work.allocation)?
+        .ok_or_else(|| error("borrowed byte traversal view lacks its exact place"))?;
+    Ok(Some(PaidDraft {
+        site: expression.id.clone(),
+        origin: aliases.resolve(place, work)?,
+        origin_span: region.view.span,
+        parent_root: None,
+        binding: None,
+        start: cfg.node(expression, LoanPointPhase::Before)?,
+        seeds: cfg_directory::singleton_set(
+            cfg.node(expression, LoanPointPhase::After)?,
+            work.allocation,
+        )?,
+        cause: LoanCause::TraversalFreeze,
+    }))
+}
+
 pub(in crate::loan_plan) fn inspect<'a>(
     program: &dyn crate::cleanup::ReplayContext,
     expression: &'a ResolvedExpr,

@@ -47,3 +47,5 @@ pub(super) fn release(bindings: &mut HashMap<String, Binding>, id: &SourceLoanId
         binding.active_loans.retain(|loan| &loan.id != id);
     }
 }
+
+pub(super) mod nested;

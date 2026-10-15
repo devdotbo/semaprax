@@ -1,0 +1,126 @@
+Fresh bounded DESIGN second opinion, no tools/code execution. Distinct packet from the earlier general proposal. The parent requests a decision between two options, not a blanket Vec/Iter ban. Identify concrete unsafe compositions/necessary independent checks and choose the smallest sound scope. Do not claim source/runtime approval. Under800words.
+
+Verified source facts: current byte-for lowers to byte_len snapshot, mutable usize zero counter, ordinary While (LexicalWhile plus SourceForStep BorrowBytes only if lexical exits), item receiver match byte_get(view,counter){Some{value}=>value}, authored body, exact unit advance. Full local shape binds view/index/item/advance/latch. Global HIR validation freshly rederives stored byte-slice provenance before final byte census. Loan construction earlier reconstructs structural regions and independently resolves actual alias roots to TraversalFreeze loans. Source freeze IDs hold each view's ultimate root across its lexical body; inner release must not clear an outer freeze. Old source verifier forbids nested For/ForBorrow/ForOwn, even through while; HIR below forbids any raw receiver inside an authored byte body.
+
+Private proposal now admits only byte-for nested under byte-for ancestry, with immutable authenticated Slice<u8> named views already present at OUTERMOST loop entry. This preserves old early mixed/unknown/computed/mutable rejection: prescan classifies preexisting bindings before body evaluation, ordinary nested entry checks current binding again. Closures/functions clear traversal admission and lexical target context. No generic-instance byte profile, view escape, owned copy, cap/work increase or fake payer. Existing source-for Vec/row/own nesting remains refused. Source checkpoint exists; HIR has NOT been widened. New shape/storage/interval primitives are still unwired.
+
+Key ambiguity: nonlexical Copy Vec source-for lowers to ordinary vec_len/counter/While without SourceForKind. HIR cannot distinguish it from a safe handwritten equivalent by an origin flag. Adding a Vec/Iter-op blanket ban would wrongly exclude accumulators/parsers; parent explicitly rejected that. Existing source restrictions do not necessarily imply rejecting every equivalent primitive HIR tree. Row/own loops do carry other independently checked descriptors/latches and cleanup proofs.
+
+OPTION A (preferred if sufficient): Keep mixed SOURCE-for syntax rejected. At HIR level admit only independently safe lowered semantics: each byte receiver belongs to one exact complete byte region, current immutable view/provenance/entry binding, every enclosing root/view/counter/item/payload freeze holds through all child loops, nearest continue/break/return target and cleanup are checked by existing independent owners. A safe manual While with Vec operations need not be rejected merely because source origin is unknown. Explicit row/own descriptors retain ALL existing independent restrictions; no syntax flag bypasses them. Reject any composition that lacks those actual proofs. A private per-function borrowed census binds exact immutable context/declarations/function/execution/region refs, is never persisted, and is reused at actual consumers. Contextless region() keeps strict old behavior unless the caller holds/derives complete contextual replay. Source, HIR, loan, cleanup, cache, interpreter/C11/Wasm controls cover same-root, alias, cross-level swaps, mutation, nearest-target exits and stale evidence.
+
+OPTION B: Introduce a source-for origin/ancestry descriptor (possibly a new wire fact/version) and independently reconstruct its exact local shape, target and containment. Use it to discriminate mixed source constructs. Parent requires it to be stronger than a trusted boolean/tag. However, if dropping the descriptor yields an otherwise valid manual While with the same operational semantics, rejecting ONLY mixed source syntax via the descriptor may provide no genuine semantic safety property. Would B actually close an authority hole, or just encode source origin? If required, specify the concrete missing invariant A cannot prove and how descriptor removal fails closed without banning legitimate manual loops.
+
+Implementation constraints: no canonical cleanup sorting/repair, no new budget/quota/grant, every new actual cursor/index/Vec/Result/temp/Drop carrier funded before allocation on real active owner; standalone no-owner APIs retain ordinary complete checked replay and are explicitly unqualified, never called paid. No self-referential census owner: immutable borrowed lifetimes and exact context/root/region checks. Old full source/scanners/receiver remain independent controls; issue780 remains open until residuals/qualification complete.
+
+Questions: 1 Which option is semantically sound/minimal? 2 Are mixed source admission rules reasonably distinct from primitive-HIR safety here? 3 Exact counterexample if A's freeze/provenance/latch/ownership checks are insufficient. 4 Required fail-closed checks for owning/row-loop descriptors and public standalone replay, without broadening them. 5 Any condition requiring a new serialized fact despite unchanged primitive HIR shapes?
+
+ACTUAL old frozen-body check:
+fn frozen_body(
+    body: &ResolvedExpr,
+    payload: &ResolvedBinding,
+    frozen: &[&ValueId],
+) -> Result<(), Diagnostic> {
+    walk(body, |expression, authorized| {
+        if matches!(&expression.kind, ResolvedExprKind::Place(place) | ResolvedExprKind::BorrowPlace { place, .. } if place.root == payload.id)
+        {
+            return Err(fail("borrowed byte receiver payload escapes its receiver"));
+        }
+        if receiver_shape(expression).is_some() {
+            return Err(fail(
+                "borrowed byte traversal is nested in another traversal",
+            ));
+        }
+        if let ResolvedExprKind::Block { statements, .. }
+        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+        {
+            for statement in statements {
+                if let ResolvedStatement::Let { binding, .. }
+                | ResolvedStatement::Assign { binding, .. } = statement
+                {
+                    if frozen.contains(&&binding.id) {
+                        return Err(fail(
+                            "borrowed byte traversal view, owner, counter or item is mutated or rebound",
+                        ));
+                    }
+                }
+            }
+        }
+        if let ResolvedExprKind::Match { arms, .. } = &expression.kind {
+            for arm in arms {
+                if let ResolvedMatchPattern::Variant { fields, .. } = &arm.pattern {
+                    if fields
+                        .iter()
+                        .any(|field| frozen.contains(&&field.binding.id))
+                    {
+                        return Err(fail("borrowed byte traversal binding is shadowed"));
+                    }
+                }
+            }
+        }
+        Ok(authorized)
+    })?;
+    Ok(())
+}
+
+
+ACTUAL early paid byte-loan producer:
+pub(in crate::loan_plan) fn draft_bytes(
+    expression: &ResolvedExpr,
+    cfg: &Cfg<'_>,
+    aliases: &impl crate::loan_plan::directory_access::Aliases,
+    work: &mut WorkCounter,
+) -> Result<Option<PaidDraft>, Diagnostic> {
+    let Some(region) = crate::hir::byte_traversal_region(expression)? else {
+        return Ok(None);
+    };
+    charge(work)?;
+    let place = storage::expression_place(region.view, work.allocation)?
+        .ok_or_else(|| error("borrowed byte traversal view lacks its exact place"))?;
+    Ok(Some(PaidDraft {
+        site: expression.id.clone(),
+        origin: aliases.resolve(place, work)?,
+        origin_span: region.view.span,
+        parent_root: None,
+        binding: None,
+        start: cfg.node(expression, LoanPointPhase::Before)?,
+        seeds: cfg_directory::singleton_set(
+            cfg.node(expression, LoanPointPhase::After)?,
+            work.allocation,
+        )?,
+        cause: LoanCause::TraversalFreeze,
+    }))
+}
+
+ACTUAL wrapper byte branch:
+    if let LoopLatchKind::SourceForStep {
+        kind: SourceForKind::BorrowBytes,
+        ..
+    } = latch
+    {
+        let proof = crate::hir::validation::byte_traversal::region(region)?.ok_or_else(fail)?;
+        return Ok(Some(SourceForWrapper {
+            authored_body: proof.authored_body,
+            iterator_step: None,
+        }));
+    }
+
+CURRENT private typed-source nested gate (rest remains old rejection):
+                    Statement::For { values, body, .. }
+                        if byte_entry_scope
+                            .is_some_and(|scope| self.nested_byte_source(scope, values)) =>
+                    {
+                        frames.push(Frame::Expression(body));
+                        continue;
+                    }
+                    Statement::For { span, .. }
+                    | Statement::ForBorrow { span, .. }
+                    | Statement::ForOwn { span, .. } => {
+                        self.diagnostics.push(error(
+                            self.program,
+                            "SPX-T284",
+                            "nested for traversal is not admitted in this bounded profile",
+                            *span,
+                        ));
+                        return Err(());
+                    }
+                },

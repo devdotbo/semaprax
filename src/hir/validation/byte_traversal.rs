@@ -18,8 +18,16 @@
 //! or transfer of an owned root anywhere in the traversal overlaps it.
 use super::*;
 
-fn fail(message: &str) -> Diagnostic {
-    Diagnostic::io("SPX-H006", message)
+#[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "complete independent pre-nesting semantic receiver"
+)]
+mod before_nested;
+pub(crate) mod nested;
+
+fn fail(message: &'static str) -> Diagnostic {
+    Diagnostic::io_static("SPX-H006", message)
 }
 
 /// The independently authenticated parts of one receiver.
@@ -343,7 +351,7 @@ fn frozen_body(
 /// lowered inside a generic instance has no authenticated root and is refused.
 /// The stored provenance is itself replayed against a fresh derivation before
 /// validation succeeds, so a forged root cannot relax this freeze.
-pub(in crate::hir) fn validate_function(
+fn validate_function_v1(
     declarations: &DeclarationIndex,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
@@ -382,6 +390,22 @@ pub(in crate::hir) fn validate_function(
         ));
     }
     Ok(())
+}
+
+/// Nested replay derives a fresh function-bound census after primary HIR
+/// validation has independently replayed stored byte provenance. The complete
+/// v1 receiver remains the ordinary non-nested and contextless path.
+pub(in crate::hir) fn validate_function(
+    declarations: &DeclarationIndex,
+    function: &ResolvedFunction,
+) -> Result<(), Diagnostic> {
+    nested::slot::controls(0)?;
+    match validate_function_v1(declarations, function) {
+        Err(error) if nested::slot::nested_refusal(&error) => {
+            nested::Census::validate(declarations, function)
+        }
+        original => original,
+    }
 }
 
 /// Receiver presence selects Graph v83. It grants nothing: validation still

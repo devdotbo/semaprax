@@ -1,0 +1,38 @@
+{
+  "basis": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+  "proposal_only": true,
+  "sources": [
+    {
+      "source": "src/source_verify/iterative/while_rules.rs",
+      "sha256": "972e49612e66563742f5fe880a28196cd6c44e3809f70fb683c2e0a7ec4968ed"
+    },
+    {
+      "source": "src/source_verify/iterative/blocks.rs",
+      "sha256": "d1d3e19a3b9f4d11c3a833b4f0aa396d8b415fafbf1c633c76883ce9e9a095ca"
+    },
+    {
+      "source": "src/source_verify/byte_traversal.rs",
+      "sha256": "7996dd9eee8206aa72f76ce65550ae2708c8442ab7ac18e9698bb1bb989fc763"
+    },
+    {
+      "source": "src/hir/validation/byte_traversal.rs",
+      "sha256": "0e4af8d20ebd5be4b9cd3d8be6b58be5d069d21116d2c09bae09e1dc1a64323f"
+    },
+    {
+      "source": "src/hir/lexical_exit/wrapper.rs",
+      "sha256": "e969672b3a9dd3d71f1eabf5cba2f1fbb02f6a609de6b397c062724821e87479"
+    },
+    {
+      "source": "src/hir/resolve_for.rs",
+      "sha256": "7495d6d268a0976d7bb145bc7e5b0cb1f7831ed5d51db29631f76865fe7f8285"
+    },
+    {
+      "source": "src/hir/resolve_for/bytes.rs",
+      "sha256": "deef25b95f122b3eda37e25650556532daf1db66f0d608f7e43bdbda062bc448"
+    },
+    {
+      "source": "src/cli/help/authoring.rs",
+      "sha256": "7470e307400d0009748f70db5e20250af782f550a290800d4aa6e567f905840c"
+    }
+  ]
+}

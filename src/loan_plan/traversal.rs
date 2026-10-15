@@ -19,9 +19,15 @@ fn place_is(expression: &ResolvedExpr, binding: &ResolvedBinding) -> bool {
 }
 // Explicit lookup retains its ordinary bounds-checked index. Row syntax keeps
 // its exact snapshot; neither form exempts any root occurrence in the index.
-fn field_index(origin: crate::hir::VecFieldReadOrigin, index: &ResolvedExpr, row_index: &ResolvedBinding) -> bool {
+fn field_index(
+    origin: crate::hir::VecFieldReadOrigin,
+    index: &ResolvedExpr,
+    row_index: &ResolvedBinding,
+) -> bool {
     match origin {
-        crate::hir::VecFieldReadOrigin::Explicit => index.ty == ResolvedType::Usize && index.ownership == OwnershipMode::Value,
+        crate::hir::VecFieldReadOrigin::Explicit => {
+            index.ty == ResolvedType::Usize && index.ownership == OwnershipMode::Value
+        }
         crate::hir::VecFieldReadOrigin::Traversal => place_is(index, row_index),
     }
 }
@@ -239,9 +245,40 @@ pub(super) fn draft_bytes(
     }))
 }
 
+pub(super) fn draft_bytes_in<'a>(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &'a ResolvedFunction,
+    census: &mut crate::hir::ByteTraversalSlot<'a>,
+    expression: &'a ResolvedExpr,
+    cfg: &Cfg<'_>,
+    aliases: &BTreeMap<ValueId, Place>,
+    work: &mut WorkCounter,
+) -> Result<Option<CfgDraft>, Diagnostic> {
+    let region = census.region(program, function, expression)?;
+    let Some(region) = region else {
+        return Ok(None);
+    };
+    charge(work)?;
+    let place = expression_place(region.view)
+        .ok_or_else(|| error("borrowed byte traversal view lacks its exact place"))?;
+    Ok(Some(CfgDraft {
+        site: expression.id.clone(),
+        origin: resolve_origin(aliases, place, work)?,
+        origin_span: region.view.span,
+        parent_root: None,
+        binding: None,
+        start: cfg.node(expression, LoanPointPhase::Before)?,
+        seeds: [cfg.node(expression, LoanPointPhase::After)?]
+            .into_iter()
+            .collect(),
+        cause: LoanCause::TraversalFreeze,
+    }))
+}
+
+#[cfg(test)]
+mod origin_tests;
 #[cfg(test)]
 mod tests;
-#[cfg(test)] mod origin_tests;
 
 /// Row Loan v1 replay facts of one exact lowered owned-leaf traversal region,
 /// reconstructed by the same structural prefix as the traversal freeze.

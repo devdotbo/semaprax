@@ -400,3 +400,6 @@ fn raw_wasm(root: &Path, name: &str, module: &[u8], expected: i64) {
 
 #[path = "byte_slice_for_runtime/catalog_identifier.rs"]
 mod catalog_identifier;
+
+#[path = "byte_slice_for_runtime/nested.rs"]
+mod nested;
