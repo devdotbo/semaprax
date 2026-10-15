@@ -13,6 +13,11 @@
   "full_current_projection": {
     "src/cleanup_plan/replay/expression_facts/receiving.rs": [
       {
+        "name": "retained-exit-status-reexport-before-status-retention",
+        "from": "    validate_blocks_and_edges_retained, validate_status_sources_retained, validate_exits_retained,\n",
+        "to": "    validate_blocks_and_edges_retained, validate_status_sources_retained,\n"
+      },
+      {
         "name": "retained-status-directory-0",
         "from": "use super::*;\nmod directory;\nmod retained;\n#[cfg(test)]\npub(in crate::cleanup_plan::replay) use retained::before_status_retention;\npub(in crate::cleanup_plan::replay) use retained::{\n    validate_blocks_and_edges_retained, validate_status_sources_retained,\n};\nmod regions_entry;\nmod remaining;\n",
         "to": "use super::*;\nmod directory;\nmod regions_entry;\nmod remaining;\n"
