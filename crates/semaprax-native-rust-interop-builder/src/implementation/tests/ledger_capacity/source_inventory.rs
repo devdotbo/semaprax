@@ -144,6 +144,8 @@ macro_rules! loan_cfg_source_inventory {
             include_str!("../../../../../src/loan_plan/paid_plan_legacy.rs"),
             include_str!("../../../../../src/loan_plan/traversal/paid_legacy.rs"),
             include_str!("../../../../../src/loan_plan/paid_live.rs"),
+        include_str!("../../../../../src/loan_plan/paid_live/dense.rs"),
+        include_str!("../../../../../src/loan_plan/paid_live/dense/tests.rs"),
             include_str!("../../../../../src/loan_plan/paid_live/original.rs"),
             include_str!("../../../../../src/loan_plan/paid_live/reuse_tests.rs"),
             include_str!("../../../../../src/loan_plan/paid_live/funded_before.rs"),

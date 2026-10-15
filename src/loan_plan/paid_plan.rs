@@ -369,12 +369,12 @@ pub(super) fn build(
     )
 }
 
-fn reject_cfg_overlaps_paid(
+fn reject_cfg_overlaps_paid<N: paid_live::Membership>(
     program: &ResolvedProgram,
     cfg: &Cfg<'_>,
     aliases: &cfg_directory::Map<ValueId, Place>,
     drafts: &[PaidDraft],
-    live: &[cfg_directory::Set<u16>],
+    live: &[N],
     work: &mut WorkCounter,
 ) -> Result<(), Diagnostic> {
     let payer = work.allocation;

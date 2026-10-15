@@ -1,6 +1,9 @@
 // Complete private-layout source inventory; original includes and literal bytes retained.
 macro_rules! semantic_graph_private_layout_source_inventory {
     () => { concat!(
+        include_str!("../../src/loan_plan/paid_live.rs"),
+        include_str!("../../src/loan_plan/paid_live/dense.rs"),
+        include_str!("../../src/loan_plan/paid_live/dense/tests.rs"),
 concat!(
         include_str!("../../src/workspace_graph/expected_projection/private_layout.rs"),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/registry.rs"),
