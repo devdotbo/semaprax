@@ -132,6 +132,7 @@ pub(crate) use owner_funded::{owner_funded_with_work, requires_funded_with_work}
     }
     {
         let mut current = ci_str!("../../../../hir/lexical_exit/owner_funded.rs").to_owned();
+        super::presence::restore("src/hir/lexical_exit/owner_funded.rs", &mut current);
         // Exact #766 test-only extension: retain the whole original plain
         // receiver and all previous source inverses; no production bytes change.
         undo(
@@ -275,6 +276,7 @@ pub(crate) use work::{owner_funded_with_work, requires_funded_with_work};
     }
     {
         let mut current = ci_str!("../../../../hir/lexical_exit/walk.rs").to_owned();
+        super::presence::restore("src/hir/lexical_exit/walk.rs", &mut current);
         undo(
             &mut current,
             r#"
