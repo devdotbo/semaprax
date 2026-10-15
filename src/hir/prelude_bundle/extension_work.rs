@@ -9,7 +9,7 @@ use super::Payer;
 pub(super) const VECTOR_WORK: usize =
     4 + crate::prelude::VEC_ID.len() + 2 * "Vec".len() + 2 * "T".len();
 
-/// One borrowed same-byte-owner account for one selected Vec extension producer. It owns no
+/// One borrowed same-byte-owner account for one selected extension slot. It owns no
 /// heap and no authored/replay work allowance. Keep it through construction and
 /// refusal; creating a new invocation is not a retry on this failed account.
 pub(super) struct ExtensionPayer<'a, E: Copy> {
@@ -20,6 +20,13 @@ pub(super) struct ExtensionPayer<'a, E: Copy> {
 }
 impl<'a, E: Copy> ExtensionPayer<'a, E> {
     pub(super) fn acquire(reserve: &'a mut dyn FnMut(usize) -> Result<(), E>) -> Result<Self, E> {
+        Self::acquire_for(0, reserve)
+    }
+    pub(super) fn acquire_for(
+        slot: usize,
+        reserve: &'a mut dyn FnMut(usize) -> Result<(), E>,
+    ) -> Result<Self, E> {
+        let limit = super::extension_model::WORK[slot];
         let carriers = std::mem::size_of::<Self>()
             .checked_add(std::mem::size_of::<Result<Self, E>>())
             .and_then(|n| n.checked_add(std::mem::size_of::<WorkReceipt>()))
@@ -27,8 +34,8 @@ impl<'a, E: Copy> ExtensionPayer<'a, E> {
         reserve(carriers)?;
         Ok(Self {
             reserve,
-            limit: VECTOR_WORK,
-            remaining: VECTOR_WORK,
+            limit,
+            remaining: limit,
             first: None,
         })
     }
@@ -53,7 +60,7 @@ impl<'a, E: Copy> ExtensionPayer<'a, E> {
     }
     #[cfg(test)]
     pub(super) fn restrict_for_test(&mut self, limit: usize) {
-        assert!(limit <= VECTOR_WORK);
+        assert!(limit <= self.limit);
         assert_eq!(self.limit, self.remaining);
         assert!(self.first.is_none());
         self.limit = limit;

@@ -48,24 +48,28 @@ fn all_selected_prefixes_keep_full_old_index_wire_and_reuse_only_selected_vec_pa
                 )
                 .unwrap();
                 assert_eq!(invocation.extension_receipt(), receipt);
-                if count > 2 {
-                    let id = first.type_id("Vec").unwrap();
-                    assert_eq!(
-                        first.parameter_payload(id).unwrap().as_ptr(),
-                        second.parameter_payload(id).unwrap().as_ptr()
-                    );
-                    let receipt = receipt.unwrap();
-                    assert_eq!(
-                        (
-                            receipt.limit,
-                            receipt.used,
-                            receipt.remaining,
-                            receipt.first
-                        ),
-                        (VECTOR_WORK, VECTOR_WORK, 0, None)
-                    );
-                } else {
-                    assert_eq!(receipt, None);
+                for slot in 0..9 {
+                    let actual = invocation.extension_receipts()[slot];
+                    if slot < count - 2 {
+                        let expected = crate::hir::prelude_bundle::extension_model::WORK[slot];
+                        let actual = actual.unwrap();
+                        assert_eq!(
+                            (actual.limit, actual.used, actual.remaining, actual.first),
+                            (expected, expected, 0, None)
+                        );
+                        let name = crate::hir::prelude_bundle::extension_model::NAMES[slot];
+                        let id = first.type_id(name).unwrap();
+                        let left = first.parameter_payload(id).unwrap();
+                        let right = second.parameter_payload(id).unwrap();
+                        assert_eq!(left.as_ptr(), right.as_ptr());
+                        if matches!(slot, 3 | 5) {
+                            let left = first.case_payload(id).unwrap();
+                            let right = second.case_payload(id).unwrap();
+                            assert_eq!(left.as_ptr(), right.as_ptr());
+                        }
+                    } else {
+                        assert_eq!(actual, None);
+                    }
                 }
                 (first, second, receipt)
             });

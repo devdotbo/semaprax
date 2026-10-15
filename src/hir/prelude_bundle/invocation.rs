@@ -20,7 +20,7 @@ pub(crate) struct Invocation<E> {
     first: Option<InvocationFailure<E>>,
     receipt: Option<WorkReceipt>,
     vector: Option<VectorExtension>,
-    extension_receipt: Option<WorkReceipt>,
+    extension_receipts: [Option<WorkReceipt>; 9],
     #[cfg(test)]
     extension_limit: Option<usize>,
     #[cfg(test)]
@@ -38,7 +38,7 @@ impl<E> Invocation<E> {
             first: None,
             receipt: None,
             vector: None,
-            extension_receipt: None,
+            extension_receipts: [None; 9],
             #[cfg(test)]
             extension_limit: None,
             #[cfg(test)]
@@ -129,19 +129,33 @@ impl<E: Copy> Invocation<E> {
             )
             .map_err(InvocationFailure::Bytes)?;
             if prelude.len() > 2 && self.vector.is_none() {
-                reserve(std::mem::size_of::<
-                    Result<super::extension_work::ExtensionPayer<'_, E>, InvocationFailure<E>>,
-                >())
+                reserve(
+                    2 * std::mem::size_of::<VectorExtension>()
+                        + std::mem::size_of::<Option<VectorExtension>>(),
+                )
                 .map_err(InvocationFailure::Bytes)?;
-                let mut payer = super::extension_work::ExtensionPayer::acquire(reserve)
+                self.vector = Some(VectorExtension::empty());
+            }
+            for slot in 0..prelude.len() - 2 {
+                if self.vector.as_ref().expect("selected catalog").values[slot].is_some() {
+                    continue;
+                }
+                reserve(std::mem::size_of::<Result<super::extension_work::ExtensionPayer<'_, E>, InvocationFailure<E>>>()
+                    + std::mem::size_of::<Result<ResolvedTypeDeclaration, InvocationFailure<E>>>())
+                    .map_err(InvocationFailure::Bytes)?;
+                let mut payer = super::extension_work::ExtensionPayer::acquire_for(slot, reserve)
                     .map_err(InvocationFailure::Bytes)?;
                 #[cfg(test)]
                 if let Some(limit) = self.extension_limit {
                     payer.restrict_for_test(limit);
                 }
-                let produced = VectorExtension::acquire(&mut payer);
-                self.extension_receipt = Some(payer.receipt());
-                self.vector = Some(produced.map_err(|failure| match failure {
+                let produced = super::extension_producer::acquire(
+                    slot,
+                    &self.vector.as_ref().expect("selected catalog").values,
+                    &mut payer,
+                );
+                self.extension_receipts[slot] = Some(payer.receipt());
+                let produced = produced.map_err(|failure| match failure {
                     Failure::Payer(FixedFailure::Bytes(error)) => InvocationFailure::Bytes(error),
                     Failure::Payer(FixedFailure::Work(error)) => {
                         InvocationFailure::ExtensionWork(error)
@@ -150,7 +164,8 @@ impl<E: Copy> Invocation<E> {
                     Failure::Allocation => InvocationFailure::Producer(ProducerFailure::Allocation),
                     Failure::Capacity => InvocationFailure::Producer(ProducerFailure::Capacity),
                     Failure::Schema => InvocationFailure::Producer(ProducerFailure::Schema),
-                })?);
+                })?;
+                self.vector.as_mut().expect("selected catalog").values[slot] = Some(produced);
             }
             Ok(())
         })();
@@ -167,7 +182,11 @@ impl<E: Copy> Invocation<E> {
     }
     #[cfg(test)]
     pub(crate) fn extension_receipt(&self) -> Option<WorkReceipt> {
-        self.extension_receipt
+        self.extension_receipts[0]
+    }
+    #[cfg(test)]
+    pub(crate) fn extension_receipts(&self) -> &[Option<WorkReceipt>; 9] {
+        &self.extension_receipts
     }
     #[cfg(test)]
     pub(crate) fn restrict_extension_work(&mut self, limit: usize) {

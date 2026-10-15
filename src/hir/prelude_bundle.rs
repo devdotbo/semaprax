@@ -12,6 +12,12 @@ use std::sync::Arc;
 
 #[path = "prelude_bundle/borrowed.rs"]
 mod borrowed;
+#[path = "prelude_bundle/extension_model.rs"]
+mod extension_model;
+#[path = "prelude_bundle/extension_producer.rs"]
+mod extension_producer;
+#[path = "prelude_bundle/extension_staging.rs"]
+mod extension_staging;
 #[path = "prelude_bundle/extension_work.rs"]
 mod extension_work;
 #[path = "prelude_bundle/fixed_work.rs"]

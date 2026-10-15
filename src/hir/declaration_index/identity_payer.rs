@@ -128,7 +128,13 @@ impl DeclarationIndex {
                     ResolvedTypeDeclarationKind::Record { .. } => DeclarationKind::Record,
                     _ => unreachable!("closed compiler payload kind"),
                 };
-                if kind == DeclarationKind::Record {
+                if super::super::prelude_bundle::VectorExtension::for_source(
+                    vector,
+                    prelude,
+                    declaration,
+                )
+                .is_some()
+                {
                     payer
                         .node::<DeclarationId, NominalPayload<ResolvedTypeParameterDeclaration>>()
                         .map_err(IdentityIndexError::Identity)?;
@@ -526,7 +532,60 @@ impl DeclarationIndex {
                 continue;
             };
             if let Some(ty) = Self::compiler_type_for_source(base, vector, prelude, declaration) {
-                index.insert_base_variant(ty);
+                if super::super::prelude_bundle::VectorExtension::for_source(
+                    vector,
+                    prelude,
+                    declaration,
+                )
+                .is_some()
+                {
+                    let ResolvedTypeDeclarationKind::Variant { cases } = &ty.kind else {
+                        unreachable!("compiler variant")
+                    };
+                    payer
+                        .node::<DeclarationId, NominalPayload<ResolvedVariantCaseDeclaration>>()
+                        .map_err(IdentityIndexError::Identity)?;
+                    payer
+                        .bytes(
+                            2 * std::mem::size_of::<NominalPayload<ResolvedVariantCaseDeclaration>>(
+                            ) + std::mem::size_of::<
+                                Option<NominalPayload<ResolvedVariantCaseDeclaration>>,
+                            >(),
+                        )
+                        .map_err(IdentityIndexError::Identity)?;
+                    for case in cases {
+                        payer
+                            .case(&case.name)
+                            .map_err(IdentityIndexError::Identity)?;
+                        let name = payer
+                            .text(&case.name)
+                            .map_err(IdentityIndexError::Identity)?;
+                        index.insert_case(
+                            ty.id.clone(),
+                            name,
+                            case.id.clone(),
+                            IdentityOrigin::CompilerOwned,
+                        );
+                        for field in &case.fields {
+                            payer
+                                .field(&field.name)
+                                .map_err(IdentityIndexError::Identity)?;
+                            index.insert_case_field_view(
+                                case.id.clone(),
+                                field,
+                                IdentityOrigin::CompilerOwned,
+                            );
+                        }
+                        // share_nominal_payloads pays the coordinate initializer;
+                        // this acquisition owns its new receiving map backing.
+                        payer
+                            .node::<DeclarationId, CaseFields>()
+                            .map_err(IdentityIndexError::Identity)?;
+                    }
+                    index.variant_cases.insert(ty.id.clone(), cases.clone());
+                } else {
+                    index.insert_base_variant(ty);
+                }
                 continue;
             }
             let owner = index.inserted_identity(&declaration.stable_id);
