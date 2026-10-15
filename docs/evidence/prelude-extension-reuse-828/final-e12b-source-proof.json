@@ -1,0 +1,15 @@
+{
+  "state": "SOURCE_ONLY_UNEXECUTED",
+  "target_root_head": "e12b377facc69a57ef0e58d34e4410537d78367f",
+  "nominal_source_bindings_verified": 79,
+  "nominal_full_original_inverses_verified": 79,
+  "extension_source_bindings_verified": 18,
+  "extension_archive_inverses_verified": 18,
+  "later_inventory_compositions": [
+    "tests/hir_module_boundaries.rs",
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"
+  ],
+  "all_prior_edits_and_original_archives_preserved": true,
+  "cargo_or_runtime_executed": false
+}
