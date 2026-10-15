@@ -1095,7 +1095,24 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
         include_str!("../src/hir/prelude_bundle/vector_extension.rs"),
         include_str!("../src/hir/prelude_bundle/vector_extension/tests.rs"),
         include_str!("../src/workspace_graph/identity_resolution/base/vector_tests.rs"),"#####, r#####"        include_str!("../src/hir/prelude_bundle/invocation.rs"),"#####);
-      // Exact additive full status-fact receiving and complete old/control join.
+        // Full exit prefix proof, complete prior receiver and owning controls.
+        undo(&mut current, r########"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"########, r########"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"########);
+        // Exact additive full status-fact receiving and complete old/control join.
         undo(&mut current, r#######"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"),

@@ -1192,6 +1192,9 @@ macro_rules! lower_source_inventory {
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs")),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/tests.rs"),
@@ -1282,6 +1285,9 @@ macro_rules! hir_final_validation_source_inventory {
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs"),
+            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs")),
             include_str!(
                 "../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory.rs"

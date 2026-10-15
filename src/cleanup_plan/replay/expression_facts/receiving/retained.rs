@@ -161,8 +161,9 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
         validate_edge_condition(function, &edge.condition, expressions, statuses, budget)?;
     }
 
-    let mut referenced_exits =
-        Directory::new(function, budget, "cleanup referenced exit directory")?;
+    // Preserve the original directory constructor's zero/current/sticky checks.
+    budget.reserve_bytes(function, 0, "cleanup referenced exit directory")?;
+    budget.charge(function, 0, "cleanup referenced exit directory")?;
     let mut committed_calls = Directory::new(function, budget, "cleanup committed call directory")?;
     for (index, block) in plan.blocks.iter().enumerate() {
         if block.id.0 != u32_index(function, index, "cleanup block")?
@@ -514,14 +515,42 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
                 if usize::try_from(exit.0)
                     .ok()
                     .is_none_or(|value| value >= plan.exits.len())
-                    || !referenced_exits.insert(function, *exit, budget)?
                 {
                     return Err(replay_error(
                         function,
                         "cleanup block references an unknown or repeated exit",
                     ));
                 }
+                // The eliminated insert authenticated even an already-paid
+                // slot. Keep both zero checks before the original owner read.
+                budget.reserve_bytes(function, 0, "cleanup referenced exit directory")?;
+                budget.charge(function, 0, "cleanup referenced exit directory")?;
                 if plan.exits[exit.0 as usize].from != block.id {
+                    // Only a malformed owner needs a bounded previous-block
+                    // proof. Pay every control and step before these new reads.
+                    budget.reserve_bytes(function, exit_prefix::CONTROL_BYTES,
+                        "cleanup prior exit reference controls")?;
+                    budget.charge(function, exit_prefix::PROBE_UNITS,
+                        "cleanup prior exit reference proof")?;
+                    let mut probe = exit_prefix::Probe {
+                        owner: plan.exits[exit.0 as usize].from,
+                        current: block.id,
+                        exit: *exit,
+                        previous: None,
+                        repeated: false,
+                    };
+                    if probe.owner.0 < probe.current.0 {
+                        probe.previous = plan.blocks.get(probe.owner.0 as usize);
+                        if let Some(previous) = probe.previous {
+                            probe.repeated = previous.id == probe.owner
+                                && matches!(previous.terminator,
+                                    CleanupTerminator::Exit(seen) if seen == probe.exit);
+                        }
+                    }
+                    if probe.repeated {
+                        return Err(replay_error(function,
+                            "cleanup block references an unknown or repeated exit"));
+                    }
                     return Err(replay_error(
                         function,
                         "cleanup exit is owned by the wrong block",
@@ -595,3 +624,9 @@ mod edge_tests;
 mod status_before;
 #[cfg(test)]
 mod status_tests;
+
+mod exit_prefix;
+#[cfg(test)]
+mod exit_before;
+#[cfg(test)]
+mod exit_tests;
