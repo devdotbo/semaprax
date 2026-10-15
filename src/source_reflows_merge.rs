@@ -760,15 +760,26 @@ fn before_actual_pin_consumers(source: &str, current: &str) -> String {
 
 // Independent physical-input domains: no checkpoint table accepts another stage.
 fn final_ready_input(stage: &str, source: &str, current: &str) -> String {
-    let previous = project(
+    let branch844 = joined_feature_input("523", source, current);
+    let branch836 = joined_feature_input("7f", source, current);
+    let previous844 = project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/docs/evidence/compact-old-receiver-compile-fix-844-20261015/current-to-677.json"
         )),
         source,
-        current,
+        &branch844,
     );
-    let current = previous.as_str();
+    let previous836 = project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/field-update-hir-visitor-836-20261015/current-to-677.json"
+        )),
+        source,
+        &branch836,
+    );
+    assert_eq!(previous844, previous836, "independent complete 677 domains");
+    let current = previous844.as_str();
     let data = match stage {
         "d8" => include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -802,4 +813,41 @@ pub(crate) fn compact844_input(source: &str, current: &str) -> String {
 }
 pub(crate) fn diagnostic846_input(source: &str, current: &str) -> String {
     final_ready_input("846", source, current)
+}
+
+// Independent physical847 source for its complete owning guards.
+fn retained_function847_previous(source: &str, current: &str) -> String {
+    joined_feature_input("453", source, current)
+}
+pub(crate) fn retained_function847_input(source: &str, current: &str) -> String {
+    retained_function847_previous(source, current)
+}
+pub(crate) fn directory825_input(source: &str, current: &str) -> String {
+    let previous = joined_feature_input("453", source, current);
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-function-alias-847/directory825-domain.json"
+        )),
+        source,
+        &previous,
+    )
+}
+fn joined_feature_input(stage: &str, source: &str, current: &str) -> String {
+    let rows = match stage {
+        "453" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-alias-compact-joined-20261015/final-to-453.json"
+        )),
+        "523" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-alias-compact-joined-20261015/final-to-523.json"
+        )),
+        "7f" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-alias-compact-joined-20261015/final-to-7f.json"
+        )),
+        _ => panic!("unknown independent feature input"),
+    };
+    project(rows, source, current)
 }
