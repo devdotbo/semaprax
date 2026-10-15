@@ -1,5 +1,5 @@
 {
-  "status": "production-source-checkpoint-uncompiled-facts-child-pending",
+  "status": "production source integrated with complete paid facts; focused compilation/runtime pending",
   "selectors": [
     "hir::identity_resolution::nominal_tests::nominal_full_constructor_refuses_at_every_actual_acquisition_and_releases_all_partial_owners",
     "hir::identity_resolution::nominal_tests::nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal",
