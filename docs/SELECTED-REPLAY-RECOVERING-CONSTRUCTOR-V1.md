@@ -440,3 +440,27 @@ the original slot/text; initial or mismatched paid publication returns the same
 owner. All original legacy publication and Preparation/Session tests remain.
 The filesystem view wrappers and full dynamic directory/TLS-help frontier are
 explicit legacy residuals, so this followup does not complete OPT781.
+
+
+## Selected-local static refusal receipts (source-only successor)
+
+The closed local entry, member and profile guards in
+`selected_context/paid.rs`, `selected_owner/paid.rs` and
+`selected_profile/paid.rs` acquire their actual refusal controls on the current
+ReplayBudget before constructing `Atom::SelectedSession`. The acquisition
+covers Receipt, EngineError, the Context/function-ID/unit receiving Results
+and the retained Option<EngineError>; it performs no diagnostic formatting.
+The original guard order and detailed Diagnostic remain the independent legacy
+reference. Publication derives its stage from the retained first receipt.
+
+Error-only acquisition does not justify an uncharged increase in successful
+receiving layouts. The owning control compares the complete original and current
+sum/Option/Result sizes and alignments before that equality can be claimed.
+The focused campaign must also exercise the actual public paid-report receiver
+from current supported source, including complete Drop and fixed outward fields.
+This does not bypass the outer source-graph authenticator to manufacture a
+Session refusal. Execution qualification is pending.
+
+Arbitrary renewal and child-helper Diagnostics remain their explicit Owned
+boundary. This successor neither funds those producers nor completes whole
+transitive OPT781 or application admission; allowances and caps are unchanged.
