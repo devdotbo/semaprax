@@ -139,3 +139,71 @@ fn complete_pre_retention_sources_and_all_inverse_hooks_remain_exact() {
         assert_eq!(before_status_retention(path, &current), archive);
     }
 }
+
+
+#[test]
+fn retained_status_control_funding_exact_short_zero_and_foreign_active_are_sticky() {
+    let program = program();
+    let function = &program.functions[0];
+    let storage = validate_slots(function).unwrap();
+    let leaves = collect_leaves(function).unwrap();
+    let mut preparation = ReplayBudget::unobserved();
+    let facts = Facts::Arena(super::super::super::arena::build::<errors::Legacy>(
+        function, capacity::Payer::Selected(
+            &mut physical_storage::PhysicalReservation::new(usize::MAX)),
+        &mut preparation,
+    ).unwrap());
+    let probe = |limit, retain| {
+        let ((success, allocation), refused, debit, first) = with_limit_usage_refusal(limit, || measure(|| {
+            let mut budget = ReplayBudget::new();
+            let success = if retain {
+                let result = validate_status_sources_retained(function, &facts, &mut budget);
+                let success = result.is_ok();
+                drop(result);
+                success
+            } else {
+                let result = super::super::validate_status_sources(function, &facts, &mut budget);
+                let success = result.is_ok();
+                drop(result);
+                success
+            };
+            drop(budget);
+            success
+        }));
+        assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated == allocation.freed);
+        (success, refused, debit, first)
+    };
+    let old = probe(1 << 26, false);
+    let exact = old.2.checked_add(CONTROL_BYTES).unwrap();
+    let full = probe(exact, true);
+    assert!(old.0 && !old.1 && old.3.is_none());
+    assert!(full.0 && !full.1 && full.3.is_none());
+    assert_eq!(full.2, exact);
+    for limit in [0, exact - 1] {
+        let refused = probe(limit, true);
+        assert!(!refused.0 && refused.1 && refused.3.is_some());
+    }
+    let (((), allocation), refused, _, first) = with_limit_usage_refusal(1 << 26, || measure(|| {
+        let mut budget = ReplayBudget::new();
+        let statuses = validate_status_sources_retained(function, &facts, &mut budget).unwrap();
+        let (_, foreign_refused, foreign_debit, foreign_first) = with_limit_usage_refusal(1 << 26, || {
+            let result = validate_blocks_and_edges_retained(&program, function, &facts,
+                &storage, &leaves, None, &mut budget, &statuses);
+            assert_eq!(result.as_ref().unwrap_err().code, "SPX-H006");
+            assert!(result.as_ref().unwrap_err().message.contains("invocation owner changed"));
+            drop(result);
+        });
+        assert!(!foreign_refused && foreign_first.is_none());
+        assert_eq!(foreign_debit, 0);
+        let restored = validate_blocks_and_edges_retained(&program, function, &facts,
+            &storage, &leaves, None, &mut budget, &statuses);
+        assert!(restored.is_err());
+        assert_eq!(budget.remaining, 0);
+        drop(restored);
+        drop(statuses);
+        drop(budget);
+    }));
+    assert!(refused && first.is_some());
+    assert_eq!(first.unwrap().requested, 0);
+    assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated == allocation.freed);
+}

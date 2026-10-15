@@ -1,10 +1,16 @@
 //! One immutable, fully paid status directory reused by consecutive ordinary passes.
 //! Complete pre-retention receivers remain in the parent and execute independently.
 use super::*;
+use crate::bounded_output::classifier_string::ClassifierLedger;
+
+// Pay both complete initialized return and receiving controls; no old Directory credit.
+const CONTROL_BYTES: usize = std::mem::size_of::<Result<StatusSources<'static>, Diagnostic>>()
+    + std::mem::size_of::<StatusSources<'static>>();
 
 pub(in crate::cleanup_plan::replay) struct StatusSources<'hir> {
     function: &'hir ResolvedFunction,
     budget: *const ReplayBudget,
+    ledger: ClassifierLedger,
     ids: Option<Directory<&'hir StatusSourceId>>,
 }
 
@@ -15,7 +21,8 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
 ) -> Result<StatusSources<'hir>, Diagnostic> {
     if let Facts::Tree(tree) = facts {
         super::super::super::validate_status_sources(function, tree)?;
-        return Ok(StatusSources { function, budget, ids: None });
+        budget.reserve_bytes(function, CONTROL_BYTES, "retained status full controls")?;
+        return Ok(StatusSources { function, budget, ledger: ClassifierLedger::capture(), ids: None });
     }
     let expressions: &dyn Lookup = facts;
     let mut ids = Directory::new(function, budget, "cleanup status identity directory")?;
@@ -99,7 +106,8 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
             }
         }
     }
-    Ok(StatusSources { function, budget, ids: Some(ids) })
+    budget.reserve_bytes(function, CONTROL_BYTES, "retained status full controls")?;
+    Ok(StatusSources { function, budget, ledger: ClassifierLedger::capture(), ids: Some(ids) })
 }
 
 pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
@@ -116,6 +124,9 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
         || !std::ptr::eq(budget, validated.budget)
     {
         return Err(replay_error(function, "status directory belongs to another function or budget"));
+    }
+    if !validated.ledger.current() {
+        return Err(budget.budget_refusal(function, "retained status invocation owner changed", ""));
     }
     // Authenticate the unchanged payer even though retaining the directory allocates nothing.
     budget.reserve_bytes(function, 0, "retained cleanup status directory")?;
