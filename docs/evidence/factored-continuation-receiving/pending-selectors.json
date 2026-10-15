@@ -1,0 +1,34 @@
+{
+  "state": "SOURCE_ONLY_UNEXECUTED",
+  "required_original_owner_retained": "workspace_graph::expected_projection::import_stub::core_proofs::tests::complete_original_forecast_constructor_ids_resolution_and_drop_match_reused_core",
+  "selectors": [
+    {
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+      "name": "whole_original_and_current_comparison_pairs_execute_with_paid_last_drop",
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::factored::continuation_receiver::tests::whole_original_and_current_comparison_pairs_execute_with_paid_last_drop"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+      "name": "current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic",
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::factored::continuation_receiver::tests::current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+      "name": "paid_factored_receiving_exact_short_zero_keeps_first_failure_and_whole_drop",
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::factored::continuation_receiver::tests::paid_factored_receiving_exact_short_zero_keeps_first_failure_and_whole_drop"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+      "name": "foreign_then_restored_invocation_cannot_acquire_or_reuse_held_frames",
+      "package": "semaprax",
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::factored::continuation_receiver::tests::foreign_then_restored_invocation_cannot_acquire_or_reuse_held_frames"
+    }
+  ]
+}

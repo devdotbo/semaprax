@@ -1,4 +1,4 @@
-//! Same current program and ACTIVE owner; no work or physical allowance.
+//! Same current program and invocation owner; no work or physical allowance.
 use super::*;
 #[derive(Clone, Copy)]
 pub(super) enum Failure {
@@ -36,6 +36,7 @@ impl<'hir> Storage<'hir> {
             Some(crate::bounded_output::classifier_string::ClassifierLedger::capture());
         Ok(storage)
     }
+    #[cfg(test)]
     pub(in crate::cleanup_plan::replay) fn has_receiving_owner(&self) -> bool {
         self.receiving_owner.is_some()
     }
