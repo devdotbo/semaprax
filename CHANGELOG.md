@@ -1,5 +1,7 @@
 # Changelog
 
+- Acquire the fixed 129-slot formatter hygiene pattern stack only for actual patterns, retaining the complete original dispatcher and source inverses. Add the unchanged 512-payload resolver source as a canonical-budget regression.
+
 - Preserve every historical CLI-help known answer while checking native-test timing and the four documented JSON-codec/fused-source usage additions; bind the complete new projection before restoring the frozen catalogue.
 
 - Grow structural call lookup scratch at actual depth under its unchanged 514-slot bound, paying complete replacement backing and work. Retain the complete original lookup and receiver controls, and propagate reservation caller coordinates through physical-budget wrappers.
