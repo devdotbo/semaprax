@@ -172,6 +172,7 @@ pub(super) fn prior_source<'a>(path: &str, current: &'a str) -> &'a str {
         "src/cleanup_plan/replay/selected_context/child/tests/source.rs" => (CURRENT_SHA_4, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/compressed-selected-child-fixture-841/source.rs.before.txt")), [157, 216, 64, 176, 250, 187, 161, 109, 89, 100, 163, 136, 14, 190, 161, 194, 40, 52, 18, 203, 131, 219, 132, 85, 172, 195, 27, 141, 140, 238, 113, 69]),
         _ => return current,
     };
+    let current = crate::source_reflows_merge::compressed_fixture_input(path, current);
     assert_eq!(
         digest(current.as_bytes()),
         expected,

@@ -565,6 +565,8 @@ pub(crate) fn constructor_complete_input(source: &str, current: &str) -> String 
 
 // New MAIN/fixture bytes authenticate into the complete previous private batch.
 fn before_current_main(source: &str, current: &str) -> String {
+    let previous = before_fixture841(source, current);
+    let current = previous.as_str();
     project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -576,10 +578,34 @@ fn before_current_main(source: &str, current: &str) -> String {
 }
 // MAIN's refusal-site source proofs retain their actual5ba physical domain.
 pub(crate) fn main_current_input(source: &str, current: &str) -> String {
+    let previous = before_fixture841(source, current);
+    let current = previous.as_str();
     project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/docs/evidence/main5ba-future-source-assembly-20261015/current-to-main5ba.json"
+        )),
+        source,
+        current,
+    )
+}
+
+// Independent branches: inherited guards see13d; the pilot sees its exact5f input.
+fn before_fixture841(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/compressed-fixture-841-assembly-20261015/current-to-13d.json"
+        )),
+        source,
+        current,
+    )
+}
+pub(crate) fn compressed_fixture_input(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/compressed-fixture-841-assembly-20261015/pilot-runtime-views.json"
         )),
         source,
         current,
