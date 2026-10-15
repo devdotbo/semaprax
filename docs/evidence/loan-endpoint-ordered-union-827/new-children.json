@@ -5,7 +5,7 @@
   },
   {
     "source": "src/loan_plan/paid_materialize/ordered_union.rs",
-    "sha256": "43e43c1ea5613b88270f9273fe0a02e0ea714013d06ac51827d9d845f42b87aa"
+    "sha256": "34f9fd8d5e9e6365a0412f53245274b37dedc253b60a5ca9acb151ce111a21fe"
   },
   {
     "source": "src/loan_plan/paid_materialize/tests.rs",

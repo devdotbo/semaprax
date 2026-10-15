@@ -68,7 +68,7 @@ fn fill<'a>(heap: &mut Vec<&'a [LoanId]>, rows: impl Iterator<Item = &'a [LoanId
     }
 }
 fn next(heap: &mut Vec<&[LoanId]>) -> Option<LoanId> {
-    let first = heap.first()?;
+    let first = *heap.first()?;
     let id = first[0];
     if first.len() == 1 {
         heap.swap_remove(0);
