@@ -1,0 +1,59 @@
+{
+  "schema": "semaprax.oneoff-frozen-pin-updater-adaptation.v1",
+  "source_head": "086c4f1ee917199424f06f37d0f943b693d7e776",
+  "private_repository": "/Volumes/Semaprax/worktrees/sharing-actual-pins-1a0b-20261015",
+  "original_script_sha256": "19936e3603f390f9c821e8baeb99a0ea9a629373152c91e2a04a3113bef6eb6c",
+  "adapted_script_sha256": "c4e652e7e1b1b6df5124e8dcf9e49a958aeb5fff569d942bbb4923210ac82969",
+  "changes": "Only exact old literals from frozen086c source matching complete tracked1a0b actual wires, plus locked one-off full head guard. Every strict provenance/panic/source-byte/digest check remains.",
+  "literal_replacements": [
+    {
+      "before": "26296de75d133f1563b1b4fc23049b6eb29f4b407a2369d4849a12e9a379f225",
+      "after": "38e9ab3f7ed3dbe91f7c20ff25ebe718a520fa03945283e49e41e6d3f77c1bdc"
+    },
+    {
+      "before": "190a00dfa539b7cef26a50dcbda97d522bb22699b02c6b904682d524806266c8",
+      "after": "20e909986079c6e4a219cd9201076a97133485169fbc4a5f29b0350acc2ccdb6"
+    },
+    {
+      "before": "7ba1554e318ce8d56739e03a2987c90d5d7fdf1ff301b528ad67c1f8cd432a42",
+      "after": "d8e96cb3b056bd8c8ebe42735b349557cf17f4223d5c7ef772a2c708dd7b6106"
+    },
+    {
+      "before": "bccc97fe0ad0026b44544e1e7c27c72f4d266c6773de01e157dcc9492317dd83",
+      "after": "40b9f534b693e3ae820e6d7e6c9198094db97abb42cc678b59666a5603a1082f"
+    },
+    {
+      "before": "6e0ea8e0fc10e31b325fdc33e41ab9030b75f393c2f0e4fec916be6a19abab62",
+      "after": "795bce9af1bc63803ccedeb18290b744f1d52b1f83ee34228e3599445ce4e974"
+    },
+    {
+      "before": "421e0b0fba5f10c294d13bbfde592c9837468e074cacf6b113ab62051299b3bc",
+      "after": "26b9168a953554441e5cd7a441a66c688dac9a2f93bfed380aa146fcb67ed0ae"
+    },
+    {
+      "before": "864367757119c169b5f049542de643b2825bcc64794ae91784920e8d73d18faf",
+      "after": "e911c00697098d60bff5ed2f13ee79c0b5a48928b8e90f58e9ae211b4801c036"
+    },
+    {
+      "before": "812fa5e3a129b96f36eed9e686ec88e3b5118813f31106c42adae637c6c14b21",
+      "after": "c0f1f17f3ab3cf539596a14109e85dc08d6a152dbd8ade2382a8e9e7c867d212"
+    },
+    {
+      "before": "c5cbb726c4e888d9b6e945964e52d233af45d25c80dc292890343d5ad2079a2e",
+      "after": "96e2900713fe94cddb8d681367c4235fe73c228c64b611ccb124b874745f2287"
+    },
+    {
+      "before": "ba3d1b86d584444b3ed9d18bb0dfd2ed7b69a2a68841a40de3ce5cdfc5dc39f9",
+      "after": "fd31c37ebd208cdf1c76576717d1b23d7a099127af109c6c82cc8c1d9861f761"
+    },
+    {
+      "before": "334_016",
+      "after": "1_349_027"
+    },
+    {
+      "before": "amount, 334016",
+      "after": "amount, 1349027"
+    }
+  ],
+  "apply_performed": false
+}

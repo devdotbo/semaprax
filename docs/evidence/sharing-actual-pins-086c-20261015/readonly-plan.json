@@ -1,0 +1,83 @@
+{
+  "schema": "semaprax.prelude-forecast-reviewed-pin-plan.v1",
+  "capture_head": "086c4f1ee917199424f06f37d0f943b693d7e776",
+  "status": "actual-candidate-plan-requires-wire-review",
+  "edits": [
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "assert_eq!(graph.budget().used_builder_bytes(), 1_349_027);",
+      "after": "assert_eq!(graph.budget().used_builder_bytes(), 1_349_771);",
+      "actual_wire": "public-graph"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:96e2900713fe94cddb8d681367c4235fe73c228c64b611ccb124b874745f2287",
+      "after": "sha256:7db6d87dbe0f5785a6c92ef1bf8586b2ba2b7bc231cdd1be17cce6d8bc79c466",
+      "actual_wire": "public-graph"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:38e9ab3f7ed3dbe91f7c20ff25ebe718a520fa03945283e49e41e6d3f77c1bdc",
+      "after": "sha256:02c1863757d4bb0ce7cc1996e1c1c611b295a73746540f93a03f05bd8cd2d50d",
+      "actual_wire": "context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:20e909986079c6e4a219cd9201076a97133485169fbc4a5f29b0350acc2ccdb6",
+      "after": "sha256:483d3a6d5fc582df70cedc61f175882271b7cb1719f5da2e138168cbafcc176f",
+      "actual_wire": "forward"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:d8e96cb3b056bd8c8ebe42735b349557cf17f4223d5c7ef772a2c708dd7b6106",
+      "after": "sha256:e1e95226e6facd043e03be4d946bc4dc2809696f026d60536f7fd70a530ad2bd",
+      "actual_wire": "capability-context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:40b9f534b693e3ae820e6d7e6c9198094db97abb42cc678b59666a5603a1082f",
+      "after": "sha256:ebfaf2cdb2101e9913372bddd55a0e65dcd94744f17a1f1c7fbd537cbe8c833d",
+      "actual_wire": "type-context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:795bce9af1bc63803ccedeb18290b744f1d52b1f83ee34228e3599445ce4e974",
+      "after": "sha256:6d5389d14872659ff10172647eb9a2895243ec55ce7920cb8b8a4516bb469a48",
+      "actual_wire": "impact"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:26b9168a953554441e5cd7a441a66c688dac9a2f93bfed380aa146fcb67ed0ae",
+      "after": "sha256:ecef7772dff4e4d34d615c660a085874d3958156d0d28e0ccc92e6cc70a0f69d",
+      "actual_wire": "custom-impact"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:e911c00697098d60bff5ed2f13ee79c0b5a48928b8e90f58e9ae211b4801c036",
+      "after": "sha256:b119980535c92812147b717f91fe11179ccb1c34bda827d873b490eea3eeb72d",
+      "actual_wire": "review"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:c0f1f17f3ab3cf539596a14109e85dc08d6a152dbd8ade2382a8e9e7c867d212",
+      "after": "sha256:deb3ce57b3595fec0be2d324a0d6787d676674b9f901548252d947973a2f0d19",
+      "actual_wire": "capability-review"
+    },
+    {
+      "path": "src/workspace_graph/type_proof_tests.rs",
+      "before": "sha256:fd31c37ebd208cdf1c76576717d1b23d7a099127af109c6c82cc8c1d9861f761",
+      "after": "sha256:55a0accbdfa1d8770dc6be6ee3f1d1e4d5b733923fab6f83937c39e2530dc10a",
+      "actual_wire": "projection-wire"
+    }
+  ],
+  "source_sha256": {
+    "src/workspace_graph/type_proof_tests.rs": "sha256:1095f188f0b3da85a832f826efc38e3b6932f72b4db7a47fb7962962522a15b1",
+    "tests/workspace/semantic_graph.rs": "sha256:1efb7f50c84ec3ecec1f74dc27fc465866caf1e199e88427ac2d6f1c91b24246"
+  },
+  "after_sha256": {
+    "src/workspace_graph/type_proof_tests.rs": "sha256:5151cceb4b99db3470a01f7ed5d192de9e5c212610aa774e11a4079c17d27c92",
+    "tests/workspace/semantic_graph.rs": "sha256:00786b21cf8e3d6a23ef90e4ca042ac5a5b2a57842916675c78ffed0b1b6347e"
+  },
+  "trusted_build_receipt_sha256": "sha256:befbe7cf6db4b0baa5a37f23f3fd62171e69e074b2c2b0313c6ade6d2a2a97b0",
+  "trusted_producer_receipt_sha256": "sha256:30acc89d2cfd6e35cdf4a989c33575d16927636ee151a44b643d9c79a2f12d5f"
+}

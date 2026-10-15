@@ -1,0 +1,15 @@
+[
+  "python3",
+  "/Volumes/Semaprax/provenance/sharing-pin-plan-086c-20261015/update-prelude-forecast-pins-086c-only.py",
+  "/Volumes/Semaprax/provenance/sharing-actual-pin-capture-086c-20261015",
+  "--repo",
+  "/Volumes/Semaprax/worktrees/sharing-actual-pins-1a0b-20261015",
+  "--expected-capture-head",
+  "086c4f1ee917199424f06f37d0f943b693d7e776",
+  "--expected-build-receipt-sha256",
+  "befbe7cf6db4b0baa5a37f23f3fd62171e69e074b2c2b0313c6ade6d2a2a97b0",
+  "--expected-producer-receipt-sha256",
+  "30acc89d2cfd6e35cdf4a989c33575d16927636ee151a44b643d9c79a2f12d5f",
+  "--round",
+  "/Volumes/Semaprax/lane-prompts/sharing-recheck-086c-20261015"
+]

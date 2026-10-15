@@ -1,0 +1,98 @@
+--- a/src/workspace_graph/type_proof_tests.rs
++++ b/src/workspace_graph/type_proof_tests.rs
+@@ -895,7 +895,7 @@
+         // digest over it move.
+         assert_eq!(
+             document_sha,
+-            "sha256:55a0accbdfa1d8770dc6be6ee3f1d1e4d5b733923fab6f83937c39e2530dc10a"
++            "sha256:fd31c37ebd208cdf1c76576717d1b23d7a099127af109c6c82cc8c1d9861f761"
+         );
+         assert!(json.starts_with(
+                 "{\"schema\":\"semaprax.workspace-semantic-graph.v1\",\"workspace_manifest_schema\":\"semaprax.workspace-semantic-manifest.v1\",\"workspace_revision\":\"sha256:workspace\",\"graph_digest\":\"sha256:"
+--- a/tests/workspace/semantic_graph.rs
++++ b/tests/workspace/semantic_graph.rs
+@@ -618,10 +618,10 @@
+     );
+     // Restoring the prior 336449-byte debit and authenticated digest chain
+     // independently reproduces all nine original whole-document KATs.
+-    assert_eq!(graph.budget().used_builder_bytes(), 1_349_771);
++    assert_eq!(graph.budget().used_builder_bytes(), 1_349_027);
+     assert_eq!(
+         document_digest(graph.to_json().as_bytes()),
+-        "sha256:7db6d87dbe0f5785a6c92ef1bf8586b2ba2b7bc231cdd1be17cce6d8bc79c466"
++        "sha256:96e2900713fe94cddb8d681367c4235fe73c228c64b611ccb124b874745f2287"
+     );
+ 
+     let output = Command::new(env!("CARGO_BIN_EXE_semaprax"))
+@@ -1050,14 +1050,14 @@
+             document_digest(capability_review.as_bytes()),
+         ],
+         [
+-            "sha256:02c1863757d4bb0ce7cc1996e1c1c611b295a73746540f93a03f05bd8cd2d50d",
+-            "sha256:483d3a6d5fc582df70cedc61f175882271b7cb1719f5da2e138168cbafcc176f",
+-            "sha256:e1e95226e6facd043e03be4d946bc4dc2809696f026d60536f7fd70a530ad2bd",
+-            "sha256:ebfaf2cdb2101e9913372bddd55a0e65dcd94744f17a1f1c7fbd537cbe8c833d",
+-            "sha256:6d5389d14872659ff10172647eb9a2895243ec55ce7920cb8b8a4516bb469a48",
+-            "sha256:ecef7772dff4e4d34d615c660a085874d3958156d0d28e0ccc92e6cc70a0f69d",
+-            "sha256:b119980535c92812147b717f91fe11179ccb1c34bda827d873b490eea3eeb72d",
+-            "sha256:deb3ce57b3595fec0be2d324a0d6787d676674b9f901548252d947973a2f0d19",
++            "sha256:38e9ab3f7ed3dbe91f7c20ff25ebe718a520fa03945283e49e41e6d3f77c1bdc",
++            "sha256:20e909986079c6e4a219cd9201076a97133485169fbc4a5f29b0350acc2ccdb6",
++            "sha256:d8e96cb3b056bd8c8ebe42735b349557cf17f4223d5c7ef772a2c708dd7b6106",
++            "sha256:40b9f534b693e3ae820e6d7e6c9198094db97abb42cc678b59666a5603a1082f",
++            "sha256:795bce9af1bc63803ccedeb18290b744f1d52b1f83ee34228e3599445ce4e974",
++            "sha256:26b9168a953554441e5cd7a441a66c688dac9a2f93bfed380aa146fcb67ed0ae",
++            "sha256:e911c00697098d60bff5ed2f13ee79c0b5a48928b8e90f58e9ae211b4801c036",
++            "sha256:c0f1f17f3ab3cf539596a14109e85dc08d6a152dbd8ade2382a8e9e7c867d212",
+         ]
+     );
+ 
+--- a/docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json
++++ b/docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json
+@@ -103,46 +103,6 @@
+       {
+         "before": "sha256:065698f98a60a7a2d70955aa9c783e341627d44e179b6f8140e4293aa48a643c",
+         "after": "sha256:c0f1f17f3ab3cf539596a14109e85dc08d6a152dbd8ade2382a8e9e7c867d212"
+-      },
+-      {
+-        "before": "assert_eq!(graph.budget().used_builder_bytes(), 1_349_027);",
+-        "after": "assert_eq!(graph.budget().used_builder_bytes(), 1_349_771);"
+-      },
+-      {
+-        "before": "sha256:96e2900713fe94cddb8d681367c4235fe73c228c64b611ccb124b874745f2287",
+-        "after": "sha256:7db6d87dbe0f5785a6c92ef1bf8586b2ba2b7bc231cdd1be17cce6d8bc79c466"
+-      },
+-      {
+-        "before": "sha256:38e9ab3f7ed3dbe91f7c20ff25ebe718a520fa03945283e49e41e6d3f77c1bdc",
+-        "after": "sha256:02c1863757d4bb0ce7cc1996e1c1c611b295a73746540f93a03f05bd8cd2d50d"
+-      },
+-      {
+-        "before": "sha256:20e909986079c6e4a219cd9201076a97133485169fbc4a5f29b0350acc2ccdb6",
+-        "after": "sha256:483d3a6d5fc582df70cedc61f175882271b7cb1719f5da2e138168cbafcc176f"
+-      },
+-      {
+-        "before": "sha256:d8e96cb3b056bd8c8ebe42735b349557cf17f4223d5c7ef772a2c708dd7b6106",
+-        "after": "sha256:e1e95226e6facd043e03be4d946bc4dc2809696f026d60536f7fd70a530ad2bd"
+-      },
+-      {
+-        "before": "sha256:40b9f534b693e3ae820e6d7e6c9198094db97abb42cc678b59666a5603a1082f",
+-        "after": "sha256:ebfaf2cdb2101e9913372bddd55a0e65dcd94744f17a1f1c7fbd537cbe8c833d"
+-      },
+-      {
+-        "before": "sha256:795bce9af1bc63803ccedeb18290b744f1d52b1f83ee34228e3599445ce4e974",
+-        "after": "sha256:6d5389d14872659ff10172647eb9a2895243ec55ce7920cb8b8a4516bb469a48"
+-      },
+-      {
+-        "before": "sha256:26b9168a953554441e5cd7a441a66c688dac9a2f93bfed380aa146fcb67ed0ae",
+-        "after": "sha256:ecef7772dff4e4d34d615c660a085874d3958156d0d28e0ccc92e6cc70a0f69d"
+-      },
+-      {
+-        "before": "sha256:e911c00697098d60bff5ed2f13ee79c0b5a48928b8e90f58e9ae211b4801c036",
+-        "after": "sha256:b119980535c92812147b717f91fe11179ccb1c34bda827d873b490eea3eeb72d"
+-      },
+-      {
+-        "before": "sha256:c0f1f17f3ab3cf539596a14109e85dc08d6a152dbd8ade2382a8e9e7c867d212",
+-        "after": "sha256:deb3ce57b3595fec0be2d324a0d6787d676674b9f901548252d947973a2f0d19"
+       }
+     ]
+   },
