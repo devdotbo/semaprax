@@ -1,0 +1,38 @@
+[
+  {
+    "source": "src/hir/declaration_index/nominal_paid_facts.rs",
+    "sha256": "ace400f0b9deabe354daf5632052cc08c0f6ab96549fc301dddc22ef283b6700",
+    "ranges": [
+      [
+        20,
+        76
+      ],
+      [
+        120,
+        143
+      ],
+      [
+        199,
+        222
+      ],
+      [
+        244,
+        258
+      ],
+      [
+        435,
+        459
+      ]
+    ]
+  },
+  {
+    "source": "src/hir/declaration_index/nominal_paid_values.rs",
+    "sha256": "1182a6b9870d8a5a5ac356185a46ff62081949061cb06172ae3a9e0fed23e518",
+    "ranges": [
+      [
+        367,
+        438
+      ]
+    ]
+  }
+]

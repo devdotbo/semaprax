@@ -1,0 +1,225 @@
+Commit 5d9e6b125 source-only review. Find raw-E sticky refusal, recursive partial Drop or unpaid allocation defects; no tools/execution. Workspace guards use prepaid shared iterative scratch. Substitute pays borrowed expanded-tree cursor and full scratch replacement before construction; validates templates in source order. into_vec/into_type empty guard via mem::take. Storage stops after first Diagnostic; raw E must survive internal static sentinel. Key/builtin/text reuse paid callbacks. Old constructors unchanged; same byte owner, no Copy bound/cap change.
+
+src/hir/declaration_index/nominal_paid_facts.rs:20..76
+20: 
+21: struct TypeGuard<'a> {
+22:     value: Option<ResolvedType>,
+23:     workspace: &'a Workspace,
+24: }
+25: impl<'a> TypeGuard<'a> {
+26:     fn new(value: ResolvedType, workspace: &'a Workspace) -> Self {
+27:         Self {
+28:             value: Some(value),
+29:             workspace,
+30:         }
+31:     }
+32:     fn as_type(&self) -> &ResolvedType {
+33:         self.value.as_ref().expect("held classifier root")
+34:     }
+35: }
+36: impl Drop for TypeGuard<'_> {
+37:     fn drop(&mut self) {
+38:         if let Some(ty) = self.value.take() {
+39:             drop(self.workspace.resolved_type(ty));
+40:         }
+41:     }
+42: }
+43: fn sentinel() -> Diagnostic {
+44:     Diagnostic::io_static("SPX-H006", "held nominal constructor refusal")
+45: }
+46: struct ConstructorPayer<'r, 'callback, 'w, E> {
+47:     reserve: &'r mut paid::Reserve<'callback, E>,
+48:     workspace: &'w Workspace,
+49:     first: Option<E>,
+50: }
+51: impl<E> ConstructorPayer<'_, '_, '_, E> {
+52:     fn receive<T>(&mut self, result: paid::Result<T, E>) -> std::result::Result<T, Diagnostic> {
+53:         match result {
+54:             Ok(value) => Ok(value),
+55:             Err(IdentityIndexError::Identity(error)) => {
+56:                 if self.first.is_none() {
+57:                     self.first = Some(error);
+58:                 }
+59:                 Err(sentinel())
+60:             }
+61:             Err(IdentityIndexError::Semantic(error)) => Err(error),
+62:         }
+63:     }
+64:     fn substitute(
+65:         &mut self,
+66:         ty: &ResolvedType,
+67:         owner: &DeclarationId,
+68:         arguments: &[ResolvedType],
+69:     ) -> std::result::Result<ResolvedType, Diagnostic> {
+70:         if self.first.is_some() {
+71:             return Err(sentinel());
+72:         }
+73:         let result = paid::substitute_type(ty, owner, arguments, self.workspace, self.reserve);
+74:         self.receive(result)
+75:     }
+76: }
+
+src/hir/declaration_index/nominal_paid_facts.rs:120..143
+120:     }
+121:     // The existing production Payer has only physical byte operations. Its
+122:     // unchanged cfg(test) default grants no oracle work lease or new account.
+123: }
+124: fn children<'a, E>(
+125:     types: impl Iterator<Item = &'a ResolvedType>,
+126:     owner: &DeclarationId,
+127:     arguments: &[ResolvedType],
+128:     storage: &mut Storage<ConstructorPayer<'_, '_, '_, E>>,
+129:     workspace: &Workspace,
+130: ) -> Option<PendingTypes> {
+131:     storage.bytes(size_of::<PendingTypes>() + size_of::<Vec<ResolvedType>>())?;
+132:     let mut children = workspace.types(Vec::new());
+133:     for ty in types {
+134:         storage.grow(&mut children, 1)?;
+135:         let result = storage.payer.substitute(ty, owner, arguments);
+136:         let child = storage.receive(result)?;
+137:         children.push(child);
+138:     }
+139:     Some(children)
+140: }
+141: impl DeclarationIndex {
+142:     pub(in crate::hir::declaration_index) fn populate_type_facts_paid<E>(
+143:         &mut self,
+
+src/hir/declaration_index/nominal_paid_facts.rs:199..222
+199:                 )?;
+200:             }
+201:             Some(())
+202:         })()
+203:         .is_some();
+204:         let raw = storage.payer.first.take();
+205:         let diagnostic = storage.first.take();
+206:         drop(storage);
+207:         if let Some(error) = raw {
+208:             return Err(IdentityIndexError::Identity(error));
+209:         }
+210:         if let Some(error) = diagnostic {
+211:             return Err(IdentityIndexError::Semantic(error));
+212:         }
+213:         if valid {
+214:             self.type_facts_by_id = memo;
+215:         }
+216:         Ok(valid)
+217:     }
+218: }
+219: 
+220: impl DeclarationIndex {
+221:     fn compute_nominal_paid_type_facts<E>(
+222:         &self,
+
+src/hir/declaration_index/nominal_paid_facts.rs:244..258
+244:                 + size_of::<TypeGuard<'_>>(),
+245:         )?;
+246:         let mut frames = Vec::new();
+247:         let root = TypeGuard::new(storage.clone_type(ty)?, workspace);
+248:         storage.push(&mut frames, Frame::Enter(root))?;
+249:         let mut results = Vec::<TypeFacts>::new();
+250:         while let Some(frame) = frames.pop() {
+251:             #[cfg(test)]
+252:             storage.oracle_work(1, "classifier compute frame")?;
+253:             match frame {
+254:                 Frame::Enter(held) => {
+255:                     let ty = held.as_type();
+256:                     let identity = key::identity(ty, storage)?;
+257: 
+258:                     if let Some(facts) = memo.get(&identity) {
+
+src/hir/declaration_index/nominal_paid_facts.rs:435..459
+435:                             arguments,
+436:                             storage,
+437:                             workspace,
+438:                         )?,
+439:                         _ => unreachable!(),
+440:                     };
+441: 
+442:                     storage.bytes(
+443:                         children
+444:                             .len()
+445:                             .checked_mul(std::mem::size_of::<TypeGuard<'_>>())?,
+446:                     )?;
+447:                     storage.grow(&mut frames, children.len().checked_add(1)?)?;
+448:                     frames.push(Frame::Finish {
+449:                         identity,
+450:                         declaration: declaration.clone(),
+451:                         kind: item.kind,
+452:                         child_count: children.len(),
+453:                     });
+454:                     frames.extend(
+455:                         children
+456:                             .into_vec()
+457:                             .into_iter()
+458:                             .rev()
+459:                             .map(|ty| Frame::Enter(TypeGuard::new(ty, workspace))),
+
+src/hir/declaration_index/nominal_paid_values.rs:367..438
+367:     while let Some(frame) = frames.pop() {
+368:         match frame {
+369:             Frame::Enter(ty, active) => {
+370:                 let (ty, active) = substituted(ty, active, owner, arguments, reserve)?;
+371:                 match ty {
+372:                     ResolvedType::Nominal {
+373:                         declaration,
+374:                         arguments,
+375:                     } => {
+376:                         grow(
+377:                             &mut frames,
+378:                             arguments.len().checked_add(1).ok_or_else(overflow)?,
+379:                             reserve,
+380:                         )?;
+381:                         frames.push(Frame::Nominal(declaration, arguments.len()));
+382:                         frames.extend(arguments.iter().rev().map(|ty| Frame::Enter(ty, active)));
+383:                     }
+384:                     ResolvedType::Function { parameters, result } => {
+385:                         grow(
+386:                             &mut frames,
+387:                             parameters.len().checked_add(2).ok_or_else(overflow)?,
+388:                             reserve,
+389:                         )?;
+390:                         frames.push(Frame::Callable(parameters.len()));
+391:                         frames.push(Frame::Enter(result, active));
+392:                         frames.extend(parameters.iter().rev().map(|ty| Frame::Enter(ty, active)));
+393:                     }
+394:                     leaf => {
+395:                         grow(&mut values, 1, reserve)?;
+396:                         bytes(reserve, size_of::<ResolvedType>())?;
+397:                         values.push(leaf.clone());
+398:                     }
+399:                 }
+400:             }
+401:             Frame::Nominal(declaration, count) => {
+402:                 let split = values.len().checked_sub(count).ok_or_else(overflow)?;
+403:                 if count == 0 {
+404:                     grow(&mut values, 1, reserve)?;
+405:                 }
+406:                 let mut nested = vector(count, reserve)?;
+407:                 // No callback follows removal of recursive children from the
+408:                 // shared guarded pool until their new root is guarded again.
+409:                 nested.extend(values.drain(split..));
+410:                 values.push(ResolvedType::Nominal {
+411:                     declaration: declaration.clone(),
+412:                     arguments: nested,
+413:                 });
+414:             }
+415:             Frame::Callable(count) => {
+416:                 let split = values
+417:                     .len()
+418:                     .checked_sub(count.checked_add(1).ok_or_else(overflow)?)
+419:                     .ok_or_else(overflow)?;
+420:                 let mut parameters = vector(count, reserve)?;
+421:                 bytes(
+422:                     reserve,
+423:                     size_of::<ResolvedType>() + size_of::<Box<ResolvedType>>(),
+424:                 )?;
+425:                 let result = Box::new(values.pop().expect("complete callable result"));
+426:                 parameters.extend(values.drain(split..));
+427:                 values.push(ResolvedType::Function { parameters, result });
+428:             }
+429:         }
+430:     }
+431:     assert_eq!(values.len(), 1);
+432:     Ok(values.pop().expect("one complete substituted type"))
+433: }

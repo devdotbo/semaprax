@@ -1,0 +1,8 @@
+{
+  "production_commit": "5d9e6b12551ffd94a99db59f432a7ac4e57b6d26",
+  "payload_bytes": 9847,
+  "payload_sha256": "2118ce2066d2b9f67ddd9fed9727de0b3a9c0bc5878c52f55bb68323ef0912d2",
+  "review_receipt_sha256": "886ae3de577677521647ed664d33e851b32b81734592f4aade9ccaea8338a5f0",
+  "actual_dispatches": 1,
+  "compilation_or_runtime_claim": false
+}
