@@ -136,3 +136,21 @@ The same nested-response authoring card now names additive
 `bounded-nested-response.v2` String-slot composition, its distinct identities
 and unchanged caps; v1 refusal remains explicit. Both source versions await
 focused executable qualification. Contract: [v2](APPLICATION-JSON-NESTED-RESPONSE-V2.md).
+
+## Search existing authoring cards
+
+`help language author:find:<word>:<offset>` searches the existing route selector,
+summary and exact card text. It uses the same word and canonical-offset grammar
+as library search, but reports only matching authoring cards. Results sort by
+selector (so the word `author` enumerates the full card inventory), include whole selector/summary rows and exact detail commands, and
+carry complete coverage or a deterministic next-page command within 2,048 bytes.
+The existing exact card owns all profile and prerequisite guidance; a discovery
+row alone makes no support claim. Every page separately links library search.
+No matches, invalid offsets and entries larger than the page budget refuse.
+
+The inventory is derived from the existing routes and exact-card implementation,
+without another semantic catalog or aliases. `core.string.take` names the
+existing `string_take` card's compiler identity. Library-only `find:` behavior,
+ordering and continuation stay unchanged. This additive search is inert and
+does not establish live-agent token savings; executable qualification is pending
+the grouped owning CLI checks.

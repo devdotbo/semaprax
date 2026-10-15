@@ -1,0 +1,43 @@
+{
+  "status": "authored_unexecuted",
+  "rows": [
+    {
+      "package": "semaprax",
+      "kind": "bin:semaprax",
+      "selector": "cli_driver::cli::help::authoring::discovery::tests::existing_cards_are_discoverable_by_operation_identity_and_route",
+      "reason": "new bounded existing-card discovery owning behavior, exact identity, deterministic complete pagination and byte frontiers"
+    },
+    {
+      "package": "semaprax",
+      "kind": "bin:semaprax",
+      "selector": "cli_driver::cli::help::authoring::discovery::tests::complete_card_pages_have_exact_coverage_order_and_byte_frontiers",
+      "reason": "new bounded existing-card discovery owning behavior, exact identity, deterministic complete pagination and byte frontiers"
+    },
+    {
+      "package": "semaprax",
+      "kind": "bin:semaprax",
+      "selector": "cli_driver::cli::help::authoring::tests::routes_and_search_are_bounded_exact_and_have_complete_continuations",
+      "reason": "unchanged library search/route inventory owning contract crossed by additive card discovery"
+    },
+    {
+      "package": "semaprax",
+      "kind": "bin:semaprax",
+      "selector": "cli_driver::cli::help::authoring::tests::exact_page_budget_and_one_short_preserve_all_entry_bytes",
+      "reason": "unchanged library search/route inventory owning contract crossed by additive card discovery"
+    },
+    {
+      "package": "semaprax",
+      "kind": "bin:semaprax",
+      "selector": "cli_driver::cli::help::tests::language_reference_and_exact_topics_are_bounded_repository_sections",
+      "reason": "default guide byte/lexical bounds and exact full reference preserved"
+    },
+    {
+      "package": "semaprax",
+      "kind": "test:cli_help_surface_v1",
+      "selector": "cli_authoring_card_search_is_bounded_exact_and_inert",
+      "reason": "actual CLI exact/malformed card discovery in empty working directory, no side effects"
+    }
+  ],
+  "closure_of_722": false,
+  "live_trials": "not run; required for efficiency/issue acceptance"
+}

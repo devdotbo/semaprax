@@ -31,6 +31,7 @@ For syntax, ask `semaprax help language <topic>`; use
 `semaprax help language topics` to list topics. The quick reference is `semaprax help language all`.
 
 Choose an application route with `semaprax help language author:routes`.
+Find language operations with `semaprax help language author:find:<word>:0`.
 Find library declarations with `semaprax help language find:<word>:0`;
 Each page prints its continuation.
 

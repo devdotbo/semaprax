@@ -1,5 +1,6 @@
 # Changelog
 
+- Add bounded authoring-card keyword/identity discovery from the existing route and card inventory, preserving library-only search. Executable qualification and live efficiency measurement remain pending.
 - Author authenticated numeric cleanup-closure memo chunks and reuse immutable
   single-epsilon child backing (#830), retaining every logical work charge and
   the complete original receivers. Add prepaid static local Session refusals

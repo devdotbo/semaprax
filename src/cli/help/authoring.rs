@@ -1,8 +1,10 @@
 //! Bounded, authority-free discovery over the embedded checked library catalog.
 use std::fmt::Write as _;
 
+mod discovery;
+
 const MAX_BYTES: usize = 2_048;
-const ROUTES: &str = "Authoring routes (complete):\n  author:vec-constructor typed Vec source; ordinary per-item commits\n  author:lexical-exits statement-tail break/continue/return\n  author:stdin-json v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data v30 private owned-leaf collections\n  author:collection-records v31 nested records containing Vec\n  author:nested-outcomes v32 typed nested success/error carriers\n  author:file-text native UTF-8 file command\n  author:selected-file native file\n  author:selected-file-resource v34\n  author:source-web single-source web build\n  author:literal-format literal String rendering\n  author:string-take named String owner transfer\n  author:static-utf8              borrowed UTF-8\n  author:string-from-utf8         strict bytes-to-String\n  author:copy-record-vec flat Copy-record vectors\n  author:record-sort-keys explicit stable field sort policies\n  author:unique-by field duplicate check\n  author:record-field-views borrowed record and Vec field reads\n  author:record-traversal scoped borrowed rows and optional indices\n  author:byte-traversal named immutable byte-slice traversal\n  author:json-codec checked source JSON codec derivation\n  author:json-identifier-views one identifier as a token view\n  author:json-request-views bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response nested collection encoder\n  author:json-nested-request finite nested request decoder\n  author:json-stream-nested-request finite nested stdin decoder\n  author:json-nested-response finite nested borrowed encoder\n  author:json-request-response typed request/response composition boundaries\nLibrary-only search: help language find:<word>:0\nExact card sections: help language topics\n";
+const ROUTES: &str = "Authoring routes (complete):\n  author:vec-constructor typed Vec source; ordinary per-item commits\n  author:lexical-exits statement-tail break/continue/return\n  author:stdin-json v27 bounded native stream command\n  author:stream-data-v2           v29 private record/Vec stream command\n  author:owned-data v30 private owned-leaf collections\n  author:collection-records v31 nested records containing Vec\n  author:nested-outcomes v32 typed nested success/error carriers\n  author:file-text native UTF-8 file command\n  author:selected-file native file\n  author:selected-file-resource v34\n  author:source-web single-source web build\n  author:literal-format literal String rendering\n  author:string-take named String owner transfer\n  author:static-utf8              borrowed UTF-8\n  author:string-from-utf8         strict bytes-to-String\n  author:copy-record-vec flat Copy-record vectors\n  author:record-sort-keys explicit stable field sort policies\n  author:unique-by field duplicate check\n  author:record-field-views borrowed record and Vec field reads\n  author:record-traversal scoped borrowed rows and optional indices\n  author:byte-traversal named immutable byte-slice traversal\n  author:json-codec checked source JSON codec derivation\n  author:json-identifier-views one identifier as a token view\n  author:json-request-views bounded identifier and record arrays\n  author:json-stream-request-views bounded native stream request view\n  author:json-owned-request bounded owning request collections\n  author:json-utf8-owned-request bounded UTF-8 string values\n  author:json-stream-utf8-owned-request bounded UTF-8 stdin requests\n  author:json-collection-response nested collection encoder\n  author:json-nested-request finite nested request decoder\n  author:json-stream-nested-request finite nested stdin decoder\n  author:json-nested-response finite nested borrowed encoder\n  author:json-request-response typed request/response composition boundaries\nCard search: help language author:find:<word>:0\nLibrary-only search: help language find:<word>:0\n";
 
 #[cfg(test)]
 pub(super) fn assert_guide_contract() {
@@ -23,6 +25,9 @@ pub(super) fn assert_guide_contract() {
 }
 
 pub(super) fn lookup(query: &str) -> Result<String, String> {
+    if query.starts_with("author:find:") {
+        return discovery::search(query, MAX_BYTES);
+    }
     match query {
         "author:routes" => Ok(ROUTES.to_owned()),
         "author:vec-constructor" => Ok(concat!(
@@ -122,7 +127,7 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Contract and owning gates: docs/STATIC-BORROWED-UTF8-LITERALS-V1.md.\n"
         ).to_owned()),
         "author:string-take" => Ok(concat!(
-            "Named String owner transfer; owning qualification pending.\n",
+            "Named String owner transfer (core.string.take); owning qualification pending.\n",
             "Use let output = string_take(input); with a live named owned String local, parameter or destructured leaf. It forwards the same owner and retires input; ordinary owning reads still clone. End all overlapping views before take.\n",
             "Computed values, record projections, borrowed roots and contract calls are refused. Bind a whole String leaf first; take supplies no general move syntax or implicit last-use rule.\n",
             "Arguments stage left to right. A later argument, precondition or postcondition failure keeps ordinary sticky cleanup; it never revives input or publishes output. Empty Strings still own a carrier.\n",

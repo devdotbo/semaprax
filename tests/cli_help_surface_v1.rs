@@ -862,3 +862,36 @@ fn fmt_and_context_failures_keep_stable_diagnostic_codes() {
 
 #[path = "cli_help_surface_v1/language_details.rs"]
 mod language_details;
+
+#[test]
+fn cli_authoring_card_search_is_bounded_exact_and_inert() {
+    for (selector, expected) in [
+        ("author:find:string_take:0", "author:string-take"),
+        ("author:find:core.string.take:0", "author:string-take"),
+        ("author:find:byte-traversal:0", "author:byte-traversal"),
+    ] {
+        let (page, directory) = invoke(&["help", "language", selector]);
+        assert!(page.status.success(), "{selector}: {page:?}");
+        assert!(page.stderr.is_empty());
+        assert!(page.stdout.len() <= 2_048);
+        let text = std::str::from_utf8(&page.stdout).unwrap();
+        assert!(text.contains(expected));
+        assert!(text.contains("Coverage: complete matching authoring cards."));
+        assert!(text.contains("Library declarations: help language find:"));
+        assert_eq!(std::fs::read_dir(&directory).unwrap().count(), 0);
+        std::fs::remove_dir(directory).unwrap();
+    }
+    for selector in [
+        "author:find::0",
+        "author:find:string_take:00",
+        "author:find:string_take:999999",
+        "author:find:core.string.no_take:0",
+        "author:find:string_take:0:extra",
+    ] {
+        let (page, directory) = invoke(&["help", "language", selector]);
+        assert_eq!(page.status.code(), Some(2), "{selector}: {page:?}");
+        assert!(page.stdout.is_empty());
+        assert_eq!(std::fs::read_dir(&directory).unwrap().count(), 0);
+        std::fs::remove_dir(directory).unwrap();
+    }
+}
