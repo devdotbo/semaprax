@@ -1,0 +1,13 @@
+{
+  "status": "authored-unexecuted",
+  "selectors": [
+    "bounded_output::loan_inner_stage_tests::loan_inner_stages_keep_complete_old_enum_budget_receipt_guard_and_carrier_layouts",
+    "bounded_output::loan_inner_stage_tests::loan_inner_stage_scopes_have_zero_allocation_debit_and_preserve_outer_identity",
+    "bounded_output::loan_inner_stage_tests::loan_inner_first_refusal_stays_exact_across_later_scopes_nested_owner_and_unwind"
+  ],
+  "existing_owners": [
+    "hir::canonical_loan_storage::caller::stage_tests::actual_prepare_stage_keeps_full_old_storage_diagnostics_numeric_receipts_and_drop",
+    "hir::canonical_loan_storage::caller::stage_tests::actual_shared_sealing_stage_keeps_complete_old_receiver_payment_and_drop",
+    "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap"
+  ]
+}

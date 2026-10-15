@@ -230,7 +230,12 @@ fn prepare_sealed<'a, T>(
             // Compare the COMPLETE plan before append consumes it. An
             // attached plan is never a sizing/admission source.
             deferred.compare(function, &plan);
-            append(&mut storage, plan, payer)?;
+            {
+                let _stage = crate::bounded_output::reservation_stage_guard(
+                    crate::bounded_output::ReservationStage::LoanCanonicalAppend,
+                );
+                append(&mut storage, plan, payer)?;
+            }
         }
         Ok((seal(storage, payer)?, deferred))
     })();

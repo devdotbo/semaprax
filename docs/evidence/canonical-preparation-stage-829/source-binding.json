@@ -4,7 +4,7 @@
   "current_sources": [
     {
       "path": "src/bounded_output.rs",
-      "sha256": "809fd5a6bafc4c5b5150017b049d7e10c14dc3a60e81b0c8c60a5831ca044803"
+      "sha256": "5d219122473aa7d959bcaf94deac28661d1ed14d7bd0107a446f3f48bf6eb8bb"
     },
     {
       "path": "src/bounded_output/canonical_stage_tests.rs",
@@ -12,11 +12,11 @@
     },
     {
       "path": "src/hir/canonical_loan_storage/caller.rs",
-      "sha256": "bc7807b201ecd544c1241812b2a0e53f25ee8d3d57f7c71e9a8e036a13da7acd"
+      "sha256": "86546a62bea117a0df58767a472d56825114a700966594acf91a65e354f3ef56"
     },
     {
       "path": "src/hir/canonical_loan_storage/caller/stage_tests.rs",
-      "sha256": "e90241af60e40d651d1d555dccfe1b0651f44b33ffc15bc5f2a21c6bcb30f081"
+      "sha256": "f992883991be9beaa3e1bbe11986bb37b58f532b173797dd79bc7ca8ab68e4e8"
     },
     {
       "path": "src/hir/canonical_loan_storage/tests/reuse.rs",
@@ -37,6 +37,10 @@
     {
       "path": "src/workspace_graph/tests/builder_limits.rs",
       "sha256": "6ccadd41c2a5e782fd666fb02f9a599d3645ddf9d1f6888b99677b028a726821"
+    },
+    {
+      "path": "src/bounded_output/loan_inner_stage_tests.rs",
+      "sha256": "f5203dc9850b2f2a99a83e1eefaf07894c7a5098914a134ebccb78b1a28cd7eb"
     }
   ],
   "unchanged_production_and_complete_old_sources": [

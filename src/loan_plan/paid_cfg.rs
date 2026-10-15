@@ -6,6 +6,9 @@ pub(super) fn build<'a>(
     work: &mut WorkCounter,
 ) -> Result<Cfg<'a>, Diagnostic> {
     let payer = work.allocation.ok_or_else(storage::marker)?;
+    let discovery_stage = crate::bounded_output::reservation_stage_guard(
+        crate::bounded_output::ReservationStage::LoanCfgDiscovery,
+    );
     let mut roots = cfg_directory::fresh(payer)?;
     storage::extend(
         &mut roots,
@@ -60,6 +63,10 @@ pub(super) fn build<'a>(
     }
     // No scratch backing is retained in the returned CFG or point phase.
     drop(child_scratch);
+    drop(discovery_stage);
+    let points_stage = crate::bounded_output::reservation_stage_guard(
+        crate::bounded_output::ReservationStage::LoanCfgPoints,
+    );
     let node_count = expressions
         .len()
         .checked_mul(2)
@@ -96,6 +103,10 @@ pub(super) fn build<'a>(
             .copied()
             .ok_or_else(|| error("CFG function-exit root is not indexed"))
     };
+    drop(points_stage);
+    let _edges_stage = crate::bounded_output::reservation_stage_guard(
+        crate::bounded_output::ReservationStage::LoanCfgEdges,
+    );
     let mut edge_set = cfg_directory::Set::<(u16, u16)>::new(payer)?;
     for expression in &expressions {
         charge(work)?;

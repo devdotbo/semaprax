@@ -6,6 +6,29 @@ use crate::test_allocation_observer::measure;
 fn actual_prepare_stage_keeps_full_old_storage_diagnostics_numeric_receipts_and_drop() {
     let program = super::super::tests::fixture();
     let seed = ConstructorSeed::authenticate(&program, None).unwrap();
+    // This fixture's final current function is the loan-free monomorphic
+    // identity instance. Its complete original planner returns no append data.
+    // Raw sealing is an identity move, so the final positive reservation lies
+    // in candidate inventory; later append authentication requests are zero.
+    let final_function = program
+        .functions
+        .iter()
+        .chain(
+            program
+                .function_instances
+                .iter()
+                .map(|instance| &instance.function),
+        )
+        .last()
+        .unwrap();
+    let final_plan = crate::loan_plan::build_plan(&program, final_function).unwrap();
+    assert_eq!(final_plan.schema, crate::loan_plan::LOAN_PLAN_SCHEMA_V1);
+    assert!(
+        final_plan.loans.is_empty()
+            && final_plan.endpoints.is_empty()
+            && final_plan.edges.is_empty()
+    );
+    drop(final_plan);
     let (expected, deferred) = owned_before::prepare_original(&seed, &program).unwrap();
     drop(deferred);
     let run = |saved, limit| {
@@ -72,8 +95,28 @@ fn actual_prepare_stage_keeps_full_old_storage_diagnostics_numeric_receipts_and_
         assert_eq!((current.1, current.2), (old.1, old.2));
         let mut normalized = current.3;
         if let Some(receipt) = &mut normalized {
-            assert_eq!(receipt.stage, Some(ReservationStage::CanonicalLoanStorage));
-            receipt.stage = Some(ReservationStage::FreshResolution);
+            if limit == 0 {
+                assert_eq!(receipt.stage, Some(ReservationStage::CanonicalLoanStorage));
+                // The independently compiled old outer receiver has no
+                // canonical-stage scope around its initial acquisition.
+                assert_eq!(
+                    old.3.unwrap().stage,
+                    Some(ReservationStage::FreshResolution)
+                );
+                receipt.stage = Some(ReservationStage::FreshResolution);
+            } else {
+                assert_eq!(limit, exact - 1);
+                assert_eq!(
+                    receipt.stage,
+                    Some(ReservationStage::LoanCandidateInventory)
+                );
+                // Both receivers invoke that same real paid candidate producer;
+                // preserve its now-more-precise coordinate rather than erasing it.
+                assert_eq!(
+                    old.3.unwrap().stage,
+                    Some(ReservationStage::LoanCandidateInventory)
+                );
+            }
         }
         assert_eq!(normalized, old.3);
         let metrics = current.0 .1;

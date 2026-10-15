@@ -21,7 +21,9 @@ pub(super) fn build(
             "funded loan planner requires the exact current function",
         )));
     }
-    payer.reserve(SUBJECT_BYTES).map_err(PlannerError::Physical)?;
+    payer
+        .reserve(SUBJECT_BYTES)
+        .map_err(PlannerError::Physical)?;
     let subject = CurrentSubject { program, function };
     // Lexical preflight precedes the legacy guidance boundary. Its semantic
     // refusal must retain its original span/path/help, even for a work limit.
@@ -33,7 +35,13 @@ pub(super) fn build(
         work.allocation = Some(payer);
         #[cfg(test)]
         work_boundary::apply(&mut work);
-        if let Some(inventory) = paid_candidate::inspect_retained(subject, payer, &mut work)? {
+        let inventory = {
+            let _stage = crate::bounded_output::reservation_stage_guard(
+                crate::bounded_output::ReservationStage::LoanCandidateInventory,
+            );
+            paid_candidate::inspect_retained(subject, payer, &mut work)?
+        };
+        if let Some(inventory) = inventory {
             paid_plan::build_retained(program, function, &mut work, inventory)
         } else {
             let mut plan = LoanPlan::empty_v1();

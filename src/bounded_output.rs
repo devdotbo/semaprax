@@ -51,6 +51,12 @@ pub(crate) enum ReservationStage {
     HirValidation,
     CanonicalLoanStorage,
 
+    LoanCandidateInventory,
+    LoanCfgDiscovery,
+    LoanCfgPoints,
+    LoanCfgEdges,
+    LoanCanonicalAppend,
+
     RetainedModule,
     LoanIdentityInventory,
     RetainedLoanScratch,
@@ -89,6 +95,11 @@ impl ReservationStage {
             Self::HirValidation => "HIR final validation",
             Self::CanonicalLoanStorage => "canonical shared-loan storage preparation",
 
+            Self::LoanCandidateInventory => "loan candidate inventory",
+            Self::LoanCfgDiscovery => "loan CFG expression discovery",
+            Self::LoanCfgPoints => "loan CFG point directory construction",
+            Self::LoanCfgEdges => "loan CFG edge construction",
+            Self::LoanCanonicalAppend => "canonical loan directory append",
             Self::RetainedModule => "resolved module retention",
             Self::LoanIdentityInventory => "loan identity inventory",
             Self::RetainedLoanScratch => "retained loan scratch allocation",
@@ -1232,3 +1243,6 @@ pub(crate) use source_owner_scope::source_owner_scope;
 
 #[cfg(test)]
 mod canonical_stage_tests;
+
+#[cfg(test)]
+mod loan_inner_stage_tests;
