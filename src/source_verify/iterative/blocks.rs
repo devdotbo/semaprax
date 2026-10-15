@@ -799,6 +799,14 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 );
             }
         }
+        let byte_entry_scope = self.byte_body_entry_scope(
+            block_scope,
+            actual
+                .as_ref()
+                .is_some_and(|value| value.ty == Type::SliceU8)
+                && !consuming
+                && !borrowing,
+        );
         if let Some(source) = source {
             if self.scopes[block_scope]
                 .bindings
@@ -815,7 +823,7 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     .with_help(crate::source_verify::hints::IMMUTABLE_TRAVERSAL_HELP),
                 );
             }
-            let _ = self.reject_for_body_disallowed(body, source);
+            let _ = self.reject_for_body_in_scope(body, source, byte_entry_scope);
         }
         let baseline = consuming.then(|| self.scopes[block_scope].bindings.clone());
         let owned_record_item = element.as_ref().is_some_and(|element| {
@@ -823,9 +831,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                 self.types, element,
             )
         });
-        let _ = self.reject_iterator_body(
+        let _ = self.reject_iterator_body_in_scope(
             body,
             (consuming && (element == Some(Type::Bytes) || owned_record_item)).then_some(item),
+            byte_entry_scope,
         );
         let item_inserted = !self.scopes[block_scope].bindings.contains_key(item);
         if !item_inserted {

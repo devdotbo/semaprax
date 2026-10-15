@@ -6,11 +6,16 @@ use crate::source_verify::diagnostics::error;
 use crate::source_verify::IterativeVerifier;
 
 impl<'a, 'p> IterativeVerifier<'a, 'p> {
-    pub(super) fn reject_for_body_disallowed(
+    pub(super) fn reject_for_body_in_scope(
         &mut self,
         body: &'p Expr,
         source: &str,
+        byte_entry_scope: Option<usize>,
     ) -> Result<(), ()> {
+        #[cfg(test)]
+        if crate::source_verify::byte_traversal::nested::before_selected() {
+            return self.reject_for_body_disallowed_before_nested(body, source);
+        }
         enum Item<'a> {
             Expr(&'a Expr),
             Statement(&'a Statement),
@@ -26,6 +31,12 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         *span,
                     ));
                     return Err(());
+                }
+                Item::Statement(Statement::For { values, body, .. })
+                    if byte_entry_scope
+                        .is_some_and(|scope| self.nested_byte_source(scope, values)) =>
+                {
+                    pending.push(Item::Expr(body));
                 }
                 Item::Statement(
                     Statement::For { span, .. }
@@ -93,6 +104,19 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
         expression: &'p Expr,
         owned_item: Option<&str>,
     ) -> Result<(), ()> {
+        let scope = self.active_byte_entry_scope();
+        self.reject_iterator_body_in_scope(expression, owned_item, scope)
+    }
+    pub(super) fn reject_iterator_body_in_scope(
+        &mut self,
+        expression: &'p Expr,
+        owned_item: Option<&str>,
+        byte_entry_scope: Option<usize>,
+    ) -> Result<(), ()> {
+        #[cfg(test)]
+        if crate::source_verify::byte_traversal::nested::before_selected() {
+            return self.reject_iterator_body_before_nested(expression, owned_item);
+        }
         let finite_scratch =
             owned_item.and_then(|_| crate::finite_byte_scratch::source(self.current, expression));
         enum Frame<'a> {
@@ -158,6 +182,13 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                         frames.push(Frame::JoinAll(2));
                         frames.push(Frame::Expression(body));
                         frames.push(Frame::Expression(condition));
+                        continue;
+                    }
+                    Statement::For { values, body, .. }
+                        if byte_entry_scope
+                            .is_some_and(|scope| self.nested_byte_source(scope, values)) =>
+                    {
+                        frames.push(Frame::Expression(body));
                         continue;
                     }
                     Statement::For { span, .. }
@@ -790,3 +821,10 @@ fn string_slot_explicit_types_and_computed_roots_keep_exact_loop_refusal() {
         string_slot_loop_admission(&changed, false);
     }
 }
+
+#[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "complete independently compiled pre-nesting loop admission oracle"
+)]
+mod before_nested;
