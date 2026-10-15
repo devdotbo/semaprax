@@ -157,7 +157,7 @@ fn retained_status_control_funding_exact_short_zero_and_foreign_active_are_stick
         let ((success, allocation), refused, debit, first) = with_limit_usage_refusal(limit, || measure(|| {
             let mut budget = ReplayBudget::new();
             let success = if retain {
-                let result = validate_status_sources_retained(function, &facts, &mut budget);
+                let result = super::status_before::validate_status_sources_retained(function, &facts, &mut budget);
                 let success = result.is_ok();
                 drop(result);
                 success

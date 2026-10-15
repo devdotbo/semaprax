@@ -1087,6 +1087,18 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        // Exact additive full status-fact receiving and complete old/control join.
+        undo(&mut current, r#######"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"#######, r#######"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"#######);
         // Remove only the exact new full receiver/oracle/control join before prior hooks.
         undo(&mut current, r######"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),

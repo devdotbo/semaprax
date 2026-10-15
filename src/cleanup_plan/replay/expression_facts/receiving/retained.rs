@@ -33,21 +33,30 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
                 semantic_refusal::Atom::RepeatedStatus(source.id.expression.clone()),
             ));
         }
-        if expressions
-            .fact(function, &source.id.expression, budget)?
-            .is_none()
-        {
+        // Retain the actual first lookup's borrowed payload, only through this
+        // immutable source's producer match. Pay its complete receiving pointer
+        // and one assignment step; no previous result/header credit is used.
+        budget.reserve_bytes(function,
+            std::mem::size_of::<&Option<CallFact<'_>>>(),
+            "retained status fact receiving control")?;
+        budget.charge(function, 1, "retained status fact receiving assignment")?;
+        let Some(fact) = expressions.fact(function, &source.id.expression, budget)? else {
             return Err(<Diagnostic as semantic_refusal::Error>::structural(
                 function,
                 semantic_refusal::Atom::UnknownStatus(source.id.expression.clone()),
             ));
-        }
+        };
         match (&source.id.lane, &source.producer) {
             (
                 StatusLane::OperationFailure | StatusLane::OwnerAdmission,
                 StatusProducer::PropagatedCall { callee },
             ) => {
-                let Some(Some(call)) = expressions.fact(function, &source.id.expression, budget)?
+                // The payload reference is a second simultaneous receiving
+                // control; the eliminated lookup's result is not a credit.
+                budget.reserve_bytes(function, std::mem::size_of::<&CallFact<'_>>(),
+                    "retained status call receiving control")?;
+                budget.charge(function, 1, "retained status call receiving assignment")?;
+                let Some(call) = fact
                 else {
                     return Err(replay_error(
                         function,
@@ -581,3 +590,8 @@ fn validate_owned_edge_unique(
 mod edge_before;
 #[cfg(test)]
 mod edge_tests;
+
+#[cfg(test)]
+mod status_before;
+#[cfg(test)]
+mod status_tests;
