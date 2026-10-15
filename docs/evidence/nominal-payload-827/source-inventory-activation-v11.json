@@ -75,7 +75,7 @@
     },
     {
       "source": "src/hir/declaration_index/identity_payer.rs",
-      "sha256": "a5a0185a1bf8ba55d57c10fce5412a55424583386dcb2abb62bf16ab1b5552bc",
+      "sha256": "8ba7094569805410056641834729c2728932adae07b4332e8e763a2c20d688be",
       "original": "docs/evidence/nominal-payload-827/original/src/hir/declaration_index/identity_payer.rs",
       "original_sha256": "a385fe6aa95cf870d35f92b12bd9a07eeeff103a60a22903d8d61c952c52915d",
       "new_file": false

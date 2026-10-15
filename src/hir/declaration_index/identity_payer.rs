@@ -602,6 +602,18 @@ impl DeclarationIndex {
             index.populate_type_facts()
         };
         if !facts {
+            if canonical_nominals {
+                return Err(super::nominal_paid_values::diagnostic(
+                    "SPX-T217",
+                    format_args!(
+                        "record declarations contain an illegal by-value recursive layout"
+                    ),
+                    Span::default(),
+                    program.path(),
+                    &mut |n| payer.bytes(n),
+                )?
+                .into());
+            }
             return Err(IdentityIndexError::Semantic(
                 Diagnostic::error(
                     "SPX-T217",
