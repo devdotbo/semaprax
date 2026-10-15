@@ -1,0 +1,12 @@
+{
+  "producer_source": "be8ff06ff1e3319c63a3e00f82f7085dd7b83ce9",
+  "application_head_before": "820a8baa354dfe0422024a2fca4685d87cb1b5fd",
+  "strict_live_capture_validation_completed_before_source_changed": true,
+  "all_old_source_hashes_preflighted": true,
+  "all_candidate_hashes_matched": true,
+  "producer_reexecuted_at_application_head": false,
+  "pins": 11,
+  "public_budget_delta": 2304,
+  "gain_claim": false,
+  "patch_sha256": "1e9daa88e47b72c10d26bd87177ea92df6db00d0fa46b05788e090737098fc1d"
+}

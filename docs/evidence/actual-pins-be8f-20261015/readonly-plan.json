@@ -1,0 +1,83 @@
+{
+  "schema": "semaprax.prelude-forecast-reviewed-pin-plan.v1",
+  "capture_head": "be8ff06ff1e3319c63a3e00f82f7085dd7b83ce9",
+  "status": "actual-candidate-plan-requires-wire-review",
+  "edits": [
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "assert_eq!(graph.budget().used_builder_bytes(), 1_414_035);",
+      "after": "assert_eq!(graph.budget().used_builder_bytes(), 1_416_339);",
+      "actual_wire": "public-graph"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:a992f8fd4090cd156ea13fef9de5005364e6d86d799dd81e66eb2efa7712b2fe",
+      "after": "sha256:f3b8715ef4ff6018b01521022318ed4a1b330efa598d9fd07d0b1122c7432d50",
+      "actual_wire": "public-graph"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:b88005b77ed92a34254a56f69fa0d04bfe57f9b7c63f119ba53b73999ad50c0f",
+      "after": "sha256:a67f0151ba1b9738bb17f59ac4c39492c04ab243c392017c2b72ab6f50ff1175",
+      "actual_wire": "context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:26b05cf95dfab584d2a21c5a4dc8353de634d331e38553ddaf2a13303b77f527",
+      "after": "sha256:12f58d2f0e534790d78303370fc646eafdfdc22745668bbb7d33d17b9a45255b",
+      "actual_wire": "forward"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:3f68256c3156382bd0a9cd35867bc21f9edac47778dde67ae24da87e96058fd8",
+      "after": "sha256:ad073a050b4734f8a28f3525a63db87ebfc5d6bbcf4e9c4374c9988c24b23317",
+      "actual_wire": "capability-context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:697f4d1387a24965826097cc9438fd27199195b7e219711d2d3b6087636fbd15",
+      "after": "sha256:3b90520d18ab1373f4dbb7b81c1bb1e8741c00df1b1ef9f3750e13b1e6bd3a54",
+      "actual_wire": "type-context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:6c3fc1aa1e02c44866083200ae8c580267b4612ede714a0b6f44fe7b53a476df",
+      "after": "sha256:304888f0f8b23564016488e8c54612377a8c68d377fb3890d07b8f8e2ed972d1",
+      "actual_wire": "impact"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:ee48c862bdd203c820c343cd63c97f129c4d57915e985b03920f3ec19fa8bff3",
+      "after": "sha256:e530a5a009cbf938c7a9b0d88bd8cc5d10d4258313f07d49bcb9748415ad7f8a",
+      "actual_wire": "custom-impact"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:9153a3f8e623a68c4bed4bb0c88fa4d5eba301c116ca319fd66c19762be7dcd6",
+      "after": "sha256:e6986a928fdf420135acb640a006f410a082220363146913defaeebdfcb8ce77",
+      "actual_wire": "review"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:8723fc1b989ca32554c881347f2cef1992bfbca78b897022ce66f5ca9b14390b",
+      "after": "sha256:4f77687750678e2ec49078f588b7f8555dcb89115d8962273bb9e0536cda4e3f",
+      "actual_wire": "capability-review"
+    },
+    {
+      "path": "src/workspace_graph/type_proof_tests.rs",
+      "before": "sha256:595782b4899aa5a77e0088a2bd9d87c292f3314ba06ffe788ed3e446c24c06f4",
+      "after": "sha256:d18a9ba4c3fa0096f9d9f6031af87b22f02a2ec11ef33c70a2bf18652f42d1b4",
+      "actual_wire": "projection-wire"
+    }
+  ],
+  "source_sha256": {
+    "src/workspace_graph/type_proof_tests.rs": "sha256:e4385994b071c971da3ba704b18090ff12ccbf97be1b41b57b2b309af033175a",
+    "tests/workspace/semantic_graph.rs": "sha256:ce085df0b8258920df9dd8a33b965e26298d5b061d7374fceef35e96040826da"
+  },
+  "after_sha256": {
+    "src/workspace_graph/type_proof_tests.rs": "sha256:6c43ae2cb39666ff30e0b7cd66ff3a9cdf90a0ee5b90ef4a4f0210136fd7f5a4",
+    "tests/workspace/semantic_graph.rs": "sha256:46655c91584bf2ebe01ba1f9874b14266c2408ca41283f74751cadf7d6634b01"
+  },
+  "trusted_build_receipt_sha256": "sha256:69dc6f55bbcc75890771bfcafb4dd73902859b9ec91425c5633dcd572c63cf47",
+  "trusted_producer_receipt_sha256": "sha256:7455173fb16116c3db2cd539ba76e4238666103bf595cc5ecfb935242b990cf6"
+}

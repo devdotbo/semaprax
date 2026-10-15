@@ -1,0 +1,9 @@
+{
+  "capture_head": "be8ff06ff1e3319c63a3e00f82f7085dd7b83ce9",
+  "later_root_head_at_preparation": "be8ff06ff1e3319c63a3e00f82f7085dd7b83ce9",
+  "build_receipt_sha256": "69dc6f55bbcc75890771bfcafb4dd73902859b9ec91425c5633dcd572c63cf47",
+  "producer_receipt_sha256": "7455173fb16116c3db2cd539ba76e4238666103bf595cc5ecfb935242b990cf6",
+  "root": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+  "capture": "/Volumes/Semaprax/provenance/cfg-status-extension-actual-pins-be8f-20261015",
+  "round": "/Volumes/Semaprax/lane-prompts/cfg-status-extension-be8f-20261015"
+}
