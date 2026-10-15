@@ -1,0 +1,33 @@
+{
+  "state": "SOURCE_ONLY_UNEXECUTED",
+  "selectors": [
+    {
+      "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
+      "name": "all_selected_prefixes_keep_full_old_index_wire_and_reuse_only_selected_vec_payload"
+    },
+    {
+      "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
+      "name": "vector_work_exact_short_zero_and_sticky_failure_keep_whole_producer_drop_paid"
+    },
+    {
+      "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
+      "name": "vector_every_byte_acquisition_and_whole_owner_exact_short_zero_are_sticky"
+    },
+    {
+      "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
+      "name": "vector_work_owner_foreign_then_restored_preserves_first_raw_detached"
+    },
+    {
+      "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
+      "name": "matching_foreign_ast_never_acquires_or_substitutes_extension_authority"
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution/base/vector_tests.rs",
+      "name": "actual_core_vec_receiver_keeps_full_old_fresh_borrowed_selective_hir_wire_and_last_drop"
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution/base/vector_tests.rs",
+      "name": "actual_core_extension_work_refusal_publishes_full_distinct_report_and_never_reacquires"
+    }
+  ]
+}

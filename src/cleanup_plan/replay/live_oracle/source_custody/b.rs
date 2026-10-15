@@ -1087,7 +1087,12 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
-        // Exact additive full status-fact receiving and complete old/control join.
+        undo(&mut current, r#####"        include_str!("../src/hir/prelude_bundle/invocation.rs"),
+        include_str!("../src/hir/prelude_bundle/extension_work.rs"),
+        include_str!("../src/hir/prelude_bundle/vector_extension.rs"),
+        include_str!("../src/hir/prelude_bundle/vector_extension/tests.rs"),
+        include_str!("../src/workspace_graph/identity_resolution/base/vector_tests.rs"),"#####, r#####"        include_str!("../src/hir/prelude_bundle/invocation.rs"),"#####);
+      // Exact additive full status-fact receiving and complete old/control join.
         undo(&mut current, r#######"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"),

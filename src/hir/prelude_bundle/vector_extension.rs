@@ -9,6 +9,19 @@ pub(crate) struct VectorExtension {
     pub(crate) ty: ResolvedTypeDeclaration,
 }
 impl VectorExtension {
+    fn text<P: Payer>(value: &str, payer: &mut P) -> Result<String, Failure<P::Error>> {
+        // Separate actual helper initializer/conversion/receiving carriers;
+        // String backing and its copy/validation work stay with paid::string.
+        payer
+            .bytes(
+                size_of::<String>()
+                    + size_of::<Vec<u8>>()
+                    + size_of::<Result<String, std::string::FromUtf8Error>>()
+                    + size_of::<Result<String, Failure<P::Error>>>(),
+            )
+            .map_err(Failure::Payer)?;
+        paid::string(value, payer)
+    }
     pub(super) fn acquire<P: Payer>(payer: &mut P) -> Result<Self, Failure<P::Error>> {
         payer
             .bytes(
@@ -33,11 +46,11 @@ impl VectorExtension {
             return Err(Failure::Schema);
         };
         let id = paid::identity(&source.stable_id, payer)?;
-        let name = paid::string(&source.name, payer)?;
+        let name = Self::text(&source.name, payer)?;
         let mut parameters = paid::vector(1, payer)?;
         payer.work(1).map_err(Failure::Payer)?;
         parameters.push(ResolvedTypeParameterDeclaration {
-            name: paid::string(&parameter.name, payer)?,
+            name: Self::text(&parameter.name, payer)?,
             index: 0,
             span: parameter.span,
         });
@@ -70,3 +83,7 @@ impl VectorExtension {
         Some(&value?.ty)
     }
 }
+
+#[cfg(test)]
+#[path = "vector_extension/tests.rs"]
+mod tests;

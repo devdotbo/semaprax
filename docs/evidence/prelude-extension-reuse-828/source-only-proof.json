@@ -1,0 +1,9 @@
+{
+  "source_only": true,
+  "compiled_or_runtime": false,
+  "c237_original_owner_inverses": 15,
+  "full_historical_nominal_inverse_rows": 76,
+  "new_exact_controls": 7,
+  "old_v12_and_archives_unchanged": true,
+  "proof": "All current hashes and full raw-byte inverse/archive comparisons passed Python assertions; no compiler invoked"
+}

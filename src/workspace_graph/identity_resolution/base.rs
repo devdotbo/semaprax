@@ -108,3 +108,6 @@ mod tests;
 
 #[cfg(test)]
 mod affinity_tests;
+
+#[cfg(test)]
+mod vector_tests;
