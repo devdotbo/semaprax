@@ -1,0 +1,205 @@
+Review storage-only redundant paid AVL set removal, tools disabled. Old seen and root map received identical ExpressionId keys; new tests rootmap at identical duplicate checkpoint. Preserve full error order and work units.64byte actual first refusal notcausallyattributed. No cap change. Complete old function independently compiled as seen_before.
+diff --git a/src/loan_plan/paid_cfg.rs b/src/loan_plan/paid_cfg.rs
+index 723bd50d9..7aafd5b2a 100644
+--- a/src/loan_plan/paid_cfg.rs
++++ b/src/loan_plan/paid_cfg.rs
+@@ -17,7 +17,6 @@ pub(super) fn build<'a>(
+         work.allocation,
+     )?;
+     let mut expressions = cfg_directory::fresh(payer)?;
+-    let mut seen = cfg_directory::Set::new(payer)?;
+     let mut root_by_expression = cfg_directory::Map::<ExpressionId, ExpressionId>::new(payer)?;
+     let mut pending = cfg_directory::fresh(payer)?;
+     storage::extend(
+@@ -28,7 +27,7 @@ pub(super) fn build<'a>(
+     let mut child_scratch: Option<Vec<&'a ResolvedExpr>> = None;
+     while let Some((expression, root)) = pending.pop() {
+         charge(work)?;
+-        if !cfg_directory::set_insert(&mut seen, expression.id.clone(), work.allocation)? {
++        if root_by_expression.contains_key(&expression.id) {
+             return Err(error("CFG contains a duplicate expression identity"));
+         }
+         cfg_directory::map_insert(
+@@ -386,8 +385,7 @@ pub(super) fn build<'a>(
+ 
+ // Option uses Vec's non-null niche; the single inline carrier stays identical.
+ const _: () = assert!(
+-    std::mem::size_of::<Option<Vec<&ResolvedExpr>>>()
+-        == std::mem::size_of::<Vec<&ResolvedExpr>>()
++    std::mem::size_of::<Option<Vec<&ResolvedExpr>>>() == std::mem::size_of::<Vec<&ResolvedExpr>>()
+ );
+ 
+ #[cfg(test)]
+@@ -409,3 +407,10 @@ pub(super) fn build_original<'a>(
+         super::build_cfg(function, work)
+     }
+ }
++
++#[cfg(test)]
++#[path = "paid_cfg/rootmap_tests.rs"]
++mod rootmap_tests;
++#[cfg(test)]
++#[path = "paid_cfg/seen_before.rs"]
++mod seen_before;
+
+Full old discovery prefix:
+//! Identical CFG construction/order with explicit caller-paid actual storage.
+use super::*;
+
+pub(super) fn build<'a>(
+    function: &'a ResolvedFunction,
+    work: &mut WorkCounter,
+) -> Result<Cfg<'a>, Diagnostic> {
+    let payer = work.allocation.ok_or_else(storage::marker)?;
+    let mut roots = cfg_directory::fresh(payer)?;
+    storage::extend(
+        &mut roots,
+        function
+            .requires
+            .iter()
+            .chain(std::iter::once(&function.body))
+            .chain(function.ensures.iter()),
+        work.allocation,
+    )?;
+    let mut expressions = cfg_directory::fresh(payer)?;
+    let mut seen = cfg_directory::Set::new(payer)?;
+    let mut root_by_expression = cfg_directory::Map::<ExpressionId, ExpressionId>::new(payer)?;
+    let mut pending = cfg_directory::fresh(payer)?;
+    storage::extend(
+        &mut pending,
+        roots.iter().rev().map(|root| (*root, *root)),
+        work.allocation,
+    )?;
+    let mut child_scratch: Option<Vec<&'a ResolvedExpr>> = None;
+    while let Some((expression, root)) = pending.pop() {
+        charge(work)?;
+        if !cfg_directory::set_insert(&mut seen, expression.id.clone(), work.allocation)? {
+            return Err(error("CFG contains a duplicate expression identity"));
+        }
+        cfg_directory::map_insert(
+            &mut root_by_expression,
+            expression.id.clone(),
+            root.id.clone(),
+            work.allocation,
+        )?;
+        storage::push(&mut expressions, expression, work.allocation)?;
+        // Acquire at the original child frontier, after work/identity checks.
+        // Only borrowed references enter this one invocation-owned scratch.
+        if child_scratch.is_none() {
+            child_scratch = Some(cfg_directory::fresh(payer)?);
+        } else {
+            payer.reserve(0).map_err(|_| storage::marker())?;
+        }
+        let children = child_scratch.as_mut().expect("child scratch acquired");
+        children.clear();
+        paid_children::push_children(expression, children, work.allocation)?;
+        storage::extend(
+            &mut pending,
+            children.iter().copied().map(|child| (child, root)),
+            work.allocation,
+        )?;
+        children.clear();
+    }
+    // No scratch backing is retained in the returned CFG or point phase.
+    drop(child_scratch);
+
+Existing Map:
+pub(super) struct Map<K, V> {
+    root: Option<Box<tree::Node<K, V>>>,
+    len: usize,
+}
+impl<K: Ord, V> Map<K, V> {
+    pub(super) fn new(payer: &CfgReservation) -> Result<Self, Diagnostic> {
+        payer
+            .reserve(std::mem::size_of::<Self>())
+            .map_err(|_| storage::marker())?;
+        Ok(Self { root: None, len: 0 })
+    }
+    pub(super) fn get(&self, key: &K) -> Option<&V> {
+        tree::get(self.root.as_deref(), key)
+    }
+    pub(super) fn contains_key(&self, key: &K) -> bool {
+        self.get(key).is_some()
+    }
+    fn insert(
+        &mut self,
+        key: K,
+        value: V,
+        payer: &CfgReservation,
+    ) -> Result<Option<V>, Diagnostic> {
+        payer.reserve(0).map_err(|_| storage::marker())?;
+        let mut leaf = if self.get(&key).is_none() {
+            let Some(bytes) = std::mem::size_of::<tree::Node<K, V>>().checked_mul(2) else {
+                payer.arithmetic();
+                return Err(storage::marker());
+            };
+            // Box heap and literal initializer are paid before construction.
+            payer.reserve(bytes).map_err(|_| storage::marker())?;
+            Some(Box::new(tree::Node::leaf(key, value)))
+        } else {
+            return Ok(tree::replace(&mut self.root, &key, value));
+        };
+        // No allocation, payer call or failure follows the prepared leaf.
+        tree::insert(&mut self.root, &mut leaf);
+        self.len += 1;
+        Ok(None)
+    }
+}
+
+Exact physical refusal+Drop observer:
+fn observe(
+    function: &ResolvedFunction,
+    old: bool,
+    limit: usize,
+) -> (
+    (bool, Metrics),
+    bool,
+    usize,
+    Option<crate::bounded_output::ReservationRefusal>,
+) {
+    with_limit_usage_refusal(limit, || {
+        measure(|| {
+            let owner = match CfgReservation::acquire() {
+                Ok(owner) => owner,
+                Err(_) => {
+                    assert!(!reserve_active_required(0));
+                    return false;
+                }
+            };
+            let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
+            work.allocation = Some(&owner);
+            match run(function, &mut work, old) {
+                Ok(cfg) => {
+                    drop(cfg);
+                    assert_eq!(owner.first(), None);
+                    drop(owner);
+                    true
+                }
+                Err(error) => {
+                    let first = owner
+                        .first()
+                        .expect("positive fixture only physically refuses");
+                    let at_stop = current_metrics().allocated;
+                    assert_eq!(owner.reserve(0), Err(first));
+                    assert_eq!(owner.reserve(1), Err(first));
+                    let used = work.used;
+                    let retry = run(function, &mut work, old);
+                    assert!(retry.is_err());
+                    assert_eq!(work.used, used);
+                    assert_eq!(owner.first(), Some(first));
+                    drop(retry);
+                    drop(error);
+                    drop(owner);
+                    assert_eq!(
+                        current_metrics().allocated,
+                        at_stop,
+                        "no allocation after selected error or during Drop"
+                    );
+                    false
+                }
+            }
+        })
+    })
+}
+
+Unexecuted new controls: allCFGfields/points/nodevalues/edgevectors/completeadjacency/borrowedexprpointers equality and work.used at every0..=oldused boundary; malformed right.id=left.id compares all6diagnosticfields with competing worklimit0..4. Physical test measures old/current samefixture separately includingDrop; asserts old.allocations-current.allocations==uniqueexpressioncount; positiveallocated<=paid; balancedDrop; current0/exact-1/exact+stickyretry noallocations/work after first physicalfailure. Same CfgReservation::reserve authenticates ACTIVE Rc and firststickyreason even0. cfg_directory::fresh before loop reserves0andpaidVecHeader beforeconstruction. Alloldtests/oracles unchanged.

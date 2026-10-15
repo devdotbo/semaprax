@@ -17,7 +17,6 @@ pub(super) fn build<'a>(
         work.allocation,
     )?;
     let mut expressions = cfg_directory::fresh(payer)?;
-    let mut seen = cfg_directory::Set::new(payer)?;
     let mut root_by_expression = cfg_directory::Map::<ExpressionId, ExpressionId>::new(payer)?;
     let mut pending = cfg_directory::fresh(payer)?;
     storage::extend(
@@ -28,7 +27,11 @@ pub(super) fn build<'a>(
     let mut child_scratch: Option<Vec<&'a ResolvedExpr>> = None;
     while let Some((expression, root)) = pending.pop() {
         charge(work)?;
-        if !cfg_directory::set_insert(&mut seen, expression.id.clone(), work.allocation)? {
+        // Both old directories received identical keys at each completed
+        // iteration. Keep the old set insertion's zero-byte authentication
+        // before its semantic duplicate check, including selected refusal.
+        payer.reserve(0).map_err(|_| storage::marker())?;
+        if root_by_expression.contains_key(&expression.id) {
             return Err(error("CFG contains a duplicate expression identity"));
         }
         cfg_directory::map_insert(
@@ -386,8 +389,7 @@ pub(super) fn build<'a>(
 
 // Option uses Vec's non-null niche; the single inline carrier stays identical.
 const _: () = assert!(
-    std::mem::size_of::<Option<Vec<&ResolvedExpr>>>()
-        == std::mem::size_of::<Vec<&ResolvedExpr>>()
+    std::mem::size_of::<Option<Vec<&ResolvedExpr>>>() == std::mem::size_of::<Vec<&ResolvedExpr>>()
 );
 
 #[cfg(test)]
@@ -409,3 +411,10 @@ pub(super) fn build_original<'a>(
         super::build_cfg(function, work)
     }
 }
+
+#[cfg(test)]
+#[path = "paid_cfg/rootmap_tests.rs"]
+mod rootmap_tests;
+#[cfg(test)]
+#[path = "paid_cfg/seen_before.rs"]
+mod seen_before;

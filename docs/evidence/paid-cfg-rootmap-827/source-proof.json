@@ -1,0 +1,13 @@
+{
+  "source_only": true,
+  "basis": "9dd051bce67bdfbb409c1833617161465bd57591",
+  "complete_old_function": "byte-equal archived previous receiver body; terminal separator blank line omitted",
+  "existing_whole_source_inverse_proofs": 36,
+  "provider_complete_originals_and_live_bindings": 17,
+  "loan_inventory_complete_originals": 8,
+  "referenced_edge_complete_originals": 4,
+  "new_whole_source_inverses": 3,
+  "execution": "No Cargo, Rust tests or builds.",
+  "work_or_quota_change": false,
+  "actual_normalizer_fit_or_cause_claim": false
+}

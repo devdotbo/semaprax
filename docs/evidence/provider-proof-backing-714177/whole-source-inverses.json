@@ -377,8 +377,13 @@
       "archive": "11.before.txt",
       "original_sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
       "original_bytes": 85667,
-      "current_sha256": "485f5b066ebe1e2edb3a42c9bcdfeb6d6f310d2691736eaf63777a02ac803676",
+      "current_sha256": "b4344dd256df5f6ba747981d59590a8ae8a36c8784d68bf90571f107b65e9389",
       "inverse": [
+        {
+          "hook": "paid-cfg-rootmap-complete-source",
+          "current": "            include_str!(\"../../../../../src/loan_plan/paid_cfg/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg/seen_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cfg/rootmap_tests.rs\"),\n",
+          "before": "            include_str!(\"../../../../../src/loan_plan/paid_cfg/tests.rs\"),\n"
+        },
         {
           "hook": "retained-edge-complete-source-context-1",
           "current": "            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/errors.rs\"),\n            concat!(include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs\")),\n",
