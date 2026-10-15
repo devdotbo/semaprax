@@ -819,6 +819,8 @@ pub(crate) fn diagnostic846_input(source: &str, current: &str) -> String {
 
 // MAIN and the two677 compile corrections have independent physical inputs.
 fn main27424_stage(stage: &str, source: &str, current: &str) -> String {
+    let current = combined_ready_input("main", source, current);
+    let current = current.as_str();
     let data = match stage {
         "7f" => include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -838,4 +840,53 @@ fn main27424_stage(stage: &str, source: &str, current: &str) -> String {
 }
 pub(crate) fn main27424_input(source: &str, current: &str) -> String {
     main27424_stage("main", source, current)
+}
+
+// Independent physical847 source for its complete owning guards.
+fn retained_function847_previous(source: &str, current: &str) -> String {
+    joined_feature_input("453", source, current)
+}
+pub(crate) fn retained_function847_input(source: &str, current: &str) -> String {
+    retained_function847_previous(source, current)
+}
+pub(crate) fn directory825_input(source: &str, current: &str) -> String {
+    let previous = joined_feature_input("453", source, current);
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-function-alias-847/directory825-domain.json"
+        )),
+        source,
+        &previous,
+    )
+}
+fn joined_feature_input(stage: &str, source: &str, current: &str) -> String {
+    let current = combined_ready_input("alias", source, current);
+    let current = current.as_str();
+    let rows = match stage {
+        "453" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-alias-compact-joined-20261015/final-to-453.json"
+        )),
+        "523" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-alias-compact-joined-20261015/final-to-523.json"
+        )),
+        "7f" => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-alias-compact-joined-20261015/final-to-7f.json"
+        )),
+        _ => panic!("unknown independent feature input"),
+    };
+    project(rows, source, current)
+}
+
+// Independent final raw fronts for MAIN integration versus retained alias owners.
+fn combined_ready_input(stage: &str, source: &str, current: &str) -> String {
+    let rows = match stage {
+        "main" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/final-main27424-alias847-assembly-20261015/final-to-main-checkpoint.json")),
+        "alias" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/final-main27424-alias847-assembly-20261015/final-to-alias-checkpoint.json")),
+        _ => panic!("unknown exact final source front"),
+    };
+    project(rows, source, current)
 }
