@@ -147,7 +147,7 @@ fn clone_and_push_keep_capacity_contents_work_and_drop_with_less_backing() {
 #[test]
 fn whole_original_enumerator_and_clone_push_helpers_remain_byte_exact() {
     use sha2::{Digest, Sha256};
-    let root = include_str!("../../replay.rs");
+    let root = main_replay_input(include_str!("../../replay.rs"));
     let packets = [
         (
             include_str!(concat!(

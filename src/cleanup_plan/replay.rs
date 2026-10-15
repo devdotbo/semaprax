@@ -6652,18 +6652,16 @@ fn plan_skeleton_paths(
                             ));
                         }
                     };
-                    let mut branch = branch_clone::for_push(
+                    budget.reserve_bytes(
+                        function,
+                        branch_clone::controls::<Rc<SkeletonObservation>, SkeletonObservation>(),
+                        "branch clone receiving controls",
+                    )?;
+                    let branch = branch_clone::with_observation(
                         budget,
                         function,
                         &observations,
-                        "cleanup-plan skeleton branch clone",
-                    )?;
-                    skeleton_push(
-                        budget,
-                        function,
-                        &mut branch,
                         observation,
-                        "plan branch observation push",
                     )?;
                     skeleton_queue_push(
                         budget,
