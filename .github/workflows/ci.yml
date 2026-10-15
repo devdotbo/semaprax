@@ -329,11 +329,20 @@ jobs:
           rustc_path="$(rustup which rustc)"
           cargo_path="$(rustup which cargo)"
           clang_path="$(command -v clang)"
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            # The held builder uses the Command Line Tools SDK explicitly.
+            # Select that installation's driver and companion linker together.
+            clang_path=/Library/Developer/CommandLineTools/usr/bin/clang
+            test -x "$clang_path"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
             clang_path="$(readlink -f "$clang_path")"
           fi
           clangxx_path="$(command -v clang++)"
           ld_path="$(command -v ld)"
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            clangxx_path=/Library/Developer/CommandLineTools/usr/bin/clang++
+            ld_path=/Library/Developer/CommandLineTools/usr/bin/ld
+          fi
           node_path="$(command -v node)"
           tsc_path="${SPX_PG_TSC:?SPX_PG_TSC was not provisioned}"
           if [[ "$RUNNER_OS" == "macOS" ]]; then
@@ -1098,7 +1107,12 @@ jobs:
           set -euo pipefail
           rustc_path="$(rustup which rustc)"
           clang_path="$(command -v clang)"
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            # The held builder uses the Command Line Tools SDK explicitly.
+            # Select that installation's driver and companion linker together.
+            clang_path=/Library/Developer/CommandLineTools/usr/bin/clang
+            test -x "$clang_path"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
             clang_path="$(readlink -f "$clang_path")"
           fi
           test -x "$rustc_path"
@@ -1225,7 +1239,12 @@ jobs:
           set -euo pipefail
           echo "RUSTC=$(rustup which rustc)" >> "$GITHUB_ENV"
           clang_path="$(command -v clang)"
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            # The held builder uses the Command Line Tools SDK explicitly.
+            # Select that installation's driver and companion linker together.
+            clang_path=/Library/Developer/CommandLineTools/usr/bin/clang
+            test -x "$clang_path"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
             clang_path="$(readlink -f "$clang_path")"
           fi
           test -x "$clang_path"
@@ -1312,7 +1331,12 @@ jobs:
           set -euo pipefail
           echo "RUSTC=$(rustup which rustc)" >> "$GITHUB_ENV"
           clang_path="$(command -v clang)"
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            # The held builder uses the Command Line Tools SDK explicitly.
+            # Select that installation's driver and companion linker together.
+            clang_path=/Library/Developer/CommandLineTools/usr/bin/clang
+            test -x "$clang_path"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
             clang_path="$(readlink -f "$clang_path")"
           fi
           test -x "$clang_path"
@@ -1435,7 +1459,12 @@ jobs:
         run: |
           set -euo pipefail
           clang_path="$(command -v clang)"
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            # The held builder uses the Command Line Tools SDK explicitly.
+            # Select that installation's driver and companion linker together.
+            clang_path=/Library/Developer/CommandLineTools/usr/bin/clang
+            test -x "$clang_path"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
             clang_path="$(readlink -f "$clang_path")"
           fi
           test -x "$clang_path"
@@ -1738,7 +1767,12 @@ jobs:
         run: |
           set -euo pipefail
           clang_path="$(command -v clang)"
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            # The held builder uses the Command Line Tools SDK explicitly.
+            # Select that installation's driver and companion linker together.
+            clang_path=/Library/Developer/CommandLineTools/usr/bin/clang
+            test -x "$clang_path"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
             clang_path="$(readlink -f "$clang_path")"
           fi
           test -x "$clang_path"
@@ -1921,7 +1955,12 @@ jobs:
         run: |
           set -euo pipefail
           clang_path="$(command -v clang)"
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            # The held builder uses the Command Line Tools SDK explicitly.
+            # Select that installation's driver and companion linker together.
+            clang_path=/Library/Developer/CommandLineTools/usr/bin/clang
+            test -x "$clang_path"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
             clang_path="$(readlink -f "$clang_path")"
           fi
           test -x "$clang_path"
@@ -2086,7 +2125,12 @@ jobs:
           set -euo pipefail
           echo "RUSTC=$(rustup which rustc)" >> "$GITHUB_ENV"
           clang_path="$(command -v clang)"
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            # The held builder uses the Command Line Tools SDK explicitly.
+            # Select that installation's driver and companion linker together.
+            clang_path=/Library/Developer/CommandLineTools/usr/bin/clang
+            test -x "$clang_path"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
             clang_path="$(readlink -f "$clang_path")"
           fi
           echo "CLANG=$clang_path" >> "$GITHUB_ENV"

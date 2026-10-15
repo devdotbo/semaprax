@@ -1,5 +1,9 @@
 # Changelog
 
+- Pair macOS CI Clang, its companion linker and C++ driver with the Command Line Tools installation used by the builder's explicit SDK, preserving held-tool admission and the unchanged SDK profile.
+
+- Refresh browser graph pins from complete hosted 2600e49eb records after measured builder-bill reductions; retain the entire previous compiled bridge and every historical graph and cursor control.
+
 - Add a macOS CI tool-link reference that exposes native compiler stderr under an empty child environment while preserving the held SDK builder's diagnostic and publication contracts.
 
 - Complete hosted full-profile coverage with benchmark-target execution and explicit checks and formatting of the remaining named examples, including the nested calculator callback.
