@@ -1,0 +1,21 @@
+{
+  "actual_source_commit": "6f8c5be48327a3f8e96c40307888d8527692e1fd",
+  "payload_bytes": 9990,
+  "payload_sha256": "546a47a9e5e9ebdc9ede609f32cb1551cdf24ec5a83d002a49c6544c3fef431a",
+  "executed_runner_sha256": "5c90e6151e4071ccb425fb1695a2d4eec6aef2d183e86af5820da0d262de4866",
+  "runner_receipt_label_correction": "The copied runner contains a stale source_commit display label from the earlier paid-CFG review. Preserve the raw receipt unchanged. This source binding and the literal source payload identify the actually reviewed integrated6f8 source. No dispatch/retry correction was performed.",
+  "sources": [
+    {
+      "source": "src/loan_plan/paid_materialize.rs",
+      "sha256": "97b1eafdd7198997927eb01d6196ef16f094e90e621ebd7e6136befe9e491844"
+    },
+    {
+      "source": "src/loan_plan/paid_materialize/before.rs",
+      "sha256": "067caf9b8d99c0f20a7de31467f3aca3a20ea46529734fd3f4d78b8c609a80ae"
+    },
+    {
+      "source": "src/loan_plan/paid_materialize/ordered_union.rs",
+      "sha256": "34f9fd8d5e9e6365a0412f53245274b37dedc253b60a5ca9acb151ce111a21fe"
+    }
+  ]
+}
