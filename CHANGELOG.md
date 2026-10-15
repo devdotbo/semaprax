@@ -1,5 +1,7 @@
 # Changelog
 
+- Reject reached Useful Data v1 dependency signatures at import admission with G172, preserving H006 for body-only authored-type refusals and admission of unreached newer bundled declarations.
+
 - Grow the actual supplemental receiving cursor from two frames under its unchanged 1,028-frame bound, paying complete overlapping replacements and live-frame moves. Retain the full original receiver and shallow reuse gate; expose callers through remaining array and path-join reservation wrappers.
 
 - Cover admitted internal owning-record imports together with exact public-v8 owning-parameter refusal, retaining the original type-import and unsupported-variant cases and no-write checks.
