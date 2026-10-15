@@ -760,6 +760,15 @@ fn before_actual_pin_consumers(source: &str, current: &str) -> String {
 
 // Independent physical-input domains: no checkpoint table accepts another stage.
 fn final_ready_input(stage: &str, source: &str, current: &str) -> String {
+    let previous = project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/compact-old-receiver-compile-fix-844-20261015/current-to-677.json"
+        )),
+        source,
+        current,
+    );
+    let current = previous.as_str();
     let data = match stage {
         "d8" => include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
