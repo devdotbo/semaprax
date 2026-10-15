@@ -26,3 +26,5 @@ pub(super) fn cross_check<'hir>(
     }
     SKELETON_MATERIALIZATIONS.with(|count| count.set(saved));
 }
+#[cfg(test)]
+mod tests;

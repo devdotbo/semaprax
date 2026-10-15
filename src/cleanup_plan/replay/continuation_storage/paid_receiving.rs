@@ -20,7 +20,8 @@ impl<'hir> Storage<'hir> {
                     .map(|instance| &instance.function),
             )
             .next();
-        let Some(function) = first.filter(|_| budget.pays_builder()) else {
+        let Some(function) = first.filter(|_| budget.payer == AllocationPayer::ActiveBuilder)
+        else {
             return Ok(Self::new(program));
         };
         // Actual two simultaneous storage initializers and returned receiver;
