@@ -1,10 +1,14 @@
 [
   {
     "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-    "current_sha256": "8e4275f9823ffc47d5d073f7375d29905e9d7438bfcc9e921f99a9002f5f375f",
+    "current_sha256": "bce662240d9e1666a3485a673419fe54a2e440880f74f9f9c8468f3c429f40fe",
     "original_sha256": "4cc35f98927317e03348e7cb2508fec59d99b697def2b35f620fcac0060735a6",
     "archive": "docs/evidence/loan-endpoint-ordered-union-827/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
     "edits": [
+      {
+        "new": "        include_str!(\"../../../../../src/loan_plan/paid_plan/retained_before_dense.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat/before_dense.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/memo.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_index.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_live/original.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_live/reuse_tests.rs\"),\n",
+        "before": "        include_str!(\"../../../../../src/loan_plan/paid_plan/retained_before_dense.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat/before_dense.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_live/original.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_live/reuse_tests.rs\"),\n"
+      },
       {
         "new": "    () => {\n        concat!(\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before_prefix.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/component_before_prefix.rs\"),\n            include_str!(\"../../../../../src/loan_plan/storage.rs\"),\n            include_str!(\"../../../../../src/loan_plan/funded_flat.rs\"),\n",
         "before": "    () => {\n        concat!(\n            include_str!(\"../../../../../src/loan_plan/storage.rs\"),\n            include_str!(\"../../../../../src/loan_plan/funded_flat.rs\"),\n"

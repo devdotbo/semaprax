@@ -7,7 +7,7 @@
   "new_authored_selectors": 10,
   "source_36": "PASS",
   "later_packet_rows": 227,
-  "integration_basis": "77e3afe45",
+  "integration_basis": "d048d61",
   "private_checkpoint": "3cb054bc2",
   "exact_later_join_rows": [
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -16,5 +16,12 @@
     "tests/hir_module_boundaries.rs",
     "tests/workspace/semantic_graph/source_inventory.rs"
   ],
-  "later_packet_count": 20
+  "later_packet_count": 20,
+  "actual_source_commit": "e8bb2db58c423cef22849157fa472d584a0f6c43",
+  "memo_later_join_rows": [
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "tests/hir_module_boundaries.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs"
+  ]
 }

@@ -45,6 +45,12 @@
         "before": "            \"\\n\",\n            include_str!(\"../src/hir/validation/byte_traversal.rs\"),\n            \"\\n\",\n            include_str!(\"../src/hir/validation/byte_traversal/tests.rs\"),\n",
         "name": "nested-byte-current-whole-source-preinverse",
         "count": 1
+      },
+      {
+        "after": "        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/memo.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/before_index.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/oracle_hook.rs\"),\n",
+        "before": "        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/oracle_hook.rs\"),\n",
+        "name": "nested-byte-current-whole-source-preinverse",
+        "count": 1
       }
     ]
   },
@@ -104,6 +110,12 @@
         "before": "                \"\\n\",\n                include_str!(\"../../../../../src/hir/validation/byte_traversal.rs\"),\n                \"\\n\",\n                include_str!(\"../../../../../src/hir/validation/record_traversal.rs\"),\n",
         "name": "nested-byte-current-whole-source-preinverse",
         "count": 1
+      },
+      {
+        "after": "        include_str!(\"../../../../../src/loan_plan/paid_plan/retained_before_dense.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat/before_dense.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/memo.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_index.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_live/original.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_live/reuse_tests.rs\"),\n",
+        "before": "        include_str!(\"../../../../../src/loan_plan/paid_plan/retained_before_dense.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat/before_dense.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_live/original.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_live/reuse_tests.rs\"),\n",
+        "name": "nested-byte-current-whole-source-preinverse",
+        "count": 1
       }
     ]
   },
@@ -151,6 +163,12 @@
       {
         "after": "    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, \"            include_str!(\\\"../src/hir/validation/byte_traversal.rs\\\"),\\n            include_str!(\\\"../src/hir/validation/byte_traversal/before_nested.rs\\\"),\\n            include_str!(\\\"../src/hir/validation/byte_traversal/nested.rs\\\"),\\n            include_str!(\\\"../src/hir/validation/byte_traversal/nested/slot.rs\\\"),\\n            include_str!(\\\"../src/hir/validation/byte_traversal/nested/check.rs\\\"),\\n            include_str!(\\\"../src/hir/validation/byte_traversal/nested/index.rs\\\"),\\n            include_str!(\\\"../src/hir/validation/byte_traversal/nested/intervals.rs\\\"),\\n            include_str!(\\\"../src/hir/validation/byte_traversal/nested/shape.rs\\\"),\\n            include_str!(\\\"../src/hir/validation/byte_traversal/nested/storage.rs\\\"),\\n            include_str!(\\\"../src/hir/validation/byte_traversal/nested/tests.rs\\\"),\\n            include_str!(\\\"../src/hir/validation/byte_traversal/nested/walk.rs\\\"),\\n\", \"            include_str!(\\\"../src/hir/validation/byte_traversal.rs\\\"),\\n\");\n        undo(&mut current, \"            include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/helpers.rs\\\"),\\n            include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/regions.rs\\\"),\\n            include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/before_remaining.rs\\\"),\\n            include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs\\\"),\\n            include_str!(\\\"../src/cleanup_plan/replay/leaf_index.rs\\\"),\\n            include_str!(\\\"../src/cleanup_plan/replay/leaf_index/paid.rs\\\"),\\n\", \"\");\n        undo(&mut current, \"        include_str!(\\\"../src/loan_plan/paid_plan/retained_before_dense.rs\\\"),\\n        include_str!(\\\"../src/loan_plan/funded_flat/before_dense.rs\\\"),\\n\", \"\");\n",
         "before": "    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, \"            include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/helpers.rs\\\"),\\n            include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/regions.rs\\\"),\\n            include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/before_remaining.rs\\\"),\\n            include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs\\\"),\\n            include_str!(\\\"../src/cleanup_plan/replay/leaf_index.rs\\\"),\\n            include_str!(\\\"../src/cleanup_plan/replay/leaf_index/paid.rs\\\"),\\n\", \"\");\n        undo(&mut current, \"        include_str!(\\\"../src/loan_plan/paid_plan/retained_before_dense.rs\\\"),\\n        include_str!(\\\"../src/loan_plan/funded_flat/before_dense.rs\\\"),\\n\", \"\");\n",
+        "name": "nested-byte-current-whole-source-preinverse",
+        "count": 1
+      },
+      {
+        "after": "                include_str!(\"../src/hir/resolve_box_call/iterator/identity_tests.rs\"),\n\"###, \"\");\n        undo(&mut current, \"        include_str!(\\\"../src/cleanup_plan/replay/factored/canonical_shared/memo.rs\\\"),\\n        include_str!(\\\"../src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs\\\"),\\n        include_str!(\\\"../src/cleanup_plan/replay/factored/canonical_shared/before_index.rs\\\"),\\n\", \"\");\n        undo(&mut current, r###\"        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/tests.rs\"),\n",
+        "before": "                include_str!(\"../src/hir/resolve_box_call/iterator/identity_tests.rs\"),\n\"###, \"\");\n        undo(&mut current, r###\"        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/tests.rs\"),\n",
         "name": "nested-byte-current-whole-source-preinverse",
         "count": 1
       }
