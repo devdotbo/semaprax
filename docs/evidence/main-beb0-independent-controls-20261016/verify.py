@@ -42,7 +42,7 @@ def item(text, needle):
  return text[start:i]
 for path,needles in [
  ('src/cleanup_plan/replay/factored.rs',['enum Label {']),
- ('src/bounded_output/classifier_string.rs',['pub(crate) fn capture()','pub(crate) fn current()'])]:
+ ('src/bounded_output/classifier_string.rs',['pub(crate) fn capture()','pub(crate) fn current(&self)'])]:
  old=blob(M,path).decode();current=(R/path).read_text()
  for needle in needles: assert item(old,needle)==item(current,needle)
 # Fixture construction and actual-entry observer remain complete old spans.
