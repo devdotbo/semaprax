@@ -1,4 +1,5 @@
-//! Test-only exact inverses for reviewed CI formatting and lint repairs.
+//! Test-only exact inverses for reviewed CI source-reader, formatting and lint repairs.
+//! Production semantic changes use separately named whole-file proofs.
 //! Historical source assertions still compare every original byte. Each
 //! current input is authenticated in full before applying explicit inverses.
 use std::collections::HashMap;

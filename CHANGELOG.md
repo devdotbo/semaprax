@@ -1,5 +1,7 @@
 # Changelog
 
+- Separate shared prelude acquisition from checked-module cache bills so a cached first module and later rebuilt provider retain cold-equivalent builder accounting. Preserve full historical root and additive audit-inventory source proofs.
+
 - Prepay a separate atomic-body control-key constructor without a type-walk cursor, preserving the full original control tuple, replay work and every other receiver. Mark generic type spellings as code in five rustdoc comments.
 
 - Update candidate inventory regressions for the admitted bounded-zeroing builtin, recognize binary-hash receipt readers in harness isolation, and fix two remaining test lint findings.
