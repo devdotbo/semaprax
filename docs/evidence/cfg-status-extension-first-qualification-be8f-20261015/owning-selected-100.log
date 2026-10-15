@@ -1,0 +1,15 @@
+
+running 1 test
+test hir::prelude_bundle::vector_extension::tests::every_extension_slot_work_exact_short_zero_and_partial_roots_drop_without_allocation ... 
+thread 'hir::prelude_bundle::vector_extension::tests::every_extension_slot_work_exact_short_zero_and_partial_roots_drop_without_allocation' (3329102) panicked at src/hir/prelude_bundle/vector_extension/tests.rs:458:13:
+assertion failed: !allocation.invalid && allocation.live == 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    hir::prelude_bundle::vector_extension::tests::every_extension_slot_work_exact_short_zero_and_partial_roots_drop_without_allocation
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8788 filtered out; finished in 0.05s
+
