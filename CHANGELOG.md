@@ -15,6 +15,8 @@
   executable qualification and physical measurements are pending.
 
 - Qualify the closed named String-transfer v1 scope with all 15 exact a417 owning controls and the five 27ae regenerated-pin/source controls; retain unrelated application-budget failures and frozen public profiles.
+- Capture the first refused reservation’s compiler caller without allocating, and append it to outward builder-budget help while preserving numeric receipts, stages, limits and paid-report omission.
+
 - Keep public v8/v9/v11 Wasm owned-String refusal separate from the emitted-body runtime census; select v10 through the replayed descriptor and preserve String-free output and earlier HIR/static-text refusals.
 
 - Separate shared prelude acquisition from checked-module cache bills so a cached first module and later rebuilt provider retain cold-equivalent builder accounting. Preserve full historical root and additive audit-inventory source proofs.
