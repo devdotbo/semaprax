@@ -4,6 +4,8 @@ use super::*;
 use crate::bounded_output::{with_limit_usage_refusal, ReservationRefusal};
 use crate::test_allocation_observer::{current_metrics, measure, Metrics};
 
+type ClosureVerdict = Result<Option<Rc<BTreeMap<usize, u64>>>, Diagnostic>;
+
 fn function() -> ResolvedFunction {
     super::super::super::lexical_plan_tests::fixture(super::super::super::lexical_plan_tests::WHILE)
         .1
@@ -134,6 +136,10 @@ fn expected_result(
     })
     .0
 }
+#[allow(
+    clippy::too_many_arguments,
+    reason = "Keep the independent receiver and observation controls explicit."
+)]
 fn observe(
     function: &ResolvedFunction,
     a: &Automaton,
@@ -142,7 +148,7 @@ fn observe(
     current: bool,
     work: usize,
     bytes: usize,
-    expected: Option<&Result<Option<Rc<BTreeMap<usize, u64>>>, Diagnostic>>,
+    expected: Option<&ClosureVerdict>,
 ) -> (
     (bool, usize, Metrics),
     bool,

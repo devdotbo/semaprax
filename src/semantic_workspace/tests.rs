@@ -404,7 +404,7 @@ fn manifest_fact(path: &str, bytes: usize) -> SemanticWorkspaceFileFact {
         source_revision: format!("sha256:{}", "1".repeat(64)),
         source_digest: format!("sha256:{}", "2".repeat(64)),
         bytes,
-        source: String::new().into(),
+        source: String::new(),
     }
 }
 
@@ -414,12 +414,12 @@ fn typed_cardinality_and_manifest_byte_replay_fail_before_unbounded_work() {
     for sources in [
         vec![SemanticWorkspaceSource {
             path: "not-canonical".to_owned(),
-            source: String::new().into(),
+            source: String::new(),
         }],
         (0..4096)
             .map(|index| SemanticWorkspaceSource {
                 path: format!("NOT-CANONICAL-{index}"),
-                source: String::new().into(),
+                source: String::new(),
             })
             .collect::<Vec<_>>(),
     ] {
