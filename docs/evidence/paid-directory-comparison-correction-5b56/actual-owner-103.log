@@ -1,0 +1,17 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::retained::exit_tests::complete_exit_receivers_preserve_prior_owner_repeated_and_competing_six_field_errors ... 
+thread 'cleanup_plan::replay::expression_facts::receiving::retained::exit_tests::complete_exit_receivers_preserve_prior_owner_repeated_and_competing_six_field_errors' (3862355) panicked at src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs:120:9:
+assertion `left == right` failed
+  left: 8271
+ right: 8451
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    cleanup_plan::replay::expression_facts::receiving::retained::exit_tests::complete_exit_receivers_preserve_prior_owner_repeated_and_competing_six_field_errors
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 0.06s
+
