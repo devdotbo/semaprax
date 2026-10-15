@@ -852,3 +852,6 @@ mod receiving_layer_tests;
 #[cfg(test)]
 #[path = "compact_nodes/before/canonical.rs"]
 pub(in crate::cleanup_plan::replay::factored) mod before_nodes;
+
+#[cfg(test)]
+mod main_unit_weight;

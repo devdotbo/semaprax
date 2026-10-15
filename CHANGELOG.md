@@ -7288,3 +7288,5 @@ are authored. Qualification is pending; Catalog corpus and limits are unchanged.
   only on a distinct second child after full payment. Complete prior receiver
   and new algebra/physical/work/authority controls await combined execution;
   no cap changes or application recovery claim.
+
+- Reuse the complete immutable closure for one unit-weight canonical input, preserving every work debit and full successor check while paying receiving metadata and retaining the entire previous producer.
