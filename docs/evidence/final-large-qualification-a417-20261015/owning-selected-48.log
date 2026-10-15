@@ -1,0 +1,6 @@
+
+running 1 test
+test owned_bounded_box_runtime::owned_bounded_box_copy_scalars_interpret_with_exact_cleanup ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 342 filtered out; finished in 1.84s
+

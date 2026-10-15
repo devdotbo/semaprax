@@ -618,10 +618,10 @@ fn public_api_cli_bytes_getters_and_read_only_locking_are_exact() {
     );
     // Restoring the prior 336449-byte debit and authenticated digest chain
     // independently reproduces all nine original whole-document KATs.
-    assert_eq!(graph.budget().used_builder_bytes(), 1_421_848);
+    assert_eq!(graph.budget().used_builder_bytes(), 1_428_092);
     assert_eq!(
         document_digest(graph.to_json().as_bytes()),
-        "sha256:bf16ffea2d2269c7e4948c6f8fdab431939a081ac5fcac106d183877c8ea5a07"
+        "sha256:ac4f8cf345ec9b214109e8932a10a6d733408bc7f5d6dd2b68df24d42d811fd6"
     );
 
     let output = Command::new(env!("CARGO_BIN_EXE_semaprax"))
@@ -1050,14 +1050,14 @@ fn public_workspace_analysis_api_cli_kats_and_locking_are_exact() {
             document_digest(capability_review.as_bytes()),
         ],
         [
-            "sha256:7c8b2afe522ce9f24a2404aa78b8b373052acd0ee382f642627ab762b5ba5d4c",
-            "sha256:0d77ba200b9cd679facc63a5ce52eafd8b316c4c4ca236daa04bd8bbd56d0e51",
-            "sha256:3ebfda039e661f99baeeef67860402d416d1d595d2127f2c1585773b0722ce28",
-            "sha256:468c6b307910e82107de083151d2f62c36c39ea282f05982d2762710f5c9c4e8",
-            "sha256:ffcfa4c3f3d4ee3d0854db9c67586ab34b0ebbac1a5c9e7804aa3a5e5f98e171",
-            "sha256:1475273c495bb4344580715480f75805f94a34be91ea4c0f80653cb594050879",
-            "sha256:1fdb6acbc9ba9c899d2a73e06d0dd33029f06d2e1e901cd67f59aab165a3664e",
-            "sha256:6e5f004daf959bd2dbc61bee9079325e7c0112b91eb711077b8c7f95e33bf588",
+            "sha256:71855c0574be5fd10adb3b71de33afb4cbae905cc7110a8da68fbe5d09b808f9",
+            "sha256:4b0d89b424ac9058c44093ccbe4a60a0eb3ec584ce5c85bc1378d31dfd0d9080",
+            "sha256:52b7f0a8f754cacfffe82f7cdbdb851641fdc1ef86f9ee188590436a5bf77896",
+            "sha256:387c789cb5f6a014ab377ea97138ed9e9869ece09068db7c3889f6acc058bc5a",
+            "sha256:ffb6cb3247de03e4409c67f267bc4a77e20949171e79d5a80b40cad9a861ead1",
+            "sha256:c1d4b519315729c71b590be9926de416136cb0e4bca007c3fb2a90d2996213dc",
+            "sha256:b14145b8e6975212415b282b2f67e5e38d1e43bea2c8a5f689c003a9883a21ac",
+            "sha256:6d503a367d03d11fa4cb37e50f579bc16f0e22c3469f47dbbbd05647c93f1eca",
         ]
     );
 

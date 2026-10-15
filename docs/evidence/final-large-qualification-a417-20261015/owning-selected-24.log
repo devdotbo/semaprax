@@ -1,0 +1,10 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::retained::edge_tests::complete_edge_receivers_preserve_full_diagnostics_order_and_drop ... fact.read original=(true, 957, 4281, false, None, 1177) paid_before=(true, 957, 4281, false, None, 1177) current=(true, 899, 4041, false, None, 937); physical delta=0 work delta=0 debit delta=0
+fact.read removed_edge_and_exit_directories=(58, 240, 240)
+fact.main original=(true, 10284, 38037, false, None, 12961) paid_before=(true, 10464, 44447, false, None, 12841) current=(true, 7917, 40687, false, None, 9081); physical delta=-120 work delta=180 debit delta=6410
+fact.main removed_edge_and_exit_directories=(2547, 3760, 3760)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8847 filtered out; finished in 0.04s
+

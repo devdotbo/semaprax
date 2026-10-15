@@ -1,0 +1,83 @@
+{
+  "schema": "semaprax.prelude-forecast-reviewed-pin-plan.v1",
+  "capture_head": "a41774c0b3522ea7e13798f1a337b0aa5f35714e",
+  "status": "actual-candidate-plan-requires-wire-review",
+  "edits": [
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "assert_eq!(graph.budget().used_builder_bytes(), 1_421_848);",
+      "after": "assert_eq!(graph.budget().used_builder_bytes(), 1_428_092);",
+      "actual_wire": "public-graph"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:bf16ffea2d2269c7e4948c6f8fdab431939a081ac5fcac106d183877c8ea5a07",
+      "after": "sha256:ac4f8cf345ec9b214109e8932a10a6d733408bc7f5d6dd2b68df24d42d811fd6",
+      "actual_wire": "public-graph"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:7c8b2afe522ce9f24a2404aa78b8b373052acd0ee382f642627ab762b5ba5d4c",
+      "after": "sha256:71855c0574be5fd10adb3b71de33afb4cbae905cc7110a8da68fbe5d09b808f9",
+      "actual_wire": "context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:0d77ba200b9cd679facc63a5ce52eafd8b316c4c4ca236daa04bd8bbd56d0e51",
+      "after": "sha256:4b0d89b424ac9058c44093ccbe4a60a0eb3ec584ce5c85bc1378d31dfd0d9080",
+      "actual_wire": "forward"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:3ebfda039e661f99baeeef67860402d416d1d595d2127f2c1585773b0722ce28",
+      "after": "sha256:52b7f0a8f754cacfffe82f7cdbdb851641fdc1ef86f9ee188590436a5bf77896",
+      "actual_wire": "capability-context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:468c6b307910e82107de083151d2f62c36c39ea282f05982d2762710f5c9c4e8",
+      "after": "sha256:387c789cb5f6a014ab377ea97138ed9e9869ece09068db7c3889f6acc058bc5a",
+      "actual_wire": "type-context"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:ffcfa4c3f3d4ee3d0854db9c67586ab34b0ebbac1a5c9e7804aa3a5e5f98e171",
+      "after": "sha256:ffb6cb3247de03e4409c67f267bc4a77e20949171e79d5a80b40cad9a861ead1",
+      "actual_wire": "impact"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:1475273c495bb4344580715480f75805f94a34be91ea4c0f80653cb594050879",
+      "after": "sha256:c1d4b519315729c71b590be9926de416136cb0e4bca007c3fb2a90d2996213dc",
+      "actual_wire": "custom-impact"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:1fdb6acbc9ba9c899d2a73e06d0dd33029f06d2e1e901cd67f59aab165a3664e",
+      "after": "sha256:b14145b8e6975212415b282b2f67e5e38d1e43bea2c8a5f689c003a9883a21ac",
+      "actual_wire": "review"
+    },
+    {
+      "path": "tests/workspace/semantic_graph.rs",
+      "before": "sha256:6e5f004daf959bd2dbc61bee9079325e7c0112b91eb711077b8c7f95e33bf588",
+      "after": "sha256:6d503a367d03d11fa4cb37e50f579bc16f0e22c3469f47dbbbd05647c93f1eca",
+      "actual_wire": "capability-review"
+    },
+    {
+      "path": "src/workspace_graph/type_proof_tests.rs",
+      "before": "sha256:17520815fb5e69c8f1ba2773ffdbe442cb05d0a27219652047ccc7c6d5fd8a90",
+      "after": "sha256:9215b8decf168cc7692058f59ca949d41e0bc455b7594f5b749b5d544f5b857a",
+      "actual_wire": "projection-wire"
+    }
+  ],
+  "source_sha256": {
+    "src/workspace_graph/type_proof_tests.rs": "sha256:039c00833cd3b67497c439bc2284d67877565f394fbc1a0ed20b7ddded70906a",
+    "tests/workspace/semantic_graph.rs": "sha256:a83fa422281a964c49993a046de3ad7e20bccee6c2b64d7edbe838c5048f3987"
+  },
+  "after_sha256": {
+    "src/workspace_graph/type_proof_tests.rs": "sha256:5c3223f7ecac32ed29d90a0c796ed79b1a9f91556afaf3074c5a63a3945c4ab5",
+    "tests/workspace/semantic_graph.rs": "sha256:4af44d68c4988c4b042a6e7b08ad5aa6f6e6f726953c0858a9e4e65ca35b497a"
+  },
+  "trusted_build_receipt_sha256": "sha256:9157d5aa2db1ab293c4b61dd10d8e8e4b5e3c7ba017cca0666d73695c1a936ef",
+  "trusted_producer_receipt_sha256": "sha256:6605a8d1e9c87c102290bdb9025cf5cab129f217d6f08cf06f1c7a672453f962"
+}

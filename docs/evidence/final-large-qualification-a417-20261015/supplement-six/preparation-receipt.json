@@ -1,0 +1,13 @@
+{
+  "state": "UNEXECUTED_SOURCE_BOUND_SUPPLEMENT",
+  "source_subject": "a41774c0b3522ea7e13798f1a337b0aa5f35714e",
+  "registration_sha256": "215d4d7d1139c5b1bb0537948de26c7b1110c6cfaab4899fc691296c22f7c0c0",
+  "runtime_manifest_sha256": "585264550cdd4e3b3b2ae980450b311add98e6c71695867a03e6219dff7b6b95",
+  "original_runtime_driver_sha256": "fb7459b6e44a336e44f779de6aff9fbf7921d986f86a8157aedb2c810eed6450",
+  "supplemental_driver_sha256": "67355be98a0473de60fb79a50b3ca4b39db216568ae78980a7b88cd988be4f10",
+  "external_build_manifest_sha256": "6308506b8c8d31d80e997a1600e9356f3ca220ee44212f67c7eef77818271b0d",
+  "original_build_receipt_not_modified": true,
+  "executable_source_and_sha_binding_preserved": true,
+  "selected": 6,
+  "compile_commands": []
+}

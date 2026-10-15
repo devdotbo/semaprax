@@ -1,0 +1,6 @@
+
+running 1 test
+test owned_record_vec_runtime::iterator::manual_next_and_for_own_execute_and_settle_on_all_backends ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 342 filtered out; finished in 1.22s
+

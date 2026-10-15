@@ -1,0 +1,17 @@
+
+running 1 test
+test hir::declaration_index::linked_owned_data::tests::linked_nominal_views_preserve_complete_old_maps_wire_and_owned_decoded_facts ... 
+thread 'hir::declaration_index::linked_owned_data::tests::linked_nominal_views_preserve_complete_old_maps_wire_and_owned_decoded_facts' (4374571) panicked at src/hir/declaration_index/linked_owned_data/tests.rs:106:33:
+assertion `left != right` failed
+  left: 0xa5cc20000
+ right: 0xa5cc20000
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    hir::declaration_index::linked_owned_data::tests::linked_nominal_views_preserve_complete_old_maps_wire_and_owned_decoded_facts
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8847 filtered out; finished in 0.05s
+

@@ -1,0 +1,9 @@
+
+running 1 test
+test loan_plan::paid_live::reuse_tests::complete_original_and_reused_liveness_planners_keep_all_fields_actual_payment_and_drop ... liveness count=1 dense=Metrics { allocations: 140, reallocations: 7, allocated: 7586, freed: 7586, live: 0, highwater: 5390, invalid: false }/15218 pre_dense=Metrics { allocations: 157, reallocations: 7, allocated: 8178, freed: 8178, live: 0, highwater: 5646, invalid: false }/14162 original=Metrics { allocations: 167, reallocations: 8, allocated: 8594, freed: 8594, live: 0, highwater: 5646, invalid: false }/14490
+liveness count=3 dense=Metrics { allocations: 319, reallocations: 20, allocated: 16626, freed: 16626, live: 0, highwater: 11206, invalid: false }/33170 pre_dense=Metrics { allocations: 424, reallocations: 20, allocated: 20130, freed: 20130, live: 0, highwater: 12550, invalid: false }/34002 original=Metrics { allocations: 454, reallocations: 25, allocated: 21202, freed: 21202, live: 0, highwater: 12550, invalid: false }/35514
+liveness count=17 dense=Metrics { allocations: 1706, reallocations: 244, allocated: 98130, freed: 98130, live: 0, highwater: 61086, invalid: false }/177058 pre_dense=Metrics { allocations: 4443, reallocations: 244, allocated: 185986, freed: 185986, live: 0, highwater: 91278, invalid: false }/319586 original=Metrics { allocations: 4613, reallocations: 277, allocated: 191650, freed: 191650, live: 0, highwater: 91278, invalid: false }/329386
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8847 filtered out; finished in 0.16s
+

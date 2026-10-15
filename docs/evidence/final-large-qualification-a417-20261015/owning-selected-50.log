@@ -1,0 +1,6 @@
+
+running 1 test
+test owned_iterator_payloads::owned_iterator_payloads_interpreter_and_native_transfer_and_settlement ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 342 filtered out; finished in 5.69s
+
