@@ -1,5 +1,7 @@
 # Changelog
 
+- Complete hosted full-profile coverage with benchmark-target execution and explicit checks and formatting of the remaining named examples, including the nested calculator callback.
+
 - Acquire branch-history clone backing at the capacity of its immediately following push, preserving complete path enumeration, work debits and later growth while retaining the original clone and push controls.
 
 - Reuse the complete immutable closure for one unit-weight canonical input, preserving every work debit and full successor check while paying receiving metadata and retaining the entire previous producer.
