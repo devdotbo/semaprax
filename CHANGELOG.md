@@ -1,5 +1,7 @@
 # Changelog
 
+- Check frozen v11 nested-record String refusal at descriptor derivation and replay, retaining array source refusal and adding an identical Bool-field positive control. Preserve the language's admitted String records.
+
 - Acquire the fixed 129-slot formatter hygiene pattern stack only for actual patterns, retaining the complete original dispatcher and source inverses. Add the unchanged 512-payload resolver source as a canonical-budget regression.
 
 - Preserve every historical CLI-help known answer while checking native-test timing and the four documented JSON-codec/fused-source usage additions; bind the complete new projection before restoring the frozen catalogue.
