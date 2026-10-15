@@ -219,8 +219,36 @@ impl Workspace {
         let guards = 2 * size_of::<PendingVec<ResolvedVariantCaseDeclaration>>()
             + 2 * size_of::<PendingVec<ResolvedFieldDeclaration>>()
             + 2 * size_of::<PendingType>();
+        // The pthread std Mutex stores its native object in a lazy Box.
+        // Fund that exact native Layout before its first lock, then initialize
+        // it here so rollback never performs that allocation after refusal.
+        #[cfg(all(
+            unix,
+            not(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "openbsd",
+                target_os = "dragonfly",
+                target_os = "fuchsia"
+            ))
+        ))]
+        let mutex_backing = size_of::<libc::pthread_mutex_t>();
+        #[cfg(not(all(
+            unix,
+            not(any(
+                target_os = "linux",
+                target_os = "android",
+                target_os = "freebsd",
+                target_os = "openbsd",
+                target_os = "dragonfly",
+                target_os = "fuchsia"
+            ))
+        )))]
+        let mutex_backing = 0;
         reserve(
             size_of::<ArcCarrier<Mutex<Vec<ResolvedType>>>>()
+                .saturating_add(mutex_backing)
                 .saturating_add(guards)
                 .saturating_add(size_of::<Self>())
                 .saturating_add(size_of::<Result<Self, E>>())
@@ -228,8 +256,14 @@ impl Workspace {
         )?;
         let scratch = Vec::with_capacity(capacity);
         assert_eq!(scratch.capacity(), capacity);
+        let scratch = Arc::new(Mutex::new(scratch));
+        drop(
+            scratch
+                .lock()
+                .expect("initialize prepaid construction disposal lock"),
+        );
         Ok(Self {
-            scratch: Some(Arc::new(Mutex::new(scratch))),
+            scratch: Some(scratch),
             building: true,
         })
     }
