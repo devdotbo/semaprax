@@ -1,0 +1,448 @@
+{
+  "source_subject": "cf7b8ad90faa5cdf969238f31b4cbc04c60cde13",
+  "no_rust_execution": true,
+  "rows": [
+    {
+      "packet": "exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "17244065ec71c8b7c26e03dfdac42605e1f09102fa1983f262cdcb3550dbd5bd",
+      "original_archive": "docs/evidence/exit-prefix-reference-proof/tests__hir_module_boundaries.rs.before.txt",
+      "original_sha256": "03fde58554846398c379bbaa6f60cd1368d2573ff9fc715d340074f4c6ea56dc",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "3e99fc2d67f0c3f8dfea4944b4e0c6131ce380b5bfb97c0af99d14eb7cc41f2f",
+      "original_archive": "docs/evidence/exit-prefix-reference-proof/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
+      "original_sha256": "bb72229bff1d33b7e6f03887a4022003465f077710cd643d75be9afcf4577961",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "4177e5cefd84c112175678354821a99f94ea92cfd649536e7a0796344dc1c827",
+      "original_archive": "docs/evidence/exit-prefix-reference-proof/src__cleanup_plan__replay__live_oracle__source_custody__b.rs.before.txt",
+      "original_sha256": "7e0364a194df13c8fc374e4dd1ae2464609a8040ea2087429d06843a00f417c7",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "current_sha256": "b567be26f4c6f73a39d80f3fbf2363684927d3da39db3d0ff326ba4c3c724dad",
+      "original_archive": "docs/evidence/exit-prefix-reference-proof/retained.rs.before.txt",
+      "original_sha256": "222853f211323dde7b91b7e5ba0dfebf0aeee26a4383174075718c662386bbe7",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 91fb6b4cc4faa677bb7ee20c5a8001e6d3b716f3"
+    },
+    {
+      "packet": "status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "17244065ec71c8b7c26e03dfdac42605e1f09102fa1983f262cdcb3550dbd5bd",
+      "original_archive": "docs/evidence/status-fact-borrow-reuse/tests__hir_module_boundaries.rs.before.txt",
+      "original_sha256": "83dc4425c79ca5720aa4d98d61561bdae8690701a0d7fb8daa0fbdfd0076f259",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "3e99fc2d67f0c3f8dfea4944b4e0c6131ce380b5bfb97c0af99d14eb7cc41f2f",
+      "original_archive": "docs/evidence/status-fact-borrow-reuse/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
+      "original_sha256": "485f5b066ebe1e2edb3a42c9bcdfeb6d6f310d2691736eaf63777a02ac803676",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "4177e5cefd84c112175678354821a99f94ea92cfd649536e7a0796344dc1c827",
+      "original_archive": "docs/evidence/status-fact-borrow-reuse/src__cleanup_plan__replay__live_oracle__source_custody__b.rs.before.txt",
+      "original_sha256": "44edd8afa0f32ce7d479b54e369ed7ae1220eb0bfdd057edb915808090b29c18",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "current_sha256": "b567be26f4c6f73a39d80f3fbf2363684927d3da39db3d0ff326ba4c3c724dad",
+      "original_archive": "docs/evidence/status-fact-borrow-reuse/retained.rs.before.txt",
+      "original_sha256": "d1c619e451e181d4f1a9832f87f3055e4231f64b79099fcb4f15c4dbef592d5e",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 91fb6b4cc4faa677bb7ee20c5a8001e6d3b716f3"
+    },
+    {
+      "packet": "status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs",
+      "current_sha256": "3afb5e4ac954fdd0568a6566f215616d965cafd419ec487b39cba2556c7ead5e",
+      "original_archive": "docs/evidence/status-fact-borrow-reuse/retained_tests.rs.before.txt",
+      "original_sha256": "c6069082ff7abb15cff8c832bc0a6086f8ef5c57103c450448ffc0494aa5eeee",
+      "whole_bytes_equal": true,
+      "method": "already exact current"
+    },
+    {
+      "packet": "referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "17244065ec71c8b7c26e03dfdac42605e1f09102fa1983f262cdcb3550dbd5bd",
+      "original_archive": "docs/evidence/referenced-edge-ownership-proof/tests__hir_module_boundaries.rs.before.txt",
+      "original_sha256": "5be1edee738ee12b426939fbfbc09635229d4c7a3da4f45d3c1074254e0eb0e2",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "3e99fc2d67f0c3f8dfea4944b4e0c6131ce380b5bfb97c0af99d14eb7cc41f2f",
+      "original_archive": "docs/evidence/referenced-edge-ownership-proof/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
+      "original_sha256": "844628e0b1a3f3dafd563a7a9ef3396f513e664dc63e7d70237912736d6558ea",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "4177e5cefd84c112175678354821a99f94ea92cfd649536e7a0796344dc1c827",
+      "original_archive": "docs/evidence/referenced-edge-ownership-proof/src__cleanup_plan__replay__live_oracle__source_custody__b.rs.before.txt",
+      "original_sha256": "52fd9fb9d542ec3916b7427610885d934f7a9e0e9987e515feea226a0bbabfdb",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "current_sha256": "b567be26f4c6f73a39d80f3fbf2363684927d3da39db3d0ff326ba4c3c724dad",
+      "original_archive": "docs/evidence/referenced-edge-ownership-proof/retained.rs.before.txt",
+      "original_sha256": "02901e6e9fb8922ee4be72dab3899cbafaba25b942a9f62daf0979ea1fb8556d",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 91fb6b4cc4faa677bb7ee20c5a8001e6d3b716f3"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_candidate.rs",
+      "current_sha256": "21beae8f565af669630a2e858cae0ac02caf8c871fa783b6c413a4159ebf77e9",
+      "original_archive": "docs/evidence/loan-candidate-inventory-reuse/paid_candidate.rs.before.txt",
+      "original_sha256": "1e0b84ebde6ce7c110238cfb35f68f5daf1befbc2a2648e1f49203a302aa1f22",
+      "whole_bytes_equal": true,
+      "method": "already exact current"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_plan.rs",
+      "current_sha256": "e49358ba67fbc53a81bd3993980bd17e3deaa2630e1b9f23e65fcd60e029e211",
+      "original_archive": "docs/evidence/loan-candidate-inventory-reuse/paid_plan.rs.before.txt",
+      "original_sha256": "98db139e9b14abb2126a887f760e4db2bbbd095a9a2b89df924bef71e68732f3",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/funded_flat.rs",
+      "current_sha256": "ac284cc83df3d1487ab8955e428042f1b6d81c5a33be4ef269d901a3220d7851",
+      "original_archive": "docs/evidence/loan-candidate-inventory-reuse/funded_flat.rs.before.txt",
+      "original_sha256": "3c4084c88c10993169b65b9bf3a16de490f14b98754cba4966b5f7af56df7d99",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/funded_flat/work_boundary.rs",
+      "current_sha256": "ee8b8c996c61a41bffffbcdd3d9f3bd8399c1f817a52d66144d08292c3bcefef",
+      "original_archive": "docs/evidence/loan-candidate-inventory-reuse/work_boundary.rs.before.txt",
+      "original_sha256": "706a4b53dbe3e980470a6156d06a6ef4f31fedcb357a61b7491b6a24c08b7733",
+      "whole_bytes_equal": true,
+      "method": "already exact current"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_cursor/tests.rs",
+      "current_sha256": "8561adbbd905297fd5c1514efcf4f76752fc9e39e27d2fc7a4588c6ce4198d79",
+      "original_archive": "docs/evidence/loan-candidate-inventory-reuse/paid_cursor_tests.rs.before.txt",
+      "original_sha256": "36d74075307777d67fcbcc5694c32d7d553fdb8ef0c208cb42e93bba3fb87202",
+      "whole_bytes_equal": true,
+      "method": "already exact current"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "17244065ec71c8b7c26e03dfdac42605e1f09102fa1983f262cdcb3550dbd5bd",
+      "original_archive": "docs/evidence/loan-candidate-inventory-reuse/tests__hir_module_boundaries.rs.before.txt",
+      "original_sha256": "4ba11a086ed1efbd2211d5b21e334316b0a3c91ccd66b2cf75677d4eb76c12bf",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "3e99fc2d67f0c3f8dfea4944b4e0c6131ce380b5bfb97c0af99d14eb7cc41f2f",
+      "original_archive": "docs/evidence/loan-candidate-inventory-reuse/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
+      "original_sha256": "a36ff7c4241aaa4ecc8698b3ae64d5bef7c9ec0ecef208d5c612deb9e0e66718",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "4177e5cefd84c112175678354821a99f94ea92cfd649536e7a0796344dc1c827",
+      "original_archive": "docs/evidence/loan-candidate-inventory-reuse/source_custody_b.rs.before.txt",
+      "original_sha256": "b85fd51439e81d83b5a776244dc17f7f9ce83b8704040407fcfddefdb8f665c6",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "prefix-certified-expression-lookup/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/arena.rs",
+      "current_sha256": "836f873c4a23a62dcb52eb1768b08f36581c7212c1b047cd06561791961dfb4b",
+      "original_archive": "docs/evidence/prefix-certified-expression-lookup/arena.rs.before.txt",
+      "original_sha256": "94e056acbccb322afa35d42ba81af4672725b036bb4cf730c9495a8bbbb44d17",
+      "whole_bytes_equal": true,
+      "method": "already exact current"
+    },
+    {
+      "packet": "prefix-certified-expression-lookup/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "17244065ec71c8b7c26e03dfdac42605e1f09102fa1983f262cdcb3550dbd5bd",
+      "original_archive": "docs/evidence/prefix-certified-expression-lookup/hir_module_boundaries.rs.before.txt",
+      "original_sha256": "57db1e409226dc2ddf5c9519071ad69822e646d6f71d11cfd16e88d51ad8c4fc",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "prefix-certified-expression-lookup/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "4177e5cefd84c112175678354821a99f94ea92cfd649536e7a0796344dc1c827",
+      "original_archive": "docs/evidence/prefix-certified-expression-lookup/source_custody_b.rs.before.txt",
+      "original_sha256": "ead6bb549f1bd85d904eecbf182f14103639489320ec8ad09f0d29232f2fe90b",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "source": "src/loan_plan/paid_live.rs",
+      "current_sha256": "5247ed741e5aee10ae7085d3b171bbca4533ea81f1527ef69db039f2e9903227",
+      "original_archive": "docs/evidence/paid-live-pending-reuse-3c351/paid_live.rs.before.txt",
+      "original_sha256": "5db3f83bc1305f20ce478f2746360fdaea138ff98f87305560f1db2c9b1d4688",
+      "whole_bytes_equal": true,
+      "method": "already exact current"
+    },
+    {
+      "packet": "paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "source": "src/loan_plan/paid_plan.rs",
+      "current_sha256": "e49358ba67fbc53a81bd3993980bd17e3deaa2630e1b9f23e65fcd60e029e211",
+      "original_archive": "docs/evidence/paid-live-pending-reuse-3c351/paid_plan.rs.before.txt",
+      "original_sha256": "f42d8f1a0d2b5d426e58e4240ee825d59b1623cb83092b353f39b45174b1b7cc",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "3e99fc2d67f0c3f8dfea4944b4e0c6131ce380b5bfb97c0af99d14eb7cc41f2f",
+      "original_archive": "docs/evidence/paid-live-pending-reuse-3c351/interop_source_inventory.rs.before.txt",
+      "original_sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "3e99fc2d67f0c3f8dfea4944b4e0c6131ce380b5bfb97c0af99d14eb7cc41f2f",
+      "original_archive": "docs/evidence/paid-cfg-child-scratch/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
+      "original_sha256": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "src/loan_plan/adjacency.rs",
+      "current_sha256": "cb1e73799e15c83b8158378f5e07963e76207bc1f4166eae698da0fe70d6ad09",
+      "original_archive": "docs/evidence/paid-cfg-child-scratch/src__loan_plan__adjacency.rs.before.txt",
+      "original_sha256": "8b852e280e23793cdcaf5e43a19ea7a06e1ae2ba29aedd23d6e01e4326d471ca",
+      "whole_bytes_equal": true,
+      "method": "already exact current"
+    },
+    {
+      "packet": "paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "src/loan_plan/cfg_directory.rs",
+      "current_sha256": "731250243432d00470b3c65886cfa7c7f6427915430bb93a86eca5eac8d99ba4",
+      "original_archive": "docs/evidence/paid-cfg-child-scratch/src__loan_plan__cfg_directory.rs.before.txt",
+      "original_sha256": "61865270ed45b2c58501e962ad2fffc01dddfd77063f8dc9195193b85223f007",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_cfg.rs",
+      "current_sha256": "d5018e9114fa51a1dc47b61e1a3219101d3d65e1e476c651c08fca7759bece28",
+      "original_archive": "docs/evidence/paid-cfg-child-scratch/src__loan_plan__paid_cfg.rs.before.txt",
+      "original_sha256": "5a1995e3ae65126afa9a1f78b2c901d3f921b17a2d567055baf7a4a2995d0dea",
+      "whole_bytes_equal": true,
+      "method": "already exact current"
+    },
+    {
+      "packet": "paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_plan_legacy.rs",
+      "current_sha256": "718cf55938c62125e054707b0b927c04703c994fae0056985f3e5f190e9a61cd",
+      "original_archive": "docs/evidence/paid-cfg-child-scratch/src__loan_plan__paid_plan_legacy.rs.before.txt",
+      "original_sha256": "ca48cef5e409813261a9ab1eb9174cb953033ad9b34f741ca7fdefdeb41d1f1e",
+      "whole_bytes_equal": true,
+      "method": "already exact current"
+    },
+    {
+      "packet": "lifecycle-inline-active-path/whole-source-inverses.json",
+      "source": "src/hir/validation/function_scope/lifecycle/completed.rs",
+      "current_sha256": "4c372d51fa2fac1c3252d876acbf909bb29e3be6e2a2db2b0defa1e4d0b8c50e",
+      "original_archive": "docs/evidence/lifecycle-inline-active-path/completed.rs.before.txt",
+      "original_sha256": "15895b83280daba02f9c04fcc0613cfeebd35d35c76fa46dbf76001ef71c9733",
+      "whole_bytes_equal": true,
+      "method": "already exact current"
+    },
+    {
+      "packet": "lifecycle-inline-active-path/whole-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "17244065ec71c8b7c26e03dfdac42605e1f09102fa1983f262cdcb3550dbd5bd",
+      "original_archive": "docs/evidence/lifecycle-inline-active-path/hir_module_boundaries.rs.before.txt",
+      "original_sha256": "1efc02b5a6d87c7bf56e17bcd40b3bd00adb70be3e8a3c50b0a844f5ba7dd903",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "lifecycle-inline-active-path/whole-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "3e99fc2d67f0c3f8dfea4944b4e0c6131ce380b5bfb97c0af99d14eb7cc41f2f",
+      "original_archive": "docs/evidence/lifecycle-inline-active-path/interop_source_inventory.rs.before.txt",
+      "original_sha256": "49c78bc2b79880849076544e19874e744374f238ee0c0f49e38a7d5c3bb47316",
+      "whole_bytes_equal": true,
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    }
+  ],
+  "new_leading_compositions": [
+    {
+      "packet": "exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "method": "exact current-to-known-input 91fb6b4cc4faa677bb7ee20c5a8001e6d3b716f3"
+    },
+    {
+      "packet": "status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "method": "exact current-to-known-input 91fb6b4cc4faa677bb7ee20c5a8001e6d3b716f3"
+    },
+    {
+      "packet": "referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "method": "exact current-to-known-input 91fb6b4cc4faa677bb7ee20c5a8001e6d3b716f3"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_plan.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/funded_flat.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "prefix-certified-expression-lookup/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "prefix-certified-expression-lookup/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "source": "src/loan_plan/paid_plan.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "src/loan_plan/cfg_directory.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "lifecycle-inline-active-path/whole-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    },
+    {
+      "packet": "lifecycle-inline-active-path/whole-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "method": "exact current-to-known-input 5b562965d2fc8e75c552f19e4f81ec7ab0835b68"
+    }
+  ]
+}
