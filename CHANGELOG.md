@@ -1,5 +1,10 @@
 # Changelog
 
+- Give ordinary empty-renewal branch clones a separately prepaid borrowed
+  payload without a renewal-map reference, preserving full state and work while
+  avoiding an atomic type cursor and tightening the conservative backing bound. Retain exact browser Project graph
+  and compiler-provenance records for reviewing changed budget-bound pins.
+
 - Repair the pinned Clippy gate while retaining explicit proof lifetimes and
   independently compiled historical receiver controls. Name complex carrier
   types, preserve measured traversal order, and move whole test modules after

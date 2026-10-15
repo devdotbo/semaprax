@@ -1,6 +1,10 @@
 //! Exact original checked-work/LIFO/edge order with caller-paid seed/live sets.
 use super::*;
 #[cfg(test)]
+#[allow(
+    clippy::duplicate_mod,
+    reason = "Run the same controls against independent receivers."
+)]
 mod tests;
 pub(super) trait Membership {
     fn contains(&self, node: &u16) -> bool;
