@@ -614,6 +614,14 @@ fn before_fixture841(source: &str, current: &str) -> String {
     )
 }
 pub(crate) fn compressed_fixture_input(source: &str, current: &str) -> String {
+    // Independently authenticate the raw-default checkpoint and its complete
+    // immediate shim view; the inherited chain below retains every old guard.
+    let raw_default = final_batch_input("841", source, current);
+    let _whole_raw_default_before = project(
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/raw-selected-child-default-841-20261015/current-to-56dc.json")),
+        source,
+        &raw_default,
+    );
     let previous = before_retained833(source, current);
     let current = previous.as_str();
     project(
@@ -883,6 +891,8 @@ fn joined_feature_input(stage: &str, source: &str, current: &str) -> String {
 
 // Independent final raw fronts for MAIN integration versus retained alias owners.
 fn combined_ready_input(stage: &str, source: &str, current: &str) -> String {
+    let final_view = final_batch_input("796", source, current);
+    let current = final_view.as_str();
     let previous = project(
         include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cache-report-observer-796-20261015/current-to-2cf33.json")),
         source,
@@ -911,6 +921,20 @@ fn combined_ready_input(stage: &str, source: &str, current: &str) -> String {
         "main" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/final-main27424-alias847-assembly-20261015/final-to-main-checkpoint.json")),
         "alias" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/final-main27424-alias847-assembly-20261015/final-to-alias-checkpoint.json")),
         _ => panic!("unknown exact final source front"),
+    };
+    project(rows, source, current)
+}
+
+// The direct831 source owner has a separate immediate domain from old guards.
+pub(crate) fn branch_closed831_input(source: &str, current: &str) -> String {
+    final_batch_input("831", source, current)
+}
+fn final_batch_input(branch: &str, source: &str, current: &str) -> String {
+    let rows = match branch {
+        "796" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/final-831841845796-assembly-20261015/final-to-796.json")),
+        "831" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/final-831841845796-assembly-20261015/final-to-831.json")),
+        "841" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/final-831841845796-assembly-20261015/final-to-841.json")),
+        _ => panic!("unknown independent final batch source checkpoint"),
     };
     project(rows, source, current)
 }
