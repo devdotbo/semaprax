@@ -1,0 +1,13 @@
+{
+  "status": "SOURCE_ONLY_NOT_EXECUTED",
+  "preserved_rows": 9,
+  "whole_current_to_a33_prepend": [
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared.rs",
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "tests/hir_module_boundaries.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/memo.rs"
+  ],
+  "all_old_hooks_and_originals_unchanged": true
+}

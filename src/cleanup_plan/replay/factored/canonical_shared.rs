@@ -4,6 +4,9 @@
 //! the complete original receiver in canonical_before.rs as an independent control.
 use super::*;
 
+mod epsilon_alias;
+#[cfg(test)]
+mod before_alias;
 mod memo;
 #[cfg(test)]
 mod before_index;
@@ -113,6 +116,23 @@ impl<'a> Canonicalizer<'a> {
                         stack.push((*target, false));
                     }
                 }
+                continue;
+            }
+            // Exactly one immutable epsilon child contributes the complete map.
+            // Sink/own-move/duplicate-edge and all other shapes keep the full
+            // general producer below, including checked route accumulation.
+            if node != self.sink && state.moves.is_empty() && state.epsilon.len() == 1 {
+                let Some(inner) = self.closures.get(&state.epsilon[0]) else {
+                    return Err(replay_error(function, "cleanup CFG contains a cycle"));
+                };
+                let shared = match epsilon_alias::share(function, inner, budget) {
+                    Ok(shared) => shared,
+                    Err(error) => {
+                        self.closures.reject_after_error();
+                        return Err(error);
+                    }
+                };
+                self.closures.insert(function, node, budget, || shared)?;
                 continue;
             }
             let mut closure = BTreeMap::new();

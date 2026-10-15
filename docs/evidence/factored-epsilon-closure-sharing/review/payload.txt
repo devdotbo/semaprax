@@ -1,0 +1,142 @@
+Review concrete #830 implementation only, no tools/execution. Preserve every existing work request/phase/order; no quota/cap/work credits. Single non-sink/no-moves/one epsilon child's already-completed immutable closure equals parent; 0 + each u64 route cannot overflow. General producer remains verbatim below branch; duplicate edges and mixed moves/sink must stay general. Full a33 canonical receiver body independently compiled+archived (only module/test adapters); same Memo implementation except additive reject_after_error setter. Caller factored::equivalent owns one local Canonicalizer and uses same borrowed function+budget across two roots before Drop. id authenticates Memo before state-cache hits. Memo.authenticate checks exact function pointer, exact budget pointer and current ClassifierLedger before requesting payer, reserve_bytes(0) sticky; all errors latch failed; get afterfailed None. Positive reserve_bytes uses actual existing cumulative owner; reserve_vec pays whole geometric replacement and try_reserve_exact+capacity equality. Ordinary refusal text preowned. LegacyUnobserved skips positive allocation accounting and remains explicit. Rc clone itself allocates no new backing. New helper success carrier fee is exact named receiving Rc + actual Result<Rc,Diagnostic>; publication only after old work debits. Error payload before this fee is the existing preowned replay Diagnostic, no new backing; caller rejects memo without requery/replacing first error. Whole observer includes all receivers/results/last Drop; immutable function/automaton/test expected output prepared before observations. Six new controls authored (not run): long64 chain ends3-entry closure, diamond/two roots/duplicates/mixed/empty, old/current IDs+signatures/u64 overflow, every work frontier comparing full Diagnostic against active-payer old producer, own exact-short-zero bytes, foreign/restored/function/budget/stale and sink-onechild. Bounded fixture census and physical reductions only pending assertions, no app frequency/fit claim. Find concrete semantic/typing/funding/authority gaps; retain uncertainties.
+
+HELPER:
+//! Exact single-epsilon closure receiver, authenticated by the enclosing memo.
+use super::*;
+use std::mem::size_of;
+
+type Closure = Rc<BTreeMap<usize, u64>>;
+
+pub(super) fn share(
+    function: &ResolvedFunction,
+    inner: &Closure,
+    budget: &mut ReplayBudget,
+) -> Result<Closure, Diagnostic> {
+    // The general producer starts an empty map and inserts each unique child
+    // entry once: 0 + routes cannot overflow u64. Retain EACH old work request
+    // and its phase/order; do not aggregate away partial exhaustion.
+    for _ in inner.iter() {
+        budget.charge(function, 1, "factored closure route addition")?;
+    }
+    budget.charge(
+        function,
+        inner.len().saturating_add(1),
+        "factored skeleton closure",
+    )?;
+    // One actual receiving Rc local plus this helper's Result carrier. Its
+    // child map and Rc allocation remain owned by the already-paid memo entry;
+    // Rc::clone acquires no new backing. No absent map/header debit or credit.
+    if budget.pays_allocations() {
+        budget.reserve_bytes(
+            function,
+            size_of::<Closure>() + size_of::<Result<Closure, Diagnostic>>(),
+            "factored epsilon closure receiving",
+        )?;
+    }
+    budget.reserve_bytes(function, 0, "factored epsilon closure authentication")?;
+    let shared = Rc::clone(inner);
+    Ok(shared)
+}
+
+#[cfg(test)]
+mod tests;
+
+ACTUAL CLOSURE:
+    fn closure(
+        &mut self,
+        function: &ResolvedFunction,
+        root: usize,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<Rc<BTreeMap<usize, u64>>>, Diagnostic> {
+        self.closures.authenticate(function, budget)?;
+        budget.reserve_array::<(usize, bool)>(function, 1, "factored closure initial cursor")?;
+        let mut stack = vec![(root, false)];
+        while let Some((node, expanded)) = stack.pop() {
+            budget.charge(function, 1, "factored closure cursor")?;
+            if self.closures.contains_key(&node) {
+                continue;
+            }
+            let state = &self.automaton.nodes[node];
+            if !expanded {
+                budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
+                stack.push((node, true));
+                for target in &state.epsilon {
+                    if !self.closures.contains_key(target) {
+                        budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
+                        stack.push((*target, false));
+                    }
+                }
+                continue;
+            }
+            // Exactly one immutable epsilon child contributes the complete map.
+            // Sink/own-move/duplicate-edge and all other shapes keep the full
+            // general producer below, including checked route accumulation.
+            if node != self.sink && state.moves.is_empty() && state.epsilon.len() == 1 {
+                let Some(inner) = self.closures.get(&state.epsilon[0]) else {
+                    return Err(replay_error(function, "cleanup CFG contains a cycle"));
+                };
+                let shared = match epsilon_alias::share(function, inner, budget) {
+                    Ok(shared) => shared,
+                    Err(error) => {
+                        self.closures.reject_after_error();
+                        return Err(error);
+                    }
+                };
+                self.closures.insert(function, node, budget, || shared)?;
+                continue;
+            }
+            let mut closure = BTreeMap::new();
+            if !state.moves.is_empty() || node == self.sink {
+                budget.reserve_btree_node::<usize, u64>(function, "factored closure node")?;
+                closure.insert(node, 1_u64);
+            }
+            for target in &state.epsilon {
+                let Some(inner) = self.closures.get(target) else {
+                    return Err(replay_error(function, "cleanup CFG contains a cycle"));
+                };
+                for (inner_node, routes) in inner.iter() {
+                    budget.charge(function, 1, "factored closure route addition")?;
+                    if !closure.contains_key(inner_node) {
+                        budget
+                            .reserve_btree_node::<usize, u64>(function, "factored closure node")?;
+                    }
+                    let slot = closure.entry(*inner_node).or_insert(0_u64);
+                    let Some(sum) = slot.checked_add(*routes) else {
+                        return Ok(None);
+                    };
+                    *slot = sum;
+                }
+            }
+            budget.charge(
+                function,
+                closure.len().saturating_add(1),
+                "factored skeleton closure",
+            )?;
+            budget.reserve_bytes(
+                function,
+                physical_clone::rc_backing_bytes::<BTreeMap<usize, u64>>(),
+                "factored closure shared header",
+            )?;
+            self.closures.insert(function, node, budget, || Rc::new(closure))?;
+        }
+        Ok(self.closures.get(&root).cloned())
+    }
+
+
+MEMO ADDITIVE REJECTION/READS:
+    pub(super) fn reject_after_error(&mut self) {
+        self.failed = true;
+    }
+    pub(super) fn contains_key(&self, key: &usize) -> bool {
+        self.get(key).is_some()
+    }
+    pub(super) fn get(&self, key: &usize) -> Option<&T> {
+        if self.failed {
+            return None;
+        }
+        self.chunks
+            .get(*key / WIDTH)?
+            .as_ref()?
+            .get(*key % WIDTH)?
+            .as_ref()
+    }

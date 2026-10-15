@@ -138,7 +138,11 @@ actual layouts before construction. Sharing keeps the original len-plus-one
 copy work and zero-byte sticky payer authentication. The complete original
 receiver remains in test-only `factored/canonical_before.rs`; source-custody
 inverses join its full interior and the HIR authority scan includes both owners
-and their receiving controls. Qualification and application fit remain pending.
+and their receiving controls. `canonical_shared/epsilon_alias.rs` owns the exact
+non-sink/no-moves/single-epsilon immutable closure receiver; it retains every
+original route/skeleton work request and authenticates the same held memo owner.
+The complete a33 receiver remains in test-only `canonical_shared/before_alias.rs`.
+Qualification and application fit remain pending.
 
 `hir/resolve_program/initial_loan_plans.rs` owns the initial authored and
 instantiated loan-plan attachment. Active construction captures one existing

@@ -1,0 +1,11 @@
+{
+  "status": "SOURCE_ONLY_PASS_NO_CARGO",
+  "basis": "a33c16996b4f095ffa2cf631bc39db4589e28302",
+  "new_source_inverse_rows": 10,
+  "prior_memo_inverse_rows": 9,
+  "new_registered_bodies": 6,
+  "retained_registered_bodies": 14,
+  "whole_a33_body_preserved": true,
+  "raw_review_retained": true,
+  "runtime_claim": false
+}

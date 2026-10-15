@@ -82,6 +82,11 @@ impl<T> Memo<T> {
         }
         Ok(())
     }
+    // Caller already holds the selected error; retain it unchanged while
+    // invalidating views without querying any payer or allocating a report.
+    pub(super) fn reject_after_error(&mut self) {
+        self.failed = true;
+    }
     pub(super) fn contains_key(&self, key: &usize) -> bool {
         self.get(key).is_some()
     }
